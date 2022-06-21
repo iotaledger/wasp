@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -322,6 +321,22 @@ func TestRotation(t *testing.T) {
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
 }
 
+type testRotationManyRotation struct {
+	Committee []int
+	Quorum    uint16
+	Address   iotago.Address
+}
+
+func newTestRotationManyRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationManyRotation {
+	address, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+	return testRotationManyRotation{
+		Committee: committee,
+		Quorum:    quorum,
+		Address:   address,
+	}
+}
+
 func TestRotationMany(t *testing.T) {
 	testutil.RunHeavy(t)
 	if testing.Short() {
@@ -329,31 +344,19 @@ func TestRotationMany(t *testing.T) {
 	}
 
 	const numRequests = 2
-	const numCmt = 5
-	const numRotations = 5
 	const waitTimeout = 180 * time.Second
 
-	cmtPredef := [][]int{
-		{0, 1, 2, 3},
-		{2, 3, 4, 5},
-		{3, 4, 5, 6, 7, 8},
-		{9, 4, 5, 6, 7, 8, 3},
-		{1, 2, 3, 4, 5, 6, 7, 8, 9},
-	}
-	quorumPredef := []uint16{3, 3, 5, 5, 7}
-	cmt := cmtPredef[:numCmt]
-	quorum := quorumPredef[:numCmt]
-	addrs := make([]iotago.Address, numCmt)
-
-	var err error
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	for i := range cmt {
-		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
-		require.NoError(t, err)
-		t.Logf("addr[%d]: %s", i, addrs[i].Bech32(parameters.L1.Protocol.Bech32HRP))
+	rotations := []testRotationManyRotation{
+		newTestRotationManyRotation(t, clu, []int{0, 1, 2, 3}, 3),
+		newTestRotationManyRotation(t, clu, []int{2, 3, 4, 5}, 3),
+		newTestRotationManyRotation(t, clu, []int{3, 4, 5, 6, 7, 8}, 5),
+		newTestRotationManyRotation(t, clu, []int{9, 4, 5, 6, 7, 8, 3}, 5),
+		newTestRotationManyRotation(t, clu, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 7),
 	}
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
+	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
@@ -361,15 +364,14 @@ func TestRotationMany(t *testing.T) {
 
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 
-	for i := range addrs {
-		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
+	for _, rotation := range rotations {
+		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
+		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithIotas(1 * iscp.Mi)
 		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
 		require.NoError(t, err)
 		_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 		require.NoError(t, err)
-		require.True(t, isAllowedStateControllerAddress(t, chain, 0, addrs[i]))
-		require.True(t, isAllowedStateControllerAddress(t, chain, 5, addrs[i]))
-		require.True(t, isAllowedStateControllerAddress(t, chain, 9, addrs[i]))
+		require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
 
 	tx := e.deployNativeIncCounterSC(0)
@@ -378,46 +380,26 @@ func TestRotationMany(t *testing.T) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 	require.NoError(t, err)
 
-	addrIndex := 0
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
-	for i := 0; i < numRotations; i++ {
-		t.Logf("Rotation number %v to %v...", i, cmt[i])
-		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
+	for i, rotation := range rotations {
+		t.Logf("Rotating to %v-th committee %v with quorum %v and address %s", i, rotation.Committee, rotation.Quorum, rotation.Address)
 
 		_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
 		require.NoError(t, err)
 
-		waitUntil(t, e.counterEquals(int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 30*time.Second)
+		waitUntil(t, e.counterEquals(int64(numRequests*(i+1))), e.Clu.Config.AllNodes(), 30*time.Second)
 
-		addrIndex = (addrIndex + 1) % numCmt
-
-		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[addrIndex]).WithIotas(1)
+		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation.Address).WithIotas(1 * iscp.Mi)
 		tx, err := govClient.PostRequest(governance.FuncRotateStateController.Name, *par)
 		require.NoError(t, err)
-		require.NoError(t, e.waitStateControllers(addrs[addrIndex], waitTimeout))
+		require.NoError(t, e.waitStateControllers(rotation.Address, waitTimeout))
 		_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 		require.NoError(t, err)
 	}
-}
-
-func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID, timeout time.Duration) string {
-	var ret string
-	succ := waitTrue(timeout, func() bool {
-		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
-		if err == nil && rec != nil {
-			ret = rec.Error.Code().String()
-			return true
-		}
-		return false
-	})
-	if !succ {
-		return "(timeout)"
-	}
-	return ret
 }
 
 func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
@@ -440,28 +422,6 @@ func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
 	v, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 	require.NoError(e.t, err)
 	return v, nil
-}
-
-func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID) (*blocklog.RequestReceipt, error) {
-	args := dict.New()
-	args.Set(blocklog.ParamRequestID, reqid.Bytes())
-
-	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
-		chain.ChainID,
-		blocklog.Contract.Hname(),
-		blocklog.ViewGetRequestReceipt.Name,
-		args,
-	)
-	if err != nil {
-		return nil, xerrors.New("not found")
-	}
-	if len(res) == 0 {
-		return nil, nil
-	}
-	recBin := res.MustGet(blocklog.ParamRequestRecord)
-	rec, err := blocklog.RequestReceiptFromBytes(recBin)
-	require.NoError(t, err)
-	return rec, nil
 }
 
 func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Duration) error {
@@ -505,6 +465,15 @@ func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 	addr, err := codec.DecodeAddress(ret.MustGet(blocklog.ParamStateControllerAddress))
 	require.NoError(e.t, err)
 	return addr, nil
+}
+
+func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
+	for _, i := range e.Chain.AllPeers {
+		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
+			return fmt.Errorf("Node %v state controller address is not %s", i, addr)
+		}
+	}
+	return nil
 }
 
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr iotago.Address) bool {

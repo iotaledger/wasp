@@ -52,25 +52,4 @@ func MakeRotateStateControllerTransaction(
 	inputsCommitment := iotago.Outputs{chainInput.GetAliasOutput()}.MustCommitment()
 	copy(result.InputsCommitment[:], inputsCommitment)
 	return result, nil
-
-	//panic("TODO implement")
-	// txb := utxoutil.NewBuilder(chainInput).
-	// 	WithTimestamp(ts).
-	// 	WithAccessPledge(accessPledge).
-	// 	WithConsensusPledge(consensusPledge)
-	// chained := chainInput.NewAliasOutputNext(true)
-	// if err := chained.SetStateAddress(nextAddr); err != nil {
-	// 	return nil, err
-	// }
-	// if err := txb.ConsumeAliasInput(chainInput.Address()); err != nil {
-	// 	return nil, err
-	// }
-	// if err := txb.AddOutputAndSpendUnspent(chained); err != nil {
-	// 	return nil, err
-	// }
-	// essence, _, err := txb.BuildEssence()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return essence, nil
 }
