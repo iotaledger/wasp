@@ -87,13 +87,13 @@ func getFibonacciIndirect(ctx iscp.SandboxView) dict.Dict {
 		return ret
 	}
 
-	ret1 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+	ret1 := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamN: n - 1,
 	}))
 	result := kvdecoder.New(ret1, ctx.Log())
 	n1 := result.MustGetUint64(ParamN)
 
-	ret2 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+	ret2 := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamN: n - 2,
 	}))
 	result = kvdecoder.New(ret2, ctx.Log())
@@ -136,6 +136,6 @@ func infiniteLoop(ctx iscp.Sandbox) dict.Dict {
 func infiniteLoopView(ctx iscp.SandboxView) dict.Dict {
 	for {
 		// do nothing, just waste gas
-		ctx.Call(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
+		ctx.CallView(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
 	}
 }

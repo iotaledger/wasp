@@ -17,18 +17,13 @@ import (
 )
 
 const (
-	keyAccountBalance = "a"
-	keyAccountNonce   = "n"
-	keyAccountCode    = "c"
-	keyAccountState   = "s"
+	keyAccountNonce = "n"
+	keyAccountCode  = "c"
+	keyAccountState = "s"
 )
 
 func accountKey(prefix kv.Key, addr common.Address) kv.Key {
 	return prefix + kv.Key(addr.Bytes())
-}
-
-func accountBalanceKey(addr common.Address) kv.Key {
-	return accountKey(keyAccountBalance, addr)
 }
 
 func accountNonceKey(addr common.Address) kv.Key {
@@ -43,46 +38,46 @@ func accountStateKey(addr common.Address, hash common.Hash) kv.Key {
 	return accountKey(keyAccountState, addr) + kv.Key(hash[:])
 }
 
-// StateDB implements vm.StateDB with a kv.KVStore as backend
+type BalanceFunc func(addr common.Address) *big.Int
+
+// StateDB implements vm.StateDB with a kv.KVStore as backend.
+// The Ethereum account balance is tied to the Iota L1 balance, and immutable
+// from EVM. (Instead, funds are supposed to be manipulated via the ISC
+// sandbox).
 type StateDB struct {
-	kv     kv.KVStore
-	logs   []*types.Log
-	refund uint64
+	kv         kv.KVStore
+	logs       []*types.Log
+	refund     uint64
+	getBalance BalanceFunc
 }
 
 var _ vm.StateDB = &StateDB{}
 
-func NewStateDB(store kv.KVStore) *StateDB {
-	return &StateDB{kv: store}
+func NewStateDB(store kv.KVStore, getBalance BalanceFunc) *StateDB {
+	return &StateDB{
+		kv:         store,
+		getBalance: getBalance,
+	}
 }
 
 func (s *StateDB) CreateAccount(addr common.Address) {
-	s.setAccountBalance(addr, big.NewInt(0))
 	s.SetNonce(addr, 0)
 }
 
-func (s *StateDB) setAccountBalance(addr common.Address, amount *big.Int) {
-	s.kv.Set(accountBalanceKey(addr), amount.Bytes())
-}
-
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
-	if amount.Sign() == 0 {
-		return
+	if amount != nil && amount.Sign() != 0 {
+		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
 	}
-	s.setAccountBalance(addr, new(big.Int).Sub(s.GetBalance(addr), amount))
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
-	if amount.Sign() == 0 {
-		return
+	if amount != nil && amount.Sign() != 0 {
+		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
 	}
-	s.setAccountBalance(addr, new(big.Int).Add(s.GetBalance(addr), amount))
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *big.Int {
-	r := new(big.Int)
-	r.SetBytes(s.kv.MustGet(accountBalanceKey(addr)))
-	return r
+	return s.getBalance(addr)
 }
 
 func (s *StateDB) GetNonce(addr common.Address) uint64 {
@@ -151,7 +146,6 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 		return false
 	}
 
-	s.kv.Del(accountBalanceKey(addr))
 	s.kv.Del(accountNonceKey(addr))
 	s.kv.Del(accountCodeKey(addr))
 
@@ -172,7 +166,7 @@ func (s *StateDB) HasSuicided(common.Address) bool { return false }
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for suicided accounts.
 func (s *StateDB) Exist(addr common.Address) bool {
-	return s.kv.MustHas(accountBalanceKey(addr))
+	return s.kv.MustHas(accountNonceKey(addr))
 }
 
 // Empty returns whether the given account is empty. Empty
@@ -226,19 +220,21 @@ func (s *StateDB) Buffered() *BufferedStateDB {
 // BufferedStateDB is a wrapper for StateDB that writes all mutations into an in-memory buffer,
 // leaving the original state unmodified until the mutations are applied manually with Commit().
 type BufferedStateDB struct {
-	buf  *buffered.BufferedKVStoreAccess
-	base kv.KVStore
+	buf        *buffered.BufferedKVStoreAccess
+	base       kv.KVStore
+	getBalance BalanceFunc
 }
 
 func NewBufferedStateDB(base *StateDB) *BufferedStateDB {
 	return &BufferedStateDB{
-		buf:  buffered.NewBufferedKVStoreAccess(base.kv),
-		base: base.kv,
+		buf:        buffered.NewBufferedKVStoreAccess(base.kv),
+		base:       base.kv,
+		getBalance: base.getBalance,
 	}
 }
 
 func (b *BufferedStateDB) StateDB() *StateDB {
-	return &StateDB{kv: b.buf}
+	return &StateDB{kv: b.buf, getBalance: b.getBalance}
 }
 
 func (b *BufferedStateDB) Commit() {

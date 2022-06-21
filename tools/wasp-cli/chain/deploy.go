@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
@@ -25,7 +24,7 @@ func deployCmd() *cobra.Command {
 		committee   []int
 		quorum      int
 		description string
-		evmParams   evmcli.DeployParams
+		evmParams   evmDeployParams
 	)
 
 	cmd := &cobra.Command{
@@ -57,7 +56,7 @@ func deployCmd() *cobra.Command {
 				Textout:           os.Stdout,
 				InitParams: dict.Dict{
 					root.ParamEVM(evm.FieldChainID):         codec.EncodeUint16(evmParams.ChainID),
-					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.GetGenesis(nil)),
+					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
 					root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
 					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
 					root.ParamEVM(evm.FieldGasRatio):        codec.EncodeRatio32(evmParams.GasRatio),
@@ -72,6 +71,6 @@ func deployCmd() *cobra.Command {
 	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes  (default: 0,1,2,3)")
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
-	evmParams.InitFlags(cmd)
+	evmParams.initFlags(cmd)
 	return cmd
 }

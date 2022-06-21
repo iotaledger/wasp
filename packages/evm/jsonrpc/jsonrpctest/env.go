@@ -319,7 +319,7 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 func (e *Env) TestRPCGasLimit(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	from, fromAddress := newAccountWithL2Funds()
 	_, toAddress := newAccountWithL2Funds()
-	value := big.NewInt(1)
+	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress)
 	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(
@@ -331,13 +331,13 @@ func (e *Env) TestRPCGasLimit(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 
 	_, err = e.sendTransactionAndWait(tx)
 	require.Error(e.T, err)
-	require.Contains(e.T, err.Error(), "insufficient funds for gas")
+	require.Regexp(e.T, `\bgas\b`, err.Error())
 }
 
 func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	from, fromAddress := newAccountWithL2Funds()
 	_, toAddress := newAccountWithL2Funds()
-	value := big.NewInt(1)
+	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress) + 1
 	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(

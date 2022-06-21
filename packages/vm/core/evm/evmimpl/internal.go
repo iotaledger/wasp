@@ -14,8 +14,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type blockContext struct {
@@ -61,6 +64,7 @@ func createEmulator(ctx iscp.Sandbox) *emulator.EVMEmulator {
 		evmStateSubrealm(ctx.State()),
 		timestamp(ctx),
 		newISCContract(ctx),
+		getBalanceFunc(ctx),
 	)
 }
 
@@ -69,6 +73,7 @@ func createEmulatorR(ctx iscp.SandboxView) *emulator.EVMEmulator {
 		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
 		timestamp(ctx),
 		newISCContractView(ctx),
+		getBalanceFunc(ctx),
 	)
 }
 
@@ -189,4 +194,35 @@ func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmula
 		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
 	}
 	return paramBlockNumber(ctx, emu, allowPrevious)
+}
+
+func getBalanceFunc(ctx iscp.SandboxBase) emulator.BalanceFunc {
+	res := ctx.CallView(
+		governance.Contract.Hname(),
+		governance.ViewGetFeePolicy.Hname(),
+		nil,
+	)
+	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
+	ctx.RequireNoError(err)
+	if feePolicy.GasFeeTokenID != nil {
+		return func(addr common.Address) *big.Int {
+			res := ctx.CallView(
+				accounts.Contract.Hname(),
+				accounts.ViewBalanceNativeToken.Hname(),
+				dict.Dict{
+					accounts.ParamAgentID:       iscp.NewEthereumAddressAgentID(addr).Bytes(),
+					accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
+				},
+			)
+			return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
+		}
+	}
+	return func(addr common.Address) *big.Int {
+		res := ctx.CallView(
+			accounts.Contract.Hname(),
+			accounts.ViewBalanceIotas.Hname(),
+			dict.Dict{accounts.ParamAgentID: iscp.NewEthereumAddressAgentID(addr).Bytes()},
+		)
+		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+	}
 }
