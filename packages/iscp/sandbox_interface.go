@@ -42,6 +42,8 @@ type SandboxBase interface {
 	Gas() Gas
 	// GetNFTInfo returns information about a NFTID (issuer and metadata)
 	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
+	// CallView calls another contract. Only calls view entry points
+	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 }
 
 type Params struct {

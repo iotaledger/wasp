@@ -253,7 +253,7 @@ func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params 
 	if s.ctx != nil {
 		return s.ctx.Call(contract, function, params, transfer)
 	}
-	return s.ctxView.Call(contract, function, params)
+	return s.ctxView.CallView(contract, function, params)
 }
 
 func (s *WasmContextSandbox) fnCaller(args []byte) []byte {

@@ -61,18 +61,21 @@ func TestBlockchain(t *testing.T) {
 	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
 	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
-	// another account
-	receiver, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
-
-	genesisAlloc := map[common.Address]core.GenesisAccount{
-		faucetAddress: {Balance: faucetSupply},
+	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	balances := map[common.Address]*big.Int{
+		faucetAddress: faucetSupply,
+	}
+	getBalance := func(addr common.Address) *big.Int {
+		bal, ok := balances[addr]
+		if ok {
+			return bal
+		}
+		return new(big.Int)
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
+	emu := NewEVMEmulator(db, 1, nil, getBalance)
 
 	// some assertions
 	{
@@ -105,66 +108,69 @@ func TestBlockchain(t *testing.T) {
 			state := emu.StateDB()
 			// check the balance of the faucet address
 			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress))
-			require.EqualValues(t, big.NewInt(0), state.GetBalance(receiverAddress))
 		}
 	}
 
-	transferAmount := big.NewInt(1000)
+	// check the balances
+	require.EqualValues(t, faucetSupply, emu.StateDB().GetBalance(faucetAddress))
 
-	// send a transaction transferring 1000 ETH to receiverAddress
-	{
-		receipt := sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil, 0)
+	// deploy a contract
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
 
-		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
-		block := emu.BlockchainDB().GetCurrentBlock()
-		require.EqualValues(t, 1, block.Header().Number.Uint64())
-		require.EqualValues(t, evm.BlockGasLimitDefault, block.Header().GasLimit)
-		require.EqualValues(t, receipt.Bloom, block.Bloom())
-		require.EqualValues(t, receipt.GasUsed, block.GasUsed())
-		require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(0).Hash(), block.ParentHash())
-	}
+	contractAddress, _ := deployEVMContract(
+		t,
+		emu,
+		faucet,
+		contractABI,
+		evmtest.StorageContractBytecode,
+		uint32(42),
+	)
 
-	{
-		state := emu.StateDB()
-		// check the new balances
-		require.EqualValues(t, (&big.Int{}).Sub(faucetSupply, transferAmount), state.GetBalance(faucetAddress))
-		require.EqualValues(t, transferAmount, state.GetBalance(receiverAddress))
-	}
+	require.EqualValues(t, 1, emu.BlockchainDB().GetNumber())
+	block := emu.BlockchainDB().GetCurrentBlock()
+	require.EqualValues(t, 1, block.Header().Number.Uint64())
+	require.EqualValues(t, evm.BlockGasLimitDefault, block.Header().GasLimit)
+	receipt := emu.BlockchainDB().GetReceiptByBlockNumberAndIndex(1, 0)
+	require.EqualValues(t, receipt.Bloom, block.Bloom())
+	require.EqualValues(t, receipt.GasUsed, block.GasUsed())
+	require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(0).Hash(), block.ParentHash())
+	require.NotEmpty(t, emu.StateDB().GetCode(contractAddress))
 }
 
 func TestBlockchainPersistence(t *testing.T) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
-	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{
-		faucetAddress: {Balance: faucetSupply},
-	}
-
-	// another account
-	receiver, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
-	transferAmount := big.NewInt(1000)
+	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
 
-	// do a transfer using one instance of EVMEmulator
+	// deploy a contract using one instance of EVMEmulator
+	var contractAddress common.Address
 	func() {
-		emu := NewEVMEmulator(db, 1, nil)
-		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil, 0)
+		emu := NewEVMEmulator(db, 1, nil, getBalance)
+		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+		require.NoError(t, err)
+
+		contractAddress, _ = deployEVMContract(
+			t,
+			emu,
+			faucet,
+			contractABI,
+			evmtest.StorageContractBytecode,
+			uint32(42),
+		)
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db, 2, nil)
-		state := emu.StateDB()
-		// check the new balances
-		require.EqualValues(t, (&big.Int{}).Sub(faucetSupply, transferAmount), state.GetBalance(faucetAddress))
-		require.EqualValues(t, transferAmount, state.GetBalance(receiverAddress))
+		emu := NewEVMEmulator(db, 2, nil, getBalance)
+		// check the contract address
+		require.NotEmpty(t, emu.StateDB().GetCode(contractAddress))
 	}
 }
 
@@ -252,16 +258,13 @@ func TestStorageContract(t *testing.T) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
-	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{
-		faucetAddress: {Balance: faucetSupply},
-	}
+	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
+	emu := NewEVMEmulator(db, 1, nil, getBalance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -323,19 +326,12 @@ func TestStorageContract(t *testing.T) {
 }
 
 func TestERC20Contract(t *testing.T) {
-	// faucet address with initial supply
-	faucet, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-
-	genesisAlloc := map[common.Address]core.GenesisAccount{
-		faucetAddress: {Balance: faucetSupply},
-	}
+	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
+	emu := NewEVMEmulator(db, 1, nil, getBalance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -417,16 +413,13 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(b, err)
-	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 
-	genesisAlloc := map[common.Address]core.GenesisAccount{
-		faucetAddress: {Balance: faucetSupply},
-	}
+	genesisAlloc := map[common.Address]core.GenesisAccount{}
+	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc)
-	emu := NewEVMEmulator(db, 1, nil)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
+	emu := NewEVMEmulator(db, 1, nil, getBalance)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)

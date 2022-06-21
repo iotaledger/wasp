@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -121,4 +122,12 @@ func (s *SandboxBase) Requiref(cond bool, format string, args ...interface{}) {
 
 func (s *SandboxBase) RequireNoError(err error, str ...string) {
 	s.assert().RequireNoError(err, str...)
+}
+
+func (s *SandboxBase) CallView(contractHname, entryPoint iscp.Hname, params dict.Dict) dict.Dict {
+	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	if params == nil {
+		params = make(dict.Dict)
+	}
+	return s.Ctx.Call(contractHname, entryPoint, params, nil)
 }

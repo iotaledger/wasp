@@ -67,6 +67,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
+		getBalanceFunc(ctx),
 	)
 
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evmtypes.DefaultGasRatio)
@@ -116,6 +117,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 }
 
 func getBalance(ctx iscp.SandboxView) dict.Dict {
+	// TODO: balance might change between two eth blocks
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
