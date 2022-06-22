@@ -8,6 +8,7 @@ use crate::*;
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 pub const SC_REQUEST_ID_LENGTH: usize = 34;
+pub const REQUEST_ID_SEPARATOR: &str = "-";
 
 #[derive(PartialEq, Clone)]
 pub struct ScRequestID {
@@ -36,7 +37,9 @@ pub fn request_id_encode(enc: &mut WasmEncoder, value: &ScRequestID) {
 
 pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
     if buf.len() == 0 {
-        return ScRequestID { id: [0; SC_REQUEST_ID_LENGTH] };
+        return ScRequestID {
+            id: [0; SC_REQUEST_ID_LENGTH],
+        };
     }
     if buf.len() != SC_REQUEST_ID_LENGTH {
         panic("invalid RequestID length");
@@ -45,7 +48,9 @@ pub fn request_id_from_bytes(buf: &[u8]) -> ScRequestID {
     if buf[SC_REQUEST_ID_LENGTH - 2] > 127 || buf[SC_REQUEST_ID_LENGTH - 1] != 0 {
         panic("invalid RequestID: output index > 127");
     }
-    ScRequestID { id: buf.try_into().expect("WTF?") }
+    ScRequestID {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
@@ -53,16 +58,23 @@ pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
 }
 
 pub fn request_id_from_string(value: &str) -> ScRequestID {
-    request_id_from_bytes(&base58_decode(value))
+    let elts: Vec<&str> = value.split(REQUEST_ID_SEPARATOR).collect();
+    let index = uint16_to_bytes(uint16_from_string(elts[0]));
+    let buf = hex_decode(elts[1]);
+    return request_id_from_bytes(&[buf, index].concat());
 }
 
 pub fn request_id_to_string(value: &ScRequestID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    let req_id = request_id_to_bytes(value);
+    let tx_id = hex_encode(&req_id[..SC_REQUEST_ID_LENGTH - 2]);
+    let index = uint16_from_bytes(&req_id[SC_REQUEST_ID_LENGTH - 2..]);
+    return uint16_to_string(index) + REQUEST_ID_SEPARATOR + &tx_id;
 }
 
 fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestID {
-    ScRequestID { id: buf.try_into().expect("invalid RequestID length") }
+    ScRequestID {
+        id: buf.try_into().expect("invalid RequestID length"),
+    }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

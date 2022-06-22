@@ -28,7 +28,9 @@ impl ScTokenID {
 
 pub fn token_id_decode(dec: &mut WasmDecoder) -> ScTokenID {
     let buf = dec.fixed_bytes(SC_TOKEN_ID_LENGTH);
-    ScTokenID { id: buf.try_into().expect("WTF?") }
+    ScTokenID {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn token_id_encode(enc: &mut WasmEncoder, value: &ScTokenID) {
@@ -37,12 +39,16 @@ pub fn token_id_encode(enc: &mut WasmEncoder, value: &ScTokenID) {
 
 pub fn token_id_from_bytes(buf: &[u8]) -> ScTokenID {
     if buf.len() == 0 {
-        return ScTokenID { id: [0; SC_TOKEN_ID_LENGTH] };
+        return ScTokenID {
+            id: [0; SC_TOKEN_ID_LENGTH],
+        };
     }
     if buf.len() != SC_TOKEN_ID_LENGTH {
         panic("invalid TokenID length");
     }
-    ScTokenID { id: buf.try_into().expect("WTF?") }
+    ScTokenID {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn token_id_to_bytes(value: &ScTokenID) -> Vec<u8> {
@@ -50,12 +56,11 @@ pub fn token_id_to_bytes(value: &ScTokenID) -> Vec<u8> {
 }
 
 pub fn token_id_from_string(value: &str) -> ScTokenID {
-    token_id_from_bytes(&base58_decode(value))
+    token_id_from_bytes(&hex_decode(&value[2..]))
 }
 
 pub fn token_id_to_string(value: &ScTokenID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    String::from("0x") + &hex_encode(&value.id)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
