@@ -10,6 +10,8 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain accoun
 var (
 	// Views
 	ViewBalance                  = coreutil.ViewFunc("balance")
+	ViewBalanceIotas             = coreutil.ViewFunc("balanceIotas")
+	ViewBalanceNativeToken       = coreutil.ViewFunc("balanceNativeToken")
 	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
 	ViewAccounts                 = coreutil.ViewFunc("accounts")
 	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
@@ -68,6 +70,8 @@ const (
 	ParamNFTIDs                    = "i"
 	ParamNFTID                     = "z"
 	ParamNFTData                   = "e"
+	ParamBalance                   = "B"
+	ParamNativeTokenID             = "N"
 )
 
 var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")

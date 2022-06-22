@@ -4,18 +4,19 @@
 package solo
 
 import (
+	"fmt"
 	"math"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/merkletrie"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -227,7 +228,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 	L1Iotas := ch.Env.L1Iotas(keyPair.Address())
 	if L1Iotas == 0 {
-		return nil, xerrors.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
+		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
 	}
 	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
@@ -382,7 +383,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 		}
 	}
 	if available < fee {
-		return xerrors.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
+		return fmt.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
 	}
 	return nil
 }
@@ -394,7 +395,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	results := ch.runRequestsSync(reqs, "post")
+	results := ch.RunRequestsSync(reqs, "post")
 	if len(results) == 0 {
 		return nil, nil, nil, xerrors.New("request has been skipped")
 	}
@@ -468,7 +469,7 @@ func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...inte
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
-func (ch *Chain) GetMerkleProofRaw(key []byte) *merkletrie.Proof {
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_blake2b.Proof {
 	ch.Log().Debugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
@@ -482,7 +483,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *merkletrie.Proof {
 }
 
 // GetBlockProof returns Merkle proof of the key in the state
-func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *merkletrie.Proof, error) {
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_blake2b.Proof, error) {
 	ch.Log().Debugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
@@ -503,7 +504,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *merklet
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *merkletrie.Proof {
+func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_blake2b.Proof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
@@ -525,7 +526,7 @@ func (ch *Chain) GetRootCommitment() trie.VCommitment {
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
-func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
+func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) ([]byte, error) {
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.GetContractStateCommitment(hn)

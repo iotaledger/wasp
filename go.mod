@@ -12,6 +12,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20220506133510-ef2e113d6665
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220531132324-8347a155e220
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220609111244-f73231b2491a
+	github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1
 	github.com/knadh/koanf v1.4.1
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.18.0
@@ -36,7 +37,7 @@ require (
 	go.uber.org/dig v1.14.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7

@@ -206,7 +206,7 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		}
 		err := method.Inputs.Copy(&callViewArgs, args)
 		c.ctx.RequireNoError(err)
-		callRet := c.ctx.Call(
+		callRet := c.ctx.CallView(
 			iscp.Hname(callViewArgs.ContractHname),
 			iscp.Hname(callViewArgs.EntryPoint),
 			callViewArgs.Params.Unwrap(),

@@ -53,12 +53,11 @@ export function nftIDToBytes(value: ScNftID): u8[] {
 }
 
 export function nftIDFromString(value: string): ScNftID {
-    return nftIDFromBytes(wasmtypes.base58Decode(value));
+    return nftIDFromBytes(wasmtypes.hexDecode(value.slice(2)));
 }
 
 export function nftIDToString(value: ScNftID): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(nftIDToBytes(value));
+    return "0x"+wasmtypes.hexEncode(nftIDToBytes(value));
 }
 
 function nftIDFromBytesUnchecked(buf: u8[]): ScNftID {

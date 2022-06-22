@@ -638,6 +638,71 @@ export class CheckAgentIDContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class CheckEthAddressAndAgentIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckEthAddressAndAgentIDParams = new sc.MutableCheckEthAddressAndAgentIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckEthAddressAndAgentID);
+	}
+}
+
+export class CheckEthAddressAndAgentIDContext {
+	params: sc.ImmutableCheckEthAddressAndAgentIDParams = new sc.ImmutableCheckEthAddressAndAgentIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class CheckHashCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckHashParams = new sc.MutableCheckHashParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckHash);
+	}
+}
+
+export class CheckHashContext {
+	params: sc.ImmutableCheckHashParams = new sc.ImmutableCheckHashParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class CheckNftIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckNftIDParams = new sc.MutableCheckNftIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckNftID);
+	}
+}
+
+export class CheckNftIDContext {
+	params: sc.ImmutableCheckNftIDParams = new sc.ImmutableCheckNftIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class CheckRequestIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckRequestIDParams = new sc.MutableCheckRequestIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckRequestID);
+	}
+}
+
+export class CheckRequestIDContext {
+	params: sc.ImmutableCheckRequestIDParams = new sc.ImmutableCheckRequestIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
+export class CheckTokenIDCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckTokenIDParams = new sc.MutableCheckTokenIDParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckTokenID);
+	}
+}
+
+export class CheckTokenIDContext {
+	params: sc.ImmutableCheckTokenIDParams = new sc.ImmutableCheckTokenIDParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class GetRandomCall {
 	func: wasmlib.ScView;
 	results: sc.ImmutableGetRandomResults = new sc.ImmutableGetRandomResults(wasmlib.ScView.nilProxy);
@@ -983,6 +1048,36 @@ export class ScFuncs {
 	static checkAgentID(ctx: wasmlib.ScViewCallContext): CheckAgentIDCall {
 		const f = new CheckAgentIDCall(ctx);
 		f.params = new sc.MutableCheckAgentIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkEthAddressAndAgentID(ctx: wasmlib.ScViewCallContext): CheckEthAddressAndAgentIDCall {
+		const f = new CheckEthAddressAndAgentIDCall(ctx);
+		f.params = new sc.MutableCheckEthAddressAndAgentIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkHash(ctx: wasmlib.ScViewCallContext): CheckHashCall {
+		const f = new CheckHashCall(ctx);
+		f.params = new sc.MutableCheckHashParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkNftID(ctx: wasmlib.ScViewCallContext): CheckNftIDCall {
+		const f = new CheckNftIDCall(ctx);
+		f.params = new sc.MutableCheckNftIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkRequestID(ctx: wasmlib.ScViewCallContext): CheckRequestIDCall {
+		const f = new CheckRequestIDCall(ctx);
+		f.params = new sc.MutableCheckRequestIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkTokenID(ctx: wasmlib.ScViewCallContext): CheckTokenIDCall {
+		const f = new CheckTokenIDCall(ctx);
+		f.params = new sc.MutableCheckTokenIDParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

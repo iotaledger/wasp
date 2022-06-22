@@ -598,7 +598,7 @@ func TestISCCall(t *testing.T) {
 
 	r, err := env.soloChain.CallView(
 		inccounter.Contract.Name,
-		inccounter.FuncGetCounter.Name,
+		inccounter.ViewGetCounter.Name,
 	)
 	require.NoError(env.solo.T, err)
 	require.EqualValues(t, 42, codec.MustDecodeInt64(r.MustGet(inccounter.VarCounter)))

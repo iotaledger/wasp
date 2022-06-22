@@ -243,7 +243,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
-	ret, err := cl.CallView(inccounter.FuncGetCounter.Name, nil)
+	ret, err := cl.CallView(inccounter.ViewGetCounter.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -275,14 +275,19 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blo
 	return rec, blockIndex, requestIndex, nil
 }
 
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	res, err := cl.CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
-		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
-	})
+	params := dict.Dict{}
+	if blockIndex != nil {
+		params = dict.Dict{
+			blocklog.ParamBlockIndex: codec.EncodeUint32(*blockIndex),
+		}
+	}
+	res, err := cl.CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, params)
 	if err != nil {
 		return nil, err
 	}
+	returnedBlockIndex := codec.MustDecodeUint32(res.MustGet(blocklog.ParamBlockIndex))
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
 	ret := make([]*blocklog.RequestReceipt, recs.MustLen())
 	for i := range ret {
@@ -294,7 +299,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int)
 		if err != nil {
 			return nil, err
 		}
-		ret[i].WithBlockData(blockIndex, uint16(i))
+		ret[i].WithBlockData(returnedBlockIndex, uint16(i))
 	}
 	return ret, nil
 }

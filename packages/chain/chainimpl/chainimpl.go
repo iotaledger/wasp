@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -246,14 +245,14 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	stateIndex := msg.VirtualState.BlockIndex()
 	oidStr := iscp.OID(msg.ChainOutput.ID())
-	rootCommitment := trie.RootCommitment(msg.VirtualState.TrieNodeStore())
+	rootCommitment := state.RootCommitment(msg.VirtualState.TrieNodeStore())
 	if msg.IsGovernance {
 		c.log.Debugf("processChainTransition: processing governance transition at state %d, output %s, state hash %s",
 			stateIndex, oidStr, rootCommitment)
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	} else {
-		// normal state update:
+	// normal state update:
 		c.log.Debugf("processChainTransition: processing state %d transition, output %s; state hash %s; last cleaned state is %d", stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
 		c.lastSeenVirtualState = msg.VirtualState
 		c.stateReader.SetBaseline()

@@ -134,6 +134,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) dict.Dict {
 	for _, d := range dataArr {
 		arr.MustPush(d)
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 

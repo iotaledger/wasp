@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"fmt"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -19,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -40,7 +41,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/xerrors"
 )
 
 const (
@@ -296,7 +296,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
-	results := ret.runRequestsSync(initReq, "new")
+	results := ret.RunRequestsSync(initReq, "new")
 	for _, res := range results {
 		require.NoError(env.T, res.Error)
 	}
@@ -320,7 +320,7 @@ func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *iscp.ChainID)
 	m := env.requestsByChain(tx)
 	ret, ok := m[*chainID]
 	if !ok {
-		return nil, xerrors.Errorf("chain %s does not exist", chainID.String())
+		return nil, fmt.Errorf("chain %s does not exist", chainID.String())
 	}
 	return ret, nil
 }
@@ -496,7 +496,7 @@ func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
 	return ch.State.Copy()
 }
 
-func (ch *Chain) EnqueueDismissChain(reason string) {
+func (ch *Chain) EnqueueDismissChain(_ string) {
 	// not used, just to implement ChainCore interface
 }
 
@@ -581,5 +581,5 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		}
 	}
 
-	return nil, xerrors.Errorf("NFT output not found in resulting tx")
+	return nil, fmt.Errorf("NFT output not found in resulting tx")
 }

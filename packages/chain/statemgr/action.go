@@ -9,7 +9,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -67,7 +66,7 @@ func (sm *stateManager) isSynced() bool {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
 	}
-	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
+	return state.EqualCommitments(state.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -91,7 +90,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"commitment", trie.RootCommitment(nextState.TrieNodeStore()),
+		"commitment", state.RootCommitment(nextState.TrieNodeStore()),
 		"output", iscp.OID(approvingOutputID),
 	)
 
@@ -159,7 +158,7 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	outputStateCommitment := outputStateL1Commitment.StateCommitment
-	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieNodeStore())
+	solidStateCommitment := state.RootCommitment(sm.solidState.TrieNodeStore())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateCommitment %s, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputCommitment %s, StateOutputTimestamp %v",
 		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{

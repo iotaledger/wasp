@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -24,7 +23,7 @@ import (
 
 func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
-	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	results := ch.RunRequestsSync([]iscp.Request{r}, "off-ledger")
 	if len(results) == 0 {
 		return nil, xerrors.Errorf("request was skipped")
 	}
@@ -34,10 +33,10 @@ func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 
 func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
 	defer ch.logRequestLastBlock()
-	return ch.runRequestsSync(reqs, "off-ledger")
+	return ch.RunRequestsSync(reqs, "off-ledger")
 }
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+func (ch *Chain) RunRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -126,7 +125,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 
 	rootC := ch.GetRootCommitment()
 	l1C := ch.GetL1Commitment()
-	require.True(ch.Env.T, trie.EqualCommitments(rootC, l1C.StateCommitment))
+	require.True(ch.Env.T, state.EqualCommitments(rootC, l1C.StateCommitment))
 
 	return task.Results
 }

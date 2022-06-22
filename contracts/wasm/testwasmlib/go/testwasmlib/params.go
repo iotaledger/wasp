@@ -1072,6 +1072,150 @@ func (s MutableCheckAgentIDParams) ScAgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamScAgentID))
 }
 
+type ImmutableCheckEthAddressAndAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckEthAddressAndAgentIDParams) EthAddress() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamEthAddress))
+}
+
+type MutableCheckEthAddressAndAgentIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckEthAddressAndAgentIDParams) EthAddress() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamEthAddress))
+}
+
+type ImmutableCheckHashParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckHashParams) HashBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamHashBytes))
+}
+
+func (s ImmutableCheckHashParams) HashString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamHashString))
+}
+
+func (s ImmutableCheckHashParams) ScHash() wasmtypes.ScImmutableHash {
+	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamScHash))
+}
+
+type MutableCheckHashParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckHashParams) HashBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamHashBytes))
+}
+
+func (s MutableCheckHashParams) HashString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamHashString))
+}
+
+func (s MutableCheckHashParams) ScHash() wasmtypes.ScMutableHash {
+	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamScHash))
+}
+
+type ImmutableCheckNftIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckNftIDParams) NftIDBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamNftIDBytes))
+}
+
+func (s ImmutableCheckNftIDParams) NftIDString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamNftIDString))
+}
+
+func (s ImmutableCheckNftIDParams) ScNftID() wasmtypes.ScImmutableNftID {
+	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamScNftID))
+}
+
+type MutableCheckNftIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckNftIDParams) NftIDBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamNftIDBytes))
+}
+
+func (s MutableCheckNftIDParams) NftIDString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamNftIDString))
+}
+
+func (s MutableCheckNftIDParams) ScNftID() wasmtypes.ScMutableNftID {
+	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamScNftID))
+}
+
+type ImmutableCheckRequestIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckRequestIDParams) RequestIDBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamRequestIDBytes))
+}
+
+func (s ImmutableCheckRequestIDParams) RequestIDString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamRequestIDString))
+}
+
+func (s ImmutableCheckRequestIDParams) ScRequestID() wasmtypes.ScImmutableRequestID {
+	return wasmtypes.NewScImmutableRequestID(s.proxy.Root(ParamScRequestID))
+}
+
+type MutableCheckRequestIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckRequestIDParams) RequestIDBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamRequestIDBytes))
+}
+
+func (s MutableCheckRequestIDParams) RequestIDString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamRequestIDString))
+}
+
+func (s MutableCheckRequestIDParams) ScRequestID() wasmtypes.ScMutableRequestID {
+	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamScRequestID))
+}
+
+type ImmutableCheckTokenIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckTokenIDParams) ScTokenID() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamScTokenID))
+}
+
+func (s ImmutableCheckTokenIDParams) TokenIDBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamTokenIDBytes))
+}
+
+func (s ImmutableCheckTokenIDParams) TokenIDString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamTokenIDString))
+}
+
+type MutableCheckTokenIDParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckTokenIDParams) ScTokenID() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamScTokenID))
+}
+
+func (s MutableCheckTokenIDParams) TokenIDBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamTokenIDBytes))
+}
+
+func (s MutableCheckTokenIDParams) TokenIDString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamTokenIDString))
+}
+
 type ImmutableStringMapOfStringArrayLengthParams struct {
 	proxy wasmtypes.Proxy
 }

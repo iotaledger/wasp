@@ -1,14 +1,15 @@
 package vmcontext
 
 import (
+	"fmt"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -20,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmtxbuilder"
-	"golang.org/x/xerrors"
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -84,12 +84,12 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency. It is a bit redundant double check
 	if len(task.Requests) == 0 {
 		// should never happen
-		panic(xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
+		panic(fmt.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
 	}
 	l1Commitment, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {
 		// should never happen
-		panic(xerrors.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
+		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 	// we create optimistic state access wrapper to be used inside the VM call.
 	// It will panic any time the state is accessed.
@@ -97,9 +97,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
-	commitmentFromState := trie.RootCommitment(optimisticStateAccess.TrieNodeStore())
+	commitmentFromState := state.RootCommitment(optimisticStateAccess.TrieNodeStore())
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if !trie.EqualCommitments(l1Commitment.StateCommitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
+	if !state.EqualCommitments(l1Commitment.StateCommitment, commitmentFromState) || blockIndex != task.AnchorOutput.StateIndex {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
@@ -184,7 +184,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	}
 
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
-	blockHash := hashing.HashData(block.EssenceBytes())
+	blockHash := state.BlockHashFromData(block.EssenceBytes())
 	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
 
 	blockIndex := vmctx.virtualState.BlockIndex()
@@ -213,22 +213,25 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	if err != nil {
 		panic(err)
 	}
+	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
+	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
 	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:             vmctx.virtualState.BlockIndex(),
-		Timestamp:              vmctx.virtualState.Timestamp(),
-		TotalRequests:          numRequests,
-		NumSuccessfulRequests:  numSuccess,
-		NumOffLedgerRequests:   numOffLedger,
-		PreviousL1Commitment:   prevL1Commitment,
-		L1Commitment:           nil,                    // current L1Commitment not known at this point
-		AnchorTransactionID:    iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TotalIotasInL2Accounts: totalIotasInContracts,
-		TotalDustDeposit:       totalDustOnChain,
-		GasBurned:              vmctx.gasBurnedTotal,
-		GasFeeCharged:          vmctx.gasFeeChargedTotal,
+		BlockIndex:                vmctx.virtualState.BlockIndex(),
+		Timestamp:                 vmctx.virtualState.Timestamp(),
+		TotalRequests:             numRequests,
+		NumSuccessfulRequests:     numSuccess,
+		NumOffLedgerRequests:      numOffLedger,
+		PreviousL1Commitment:      prevL1Commitment,
+		L1Commitment:              nil,                    // current L1Commitment not known at this point
+		AnchorTransactionID:       iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TransactionSubEssenceHash: subEssenceHash,
+		TotalIotasInL2Accounts:    totalIotasInContracts,
+		TotalDustDeposit:          totalDustOnChain,
+		GasBurned:                 vmctx.gasBurnedTotal,
+		GasFeeCharged:             vmctx.gasFeeChargedTotal,
 	}
-	if !trie.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
+	if !state.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
 		panic("CloseVMContext: inconsistent previous state commitment")
 	}
 

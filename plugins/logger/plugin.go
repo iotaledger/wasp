@@ -18,6 +18,7 @@ func Init(conf *configuration.Configuration) *node.Plugin {
 		if err := logger.InitGlobalLogger(conf); err != nil {
 			panic(err)
 		}
+		initGoEthLogger(logger.NewLogger("go-ethereum"))
 	}))
 
 	return Plugin

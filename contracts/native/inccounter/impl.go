@@ -19,7 +19,7 @@ var Processor = Contract.Processor(initialize,
 	FuncIncAndRepeatOnceAfter2s.WithHandler(incCounterAndRepeatOnce),
 	FuncIncAndRepeatMany.WithHandler(incCounterAndRepeatMany),
 	FuncSpawn.WithHandler(spawn),
-	FuncGetCounter.WithHandler(getCounter),
+	ViewGetCounter.WithHandler(getCounter),
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 	FuncIncAndRepeatOnceAfter2s = coreutil.Func("incAndRepeatOnceAfter5s")
 	FuncIncAndRepeatMany        = coreutil.Func("incAndRepeatMany")
 	FuncSpawn                   = coreutil.Func("spawn")
-	FuncGetCounter              = coreutil.ViewFunc("getCounter")
+	ViewGetCounter              = coreutil.ViewFunc("getCounter")
 )
 
 const (

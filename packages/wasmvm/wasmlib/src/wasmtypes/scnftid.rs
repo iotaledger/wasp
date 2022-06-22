@@ -28,7 +28,9 @@ impl ScNftID {
 
 pub fn nft_id_decode(dec: &mut WasmDecoder) -> ScNftID {
     let buf = dec.fixed_bytes(SC_NFT_ID_LENGTH);
-    ScNftID { id: buf.try_into().expect("WTF?") }
+    ScNftID {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn nft_id_encode(enc: &mut WasmEncoder, value: &ScNftID) {
@@ -37,12 +39,16 @@ pub fn nft_id_encode(enc: &mut WasmEncoder, value: &ScNftID) {
 
 pub fn nft_id_from_bytes(buf: &[u8]) -> ScNftID {
     if buf.len() == 0 {
-        return ScNftID { id: [0; SC_NFT_ID_LENGTH] };
+        return ScNftID {
+            id: [0; SC_NFT_ID_LENGTH],
+        };
     }
     if buf.len() != SC_NFT_ID_LENGTH {
         panic("invalid NftID length");
     }
-    ScNftID { id: buf.try_into().expect("WTF?") }
+    ScNftID {
+        id: buf.try_into().expect("WTF?"),
+    }
 }
 
 pub fn nft_id_to_bytes(value: &ScNftID) -> Vec<u8> {
@@ -50,12 +56,11 @@ pub fn nft_id_to_bytes(value: &ScNftID) -> Vec<u8> {
 }
 
 pub fn nft_id_from_string(value: &str) -> ScNftID {
-    nft_id_from_bytes(&base58_decode(value))
+    nft_id_from_bytes(&hex_decode(&value[2..]))
 }
 
 pub fn nft_id_to_string(value: &ScNftID) -> String {
-    // TODO standardize human readable string
-    base58_encode(&value.id)
+    String::from("0x") + &hex_encode(&value.id)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

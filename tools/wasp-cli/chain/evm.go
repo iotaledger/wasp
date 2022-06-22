@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evmcli
+package chain
 
 import (
 	"encoding/base64"
@@ -17,7 +17,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type DeployParams struct {
+type evmDeployParams struct {
 	ChainID         uint16
 	alloc           []string
 	allocBase64     string
@@ -26,7 +26,7 @@ type DeployParams struct {
 	BlockKeepAmount int32
 }
 
-func (d *DeployParams) InitFlags(cmd *cobra.Command) {
+func (d *evmDeployParams) initFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint16VarP(&d.ChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
 	cmd.Flags().StringSliceVarP(&d.alloc, "evm-alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
 	cmd.Flags().StringVarP(&d.allocBase64, "evm-alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
@@ -36,7 +36,7 @@ func (d *DeployParams) InitFlags(cmd *cobra.Command) {
 	cmd.Flags().Int32VarP(&d.BlockKeepAmount, "evm-block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks)")
 }
 
-func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
+func (d *evmDeployParams) getGenesis(def core.GenesisAlloc) core.GenesisAlloc {
 	if len(d.alloc) == 0 && d.allocBase64 == "" {
 		return def
 	}
