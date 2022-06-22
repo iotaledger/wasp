@@ -47,6 +47,11 @@ var (
 	FuncRevokeAccessNode  = coreutil.Func("revokeAccessNode")
 	FuncChangeAccessNodes = coreutil.Func("changeAccessNodes")
 	ViewGetChainNodes     = coreutil.ViewFunc("getChainNodes")
+
+	// maintenance
+	FuncSetMaintenanceOn     = coreutil.Func("setMaintenanceOn")
+	FuncSetMaintenanceOff    = coreutil.Func("setMaintenanceOff")
+	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 )
 
 // state variables
@@ -72,6 +77,9 @@ const (
 	// access nodes
 	VarAccessNodes          = "an"
 	VarAccessNodeCandidates = "ac"
+
+	// maintenance
+	VarMaintenanceStatus = "m"
 )
 
 // params

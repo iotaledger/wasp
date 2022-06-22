@@ -37,6 +37,11 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodes),
 	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNode),
 	governance.ViewGetChainNodes.WithHandler(getChainNodes),
+
+	// maintenance
+	governance.FuncSetMaintenanceOn.WithHandler(setMaintenanceOn),
+	governance.FuncSetMaintenanceOff.WithHandler(setMaintenanceOff),
+	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
