@@ -55,6 +55,8 @@ type VMTask struct {
 	Results []*RequestResult
 	// If not nil, VMError is a fatal error that prevented the execution of the task
 	VMError error
+	// If maintenance mode is enabled, only requests to the governance contract will be executed
+	MaintenanceModeEnabled bool
 }
 
 type RequestResult struct {

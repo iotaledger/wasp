@@ -12,6 +12,7 @@ import (
 
 func setMaintenanceOn(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
+	// TODO check if caller is a contract from this chain, panic if so.
 	ctx.State().Set(governance.VarMaintenanceStatus, codec.Encode(true))
 	return nil
 }

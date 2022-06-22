@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 	"golang.org/x/xerrors"
 )
@@ -35,13 +36,15 @@ func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 		}
 	}
 
-	var err error
-	if vmctx.req.IsOffLedger() {
-		err = vmctx.checkReasonToSkipOffLedger()
-	} else {
-		err = vmctx.checkReasonToSkipOnLedger()
+	if vmctx.task.MaintenanceModeEnabled &&
+		vmctx.req.CallTarget().Contract != governance.Contract.Hname() {
+		return fmt.Errorf("skipped due to maintenance mode")
 	}
-	return err
+
+	if vmctx.req.IsOffLedger() {
+		return vmctx.checkReasonToSkipOffLedger()
+	}
+	return vmctx.checkReasonToSkipOnLedger()
 }
 
 // checkReasonRequestProcessed checks if request ID is already in the blocklog
