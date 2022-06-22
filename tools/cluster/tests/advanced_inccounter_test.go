@@ -121,7 +121,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
-			3 + // Initial State + IncCounter SC Deploy + ???
+			4 + // Initial State + IncCounter SC Deploy + ???
 			clusterSize, // Access node applications.
 	)
 }
@@ -216,7 +216,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
-			4 + // ???
+			5 + // ???
 			clusterSize, // Access nodes applications.
 	)
 	time.Sleep(10 * time.Second) // five time for the nodes to shutdown properly before running the next test
