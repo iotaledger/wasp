@@ -375,12 +375,12 @@ module.exports = {
                 {
                     type: 'doc',
                     label: 'Limitations',
-                    id: 'guide/evm/limitations',
+                    id: 'guide/evm/compatibility',
                 },
                 {
                     type: 'doc',
-                    label: 'Creating a Chain',
-                    id: 'guide/evm/create-chain',
+                    label: 'How to use',
+                    id: 'guide/evm/using',
                 },
                 {
                     type: 'doc',
