@@ -538,7 +538,7 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	results := ch.runRequestsSync(reqs, "postSpecial")
+	results := ch.RunRequestsSync(reqs, "postSpecial")
 	return results[0]
 }
 

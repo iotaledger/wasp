@@ -19,7 +19,7 @@ import (
 const incName = "incTest"
 
 func checkCounter(e *solo.Chain, expected int64) {
-	ret, err := e.CallView(incName, FuncGetCounter.Name)
+	ret, err := e.CallView(incName, ViewGetCounter.Name)
 	require.NoError(e.Env.T, err)
 	c, err := codec.DecodeInt64(ret.MustGet(VarCounter))
 	require.NoError(e.Env.T, err)

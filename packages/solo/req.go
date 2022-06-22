@@ -395,7 +395,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-	results := ch.runRequestsSync(reqs, "post")
+	results := ch.RunRequestsSync(reqs, "post")
 	if len(results) == 0 {
 		return nil, nil, nil, xerrors.New("request has been skipped")
 	}
