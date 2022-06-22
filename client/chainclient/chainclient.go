@@ -67,7 +67,7 @@ func (c *Client) Post1Request(
 	return c.post1RequestWithOutputs(contractHname, entryPoint, outputsSet, params...)
 }
 
-// Post1Request sends n consecutive on-ledger transactions with one request on each to the chain
+// PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
 func (c *Client) PostNRequests(
 	contractHname iscp.Hname,
 	entryPoint iscp.Hname,

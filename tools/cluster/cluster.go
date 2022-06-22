@@ -242,7 +242,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.AsDict()).
-		WithIotas(1000)
+		WithIotas(1 * iscp.Mi)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
 	if err != nil {
