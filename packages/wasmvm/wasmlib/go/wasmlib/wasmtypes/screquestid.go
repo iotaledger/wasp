@@ -9,8 +9,10 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScRequestIDLength = 34
-const RequestIDSeparator = "-"
+const (
+	ScRequestIDLength  = 34
+	RequestIDSeparator = "-"
+)
 
 type ScRequestID struct {
 	id [ScRequestIDLength]byte

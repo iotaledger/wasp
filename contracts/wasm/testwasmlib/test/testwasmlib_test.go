@@ -554,6 +554,7 @@ func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
 	return nftInfo.NFTID, nil
 }
 
+//nolint:dupl
 func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID iscp.AgentID) {
 	agentBytes := agentID.Bytes()
 	agentString := agentID.String()
@@ -588,6 +589,7 @@ func checkAddress(t *testing.T, ctx *wasmsolo.SoloContext, scAddress wasmtypes.S
 	require.NoError(t, ctx.Err)
 }
 
+//nolint:dupl
 func checkHash(t *testing.T, ctx *wasmsolo.SoloContext, scHash wasmtypes.ScHash, hash hashing.HashValue) {
 	hashBytes := hash.Bytes()
 	hashString := hash.String()
@@ -605,6 +607,7 @@ func checkHash(t *testing.T, ctx *wasmsolo.SoloContext, scHash wasmtypes.ScHash,
 	require.NoError(t, ctx.Err)
 }
 
+//nolint:dupl
 func checkNftID(t *testing.T, ctx *wasmsolo.SoloContext, scNftID wasmtypes.ScNftID, nftID iotago.NFTID) {
 	nftIDBytes := nftID[:]
 	nftIDString := nftID.String()
@@ -621,6 +624,7 @@ func checkNftID(t *testing.T, ctx *wasmsolo.SoloContext, scNftID wasmtypes.ScNft
 	require.NoError(t, ctx.Err)
 }
 
+//nolint:dupl
 func checkTokenID(t *testing.T, ctx *wasmsolo.SoloContext, scTokenID wasmtypes.ScTokenID, tokenID iotago.NativeTokenID) {
 	tokenIDBytes := tokenID[:]
 	tokenIDString := tokenID.String()
