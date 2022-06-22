@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -20,11 +21,13 @@ func TestMaintenance(t *testing.T) {
 	ownerAgentID := iscp.NewAgentID(ownerAddr)
 	env.DepositFunds(10*iscp.Mi, ownerWallet)
 	ownerSCClient := env.Chain.SCClient(governance.Contract.Hname(), ownerWallet)
+	ownerIncCounterSCClient := env.Chain.SCClient(nativeIncCounterSCHname, ownerWallet)
 
 	userWallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	env.DepositFunds(10*iscp.Mi, userWallet)
 	userSCClient := env.Chain.SCClient(governance.Contract.Hname(), userWallet)
+	userIncCounterSCClient := env.Chain.SCClient(nativeIncCounterSCHname, userWallet)
 
 	// set owner of the chain
 	{
@@ -35,12 +38,12 @@ func TestMaintenance(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 10*time.Second)
 		require.NoError(t, err)
 
-		tx, err = ownerSCClient.PostRequest(governance.FuncClaimChainOwnership.Name)
+		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncClaimChainOwnership.Name)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -54,18 +57,18 @@ func TestMaintenance(t *testing.T) {
 
 	// test non-chain owner cannot call init maintenance
 	{
-		tx, err := userSCClient.PostRequest(governance.FuncSetMaintenanceOn.Name)
+		req, err := userSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOn.Name)
 		require.NoError(t, err)
-		rec, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 30*time.Second)
+		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
-		require.Error(t, rec[0].Error)
+		require.Error(t, rec.Error)
 	}
 
 	// owner can start maintenance mode
 	{
-		tx, err := ownerSCClient.PostRequest(governance.FuncSetMaintenanceOn.Name)
+		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOn.Name)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -82,12 +85,24 @@ func TestMaintenance(t *testing.T) {
 	require.NoError(t, err)
 
 	// calls to non-maintenance endpoints are not processed
-	// TODO try to call inccounter
-	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
+	{
+		req, err := userIncCounterSCClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+		require.NoError(t, err)
+		time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
+		rec, err := env.Chain.GetRequestReceipt(req.ID())
+		require.NoError(t, err)
+		require.Nil(t, rec)
+	}
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
-	// TODO try to call inccounter
-	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
+	{
+		req, err := ownerIncCounterSCClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
+		require.NoError(t, err)
+		time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
+		rec, err := env.Chain.GetRequestReceipt(req.ID())
+		require.NoError(t, err)
+		require.Nil(t, rec)
+	}
 
 	// assert that block number is still the same
 	blockIndex2, err := env.Chain.BlockIndex()
@@ -95,6 +110,8 @@ func TestMaintenance(t *testing.T) {
 	require.EqualValues(t, blockIndex, blockIndex2) // TODO this will probably fail for now, we need the fix to not produce empty blocks
 
 	// calls to governance are processed (try changing fees for example)
+
+	// calls to governance from non-owners should be processed, but fail
 
 	// test non-chain owner cannot call stop maintenance
 

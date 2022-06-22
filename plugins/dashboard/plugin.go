@@ -10,13 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-
-	"github.com/iotaledger/wasp/packages/authentication"
-
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/packages/iscp"
