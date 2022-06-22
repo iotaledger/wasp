@@ -13,7 +13,7 @@ import (
 )
 
 // this is the expected blob hash for key0/val0 key1/val1
-const expectedBlobHash = "7TSfAujQGoRmQR7TsJmdjAFkxqgTas2tCdHWmCsfvasJ"
+const expectedBlobHash = "5fec3bfc701d80bdf75e337cb3dcb401c2423d15fc17a74d5b644dae143118b1"
 
 func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
@@ -80,7 +80,7 @@ func TestListBlobs(t *testing.T) {
 	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("_val1"))
 	fStore.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "5iuXgyYYRkHsPfZe37W1Yj3iu5X9Brdroe1uWc2dweos"
+	expectedHash := "462af4abe5977f4dd985a0a097705925b9fa6c033c9d931c1e2171f710693462"
 	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
 
 	fList := coreblob.ScFuncs.ListBlobs(ctx)

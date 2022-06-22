@@ -349,7 +349,7 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	assert.True(t, exist0)
 	exist1 := f.Results.Mapping().GetBool(tokenID1).Value()
 	assert.True(t, exist1)
-	notExistTokenID := wasmtypes.TokenIDFromString("2C1agnXFL6r7U7wSH4MfkWcuj7tJkxes8hEPVPbb5gvApYh3thqh")
+	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
 	exist2 := f.Results.Mapping().GetBool(notExistTokenID).Value()
 	assert.False(t, exist2)
 }
