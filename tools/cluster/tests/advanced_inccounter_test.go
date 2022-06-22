@@ -262,19 +262,12 @@ func TestAccessNodesMany(t *testing.T) {
 func TestRotation(t *testing.T) {
 	numRequests := 8
 
-	cmt1 := []int{0, 1, 2, 3}
-	cmt2 := []int{2, 3, 4, 5}
-
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	addr1, err := clu.RunDKG(cmt1, 3)
-	require.NoError(t, err)
-	addr2, err := clu.RunDKG(cmt2, 3)
-	require.NoError(t, err)
+	rotation1 := newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3)
+	rotation2 := newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3)
 
-	t.Logf("addr1: %s", addr1.Bech32(parameters.L1.Protocol.Bech32HRP))
-	t.Logf("addr2: %s", addr2.Bech32(parameters.L1.Protocol.Bech32HRP))
-
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
+	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID)
 
@@ -286,7 +279,7 @@ func TestRotation(t *testing.T) {
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
-	require.NoError(t, e.waitStateControllers(addr1, 5*time.Second))
+	require.NoError(t, e.waitStateControllers(rotation1.Address, 5*time.Second))
 
 	keyPair, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -296,22 +289,24 @@ func TestRotation(t *testing.T) {
 	_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
 	require.NoError(t, err)
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 5*time.Second)
 
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 
-	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
+	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
+	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
-	require.True(t, isAllowedStateControllerAddress(t, chain, 0, addr2))
-	require.NoError(t, e.waitStateControllers(addr1, 15*time.Second))
+	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
+	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
 
-	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
+	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
+	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
-	require.NoError(t, e.waitStateControllers(addr2, 15*time.Second))
+	require.NoError(t, e.waitStateControllers(rotation2.Address, 15*time.Second))
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
@@ -321,16 +316,16 @@ func TestRotation(t *testing.T) {
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
 }
 
-type testRotationManyRotation struct {
+type testRotationSingleRotation struct {
 	Committee []int
 	Quorum    uint16
 	Address   iotago.Address
 }
 
-func newTestRotationManyRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationManyRotation {
+func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee []int, quorum uint16) testRotationSingleRotation {
 	address, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
-	return testRotationManyRotation{
+	return testRotationSingleRotation{
 		Committee: committee,
 		Quorum:    quorum,
 		Address:   address,
@@ -347,12 +342,12 @@ func TestRotationMany(t *testing.T) {
 	const waitTimeout = 180 * time.Second
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	rotations := []testRotationManyRotation{
-		newTestRotationManyRotation(t, clu, []int{0, 1, 2, 3}, 3),
-		newTestRotationManyRotation(t, clu, []int{2, 3, 4, 5}, 3),
-		newTestRotationManyRotation(t, clu, []int{3, 4, 5, 6, 7, 8}, 5),
-		newTestRotationManyRotation(t, clu, []int{9, 4, 5, 6, 7, 8, 3}, 5),
-		newTestRotationManyRotation(t, clu, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 7),
+	rotations := []testRotationSingleRotation{
+		newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3),
+		newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3),
+		newTestRotationSingleRotation(t, clu, []int{3, 4, 5, 6, 7, 8}, 5),
+		newTestRotationSingleRotation(t, clu, []int{9, 4, 5, 6, 7, 8, 3}, 5),
+		newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 7),
 	}
 
 	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
@@ -470,7 +465,7 @@ func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
 	for _, i := range e.Chain.AllPeers {
 		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
-			return fmt.Errorf("Node %v state controller address is not %s", i, addr)
+			return fmt.Errorf("State controller address %s is not allowed in node %v", addr, i)
 		}
 	}
 	return nil
