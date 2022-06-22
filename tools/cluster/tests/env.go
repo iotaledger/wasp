@@ -7,8 +7,10 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -90,4 +92,14 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 	wallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
+}
+
+func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
+	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
+	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+		Transfer: iscp.NewTokensIotas(amount),
+	})
+	require.NoError(e.t, err)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err)
 }

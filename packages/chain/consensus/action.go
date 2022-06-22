@@ -235,7 +235,11 @@ func (c *consensus) sortBatch(reqs []iscp.Request) {
 
 func getMaintenanceStatus(store kv.KVStore) bool {
 	govstate := subrealm.New(store, kv.Key(governance.Contract.Hname().Bytes()))
-	return codec.MustDecodeBool(govstate.MustGet(governance.VarMaintenanceStatus))
+	r := govstate.MustGet(governance.VarMaintenanceStatus)
+	if r == nil {
+		return false // chain is being initialized, governance has not been initialized yet
+	}
+	return codec.MustDecodeBool(r)
 }
 
 func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
