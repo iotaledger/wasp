@@ -427,7 +427,7 @@ func (c *consensus) postTransactionIfNeeded() {
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
 	if c.resultState == nil { // governance transaction
-		go c.nodeConn.PublishGovernanceTransaction(c.finalTx)
+		go c.nodeConn.PublishGovernanceTransaction(c.finalTx) //nolint:errcheck
 		logMsgTypeStr = "GOVERNANCE"
 		logMsgStateIndexStr = ""
 	} else {
