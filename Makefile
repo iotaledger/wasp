@@ -31,7 +31,7 @@ test-full: install
 	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 30m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 40m --count 1 -failfast $(TEST_ARG)
 
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
