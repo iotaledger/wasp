@@ -361,7 +361,7 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 				c.log.Warnf("checkQuorum: error writing block to wal: %v", err)
 			}
 		} else {
-			c.log.Warnf("checkQuorum: skipping writing block to was: error extracting block from state: %v", err)
+			c.log.Warnf("checkQuorum: skipping writing block to wal: error extracting block from state: %v", err)
 		}
 
 		// sending message to state manager

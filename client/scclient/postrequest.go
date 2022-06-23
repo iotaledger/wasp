@@ -10,7 +10,7 @@ func (c *SCClient) PostRequest(fname string, params ...chainclient.PostRequestPa
 	return c.ChainClient.Post1Request(c.ContractHname, iscp.Hn(fname), params...)
 }
 
-func (c *SCClient) PostRequests(fname string, n int, params ...chainclient.PostRequestParams) ([]*iotago.Transaction, error) {
+func (c *SCClient) PostNRequests(fname string, n int, params ...chainclient.PostRequestParams) ([]*iotago.Transaction, error) {
 	return c.ChainClient.PostNRequests(c.ContractHname, iscp.Hn(fname), n, params...)
 }
 

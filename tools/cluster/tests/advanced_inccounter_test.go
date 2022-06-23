@@ -244,7 +244,7 @@ func TestAccessNodesMany(t *testing.T) {
 	for i := 0; i < iterationCount; i++ {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
 		t.Logf("Running %s", logMsg)
-		_, err := myClient.PostRequests(inccounter.FuncIncCounter.Name, requestsCount)
+		_, err := myClient.PostNRequests(inccounter.FuncIncCounter.Name, requestsCount)
 		require.NoError(t, err)
 		posted += requestsCount
 		requestsCumulative += requestsCount
@@ -286,7 +286,7 @@ func TestRotation(t *testing.T) {
 
 	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
 
-	_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
+	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
 	require.NoError(t, err)
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 5*time.Second)
@@ -310,7 +310,7 @@ func TestRotation(t *testing.T) {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
-	_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
+	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
 	require.NoError(t, err)
 
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
@@ -383,7 +383,7 @@ func TestRotationMany(t *testing.T) {
 	for i, rotation := range rotations {
 		t.Logf("Rotating to %v-th committee %v with quorum %v and address %s", i, rotation.Committee, rotation.Quorum, rotation.Address)
 
-		_, err = myClient.PostRequests(inccounter.FuncIncCounter.Name, numRequests)
+		_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
 		require.NoError(t, err)
 
 		waitUntil(t, e.counterEquals(int64(numRequests*(i+1))), e.Clu.Config.AllNodes(), 30*time.Second)
