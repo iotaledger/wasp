@@ -123,7 +123,7 @@ func TestNodeConn(t *testing.T) {
 	client.RequestFunds(wallet.Address())
 	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*iscp.Mi)
 	require.NoError(t, err)
-	err = nc.PublishTransaction(chainID, uint32(0), tx)
+	err = nc.PublishStateTransaction(chainID, uint32(0), tx)
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh

@@ -13,13 +13,20 @@ import (
 // LogStateTransition also used in testing
 func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
 	if msg.ChainOutput.GetStateIndex() > 0 {
-		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
+		log.Infof("STATE TRANSITION TO #%d. Requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. state hash: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Debugf("ORIGIN STATE SAVED. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 	}
+}
+
+// LogGovernanceTransition
+func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
+	log.Infof("GOVERNANCE TRANSITION. State index #%d, anchor output: %s",
+		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()))
+	log.Debugf("GOVERNANCE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
 }
 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {

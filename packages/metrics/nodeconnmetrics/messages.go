@@ -5,10 +5,11 @@ import (
 )
 
 type nodeConnectionMessagesMetricsImpl struct {
-	outPublishTransactionMetrics   NodeConnectionMessageMetrics
-	outPullLatestOutputMetrics     NodeConnectionMessageMetrics
-	outPullTxInclusionStateMetrics NodeConnectionMessageMetrics
-	outPullOutputByIDMetrics       NodeConnectionMessageMetrics
+	outPublishStateTransactionMetrics      NodeConnectionMessageMetrics
+	outPublishGovernanceTransactionMetrics NodeConnectionMessageMetrics
+	outPullLatestOutputMetrics             NodeConnectionMessageMetrics
+	outPullTxInclusionStateMetrics         NodeConnectionMessageMetrics
+	outPullOutputByIDMetrics               NodeConnectionMessageMetrics
 
 	inStateOutputMetrics      NodeConnectionMessageMetrics
 	inAliasOutputMetrics      NodeConnectionMessageMetrics
@@ -28,10 +29,11 @@ func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *
 		return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())
 	}
 	return &nodeConnectionMessagesMetricsImpl{
-		outPublishTransactionMetrics:   createMessageMetricsFun("out_publish_transaction", func() NodeConnectionMessageMetrics { return ncmi.GetOutPublishTransaction() }),
-		outPullLatestOutputMetrics:     createMessageMetricsFun("out_pull_latest_output", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullLatestOutput() }),
-		outPullTxInclusionStateMetrics: createMessageMetricsFun("out_pull_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullTxInclusionState() }),
-		outPullOutputByIDMetrics:       createMessageMetricsFun("out_pull_output_by_id", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullOutputByID() }),
+		outPublishStateTransactionMetrics:      createMessageMetricsFun("out_publish_state_transaction", func() NodeConnectionMessageMetrics { return ncmi.GetOutPublishStateTransaction() }),
+		outPublishGovernanceTransactionMetrics: createMessageMetricsFun("out_publish_gov_transaction", func() NodeConnectionMessageMetrics { return ncmi.GetOutPublishGovernanceTransaction() }),
+		outPullLatestOutputMetrics:             createMessageMetricsFun("out_pull_latest_output", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullLatestOutput() }),
+		outPullTxInclusionStateMetrics:         createMessageMetricsFun("out_pull_tx_inclusion_state", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullTxInclusionState() }),
+		outPullOutputByIDMetrics:               createMessageMetricsFun("out_pull_output_by_id", func() NodeConnectionMessageMetrics { return ncmi.GetOutPullOutputByID() }),
 
 		inStateOutputMetrics:      createMessageMetricsFun("in_state_output", func() NodeConnectionMessageMetrics { return ncmi.GetInStateOutput() }),
 		inAliasOutputMetrics:      createMessageMetricsFun("in_alias_output", func() NodeConnectionMessageMetrics { return ncmi.GetInAliasOutput() }),
@@ -41,8 +43,12 @@ func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *
 	}
 }
 
-func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPublishTransaction() NodeConnectionMessageMetrics {
-	return ncmmiT.outPublishTransactionMetrics
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPublishStateTransaction() NodeConnectionMessageMetrics {
+	return ncmmiT.outPublishStateTransactionMetrics
+}
+
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics {
+	return ncmmiT.outPublishGovernanceTransactionMetrics
 }
 
 func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullLatestOutput() NodeConnectionMessageMetrics {
