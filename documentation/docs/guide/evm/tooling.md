@@ -1,5 +1,5 @@
 ---
-description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
+description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure Hardhat, Metamask, Remix, Ether.js and Web3.js among others.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - smart contracts
@@ -19,23 +19,14 @@ EVM on IOTA Smart Contracts has been integrated in a way that the existing EVM t
 
 ## Tooling Considerations
 
- 1. Please make sure you use the correct JSON-RPC endpoint URL in your tooling for your chain. If you run locally this will simply be `localhost:8545`.
- 2. Please make sure you use the right `Chain ID` as configured while starting the JSON-RPC service. If you did not explicitly define this while starting the service, the default Chain ID will be `1074`. 
- 3. Fees are being handled on the IOTA Smart Contracts chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level at this point in time.
+ 1. Please make sure you use the correct JSON-RPC endpoint URL in your tooling for your chain. The JSON-RPC endpoint and Chain ID can be found in the Wasp dashboard / Chains / your ISC chain page.
+ 2. Fees are being handled on the IOTA Smart Contracts chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level.
 
 :::caution
 
 Re-using an existing Chain ID is not recommended and can be a security risk. For any serious chain you will be running make sure you register a unique Chain ID on [Chainlist](https://chainlist.org/) and use that instead of the default.
 
 :::
-
-## Wasp-cli
-
-The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with IOTA Smart Contracts and EVM. You can currently either run a JSON-RPC server, or deploy the EVM Chain itself on an IOTA Smart Contracts chain. To see the available options and configuration parameters simply run:
-
-```shell
-wasp-cli chain evm
-```
 
 ## MetaMask
 
@@ -45,9 +36,9 @@ To use your EVM chain with MetaMask, simply open up MetaMask and click on the ne
 
 [![MetaMask Network](/img/metamask_network.png)](/img/metamask_network.png)
 
-Make sure that your `RPC Url` and `Chain ID` are set correctly and match the settings you've chosen running your JSON-RPC endpoint. The `Network Name` can be whatever you see fit.
+Make sure that your `RPC URL` and `Chain ID` are set correctly and match the settings listed in the Wasp dashboard. The `Network Name` can be whatever you see fit.
 
-If you wish to use additional EVM chains with Metamask, you can simply add more Custom RPC networks, as long as they have a unique `Chain ID` and `RPC Url`. Once this is done, you can start using MetaMask to manage your EVM wallet or issue/sign transactions with any dApp running on that network. 
+If you wish to use additional EVM chains with Metamask, you can simply add more Custom RPC networks, as long as they have a unique `Chain ID` and `RPC URL`. Once this is done, you can start using MetaMask to manage your EVM wallet or issue/sign transactions with any dApp running on that network. 
 
 ### Remix 
 
@@ -73,7 +64,7 @@ Metamask will ask to connect to Remix and once connected the `Environment` will 
 ```javascript
 networks: {
     local: {
-        url: 'http://localhost:8545',
+        url: 'http://localhost:9090/chain/atoi1prkduk8zfp3yzaqcweaz83dja5rqxe5nenm059pzs3mmev9nspwew95dycu/evm/jsonrpc',
         chainId: 1074,
         accounts: [privkey],
         timeout: 60000

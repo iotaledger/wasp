@@ -4,73 +4,65 @@ This package and subpackages contain the code for the `evm`
 core contract, which allows to execute Ethereum VM (EVM) code on top of the
 ISC chain, thus adding support for Ethereum smart contracts.
 
-The `evm` contract stores the current EVM state in raw form, and
-after running an Ethereum transaction, it:
-
-- Updates the EVM state
-- Stores the transaction and receipt for future reference. Only the latest N
-  transactions/receipts are stored, to avoid using unlimited space.
-
 ## JSON-RPC
 
-The `wasp-cli chain evm jsonrpc` command to start a JSON-RPC server. This will
-allow you to connect any standard Ethereum tool, like Metamask.
-
-Note: Existing EVM tools that expect a 'real' Ethereum blockchain might not
-be compatible with the current implementation of `evm`. Some examples:
-
-- Ethereum blocks are kept only to provide compatibility, but they do not
-  actually form a 'real' blockchain, and the EVM state is not actually stored
-  in a Merkle tree (since the ISC layer already takes care of all of this, it
-  would be inefficient to do that at the EVM layer as well). As a consequence,
-  some attributes of the blocks will show dummy values (e.g. `stateRoot`,
-  `nonce`, etc).
-
-- If a transaction is reverted, in Ethereum a receipt is generated with
-  `status = failed`. In ISC, the corresponding ISC request will
-  also be reverted, generating no Ethereum receipt (the ISC receipt will
-  still be generated).
+The Wasp node provides a JSON-RPC service at `/chain/<isc-chainid>/evm/jsonrpc`. This will
+allow you to connect any standard Ethereum tool, like Metamask. You can check
+the Metamask connection parameters for any given ISC chain in the Dashboard.
 
 ## Complete example using `wasp-cluster`
 
-In terminal #1, start a cluster:
+1. Start a test cluster:
 
-```
-wasp-cluster start -d
-```
+    ```
+    wasp-cluster start -d
+    ```
 
-In terminal #2:
+2. In a different terminal, initialize a private key and request some iotas from the faucet:
 
-```
-# initialize a private key and request some funds
-wasp-cli init
-wasp-cli request-funds
+    ```
+    wasp-cli init
+    wasp-cli request-funds
+    ```
 
-# deploy an ISC chain, deposit some funds to be used for gas fees
-wasp-cli chain deploy --chain=mychain --committee=0,1,2,3 --quorum 3
-wasp-cli chain deposit IOTA:10000
-```
+3. Deploy an ISC chain with an arbitrary Ethereum chain ID (which should be
+   different from any standard Ethereum chain IDs -- see
+   https://chainlist.org):
 
-Finally we start the JSON-RPC server:
+    ```
+    wasp-cli chain deploy --chain=mychain --evm-chainid 1234
+    ```
 
-```
-wasp-cli chain evm jsonrpc
-```
+4. Send some iotas from your L1 account to any Ethereum account on L2 (e.g. to cover for gas fees):
 
-## Predictable block time
+    ```
+    wasp-cli chain deposit 0xa1b2c3d4... iota:1000000
+    ```
 
-Some EVM contracts depend on blocks being minted periodically with regular
-intervals. ISC does not support that natively, so by default a new EVM block
-is minted every time an ISC batch is executed that contains at least one EVM
-transaction. In other words, by default no EVM blocks will be minted until an
-EVM transaction is received.
+5. Visit the Wasp dashboard at http://localhost:7000, go to `Chains`, then to
+   your ISC chain, scroll down and you will find the EVM section with the
+   JSON-RPC URL for Metamask or any other Ethereum tool.
 
-However, the `evm` contract supports emulating predictable block times. To
-enable this feature, add `--evm-block-time <n>` to the `wasp-cli chain deploy`
-command, where `<n>` is the desired average amount of seconds between blocks.
+You can now deploy an EVM contract like you would on Ethereum. Use the
+[`isc` Ethereum contract](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/isccontract/ISC.sol)
+to interact with ISC functionality. For example:
 
-Note that this may change the behavior of JSON-RPC functions that query the
-EVM state (e.g. `getBalance`), since `evm` is not able to store the state
-in both the latest minted block and the pending block. These functions will
-always return the state computed after accepting the latest transaction (i.e.
-the state of the pending block).
+ ```solidity
+ pragma solidity >=0.8.5;
+
+ import "@isccontract/ISC.sol";
+
+ contract EntropyTest {
+     event EntropyEvent(bytes32 entropy);
+
+     // this will emit a "random" value, taken from the ISC entropy value
+     function emitEntropy() public {
+         bytes32 e = isc.getEntropy();
+         emit EntropyEvent(e);
+     }
+ }
+ ```
+
+You can find more examples in the
+[ISCTest.sol](https://github.com/iotaledger/wasp/blob/develop/packages/evm/evmtest/ISCTest.sol)
+contract (used internally in unit tests).
