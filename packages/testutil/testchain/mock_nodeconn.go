@@ -12,14 +12,15 @@ import (
 )
 
 type MockedNodeConn struct {
-	log                            *logger.Logger
-	ledgers                        *MockedLedgers
-	id                             string
-	publishTransactionAllowedFun   func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
-	pullLatestOutputAllowed        bool
-	pullTxInclusionStateAllowedFun func(chainID *iscp.ChainID, txID iotago.TransactionID) bool
-	pullOutputByIDAllowedFun       func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool
-	stopChannel                    chan bool
+	log                                    *logger.Logger
+	ledgers                                *MockedLedgers
+	id                                     string
+	publishStateTransactionAllowedFun      func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
+	publishGovernanceTransactionAllowedFun func(chainID *iscp.ChainID, tx *iotago.Transaction) bool
+	pullLatestOutputAllowed                bool
+	pullTxInclusionStateAllowedFun         func(chainID *iscp.ChainID, txID iotago.TransactionID) bool
+	pullOutputByIDAllowedFun               func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool
+	stopChannel                            chan bool
 }
 
 var _ chain.NodeConnection = &MockedNodeConn{}
@@ -31,7 +32,8 @@ func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logg
 		ledgers:     ledgers,
 		stopChannel: make(chan bool),
 	}
-	result.SetPublishTransactionAllowed(true)
+	result.SetPublishStateTransactionAllowed(true)
+	result.SetPublishGovernanceTransactionAllowed(true)
 	result.SetPullLatestOutputAllowed(true)
 	result.SetPullTxInclusionStateAllowed(true)
 	result.SetPullOutputByIDAllowed(true)
@@ -51,11 +53,18 @@ func (mncT *MockedNodeConn) UnregisterChain(chainID *iscp.ChainID) {
 	mncT.ledgers.GetLedger(chainID).Unregister(mncT.id)
 }
 
-func (mncT *MockedNodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
-	if mncT.publishTransactionAllowedFun(chainID, stateIndex, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishTransaction(stateIndex, tx)
+func (mncT *MockedNodeConn) PublishStateTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+	if mncT.publishStateTransactionAllowedFun(chainID, stateIndex, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishStateTransaction(stateIndex, tx)
 	}
-	return fmt.Errorf("Publishing transaction for address %s of index %v is not allowed", chainID, stateIndex)
+	return fmt.Errorf("Publishing state transaction for address %s of index %v is not allowed", chainID, stateIndex)
+}
+
+func (mncT *MockedNodeConn) PublishGovernanceTransaction(chainID *iscp.ChainID, tx *iotago.Transaction) error {
+	if mncT.publishGovernanceTransactionAllowedFun(chainID, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishGovernanceTransaction(tx)
+	}
+	return fmt.Errorf("Publishing governance rotation transaction for address %s is not allowed", chainID)
 }
 
 func (mncT *MockedNodeConn) PullLatestOutput(chainID *iscp.ChainID) {
@@ -108,12 +117,20 @@ func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 func (mncT *MockedNodeConn) Close() {
 }
 
-func (mncT *MockedNodeConn) SetPublishTransactionAllowed(flag bool) {
-	mncT.SetPublishTransactionAllowedFun(func(*iscp.ChainID, uint32, *iotago.Transaction) bool { return flag })
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowed(flag bool) {
+	mncT.SetPublishStateTransactionAllowedFun(func(*iscp.ChainID, uint32, *iotago.Transaction) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPublishTransactionAllowedFun(fun func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
-	mncT.publishTransactionAllowedFun = fun
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
+	mncT.publishStateTransactionAllowedFun = fun
+}
+
+func (mncT *MockedNodeConn) SetPublishGovernanceTransactionAllowed(flag bool) {
+	mncT.SetPublishGovernanceTransactionAllowedFun(func(*iscp.ChainID, *iotago.Transaction) bool { return flag })
+}
+
+func (mncT *MockedNodeConn) SetPublishGovernanceTransactionAllowedFun(fun func(chainID *iscp.ChainID, tx *iotago.Transaction) bool) {
+	mncT.publishGovernanceTransactionAllowedFun = fun
 }
 
 func (mncT *MockedNodeConn) SetPullLatestOutputAllowed(flag bool) {

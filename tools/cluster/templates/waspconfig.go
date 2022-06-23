@@ -23,7 +23,7 @@ const WaspConfig = `
     "directory": "waspdb"
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",

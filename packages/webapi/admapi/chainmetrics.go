@@ -26,10 +26,15 @@ func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Pr
 
 func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
 	chainExample := &model.NodeConnectionMessagesMetrics{
-		OutPublishTransaction: &model.NodeConnectionMessageMetrics{
+		OutPublishStateTransaction: &model.NodeConnectionMessageMetrics{
 			Total:       3,
 			LastEvent:   time.Now().Add(-2 * time.Millisecond),
-			LastMessage: "Last sent PublishTransaction message structure",
+			LastMessage: "Last sent PublishStateTransaction message structure",
+		},
+		OutPublishGovernanceTransaction: &model.NodeConnectionMessageMetrics{
+			Total:       0,
+			LastEvent:   time.Time{},
+			LastMessage: "Last sent PublishGovernanceTransaction message structure",
 		},
 		OutPullLatestOutput: &model.NodeConnectionMessageMetrics{
 			Total:       15,

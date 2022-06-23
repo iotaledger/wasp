@@ -107,14 +107,23 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 1, "InOnLedgerRequest2", cncm2.GetInOnLedgerRequest())
 	checkMetricsValues(t, 3, "InOnLedgerRequest3", ncm.GetInOnLedgerRequest())
 
-	// OUT Publish transaction
-	cncm1.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction1")
-	cncm2.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction2")
-	cncm2.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction3")
+	// OUT Publish state transaction
+	cncm1.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction1")
+	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction2")
+	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction3")
 
-	checkMetricsValues(t, 1, "OutPublishTransaction1", cncm1.GetOutPublishTransaction())
-	checkMetricsValues(t, 2, "OutPublishTransaction3", cncm2.GetOutPublishTransaction())
-	checkMetricsValues(t, 3, "OutPublishTransaction3", ncm.GetOutPublishTransaction())
+	checkMetricsValues(t, 1, "OutPublishStateTransaction1", cncm1.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 2, "OutPublishStateTransaction3", cncm2.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishStateTransaction())
+
+	// OUT Publish governance transaction
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction1")
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction2")
+	cncm1.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction3")
+
+	checkMetricsValues(t, 1, "OutPublishStateTransaction3", cncm1.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 2, "OutPublishStateTransaction2", cncm2.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishGovernanceTransaction())
 
 	// OUT Pull latest output
 	ncm.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput1")

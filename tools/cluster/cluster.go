@@ -226,6 +226,33 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 			return xerrors.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
+
+	scArgs := governance.NewChangeAccessNodesRequest()
+	for _, a := range nodes {
+		waspClient := clu.WaspClient(a)
+		accessNodePeering, err := waspClient.GetPeeringSelf()
+		if err != nil {
+			return err
+		}
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+		if err != nil {
+			return err
+		}
+		scArgs.Accept(accessNodePubKey)
+	}
+	scParams := chainclient.
+		NewPostRequestParams(scArgs.AsDict()).
+		WithIotas(1 * iscp.Mi)
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
+	if err != nil {
+		return err
+	}
+	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -576,9 +603,17 @@ func waitCmd(cmd **exec.Cmd) {
 	}
 }
 
-func (clu *Cluster) ActiveNodes() []int {
+func (clu *Cluster) AllNodes() []int {
 	nodes := make([]int, 0)
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+		nodes = append(nodes, i)
+	}
+	return nodes
+}
+
+func (clu *Cluster) ActiveNodes() []int {
+	nodes := make([]int, 0)
+	for _, i := range clu.AllNodes() {
 		if !clu.IsNodeUp(i) {
 			continue
 		}

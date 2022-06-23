@@ -115,93 +115,81 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 	}
 	c.log.Debugf("handleAliasOutput: L1 commitment is %s", commitment)
 
-	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex < msgStateIndex) {
+	if (c.lastSeenOutputStateIndex == nil) || (*c.lastSeenOutputStateIndex <= msgStateIndex) {
 		if c.lastSeenOutputStateIndex == nil {
 			c.log.Debugf("handleAliasOutput: received initial state output")
 		} else {
-			c.log.Debugf("handleAliasOutput: received newer output than the known one with index %v", *c.lastSeenOutputStateIndex)
+			c.log.Debugf("handleAliasOutput: received output, which is not older than the known one with index %v", *c.lastSeenOutputStateIndex)
 		}
 		cmt := c.getCommittee()
+		var isRotation bool
 		if cmt != nil {
-			err = c.rotateCommitteeIfNeeded(msg, cmt)
+			isRotation, err = c.rotateCommitteeIfNeeded(msg, cmt)
 			if err != nil {
 				c.log.Errorf("handleAliasOutput: committee rotation failed: %v", err)
 				return
 			}
 		} else {
-			err = c.createCommitteeIfNeeded(msg)
+			isRotation, err = c.createCommitteeIfNeeded(msg)
 			if err != nil {
 				c.log.Errorf("handleAliasOutput: committee creation failed: %v", err)
 				return
 			}
 		}
 		c.lastSeenOutputStateIndex = &msgStateIndex
+		if msgStateIndex != 0 && isRotation {
+			c.processChainTransition(&chain.ChainTransitionEventData{
+				IsGovernance:    true,
+				VirtualState:    c.lastSeenVirtualState,
+				ChainOutput:     msg,
+				OutputTimestamp: time.Now(),
+			})
+		}
 	} else {
-		c.log.Debugf("handleAliasOutput: received output, which is not newer than the known one with index %v; committee rotation/creation will not be performed", *c.lastSeenOutputStateIndex)
+		c.log.Debugf("handleAliasOutput: received output, which is older than the known one with index %v; committee rotation/creation will not be performed", *c.lastSeenOutputStateIndex)
 	}
 	c.stateMgr.EnqueueAliasOutput(msg)
 	c.log.Debugf("handleAliasOutput: output %v passed to state manager", iscp.OID(msg.ID()))
 }
 
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID, currentCmt chain.Committee) error {
+func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID, currentCmt chain.Committee) (bool, error) {
 	currentCmtAddress := currentCmt.Address()
 	anchorOutputAddress := anchorOutput.GetStateAddress()
 	if currentCmtAddress.Equal(anchorOutputAddress) {
 		c.log.Debugf("rotateCommitteeIfNeeded rotation is not needed: committee address %s is not changed", currentCmtAddress)
-		return nil
+		return false, nil
 	}
 	c.log.Debugf("rotateCommitteeIfNeeded rotation is needed: committee address is changed %s -> %s", currentCmtAddress, anchorOutputAddress)
-	// TODO implement
-	// if !anchorOutput.GetIsGovernanceUpdated() {
-	// 	return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
-	// }
-	dkShare, err := c.getChainDKShare(anchorOutputAddress)
-	if err != nil {
-		if !errors.Is(err, registry.ErrDKShareNotFound) {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: unable to load dkShare: %w", err)
-		}
-	}
 
 	// rotation needed
 	// close current in any case
 	currentCmt.Close()
 	c.consensus.Close()
 	c.setCommittee(nil)
-	c.log.Infof("CLOSED COMMITTEE for the state address %s", currentCmtAddress)
+	c.log.Infof("rotateCommitteeIfNeeded: CLOSED COMMITTEE for the state address %s", currentCmtAddress)
 	c.consensus = nil
-	if dkShare != nil {
-		// create new if committee record is available
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus failed: %v", err)
-		}
-		c.log.Infof("RECREATED COMMITTEE for the state address %s", anchorOutputAddress)
-	} else {
-		c.log.Warnf("DKShare is nil, committee not created")
-	}
-	return nil
+
+	_, err := c.createCommitteeIfNeeded(anchorOutput)
+	return true, err
 }
 
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID) error {
+func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID) (bool, error) {
 	// check if I am in the committee
-	stateControllerAddress := anchorOutput.GetAliasOutput().StateController()
+	stateControllerAddress := anchorOutput.GetStateAddress()
 	dkShare, err := c.getChainDKShare(stateControllerAddress)
 	if err != nil {
 		if errors.Is(err, registry.ErrDKShareNotFound) {
-			c.log.Warnf("DKShare not found, committee not created, node will not participate in consensus. address: %s", stateControllerAddress)
-			return nil
+			c.log.Warnf("createCommitteeIfNeeded: DKShare not found, committee not created, node will not participate in consensus. Address: %s", stateControllerAddress)
+			return false, nil
 		}
-		return xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
+		return false, xerrors.Errorf("createCommitteeIfNeeded: unable to load dkShare: %w", err)
 	}
-	if dkShare != nil {
-		// create if record is present
-		if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
-			return xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
-		}
-		c.log.Infof("CREATED COMMITTEE for the state address %s", stateControllerAddress)
-	} else {
-		c.log.Warnf("DKShare is nil, committee not created")
+	// create new committee
+	if err = c.createNewCommitteeAndConsensus(dkShare); err != nil {
+		return true, xerrors.Errorf("createCommitteeIfNeeded: creating committee and consensus failed %w", err)
 	}
-	return nil
+	c.log.Infof("createCommitteeIfNeeded: CREATED COMMITTEE for the state address %s", stateControllerAddress)
+	return true, nil
 }
 
 func (c *chainObj) getChainDKShare(addr iotago.Address) (tcrypto.DKShare, error) {
