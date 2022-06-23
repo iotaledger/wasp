@@ -7,11 +7,14 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/iotaledger/hive.go/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -85,23 +88,22 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 	task := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
-	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
-		inputsCommitment = task.ResultInputsCommitment
+		copy(essence.InputsCommitment[:], task.ResultInputsCommitment)
 	} else {
-		panic("not implemented")
-		//essence, err = rotate.MakeRotateStateControllerTransaction(
-		//	task.RotationAddress,
-		//	task.AnchorOutput,
-		//	task.Timestamp.Add(2*time.Nanosecond),
-		//	identity.ID{},
-		//	identity.ID{},
-		//)
-		//require.NoError(ch.Env.T, err)
+		var err error
+		essence, err = rotate.MakeRotateStateControllerTransaction(
+			task.RotationAddress,
+			iscp.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
+			task.TimeAssumption.Time.Add(2*time.Nanosecond),
+			identity.ID{},
+			identity.ID{},
+		)
+		require.NoError(ch.Env.T, err)
 	}
 	sigs, err := essence.Sign(
-		inputsCommitment,
+		essence.InputsCommitment[:],
 		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
 	)
 	require.NoError(ch.Env.T, err)

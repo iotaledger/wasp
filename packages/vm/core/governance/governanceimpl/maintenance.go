@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -12,7 +13,11 @@ import (
 
 func setMaintenanceOn(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
-	// TODO check if caller is a contract from this chain, panic if so.
+	// check if caller is a contract from this chain, panic if so.
+	if ctx.Caller().Kind() == iscp.AgentIDKindContract &&
+		ctx.Caller().(*iscp.ContractAgentID).ChainID().Equals(ctx.ChainID()) {
+		panic(vm.ErrUnauthorized)
+	}
 	ctx.State().Set(governance.VarMaintenanceStatus, codec.Encode(true))
 	return nil
 }

@@ -156,9 +156,11 @@ func TestMaintenance(t *testing.T) {
 	}
 
 	// normal requests are now processed successfully (pending requests issued during maintenance should be processed now)
-	_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq1.ID(), 10*time.Second)
-	require.NoError(t, err)
-	_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq2.ID(), 10*time.Second)
-	require.NoError(t, err)
-	require.EqualValues(t, 2, env.getCounter(nativeIncCounterSCHname))
+	{
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq1.ID(), 10*time.Second)
+		require.NoError(t, err)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq2.ID(), 10*time.Second)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, env.getCounter(nativeIncCounterSCHname))
+	}
 }
