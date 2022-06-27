@@ -13,12 +13,20 @@ import (
 )
 
 // RequestReceipt fetches the processing status of a request.
-func (c *WaspClient) RequestReceipt(chainID *iscp.ChainID, reqID iscp.RequestID) (*string, error) {
-	var res *string
-	if err := c.do(http.MethodGet, routes.RequestReceipt(chainID.String(), reqID.String()), nil, res); err != nil {
+func (c *WaspClient) RequestReceipt(chainID *iscp.ChainID, reqID iscp.RequestID) (*iscp.Receipt, error) {
+	var res model.RequestReceiptResponse
+	if err := c.do(http.MethodGet, routes.RequestReceipt(chainID.String(), reqID.String()), nil, &res); err != nil {
 		return nil, err
 	}
-	return res, nil
+	if res.Receipt == "" {
+		return nil, nil
+	}
+	var receipt iscp.Receipt
+	err := json.Unmarshal([]byte(res.Receipt), &receipt)
+	if err != nil {
+		return nil, err
+	}
+	return &receipt, nil
 }
 
 // WaitUntilRequestProcessed blocks until the request has been processed by the node

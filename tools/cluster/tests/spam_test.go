@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
@@ -107,13 +106,7 @@ func TestSpamOffLedger(t *testing.T) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount),
-	})
-	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
+	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 
 	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
 

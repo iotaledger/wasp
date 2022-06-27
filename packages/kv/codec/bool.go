@@ -19,6 +19,14 @@ func DecodeBool(b []byte, def ...bool) (bool, error) {
 	return ret, err
 }
 
+func MustDecodeBool(b []byte, def ...bool) bool {
+	ret, err := DecodeBool(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 func EncodeBool(value bool) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	err := util.WriteBoolByte(buf, value)
