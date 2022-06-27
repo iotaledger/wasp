@@ -638,6 +638,19 @@ export class CheckAgentIDContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class CheckBigIntCall {
+	func: wasmlib.ScView;
+	params: sc.MutableCheckBigIntParams = new sc.MutableCheckBigIntParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckBigInt);
+	}
+}
+
+export class CheckBigIntContext {
+	params: sc.ImmutableCheckBigIntParams = new sc.ImmutableCheckBigIntParams(wasmlib.paramsProxy());
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class CheckEthAddressAndAgentIDCall {
 	func: wasmlib.ScView;
 	params: sc.MutableCheckEthAddressAndAgentIDParams = new sc.MutableCheckEthAddressAndAgentIDParams(wasmlib.ScView.nilProxy);
@@ -1048,6 +1061,12 @@ export class ScFuncs {
 	static checkAgentID(ctx: wasmlib.ScViewCallContext): CheckAgentIDCall {
 		const f = new CheckAgentIDCall(ctx);
 		f.params = new sc.MutableCheckAgentIDParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static checkBigInt(ctx: wasmlib.ScViewCallContext): CheckBigIntCall {
+		const f = new CheckBigIntCall(ctx);
+		f.params = new sc.MutableCheckBigIntParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

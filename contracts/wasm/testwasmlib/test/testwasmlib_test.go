@@ -478,11 +478,8 @@ func TestWasmTypes(t *testing.T) {
 	require.Equal(t, goUint64, wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)))
 
 	scBigInt := wasmtypes.NewScBigInt(123213)
-	goBigInt := big.NewInt(123213)
-	require.Equal(t, scBigInt, wasmtypes.BigIntFromBytes(wasmtypes.BigIntToBytes(scBigInt)))
-	require.Equal(t, goBigInt.Bytes(), scBigInt.Bytes())
-	require.Equal(t, scBigInt, wasmtypes.BigIntFromString(wasmtypes.BigIntToString(scBigInt)))
-	require.Equal(t, goBigInt.String(), scBigInt.String())
+	bigInt := big.NewInt(123213)
+	checkBigInt(t, ctx, scBigInt, bigInt)
 
 	goBool := true
 	require.Equal(t, goBool, wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(goBool)))
@@ -553,6 +550,22 @@ func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
 		return iotago.NFTID{}, err
 	}
 	return nftInfo.NFTID, nil
+}
+
+func checkBigInt(t *testing.T, ctx *wasmsolo.SoloContext, scBigInt wasmtypes.ScBigInt, bigInt *big.Int) {
+	require.Equal(t, scBigInt, wasmtypes.BigIntFromBytes(wasmtypes.BigIntToBytes(scBigInt)))
+	require.Equal(t, bigInt.Bytes(), scBigInt.Bytes())
+	require.Equal(t, scBigInt, wasmtypes.BigIntFromString(wasmtypes.BigIntToString(scBigInt)))
+	require.Equal(t, bigInt.String(), scBigInt.String())
+
+	bigIntBytes := bigInt.Bytes()
+	bigIntString := bigInt.String()
+	checker := testwasmlib.ScFuncs.CheckBigInt(ctx)
+	checker.Params.ScBigInt().SetValue(scBigInt)
+	checker.Params.BigIntBytes().SetValue(bigIntBytes)
+	checker.Params.BigIntString().SetValue(bigIntString)
+	checker.Func.Call()
+	require.NoError(t, ctx.Err, fmt.Sprintf("scBigInt: %s, bigInt: %s", scBigInt.String(), bigInt.String()))
 }
 
 //nolint:dupl

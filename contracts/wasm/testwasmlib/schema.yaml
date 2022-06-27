@@ -350,6 +350,12 @@ views:
     results:
       random: Uint64
 
+  checkBigInt:
+    params:
+      scBigInt: BigInt
+      bigIntBytes: Bytes
+      bigIntString: String
+
   checkAgentID:
     params:
       scAgentID: AgentID

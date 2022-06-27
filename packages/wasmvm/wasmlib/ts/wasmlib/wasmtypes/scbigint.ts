@@ -308,7 +308,7 @@ export function bigIntToString(value: ScBigInt): string {
     }
     const divMod = value.divMod(quintillion);
     const digits = wasmtypes.uint64ToString(divMod[1].uint64());
-    const zeroes = wasmtypes.zeroes(18 - digits.length);
+    const zeroes = "000000000000000000".slice(18 - digits.length);
     return bigIntToString(divMod[0]) + zeroes + digits;
 }
 

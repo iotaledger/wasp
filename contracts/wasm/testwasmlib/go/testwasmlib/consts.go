@@ -24,6 +24,8 @@ const (
 	ParamAgentID         = "agentID"
 	ParamAgentString     = "agentString"
 	ParamBigInt          = "bigInt"
+	ParamBigIntBytes     = "bigIntBytes"
+	ParamBigIntString    = "bigIntString"
 	ParamBlockIndex      = "blockIndex"
 	ParamBool            = "bool"
 	ParamBytes           = "bytes"
@@ -56,6 +58,7 @@ const (
 	ParamRhs             = "rhs"
 	ParamScAddress       = "scAddress"
 	ParamScAgentID       = "scAgentID"
+	ParamScBigInt        = "scBigInt"
 	ParamScHash          = "scHash"
 	ParamScNftID         = "scNftID"
 	ParamScRequestID     = "scRequestID"
@@ -143,6 +146,7 @@ const (
 	ViewBlockRecords                   = "blockRecords"
 	ViewCheckAddress                   = "checkAddress"
 	ViewCheckAgentID                   = "checkAgentID"
+	ViewCheckBigInt                    = "checkBigInt"
 	ViewCheckEthAddressAndAgentID      = "checkEthAddressAndAgentID"
 	ViewCheckHash                      = "checkHash"
 	ViewCheckNftID                     = "checkNftID"
@@ -201,6 +205,7 @@ const (
 	HViewBlockRecords                   = wasmtypes.ScHname(0x16e249ea)
 	HViewCheckAddress                   = wasmtypes.ScHname(0x64b8add5)
 	HViewCheckAgentID                   = wasmtypes.ScHname(0x27ae5137)
+	HViewCheckBigInt                    = wasmtypes.ScHname(0x3497622b)
 	HViewCheckEthAddressAndAgentID      = wasmtypes.ScHname(0xe01ad77e)
 	HViewCheckHash                      = wasmtypes.ScHname(0x6b391dec)
 	HViewCheckNftID                     = wasmtypes.ScHname(0xcf852738)

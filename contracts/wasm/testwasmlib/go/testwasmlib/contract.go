@@ -244,6 +244,11 @@ type CheckAgentIDCall struct {
 	Params MutableCheckAgentIDParams
 }
 
+type CheckBigIntCall struct {
+	Func   *wasmlib.ScView
+	Params MutableCheckBigIntParams
+}
+
 type CheckEthAddressAndAgentIDCall struct {
 	Func   *wasmlib.ScView
 	Params MutableCheckEthAddressAndAgentIDParams
@@ -573,6 +578,12 @@ func (sc Funcs) CheckAddress(ctx wasmlib.ScViewCallContext) *CheckAddressCall {
 
 func (sc Funcs) CheckAgentID(ctx wasmlib.ScViewCallContext) *CheckAgentIDCall {
 	f := &CheckAgentIDCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckAgentID)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	return f
+}
+
+func (sc Funcs) CheckBigInt(ctx wasmlib.ScViewCallContext) *CheckBigIntCall {
+	f := &CheckBigIntCall{Func: wasmlib.NewScView(ctx, HScName, HViewCheckBigInt)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	return f
 }

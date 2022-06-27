@@ -77,6 +77,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_BLOCK_RECORDS,
     	VIEW_CHECK_ADDRESS,
     	VIEW_CHECK_AGENT_ID,
+    	VIEW_CHECK_BIG_INT,
     	VIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID,
     	VIEW_CHECK_HASH,
     	VIEW_CHECK_NFT_ID,
@@ -136,6 +137,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_block_records_thunk,
     	view_check_address_thunk,
     	view_check_agent_id_thunk,
+    	view_check_big_int_thunk,
     	view_check_eth_address_and_agent_id_thunk,
     	view_check_hash_thunk,
     	view_check_nft_id_thunk,
@@ -993,6 +995,24 @@ fn view_check_agent_id_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.sc_agent_id().exists(), "missing mandatory scAgentID");
 	view_check_agent_id(ctx, &f);
 	ctx.log("testwasmlib.viewCheckAgentID ok");
+}
+
+pub struct CheckBigIntContext {
+	params: ImmutableCheckBigIntParams,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_big_int_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckBigInt");
+	let f = CheckBigIntContext {
+		params: ImmutableCheckBigIntParams { proxy: params_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.big_int_bytes().exists(), "missing mandatory bigIntBytes");
+	ctx.require(f.params.big_int_string().exists(), "missing mandatory bigIntString");
+	ctx.require(f.params.sc_big_int().exists(), "missing mandatory scBigInt");
+	view_check_big_int(ctx, &f);
+	ctx.log("testwasmlib.viewCheckBigInt ok");
 }
 
 pub struct CheckEthAddressAndAgentIDContext {

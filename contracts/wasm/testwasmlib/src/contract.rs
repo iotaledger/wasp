@@ -245,6 +245,11 @@ pub struct CheckAgentIDCall {
 	pub params: MutableCheckAgentIDParams,
 }
 
+pub struct CheckBigIntCall {
+	pub func: ScView,
+	pub params: MutableCheckBigIntParams,
+}
+
 pub struct CheckEthAddressAndAgentIDCall {
 	pub func: ScView,
 	pub params: MutableCheckEthAddressAndAgentIDParams,
@@ -718,6 +723,15 @@ impl ScFuncs {
         let mut f = CheckAgentIDCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_AGENT_ID),
             params: MutableCheckAgentIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_big_int(_ctx: &dyn ScViewCallContext) -> CheckBigIntCall {
+        let mut f = CheckBigIntCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_BIG_INT),
+            params: MutableCheckBigIntParams { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f

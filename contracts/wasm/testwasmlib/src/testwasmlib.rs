@@ -716,3 +716,19 @@ pub fn view_check_token_id(ctx: &ScViewContext, f: &CheckTokenIDContext) {
         "string mismatch",
     );
 }
+
+pub fn view_check_big_int(ctx: &ScViewContext, f: &CheckBigIntContext) {
+    let sc_big_int = f.params.sc_big_int().value();
+    let big_int_bytes = f.params.big_int_bytes().value();
+    let big_int_string = f.params.big_int_string().value();
+    ctx.require(
+        sc_big_int == big_int_from_bytes(&big_int_to_bytes(&sc_big_int)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_big_int == big_int_from_string(&big_int_to_string(&sc_big_int)),
+        "string conversion failed",
+    );
+    ctx.require(sc_big_int.to_bytes() == big_int_bytes, "bytes mismatch");
+    ctx.require(sc_big_int.to_string() == big_int_string, "string mismatch");
+}

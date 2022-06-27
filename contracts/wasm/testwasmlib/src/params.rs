@@ -1304,6 +1304,44 @@ impl MutableCheckAgentIDParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableCheckBigIntParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckBigIntParams {
+    pub fn big_int_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_BIG_INT_BYTES))
+	}
+
+    pub fn big_int_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_BIG_INT_STRING))
+	}
+
+    pub fn sc_big_int(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_SC_BIG_INT))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckBigIntParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckBigIntParams {
+    pub fn big_int_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_BIG_INT_BYTES))
+	}
+
+    pub fn big_int_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_BIG_INT_STRING))
+	}
+
+    pub fn sc_big_int(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_SC_BIG_INT))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableCheckEthAddressAndAgentIDParams {
 	pub(crate) proxy: Proxy,
 }

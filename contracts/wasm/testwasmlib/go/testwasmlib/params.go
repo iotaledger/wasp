@@ -1080,6 +1080,38 @@ func (s MutableCheckAgentIDParams) ScAgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamScAgentID))
 }
 
+type ImmutableCheckBigIntParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckBigIntParams) BigIntBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamBigIntBytes))
+}
+
+func (s ImmutableCheckBigIntParams) BigIntString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamBigIntString))
+}
+
+func (s ImmutableCheckBigIntParams) ScBigInt() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamScBigInt))
+}
+
+type MutableCheckBigIntParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckBigIntParams) BigIntBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamBigIntBytes))
+}
+
+func (s MutableCheckBigIntParams) BigIntString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamBigIntString))
+}
+
+func (s MutableCheckBigIntParams) ScBigInt() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamScBigInt))
+}
+
 type ImmutableCheckEthAddressAndAgentIDParams struct {
 	proxy wasmtypes.Proxy
 }

@@ -57,6 +57,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewBlockRecords,
 		ViewCheckAddress,
 		ViewCheckAgentID,
+		ViewCheckBigInt,
 		ViewCheckEthAddressAndAgentID,
 		ViewCheckHash,
 		ViewCheckNftID,
@@ -116,6 +117,7 @@ var exportMap = wasmlib.ScExportMap{
 		viewBlockRecordsThunk,
 		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
+		viewCheckBigIntThunk,
 		viewCheckEthAddressAndAgentIDThunk,
 		viewCheckHashThunk,
 		viewCheckNftIDThunk,
@@ -1166,6 +1168,28 @@ func viewCheckAgentIDThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.ScAgentID().Exists(), "missing mandatory scAgentID")
 	viewCheckAgentID(ctx, f)
 	ctx.Log("testwasmlib.viewCheckAgentID ok")
+}
+
+type CheckBigIntContext struct {
+	Params ImmutableCheckBigIntParams
+	State  ImmutableTestWasmLibState
+}
+
+func viewCheckBigIntThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckBigInt")
+	f := &CheckBigIntContext{
+		Params: ImmutableCheckBigIntParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.BigIntBytes().Exists(), "missing mandatory bigIntBytes")
+	ctx.Require(f.Params.BigIntString().Exists(), "missing mandatory bigIntString")
+	ctx.Require(f.Params.ScBigInt().Exists(), "missing mandatory scBigInt")
+	viewCheckBigInt(ctx, f)
+	ctx.Log("testwasmlib.viewCheckBigInt ok")
 }
 
 type CheckEthAddressAndAgentIDContext struct {

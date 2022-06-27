@@ -524,3 +524,13 @@ export function viewCheckTokenID(ctx: wasmlib.ScViewContext, f: sc.CheckTokenIDC
     ctx.require(wasmtypes.bytesCompare(tokenID.toBytes(), tokenIDBytes) == 0, "bytes mismatch");
     ctx.require(tokenID.toString() == tokenIDString, "string mismatch");
 }
+
+export function viewCheckBigInt(ctx: wasmlib.ScViewContext, f: sc.CheckBigIntContext): void {
+    const bigInt = f.params.scBigInt().value();
+    const bigIntBytes = f.params.bigIntBytes().value();
+    const bigIntString = f.params.bigIntString().value();
+    ctx.require(bigInt.equals(wasmtypes.bigIntFromBytes(wasmtypes.bigIntToBytes(bigInt))), "bytes conversion failed");
+    ctx.require(bigInt.equals(wasmtypes.bigIntFromString(wasmtypes.bigIntToString(bigInt))), "string conversion failed");
+    ctx.require(wasmtypes.bytesCompare(bigInt.toBytes(), bigIntBytes) == 0, "bytes mismatch");
+    ctx.require(bigInt.toString() == bigIntString, "string mismatch");
+}

@@ -524,3 +524,14 @@ func viewCheckTokenID(ctx wasmlib.ScViewContext, f *CheckTokenIDContext) {
 	ctx.Require(string(scTokenID.Bytes()) == string(tokenIDBytes), "bytes mismatch")
 	ctx.Require(scTokenID.String() == tokenIDString, "string mismatch")
 }
+
+func viewCheckBigInt(ctx wasmlib.ScViewContext, f *CheckBigIntContext) {
+	scBigInt := f.Params.ScBigInt().Value()
+	bigIntBytes := f.Params.BigIntBytes().Value()
+	bigIntString := f.Params.BigIntString().Value()
+
+	ctx.Require(scBigInt.Cmp(wasmtypes.BigIntFromString(wasmtypes.BigIntToString(scBigInt))) == 0, "bytes conversion failed")
+	ctx.Require(scBigInt.Cmp(wasmtypes.BigIntFromBytes(wasmtypes.BigIntToBytes(scBigInt))) == 0, "string conversion failed")
+	ctx.Require(string(scBigInt.Bytes()) == string(bigIntBytes), "bytes mismatch")
+	ctx.Require(scBigInt.String() == bigIntString, "string mismatch")
+}

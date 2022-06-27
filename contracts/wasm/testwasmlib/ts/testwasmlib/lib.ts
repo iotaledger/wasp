@@ -55,6 +55,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewBlockRecords,
 		sc.ViewCheckAddress,
 		sc.ViewCheckAgentID,
+		sc.ViewCheckBigInt,
 		sc.ViewCheckEthAddressAndAgentID,
 		sc.ViewCheckHash,
 		sc.ViewCheckNftID,
@@ -114,6 +115,7 @@ const exportMap: wasmlib.ScExportMap = {
 		viewBlockRecordsThunk,
 		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
+		viewCheckBigIntThunk,
 		viewCheckEthAddressAndAgentIDThunk,
 		viewCheckHashThunk,
 		viewCheckNftIDThunk,
@@ -579,6 +581,16 @@ function viewCheckAgentIDThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.scAgentID().exists(), "missing mandatory scAgentID");
 	sc.viewCheckAgentID(ctx, f);
 	ctx.log("testwasmlib.viewCheckAgentID ok");
+}
+
+function viewCheckBigIntThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckBigInt");
+	let f = new sc.CheckBigIntContext();
+	ctx.require(f.params.bigIntBytes().exists(), "missing mandatory bigIntBytes");
+	ctx.require(f.params.bigIntString().exists(), "missing mandatory bigIntString");
+	ctx.require(f.params.scBigInt().exists(), "missing mandatory scBigInt");
+	sc.viewCheckBigInt(ctx, f);
+	ctx.log("testwasmlib.viewCheckBigInt ok");
 }
 
 function viewCheckEthAddressAndAgentIDThunk(ctx: wasmlib.ScViewContext): void {
