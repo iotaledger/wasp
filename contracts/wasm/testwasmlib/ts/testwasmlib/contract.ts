@@ -677,6 +677,17 @@ export class CheckHashContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class CheckIntAndUintCall {
+	func: wasmlib.ScView;
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewCheckIntAndUint);
+	}
+}
+
+export class CheckIntAndUintContext {
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class CheckNftIDCall {
 	func: wasmlib.ScView;
 	params: sc.MutableCheckNftIDParams = new sc.MutableCheckNftIDParams(wasmlib.ScView.nilProxy);
@@ -1080,6 +1091,10 @@ export class ScFuncs {
 		const f = new CheckHashCall(ctx);
 		f.params = new sc.MutableCheckHashParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
+	}
+
+	static checkIntAndUint(ctx: wasmlib.ScViewCallContext): CheckIntAndUintCall {
+		return new CheckIntAndUintCall(ctx);
 	}
 
 	static checkNftID(ctx: wasmlib.ScViewCallContext): CheckNftIDCall {

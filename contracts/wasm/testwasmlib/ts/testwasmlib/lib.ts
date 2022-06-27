@@ -58,6 +58,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewCheckBigInt,
 		sc.ViewCheckEthAddressAndAgentID,
 		sc.ViewCheckHash,
+		sc.ViewCheckIntAndUint,
 		sc.ViewCheckNftID,
 		sc.ViewCheckRequestID,
 		sc.ViewCheckTokenID,
@@ -118,6 +119,7 @@ const exportMap: wasmlib.ScExportMap = {
 		viewCheckBigIntThunk,
 		viewCheckEthAddressAndAgentIDThunk,
 		viewCheckHashThunk,
+		viewCheckIntAndUintThunk,
 		viewCheckNftIDThunk,
 		viewCheckRequestIDThunk,
 		viewCheckTokenIDThunk,
@@ -609,6 +611,13 @@ function viewCheckHashThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.scHash().exists(), "missing mandatory scHash");
 	sc.viewCheckHash(ctx, f);
 	ctx.log("testwasmlib.viewCheckHash ok");
+}
+
+function viewCheckIntAndUintThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckIntAndUint");
+	let f = new sc.CheckIntAndUintContext();
+	sc.viewCheckIntAndUint(ctx, f);
+	ctx.log("testwasmlib.viewCheckIntAndUint ok");
 }
 
 function viewCheckNftIDThunk(ctx: wasmlib.ScViewContext): void {

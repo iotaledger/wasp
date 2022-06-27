@@ -732,3 +732,261 @@ pub fn view_check_big_int(ctx: &ScViewContext, f: &CheckBigIntContext) {
     ctx.require(sc_big_int.to_bytes() == big_int_bytes, "bytes mismatch");
     ctx.require(sc_big_int.to_string() == big_int_string, "string mismatch");
 }
+
+pub fn view_check_int_and_uint(ctx: &ScViewContext, f: &CheckIntAndUintContext) {
+    let mut int8 = std::i8::MAX;
+    ctx.require(
+        int8 == int8_from_bytes(&int8_to_bytes(int8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int8 == int8_from_string(&int8_to_string(int8)),
+        "string conversion failed",
+    );
+    int8 = std::i8::MIN;
+    ctx.require(
+        int8 == int8_from_bytes(&int8_to_bytes(int8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int8 == int8_from_string(&int8_to_string(int8)),
+        "string conversion failed",
+    );
+    int8 = 1;
+    ctx.require(
+        int8 == int8_from_bytes(&int8_to_bytes(int8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int8 == int8_from_string(&int8_to_string(int8)),
+        "string conversion failed",
+    );
+    int8 = 0;
+    ctx.require(
+        int8 == int8_from_bytes(&int8_to_bytes(int8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int8 == int8_from_string(&int8_to_string(int8)),
+        "string conversion failed",
+    );
+    int8 = -1;
+    ctx.require(
+        int8 == int8_from_bytes(&int8_to_bytes(int8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int8 == int8_from_string(&int8_to_string(int8)),
+        "string conversion failed",
+    );
+    let mut uint8 = std::u8::MAX;
+    ctx.require(
+        uint8 == uint8_from_bytes(&uint8_to_bytes(uint8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint8 == uint8_from_string(&uint8_to_string(uint8)),
+        "string conversion failed",
+    );
+    uint8 = std::u8::MIN;
+    ctx.require(
+        uint8 == uint8_from_bytes(&uint8_to_bytes(uint8)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint8 == uint8_from_string(&uint8_to_string(uint8)),
+        "string conversion failed",
+    );
+
+    let mut int16 = std::i16::MAX;
+    ctx.require(
+        int16 == int16_from_bytes(&int16_to_bytes(int16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int16 == int16_from_string(&int16_to_string(int16)),
+        "string conversion failed",
+    );
+    int16 = std::i16::MIN;
+    ctx.require(
+        int16 == int16_from_bytes(&int16_to_bytes(int16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int16 == int16_from_string(&int16_to_string(int16)),
+        "string conversion failed",
+    );
+    int16 = 1;
+    ctx.require(
+        int16 == int16_from_bytes(&int16_to_bytes(int16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int16 == int16_from_string(&int16_to_string(int16)),
+        "string conversion failed",
+    );
+    int16 = 0;
+    ctx.require(
+        int16 == int16_from_bytes(&int16_to_bytes(int16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int16 == int16_from_string(&int16_to_string(int16)),
+        "string conversion failed",
+    );
+    int16 = -1;
+    ctx.require(
+        int16 == int16_from_bytes(&int16_to_bytes(int16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int16 == int16_from_string(&int16_to_string(int16)),
+        "string conversion failed",
+    );
+    let mut uint16 = std::u16::MAX;
+    ctx.require(
+        uint16 == uint16_from_bytes(&uint16_to_bytes(uint16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint16 == uint16_from_string(&uint16_to_string(uint16)),
+        "string conversion failed",
+    );
+    uint16 = std::u16::MIN;
+    ctx.require(
+        uint16 == uint16_from_bytes(&uint16_to_bytes(uint16)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint16 == uint16_from_string(&uint16_to_string(uint16)),
+        "string conversion failed",
+    );
+
+    let mut int32 = std::i32::MAX;
+    ctx.require(
+        int32 == int32_from_bytes(&int32_to_bytes(int32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int32 == int32_from_string(&int32_to_string(int32)),
+        "string conversion failed",
+    );
+    int32 = std::i32::MIN;
+    ctx.require(
+        int32 == int32_from_bytes(&int32_to_bytes(int32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int32 == int32_from_string(&int32_to_string(int32)),
+        "string conversion failed",
+    );
+    int32 = 1;
+    ctx.require(
+        int32 == int32_from_bytes(&int32_to_bytes(int32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int32 == int32_from_string(&int32_to_string(int32)),
+        "string conversion failed",
+    );
+    int32 = 0;
+    ctx.require(
+        int32 == int32_from_bytes(&int32_to_bytes(int32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int32 == int32_from_string(&int32_to_string(int32)),
+        "string conversion failed",
+    );
+    int32 = -1;
+    ctx.require(
+        int32 == int32_from_bytes(&int32_to_bytes(int32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int32 == int32_from_string(&int32_to_string(int32)),
+        "string conversion failed",
+    );
+    let mut uint32 = std::u32::MAX;
+    ctx.require(
+        uint32 == uint32_from_bytes(&uint32_to_bytes(uint32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint32 == uint32_from_string(&uint32_to_string(uint32)),
+        "string conversion failed",
+    );
+    uint32 = std::u32::MIN;
+    ctx.require(
+        uint32 == uint32_from_bytes(&uint32_to_bytes(uint32)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint32 == uint32_from_string(&uint32_to_string(uint32)),
+        "string conversion failed",
+    );
+
+    let mut int64 = std::i64::MAX;
+    ctx.require(
+        int64 == int64_from_bytes(&int64_to_bytes(int64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int64 == int64_from_string(&int64_to_string(int64)),
+        "string conversion failed",
+    );
+    int64 = std::i64::MIN;
+    ctx.require(
+        int64 == int64_from_bytes(&int64_to_bytes(int64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int64 == int64_from_string(&int64_to_string(int64)),
+        "string conversion failed",
+    );
+    int64 = 1;
+    ctx.require(
+        int64 == int64_from_bytes(&int64_to_bytes(int64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int64 == int64_from_string(&int64_to_string(int64)),
+        "string conversion failed",
+    );
+    int64 = 0;
+    ctx.require(
+        int64 == int64_from_bytes(&int64_to_bytes(int64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int64 == int64_from_string(&int64_to_string(int64)),
+        "string conversion failed",
+    );
+    int64 = -1;
+    ctx.require(
+        int64 == int64_from_bytes(&int64_to_bytes(int64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        int64 == int64_from_string(&int64_to_string(int64)),
+        "string conversion failed",
+    );
+    let mut uint64 = std::u64::MAX;
+    ctx.require(
+        uint64 == uint64_from_bytes(&uint64_to_bytes(uint64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint64 == uint64_from_string(&uint64_to_string(uint64)),
+        "string conversion failed",
+    );
+    uint64 = std::u64::MIN;
+    ctx.require(
+        uint64 == uint64_from_bytes(&uint64_to_bytes(uint64)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        uint64 == uint64_from_string(&uint64_to_string(uint64)),
+        "string conversion failed",
+    );
+}

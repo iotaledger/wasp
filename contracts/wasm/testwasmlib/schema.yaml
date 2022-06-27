@@ -395,3 +395,6 @@ views:
       scTokenID: TokenID
       tokenIDBytes: Bytes
       tokenIDString: String
+
+  checkIntAndUint:
+    

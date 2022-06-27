@@ -80,6 +80,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_CHECK_BIG_INT,
     	VIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID,
     	VIEW_CHECK_HASH,
+    	VIEW_CHECK_INT_AND_UINT,
     	VIEW_CHECK_NFT_ID,
     	VIEW_CHECK_REQUEST_ID,
     	VIEW_CHECK_TOKEN_ID,
@@ -140,6 +141,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_check_big_int_thunk,
     	view_check_eth_address_and_agent_id_thunk,
     	view_check_hash_thunk,
+    	view_check_int_and_uint_thunk,
     	view_check_nft_id_thunk,
     	view_check_request_id_thunk,
     	view_check_token_id_thunk,
@@ -1047,6 +1049,19 @@ fn view_check_hash_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.sc_hash().exists(), "missing mandatory scHash");
 	view_check_hash(ctx, &f);
 	ctx.log("testwasmlib.viewCheckHash ok");
+}
+
+pub struct CheckIntAndUintContext {
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_check_int_and_uint_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewCheckIntAndUint");
+	let f = CheckIntAndUintContext {
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	view_check_int_and_uint(ctx, &f);
+	ctx.log("testwasmlib.viewCheckIntAndUint ok");
 }
 
 pub struct CheckNftIDContext {

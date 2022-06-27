@@ -260,6 +260,10 @@ pub struct CheckHashCall {
 	pub params: MutableCheckHashParams,
 }
 
+pub struct CheckIntAndUintCall {
+	pub func: ScView,
+}
+
 pub struct CheckNftIDCall {
 	pub func: ScView,
 	pub params: MutableCheckNftIDParams,
@@ -753,6 +757,12 @@ impl ScFuncs {
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f
+    }
+
+    pub fn check_int_and_uint(_ctx: &dyn ScViewCallContext) -> CheckIntAndUintCall {
+        CheckIntAndUintCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_INT_AND_UINT),
+        }
     }
 
     pub fn check_nft_id(_ctx: &dyn ScViewCallContext) -> CheckNftIDCall {

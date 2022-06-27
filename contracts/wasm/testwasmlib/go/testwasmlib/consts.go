@@ -149,6 +149,7 @@ const (
 	ViewCheckBigInt                    = "checkBigInt"
 	ViewCheckEthAddressAndAgentID      = "checkEthAddressAndAgentID"
 	ViewCheckHash                      = "checkHash"
+	ViewCheckIntAndUint                = "checkIntAndUint"
 	ViewCheckNftID                     = "checkNftID"
 	ViewCheckRequestID                 = "checkRequestID"
 	ViewCheckTokenID                   = "checkTokenID"
@@ -208,6 +209,7 @@ const (
 	HViewCheckBigInt                    = wasmtypes.ScHname(0x3497622b)
 	HViewCheckEthAddressAndAgentID      = wasmtypes.ScHname(0xe01ad77e)
 	HViewCheckHash                      = wasmtypes.ScHname(0x6b391dec)
+	HViewCheckIntAndUint                = wasmtypes.ScHname(0xfe928771)
 	HViewCheckNftID                     = wasmtypes.ScHname(0xcf852738)
 	HViewCheckRequestID                 = wasmtypes.ScHname(0xeb1244dc)
 	HViewCheckTokenID                   = wasmtypes.ScHname(0xeea106dc)

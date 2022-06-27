@@ -534,3 +534,94 @@ export function viewCheckBigInt(ctx: wasmlib.ScViewContext, f: sc.CheckBigIntCon
     ctx.require(wasmtypes.bytesCompare(bigInt.toBytes(), bigIntBytes) == 0, "bytes mismatch");
     ctx.require(bigInt.toString() == bigIntString, "string mismatch");
 }
+
+export function viewCheckIntAndUint(ctx: wasmlib.ScViewContext, f: sc.CheckIntAndUintContext): void {
+    let int8 = i8.MAX_VALUE;
+	ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), "bytes conversion failed");
+	ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), "string conversion failed");
+	int8 = i8.MIN_VALUE;
+	ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), "bytes conversion failed");
+	ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), "string conversion failed");
+	int8 = 1;
+	ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), "bytes conversion failed");
+	ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), "string conversion failed");
+	int8 = 0;
+	ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), "bytes conversion failed");
+	ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), "string conversion failed");
+	int8 = -1;
+	ctx.require(int8 == wasmtypes.int8FromBytes(wasmtypes.int8ToBytes(int8)), "bytes conversion failed");
+	ctx.require(int8 == wasmtypes.int8FromString(wasmtypes.int8ToString(int8)), "string conversion failed");
+	let uint8 = u8.MIN_VALUE;
+	ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), "bytes conversion failed");
+	ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), "string conversion failed");
+	uint8 = u8.MAX_VALUE;
+	ctx.require(uint8 == wasmtypes.uint8FromBytes(wasmtypes.uint8ToBytes(uint8)), "bytes conversion failed");
+	ctx.require(uint8 == wasmtypes.uint8FromString(wasmtypes.uint8ToString(uint8)), "string conversion failed");
+
+    let int16 = i16.MAX_VALUE;
+	ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), "bytes conversion failed");
+	ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), "string conversion failed");
+	int16 = i16.MIN_VALUE;
+	ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), "bytes conversion failed");
+	ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), "string conversion failed");
+	int16 = 1;
+	ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), "bytes conversion failed");
+	ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), "string conversion failed");
+	int16 = 0;
+	ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), "bytes conversion failed");
+	ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), "string conversion failed");
+	int16 = -1;
+	ctx.require(int16 == wasmtypes.int16FromBytes(wasmtypes.int16ToBytes(int16)), "bytes conversion failed");
+	ctx.require(int16 == wasmtypes.int16FromString(wasmtypes.int16ToString(int16)), "string conversion failed");
+	let uint16 = u16.MIN_VALUE;
+	ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), "bytes conversion failed");
+	ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), "string conversion failed");
+	uint16 = u16.MAX_VALUE;
+	ctx.require(uint16 == wasmtypes.uint16FromBytes(wasmtypes.uint16ToBytes(uint16)), "bytes conversion failed");
+	ctx.require(uint16 == wasmtypes.uint16FromString(wasmtypes.uint16ToString(uint16)), "string conversion failed");
+
+	let int32 = i32.MAX_VALUE;
+	ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), "bytes conversion failed");
+	ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), "string conversion failed");
+	int32 = i32.MIN_VALUE;
+	ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), "bytes conversion failed");
+	ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), "string conversion failed");
+	int32 = 1;
+	ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), "bytes conversion failed");
+	ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), "string conversion failed");
+	int32 = 0;
+	ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), "bytes conversion failed");
+	ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), "string conversion failed");
+	int32 = -1;
+	ctx.require(int32 == wasmtypes.int32FromBytes(wasmtypes.int32ToBytes(int32)), "bytes conversion failed");
+	ctx.require(int32 == wasmtypes.int32FromString(wasmtypes.int32ToString(int32)), "string conversion failed");
+	let uint32 = u32.MIN_VALUE;
+	ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), "bytes conversion failed");
+	ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), "string conversion failed");
+	uint32 = u32.MAX_VALUE;
+	ctx.require(uint32 == wasmtypes.uint32FromBytes(wasmtypes.uint32ToBytes(uint32)), "bytes conversion failed");
+	ctx.require(uint32 == wasmtypes.uint32FromString(wasmtypes.uint32ToString(uint32)), "string conversion failed");
+
+    // FIXME uncomment following tests once u64/iu6 behavior in TS has been confirmed
+	// let int64 = i64.MAX_VALUE;
+	// ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), "bytes conversion failed");
+	// ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), "string conversion failed");
+	// int64 = i64.MIN_VALUE;
+	// ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), "bytes conversion failed");
+	// ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), "string conversion failed");
+	// int64 = 1;
+	// ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), "bytes conversion failed");
+	// ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), "string conversion failed");
+	// int64 = 0;
+	// ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), "bytes conversion failed");
+	// ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), "string conversion failed");
+	// int64 = -1;
+	// ctx.require(int64 == wasmtypes.int64FromBytes(wasmtypes.int64ToBytes(int64)), "bytes conversion failed");
+	// ctx.require(int64 == wasmtypes.int64FromString(wasmtypes.int64ToString(int64)), "string conversion failed");
+	// let uint64 = u64.MIN_VALUE;
+	// ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), "bytes conversion failed");
+	// ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), "string conversion failed");
+	// uint64 = u64.MAX_VALUE;
+	// ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), "bytes conversion failed");
+	// ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), "string conversion failed");
+}
