@@ -17,6 +17,7 @@ export const ParamAddressString   = "addressString";
 export const ParamAgentBytes      = "agentBytes";
 export const ParamAgentID         = "agentID";
 export const ParamAgentString     = "agentString";
+export const ParamBigInt          = "bigInt";
 export const ParamBlockIndex      = "blockIndex";
 export const ParamBool            = "bool";
 export const ParamBytes           = "bytes";

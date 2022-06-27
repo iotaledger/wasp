@@ -18,6 +18,13 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
             "mismatch: AgentID",
         );
     }
+    if f.params.big_int().exists() {
+        let big_int_data = big_int_from_string("100000000000000000000");
+        ctx.require(
+            f.params.big_int().value().cmp(&big_int_data) == 0,
+            "mismatch: BigInt",
+        );
+    }
     if f.params.bool().exists() {
         ctx.require(f.params.bool().value(), "mismatch: Bool");
     }

@@ -18,7 +18,10 @@ func funcParamTypes(ctx wasmlib.ScFuncContext, f *ParamTypesContext) {
 	if f.Params.AgentID().Exists() {
 		ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "mismatch: AgentID")
 	}
-	// TODO big.Int
+	if f.Params.BigInt().Exists() {
+		bigIntData := wasmtypes.BigIntFromString("100000000000000000000")
+		ctx.Require(f.Params.BigInt().Value().Cmp(bigIntData) == 0, "mismatch: BigInt")
+	}
 	if f.Params.Bool().Exists() {
 		ctx.Require(f.Params.Bool().Value(), "mismatch: Bool")
 	}

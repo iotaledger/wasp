@@ -326,6 +326,10 @@ func (s ImmutableParamTypesParams) AgentID() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
+func (s ImmutableParamTypesParams) BigInt() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamBigInt))
+}
+
 func (s ImmutableParamTypesParams) Bool() wasmtypes.ScImmutableBool {
 	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamBool))
 }
@@ -421,6 +425,10 @@ func (s MutableParamTypesParams) Address() wasmtypes.ScMutableAddress {
 
 func (s MutableParamTypesParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+func (s MutableParamTypesParams) BigInt() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamBigInt))
 }
 
 func (s MutableParamTypesParams) Bool() wasmtypes.ScMutableBool {

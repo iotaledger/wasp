@@ -276,6 +276,10 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 
+	bigInt(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamBigInt));
+	}
+
 	bool(): wasmtypes.ScImmutableBool {
 		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamBool));
 	}
@@ -368,6 +372,10 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 
 	agentID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+
+	bigInt(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamBigInt));
 	}
 
 	bool(): wasmtypes.ScMutableBool {

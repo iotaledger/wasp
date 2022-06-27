@@ -23,6 +23,7 @@ const (
 	ParamAgentBytes      = "agentBytes"
 	ParamAgentID         = "agentID"
 	ParamAgentString     = "agentString"
+	ParamBigInt          = "bigInt"
 	ParamBlockIndex      = "blockIndex"
 	ParamBool            = "bool"
 	ParamBytes           = "bytes"

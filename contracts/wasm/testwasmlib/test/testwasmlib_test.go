@@ -113,6 +113,7 @@ func testValidParams(t *testing.T) *wasmsolo.SoloContext {
 	pt := testwasmlib.ScFuncs.ParamTypes(ctx)
 	pt.Params.Address().SetValue(ctx.CurrentChainID().Address())
 	pt.Params.AgentID().SetValue(ctx.AccountID())
+	pt.Params.BigInt().SetValue(wasmtypes.BigIntFromString("100000000000000000000"))
 	pt.Params.Bool().SetValue(true)
 	pt.Params.Bytes().SetValue([]byte("these are bytes"))
 	pt.Params.ChainID().SetValue(ctx.CurrentChainID())

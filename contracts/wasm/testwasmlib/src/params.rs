@@ -398,6 +398,10 @@ impl ImmutableParamTypesParams {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
 	}
 
+    pub fn big_int(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_BIG_INT))
+	}
+
     pub fn bool(&self) -> ScImmutableBool {
 		ScImmutableBool::new(self.proxy.root(PARAM_BOOL))
 	}
@@ -499,6 +503,10 @@ impl MutableParamTypesParams {
 
     pub fn agent_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+	}
+
+    pub fn big_int(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_BIG_INT))
 	}
 
     pub fn bool(&self) -> ScMutableBool {

@@ -13,6 +13,10 @@ export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesConte
     if ((f.params.agentID().exists())) {
         ctx.require(f.params.agentID().value().equals(ctx.accountID()), "mismatch: AgentID");
     }
+    if ((f.params.bigInt().exists())) {
+        let bigIntData = wasmtypes.bigIntFromString("100000000000000000000");
+        ctx.require(f.params.bigInt().value().cmp(bigIntData) == 0, "mismatch: BigInt");
+    }
     if ((f.params.bool().exists())) {
         ctx.require(f.params.bool().value(), "mismatch: Bool");
     }

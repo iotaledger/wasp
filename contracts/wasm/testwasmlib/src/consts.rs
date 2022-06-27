@@ -19,6 +19,7 @@ pub const PARAM_ADDRESS_STRING    : &str = "addressString";
 pub const PARAM_AGENT_BYTES       : &str = "agentBytes";
 pub const PARAM_AGENT_ID          : &str = "agentID";
 pub const PARAM_AGENT_STRING      : &str = "agentString";
+pub const PARAM_BIG_INT           : &str = "bigInt";
 pub const PARAM_BLOCK_INDEX       : &str = "blockIndex";
 pub const PARAM_BOOL              : &str = "bool";
 pub const PARAM_BYTES             : &str = "bytes";
