@@ -318,7 +318,7 @@ func TestRotation(t *testing.T) {
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotationFromSingle(t *testing.T) {
-	numRequests := 8
+	numRequests := 16
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	rotation1 := newTestRotationSingleRotation(t, clu, []int{0}, 1)
@@ -335,22 +335,33 @@ func TestRotationFromSingle(t *testing.T) {
 
 	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, e.waitStateControllers(rotation1.Address, 5*time.Second))
+	incCounterResultChan := make(chan error)
 
-	keyPair, _, err := clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-
-	myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
-
-	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
-	require.NoError(t, err)
-
-	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 5*time.Second)
+	go func() {
+		keyPair, _, err := clu.NewKeyPairWithFunds()
+		if err != nil {
+			incCounterResultChan <- fmt.Errorf("Failed to create a key pair: %v", err)
+			return
+		}
+		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
+		for i := 0; i < numRequests; i++ {
+			t.Logf("Posting inccounter request number %v", i)
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+			if err != nil {
+				incCounterResultChan <- fmt.Errorf("Failed to post inccounter request number %v: %v", i, err)
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		incCounterResultChan <- nil
+	}()
 
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 
+	time.Sleep(500 * time.Millisecond)
 	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
@@ -360,6 +371,7 @@ func TestRotationFromSingle(t *testing.T) {
 	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
 
+	time.Sleep(500 * time.Millisecond)
 	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
@@ -368,10 +380,14 @@ func TestRotationFromSingle(t *testing.T) {
 	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
-	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
-	require.NoError(t, err)
+	select {
+	case incCounterResult := <-incCounterResultChan:
+		require.NoError(t, incCounterResult)
+	case <-time.After(10 * time.Second):
+		t.FailNow()
+	}
 
-	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 5*time.Second)
 }
 
 type testRotationSingleRotation struct {

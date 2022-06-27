@@ -45,6 +45,10 @@ func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 	}
 }
 
+func (bh BlockHash) String() string {
+	return hex.EncodeToString(bh[:])
+}
+
 func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
 	if len(data) != l1CommitmentSize {
 		return L1Commitment{}, xerrors.New("L1CommitmentFromBytes: wrong data length")
