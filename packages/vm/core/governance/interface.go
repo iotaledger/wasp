@@ -49,8 +49,8 @@ var (
 	ViewGetChainNodes     = coreutil.ViewFunc("getChainNodes")
 
 	// maintenance
-	FuncSetMaintenanceOn     = coreutil.Func("setMaintenanceOn")
-	FuncSetMaintenanceOff    = coreutil.Func("setMaintenanceOff")
+	FuncStartMaintenance     = coreutil.Func("startMaintenance")
+	FuncStopMaintenance      = coreutil.Func("stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.ViewFunc("getMaintenanceStatus")
 )
 

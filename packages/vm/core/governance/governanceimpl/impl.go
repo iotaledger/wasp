@@ -39,8 +39,8 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.ViewGetChainNodes.WithHandler(getChainNodes),
 
 	// maintenance
-	governance.FuncSetMaintenanceOn.WithHandler(setMaintenanceOn),
-	governance.FuncSetMaintenanceOff.WithHandler(setMaintenanceOff),
+	governance.FuncStartMaintenance.WithHandler(setMaintenanceOn),
+	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
 	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 )
 

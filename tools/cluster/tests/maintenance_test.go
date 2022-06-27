@@ -58,7 +58,7 @@ func TestMaintenance(t *testing.T) {
 
 	// test non-chain owner cannot call init maintenance
 	{
-		req, err := userSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOn.Name)
+		req, err := userSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
 		require.NoError(t, err)
 		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestMaintenance(t *testing.T) {
 
 	// owner can start maintenance mode
 	{
-		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOn.Name)
+		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncStartMaintenance.Name)
 		require.NoError(t, err)
 		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestMaintenance(t *testing.T) {
 
 	// test non-chain owner cannot call stop maintenance
 	{
-		req, err := userSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOff.Name)
+		req, err := userSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err)
 		rec, err := env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestMaintenance(t *testing.T) {
 
 	// owner can stop maintenance mode
 	{
-		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncSetMaintenanceOff.Name)
+		req, err := ownerSCClient.PostOffLedgerRequest(governance.FuncStopMaintenance.Name)
 		require.NoError(t, err)
 		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 10*time.Second)
 		require.NoError(t, err)

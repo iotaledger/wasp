@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -206,4 +209,68 @@ func TestAccessNodes(t *testing.T) {
 	getChainNodesResponse = governance.NewGetChainNodesResponseFromDict(res)
 	require.Empty(t, getChainNodesResponse.AccessNodeCandidates)
 	require.Empty(t, getChainNodesResponse.AccessNodes)
+}
+
+func TestDisallowMaintenanceDeadlock(t *testing.T) {
+	// contracts of the same chain cannot turn on maintenance mode
+
+	claimOwnershipFunc := coreutil.Func("claimOwnership")
+	startMaintenceFunc := coreutil.Func("initMaintenance")
+	stopMaintenceFunc := coreutil.Func("stopMaintenance")
+	ownerContract := coreutil.NewContract("chain owner contract", "N/A")
+	ownerContractProcessor := ownerContract.Processor(nil,
+		claimOwnershipFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)
+		}),
+		startMaintenceFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+			return ctx.Call(governance.Contract.Hname(), governance.FuncStartMaintenance.Hname(), nil, nil)
+		}),
+		stopMaintenceFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+			return ctx.Call(governance.Contract.Hname(), governance.FuncStopMaintenance.Hname(), nil, nil)
+		}),
+	)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+		WithNativeContract(ownerContractProcessor)
+	ch := env.NewChain(nil, "chain")
+
+	ownerContractAgentID := iscp.NewContractAgentID(ch.ChainID, ownerContract.Hname())
+	userWallet, _ := env.NewKeyPairWithFunds()
+
+	err := ch.DeployContract(nil, ownerContract.Name, ownerContract.ProgramHash)
+	require.NoError(t, err)
+
+	// from the initial owner - set maintenance
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(governance.Contract.Name, governance.FuncStartMaintenance.Name).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// set the "owner contract" as the new chain owner
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
+			governance.ParamChainOwner, codec.Encode(ownerContractAgentID)).WithMaxAffordableGasBudget(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(ownerContract.Name, claimOwnershipFunc.Name).WithMaxAffordableGasBudget(),
+		userWallet,
+	)
+	require.NoError(t, err)
+
+	// the "owner contact" is able to stop maintenance mode
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(ownerContract.Name, stopMaintenceFunc.Name).WithMaxAffordableGasBudget(),
+		userWallet,
+	)
+	require.NoError(t, err)
+
+	// the "owner contract" is unable to start a new maintenance
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(ownerContract.Name, startMaintenceFunc.Name).WithMaxAffordableGasBudget(),
+		userWallet,
+	)
+	require.Error(t, err)
 }
