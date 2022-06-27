@@ -92,7 +92,7 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname iscp.Hnam
 	}
 	ret, err := chainutil.CallView(theChain, contractHname, functionHname, params)
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
+		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
 
 	return c.JSON(http.StatusOK, ret)
@@ -138,7 +138,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		if errors.Is(err, coreutil.ErrorStateInvalidated) {
 			return httperrors.Conflict(reason)
 		}
-		return httperrors.BadRequest(reason)
+		return httperrors.ServerError(reason)
 	}
 
 	return c.JSON(http.StatusOK, ret)

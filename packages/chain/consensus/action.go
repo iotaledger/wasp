@@ -17,12 +17,16 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.uber.org/zap"
 )
@@ -229,6 +233,15 @@ func (c *consensus) sortBatch(reqs []iscp.Request) {
 	}
 }
 
+func getMaintenanceStatus(store kv.KVStore) bool {
+	govstate := subrealm.New(store, kv.Key(governance.Contract.Hname().Bytes()))
+	r := govstate.MustGet(governance.VarMaintenanceStatus)
+	if r == nil {
+		return false // chain is being initialized, governance has not been initialized yet
+	}
+	return codec.MustDecodeBool(r)
+}
+
 func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 	stateBaseline := c.chain.GlobalStateSync().GetSolidIndexBaseline()
 	if !stateBaseline.IsValid() {
@@ -236,17 +249,18 @@ func (c *consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		return nil
 	}
 	task := &vm.VMTask{
-		ACSSessionID:       c.acsSessionID,
-		Processors:         c.chain.Processors(),
-		AnchorOutput:       c.stateOutput.GetAliasOutput(),
-		AnchorOutputID:     c.stateOutput.OutputID(),
-		SolidStateBaseline: stateBaseline,
-		Entropy:            c.consensusEntropy,
-		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
-		Requests:           reqs,
-		TimeAssumption:     c.consensusBatch.TimeData,
-		VirtualStateAccess: c.currentState.Copy(),
-		Log:                c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		ACSSessionID:           c.acsSessionID,
+		Processors:             c.chain.Processors(),
+		AnchorOutput:           c.stateOutput.GetAliasOutput(),
+		AnchorOutputID:         c.stateOutput.OutputID(),
+		SolidStateBaseline:     stateBaseline,
+		Entropy:                c.consensusEntropy,
+		ValidatorFeeTarget:     c.consensusBatch.FeeDestination,
+		Requests:               reqs,
+		TimeAssumption:         c.consensusBatch.TimeData,
+		VirtualStateAccess:     c.currentState.Copy(),
+		Log:                    c.log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		MaintenanceModeEnabled: getMaintenanceStatus(c.currentState.KVStore()),
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task

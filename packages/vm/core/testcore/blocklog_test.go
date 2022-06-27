@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -190,4 +191,13 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	ids := ch.GetRequestIDsForBlock(3)
 	require.EqualValues(t, 1, len(ids))
 	require.EqualValues(t, reqs[0].ID(), ids[0])
+}
+
+func TestViewGetRequestReceipt(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+	// try to get a receipt for a request that does not exist
+	receipt, ok := ch.GetRequestReceipt(iscp.RequestID{})
+	require.Nil(t, receipt)
+	require.False(t, ok)
 }

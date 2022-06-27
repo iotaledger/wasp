@@ -487,7 +487,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	)
+	).WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -496,7 +496,7 @@ func (ch *Chain) AddAllowedStateController(addr iotago.Address, keyPair *cryptol
 func (ch *Chain) RemoveAllowedStateController(addr iotago.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
-	)
+	).WithMaxAffordableGasBudget()
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -524,7 +524,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
-	).AddIotas(1)
+	).WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if result.Error == nil {
 		ch.StateControllerAddress = newStateAddr
