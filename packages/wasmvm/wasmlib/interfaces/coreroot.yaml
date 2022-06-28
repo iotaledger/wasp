@@ -6,7 +6,7 @@ state: {}
 funcs: 
   deployContract:
     params:
-      programHash=ph: Hash #TODO variable init params for deployed contract
+      programHash=ph: Hash # TODO variable init params for deployed contract
       description=ds: String? # default 'N/A'
       name=nm: String
   grantDeployPermission:

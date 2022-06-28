@@ -18,7 +18,7 @@ export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-	//TODO variable init params for deployed contract
+	// TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
@@ -34,7 +34,7 @@ export class MutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-	//TODO variable init params for deployed contract
+	// TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
