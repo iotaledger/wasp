@@ -10,23 +10,23 @@ package coreroot
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DeployContractCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableDeployContractParams
+	Func    *wasmlib.ScFunc
+	Params  MutableDeployContractParams
 }
 
 type GrantDeployPermissionCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableGrantDeployPermissionParams
+	Func    *wasmlib.ScFunc
+	Params  MutableGrantDeployPermissionParams
 }
 
 type RequireDeployPermissionsCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRequireDeployPermissionsParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRequireDeployPermissionsParams
 }
 
 type RevokeDeployPermissionCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableRevokeDeployPermissionParams
+	Func    *wasmlib.ScFunc
+	Params  MutableRevokeDeployPermissionParams
 }
 
 type FindContractCall struct {
@@ -83,12 +83,12 @@ func (sc Funcs) GetContractRecords(ctx wasmlib.ScViewCallContext) *GetContractRe
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
-		FuncDeployContract,
-		FuncGrantDeployPermission,
-		FuncRequireDeployPermissions,
-		FuncRevokeDeployPermission,
-		ViewFindContract,
-		ViewGetContractRecords,
+    	FuncDeployContract,
+    	FuncGrantDeployPermission,
+    	FuncRequireDeployPermissions,
+    	FuncRevokeDeployPermission,
+    	ViewFindContract,
+    	ViewGetContractRecords,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		wasmlib.FuncError,

@@ -58,11 +58,15 @@ var exportMap = wasmlib.ScExportMap{
 		ViewCheckAddress,
 		ViewCheckAgentID,
 		ViewCheckBigInt,
+		ViewCheckBool,
+		ViewCheckBytes,
 		ViewCheckEthAddressAndAgentID,
 		ViewCheckHash,
+		ViewCheckHname,
 		ViewCheckIntAndUint,
 		ViewCheckNftID,
 		ViewCheckRequestID,
+		ViewCheckString,
 		ViewCheckTokenID,
 		ViewGetRandom,
 		ViewIotaBalance,
@@ -119,11 +123,15 @@ var exportMap = wasmlib.ScExportMap{
 		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
 		viewCheckBigIntThunk,
+		viewCheckBoolThunk,
+		viewCheckBytesThunk,
 		viewCheckEthAddressAndAgentIDThunk,
 		viewCheckHashThunk,
+		viewCheckHnameThunk,
 		viewCheckIntAndUintThunk,
 		viewCheckNftIDThunk,
 		viewCheckRequestIDThunk,
+		viewCheckStringThunk,
 		viewCheckTokenIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
@@ -1194,6 +1202,41 @@ func viewCheckBigIntThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("testwasmlib.viewCheckBigInt ok")
 }
 
+type CheckBoolContext struct {
+	State   ImmutableTestWasmLibState
+}
+
+func viewCheckBoolThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckBool")
+	f := &CheckBoolContext{
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	viewCheckBool(ctx, f)
+	ctx.Log("testwasmlib.viewCheckBool ok")
+}
+
+type CheckBytesContext struct {
+	Params  ImmutableCheckBytesParams
+	State   ImmutableTestWasmLibState
+}
+
+func viewCheckBytesThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckBytes")
+	f := &CheckBytesContext{
+		Params: ImmutableCheckBytesParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Bytes().Exists(), "missing mandatory bytes")
+	viewCheckBytes(ctx, f)
+	ctx.Log("testwasmlib.viewCheckBytes ok")
+}
+
 type CheckEthAddressAndAgentIDContext struct {
 	Params  ImmutableCheckEthAddressAndAgentIDParams
 	State   ImmutableTestWasmLibState
@@ -1234,6 +1277,28 @@ func viewCheckHashThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.ScHash().Exists(), "missing mandatory scHash")
 	viewCheckHash(ctx, f)
 	ctx.Log("testwasmlib.viewCheckHash ok")
+}
+
+type CheckHnameContext struct {
+	Params  ImmutableCheckHnameParams
+	State   ImmutableTestWasmLibState
+}
+
+func viewCheckHnameThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckHname")
+	f := &CheckHnameContext{
+		Params: ImmutableCheckHnameParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.HnameBytes().Exists(), "missing mandatory hnameBytes")
+	ctx.Require(f.Params.HnameString().Exists(), "missing mandatory hnameString")
+	ctx.Require(f.Params.ScHname().Exists(), "missing mandatory scHname")
+	viewCheckHname(ctx, f)
+	ctx.Log("testwasmlib.viewCheckHname ok")
 }
 
 type CheckIntAndUintContext struct {
@@ -1293,6 +1358,26 @@ func viewCheckRequestIDThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.ScRequestID().Exists(), "missing mandatory scRequestID")
 	viewCheckRequestID(ctx, f)
 	ctx.Log("testwasmlib.viewCheckRequestID ok")
+}
+
+type CheckStringContext struct {
+	Params  ImmutableCheckStringParams
+	State   ImmutableTestWasmLibState
+}
+
+func viewCheckStringThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewCheckString")
+	f := &CheckStringContext{
+		Params: ImmutableCheckStringParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.String().Exists(), "missing mandatory string")
+	viewCheckString(ctx, f)
+	ctx.Log("testwasmlib.viewCheckString ok")
 }
 
 type CheckTokenIDContext struct {

@@ -626,3 +626,34 @@ func viewCheckIntAndUint(ctx wasmlib.ScViewContext, f *CheckIntAndUintContext) {
 	ctx.Require(goUint64 == wasmtypes.Uint64FromBytes(wasmtypes.Uint64ToBytes(goUint64)), "bytes conversion failed")
 	ctx.Require(goUint64 == wasmtypes.Uint64FromString(wasmtypes.Uint64ToString(goUint64)), "string conversion failed")
 }
+
+func viewCheckBool(ctx wasmlib.ScViewContext, f *CheckBoolContext) {
+	boolData := true
+	ctx.Require(boolData == wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(boolData)), "bytes conversion failed")
+	ctx.Require(boolData == wasmtypes.BoolFromString(wasmtypes.BoolToString(boolData)), "string conversion failed")
+	boolData = false
+	ctx.Require(boolData == wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(boolData)), "bytes conversion failed")
+	ctx.Require(boolData == wasmtypes.BoolFromString(wasmtypes.BoolToString(boolData)), "string conversion failed")
+}
+
+func viewCheckBytes(ctx wasmlib.ScViewContext, f *CheckBytesContext) {
+	byteData := f.Params.Bytes().Value()
+	ctx.Require(bytes.Equal(byteData, wasmtypes.BytesFromBytes(wasmtypes.BytesToBytes(byteData))), "bytes conversion failed")
+	ctx.Require(bytes.Equal(byteData, wasmtypes.BytesFromString(wasmtypes.BytesToString(byteData))), "string conversion failed")
+}
+
+func viewCheckHname(ctx wasmlib.ScViewContext, f *CheckHnameContext) {
+	scHname := f.Params.ScHname().Value()
+	hnameBytes := f.Params.HnameBytes().Value()
+	hnameString := f.Params.HnameString().Value()
+	ctx.Require(scHname == wasmtypes.HnameFromBytes(wasmtypes.HnameToBytes(scHname)), "bytes conversion failed")
+	ctx.Require(scHname == wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)), "string conversion failed")
+	ctx.Require(bytes.Equal(hnameBytes, wasmtypes.HnameToBytes(scHname)), "bytes conversion failed")
+	ctx.Require(hnameString == wasmtypes.HnameToString(scHname), "string conversion failed")
+}
+
+func viewCheckString(ctx wasmlib.ScViewContext, f *CheckStringContext) {
+	stringData := f.Params.String().Value()
+	ctx.Require(stringData == wasmtypes.StringFromBytes(wasmtypes.StringToBytes(stringData)), "bytes conversion failed")
+	ctx.Require(stringData == wasmtypes.StringToString(wasmtypes.StringFromString(stringData)), "string conversion failed")
+}

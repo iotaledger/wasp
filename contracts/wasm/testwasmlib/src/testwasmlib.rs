@@ -990,3 +990,70 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, f: &CheckIntAndUintContext) 
         "string conversion failed",
     );
 }
+
+pub fn view_check_bool(ctx: &ScViewContext, f: &CheckBoolContext) {
+    let mut bool_data = true;
+    ctx.require(
+        bool_data == bool_from_bytes(&bool_to_bytes(bool_data)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        bool_data == bool_from_string(&bool_to_string(bool_data)),
+        "string conversion failed",
+    );
+    bool_data = false;
+    ctx.require(
+        bool_data == bool_from_bytes(&bool_to_bytes(bool_data)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        bool_data == bool_from_string(&bool_to_string(bool_data)),
+        "string conversion failed",
+    );
+}
+
+pub fn view_check_bytes(ctx: &ScViewContext, f: &CheckBytesContext) {
+    let byte_data: Vec<u8> = f.params.bytes().value();
+    ctx.require(
+        byte_data == bytes_from_bytes(&bytes_to_bytes(&byte_data)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        byte_data == bytes_from_string(&bytes_to_string(&byte_data)),
+        "string conversion failed",
+    );
+}
+
+pub fn view_check_hname(ctx: &ScViewContext, f: &CheckHnameContext) {
+    let sc_hname: ScHname = f.params.sc_hname().value();
+    let hname_bytes: Vec<u8> = f.params.hname_bytes().value();
+    let hname_string: String = f.params.hname_string().value();
+    ctx.require(
+        sc_hname == hname_from_bytes(&hname_to_bytes(sc_hname)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        sc_hname == hname_from_string(&hname_to_string(sc_hname)),
+        "string conversion failed",
+    );
+    ctx.require(
+        hname_bytes == hname_to_bytes(sc_hname),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        hname_string == hname_to_string(sc_hname),
+        "string conversion failed",
+    );
+}
+
+pub fn view_check_string(ctx: &ScViewContext, f: &CheckStringContext) {
+    let string_data: String = f.params.string().value();
+    ctx.require(
+        string_data == string_from_bytes(&string_to_bytes(&string_data)),
+        "bytes conversion failed",
+    );
+    ctx.require(
+        string_data == string_to_string(&string_from_string(&string_data)),
+        "string conversion failed",
+    );
+}

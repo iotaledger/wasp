@@ -250,6 +250,15 @@ pub struct CheckBigIntCall {
 	pub params: MutableCheckBigIntParams,
 }
 
+pub struct CheckBoolCall {
+	pub func: ScView,
+}
+
+pub struct CheckBytesCall {
+	pub func: ScView,
+	pub params: MutableCheckBytesParams,
+}
+
 pub struct CheckEthAddressAndAgentIDCall {
 	pub func: ScView,
 	pub params: MutableCheckEthAddressAndAgentIDParams,
@@ -258,6 +267,11 @@ pub struct CheckEthAddressAndAgentIDCall {
 pub struct CheckHashCall {
 	pub func: ScView,
 	pub params: MutableCheckHashParams,
+}
+
+pub struct CheckHnameCall {
+	pub func: ScView,
+	pub params: MutableCheckHnameParams,
 }
 
 pub struct CheckIntAndUintCall {
@@ -272,6 +286,11 @@ pub struct CheckNftIDCall {
 pub struct CheckRequestIDCall {
 	pub func: ScView,
 	pub params: MutableCheckRequestIDParams,
+}
+
+pub struct CheckStringCall {
+	pub func: ScView,
+	pub params: MutableCheckStringParams,
 }
 
 pub struct CheckTokenIDCall {
@@ -741,6 +760,21 @@ impl ScFuncs {
         f
     }
 
+    pub fn check_bool(_ctx: &dyn ScViewCallContext) -> CheckBoolCall {
+        CheckBoolCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_BOOL),
+        }
+    }
+
+    pub fn check_bytes(_ctx: &dyn ScViewCallContext) -> CheckBytesCall {
+        let mut f = CheckBytesCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_BYTES),
+            params: MutableCheckBytesParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     pub fn check_eth_address_and_agent_id(_ctx: &dyn ScViewCallContext) -> CheckEthAddressAndAgentIDCall {
         let mut f = CheckEthAddressAndAgentIDCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_ETH_ADDRESS_AND_AGENT_ID),
@@ -754,6 +788,15 @@ impl ScFuncs {
         let mut f = CheckHashCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_HASH),
             params: MutableCheckHashParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_hname(_ctx: &dyn ScViewCallContext) -> CheckHnameCall {
+        let mut f = CheckHnameCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_HNAME),
+            params: MutableCheckHnameParams { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f
@@ -778,6 +821,15 @@ impl ScFuncs {
         let mut f = CheckRequestIDCall {
             func: ScView::new(HSC_NAME, HVIEW_CHECK_REQUEST_ID),
             params: MutableCheckRequestIDParams { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn check_string(_ctx: &dyn ScViewCallContext) -> CheckStringCall {
+        let mut f = CheckStringCall {
+            func: ScView::new(HSC_NAME, HVIEW_CHECK_STRING),
+            params: MutableCheckStringParams { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         f

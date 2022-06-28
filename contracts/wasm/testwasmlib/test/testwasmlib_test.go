@@ -6,6 +6,7 @@ package test
 import (
 	"fmt"
 	"math/big"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -397,16 +398,19 @@ func TestWasmTypes(t *testing.T) {
 	bigInt := big.NewInt(123213)
 	checkBigInt(t, ctx, scBigInt, bigInt)
 
-	goBool := true
-	require.Equal(t, goBool, wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(goBool)))
-	require.Equal(t, goBool, wasmtypes.BoolFromString(wasmtypes.BoolToString(goBool)))
-	goBool = false
-	require.Equal(t, goBool, wasmtypes.BoolFromBytes(wasmtypes.BoolToBytes(goBool)))
-	require.Equal(t, goBool, wasmtypes.BoolFromString(wasmtypes.BoolToString(goBool)))
+	checkerBool := testwasmlib.ScFuncs.CheckBool(ctx)
+	checkerBool.Func.Call()
+	require.NoError(t, ctx.Err)
 
-	goBytes := []byte{0xc3, 0x77, 0xf3, 0xf1}
-	require.Equal(t, goBytes, wasmtypes.BytesFromBytes(wasmtypes.BytesToBytes(goBytes)))
-	require.Equal(t, goBytes, wasmtypes.BytesFromString(wasmtypes.BytesToString(goBytes)))
+	checkerBytes := testwasmlib.ScFuncs.CheckBytes(ctx)
+	length := 100
+	byteData := make([]byte, length)
+	for i := 0; i < length; i++ {
+		byteData[i] = byte(rand.Intn(256))
+	}
+	checkerBytes.Params.Bytes().SetValue(byteData)
+	checkerBytes.Func.Call()
+	require.NoError(t, ctx.Err)
 
 	hashString := "7c106d42ca17fdbfb03f6b45b91effcef2cff61215a3552dbc1ab8fd46817719"
 	hash, err := hashing.HashValueFromHex(hashString)
@@ -415,14 +419,18 @@ func TestWasmTypes(t *testing.T) {
 	checkHash(t, ctx, scHash, hash)
 
 	scHname := testwasmlib.HScName
-	require.Equal(t, scHname, wasmtypes.HnameFromString(wasmtypes.HnameToString(scHname)))
-	require.Equal(t, scHname.String(), wasmtypes.HnameToString(scHname))
-	require.Equal(t, scHname, wasmtypes.HnameFromBytes(wasmtypes.HnameToBytes(scHname)))
-	require.Equal(t, scHname.Bytes(), wasmtypes.HnameToBytes(scHname))
+	checkerHname := testwasmlib.ScFuncs.CheckHname(ctx)
+	checkerHname.Params.ScHname().SetValue(scHname)
+	checkerHname.Params.HnameBytes().SetValue(scHname.Bytes())
+	checkerHname.Params.HnameString().SetValue(scHname.String())
+	checkerHname.Func.Call()
+	require.NoError(t, ctx.Err)
 
-	goString := "this is a go string example"
-	require.Equal(t, goString, wasmtypes.StringToString(wasmtypes.StringFromString(goString)))
-	require.Equal(t, []byte(goString), wasmtypes.StringToBytes(wasmtypes.StringFromBytes([]byte(goString))))
+	checkerString := testwasmlib.ScFuncs.CheckString(ctx)
+	stringData := "this is a go string example"
+	checkerString.Params.String().SetValue(stringData)
+	checkerString.Func.Call()
+	require.NoError(t, ctx.Err)
 
 	tokenID, err := getTokenID(ctx)
 	require.NoError(t, err)

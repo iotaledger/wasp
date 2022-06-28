@@ -960,6 +960,18 @@ export class MutableCheckBigIntParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableCheckBytesParams extends wasmtypes.ScProxy {
+	bytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamBytes));
+	}
+}
+
+export class MutableCheckBytesParams extends wasmtypes.ScProxy {
+	bytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamBytes));
+	}
+}
+
 export class ImmutableCheckEthAddressAndAgentIDParams extends wasmtypes.ScProxy {
 	ethAddress(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamEthAddress));
@@ -997,6 +1009,34 @@ export class MutableCheckHashParams extends wasmtypes.ScProxy {
 
 	scHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamScHash));
+	}
+}
+
+export class ImmutableCheckHnameParams extends wasmtypes.ScProxy {
+	hnameBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamHnameBytes));
+	}
+
+	hnameString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamHnameString));
+	}
+
+	scHname(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamScHname));
+	}
+}
+
+export class MutableCheckHnameParams extends wasmtypes.ScProxy {
+	hnameBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamHnameBytes));
+	}
+
+	hnameString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamHnameString));
+	}
+
+	scHname(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamScHname));
 	}
 }
 
@@ -1053,6 +1093,18 @@ export class MutableCheckRequestIDParams extends wasmtypes.ScProxy {
 
 	scRequestID(): wasmtypes.ScMutableRequestID {
 		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamScRequestID));
+	}
+}
+
+export class ImmutableCheckStringParams extends wasmtypes.ScProxy {
+	string(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamString));
+	}
+}
+
+export class MutableCheckStringParams extends wasmtypes.ScProxy {
+	string(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamString));
 	}
 }
 

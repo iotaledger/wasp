@@ -625,3 +625,34 @@ export function viewCheckIntAndUint(ctx: wasmlib.ScViewContext, f: sc.CheckIntAn
 	// ctx.require(uint64 == wasmtypes.uint64FromBytes(wasmtypes.uint64ToBytes(uint64)), "bytes conversion failed");
 	// ctx.require(uint64 == wasmtypes.uint64FromString(wasmtypes.uint64ToString(uint64)), "string conversion failed");
 }
+
+export function viewCheckBool(ctx: wasmlib.ScViewContext, f: sc.CheckBoolContext): void {
+    let boolData = true;
+	ctx.require(boolData == wasmtypes.boolFromBytes(wasmtypes.boolToBytes(boolData)), "bytes conversion failed");
+	ctx.require(boolData == wasmtypes.boolFromString(wasmtypes.boolToString(boolData)), "string conversion failed");
+	boolData = false;
+	ctx.require(boolData == wasmtypes.boolFromBytes(wasmtypes.boolToBytes(boolData)), "bytes conversion failed");
+	ctx.require(boolData == wasmtypes.boolFromString(wasmtypes.boolToString(boolData)), "string conversion failed");
+}
+
+export function viewCheckBytes(ctx: wasmlib.ScViewContext, f: sc.CheckBytesContext): void {
+    let byteData = f.params.bytes().value();
+	ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromBytes(wasmtypes.bytesToBytes(byteData))) == 0, "bytes conversion failed");
+	ctx.require(wasmtypes.bytesCompare(byteData, wasmtypes.bytesFromString(wasmtypes.bytesToString(byteData))) == 0, "string conversion failed");
+}
+
+export function viewCheckHname(ctx: wasmlib.ScViewContext, f: sc.CheckHnameContext): void {
+    let scHname = f.params.scHname().value();
+	let hnameBytes = f.params.hnameBytes().value();
+	let hnameString = f.params.hnameString().value();
+	ctx.require(scHname.equals(wasmtypes.hnameFromBytes(wasmtypes.hnameToBytes(scHname))), "bytes conversion failed");
+	ctx.require(scHname.equals(wasmtypes.hnameFromString(wasmtypes.hnameToString(scHname))), "string conversion failed");
+	ctx.require(wasmtypes.bytesCompare(hnameBytes, wasmtypes.hnameToBytes(scHname)) == 0, "not equal to input bytes");
+	ctx.require(hnameString == wasmtypes.hnameToString(scHname), "not equal to input string");
+}
+
+export function viewCheckString(ctx: wasmlib.ScViewContext, f: sc.CheckStringContext): void {
+    let stringData = f.params.string().value();
+	ctx.require(stringData == wasmtypes.stringFromBytes(wasmtypes.stringToBytes(stringData)), "bytes conversion failed");
+	ctx.require(stringData == wasmtypes.stringToString(wasmtypes.stringFromString(stringData)), "string conversion failed");
+}

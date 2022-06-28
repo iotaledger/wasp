@@ -397,4 +397,15 @@ views:
       tokenIDString: String
 
   checkIntAndUint:
-    
+  checkBool:
+  checkBytes:
+    params:
+      bytes: Bytes
+  checkHname:
+    params:
+      scHname: Hname
+      hnameBytes: Bytes
+      hnameString: String
+  checkString:
+    params:
+      string: String

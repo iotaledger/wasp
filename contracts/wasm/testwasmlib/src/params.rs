@@ -1342,6 +1342,28 @@ impl MutableCheckBigIntParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableCheckBytesParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckBytesParams {
+    pub fn bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_BYTES))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckBytesParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckBytesParams {
+    pub fn bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_BYTES))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableCheckEthAddressAndAgentIDParams {
 	pub(crate) proxy: Proxy,
 }
@@ -1398,6 +1420,44 @@ impl MutableCheckHashParams {
 
     pub fn sc_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_SC_HASH))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckHnameParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckHnameParams {
+    pub fn hname_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_HNAME_BYTES))
+	}
+
+    pub fn hname_string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_HNAME_STRING))
+	}
+
+    pub fn sc_hname(&self) -> ScImmutableHname {
+		ScImmutableHname::new(self.proxy.root(PARAM_SC_HNAME))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckHnameParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckHnameParams {
+    pub fn hname_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_HNAME_BYTES))
+	}
+
+    pub fn hname_string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_HNAME_STRING))
+	}
+
+    pub fn sc_hname(&self) -> ScMutableHname {
+		ScMutableHname::new(self.proxy.root(PARAM_SC_HNAME))
 	}
 }
 
@@ -1474,6 +1534,28 @@ impl MutableCheckRequestIDParams {
 
     pub fn sc_request_id(&self) -> ScMutableRequestID {
 		ScMutableRequestID::new(self.proxy.root(PARAM_SC_REQUEST_ID))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableCheckStringParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableCheckStringParams {
+    pub fn string(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_STRING))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableCheckStringParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableCheckStringParams {
+    pub fn string(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_STRING))
 	}
 }
 

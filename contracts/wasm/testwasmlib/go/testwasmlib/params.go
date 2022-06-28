@@ -1112,6 +1112,22 @@ func (s MutableCheckBigIntParams) ScBigInt() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamScBigInt))
 }
 
+type ImmutableCheckBytesParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckBytesParams) Bytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamBytes))
+}
+
+type MutableCheckBytesParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckBytesParams) Bytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamBytes))
+}
+
 type ImmutableCheckEthAddressAndAgentIDParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -1158,6 +1174,38 @@ func (s MutableCheckHashParams) HashString() wasmtypes.ScMutableString {
 
 func (s MutableCheckHashParams) ScHash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamScHash))
+}
+
+type ImmutableCheckHnameParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckHnameParams) HnameBytes() wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamHnameBytes))
+}
+
+func (s ImmutableCheckHnameParams) HnameString() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamHnameString))
+}
+
+func (s ImmutableCheckHnameParams) ScHname() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamScHname))
+}
+
+type MutableCheckHnameParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckHnameParams) HnameBytes() wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamHnameBytes))
+}
+
+func (s MutableCheckHnameParams) HnameString() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamHnameString))
+}
+
+func (s MutableCheckHnameParams) ScHname() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamScHname))
 }
 
 type ImmutableCheckNftIDParams struct {
@@ -1222,6 +1270,22 @@ func (s MutableCheckRequestIDParams) RequestIDString() wasmtypes.ScMutableString
 
 func (s MutableCheckRequestIDParams) ScRequestID() wasmtypes.ScMutableRequestID {
 	return wasmtypes.NewScMutableRequestID(s.proxy.Root(ParamScRequestID))
+}
+
+type ImmutableCheckStringParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableCheckStringParams) String() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamString))
+}
+
+type MutableCheckStringParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableCheckStringParams) String() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamString))
 }
 
 type ImmutableCheckTokenIDParams struct {
