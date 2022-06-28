@@ -297,7 +297,7 @@ func TestRotation(t *testing.T) {
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
@@ -307,7 +307,7 @@ func TestRotation(t *testing.T) {
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
 	require.NoError(t, e.waitStateControllers(rotation2.Address, 15*time.Second))
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
 	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)

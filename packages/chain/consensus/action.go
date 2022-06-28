@@ -718,17 +718,26 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		return false
 	}
 
-	c.stateOutput = msg.StateOutput
+	// If c.stateOutput.GetStateIndex() == msg.StateOutput.GetStateIndex() and the new state output is not a governance update, then either,
+	// a) c.stateOutput is the same as msg.StateOutput and there is no need to reasign c.stateOutput or b) msg.StateOutput is a regular state update
+	// output and c.stateOutput is a governance update output with the same index; in such case governance update is the last and should be taken
+	// into account. Regular state output is overwriden by governance uptade output and should be ignored.
+	// TODO: it is assumed, that at most one governance update may occur in between regural state updates. The situation of several consecutive
+	// governance updates must be yet to be discussed, designed and implemented. The main problem is that there is no way in knowing the exact order
+	// of governance updates, which have the same block index.
+	if (c.stateOutput == nil) || (c.stateOutput.GetStateIndex() < msg.StateOutput.GetStateIndex()) || msg.IsGovernance {
+		c.stateOutput = msg.StateOutput
+	} else {
+		c.log.Debugf("consensus::setNewState: ignoring the received state output %s in favor of the current one %s", iscp.OID(msg.StateOutput.ID()), iscp.OID(c.stateOutput.ID()))
+	}
 	c.stateTimestamp = msg.StateTimestamp
-	oid := msg.StateOutput.OutputID()
+	oid := c.stateOutput.OutputID()
+	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	if msg.IsGovernance && !sameIndex {
 		c.currentState = nil
 		c.log.Debugf("SET NEW STATE #%d (rotate) and pausing consensus to wait for adequate state, output: %s",
 			c.stateOutput.GetStateIndex(), iscp.OID(c.stateOutput.ID()))
 	} else {
-		if !msg.IsGovernance {
-			c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
-		}
 		c.currentState = msg.State
 		r := ""
 		if msg.IsGovernance {
