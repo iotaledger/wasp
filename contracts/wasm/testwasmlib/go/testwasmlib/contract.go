@@ -10,112 +10,112 @@ package testwasmlib
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type AddressMapOfAddressArrayAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableAddressMapOfAddressArrayAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableAddressMapOfAddressArrayAppendParams
 }
 
 type AddressMapOfAddressArrayClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableAddressMapOfAddressArrayClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableAddressMapOfAddressArrayClearParams
 }
 
 type AddressMapOfAddressArraySetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableAddressMapOfAddressArraySetParams
+	Func   *wasmlib.ScFunc
+	Params MutableAddressMapOfAddressArraySetParams
 }
 
 type AddressMapOfAddressMapClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableAddressMapOfAddressMapClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableAddressMapOfAddressMapClearParams
 }
 
 type AddressMapOfAddressMapSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableAddressMapOfAddressMapSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableAddressMapOfAddressMapSetParams
 }
 
 type ArrayOfAddressArrayAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfAddressArrayAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfAddressArrayAppendParams
 }
 
 type ArrayOfAddressArrayClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfAddressArraySetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfAddressArraySetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfAddressArraySetParams
 }
 
 type ArrayOfAddressMapClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfAddressMapSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfAddressMapSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfAddressMapSetParams
 }
 
 type ArrayOfStringArrayAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfStringArrayAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfStringArrayAppendParams
 }
 
 type ArrayOfStringArrayClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfStringArraySetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfStringArraySetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfStringArraySetParams
 }
 
 type ArrayOfStringMapClearCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type ArrayOfStringMapSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableArrayOfStringMapSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableArrayOfStringMapSetParams
 }
 
 type ParamTypesCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableParamTypesParams
+	Func   *wasmlib.ScFunc
+	Params MutableParamTypesParams
 }
 
 type RandomCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type StringMapOfStringArrayAppendCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringArrayAppendParams
+	Func   *wasmlib.ScFunc
+	Params MutableStringMapOfStringArrayAppendParams
 }
 
 type StringMapOfStringArrayClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringArrayClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableStringMapOfStringArrayClearParams
 }
 
 type StringMapOfStringArraySetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringArraySetParams
+	Func   *wasmlib.ScFunc
+	Params MutableStringMapOfStringArraySetParams
 }
 
 type StringMapOfStringMapClearCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringMapClearParams
+	Func   *wasmlib.ScFunc
+	Params MutableStringMapOfStringMapClearParams
 }
 
 type StringMapOfStringMapSetCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStringMapOfStringMapSetParams
+	Func   *wasmlib.ScFunc
+	Params MutableStringMapOfStringMapSetParams
 }
 
 type TakeAllowanceCall struct {
-	Func    *wasmlib.ScFunc
+	Func *wasmlib.ScFunc
 }
 
 type TakeBalanceCall struct {
@@ -124,8 +124,8 @@ type TakeBalanceCall struct {
 }
 
 type TriggerEventCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableTriggerEventParams
+	Func   *wasmlib.ScFunc
+	Params MutableTriggerEventParams
 }
 
 type AddressMapOfAddressArrayLengthCall struct {
@@ -235,66 +235,66 @@ type BlockRecordsCall struct {
 }
 
 type CheckAddressCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckAddressParams
+	Func   *wasmlib.ScView
+	Params MutableCheckAddressParams
 }
 
 type CheckAgentIDCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckAgentIDParams
+	Func   *wasmlib.ScView
+	Params MutableCheckAgentIDParams
 }
 
 type CheckBigIntCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckBigIntParams
+	Func   *wasmlib.ScView
+	Params MutableCheckBigIntParams
 }
 
 type CheckBoolCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type CheckBytesCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckBytesParams
+	Func   *wasmlib.ScView
+	Params MutableCheckBytesParams
 }
 
 type CheckEthAddressAndAgentIDCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckEthAddressAndAgentIDParams
+	Func   *wasmlib.ScView
+	Params MutableCheckEthAddressAndAgentIDParams
 }
 
 type CheckHashCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckHashParams
+	Func   *wasmlib.ScView
+	Params MutableCheckHashParams
 }
 
 type CheckHnameCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckHnameParams
+	Func   *wasmlib.ScView
+	Params MutableCheckHnameParams
 }
 
 type CheckIntAndUintCall struct {
-	Func    *wasmlib.ScView
+	Func *wasmlib.ScView
 }
 
 type CheckNftIDCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckNftIDParams
+	Func   *wasmlib.ScView
+	Params MutableCheckNftIDParams
 }
 
 type CheckRequestIDCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckRequestIDParams
+	Func   *wasmlib.ScView
+	Params MutableCheckRequestIDParams
 }
 
 type CheckStringCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckStringParams
+	Func   *wasmlib.ScView
+	Params MutableCheckStringParams
 }
 
 type CheckTokenIDCall struct {
-	Func    *wasmlib.ScView
-	Params  MutableCheckTokenIDParams
+	Func   *wasmlib.ScView
+	Params MutableCheckTokenIDParams
 }
 
 type GetRandomCall struct {

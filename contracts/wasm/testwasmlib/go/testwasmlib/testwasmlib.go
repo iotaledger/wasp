@@ -537,6 +537,7 @@ func viewCheckBigInt(ctx wasmlib.ScViewContext, f *CheckBigIntContext) {
 	ctx.Require(scBigInt.String() == bigIntString, "string mismatch")
 }
 
+//nolint:funlen
 func viewCheckIntAndUint(ctx wasmlib.ScViewContext, f *CheckIntAndUintContext) {
 	goInt8 := int8(math.MaxInt8)
 	ctx.Require(goInt8 == wasmtypes.Int8FromBytes(wasmtypes.Int8ToBytes(goInt8)), "bytes conversion failed")
