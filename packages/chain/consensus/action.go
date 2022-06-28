@@ -699,7 +699,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 }
 
 func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
-	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
+	sameIndex := msg.State.BlockIndex() == msg.StateOutput.GetStateIndex()
+	if !msg.IsGovernance && !sameIndex {
 		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:
 		// 1) State manager synchronizes to state index n and passes state transmission message through event to consensus asynchronously
 		// 2) Consensus is overwhelmed and receives a message after delay
@@ -718,17 +719,24 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	}
 
 	c.stateOutput = msg.StateOutput
-	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
 	oid := msg.StateOutput.OutputID()
-	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
-	r := ""
-	/* TODO
-	if c.stateOutput.GetIsGovernanceUpdated() {
-		r = " (rotate) "
-	}*/
-	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), state.RootCommitment(msg.State.TrieNodeStore()))
+	if msg.IsGovernance && !sameIndex {
+		c.currentState = nil
+		c.log.Debugf("SET NEW STATE #%d (rotate) and pausing consensus to wait for adequate state, output: %s",
+			c.stateOutput.GetStateIndex(), iscp.OID(c.stateOutput.ID()))
+	} else {
+		if !msg.IsGovernance {
+			c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
+		}
+		c.currentState = msg.State
+		r := ""
+		if msg.IsGovernance {
+			r = " (rotate) "
+		}
+		c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
+			c.stateOutput.GetStateIndex(), r, iscp.OID(c.stateOutput.ID()), state.RootCommitment(c.currentState.TrieNodeStore()))
+	}
 	c.resetWorkflow()
 	return true
 }
@@ -744,7 +752,7 @@ func (c *consensus) resetWorkflow() {
 	c.consensusBatch = nil
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
-	c.workflow = newWorkflowStatus(c.stateOutput != nil, c.workflow.stateIndex)
+	c.workflow = newWorkflowStatus(c.stateOutput != nil && c.currentState != nil, c.workflow.stateIndex)
 	c.log.Debugf("Workflow reset")
 }
 
