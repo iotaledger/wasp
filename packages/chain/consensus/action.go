@@ -719,12 +719,16 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	}
 
 	// If c.stateOutput.GetStateIndex() == msg.StateOutput.GetStateIndex() and the new state output is not a governance update, then either,
-	// a) c.stateOutput is the same as msg.StateOutput and there is no need to reasign c.stateOutput or b) msg.StateOutput is a regular state update
+	// a) c.stateOutput is the same as msg.StateOutput and there is no need to reassign c.stateOutput or b) msg.StateOutput is a regular state update
 	// output and c.stateOutput is a governance update output with the same index; in such case governance update is the last and should be taken
-	// into account. Regular state output is overwriden by governance uptade output and should be ignored.
-	// TODO: it is assumed, that at most one governance update may occur in between regural state updates. The situation of several consecutive
-	// governance updates must be yet to be discussed, designed and implemented. The main problem is that there is no way in knowing the exact order
-	// of governance updates, which have the same block index.
+	// into account. Regular state output is overwritten by governance update output and should be ignored.
+	// TODO: it is assumed, that at most one governance update transaction may occur in between regular state update transactions. The situation of
+	// several consecutive governance update transactions are yet to be discussed, designed and implemented. The main problem is that there is no way
+	// in knowing the exact order of governance updates, which have the same block index.
+	// I.e., this situation is undefined:
+	// ... -> Transaction to state index 15 -> Govenance update at state index 15 -> Another governance update at state index 15 -> Transaction to state index 16 -> ...
+	// however, this situation should be handled normally:
+	// ... -> Transaction to state index 15 -> Govenance update at state index 15 -> Transaction to state index 16 -> Governance update at state index 16 -> ...
 	if (c.stateOutput == nil) || (c.stateOutput.GetStateIndex() < msg.StateOutput.GetStateIndex()) || msg.IsGovernance {
 		c.stateOutput = msg.StateOutput
 	} else {
