@@ -49,7 +49,7 @@ func NewPermutation16(size uint16, seedOptional ...int64) (*Permutation16, error
 }
 
 func (perm *Permutation16) Shuffle() *Permutation16 {
-	rand.Shuffle(len(perm.permutation), func(i, j int) {
+	perm.random.Shuffle(len(perm.permutation), func(i, j int) {
 		perm.permutation[i], perm.permutation[j] = perm.permutation[j], perm.permutation[i]
 	})
 	perm.curSeqIndex = 0
