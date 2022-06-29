@@ -316,7 +316,17 @@ func TestRotation(t *testing.T) {
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
 }
 
-// cluster of 10 access nodes and two overlapping committees
+// cluster of 10 access nodes; chain is initialized by one node committee and then
+// rotated for four other nodes committee. In parallel of doing this, simple inccounter
+// requests are being posted. Test is designed in a way that some inccounter requests
+// are approved by the one node committee and others by rotated four node committee.
+// NOTE: the timeouts of the test are large, because all the nodes are checked. For
+// a request to be marked proccessed, the node's state manager must be synchronized
+// to any index after the transaction, which included the request. It might happen
+// that some request is approved by committee for state index 8 and some (most likelly
+// access) node is constantly behind and catches up only when the test stops producing
+// requests in state index 18. In that node, request index 8 is marked as processed
+// only after state manager reaches state index 18 and publishes the transaction.
 func TestRotationFromSingle(t *testing.T) {
 	numRequests := 16
 
@@ -366,7 +376,7 @@ func TestRotationFromSingle(t *testing.T) {
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
-	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
@@ -376,8 +386,8 @@ func TestRotationFromSingle(t *testing.T) {
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
-	require.NoError(t, e.waitStateControllers(rotation2.Address, 15*time.Second))
-	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	require.NoError(t, e.waitStateControllers(rotation2.Address, 30*time.Second))
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
 	select {
@@ -387,7 +397,7 @@ func TestRotationFromSingle(t *testing.T) {
 		t.FailNow()
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 5*time.Second)
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 30*time.Second)
 }
 
 type testRotationSingleRotation struct {
