@@ -49,6 +49,8 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
 	(*WasmContextSandbox).fnTransferAllowed,
+	(*WasmContextSandbox).fnUtilsBase58Decode,
+	(*WasmContextSandbox).fnUtilsBase58Encode,
 	(*WasmContextSandbox).fnUtilsBech32Decode,
 	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
@@ -400,6 +402,20 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 			s.ctx.TransferAllowedFunds(agentID, allowance)
 		}
 	}
+	return nil
+}
+
+func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
+	// TODO WASM REFACTOR
+	// bytes, err := s.common.Utils().Base58().Decode(string(args))
+	// s.checkErr(err)
+	// return bytes
+	return nil
+}
+
+func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
+	// TODO WASM REFACTOR
+	// return []byte(s.common.Utils().Base58().Encode(args))
 	return nil
 }
 
