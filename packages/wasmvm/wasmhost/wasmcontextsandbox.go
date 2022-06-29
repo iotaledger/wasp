@@ -21,7 +21,7 @@ import (
 // NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
-	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAgentID,
 	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
@@ -69,7 +69,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 // NOTE: These strings correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFuncNames = []string{
 	"nil",
-	"FnAccountID",
+	"FnAgentID",
 	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
@@ -204,7 +204,7 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
+func (s *WasmContextSandbox) fnAgentID(args []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
 }
 

@@ -31,7 +31,7 @@ func (vmctx *VMContext) ChainOwnerID() iscp.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) ContractAgentID() iscp.AgentID {
+func (vmctx *VMContext) AgentID() iscp.AgentID {
 	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 

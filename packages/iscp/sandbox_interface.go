@@ -18,8 +18,6 @@ import (
 type SandboxBase interface {
 	Helpers
 	Balance
-	// AccountID returns the agentID of the current contract
-	AccountID() AgentID
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
@@ -28,8 +26,8 @@ type SandboxBase interface {
 	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
-	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
-	ContractAgentID() AgentID
+	// AccountID returns the agentID of the current contract (i.e. chainID + contract hname)
+	AccountID() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
