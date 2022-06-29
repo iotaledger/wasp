@@ -35,14 +35,6 @@ func (vmctx *VMContext) ContractAgentID() iscp.AgentID {
 	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) ContractCreator() iscp.AgentID {
-	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
-	if rec == nil {
-		panic("can't find current contract")
-	}
-	return rec.Creator
-}
-
 func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }

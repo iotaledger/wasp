@@ -260,7 +260,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
         f.State.Owner().SetValue(f.Params.Owner().Value())
         return
     }
-    f.State.Owner().SetValue(ctx.ContractCreator())
+    f.State.Owner().SetValue(ctx.Caller())
 }
 
 func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
@@ -309,7 +309,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
         f.state.owner().setValue(f.params.owner().value());
         return;
     }
-    f.state.owner().setValue(ctx.contractCreator());
+    f.state.owner().setValue(ctx.Caller());
 }
 
 export function funcSetOwner(ctx: wasmlib.ScFuncContext, f: sc.SetOwnerContext): void {

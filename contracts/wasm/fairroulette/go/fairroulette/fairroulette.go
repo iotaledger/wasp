@@ -222,11 +222,12 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// The bank always wins :-P
 	remainder := totalBetAmount - totalPayout
 	if remainder != 0 {
-		// We have a remainder. First create a transfer for the remainder.
-		transfers := wasmlib.NewScTransferIotas(remainder)
+		// TODO WASM REFACTOR
+		// // We have a remainder. First create a transfer for the remainder.
+		// transfers := wasmlib.NewScTransferIotas(remainder)
 
-		// Send the remainder to the contract creator.
-		ctx.Send(ctx.ContractCreator().Address(), transfers)
+		// // Send the remainder to the contract creator.
+		// ctx.Send(ctx.ContractCreator().Address(), transfers)
 	}
 
 	// Set round status to 0, send out event to notify that the round has ended

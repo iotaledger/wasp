@@ -72,7 +72,8 @@ func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can withdraw donated funds
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcWithdraw(ctx, f)
 	ctx.Log("donatewithfeedback.funcWithdraw ok")

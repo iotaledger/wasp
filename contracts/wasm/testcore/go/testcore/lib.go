@@ -155,7 +155,6 @@ func funcCheckContextFromFullEPThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.Caller().Exists(), "missing mandatory caller")
 	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
 	ctx.Require(f.Params.ChainOwnerID().Exists(), "missing mandatory chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Exists(), "missing mandatory contractCreator")
 	funcCheckContextFromFullEP(ctx, f)
 	ctx.Log("testcore.funcCheckContextFromFullEP ok")
 }
@@ -627,7 +626,6 @@ func viewCheckContextFromViewEPThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.AgentID().Exists(), "missing mandatory agentID")
 	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
 	ctx.Require(f.Params.ChainOwnerID().Exists(), "missing mandatory chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Exists(), "missing mandatory contractCreator")
 	viewCheckContextFromViewEP(ctx, f)
 	ctx.Log("testcore.viewCheckContextFromViewEP ok")
 }

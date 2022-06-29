@@ -146,7 +146,8 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 			ownerFee = 1
 		}
 		// finalizeAuction request token was probably not confirmed yet
-		transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+		// TODO WASM REFACTOR
+		// transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
 		transferNFT(ctx, auction.Creator, auction.Nft)
 		transferIotas(ctx, auction.Creator, auction.Deposit-ownerFee)
 		return
@@ -170,7 +171,8 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	}
 
 	// finalizeAuction request token was probably not confirmed yet
-	transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+	// TODO WASM REFACTOR
+	// transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
 	transferNFT(ctx, auction.HighestBidder, auction.Nft)
 	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
 }

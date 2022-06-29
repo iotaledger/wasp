@@ -30,8 +30,6 @@ type SandboxBase interface {
 	Contract() Hname
 	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
 	ContractAgentID() AgentID
-	// ContractCreator returns the agentID that deployed the contract
-	ContractCreator() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method

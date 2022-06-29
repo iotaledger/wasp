@@ -60,7 +60,8 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForcePayout(ctx, f)
 	ctx.Log("fairroulette.funcForcePayout ok")
@@ -80,7 +81,8 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForceReset(ctx, f)
 	ctx.Log("fairroulette.funcForceReset ok")
@@ -145,7 +147,8 @@ func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can update the play period
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")
 	funcPlayPeriod(ctx, f)

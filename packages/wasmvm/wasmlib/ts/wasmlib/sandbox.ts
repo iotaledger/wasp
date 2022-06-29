@@ -21,7 +21,6 @@ export const FnCaller              : i32 = -7;
 export const FnChainID             : i32 = -8;
 export const FnChainOwnerID        : i32 = -9;
 export const FnContract            : i32 = -10;
-export const FnContractCreator     : i32 = -11;
 export const FnDeployContract      : i32 = -12;
 export const FnEntropy             : i32 = -13;
 export const FnEstimateDust        : i32 = -14;
@@ -89,7 +88,7 @@ export class ScSandbox {
 
     // calls a smart contract function
     protected callWithAllowance(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
-         const req = new wasmrequests.CallRequest();
+        const req = new wasmrequests.CallRequest();
         req.contract = hContract;
         req.function = hFunction;
         if (params === null) {
@@ -112,11 +111,6 @@ export class ScSandbox {
     // retrieve the hname of this contract
     public contract(): wasmtypes.ScHname {
         return wasmtypes.hnameFromBytes(sandbox(FnContract, null));
-    }
-
-    // retrieve the agent id of the creator of this contract
-    public contractCreator(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null));
     }
 
     // retrieve the chain id of the chain this contract lives on

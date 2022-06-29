@@ -19,7 +19,6 @@ const (
 	FnChainID             = int32(-8)
 	FnChainOwnerID        = int32(-9)
 	FnContract            = int32(-10)
-	FnContractCreator     = int32(-11)
 	FnDeployContract      = int32(-12)
 	FnEntropy             = int32(-13)
 	FnEstimateDust        = int32(-14)
@@ -106,11 +105,6 @@ func (s ScSandbox) ChainOwnerID() wasmtypes.ScAgentID {
 // retrieve the hname of this contract
 func (s ScSandbox) Contract() wasmtypes.ScHname {
 	return wasmtypes.HnameFromBytes(Sandbox(FnContract, nil))
-}
-
-// retrieve the agent id of the creator of this contract
-func (s ScSandbox) ContractCreator() wasmtypes.ScAgentID {
-	return wasmtypes.AgentIDFromBytes(Sandbox(FnContractCreator, nil))
 }
 
 // retrieve the chain id of the chain this contract lives on

@@ -31,7 +31,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnChainID,
 	(*WasmContextSandbox).fnChainOwnerID,
 	(*WasmContextSandbox).fnContract,
-	(*WasmContextSandbox).fnContractCreator,
+	(*WasmContextSandbox).fnContractCreator, // TODO WASM REFACTOR - remove
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEstimateDust,
@@ -49,8 +49,8 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
 	(*WasmContextSandbox).fnTransferAllowed,
-	(*WasmContextSandbox).fnUtilsBase58Decode,
-	(*WasmContextSandbox).fnUtilsBase58Encode,
+	(*WasmContextSandbox).fnUtilsBase58Decode, // TODO WASM REFACTOR - remove
+	(*WasmContextSandbox).fnUtilsBase58Encode, // TODO WASM REFACTOR - remove
 	(*WasmContextSandbox).fnUtilsBech32Decode,
 	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
@@ -273,7 +273,9 @@ func (s *WasmContextSandbox) fnContract(args []byte) []byte {
 }
 
 func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
+	// TODO WASM REFACTOR
+	return nil
+	// return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {

@@ -72,7 +72,8 @@ func funcTransferOwnershipThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// TODO the one who can transfer token ownership
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcTransferOwnership(ctx, f)
@@ -96,7 +97,8 @@ func funcUpdateMetadataThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// TODO the one who can change the token info
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcUpdateMetadata(ctx, f)

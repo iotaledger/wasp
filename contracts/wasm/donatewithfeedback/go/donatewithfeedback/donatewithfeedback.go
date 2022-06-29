@@ -43,8 +43,9 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 		return
 	}
 
-	scCreator := ctx.ContractCreator().Address()
-	ctx.Send(scCreator, wasmlib.NewScTransferIotas(amount))
+	// TODO WASM REFACTOR
+	// scCreator := ctx.ContractCreator().Address()
+	// ctx.Send(scCreator, wasmlib.NewScTransferIotas(amount))
 }
 
 func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {

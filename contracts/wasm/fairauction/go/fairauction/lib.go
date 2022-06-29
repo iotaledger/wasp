@@ -99,7 +99,8 @@ func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can set owner margin
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// TODO WASM REFACTOR
+	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.OwnerMargin().Exists(), "missing mandatory ownerMargin")
 	funcSetOwnerMargin(ctx, f)

@@ -159,7 +159,6 @@ fn func_check_context_from_full_ep_thunk(ctx: &ScFuncContext) {
 	ctx.require(f.params.caller().exists(), "missing mandatory caller");
 	ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
 	ctx.require(f.params.chain_owner_id().exists(), "missing mandatory chainOwnerID");
-	ctx.require(f.params.contract_creator().exists(), "missing mandatory contractCreator");
 	func_check_context_from_full_ep(ctx, &f);
 	ctx.log("testcore.funcCheckContextFromFullEP ok");
 }
@@ -555,7 +554,6 @@ fn view_check_context_from_view_ep_thunk(ctx: &ScViewContext) {
 	ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
 	ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
 	ctx.require(f.params.chain_owner_id().exists(), "missing mandatory chainOwnerID");
-	ctx.require(f.params.contract_creator().exists(), "missing mandatory contractCreator");
 	view_check_context_from_view_ep(ctx, &f);
 	ctx.log("testcore.viewCheckContextFromViewEP ok");
 }

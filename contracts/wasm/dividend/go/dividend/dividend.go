@@ -32,7 +32,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 
 	// First we set up a default value for the owner in case the optional
 	// 'owner' parameter was omitted.
-	var owner wasmtypes.ScAgentID = ctx.ContractCreator()
+	var owner wasmtypes.ScAgentID = ctx.Caller()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
 	if f.Params.Owner().Exists() {

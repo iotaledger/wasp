@@ -79,11 +79,6 @@ func (s *SandboxBase) ContractAgentID() iscp.AgentID {
 	return iscp.NewContractAgentID(s.Ctx.ChainID(), s.Ctx.CurrentContractHname())
 }
 
-func (s *SandboxBase) ContractCreator() iscp.AgentID {
-	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.ContractCreator()
-}
-
 func (s *SandboxBase) Timestamp() time.Time {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.Timestamp()

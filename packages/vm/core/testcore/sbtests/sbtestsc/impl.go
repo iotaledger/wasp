@@ -86,19 +86,3 @@ func doNothing(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof(MsgDoNothing)
 	return nil
 }
-
-// sendToAddress send the whole account to ParamAddress if invoked by the creator
-// Panics if wrong parameter or unauthorized access
-//func sendToAddress(ctx iscp.Sandbox) (dict.Dict) {
-//	ctx.Log().Infof(FuncSendToAddress.Name)
-//	a := assert.NewAssert(ctx.Log())
-//	par := kvdecoder.New(ctx.Params(), ctx.Log())
-//	a.Requiref(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
-//	targetAddress := par.MustGetAddress(ParamAddress)
-//	myTokens := ctx.Balances()
-//	a.Requiref(ctx.Send(targetAddress, myTokens, nil),
-//		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
-//
-//	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())
-//	return nil
-//}

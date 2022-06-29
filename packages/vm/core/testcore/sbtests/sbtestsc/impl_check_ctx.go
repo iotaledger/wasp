@@ -17,7 +17,6 @@ func testCheckContextFromFullEP(ctx iscp.Sandbox) dict.Dict {
 	ctx.Requiref(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
 	myAgentID := iscp.NewContractAgentID(ctx.ChainID(), ctx.Contract())
 	ctx.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	ctx.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil
 }
 
@@ -29,7 +28,6 @@ func testCheckContextFromViewEP(ctx iscp.SandboxView) dict.Dict {
 	a.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
 	myAgentID := iscp.NewContractAgentID(ctx.ChainID(), ctx.Contract())
 	a.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Requiref(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil
 }
 
