@@ -290,13 +290,13 @@ export function bigIntToBytes(value: ScBigInt): u8[] {
 }
 
 export function bigIntFromString(value: string): ScBigInt {
-    const digits = value.length - 18;
-    if (digits <= 0) {
-        // Uint64 fits 18 digits or 1 quintillion
+    // Uint64 fits 18 digits or 1 quintillion
+    if (value.length <= 18) {
         return ScBigInt.fromUint64(wasmtypes.uint64FromString(value));
     }
 
     // build value 18 digits at a time
+    const digits = value.length - 18;
     const lhs = bigIntFromString(value.slice(0, digits));
     const rhs = bigIntFromString(value.slice(digits));
     return lhs.mul(quintillion).add(rhs)
@@ -308,7 +308,7 @@ export function bigIntToString(value: ScBigInt): string {
     }
     const divMod = value.divMod(quintillion);
     const digits = wasmtypes.uint64ToString(divMod[1].uint64());
-    const zeroes = wasmtypes.zeroes(18 - digits.length);
+    const zeroes = "000000000000000000".slice(18 - digits.length);
     return bigIntToString(divMod[0]) + zeroes + digits;
 }
 

@@ -3,8 +3,6 @@
 
 package wasmtypes
 
-import "encoding/hex"
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func BytesDecode(dec *WasmDecoder) []byte {
@@ -24,15 +22,11 @@ func BytesToBytes(value []byte) []byte {
 }
 
 func BytesFromString(value string) []byte {
-	ret, err := hex.DecodeString(value)
-	if err != nil {
-		panic(err)
-	}
-	return ret
+	return HexDecode(value)
 }
 
 func BytesToString(value []byte) string {
-	return hex.EncodeToString(value)
+	return HexEncode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

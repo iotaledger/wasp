@@ -26,7 +26,7 @@ impl ImmutableDeployContractParams {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
-    //TODO variable init params for deployed contract
+    // TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -47,7 +47,7 @@ impl MutableDeployContractParams {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
-    //TODO variable init params for deployed contract
+    // TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}

@@ -168,6 +168,7 @@ funcs:
     params:
       address: Address?
       agentID: AgentID?
+      bigInt: BigInt?
       bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
@@ -349,6 +350,12 @@ views:
     results:
       random: Uint64
 
+  checkBigInt:
+    params:
+      scBigInt: BigInt
+      bigIntBytes: Bytes
+      bigIntString: String
+
   checkAgentID:
     params:
       scAgentID: AgentID
@@ -388,3 +395,17 @@ views:
       scTokenID: TokenID
       tokenIDBytes: Bytes
       tokenIDString: String
+
+  checkIntAndUint:
+  checkBool:
+  checkBytes:
+    params:
+      bytes: Bytes
+  checkHname:
+    params:
+      scHname: Hname
+      hnameBytes: Bytes
+      hnameString: String
+  checkString:
+    params:
+      string: String
