@@ -8,13 +8,9 @@ import (
 	"io"
 	"math/rand"
 
-	"github.com/mr-tron/base58"
-	"golang.org/x/crypto/sha3"
-
-	// github.com/mr-tron/base58
-
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/sha3"
 )
 
 const HashSize = 32
@@ -29,10 +25,6 @@ func (h HashValue) Bytes() []byte {
 
 func (h HashValue) String() string {
 	return h.Hex()
-}
-
-func (h HashValue) Base58() string {
-	return base58.Encode(h[:])
 }
 
 func (h HashValue) Hex() string {
