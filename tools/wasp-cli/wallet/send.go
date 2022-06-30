@@ -1,38 +1,56 @@
 package wallet
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
 
 var sendFundsCmd = &cobra.Command{
-	Use:   "send-funds <target-address> <token-id> <amount>",
+	Use:   "send-funds <target-address> <token-id>:<amount> <token-id2>:<amount> ...",
 	Short: "Transfer L1 tokens",
-	Args:  cobra.ExactArgs(3),
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		panic("TODO implement")
-		// wallet := Load()
-		// sourceAddress := wallet.Address()
-		// _, targetAddress, err := iotago.ParseBech32(args[0])
-		// log.Check(err)
+		_, targetAddress, err := iotago.ParseBech32(args[0])
+		log.Check(err)
 
-		// tokenID := decodeTokenID(args[1])
+		tokens := util.ParseFungibleTokens(args[1:])
+		log.Check(err)
 
-		// amount, err := strconv.Atoi(args[2])
-		// log.Check(err)
+		log.Printf("Sending %v to %v (%v)\n", tokens, args[0], targetAddress)
 
-		// outs, err := config.GoshimmerClient().GetConfirmedOutputs(sourceAddress)
-		// log.Check(err)
+		wallet := Load()
+		senderAddress := wallet.Address()
+		client := config.L1Client()
 
-		// tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
-		// 	txb := utxoutil.NewBuilder(outs...)
-		// 	bals := colored.ToL1Map(colored.NewBalancesForColor(tokenID, uint64(amount)))
-		// 	err := txb.AddSigLockedColoredOutput(targetAddress, bals)
-		// 	log.Check(err)
-		// 	err = txb.AddRemainderOutputIfNeeded(sourceAddress, nil, true)
-		// 	log.Check(err)
-		// 	return txb.BuildWithED25519(wallet.KeyPair())
-		// })
+		outputSet, err := client.OutputMap(senderAddress)
+		log.Check(err)
 
-		// log.Printf("Transaction %s posted successfully.\n", tx.ID())
+		tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
+			DisableAutoAdjustDustDeposit: !adjustDustDeposit,
+			FungibleTokens:               tokens,
+			SendOptions:                  iscp.SendOptions{},
+			SenderAddress:                senderAddress,
+			SenderKeyPair:                wallet.KeyPair,
+			TargetAddress:                targetAddress,
+			UnspentOutputs:               outputSet,
+			UnspentOutputIDs:             iscp.OutputSetToOutputIDs(outputSet),
+		})
+
+		log.Check(err)
+
+		txID, err := tx.ID()
+
+		log.Check(err)
+
+		err = client.PostTx(tx)
+
+		log.Check(err)
+
+		log.Printf("Transaction [%v] successfully sent", txID)
 	},
 }
