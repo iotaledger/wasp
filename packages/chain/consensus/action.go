@@ -713,7 +713,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 }
 
 func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
-	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
+	sameIndex := msg.State.BlockIndex() == msg.StateOutput.GetStateIndex()
+	if !msg.IsGovernance && !sameIndex {
 		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:
 		// 1) State manager synchronizes to state index n and passes state transmission message through event to consensus asynchronously
 		// 2) Consensus is overwhelmed and receives a message after delay
@@ -731,18 +732,38 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		return false
 	}
 
-	c.stateOutput = msg.StateOutput
-	c.currentState = msg.State
+	// If c.stateOutput.GetStateIndex() == msg.StateOutput.GetStateIndex() and the new state output is not a governance update, then either,
+	// a) c.stateOutput is the same as msg.StateOutput and there is no need to reassign c.stateOutput or b) msg.StateOutput is a regular state update
+	// output and c.stateOutput is a governance update output with the same index; in such case governance update is the last and should be taken
+	// into account. Regular state output is overwritten by governance update output and should be ignored.
+	// TODO: it is assumed, that at most one governance update transaction may occur in between regular state update transactions. The situation of
+	// several consecutive governance update transactions are yet to be discussed, designed and implemented. The main problem is that there is no way
+	// in knowing the exact order of governance updates, which have the same block index.
+	// I.e., this situation is undefined:
+	// ... -> Transaction to state index 15 -> Govenance update at state index 15 -> Another governance update at state index 15 -> Transaction to state index 16 -> ...
+	// however, this situation should be handled normally:
+	// ... -> Transaction to state index 15 -> Govenance update at state index 15 -> Transaction to state index 16 -> Governance update at state index 16 -> ...
+	if (c.stateOutput == nil) || (c.stateOutput.GetStateIndex() < msg.StateOutput.GetStateIndex()) || msg.IsGovernance {
+		c.stateOutput = msg.StateOutput
+	} else {
+		c.log.Debugf("consensus::setNewState: ignoring the received state output %s in favor of the current one %s", iscp.OID(msg.StateOutput.ID()), iscp.OID(c.stateOutput.ID()))
+	}
 	c.stateTimestamp = msg.StateTimestamp
-	oid := msg.StateOutput.OutputID()
+	oid := c.stateOutput.OutputID()
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
-	r := ""
-	/* TODO
-	if c.stateOutput.GetIsGovernanceUpdated() {
-		r = " (rotate) "
-	}*/
-	c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), state.RootCommitment(msg.State.TrieNodeStore()))
+	if msg.IsGovernance && !sameIndex {
+		c.currentState = nil
+		c.log.Debugf("SET NEW STATE #%d (rotate) and pausing consensus to wait for adequate state, output: %s",
+			c.stateOutput.GetStateIndex(), iscp.OID(c.stateOutput.ID()))
+	} else {
+		c.currentState = msg.State
+		r := ""
+		if msg.IsGovernance {
+			r = " (rotate) "
+		}
+		c.log.Debugf("SET NEW STATE #%d%s, output: %s, state commitment: %s",
+			c.stateOutput.GetStateIndex(), r, iscp.OID(c.stateOutput.ID()), state.RootCommitment(c.currentState.TrieNodeStore()))
+	}
 	c.resetWorkflow()
 	return true
 }
@@ -758,7 +779,7 @@ func (c *consensus) resetWorkflow() {
 	c.consensusBatch = nil
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
-	c.workflow = newWorkflowStatus(c.stateOutput != nil, c.workflow.stateIndex)
+	c.workflow = newWorkflowStatus(c.stateOutput != nil && c.currentState != nil, c.workflow.stateIndex)
 	c.log.Debugf("Workflow reset")
 }
 

@@ -40,13 +40,6 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	//TODO implement
-	/*gu := ""
-	if sm.stateOutput.GetIsGovernanceUpdated() {
-		gu = " (rotation) "
-	}
-	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
-		gu, stateOutputIndex, iscp.OID(stateOutputID))*/
 	sm.log.Debugf("notifyStateTransition: state IS SYNCED to index %d and is approved by output %v",
 		stateOutputIndex, iscp.OID(stateOutputID))
 	sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{

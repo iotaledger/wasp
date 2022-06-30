@@ -27,8 +27,10 @@ const (
 
 type TimerTick int
 
-// StateTransitionMsg Notifies chain about changed state
+// StateTransitionMsg Notifies chain about changed
 type StateTransitionMsg struct {
+	// is transition a governance update
+	IsGovernance bool
 	// new variable state
 	State state.VirtualStateAccess
 	// corresponding state transaction
