@@ -196,8 +196,9 @@ func TestGetMaxBlobSize(t *testing.T) {
 	ctx := setupGovernance(t)
 	require.NoError(t, ctx.Err)
 
+	var maxBlobSize uint32 = 10
 	fset := coregovernance.ScFuncs.SetChainInfo(ctx)
-	fset.Params.MaxBlobSize().SetValue(10)
+	fset.Params.MaxBlobSize().SetValue(maxBlobSize)
 	fset.Params.MaxEventSize().SetValue(11)
 	fset.Params.MaxEventsPerReq().SetValue(12)
 	fset.Func.Post()
@@ -206,5 +207,5 @@ func TestGetMaxBlobSize(t *testing.T) {
 	fget := coregovernance.ScFuncs.GetMaxBlobSize(ctx)
 	fget.Func.Call()
 	require.NoError(t, ctx.Err)
-	// FIXME check results
+	require.Equal(t, maxBlobSize, fget.Results.MaxBlobSize().Value())
 }
