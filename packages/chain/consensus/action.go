@@ -160,13 +160,23 @@ func (c *consensus) runVMIfNeeded() {
 				c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
 				return
 			}
-			c.log.Debugf("runVM result: responding by state index: %d state commitment: %s",
-				vmTask.VirtualStateAccess.BlockIndex(), state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()))
-			c.EnqueueVMResultMsg(&messages.VMResultMsg{
-				Task: vmTask,
-			})
-			elapsed := time.Since(c.workflow.GetVMStartedTime())
-			c.consensusMetrics.RecordVMRunTime(elapsed)
+			finalRequestsCount := len(vmTask.Results)
+			if finalRequestsCount > 0 {
+				finalRequests := make([]iscp.Request, finalRequestsCount)
+				for i := range vmTask.Results {
+					finalRequests[i] = vmTask.Results[i].Request
+				}
+				c.log.Debugf("runVM result: responding by state index: %d, state commitment: %s, included %v requests: %v",
+					vmTask.VirtualStateAccess.BlockIndex(), state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()), finalRequestsCount, iscp.ShortRequestIDsFromRequests(finalRequests))
+				c.EnqueueVMResultMsg(&messages.VMResultMsg{
+					Task: vmTask,
+				})
+				elapsed := time.Since(c.workflow.GetVMStartedTime())
+				c.consensusMetrics.RecordVMRunTime(elapsed)
+			} else {
+				c.log.Debugf("runVM result: no requests included, ignoring the result and reseting the workflow")
+				c.resetWorkflow()
+			}
 		}()
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
