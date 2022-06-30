@@ -18,45 +18,45 @@ funcs:
   claimChainOwnership: {}
   delegateChainOwnership:
     params:
-      chainOwner=c: AgentID
+      chainOwner=o: AgentID
   # fees
   setFeePolicy:
     params:
-      feePolicyBytes=d: Bytes
+      feePolicyBytes=g: Bytes
   # chain info
   setChainInfo:
     params:
-      maxBlobSize=g: Uint32? # default maximum size of a blob
-      maxEventSize=h: Uint16? # default maximum size of a single event
-      maxEventsPerReq=i: Uint16? # default maximum number of events per request
+      maxBlobSize=mb: Uint32? # default maximum size of a blob
+      maxEventSize=ms: Uint16? # default maximum size of a single event
+      maxEventsPerReq=mr: Uint16? # default maximum number of events per request
   # access nodes
   addCandidateNode:
     params:
-      accessNodeInfoPubKey=m: Bytes
-      accessNodeInfoCertificate=n: Bytes
-      accessNodeInfoForCommittee=l: Bool
-      accessNodeInfoAccessAPI=o: String
+      accessNodeInfoForCommittee=i: Bool
+      accessNodeInfoPubKey=ip: Bytes
+      accessNodeInfoCertificate=ic: Bytes
+      accessNodeInfoAccessAPI=ia: String
   revokeAccessNode:
     params:
-      accessNodeInfoPubKey=m: Bytes
-      accessNodeInfoCertificate=n: Bytes
+      accessNodeInfoPubKey=ip: Bytes
+      accessNodeInfoCertificate=ic: Bytes
   changeAccessNodes:
     params:
-      changeAccessNodesActions=p: map[Bytes]Uint8
+      changeAccessNodesActions=n: map[Bytes]Uint8
 
 views:
   # state controller
   getAllowedStateControllerAddresses:
     results:
-      allowedStateControllerAddresses=b: Address[] # native contract, so this is an Array16
+      allowedStateControllerAddresses=a: Address[] # native contract, so this is an Array16
   # chain owner
   getChainOwner:
     results:
-      chainOwner=c: AgentID
+      chainOwner=o: AgentID
   # fees
   getFeePolicy:
     results:
-      feePolicyBytes=d: Bytes
+      feePolicyBytes=g: Bytes
   # chain info
   getChainInfo:
     results:
