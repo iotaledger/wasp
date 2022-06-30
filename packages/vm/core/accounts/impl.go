@@ -189,8 +189,6 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 
 // Params:
 // - token scheme
-// - token tag
-// - max supply big integer
 // - must be enough allowance for the dust deposit
 func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
