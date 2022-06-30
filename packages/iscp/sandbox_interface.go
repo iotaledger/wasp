@@ -132,8 +132,11 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	GasBurnEnable(enable bool)
+
+	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
+	SetBlockContext(bctx interface{})
+	BlockContext() interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

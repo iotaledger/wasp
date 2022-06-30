@@ -103,8 +103,9 @@ func TestRPCBlockNumber(t *testing.T) {
 	env := newSoloTestEnv(t)
 	require.EqualValues(t, 0, env.BlockNumber())
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	require.EqualValues(t, 1, env.BlockNumber()) // EVM block number is incremented along with ISC block index
 	env.deployStorageContract(creator, 42)
-	require.EqualValues(t, 1, env.BlockNumber())
+	require.EqualValues(t, 2, env.BlockNumber())
 }
 
 func TestRPCGetTransactionCount(t *testing.T) {
@@ -137,9 +138,9 @@ func TestRPCGetTransactionByHash(t *testing.T) {
 	require.Nil(t, env.TransactionByHash(common.Hash{}))
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	tx := env.TransactionByHash(block1.Transactions()[0].Hash())
-	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	tx := env.TransactionByHash(block.Transactions()[0].Hash())
+	require.Equal(t, block.Transactions()[0].Hash(), tx.Hash())
 }
 
 func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
@@ -147,9 +148,9 @@ func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
 	require.Nil(t, env.TransactionByBlockHashAndIndex(common.Hash{}, 0))
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	tx := env.TransactionByBlockHashAndIndex(block1.Hash(), 0)
-	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	tx := env.TransactionByBlockHashAndIndex(block.Hash(), 0)
+	require.Equal(t, block.Transactions()[0].Hash(), tx.Hash())
 }
 
 func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
@@ -157,8 +158,8 @@ func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
 	require.Nil(t, env.UncleByBlockHashAndIndex(common.Hash{}, 0))
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	require.Nil(t, env.UncleByBlockHashAndIndex(block1.Hash(), 0))
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Nil(t, env.UncleByBlockHashAndIndex(block.Hash(), 0))
 }
 
 func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
@@ -166,9 +167,9 @@ func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
 	require.Nil(t, env.TransactionByBlockNumberAndIndex(big.NewInt(3), 0))
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	tx := env.TransactionByBlockNumberAndIndex(block1.Number(), 0)
-	require.EqualValues(t, block1.Hash(), *tx.BlockHash)
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	tx := env.TransactionByBlockNumberAndIndex(block.Number(), 0)
+	require.EqualValues(t, block.Hash(), *tx.BlockHash)
 	require.EqualValues(t, 0, *tx.TransactionIndex)
 }
 
@@ -177,17 +178,17 @@ func TestRPCGetUncleByBlockNumberAndIndex(t *testing.T) {
 	require.Nil(t, env.UncleByBlockNumberAndIndex(big.NewInt(3), 0))
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	require.Nil(t, env.UncleByBlockNumberAndIndex(block1.Number(), 0))
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Nil(t, env.UncleByBlockNumberAndIndex(block.Number(), 0))
 }
 
 func TestRPCGetTransactionCountByHash(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	require.Positive(t, len(block1.Transactions()))
-	require.EqualValues(t, len(block1.Transactions()), env.BlockTransactionCountByHash(block1.Hash()))
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Positive(t, len(block.Transactions()))
+	require.EqualValues(t, len(block.Transactions()), env.BlockTransactionCountByHash(block.Hash()))
 	require.EqualValues(t, 0, env.BlockTransactionCountByHash(common.Hash{}))
 }
 
@@ -195,9 +196,9 @@ func TestRPCGetUncleCountByBlockHash(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	require.Zero(t, len(block1.Uncles()))
-	require.EqualValues(t, len(block1.Uncles()), env.UncleCountByBlockHash(block1.Hash()))
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Zero(t, len(block.Uncles()))
+	require.EqualValues(t, len(block.Uncles()), env.UncleCountByBlockHash(block.Hash()))
 	require.EqualValues(t, 0, env.UncleCountByBlockHash(common.Hash{}))
 }
 
@@ -205,18 +206,18 @@ func TestRPCGetTransactionCountByNumber(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(nil)
-	require.Positive(t, len(block1.Transactions()))
-	require.EqualValues(t, len(block1.Transactions()), env.BlockTransactionCountByNumber())
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Positive(t, len(block.Transactions()))
+	require.EqualValues(t, len(block.Transactions()), env.BlockTransactionCountByNumber())
 }
 
 func TestRPCGetUncleCountByBlockNumber(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator, 42)
-	block1 := env.BlockByNumber(big.NewInt(1))
-	require.Zero(t, len(block1.Uncles()))
-	require.EqualValues(t, len(block1.Uncles()), env.UncleCountByBlockNumber(big.NewInt(1)))
+	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
+	require.Zero(t, len(block.Uncles()))
+	require.EqualValues(t, len(block.Uncles()), env.UncleCountByBlockNumber(big.NewInt(1)))
 }
 
 func TestRPCAccounts(t *testing.T) {
@@ -303,8 +304,8 @@ func TestRPCGetTxReceipt(t *testing.T) {
 	require.EqualValues(t, contractAddress, receipt.ContractAddress)
 	require.NotZero(t, receipt.GasUsed)
 
-	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
-	require.EqualValues(t, env.BlockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+	require.EqualValues(t, big.NewInt(2), receipt.BlockNumber)
+	require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 	require.EqualValues(t, 0, receipt.TransactionIndex)
 }
 
