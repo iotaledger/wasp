@@ -28,10 +28,11 @@ import (
 func TestStorageContract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
 	// deploy solidity `storage` contract
 	storage := env.deployStorageContract(ethKey, 42)
-	require.EqualValues(t, 1, env.getBlockNumber())
+	require.EqualValues(t, 2, env.getBlockNumber())
 
 	// call FuncCallView to call EVM contract's `retrieve` view, get 42
 	require.EqualValues(t, 42, storage.retrieve())
@@ -40,7 +41,7 @@ func TestStorageContract(t *testing.T) {
 	res, err := storage.store(43)
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	require.EqualValues(t, 2, env.getBlockNumber())
+	require.EqualValues(t, 3, env.getBlockNumber())
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, storage.retrieve())
@@ -608,7 +609,7 @@ func TestFibonacciContract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	fibo := env.deployFibonacciContract(ethKey)
-	require.EqualValues(t, 1, env.getBlockNumber())
+	require.EqualValues(t, 2, env.getBlockNumber())
 
 	res, err := fibo.fib(7)
 	require.NoError(t, err)

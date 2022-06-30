@@ -5,6 +5,7 @@
 package vmcontext
 
 import (
+	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -107,6 +108,7 @@ func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTempl
 // helper methods
 
 func (s *contractSandbox) RequireCallerAnyOf(agentIDs []iscp.AgentID) {
+	fmt.Printf("\n\n%s != %s\n\n", s.Caller(), agentIDs)
 	ok := false
 	for _, agentID := range agentIDs {
 		if s.Caller().Equals(agentID) {
@@ -148,9 +150,16 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.Ctx.(*VMContext).ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
-	// doesn't have a gas burn, only used for internal (native) contracts
-	return s.Ctx.(*VMContext).BlockContext(s, construct, onClose)
+func (s *contractSandbox) SubscribeBlockContext(openFunc, closeFunc iscp.Hname) {
+	s.Ctx.(*VMContext).SubscribeBlockContext(openFunc, closeFunc)
+}
+
+func (s *contractSandbox) SetBlockContext(bctx interface{}) {
+	s.Ctx.(*VMContext).SetBlockContext(bctx)
+}
+
+func (s *contractSandbox) BlockContext() interface{} {
+	return s.Ctx.(*VMContext).BlockContext()
 }
 
 func (s *contractSandbox) GasBurnEnable(enable bool) {

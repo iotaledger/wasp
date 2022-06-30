@@ -30,6 +30,10 @@ const (
 	FuncSetGasRatio = "setGasRatio"
 	FuncGetGasRatio = "getGasRatio"
 
+	// block context
+	FuncOpenBlockContext  = "openBlockContext"
+	FuncCloseBlockContext = "closeBlockContext"
+
 	FieldTransaction      = "t"
 	FieldCallMsg          = "c"
 	FieldChainID          = "chid"
