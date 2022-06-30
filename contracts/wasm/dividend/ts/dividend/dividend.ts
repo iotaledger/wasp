@@ -27,7 +27,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 
     // First we set up a default value for the owner in case the optional
     // 'owner' parameter was omitted.
-    let owner: wasmlib.ScAgentID = ctx.contractCreator();
+    let owner: wasmlib.ScAgentID = ctx.caller();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if (f.params.owner().exists()) {

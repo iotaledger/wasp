@@ -47,8 +47,8 @@ func OnLoad(index int32) {
 }
 
 type ForcePayoutContext struct {
-	Events FairRouletteEvents
-	State  MutableFairRouletteState
+	Events  FairRouletteEvents
+	State   MutableFairRouletteState
 }
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
@@ -60,16 +60,15 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can restart the round forcefully
-	// TODO WASM REFACTOR
-	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForcePayout(ctx, f)
 	ctx.Log("fairroulette.funcForcePayout ok")
 }
 
 type ForceResetContext struct {
-	Events FairRouletteEvents
-	State  MutableFairRouletteState
+	Events  FairRouletteEvents
+	State   MutableFairRouletteState
 }
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
@@ -81,16 +80,15 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can restart the round forcefully
-	// TODO WASM REFACTOR
-	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcForceReset(ctx, f)
 	ctx.Log("fairroulette.funcForceReset ok")
 }
 
 type PayWinnersContext struct {
-	Events FairRouletteEvents
-	State  MutableFairRouletteState
+	Events  FairRouletteEvents
+	State   MutableFairRouletteState
 }
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
@@ -109,9 +107,9 @@ func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlaceBetContext struct {
-	Events FairRouletteEvents
-	Params ImmutablePlaceBetParams
-	State  MutableFairRouletteState
+	Events  FairRouletteEvents
+	Params  ImmutablePlaceBetParams
+	State   MutableFairRouletteState
 }
 
 func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
@@ -130,9 +128,9 @@ func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlayPeriodContext struct {
-	Events FairRouletteEvents
-	Params ImmutablePlayPeriodParams
-	State  MutableFairRouletteState
+	Events  FairRouletteEvents
+	Params  ImmutablePlayPeriodParams
+	State   MutableFairRouletteState
 }
 
 func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
@@ -147,8 +145,7 @@ func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can update the play period
-	// TODO WASM REFACTOR
-	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")
 	funcPlayPeriod(ctx, f)

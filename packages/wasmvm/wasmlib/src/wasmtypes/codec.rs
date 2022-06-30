@@ -208,16 +208,6 @@ impl WasmEncoder {
     }
 }
 
-pub fn base58_decode(value: &str) -> Vec<u8> {
-    let utils = ScSandboxUtils{};
-    utils.base58_decode(value)
-}
-
-pub fn base58_encode(buf: &[u8]) -> String {
-    let utils = ScSandboxUtils{};
-    utils.base58_encode(buf)
-}
-
 static HEX_DIGITS: &'static [u8] = b"0123456789abcdef";
 
 fn hexer(hex_digit: u8) -> u8 {

@@ -7,16 +7,6 @@ use crate::host::*;
 pub struct ScSandboxUtils {}
 
 impl ScSandboxUtils {
-    // decodes the specified base58-encoded string value to its original bytes
-    pub fn base58_decode(&self, value: &str) -> Vec<u8> {
-        sandbox(FN_UTILS_BASE58_DECODE, &string_to_bytes(value))
-    }
-
-    // encodes the specified bytes to a base-58-encoded string
-    pub fn base58_encode(&self, bytes: &[u8]) -> String {
-        string_from_bytes(&sandbox(FN_UTILS_BASE58_ENCODE, bytes))
-    }
-
     // decodes the specified bech32-encoded string value to its original address
     pub fn bech32_decode(&self, value: &str) -> ScAddress {
         address_from_bytes(&sandbox(FN_UTILS_BECH32_DECODE, &string_to_bytes(value)))

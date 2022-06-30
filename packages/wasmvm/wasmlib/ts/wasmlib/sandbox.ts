@@ -38,18 +38,16 @@ export const FnStateAnchor         : i32 = -25;
 export const FnTimestamp           : i32 = -26;
 export const FnTrace               : i32 = -27;
 export const FnTransferAllowed     : i32 = -28;
-export const FnUtilsBase58Decode   : i32 = -29;
-export const FnUtilsBase58Encode   : i32 = -30;
-export const FnUtilsBech32Decode   : i32 = -31;
-export const FnUtilsBech32Encode   : i32 = -32;
-export const FnUtilsBlsAddress     : i32 = -33;
-export const FnUtilsBlsAggregate   : i32 = -34;
-export const FnUtilsBlsValid       : i32 = -35;
-export const FnUtilsEd25519Address : i32 = -36;
-export const FnUtilsEd25519Valid   : i32 = -37;
-export const FnUtilsHashBlake2b    : i32 = -38;
-export const FnUtilsHashName       : i32 = -39;
-export const FnUtilsHashSha3       : i32 = -40;
+export const FnUtilsBech32Decode   : i32 = -29;
+export const FnUtilsBech32Encode   : i32 = -30;
+export const FnUtilsBlsAddress     : i32 = -31;
+export const FnUtilsBlsAggregate   : i32 = -32;
+export const FnUtilsBlsValid       : i32 = -33;
+export const FnUtilsEd25519Address : i32 = -34;
+export const FnUtilsEd25519Valid   : i32 = -35;
+export const FnUtilsHashBlake2b    : i32 = -36;
+export const FnUtilsHashName       : i32 = -37;
+export const FnUtilsHashSha3       : i32 = -38;
 // @formatter:on
 
 // Direct logging of text to host log

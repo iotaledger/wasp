@@ -10,13 +10,13 @@ package donatewithfeedback
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type DonateCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableDonateParams
+	Func    *wasmlib.ScFunc
+	Params  MutableDonateParams
 }
 
 type WithdrawCall struct {
-	Func   *wasmlib.ScFunc
-	Params MutableWithdrawParams
+	Func    *wasmlib.ScFunc
+	Params  MutableWithdrawParams
 }
 
 type DonationCall struct {

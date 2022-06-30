@@ -28,7 +28,7 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
 
     // First we set up a default value for the owner in case the optional
     // 'owner' parameter was omitted.
-    let mut owner: ScAgentID = ctx.contract_creator();
+    let mut owner: ScAgentID = ctx.caller();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if f.params.owner().exists() {

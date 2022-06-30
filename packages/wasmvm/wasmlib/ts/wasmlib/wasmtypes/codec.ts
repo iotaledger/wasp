@@ -1,11 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {sandbox} from "../host";
-import {FnUtilsBase58Decode, FnUtilsBase58Encode, panic} from "../sandbox";
+import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
 import {ScSandboxUtils} from "../sandboxutils";
-import {ScAddress} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -207,17 +205,6 @@ export class WasmEncoder {
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// wrapper for simplified use by hashtypes
-export function base58Decode(value: string): u8[] {
-    const utils = new ScSandboxUtils();
-    return utils.base58Decode(value)
-}
-
-export function base58Encode(buf: u8[]): string {
-    const utils = new ScSandboxUtils();
-    return utils.base58Encode(buf)
-}
 
 function hexer(hexDigit: u8): u8 {
     // '0' to '9'

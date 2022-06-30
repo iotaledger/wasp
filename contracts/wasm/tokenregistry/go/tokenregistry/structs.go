@@ -11,17 +11,17 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Token struct {
 	// creation timestamp
-	Created uint64
+	Created     uint64
 	// description what minted token represents
 	Description string
 	// original minter
-	MintedBy wasmtypes.ScAgentID
+	MintedBy    wasmtypes.ScAgentID
 	// current owner
-	Owner wasmtypes.ScAgentID
+	Owner       wasmtypes.ScAgentID
 	// amount of tokens originally minted
-	Supply uint64
+	Supply      uint64
 	// last update timestamp
-	Updated uint64
+	Updated     uint64
 	// any user defined text
 	UserDefined string
 }
@@ -29,12 +29,12 @@ type Token struct {
 func NewTokenFromBytes(buf []byte) *Token {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Token{}
-	data.Created = wasmtypes.Uint64Decode(dec)
+	data.Created     = wasmtypes.Uint64Decode(dec)
 	data.Description = wasmtypes.StringDecode(dec)
-	data.MintedBy = wasmtypes.AgentIDDecode(dec)
-	data.Owner = wasmtypes.AgentIDDecode(dec)
-	data.Supply = wasmtypes.Uint64Decode(dec)
-	data.Updated = wasmtypes.Uint64Decode(dec)
+	data.MintedBy    = wasmtypes.AgentIDDecode(dec)
+	data.Owner       = wasmtypes.AgentIDDecode(dec)
+	data.Supply      = wasmtypes.Uint64Decode(dec)
+	data.Updated     = wasmtypes.Uint64Decode(dec)
 	data.UserDefined = wasmtypes.StringDecode(dec)
 	dec.Close()
 	return data

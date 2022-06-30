@@ -52,10 +52,6 @@ export class ImmutableCheckContextFromFullEPParams extends wasmtypes.ScProxy {
 	chainOwnerID(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwnerID));
 	}
-
-	contractCreator(): wasmtypes.ScImmutableAgentID {
-		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamContractCreator));
-	}
 }
 
 export class MutableCheckContextFromFullEPParams extends wasmtypes.ScProxy {
@@ -73,10 +69,6 @@ export class MutableCheckContextFromFullEPParams extends wasmtypes.ScProxy {
 
 	chainOwnerID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwnerID));
-	}
-
-	contractCreator(): wasmtypes.ScMutableAgentID {
-		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamContractCreator));
 	}
 }
 
@@ -280,10 +272,6 @@ export class ImmutableCheckContextFromViewEPParams extends wasmtypes.ScProxy {
 	chainOwnerID(): wasmtypes.ScImmutableAgentID {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamChainOwnerID));
 	}
-
-	contractCreator(): wasmtypes.ScImmutableAgentID {
-		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamContractCreator));
-	}
 }
 
 export class MutableCheckContextFromViewEPParams extends wasmtypes.ScProxy {
@@ -297,10 +285,6 @@ export class MutableCheckContextFromViewEPParams extends wasmtypes.ScProxy {
 
 	chainOwnerID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamChainOwnerID));
-	}
-
-	contractCreator(): wasmtypes.ScMutableAgentID {
-		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamContractCreator));
 	}
 }
 

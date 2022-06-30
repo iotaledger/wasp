@@ -37,8 +37,8 @@ func OnLoad(index int32) {
 }
 
 type DonateContext struct {
-	Params ImmutableDonateParams
-	State  MutableDonateWithFeedbackState
+	Params  ImmutableDonateParams
+	State   MutableDonateWithFeedbackState
 }
 
 func funcDonateThunk(ctx wasmlib.ScFuncContext) {
@@ -56,8 +56,8 @@ func funcDonateThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type WithdrawContext struct {
-	Params ImmutableWithdrawParams
-	State  MutableDonateWithFeedbackState
+	Params  ImmutableWithdrawParams
+	State   MutableDonateWithFeedbackState
 }
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
@@ -72,8 +72,7 @@ func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can withdraw donated funds
-	// TODO WASM REFACTOR
-	// ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
 
 	funcWithdraw(ctx, f)
 	ctx.Log("donatewithfeedback.funcWithdraw ok")

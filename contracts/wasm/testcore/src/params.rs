@@ -70,10 +70,6 @@ impl ImmutableCheckContextFromFullEPParams {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
-
-    pub fn contract_creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
-	}
 }
 
 #[derive(Clone)]
@@ -96,10 +92,6 @@ impl MutableCheckContextFromFullEPParams {
 
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
-	}
-
-    pub fn contract_creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 
@@ -378,10 +370,6 @@ impl ImmutableCheckContextFromViewEPParams {
     pub fn chain_owner_id(&self) -> ScImmutableAgentID {
 		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
 	}
-
-    pub fn contract_creator(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
-	}
 }
 
 #[derive(Clone)]
@@ -400,10 +388,6 @@ impl MutableCheckContextFromViewEPParams {
 
     pub fn chain_owner_id(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER_ID))
-	}
-
-    pub fn contract_creator(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_CONTRACT_CREATOR))
 	}
 }
 

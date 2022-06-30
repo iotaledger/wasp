@@ -11,13 +11,13 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Donation struct {
 	// amount donated
-	Amount uint64
+	Amount    uint64
 	// who donated
-	Donator wasmtypes.ScAgentID
+	Donator   wasmtypes.ScAgentID
 	// error to be reported to donator if anything goes wrong
-	Error string
+	Error     string
 	// the feedback for the person donated to
-	Feedback string
+	Feedback  string
 	// when the donation took place
 	Timestamp uint64
 }
@@ -25,10 +25,10 @@ type Donation struct {
 func NewDonationFromBytes(buf []byte) *Donation {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Donation{}
-	data.Amount = wasmtypes.Uint64Decode(dec)
-	data.Donator = wasmtypes.AgentIDDecode(dec)
-	data.Error = wasmtypes.StringDecode(dec)
-	data.Feedback = wasmtypes.StringDecode(dec)
+	data.Amount    = wasmtypes.Uint64Decode(dec)
+	data.Donator   = wasmtypes.AgentIDDecode(dec)
+	data.Error     = wasmtypes.StringDecode(dec)
+	data.Feedback  = wasmtypes.StringDecode(dec)
 	data.Timestamp = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data

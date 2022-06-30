@@ -7,26 +7,24 @@
 
 package fairroulette
 
-import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-)
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
-var fairRouletteHandlers = map[string]func(*FairRouletteEventHandlers, []string){
-	"fairroulette.bet":    func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteBetThunk(msg) },
+var fairRouletteHandlers = map[string]func(*FairRouletteEventHandlers, []string) {
+	"fairroulette.bet": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteBetThunk(msg) },
 	"fairroulette.payout": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRoulettePayoutThunk(msg) },
-	"fairroulette.round":  func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteRoundThunk(msg) },
-	"fairroulette.start":  func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteStartThunk(msg) },
-	"fairroulette.stop":   func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteStopThunk(msg) },
+	"fairroulette.round": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteRoundThunk(msg) },
+	"fairroulette.start": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteStartThunk(msg) },
+	"fairroulette.stop": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteStopThunk(msg) },
 	"fairroulette.winner": func(evt *FairRouletteEventHandlers, msg []string) { evt.onFairRouletteWinnerThunk(msg) },
 }
 
 type FairRouletteEventHandlers struct {
-	bet    func(e *EventBet)
+	bet func(e *EventBet)
 	payout func(e *EventPayout)
-	round  func(e *EventRound)
-	start  func(e *EventStart)
-	stop   func(e *EventStop)
+	round func(e *EventRound)
+	start func(e *EventStart)
+	stop func(e *EventStop)
 	winner func(e *EventWinner)
 }
 
@@ -63,17 +61,17 @@ func (h *FairRouletteEventHandlers) OnFairRouletteWinner(handler func(e *EventWi
 
 type EventBet struct {
 	Timestamp uint64
-	Address   wasmtypes.ScAddress
-	Amount    uint64
-	Number    uint16
+  	Address wasmtypes.ScAddress
+  	Amount uint64
+  	Number uint16
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteBetThunk(msg []string) {
-	if h.bet == nil {
+    if h.bet == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventBet{Timestamp: evt.Timestamp()}
+	e := &EventBet{ Timestamp: evt.Timestamp() }
 	e.Address = wasmtypes.AddressFromString(evt.Decode())
 	e.Amount = wasmtypes.Uint64FromString(evt.Decode())
 	e.Number = wasmtypes.Uint16FromString(evt.Decode())
@@ -82,16 +80,16 @@ func (h *FairRouletteEventHandlers) onFairRouletteBetThunk(msg []string) {
 
 type EventPayout struct {
 	Timestamp uint64
-	Address   wasmtypes.ScAddress
-	Amount    uint64
+  	Address wasmtypes.ScAddress
+  	Amount uint64
 }
 
 func (h *FairRouletteEventHandlers) onFairRoulettePayoutThunk(msg []string) {
-	if h.payout == nil {
+    if h.payout == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventPayout{Timestamp: evt.Timestamp()}
+	e := &EventPayout{ Timestamp: evt.Timestamp() }
 	e.Address = wasmtypes.AddressFromString(evt.Decode())
 	e.Amount = wasmtypes.Uint64FromString(evt.Decode())
 	h.payout(e)
@@ -99,15 +97,15 @@ func (h *FairRouletteEventHandlers) onFairRoulettePayoutThunk(msg []string) {
 
 type EventRound struct {
 	Timestamp uint64
-	Number    uint32
+  	Number uint32
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteRoundThunk(msg []string) {
-	if h.round == nil {
+    if h.round == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventRound{Timestamp: evt.Timestamp()}
+	e := &EventRound{ Timestamp: evt.Timestamp() }
 	e.Number = wasmtypes.Uint32FromString(evt.Decode())
 	h.round(e)
 }
@@ -117,11 +115,11 @@ type EventStart struct {
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteStartThunk(msg []string) {
-	if h.start == nil {
+    if h.start == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventStart{Timestamp: evt.Timestamp()}
+	e := &EventStart{ Timestamp: evt.Timestamp() }
 	h.start(e)
 }
 
@@ -130,25 +128,25 @@ type EventStop struct {
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteStopThunk(msg []string) {
-	if h.stop == nil {
+    if h.stop == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventStop{Timestamp: evt.Timestamp()}
+	e := &EventStop{ Timestamp: evt.Timestamp() }
 	h.stop(e)
 }
 
 type EventWinner struct {
 	Timestamp uint64
-	Number    uint16
+  	Number uint16
 }
 
 func (h *FairRouletteEventHandlers) onFairRouletteWinnerThunk(msg []string) {
-	if h.winner == nil {
+    if h.winner == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &EventWinner{Timestamp: evt.Timestamp()}
+	e := &EventWinner{ Timestamp: evt.Timestamp() }
 	e.Number = wasmtypes.Uint16FromString(evt.Decode())
 	h.winner(e)
 }

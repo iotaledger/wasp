@@ -21,7 +21,7 @@ import (
 // NOTE: These functions correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
-	(*WasmContextSandbox).fnAgentID,
+	(*WasmContextSandbox).fnAccountID,
 	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
@@ -31,7 +31,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnChainID,
 	(*WasmContextSandbox).fnChainOwnerID,
 	(*WasmContextSandbox).fnContract,
-	(*WasmContextSandbox).fnContractCreator, // TODO WASM REFACTOR - remove
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEstimateDust,
@@ -49,8 +48,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
 	(*WasmContextSandbox).fnTransferAllowed,
-	(*WasmContextSandbox).fnUtilsBase58Decode, // TODO WASM REFACTOR - remove
-	(*WasmContextSandbox).fnUtilsBase58Encode, // TODO WASM REFACTOR - remove
 	(*WasmContextSandbox).fnUtilsBech32Decode,
 	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
@@ -69,7 +66,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 // NOTE: These strings correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFuncNames = []string{
 	"nil",
-	"FnAgentID",
+	"FnAccountID",
 	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
@@ -79,7 +76,6 @@ var sandboxFuncNames = []string{
 	"FnChainID",
 	"FnChainOwnerID",
 	"FnContract",
-	"FnContractCreator",
 	"#FnDeployContract",
 	"FnEntropy",
 	"#FnEstimateDust",
@@ -97,8 +93,6 @@ var sandboxFuncNames = []string{
 	"FnTimestamp",
 	"$FnTrace",
 	"#FnTransferAllowed",
-	"$FnUtilsBase58Decode",
-	"#FnUtilsBase58Encode",
 	"$FnUtilsBech32Decode",
 	"#FnUtilsBech32Encode",
 	"#FnUtilsBlsAddress",
@@ -204,7 +198,7 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *WasmContextSandbox) fnAgentID(args []byte) []byte {
+func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
 }
 
@@ -270,12 +264,6 @@ func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnContract(args []byte) []byte {
 	return s.cvt.ScHname(s.common.Contract()).Bytes()
-}
-
-func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	// TODO WASM REFACTOR
-	return nil
-	// return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
@@ -404,20 +392,6 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 			s.ctx.TransferAllowedFunds(agentID, allowance)
 		}
 	}
-	return nil
-}
-
-func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
-	// TODO WASM REFACTOR
-	// bytes, err := s.common.Utils().Base58().Decode(string(args))
-	// s.checkErr(err)
-	// return bytes
-	return nil
-}
-
-func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
-	// TODO WASM REFACTOR
-	// return []byte(s.common.Utils().Base58().Encode(args))
 	return nil
 }
 
