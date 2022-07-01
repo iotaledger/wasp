@@ -69,34 +69,32 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func TestClientEvents(t *testing.T) {
-	// TODO WASM REFACTOR
+	svc := setupClient(t)
+	events := &testwasmlib.TestWasmLibEventHandlers{}
+	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
+		fmt.Printf("Name is %s\n", e.Name)
+	})
+	svc.Register(events)
 
-	// svc := setupClient(t)
-	// events := &testwasmlib.TestWasmLibEventHandlers{}
-	// events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-	// 	fmt.Printf("Name is %s\n", e.Name)
-	// })
-	// svc.Register(events)
+	// get new triggerEvent interface, pass params, and post the request
+	f := testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Lala")
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
 
-	// // get new triggerEvent interface, pass params, and post the request
-	// f := testwasmlib.ScFuncs.TriggerEvent(svc)
-	// f.Params.Name().SetValue("Lala")
-	// f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	// f.Func.Post()
-	// require.NoError(t, svc.Err)
+	err := svc.WaitRequest()
+	require.NoError(t, err)
 
-	// err := svc.WaitRequest()
-	// require.NoError(t, err)
+	// get new triggerEvent interface, pass params, and post the request
+	f = testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Trala")
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
 
-	// // get new triggerEvent interface, pass params, and post the request
-	// f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	// f.Params.Name().SetValue("Trala")
-	// f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	// f.Func.Post()
-	// require.NoError(t, svc.Err)
-
-	// err = svc.WaitRequest()
-	// require.NoError(t, err)
+	err = svc.WaitRequest()
+	require.NoError(t, err)
 }
 
 func TestClientRandom(t *testing.T) {
