@@ -34,9 +34,7 @@ fn on_load() {
     ScExports::export(&EXPORT_MAP);
 }
 
-// storeString entry point stores a string provided as parameters
-// in the state as a value of the key 'storedString'
-// panics if parameter is not provided
+// init_func entry point initializes the owner of the contract
 fn init_func(ctx: &ScFuncContext) {
     let var_owner = string_to_bytes(VAR_OWNER);
     let owner = ctx.request_sender().to_bytes();
@@ -89,7 +87,6 @@ fn withdraw_iota(ctx: &ScFuncContext) {
     let owner = agent_id_from_bytes(&state.get(&var_owner));
 
     let caller = ctx.caller();
-
     ctx.require(caller == owner, "not authorised");
     ctx.require(caller.is_address(), "caller must be an address");
 
