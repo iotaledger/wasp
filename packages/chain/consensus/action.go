@@ -93,7 +93,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
-func (c *consensus) runVMIfNeeded() {
+func (c *consensus) runVMIfNeeded() { // nolint:funlen
 	if !c.workflow.IsConsensusBatchKnown() {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
@@ -136,51 +136,52 @@ func (c *consensus) runVMIfNeeded() {
 	c.sortBatch(reqs)
 	c.log.Debugf("runVM: sorted requests: %+v", iscp.ShortRequestIDsFromRequests(reqs))
 
-	if vmTask := c.prepareVMTask(reqs); vmTask != nil {
-		chainID := iscp.ChainIDFromAliasID(vmTask.AnchorOutput.AliasID)
-		c.log.Debugw("runVMIfNeeded: starting VM task",
-			"chainID", (&chainID).String(),
-			"ACS session ID", vmTask.ACSSessionID,
-			"milestone", vmTask.TimeAssumption.MilestoneIndex,
-			"timestamp", vmTask.TimeAssumption.Time,
-			"timestamp (Unix nano)", vmTask.TimeAssumption.Time.UnixNano(),
-			"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
-			"block index", vmTask.AnchorOutput.StateIndex,
-			"entropy", vmTask.Entropy.String(),
-			"validator fee target", vmTask.ValidatorFeeTarget.String(),
-			"num req", len(vmTask.Requests),
-			"estimate gas mode", vmTask.EstimateGasMode,
-			"state commitment", state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
-		)
-		c.workflow.setVMStarted()
-		c.consensusMetrics.CountVMRuns()
-		go func() {
-			c.vmRunner.Run(vmTask)
-			if vmTask.VMError != nil {
-				c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
-				return
-			}
-			finalRequestsCount := len(vmTask.Results)
-			if finalRequestsCount > 0 {
-				finalRequests := make([]iscp.Request, finalRequestsCount)
-				for i := range vmTask.Results {
-					finalRequests[i] = vmTask.Results[i].Request
-				}
-				c.log.Debugf("runVM result: responding by state index: %d, state commitment: %s, included %v requests: %v",
-					vmTask.VirtualStateAccess.BlockIndex(), state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()), finalRequestsCount, iscp.ShortRequestIDsFromRequests(finalRequests))
-				c.EnqueueVMResultMsg(&messages.VMResultMsg{
-					Task: vmTask,
-				})
-				elapsed := time.Since(c.workflow.GetVMStartedTime())
-				c.consensusMetrics.RecordVMRunTime(elapsed)
-			} else {
-				c.log.Debugf("runVM result: no requests included, ignoring the result and restarting the workflow")
-				c.resetWorkflow()
-			}
-		}()
-	} else {
+	vmTask := c.prepareVMTask(reqs)
+	if vmTask == nil {
 		c.log.Errorf("runVM: error preparing VM task")
+		return
 	}
+	chainID := iscp.ChainIDFromAliasID(vmTask.AnchorOutput.AliasID)
+	c.log.Debugw("runVMIfNeeded: starting VM task",
+		"chainID", (&chainID).String(),
+		"ACS session ID", vmTask.ACSSessionID,
+		"milestone", vmTask.TimeAssumption.MilestoneIndex,
+		"timestamp", vmTask.TimeAssumption.Time,
+		"timestamp (Unix nano)", vmTask.TimeAssumption.Time.UnixNano(),
+		"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
+		"block index", vmTask.AnchorOutput.StateIndex,
+		"entropy", vmTask.Entropy.String(),
+		"validator fee target", vmTask.ValidatorFeeTarget.String(),
+		"num req", len(vmTask.Requests),
+		"estimate gas mode", vmTask.EstimateGasMode,
+		"state commitment", state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()),
+	)
+	c.workflow.setVMStarted()
+	c.consensusMetrics.CountVMRuns()
+	go func() {
+		c.vmRunner.Run(vmTask)
+		if vmTask.VMError != nil {
+			c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
+			return
+		}
+		finalRequestsCount := len(vmTask.Results)
+		if finalRequestsCount == 0 {
+			c.log.Debugf("runVM result: no requests included, ignoring the result and restarting the workflow")
+			c.resetWorkflow()
+			return
+		}
+		finalRequests := make([]iscp.Request, finalRequestsCount)
+		for i := range vmTask.Results {
+			finalRequests[i] = vmTask.Results[i].Request
+		}
+		c.log.Debugf("runVM result: responding by state index: %d, state commitment: %s, included %v requests: %v",
+			vmTask.VirtualStateAccess.BlockIndex(), state.RootCommitment(vmTask.VirtualStateAccess.TrieNodeStore()), finalRequestsCount, iscp.ShortRequestIDsFromRequests(finalRequests))
+		c.EnqueueVMResultMsg(&messages.VMResultMsg{
+			Task: vmTask,
+		})
+		elapsed := time.Since(c.workflow.GetVMStartedTime())
+		c.consensusMetrics.RecordVMRunTime(elapsed)
+	}()
 }
 
 func (c *consensus) pollMissingRequests(missingRequestIndexes []int) {
