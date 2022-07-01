@@ -22,7 +22,7 @@ $#emit init$Kind$FuncName
         f.State.Owner().SetValue(f.Params.Owner().Value())
         return
     }
-    f.State.Owner().SetValue(ctx.ContractCreator())
+    f.State.Owner().SetValue(ctx.RequestSender())
 `,
 	// *******************************
 	"initFuncSetOwner": `

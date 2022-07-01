@@ -8,11 +8,12 @@
 //nolint:gocritic
 package fairroulette
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
-type FairRouletteEvents struct {
-}
+type FairRouletteEvents struct{}
 
 func (e FairRouletteEvents) Bet(
 	// address of better

@@ -223,8 +223,8 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
         // We have a remainder. First create a transfer for the remainder.
         let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.iotas(remainder);
 
-        // Send the remainder to the contract creator.
-        ctx.send(ctx.contractCreator().address(), transfers);
+        // Send the remainder to the contract owner.
+        ctx.send(f.state.owner().value().address(), transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended
@@ -296,4 +296,12 @@ export function viewRoundStartedAt(ctx: wasmlib.ScViewContext, f: sc.RoundStarte
 
 export function funcForcePayout(ctx: wasmlib.ScFuncContext, f: sc.ForcePayoutContext): void {
     sc.ScFuncs.payWinners(ctx).func.call();
+}
+
+export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
+	if (f.params.owner().exists()) {
+		f.state.owner().setValue(f.params.owner().value());
+		return;
+	}
+	f.state.owner().setValue(ctx.requestSender());
 }

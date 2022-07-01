@@ -33,6 +33,8 @@ import (
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
+	defer func() { vmctx.req = nil }() // in case `getToBeCaller()` is called afterwards
+
 	vmctx.NumPostedOutputs = 0
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0

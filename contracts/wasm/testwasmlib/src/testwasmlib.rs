@@ -733,7 +733,7 @@ pub fn view_check_big_int(ctx: &ScViewContext, f: &CheckBigIntContext) {
     ctx.require(sc_big_int.to_string() == big_int_string, "string mismatch");
 }
 
-pub fn view_check_int_and_uint(ctx: &ScViewContext, f: &CheckIntAndUintContext) {
+pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext) {
     let mut int8 = std::i8::MAX;
     ctx.require(
         int8 == int8_from_bytes(&int8_to_bytes(int8)),
@@ -991,7 +991,7 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, f: &CheckIntAndUintContext) 
     );
 }
 
-pub fn view_check_bool(ctx: &ScViewContext, f: &CheckBoolContext) {
+pub fn view_check_bool(ctx: &ScViewContext, _f: &CheckBoolContext) {
     let mut bool_data = true;
     ctx.require(
         bool_data == bool_from_bytes(&bool_to_bytes(bool_data)),

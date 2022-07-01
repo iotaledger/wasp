@@ -21,6 +21,7 @@ const (
 	ParamDuration    = "duration"
 	ParamMinimumBid  = "minimumBid"
 	ParamNft         = "nft"
+	ParamOwner       = "owner"
 	ParamOwnerMargin = "ownerMargin"
 )
 
@@ -42,11 +43,13 @@ const (
 	StateAuctions    = "auctions"
 	StateBidderList  = "bidderList"
 	StateBids        = "bids"
+	StateOwner       = "owner"
 	StateOwnerMargin = "ownerMargin"
 )
 
 const (
 	FuncFinalizeAuction = "finalizeAuction"
+	FuncInit            = "init"
 	FuncPlaceBid        = "placeBid"
 	FuncSetOwnerMargin  = "setOwnerMargin"
 	FuncStartAuction    = "startAuction"
@@ -55,6 +58,7 @@ const (
 
 const (
 	HFuncFinalizeAuction = wasmtypes.ScHname(0x8d534ddc)
+	HFuncInit            = wasmtypes.ScHname(0x1f44d644)
 	HFuncPlaceBid        = wasmtypes.ScHname(0x9bd72fa9)
 	HFuncSetOwnerMargin  = wasmtypes.ScHname(0x1774461a)
 	HFuncStartAuction    = wasmtypes.ScHname(0xd5b7bacb)

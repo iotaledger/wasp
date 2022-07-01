@@ -10,6 +10,22 @@ package tokenregistry
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
+type ImmutableInitParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableInitParams) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamOwner))
+}
+
+type MutableInitParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableInitParams) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamOwner))
+}
+
 type ImmutableMintSupplyParams struct {
 	proxy wasmtypes.Proxy
 }

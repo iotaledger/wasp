@@ -33,6 +33,10 @@ type ImmutableTokenRegistryState struct {
 	proxy wasmtypes.Proxy
 }
 
+func (s ImmutableTokenRegistryState) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
+}
+
 func (s ImmutableTokenRegistryState) Registry() MapTokenIDToImmutableToken {
 	return MapTokenIDToImmutableToken{proxy: s.proxy.Root(StateRegistry)}
 }
@@ -79,6 +83,10 @@ type MutableTokenRegistryState struct {
 
 func (s MutableTokenRegistryState) AsImmutable() ImmutableTokenRegistryState {
 	return ImmutableTokenRegistryState(s)
+}
+
+func (s MutableTokenRegistryState) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
 }
 
 func (s MutableTokenRegistryState) Registry() MapTokenIDToMutableToken {

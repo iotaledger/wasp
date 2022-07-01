@@ -13,6 +13,7 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncFinalizeAuction,
+		FuncInit,
 		FuncPlaceBid,
 		FuncSetOwnerMargin,
 		FuncStartAuction,
@@ -20,6 +21,7 @@ var exportMap = wasmlib.ScExportMap{
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcFinalizeAuctionThunk,
+		funcInitThunk,
 		funcPlaceBidThunk,
 		funcSetOwnerMarginThunk,
 		funcStartAuctionThunk,
@@ -39,8 +41,8 @@ func OnLoad(index int32) {
 }
 
 type FinalizeAuctionContext struct {
-	Params  ImmutableFinalizeAuctionParams
-	State   MutableFairAuctionState
+	Params ImmutableFinalizeAuctionParams
+	State  MutableFairAuctionState
 }
 
 func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
@@ -62,9 +64,28 @@ func funcFinalizeAuctionThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("fairauction.funcFinalizeAuction ok")
 }
 
+type InitContext struct {
+	Params ImmutableInitParams
+	State  MutableFairAuctionState
+}
+
+func funcInitThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("fairauction.funcInit")
+	f := &InitContext{
+		Params: ImmutableInitParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableFairAuctionState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInit(ctx, f)
+	ctx.Log("fairauction.funcInit ok")
+}
+
 type PlaceBidContext struct {
-	Params  ImmutablePlaceBidParams
-	State   MutableFairAuctionState
+	Params ImmutablePlaceBidParams
+	State  MutableFairAuctionState
 }
 
 func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
@@ -83,8 +104,8 @@ func funcPlaceBidThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type SetOwnerMarginContext struct {
-	Params  ImmutableSetOwnerMarginParams
-	State   MutableFairAuctionState
+	Params ImmutableSetOwnerMarginParams
+	State  MutableFairAuctionState
 }
 
 func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
@@ -99,7 +120,9 @@ func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// only SC creator can set owner margin
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	ctx.Require(f.Params.OwnerMargin().Exists(), "missing mandatory ownerMargin")
 	funcSetOwnerMargin(ctx, f)
@@ -107,8 +130,8 @@ func funcSetOwnerMarginThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type StartAuctionContext struct {
-	Params  ImmutableStartAuctionParams
-	State   MutableFairAuctionState
+	Params ImmutableStartAuctionParams
+	State  MutableFairAuctionState
 }
 
 func funcStartAuctionThunk(ctx wasmlib.ScFuncContext) {

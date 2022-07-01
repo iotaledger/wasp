@@ -21,6 +21,19 @@ export class DonateContext {
 	state: sc.MutableDonateWithFeedbackState = new sc.MutableDonateWithFeedbackState(wasmlib.ScState.proxy());
 }
 
+export class InitCall {
+	func: wasmlib.ScInitFunc;
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScInitFunc(ctx, sc.HScName, sc.HFuncInit);
+	}
+}
+
+export class InitContext {
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableDonateWithFeedbackState = new sc.MutableDonateWithFeedbackState(wasmlib.ScState.proxy());
+}
+
 export class WithdrawCall {
 	func: wasmlib.ScFunc;
 	params: sc.MutableWithdrawParams = new sc.MutableWithdrawParams(wasmlib.ScView.nilProxy);
@@ -66,6 +79,12 @@ export class ScFuncs {
 	static donate(ctx: wasmlib.ScFuncCallContext): DonateCall {
 		const f = new DonateCall(ctx);
 		f.params = new sc.MutableDonateParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall(ctx);
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

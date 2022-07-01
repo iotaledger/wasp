@@ -31,6 +31,7 @@ mod fairauction;
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
     	FUNC_FINALIZE_AUCTION,
+    	FUNC_INIT,
     	FUNC_PLACE_BID,
     	FUNC_SET_OWNER_MARGIN,
     	FUNC_START_AUCTION,
@@ -38,6 +39,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
 	],
     funcs: &[
     	func_finalize_auction_thunk,
+    	func_init_thunk,
     	func_place_bid_thunk,
     	func_set_owner_margin_thunk,
     	func_start_auction_thunk,
@@ -77,6 +79,21 @@ fn func_finalize_auction_thunk(ctx: &ScFuncContext) {
 	ctx.log("fairauction.funcFinalizeAuction ok");
 }
 
+pub struct InitContext {
+	params: ImmutableInitParams,
+	state: MutableFairAuctionState,
+}
+
+fn func_init_thunk(ctx: &ScFuncContext) {
+	ctx.log("fairauction.funcInit");
+	let f = InitContext {
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableFairAuctionState { proxy: state_proxy() },
+	};
+	func_init(ctx, &f);
+	ctx.log("fairauction.funcInit ok");
+}
+
 pub struct PlaceBidContext {
 	params: ImmutablePlaceBidParams,
 	state: MutableFairAuctionState,
@@ -106,7 +123,9 @@ fn func_set_owner_margin_thunk(ctx: &ScFuncContext) {
 	};
 
 	// only SC creator can set owner margin
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	ctx.require(f.params.owner_margin().exists(), "missing mandatory ownerMargin");
 	func_set_owner_margin(ctx, &f);

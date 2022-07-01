@@ -5,14 +5,17 @@ use wasmlib::*;
 
 const PARAM_STRING: &str = "paramString";
 const VAR_STRING: &str = "storedString";
+const VAR_OWNER: &str = "owner";
 
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
+        "init",
         "storeString",
         "withdrawIota",
         "getString",
     ],
     funcs: &[
+        init_func,
         store_string,
         withdraw_iota,
     ],
@@ -34,6 +37,16 @@ fn on_load() {
 // storeString entry point stores a string provided as parameters
 // in the state as a value of the key 'storedString'
 // panics if parameter is not provided
+fn init_func(ctx: &ScFuncContext) {
+    let var_owner = string_to_bytes(VAR_OWNER);
+    let owner = ctx.request_sender().to_bytes();
+    let state = ctx.raw_state();
+    state.set(&var_owner, &owner);
+}
+
+// storeString entry point stores a string provided as parameters
+// in the state as a value of the key 'storedString'
+// panics if parameter is not provided
 fn store_string(ctx: &ScFuncContext) {
     // take parameter paramString
     let params = ctx.params();
@@ -45,7 +58,7 @@ fn store_string(ctx: &ScFuncContext) {
     let var_string = string_to_bytes(VAR_STRING);
     let value = params.get(&param_string);
     state.set(&var_string, &value);
-     // log the text
+    // log the text
     let msg = "Message stored: ".to_string() + &string_from_bytes(&value);
     ctx.log(&msg);
 }
@@ -71,10 +84,13 @@ fn get_string(ctx: &ScViewContext) {
 // Panics if the address is not the creator of the contract is the caller
 // The caller will be address only if request is sent from the wallet on the L1, not a smart contract
 fn withdraw_iota(ctx: &ScFuncContext) {
-    let creator = ctx.contract_creator();
+    let var_owner = string_to_bytes(VAR_OWNER);
+    let state = ctx.raw_state();
+    let owner = agent_id_from_bytes(&state.get(&var_owner));
+
     let caller = ctx.caller();
 
-    ctx.require(creator == caller, "not authorised");
+    ctx.require(caller == owner, "not authorised");
     ctx.require(caller.is_address(), "caller must be an address");
 
     let bal = ctx.balances().iotas();

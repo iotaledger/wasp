@@ -83,7 +83,7 @@ func (vmctx *VMContext) isOnChainAccount(agentID iscp.AgentID) bool {
 	return vmctx.ChainID().IsSameChain(agentID)
 }
 
-func (vmctx *VMContext) isCoreAccount(agentID iscp.AgentID) bool {
+func (vmctx *VMContext) IsCoreAccount(agentID iscp.AgentID) bool {
 	contract, ok := agentID.(*iscp.ContractAgentID)
 	if !ok {
 		return false
@@ -123,7 +123,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
-	if vmctx.isCoreAccount(target) {
+	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
 	} else if !forceOpenAccount && !vmctx.targetAccountExists(target) {

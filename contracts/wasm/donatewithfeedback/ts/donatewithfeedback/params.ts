@@ -22,6 +22,18 @@ export class MutableDonateParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
+export class MutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
 export class ImmutableWithdrawParams extends wasmtypes.ScProxy {
 	// amount to withdraw
 	amount(): wasmtypes.ScImmutableUint64 {

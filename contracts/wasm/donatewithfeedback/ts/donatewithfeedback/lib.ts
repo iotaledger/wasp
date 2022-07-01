@@ -11,12 +11,14 @@ import * as sc from "./index";
 const exportMap: wasmlib.ScExportMap = {
 	names: [
 		sc.FuncDonate,
+		sc.FuncInit,
 		sc.FuncWithdraw,
 		sc.ViewDonation,
 		sc.ViewDonationInfo,
 	],
 	funcs: [
 		funcDonateThunk,
+		funcInitThunk,
 		funcWithdrawThunk,
 	],
 	views: [
@@ -42,12 +44,21 @@ function funcDonateThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("donatewithfeedback.funcDonate ok");
 }
 
+function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("donatewithfeedback.funcInit");
+	let f = new sc.InitContext();
+	sc.funcInit(ctx, f);
+	ctx.log("donatewithfeedback.funcInit ok");
+}
+
 function funcWithdrawThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("donatewithfeedback.funcWithdraw");
 	let f = new sc.WithdrawContext();
 
-	// only SC creator can withdraw donated funds
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	// only SC owner can withdraw donated funds
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	sc.funcWithdraw(ctx, f);
 	ctx.log("donatewithfeedback.funcWithdraw ok");

@@ -32,6 +32,20 @@ export class ForceResetContext {
 	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState(wasmlib.ScState.proxy());
 }
 
+export class InitCall {
+	func: wasmlib.ScInitFunc;
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScInitFunc(ctx, sc.HScName, sc.HFuncInit);
+	}
+}
+
+export class InitContext {
+	events: sc.FairRouletteEvents = new sc.FairRouletteEvents();
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableFairRouletteState = new sc.MutableFairRouletteState(wasmlib.ScState.proxy());
+}
+
 export class PayWinnersCall {
 	func: wasmlib.ScFunc;
 	public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -131,6 +145,12 @@ export class ScFuncs {
 
 	static forceReset(ctx: wasmlib.ScFuncCallContext): ForceResetCall {
 		return new ForceResetCall(ctx);
+	}
+
+	static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall(ctx);
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
 	}
 
 	static payWinners(ctx: wasmlib.ScFuncCallContext): PayWinnersCall {

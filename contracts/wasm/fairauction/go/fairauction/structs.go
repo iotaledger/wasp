@@ -11,40 +11,40 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type Auction struct {
 	// issuer of start_auction transaction
-	Creator       wasmtypes.ScAgentID
+	Creator wasmtypes.ScAgentID
 	// deposit by auction owner to cover the SC fees
-	Deposit       uint64
+	Deposit uint64
 	// auction description
-	Description   string
+	Description string
 	// auction duration in minutes
-	Duration      uint32
+	Duration uint32
 	// the current highest bid amount
-	HighestBid    uint64
+	HighestBid uint64
 	// the current highest bidder
 	HighestBidder wasmtypes.ScAgentID
 	// minimum bid amount
-	MinimumBid    uint64
+	MinimumBid uint64
 	// NFT of NFTs for sale
-	Nft           wasmtypes.ScNftID
+	Nft wasmtypes.ScNftID
 	// auction owner's margin in promilles
-	OwnerMargin   uint64
+	OwnerMargin uint64
 	// timestamp when auction started
-	WhenStarted   uint64
+	WhenStarted uint64
 }
 
 func NewAuctionFromBytes(buf []byte) *Auction {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Auction{}
-	data.Creator       = wasmtypes.AgentIDDecode(dec)
-	data.Deposit       = wasmtypes.Uint64Decode(dec)
-	data.Description   = wasmtypes.StringDecode(dec)
-	data.Duration      = wasmtypes.Uint32Decode(dec)
-	data.HighestBid    = wasmtypes.Uint64Decode(dec)
+	data.Creator = wasmtypes.AgentIDDecode(dec)
+	data.Deposit = wasmtypes.Uint64Decode(dec)
+	data.Description = wasmtypes.StringDecode(dec)
+	data.Duration = wasmtypes.Uint32Decode(dec)
+	data.HighestBid = wasmtypes.Uint64Decode(dec)
 	data.HighestBidder = wasmtypes.AgentIDDecode(dec)
-	data.MinimumBid    = wasmtypes.Uint64Decode(dec)
-	data.Nft           = wasmtypes.NftIDDecode(dec)
-	data.OwnerMargin   = wasmtypes.Uint64Decode(dec)
-	data.WhenStarted   = wasmtypes.Uint64Decode(dec)
+	data.MinimumBid = wasmtypes.Uint64Decode(dec)
+	data.Nft = wasmtypes.NftIDDecode(dec)
+	data.OwnerMargin = wasmtypes.Uint64Decode(dec)
+	data.WhenStarted = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data
 }
@@ -98,9 +98,9 @@ func (o MutableAuction) Value() *Auction {
 
 type Bid struct {
 	// cumulative amount of bids from same bidder
-	Amount    uint64
+	Amount uint64
 	// index of bidder in bidder list
-	Index     uint32
+	Index uint32
 	// timestamp of most recent bid
 	Timestamp uint64
 }
@@ -108,8 +108,8 @@ type Bid struct {
 func NewBidFromBytes(buf []byte) *Bid {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &Bid{}
-	data.Amount    = wasmtypes.Uint64Decode(dec)
-	data.Index     = wasmtypes.Uint32Decode(dec)
+	data.Amount = wasmtypes.Uint64Decode(dec)
+	data.Index = wasmtypes.Uint32Decode(dec)
 	data.Timestamp = wasmtypes.Uint64Decode(dec)
 	dec.Close()
 	return data

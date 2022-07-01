@@ -67,8 +67,17 @@ func (d *DomainImpl) GetRandomOtherPeers(upToNumPeers int) []*cryptolib.PublicKe
 		upToNumPeers = len(d.permPubKeys)
 	}
 	ret := make([]*cryptolib.PublicKey, upToNumPeers)
-	for i := range ret {
+	for i := 0; i < upToNumPeers; {
 		ret[i] = d.permPubKeys[d.permutation.NextNoCycles()]
+		distinct := true
+		for j := 0; j < i && distinct; j++ {
+			if ret[i].Equals(ret[j]) {
+				distinct = false
+			}
+		}
+		if distinct {
+			i++
+		}
 	}
 	return ret
 }

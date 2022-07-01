@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -30,16 +31,15 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID         iscp.AgentID
-	virtualState         state.VirtualStateAccess
-	finalStateTimestamp  time.Time
-	blockContext         map[iscp.Hname]*blockContext
-	blockContextCloseSeq []iscp.Hname
-	dustAssumptions      *transaction.StorageDepositAssumption
-	txbuilder            *vmtxbuilder.AnchorTransactionBuilder
-	txsnapshot           *vmtxbuilder.AnchorTransactionBuilder
-	gasBurnedTotal       uint64
-	gasFeeChargedTotal   uint64
+	chainOwnerID        iscp.AgentID
+	virtualState        state.VirtualStateAccess
+	finalStateTimestamp time.Time
+	blockContext        map[iscp.Hname]interface{}
+	dustAssumptions     *transaction.StorageDepositAssumption
+	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal      uint64
+	gasFeeChargedTotal  uint64
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
@@ -74,11 +74,6 @@ type callContext struct {
 	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
-type blockContext struct {
-	obj     interface{}
-	onClose func(interface{})
-}
-
 // CreateVMContext creates a context for the whole batch run
 func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency. It is a bit redundant double check
@@ -108,13 +103,12 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	ret := &VMContext{
-		task:                 task,
-		virtualState:         optimisticStateAccess,
-		finalStateTimestamp:  finalStateTimestamp,
-		blockContext:         make(map[iscp.Hname]*blockContext),
-		blockContextCloseSeq: make([]iscp.Hname, 0),
-		entropy:              task.Entropy,
-		callStack:            make([]*callContext, 0),
+		task:                task,
+		virtualState:        optimisticStateAccess,
+		finalStateTimestamp: finalStateTimestamp,
+		blockContext:        make(map[iscp.Hname]interface{}),
+		entropy:             task.Entropy,
+		callStack:           make([]*callContext, 0),
 	}
 	if task.EnableGasBurnLogging {
 		ret.gasBurnLog = gas.NewGasBurnLog()
@@ -173,7 +167,9 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.GasBurnEnable(false)
 	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 	rotationAddr := vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
-	vmctx.closeBlockContexts()
+	if vmctx.task.AnchorOutput.StateIndex > 0 {
+		vmctx.closeBlockContexts()
+	}
 	vmctx.saveInternalUTXOs()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 	vmctx.virtualState.Commit()
@@ -247,13 +243,38 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	return nil
 }
 
-// closeBlockContexts closing block contexts in deterministic FIFO sequence
-func (vmctx *VMContext) closeBlockContexts() {
-	for _, hname := range vmctx.blockContextCloseSeq {
-		b := vmctx.blockContext[hname]
-		b.onClose(b.obj)
+// OpenBlockContexts calls the block context open function for all subscribed core contracts
+func (vmctx *VMContext) OpenBlockContexts() {
+	if vmctx.gasBurnEnabled {
+		panic("expected gasBurnEnabled == false")
 	}
+
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+	vmctx.loadChainConfig()
+
+	var subs []root.BlockContextSubscription
+	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+		subs = root.GetBlockContextSubscriptions(s)
+	})
+	for _, sub := range subs {
+		vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil)
+	}
+
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+}
+
+// closeBlockContexts closes block contexts in deterministic FIFO sequence
+func (vmctx *VMContext) closeBlockContexts() {
+	if vmctx.gasBurnEnabled {
+		panic("expected gasBurnEnabled == false")
+	}
+	var subs []root.BlockContextSubscription
+	vmctx.callCore(root.Contract, func(s kv.KVStore) {
+		subs = root.GetBlockContextSubscriptions(s)
+	})
+	for i := len(subs) - 1; i >= 0; i-- {
+		vmctx.callProgram(subs[i].Contract, subs[i].CloseFunc, nil, nil)
+	}
 }
 
 // saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.

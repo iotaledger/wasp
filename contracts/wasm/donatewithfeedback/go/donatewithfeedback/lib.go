@@ -13,12 +13,14 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncDonate,
+		FuncInit,
 		FuncWithdraw,
 		ViewDonation,
 		ViewDonationInfo,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcDonateThunk,
+		funcInitThunk,
 		funcWithdrawThunk,
 	},
 	Views: []wasmlib.ScViewContextFunction{
@@ -37,8 +39,8 @@ func OnLoad(index int32) {
 }
 
 type DonateContext struct {
-	Params  ImmutableDonateParams
-	State   MutableDonateWithFeedbackState
+	Params ImmutableDonateParams
+	State  MutableDonateWithFeedbackState
 }
 
 func funcDonateThunk(ctx wasmlib.ScFuncContext) {
@@ -55,9 +57,28 @@ func funcDonateThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("donatewithfeedback.funcDonate ok")
 }
 
+type InitContext struct {
+	Params ImmutableInitParams
+	State  MutableDonateWithFeedbackState
+}
+
+func funcInitThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("donatewithfeedback.funcInit")
+	f := &InitContext{
+		Params: ImmutableInitParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableDonateWithFeedbackState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInit(ctx, f)
+	ctx.Log("donatewithfeedback.funcInit ok")
+}
+
 type WithdrawContext struct {
-	Params  ImmutableWithdrawParams
-	State   MutableDonateWithFeedbackState
+	Params ImmutableWithdrawParams
+	State  MutableDonateWithFeedbackState
 }
 
 func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
@@ -71,8 +92,10 @@ func funcWithdrawThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can withdraw donated funds
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can withdraw donated funds
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	funcWithdraw(ctx, f)
 	ctx.Log("donatewithfeedback.funcWithdraw ok")

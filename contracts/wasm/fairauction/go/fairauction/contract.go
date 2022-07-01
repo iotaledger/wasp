@@ -10,23 +10,28 @@ package fairauction
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 type FinalizeAuctionCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableFinalizeAuctionParams
+	Func   *wasmlib.ScFunc
+	Params MutableFinalizeAuctionParams
+}
+
+type InitCall struct {
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
 }
 
 type PlaceBidCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutablePlaceBidParams
+	Func   *wasmlib.ScFunc
+	Params MutablePlaceBidParams
 }
 
 type SetOwnerMarginCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableSetOwnerMarginParams
+	Func   *wasmlib.ScFunc
+	Params MutableSetOwnerMarginParams
 }
 
 type StartAuctionCall struct {
-	Func    *wasmlib.ScFunc
-	Params  MutableStartAuctionParams
+	Func   *wasmlib.ScFunc
+	Params MutableStartAuctionParams
 }
 
 type GetAuctionInfoCall struct {
@@ -41,6 +46,12 @@ var ScFuncs Funcs
 
 func (sc Funcs) FinalizeAuction(ctx wasmlib.ScFuncCallContext) *FinalizeAuctionCall {
 	f := &FinalizeAuctionCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncFinalizeAuction)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }

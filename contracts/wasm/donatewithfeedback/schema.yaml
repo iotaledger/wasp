@@ -11,13 +11,17 @@ typedefs: {}
 state:
   log: Donation[]
   maxDonation: Uint64
+  owner: AgentID
   totalDonation: Uint64
 funcs:
+  init:
+    params:
+      owner: AgentID?
   donate:
     params:
       feedback: String? # feedback for the person you donate to
   withdraw:
-    access: creator # only SC creator can withdraw donated funds
+    access: owner # only SC owner can withdraw donated funds
     params:
       amount: Uint64? # amount to withdraw
 views:

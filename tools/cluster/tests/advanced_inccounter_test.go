@@ -297,7 +297,7 @@ func TestRotation(t *testing.T) {
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
 	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
@@ -307,13 +307,97 @@ func TestRotation(t *testing.T) {
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
 	require.NoError(t, e.waitStateControllers(rotation2.Address, 15*time.Second))
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
 
 	_, err = myClient.PostNRequests(inccounter.FuncIncCounter.Name, numRequests)
 	require.NoError(t, err)
 
 	waitUntil(t, e.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
+}
+
+// cluster of 10 access nodes; chain is initialized by one node committee and then
+// rotated for four other nodes committee. In parallel of doing this, simple inccounter
+// requests are being posted. Test is designed in a way that some inccounter requests
+// are approved by the one node committee and others by rotated four node committee.
+// NOTE: the timeouts of the test are large, because all the nodes are checked. For
+// a request to be marked proccessed, the node's state manager must be synchronized
+// to any index after the transaction, which included the request. It might happen
+// that some request is approved by committee for state index 8 and some (most likelly
+// access) node is constantly behind and catches up only when the test stops producing
+// requests in state index 18. In that node, request index 8 is marked as processed
+// only after state manager reaches state index 18 and publishes the transaction.
+func TestRotationFromSingle(t *testing.T) {
+	numRequests := 16
+
+	clu := newCluster(t, waspClusterOpts{nNodes: 10})
+	rotation1 := newTestRotationSingleRotation(t, clu, []int{0}, 1)
+	rotation2 := newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4}, 3)
+
+	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
+	require.NoError(t, err)
+	t.Logf("chainID: %s", chain.ChainID)
+
+	e := newChainEnv(t, clu, chain)
+
+	tx := e.deployNativeIncCounterSC(0)
+
+	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+	require.NoError(t, e.waitStateControllers(rotation1.Address, 5*time.Second))
+	incCounterResultChan := make(chan error)
+
+	go func() {
+		keyPair, _, err := clu.NewKeyPairWithFunds()
+		if err != nil {
+			incCounterResultChan <- fmt.Errorf("Failed to create a key pair: %v", err)
+			return
+		}
+		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
+		for i := 0; i < numRequests; i++ {
+			t.Logf("Posting inccounter request number %v", i)
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+			if err != nil {
+				incCounterResultChan <- fmt.Errorf("Failed to post inccounter request number %v: %v", i, err)
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		incCounterResultChan <- nil
+	}()
+
+	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
+
+	time.Sleep(500 * time.Millisecond)
+	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
+	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
+	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
+	require.NoError(t, err)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+	require.NoError(t, e.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
+	require.NoError(t, e.waitStateControllers(rotation1.Address, 15*time.Second))
+
+	time.Sleep(500 * time.Millisecond)
+	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
+	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithIotas(1 * iscp.Mi)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
+	require.NoError(t, err)
+	require.NoError(t, e.waitStateControllers(rotation2.Address, 30*time.Second))
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+
+	select {
+	case incCounterResult := <-incCounterResultChan:
+		require.NoError(t, incCounterResult)
+	case <-time.After(10 * time.Second):
+		t.FailNow()
+	}
+
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.Config.AllNodes(), 30*time.Second)
 }
 
 type testRotationSingleRotation struct {

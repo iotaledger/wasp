@@ -16,6 +16,7 @@ pub const HSC_NAME       : ScHname = ScHname(0x696d7f66);
 pub const PARAM_AMOUNT   : &str = "amount";
 pub const PARAM_FEEDBACK : &str = "feedback";
 pub const PARAM_NR       : &str = "nr";
+pub const PARAM_OWNER    : &str = "owner";
 
 pub const RESULT_AMOUNT         : &str = "amount";
 pub const RESULT_COUNT          : &str = "count";
@@ -28,14 +29,17 @@ pub const RESULT_TOTAL_DONATION : &str = "totalDonation";
 
 pub const STATE_LOG            : &str = "log";
 pub const STATE_MAX_DONATION   : &str = "maxDonation";
+pub const STATE_OWNER          : &str = "owner";
 pub const STATE_TOTAL_DONATION : &str = "totalDonation";
 
 pub const FUNC_DONATE        : &str = "donate";
+pub const FUNC_INIT          : &str = "init";
 pub const FUNC_WITHDRAW      : &str = "withdraw";
 pub const VIEW_DONATION      : &str = "donation";
 pub const VIEW_DONATION_INFO : &str = "donationInfo";
 
 pub const HFUNC_DONATE        : ScHname = ScHname(0xdc9b133a);
+pub const HFUNC_INIT          : ScHname = ScHname(0x1f44d644);
 pub const HFUNC_WITHDRAW      : ScHname = ScHname(0x9dcc0f41);
 pub const HVIEW_DONATION      : ScHname = ScHname(0xbdb245ba);
 pub const HVIEW_DONATION_INFO : ScHname = ScHname(0xc8f7c726);

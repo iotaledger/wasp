@@ -26,9 +26,9 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
     // The schema tool has already created a proper InitContext for this function that
     // allows us to access call parameters and state storage in a type-safe manner.
 
-    // First we set up a default value for the owner in case the optional
-    // 'owner' parameter was omitted.
-    let mut owner: ScAgentID = ctx.caller();
+    // First we set up a default value for the owner in case the optional 'owner'
+    // parameter was omitted. We use the agent that sent the deploy request.
+    let mut owner: ScAgentID = ctx.request_sender();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if f.params.owner().exists() {

@@ -21,17 +21,18 @@ export const FnCaller              : i32 = -7;
 export const FnChainID             : i32 = -8;
 export const FnChainOwnerID        : i32 = -9;
 export const FnContract            : i32 = -10;
-export const FnDeployContract      : i32 = -12;
-export const FnEntropy             : i32 = -13;
-export const FnEstimateDust        : i32 = -14;
-export const FnEvent               : i32 = -15;
-export const FnLog                 : i32 = -16;
-export const FnMinted              : i32 = -17;
-export const FnPanic               : i32 = -18;
-export const FnParams              : i32 = -19;
-export const FnPost                : i32 = -20;
-export const FnRequest             : i32 = -21;
-export const FnRequestID           : i32 = -22;
+export const FnDeployContract      : i32 = -11;
+export const FnEntropy             : i32 = -12;
+export const FnEstimateDust        : i32 = -13;
+export const FnEvent               : i32 = -14;
+export const FnLog                 : i32 = -15;
+export const FnMinted              : i32 = -16;
+export const FnPanic               : i32 = -17;
+export const FnParams              : i32 = -18;
+export const FnPost                : i32 = -19;
+export const FnRequest             : i32 = -20;
+export const FnRequestID           : i32 = -21;
+export const FnRequestSender       : i32 = -22;
 export const FnResults             : i32 = -23;
 export const FnSend                : i32 = -24;
 export const FnStateAnchor         : i32 = -25;
@@ -286,6 +287,11 @@ export class ScSandboxFunc extends ScSandbox {
     // retrieve the request id of this transaction
     public requestID(): wasmtypes.ScRequestID {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
+    }
+
+    // retrieve the request sender of this transaction
+    public requestSender(): wasmtypes.ScAgentID {
+        return wasmtypes.agentIDFromBytes(sandbox(FnRequestSender, null));
     }
 
     // Send transfers SC assets to the specified address

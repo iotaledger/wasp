@@ -18,6 +18,11 @@ pub struct ForceResetCall {
 	pub func: ScFunc,
 }
 
+pub struct InitCall {
+	pub func: ScInitFunc,
+	pub params: MutableInitParams,
+}
+
 pub struct PayWinnersCall {
 	pub func: ScFunc,
 }
@@ -66,6 +71,15 @@ impl ScFuncs {
         ForceResetCall {
             func: ScFunc::new(HSC_NAME, HFUNC_FORCE_RESET),
         }
+    }
+
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
+        let mut f = InitCall {
+            func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
+            params: MutableInitParams { proxy: Proxy::nil() },
+        };
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
+        f
     }
 
     pub fn pay_winners(_ctx: &dyn ScFuncCallContext) -> PayWinnersCall {

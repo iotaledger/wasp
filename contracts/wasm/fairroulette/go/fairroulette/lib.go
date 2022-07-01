@@ -14,6 +14,7 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncForcePayout,
 		FuncForceReset,
+		FuncInit,
 		FuncPayWinners,
 		FuncPlaceBet,
 		FuncPlayPeriod,
@@ -25,6 +26,7 @@ var exportMap = wasmlib.ScExportMap{
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcForcePayoutThunk,
 		funcForceResetThunk,
+		funcInitThunk,
 		funcPayWinnersThunk,
 		funcPlaceBetThunk,
 		funcPlayPeriodThunk,
@@ -47,8 +49,8 @@ func OnLoad(index int32) {
 }
 
 type ForcePayoutContext struct {
-	Events  FairRouletteEvents
-	State   MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
@@ -59,16 +61,18 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can restart the round forcefully
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	funcForcePayout(ctx, f)
 	ctx.Log("fairroulette.funcForcePayout ok")
 }
 
 type ForceResetContext struct {
-	Events  FairRouletteEvents
-	State   MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
@@ -79,16 +83,38 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can restart the round forcefully
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	funcForceReset(ctx, f)
 	ctx.Log("fairroulette.funcForceReset ok")
 }
 
+type InitContext struct {
+	Events FairRouletteEvents
+	Params ImmutableInitParams
+	State  MutableFairRouletteState
+}
+
+func funcInitThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("fairroulette.funcInit")
+	f := &InitContext{
+		Params: ImmutableInitParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInit(ctx, f)
+	ctx.Log("fairroulette.funcInit ok")
+}
+
 type PayWinnersContext struct {
-	Events  FairRouletteEvents
-	State   MutableFairRouletteState
+	Events FairRouletteEvents
+	State  MutableFairRouletteState
 }
 
 func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
@@ -107,9 +133,9 @@ func funcPayWinnersThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlaceBetContext struct {
-	Events  FairRouletteEvents
-	Params  ImmutablePlaceBetParams
-	State   MutableFairRouletteState
+	Events FairRouletteEvents
+	Params ImmutablePlaceBetParams
+	State  MutableFairRouletteState
 }
 
 func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
@@ -128,9 +154,9 @@ func funcPlaceBetThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type PlayPeriodContext struct {
-	Events  FairRouletteEvents
-	Params  ImmutablePlayPeriodParams
-	State   MutableFairRouletteState
+	Events FairRouletteEvents
+	Params ImmutablePlayPeriodParams
+	State  MutableFairRouletteState
 }
 
 func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
@@ -144,8 +170,10 @@ func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can update the play period
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can update the play period
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")
 	funcPlayPeriod(ctx, f)

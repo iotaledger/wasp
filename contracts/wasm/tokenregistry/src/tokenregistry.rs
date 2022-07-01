@@ -44,3 +44,11 @@ pub fn func_update_metadata(_ctx: &ScFuncContext, _f: &UpdateMetadataContext) {
 pub fn view_get_info(_ctx: &ScViewContext, _f: &GetInfoContext) {
     // TODO
 }
+
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
+    }
+    f.state.owner().set_value(&ctx.request_sender());
+}

@@ -27,6 +27,10 @@ export class ArrayOfImmutableTokenID extends wasmtypes.ScProxy {
 }
 
 export class ImmutableTokenRegistryState extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateOwner));
+	}
+
 	registry(): sc.MapTokenIDToImmutableToken {
 		return new sc.MapTokenIDToImmutableToken(this.proxy.root(sc.StateRegistry));
 	}
@@ -69,6 +73,10 @@ export class ArrayOfMutableTokenID extends wasmtypes.ScProxy {
 export class MutableTokenRegistryState extends wasmtypes.ScProxy {
 	asImmutable(): sc.ImmutableTokenRegistryState {
 		return new sc.ImmutableTokenRegistryState(this.proxy);
+	}
+
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateOwner));
 	}
 
 	registry(): sc.MapTokenIDToMutableToken {

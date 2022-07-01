@@ -42,6 +42,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnPost,
 	(*WasmContextSandbox).fnRequest,
 	(*WasmContextSandbox).fnRequestID,
+	(*WasmContextSandbox).fnRequestSender,
 	(*WasmContextSandbox).fnResults,
 	(*WasmContextSandbox).fnSend,
 	(*WasmContextSandbox).fnStateAnchor,
@@ -87,6 +88,7 @@ var sandboxFuncNames = []string{
 	"#FnPost",
 	"FnRequest",
 	"FnRequestID",
+	"FnRequestSender",
 	"#FnResults",
 	"#FnSend",
 	"#FnStateAnchor",
@@ -334,6 +336,10 @@ func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
 
 func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
 	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnRequestSender(args []byte) []byte {
+	return s.cvt.ScAgentID(s.ctx.Request().SenderAccount()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnResults(args []byte) []byte {

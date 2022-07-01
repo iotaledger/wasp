@@ -30,22 +30,23 @@ const (
 	FnPost                = int32(-19)
 	FnRequest             = int32(-20)
 	FnRequestID           = int32(-21)
-	FnResults             = int32(-22)
-	FnSend                = int32(-23)
-	FnStateAnchor         = int32(-24)
-	FnTimestamp           = int32(-25)
-	FnTrace               = int32(-26)
-	FnTransferAllowed     = int32(-27)
-	FnUtilsBech32Decode   = int32(-28)
-	FnUtilsBech32Encode   = int32(-29)
-	FnUtilsBlsAddress     = int32(-30)
-	FnUtilsBlsAggregate   = int32(-31)
-	FnUtilsBlsValid       = int32(-32)
-	FnUtilsEd25519Address = int32(-33)
-	FnUtilsEd25519Valid   = int32(-34)
-	FnUtilsHashBlake2b    = int32(-35)
-	FnUtilsHashName       = int32(-36)
-	FnUtilsHashSha3       = int32(-37)
+	FnRequestSender       = int32(-22)
+	FnResults             = int32(-23)
+	FnSend                = int32(-24)
+	FnStateAnchor         = int32(-25)
+	FnTimestamp           = int32(-26)
+	FnTrace               = int32(-27)
+	FnTransferAllowed     = int32(-28)
+	FnUtilsBech32Decode   = int32(-29)
+	FnUtilsBech32Encode   = int32(-30)
+	FnUtilsBlsAddress     = int32(-31)
+	FnUtilsBlsAggregate   = int32(-32)
+	FnUtilsBlsValid       = int32(-33)
+	FnUtilsEd25519Address = int32(-34)
+	FnUtilsEd25519Valid   = int32(-35)
+	FnUtilsHashBlake2b    = int32(-36)
+	FnUtilsHashName       = int32(-37)
+	FnUtilsHashSha3       = int32(-38)
 )
 
 type ScSandbox struct{}
@@ -279,6 +280,11 @@ func (s ScSandboxFunc) RawState() ScState {
 // retrieve the request id of this transaction
 func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
+}
+
+// retrieve the request sender of this transaction
+func (s ScSandboxFunc) RequestSender() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnRequestSender, nil))
 }
 
 // Send transfers SC assets to the specified address

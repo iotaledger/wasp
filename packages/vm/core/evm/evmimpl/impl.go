@@ -40,6 +40,8 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncGetStorage.WithHandler(getStorage),
 	evm.FuncGetLogs.WithHandler(getLogs),
 	evm.FuncGetChainID.WithHandler(getChainID),
+	evm.FuncOpenBlockContext.WithHandler(openBlockContext),
+	evm.FuncCloseBlockContext.WithHandler(closeBlockContext),
 )
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
@@ -76,6 +78,8 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
 
+	ctx.Privileged().SubscribeBlockContext(evm.FuncOpenBlockContext.Hname(), evm.FuncCloseBlockContext.Hname())
+
 	return nil
 }
 
@@ -84,8 +88,7 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
-	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransaction))
+	tx, err := evmtypes.DecodeTransaction(ctx.Params().MustGet(evm.FieldTransaction))
 	ctx.RequireNoError(err)
 
 	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))

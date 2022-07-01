@@ -30,9 +30,9 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	// The schema tool has already created a proper InitContext for this function that
 	// allows us to access call parameters and state storage in a type-safe manner.
 
-	// First we set up a default value for the owner in case the optional
-	// 'owner' parameter was omitted.
-	var owner wasmtypes.ScAgentID = ctx.Caller()
+	// First we set up a default value for the owner in case the optional 'owner'
+	// parameter was omitted. We use the agent that sent the deploy request.
+	var owner wasmtypes.ScAgentID = ctx.RequestSender()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
 	if f.Params.Owner().Exists() {
