@@ -174,7 +174,7 @@ func (c *consensus) runVMIfNeeded() {
 				elapsed := time.Since(c.workflow.GetVMStartedTime())
 				c.consensusMetrics.RecordVMRunTime(elapsed)
 			} else {
-				c.log.Debugf("runVM result: no requests included, ignoring the result and reseting the workflow")
+				c.log.Debugf("runVM result: no requests included, ignoring the result and restarting the workflow")
 				c.resetWorkflow()
 			}
 		}()
