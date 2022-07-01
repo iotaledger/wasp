@@ -112,7 +112,6 @@ func TestTransferAllowanceTo(t *testing.T) {
 	assert.Equal(t, balanceOldUser1, balanceNewUser1)
 	assert.Equal(t, new(big.Int).Sub(balanceOldUser0L2, big.NewInt(int64(transferAmount))), balanceNewUser0L2)
 	assert.Equal(t, new(big.Int).Add(balanceOldUser1L2, big.NewInt(int64(transferAmount))), balanceNewUser1L2)
-
 }
 
 func TestWithdraw(t *testing.T) {
