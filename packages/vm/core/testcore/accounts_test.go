@@ -1067,7 +1067,7 @@ func TestNFTAccount(t *testing.T) {
 	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
 }
 
-func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *iscp.NFT) {
+func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *iscp.NFT, owner iscp.AgentID) {
 	ret, err := ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name, dict.Dict{
 		accounts.ParamNFTID: nft.ID[:],
 	})
@@ -1077,6 +1077,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *iscp.NFT) {
 	require.Equal(t, nftBack.ID, nft.ID)
 	require.Equal(t, nftBack.Issuer, nft.Issuer)
 	require.Equal(t, nftBack.Metadata, nft.Metadata)
+	require.True(t, nftBack.Owner.Equals(owner))
 }
 
 func TestTransferNFTAllowance(t *testing.T) {
@@ -1100,7 +1101,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
-	checkChainNFTData(t, ch, nft)
+	checkChainNFTData(t, ch, nft, initialOwnerAgentID)
 
 	// send an off-ledger request to transfer the NFT to the another account
 	finalOwnerWallet, finalOwnerAddress := ch.Env.NewKeyPairWithFunds()
@@ -1119,7 +1120,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 
 	require.True(t, ch.HasL2NFT(finalOwnerAgentID, &nft.ID))
 	require.False(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
-	checkChainNFTData(t, ch, nft)
+	checkChainNFTData(t, ch, nft, finalOwnerAgentID)
 
 	// withdraw to L1
 	_, err = ch.PostRequestSync(

@@ -274,18 +274,14 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
 	require.NoError(t, err)
 	_, err = env.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			AddIotas(100000).
-			WithNFT(&iscp.NFT{
-				ID:       nftInfo.NFTID,
-				Issuer:   issuerAddress,
-				Metadata: metadata,
-			}).
+			WithNFT(nft).
 			WithMaxAffordableGasBudget().
-			WithSender(nftInfo.NFTID.ToAddress()),
+			WithSender(nft.ID.ToAddress()),
 		issuerWallet,
 	)
 	require.NoError(t, err)
@@ -294,11 +290,11 @@ func TestISCNFTData(t *testing.T) {
 	ret := new(isccontract.ISCNFT)
 	env.ISCContract(ethKey).callView(
 		"getNFTData",
-		[]interface{}{isccontract.WrapIotaNFTID(nftInfo.NFTID)},
+		[]interface{}{isccontract.WrapIotaNFTID(nft.ID)},
 		&ret,
 	)
 
-	require.EqualValues(t, nftInfo.NFTID, ret.MustUnwrap().ID)
+	require.EqualValues(t, nft.ID, ret.MustUnwrap().ID)
 	require.True(t, issuerAddress.Equal(ret.MustUnwrap().Issuer))
 	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
 }
