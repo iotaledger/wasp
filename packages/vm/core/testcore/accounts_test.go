@@ -60,7 +60,7 @@ func TestHarvest(t *testing.T) {
 		nil)
 	require.NoError(t, err)
 	t.Logf("common iotas AFTER: %d", ch.L2CommonAccountIotas())
-	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumIotasOnCommonAccount)
+	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // allowance shouldn't allow you to bypass gas fees.
@@ -828,7 +828,7 @@ func TestTransferAndHarvest(t *testing.T) {
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+rec.GasFeeCharged, commonAssets.Iotas)
+	require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAssets.Iotas)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
 }
 

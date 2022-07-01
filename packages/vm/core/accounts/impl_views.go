@@ -20,13 +20,13 @@ func viewBalance(ctx iscp.SandboxView) dict.Dict {
 	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
 }
 
-// viewBalanceIotas returns the iota balance of the account belonging to the AgentID
+// viewBalanceBaseToken returns the iota balance of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
 // Returns: {ParamBalance: uint64}
-func viewBalanceIotas(ctx iscp.SandboxView) dict.Dict {
-	iotas := getIotaBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
-	return dict.Dict{ParamBalance: codec.EncodeUint64(iotas)}
+func viewBalanceBaseToken(ctx iscp.SandboxView) dict.Dict {
+	nTokens := getIotaBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
+	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID

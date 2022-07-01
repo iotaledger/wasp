@@ -27,7 +27,7 @@ var Processor = Contract.Processor(initialize,
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
-	ViewBalanceIotas.WithHandler(viewBalanceIotas),
+	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceNativeToken.WithHandler(viewBalanceNativeToken),
 	ViewFoundryOutput.WithHandler(viewFoundryOutput),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
@@ -171,18 +171,18 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	checkLedger(state, "accounts.harvest.begin")
 	defer checkLedger(state, "accounts.harvest.exit")
 
-	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
-	if bottomIotas > MinimumIotasOnCommonAccount {
-		bottomIotas = MinimumIotasOnCommonAccount
+	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
+	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
+		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
 	toWithdraw := GetAccountAssets(state, commonAccount)
-	if toWithdraw.Iotas <= bottomIotas {
+	if toWithdraw.Iotas <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
-	ctx.Requiref(toWithdraw.Iotas > bottomIotas, "assertion failed: toWithdraw.Iotas > bottomIotas")
-	toWithdraw.Iotas -= bottomIotas
+	ctx.Requiref(toWithdraw.Iotas > bottomBaseTokens, "assertion failed: toWithdraw.Iotas > availableBaseTokens")
+	toWithdraw.Iotas -= bottomBaseTokens
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
 }
