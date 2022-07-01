@@ -18,6 +18,10 @@ funcs:
   requireDeployPermissions:
     params:
       deployPermissionsEnabled=de: Bool
+  subscribeBlockContext:
+    params:
+      openFunc=bco: Hname
+      closeFunc=bcc: Hname
 views:
   findContract:
     params:

@@ -29,6 +29,11 @@ type RevokeDeployPermissionCall struct {
 	Params MutableRevokeDeployPermissionParams
 }
 
+type SubscribeBlockContextCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableSubscribeBlockContextParams
+}
+
 type FindContractCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableFindContractParams
@@ -68,6 +73,12 @@ func (sc Funcs) RevokeDeployPermission(ctx wasmlib.ScFuncCallContext) *RevokeDep
 	return f
 }
 
+func (sc Funcs) SubscribeBlockContext(ctx wasmlib.ScFuncCallContext) *SubscribeBlockContextCall {
+	f := &SubscribeBlockContextCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSubscribeBlockContext)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
 func (sc Funcs) FindContract(ctx wasmlib.ScViewCallContext) *FindContractCall {
 	f := &FindContractCall{Func: wasmlib.NewScView(ctx, HScName, HViewFindContract)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -87,10 +98,12 @@ var exportMap = wasmlib.ScExportMap{
 		FuncGrantDeployPermission,
 		FuncRequireDeployPermissions,
 		FuncRevokeDeployPermission,
+		FuncSubscribeBlockContext,
 		ViewFindContract,
 		ViewGetContractRecords,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,
 		wasmlib.FuncError,

@@ -30,6 +30,11 @@ pub struct RevokeDeployPermissionCall {
 	pub params: MutableRevokeDeployPermissionParams,
 }
 
+pub struct SubscribeBlockContextCall {
+	pub func: ScFunc,
+	pub params: MutableSubscribeBlockContextParams,
+}
+
 pub struct FindContractCall {
 	pub func: ScView,
 	pub params: MutableFindContractParams,
@@ -76,6 +81,15 @@ impl ScFuncs {
         let mut f = RevokeDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
             params: MutableRevokeDeployPermissionParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn subscribe_block_context(_ctx: &dyn ScFuncCallContext) -> SubscribeBlockContextCall {
+        let mut f = SubscribeBlockContextCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SUBSCRIBE_BLOCK_CONTEXT),
+            params: MutableSubscribeBlockContextParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f
