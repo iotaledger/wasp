@@ -170,6 +170,7 @@ func (c *consensus) runVMIfNeeded() { // nolint:funlen
 			c.resetWorkflow()
 			return
 		}
+		// NOTE: this loop is needed for logging purposes only; it can be removed for optimisation if needed.
 		finalRequests := make([]iscp.Request, finalRequestsCount)
 		for i := range vmTask.Results {
 			finalRequests[i] = vmTask.Results[i].Request
