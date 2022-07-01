@@ -93,13 +93,20 @@ This operation cannot be reverted
 
 ## Views
 
-The `accounts` contract provides ways to query chain accounts information.
+The `accounts` contract provides ways to query information about chain accounts.
 
-### - `balance()`
+### - `balance(a AgentID)`
 
-Returns the colored token balances that are controlled by the `agent ID` that was specified in the call parameters. It returns the balances as a dictionary of `color: amount` pairs.
+Returns the fungible tokens owned by any AgentID `a`.
 
-### - `balanceIotas()`
+
+### - `accountNFTs()`
+
+Returns the NFTs owned by any AgentID `a`.
+
+### - `balanceBaseToken()`
+
+
 
 ### - `balanceNativeToken()`
 
@@ -117,6 +124,6 @@ Returns a list of all non-empty accounts in the chain as a list of serialized `a
 
 ### - `foundryOutput()`
 
-### - `accountNFTs()`
+
 
 ### - `nftData()`
