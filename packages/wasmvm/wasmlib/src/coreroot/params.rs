@@ -120,6 +120,36 @@ impl MutableRevokeDeployPermissionParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableSubscribeBlockContextParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSubscribeBlockContextParams {
+    pub fn close_func(&self) -> ScImmutableHname {
+		ScImmutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
+	}
+
+    pub fn open_func(&self) -> ScImmutableHname {
+		ScImmutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableSubscribeBlockContextParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableSubscribeBlockContextParams {
+    pub fn close_func(&self) -> ScMutableHname {
+		ScMutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
+	}
+
+    pub fn open_func(&self) -> ScMutableHname {
+		ScMutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableFindContractParams {
 	pub(crate) proxy: Proxy,
 }

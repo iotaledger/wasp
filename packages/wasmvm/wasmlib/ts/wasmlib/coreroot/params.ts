@@ -76,6 +76,26 @@ export class MutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableSubscribeBlockContextParams extends wasmtypes.ScProxy {
+	closeFunc(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamCloseFunc));
+	}
+
+	openFunc(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamOpenFunc));
+	}
+}
+
+export class MutableSubscribeBlockContextParams extends wasmtypes.ScProxy {
+	closeFunc(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamCloseFunc));
+	}
+
+	openFunc(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamOpenFunc));
+	}
+}
+
 export class ImmutableFindContractParams extends wasmtypes.ScProxy {
 	hname(): wasmtypes.ScImmutableHname {
 		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamHname));
