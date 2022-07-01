@@ -19,36 +19,34 @@ const (
 	FnChainID             = int32(-8)
 	FnChainOwnerID        = int32(-9)
 	FnContract            = int32(-10)
-	FnContractCreator     = int32(-11)
-	FnDeployContract      = int32(-12)
-	FnEntropy             = int32(-13)
-	FnEstimateDust        = int32(-14)
-	FnEvent               = int32(-15)
-	FnLog                 = int32(-16)
-	FnMinted              = int32(-17)
-	FnPanic               = int32(-18)
-	FnParams              = int32(-19)
-	FnPost                = int32(-20)
-	FnRequest             = int32(-21)
-	FnRequestID           = int32(-22)
+	FnDeployContract      = int32(-11)
+	FnEntropy             = int32(-12)
+	FnEstimateDust        = int32(-13)
+	FnEvent               = int32(-14)
+	FnLog                 = int32(-15)
+	FnMinted              = int32(-16)
+	FnPanic               = int32(-17)
+	FnParams              = int32(-18)
+	FnPost                = int32(-19)
+	FnRequest             = int32(-20)
+	FnRequestID           = int32(-21)
+	FnRequestSender       = int32(-22)
 	FnResults             = int32(-23)
 	FnSend                = int32(-24)
 	FnStateAnchor         = int32(-25)
 	FnTimestamp           = int32(-26)
 	FnTrace               = int32(-27)
 	FnTransferAllowed     = int32(-28)
-	FnUtilsBase58Decode   = int32(-29)
-	FnUtilsBase58Encode   = int32(-30)
-	FnUtilsBech32Decode   = int32(-31)
-	FnUtilsBech32Encode   = int32(-32)
-	FnUtilsBlsAddress     = int32(-33)
-	FnUtilsBlsAggregate   = int32(-34)
-	FnUtilsBlsValid       = int32(-35)
-	FnUtilsEd25519Address = int32(-36)
-	FnUtilsEd25519Valid   = int32(-37)
-	FnUtilsHashBlake2b    = int32(-38)
-	FnUtilsHashName       = int32(-39)
-	FnUtilsHashSha3       = int32(-40)
+	FnUtilsBech32Decode   = int32(-29)
+	FnUtilsBech32Encode   = int32(-30)
+	FnUtilsBlsAddress     = int32(-31)
+	FnUtilsBlsAggregate   = int32(-32)
+	FnUtilsBlsValid       = int32(-33)
+	FnUtilsEd25519Address = int32(-34)
+	FnUtilsEd25519Valid   = int32(-35)
+	FnUtilsHashBlake2b    = int32(-36)
+	FnUtilsHashName       = int32(-37)
+	FnUtilsHashSha3       = int32(-38)
 )
 
 type ScSandbox struct{}
@@ -106,11 +104,6 @@ func (s ScSandbox) ChainOwnerID() wasmtypes.ScAgentID {
 // retrieve the hname of this contract
 func (s ScSandbox) Contract() wasmtypes.ScHname {
 	return wasmtypes.HnameFromBytes(Sandbox(FnContract, nil))
-}
-
-// retrieve the agent id of the creator of this contract
-func (s ScSandbox) ContractCreator() wasmtypes.ScAgentID {
-	return wasmtypes.AgentIDFromBytes(Sandbox(FnContractCreator, nil))
 }
 
 // retrieve the chain id of the chain this contract lives on
@@ -287,6 +280,11 @@ func (s ScSandboxFunc) RawState() ScState {
 // retrieve the request id of this transaction
 func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
+}
+
+// retrieve the request sender of this transaction
+func (s ScSandboxFunc) RequestSender() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnRequestSender, nil))
 }
 
 // Send transfers SC assets to the specified address

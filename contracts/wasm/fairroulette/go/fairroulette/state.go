@@ -33,6 +33,10 @@ func (s ImmutableFairRouletteState) LastWinningNumber() wasmtypes.ScImmutableUin
 	return wasmtypes.NewScImmutableUint16(s.proxy.Root(StateLastWinningNumber))
 }
 
+func (s ImmutableFairRouletteState) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
+}
+
 func (s ImmutableFairRouletteState) PlayPeriod() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(StatePlayPeriod))
 }
@@ -83,6 +87,10 @@ func (s MutableFairRouletteState) Bets() ArrayOfMutableBet {
 
 func (s MutableFairRouletteState) LastWinningNumber() wasmtypes.ScMutableUint16 {
 	return wasmtypes.NewScMutableUint16(s.proxy.Root(StateLastWinningNumber))
+}
+
+func (s MutableFairRouletteState) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
 }
 
 func (s MutableFairRouletteState) PlayPeriod() wasmtypes.ScMutableUint32 {

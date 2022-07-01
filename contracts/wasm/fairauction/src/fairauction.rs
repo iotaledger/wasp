@@ -140,7 +140,7 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
             owner_fee = 1;
         }
         // finalizeAuction request nft was probably not confirmed yet
-        transfer_iotas(ctx, &ctx.contract_creator(), owner_fee - 1);
+        transfer_iotas(ctx, &f.state.owner().value(), owner_fee - 1);
         transfer_nft(ctx, &auction.creator, &auction.nft);
         transfer_iotas(ctx, &auction.creator, auction.deposit - owner_fee);
         return;
@@ -164,7 +164,7 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
     }
 
     // finalizeAuction request nft was probably not confirmed yet
-    transfer_iotas(ctx, &ctx.contract_creator(), owner_fee - 1);
+    transfer_iotas(ctx, &f.state.owner().value(), owner_fee - 1);
     transfer_nft(ctx, &auction.highest_bidder, &auction.nft);
     transfer_iotas(
         ctx,
@@ -227,4 +227,12 @@ fn transfer_nft(ctx: &ScFuncContext, agent: &ScAgentID, nft: &ScNftID) {
 
     // TODO not an address, deposit into account on chain
     ctx.send(&agent.address(), &ScTransfer::nft(nft));
+}
+
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
+    }
+    f.state.owner().set_value(&ctx.request_sender());
 }

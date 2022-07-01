@@ -63,6 +63,10 @@ impl ImmutableFairAuctionState {
 		MapNftIDToImmutableBids { proxy: self.proxy.root(STATE_BIDS) }
 	}
 
+    pub fn owner(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
+	}
+
     // default auction owner's margin in promilles
     pub fn owner_margin(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_OWNER_MARGIN))
@@ -134,6 +138,10 @@ impl MutableFairAuctionState {
 
     pub fn bids(&self) -> MapNftIDToMutableBids {
 		MapNftIDToMutableBids { proxy: self.proxy.root(STATE_BIDS) }
+	}
+
+    pub fn owner(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
     // default auction owner's margin in promilles

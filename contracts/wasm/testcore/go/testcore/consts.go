@@ -22,7 +22,6 @@ const (
 	ParamCaller          = "caller"
 	ParamChainID         = "chainID"
 	ParamChainOwnerID    = "chainOwnerID"
-	ParamContractCreator = "contractCreator"
 	ParamContractID      = "contractID"
 	ParamCounter         = "counter"
 	ParamFail            = "initFailParam"

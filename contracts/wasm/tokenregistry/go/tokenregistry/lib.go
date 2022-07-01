@@ -12,12 +12,14 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
+		FuncInit,
 		FuncMintSupply,
 		FuncTransferOwnership,
 		FuncUpdateMetadata,
 		ViewGetInfo,
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{
+		funcInitThunk,
 		funcMintSupplyThunk,
 		funcTransferOwnershipThunk,
 		funcUpdateMetadataThunk,
@@ -34,6 +36,25 @@ func OnLoad(index int32) {
 	}
 
 	wasmlib.ScExportsExport(&exportMap)
+}
+
+type InitContext struct {
+	Params ImmutableInitParams
+	State  MutableTokenRegistryState
+}
+
+func funcInitThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("tokenregistry.funcInit")
+	f := &InitContext{
+		Params: ImmutableInitParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableTokenRegistryState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInit(ctx, f)
+	ctx.Log("tokenregistry.funcInit ok")
 }
 
 type MintSupplyContext struct {
@@ -72,7 +93,9 @@ func funcTransferOwnershipThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// TODO the one who can transfer token ownership
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcTransferOwnership(ctx, f)
@@ -96,7 +119,9 @@ func funcUpdateMetadataThunk(ctx wasmlib.ScFuncContext) {
 	}
 
 	// TODO the one who can change the token info
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	ctx.Require(f.Params.Token().Exists(), "missing mandatory token")
 	funcUpdateMetadata(ctx, f)

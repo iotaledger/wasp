@@ -14,6 +14,7 @@ var exportMap = wasmlib.ScExportMap{
 	Names: []string{
 		FuncForcePayout,
 		FuncForceReset,
+		FuncInit,
 		FuncPayWinners,
 		FuncPlaceBet,
 		FuncPlayPeriod,
@@ -25,6 +26,7 @@ var exportMap = wasmlib.ScExportMap{
 	Funcs: []wasmlib.ScFuncContextFunction{
 		funcForcePayoutThunk,
 		funcForceResetThunk,
+		funcInitThunk,
 		funcPayWinnersThunk,
 		funcPlaceBetThunk,
 		funcPlayPeriodThunk,
@@ -59,8 +61,10 @@ func funcForcePayoutThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can restart the round forcefully
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	funcForcePayout(ctx, f)
 	ctx.Log("fairroulette.funcForcePayout ok")
@@ -79,11 +83,33 @@ func funcForceResetThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can restart the round forcefully
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can restart the round forcefully
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	funcForceReset(ctx, f)
 	ctx.Log("fairroulette.funcForceReset ok")
+}
+
+type InitContext struct {
+	Events FairRouletteEvents
+	Params ImmutableInitParams
+	State  MutableFairRouletteState
+}
+
+func funcInitThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("fairroulette.funcInit")
+	f := &InitContext{
+		Params: ImmutableInitParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		State: MutableFairRouletteState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	funcInit(ctx, f)
+	ctx.Log("fairroulette.funcInit ok")
 }
 
 type PayWinnersContext struct {
@@ -144,8 +170,10 @@ func funcPlayPeriodThunk(ctx wasmlib.ScFuncContext) {
 		},
 	}
 
-	// only SC creator can update the play period
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
+	// only SC owner can update the play period
+	access := f.State.Owner()
+	ctx.Require(access.Exists(), "access not set: owner")
+	ctx.Require(ctx.Caller() == access.Value(), "no permission")
 
 	ctx.Require(f.Params.PlayPeriod().Exists(), "missing mandatory playPeriod")
 	funcPlayPeriod(ctx, f)

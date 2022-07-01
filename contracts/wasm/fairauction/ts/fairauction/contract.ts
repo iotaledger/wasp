@@ -21,6 +21,19 @@ export class FinalizeAuctionContext {
 	state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState(wasmlib.ScState.proxy());
 }
 
+export class InitCall {
+	func: wasmlib.ScInitFunc;
+	params: sc.MutableInitParams = new sc.MutableInitParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScInitFunc(ctx, sc.HScName, sc.HFuncInit);
+	}
+}
+
+export class InitContext {
+	params: sc.ImmutableInitParams = new sc.ImmutableInitParams(wasmlib.paramsProxy());
+	state: sc.MutableFairAuctionState = new sc.MutableFairAuctionState(wasmlib.ScState.proxy());
+}
+
 export class PlaceBidCall {
 	func: wasmlib.ScFunc;
 	params: sc.MutablePlaceBidParams = new sc.MutablePlaceBidParams(wasmlib.ScView.nilProxy);
@@ -79,6 +92,12 @@ export class ScFuncs {
 	static finalizeAuction(ctx: wasmlib.ScFuncCallContext): FinalizeAuctionCall {
 		const f = new FinalizeAuctionCall(ctx);
 		f.params = new sc.MutableFinalizeAuctionParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static init(ctx: wasmlib.ScFuncCallContext): InitCall {
+		const f = new InitCall(ctx);
+		f.params = new sc.MutableInitParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 

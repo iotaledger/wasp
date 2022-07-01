@@ -15,6 +15,7 @@ export const ParamDescription = "description";
 export const ParamDuration    = "duration";
 export const ParamMinimumBid  = "minimumBid";
 export const ParamNft         = "nft";
+export const ParamOwner       = "owner";
 export const ParamOwnerMargin = "ownerMargin";
 
 export const ResultBidders       = "bidders";
@@ -32,15 +33,18 @@ export const ResultWhenStarted   = "whenStarted";
 export const StateAuctions    = "auctions";
 export const StateBidderList  = "bidderList";
 export const StateBids        = "bids";
+export const StateOwner       = "owner";
 export const StateOwnerMargin = "ownerMargin";
 
 export const FuncFinalizeAuction = "finalizeAuction";
+export const FuncInit            = "init";
 export const FuncPlaceBid        = "placeBid";
 export const FuncSetOwnerMargin  = "setOwnerMargin";
 export const FuncStartAuction    = "startAuction";
 export const ViewGetAuctionInfo  = "getAuctionInfo";
 
 export const HFuncFinalizeAuction = new wasmtypes.ScHname(0x8d534ddc);
+export const HFuncInit            = new wasmtypes.ScHname(0x1f44d644);
 export const HFuncPlaceBid        = new wasmtypes.ScHname(0x9bd72fa9);
 export const HFuncSetOwnerMargin  = new wasmtypes.ScHname(0x1774461a);
 export const HFuncStartAuction    = new wasmtypes.ScHname(0xd5b7bacb);

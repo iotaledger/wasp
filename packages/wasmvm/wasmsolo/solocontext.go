@@ -293,10 +293,6 @@ func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
 	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
-func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
-	return ctx.Creator().ScAgentID()
-}
-
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
 func (ctx *SoloContext) ContractExists(scName string) error {
 	_, err := ctx.Chain.FindContract(scName)

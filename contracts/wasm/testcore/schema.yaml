@@ -21,7 +21,6 @@ funcs:
       caller: AgentID
       chainID: ChainID
       chainOwnerID: AgentID
-      contractCreator: AgentID
   claimAllowance:
   doNothing:
   estimateMinDust:
@@ -85,7 +84,6 @@ views:
       agentID: AgentID
       chainID: ChainID
       chainOwnerID: AgentID
-      contractCreator: AgentID
   fibonacci:
     params:
       n: Uint64

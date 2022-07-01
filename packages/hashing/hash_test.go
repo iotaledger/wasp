@@ -61,7 +61,6 @@ func TestString(t *testing.T) {
 	stringified := h1.String()
 	require.EqualValues(t, reflect.TypeOf(stringType), reflect.TypeOf(stringified))
 	require.EqualValues(t, h1.String(), (&h1).String())
-	require.EqualValues(t, h1.Base58(), (&h1).Base58())
 }
 
 func TestSha3(t *testing.T) {

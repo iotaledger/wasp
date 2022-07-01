@@ -31,7 +31,6 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnChainID,
 	(*WasmContextSandbox).fnChainOwnerID,
 	(*WasmContextSandbox).fnContract,
-	(*WasmContextSandbox).fnContractCreator,
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
 	(*WasmContextSandbox).fnEstimateDust,
@@ -43,14 +42,13 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnPost,
 	(*WasmContextSandbox).fnRequest,
 	(*WasmContextSandbox).fnRequestID,
+	(*WasmContextSandbox).fnRequestSender,
 	(*WasmContextSandbox).fnResults,
 	(*WasmContextSandbox).fnSend,
 	(*WasmContextSandbox).fnStateAnchor,
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
 	(*WasmContextSandbox).fnTransferAllowed,
-	(*WasmContextSandbox).fnUtilsBase58Decode,
-	(*WasmContextSandbox).fnUtilsBase58Encode,
 	(*WasmContextSandbox).fnUtilsBech32Decode,
 	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
@@ -79,7 +77,6 @@ var sandboxFuncNames = []string{
 	"FnChainID",
 	"FnChainOwnerID",
 	"FnContract",
-	"FnContractCreator",
 	"#FnDeployContract",
 	"FnEntropy",
 	"#FnEstimateDust",
@@ -91,14 +88,13 @@ var sandboxFuncNames = []string{
 	"#FnPost",
 	"FnRequest",
 	"FnRequestID",
+	"FnRequestSender",
 	"#FnResults",
 	"#FnSend",
 	"#FnStateAnchor",
 	"FnTimestamp",
 	"$FnTrace",
 	"#FnTransferAllowed",
-	"$FnUtilsBase58Decode",
-	"#FnUtilsBase58Encode",
 	"$FnUtilsBech32Decode",
 	"#FnUtilsBech32Encode",
 	"#FnUtilsBlsAddress",
@@ -272,10 +268,6 @@ func (s *WasmContextSandbox) fnContract(args []byte) []byte {
 	return s.cvt.ScHname(s.common.Contract()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
-}
-
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 	req := wasmrequests.NewDeployRequestFromBytes(args)
 	programHash, err := hashing.HashValueFromBytes(req.ProgHash.Bytes())
@@ -346,6 +338,10 @@ func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
 	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
 }
 
+func (s *WasmContextSandbox) fnRequestSender(args []byte) []byte {
+	return s.cvt.ScAgentID(s.ctx.Request().SenderAccount()).Bytes()
+}
+
 func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 	results, err := dict.FromBytes(args)
 	if err != nil {
@@ -403,16 +399,6 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 		}
 	}
 	return nil
-}
-
-func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
-	bytes, err := s.common.Utils().Base58().Decode(string(args))
-	s.checkErr(err)
-	return bytes
-}
-
-func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
-	return []byte(s.common.Utils().Base58().Encode(args))
 }
 
 func (s WasmContextSandbox) fnUtilsBech32Decode(args []byte) []byte {

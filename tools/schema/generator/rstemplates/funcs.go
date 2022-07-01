@@ -24,7 +24,7 @@ $#emit init$Kind$FuncName
         f.state.owner().set_value(&f.params.owner().value());
         return;
     }
-    f.state.owner().set_value(&ctx.contract_creator());
+    f.state.owner().set_value(&ctx.request_sender());
 `,
 	// *******************************
 	"initFuncSetOwner": `

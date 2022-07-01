@@ -28,6 +28,10 @@ export class ImmutableFairRouletteState extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint16(this.proxy.root(sc.StateLastWinningNumber));
 	}
 
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateOwner));
+	}
+
 	playPeriod(): wasmtypes.ScImmutableUint32 {
 		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.StatePlayPeriod));
 	}
@@ -75,6 +79,10 @@ export class MutableFairRouletteState extends wasmtypes.ScProxy {
 
 	lastWinningNumber(): wasmtypes.ScMutableUint16 {
 		return new wasmtypes.ScMutableUint16(this.proxy.root(sc.StateLastWinningNumber));
+	}
+
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateOwner));
 	}
 
 	playPeriod(): wasmtypes.ScMutableUint32 {

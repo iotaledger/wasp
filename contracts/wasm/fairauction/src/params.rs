@@ -36,6 +36,28 @@ impl MutableFinalizeAuctionParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableInitParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableInitParams {
+    pub fn owner(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(PARAM_OWNER))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableInitParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableInitParams {
+    pub fn owner(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(PARAM_OWNER))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutablePlaceBidParams {
 	pub(crate) proxy: Proxy,
 }

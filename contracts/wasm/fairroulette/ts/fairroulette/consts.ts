@@ -12,6 +12,7 @@ export const ScDescription = "";
 export const HScName       = new wasmtypes.ScHname(0xdf79d138);
 
 export const ParamNumber     = "number";
+export const ParamOwner      = "owner";
 export const ParamPlayPeriod = "playPeriod";
 
 export const ResultLastWinningNumber = "lastWinningNumber";
@@ -21,6 +22,7 @@ export const ResultRoundStatus       = "roundStatus";
 
 export const StateBets              = "bets";
 export const StateLastWinningNumber = "lastWinningNumber";
+export const StateOwner             = "owner";
 export const StatePlayPeriod        = "playPeriod";
 export const StateRoundNumber       = "roundNumber";
 export const StateRoundStartedAt    = "roundStartedAt";
@@ -28,6 +30,7 @@ export const StateRoundStatus       = "roundStatus";
 
 export const FuncForcePayout       = "forcePayout";
 export const FuncForceReset        = "forceReset";
+export const FuncInit              = "init";
 export const FuncPayWinners        = "payWinners";
 export const FuncPlaceBet          = "placeBet";
 export const FuncPlayPeriod        = "playPeriod";
@@ -38,6 +41,7 @@ export const ViewRoundStatus       = "roundStatus";
 
 export const HFuncForcePayout       = new wasmtypes.ScHname(0x555a4c4f);
 export const HFuncForceReset        = new wasmtypes.ScHname(0xa331951e);
+export const HFuncInit              = new wasmtypes.ScHname(0x1f44d644);
 export const HFuncPayWinners        = new wasmtypes.ScHname(0xfb2b0144);
 export const HFuncPlaceBet          = new wasmtypes.ScHname(0xdfba7d1b);
 export const HFuncPlayPeriod        = new wasmtypes.ScHname(0xcb94b293);

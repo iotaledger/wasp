@@ -15,6 +15,11 @@ pub struct DonateCall {
 	pub params: MutableDonateParams,
 }
 
+pub struct InitCall {
+	pub func: ScInitFunc,
+	pub params: MutableInitParams,
+}
+
 pub struct WithdrawCall {
 	pub func: ScFunc,
 	pub params: MutableWithdrawParams,
@@ -41,6 +46,15 @@ impl ScFuncs {
             params: MutableDonateParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
+        let mut f = InitCall {
+            func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
+            params: MutableInitParams { proxy: Proxy::nil() },
+        };
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 

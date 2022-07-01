@@ -41,3 +41,11 @@ export function funcUpdateMetadata(ctx: wasmlib.ScFuncContext, f: sc.UpdateMetad
 export function viewGetInfo(ctx: wasmlib.ScViewContext, f: sc.GetInfoContext): void {
     // TODO
 }
+
+export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
+	if (f.params.owner().exists()) {
+		f.state.owner().setValue(f.params.owner().value());
+		return;
+	}
+	f.state.owner().setValue(ctx.requestSender());
+}

@@ -308,7 +308,7 @@ func (r *offLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 func (r *offLedgerRequestData) String() string {
 	return fmt.Sprintf("offLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, nonce: %d }",
 		r.ID().String(),
-		"**not impl**", // TODO r.SenderAddress().Base58(),
+		r.SenderAccount().String(),
 		r.contract.String(),
 		r.entryPoint.String(),
 		r.Params().String(),

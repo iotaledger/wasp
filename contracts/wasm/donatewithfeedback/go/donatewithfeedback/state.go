@@ -33,6 +33,10 @@ func (s ImmutableDonateWithFeedbackState) MaxDonation() wasmtypes.ScImmutableUin
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateMaxDonation))
 }
 
+func (s ImmutableDonateWithFeedbackState) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(StateOwner))
+}
+
 func (s ImmutableDonateWithFeedbackState) TotalDonation() wasmtypes.ScImmutableUint64 {
 	return wasmtypes.NewScImmutableUint64(s.proxy.Root(StateTotalDonation))
 }
@@ -71,6 +75,10 @@ func (s MutableDonateWithFeedbackState) Log() ArrayOfMutableDonation {
 
 func (s MutableDonateWithFeedbackState) MaxDonation() wasmtypes.ScMutableUint64 {
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(StateMaxDonation))
+}
+
+func (s MutableDonateWithFeedbackState) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(StateOwner))
 }
 
 func (s MutableDonateWithFeedbackState) TotalDonation() wasmtypes.ScMutableUint64 {

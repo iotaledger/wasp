@@ -17,36 +17,34 @@ pub const FN_CALLER                : i32 = -7;
 pub const FN_CHAIN_ID              : i32 = -8;
 pub const FN_CHAIN_OWNER_ID        : i32 = -9;
 pub const FN_CONTRACT              : i32 = -10;
-pub const FN_CONTRACT_CREATOR      : i32 = -11;
-pub const FN_DEPLOY_CONTRACT       : i32 = -12;
-pub const FN_ENTROPY               : i32 = -13;
-pub const FN_ESTIMATE_DUST         : i32 = -14;
-pub const FN_EVENT                 : i32 = -15;
-pub const FN_LOG                   : i32 = -16;
-pub const FN_MINTED                : i32 = -17;
-pub const FN_PANIC                 : i32 = -18;
-pub const FN_PARAMS                : i32 = -19;
-pub const FN_POST                  : i32 = -20;
-pub const FN_REQUEST               : i32 = -21;
-pub const FN_REQUEST_ID            : i32 = -22;
+pub const FN_DEPLOY_CONTRACT       : i32 = -11;
+pub const FN_ENTROPY               : i32 = -12;
+pub const FN_ESTIMATE_DUST         : i32 = -13;
+pub const FN_EVENT                 : i32 = -14;
+pub const FN_LOG                   : i32 = -15;
+pub const FN_MINTED                : i32 = -16;
+pub const FN_PANIC                 : i32 = -17;
+pub const FN_PARAMS                : i32 = -18;
+pub const FN_POST                  : i32 = -19;
+pub const FN_REQUEST               : i32 = -20;
+pub const FN_REQUEST_ID            : i32 = -21;
+pub const FN_REQUEST_SENDER        : i32 = -22;
 pub const FN_RESULTS               : i32 = -23;
 pub const FN_SEND                  : i32 = -24;
 pub const FN_STATE_ANCHOR          : i32 = -25;
 pub const FN_TIMESTAMP             : i32 = -26;
 pub const FN_TRACE                 : i32 = -27;
 pub const FN_TRANSFER_ALLOWED      : i32 = -28;
-pub const FN_UTILS_BASE58_DECODE   : i32 = -29;
-pub const FN_UTILS_BASE58_ENCODE   : i32 = -30;
-pub const FN_UTILS_BECH32_DECODE   : i32 = -31;
-pub const FN_UTILS_BECH32_ENCODE   : i32 = -32;
-pub const FN_UTILS_BLS_ADDRESS     : i32 = -33;
-pub const FN_UTILS_BLS_AGGREGATE   : i32 = -34;
-pub const FN_UTILS_BLS_VALID       : i32 = -35;
-pub const FN_UTILS_ED25519_ADDRESS : i32 = -36;
-pub const FN_UTILS_ED25519_VALID   : i32 = -37;
-pub const FN_UTILS_HASH_BLAKE2B    : i32 = -38;
-pub const FN_UTILS_HASH_NAME       : i32 = -39;
-pub const FN_UTILS_HASH_SHA3       : i32 = -40;
+pub const FN_UTILS_BECH32_DECODE   : i32 = -29;
+pub const FN_UTILS_BECH32_ENCODE   : i32 = -30;
+pub const FN_UTILS_BLS_ADDRESS     : i32 = -31;
+pub const FN_UTILS_BLS_AGGREGATE   : i32 = -32;
+pub const FN_UTILS_BLS_VALID       : i32 = -33;
+pub const FN_UTILS_ED25519_ADDRESS : i32 = -34;
+pub const FN_UTILS_ED25519_VALID   : i32 = -35;
+pub const FN_UTILS_HASH_BLAKE2B    : i32 = -36;
+pub const FN_UTILS_HASH_NAME       : i32 = -37;
+pub const FN_UTILS_HASH_SHA3       : i32 = -38;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -118,11 +116,6 @@ pub trait ScSandbox {
     // retrieve the hname of this contract
     fn contract(&self) -> ScHname {
         hname_from_bytes(&sandbox(FN_CONTRACT, &[]))
-    }
-
-    // retrieve the agent id of the creator of this contract
-    fn contract_creator(&self) -> ScAgentID {
-        agent_id_from_bytes(&sandbox(FN_CONTRACT_CREATOR, &[]))
     }
 
     // retrieve the chain id of the chain this contract lives on
@@ -290,6 +283,11 @@ pub trait ScSandboxFunc: ScSandbox {
     // retrieve the request id of this transaction
     fn request_id(&self) -> ScRequestID {
         return request_id_from_bytes(&sandbox(FN_REQUEST_ID, &[]));
+    }
+
+    // retrieve the request sender of this transaction
+    fn request_sender(&self) -> ScAgentID {
+        return agent_id_from_bytes(&sandbox(FN_REQUEST_SENDER, &[]));
     }
 
     // Send transfers SC assets to the specified address

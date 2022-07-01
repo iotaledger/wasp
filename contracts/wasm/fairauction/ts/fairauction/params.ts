@@ -22,6 +22,18 @@ export class MutableFinalizeAuctionParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
+export class MutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
 export class ImmutablePlaceBidParams extends wasmtypes.ScProxy {
 	// NFT identifies the auction
 	nft(): wasmtypes.ScImmutableNftID {

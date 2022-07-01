@@ -42,6 +42,10 @@ export class ImmutableFairAuctionState extends wasmtypes.ScProxy {
 		return new sc.MapNftIDToImmutableBids(this.proxy.root(sc.StateBids));
 	}
 
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateOwner));
+	}
+
 	// default auction owner's margin in promilles
 	ownerMargin(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateOwnerMargin));
@@ -96,6 +100,10 @@ export class MutableFairAuctionState extends wasmtypes.ScProxy {
 
 	bids(): sc.MapNftIDToMutableBids {
 		return new sc.MapNftIDToMutableBids(this.proxy.root(sc.StateBids));
+	}
+
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateOwner));
 	}
 
 	// default auction owner's margin in promilles

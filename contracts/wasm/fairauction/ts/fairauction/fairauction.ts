@@ -96,7 +96,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
             ownerFee = 1;
         }
         // finalizeAuction request nft was probably not confirmed yet
-        transferIotas(ctx, ctx.contractCreator(), ownerFee - 1);
+        transferIotas(ctx, f.state.owner().value(), ownerFee - 1);
         transferNFT(ctx, auction.creator, auction.nft);
         transferIotas(ctx, auction.creator, auction.deposit - ownerFee);
         return;
@@ -120,7 +120,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
     }
 
     // finalizeAuction request nft was probably not confirmed yet
-    transferIotas(ctx, ctx.contractCreator(), ownerFee - 1);
+    transferIotas(ctx, f.state.owner().value(), ownerFee - 1);
     transferNFT(ctx, auction.highestBidder, auction.nft);
     transferIotas(ctx, auction.creator, auction.deposit + auction.highestBid - ownerFee);
 }
@@ -216,4 +216,12 @@ function transferNFT(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, nft: 
 
     // TODO not an address, deposit into account on chain
     ctx.send(agent.address(), wasmlib.ScTransfer.nft(nft));
+}
+
+export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
+	if (f.params.owner().exists()) {
+		f.state.owner().setValue(f.params.owner().value());
+		return;
+	}
+	f.state.owner().setValue(ctx.requestSender());
 }

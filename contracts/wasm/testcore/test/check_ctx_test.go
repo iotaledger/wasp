@@ -17,7 +17,6 @@ func TestMainCallsFromFullEP(t *testing.T) {
 		f.Params.AgentID().SetValue(ctx.AccountID())
 		f.Params.Caller().SetValue(user.ScAgentID())
 		f.Params.ChainOwnerID().SetValue(ctx.Originator().ScAgentID())
-		f.Params.ContractCreator().SetValue(user.ScAgentID())
 		f.Func.Post()
 		require.NoError(t, ctx.Err)
 	})
@@ -26,13 +25,11 @@ func TestMainCallsFromFullEP(t *testing.T) {
 func TestMainCallsFromViewEP(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
 		ctx := deployTestCore(t, w, true)
-		user := ctx.Creator()
 
 		f := testcore.ScFuncs.CheckContextFromViewEP(ctx)
 		f.Params.ChainID().SetValue(ctx.CurrentChainID())
 		f.Params.AgentID().SetValue(ctx.AccountID())
 		f.Params.ChainOwnerID().SetValue(ctx.Originator().ScAgentID())
-		f.Params.ContractCreator().SetValue(user.ScAgentID())
 		f.Func.Call()
 		require.NoError(t, ctx.Err)
 	})

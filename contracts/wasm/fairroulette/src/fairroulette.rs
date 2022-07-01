@@ -226,8 +226,8 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
         // We have a remainder. First create a transfer for the remainder.
         let transfers: ScTransfer = ScTransfer::iotas(remainder);
 
-        // Send the remainder to the contract creator.
-        ctx.send(&ctx.contract_creator().address(), &transfers);
+        // Send the remainder to the contract owner.
+        ctx.send(&f.state.owner().value().address(), &transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended
@@ -299,4 +299,12 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
 
 pub fn func_force_payout(ctx: &ScFuncContext, _f: &ForcePayoutContext) {
     ScFuncs::pay_winners(ctx).func.call();
+}
+
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
+    }
+    f.state.owner().set_value(&ctx.request_sender());
 }

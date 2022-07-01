@@ -127,7 +127,6 @@ function funcCheckContextFromFullEPThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.require(f.params.caller().exists(), "missing mandatory caller");
 	ctx.require(f.params.chainID().exists(), "missing mandatory chainID");
 	ctx.require(f.params.chainOwnerID().exists(), "missing mandatory chainOwnerID");
-	ctx.require(f.params.contractCreator().exists(), "missing mandatory contractCreator");
 	sc.funcCheckContextFromFullEP(ctx, f);
 	ctx.log("testcore.funcCheckContextFromFullEP ok");
 }
@@ -345,7 +344,6 @@ function viewCheckContextFromViewEPThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.agentID().exists(), "missing mandatory agentID");
 	ctx.require(f.params.chainID().exists(), "missing mandatory chainID");
 	ctx.require(f.params.chainOwnerID().exists(), "missing mandatory chainOwnerID");
-	ctx.require(f.params.contractCreator().exists(), "missing mandatory contractCreator");
 	sc.viewCheckContextFromViewEP(ctx, f);
 	ctx.log("testcore.viewCheckContextFromViewEP ok");
 }

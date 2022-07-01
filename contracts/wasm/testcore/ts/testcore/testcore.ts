@@ -45,7 +45,6 @@ export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.Che
     ctx.require(f.params.caller().value().equals(ctx.caller()), "fail: caller");
     ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
-    ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
 
 export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
@@ -226,7 +225,6 @@ export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.Che
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
     ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
-    ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
 
 function fibonacci(n: u64): u64 {

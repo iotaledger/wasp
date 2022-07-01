@@ -58,7 +58,6 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 	ctx.Require(f.Params.Caller().Value() == ctx.Caller(), "fail: caller")
 	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, f *ClaimAllowanceContext) {
@@ -265,7 +264,6 @@ func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromVi
 	ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "fail: agentID")
 	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
 func fibonacci(n uint64) uint64 {

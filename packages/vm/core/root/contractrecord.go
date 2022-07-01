@@ -21,9 +21,6 @@ type ContractRecord struct {
 	// Unique name of the contract on the chain. The real identity of the instance on the chain
 	// is hname(name) =  iscp.Hn(name)
 	Name string
-	// The agentID of the entity which deployed the instance. It can be interpreted as
-	// an privileged user of the instance, however it is up to the smart contract.
-	Creator iscp.AgentID
 }
 
 func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord {
@@ -31,7 +28,6 @@ func ContractRecordFromContractInfo(itf *coreutil.ContractInfo) *ContractRecord 
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
 		Name:        itf.Name,
-		Creator:     &iscp.NilAgentID{},
 	}
 }
 
@@ -49,15 +45,6 @@ func ContractRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractRecord
 	if ret.Name, err = readString(mu); err != nil {
 		return nil, err
 	}
-	creatorNotNil, err := mu.ReadBool()
-	if err != nil {
-		return nil, err
-	}
-	if creatorNotNil {
-		if ret.Creator, err = iscp.AgentIDFromMarshalUtil(mu); err != nil {
-			return nil, err
-		}
-	}
 	return ret, nil
 }
 
@@ -66,10 +53,6 @@ func (p *ContractRecord) Bytes() []byte {
 	mu.WriteBytes(p.ProgramHash[:])
 	writeString(mu, p.Description)
 	writeString(mu, p.Name)
-	mu.WriteBool(p.Creator != nil)
-	if p.Creator != nil {
-		mu.Write(p.Creator)
-	}
 	return mu.Bytes()
 }
 
@@ -91,10 +74,6 @@ func readString(mu *marshalutil.MarshalUtil) (string, error) {
 		return "", err
 	}
 	return string(ret), nil
-}
-
-func (p *ContractRecord) HasCreator() bool {
-	return p.Creator != nil
 }
 
 func (p *ContractRecord) Hname() iscp.Hname {

@@ -10,6 +10,11 @@
 use wasmlib::*;
 use crate::*;
 
+pub struct InitCall {
+	pub func: ScInitFunc,
+	pub params: MutableInitParams,
+}
+
 pub struct MintSupplyCall {
 	pub func: ScFunc,
 	pub params: MutableMintSupplyParams,
@@ -34,6 +39,15 @@ pub struct ScFuncs {
 }
 
 impl ScFuncs {
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
+        let mut f = InitCall {
+            func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
+            params: MutableInitParams { proxy: Proxy::nil() },
+        };
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     pub fn mint_supply(_ctx: &dyn ScFuncCallContext) -> MintSupplyCall {
         let mut f = MintSupplyCall {
             func: ScFunc::new(HSC_NAME, HFUNC_MINT_SUPPLY),

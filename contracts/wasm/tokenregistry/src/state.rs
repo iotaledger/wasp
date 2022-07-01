@@ -44,6 +44,10 @@ pub struct ImmutableTokenRegistryState {
 }
 
 impl ImmutableTokenRegistryState {
+    pub fn owner(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
+	}
+
     pub fn registry(&self) -> MapTokenIDToImmutableToken {
 		MapTokenIDToImmutableToken { proxy: self.proxy.root(STATE_REGISTRY) }
 	}
@@ -99,6 +103,10 @@ pub struct MutableTokenRegistryState {
 impl MutableTokenRegistryState {
     pub fn as_immutable(&self) -> ImmutableTokenRegistryState {
 		ImmutableTokenRegistryState { proxy: self.proxy.root("") }
+	}
+
+    pub fn owner(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
     pub fn registry(&self) -> MapTokenIDToMutableToken {

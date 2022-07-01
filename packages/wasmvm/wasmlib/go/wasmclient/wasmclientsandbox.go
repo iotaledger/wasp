@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 )
 
@@ -24,10 +23,6 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 		return s.fnCall(args)
 	case wasmlib.FnPost:
 		return s.fnPost(args)
-	case wasmlib.FnUtilsBase58Decode:
-		return Base58Decode(string(args))
-	case wasmlib.FnUtilsBase58Encode:
-		return []byte(Base58Encode(args))
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:
@@ -109,18 +104,4 @@ func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
 func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {
 	var utils iscp.Utils
 	return codec.EncodeHname(utils.Hashing().Hname(string(args)))
-}
-
-/////////////////////////////////////////////////////////////////
-
-func Base58Decode(s string) []byte {
-	res, err := base58.Decode(s)
-	if err != nil {
-		panic("invalid base58 encoding")
-	}
-	return res
-}
-
-func Base58Encode(b []byte) string {
-	return base58.Encode(b)
 }

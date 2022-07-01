@@ -143,7 +143,6 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     ctx.Caller(),
 	})
 	ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",

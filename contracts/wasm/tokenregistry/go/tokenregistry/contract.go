@@ -9,6 +9,11 @@ package tokenregistry
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
+type InitCall struct {
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
+}
+
 type MintSupplyCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableMintSupplyParams
@@ -32,6 +37,12 @@ type GetInfoCall struct {
 type Funcs struct{}
 
 var ScFuncs Funcs
+
+func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
 
 func (sc Funcs) MintSupply(ctx wasmlib.ScFuncCallContext) *MintSupplyCall {
 	f := &MintSupplyCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMintSupply)}

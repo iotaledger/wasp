@@ -33,7 +33,6 @@ type WaspContext interface {
 	ChainID() *iscp.ChainID
 	ChainOwnerID() iscp.AgentID
 	CurrentContractHname() iscp.Hname
-	ContractCreator() iscp.AgentID
 	Params() *iscp.Params
 	StateReader() kv.KVStoreReader
 	GasBudgetLeft() uint64

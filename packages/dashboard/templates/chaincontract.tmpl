@@ -10,7 +10,6 @@
 			<dt>Hname</dt><dd><code>{{.Hname}}</code></dd>
 			<dt>Description</dt><dd><code>{{trim 50 $c.Description}}</code></dd>
 			<dt>Program hash</dt><dd><code>{{$c.ProgramHash.String}}</code></dd>
-			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
 		</dl>
 	</div>
 

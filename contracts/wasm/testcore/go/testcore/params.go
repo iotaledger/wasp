@@ -62,10 +62,6 @@ func (s ImmutableCheckContextFromFullEPParams) ChainOwnerID() wasmtypes.ScImmuta
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s ImmutableCheckContextFromFullEPParams) ContractCreator() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractCreator))
-}
-
 type MutableCheckContextFromFullEPParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -84,10 +80,6 @@ func (s MutableCheckContextFromFullEPParams) ChainID() wasmtypes.ScMutableChainI
 
 func (s MutableCheckContextFromFullEPParams) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwnerID))
-}
-
-func (s MutableCheckContextFromFullEPParams) ContractCreator() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type ImmutableInitParams struct {
@@ -322,10 +314,6 @@ func (s ImmutableCheckContextFromViewEPParams) ChainOwnerID() wasmtypes.ScImmuta
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwnerID))
 }
 
-func (s ImmutableCheckContextFromViewEPParams) ContractCreator() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamContractCreator))
-}
-
 type MutableCheckContextFromViewEPParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -340,10 +328,6 @@ func (s MutableCheckContextFromViewEPParams) ChainID() wasmtypes.ScMutableChainI
 
 func (s MutableCheckContextFromViewEPParams) ChainOwnerID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamChainOwnerID))
-}
-
-func (s MutableCheckContextFromViewEPParams) ContractCreator() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamContractCreator))
 }
 
 type ImmutableFibonacciParams struct {

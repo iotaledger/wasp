@@ -37,7 +37,6 @@ func (ch *Chain) CheckChain() {
 		require.EqualValues(ch.Env.T, c.Name, recFromState.Name)
 		require.EqualValues(ch.Env.T, c.Description, recFromState.Description)
 		require.EqualValues(ch.Env.T, c.ProgramHash, recFromState.ProgramHash)
-		require.Equal(ch.Env.T, iscp.AgentIDKindNil, recFromState.Creator.Kind())
 	}
 	ch.CheckAccountLedger()
 }
