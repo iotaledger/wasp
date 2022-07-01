@@ -86,6 +86,7 @@ func newMempool(
 func (m *mempool) addToInBuffer(req iscp.Request) bool {
 	// just check if it is already in the pool
 	if m.HasRequest(req.ID()) {
+		m.log.Warnf("Request %s is already in mempool", req.ID())
 		return false
 	}
 	m.inMutex.Lock()

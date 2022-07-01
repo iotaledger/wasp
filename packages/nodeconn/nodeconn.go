@@ -287,7 +287,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", msgID)
+			nc.log.Debugf("promoting msgID: %s", msgID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
 			if err != nil {
