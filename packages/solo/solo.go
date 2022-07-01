@@ -548,7 +548,7 @@ type NFTMintedInfo struct {
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
 // Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*iscp.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
 	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
@@ -559,27 +559,33 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		ImmutableMetadata: immutableMetadata,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = env.AddToLedger(tx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	outSet, err := tx.OutputsSet()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for id, out := range outSet {
 		// we know that the tx will only produce 1 NFT output
 		if _, ok := out.(*iotago.NFTOutput); ok {
-			return &NFTMintedInfo{
+			info := &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
 				NFTID:    iotago.NFTIDFromOutputID(id),
-			}, nil
+			}
+			iscpNFT := &iscp.NFT{
+				ID:       info.NFTID,
+				Issuer:   issuer.Address(),
+				Metadata: immutableMetadata,
+			}
+			return iscpNFT, info, nil
 		}
 	}
 
-	return nil, fmt.Errorf("NFT output not found in resulting tx")
+	return nil, nil, fmt.Errorf("NFT output not found in resulting tx")
 }

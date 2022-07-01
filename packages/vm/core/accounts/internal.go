@@ -297,6 +297,7 @@ func creditNFTToAccount(account *collections.Map, id iotago.NFTID) {
 }
 
 // DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
+// this will also delete the NFT data, as the NFT will be leaving the chain
 func DebitNFTFromAccount(state kv.KVStore, agentID iscp.AgentID, id iotago.NFTID) {
 	if id.Empty() {
 		return

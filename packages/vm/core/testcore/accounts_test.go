@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -1026,7 +1027,7 @@ func TestNFTAccount(t *testing.T) {
 	ownerWallet, ownerAddress := ch.Env.NewKeyPairWithFunds()
 	ownerBalance := ch.Env.L1Iotas(ownerAddress)
 
-	nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
+	_, nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
 	require.NoError(t, err)
 	nftAddress := nftInfo.NFTID.ToAddress()
 
@@ -1064,6 +1065,77 @@ func TestNFTAccount(t *testing.T) {
 	_, err = ch.PostRequestSync(wdReq.WithSender(nftAddress), ownerWallet)
 	require.NoError(t, err)
 	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+}
 
-	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *iscp.NFT) {
+	ret, err := ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name, dict.Dict{
+		accounts.ParamNFTID: nft.ID[:],
+	})
+	require.NoError(t, err)
+	nftBack, err := iscp.NFTFromBytes(ret.MustGet(accounts.ParamNFTData))
+	require.NoError(t, err)
+	require.Equal(t, nftBack.ID, nft.ID)
+	require.Equal(t, nftBack.Issuer, nft.Issuer)
+	require.Equal(t, nftBack.Metadata, nft.Metadata)
+}
+
+func TestTransferNFTAllowance(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
+	initialOwnerWallet, initialOwnerAddress := ch.Env.NewKeyPairWithFunds()
+	initialOwnerAgentID := iscp.NewAgentID(initialOwnerAddress)
+
+	nft, _, err := ch.Env.MintNFTL1(issuerWallet, initialOwnerAddress, []byte("foobar"))
+	require.NoError(t, err)
+
+	// deposit the NFT to the chain to the initial owner's account
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithNFT(nft).
+			AddIotas(10*iscp.Mi).
+			WithMaxAffordableGasBudget(),
+		initialOwnerWallet)
+	require.NoError(t, err)
+
+	require.True(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
+	checkChainNFTData(t, ch, nft)
+
+	// send an off-ledger request to transfer the NFT to the another account
+	finalOwnerWallet, finalOwnerAddress := ch.Env.NewKeyPairWithFunds()
+	finalOwnerAgentID := iscp.NewAgentID(finalOwnerAddress)
+
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
+			accounts.ParamAgentID:          codec.Encode(finalOwnerAgentID),
+			accounts.ParamForceOpenAccount: codec.Encode(true),
+		}).
+			WithAllowance(iscp.NewAllowance(0, nil, []iotago.NFTID{nft.ID})).
+			WithMaxAffordableGasBudget(),
+		initialOwnerWallet,
+	)
+	require.NoError(t, err)
+
+	require.True(t, ch.HasL2NFT(finalOwnerAgentID, &nft.ID))
+	require.False(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
+	checkChainNFTData(t, ch, nft)
+
+	// withdraw to L1
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+			WithAllowance(iscp.NewAllowance(1*iscp.Mi, nil, []iotago.NFTID{nft.ID})).
+			AddIotas(10*iscp.Mi).
+			WithMaxAffordableGasBudget(),
+		finalOwnerWallet,
+	)
+	require.NoError(t, err)
+
+	require.False(t, ch.HasL2NFT(finalOwnerAgentID, &nft.ID))
+	require.True(t, env.HasL1NFT(finalOwnerAddress, &nft.ID))
+	_, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name, dict.Dict{
+		accounts.ParamNFTID: nft.ID[:],
+	})
+	require.Error(t, err)
+	require.Regexp(t, "NFTID not found", err.Error())
 }
