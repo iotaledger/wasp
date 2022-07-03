@@ -68,6 +68,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	VIEW_ARRAY_OF_STRING_MAP_VALUE,
     	VIEW_BIG_INT_ADD,
     	VIEW_BIG_INT_DIV,
+    	VIEW_BIG_INT_DIV_MOD,
     	VIEW_BIG_INT_MOD,
     	VIEW_BIG_INT_MUL,
     	VIEW_BIG_INT_SHL,
@@ -133,6 +134,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     	view_array_of_string_map_value_thunk,
     	view_big_int_add_thunk,
     	view_big_int_div_thunk,
+    	view_big_int_div_mod_thunk,
     	view_big_int_mod_thunk,
     	view_big_int_mul_thunk,
     	view_big_int_shl_thunk,
@@ -830,6 +832,26 @@ fn view_big_int_div_thunk(ctx: &ScViewContext) {
 	view_big_int_div(ctx, &f);
 	ctx.results(&f.results.proxy.kv_store);
 	ctx.log("testwasmlib.viewBigIntDiv ok");
+}
+
+pub struct BigIntDivModContext {
+	params: ImmutableBigIntDivModParams,
+	results: MutableBigIntDivModResults,
+	state: ImmutableTestWasmLibState,
+}
+
+fn view_big_int_div_mod_thunk(ctx: &ScViewContext) {
+	ctx.log("testwasmlib.viewBigIntDivMod");
+	let f = BigIntDivModContext {
+		params: ImmutableBigIntDivModParams { proxy: params_proxy() },
+		results: MutableBigIntDivModResults { proxy: results_proxy() },
+		state: ImmutableTestWasmLibState { proxy: state_proxy() },
+	};
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	view_big_int_div_mod(ctx, &f);
+	ctx.results(&f.results.proxy.kv_store);
+	ctx.log("testwasmlib.viewBigIntDivMod ok");
 }
 
 pub struct BigIntModContext {

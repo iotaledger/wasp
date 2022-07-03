@@ -744,6 +744,26 @@ export class MutableBigIntDivParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableBigIntDivModParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	rhs(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamRhs));
+	}
+}
+
+export class MutableBigIntDivModParams extends wasmtypes.ScProxy {
+	lhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamLhs));
+	}
+
+	rhs(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamRhs));
+	}
+}
+
 export class ImmutableBigIntModParams extends wasmtypes.ScProxy {
 	lhs(): wasmtypes.ScImmutableBigInt {
 		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamLhs));

@@ -13,7 +13,8 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type TestWasmLibEvents struct{}
+type TestWasmLibEvents struct {
+}
 
 func (e TestWasmLibEvents) Test(
 	address wasmtypes.ScAddress,

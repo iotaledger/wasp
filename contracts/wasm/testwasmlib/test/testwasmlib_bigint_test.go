@@ -109,6 +109,24 @@ func TestBigDiv(t *testing.T) {
 	testLoop(func(lhs, rhs uint64) { bigDiv64(t, ctx, lhs, rhs) })
 }
 
+func TestBigDivMod(t *testing.T) {
+	ctx := setupBigIntTest(t)
+
+	bigDivMod64(t, ctx, 536870911, 511)
+
+	quo, remainder := bigDivMod(t, ctx, wasmtypes.NewScBigInt(), wasmtypes.NewScBigInt(1))
+	require.True(t, quo.IsZero())
+	require.EqualValues(t, "0", quo.String())
+	require.EqualValues(t, "0", remainder.String())
+	quo, remainder = bigDivMod(t, ctx, wasmtypes.NewScBigInt(1), wasmtypes.NewScBigInt(1))
+	require.False(t, quo.IsZero())
+	require.EqualValues(t, "1", quo.String())
+	require.True(t, remainder.IsZero())
+	require.EqualValues(t, "0", remainder.String())
+
+	testLoop(func(lhs, rhs uint64) { bigDivMod64(t, ctx, lhs, rhs) })
+}
+
 func TestBigMod(t *testing.T) {
 	ctx := setupBigIntTest(t)
 
@@ -196,6 +214,18 @@ func bigDiv(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs wasmtypes.ScBigInt
 	return f.Results.Res().Value()
 }
 
+func bigDivMod(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs wasmtypes.ScBigInt) (wasmtypes.ScBigInt, wasmtypes.ScBigInt) {
+	if SkipWasm {
+		return lhs.DivMod(rhs)
+	}
+	f := testwasmlib.ScFuncs.BigIntDivMod(ctx)
+	f.Params.Lhs().SetValue(lhs)
+	f.Params.Rhs().SetValue(rhs)
+	f.Func.Call()
+	require.NoError(t, ctx.Err)
+	return f.Results.Quo().Value(), f.Results.Remainder().Value()
+}
+
 func bigMod(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs wasmtypes.ScBigInt) wasmtypes.ScBigInt {
 	if SkipWasm {
 		return lhs.Modulo(rhs)
@@ -274,6 +304,21 @@ func bigDiv64(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs uint64) {
 	require.EqualValues(t, expect, res.Uint64())
 	require.EqualValues(t, wasmtypes.Uint64ToString(expect), res.String())
 	require.EqualValues(t, 0, res.Cmp(wasmtypes.NewScBigInt(expect)))
+}
+
+func bigDivMod64(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs uint64) {
+	expectQuo := lhs / rhs
+	expectRemainder := lhs - rhs*expectQuo
+	if LogOp {
+		t.Logf("%d / %d = %d...%d\n", lhs, rhs, expectQuo, expectRemainder)
+	}
+	quo, remainder := bigDivMod(t, ctx, wasmtypes.NewScBigInt(lhs), wasmtypes.NewScBigInt(rhs))
+	require.EqualValues(t, expectQuo, quo.Uint64())
+	require.EqualValues(t, wasmtypes.Uint64ToString(expectQuo), quo.String())
+	require.EqualValues(t, 0, quo.Cmp(wasmtypes.NewScBigInt(expectQuo)))
+	require.EqualValues(t, expectRemainder, remainder.Uint64())
+	require.EqualValues(t, wasmtypes.Uint64ToString(expectRemainder), remainder.String())
+	require.EqualValues(t, 0, remainder.Cmp(wasmtypes.NewScBigInt(expectRemainder)))
 }
 
 func bigMod64(t *testing.T, ctx *wasmsolo.SoloContext, lhs, rhs uint64) {

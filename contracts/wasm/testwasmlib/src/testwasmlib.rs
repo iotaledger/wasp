@@ -552,6 +552,14 @@ pub fn view_big_int_div(_ctx: &ScViewContext, f: &BigIntDivContext) {
     f.results.res().set_value(&res);
 }
 
+pub fn view_big_int_div_mod(_ctx: &ScViewContext, f: &BigIntDivModContext) {
+    let lhs = f.params.lhs().value();
+    let rhs = f.params.rhs().value();
+    let (quo, remainder) = lhs.div_mod(&rhs);
+    f.results.quo().set_value(&quo);
+    f.results.remainder().set_value(&remainder);
+}
+
 pub fn view_big_int_mod(_ctx: &ScViewContext, f: &BigIntModContext) {
     let lhs = f.params.lhs().value();
     let rhs = f.params.rhs().value();

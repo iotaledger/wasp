@@ -418,6 +418,14 @@ func viewBigIntDiv(ctx wasmlib.ScViewContext, f *BigIntDivContext) {
 	f.Results.Res().SetValue(res)
 }
 
+func viewBigIntDivMod(ctx wasmlib.ScViewContext, f *BigIntDivModContext) {
+	lhs := f.Params.Lhs().Value()
+	rhs := f.Params.Rhs().Value()
+	quo, remainder := lhs.DivMod(rhs)
+	f.Results.Quo().SetValue(quo)
+	f.Results.Remainder().SetValue(remainder)
+}
+
 func viewBigIntMod(ctx wasmlib.ScViewContext, f *BigIntModContext) {
 	lhs := f.Params.Lhs().Value()
 	rhs := f.Params.Rhs().Value()
