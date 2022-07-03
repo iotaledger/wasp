@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import {log, panic} from "../sandbox";
 import * as wasmtypes from "./index";
-import {ScSandboxUtils} from "../sandboxutils";
+import {uint64ToString} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -216,7 +216,7 @@ function hexer(hexDigit: u8): u8 {
         return hexDigit - 0x61 + 10;
     }
     // 'A' to 'F'
-    if (hexDigit >= 0x41 && hexDigit <= 0x46){
+    if (hexDigit >= 0x41 && hexDigit <= 0x46) {
         return hexDigit - 0x41 + 10;
     }
     panic("invalid hex digit");
@@ -252,13 +252,58 @@ export function hexEncode(buf: u8[]): string {
 }
 
 export function intFromString(value: string, bits: u32): i64 {
-    //TODO implement bits, handle 64 bits properly
-    return parseInt(value) as i64;
+    if (value.length == 0) {
+        panic("intFromString: empty string");
+    }
+    let neg = false
+    switch (value.charCodeAt(0)) {
+        case 0x2b: // '+'
+            value = value.slice(1);
+            break;
+        case 0x2d: // '-'
+            neg = true;
+            value = value.slice(1);
+            break;
+    }
+    const uns = uintFromString(value, bits);
+    const cutoff = (1 as u64) << (bits - 1);
+    if (neg) {
+        if (neg && uns > cutoff) {
+            panic("intFromString: min overflow");
+        }
+        return -uns as i64;
+    }
+    if (uns >= cutoff) {
+        panic("intFromString: max overflow");
+    }
+    return uns as i64;
 }
 
 export function uintFromString(value: string, bits: u32): u64 {
-    //TODO implement bits, handle 64 bits properly
-    return parseInt(value) as u64;
+    if (value.length == 0) {
+        panic("uintFromString: empty string");
+    }
+    const cutoff = (-1 as u64) / 10 + 1;
+
+    const maxVal = (bits == 64) ? (-1 as u64) : (((1 as u64) << bits) - 1);
+
+    let n = 0 as u64;
+    for (let i = 0; i < value.length; i++) {
+        const c = value.charCodeAt(i) as u32;
+        if (c < 0x30 || c > 0x39) {
+            panic("uintFromString: invalid digit");
+        }
+        if (n >= cutoff) {
+            panic("uintFromString: cutoff overflow");
+        }
+        const n1 = n;
+        n = n * 10 + c - 0x30;
+        if (n < n1 || n > maxVal) {
+            log(uint64ToString(n) + " " + uint64ToString(n1) + " " + uint64ToString(maxVal));
+            panic("uintFromString: range overflow");
+        }
+    }
+    return n;
 }
 
 export function zeroes(count: u32): u8[] {
