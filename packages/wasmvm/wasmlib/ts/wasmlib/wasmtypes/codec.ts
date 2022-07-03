@@ -296,10 +296,9 @@ export function uintFromString(value: string, bits: u32): u64 {
         if (n >= cutoff) {
             panic("uintFromString: cutoff overflow");
         }
-        const n1 = n;
-        n = n * 10 + c - 0x30;
+        const n1 = n * 10;
+        n = n1 + c - 0x30;
         if (n < n1 || n > maxVal) {
-            log(uint64ToString(n) + " " + uint64ToString(n1) + " " + uint64ToString(maxVal));
             panic("uintFromString: range overflow");
         }
     }
