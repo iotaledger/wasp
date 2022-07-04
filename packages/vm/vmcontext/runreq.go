@@ -151,6 +151,10 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf(string(debug.Stack()))
 		}()
 		callRet = vmctx.callFromRequest()
+		// ensure at least the minimum amount of gas is charged
+		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
+			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
+		}
 	}()
 	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
