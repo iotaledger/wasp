@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/stretchr/testify/require"
 )
 
@@ -611,10 +612,10 @@ func TestDepositIotas(t *testing.T) {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initDepositTest(t)
 			v.req.WithGasBudget(100_000)
-			gas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
+			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 
-			v.req.WithGasBudget(gas)
+			v.req.WithGasBudget(estimatedGas)
 
 			v.req = v.req.AddIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.user)
@@ -1064,6 +1065,21 @@ func TestNFTAccount(t *testing.T) {
 	_, err = ch.PostRequestSync(wdReq.WithSender(nftAddress), ownerWallet)
 	require.NoError(t, err)
 	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+}
 
-	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+func TestDepositRandomContractMinFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds()
+	agentID := iscp.NewAgentID(addr)
+
+	sent := 1 * iscp.Mi
+	_, err := ch.PostRequestSync(solo.NewCallParams("", "").AddIotas(sent), wallet)
+	require.Error(t, err)
+	receipt := ch.LastReceipt()
+	require.Error(t, receipt.Error)
+
+	require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
+	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2Iotas(agentID))
 }
