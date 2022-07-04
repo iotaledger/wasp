@@ -62,24 +62,19 @@ The serial number `s` of the newly created foundry will be returned.
 The [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system) for the new foundry must be provided via allowance (only the minimum required will be used).
 :::
 
-### - `foundryModifySupply(s SerialNumber, d SupplyDelta, y DestroyTokens)`
+### - `foundryModifySupply(s SerialNumber, d SupplyDeltaAbs, y DestroyTokens)`
 
 Inflates (mints) or shrinks supply of token by the foundry, controlled by the caller.
 The following parameters must be provided:
 
 - the target foundry serial number `s`
-- SupplyDelta `d` specifies by which amount the supply should increase or decrease (specified as a big.int)
+- SupplyDeltaAbs `d` specifies by which amount the supply should increase or decrease (specified as a big.int), this is an absolute value
+- DestroyTokens `y` is a boolean that specifies whether to destroy tokens or not (defaults to `false`)
 
--
+When minting new tokens, the storage deposit for the new output must be provided via allowance.
 
- ParamFoundrySN                 = "s"
+When destroying tokens, the tokens to be destroyed must be provided via allowance.
 
- ParamSupplyDeltaAbs            = "d"
-
- ParamDestroyTokens             = "y"
-
-  // TODO look into maybe refactoring this function... ParamDestroyTokens seems obsolete since delta can be negative
-  // also it feels weird to destroy tokens direclty from the users account, rather than using the allowance
 
 ### - `foundryDestroy(s SerialNumber)`
 

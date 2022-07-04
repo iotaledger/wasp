@@ -234,11 +234,15 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
+// TODO
+// - destroy tokens must be taken via allowance
+
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 // Params:
 // - ParamFoundrySN serial number of the foundry
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
+// NOTE: ParamDestroyTokens is needed since `big.Int` `Bytes()` function does not serialize the sign, only the absolute value
 func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
 	delta := ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs)
