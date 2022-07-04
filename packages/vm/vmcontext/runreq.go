@@ -151,10 +151,6 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf(string(debug.Stack()))
 		}()
 		callRet = vmctx.callFromRequest()
-		// ensure at least the minimum amount of gas is charged
-		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
-			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
-		}
 	}()
 	if callErr != nil {
 		// panic happened during VM plugin call. Restore the state
@@ -303,6 +299,14 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 // chargeGasFee takes burned tokens from the sender's account
 // It should always be enough because gas budget is set affordable
 func (vmctx *VMContext) chargeGasFee() {
+	// ensure at least the minimum amount of gas is charged
+	minGas := gas.BurnCodeMinimumGasPerRequest1P.Cost()
+	if vmctx.GasBurned() < minGas {
+		currentGas := vmctx.gasBurned
+		vmctx.gasBurned = minGas
+		vmctx.gasBurnedTotal += minGas - currentGas
+	}
+
 	// disable gas burn
 	vmctx.GasBurnEnable(false)
 	if vmctx.req.SenderAccount() == nil {
