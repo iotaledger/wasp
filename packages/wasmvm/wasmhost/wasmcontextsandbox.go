@@ -177,9 +177,8 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 			TargetContract: contract,
 			EntryPoint:     function,
 			Params:         params,
-			// TODO check, probably not correct
-			Allowance: allowance,
-			GasBudget: gas.MaxGasPerCall,
+			Allowance:      allowance,
+			GasBudget:      gas.MaxGasPerCall,
 		},
 	}
 	if req.Delay != 0 {

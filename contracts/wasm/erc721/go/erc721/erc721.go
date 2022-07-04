@@ -18,7 +18,7 @@ import (
 //     use 'approved' when it is an AgentID
 //     use 'approval' when it is a Bool
 
-// set the required base URI, to which the base58 encoded token ID will be concatenated
+// set the required base URI, to which the string encoded token ID will be concatenated
 const baseURI = "my/special/base/uri/"
 
 var zero = wasmtypes.ScAgentID{}

@@ -83,7 +83,35 @@ func TestTransferAllowanceTo(t *testing.T) {
 	bal.Add(user1, transferAmountIOTA)
 	bal.VerifyBalances(t)
 
-	// FIXME transfer other native tokens
+	var mintAmount, transferAmount uint64 = 20_000, 10_000
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+	require.NoError(t, err)
+	err = foundry.Mint(mintAmount)
+	require.NoError(t, err)
+	scTokenID := foundry.TokenID()
+	tokenID := ctx.Cvt.IscpTokenID(&scTokenID)
+
+	balanceOldUser0 = user0.Balance(scTokenID)
+	balanceOldUser1 = user1.Balance(scTokenID)
+	balanceOldUser0L2 := ctx.Chain.L2NativeTokens(user0.AgentID(), tokenID)
+	balanceOldUser1L2 := ctx.Chain.L2NativeTokens(user1.AgentID(), tokenID)
+
+	f.Params.AgentID().SetValue(user1.ScAgentID())
+	f.Params.ForceOpenAccount().SetValue(false)
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&scTokenID, wasmtypes.NewScBigInt(transferAmount))
+	f.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	// note: transfer took place on L2, so no change on L1
+	balanceNewUser0 = user0.Balance(scTokenID)
+	balanceNewUser1 = user1.Balance(scTokenID)
+	balanceNewUser0L2 := ctx.Chain.L2NativeTokens(user0.AgentID(), tokenID)
+	balanceNewUser1L2 := ctx.Chain.L2NativeTokens(user1.AgentID(), tokenID)
+	assert.Equal(t, balanceOldUser0, balanceNewUser0)
+	assert.Equal(t, balanceOldUser1, balanceNewUser1)
+	assert.Equal(t, new(big.Int).Sub(balanceOldUser0L2, big.NewInt(int64(transferAmount))), balanceNewUser0L2)
+	assert.Equal(t, new(big.Int).Add(balanceOldUser1L2, big.NewInt(int64(transferAmount))), balanceNewUser1L2)
 }
 
 func TestWithdraw(t *testing.T) {
@@ -239,8 +267,8 @@ func TestBalance(t *testing.T) {
 	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
 	require.NoError(t, err)
 	err = foundry.Mint(mintAmount)
-	tokenID := foundry.TokenID()
 	require.NoError(t, err)
+	tokenID := foundry.TokenID()
 
 	f := coreaccounts.ScFuncs.Balance(ctx)
 	f.Params.AgentID().SetValue(user0.ScAgentID())

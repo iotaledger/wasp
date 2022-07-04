@@ -167,7 +167,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 
     // First we set up a default value for the owner in case the optional 'owner'
     // parameter was omitted. We use the agent that sent the deploy request.
-    let owner: wasmlib.ScAgentID = ctx.RequestSender();
+    let owner: wasmlib.ScAgentID = ctx.requestSender();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if (f.params.owner().exists()) {

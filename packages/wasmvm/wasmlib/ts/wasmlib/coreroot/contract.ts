@@ -40,6 +40,14 @@ export class RevokeDeployPermissionCall {
 	}
 }
 
+export class SubscribeBlockContextCall {
+	func: wasmlib.ScFunc;
+	params: sc.MutableSubscribeBlockContextParams = new sc.MutableSubscribeBlockContextParams(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScFuncCallContext) {
+		this.func = new wasmlib.ScFunc(ctx, sc.HScName, sc.HFuncSubscribeBlockContext);
+	}
+}
+
 export class FindContractCall {
 	func: wasmlib.ScView;
 	params: sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
@@ -79,6 +87,12 @@ export class ScFuncs {
 	static revokeDeployPermission(ctx: wasmlib.ScFuncCallContext): RevokeDeployPermissionCall {
 		const f = new RevokeDeployPermissionCall(ctx);
 		f.params = new sc.MutableRevokeDeployPermissionParams(wasmlib.newCallParamsProxy(f.func));
+		return f;
+	}
+
+	static subscribeBlockContext(ctx: wasmlib.ScFuncCallContext): SubscribeBlockContextCall {
+		const f = new SubscribeBlockContextCall(ctx);
+		f.params = new sc.MutableSubscribeBlockContextParams(wasmlib.newCallParamsProxy(f.func));
 		return f;
 	}
 
