@@ -612,10 +612,10 @@ func TestDepositIotas(t *testing.T) {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initDepositTest(t)
 			v.req.WithGasBudget(100_000)
-			gas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
+			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 
-			v.req.WithGasBudget(gas)
+			v.req.WithGasBudget(estimatedGas)
 
 			v.req = v.req.AddIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.user)
