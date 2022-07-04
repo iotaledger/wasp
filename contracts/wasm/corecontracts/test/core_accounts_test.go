@@ -188,7 +188,7 @@ func TestFoundryDestroy(t *testing.T) {
 	require.NoError(t, ctx.Err)
 }
 
-func TestFoundryModifySupply(t *testing.T) {
+func TestFoundryNew(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 
@@ -203,17 +203,29 @@ func TestFoundryModifySupply(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
+}
 
-	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx)
+func TestFoundryModifySupply(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent()
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+	require.NoError(t, err)
+
+	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
 	fmod1.Params.FoundrySN().SetValue(1)
 	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod1.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 
-	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx)
-	fmod2.Params.FoundrySN().SetValue(1)
+	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
+	fmod2.Params.FoundrySN().SetValue(foundry.SN())
 	fmod2.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
 	fmod2.Params.DestroyTokens().SetValue(true)
+	tokenID := foundry.TokenID()
+	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
+	fmod2.Func.Allowance(allowance)
 	fmod2.Func.TransferIotas(dustAllowance).Post()
 	require.NoError(t, ctx.Err)
 }

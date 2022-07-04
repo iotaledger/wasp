@@ -24,6 +24,7 @@ var (
 	ErrNotEnoughFunds               = coreerrors.Register("not enough funds").Create()
 	ErrNotEnoughIotasForDustDeposit = coreerrors.Register("not enough iotas for dust deposit").Create()
 	ErrNotEnoughAllowance           = coreerrors.Register("not enough allowance").Create()
+	ErrNotEnoughFundsForAllowance   = coreerrors.Register("not enough funds for allowance").Create()
 	ErrBadAmount                    = coreerrors.Register("bad native asset amount").Create()
 	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()

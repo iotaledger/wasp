@@ -75,7 +75,6 @@ When minting new tokens, the storage deposit for the new output must be provided
 
 When destroying tokens, the tokens to be destroyed must be provided via allowance.
 
-
 ### - `foundryDestroy(s SerialNumber)`
 
 Destroys a given foundry output on L1, reiburses the [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system) to the caller. (Can only succeed if the foundry is owned by the caller)

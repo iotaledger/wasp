@@ -234,9 +234,6 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-// TODO
-// - destroy tokens must be taken via allowance
-
 // foundryModifySupply inflates (mints) or shrinks supply of token by the foundry, controlled by the caller
 // Params:
 // - ParamFoundrySN serial number of the foundry
@@ -245,7 +242,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 // NOTE: ParamDestroyTokens is needed since `big.Int` `Bytes()` function does not serialize the sign, only the absolute value
 func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	delta := ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs)
+	delta := new(big.Int).Abs(ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs))
 	if util.IsZeroBigInt(delta) {
 		return nil
 	}
@@ -261,7 +258,16 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var dustAdjustment int64
 	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
-		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		// take tokens to destroy from allowance
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceFungibleTokens(
+			iscp.NewFungibleTokens(0, iotago.NativeTokens{
+				&iotago.NativeToken{
+					ID:     tokenID,
+					Amount: delta,
+				},
+			}),
+		))
+		DebitFromAccount(ctx.State(), ctx.AccountID(), deltaAssets)
 		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
 		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)

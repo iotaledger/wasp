@@ -269,11 +269,20 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokensOnL2(foundryOrTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyTokensOnL2(tokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(foundryOrTokenID),
+		accounts.ParamFoundrySN, toFoundrySN(tokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
+	).WithAllowance(
+		iscp.NewAllowanceFungibleTokens(
+			iscp.NewFungibleTokens(0, iotago.NativeTokens{
+				&iotago.NativeToken{
+					ID:     tokenID,
+					Amount: util.ToBigInt(amount),
+				},
+			}),
+		),
 	).WithGasBudget(DestroyTokensGasBudgetIotas)
 
 	if user == nil {

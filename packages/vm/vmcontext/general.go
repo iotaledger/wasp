@@ -144,7 +144,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		if !accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs) {
-			panic(accounts.ErrNotEnoughAllowance)
+			panic(accounts.ErrNotEnoughFundsForAllowance)
 		}
 	})
 	return vmctx.AllowanceAvailable()
