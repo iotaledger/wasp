@@ -1160,3 +1160,15 @@ func TestDepositRandomContractMinFee(t *testing.T) {
 	require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2Iotas(agentID))
 }
+
+func TestAllowanceNotEnoughFunds() {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds()
+	agentID := iscp.NewAgentID(addr)
+	sent := 1 * iscp.Mi
+	allowance := iscp.NewAllowanceIotas(10 * iscp.Mi)
+	_, err := ch.PostRequestSync(solo.NewCallParams("", "").AddIotas(sent), wallet)
+	require.Error(t, err)
+}
