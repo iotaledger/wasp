@@ -41,17 +41,21 @@ The amount of tokens to be withdrawn must be specified via allowance in the requ
 A call to withdraw means that a L1 output will be created, because of this, the withdrawn amount must be able to cover the L1 [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system), otherwise it will fail.
 :::
 
-### - `transferAllowanceTo(a AgentID)`
+### - `transferAllowanceTo(a AgentID, c ForceOpenAccount)`
 
 Credits the specified allowance to any AgentID (`a`) on the chain.
 
 :::note
-If the target AgentID doesn't yet have funds on the chain, an optional boolean parameter (`c`) must specified to signal for an account to be created.
+If the target AgentID doesn't yet have funds on the chain, an optional boolean parameter (`c`) "ForceOpenAccount" must specified to signal for an account to be created.
 :::
 
 ### - `harvest()`
 
 Moves tokens from the common account controlled by the chain owner, to the proper owner's account on the same chain. This entry point is only authorised to whoever owns the chain.
+
+:::note
+The "common account" is an account where the gas fees collected for the chain owner are placed. Also if assets are sent to any of the core contracts, they will end up on this account.
+:::
 
 ### - `foundryCreateNew(t TokenScheme) s SerialNumber`
 
