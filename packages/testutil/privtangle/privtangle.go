@@ -67,7 +67,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
-		// logfunc:       logfunc,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
