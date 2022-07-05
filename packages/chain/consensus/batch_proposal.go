@@ -66,10 +66,6 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.TimeData.MilestoneIndex, err = mu.ReadUint32()
-	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
-	}
 	ret.TimeData.Time, err = mu.ReadTime()
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
@@ -110,7 +106,6 @@ func (b *BatchProposal) Bytes() []byte {
 		Write(b.AccessManaPledge).
 		Write(b.ConsensusManaPledge).
 		Write(b.FeeDestination).
-		WriteUint32(b.TimeData.MilestoneIndex).
 		WriteTime(b.TimeData.Time).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).

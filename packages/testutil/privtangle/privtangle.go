@@ -29,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (761f1ff)
-// https://github.com/gohornet/inx-mqtt (bd0f837)
-// https://github.com/gohornet/inx-indexer (58f9a3b)
-// https://github.com/gohornet/inx-coordinator (bd76ece)
-// https://github.com/gohornet/inx-faucet (1c6e1ee) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (b318943)
+// https://github.com/gohornet/inx-mqtt (22374ae)
+// https://github.com/gohornet/inx-indexer (490d00e)
+// https://github.com/gohornet/inx-coordinator (9ed483b)
+// https://github.com/gohornet/inx-faucet (373b56a) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -100,6 +100,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startIndexer(i)
 		pt.MqttCmd[i] = pt.startMqtt(i)
 	}
+
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.waitInxPlugins()
 
@@ -163,7 +164,6 @@ func (pt *PrivTangle) startNode(i int) {
 		"-c", pt.ConfigFile,
 		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
-		fmt.Sprintf("--dashboard.bindAddress=localhost:%d", pt.NodePortDashboard(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
 		fmt.Sprintf("--app.disablePlugins=%s", "Autopeering"),
 		fmt.Sprintf("--app.enablePlugins=%s", plugins),
@@ -218,6 +218,7 @@ func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 		),
 	}
 	args := []string{
+		"--app.stopGracePeriod=10s",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 	}
@@ -416,6 +417,9 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}
+
+	fmt.Printf("faucet has %v balance\n", parsedResp.Balance)
+
 	return nil
 }
 

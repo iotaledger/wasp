@@ -302,43 +302,38 @@ func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
 }
 
 type ISCTimeData struct {
-	MilestoneIndex uint32
-	Time           int64
+	Time int64
 }
 
 func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
 	ret := ISCTimeData{
-		MilestoneIndex: data.MilestoneIndex,
-		Time:           data.Time.UnixMilli(),
+		Time: data.Time.UnixMilli(),
 	}
 
 	return ret
 }
 
 func (i ISCTimeData) Unwrap() *iscp.TimeData {
-	if i.MilestoneIndex == 0 && i.Time == 0 {
+	if i.Time == 0 {
 		return nil
 	}
 
 	ret := iscp.TimeData{
-		MilestoneIndex: i.MilestoneIndex,
-		Time:           time.UnixMilli(i.Time),
+		Time: time.UnixMilli(i.Time),
 	}
 
 	return &ret
 }
 
 type ISCExpiration struct {
-	MilestoneIndex uint32
-	Time           int64
-	ReturnAddress  IotaAddress
+	Time          int64
+	ReturnAddress IotaAddress
 }
 
 func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 	ret := ISCExpiration{
-		MilestoneIndex: data.MilestoneIndex,
-		Time:           data.Time.UnixMilli(),
-		ReturnAddress:  WrapIotaAddress(data.ReturnAddress),
+		Time:          data.Time.UnixMilli(),
+		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
 	}
 
 	return ret
@@ -349,7 +344,7 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 		return nil
 	}
 
-	if i.MilestoneIndex == 0 && i.Time == 0 {
+	if i.Time == 0 {
 		return nil
 	}
 
@@ -358,8 +353,7 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 	ret := iscp.Expiration{
 		ReturnAddress: address,
 		TimeData: iscp.TimeData{
-			MilestoneIndex: i.MilestoneIndex,
-			Time:           time.UnixMilli(i.Time),
+			Time: time.UnixMilli(i.Time),
 		},
 	}
 

@@ -62,12 +62,10 @@ struct ISCSendMetadata  {
 }
 
 struct ISCTimeData {
-	uint32 milestoneIndex;
 	int64 time;
 }
 
 struct ISCExpiration {
-	uint32 milestoneIndex;
 	int64 time;
 	IotaAddress returnAddress;
 }

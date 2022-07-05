@@ -128,8 +128,7 @@ func New(
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
 		ret.timeData = &iscp.TimeData{
-			MilestoneIndex: milestonePointer.Index,
-			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),
+			Time: time.Unix(int64(milestonePointer.Timestamp), 0),
 		}
 	})
 	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {

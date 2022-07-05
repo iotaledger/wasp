@@ -129,9 +129,6 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 				return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
 			}
 		}
-		if lock.MilestoneIndex != 0 && vmctx.task.TimeAssumption.MilestoneIndex < lock.MilestoneIndex {
-			return xerrors.Errorf("can't be consumed due to lock until milestone index #%v", vmctx.task.TimeAssumption.MilestoneIndex)
-		}
 	}
 	return nil
 }
@@ -153,21 +150,11 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 		return xerrors.Errorf("can't be consumed in the expire safety window close to v", expiry.Time)
 	}
 
-	// Validate milestone window
-	milestoneFrom := vmctx.task.TimeAssumption.MilestoneIndex - ExpiryUnlockSafetyWindowMilestone
-	milestoneTo := vmctx.task.TimeAssumption.MilestoneIndex + ExpiryUnlockSafetyWindowMilestone
-
-	if milestoneFrom <= expiry.MilestoneIndex && expiry.MilestoneIndex <= milestoneTo {
-		return xerrors.Errorf("can't be consumed in the expire safety window between milestones #%d and #%d",
-			milestoneFrom, milestoneTo)
-	}
-
 	// General unlock validation
 	output, _ := vmctx.req.(iscp.OnLedgerRequest).Output().(iotago.TransIndepIdentOutput)
 
 	unlockable := output.UnlockableBy(vmctx.task.AnchorOutput.AliasID.ToAddress(), &iotago.ExternalUnlockParameters{
-		ConfUnix:    uint32(vmctx.finalStateTimestamp.Unix()),
-		ConfMsIndex: vmctx.task.TimeAssumption.MilestoneIndex,
+		ConfUnix: uint32(vmctx.finalStateTimestamp.Unix()),
 	})
 
 	if !unlockable {

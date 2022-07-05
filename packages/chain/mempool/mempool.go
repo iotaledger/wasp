@@ -206,20 +206,18 @@ func (m *mempool) traceIn(req iscp.Request) {
 		rotateStr = "(rotate) "
 	}
 	var timeLockTime time.Time
-	var timeLockMilestone uint32
 
 	if !req.IsOffLedger() {
 		td := req.(iscp.OnLedgerRequest).Features().TimeLock()
 		if td != nil {
 			timeLockTime = td.Time
-			timeLockMilestone = td.MilestoneIndex
 		}
 	}
 
 	logFun := m.getLogFun()
-	if !timeLockTime.IsZero() || timeLockMilestone > 0 {
+	if !timeLockTime.IsZero() {
 		logFun("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v until milestone %d",
-			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(timeLockTime), timeLockMilestone)
+			rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(timeLockTime))
 	} else {
 		logFun("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	}
