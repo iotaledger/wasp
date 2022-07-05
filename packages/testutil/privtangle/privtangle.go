@@ -29,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (761f1ff)
-// https://github.com/gohornet/inx-mqtt (bd0f837)
-// https://github.com/gohornet/inx-indexer (58f9a3b)
-// https://github.com/gohornet/inx-coordinator (bd76ece)
-// https://github.com/gohornet/inx-faucet (1c6e1ee) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (b318943)
+// https://github.com/gohornet/inx-mqtt (22374ae)
+// https://github.com/gohornet/inx-indexer (490d00e)
+// https://github.com/gohornet/inx-coordinator (9ed483b)
+// https://github.com/gohornet/inx-faucet (373b56a) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -67,7 +67,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
-		logfunc:       logfunc,
+		// logfunc:       logfunc,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
