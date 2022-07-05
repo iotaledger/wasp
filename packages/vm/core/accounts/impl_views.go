@@ -43,7 +43,7 @@ func viewBalanceNativeToken(ctx iscp.SandboxView) dict.Dict {
 	return dict.Dict{ParamBalance: bal.Bytes()}
 }
 
-// viewTotalAssets returns total colored balances controlled by the chain
+// viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
 	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State()))
@@ -63,7 +63,7 @@ func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
 func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()

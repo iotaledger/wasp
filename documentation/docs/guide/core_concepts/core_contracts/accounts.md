@@ -91,33 +91,36 @@ The `accounts` contract provides ways to query information about chain accounts.
 
 ### - `balance(a AgentID)`
 
-Returns the fungible tokens owned by any AgentID `a`.
+Returns the fungible tokens owned by any AgentID `a` on the chain.
 
+### - `balanceBaseToken(a AgentID)`
 
-### - `accountNFTs()`
+Returns amount of base tokens owned by any AgentID `a` on the chain.
 
-Returns the NFTs owned by any AgentID `a`.
+### - `balanceNativeToken(a AgentID, N NativeTokenID)`
 
-### - `balanceBaseToken()`
-
-
-
-### - `balanceNativeToken()`
+Returns the amount of native tokens with TokenID `N` owned by any AgentID `a`  on the chain.
 
 ### - `totalAssets()`
 
-Returns the colored balances controlled by the chain. They are always equal to the sum of all on-chain accounts, color-by-color.
+Returns a map with the sum of all assets controlled by the chain Base tokens, Native Tokens and NFTs.
 
 ### - `accounts()`
 
-Returns a list of all non-empty accounts in the chain as a list of serialized `agent IDs`.
-
-### - `getAccountNonce()`
+Returns a list of all agent IDs that own assets on the chain.
 
 ### - `getNativeTokenIDRegistry()`
 
-### - `foundryOutput()`
+Returns a list of all native tokenIDs that are owned by the chain.
 
+### - `foundryOutput(s FoundrySerialNumber)`
 
+Returns the output corresponding to the foundry with Serial Number `s`.
 
-### - `nftData()`
+### - `nftData(z NFTID)`
+
+Returns the data for a given NFT with ID `z` that on the chain. This data includes the issuer, immutable metadata and the current on-chain owner.
+
+### - `getAccountNonce(a AgentID)`
+
+Returns the current account nonce for a give AgentID `a` (the account nonce is used to issue off-ledger requests).
