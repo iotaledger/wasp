@@ -67,6 +67,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
+		logfunc:       logfunc,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
@@ -98,6 +99,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		pt.startIndexer(i)
 		pt.startMqtt(i)
 	}
+
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
 	pt.waitInxPlugins()
 
@@ -161,7 +163,6 @@ func (pt *PrivTangle) startNode(i int) {
 		"-c", pt.ConfigFile,
 		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
-		fmt.Sprintf("--dashboard.bindAddress=localhost:%d", pt.NodePortDashboard(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
 		fmt.Sprintf("--app.disablePlugins=%s", "Autopeering"),
 		fmt.Sprintf("--app.enablePlugins=%s", plugins),
@@ -216,6 +217,7 @@ func (pt *PrivTangle) startFaucet(i int) {
 		),
 	}
 	args := []string{
+		"--app.stopGracePeriod=10s",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 	}
@@ -402,6 +404,9 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}
+
+	fmt.Printf("faucet has %v balance\n", parsedResp.Balance)
+
 	return nil
 }
 
