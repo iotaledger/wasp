@@ -4,6 +4,8 @@
 package wasmlib
 
 import (
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -22,7 +24,8 @@ func (e *EventEncoder) Emit() {
 }
 
 func (e *EventEncoder) Encode(value string) {
-	// TODO encode potential vertical bars that are present in the value string
+	value = strings.ReplaceAll(value, "\\", "\\\\")
+	value = strings.ReplaceAll(value, "|", "\\/")
 	e.event += "|" + value
 }
 
