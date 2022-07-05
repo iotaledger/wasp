@@ -9,12 +9,19 @@ import (
 type NFT struct {
 	ID       iotago.NFTID
 	Issuer   iotago.Address
-	Metadata []byte // (ImmutableMetadata)
+	Metadata []byte  // (ImmutableMetadata)
+	Owner    AgentID // can be nil
 }
 
-func (nft *NFT) Bytes() []byte {
+func (nft *NFT) Bytes(withID ...bool) []byte {
+	writeID := true
+	if len(withID) > 0 {
+		writeID = withID[0]
+	}
 	mu := marshalutil.New()
-	mu.WriteBytes(nft.ID[:])
+	if writeID {
+		mu.WriteBytes(nft.ID[:])
+	}
 	issuerBytes, err := nft.Issuer.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic("Unexpected error serializing NFT")
@@ -22,16 +29,26 @@ func (nft *NFT) Bytes() []byte {
 	mu.WriteBytes(issuerBytes)
 	mu.WriteUint16(uint16(len(nft.Metadata)))
 	mu.WriteBytes(nft.Metadata)
+	if nft.Owner != nil {
+		mu.WriteBytes(nft.Owner.Bytes())
+	}
 	return mu.Bytes()
 }
 
-func NFTFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFT, error) {
-	ret := &NFT{}
-	idBytes, err := mu.ReadBytes(iotago.NFTIDLength)
-	if err != nil {
-		return nil, err
+func NFTFromMarshalUtil(mu *marshalutil.MarshalUtil, withID ...bool) (*NFT, error) {
+	readID := true
+	if len(withID) > 0 {
+		readID = withID[0]
 	}
-	copy(ret.ID[:], idBytes)
+
+	ret := &NFT{}
+	if readID {
+		idBytes, err := mu.ReadBytes(iotago.NFTIDLength)
+		if err != nil {
+			return nil, err
+		}
+		copy(ret.ID[:], idBytes)
+	}
 
 	currentOffset := mu.ReadOffset()
 	issuerAddrType, err := mu.ReadByte()
@@ -58,9 +75,18 @@ func NFTFromMarshalUtil(mu *marshalutil.MarshalUtil) (*NFT, error) {
 	if err != nil {
 		return nil, err
 	}
+	if done, err := mu.DoneReading(); err != nil {
+		return nil, err
+	} else if done {
+		return ret, nil
+	}
+	ret.Owner, err = AgentIDFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
-func NFTFromBytes(bytes []byte) (*NFT, error) {
-	return NFTFromMarshalUtil(marshalutil.New(bytes))
+func NFTFromBytes(bytes []byte, withID ...bool) (*NFT, error) {
+	return NFTFromMarshalUtil(marshalutil.New(bytes), withID...)
 }

@@ -20,13 +20,13 @@ func viewBalance(ctx iscp.SandboxView) dict.Dict {
 	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
 }
 
-// viewBalanceIotas returns the iota balance of the account belonging to the AgentID
+// viewBalanceBaseToken returns the iota balance of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
 // Returns: {ParamBalance: uint64}
-func viewBalanceIotas(ctx iscp.SandboxView) dict.Dict {
-	iotas := getIotaBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
-	return dict.Dict{ParamBalance: codec.EncodeUint64(iotas)}
+func viewBalanceBaseToken(ctx iscp.SandboxView) dict.Dict {
+	nTokens := getIotaBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
+	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
 // viewBalanceNativeToken returns the native token balance of the account belonging to the AgentID
@@ -43,7 +43,7 @@ func viewBalanceNativeToken(ctx iscp.SandboxView) dict.Dict {
 	return dict.Dict{ParamBalance: bal.Bytes()}
 }
 
-// viewTotalAssets returns total colored balances controlled by the chain
+// viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx iscp.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
 	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State()))
@@ -63,7 +63,7 @@ func viewGetAccountNonce(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chian
+// viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
 func viewGetNativeTokenIDRegistry(ctx iscp.SandboxView) dict.Dict {
 	mapping := getNativeTokenOutputMapR(ctx.State())
 	ret := dict.New()

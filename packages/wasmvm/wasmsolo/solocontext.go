@@ -398,14 +398,9 @@ func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScN
 	if !ok {
 		panic("agent should be an address")
 	}
-	nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
+	nft, _, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
 	if err != nil {
 		panic(err)
-	}
-	nft := &iscp.NFT{
-		ID:       nftInfo.NFTID,
-		Issuer:   addr,
-		Metadata: metadata,
 	}
 	if ctx.nfts == nil {
 		ctx.nfts = make(map[iotago.NFTID]*iscp.NFT)
