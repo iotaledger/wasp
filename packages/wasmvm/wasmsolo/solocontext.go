@@ -250,7 +250,6 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	// TODO is milestones 1 a good value?
 	ctx.Chain.Env.AdvanceClockBy(step)
 }
 
@@ -299,16 +298,16 @@ func (ctx *SoloContext) ContractExists(scName string) error {
 	return err
 }
 
-func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
-	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
-}
-
 // Creator returns a SoloAgent representing the contract creator
 func (ctx *SoloContext) Creator() *SoloAgent {
 	if ctx.creator != nil {
 		return ctx.creator
 	}
 	return ctx.Originator()
+}
+
+func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 func (ctx *SoloContext) EnqueueRequest() {

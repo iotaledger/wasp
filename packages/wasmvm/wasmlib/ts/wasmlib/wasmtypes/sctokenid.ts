@@ -23,7 +23,6 @@ export class ScTokenID {
 
     // human-readable string representation
     public toString(): string {
-        // TODO standardize human readable string
         return tokenIDToString(this);
     }
 }

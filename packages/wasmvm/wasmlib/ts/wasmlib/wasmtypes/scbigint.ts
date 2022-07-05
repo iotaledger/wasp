@@ -105,8 +105,12 @@ export class ScBigInt {
             }
             return this.divModSimple(rhs.bytes[0]);
         }
+        return this.divModEstimate(rhs);
+    }
+
+    public divModEstimate(rhs: ScBigInt): ScBigInt[] {
         //TODO
-        panic("implement rest of DivMod");
+        panic("implement divModEstimate");
         return [this, rhs];
     }
 
@@ -251,7 +255,6 @@ export class ScBigInt {
 
     // human-readable string representation
     public toString(): string {
-        // TODO standardize human readable string
         return bigIntToString(this);
     }
 

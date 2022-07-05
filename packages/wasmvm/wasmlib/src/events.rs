@@ -21,7 +21,7 @@ impl EventEncoder {
     }
 
     pub fn encode(&mut self, value: &str) -> &EventEncoder {
-        // TODO encode potential vertical bars that are present in the value string
+        //TODO encode potential vertical bars that are present in the value string
         self.event += "|";
         self.event += &value;
         self

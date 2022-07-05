@@ -23,7 +23,6 @@ export class ScNftID {
 
     // human-readable string representation
     public toString(): string {
-        // TODO standardize human readable string
         return nftIDToString(this);
     }
 }
