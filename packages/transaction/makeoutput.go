@@ -69,9 +69,7 @@ func MakeBasicOutput(
 		})
 	}
 	if options.Timelock != nil {
-		cond := &iotago.TimelockUnlockCondition{
-			//MilestoneIndex: options.Timelock.MilestoneIndex,
-		}
+		cond := &iotago.TimelockUnlockCondition{}
 		if !options.Timelock.Time.IsZero() {
 			cond.UnixTime = uint32(options.Timelock.Time.Unix())
 		}
@@ -79,7 +77,6 @@ func MakeBasicOutput(
 	}
 	if options.Expiration != nil {
 		cond := &iotago.ExpirationUnlockCondition{
-			//MilestoneIndex: options.Expiration.MilestoneIndex,
 			ReturnAddress: options.Expiration.ReturnAddress,
 		}
 		if !options.Expiration.Time.IsZero() {
