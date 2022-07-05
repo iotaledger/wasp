@@ -85,7 +85,7 @@ func (*mockedChain) GetDB() kvstore.KVStore {
 	panic("unimplemented")
 }
 
-func (*mockedChain) GetTimeData() iscp.TimeData {
+func (*mockedChain) GetTimeData() time.Time {
 	panic("unimplemented")
 }
 

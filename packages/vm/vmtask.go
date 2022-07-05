@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"time"
 )
 
 type VMRunner interface {
@@ -28,7 +29,7 @@ type VMTask struct {
 	AnchorOutputID     iotago.OutputID
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
-	TimeAssumption     iscp.TimeData
+	TimeAssumption     time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget iscp.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged

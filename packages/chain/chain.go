@@ -65,7 +65,7 @@ type ChainMetrics interface {
 
 type ChainRunner interface {
 	GetAnchorOutput() *iscp.AliasOutputWithID
-	GetTimeData() iscp.TimeData
+	GetTimeData() time.Time
 	GetDB() kvstore.KVStore
 }
 
@@ -193,7 +193,7 @@ type ConsensusInfo struct {
 	StateIndex uint32
 	Mempool    mempool.MempoolInfo
 	TimerTick  int
-	TimeData   iscp.TimeData
+	TimeData   time.Time
 }
 
 type ConsensusWorkflowStatus interface {
