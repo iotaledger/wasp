@@ -563,10 +563,8 @@ func (r *onLedgerRequestData) TimeLock() *TimeData {
 		return nil
 	}
 	ret := &TimeData{}
-	ret.MilestoneIndex = timelock.MilestoneIndex
-	if timelock.UnixTime != 0 {
-		ret.Time = time.Unix(int64(timelock.UnixTime), 0)
-	}
+	ret.Time = time.Unix(int64(timelock.UnixTime), 0)
+
 	return ret
 }
 
@@ -576,10 +574,8 @@ func (r *onLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
 		return nil, nil
 	}
 	ret := &TimeData{}
-	ret.MilestoneIndex = expiration.MilestoneIndex
-	if expiration.UnixTime != 0 {
-		ret.Time = time.Unix(int64(expiration.UnixTime), 0)
-	}
+	ret.Time = time.Unix(int64(expiration.UnixTime), 0)
+
 	return ret, expiration.ReturnAddress
 }
 

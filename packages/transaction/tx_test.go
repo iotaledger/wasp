@@ -173,8 +173,7 @@ func TestConsumeRequest(t *testing.T) {
 	}
 	semValCtx := &iotago.SemanticValidationContext{
 		ExtParas: &iotago.ExternalUnlockParameters{
-			ConfMsIndex: 1,
-			ConfUnix:    uint32(time.Now().Unix()),
+			ConfUnix: uint32(time.Now().Unix()),
 		},
 	}
 	outset := iotago.OutputSet{

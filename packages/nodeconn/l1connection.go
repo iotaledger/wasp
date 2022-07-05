@@ -189,10 +189,10 @@ func MakeSimpleValueTX(
 		}
 		oid := i
 		out := o
-		txBuilder = txBuilder.AddInput(&builder.ToBeSignedUTXOInput{
-			Address:  senderAddr,
-			OutputID: oid,
-			Output:   out,
+		txBuilder = txBuilder.AddInput(&builder.TxInput{
+			UnlockTarget: senderAddr,
+			InputID:      oid,
+			Input:        out,
 		})
 		inputSum += out.Deposit()
 	}

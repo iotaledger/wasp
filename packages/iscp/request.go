@@ -24,8 +24,7 @@ type Request interface {
 }
 
 type TimeData struct {
-	MilestoneIndex uint32
-	Time           time.Time
+	Time time.Time
 }
 
 type Calldata interface {
@@ -134,9 +133,6 @@ func RequestIsExpired(req OnLedgerRequest, currentTime TimeData) bool {
 	if expiry == nil {
 		return false
 	}
-	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
-		return false
-	}
 	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-RequestConsideredExpiredWindow))
 }
 
@@ -148,8 +144,7 @@ func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, curre
 	output, _ := req.Output().(iotago.TransIndepIdentOutput)
 
 	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{
-		ConfMsIndex: currentTime.MilestoneIndex,
-		ConfUnix:    uint32(currentTime.Time.Unix()),
+		ConfUnix: uint32(currentTime.Time.Unix()),
 	})
 }
 

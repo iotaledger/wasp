@@ -145,7 +145,6 @@ func (c *consensus) runVMIfNeeded() { // nolint:funlen
 	c.log.Debugw("runVMIfNeeded: starting VM task",
 		"chainID", (&chainID).String(),
 		"ACS session ID", vmTask.ACSSessionID,
-		"milestone", vmTask.TimeAssumption.MilestoneIndex,
 		"timestamp", vmTask.TimeAssumption.Time,
 		"timestamp (Unix nano)", vmTask.TimeAssumption.Time.UnixNano(),
 		"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
