@@ -282,31 +282,9 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	require.Contains(t, out[0], description)
 }
 
-func TestWaspCLIMint(t *testing.T) {
-	newWaspCLITest(t)
-	//panic("TODO implement")
-
-	// out := w.Run("mint", "1000")
-	// colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
-	// color, err := ledgerstate.ColorFromBase58EncodedString(colorb58)
-	// require.NoError(t, err)
-
-	// outs, err := w.Cluster.GetOutputs(w.Address())
-	// require.NoError(t, err)
-	// found := false
-	// for _, out := range outs {
-	// 	if v, ok := out.Balances().Get(color); ok {
-	// 		require.EqualValues(t, 1000, v)
-	// 		found = true
-	// 		break
-	// 	}
-	// }
-	// require.True(t, found)
-}
-
 func TestWaspCLIBalance(t *testing.T) {
 	newWaspCLITest(t)
-	//panic("TODO implement")
+	// TODO: Implement!
 	// w.Run("mint", "1000")
 
 	// out := w.Run("balance")
