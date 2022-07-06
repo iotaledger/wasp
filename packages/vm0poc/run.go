@@ -15,6 +15,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
+// VMRunner minimal mocked VM. It receives requests. Each request is expected to have
+// parameter ParamDeltaInt64 = "d" with the delta value
+// The request updates the state of the chain by adding `delta` to the int64 value stored at
+// the key "counter"
+// The VM takes any batch of requests but only processes one single off-ledger request which it is able
+// to parse successfully. Other requests are skipped, which means they will be picked in the next block
+// Warning: probably not 100% correct in edge cases
 type VMRunner struct{}
 
 type VMContext struct {
@@ -23,7 +30,9 @@ type VMContext struct {
 }
 
 const (
+	// ParamDeltaInt64 name of the parameter in the request
 	ParamDeltaInt64 = "d"
+	// CounterStateVar key of counter in the state
 	CounterStateVar = "counter"
 )
 
@@ -33,8 +42,12 @@ func NewVMRunner() VMRunner {
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// optimistic read panic catcher for the whole VM task
+	// If the node updates the state while VM is still running, it will peacefully
+	// abandon the VM run
 	err := panicutil.CatchPanicReturnError(
-		func() { runTask(task) },
+		func() {
+			runTask(task)
+		},
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
@@ -51,6 +64,8 @@ func (r VMRunner) Run(task *vm.VMTask) {
 	}
 }
 
+// runTask initialized, loops through batch and finalizes by producing updated (not committed state)
+// and the anchor transaction
 func runTask(task *vm.VMTask) {
 	vmctx := createVMContext(task)
 	oneRequestProcessed := false
@@ -69,22 +84,17 @@ func runTask(task *vm.VMTask) {
 		}
 
 		result := vmctx.runTheRequest(delta)
+
 		task.Log.Infof("request has been processed. %s, result: %s",
 			req.ID().String(), result)
 		oneRequestProcessed = true
 
 		task.ResultTransactionEssence, task.ResultInputsCommitment = vmctx.closeVMContext()
-		task.Results = []*vm.RequestResult{
-			{
-				Request: req,
-				Return:  nil,
-				Error:   nil,
-				Receipt: nil,
-			},
-		}
+		task.Results = []*vm.RequestResult{{Request: req}}
 	}
 }
 
+// getParam parses the request
 func (vmctx *VMContext) getParam(req iscp.Request) (int64, string) {
 	if !req.IsOffLedger() {
 		return 0, "only off-ledger requests are accepted"
@@ -115,7 +125,7 @@ func createVMContext(task *vm.VMTask) *VMContext {
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 	// we create optimistic state access wrapper to be used inside the VM call.
-	// It will panic any time the state is accessed.
+	// It will panic any time the state is write-accessed.
 	// The panic will be caught above and VM call will be abandoned peacefully
 	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
@@ -126,7 +136,11 @@ func createVMContext(task *vm.VMTask) *VMContext {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, &l1Commitment)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(
+		blockIndex+1,
+		task.TimeAssumption,
+		&l1Commitment,
+	)
 	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
 
 	ret := &VMContext{
@@ -136,6 +150,7 @@ func createVMContext(task *vm.VMTask) *VMContext {
 	return ret
 }
 
+// runTheRequest updates the state
 func (vmctx *VMContext) runTheRequest(delta int64) (result string) {
 	var c int64
 
@@ -158,6 +173,11 @@ func (vmctx *VMContext) runTheRequest(delta int64) (result string) {
 	return fmt.Sprintf("counter was mutated: %d + (%d) -> %d", c, delta, c+delta)
 }
 
+// closeVMContext:
+// - extracts mutation buffer as block
+// - commits the trie (does not save the state)
+// - produces next anchor output
+// - produces anchor transaction essence
 func (vmctx *VMContext) closeVMContext() (*iotago.TransactionEssence, []byte) {
 	block, err := vmctx.virtualState.ExtractBlock()
 	if err != nil {
