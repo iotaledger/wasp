@@ -90,8 +90,8 @@ func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, e
 	if err != nil {
 		return 0, err
 	}
-	if res.Error != nil {
-		return 0, res.Error
+	if res.Receipt.Error != nil {
+		return 0, res.Receipt.Error
 	}
 	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
 }

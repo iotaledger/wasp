@@ -49,7 +49,6 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 		task.Results[i] = &vm.RequestResult{
 			Request: task.Requests[i],
 			Return:  dict.New(),
-			Error:   nil,
 			Receipt: &blocklog.RequestReceipt{
 				Request: task.Requests[i],
 				Error:   nil,
