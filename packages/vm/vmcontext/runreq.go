@@ -119,6 +119,14 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
 
+// checkAllowance ensure there are enough funds to cover the specified allowance
+// panics if not enough funds
+func (vmctx *VMContext) checkAllowance() {
+	if !vmctx.HasEnoughForAllowance(vmctx.req.SenderAccount(), vmctx.req.Allowance()) {
+		panic(vm.ErrNotEnoughFundsForAllowance)
+	}
+}
+
 func (vmctx *VMContext) prepareGasBudget() {
 	if vmctx.req.SenderAccount() == nil {
 		return
@@ -150,6 +158,9 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
+		// ensure there are enough funds to cover the specified allowance
+		vmctx.checkAllowance()
+
 		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
