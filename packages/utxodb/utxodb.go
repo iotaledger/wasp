@@ -40,7 +40,7 @@ type UtxoDB struct {
 	transactions map[iotago.TransactionID]*iotago.Transaction
 	utxo         map[iotago.OutputID]struct{}
 	// globalLogicalTime can be ahead of real time due to AdvanceClockBy
-	globalLogicalTime iscp.TimeData
+	globalLogicalTime time.Time
 	timeStep          time.Duration
 }
 
@@ -82,13 +82,11 @@ func New(params ...*InitParams) *UtxoDB {
 		p = DefaultInitParams()
 	}
 	u := &UtxoDB{
-		supply:       p.supply,
-		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
-		utxo:         make(map[iotago.OutputID]struct{}),
-		globalLogicalTime: iscp.TimeData{
-			Time: p.initialTime,
-		},
-		timeStep: p.timestep,
+		supply:            p.supply,
+		transactions:      make(map[iotago.TransactionID]*iotago.Transaction),
+		utxo:              make(map[iotago.OutputID]struct{}),
+		globalLogicalTime: p.initialTime,
+		timeStep:          p.timestep,
 	}
 	u.genesisInit()
 	return u
@@ -151,7 +149,7 @@ func (u *UtxoDB) advanceClockBy(step time.Duration) {
 	if step == 0 {
 		panic("can't advance clock by 0 nanoseconds")
 	}
-	u.globalLogicalTime.Time = u.globalLogicalTime.Time.Add(step)
+	u.globalLogicalTime = u.globalLogicalTime.Add(step)
 }
 
 func (u *UtxoDB) AdvanceClockBy(step time.Duration) {
@@ -161,7 +159,7 @@ func (u *UtxoDB) AdvanceClockBy(step time.Duration) {
 	u.advanceClockBy(step)
 }
 
-func (u *UtxoDB) GlobalTime() iscp.TimeData {
+func (u *UtxoDB) GlobalTime() time.Time {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -286,7 +284,7 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 
 	semValCtx := &iotago.SemanticValidationContext{
 		ExtParas: &iotago.ExternalUnlockParameters{
-			ConfUnix: uint32(u.globalLogicalTime.Time.Unix()),
+			ConfUnix: uint32(u.globalLogicalTime.Unix()),
 		},
 	}
 	if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {

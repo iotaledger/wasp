@@ -171,12 +171,12 @@ type StateAnchor struct {
 }
 
 type SendOptions struct {
-	Timelock   *TimeData
+	Timelock   time.Time
 	Expiration *Expiration
 }
 
 type Expiration struct {
-	TimeData
+	Time          time.Time
 	ReturnAddress iotago.Address
 }
 

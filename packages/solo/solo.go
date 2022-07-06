@@ -160,7 +160,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
-		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep())
+		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
 	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
 		return wasmhost.GetProcessor(binaryCode, opt.Log)

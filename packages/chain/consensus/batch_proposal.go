@@ -22,7 +22,7 @@ type BatchProposal struct {
 	StateOutputID           *iotago.UTXOInput
 	RequestIDs              []iscp.RequestID
 	RequestHashes           [][32]byte
-	TimeData                iscp.TimeData
+	TimeData                time.Time
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
 	FeeDestination          iscp.AgentID
@@ -30,7 +30,7 @@ type BatchProposal struct {
 }
 
 type consensusBatchParams struct {
-	timeData        iscp.TimeData // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
+	timeData        time.Time // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
 	feeDestination  iscp.AgentID
@@ -66,7 +66,7 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.TimeData.Time, err = mu.ReadTime()
+	ret.TimeData, err = mu.ReadTime()
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -106,7 +106,7 @@ func (b *BatchProposal) Bytes() []byte {
 		Write(b.AccessManaPledge).
 		Write(b.ConsensusManaPledge).
 		Write(b.FeeDestination).
-		WriteTime(b.TimeData.Time).
+		WriteTime(b.TimeData).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).
 		WriteBytes(b.SigShareOfStateOutputID)
@@ -149,7 +149,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 
 	ts := make([]time.Time, len(props))
 	for i := range ts {
-		ts[i] = props[i].TimeData.Time
+		ts[i] = props[i].TimeData
 	}
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
@@ -181,7 +181,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 	return &consensusBatchParams{
-		timeData:        iscp.TimeData{Time: retTS},
+		timeData:        retTS,
 		accessPledge:    props[selectedIndex].AccessManaPledge,
 		consensusPledge: props[selectedIndex].ConsensusManaPledge,
 		feeDestination:  props[selectedIndex].FeeDestination,

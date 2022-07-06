@@ -184,7 +184,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 	if req.Delay != 0 {
 		timeLock := s.ctx.Timestamp()
 		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
-		sendReq.Options.Timelock = &iscp.TimeData{Time: timeLock}
+		sendReq.Options.Timelock = timeLock
 	}
 	return sendReq
 }
