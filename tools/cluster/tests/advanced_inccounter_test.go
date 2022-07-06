@@ -492,7 +492,7 @@ func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
 	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.Chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.ViewGetLatestBlockInfo.Name,
+		blocklog.ViewGetBlockInfo.Name,
 		nil,
 	)
 	if err != nil {

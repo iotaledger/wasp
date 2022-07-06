@@ -201,7 +201,7 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.ViewGetLatestBlockInfo.Name, nil)
+	ret, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, nil)
 	if err != nil {
 		return 0, err
 	}

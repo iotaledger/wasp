@@ -93,7 +93,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 }
 
 func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) {
-	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name, nil)
+	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name, nil)
 	if err != nil {
 		return nil, err
 	}

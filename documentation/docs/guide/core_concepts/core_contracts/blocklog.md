@@ -34,25 +34,35 @@ processing to the chain.
 
 ## Views
 
-### - `getBlockInfo()`
+### - `getBlockInfo(n BlockIndex)`
 
-Returns the data of the block in the chain with specified index.
+Returns information about the block with index `n`. If `n` is not provided, it defaults to the current (latest) block.
 
-### - `getLatestBlockInfo()`
+Block info has the following data:
 
-Returns the index and data of the latest block in the chain.
+```go
+ BlockIndex                uint32
+ Timestamp                 Time
+ TotalRequests             uint16
+ NumSuccessfulRequests     uint16
+ NumOffLedgerRequests      uint16
+ PreviousL1Commitment      Hash
+ L1Commitment              Hash     
+ AnchorTransactionID       TransactionID  
+ TransactionSubEssenceHash Hash
+ TotalIotasInL2Accounts    uint64
+ TotalDustDeposit          uint64
+ GasBurned                 uint64
+ GasFeeCharged             uint64
+```
 
-### - `getRequestIDsForBlock()`
+### - `getRequestIDsForBlock(n BlockIndex)`
 
-Returns the IDs of all requests in the block with the specified block index.
-
-
+Returns a list with the IDs of all requests in the block with block index `n`.
 
 ### - `getRequestReceipt()`
 
-
 ### - `getRequestReceiptsForBlock()`
-
 
 ### - `isRequestProcessed()`
 
@@ -80,12 +90,4 @@ Returns the data, block index, and request index of all requests in the block wi
 
  -->
 
-  
-
-
-
-
-
-### `viewccontrolAddresses()` 
-
-
+### `viewccontrolAddresses()`
