@@ -62,10 +62,10 @@ func runTask(task *vm.VMTask) {
 			numOffLedger++
 		}
 
-		if result.Error == nil {
+		if result.Receipt.Error == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Error)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
 		}
 		vmctx.AssertConsistentGasTotals()
 	}
