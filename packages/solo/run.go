@@ -76,7 +76,7 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		EstimateGasMode:      estimateGas,
 	}
 
-	ch.Env.vmRunner.Run(task)
+	ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, task.VMError)
 
 	return task

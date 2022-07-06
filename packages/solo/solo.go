@@ -58,7 +58,6 @@ type Solo struct {
 	glbMutex                     sync.RWMutex
 	ledgerMutex                  sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
-	vmRunner                     vm.VMRunner
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
 }
@@ -98,6 +97,8 @@ type Chain struct {
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
 	log *logger.Logger
+	// instance of VM
+	vmRunner vm.VMRunner
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
@@ -116,6 +117,11 @@ type InitOptions struct {
 	PrintStackTrace       bool
 	Seed                  cryptolib.Seed
 	Log                   *logger.Logger
+}
+
+type InitChainOptions struct {
+	InitRequestParameters dict.Dict
+	VMRunner              vm.VMRunner
 }
 
 func defaultInitOptions() *InitOptions {
@@ -152,7 +158,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
-		vmRunner:                     runvm.NewVMRunner(),
 		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 	}
@@ -195,16 +200,27 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initParams ...dict.Dict) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initParams...)
+func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initOptions ...InitChainOptions) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initOptions...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
+	vmRunner := runvm.NewVMRunner()
+	var initRequestParams []dict.Dict
+
+	if len(initOptions) > 0 {
+		if initOptions[0].VMRunner != nil {
+			vmRunner = initOptions[0].VMRunner
+		}
+		if len(initOptions[0].InitRequestParameters) > 0 {
+			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
+		}
+	}
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
 	var originatorAddr iotago.Address
@@ -265,6 +281,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		State:                  vs,
 		GlobalSync:             glbSync,
 		StateReader:            vs.OptimisticStateReader(glbSync),
+		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}
@@ -279,7 +296,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		"'solo' testing chain",
 		outs,
 		ids,
-		initParams...,
+		initRequestParams...,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
