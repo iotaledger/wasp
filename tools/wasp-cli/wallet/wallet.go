@@ -44,7 +44,7 @@ func Load() *Wallet {
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
-	kp := cryptolib.NewKeyPairFromSeed(seed)
+	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
 	return &Wallet{KeyPair: kp}
 }
 
