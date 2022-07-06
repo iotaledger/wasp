@@ -60,6 +60,7 @@ type Solo struct {
 	chains                       map[iscp.ChainID]*Chain
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
+	seed                         cryptolib.Seed
 }
 
 // Chain represents state of individual chain.
@@ -105,6 +106,8 @@ type Chain struct {
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool mempool.Mempool
+	// used for non-standard VMs
+	bypassStardustVM bool
 	// receipt of the last call
 	lastReceipt *blocklog.RequestReceipt
 }
@@ -120,9 +123,13 @@ type InitOptions struct {
 }
 
 type InitChainOptions struct {
-	InitRequestParameters     dict.Dict
-	VMRunner                  vm.VMRunner
-	SkipStardustVMInitRequest bool
+	// optional parameters for init request call
+	InitRequestParameters dict.Dict
+	// optional VMRunner. Default is StardustVM
+	VMRunner vm.VMRunner
+	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
+	// To be used with provided non-standard VMRunner
+	BypassStardustVM bool
 }
 
 func defaultInitOptions() *InitOptions {
@@ -152,7 +159,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
+	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
@@ -161,10 +168,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		chains:                       make(map[iscp.ChainID]*Chain),
 		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
+		seed:                         opt.Seed,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
-		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep())
+		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
 	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
 		return wasmhost.GetProcessor(binaryCode, opt.Log)
@@ -213,7 +221,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	vmRunner := runvm.NewVMRunner()
 	var initRequestParams []dict.Dict
-	skipStardustVMInitRequest := false
+	bypassStardustVM := false
 
 	if len(initOptions) > 0 {
 		if initOptions[0].VMRunner != nil {
@@ -222,26 +230,26 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		if len(initOptions[0].InitRequestParameters) > 0 {
 			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
 		}
-		skipStardustVMInitRequest = initOptions[0].SkipStardustVMInitRequest
+		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
-	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
-	var originatorAddr iotago.Address
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
+
 	if chainOriginator == nil {
-		chainOriginator = cryptolib.NewKeyPair()
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
+		chainOriginator = env.NewKeyPairFromIndex(-2)
+		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
-	} else {
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
+	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
-		stateAddr,
-		stateAddr,
+		stateControllerAddr,
+		stateControllerAddr,
 		initIotas, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
@@ -256,8 +264,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
@@ -275,8 +283,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		Env:                    env,
 		Name:                   name,
 		ChainID:                chainID,
-		StateControllerKeyPair: stateController,
-		StateControllerAddress: stateAddr,
+		StateControllerKeyPair: stateControllerKey,
+		StateControllerAddress: stateControllerAddr,
 		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
@@ -284,6 +292,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		State:                  vs,
 		GlobalSync:             glbSync,
 		StateReader:            vs.OptimisticStateReader(glbSync),
+		bypassStardustVM:       bypassStardustVM,
 		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
@@ -314,7 +323,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	go ret.batchLoop()
 
-	if skipStardustVMInitRequest {
+	if bypassStardustVM {
 		// force skipping the init request. It is needed for non-Stardust VMs
 		return ret, originTx, nil
 	}

@@ -122,12 +122,10 @@ func (vmctx *VMContext) checkInternalOutput() error {
 // checkReasonTimeLock checking timelock conditions based on time assumptions.
 // VM must ensure that the UTXO can be unlocked
 func (vmctx *VMContext) checkReasonTimeLock() error {
-	lock := vmctx.req.(iscp.OnLedgerRequest).Features().TimeLock()
-	if lock != nil {
-		if !lock.Time.IsZero() {
-			if vmctx.finalStateTimestamp.Before(lock.Time) {
-				return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
-			}
+	timeLock := vmctx.req.(iscp.OnLedgerRequest).Features().TimeLock()
+	if !timeLock.IsZero() {
+		if vmctx.finalStateTimestamp.Before(timeLock) {
+			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
 		}
 	}
 	return nil
@@ -138,7 +136,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 func (vmctx *VMContext) checkReasonExpiry() error {
 	expiry, _ := vmctx.req.(iscp.OnLedgerRequest).Features().Expiry()
 
-	if expiry == nil {
+	if expiry.IsZero() {
 		return nil
 	}
 
@@ -146,8 +144,8 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	windowFrom := vmctx.finalStateTimestamp.Add(-ExpiryUnlockSafetyWindowDuration)
 	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
 
-	if expiry.Time.After(windowFrom) && expiry.Time.Before(windowTo) {
-		return xerrors.Errorf("can't be consumed in the expire safety window close to v", expiry.Time)
+	if expiry.After(windowFrom) && expiry.Before(windowTo) {
+		return xerrors.Errorf("can't be consumed in the expire safety window close to v", expiry)
 	}
 
 	// General unlock validation
@@ -158,7 +156,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	})
 
 	if !unlockable {
-		return xerrors.Errorf("can't be consumed", expiry.Time)
+		return xerrors.Errorf("can't be consumed", expiry)
 	}
 
 	return nil

@@ -329,6 +329,8 @@ func (ch *Chain) CommonAccount() iscp.AgentID {
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
+	ch.mustStardustVM()
+
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
@@ -401,6 +403,8 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRecei
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
 func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.RequestReceipt {
+	ch.mustStardustVM()
+
 	var blockIdx uint32
 	if len(blockIndex) == 0 {
 		blockIdx = ch.GetLatestBlockInfo().BlockIndex

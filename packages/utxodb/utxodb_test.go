@@ -17,12 +17,12 @@ func TestBasic(t *testing.T) {
 	require.EqualValues(t, u.Supply(), u.GetAddressBalanceIotas(u.GenesisAddress()))
 	gtime := u.GlobalTime()
 	expectedTime := time.Unix(1, 0).Add(1 * time.Millisecond)
-	require.EqualValues(t, expectedTime, gtime.Time)
+	require.EqualValues(t, expectedTime, gtime)
 
 	u.AdvanceClockBy(10 * time.Second)
 	gtime1 := u.GlobalTime()
-	expectedTime = gtime.Time.Add(10 * time.Second)
-	require.EqualValues(t, expectedTime, gtime1.Time)
+	expectedTime = gtime.Add(10 * time.Second)
+	require.EqualValues(t, expectedTime, gtime1)
 }
 
 func TestRequestFunds(t *testing.T) {
@@ -39,7 +39,7 @@ func TestRequestFunds(t *testing.T) {
 
 	gtime := u.GlobalTime()
 	expectedTime := time.Unix(1, 0).Add(2 * time.Millisecond)
-	require.EqualValues(t, expectedTime, gtime.Time)
+	require.EqualValues(t, expectedTime, gtime)
 }
 
 func TestAddTransactionFail(t *testing.T) {

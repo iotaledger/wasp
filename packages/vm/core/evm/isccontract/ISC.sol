@@ -61,17 +61,13 @@ struct ISCSendMetadata  {
 	uint64 gasBudget;
 }
 
-struct ISCTimeData {
-	int64 time;
-}
-
 struct ISCExpiration {
 	int64 time;
 	IotaAddress returnAddress;
 }
 
 struct ISCSendOptions {
-	ISCTimeData timelock;
+	int64 timelock;
 	ISCExpiration expiration;
 }
 

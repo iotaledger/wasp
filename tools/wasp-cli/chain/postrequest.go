@@ -1,15 +1,11 @@
 package chain
 
 import (
-	"encoding/hex"
-	"math/big"
-	"strings"
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +23,7 @@ func postRequestCmd() *cobra.Command {
 			fname := args[1]
 			params := chainclient.PostRequestParams{
 				Args:     util.EncodeParams(args[2:]),
-				Transfer: parseFungibleTokens(transfer),
+				Transfer: util.ParseFungibleTokens(transfer),
 			}
 
 			scClient := SCClient(iscp.Hn(args[0]))
@@ -53,43 +49,4 @@ func postRequestCmd() *cobra.Command {
 	)
 
 	return cmd
-}
-
-func tokenIDFromString(s string) []byte {
-	ret, err := hex.DecodeString(s)
-	log.Check(err)
-	return ret
-}
-
-func parseFungibleTokens(args []string) *iscp.FungibleTokens {
-	tokens := iscp.NewEmptyAssets()
-	for _, tr := range args {
-		parts := strings.Split(tr, ":")
-		if len(parts) != 2 {
-			log.Fatalf("fungible tokens syntax: <token-id>:<amount>,<token-id:amount>... -- Example: iota:100")
-		}
-		// In the past we would indicate iotas as 'IOTA:nnn'
-		// Now we can simply use ':nnn', but let's keep it
-		// backward compatible for now and allow both
-		if strings.ToLower(parts[0]) == iotaTokenStr {
-			parts[0] = ""
-		}
-		tokenIDBytes := tokenIDFromString(parts[0])
-
-		amount, ok := new(big.Int).SetString(parts[1], 10)
-		if !ok {
-			log.Fatalf("error parsing token amount")
-		}
-
-		if iscp.IsIota(tokenIDBytes) {
-			tokens.AddIotas(amount.Uint64())
-			continue
-		}
-
-		tokenID, err := iscp.NativeTokenIDFromBytes(tokenIDBytes)
-		log.Check(err)
-
-		tokens.AddNativeTokens(tokenID, amount)
-	}
-	return tokens
 }
