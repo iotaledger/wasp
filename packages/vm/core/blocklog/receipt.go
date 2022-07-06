@@ -116,16 +116,16 @@ func (r *RequestReceipt) LookupKey() RequestLookupKey {
 	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
 }
 
-func (r *RequestReceipt) ToTranslatedReceipt(translatedError *iscp.VMError) *iscp.Receipt {
+func (r *RequestReceipt) ToISCPReceipt(resolvedError *iscp.VMError) *iscp.Receipt {
 	return &iscp.Receipt{
-		Request:         r.Request.Bytes(),
-		Error:           r.Error,
-		GasBudget:       r.GasBudget,
-		GasBurned:       r.GasBurned,
-		GasFeeCharged:   r.GasFeeCharged,
-		BlockIndex:      r.BlockIndex,
-		RequestIndex:    r.RequestIndex,
-		TranslatedError: translatedError.Error(),
+		Request:       r.Request.Bytes(),
+		Error:         r.Error,
+		GasBudget:     r.GasBudget,
+		GasBurned:     r.GasBurned,
+		GasFeeCharged: r.GasFeeCharged,
+		BlockIndex:    r.BlockIndex,
+		RequestIndex:  r.RequestIndex,
+		ResolvedError: resolvedError.Error(),
 	}
 }
 

@@ -31,7 +31,7 @@ var _ chain.Chain = &mockedChain{}
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+func (m *mockedChain) ResolveError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
 	panic("implement me")
 }
 
