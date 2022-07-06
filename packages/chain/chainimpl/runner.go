@@ -1,9 +1,10 @@
 package chainimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"time"
 )
 
 func (ch *chainObj) GetAnchorOutput() *iscp.AliasOutputWithID {

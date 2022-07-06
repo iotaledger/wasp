@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"time"
 )
 
 type VMRunner interface {

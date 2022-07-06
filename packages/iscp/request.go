@@ -36,7 +36,9 @@ type Calldata interface {
 }
 
 type Features interface {
+	// TimeLock returns the timelock feature, or a zero time if not present
 	TimeLock() time.Time
+	// Expiry returns the expiry time and sender address, or a zero time if not present
 	Expiry() (time.Time, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
 	ReturnAmount() (uint64, bool)
 }
