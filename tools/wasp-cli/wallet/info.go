@@ -49,9 +49,9 @@ var balanceCmd = &cobra.Command{
 
 func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
 	balance := iscp.FungibleTokensFromOutputMap(outs)
-	log.Printf("    iota: %d\n", balance.Iotas)
+	log.Printf("    iota %d\n", balance.Iotas)
 	for _, nt := range balance.Tokens {
-		log.Printf("    %s: %s\n", nt.ID, nt.Amount)
+		log.Printf("    %s %s\n", nt.ID, nt.Amount)
 	}
 }
 

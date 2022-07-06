@@ -48,7 +48,10 @@ func Load() *Wallet {
 	return &Wallet{KeyPair: kp}
 }
 
-var addressIndex int
+var (
+	addressIndex      int
+	adjustDustDeposit bool
+)
 
 func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
 	return w.KeyPair.GetPrivateKey()

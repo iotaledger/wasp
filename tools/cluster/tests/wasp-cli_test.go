@@ -101,6 +101,31 @@ func checkBalance(t *testing.T, out []string, expected int) {
 	require.GreaterOrEqual(t, amount, expected)
 }
 
+func getAddress(t *testing.T, out []string) (int, string) {
+	var address string
+	var addressIndex int
+
+	r := regexp.MustCompile(`(?m)Address index (\d+)[ \t]+Address:[ \t]+(\w+)`).FindStringSubmatch(strings.Join(out, " "))
+
+	if r != nil {
+		var err error
+		addressIndex, err = strconv.Atoi(r[1])
+		require.NoError(t, err)
+		address = r[2]
+	}
+
+	return addressIndex, address
+}
+
+func TestWaspCLISendFunds(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	_, alternativeAddress := getAddress(t, w.Run("address", "--address-index=1"))
+
+	w.Run("send-funds", alternativeAddress, "iota:1000000")
+	checkBalance(t, w.Run("balance", "--address-index=1"), 1000000)
+}
+
 func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
