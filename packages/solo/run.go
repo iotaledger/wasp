@@ -171,6 +171,9 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 }
 
 func (ch *Chain) logRequestLastBlock() {
+	if ch.bypassStardustVM {
+		return
+	}
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())

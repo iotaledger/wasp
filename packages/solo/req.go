@@ -191,6 +191,12 @@ func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptol
 	return ret.Sign(keyPair)
 }
 
+func (ch *Chain) mustStardustVM() {
+	if ch.bypassStardustVM {
+		panic("Solo: StardustVM context expected")
+	}
+}
+
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
@@ -346,6 +352,8 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+	ch.mustStardustVM()
+
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
@@ -456,6 +464,9 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 }
 
 func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...interface{}) (dict.Dict, error) {
+	if ch.bypassStardustVM {
+		return nil, xerrors.New("Solo: StardustVM context expected")
+	}
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)

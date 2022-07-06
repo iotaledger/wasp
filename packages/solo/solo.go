@@ -105,6 +105,8 @@ type Chain struct {
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool mempool.Mempool
+	// used for non-standard VMs
+	bypassStardustVM bool
 	// receipt of the last call
 	lastReceipt *blocklog.RequestReceipt
 }
@@ -120,9 +122,13 @@ type InitOptions struct {
 }
 
 type InitChainOptions struct {
-	InitRequestParameters     dict.Dict
-	VMRunner                  vm.VMRunner
-	SkipStardustVMInitRequest bool
+	// optional parameters for init request call
+	InitRequestParameters dict.Dict
+	// optional VMRunner. Default is StardustVM
+	VMRunner vm.VMRunner
+	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
+	// To be used with provided non-standard VMRunner
+	BypassStardustVM bool
 }
 
 func defaultInitOptions() *InitOptions {
@@ -213,7 +219,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	vmRunner := runvm.NewVMRunner()
 	var initRequestParams []dict.Dict
-	skipStardustVMInitRequest := false
+	bypassStardustVM := false
 
 	if len(initOptions) > 0 {
 		if initOptions[0].VMRunner != nil {
@@ -222,7 +228,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		if len(initOptions[0].InitRequestParameters) > 0 {
 			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
 		}
-		skipStardustVMInitRequest = initOptions[0].SkipStardustVMInitRequest
+		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
@@ -284,6 +290,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		State:                  vs,
 		GlobalSync:             glbSync,
 		StateReader:            vs.OptimisticStateReader(glbSync),
+		bypassStardustVM:       bypassStardustVM,
 		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
@@ -314,7 +321,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	go ret.batchLoop()
 
-	if skipStardustVMInitRequest {
+	if bypassStardustVM {
 		// force skipping the init request. It is needed for non-Stardust VMs
 		return ret, originTx, nil
 	}
