@@ -66,8 +66,8 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 
 func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
 	res := ch.estimateGas(iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg))
-	if res.Error != nil {
-		return 0, res.Error
+	if res.Receipt.Error != nil {
+		return 0, res.Receipt.Error
 	}
 	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
 }
