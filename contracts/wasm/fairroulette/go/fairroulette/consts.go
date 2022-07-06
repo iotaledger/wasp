@@ -18,6 +18,7 @@ const (
 
 const (
 	ParamNumber     = "number"
+	ParamOwner      = "owner"
 	ParamPlayPeriod = "playPeriod"
 )
 
@@ -31,6 +32,7 @@ const (
 const (
 	StateBets              = "bets"
 	StateLastWinningNumber = "lastWinningNumber"
+	StateOwner             = "owner"
 	StatePlayPeriod        = "playPeriod"
 	StateRoundNumber       = "roundNumber"
 	StateRoundStartedAt    = "roundStartedAt"
@@ -40,6 +42,7 @@ const (
 const (
 	FuncForcePayout       = "forcePayout"
 	FuncForceReset        = "forceReset"
+	FuncInit              = "init"
 	FuncPayWinners        = "payWinners"
 	FuncPlaceBet          = "placeBet"
 	FuncPlayPeriod        = "playPeriod"
@@ -52,6 +55,7 @@ const (
 const (
 	HFuncForcePayout       = wasmtypes.ScHname(0x555a4c4f)
 	HFuncForceReset        = wasmtypes.ScHname(0xa331951e)
+	HFuncInit              = wasmtypes.ScHname(0x1f44d644)
 	HFuncPayWinners        = wasmtypes.ScHname(0xfb2b0144)
 	HFuncPlaceBet          = wasmtypes.ScHname(0xdfba7d1b)
 	HFuncPlayPeriod        = wasmtypes.ScHname(0xcb94b293)

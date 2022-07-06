@@ -11,6 +11,7 @@ import * as sc from "./index";
 const exportMap: wasmlib.ScExportMap = {
 	names: [
 		sc.FuncFinalizeAuction,
+		sc.FuncInit,
 		sc.FuncPlaceBid,
 		sc.FuncSetOwnerMargin,
 		sc.FuncStartAuction,
@@ -18,6 +19,7 @@ const exportMap: wasmlib.ScExportMap = {
 	],
 	funcs: [
 		funcFinalizeAuctionThunk,
+		funcInitThunk,
 		funcPlaceBidThunk,
 		funcSetOwnerMarginThunk,
 		funcStartAuctionThunk,
@@ -49,6 +51,13 @@ function funcFinalizeAuctionThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcFinalizeAuction ok");
 }
 
+function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("fairauction.funcInit");
+	let f = new sc.InitContext();
+	sc.funcInit(ctx, f);
+	ctx.log("fairauction.funcInit ok");
+}
+
 function funcPlaceBidThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairauction.funcPlaceBid");
 	let f = new sc.PlaceBidContext();
@@ -62,7 +71,9 @@ function funcSetOwnerMarginThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.SetOwnerMarginContext();
 
 	// only SC creator can set owner margin
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	ctx.require(f.params.ownerMargin().exists(), "missing mandatory ownerMargin");
 	sc.funcSetOwnerMargin(ctx, f);

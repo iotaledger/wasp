@@ -40,8 +40,8 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
         return;
     }
 
-    let scCreator = ctx.contractCreator().address();
-    ctx.send(scCreator, wasmlib.ScTransfer.iotas(amount));
+    let scOwner = f.state.owner().value().address();
+    ctx.send(scOwner, wasmlib.ScTransfer.iotas(amount));
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {
@@ -58,4 +58,12 @@ export function viewDonationInfo(ctx: wasmlib.ScViewContext, f: sc.DonationInfoC
     f.results.maxDonation().setValue(f.state.maxDonation().value());
     f.results.totalDonation().setValue(f.state.totalDonation().value());
     f.results.count().setValue(f.state.log().length());
+}
+
+export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
+	if (f.params.owner().exists()) {
+		f.state.owner().setValue(f.params.owner().value());
+		return;
+	}
+	f.state.owner().setValue(ctx.requestSender());
 }

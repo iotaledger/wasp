@@ -45,3 +45,11 @@ func funcUpdateMetadata(ctx wasmlib.ScFuncContext, f *UpdateMetadataContext) {
 func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
 	// TODO implement
 }
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
+}

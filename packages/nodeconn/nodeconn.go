@@ -237,7 +237,7 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
 	// Build a Block and post it.
-	block, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).
+	block, err := builder.NewBlockBuilder().
 		Payload(tx).
 		Tips(ctx, nc.nodeAPIClient).
 		Build()
@@ -287,7 +287,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", msgID)
+			nc.log.Debugf("promoting msgID: %s", msgID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
 			if err != nil {
@@ -297,14 +297,18 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			if err != nil {
 				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
 			}
-			parents := [][]byte{msgID[:]}
+
+			parents := []iotago.BlockID{
+				msgID,
+			}
+
 			if len(tips) > 7 {
 				tips = tips[:7] // max 8 parents
 			}
 			for _, tip := range tips {
-				parents = append(parents, tip[:])
+				parents = append(parents, tip)
 			}
-			promotionMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Parents(parents).Build()
+			promotionMsg, err := builder.NewBlockBuilder().Parents(parents).Build()
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion Block: %w", err)
 			}

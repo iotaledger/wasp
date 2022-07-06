@@ -16,7 +16,6 @@ export const ParamAgentID         = "agentID";
 export const ParamCaller          = "caller";
 export const ParamChainID         = "chainID";
 export const ParamChainOwnerID    = "chainOwnerID";
-export const ParamContractCreator = "contractCreator";
 export const ParamContractID      = "contractID";
 export const ParamCounter         = "counter";
 export const ParamFail            = "initFailParam";

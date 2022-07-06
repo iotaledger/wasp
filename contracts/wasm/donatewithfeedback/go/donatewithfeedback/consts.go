@@ -20,6 +20,7 @@ const (
 	ParamAmount   = "amount"
 	ParamFeedback = "feedback"
 	ParamNr       = "nr"
+	ParamOwner    = "owner"
 )
 
 const (
@@ -36,11 +37,13 @@ const (
 const (
 	StateLog           = "log"
 	StateMaxDonation   = "maxDonation"
+	StateOwner         = "owner"
 	StateTotalDonation = "totalDonation"
 )
 
 const (
 	FuncDonate       = "donate"
+	FuncInit         = "init"
 	FuncWithdraw     = "withdraw"
 	ViewDonation     = "donation"
 	ViewDonationInfo = "donationInfo"
@@ -48,6 +51,7 @@ const (
 
 const (
 	HFuncDonate       = wasmtypes.ScHname(0xdc9b133a)
+	HFuncInit         = wasmtypes.ScHname(0x1f44d644)
 	HFuncWithdraw     = wasmtypes.ScHname(0x9dcc0f41)
 	HViewDonation     = wasmtypes.ScHname(0xbdb245ba)
 	HViewDonationInfo = wasmtypes.ScHname(0xc8f7c726)

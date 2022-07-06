@@ -225,8 +225,8 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		// We have a remainder. First create a transfer for the remainder.
 		transfers := wasmlib.NewScTransferIotas(remainder)
 
-		// Send the remainder to the contract creator.
-		ctx.Send(ctx.ContractCreator().Address(), transfers)
+		// Send the remainder to the contract owner.
+		ctx.Send(f.State.Owner().Value().Address(), transfers)
 	}
 
 	// Set round status to 0, send out event to notify that the round has ended
@@ -295,4 +295,12 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 
 func funcForcePayout(ctx wasmlib.ScFuncContext, f *ForcePayoutContext) {
 	ScFuncs.PayWinners(ctx).Func.Call()
+}
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 }

@@ -14,6 +14,11 @@ type DonateCall struct {
 	Params MutableDonateParams
 }
 
+type InitCall struct {
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
+}
+
 type WithdrawCall struct {
 	Func   *wasmlib.ScFunc
 	Params MutableWithdrawParams
@@ -36,6 +41,12 @@ var ScFuncs Funcs
 
 func (sc Funcs) Donate(ctx wasmlib.ScFuncCallContext) *DonateCall {
 	f := &DonateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDonate)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
+}
+
+func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }

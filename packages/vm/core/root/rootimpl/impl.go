@@ -32,6 +32,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.ViewFindContract.WithHandler(findContract),
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
+	root.FuncSubscribeBlockContext.WithHandler(subscribeBlockContext),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -142,7 +143,6 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     ctx.Caller(),
 	})
 	ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
@@ -212,4 +212,15 @@ func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 	})
 
 	return ret
+}
+
+func subscribeBlockContext(ctx iscp.Sandbox) dict.Dict {
+	ctx.Requiref(ctx.StateAnchor().StateIndex == 0, "subscribeBlockContext must be called when initializing the chain")
+	root.SubscribeBlockContext(
+		ctx.State(),
+		ctx.Caller().(*iscp.ContractAgentID).Hname(),
+		ctx.Params().MustGetHname(root.ParamBlockContextOpenFunc),
+		ctx.Params().MustGetHname(root.ParamBlockContextCloseFunc),
+	)
+	return nil
 }

@@ -28,6 +28,22 @@ func (s MutableDonateParams) Feedback() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamFeedback))
 }
 
+type ImmutableInitParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableInitParams) Owner() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamOwner))
+}
+
+type MutableInitParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableInitParams) Owner() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamOwner))
+}
+
 type ImmutableWithdrawParams struct {
 	proxy wasmtypes.Proxy
 }

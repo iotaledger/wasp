@@ -9,16 +9,6 @@ import (
 
 type ScSandboxUtils struct{}
 
-// Base58Decode decodes the specified base58-encoded string value to its original bytes
-func (u ScSandboxUtils) Base58Decode(value string) []byte {
-	return Sandbox(FnUtilsBase58Decode, wasmtypes.StringToBytes(value))
-}
-
-// Base58Encode encodes the specified bytes to a base58-encoded string
-func (u ScSandboxUtils) Base58Encode(bytes []byte) string {
-	return wasmtypes.StringFromBytes(Sandbox(FnUtilsBase58Encode, bytes))
-}
-
 // Bech32Decode decodes the specified bech32-encoded string value to its original address
 func (u ScSandboxUtils) Bech32Decode(value string) wasmtypes.ScAddress {
 	return wasmtypes.AddressFromBytes(Sandbox(FnUtilsBech32Decode, wasmtypes.StringToBytes(value)))

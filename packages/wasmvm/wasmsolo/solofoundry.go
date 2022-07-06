@@ -34,7 +34,7 @@ func (sf *SoloFoundry) Destroy() error {
 }
 
 func (sf *SoloFoundry) DestroyTokens(amount interface{}) error {
-	return sf.ctx.Chain.DestroyTokensOnL2(sf.sn, amount, sf.agent.Pair)
+	return sf.ctx.Chain.DestroyTokensOnL2(sf.tokenID, amount, sf.agent.Pair)
 }
 
 func (sf *SoloFoundry) Mint(amount interface{}) error {

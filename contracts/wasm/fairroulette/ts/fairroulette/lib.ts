@@ -12,6 +12,7 @@ const exportMap: wasmlib.ScExportMap = {
 	names: [
 		sc.FuncForcePayout,
 		sc.FuncForceReset,
+		sc.FuncInit,
 		sc.FuncPayWinners,
 		sc.FuncPlaceBet,
 		sc.FuncPlayPeriod,
@@ -23,6 +24,7 @@ const exportMap: wasmlib.ScExportMap = {
 	funcs: [
 		funcForcePayoutThunk,
 		funcForceResetThunk,
+		funcInitThunk,
 		funcPayWinnersThunk,
 		funcPlaceBetThunk,
 		funcPlayPeriodThunk,
@@ -49,8 +51,10 @@ function funcForcePayoutThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcForcePayout");
 	let f = new sc.ForcePayoutContext();
 
-	// only SC creator can restart the round forcefully
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	// only SC owner can restart the round forcefully
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	sc.funcForcePayout(ctx, f);
 	ctx.log("fairroulette.funcForcePayout ok");
@@ -60,11 +64,20 @@ function funcForceResetThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcForceReset");
 	let f = new sc.ForceResetContext();
 
-	// only SC creator can restart the round forcefully
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	// only SC owner can restart the round forcefully
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	sc.funcForceReset(ctx, f);
 	ctx.log("fairroulette.funcForceReset ok");
+}
+
+function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("fairroulette.funcInit");
+	let f = new sc.InitContext();
+	sc.funcInit(ctx, f);
+	ctx.log("fairroulette.funcInit ok");
 }
 
 function funcPayWinnersThunk(ctx: wasmlib.ScFuncContext): void {
@@ -90,8 +103,10 @@ function funcPlayPeriodThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("fairroulette.funcPlayPeriod");
 	let f = new sc.PlayPeriodContext();
 
-	// only SC creator can update the play period
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	// only SC owner can update the play period
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	ctx.require(f.params.playPeriod().exists(), "missing mandatory playPeriod");
 	sc.funcPlayPeriod(ctx, f);

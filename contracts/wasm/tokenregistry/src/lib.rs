@@ -26,12 +26,14 @@ mod tokenregistry;
 
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
+    	FUNC_INIT,
     	FUNC_MINT_SUPPLY,
     	FUNC_TRANSFER_OWNERSHIP,
     	FUNC_UPDATE_METADATA,
     	VIEW_GET_INFO,
 	],
     funcs: &[
+    	func_init_thunk,
     	func_mint_supply_thunk,
     	func_transfer_ownership_thunk,
     	func_update_metadata_thunk,
@@ -49,6 +51,21 @@ fn on_call(index: i32) {
 #[no_mangle]
 fn on_load() {
     ScExports::export(&EXPORT_MAP);
+}
+
+pub struct InitContext {
+	params: ImmutableInitParams,
+	state: MutableTokenRegistryState,
+}
+
+fn func_init_thunk(ctx: &ScFuncContext) {
+	ctx.log("tokenregistry.funcInit");
+	let f = InitContext {
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableTokenRegistryState { proxy: state_proxy() },
+	};
+	func_init(ctx, &f);
+	ctx.log("tokenregistry.funcInit ok");
 }
 
 pub struct MintSupplyContext {
@@ -79,7 +96,9 @@ fn func_transfer_ownership_thunk(ctx: &ScFuncContext) {
 	};
 
 	// TODO the one who can transfer token ownership
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_transfer_ownership(ctx, &f);
@@ -99,7 +118,9 @@ fn func_update_metadata_thunk(ctx: &ScFuncContext) {
 	};
 
 	// TODO the one who can change the token info
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
 	func_update_metadata(ctx, &f);

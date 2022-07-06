@@ -29,12 +29,14 @@ mod donatewithfeedback;
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
     	FUNC_DONATE,
+    	FUNC_INIT,
     	FUNC_WITHDRAW,
     	VIEW_DONATION,
     	VIEW_DONATION_INFO,
 	],
     funcs: &[
     	func_donate_thunk,
+    	func_init_thunk,
     	func_withdraw_thunk,
 	],
     views: &[
@@ -68,6 +70,21 @@ fn func_donate_thunk(ctx: &ScFuncContext) {
 	ctx.log("donatewithfeedback.funcDonate ok");
 }
 
+pub struct InitContext {
+	params: ImmutableInitParams,
+	state: MutableDonateWithFeedbackState,
+}
+
+fn func_init_thunk(ctx: &ScFuncContext) {
+	ctx.log("donatewithfeedback.funcInit");
+	let f = InitContext {
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableDonateWithFeedbackState { proxy: state_proxy() },
+	};
+	func_init(ctx, &f);
+	ctx.log("donatewithfeedback.funcInit ok");
+}
+
 pub struct WithdrawContext {
 	params: ImmutableWithdrawParams,
 	state: MutableDonateWithFeedbackState,
@@ -80,8 +97,10 @@ fn func_withdraw_thunk(ctx: &ScFuncContext) {
 		state: MutableDonateWithFeedbackState { proxy: state_proxy() },
 	};
 
-	// only SC creator can withdraw donated funds
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	// only SC owner can withdraw donated funds
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	func_withdraw(ctx, &f);
 	ctx.log("donatewithfeedback.funcWithdraw ok");

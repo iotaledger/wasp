@@ -85,9 +85,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 			GasBudget:      math.MaxUint64,
 		},
 		Options: iscp.SendOptions{
-			Timelock: &iscp.TimeData{
-				Time: ctx.Timestamp().Add(2 * time.Second),
-			},
+			Timelock: ctx.Timestamp().Add(2 * time.Second),
 		},
 	})
 	ctx.Log().Debugf("incCounterAndRepeatOnce: PostRequestToSelfWithDelay RequestInc 2 sec")
@@ -131,9 +129,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 			Allowance:      iscp.NewAllowanceIotas(1000),
 		},
 		Options: iscp.SendOptions{
-			Timelock: &iscp.TimeData{
-				Time: ctx.Timestamp().Add(2 * time.Second),
-			},
+			Timelock: ctx.Timestamp().Add(2 * time.Second),
 		},
 	})
 

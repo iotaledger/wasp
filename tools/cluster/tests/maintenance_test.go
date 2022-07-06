@@ -104,9 +104,7 @@ func TestMaintenance(t *testing.T) {
 	// assert that block number is still the same
 	blockIndex2, err := env.Chain.BlockIndex()
 	require.NoError(t, err)
-	// TODO this will fail for now, we need the fix to not produce empty blocks
-	// require.EqualValues(t, blockIndex, blockIndex2)
-	println(blockIndex, blockIndex2)
+	require.EqualValues(t, blockIndex, blockIndex2)
 
 	// calls to governance are processed (try changing fees for example)
 	newGasFeePolicy := gas.GasFeePolicy{

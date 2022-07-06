@@ -40,9 +40,9 @@ var Processor = Contract.Processor(initialize,
 	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
 	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
-	FuncTestBlockContext1.WithHandler(testBlockContext1),
-	FuncTestBlockContext2.WithHandler(testBlockContext2),
-	FuncGetStringValue.WithHandler(getStringValue),
+	FuncOpenBlockContext.WithHandler(openBlockContext),
+	FuncCloseBlockContext.WithHandler(closeBlockContext),
+	FuncGetLastBlockNumCalls.WithHandler(getLastBlockNumCalls),
 
 	FuncJustView.WithHandler(testJustView),
 
@@ -79,9 +79,9 @@ var (
 	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncTestBlockContext1 = coreutil.Func("testBlockContext1")
-	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
-	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
+	FuncOpenBlockContext     = coreutil.Func("openBlockContext")
+	FuncCloseBlockContext    = coreutil.Func("closeBlockContext")
+	FuncGetLastBlockNumCalls = coreutil.ViewFunc("getLastBlockNumCalls")
 
 	FuncWithdrawFromChain = coreutil.Func("withdrawFromChain")
 
@@ -126,7 +126,6 @@ const (
 	ParamCaller            = "caller"
 	ParamChainID           = "chainID"
 	ParamChainOwnerID      = "chainOwnerID"
-	ParamContractCreator   = "contractCreator"
 	ParamContractID        = "contractID"
 	ParamFail              = "initFailParam"
 	ParamHnameContract     = "hnameContract"

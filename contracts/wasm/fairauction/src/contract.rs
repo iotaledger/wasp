@@ -15,6 +15,11 @@ pub struct FinalizeAuctionCall {
 	pub params: MutableFinalizeAuctionParams,
 }
 
+pub struct InitCall {
+	pub func: ScInitFunc,
+	pub params: MutableInitParams,
+}
+
 pub struct PlaceBidCall {
 	pub func: ScFunc,
 	pub params: MutablePlaceBidParams,
@@ -46,6 +51,15 @@ impl ScFuncs {
             params: MutableFinalizeAuctionParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn init(_ctx: &dyn ScFuncCallContext) -> InitCall {
+        let mut f = InitCall {
+            func: ScInitFunc::new(HSC_NAME, HFUNC_INIT),
+            params: MutableInitParams { proxy: Proxy::nil() },
+        };
+        ScInitFunc::link_params(&mut f.params.proxy, &f.func);
         f
     }
 

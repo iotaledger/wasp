@@ -26,7 +26,7 @@ impl ImmutableDeployContractParams {
 		ScImmutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
-    //TODO variable init params for deployed contract
+    // TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScImmutableHash {
 		ScImmutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -47,7 +47,7 @@ impl MutableDeployContractParams {
 		ScMutableString::new(self.proxy.root(PARAM_NAME))
 	}
 
-    //TODO variable init params for deployed contract
+    // TODO variable init params for deployed contract
     pub fn program_hash(&self) -> ScMutableHash {
 		ScMutableHash::new(self.proxy.root(PARAM_PROGRAM_HASH))
 	}
@@ -116,6 +116,36 @@ pub struct MutableRevokeDeployPermissionParams {
 impl MutableRevokeDeployPermissionParams {
     pub fn deployer(&self) -> ScMutableAgentID {
 		ScMutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableSubscribeBlockContextParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableSubscribeBlockContextParams {
+    pub fn close_func(&self) -> ScImmutableHname {
+		ScImmutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
+	}
+
+    pub fn open_func(&self) -> ScImmutableHname {
+		ScImmutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableSubscribeBlockContextParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableSubscribeBlockContextParams {
+    pub fn close_func(&self) -> ScMutableHname {
+		ScMutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
+	}
+
+    pub fn open_func(&self) -> ScMutableHname {
+		ScMutableHname::new(self.proxy.root(PARAM_OPEN_FUNC))
 	}
 }
 

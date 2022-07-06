@@ -208,7 +208,7 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 
 	n.StateOutput = newStateOutput
 	n.stateSync.SetSolidIndex(n.StateOutput.GetStateIndex())
-	n.Consensus.EnqueueStateTransitionMsg(newState, n.StateOutput, time.Now())
+	n.Consensus.EnqueueStateTransitionMsg(false, newState, n.StateOutput, time.Now())
 	n.Log.Debugf("State manager mock: new state %v approved, commitment %v, state output ID %v",
 		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieNodeStore()), iscp.OID(n.StateOutput.ID()))
 }

@@ -9,37 +9,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO fix - broken because of crypto stuff
-// func TestAgentID(t *testing.T) {
-// 	aid := NewRandomAgentID()
+func TestAgentIDCoretypes(t *testing.T) {
+	aid := NewRandomAgentID()
 
-// 	t.Logf("random AgentID = %s", aid.String())
+	t.Logf("random AgentID = %s", aid.String())
 
-// 	kp := cryptolib.NewKeyPair()
-// 	addr := cryptolib.Ed25519AddressFromPubKey(kp.PublicKey)
+	chainID := RandomChainID()
 
-// 	hname := Hn("dummy")
-// 	aid = NewAgentID(addr, hname)
+	hname := Hn("dummy")
+	aid = NewContractAgentID(chainID, hname)
 
-// 	t.Logf("agent ID string: %s", aid.String())
-// 	t.Logf("agent ID base58: %s", aid.Base58())
+	t.Logf("agent ID string: %s", aid.String())
 
-// 	aidBack, err := AgentIDFromBytes(aid.Bytes())
-// 	require.NoError(t, err)
-// 	require.True(t, aid.Equals(aidBack))
+	aidBack, err := AgentIDFromBytes(aid.Bytes())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
 
-// 	aid = NewAgentID(addr, hname)
-// 	require.True(t, addr.Equals(aid.Address()))
-// 	require.EqualValues(t, aid.Hname(), hname)
+	aid = NewContractAgentID(chainID, hname)
+	require.True(t, chainID.AsAddress().Equal(aid.(*ContractAgentID).Address()))
+	require.EqualValues(t, aid.(*ContractAgentID).Hname(), hname)
 
-// 	aidBack, err = NewAgentIDFromBase58EncodedString(aid.Base58())
-// 	require.NoError(t, err)
-// 	require.True(t, aid.Equals(aidBack))
+	aidBack, err = NewAgentIDFromString(aid.String())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
 
-// 	aidBack, err = NewAgentIDFromString(aid.String())
-// 	require.NoError(t, err)
-// 	require.True(t, aid.Equals(aidBack))
-// }
+	aidBack, err = NewAgentIDFromString(aid.String())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
+}
 
 func TestHname(t *testing.T) {
 	hn1 := Hn("first")

@@ -10,12 +10,14 @@ import * as sc from "./index";
 
 const exportMap: wasmlib.ScExportMap = {
 	names: [
+		sc.FuncInit,
 		sc.FuncMintSupply,
 		sc.FuncTransferOwnership,
 		sc.FuncUpdateMetadata,
 		sc.ViewGetInfo,
 	],
 	funcs: [
+		funcInitThunk,
 		funcMintSupplyThunk,
 		funcTransferOwnershipThunk,
 		funcUpdateMetadataThunk,
@@ -35,6 +37,13 @@ export function on_load(): void {
 	wasmlib.ScExports.export(exportMap);
 }
 
+function funcInitThunk(ctx: wasmlib.ScFuncContext): void {
+	ctx.log("tokenregistry.funcInit");
+	let f = new sc.InitContext();
+	sc.funcInit(ctx, f);
+	ctx.log("tokenregistry.funcInit ok");
+}
+
 function funcMintSupplyThunk(ctx: wasmlib.ScFuncContext): void {
 	ctx.log("tokenregistry.funcMintSupply");
 	let f = new sc.MintSupplyContext();
@@ -47,7 +56,9 @@ function funcTransferOwnershipThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.TransferOwnershipContext();
 
 	// TODO the one who can transfer token ownership
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
 	sc.funcTransferOwnership(ctx, f);
@@ -59,7 +70,9 @@ function funcUpdateMetadataThunk(ctx: wasmlib.ScFuncContext): void {
 	let f = new sc.UpdateMetadataContext();
 
 	// TODO the one who can change the token info
-	ctx.require(ctx.caller().equals(ctx.contractCreator()), "no permission");
+	const access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller().equals(access.value()), "no permission");
 
 	ctx.require(f.params.token().exists(), "missing mandatory token");
 	sc.funcUpdateMetadata(ctx, f);

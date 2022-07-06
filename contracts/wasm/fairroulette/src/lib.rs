@@ -32,6 +32,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
     	FUNC_FORCE_PAYOUT,
     	FUNC_FORCE_RESET,
+    	FUNC_INIT,
     	FUNC_PAY_WINNERS,
     	FUNC_PLACE_BET,
     	FUNC_PLAY_PERIOD,
@@ -43,6 +44,7 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
     funcs: &[
     	func_force_payout_thunk,
     	func_force_reset_thunk,
+    	func_init_thunk,
     	func_pay_winners_thunk,
     	func_place_bet_thunk,
     	func_play_period_thunk,
@@ -77,8 +79,10 @@ fn func_force_payout_thunk(ctx: &ScFuncContext) {
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
 
-	// only SC creator can restart the round forcefully
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	// only SC owner can restart the round forcefully
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	func_force_payout(ctx, &f);
 	ctx.log("fairroulette.funcForcePayout ok");
@@ -96,11 +100,30 @@ fn func_force_reset_thunk(ctx: &ScFuncContext) {
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
 
-	// only SC creator can restart the round forcefully
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	// only SC owner can restart the round forcefully
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	func_force_reset(ctx, &f);
 	ctx.log("fairroulette.funcForceReset ok");
+}
+
+pub struct InitContext {
+	events:  FairRouletteEvents,
+	params: ImmutableInitParams,
+	state: MutableFairRouletteState,
+}
+
+fn func_init_thunk(ctx: &ScFuncContext) {
+	ctx.log("fairroulette.funcInit");
+	let f = InitContext {
+		events:  FairRouletteEvents {},
+		params: ImmutableInitParams { proxy: params_proxy() },
+		state: MutableFairRouletteState { proxy: state_proxy() },
+	};
+	func_init(ctx, &f);
+	ctx.log("fairroulette.funcInit ok");
 }
 
 pub struct PayWinnersContext {
@@ -154,8 +177,10 @@ fn func_play_period_thunk(ctx: &ScFuncContext) {
 		state: MutableFairRouletteState { proxy: state_proxy() },
 	};
 
-	// only SC creator can update the play period
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+	// only SC owner can update the play period
+	let access = f.state.owner();
+	ctx.require(access.exists(), "access not set: owner");
+	ctx.require(ctx.caller() == access.value(), "no permission");
 
 	ctx.require(f.params.play_period().exists(), "missing mandatory playPeriod");
 	func_play_period(ctx, &f);

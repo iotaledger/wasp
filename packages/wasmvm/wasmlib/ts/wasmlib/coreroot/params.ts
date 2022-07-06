@@ -18,7 +18,7 @@ export class ImmutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamName));
 	}
 
-	//TODO variable init params for deployed contract
+	// TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScImmutableHash {
 		return new wasmtypes.ScImmutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
@@ -34,7 +34,7 @@ export class MutableDeployContractParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamName));
 	}
 
-	//TODO variable init params for deployed contract
+	// TODO variable init params for deployed contract
 	programHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamProgramHash));
 	}
@@ -73,6 +73,26 @@ export class ImmutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
 export class MutableRevokeDeployPermissionParams extends wasmtypes.ScProxy {
 	deployer(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamDeployer));
+	}
+}
+
+export class ImmutableSubscribeBlockContextParams extends wasmtypes.ScProxy {
+	closeFunc(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamCloseFunc));
+	}
+
+	openFunc(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamOpenFunc));
+	}
+}
+
+export class MutableSubscribeBlockContextParams extends wasmtypes.ScProxy {
+	closeFunc(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamCloseFunc));
+	}
+
+	openFunc(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamOpenFunc));
 	}
 }
 

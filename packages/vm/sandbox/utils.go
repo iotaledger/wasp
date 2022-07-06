@@ -28,10 +28,6 @@ func NewUtils(g iscp.Gas) iscp.Utils {
 
 // ------ iscp.Utils() interface
 
-func (u utilImpl) Base58() iscp.Base58 {
-	return u
-}
-
 func (u utilImpl) Hashing() iscp.Hashing {
 	return u
 }

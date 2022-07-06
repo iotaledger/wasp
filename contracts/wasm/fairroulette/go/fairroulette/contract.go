@@ -17,6 +17,11 @@ type ForceResetCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type InitCall struct {
+	Func   *wasmlib.ScInitFunc
+	Params MutableInitParams
+}
+
 type PayWinnersCall struct {
 	Func *wasmlib.ScFunc
 }
@@ -61,6 +66,12 @@ func (sc Funcs) ForcePayout(ctx wasmlib.ScFuncCallContext) *ForcePayoutCall {
 
 func (sc Funcs) ForceReset(ctx wasmlib.ScFuncCallContext) *ForceResetCall {
 	return &ForceResetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncForceReset)}
+}
+
+func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	return f
 }
 
 func (sc Funcs) PayWinners(ctx wasmlib.ScFuncCallContext) *PayWinnersCall {

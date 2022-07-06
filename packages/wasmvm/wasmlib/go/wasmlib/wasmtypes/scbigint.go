@@ -308,13 +308,13 @@ func BigIntToBytes(value ScBigInt) []byte {
 }
 
 func BigIntFromString(value string) ScBigInt {
-	digits := len(value) - 18
-	if digits <= 0 {
-		// Uint64 fits 18 digits or 1 quintillion
+	// Uint64 fits 18 digits or 1 quintillion
+	if len(value) <= 18 {
 		return NewScBigInt(Uint64FromString(value))
 	}
 
 	// build value 18 digits at a time
+	digits := len(value) - 18
 	lhs := BigIntFromString(value[:digits])
 	rhs := BigIntFromString(value[digits:])
 	return lhs.Mul(quintillion).Add(rhs)

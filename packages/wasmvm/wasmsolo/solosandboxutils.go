@@ -10,16 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-func (s *SoloSandbox) fnUtilsBase58Decode(args []byte) []byte {
-	bytes, err := s.utils.Base58().Decode(string(args))
-	s.checkErr(err)
-	return bytes
-}
-
-func (s *SoloSandbox) fnUtilsBase58Encode(args []byte) []byte {
-	return []byte(s.utils.Base58().Encode(args))
-}
-
 func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
 	hrp, addr, err := iotago.ParseBech32(string(args))
 	s.checkErr(err)

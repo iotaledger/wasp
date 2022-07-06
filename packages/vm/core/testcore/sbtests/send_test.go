@@ -214,13 +214,9 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 
 func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner iotago.Address) (*iscp.NFT, *solo.NFTMintedInfo) {
 	nftMetadata := []byte("foobar")
-	nftInfo, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
+	nft, nftInfo, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
 	require.NoError(t, err)
-	return &iscp.NFT{
-		ID:       nftInfo.NFTID,
-		Issuer:   owner,
-		Metadata: nftMetadata,
-	}, nftInfo
+	return nft, nftInfo
 }
 
 func TestSendNFTsBack(t *testing.T) { run2(t, testSendNFTsBack) }

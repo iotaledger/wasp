@@ -8,6 +8,18 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as sc from "./index";
 
+export class ImmutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
+export class MutableInitParams extends wasmtypes.ScProxy {
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamOwner));
+	}
+}
+
 export class ImmutablePlaceBetParams extends wasmtypes.ScProxy {
 	// the number a better bets on
 	number(): wasmtypes.ScImmutableUint16 {

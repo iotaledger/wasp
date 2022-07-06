@@ -87,7 +87,6 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.True(t, ch.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
 
 	recFind, err := ch.FindContract(name)
@@ -128,7 +127,6 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
-	require.True(t, ch.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
 }
 

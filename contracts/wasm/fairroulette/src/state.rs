@@ -42,6 +42,10 @@ impl ImmutableFairRouletteState {
 		ScImmutableUint16::new(self.proxy.root(STATE_LAST_WINNING_NUMBER))
 	}
 
+    pub fn owner(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
+	}
+
     pub fn play_period(&self) -> ScImmutableUint32 {
 		ScImmutableUint32::new(self.proxy.root(STATE_PLAY_PERIOD))
 	}
@@ -99,6 +103,10 @@ impl MutableFairRouletteState {
 
     pub fn last_winning_number(&self) -> ScMutableUint16 {
 		ScMutableUint16::new(self.proxy.root(STATE_LAST_WINNING_NUMBER))
+	}
+
+    pub fn owner(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
     pub fn play_period(&self) -> ScMutableUint32 {

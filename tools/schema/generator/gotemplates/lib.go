@@ -173,14 +173,6 @@ $#each funcAccessComment _funcAccessComment
 $#set accessFinalize accessDone
 `,
 	// *******************************
-	"caseAccesscreator": `
-
-$#each funcAccessComment _funcAccessComment
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
-
-$#set accessFinalize accessDone
-`,
-	// *******************************
 	"accessOther": `
 
 $#each funcAccessComment _funcAccessComment

@@ -65,7 +65,6 @@ func (e *ChainEnv) checkRootsOutside() {
 		require.EqualValues(e.t, rec.Name, recBack.Name)
 		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
 		require.EqualValues(e.t, rec.Description, recBack.Description)
-		require.Equal(e.t, iscp.AgentIDKindNil, recBack.Creator.Kind())
 	}
 }
 

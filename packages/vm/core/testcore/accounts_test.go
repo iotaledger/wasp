@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -22,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,7 +62,7 @@ func TestHarvest(t *testing.T) {
 		nil)
 	require.NoError(t, err)
 	t.Logf("common iotas AFTER: %d", ch.L2CommonAccountIotas())
-	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumIotasOnCommonAccount)
+	require.True(t, ch.L2CommonAccountIotas() > accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // allowance shouldn't allow you to bypass gas fees.
@@ -332,7 +334,7 @@ func TestFoundries(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 1, sn)
 
-		err = ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
+		err = ch.DestroyTokensOnL2(tokenID, big.NewInt(1), senderKeyPair)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
 		ch.AssertL2TotalNativeTokens(&tokenID, util.Big0)
@@ -358,7 +360,7 @@ func TestFoundries(t *testing.T) {
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 20)
 		ch.AssertL2TotalNativeTokens(&tokenID, 20)
 
-		err = ch.DestroyTokensOnL2(sn, 10, senderKeyPair)
+		err = ch.DestroyTokensOnL2(tokenID, 10, senderKeyPair)
 		require.NoError(t, err)
 		ch.AssertL2TotalNativeTokens(&tokenID, 10)
 		ch.AssertL2NativeTokens(senderAgentID, &tokenID, 10)
@@ -400,10 +402,12 @@ func TestFoundries(t *testing.T) {
 	t.Run("10 foundries", func(t *testing.T) {
 		initTest()
 		ch.MustDepositIotasToL2(50_000_000, senderKeyPair)
+		tokenIDs := make([]iotago.NativeTokenID, 11)
 		for sn := uint32(1); sn <= 10; sn++ {
 			snBack, tokenID, err := ch.NewFoundryParams(uint64(sn + 1)).
 				WithUser(senderKeyPair).
 				CreateFoundry()
+			tokenIDs[sn] = tokenID
 			require.NoError(t, err)
 			require.EqualValues(t, int(sn), int(snBack))
 			ch.AssertL2NativeTokens(senderAgentID, &tokenID, util.Big0)
@@ -429,7 +433,7 @@ func TestFoundries(t *testing.T) {
 		}
 		// destroy 1 token of each tokenID
 		for sn := uint32(1); sn <= 10; sn++ {
-			err := ch.DestroyTokensOnL2(sn, big.NewInt(1), senderKeyPair)
+			err := ch.DestroyTokensOnL2(tokenIDs[sn], big.NewInt(1), senderKeyPair)
 			require.NoError(t, err)
 		}
 		// check balances
@@ -611,10 +615,10 @@ func TestDepositIotas(t *testing.T) {
 		t.Run("add iotas "+strconv.Itoa(int(addIotas)), func(t *testing.T) {
 			v := initDepositTest(t)
 			v.req.WithGasBudget(100_000)
-			gas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
+			estimatedGas, _, err := v.ch.EstimateGasOnLedger(v.req, v.user)
 			require.NoError(t, err)
 
-			v.req.WithGasBudget(gas)
+			v.req.WithGasBudget(estimatedGas)
 
 			v.req = v.req.AddIotas(addIotas)
 			tx, _, err := v.ch.PostRequestSyncTx(v.req, v.user)
@@ -666,7 +670,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v := initWithdrawTest(t, 2*iscp.Mi)
 		v.req.AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     *v.tokenID,
-			Amount: new(big.Int).SetUint64(1 * iscp.Mi),
+			Amount: new(big.Int).SetUint64(10),
 		})
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughIotasForDustDeposit)
@@ -696,7 +700,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 
 		// should fail because those tokens are not on the user's on chain account
-		err = v.ch.DestroyTokensOnL2(v.sn, big.NewInt(50), v.user)
+		err = v.ch.DestroyTokensOnL2(*v.tokenID, big.NewInt(50), v.user)
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughFunds)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, big.NewInt(100))
 		v.printBalances("AFTER DESTROY")
@@ -720,7 +724,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
 		v.printBalances("AFTER DEPOSIT")
 
-		err = v.ch.DestroyTokensOnL2(v.sn, 49, v.user)
+		err = v.ch.DestroyTokensOnL2(*v.tokenID, 49, v.user)
 		require.NoError(t, err)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
@@ -785,7 +789,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2TotalNativeTokens(v.tokenID, 50)
 		v.printBalances("AFTER DEPOSIT")
 
-		err = v.ch.DestroyTokensOnL2(v.sn, 50, v.user)
+		err = v.ch.DestroyTokensOnL2(*v.tokenID, 50, v.user)
 		require.NoError(t, err)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
@@ -828,7 +832,7 @@ func TestTransferAndHarvest(t *testing.T) {
 
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
-	require.EqualValues(t, accounts.MinimumIotasOnCommonAccount+rec.GasFeeCharged, commonAssets.Iotas)
+	require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAssets.Iotas)
 	require.EqualValues(t, 0, len(commonAssets.Tokens))
 }
 
@@ -1026,7 +1030,7 @@ func TestNFTAccount(t *testing.T) {
 	ownerWallet, ownerAddress := ch.Env.NewKeyPairWithFunds()
 	ownerBalance := ch.Env.L1Iotas(ownerAddress)
 
-	nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
+	_, nftInfo, err := ch.Env.MintNFTL1(issuerWallet, ownerAddress, []byte("foobar"))
 	require.NoError(t, err)
 	nftAddress := nftInfo.NFTID.ToAddress()
 
@@ -1064,6 +1068,95 @@ func TestNFTAccount(t *testing.T) {
 	_, err = ch.PostRequestSync(wdReq.WithSender(nftAddress), ownerWallet)
 	require.NoError(t, err)
 	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+}
 
-	ch.Env.AssertL1Iotas(nftAddress, iotasToWithdrawal)
+func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *iscp.NFT, owner iscp.AgentID) {
+	ret, err := ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name, dict.Dict{
+		accounts.ParamNFTID: nft.ID[:],
+	})
+	require.NoError(t, err)
+	nftBack, err := iscp.NFTFromBytes(ret.MustGet(accounts.ParamNFTData))
+	require.NoError(t, err)
+	require.Equal(t, nftBack.ID, nft.ID)
+	require.Equal(t, nftBack.Issuer, nft.Issuer)
+	require.Equal(t, nftBack.Metadata, nft.Metadata)
+	require.True(t, nftBack.Owner.Equals(owner))
+}
+
+func TestTransferNFTAllowance(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
+	initialOwnerWallet, initialOwnerAddress := ch.Env.NewKeyPairWithFunds()
+	initialOwnerAgentID := iscp.NewAgentID(initialOwnerAddress)
+
+	nft, _, err := ch.Env.MintNFTL1(issuerWallet, initialOwnerAddress, []byte("foobar"))
+	require.NoError(t, err)
+
+	// deposit the NFT to the chain to the initial owner's account
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithNFT(nft).
+			AddIotas(10*iscp.Mi).
+			WithMaxAffordableGasBudget(),
+		initialOwnerWallet)
+	require.NoError(t, err)
+
+	require.True(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
+	checkChainNFTData(t, ch, nft, initialOwnerAgentID)
+
+	// send an off-ledger request to transfer the NFT to the another account
+	finalOwnerWallet, finalOwnerAddress := ch.Env.NewKeyPairWithFunds()
+	finalOwnerAgentID := iscp.NewAgentID(finalOwnerAddress)
+
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
+			accounts.ParamAgentID:          codec.Encode(finalOwnerAgentID),
+			accounts.ParamForceOpenAccount: codec.Encode(true),
+		}).
+			WithAllowance(iscp.NewAllowance(0, nil, []iotago.NFTID{nft.ID})).
+			WithMaxAffordableGasBudget(),
+		initialOwnerWallet,
+	)
+	require.NoError(t, err)
+
+	require.True(t, ch.HasL2NFT(finalOwnerAgentID, &nft.ID))
+	require.False(t, ch.HasL2NFT(initialOwnerAgentID, &nft.ID))
+	checkChainNFTData(t, ch, nft, finalOwnerAgentID)
+
+	// withdraw to L1
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
+			WithAllowance(iscp.NewAllowance(1*iscp.Mi, nil, []iotago.NFTID{nft.ID})).
+			AddIotas(10*iscp.Mi).
+			WithMaxAffordableGasBudget(),
+		finalOwnerWallet,
+	)
+	require.NoError(t, err)
+
+	require.False(t, ch.HasL2NFT(finalOwnerAgentID, &nft.ID))
+	require.True(t, env.HasL1NFT(finalOwnerAddress, &nft.ID))
+	_, err = ch.CallView(accounts.Contract.Name, accounts.ViewNFTData.Name, dict.Dict{
+		accounts.ParamNFTID: nft.ID[:],
+	})
+	require.Error(t, err)
+	require.Regexp(t, "NFTID not found", err.Error())
+}
+
+func TestDepositRandomContractMinFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	wallet, addr := ch.Env.NewKeyPairWithFunds()
+	agentID := iscp.NewAgentID(addr)
+
+	sent := 1 * iscp.Mi
+	_, err := ch.PostRequestSync(solo.NewCallParams("", "").AddIotas(sent), wallet)
+	require.Error(t, err)
+	receipt := ch.LastReceipt()
+	require.Error(t, receipt.Error)
+
+	require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
+	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2Iotas(agentID))
 }

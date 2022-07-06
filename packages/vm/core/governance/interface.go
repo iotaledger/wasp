@@ -7,7 +7,6 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // constants
@@ -86,30 +85,30 @@ const (
 const (
 	// state controller
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
-	ParamAllowedStateControllerAddresses = kv.Key('a' + iota)
+	ParamAllowedStateControllerAddresses = "a"
 
 	// chain owner
-	ParamChainOwner
+	ParamChainOwner = "o"
 
 	// fees
-	ParamFeePolicyBytes
+	ParamFeePolicyBytes = "g"
 
 	// chain info
-	ParamChainID
-	ParamDescription
-	ParamMaxBlobSizeUint32
-	ParamMaxEventSizeUint16
-	ParamMaxEventsPerRequestUint16
+	ParamChainID                   = "c"
+	ParamDescription               = "d"
+	ParamMaxBlobSizeUint32         = "mb"
+	ParamMaxEventSizeUint16        = "me"
+	ParamMaxEventsPerRequestUint16 = "mr"
 
-	ParamGetChainNodesAccessNodeCandidates
-	ParamGetChainNodesAccessNodes
+	ParamGetChainNodesAccessNodeCandidates = "an"
+	ParamGetChainNodesAccessNodes          = "ac"
 
 	// access nodes: addCandidateNode
-	ParamAccessNodeInfoForCommittee
-	ParamAccessNodeInfoPubKey
-	ParamAccessNodeInfoCertificate
-	ParamAccessNodeInfoAccessAPI
+	ParamAccessNodeInfoForCommittee = "i"
+	ParamAccessNodeInfoPubKey       = "ip"
+	ParamAccessNodeInfoCertificate  = "ic"
+	ParamAccessNodeInfoAccessAPI    = "ia"
 
 	// access nodes: changeAccessNodes
-	ParamChangeAccessNodesActions
+	ParamChangeAccessNodesActions = "n"
 )

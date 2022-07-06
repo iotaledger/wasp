@@ -22,7 +22,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
-		sbtestsc.ParamContractCreator, userAgentID).
+	).
 		WithGasBudget(120_000)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func TestMainCallsFromViewEP(t *testing.T) { run2(t, testMainCallsFromViewEP) }
 func testMainCallsFromViewEP(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 
-	user, _, userAgentID := setupDeployer(t, chain)
+	user, _, _ := setupDeployer(t, chain)
 
 	setupTestSandboxSC(t, chain, user, w)
 
@@ -40,7 +40,6 @@ func testMainCallsFromViewEP(t *testing.T, w bool) {
 		sbtestsc.ParamChainID, chain.ChainID,
 		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
-		sbtestsc.ParamContractCreator, userAgentID,
 	)
 	require.NoError(t, err)
 }

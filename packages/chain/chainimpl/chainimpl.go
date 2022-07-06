@@ -292,7 +292,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	if c.consensus == nil {
 		c.log.Warnf("processChainTransition: skipping notifying consensus as it is not initiated")
 	} else {
-		c.consensus.EnqueueStateTransitionMsg(msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
+		c.consensus.EnqueueStateTransitionMsg(msg.IsGovernance, msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, rootCommitment)
 }
@@ -313,9 +313,6 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 		govResponse := governance.NewGetChainNodesResponseFromDict(res)
 		govAccessNodes = govResponse.AccessNodes
 		govCandidateNodes = govResponse.AccessNodeCandidates
-		if err != nil {
-			c.log.Panicf("unable to read the governance contract state: %v", err)
-		}
 	}
 
 	//

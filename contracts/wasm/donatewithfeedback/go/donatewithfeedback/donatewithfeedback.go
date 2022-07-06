@@ -43,8 +43,8 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 		return
 	}
 
-	scCreator := ctx.ContractCreator().Address()
-	ctx.Send(scCreator, wasmlib.NewScTransferIotas(amount))
+	scOwner := f.State.Owner().Value().Address()
+	ctx.Send(scOwner, wasmlib.NewScTransferIotas(amount))
 }
 
 func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {
@@ -61,4 +61,12 @@ func viewDonationInfo(ctx wasmlib.ScViewContext, f *DonationInfoContext) {
 	f.Results.MaxDonation().SetValue(f.State.MaxDonation().Value())
 	f.Results.TotalDonation().SetValue(f.State.TotalDonation().Value())
 	f.Results.Count().SetValue(f.State.Log().Length())
+}
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 }

@@ -28,10 +28,11 @@ import (
 func TestStorageContract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
 	// deploy solidity `storage` contract
 	storage := env.deployStorageContract(ethKey, 42)
-	require.EqualValues(t, 1, env.getBlockNumber())
+	require.EqualValues(t, 2, env.getBlockNumber())
 
 	// call FuncCallView to call EVM contract's `retrieve` view, get 42
 	require.EqualValues(t, 42, storage.retrieve())
@@ -40,7 +41,7 @@ func TestStorageContract(t *testing.T) {
 	res, err := storage.store(43)
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
-	require.EqualValues(t, 2, env.getBlockNumber())
+	require.EqualValues(t, 3, env.getBlockNumber())
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, storage.retrieve())
@@ -273,18 +274,14 @@ func TestISCNFTData(t *testing.T) {
 	// mint an NFT and send it to the chain
 	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 	metadata := []byte("foobar")
-	nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
+	nft, _, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
 	require.NoError(t, err)
 	_, err = env.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			AddIotas(100000).
-			WithNFT(&iscp.NFT{
-				ID:       nftInfo.NFTID,
-				Issuer:   issuerAddress,
-				Metadata: metadata,
-			}).
+			WithNFT(nft).
 			WithMaxAffordableGasBudget().
-			WithSender(nftInfo.NFTID.ToAddress()),
+			WithSender(nft.ID.ToAddress()),
 		issuerWallet,
 	)
 	require.NoError(t, err)
@@ -293,11 +290,11 @@ func TestISCNFTData(t *testing.T) {
 	ret := new(isccontract.ISCNFT)
 	env.ISCContract(ethKey).callView(
 		"getNFTData",
-		[]interface{}{isccontract.WrapIotaNFTID(nftInfo.NFTID)},
+		[]interface{}{isccontract.WrapIotaNFTID(nft.ID)},
 		&ret,
 	)
 
-	require.EqualValues(t, nftInfo.NFTID, ret.MustUnwrap().ID)
+	require.EqualValues(t, nft.ID, ret.MustUnwrap().ID)
 	require.True(t, issuerAddress.Equal(ret.MustUnwrap().Issuer))
 	require.EqualValues(t, metadata, ret.MustUnwrap().Metadata)
 }
@@ -608,7 +605,7 @@ func TestFibonacciContract(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	fibo := env.deployFibonacciContract(ethKey)
-	require.EqualValues(t, 1, env.getBlockNumber())
+	require.EqualValues(t, 2, env.getBlockNumber())
 
 	res, err := fibo.fib(7)
 	require.NoError(t, err)

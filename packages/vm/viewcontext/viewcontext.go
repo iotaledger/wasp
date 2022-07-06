@@ -139,14 +139,6 @@ func (ctx *ViewContext) ChainOwnerID() iscp.AgentID {
 	return ctx.chainInfo.ChainOwnerID
 }
 
-func (ctx *ViewContext) ContractCreator() iscp.AgentID {
-	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
-	if rec == nil {
-		panic("can't find current contract")
-	}
-	return rec.Creator
-}
-
 func (ctx *ViewContext) CurrentContractHname() iscp.Hname {
 	return ctx.getCallContext().contract
 }

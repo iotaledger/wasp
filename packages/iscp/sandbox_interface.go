@@ -18,8 +18,6 @@ import (
 type SandboxBase interface {
 	Helpers
 	Balance
-	// AccountID returns the agentID of the current contract
-	AccountID() AgentID
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
@@ -28,10 +26,8 @@ type SandboxBase interface {
 	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
-	// ContractAgentID returns the agentID of the contract (i.e. chainID + contract hname)
-	ContractAgentID() AgentID
-	// ContractCreator returns the agentID that deployed the contract
-	ContractCreator() AgentID
+	// AccountID returns the agentID of the current contract (i.e. chainID + contract hname)
+	AccountID() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
@@ -132,8 +128,11 @@ type Privileged interface {
 	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 	GasBurnEnable(enable bool)
+
+	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
+	SetBlockContext(bctx interface{})
+	BlockContext() interface{}
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
@@ -172,12 +171,12 @@ type StateAnchor struct {
 }
 
 type SendOptions struct {
-	Timelock   *TimeData
+	Timelock   time.Time
 	Expiration *Expiration
 }
 
 type Expiration struct {
-	TimeData
+	Time          time.Time
 	ReturnAddress iotago.Address
 }
 
@@ -193,7 +192,6 @@ type SendMetadata struct {
 // Utils implement various utilities which are faster on host side than on wasm VM
 // Implement deterministic stateless computations
 type Utils interface {
-	Base58() Base58
 	Hashing() Hashing
 	ED25519() ED25519
 	BLS() BLS
@@ -203,11 +201,6 @@ type Hashing interface {
 	Blake2b(data []byte) hashing.HashValue
 	Sha3(data []byte) hashing.HashValue
 	Hname(name string) Hname
-}
-
-type Base58 interface {
-	Decode(s string) ([]byte, error)
-	Encode(data []byte) string
 }
 
 type ED25519 interface {

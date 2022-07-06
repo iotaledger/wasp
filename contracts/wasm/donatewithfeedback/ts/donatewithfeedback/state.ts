@@ -28,6 +28,10 @@ export class ImmutableDonateWithFeedbackState extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateMaxDonation));
 	}
 
+	owner(): wasmtypes.ScImmutableAgentID {
+		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.StateOwner));
+	}
+
 	totalDonation(): wasmtypes.ScImmutableUint64 {
 		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.StateTotalDonation));
 	}
@@ -63,6 +67,10 @@ export class MutableDonateWithFeedbackState extends wasmtypes.ScProxy {
 
 	maxDonation(): wasmtypes.ScMutableUint64 {
 		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.StateMaxDonation));
+	}
+
+	owner(): wasmtypes.ScMutableAgentID {
+		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.StateOwner));
 	}
 
 	totalDonation(): wasmtypes.ScMutableUint64 {

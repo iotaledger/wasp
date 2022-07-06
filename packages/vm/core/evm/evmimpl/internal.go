@@ -27,18 +27,28 @@ type blockContext struct {
 	receipts []*types.Receipt
 }
 
-// getBlockContext creates a new emulator instance if this is the first call to applyTransaction
-// in the ISC block; otherwise it returns the previously created instance. The purpose is to
-// create a single Ethereum block for each ISC block.
-func getBlockContext(ctx iscp.Sandbox) *blockContext {
-	bctx := ctx.Privileged().BlockContext(
-		func(ctx iscp.Sandbox) interface{} { return &blockContext{emu: createEmulator(ctx)} },
-		func(bctx interface{}) { bctx.(*blockContext).close() },
-	)
-	return bctx.(*blockContext)
+// openBlockContext creates a new emulator instance before processing any
+// requests in the ISC block. The purpose is to create a single Ethereum block
+// for each ISC block.
+func openBlockContext(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	ctx.Privileged().SetBlockContext(&blockContext{emu: createEmulator(ctx)})
+	return nil
 }
 
-func (bctx *blockContext) close() {
+// closeBlockContext "mints" the Ethereum block after all requests in the ISC
+// block have been processed.
+func closeBlockContext(ctx iscp.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	getBlockContext(ctx).mintBlock()
+	return nil
+}
+
+func getBlockContext(ctx iscp.Sandbox) *blockContext {
+	return ctx.Privileged().BlockContext().(*blockContext)
+}
+
+func (bctx *blockContext) mintBlock() {
 	// count txs where status = success (which are already stored in the pending block)
 	txCount := uint(0)
 	for i := range bctx.txs {
@@ -220,7 +230,7 @@ func getBalanceFunc(ctx iscp.SandboxBase) emulator.BalanceFunc {
 	return func(addr common.Address) *big.Int {
 		res := ctx.CallView(
 			accounts.Contract.Hname(),
-			accounts.ViewBalanceIotas.Hname(),
+			accounts.ViewBalanceBaseToken.Hname(),
 			dict.Dict{accounts.ParamAgentID: iscp.NewEthereumAddressAgentID(addr).Bytes()},
 		)
 		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))

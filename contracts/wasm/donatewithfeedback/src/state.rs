@@ -42,6 +42,10 @@ impl ImmutableDonateWithFeedbackState {
 		ScImmutableUint64::new(self.proxy.root(STATE_MAX_DONATION))
 	}
 
+    pub fn owner(&self) -> ScImmutableAgentID {
+		ScImmutableAgentID::new(self.proxy.root(STATE_OWNER))
+	}
+
     pub fn total_donation(&self) -> ScImmutableUint64 {
 		ScImmutableUint64::new(self.proxy.root(STATE_TOTAL_DONATION))
 	}
@@ -87,6 +91,10 @@ impl MutableDonateWithFeedbackState {
 
     pub fn max_donation(&self) -> ScMutableUint64 {
 		ScMutableUint64::new(self.proxy.root(STATE_MAX_DONATION))
+	}
+
+    pub fn owner(&self) -> ScMutableAgentID {
+		ScMutableAgentID::new(self.proxy.root(STATE_OWNER))
 	}
 
     pub fn total_donation(&self) -> ScMutableUint64 {

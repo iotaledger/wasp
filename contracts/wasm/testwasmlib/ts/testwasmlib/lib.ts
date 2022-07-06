@@ -55,10 +55,16 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewBlockRecords,
 		sc.ViewCheckAddress,
 		sc.ViewCheckAgentID,
+		sc.ViewCheckBigInt,
+		sc.ViewCheckBool,
+		sc.ViewCheckBytes,
 		sc.ViewCheckEthAddressAndAgentID,
 		sc.ViewCheckHash,
+		sc.ViewCheckHname,
+		sc.ViewCheckIntAndUint,
 		sc.ViewCheckNftID,
 		sc.ViewCheckRequestID,
+		sc.ViewCheckString,
 		sc.ViewCheckTokenID,
 		sc.ViewGetRandom,
 		sc.ViewIotaBalance,
@@ -114,10 +120,16 @@ const exportMap: wasmlib.ScExportMap = {
 		viewBlockRecordsThunk,
 		viewCheckAddressThunk,
 		viewCheckAgentIDThunk,
+		viewCheckBigIntThunk,
+		viewCheckBoolThunk,
+		viewCheckBytesThunk,
 		viewCheckEthAddressAndAgentIDThunk,
 		viewCheckHashThunk,
+		viewCheckHnameThunk,
+		viewCheckIntAndUintThunk,
 		viewCheckNftIDThunk,
 		viewCheckRequestIDThunk,
+		viewCheckStringThunk,
 		viewCheckTokenIDThunk,
 		viewGetRandomThunk,
 		viewIotaBalanceThunk,
@@ -581,6 +593,31 @@ function viewCheckAgentIDThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewCheckAgentID ok");
 }
 
+function viewCheckBigIntThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckBigInt");
+	let f = new sc.CheckBigIntContext();
+	ctx.require(f.params.bigIntBytes().exists(), "missing mandatory bigIntBytes");
+	ctx.require(f.params.bigIntString().exists(), "missing mandatory bigIntString");
+	ctx.require(f.params.scBigInt().exists(), "missing mandatory scBigInt");
+	sc.viewCheckBigInt(ctx, f);
+	ctx.log("testwasmlib.viewCheckBigInt ok");
+}
+
+function viewCheckBoolThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckBool");
+	let f = new sc.CheckBoolContext();
+	sc.viewCheckBool(ctx, f);
+	ctx.log("testwasmlib.viewCheckBool ok");
+}
+
+function viewCheckBytesThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckBytes");
+	let f = new sc.CheckBytesContext();
+	ctx.require(f.params.bytes().exists(), "missing mandatory bytes");
+	sc.viewCheckBytes(ctx, f);
+	ctx.log("testwasmlib.viewCheckBytes ok");
+}
+
 function viewCheckEthAddressAndAgentIDThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.log("testwasmlib.viewCheckEthAddressAndAgentID");
 	let f = new sc.CheckEthAddressAndAgentIDContext();
@@ -597,6 +634,23 @@ function viewCheckHashThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.scHash().exists(), "missing mandatory scHash");
 	sc.viewCheckHash(ctx, f);
 	ctx.log("testwasmlib.viewCheckHash ok");
+}
+
+function viewCheckHnameThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckHname");
+	let f = new sc.CheckHnameContext();
+	ctx.require(f.params.hnameBytes().exists(), "missing mandatory hnameBytes");
+	ctx.require(f.params.hnameString().exists(), "missing mandatory hnameString");
+	ctx.require(f.params.scHname().exists(), "missing mandatory scHname");
+	sc.viewCheckHname(ctx, f);
+	ctx.log("testwasmlib.viewCheckHname ok");
+}
+
+function viewCheckIntAndUintThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckIntAndUint");
+	let f = new sc.CheckIntAndUintContext();
+	sc.viewCheckIntAndUint(ctx, f);
+	ctx.log("testwasmlib.viewCheckIntAndUint ok");
 }
 
 function viewCheckNftIDThunk(ctx: wasmlib.ScViewContext): void {
@@ -617,6 +671,14 @@ function viewCheckRequestIDThunk(ctx: wasmlib.ScViewContext): void {
 	ctx.require(f.params.scRequestID().exists(), "missing mandatory scRequestID");
 	sc.viewCheckRequestID(ctx, f);
 	ctx.log("testwasmlib.viewCheckRequestID ok");
+}
+
+function viewCheckStringThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewCheckString");
+	let f = new sc.CheckStringContext();
+	ctx.require(f.params.string().exists(), "missing mandatory string");
+	sc.viewCheckString(ctx, f);
+	ctx.log("testwasmlib.viewCheckString ok");
 }
 
 function viewCheckTokenIDThunk(ctx: wasmlib.ScViewContext): void {

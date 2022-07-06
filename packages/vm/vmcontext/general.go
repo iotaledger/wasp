@@ -31,16 +31,8 @@ func (vmctx *VMContext) ChainOwnerID() iscp.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) ContractAgentID() iscp.AgentID {
+func (vmctx *VMContext) AgentID() iscp.AgentID {
 	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
-}
-
-func (vmctx *VMContext) ContractCreator() iscp.AgentID {
-	rec := vmctx.findContractByHname(vmctx.CurrentContractHname())
-	if rec == nil {
-		panic("can't find current contract")
-	}
-	return rec.Creator
 }
 
 func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
@@ -91,7 +83,7 @@ func (vmctx *VMContext) isOnChainAccount(agentID iscp.AgentID) bool {
 	return vmctx.ChainID().IsSameChain(agentID)
 }
 
-func (vmctx *VMContext) isCoreAccount(agentID iscp.AgentID) bool {
+func (vmctx *VMContext) IsCoreAccount(agentID iscp.AgentID) bool {
 	contract, ok := agentID.(*iscp.ContractAgentID)
 	if !ok {
 		return false
@@ -131,7 +123,7 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
 func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
-	if vmctx.isCoreAccount(target) {
+	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
 	} else if !forceOpenAccount && !vmctx.targetAccountExists(target) {
@@ -151,7 +143,9 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 
 	caller := vmctx.Caller() // have to take it here because callCore changes that
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs)
+		if !accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs) {
+			panic(accounts.ErrNotEnoughFundsForAllowance)
+		}
 	})
 	return vmctx.AllowanceAvailable()
 }

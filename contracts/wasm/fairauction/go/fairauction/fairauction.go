@@ -146,7 +146,7 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 			ownerFee = 1
 		}
 		// finalizeAuction request token was probably not confirmed yet
-		transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+		transferIotas(ctx, f.State.Owner().Value(), ownerFee-1)
 		transferNFT(ctx, auction.Creator, auction.Nft)
 		transferIotas(ctx, auction.Creator, auction.Deposit-ownerFee)
 		return
@@ -170,7 +170,7 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	}
 
 	// finalizeAuction request token was probably not confirmed yet
-	transferIotas(ctx, ctx.ContractCreator(), ownerFee-1)
+	transferIotas(ctx, f.State.Owner().Value(), ownerFee-1)
 	transferNFT(ctx, auction.HighestBidder, auction.Nft)
 	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
 }
@@ -229,4 +229,12 @@ func transferNFT(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, nft wasmt
 
 	// TODO not an address, deposit into account on chain
 	ctx.Send(agent.Address(), wasmlib.NewScTransferNFT(&nft))
+}
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 }

@@ -276,6 +276,10 @@ export class ImmutableParamTypesParams extends wasmtypes.ScProxy {
 		return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
 	}
 
+	bigInt(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamBigInt));
+	}
+
 	bool(): wasmtypes.ScImmutableBool {
 		return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamBool));
 	}
@@ -368,6 +372,10 @@ export class MutableParamTypesParams extends wasmtypes.ScProxy {
 
 	agentID(): wasmtypes.ScMutableAgentID {
 		return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+	}
+
+	bigInt(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamBigInt));
 	}
 
 	bool(): wasmtypes.ScMutableBool {
@@ -924,6 +932,46 @@ export class MutableCheckAgentIDParams extends wasmtypes.ScProxy {
 	}
 }
 
+export class ImmutableCheckBigIntParams extends wasmtypes.ScProxy {
+	bigIntBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamBigIntBytes));
+	}
+
+	bigIntString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamBigIntString));
+	}
+
+	scBigInt(): wasmtypes.ScImmutableBigInt {
+		return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ParamScBigInt));
+	}
+}
+
+export class MutableCheckBigIntParams extends wasmtypes.ScProxy {
+	bigIntBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamBigIntBytes));
+	}
+
+	bigIntString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamBigIntString));
+	}
+
+	scBigInt(): wasmtypes.ScMutableBigInt {
+		return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ParamScBigInt));
+	}
+}
+
+export class ImmutableCheckBytesParams extends wasmtypes.ScProxy {
+	bytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamBytes));
+	}
+}
+
+export class MutableCheckBytesParams extends wasmtypes.ScProxy {
+	bytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamBytes));
+	}
+}
+
 export class ImmutableCheckEthAddressAndAgentIDParams extends wasmtypes.ScProxy {
 	ethAddress(): wasmtypes.ScImmutableString {
 		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamEthAddress));
@@ -961,6 +1009,34 @@ export class MutableCheckHashParams extends wasmtypes.ScProxy {
 
 	scHash(): wasmtypes.ScMutableHash {
 		return new wasmtypes.ScMutableHash(this.proxy.root(sc.ParamScHash));
+	}
+}
+
+export class ImmutableCheckHnameParams extends wasmtypes.ScProxy {
+	hnameBytes(): wasmtypes.ScImmutableBytes {
+		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ParamHnameBytes));
+	}
+
+	hnameString(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamHnameString));
+	}
+
+	scHname(): wasmtypes.ScImmutableHname {
+		return new wasmtypes.ScImmutableHname(this.proxy.root(sc.ParamScHname));
+	}
+}
+
+export class MutableCheckHnameParams extends wasmtypes.ScProxy {
+	hnameBytes(): wasmtypes.ScMutableBytes {
+		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ParamHnameBytes));
+	}
+
+	hnameString(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamHnameString));
+	}
+
+	scHname(): wasmtypes.ScMutableHname {
+		return new wasmtypes.ScMutableHname(this.proxy.root(sc.ParamScHname));
 	}
 }
 
@@ -1017,6 +1093,18 @@ export class MutableCheckRequestIDParams extends wasmtypes.ScProxy {
 
 	scRequestID(): wasmtypes.ScMutableRequestID {
 		return new wasmtypes.ScMutableRequestID(this.proxy.root(sc.ParamScRequestID));
+	}
+}
+
+export class ImmutableCheckStringParams extends wasmtypes.ScProxy {
+	string(): wasmtypes.ScImmutableString {
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamString));
+	}
+}
+
+export class MutableCheckStringParams extends wasmtypes.ScProxy {
+	string(): wasmtypes.ScMutableString {
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamString));
 	}
 }
 
