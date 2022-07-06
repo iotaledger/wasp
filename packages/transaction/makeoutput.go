@@ -68,10 +68,9 @@ func MakeBasicOutput(
 			Data: metadata.Bytes(),
 		})
 	}
-	if options.Timelock != nil {
-		cond := &iotago.TimelockUnlockCondition{}
-		if !options.Timelock.Time.IsZero() {
-			cond.UnixTime = uint32(options.Timelock.Time.Unix())
+	if !options.Timelock.IsZero() {
+		cond := &iotago.TimelockUnlockCondition{
+			UnixTime: uint32(options.Timelock.Unix()),
 		}
 		out.Conditions = append(out.Conditions, cond)
 	}

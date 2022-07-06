@@ -96,7 +96,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 		essence, err = rotate.MakeRotateStateControllerTransaction(
 			task.RotationAddress,
 			iscp.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
-			task.TimeAssumption.Time.Add(2*time.Nanosecond),
+			task.TimeAssumption.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},
 		)

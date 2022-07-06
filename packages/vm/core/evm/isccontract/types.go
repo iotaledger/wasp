@@ -301,38 +301,20 @@ func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
 	return &ret
 }
 
-type ISCTimeData struct {
-	Time int64
-}
-
-func WrapISCTimeData(data *iscp.TimeData) ISCTimeData {
-	ret := ISCTimeData{
-		Time: data.Time.UnixMilli(),
-	}
-
-	return ret
-}
-
-func (i ISCTimeData) Unwrap() *iscp.TimeData {
-	if i.Time == 0 {
-		return nil
-	}
-
-	ret := iscp.TimeData{
-		Time: time.UnixMilli(i.Time),
-	}
-
-	return &ret
-}
-
 type ISCExpiration struct {
 	Time          int64
 	ReturnAddress IotaAddress
 }
 
 func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
+	var expiryTime int64
+
+	if !data.Time.IsZero() {
+		expiryTime = data.Time.UnixMilli()
+	}
+
 	ret := ISCExpiration{
-		Time:          data.Time.UnixMilli(),
+		Time:          expiryTime,
 		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
 	}
 
@@ -352,22 +334,26 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 
 	ret := iscp.Expiration{
 		ReturnAddress: address,
-		TimeData: iscp.TimeData{
-			Time: time.UnixMilli(i.Time),
-		},
+		Time:          time.UnixMilli(i.Time),
 	}
 
 	return &ret
 }
 
 type ISCSendOptions struct {
-	Timelock   ISCTimeData
+	Timelock   int64
 	Expiration ISCExpiration
 }
 
 func WrapISCSendOptions(options iscp.SendOptions) ISCSendOptions {
+	var timeLock int64
+
+	if !options.Timelock.IsZero() {
+		timeLock = options.Timelock.UnixMilli()
+	}
+
 	ret := ISCSendOptions{
-		Timelock:   WrapISCTimeData(options.Timelock),
+		Timelock:   timeLock,
 		Expiration: WrapISCExpiration(options.Expiration),
 	}
 
@@ -375,8 +361,14 @@ func WrapISCSendOptions(options iscp.SendOptions) ISCSendOptions {
 }
 
 func (i *ISCSendOptions) Unwrap() iscp.SendOptions {
+	var timeLock time.Time
+
+	if i.Timelock > 0 {
+		timeLock = time.UnixMilli(i.Timelock)
+	}
+
 	ret := iscp.SendOptions{
-		Timelock:   i.Timelock.Unwrap(),
+		Timelock:   timeLock,
 		Expiration: i.Expiration.Unwrap(),
 	}
 

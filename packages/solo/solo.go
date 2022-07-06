@@ -60,6 +60,7 @@ type Solo struct {
 	chains                       map[iscp.ChainID]*Chain
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
+	seed                         cryptolib.Seed
 }
 
 // Chain represents state of individual chain.
@@ -158,7 +159,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
+	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
@@ -167,10 +168,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		chains:                       make(map[iscp.ChainID]*Chain),
 		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
+		seed:                         opt.Seed,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
-		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep())
+		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
 	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
 		return wasmhost.GetProcessor(binaryCode, opt.Log)
@@ -217,6 +219,8 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initO
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 	vmRunner := runvm.NewVMRunner()
 	var initRequestParams []dict.Dict
 	bypassStardustVM := false
@@ -232,22 +236,20 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	}
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
-	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		chainOriginator = cryptolib.NewKeyPair()
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
+		chainOriginator = env.NewKeyPairFromIndex(-2)
+		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
-	} else {
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
+	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
-		stateAddr,
-		stateAddr,
+		stateControllerAddr,
+		stateControllerAddr,
 		initIotas, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
@@ -262,8 +264,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
@@ -281,8 +283,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		Env:                    env,
 		Name:                   name,
 		ChainID:                chainID,
-		StateControllerKeyPair: stateController,
-		StateControllerAddress: stateAddr,
+		StateControllerKeyPair: stateControllerKey,
+		StateControllerAddress: stateControllerAddr,
 		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
