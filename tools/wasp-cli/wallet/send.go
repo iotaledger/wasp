@@ -40,15 +40,12 @@ var sendFundsCmd = &cobra.Command{
 			UnspentOutputs:               outputSet,
 			UnspentOutputIDs:             iscp.OutputSetToOutputIDs(outputSet),
 		})
-
 		log.Check(err)
 
 		txID, err := tx.ID()
-
 		log.Check(err)
 
 		err = client.PostTx(tx)
-
 		log.Check(err)
 
 		log.Printf("Transaction [%v] successfully sent", txID)
