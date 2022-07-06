@@ -35,4 +35,5 @@ func (r VMRunner) Run(task *vm.VMTask) {
 }
 
 func runTask(task *vm.VMTask) {
+	panic("implement me")
 }
