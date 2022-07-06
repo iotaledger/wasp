@@ -45,7 +45,7 @@ func TestInitLoad(t *testing.T) {
 	require.EqualValues(t, 0, len(cassets.Tokens))
 
 	t.Logf("common iotas: %d", ch.L2CommonAccountIotas())
-	require.True(t, cassets.Iotas >= accounts.MinimumIotasOnCommonAccount)
+	require.True(t, cassets.Iotas >= accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers

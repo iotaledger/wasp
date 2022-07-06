@@ -27,7 +27,7 @@ var Processor = Contract.Processor(initialize,
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
-	ViewBalanceIotas.WithHandler(viewBalanceIotas),
+	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceNativeToken.WithHandler(viewBalanceNativeToken),
 	ViewFoundryOutput.WithHandler(viewFoundryOutput),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
@@ -171,26 +171,24 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	checkLedger(state, "accounts.harvest.begin")
 	defer checkLedger(state, "accounts.harvest.exit")
 
-	bottomIotas := ctx.Params().MustGetUint64(ParamForceMinimumIotas, MinimumIotasOnCommonAccount)
-	if bottomIotas > MinimumIotasOnCommonAccount {
-		bottomIotas = MinimumIotasOnCommonAccount
+	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
+	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
+		bottomBaseTokens = MinimumBaseTokensOnCommonAccount
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
 	toWithdraw := GetAccountAssets(state, commonAccount)
-	if toWithdraw.Iotas <= bottomIotas {
+	if toWithdraw.Iotas <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
-	ctx.Requiref(toWithdraw.Iotas > bottomIotas, "assertion failed: toWithdraw.Iotas > bottomIotas")
-	toWithdraw.Iotas -= bottomIotas
+	ctx.Requiref(toWithdraw.Iotas > bottomBaseTokens, "assertion failed: toWithdraw.Iotas > availableBaseTokens")
+	toWithdraw.Iotas -= bottomBaseTokens
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
 }
 
 // Params:
 // - token scheme
-// - token tag
-// - max supply big integer
 // - must be enough allowance for the dust deposit
 func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
@@ -241,9 +239,10 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 // - ParamFoundrySN serial number of the foundry
 // - ParamSupplyDeltaAbs absolute delta of the supply as big.Int
 // - ParamDestroyTokens true if destroy supply, false (default) if mint new supply
+// NOTE: ParamDestroyTokens is needed since `big.Int` `Bytes()` function does not serialize the sign, only the absolute value
 func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	delta := ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs)
+	delta := new(big.Int).Abs(ctx.Params().MustGetBigInt(ParamSupplyDeltaAbs))
 	if util.IsZeroBigInt(delta) {
 		return nil
 	}
@@ -259,7 +258,16 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var dustAdjustment int64
 	if deltaAssets := iscp.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
-		DebitFromAccount(ctx.State(), ctx.Caller(), deltaAssets)
+		// take tokens to destroy from allowance
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceFungibleTokens(
+			iscp.NewFungibleTokens(0, iotago.NativeTokens{
+				&iotago.NativeToken{
+					ID:     tokenID,
+					Amount: delta,
+				},
+			}),
+		))
+		DebitFromAccount(ctx.State(), ctx.AccountID(), deltaAssets)
 		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
 		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)

@@ -24,6 +24,7 @@ var (
 	ErrNotEnoughFunds               = coreerrors.Register("not enough funds").Create()
 	ErrNotEnoughIotasForDustDeposit = coreerrors.Register("not enough iotas for dust deposit").Create()
 	ErrNotEnoughAllowance           = coreerrors.Register("not enough allowance").Create()
+	ErrNotEnoughFundsForAllowance   = coreerrors.Register("not enough funds for allowance").Create()
 	ErrBadAmount                    = coreerrors.Register("bad native asset amount").Create()
 	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
@@ -244,86 +245,6 @@ func debitFromAccount(account *collections.Map, assets *iscp.FungibleTokens) boo
 	return true
 }
 
-// CreditNFTToAccount credits an NFT to the on chain ledger
-func CreditNFTToAccount(state kv.KVStore, agentID iscp.AgentID, nft *iscp.NFT) {
-	if nft == nil {
-		return
-	}
-	account := getAccount(state, agentID)
-
-	checkLedger(state, "CreditNFTToAccount IN")
-	defer checkLedger(state, "CreditNFTToAccount OUT")
-
-	saveNFTData(state, nft)
-	creditNFTToAccount(account, nft.ID)
-	touchAccount(state, account)
-}
-
-func saveNFTData(state kv.KVStore, nft *iscp.NFT) {
-	nftMap := getNFTState(state)
-	if nftMap.MustHasAt(nft.ID[:]) {
-		panic("saveNFTData: inconsistency - NFT data already exists")
-	}
-	// TODO (maybe) - for optimization we could avoid saving the NFTID twice (in key an value)
-	nftMap.MustSetAt(nft.ID[:], nft.Bytes())
-}
-
-func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
-	nftMap := getNFTState(state)
-	if !nftMap.MustHasAt(id[:]) {
-		panic("deleteNFTData: inconsistency - NFT data doesn't exists")
-	}
-	nftMap.MustDelAt(id[:])
-}
-
-func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
-	nftMap := getNFTStateR(state)
-	nftBytes := nftMap.MustGetAt(id[:])
-	if len(nftBytes) == 0 {
-		panic(ErrNFTIDNotFound.Create(id))
-	}
-	nft, err := iscp.NFTFromBytes(nftBytes)
-	if err != nil {
-		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
-	}
-	if nft == nil {
-		panic(ErrNFTIDNotFound.Create(id))
-	}
-	return *nft
-}
-
-func creditNFTToAccount(account *collections.Map, id iotago.NFTID) {
-	account.MustSetAt(id[:], codec.EncodeBool(true))
-}
-
-// DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
-func DebitNFTFromAccount(state kv.KVStore, agentID iscp.AgentID, id iotago.NFTID) {
-	if id.Empty() {
-		return
-	}
-	account := getAccount(state, agentID)
-
-	checkLedger(state, "DebitNFTFromAccount IN")
-	defer checkLedger(state, "DebitNFTFromAccount OUT")
-
-	if !debitNFTFromAccount(account, id) {
-		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
-	}
-
-	deleteNFTData(state, id)
-	touchAccount(state, account)
-}
-
-// DebitNFTFromAccount removes an NFT from the internal map of an account
-func debitNFTFromAccount(account *collections.Map, id iotago.NFTID) bool {
-	bytes, err := account.GetAt(id[:])
-	if err != nil || len(bytes) == 0 {
-		return false
-	}
-	err = account.DelAt(id[:])
-	return err == nil
-}
-
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID iscp.AgentID, fungibleTokens *iscp.FungibleTokens, nfts []iotago.NFTID) bool {
 	checkLedger(state, "MoveBetweenAccounts.IN")
@@ -350,7 +271,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID iscp.AgentID, 
 		if !debitNFTFromAccount(fromAccount, nft) {
 			return false
 		}
-		creditNFTToAccount(toAccount, nft)
+		creditNFTToAccount(state, toAccount, nft, toAgentID)
 	}
 
 	return true

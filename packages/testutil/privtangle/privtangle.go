@@ -49,6 +49,7 @@ type PrivTangle struct {
 	NodeCount     int
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
+	MqttCmd       []*exec.Cmd
 	ctx           context.Context
 	logfunc       LogFunc
 }
@@ -66,6 +67,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeCount:     nodeCount,
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
+		MqttCmd:       make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
 	}
 	for i := range pt.NodeKeyPairs {
@@ -96,7 +98,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
-		pt.startMqtt(i)
+		pt.MqttCmd[i] = pt.startMqtt(i)
 	}
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
@@ -193,7 +195,7 @@ func (pt *PrivTangle) startNode(i int) {
 	}
 }
 
-func (pt *PrivTangle) startCoordinator(i int) {
+func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 	env := []string{
 		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
 			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
@@ -206,10 +208,10 @@ func (pt *PrivTangle) startCoordinator(i int) {
 		"--coordinator.interval=1s",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 	}
-	pt.startINXPlugin(i, "inx-coordinator", args, env)
+	return pt.startINXPlugin(i, "inx-coordinator", args, env)
 }
 
-func (pt *PrivTangle) startFaucet(i int) {
+func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 	env := []string{
 		fmt.Sprintf("FAUCET_PRV_KEY=%s",
 			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
@@ -220,26 +222,26 @@ func (pt *PrivTangle) startFaucet(i int) {
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 	}
-	pt.startINXPlugin(i, "inx-faucet", args, env)
+	return pt.startINXPlugin(i, "inx-faucet", args, env)
 }
 
-func (pt *PrivTangle) startIndexer(i int) {
+func (pt *PrivTangle) startIndexer(i int) *exec.Cmd {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
 	}
-	pt.startINXPlugin(i, "inx-indexer", args, nil)
+	return pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
 
-func (pt *PrivTangle) startMqtt(i int) {
+func (pt *PrivTangle) startMqtt(i int) *exec.Cmd {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
 	}
-	pt.startINXPlugin(i, "inx-mqtt", args, nil)
+	return pt.startINXPlugin(i, "inx-mqtt", args, nil)
 }
 
-func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) {
+func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) *exec.Cmd {
 	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
 	if err := os.MkdirAll(path, 0o755); err != nil {
 		panic(xerrors.Errorf("Unable to create dir %v: %w", path, err))
@@ -257,6 +259,7 @@ func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) {
 	if err := cmd.Start(); err != nil {
 		panic(xerrors.Errorf("Cannot start %s [%d]: %w", plugin, i, err))
 	}
+	return cmd
 }
 
 func (pt *PrivTangle) Stop() {
@@ -275,6 +278,17 @@ func (pt *PrivTangle) Stop() {
 		}
 	}
 	pt.logf("Stopping... Done")
+}
+
+func (pt *PrivTangle) RestartMqtt() {
+	// kill cmd
+	for i := range pt.NodeKeyPairs {
+		if err := pt.MqttCmd[i].Process.Kill(); err != nil {
+			panic(fmt.Errorf("unable to kill mqtt process %w", err))
+		}
+		pt.MqttCmd[i] = pt.startMqtt(i)
+	}
+	pt.waitInxPlugins()
 }
 
 func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
