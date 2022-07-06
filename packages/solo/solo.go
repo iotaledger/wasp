@@ -120,8 +120,9 @@ type InitOptions struct {
 }
 
 type InitChainOptions struct {
-	InitRequestParameters dict.Dict
-	VMRunner              vm.VMRunner
+	InitRequestParameters     dict.Dict
+	VMRunner                  vm.VMRunner
+	SkipStardustVMInitRequest bool
 }
 
 func defaultInitOptions() *InitOptions {
@@ -212,6 +213,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	vmRunner := runvm.NewVMRunner()
 	var initRequestParams []dict.Dict
+	skipStardustVMInitRequest := false
 
 	if len(initOptions) > 0 {
 		if initOptions[0].VMRunner != nil {
@@ -220,6 +222,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		if len(initOptions[0].InitRequestParameters) > 0 {
 			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
 		}
+		skipStardustVMInitRequest = initOptions[0].SkipStardustVMInitRequest
 	}
 	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
 
@@ -289,6 +292,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
+	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
@@ -310,6 +314,11 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	go ret.batchLoop()
 
+	if skipStardustVMInitRequest {
+		// force skipping the init request. It is needed for non-Stardust VMs
+		return ret, originTx, nil
+	}
+	// run the on-ledger init request for the chain
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
