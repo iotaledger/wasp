@@ -165,7 +165,7 @@ func testNothing(t *testing.T, numRequests int) {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(receipts))
-		require.Contains(t, receipts[0].TranslatedError, vm.ErrTargetEntryPointNotFound.MessageFormat())
+		require.Contains(t, receipts[0].ResolvedError, vm.ErrTargetEntryPointNotFound.MessageFormat())
 	}
 
 	if !e.counter.WaitUntilExpectationsMet() {

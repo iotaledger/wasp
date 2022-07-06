@@ -54,7 +54,7 @@ func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestP
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (m *mockChain) TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+func (m *mockChain) ResolveError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
 	return nil, nil
 }
 
