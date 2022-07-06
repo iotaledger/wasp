@@ -1160,3 +1160,37 @@ func TestDepositRandomContractMinFee(t *testing.T) {
 	require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2Iotas(agentID))
 }
+
+func TestAllowanceNotEnoughFunds(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	ch := env.NewChain(nil, "chain1")
+
+	wallet, _ := ch.Env.NewKeyPairWithFunds()
+	allowances := []*iscp.Allowance{
+		// test base token
+		iscp.NewAllowanceIotas(1000 * iscp.Mi),
+		// test fungible tokens
+		iscp.NewAllowanceFungibleTokens(
+			iscp.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+				ID:     [38]byte{0x1},
+				Amount: big.NewInt(10),
+			}}),
+		),
+		// test NFTs
+		iscp.NewAllowance(0, nil, []iotago.NFTID{
+			{0x1},
+		}),
+	}
+	for _, a := range allowances {
+		_, err := ch.PostRequestSync(
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+				AddIotas(1*iscp.Mi).
+				WithAllowance(a).
+				WithMaxAffordableGasBudget(),
+			wallet)
+		require.Error(t, err)
+		testmisc.RequireErrorToBe(t, err, vm.ErrNotEnoughFundsForAllowance)
+		receipt := ch.LastReceipt()
+		require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
+	}
+}
