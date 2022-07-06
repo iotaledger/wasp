@@ -219,8 +219,6 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initO
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
-	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 	vmRunner := runvm.NewVMRunner()
 	var initRequestParams []dict.Dict
 	bypassStardustVM := false
@@ -234,7 +232,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		}
 		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
-	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
+
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-2)
