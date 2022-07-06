@@ -469,7 +469,7 @@ func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
 	if !ok {
 		return iotago.NFTID{}, fmt.Errorf("can't get address from AgentID")
 	}
-	nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, []byte("test data"))
+	_, nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, []byte("test data"))
 	if err != nil {
 		return iotago.NFTID{}, err
 	}

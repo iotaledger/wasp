@@ -98,9 +98,9 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
 		panic(coreutil.ErrorStateInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption.Time, &l1Commitment)
+	openingStateUpdate := state.NewStateUpdateWithBlockLogValues(blockIndex+1, task.TimeAssumption, &l1Commitment)
 	optimisticStateAccess.ApplyStateUpdate(openingStateUpdate)
-	finalStateTimestamp := task.TimeAssumption.Time.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+	finalStateTimestamp := task.TimeAssumption.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	ret := &VMContext{
 		task:                task,
