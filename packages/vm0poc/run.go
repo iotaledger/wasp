@@ -24,7 +24,7 @@ type VMContext struct {
 
 const (
 	ParamDeltaInt64 = "d"
-	CounterStateVar = "c"
+	CounterStateVar = "counter"
 )
 
 func NewVMRunner() VMRunner {
@@ -163,6 +163,7 @@ func (vmctx *VMContext) closeVMContext() (*iotago.TransactionEssence, []byte) {
 	if err != nil {
 		panic(err)
 	}
+	vmctx.virtualState.Commit()
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
 	blockHash := state.BlockHashFromData(block.EssenceBytes())
 	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
@@ -173,11 +174,13 @@ func (vmctx *VMContext) closeVMContext() (*iotago.TransactionEssence, []byte) {
 	if aliasID.Empty() {
 		aliasID = iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID)
 	}
+	anchor.AliasID = aliasID
 	anchor.Features = iotago.Features{
 		&iotago.SenderFeature{
 			Address: aliasID.ToAddress(),
 		},
 	}
+	anchor.StateIndex = vmctx.task.AnchorOutput.StateIndex + 1
 
 	inputIDs := iotago.OutputIDs{vmctx.task.AnchorOutputID}
 	inputSet := iotago.OutputSet{vmctx.task.AnchorOutputID: vmctx.task.AnchorOutput}
