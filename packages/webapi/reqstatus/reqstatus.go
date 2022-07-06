@@ -50,7 +50,7 @@ func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 		return err
 	}
 
-	receiptResponse, err := getTranslatedReceipt(ch, reqID)
+	receiptResponse, err := getISCPReceipt(ch, reqID)
 	if err != nil {
 		return httperrors.ServerError(err.Error())
 	}
@@ -75,7 +75,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 
 	tryGetReceipt := func() (bool, error) {
-		receiptResponse, err := getTranslatedReceipt(ch, reqID)
+		receiptResponse, err := getISCPReceipt(ch, reqID)
 		if err != nil {
 			return receiptResponse != nil, httperrors.ServerError(err.Error())
 		}
@@ -132,7 +132,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp
 	return theChain, reqID, nil
 }
 
-func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.RequestReceiptResponse, error) {
+func doGetISCPReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.RequestReceiptResponse, error) {
 	receipt, err := ch.GetRequestReceipt(reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("error getting request receipt: %s", err)
@@ -141,11 +141,11 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 		return nil, nil
 	}
 
-	translatedError, err := ch.TranslateError(receipt.Error)
+	resolvedError, err := ch.ResolveError(receipt.Error)
 	if err != nil {
-		return nil, xerrors.Errorf("error translating receipt: %s", err)
+		return nil, xerrors.Errorf("error resolving the receipt error: %s", err)
 	}
-	iscpReceipt := receipt.ToTranslatedReceipt(translatedError)
+	iscpReceipt := receipt.ToISCPReceipt(resolvedError)
 
 	receiptJSON, err := json.Marshal(iscpReceipt)
 	if err != nil {
@@ -156,10 +156,10 @@ func doGetTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*mode
 	}, nil
 }
 
-func getTranslatedReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
+func getISCPReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	err = optimism.RetryOnStateInvalidated(func() (err error) {
 		panicCatchErr := panicutil.CatchPanicReturnError(func() {
-			ret, err = doGetTranslatedReceipt(ch, reqID)
+			ret, err = doGetISCPReceipt(ch, reqID)
 		}, coreutil.ErrorStateInvalidated)
 		if err != nil {
 			return err
