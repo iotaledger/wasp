@@ -46,6 +46,7 @@ const exportMap: wasmlib.ScExportMap = {
 		sc.ViewArrayOfStringMapValue,
 		sc.ViewBigIntAdd,
 		sc.ViewBigIntDiv,
+		sc.ViewBigIntDivMod,
 		sc.ViewBigIntMod,
 		sc.ViewBigIntMul,
 		sc.ViewBigIntShl,
@@ -111,6 +112,7 @@ const exportMap: wasmlib.ScExportMap = {
 		viewArrayOfStringMapValueThunk,
 		viewBigIntAddThunk,
 		viewBigIntDivThunk,
+		viewBigIntDivModThunk,
 		viewBigIntModThunk,
 		viewBigIntMulThunk,
 		viewBigIntShlThunk,
@@ -488,6 +490,18 @@ function viewBigIntDivThunk(ctx: wasmlib.ScViewContext): void {
 	sc.viewBigIntDiv(ctx, f);
 	ctx.results(results);
 	ctx.log("testwasmlib.viewBigIntDiv ok");
+}
+
+function viewBigIntDivModThunk(ctx: wasmlib.ScViewContext): void {
+	ctx.log("testwasmlib.viewBigIntDivMod");
+	let f = new sc.BigIntDivModContext();
+	const results = new wasmlib.ScDict([]);
+	f.results = new sc.MutableBigIntDivModResults(results.asProxy());
+	ctx.require(f.params.lhs().exists(), "missing mandatory lhs");
+	ctx.require(f.params.rhs().exists(), "missing mandatory rhs");
+	sc.viewBigIntDivMod(ctx, f);
+	ctx.results(results);
+	ctx.log("testwasmlib.viewBigIntDivMod ok");
 }
 
 function viewBigIntModThunk(ctx: wasmlib.ScViewContext): void {

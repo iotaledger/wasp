@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import { panic } from "../sandbox";
 import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -109,9 +109,41 @@ export class ScBigInt {
     }
 
     public divModEstimate(rhs: ScBigInt): ScBigInt[] {
-        //TODO
-        panic("implement divModEstimate");
-        return [this, rhs];
+        // shift divisor MSB until the high order bit is set
+        let rhsLen = rhs.bytes.length;
+        let byte1 = rhs.bytes[rhsLen - 1];
+        let byte2 = rhs.bytes[rhsLen - 2];
+        let word = byte1 << 8 + byte2;
+        let shift = 0;
+        for (; (word & 0x8000) == 0; word <<= 1) {
+            shift++;
+        }
+
+        // shift numerator by the same amount of bits
+        let numerator = this.shl(shift);
+
+        // now chop off LSBs on both sides such that only MSB of divisor remains
+        numerator.bytes = numerator.bytes.slice(rhsLen - 1);
+        let words: u8[] = [word >> 8];
+        let divisor = ScBigInt.normalize(words);
+
+        // now we can use simple division by one byte to get a quotient estimate
+        // at worst case this will be 1 or 2 higher than the actual value
+        let quotients = numerator.divModSimple(divisor.bytes[0]);
+        let quotient = quotients[0];
+
+        // calculate first product based on estimated quotient
+        let product = rhs.mul(quotient)
+
+        // as long as the product is too high,
+        // decrement the estimated quotient and adjust the product accordingly
+        while (product.cmp(this) > 0) {
+            quotient = quotient.sub(ScBigInt.fromUint64(1))
+            product = product.sub(rhs)
+        }
+
+        // now that we found the actual quotient, the remainder is easy to calculate
+        return [quotient, this.sub(product)] as ScBigInt[];
     }
 
     private divModSimple(value: u8): ScBigInt[] {

@@ -276,6 +276,36 @@ impl MutableBigIntDivResults {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBigIntDivModResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntDivModResults {
+    pub fn quo(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_QUO))
+	}
+
+    pub fn remainder(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(RESULT_REMAINDER))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntDivModResults {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntDivModResults {
+    pub fn quo(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_QUO))
+	}
+
+    pub fn remainder(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(RESULT_REMAINDER))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableBigIntModResults {
 	pub(crate) proxy: Proxy,
 }

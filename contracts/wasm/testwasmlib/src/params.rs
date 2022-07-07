@@ -1026,6 +1026,36 @@ impl MutableBigIntDivParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBigIntDivModParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBigIntDivModParams {
+    pub fn lhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScImmutableBigInt {
+		ScImmutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableBigIntDivModParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableBigIntDivModParams {
+    pub fn lhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_LHS))
+	}
+
+    pub fn rhs(&self) -> ScMutableBigInt {
+		ScMutableBigInt::new(self.proxy.root(PARAM_RHS))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableBigIntModParams {
 	pub(crate) proxy: Proxy,
 }

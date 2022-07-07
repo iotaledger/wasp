@@ -193,6 +193,12 @@ pub struct BigIntDivCall {
 	pub results: ImmutableBigIntDivResults,
 }
 
+pub struct BigIntDivModCall {
+	pub func: ScView,
+	pub params: MutableBigIntDivModParams,
+	pub results: ImmutableBigIntDivModResults,
+}
+
 pub struct BigIntModCall {
 	pub func: ScView,
 	pub params: MutableBigIntModParams,
@@ -650,6 +656,17 @@ impl ScFuncs {
             func: ScView::new(HSC_NAME, HVIEW_BIG_INT_DIV),
             params: MutableBigIntDivParams { proxy: Proxy::nil() },
             results: ImmutableBigIntDivResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn big_int_div_mod(_ctx: &dyn ScViewCallContext) -> BigIntDivModCall {
+        let mut f = BigIntDivModCall {
+            func: ScView::new(HSC_NAME, HVIEW_BIG_INT_DIV_MOD),
+            params: MutableBigIntDivModParams { proxy: Proxy::nil() },
+            results: ImmutableBigIntDivModResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

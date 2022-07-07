@@ -420,6 +420,14 @@ export function viewBigIntDiv(ctx: wasmlib.ScViewContext, f: sc.BigIntDivContext
     f.results.res().setValue(res);
 }
 
+export function viewBigIntDivMod(ctx: wasmlib.ScViewContext, f: sc.BigIntDivModContext): void {
+    const lhs = f.params.lhs().value();
+    const rhs = f.params.rhs().value();
+    const res = lhs.divMod(rhs);
+    f.results.quo().setValue(res[0]);
+    f.results.remainder().setValue(res[1]);
+}
+
 export function viewBigIntMod(ctx: wasmlib.ScViewContext, f: sc.BigIntModContext): void {
     const lhs = f.params.lhs().value();
     const rhs = f.params.rhs().value();
