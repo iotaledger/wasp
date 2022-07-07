@@ -113,7 +113,12 @@ func (s *WasmClientContext) startEventHandlers() error {
 				event := strings.Join(msgSplit, " ")
 				fmt.Printf("%s\n", event)
 				if msgSplit[0] == "vmmsg" {
-					msg := strings.Split(msgSplit[3], "|")
+					msgEscaped := strings.Split(msgSplit[3], "|")
+					msg := make([]string, len(msgEscaped))
+					for i, m := range msgEscaped {
+						msg[i] = strings.ReplaceAll(m, "\\/", "|")
+						msg[i] = strings.ReplaceAll(m, "\\\\", "\\")
+					}
 					topic := msg[0]
 					params := msg[1:]
 					for _, handler := range s.eventHandlers {
