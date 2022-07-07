@@ -428,11 +428,10 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
+		_, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
 		if err != nil {
 			return err
 		}
-		clu.waspCmds[i] = cmd
 	}
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
@@ -446,47 +445,56 @@ func (clu *Cluster) start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) KillNode(nodeIndex int) error {
+func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
 		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
 	process := clu.waspCmds[nodeIndex]
 
-	if process != nil {
-		err := process.Process.Kill()
-
-		if err == nil {
-			clu.waspCmds[nodeIndex] = nil
-		}
-
-		return err
+	if process == nil {
+		return nil
 	}
 
-	return nil
-}
+	err := process.Process.Kill()
 
-func (clu *Cluster) RestartNode(nodeIndex int) error {
-	if nodeIndex >= len(clu.waspCmds) {
-		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+	if err == nil {
+		clu.waspCmds[nodeIndex] = nil
 	}
-
-	initOk := make(chan bool, 1)
-
-	cmd, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, nodeIndex), nodeIndex, initOk)
-	if err != nil {
-		return err
-	}
-
-	select {
-	case <-initOk:
-	case <-time.After(10 * time.Second):
-		return xerrors.Errorf("Timeout starting wasp nodes\n")
-	}
-
-	clu.waspCmds[nodeIndex] = cmd
 
 	return err
+}
+
+func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
+	// stop nodes
+	for _, i := range nodeIndex {
+		if i >= len(clu.waspCmds) {
+			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
+		}
+
+		clu.stopNode(i)
+	}
+
+	// start nodes
+	initOk := make(chan bool, len(nodeIndex))
+	okCount := 0
+	for _, i := range nodeIndex {
+		_, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, i), i, initOk)
+		if err != nil {
+			return err
+		}
+
+		select {
+		case <-initOk:
+			okCount++
+			if okCount == len(nodeIndex) {
+				return nil
+			}
+		case <-time.After(5 * time.Second):
+			return xerrors.Errorf("Timeout starting wasp nodes\n")
+		}
+	}
+	return nil
 }
 
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
@@ -521,6 +529,7 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	)
 	go clu.waitForAPIReady(initOk, nodeIndex)
 
+	clu.waspCmds[nodeIndex] = cmd
 	return cmd, nil
 }
 
