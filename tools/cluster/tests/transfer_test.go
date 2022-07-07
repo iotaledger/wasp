@@ -35,7 +35,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkLedger()
 
 	// deposit some iotas to the chain
-	depositIotas := uint64(42000)
+	depositIotas := 10 * iscp.Mi
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
@@ -56,7 +56,7 @@ func TestDepositWithdraw(t *testing.T) {
 	)
 
 	// withdraw some iotas back
-	iotasToWithdraw := uint64(500)
+	iotasToWithdraw := 1 * iscp.Mi
 	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: iscp.NewAllowanceIotas(iotasToWithdraw),
@@ -74,5 +74,4 @@ func TestDepositWithdraw(t *testing.T) {
 	)
 
 	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining iotas
-	t.Fatal()
 }

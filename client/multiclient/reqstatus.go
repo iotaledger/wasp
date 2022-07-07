@@ -32,8 +32,8 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID *iscp.ChainI
 	if err != nil {
 		return receipt, err
 	}
-	if receipt.TranslatedError != "" {
-		return receipt, xerrors.Errorf("request processed with an error: %s", receipt.TranslatedError)
+	if receipt.ResolvedError != "" {
+		return receipt, xerrors.Errorf("request processed with an error: %s", receipt.ResolvedError)
 	}
 	return receipt, nil
 }
@@ -62,8 +62,8 @@ func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID *iscp.Ch
 		return receipts, err
 	}
 	for i, receipt := range receipts {
-		if receipt.TranslatedError != "" {
-			return receipts, xerrors.Errorf("error found on receipt #%d: %s", i, receipt.TranslatedError)
+		if receipt.ResolvedError != "" {
+			return receipts, xerrors.Errorf("error found on receipt #%d: %s", i, receipt.ResolvedError)
 		}
 	}
 	return receipts, nil

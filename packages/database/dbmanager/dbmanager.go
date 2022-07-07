@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/database/textdb"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -24,8 +23,8 @@ type DBManager struct {
 	log           *logger.Logger
 	registryDB    DB
 	registryStore kvstore.KVStore
-	databases     map[*iotago.AliasID]DB
-	stores        map[*iotago.AliasID]kvstore.KVStore
+	databases     map[iscp.ChainID]DB
+	stores        map[iscp.ChainID]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
 }
@@ -33,8 +32,8 @@ type DBManager struct {
 func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Config) *DBManager {
 	dbm := DBManager{
 		log:       log,
-		databases: make(map[*iotago.AliasID]DB),
-		stores:    make(map[*iotago.AliasID]kvstore.KVStore),
+		databases: make(map[iscp.ChainID]DB),
+		stores:    make(map[iscp.ChainID]kvstore.KVStore),
 		mutex:     sync.RWMutex{},
 		inMemory:  inMemory,
 	}
@@ -107,19 +106,19 @@ func (m *DBManager) GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	// create a new database / store
 	db := m.createDB(chainID)
 	store = db.NewStore()
-	m.databases[chainID.AsAliasID()] = db
-	m.stores[chainID.AsAliasID()] = db.NewStore()
+	m.databases[*chainID] = db
+	m.stores[*chainID] = db.NewStore()
 	return store
 }
 
 func (m *DBManager) GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
-	return m.stores[chainID.AsAliasID()]
+	return m.stores[*chainID]
 }
 
 func (m *DBManager) Close() {
-	m.registryDB.Close()
+	func() { _ = m.registryDB.Close() }() // please linter
 	for _, instance := range m.databases {
-		instance.Close()
+		func() { _ = instance.Close() }()
 	}
 }
 

@@ -23,11 +23,6 @@ type Request interface {
 	String() string
 }
 
-type TimeData struct {
-	MilestoneIndex uint32
-	Time           time.Time
-}
-
 type Calldata interface {
 	ID() RequestID
 	Params() dict.Dict
@@ -41,8 +36,10 @@ type Calldata interface {
 }
 
 type Features interface {
-	TimeLock() *TimeData
-	Expiry() (*TimeData, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
+	// TimeLock returns the timelock feature, or a zero time if not present
+	TimeLock() time.Time
+	// Expiry returns the expiry time and sender address, or a zero time if not present
+	Expiry() (time.Time, iotago.Address) // return expiry time data and sender address or nil, nil if does not exist
 	ReturnAmount() (uint64, bool)
 }
 
@@ -129,18 +126,15 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 // don't process any request which deadline will expire within 1 minute
 const RequestConsideredExpiredWindow = time.Minute * 1
 
-func RequestIsExpired(req OnLedgerRequest, currentTime TimeData) bool {
+func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 	expiry, _ := req.Features().Expiry()
-	if expiry == nil {
+	if expiry.IsZero() {
 		return false
 	}
-	if expiry.MilestoneIndex != 0 && currentTime.MilestoneIndex >= expiry.MilestoneIndex {
-		return false
-	}
-	return !expiry.Time.IsZero() && currentTime.Time.After(expiry.Time.Add(-RequestConsideredExpiredWindow))
+	return !expiry.IsZero() && currentTime.After(expiry.Add(-RequestConsideredExpiredWindow))
 }
 
-func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime TimeData) bool {
+func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime time.Time) bool {
 	if RequestIsExpired(req, currentTime) {
 		return false
 	}
@@ -148,8 +142,7 @@ func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, curre
 	output, _ := req.Output().(iotago.TransIndepIdentOutput)
 
 	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{
-		ConfMsIndex: currentTime.MilestoneIndex,
-		ConfUnix:    uint32(currentTime.Time.Unix()),
+		ConfUnix: uint32(currentTime.Unix()),
 	})
 }
 

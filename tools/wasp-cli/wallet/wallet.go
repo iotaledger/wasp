@@ -44,11 +44,14 @@ func Load() *Wallet {
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
-	kp := cryptolib.NewKeyPairFromSeed(seed)
+	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
 	return &Wallet{KeyPair: kp}
 }
 
-var addressIndex int
+var (
+	addressIndex      int
+	adjustDustDeposit bool
+)
 
 func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
 	return w.KeyPair.GetPrivateKey()

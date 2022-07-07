@@ -61,6 +61,7 @@ type Solo struct {
 	vmRunner                     vm.VMRunner
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
+	seed                         cryptolib.Seed
 }
 
 // Chain represents state of individual chain.
@@ -145,7 +146,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	utxoDBinitParams := utxodb.DefaultInitParams(opt.Seed[:])
+	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
 		T:                            t,
 		logger:                       opt.Log,
@@ -155,10 +156,11 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		vmRunner:                     runvm.NewVMRunner(),
 		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
+		seed:                         opt.Seed,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
-	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v, milestone index: #%d",
-		globalTime.Time.Format(timeLayout), ret.utxoDB.TimeStep(), globalTime.MilestoneIndex)
+	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
+		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
 	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (iscp.VMProcessor, error) {
 		return wasmhost.GetProcessor(binaryCode, opt.Log)
@@ -205,40 +207,35 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initP
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	stateController, stateAddr := env.utxoDB.NewKeyPairByIndex(2)
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 
-	var originatorAddr iotago.Address
 	if chainOriginator == nil {
-		chainOriginator = cryptolib.NewKeyPair()
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
+		chainOriginator = env.NewKeyPairFromIndex(-2)
+		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
-	} else {
-		originatorAddr = chainOriginator.GetPublicKey().AsEd25519Address()
 	}
+	originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 	originatorAgentID := iscp.NewAgentID(originatorAddr)
 
 	outs, outIDs := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		chainOriginator,
-		stateAddr,
-		stateAddr,
+		stateControllerAddr,
+		stateControllerAddr,
 		initIotas, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
 	)
 	require.NoError(env.T, err)
 
-	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
-	require.NoError(env.T, err)
-
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
-		name, chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
-	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
@@ -256,8 +253,8 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		Env:                    env,
 		Name:                   name,
 		ChainID:                chainID,
-		StateControllerKeyPair: stateController,
-		StateControllerAddress: stateAddr,
+		StateControllerKeyPair: stateControllerKey,
+		StateControllerAddress: stateControllerAddr,
 		OriginatorPrivateKey:   chainOriginator,
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
@@ -269,7 +266,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		log:                    chainlog,
 	}
 	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
-	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
@@ -298,7 +294,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	results := ret.RunRequestsSync(initReq, "new")
 	for _, res := range results {
-		require.NoError(env.T, res.Error)
+		require.NoError(env.T, res.Receipt.Error.AsGoError())
 	}
 	ret.logRequestLastBlock()
 
@@ -434,8 +430,8 @@ func (ch *Chain) collateAndRunBatch() bool {
 	if len(batch) > 0 {
 		results := ch.runRequestsNolock(batch, "batchLoop")
 		for _, res := range results {
-			if res.Error != nil {
-				ch.log.Errorf("runRequestsSync: %v", res.Error)
+			if res.Receipt.Error != nil {
+				ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
 			}
 		}
 		return true
@@ -548,7 +544,7 @@ type NFTMintedInfo struct {
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
 // Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*NFTMintedInfo, error) {
+func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*iscp.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
 	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
@@ -559,27 +555,33 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		ImmutableMetadata: immutableMetadata,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = env.AddToLedger(tx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	outSet, err := tx.OutputsSet()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for id, out := range outSet {
 		// we know that the tx will only produce 1 NFT output
 		if _, ok := out.(*iotago.NFTOutput); ok {
-			return &NFTMintedInfo{
+			info := &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
 				NFTID:    iotago.NFTIDFromOutputID(id),
-			}, nil
+			}
+			iscpNFT := &iscp.NFT{
+				ID:       info.NFTID,
+				Issuer:   issuer.Address(),
+				Metadata: immutableMetadata,
+			}
+			return iscpNFT, info, nil
 		}
 	}
 
-	return nil, fmt.Errorf("NFT output not found in resulting tx")
+	return nil, nil, fmt.Errorf("NFT output not found in resulting tx")
 }
