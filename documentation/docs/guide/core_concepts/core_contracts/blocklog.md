@@ -22,23 +22,7 @@ It provides views to get request status or receipts, block information, or event
 
 ---
 
-## Entry Points
-
-The `blocklog` core contract does not contain any entry points which modify its
-state.
-
-The only way to modify the `blocklog` state is by submitting requests for
-processing to the chain.
-
----
-
-## Views
-
-### - `getBlockInfo(n BlockIndex)`
-
-Returns information about the block with index `n`. If `n` is not provided, it defaults to the current (latest) block.
-
-Block info has the following data:
+## Block Information
 
 ```go
  BlockIndex                uint32
@@ -56,38 +40,72 @@ Block info has the following data:
  GasFeeCharged             uint64
 ```
 
+---
+
+## Request Receipt
+
+```go
+ Request       ISC Request
+ Error         Unresolved VM Error 
+ GasBudget     uint64                  
+ GasBurned     uint64                  
+ GasFeeCharged uint64                  
+ BlockIndex   uint32       
+ RequestIndex uint16       
+```
+
+:::note
+Errors on receipts queried directly from blocklog are not humanly readable.
+
+Those errors need to be translated using // TODO add link
+:::
+
+---
+
+## Entry Points
+
+The `blocklog` core contract does not contain any entry points which modify its
+state.
+
+The only way to modify the `blocklog` state is by submitting requests for
+processing to the chain.
+
+---
+
+## Views
+
+### - `getBlockInfo(n BlockIndex)`
+
+Returns information about the block with index `n`. If `n` is not provided, it defaults to the current (latest) block.
+
 ### - `getRequestIDsForBlock(n BlockIndex)`
 
 Returns a list with the IDs of all requests in the block with block index `n`.
 
-### - `getRequestReceipt()`
+### - `getRequestReceipt(u RequestID)`
 
-### - `getRequestReceiptsForBlock()`
+Returns the receipt for a request with ID `u`.
 
-### - `isRequestProcessed()`
+### - `getRequestReceiptsForBlock(n BlockIndex)`
 
-Returns whether a request with specified ID has been processed.
+Returns all the receipt for the block with index `n`.
 
-### - `getEventsForRequest()`
+### - `isRequestProcessed(u RequestID)`
 
-Returns a list of events for a given request.
+Returns whether a request with ID `u` has been processed.
 
-### - `getEventsForBlock()`
+### - `getEventsForRequest(u RequestID)`
 
-Returns a list of events for a given block.
+Returns a list of events for a request with ID `u`.
 
-### - `getEventsForContract()`
+### - `getEventsForBlock(n blockIndex)`
 
-Returns a list of events for a given smart contract.
-<!-- 
-### `viewGetRequestLogRecord()`
+Returns a list of events for a block with index `n`.
 
-Returns the data, block index, and request index of the specified request.
+### - `getEventsForContract(h Hname)`
 
-### `viewGetRequestLogRecordsForBlock()`
+Returns a list of events for a smart contract with hname `h`.
 
-Returns the data, block index, and request index of all requests in the block with the specified block index.
+### `controlAddresses()`
 
- -->
-
-### `viewccontrolAddresses()`
+Returns the current "State Controller", "Governing Address" and at what BlockIndex those were set.
