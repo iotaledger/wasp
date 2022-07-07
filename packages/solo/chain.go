@@ -533,11 +533,11 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	if result.Error == nil {
+	if result.Receipt.Error == nil {
 		ch.StateControllerAddress = newStateAddr
 		ch.StateControllerKeyPair = newStateKeyPair
 	}
-	return result.Error
+	return ch.ResolveVMError(result.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {

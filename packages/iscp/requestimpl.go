@@ -131,12 +131,12 @@ func (r *offLedgerRequestData) ChainID() *ChainID {
 // implements Features interface
 var _ Features = &offLedgerRequestData{}
 
-func (r *offLedgerRequestData) TimeLock() *TimeData {
-	return nil
+func (r *offLedgerRequestData) TimeLock() time.Time {
+	return time.Time{}
 }
 
-func (r *offLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
-	return nil, nil
+func (r *offLedgerRequestData) Expiry() (time.Time, iotago.Address) {
+	return time.Time{}, nil
 }
 
 func (r *offLedgerRequestData) ReturnAmount() (uint64, bool) {
@@ -557,30 +557,21 @@ func (r *onLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
 // implements Features interface
 var _ Features = &onLedgerRequestData{}
 
-func (r *onLedgerRequestData) TimeLock() *TimeData {
+func (r *onLedgerRequestData) TimeLock() time.Time {
 	timelock := r.unlockConditions.Timelock()
 	if timelock == nil {
-		return nil
+		return time.Time{}
 	}
-	ret := &TimeData{}
-	ret.MilestoneIndex = timelock.MilestoneIndex
-	if timelock.UnixTime != 0 {
-		ret.Time = time.Unix(int64(timelock.UnixTime), 0)
-	}
-	return ret
+	return time.Unix(int64(timelock.UnixTime), 0)
 }
 
-func (r *onLedgerRequestData) Expiry() (*TimeData, iotago.Address) {
+func (r *onLedgerRequestData) Expiry() (time.Time, iotago.Address) {
 	expiration := r.unlockConditions.Expiration()
 	if expiration == nil {
-		return nil, nil
+		return time.Time{}, nil
 	}
-	ret := &TimeData{}
-	ret.MilestoneIndex = expiration.MilestoneIndex
-	if expiration.UnixTime != 0 {
-		ret.Time = time.Unix(int64(expiration.UnixTime), 0)
-	}
-	return ret, expiration.ReturnAddress
+
+	return time.Unix(int64(expiration.UnixTime), 0), expiration.ReturnAddress
 }
 
 func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {

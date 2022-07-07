@@ -68,19 +68,15 @@ func MakeBasicOutput(
 			Data: metadata.Bytes(),
 		})
 	}
-	if options.Timelock != nil {
+	if !options.Timelock.IsZero() {
 		cond := &iotago.TimelockUnlockCondition{
-			MilestoneIndex: options.Timelock.MilestoneIndex,
-		}
-		if !options.Timelock.Time.IsZero() {
-			cond.UnixTime = uint32(options.Timelock.Time.Unix())
+			UnixTime: uint32(options.Timelock.Unix()),
 		}
 		out.Conditions = append(out.Conditions, cond)
 	}
 	if options.Expiration != nil {
 		cond := &iotago.ExpirationUnlockCondition{
-			MilestoneIndex: options.Expiration.MilestoneIndex,
-			ReturnAddress:  options.Expiration.ReturnAddress,
+			ReturnAddress: options.Expiration.ReturnAddress,
 		}
 		if !options.Expiration.Time.IsZero() {
 			cond.UnixTime = uint32(options.Expiration.Time.Unix())

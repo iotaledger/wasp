@@ -25,11 +25,13 @@ func TestCreateOrigin(t *testing.T) {
 
 	initTest := func() {
 		u = utxodb.New()
-		user, userAddr = u.NewKeyPairByIndex(1)
+		user = cryptolib.NewKeyPair()
+		userAddr = user.GetPublicKey().AsEd25519Address()
 		_, err := u.GetFundsFromFaucet(userAddr)
 		require.NoError(t, err)
 
-		_, stateAddr = u.NewKeyPairByIndex(2)
+		state := cryptolib.NewKeyPair()
+		stateAddr = state.GetPublicKey().AsEd25519Address()
 
 		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceIotas(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
@@ -173,8 +175,7 @@ func TestConsumeRequest(t *testing.T) {
 	}
 	semValCtx := &iotago.SemanticValidationContext{
 		ExtParas: &iotago.ExternalUnlockParameters{
-			ConfMsIndex: 1,
-			ConfUnix:    uint32(time.Now().Unix()),
+			ConfUnix: uint32(time.Now().Unix()),
 		},
 	}
 	outset := iotago.OutputSet{

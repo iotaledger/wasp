@@ -34,7 +34,7 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func now() iscp.TimeData { return iscp.TimeData{Time: time.Now()} }
+func now() time.Time { return time.Now() }
 
 func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []iscp.OnLedgerRequest {
 	result := make([]iscp.OnLedgerRequest, amount)
@@ -301,16 +301,16 @@ func TestTimeLock(t *testing.T) {
 	requests := getRequestsOnLedger(t, 6, func(i int, p *iscp.RequestParameters) {
 		switch i {
 		case 1:
-			p.Options.Timelock = &iscp.TimeData{Time: start.Add(-2 * time.Hour)}
+			p.Options.Timelock = start.Add(-2 * time.Hour)
 		case 2:
-			p.Options.Timelock = &iscp.TimeData{Time: start}
+			p.Options.Timelock = start
 		case 3:
-			p.Options.Timelock = &iscp.TimeData{Time: start.Add(2 * time.Hour)}
+			p.Options.Timelock = start.Add(2 * time.Hour)
 		}
 	})
 
 	testStatsFun := func() { // Info does not change after requests are added to the mempool
-		stats := pool.Info(iscp.TimeData{Time: start})
+		stats := pool.Info(start)
 		require.EqualValues(t, 4, stats.InPoolCounter)
 		require.EqualValues(t, 0, stats.OutPoolCounter)
 		require.EqualValues(t, 4, stats.TotalPool)
@@ -328,7 +328,7 @@ func TestTimeLock(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 	testStatsFun()
 
-	ready, _, result := pool.ReadyFromIDs(iscp.TimeData{Time: start.Add(-3 * time.Hour)},
+	ready, _, result := pool.ReadyFromIDs(start.Add(-3*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // - Time lock less than three hours before start
 		requests[2].ID(), // - Time lock at exactly the same time as start
@@ -339,7 +339,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[0])
 	testStatsFun()
 
-	ready, _, result = pool.ReadyFromIDs(iscp.TimeData{Time: start.Add(-1 * time.Hour)},
+	ready, _, result = pool.ReadyFromIDs(start.Add(-1*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock more than one hour before start
 		requests[2].ID(), // - Time lock at exactly the same time as start
@@ -351,7 +351,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[1])
 	testStatsFun()
 
-	ready, _, result = pool.ReadyFromIDs(iscp.TimeData{Time: start},
+	ready, _, result = pool.ReadyFromIDs(start,
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before start
 		requests[2].ID(), // - Time lock at exactly the same time as start
@@ -364,7 +364,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	testStatsFun()
 
-	ready, _, result = pool.ReadyFromIDs(iscp.TimeData{Time: start.Add(1 * time.Hour)},
+	ready, _, result = pool.ReadyFromIDs(start.Add(1*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before start
 		requests[2].ID(), // + Time lock at exactly the same time as start
@@ -377,7 +377,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	testStatsFun()
 
-	ready, _, result = pool.ReadyFromIDs(iscp.TimeData{Time: start.Add(3 * time.Hour)},
+	ready, _, result = pool.ReadyFromIDs(start.Add(3*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before start
 		requests[2].ID(), // + Time lock at exactly the same time as start
@@ -403,19 +403,19 @@ func TestExpiration(t *testing.T) {
 		case 1:
 			// expired
 			p.Options.Expiration = &iscp.Expiration{
-				TimeData:      iscp.TimeData{Time: start.Add(-iscp.RequestConsideredExpiredWindow)},
+				Time:          start.Add(-iscp.RequestConsideredExpiredWindow),
 				ReturnAddress: chainAddress,
 			}
 		case 2:
 			// will expire soon
 			p.Options.Expiration = &iscp.Expiration{
-				TimeData:      iscp.TimeData{Time: start.Add(iscp.RequestConsideredExpiredWindow / 2)},
+				Time:          start.Add(iscp.RequestConsideredExpiredWindow / 2),
 				ReturnAddress: chainAddress,
 			}
 		case 3:
 			// not expired yet
 			p.Options.Expiration = &iscp.Expiration{
-				TimeData:      iscp.TimeData{Time: start.Add(iscp.RequestConsideredExpiredWindow * 2)},
+				Time:          start.Add(iscp.RequestConsideredExpiredWindow * 2),
 				ReturnAddress: chainAddress,
 			}
 		}
@@ -433,13 +433,13 @@ func TestExpiration(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 
-	stats := pool.Info(iscp.TimeData{Time: start})
+	stats := pool.Info(start)
 	require.EqualValues(t, 4, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 4, stats.TotalPool)
 	require.EqualValues(t, 2, stats.ReadyCounter)
 
-	ready := pool.ReadyNow(iscp.TimeData{Time: start})
+	ready := pool.ReadyNow(start)
 	require.Len(t, ready, 2)
 	require.Contains(t, ready, requests[0])
 	require.Contains(t, ready, requests[3])

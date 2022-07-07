@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -8,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 type NewRequestTransactionParams struct {
@@ -19,6 +19,65 @@ type NewRequestTransactionParams struct {
 	Request                      *iscp.RequestParameters
 	NFT                          *iscp.NFT
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
+}
+
+type NewTransferTransactionParams struct {
+	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
+	FungibleTokens               *iscp.FungibleTokens
+	SendOptions                  iscp.SendOptions
+	SenderAddress                iotago.Address
+	SenderKeyPair                *cryptolib.KeyPair
+	TargetAddress                iotago.Address
+	UnspentOutputs               iotago.OutputSet
+	UnspentOutputIDs             iotago.OutputIDs
+}
+
+// NewTransferTransaction creates a basic output transaction that sends L1 Token to another L1 address
+func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transaction, error) {
+	output := MakeBasicOutput(
+		params.TargetAddress,
+		params.SenderAddress,
+		params.FungibleTokens,
+		nil,
+		params.SendOptions,
+		params.DisableAutoAdjustDustDeposit,
+	)
+
+	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(output)
+	if output.Deposit() < storageDeposit {
+		return nil, fmt.Errorf("%v: available %d < required %d iotas",
+			ErrNotEnoughIotasForDustDeposit, output.Deposit(), storageDeposit)
+	}
+
+	sumIotasOut := output.Deposit()
+	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
+	sumTokensOut = addNativeTokens(sumTokensOut, output)
+
+	tokenMap := map[iotago.NativeTokenID]*big.Int{}
+	for _, token := range params.FungibleTokens.Tokens {
+		tokenMap[token.ID] = token.Amount
+	}
+
+	inputIDs, remainder, err := computeInputsAndRemainder(params.SenderAddress,
+		sumIotasOut,
+		sumTokensOut,
+		map[iotago.NFTID]bool{},
+		params.UnspentOutputs,
+		params.UnspentOutputIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	outputs := []iotago.Output{output}
+
+	if remainder != nil {
+		outputs = append(outputs, remainder)
+	}
+
+	inputsCommitment := inputIDs.OrderedSet(params.UnspentOutputs).MustCommitment()
+
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, params.SenderKeyPair, parameters.L1.Protocol.NetworkID())
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -62,7 +121,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
-		return nil, xerrors.Errorf("%v: available %d < required %d iotas",
+		return nil, fmt.Errorf("%v: available %d < required %d iotas",
 			ErrNotEnoughIotasForDustDeposit, out.Deposit(), storageDeposit)
 	}
 	outputs = append(outputs, out)

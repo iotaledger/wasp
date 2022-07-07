@@ -36,7 +36,7 @@ type consensus struct {
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *iscp.AliasOutputWithID
 	stateTimestamp                   time.Time
-	timeData                         *iscp.TimeData
+	timeData                         time.Time
 	acsSessionID                     uint64
 	consensusBatch                   *BatchProposal
 	consensusEntropy                 hashing.HashValue
@@ -127,10 +127,7 @@ func New(
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
-		ret.timeData = &iscp.TimeData{
-			MilestoneIndex: milestonePointer.Index,
-			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),
-		}
+		ret.timeData = time.Unix(int64(milestonePointer.Timestamp), 0)
 	})
 	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
 		ret.EnqueueTxInclusionsStateMsg(txID, inclusionState)
@@ -281,11 +278,11 @@ func (c *consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	var timeData iscp.TimeData
-	if c.timeData == nil {
-		timeData = iscp.TimeData{Time: time.Now()}
+	var timeData time.Time
+	if c.timeData.IsZero() {
+		timeData = time.Now()
 	} else {
-		timeData = *c.timeData
+		timeData = c.timeData
 	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,

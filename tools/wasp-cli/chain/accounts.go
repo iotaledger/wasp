@@ -17,8 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const iotaTokenStr = "iota"
-
 var listAccountsCmd = &cobra.Command{
 	Use:   "list-accounts",
 	Short: "List L2 accounts",
@@ -69,7 +67,7 @@ var balanceCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k, v := range ret {
-			tokenStr := iotaTokenStr
+			tokenStr := util.IotaTokenStr
 			if !iscp.IsIota([]byte(k)) {
 				tokenStr = codec.MustDecodeNativeTokenID([]byte(k)).String()
 			}
@@ -94,7 +92,7 @@ var depositCmd = &cobra.Command{
 
 		if strings.Contains(args[0], ":") {
 			// deposit to own agentID
-			tokens := parseFungibleTokens(args)
+			tokens := util.ParseFungibleTokens(args)
 			util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 				return SCClient(accounts.Contract.Hname()).PostRequest(
 					accounts.FuncDeposit.Name,
@@ -107,7 +105,7 @@ var depositCmd = &cobra.Command{
 			// deposit to some other agentID
 			agentID, err := iscp.NewAgentIDFromString(args[0])
 			log.Check(err)
-			tokens := parseFungibleTokens(args[1:])
+			tokens := util.ParseFungibleTokens(args[1:])
 			util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 				return SCClient(accounts.Contract.Hname()).PostRequest(
 					accounts.FuncTransferAllowanceTo.Name,

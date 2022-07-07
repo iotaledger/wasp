@@ -39,7 +39,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
 		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), iscp.OID(task.AnchorOutputID.UTXOInput()))
-	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption.Time, task.Requests...)
+	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests...)
 	task.VirtualStateAccess = nextvs
 	task.RotationAddress = nil
 	task.ResultTransactionEssence = txEssence
@@ -49,7 +49,6 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 		task.Results[i] = &vm.RequestResult{
 			Request: task.Requests[i],
 			Return:  dict.New(),
-			Error:   nil,
 			Receipt: &blocklog.RequestReceipt{
 				Request: task.Requests[i],
 				Error:   nil,

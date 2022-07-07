@@ -250,7 +250,7 @@ func (ctx *SoloContext) AccountID() wasmtypes.ScAgentID {
 
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
-	ctx.Chain.Env.AdvanceClockBy(step, 1)
+	ctx.Chain.Env.AdvanceClockBy(step)
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.

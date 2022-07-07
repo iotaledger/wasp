@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -28,7 +30,7 @@ type VMTask struct {
 	AnchorOutputID     iotago.OutputID
 	SolidStateBaseline coreutil.StateBaseline
 	Requests           []iscp.Request
-	TimeAssumption     iscp.TimeData
+	TimeAssumption     time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget iscp.AgentID
 	// If EstimateGasMode is enabled, gas fee will be calculated but not charged
@@ -65,7 +67,6 @@ type RequestResult struct {
 	// Return is the return value of the call
 	Return dict.Dict
 	// Error is the error produced by the call, if any
-	Error error
 	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
 }

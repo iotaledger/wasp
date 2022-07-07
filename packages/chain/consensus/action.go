@@ -66,11 +66,11 @@ func (c *consensus) proposeBatchIfNeeded() {
 		c.log.Debugf("proposeBatch not needed: delayed for %v from %v", c.timers.ProposeBatchDelayForNewState, c.stateTimestamp)
 		return
 	}
-	if c.timeData == nil {
+	if c.timeData.IsZero() {
 		c.log.Debugf("proposeBatch not needed: time data hasn't been received yet")
 		return
 	}
-	reqs := c.mempool.ReadyNow(*c.timeData)
+	reqs := c.mempool.ReadyNow(c.timeData)
 	if len(reqs) == 0 {
 		c.log.Debugf("proposeBatch not needed: no ready requests in mempool")
 		return
@@ -145,9 +145,8 @@ func (c *consensus) runVMIfNeeded() { // nolint:funlen
 	c.log.Debugw("runVMIfNeeded: starting VM task",
 		"chainID", (&chainID).String(),
 		"ACS session ID", vmTask.ACSSessionID,
-		"milestone", vmTask.TimeAssumption.MilestoneIndex,
-		"timestamp", vmTask.TimeAssumption.Time,
-		"timestamp (Unix nano)", vmTask.TimeAssumption.Time.UnixNano(),
+		"timestamp", vmTask.TimeAssumption,
+		"timestamp (Unix nano)", vmTask.TimeAssumption.UnixNano(),
 		"anchor output ID", iscp.OID(vmTask.AnchorOutputID.UTXOInput()),
 		"block index", vmTask.AnchorOutput.StateIndex,
 		"entropy", vmTask.Entropy.String(),
@@ -513,7 +512,7 @@ func (c *consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
 		StateOutputID:           c.stateOutput.ID(),
 		RequestIDs:              make([]iscp.RequestID, len(reqs)),
 		RequestHashes:           make([][32]byte, len(reqs)),
-		TimeData:                *c.timeData,
+		TimeData:                c.timeData,
 		ConsensusManaPledge:     consensusManaPledge,
 		AccessManaPledge:        accessManaPledge,
 		FeeDestination:          feeDestination,
@@ -849,7 +848,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 	essence, err := rotate.MakeRotateStateControllerTransaction(
 		task.RotationAddress,
 		iscp.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
-		task.TimeAssumption.Time,
+		task.TimeAssumption,
 		identity.ID{},
 		identity.ID{},
 	)
