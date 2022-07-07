@@ -4,29 +4,27 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
-	if msg.ChainOutput.GetStateIndex() > 0 {
-		log.Infof("STATE TRANSITION TO #%d. Requests: %d, chain output: %s",
-			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("STATE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
+func LogStateTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, reqids []iscp.RequestID, log *logger.Logger) {
+	if blockIndex > 0 {
+		log.Infof("STATE TRANSITION TO #%d. Requests: %d, chain output: %s", blockIndex, len(reqids), outputID)
+		log.Debugf("STATE TRANSITION. Root commitment: %s", rootCommitment)
 	} else {
-		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
+		log.Infof("ORIGIN STATE SAVED. State output id: %s", outputID)
+		log.Debugf("ORIGIN STATE SAVED. Root commitment: %s", rootCommitment)
 	}
 }
 
 // LogGovernanceTransition
-func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
-	log.Infof("GOVERNANCE TRANSITION. State index #%d, anchor output: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()))
-	log.Debugf("GOVERNANCE TRANSITION. Root commitment: %s", state.RootCommitment(msg.VirtualState.TrieNodeStore()))
+func LogGovernanceTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, log *logger.Logger) {
+	log.Infof("GOVERNANCE TRANSITION. State index #%d, anchor output: %s", blockIndex, outputID)
+	log.Debugf("GOVERNANCE TRANSITION. Root commitment: %s", rootCommitment)
 }
 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
