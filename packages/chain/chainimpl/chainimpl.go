@@ -243,6 +243,9 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 // processChainTransition processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
+	if msg.VirtualState == nil {
+		return
+	}
 	stateIndex := msg.VirtualState.BlockIndex()
 	oidStr := iscp.OID(msg.ChainOutput.ID())
 	rootCommitment := state.RootCommitment(msg.VirtualState.TrieNodeStore())
