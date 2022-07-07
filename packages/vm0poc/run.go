@@ -179,38 +179,52 @@ func (vmctx *VMContext) runTheRequest(delta int64) (result string) {
 // - produces next anchor output
 // - produces anchor transaction essence
 func (vmctx *VMContext) closeVMContext() (*iotago.TransactionEssence, []byte) {
+	// block is just collection of mutations to the state in the form of Set(k,v) and Del(k)
 	block, err := vmctx.virtualState.ExtractBlock()
 	if err != nil {
 		panic(err)
 	}
+	// recalculate the trie, so that to have root commitment corresponding to the updated state
+	// Note: this step does not save anything, only loads necessary part of the trie from DB to
+	// the buffer and updates nodes
 	vmctx.virtualState.Commit()
+	// take the root commitment of the updated state (not saved yet)
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
+	// take deterministic hash of the mutations (plain hash, no merklization)
 	blockHash := state.BlockHashFromData(block.EssenceBytes())
+	// compose L1Commitment structure which will be put into the anchor Alias output
 	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
 
-	anchor := vmctx.task.AnchorOutput.Clone().(*iotago.AliasOutput)
-	anchor.StateMetadata = l1Commitment.Bytes()
-	aliasID := vmctx.task.AnchorOutput.AliasID
-	if aliasID.Empty() {
-		aliasID = iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID)
-	}
-	anchor.AliasID = aliasID
-	anchor.Features = iotago.Features{
-		&iotago.SenderFeature{
-			Address: aliasID.ToAddress(),
-		},
-	}
-	anchor.StateIndex = vmctx.task.AnchorOutput.StateIndex + 1
+	// create new anchor Alias output. First cloning the previous one and then updating it
+	nextAnchorOutput := vmctx.task.AnchorOutput.Clone().(*iotago.AliasOutput)
+	// place l1commitment into the StateMetadata block
+	nextAnchorOutput.StateMetadata = l1Commitment.Bytes()
+	if vmctx.task.AnchorOutput.AliasID.Empty() {
+		// if aliasID is all-0, it means the previous state was origin and the aliasID is not yet calculated.
+		// We need to compute real AliasID from the outputID and put it into the output
 
+		aliasID := iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID)
+		nextAnchorOutput.Features = iotago.Features{
+			&iotago.SenderFeature{
+				Address: aliasID.ToAddress(),
+			},
+		}
+		nextAnchorOutput.AliasID = aliasID
+	}
+	// increment state index
+	nextAnchorOutput.StateIndex = vmctx.task.AnchorOutput.StateIndex + 1
+
+	// compose the essence
 	inputIDs := iotago.OutputIDs{vmctx.task.AnchorOutputID}
 	inputSet := iotago.OutputSet{vmctx.task.AnchorOutputID: vmctx.task.AnchorOutput}
 	inputs := inputIDs.UTXOInputs()
 	essence := &iotago.TransactionEssence{
 		NetworkID: parameters.L1.Protocol.NetworkID(),
 		Inputs:    inputs,
-		Outputs:   iotago.Outputs{anchor},
+		Outputs:   iotago.Outputs{nextAnchorOutput},
 	}
 
+	// set the commitment to real inputs: required by the Stardust to prevent fake output attacks
 	inputsCommitment := inputIDs.OrderedSet(inputSet).MustCommitment()
 	copy(essence.InputsCommitment[:], inputsCommitment)
 
