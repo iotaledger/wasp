@@ -83,8 +83,10 @@ const (
 	ResultCount     = "count"
 	ResultIotas     = "iotas"
 	ResultLength    = "length"
+	ResultQuo       = "quo"
 	ResultRandom    = "random"
 	ResultRecord    = "record"
+	ResultRemainder = "remainder"
 	ResultRes       = "res"
 	ResultValue     = "value"
 	ResultValueAddr = "valueAddr"
@@ -140,6 +142,7 @@ const (
 	ViewArrayOfStringMapValue          = "arrayOfStringMapValue"
 	ViewBigIntAdd                      = "bigIntAdd"
 	ViewBigIntDiv                      = "bigIntDiv"
+	ViewBigIntDivMod                   = "bigIntDivMod"
 	ViewBigIntMod                      = "bigIntMod"
 	ViewBigIntMul                      = "bigIntMul"
 	ViewBigIntShl                      = "bigIntShl"
@@ -204,6 +207,7 @@ const (
 	HViewArrayOfStringMapValue          = wasmtypes.ScHname(0x8b35543c)
 	HViewBigIntAdd                      = wasmtypes.ScHname(0x2b2c5e52)
 	HViewBigIntDiv                      = wasmtypes.ScHname(0x84b2dadd)
+	HViewBigIntDivMod                   = wasmtypes.ScHname(0x0bcaf323)
 	HViewBigIntMod                      = wasmtypes.ScHname(0x4bbefd01)
 	HViewBigIntMul                      = wasmtypes.ScHname(0x976cc699)
 	HViewBigIntShl                      = wasmtypes.ScHname(0x64677f67)

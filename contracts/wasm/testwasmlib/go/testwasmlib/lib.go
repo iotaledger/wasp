@@ -48,6 +48,7 @@ var exportMap = wasmlib.ScExportMap{
 		ViewArrayOfStringMapValue,
 		ViewBigIntAdd,
 		ViewBigIntDiv,
+		ViewBigIntDivMod,
 		ViewBigIntMod,
 		ViewBigIntMul,
 		ViewBigIntShl,
@@ -113,6 +114,7 @@ var exportMap = wasmlib.ScExportMap{
 		viewArrayOfStringMapValueThunk,
 		viewBigIntAddThunk,
 		viewBigIntDivThunk,
+		viewBigIntDivModThunk,
 		viewBigIntModThunk,
 		viewBigIntMulThunk,
 		viewBigIntShlThunk,
@@ -946,6 +948,33 @@ func viewBigIntDivThunk(ctx wasmlib.ScViewContext) {
 	viewBigIntDiv(ctx, f)
 	ctx.Results(results)
 	ctx.Log("testwasmlib.viewBigIntDiv ok")
+}
+
+type BigIntDivModContext struct {
+	Params  ImmutableBigIntDivModParams
+	Results MutableBigIntDivModResults
+	State   ImmutableTestWasmLibState
+}
+
+func viewBigIntDivModThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testwasmlib.viewBigIntDivMod")
+	results := wasmlib.NewScDict()
+	f := &BigIntDivModContext{
+		Params: ImmutableBigIntDivModParams{
+			proxy: wasmlib.NewParamsProxy(),
+		},
+		Results: MutableBigIntDivModResults{
+			proxy: results.AsProxy(),
+		},
+		State: ImmutableTestWasmLibState{
+			proxy: wasmlib.NewStateProxy(),
+		},
+	}
+	ctx.Require(f.Params.Lhs().Exists(), "missing mandatory lhs")
+	ctx.Require(f.Params.Rhs().Exists(), "missing mandatory rhs")
+	viewBigIntDivMod(ctx, f)
+	ctx.Results(results)
+	ctx.Log("testwasmlib.viewBigIntDivMod ok")
 }
 
 type BigIntModContext struct {

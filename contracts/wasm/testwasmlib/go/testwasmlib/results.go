@@ -202,6 +202,30 @@ func (s MutableBigIntDivResults) Res() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRes))
 }
 
+type ImmutableBigIntDivModResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntDivModResults) Quo() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultQuo))
+}
+
+func (s ImmutableBigIntDivModResults) Remainder() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultRemainder))
+}
+
+type MutableBigIntDivModResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntDivModResults) Quo() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultQuo))
+}
+
+func (s MutableBigIntDivModResults) Remainder() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultRemainder))
+}
+
 type ImmutableBigIntModResults struct {
 	proxy wasmtypes.Proxy
 }
