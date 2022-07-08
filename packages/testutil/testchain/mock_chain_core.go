@@ -86,7 +86,7 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 		onTimerTick:         func(tick int) { t.Fatalf("Receiving timer tick not implemented: index=%v", tick) },
 	}
 	ret.onEventStateTransition = func(msg *chain.ChainTransitionEventData) {
-		chain.LogStateTransition(msg, nil, log)
+		chain.LogStateTransition(msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), state.RootCommitment(msg.VirtualState.TrieNodeStore()), nil, log)
 	}
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.ChainTransitionEventData) {
 		ret.onEventStateTransition(data)
