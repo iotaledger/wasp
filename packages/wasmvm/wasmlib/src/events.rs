@@ -23,8 +23,9 @@ impl EventEncoder {
     }
 
     pub fn encode(&mut self, value: &str) -> &EventEncoder {
-        let mut replaced_value = str::replace(value, "\\", "\\\\");
-        replaced_value = str::replace(&replaced_value, "|", "\\/");
+        let mut replaced_value = str::replace(value, "~", "~~");
+        replaced_value = str::replace(&replaced_value, "|", "~/");
+        replaced_value = str::replace(&replaced_value, " ", "~_");
         self.event += "|";
         self.event += &replaced_value;
         self

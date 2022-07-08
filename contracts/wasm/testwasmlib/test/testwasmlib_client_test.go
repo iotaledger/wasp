@@ -71,8 +71,9 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 func TestClientEvents(t *testing.T) {
 	svc := setupClient(t)
 	events := &testwasmlib.TestWasmLibEventHandlers{}
+	name := ""
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-		fmt.Printf("Name is %s\n", e.Name)
+		name = e.Name
 	})
 	svc.Register(events)
 
@@ -85,6 +86,7 @@ func TestClientEvents(t *testing.T) {
 
 	err := svc.WaitRequest()
 	require.NoError(t, err)
+	require.EqualValues(t, "Lala", name)
 
 	// get new triggerEvent interface, pass params, and post the request
 	f = testwasmlib.ScFuncs.TriggerEvent(svc)
@@ -92,9 +94,43 @@ func TestClientEvents(t *testing.T) {
 	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
+	require.EqualValues(t, "Trala", name)
 
 	err = svc.WaitRequest()
 	require.NoError(t, err)
+
+	// get new triggerEvent interface, pass params containing a vertical bar, and post the request
+	f = testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Bar|Bar")
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+
+	err = svc.WaitRequest()
+	require.NoError(t, err)
+	require.EqualValues(t, "Bar|Bar", name)
+
+	// get new triggerEvent interface, pass params containing a backslash, and post the request
+	f = testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Tilde~Tilde")
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+
+	err = svc.WaitRequest()
+	require.NoError(t, err)
+	require.EqualValues(t, "Tilde~Tilde", name)
+
+	// get new triggerEvent interface, pass params containing 'escaped' characters, and post the request
+	f = testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue("Tilde~~ Bar~/ Space~_")
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+
+	err = svc.WaitRequest()
+	require.NoError(t, err)
+	require.EqualValues(t, "Tilde~~ Bar~/ Space~_", name)
 }
 
 func TestClientRandom(t *testing.T) {

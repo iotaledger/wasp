@@ -24,8 +24,9 @@ func (e *EventEncoder) Emit() {
 }
 
 func (e *EventEncoder) Encode(value string) {
-	value = strings.ReplaceAll(value, "\\", "\\\\")
-	value = strings.ReplaceAll(value, "|", "\\/")
+	value = strings.ReplaceAll(value, "~", "~~")
+	value = strings.ReplaceAll(value, "|", "~/")
+	value = strings.ReplaceAll(value, " ", "~_")
 	e.event += "|" + value
 }
 
