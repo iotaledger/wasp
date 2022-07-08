@@ -140,7 +140,7 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 		if msgStateIndex != 0 && isRotation {
 			c.processChainTransition(&chain.ChainTransitionEventData{
 				IsGovernance:    true,
-				VirtualState:    nil, // governance transition doesn't produce a new virtual state
+				VirtualState:    nil, // governance rotation doesn't produce a new virtual state
 				ChainOutput:     msg,
 				OutputTimestamp: time.Now(),
 			})
