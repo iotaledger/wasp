@@ -77,60 +77,25 @@ func TestClientEvents(t *testing.T) {
 	})
 	svc.Register(events)
 
+	testClientEventsParam(t, svc, "Lala", &name)
+	testClientEventsParam(t, svc, "Trala", &name)
+	testClientEventsParam(t, svc, "Bar|Bar", &name)
+	testClientEventsParam(t, svc, "Bar~|~Bar", &name)
+	testClientEventsParam(t, svc, "Tilde~Tilde", &name)
+	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", &name)
+}
+
+func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, param string, name *string) {
 	// get new triggerEvent interface, pass params, and post the request
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Lala")
+	f.Params.Name().SetValue(param)
 	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
 	err := svc.WaitRequest()
 	require.NoError(t, err)
-	require.EqualValues(t, "Lala", name)
-
-	// get new triggerEvent interface, pass params, and post the request
-	f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Trala")
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, "Trala", name)
-
-	err = svc.WaitRequest()
-	require.NoError(t, err)
-
-	// get new triggerEvent interface, pass params containing a vertical bar, and post the request
-	f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Bar|Bar")
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-
-	err = svc.WaitRequest()
-	require.NoError(t, err)
-	require.EqualValues(t, "Bar|Bar", name)
-
-	// get new triggerEvent interface, pass params containing a backslash, and post the request
-	f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Tilde~Tilde")
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-
-	err = svc.WaitRequest()
-	require.NoError(t, err)
-	require.EqualValues(t, "Tilde~Tilde", name)
-
-	// get new triggerEvent interface, pass params containing 'escaped' characters, and post the request
-	f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Tilde~~ Bar~/ Space~_")
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-
-	err = svc.WaitRequest()
-	require.NoError(t, err)
-	require.EqualValues(t, "Tilde~~ Bar~/ Space~_", name)
+	require.EqualValues(t, param, *name)
 }
 
 func TestClientRandom(t *testing.T) {
