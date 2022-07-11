@@ -98,6 +98,11 @@ module.exports = {
                             label: 'Governance',
                             id: 'guide/core_concepts/core_contracts/governance',
                         },
+                        {
+                            type: 'doc',
+                            label: 'Errors',
+                            id: 'guide/core_concepts/core_contracts/errors',
+                        },
                     ],
                 },
                 {

@@ -25,6 +25,8 @@ The `root` contract provides the following functions:
 
 - The contract registry keeps a list of contract records, which contain their respective name, hname, description and creator.
 
+---
+
 ## Entry Points
 
 The following are the functions/entry points of the `root` contract. Some of
@@ -66,6 +68,8 @@ The chain owner revokes deploy permission from an agent ID.
 - enabled: true | false - whether permissions should be required to deploy a contract on the chain.
 
 By default permissions are enabled (addresses need to be granted the right to deploy), but the chain owner can override this setting to allow anyone to deploy contracts on the chain.
+
+---
 
 ## Views
 
