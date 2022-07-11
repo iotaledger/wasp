@@ -229,7 +229,7 @@ func TestAccessNodesMany(t *testing.T) {
 	const numValidatorNodes = 6
 	const requestsCountInitial = 2
 	const requestsCountProgression = 2
-	const iterationCount = 9
+	const iterationCount = 8
 
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
@@ -253,7 +253,7 @@ func TestAccessNodesMany(t *testing.T) {
 	}
 	e.printBlocks(
 		posted + // The actual SC requests.
-			3 + // ???
+			4 + // ???
 			clusterSize, // GOV: Access Node Applications.
 	)
 }
