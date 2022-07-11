@@ -33,39 +33,38 @@ The following are the functions/entry points of the `root` contract. Some of
 them may require authorisation, i.e. can only be invoked by a specific caller,
 for example the _chain owner_.
 
-### init
+### `init()`
 
 The constructor. Automatically posted to the chain immediately after confirmation of the origin transaction, as the first call.
 
-* Initializes base values of the chain according to parameters
-* Sets the caller as the _chain owner_
-* Sets chain fee color (default is _IOTA color_)
-* Deploys all core contracts. The core contracts become part of the immutable state.
+- Initializes base values of the chain according to parameters
+- Sets the caller as the _chain owner_
+- Sets chain fee color (default is _IOTA color_)
+- Deploys all core contracts. The core contracts become part of the immutable state.
   It makes them callable just like any other smart contract deployed on the chain.
 
-### deployContract
+Cannot be called again, after the chain has been initialized.
 
-Deploys a smart contract on the chain, if the caller has deploy permission. 
+### `deployContract(ph ProgramHash, ds Description, nm Name)`
 
-#### Parameters
+Deploys a WASM smart contract on the chain, if the caller has deploy permission.
+It expects the following parameters:
 
-* Hash of the _blob_ with the binary of the program and VM type
-* Name of the instance. This is later used in the hashed form of _hname_
-* Description of the instance
+- `ph` the hash of the binary _blob_ (that has been previously stored in the [blob contract](blob.md)),
+- `ds` description of the contract to be deployed,
+- `nm` the name of the contract to be deployed. This is later used in the hashed form of _hname_.
 
-### grantDeployPermission
+### `grantDeployPermission(dp AgentID)`
 
-The chain owner grants deploy permission to an agent ID.
+The chain owner grants deploy permission to the agent ID `dp`.
 
-### revokeDeployPermission
+### `revokeDeployPermission(dp AgentID)`
 
-The chain owner revokes deploy permission from an agent ID.
+The chain owner revokes the deploy permission of the agent ID `dp`.
 
-### requireDeployPermissions
+### `requireDeployPermissions(de DeployPermissionsEnabled)`
 
-#### Parameters
-
-- enabled: true | false - whether permissions should be required to deploy a contract on the chain.
+- `de`: true | false - whether permissions should be required to deploy a contract on the chain.
 
 By default permissions are enabled (addresses need to be granted the right to deploy), but the chain owner can override this setting to allow anyone to deploy contracts on the chain.
 
@@ -76,9 +75,9 @@ By default permissions are enabled (addresses need to be granted the right to de
 Can be called directly. Calling a view does not modify the state of the smart
 contract.
 
-###  findContract
+### `findContract(hn Hname)`
 
-Returns the record for a given smart contract (if it exists).
+Returns the record for a given smart contract with Hname `hn` (if it exists).
 
 ### getContractRecords
 
