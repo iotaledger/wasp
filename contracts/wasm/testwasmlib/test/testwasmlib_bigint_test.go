@@ -4,6 +4,7 @@
 package test
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
@@ -13,16 +14,18 @@ import (
 )
 
 const (
-	ExhaustiveLimit = 2048
-	ExtremeLimit    = 66666
-	LogOp           = true
-	SkipWasm        = false
-	TestExhaustive  = false
-	TestExtreme     = false
-	UpperLimit      = 1_000_000_000
+	ExhaustiveLimit  = 2048
+	ExtremeLimit     = 66666
+	LogOp            = true
+	SkipWasm         = false
+	TestExhaustive   = false
+	TestExtreme      = false
+	TestRandomValues = false
+	UpperLimit       = 1_000_000_000
 )
 
 func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
+	//*wasmsolo.TsWasm = true
 	if SkipWasm {
 		return nil
 	}
@@ -30,6 +33,11 @@ func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
 }
 
 func testLoop(bigOp64 func(lhs, rhs uint64)) {
+	if TestRandomValues {
+		for i := 0; i <= ExhaustiveLimit; i++ {
+			bigOp64(rand.Uint64(), rand.Uint64()&0xffff|0xff00)
+		}
+	}
 	if TestExhaustive {
 		for lhs := 0; lhs <= ExhaustiveLimit; lhs++ {
 			for rhs := 1; rhs <= lhs; rhs++ {
@@ -114,17 +122,29 @@ func TestBigDivMod(t *testing.T) {
 
 	bigDivMod64(t, ctx, 536870911, 511)
 
-	quo, remainder := bigDivMod(t, ctx, wasmtypes.NewScBigInt(), wasmtypes.NewScBigInt(1))
+	quo, rem := bigDivMod(t, ctx, wasmtypes.NewScBigInt(), wasmtypes.NewScBigInt(1))
 	require.True(t, quo.IsZero())
 	require.EqualValues(t, "0", quo.String())
-	require.EqualValues(t, "0", remainder.String())
-	quo, remainder = bigDivMod(t, ctx, wasmtypes.NewScBigInt(1), wasmtypes.NewScBigInt(1))
+	require.True(t, rem.IsZero())
+	require.EqualValues(t, "0", rem.String())
+
+	quo, rem = bigDivMod(t, ctx, wasmtypes.NewScBigInt(1), wasmtypes.NewScBigInt(1))
 	require.False(t, quo.IsZero())
 	require.EqualValues(t, "1", quo.String())
-	require.True(t, remainder.IsZero())
-	require.EqualValues(t, "0", remainder.String())
+	require.True(t, rem.IsZero())
+	require.EqualValues(t, "0", rem.String())
+
+	testBigDivModString(t, ctx, "0", "1", "0", "0")
+	testBigDivModString(t, ctx, "1", "1", "1", "0")
+	// testBigDivModString(t, ctx, "123456789012345678901234567", "63531", "1943252727209483227105", "26812")
 
 	testLoop(func(lhs, rhs uint64) { bigDivMod64(t, ctx, lhs, rhs) })
+}
+
+func testBigDivModString(t *testing.T, ctx *wasmsolo.SoloContext, num, denom, quo, rem string) {
+	quotient, remainder := bigDivMod(t, ctx, wasmtypes.BigIntFromString(num), wasmtypes.BigIntFromString(denom))
+	require.EqualValues(t, quo, quotient.String())
+	require.EqualValues(t, rem, remainder.String())
 }
 
 func TestBigMod(t *testing.T) {

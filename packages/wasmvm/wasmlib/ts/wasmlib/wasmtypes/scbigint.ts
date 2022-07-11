@@ -113,8 +113,8 @@ export class ScBigInt {
         let rhsLen = rhs.bytes.length;
         let byte1 = rhs.bytes[rhsLen - 1];
         let byte2 = rhs.bytes[rhsLen - 2];
-        let word = byte1 << 8 + byte2;
-        let shift = 0;
+        let word = (byte1 as u16) << 8 + (byte2 as u16);
+        let shift: u32 = 0;
         for (; (word & 0x8000) == 0; word <<= 1) {
             shift++;
         }
@@ -124,8 +124,7 @@ export class ScBigInt {
 
         // now chop off LSBs on both sides such that only MSB of divisor remains
         numerator.bytes = numerator.bytes.slice(rhsLen - 1);
-        let words: u8[] = [word >> 8];
-        let divisor = ScBigInt.normalize(words);
+        let divisor = ScBigInt.normalize([(word >> 8) as u8]);
 
         // now we can use simple division by one byte to get a quotient estimate
         // at worst case this will be 1 or 2 higher than the actual value
@@ -143,7 +142,7 @@ export class ScBigInt {
         }
 
         // now that we found the actual quotient, the remainder is easy to calculate
-        return [quotient, this.sub(product)] as ScBigInt[];
+        return [quotient, this.sub(product)];
     }
 
     private divModSimple(value: u8): ScBigInt[] {
