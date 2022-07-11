@@ -95,6 +95,11 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 
 	err := svc.WaitRequest()
 	require.NoError(t, err)
+
+	// make sure we wait for the event to show up
+	err = svc.WaitEvent()
+	require.NoError(t, err)
+
 	require.EqualValues(t, param, *name)
 }
 
