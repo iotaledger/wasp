@@ -251,8 +251,11 @@ func HasEnoughForAllowance(state kv.KVStoreReader, agentID iscp.AgentID, allowan
 
 // enoughForAllowance checkes whether an account has enough balance to cover for the allowance
 func hasEnoughForAllowance(account *collections.ImmutableMap, allowance *iscp.Allowance) bool {
-	if allowance == nil {
+	if allowance == nil || allowance.IsEmpty() {
 		return true
+	}
+	if account.MustLen() == 0 {
+		return false
 	}
 	// check base token
 	if allowance.Assets != nil {

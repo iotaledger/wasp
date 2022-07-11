@@ -100,7 +100,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 
 func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
 	node.ChainCore.OnStateTransition(func(msg *chain.ChainTransitionEventData) {
-		chain.LogStateTransition(msg, nil, node.Log)
+		chain.LogStateTransition(msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), state.RootCommitment(msg.VirtualState.TrieNodeStore()), nil, node.Log)
 		if msg.ChainOutput.GetStateIndex() < limit {
 			go node.NextState(msg.VirtualState, msg.ChainOutput)
 		}
