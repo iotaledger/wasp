@@ -16,7 +16,6 @@ var Processor = Contract.Processor(initialize,
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
 	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
-	ViewGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
 	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
@@ -62,16 +61,8 @@ func viewGetBlockInfo(ctx iscp.SandboxView) dict.Dict {
 	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
-	return dict.Dict{ParamBlockInfo: data}
-}
-
-func viewGetLatestBlockInfo(ctx iscp.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
-	regLen := registry.MustLen()
-	ctx.Requiref(regLen != 0, "blocklog::viewGetLatestBlockInfo: empty log")
-	data := registry.MustGetAt(regLen - 1)
 	return dict.Dict{
-		ParamBlockIndex: codec.EncodeUint32(regLen - 1),
+		ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		ParamBlockInfo:  data,
 	}
 }

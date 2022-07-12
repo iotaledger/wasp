@@ -329,7 +329,7 @@ func (ch *Chain) CommonAccount() iscp.AgentID {
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name)
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
@@ -355,16 +355,23 @@ func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 }
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
-func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name,
-		blocklog.ParamBlockIndex, blockIndex)
+func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error) {
+	var ret dict.Dict
+	var err error
+	if len(blockIndex) > 0 {
+		ret, err = ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name,
+			blocklog.ParamBlockIndex, blockIndex[0])
+	} else {
+		ret, err = ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
+	}
 	if err != nil {
 		return nil, err
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+	blockIndexRet := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndexRet, blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo, nil
 }

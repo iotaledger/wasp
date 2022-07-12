@@ -6,11 +6,8 @@ import (
 
 var Contract = coreutil.NewContract(coreutil.CoreContractErrors, "Errors contract")
 
-//nolint:deadcode,varcheck // prefixBlockRegistry and prefixControlAddresses are not used, can those be removed?
 const (
-	prefixBlockRegistry = string('a' + iota)
-	prefixControlAddresses
-	prefixErrorTemplateMap
+	prefixErrorTemplateMap = "a"
 )
 
 var (

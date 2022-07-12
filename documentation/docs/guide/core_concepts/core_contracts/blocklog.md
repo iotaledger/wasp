@@ -20,6 +20,48 @@ requests that were processed by the chain.
 
 It provides views to get request status or receipts, block information, or events (per request / block / smart contract).
 
+---
+
+## Block Information
+
+```go
+ BlockIndex                uint32
+ Timestamp                 Time
+ TotalRequests             uint16
+ NumSuccessfulRequests     uint16
+ NumOffLedgerRequests      uint16
+ PreviousL1Commitment      Hash
+ L1Commitment              Hash     
+ AnchorTransactionID       TransactionID  
+ TransactionSubEssenceHash Hash
+ TotalIotasInL2Accounts    uint64
+ TotalDustDeposit          uint64
+ GasBurned                 uint64
+ GasFeeCharged             uint64
+```
+
+---
+
+## Request Receipt
+
+```go
+ Request       ISC Request
+ Error         Unresolved VM Error 
+ GasBudget     uint64                  
+ GasBurned     uint64                  
+ GasFeeCharged uint64                  
+ BlockIndex   uint32       
+ RequestIndex uint16       
+```
+
+:::note
+Errors on receipts queried directly from blocklog are not humanly readable.
+
+Those errors need to be translated using // TODO add link
+:::
+
+---
+
 ## Entry Points
 
 The `blocklog` core contract does not contain any entry points which modify its
@@ -28,41 +70,42 @@ state.
 The only way to modify the `blocklog` state is by submitting requests for
 processing to the chain.
 
+---
+
 ## Views
 
-### viewGetBlockInfo
+### - `getBlockInfo(n BlockIndex)`
 
-Returns the data of the block in the chain with specified index.
+Returns information about the block with index `n`. If `n` is not provided, it defaults to the current (latest) block.
 
-### viewGetLatestBlockInfo
+### - `getRequestIDsForBlock(n BlockIndex)`
 
-Returns the index and data of the latest block in the chain.
+Returns a list with the IDs of all requests in the block with block index `n`.
 
-### viewGetRequestLogRecord
+### - `getRequestReceipt(u RequestID)`
 
-Returns the data, block index, and request index of the specified request.
+Returns the receipt for a request with ID `u`.
 
-### viewGetRequestLogRecordsForBlock
+### - `getRequestReceiptsForBlock(n BlockIndex)`
 
-Returns the data, block index, and request index of all requests in the block with the specified block index.
+Returns all the receipt for the block with index `n`.
 
-### viewGetRequestIDsForBlock
+### - `isRequestProcessed(u RequestID)`
 
-Returns the IDs of all requests in the block with the specified block index.
+Returns whether a request with ID `u` has been processed.
 
-### viewIsRequestProcessed
+### - `getEventsForRequest(u RequestID)`
 
-Returns whether a request with specified ID has been processed.
+Returns a list of events for a request with ID `u`.
 
-### viewGetEventsForRequest
+### - `getEventsForBlock(n blockIndex)`
 
-Returns a list of events for a given request.
+Returns a list of events for a block with index `n`.
 
-### viewGetEventsForBlock
+### - `getEventsForContract(h Hname)`
 
-Returns a list of events for a given block.
-  
-### viewGetEventsForContract
+Returns a list of events for a smart contract with hname `h`.
 
-Returns a list of events for a given smart contract.
-  
+### `controlAddresses()`
+
+Returns the current "State Controller", "Governing Address" and at what BlockIndex those were set.

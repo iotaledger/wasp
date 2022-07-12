@@ -56,7 +56,7 @@ export class GetLatestBlockInfoCall {
 	func: wasmlib.ScView;
 	results: sc.ImmutableGetLatestBlockInfoResults = new sc.ImmutableGetLatestBlockInfoResults(wasmlib.ScView.nilProxy);
 	public constructor(ctx: wasmlib.ScViewCallContext) {
-		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetLatestBlockInfo);
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetBlockInfo);
 	}
 }
 
