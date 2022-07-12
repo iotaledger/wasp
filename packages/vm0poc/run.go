@@ -184,9 +184,9 @@ func (vmctx *VMContext) closeVMContext() (*iotago.TransactionEssence, []byte) {
 	if err != nil {
 		panic(err)
 	}
-	// recalculate the trie, so that to have root commitment corresponding to the updated state
-	// Note: this step does not save anything, only loads necessary part of the trie from DB to
-	// the buffer and updates nodes
+	// recalculate the trie, in order to have the root commitment corresponding to the updated state
+	// Note: this step does not save anything, only loads necessary nodes of the trie from DB to
+	// the buffer and updates commitments in the nodes
 	vmctx.virtualState.Commit()
 	// take the root commitment of the updated state (not saved yet)
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())

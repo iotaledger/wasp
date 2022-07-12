@@ -31,7 +31,11 @@ func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
+	var err *iscp.UnresolvedVMError
+	if !ch.bypassStardustVM {
+		err = res.Receipt.Error
+	}
+	return res.Return, ch.ResolveVMError(err).AsGoError()
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
