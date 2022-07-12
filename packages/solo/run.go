@@ -33,6 +33,7 @@ func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 	res := results[0]
 	var err *iscp.UnresolvedVMError
 	if !ch.bypassStardustVM {
+		// bypass if VM does not implement receipts
 		err = res.Receipt.Error
 	}
 	return res.Return, ch.ResolveVMError(err).AsGoError()
