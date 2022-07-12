@@ -331,7 +331,7 @@ func (ch *Chain) CommonAccount() iscp.AgentID {
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ch.mustStardustVM()
 
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetLatestBlockInfo.Name)
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
@@ -357,16 +357,23 @@ func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
 }
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
-func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name,
-		blocklog.ParamBlockIndex, blockIndex)
+func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error) {
+	var ret dict.Dict
+	var err error
+	if len(blockIndex) > 0 {
+		ret, err = ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name,
+			blocklog.ParamBlockIndex, blockIndex[0])
+	} else {
+		ret, err = ch.CallView(blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name)
+	}
 	if err != nil {
 		return nil, err
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+	blockIndexRet := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 
-	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndexRet, blockInfoBin)
 	require.NoError(ch.Env.T, err)
 	return blockInfo, nil
 }
@@ -530,11 +537,11 @@ func (ch *Chain) RotateStateController(newStateAddr iotago.Address, newStateKeyP
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithMaxAffordableGasBudget()
 	result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	if result.Error == nil {
+	if result.Receipt.Error == nil {
 		ch.StateControllerAddress = newStateAddr
 		ch.StateControllerKeyPair = newStateKeyPair
 	}
-	return result.Error
+	return ch.ResolveVMError(result.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {

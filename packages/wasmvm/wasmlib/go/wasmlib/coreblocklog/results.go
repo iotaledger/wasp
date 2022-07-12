@@ -52,6 +52,10 @@ func (s ImmutableGetBlockInfoResults) BlockInfo() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBlockInfo))
 }
 
+func (s ImmutableGetBlockInfoResults) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
+}
+
 type MutableGetBlockInfoResults struct {
 	proxy wasmtypes.Proxy
 }
@@ -148,26 +152,6 @@ func (s MutableGetEventsForRequestResults) Event() ArrayOfMutableBytes {
 
 type ImmutableGetLatestBlockInfoResults struct {
 	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetLatestBlockInfoResults) BlockIndex() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
-}
-
-func (s ImmutableGetLatestBlockInfoResults) BlockInfo() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBlockInfo))
-}
-
-type MutableGetLatestBlockInfoResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetLatestBlockInfoResults) BlockIndex() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
-}
-
-func (s MutableGetLatestBlockInfoResults) BlockInfo() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBlockInfo))
 }
 
 type ArrayOfImmutableRequestID struct {

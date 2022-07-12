@@ -299,7 +299,6 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	}
 	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
-	require.NoError(env.T, err)
 
 	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
@@ -333,7 +332,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	results := ret.RunRequestsSync(initReq, "new")
 	for _, res := range results {
-		require.NoError(env.T, res.Error)
+		require.NoError(env.T, res.Receipt.Error.AsGoError())
 	}
 	ret.logRequestLastBlock()
 
@@ -469,8 +468,8 @@ func (ch *Chain) collateAndRunBatch() bool {
 	if len(batch) > 0 {
 		results := ch.runRequestsNolock(batch, "batchLoop")
 		for _, res := range results {
-			if res.Error != nil {
-				ch.log.Errorf("runRequestsSync: %v", res.Error)
+			if res.Receipt.Error != nil {
+				ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
 			}
 		}
 		return true

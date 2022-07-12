@@ -23,7 +23,9 @@ export class EventEncoder {
     }
 
     encode(value: string): void {
-        //TODO encode potential vertical bars that are present in the value string
+        value = value.replaceAll("~", "~~")
+        value = value.replaceAll("|", "~/")
+        value = value.replaceAll(" ", "~_")
         this.event += "|" + value;
     }
 }

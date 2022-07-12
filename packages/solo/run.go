@@ -5,6 +5,7 @@ package solo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -21,17 +22,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 	results := ch.RunRequestsSync([]iscp.Request{r}, "off-ledger")
 	if len(results) == 0 {
-		return nil, xerrors.Errorf("request was skipped")
+		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	return res.Return, res.Error
+	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {

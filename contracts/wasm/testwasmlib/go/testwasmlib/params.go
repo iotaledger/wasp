@@ -856,6 +856,30 @@ func (s MutableBigIntDivParams) Rhs() wasmtypes.ScMutableBigInt {
 	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamRhs))
 }
 
+type ImmutableBigIntDivModParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBigIntDivModParams) Lhs() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s ImmutableBigIntDivModParams) Rhs() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamRhs))
+}
+
+type MutableBigIntDivModParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBigIntDivModParams) Lhs() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamLhs))
+}
+
+func (s MutableBigIntDivModParams) Rhs() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamRhs))
+}
+
 type ImmutableBigIntModParams struct {
 	proxy wasmtypes.Proxy
 }

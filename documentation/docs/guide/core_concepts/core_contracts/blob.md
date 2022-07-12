@@ -61,11 +61,13 @@ immutable data of a smart contract program:
 "s" : program sources in .zip format
 ```
 
+---
+
 ## Entry Points
 
 There is only one full entry point which allows us to submit a _blob_ to the `blob` contract:
 
-### storeBlob
+### - `storeBlob()`
 
 In the current implementation the data of the _blob_ is passed
 as parameters to the call of the entry point. It may be practically impossible
@@ -73,9 +75,11 @@ to submit very large _blobs_ to the chain. In the future we plan to implement
 a special mechanism which allows for the nodes to download big data chunks as
 part of the committee consensus.
 
+---
+
 ## Views
 
-### getBlobInfo
+### - `getBlobInfo(hash BlobHash)`
 
 Returns information about fields of the blob with specific hash and sizes of its data chunks:
 
@@ -85,11 +89,11 @@ Returns information about fields of the blob with specific hash and sizes of its
 <fieldNameN>: <size of the dataChunkN>
 ```
 
-### getBlobField
+### - `getBlobField(hash BlobHash, field BlobField)`
 
 Returns the data of the specified _blob_ field.
 
-### listBlobs
+### -`listBlobs()`
 
 Returns a list of pairs `blob hash`: `total size of chunks` for all blobs in the registry.
   

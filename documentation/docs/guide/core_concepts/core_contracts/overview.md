@@ -32,3 +32,5 @@ provide infrastructure for all other smart contracts:
 - [__blocklog__](blocklog.md): Keeps track of the blocks and receipts of requests which were processed by the chain. It also contains all events emitted by smart contracts.
 
 - [__governance__](governance.md): Handles the administrative functions of the chain. For example: rotation of the committee of validators of the chain, fees and other chain-specific configurations.
+
+- [__errors__](errors.md): Keeps a map of error codes to error messages templates. These error codes are used in request receipts.

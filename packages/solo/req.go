@@ -347,7 +347,7 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 	if err != nil {
 		return tx, res, err
 	}
-	return tx, res, receipt.Error.AsGoError()
+	return tx, res, ch.ResolveVMError(receipt.Error).AsGoError()
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
@@ -408,7 +408,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 		return nil, nil, nil, xerrors.New("request has been skipped")
 	}
 	res := results[0]
-	return tx, res.Receipt, res.Return, res.Error
+	return tx, res.Receipt, res.Return, nil
 }
 
 // EstimateGasOnLedger executes the given on-ledger request without committing

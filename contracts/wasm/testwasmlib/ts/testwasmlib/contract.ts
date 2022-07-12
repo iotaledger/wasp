@@ -507,6 +507,21 @@ export class BigIntDivContext {
 	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
 }
 
+export class BigIntDivModCall {
+	func: wasmlib.ScView;
+	params: sc.MutableBigIntDivModParams = new sc.MutableBigIntDivModParams(wasmlib.ScView.nilProxy);
+	results: sc.ImmutableBigIntDivModResults = new sc.ImmutableBigIntDivModResults(wasmlib.ScView.nilProxy);
+	public constructor(ctx: wasmlib.ScViewCallContext) {
+		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBigIntDivMod);
+	}
+}
+
+export class BigIntDivModContext {
+	params: sc.ImmutableBigIntDivModParams = new sc.ImmutableBigIntDivModParams(wasmlib.paramsProxy());
+	results: sc.MutableBigIntDivModResults = new sc.MutableBigIntDivModResults(wasmlib.ScView.nilProxy);
+	state: sc.ImmutableTestWasmLibState = new sc.ImmutableTestWasmLibState(wasmlib.ScState.proxy());
+}
+
 export class BigIntModCall {
 	func: wasmlib.ScView;
 	params: sc.MutableBigIntModParams = new sc.MutableBigIntModParams(wasmlib.ScView.nilProxy);
@@ -1061,6 +1076,13 @@ export class ScFuncs {
 		const f = new BigIntDivCall(ctx);
 		f.params = new sc.MutableBigIntDivParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableBigIntDivResults(wasmlib.newCallResultsProxy(f.func));
+		return f;
+	}
+
+	static bigIntDivMod(ctx: wasmlib.ScViewCallContext): BigIntDivModCall {
+		const f = new BigIntDivModCall(ctx);
+		f.params = new sc.MutableBigIntDivModParams(wasmlib.newCallParamsProxy(f.func));
+		f.results = new sc.ImmutableBigIntDivModResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

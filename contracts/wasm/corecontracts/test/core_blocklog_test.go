@@ -75,8 +75,9 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	expectBlockInfo := ctx.Chain.GetLatestBlockInfo()
-	f := coreblocklog.ScFuncs.GetLatestBlockInfo(ctx)
+	expectBlockInfo, err := ctx.Chain.GetBlockInfo()
+	require.NoError(t, err)
+	f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	index := f.Results.BlockIndex().Value()

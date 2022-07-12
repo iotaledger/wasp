@@ -243,29 +243,36 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 // processChainTransition processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
-	stateIndex := msg.VirtualState.BlockIndex()
+	if !msg.IsGovernance {
+		// save last received from normal state transition
+		c.lastSeenVirtualState = msg.VirtualState
+	}
+	if c.lastSeenVirtualState == nil {
+		c.log.Warnf("processChainTransition: virtual state hasn't been received yet; ignoring chain transition event")
+		return
+	}
+	stateIndex := c.lastSeenVirtualState.BlockIndex()
 	oidStr := iscp.OID(msg.ChainOutput.ID())
-	rootCommitment := state.RootCommitment(msg.VirtualState.TrieNodeStore())
+	rootCommitment := state.RootCommitment(c.lastSeenVirtualState.TrieNodeStore())
 	if msg.IsGovernance {
 		c.log.Debugf("processChainTransition: processing governance transition at state %d, output %s, state hash %s",
 			stateIndex, oidStr, rootCommitment)
-		chain.LogGovernanceTransition(msg, c.log)
+		chain.LogGovernanceTransition(stateIndex, oidStr, rootCommitment, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	} else {
 		// normal state update:
 		c.log.Debugf("processChainTransition: processing state %d transition, output %s; state hash %s; last cleaned state is %d", stateIndex, iscp.OID(msg.ChainOutput.ID()), rootCommitment, c.mempoolLastCleanedIndex)
-		c.lastSeenVirtualState = msg.VirtualState
 		c.stateReader.SetBaseline()
 		chainID := iscp.ChainIDFromAliasID(msg.ChainOutput.GetAliasID())
 		var reqids []iscp.RequestID
-		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
+		for i := c.mempoolLastCleanedIndex + 1; i <= c.lastSeenVirtualState.BlockIndex(); i++ {
 			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)
 			var err error
 			reqids, err = blocklog.GetRequestIDsForBlock(c.stateReader, i)
 			if reqids == nil {
 				// The error means a database error. The optimistic state read failure can't occur here
 				// because the state transition message is only sent only after state is committed and before consensus
-				// start new round
+				// starts new round
 				c.log.Panicf("processChainTransition. unexpected error: %v", err)
 				return // to avoid "possible nil pointer dereference" in later use of `reqids`
 			}
@@ -283,7 +290,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				stateIndex, i, iscp.ShortRequestIDs(reqids))
 		}
 		chain.PublishStateTransition(&chainID, msg.ChainOutput, len(reqids))
-		chain.LogStateTransition(msg, reqids, c.log)
+		chain.LogStateTransition(stateIndex, oidStr, rootCommitment, reqids, c.log)
 
 		c.mempoolLastCleanedIndex = stateIndex
 		c.updateChainNodes(stateIndex)
@@ -292,7 +299,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	if c.consensus == nil {
 		c.log.Warnf("processChainTransition: skipping notifying consensus as it is not initiated")
 	} else {
-		c.consensus.EnqueueStateTransitionMsg(msg.IsGovernance, msg.VirtualState, msg.ChainOutput, msg.OutputTimestamp)
+		c.consensus.EnqueueStateTransitionMsg(msg.IsGovernance, c.lastSeenVirtualState, msg.ChainOutput, msg.OutputTimestamp)
 	}
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, rootCommitment)
 }

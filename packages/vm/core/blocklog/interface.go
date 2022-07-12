@@ -20,7 +20,6 @@ const (
 var (
 	ViewControlAddresses           = coreutil.ViewFunc("controlAddresses")
 	ViewGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
-	ViewGetLatestBlockInfo         = coreutil.ViewFunc("getLatestBlockInfo")
 	ViewGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
 	ViewGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
 	ViewGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")

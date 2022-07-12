@@ -4,6 +4,7 @@
 package wasmclient
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ type WasmClientContext struct {
 	Err           error
 	eventDone     chan bool
 	eventHandlers []IEventHandler
+	eventReceived bool
 	keyPair       *cryptolib.KeyPair
 	ReqID         wasmtypes.ScRequestID
 	scName        string
@@ -100,6 +102,37 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) error {
 	return s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
+func (s *WasmClientContext) WaitEvent() error {
+	for i := 0; i < 100; i++ {
+		if s.eventReceived {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return errors.New("event wait timeout")
+}
+
+func (s *WasmClientContext) processEvent(msg []string) {
+	fmt.Printf("%s\n", strings.Join(msg, " "))
+
+	if msg[0] != "vmmsg" {
+		// not intended for us
+		return
+	}
+
+	s.eventReceived = true
+
+	params := strings.Split(msg[3], "|")
+	for i, param := range params {
+		params[i] = unescape(param)
+	}
+	topic := params[0]
+	params = params[1:]
+	for _, handler := range s.eventHandlers {
+		handler.CallHandler(topic, params)
+	}
+}
+
 func (s *WasmClientContext) startEventHandlers() error {
 	chMsg := make(chan []string, 20)
 	s.eventDone = make(chan bool)
@@ -109,17 +142,8 @@ func (s *WasmClientContext) startEventHandlers() error {
 	}
 	go func() {
 		for {
-			for msgSplit := range chMsg {
-				event := strings.Join(msgSplit, " ")
-				fmt.Printf("%s\n", event)
-				if msgSplit[0] == "vmmsg" {
-					msg := strings.Split(msgSplit[3], "|")
-					topic := msg[0]
-					params := msg[1:]
-					for _, handler := range s.eventHandlers {
-						handler.CallHandler(topic, params)
-					}
-				}
+			for msg := range chMsg {
+				s.processEvent(msg)
 			}
 		}
 	}()
@@ -129,5 +153,26 @@ func (s *WasmClientContext) startEventHandlers() error {
 func (s *WasmClientContext) stopEventHandlers() {
 	if len(s.eventHandlers) > 0 {
 		s.eventDone <- true
+	}
+}
+
+// note that un-escaping needs to be done in a single pass to prevent
+// occurrences of legit "\/" substrings to be turned into "|"
+func unescape(param string) string {
+	i := strings.IndexByte(param, '~')
+	if i < 0 {
+		// no escape detected, return original string
+		return param
+	}
+
+	switch param[i+1] {
+	case '~': // escaped escape character
+		return param[:i] + "~" + unescape(param[i+2:])
+	case '/': // escaped vertical bar
+		return param[:i] + "|" + unescape(param[i+2:])
+	case '_': // escaped space
+		return param[:i] + " " + unescape(param[i+2:])
+	default:
+		panic("invalid event encoding")
 	}
 }

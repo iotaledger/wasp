@@ -85,6 +85,14 @@ func (vmctx *VMContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
 	return ret
 }
 
+func (vmctx *VMContext) HasEnoughForAllowance(agentID iscp.AgentID, allowance *iscp.Allowance) bool {
+	var ret bool
+	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
+		ret = accounts.HasEnoughForAllowance(s, agentID, allowance)
+	})
+	return ret
+}
+
 func (vmctx *VMContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {

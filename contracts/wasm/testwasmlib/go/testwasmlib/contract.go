@@ -192,6 +192,12 @@ type BigIntDivCall struct {
 	Results ImmutableBigIntDivResults
 }
 
+type BigIntDivModCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBigIntDivModParams
+	Results ImmutableBigIntDivModResults
+}
+
 type BigIntModCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableBigIntModParams
@@ -539,6 +545,13 @@ func (sc Funcs) BigIntAdd(ctx wasmlib.ScViewCallContext) *BigIntAddCall {
 
 func (sc Funcs) BigIntDiv(ctx wasmlib.ScViewCallContext) *BigIntDivCall {
 	f := &BigIntDivCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntDiv)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BigIntDivMod(ctx wasmlib.ScViewCallContext) *BigIntDivModCall {
+	f := &BigIntDivModCall{Func: wasmlib.NewScView(ctx, HScName, HViewBigIntDivMod)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
 	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
 	return f

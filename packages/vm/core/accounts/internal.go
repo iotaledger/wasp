@@ -24,7 +24,6 @@ var (
 	ErrNotEnoughFunds               = coreerrors.Register("not enough funds").Create()
 	ErrNotEnoughIotasForDustDeposit = coreerrors.Register("not enough iotas for dust deposit").Create()
 	ErrNotEnoughAllowance           = coreerrors.Register("not enough allowance").Create()
-	ErrNotEnoughFundsForAllowance   = coreerrors.Register("not enough funds for allowance").Create()
 	ErrBadAmount                    = coreerrors.Register("bad native asset amount").Create()
 	ErrRepeatingFoundrySerialNumber = coreerrors.Register("repeating serial number of the foundry").Create()
 	ErrFoundryNotFound              = coreerrors.Register("foundry not found").Create()
@@ -242,6 +241,51 @@ func debitFromAccount(account *collections.Map, assets *iscp.FungibleTokens) boo
 			account.MustSetAt(id[:], m.balance.Bytes())
 		}
 	}
+	return true
+}
+
+// GetNativeTokenBalance returns balance or nil if it does not exist
+func HasEnoughForAllowance(state kv.KVStoreReader, agentID iscp.AgentID, allowance *iscp.Allowance) bool {
+	return hasEnoughForAllowance(getAccountR(state, agentID), allowance)
+}
+
+// enoughForAllowance checkes whether an account has enough balance to cover for the allowance
+func hasEnoughForAllowance(account *collections.ImmutableMap, allowance *iscp.Allowance) bool {
+	if allowance == nil || allowance.IsEmpty() {
+		return true
+	}
+	if account.MustLen() == 0 {
+		return false
+	}
+	// check base token
+	if allowance.Assets != nil {
+		accountIotas := util.MustUint64From8Bytes(account.MustGetAt(nil))
+		if accountIotas < allowance.Assets.Iotas {
+			return false
+		}
+
+		// check native tokens
+		for _, token := range allowance.Assets.Tokens {
+			v := account.MustGetAt(token.ID[:])
+			if v == nil {
+				return false
+			}
+			bal := big.NewInt(0)
+			bal.SetBytes(v)
+			if bal.Cmp(token.Amount) == -1 {
+				return false
+			}
+		}
+	}
+
+	// check NFTs
+	for _, nftID := range allowance.NFTs {
+		v := account.MustGetAt(nftID[:])
+		if v == nil {
+			return false
+		}
+	}
+
 	return true
 }
 

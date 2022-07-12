@@ -66,8 +66,6 @@ type RequestResult struct {
 	Request iscp.Request
 	// Return is the return value of the call
 	Return dict.Dict
-	// Error is the error produced by the call, if any
-	Error error
 	// Receipt is the receipt produced after executing the request
 	Receipt *blocklog.RequestReceipt
 }

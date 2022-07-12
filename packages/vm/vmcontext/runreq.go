@@ -66,13 +66,12 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (re
 			// load gas and fee policy, calculate and set gas budget
 			vmctx.prepareGasBudget()
 			// run the contract program
-			receipt, callRet, callErr := vmctx.callTheContract()
+			receipt, callRet := vmctx.callTheContract()
 			vmctx.mustCheckTransactionSize()
 			result = &vm.RequestResult{
 				Request: req,
 				Receipt: receipt,
 				Return:  callRet,
-				Error:   callErr,
 			}
 		}, vmexceptions.AllProtocolLimits...,
 	)
@@ -120,6 +119,14 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
 }
 
+// checkAllowance ensure there are enough funds to cover the specified allowance
+// panics if not enough funds
+func (vmctx *VMContext) checkAllowance() {
+	if !vmctx.HasEnoughForAllowance(vmctx.req.SenderAccount(), vmctx.req.Allowance()) {
+		panic(vm.ErrNotEnoughFundsForAllowance)
+	}
+}
+
 func (vmctx *VMContext) prepareGasBudget() {
 	if vmctx.req.SenderAccount() == nil {
 		return
@@ -133,13 +140,14 @@ func (vmctx *VMContext) prepareGasBudget() {
 }
 
 // callTheContract runs the contract. It catches and processes all panics except the one which cancel the whole block
-func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict, callErr error) {
+func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, callRet dict.Dict) {
 	vmctx.txsnapshot = vmctx.createTxBuilderSnapshot()
 	snapMutations := vmctx.currentStateUpdate.Clone()
 
 	if vmctx.req.IsOffLedger() {
 		vmctx.updateOffLedgerRequestMaxAssumedNonce()
 	}
+	var callErr error
 	func() {
 		defer func() {
 			panicErr := vmctx.checkVMPluginPanic(recover())
@@ -150,6 +158,9 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
 			vmctx.Debugf(string(debug.Stack()))
 		}()
+		// ensure there are enough funds to cover the specified allowance
+		vmctx.checkAllowance()
+
 		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
@@ -165,7 +176,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	vmctx.chargeGasFee()
 	// write receipt no matter what
 	receipt = vmctx.writeReceiptToBlockLog(callErr)
-	return receipt, callRet, callErr
+	return receipt, callRet
 }
 
 func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {

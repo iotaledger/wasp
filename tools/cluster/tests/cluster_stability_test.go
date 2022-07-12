@@ -94,7 +94,7 @@ func (e *SabotageEnv) sabotageNodes(sabotageOption SabotageOption, startDelay, i
 			var err error
 
 			if sabotageOption == SabotageByKill {
-				err = e.chainEnv.Clu.KillNode(nodeID)
+				err = e.chainEnv.Clu.KillNodeProcess(nodeID)
 			} else if sabotageOption == SabotageByFreeze {
 				err = e.chainEnv.Clu.FreezeNode(nodeID)
 			}
