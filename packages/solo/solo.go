@@ -233,11 +233,11 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		bypassStardustVM = initOptions[0].BypassStardustVM
 	}
 
-	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
 	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 
 	if chainOriginator == nil {
-		chainOriginator = env.NewKeyPairFromIndex(-2)
+		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
 		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
