@@ -93,12 +93,15 @@ The parameters needed are the same as `addCandidateNode`
 
 Can only be invoked by the access node owner (verified via the Certificate field).
 
-### `changeAccessNodes()`
+### `changeAccessNodes(n actions)`
 
+Iterates through a map of actions (`n`) and applies those actions. These actions are a map of pubKey -> to a byte value, this byte value can mean different things:
 
-// TODO
+- 0 - Removes an access node from the access nodes list
+- 1 - Accept a candidate node and adds it to the list of access nodes
+- 2 - Drops an access node from the access nodes list and candidates list
 
-Can only be invoked by the chain owner (verified via the Certificate field).
+Can only be invoked by the chain owner.
 
 ### `startMaintenance()`
 

@@ -88,7 +88,9 @@ func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 		case governance.ChangeAccessNodeActionRemove:
 			accessNodes.MustDelAt(pubKey)
 		case governance.ChangeAccessNodeActionAccept:
+			// TODO should the list of candidates be checked? we are just adding any pubkey
 			accessNodes.MustSetAt(pubKey, make([]byte, 0))
+			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.MustDelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.MustDelAt(pubKey)
 			accessNodeCandidates.MustDelAt(pubKey)
