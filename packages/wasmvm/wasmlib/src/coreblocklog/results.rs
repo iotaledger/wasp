@@ -57,6 +57,10 @@ pub struct ImmutableGetBlockInfoResults {
 }
 
 impl ImmutableGetBlockInfoResults {
+    pub fn block_index(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+	}
+
     pub fn block_info(&self) -> ScImmutableBytes {
 		ScImmutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
@@ -68,6 +72,10 @@ pub struct MutableGetBlockInfoResults {
 }
 
 impl MutableGetBlockInfoResults {
+    pub fn block_index(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
+	}
+
     pub fn block_info(&self) -> ScMutableBytes {
 		ScMutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
@@ -180,36 +188,6 @@ impl MutableGetEventsForRequestResults {
     // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
 		ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableGetLatestBlockInfoResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableGetLatestBlockInfoResults {
-    pub fn block_index(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
-	}
-
-    pub fn block_info(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableGetLatestBlockInfoResults {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableGetLatestBlockInfoResults {
-    pub fn block_index(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
-	}
-
-    pub fn block_info(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(RESULT_BLOCK_INFO))
 	}
 }
 
