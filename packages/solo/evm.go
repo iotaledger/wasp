@@ -12,39 +12,43 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
 
-type JSONRPCSoloBackend struct {
-	Chain *Chain
+type jsonRPCSoloBackend struct {
+	Chain     *Chain
+	baseToken *parameters.BaseToken
 }
 
-var _ jsonrpc.ChainBackend = &JSONRPCSoloBackend{}
-
-func NewEVMBackend(chain *Chain) *JSONRPCSoloBackend {
-	return &JSONRPCSoloBackend{Chain: chain}
+func newJSONRPCSoloBackend(chain *Chain, baseToken *parameters.BaseToken) jsonrpc.ChainBackend {
+	return &jsonRPCSoloBackend{Chain: chain, baseToken: baseToken}
 }
 
-func (b *JSONRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
+func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	_, err := b.Chain.PostEthereumTransaction(tx)
 	return err
 }
 
-func (b *JSONRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return b.Chain.EstimateGasEthereum(callMsg)
 }
 
-func (b *JSONRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
+func (b *jsonRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
 	return b.Chain.CallView(scName, funName, args)
+}
+
+func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {
+	return b.baseToken
 }
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	ret, err := ch.CallView(evm.Contract.Name, evm.FuncGetChainID.Name)
 	require.NoError(ch.Env.T, err)
 	return jsonrpc.NewEVMChain(
-		NewEVMBackend(ch),
+		newJSONRPCSoloBackend(ch, parameters.L1.BaseToken),
 		evmtypes.MustDecodeChainID(ret.MustGet(evm.FieldResult)),
 	)
 }
