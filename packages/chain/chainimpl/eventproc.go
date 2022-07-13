@@ -26,7 +26,6 @@ func (c *chainObj) recvLoop() {
 	dismissChainMsgChannel := c.dismissChainMsgPipe.Out()
 	aliasOutputChannel := c.aliasOutputPipe.Out()
 	offLedgerRequestMsgChannel := c.offLedgerRequestPeerMsgPipe.Out()
-	requestAckMsgChannel := c.requestAckPeerMsgPipe.Out()
 	missingRequestIDsMsgChannel := c.missingRequestIDsPeerMsgPipe.Out()
 	missingRequestMsgChannel := c.missingRequestPeerMsgPipe.Out()
 	timerTickMsgChannel := c.timerTickMsgPipe.Out()
@@ -50,12 +49,6 @@ func (c *chainObj) recvLoop() {
 			} else {
 				offLedgerRequestMsgChannel = nil
 			}
-		case msg, ok := <-requestAckMsgChannel:
-			if ok {
-				c.handleRequestAckPeerMsg(msg.(*messages.RequestAckMsgIn))
-			} else {
-				requestAckMsgChannel = nil
-			}
 		case msg, ok := <-missingRequestIDsMsgChannel:
 			if ok {
 				c.handleMissingRequestIDsMsg(msg.(*messages.MissingRequestIDsMsgIn))
@@ -78,7 +71,6 @@ func (c *chainObj) recvLoop() {
 		if dismissChainMsgChannel == nil &&
 			aliasOutputChannel == nil &&
 			offLedgerRequestMsgChannel == nil &&
-			requestAckMsgChannel == nil &&
 			missingRequestIDsMsgChannel == nil &&
 			missingRequestMsgChannel == nil &&
 			timerTickMsgChannel == nil {
@@ -244,9 +236,17 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 	c.chainMetrics.CountMessages()
 }
 
+func (c *chainObj) addToPeersHaveReq(reqID iscp.RequestID, peer *cryptolib.PublicKey) {
+	c.offLedgerPeersHaveReqMutex.Lock()
+	if c.offLedgerPeersHaveReq[reqID] == nil {
+		c.offLedgerPeersHaveReq[reqID] = make(map[*cryptolib.PublicKey]bool)
+	}
+	c.offLedgerPeersHaveReq[reqID][peer] = true
+	c.offLedgerPeersHaveReqMutex.Unlock()
+}
+
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.AsString(), msg.Req.ID())
-	c.sendRequestAcknowledgementMsg(msg.Req.ID(), msg.SenderPubKey)
 
 	if err := c.validateRequest(msg.Req); err != nil {
 		// this means some node broadcasted an invalid request (bad chainID or signature)
@@ -254,21 +254,15 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: %v", err)
 		return
 	}
+
+	c.addToPeersHaveReq(msg.Req.ID(), msg.SenderPubKey)
+
 	if !c.mempool.ReceiveRequest(msg.Req) {
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
 		return
 	}
 	c.broadcastOffLedgerRequest(msg.Req)
 	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().String())
-}
-
-func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerPubKey *cryptolib.PublicKey) {
-	if peerPubKey == nil {
-		return
-	}
-	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID, peerPubKey.AsString())
-	msg := &messages.RequestAckMsg{ReqID: &reqID}
-	c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeRequestAck, msg.Bytes())
 }
 
 func (c *chainObj) validateRequest(req iscp.OffLedgerRequest) error {
@@ -291,22 +285,25 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 		getPeerPubKeys = cmt.GetRandomValidators
 	}
 
-	sendMessage := func(ackPeers []*cryptolib.PublicKey) {
+	sendMessage := func(peersThatHaveTheRequest map[*cryptolib.PublicKey]bool) {
 		peerPubKeys := getPeerPubKeys(c.offledgerBroadcastUpToNPeers)
 		for _, peerPubKey := range peerPubKeys {
-			if shouldSendToPeer(peerPubKey, ackPeers) {
-				c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
-				c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+			if peersThatHaveTheRequest[peerPubKey] {
+				// this peer already has the request
+				continue
 			}
+			c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
+			c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
+			c.addToPeersHaveReq(msg.Req.ID(), peerPubKey)
 		}
 	}
 
 	ticker := time.NewTicker(c.offledgerBroadcastInterval)
 	stopBroadcast := func() {
-		c.offLedgerReqsAcksMutex.Lock()
-		delete(c.offLedgerReqsAcks, req.ID())
-		c.offLedgerReqsAcksMutex.Unlock()
 		ticker.Stop()
+		c.offLedgerPeersHaveReqMutex.Lock()
+		delete(c.offLedgerPeersHaveReq, req.ID())
+		c.offLedgerPeersHaveReqMutex.Unlock()
 	}
 
 	go func() {
@@ -317,39 +314,16 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 			if !c.mempool.HasRequest(req.ID()) {
 				return
 			}
-			c.offLedgerReqsAcksMutex.RLock()
-			ackPeers := c.offLedgerReqsAcks[req.ID()]
-			c.offLedgerReqsAcksMutex.RUnlock()
-			if cmt != nil && len(ackPeers) >= int(cmt.Size())-1 {
+			c.offLedgerPeersHaveReqMutex.RLock()
+			peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
+			c.offLedgerPeersHaveReqMutex.RUnlock()
+			if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
 				// this node is part of the committee and the message has already been received by every other committee node
 				return
 			}
-			sendMessage(ackPeers)
+			sendMessage(peersThatHaveTheRequest)
 		}
 	}()
-}
-
-func shouldSendToPeer(peerPubKey *cryptolib.PublicKey, ackPeers []*cryptolib.PublicKey) bool {
-	for _, p := range ackPeers {
-		if p.Equals(peerPubKey) {
-			return false
-		}
-	}
-	return true
-}
-
-func (c *chainObj) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
-	c.requestAckPeerMsgPipe.In() <- msg
-	c.chainMetrics.CountMessages()
-}
-
-func (c *chainObj) handleRequestAckPeerMsg(msg *messages.RequestAckMsgIn) {
-	c.log.Debugf("handleRequestAckPeerMsg message received from peer %v, reqID: %s", msg.SenderPubKey.AsString(), msg.ReqID)
-	c.offLedgerReqsAcksMutex.Lock()
-	defer c.offLedgerReqsAcksMutex.Unlock()
-	c.offLedgerReqsAcks[*msg.ReqID] = append(c.offLedgerReqsAcks[*msg.ReqID], msg.SenderPubKey)
-	c.chainMetrics.CountRequestAckMessages()
-	c.log.Debugf("handleRequestAckPeerMsg comleted: reqID: %s", msg.ReqID.String())
 }
 
 func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
