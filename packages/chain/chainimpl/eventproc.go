@@ -236,13 +236,12 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 	c.chainMetrics.CountMessages()
 }
 
+// addToPeersHaveReq adds a peer to the list of known peers that have a given request, DOES NOT LOCK THE MUTEX
 func (c *chainObj) addToPeersHaveReq(reqID iscp.RequestID, peer *cryptolib.PublicKey) {
-	c.offLedgerPeersHaveReqMutex.Lock()
 	if c.offLedgerPeersHaveReq[reqID] == nil {
 		c.offLedgerPeersHaveReq[reqID] = make(map[cryptolib.PublicKeyKey]bool)
 	}
 	c.offLedgerPeersHaveReq[reqID][peer.AsKey()] = true
-	c.offLedgerPeersHaveReqMutex.Unlock()
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
@@ -255,7 +254,9 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 		return
 	}
 
+	c.offLedgerPeersHaveReqMutex.Lock()
 	c.addToPeersHaveReq(msg.Req.ID(), msg.SenderPubKey)
+	c.offLedgerPeersHaveReqMutex.Unlock()
 
 	if !c.mempool.ReceiveRequest(msg.Req) {
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
@@ -290,10 +291,10 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 		for _, peerPubKey := range peerPubKeys {
 			if peersThatHaveTheRequest[peerPubKey.AsKey()] {
 				// this peer already has the request
-				c.log.Debugf("skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.AsString())
+				c.log.Debugf("broadcastOffLedgerRequest: skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.AsString())
 				continue
 			}
-			c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
+			c.log.Debugf("broadcastOffLedgerRequest: sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
 			c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			c.addToPeersHaveReq(msg.Req.ID(), peerPubKey)
 		}
@@ -315,14 +316,15 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 			if !c.mempool.HasRequest(req.ID()) {
 				return
 			}
-			c.offLedgerPeersHaveReqMutex.RLock()
+			// deep copy the list of peers that have the request (otherwise we get a pointer to the map instead)
+			c.offLedgerPeersHaveReqMutex.Lock()
 			peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
 			if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
 				// this node is part of the committee and the message has already been received by every other committee node
 				return
 			}
 			sendMessage(peersThatHaveTheRequest)
-			c.offLedgerPeersHaveReqMutex.RUnlock()
+			c.offLedgerPeersHaveReqMutex.Unlock()
 		}
 	}()
 }
