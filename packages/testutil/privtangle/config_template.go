@@ -77,15 +77,7 @@ var configFileContentTemplate = `
       "pruneReceipts":false
    },
    "protocol":{
-      "parameters":{
-         "networkName":"private_tangle_wasp_cluster",
-         "bech32HRP":"atoi",
-         "minPoWScore":1,
-         "vByteCost":600,
-         "vByteFactorData":1,
-         "vByteFactorKey":10,
-         "tokenSupply":2779530283277761
-      },
+      "targetNetworkName": "private_tangle_wasp_cluster",
       "baseToken":{
          "name":"Iota",
          "tickerSymbol":"MIOTA",
@@ -195,6 +187,22 @@ var configFileContentTemplate = `
    "debug":{
       "whiteFlagParentsSolidTimeout":"2s"
    }
+}
+`
+
+const protocolParameters = `
+{
+   "version": 2,
+   "networkName":"private_tangle_wasp_cluster",
+   "bech32HRP":"atoi",
+   "minPoWScore":1,
+   "belowMaxDepth": 15,
+   "rentStructure": {
+       "vByteCost": 600,
+       "vByteFactorData": 1,
+       "vByteFactorKey": 10
+   },
+   "tokenSupply":"2779530283277761"
 }
 `
 

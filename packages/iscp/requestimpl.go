@@ -496,7 +496,7 @@ func (r *onLedgerRequestData) Allowance() *Allowance {
 
 func (r *onLedgerRequestData) FungibleTokens() *FungibleTokens {
 	amount := r.output.Deposit()
-	tokens := r.output.NativeTokenSet()
+	tokens := r.output.NativeTokenList()
 	return NewFungibleTokens(amount, tokens)
 }
 

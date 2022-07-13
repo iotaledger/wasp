@@ -278,12 +278,12 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
 
-		if metadataResp.ReferencedByMilestoneIndex != nil {
-			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
+		if metadataResp.ReferencedByMilestoneIndex != 0 {
+			if metadataResp.LedgerInclusionState != "" && metadataResp.LedgerInclusionState == "included" {
 				return nil // success
 			}
 			return xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d",
-				*metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
+				metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
