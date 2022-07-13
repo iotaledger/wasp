@@ -187,7 +187,7 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(43)
 
 	// include a funds transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10")
+	w.Run("chain", "post-request", name, "increment", "--transfer=iota:100000")
 	checkCounter(44)
 
 	// test off-ledger request
