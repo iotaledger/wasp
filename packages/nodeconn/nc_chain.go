@@ -83,14 +83,14 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	go func() {
 		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", iscp.TxID(txID))
 		for msgMetaChange := range msgMetaChanges {
-			if msgMetaChange.LedgerInclusionState != nil {
+			if msgMetaChange.LedgerInclusionState != "" {
 				str, err := json.Marshal(msgMetaChange)
 				if err != nil {
 					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", iscp.TxID(txID), err)
 				} else {
 					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
 				}
-				ncc.inclusionStates.Trigger(txID, *msgMetaChange.LedgerInclusionState)
+				ncc.inclusionStates.Trigger(txID, msgMetaChange.LedgerInclusionState)
 			}
 		}
 		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))
