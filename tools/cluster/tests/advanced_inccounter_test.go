@@ -84,17 +84,17 @@ func TestAccessNodesOnLedger(t *testing.T) {
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 
-	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
+	t.Run("cluster=15, N=4, req=200", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const numRequests = 1000
+		const numRequests = 200
 		const numValidatorNodes = 4
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 
-	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
+	t.Run("cluster=15, N=6, req=200", func(t *testing.T) {
 		testutil.RunHeavy(t)
-		const numRequests = 1000
+		const numRequests = 200
 		const numValidatorNodes = 6
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
