@@ -5,7 +5,6 @@
 package vmcontext
 
 import (
-	"fmt"
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -108,7 +107,6 @@ func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTempl
 // helper methods
 
 func (s *contractSandbox) RequireCallerAnyOf(agentIDs []iscp.AgentID) {
-	fmt.Printf("\n\n%s != %s\n\n", s.Caller(), agentIDs)
 	ok := false
 	for _, agentID := range agentIDs {
 		if s.Caller().Equals(agentID) {
