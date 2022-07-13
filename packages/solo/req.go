@@ -446,6 +446,22 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
+// EstimateNeededStorageDeposit estimates the amount of iotas that will be
+// needed to add to the request (if any) in order to cover for the storage
+// deposit.
+func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) (uint64, error) {
+	reqDeposit := uint64(0)
+	if req.ftokens != nil {
+		reqDeposit = req.ftokens.Iotas
+	}
+	tx, err := ch.createRequestTx(req, keyPair)
+	if err != nil {
+		return 0, err
+	}
+	require.GreaterOrEqual(ch.Env.T, tx.Essence.Outputs[0].Deposit(), reqDeposit)
+	return tx.Essence.Outputs[0].Deposit() - reqDeposit, nil
+}
+
 func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
 	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return ch.CallView(contractName, funcName, params)
