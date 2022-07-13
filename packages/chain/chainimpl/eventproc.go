@@ -239,9 +239,9 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 func (c *chainObj) addToPeersHaveReq(reqID iscp.RequestID, peer *cryptolib.PublicKey) {
 	c.offLedgerPeersHaveReqMutex.Lock()
 	if c.offLedgerPeersHaveReq[reqID] == nil {
-		c.offLedgerPeersHaveReq[reqID] = make(map[*cryptolib.PublicKey]bool)
+		c.offLedgerPeersHaveReq[reqID] = make(map[cryptolib.PublicKeyKey]bool)
 	}
-	c.offLedgerPeersHaveReq[reqID][peer] = true
+	c.offLedgerPeersHaveReq[reqID][peer.AsKey()] = true
 	c.offLedgerPeersHaveReqMutex.Unlock()
 }
 
@@ -285,10 +285,10 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 		getPeerPubKeys = cmt.GetRandomValidators
 	}
 
-	sendMessage := func(peersThatHaveTheRequest map[*cryptolib.PublicKey]bool) {
+	sendMessage := func(peersThatHaveTheRequest map[cryptolib.PublicKeyKey]bool) {
 		peerPubKeys := getPeerPubKeys(c.offledgerBroadcastUpToNPeers)
 		for _, peerPubKey := range peerPubKeys {
-			if peersThatHaveTheRequest[peerPubKey] {
+			if peersThatHaveTheRequest[peerPubKey.AsKey()] {
 				// this peer already has the request
 				c.log.Debugf("skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.AsString())
 				continue

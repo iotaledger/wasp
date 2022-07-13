@@ -66,7 +66,7 @@ type chainObj struct {
 	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
 	offLedgerPeersHaveReqMutex         sync.RWMutex
-	offLedgerPeersHaveReq              map[iscp.RequestID]map[*cryptolib.PublicKey]bool
+	offLedgerPeersHaveReq              map[iscp.RequestID]map[cryptolib.PublicKeyKey]bool
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
 	pullMissingRequestsFromCommittee   bool
@@ -122,7 +122,7 @@ func NewChain(
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
-		offLedgerPeersHaveReq:            make(map[iscp.RequestID]map[*cryptolib.PublicKey]bool),
+		offLedgerPeersHaveReq:            make(map[iscp.RequestID]map[cryptolib.PublicKeyKey]bool),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
