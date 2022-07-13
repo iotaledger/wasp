@@ -290,6 +290,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 		for _, peerPubKey := range peerPubKeys {
 			if peersThatHaveTheRequest[peerPubKey] {
 				// this peer already has the request
+				c.log.Debugf("skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.AsString())
 				continue
 			}
 			c.log.Debugf("sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
@@ -316,12 +317,12 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 			}
 			c.offLedgerPeersHaveReqMutex.RLock()
 			peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
-			c.offLedgerPeersHaveReqMutex.RUnlock()
 			if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
 				// this node is part of the committee and the message has already been received by every other committee node
 				return
 			}
 			sendMessage(peersThatHaveTheRequest)
+			c.offLedgerPeersHaveReqMutex.RUnlock()
 		}
 	}()
 }
