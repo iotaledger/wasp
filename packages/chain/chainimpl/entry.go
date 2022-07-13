@@ -37,7 +37,6 @@ func (c *chainObj) Dismiss(reason string) {
 		c.dismissChainMsgPipe.Close()
 		c.aliasOutputPipe.Close()
 		c.offLedgerRequestPeerMsgPipe.Close()
-		c.requestAckPeerMsgPipe.Close()
 		c.missingRequestIDsPeerMsgPipe.Close()
 		c.missingRequestPeerMsgPipe.Close()
 		c.timerTickMsgPipe.Close()

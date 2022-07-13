@@ -65,8 +65,8 @@ type chainObj struct {
 	detachFromCommitteePeerMessagesFun func()
 	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
-	offLedgerReqsAcksMutex             sync.RWMutex
-	offLedgerReqsAcks                  map[iscp.RequestID][]*cryptolib.PublicKey
+	offLedgerPeersHaveReqMutex         sync.RWMutex
+	offLedgerPeersHaveReq              map[iscp.RequestID]map[cryptolib.PublicKeyKey]bool
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
 	pullMissingRequestsFromCommittee   bool
@@ -75,7 +75,6 @@ type chainObj struct {
 	dismissChainMsgPipe                pipe.Pipe
 	aliasOutputPipe                    pipe.Pipe
 	offLedgerRequestPeerMsgPipe        pipe.Pipe
-	requestAckPeerMsgPipe              pipe.Pipe
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
@@ -123,7 +122,7 @@ func NewChain(
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		candidateNodes:                   make([]*governance.AccessNodeInfo, 0),
-		offLedgerReqsAcks:                make(map[iscp.RequestID][]*cryptolib.PublicKey),
+		offLedgerPeersHaveReq:            make(map[iscp.RequestID]map[cryptolib.PublicKeyKey]bool),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -131,7 +130,6 @@ func NewChain(
 		dismissChainMsgPipe:              pipe.NewLimitInfinitePipe(1),
 		aliasOutputPipe:                  pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		offLedgerRequestPeerMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
-		requestAckPeerMsgPipe:            pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
@@ -217,16 +215,6 @@ func (c *chainObj) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
 		c.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
 			OffLedgerRequestMsg: *msg,
 			SenderPubKey:        peerMsg.SenderPubKey,
-		})
-	case chain.PeerMsgTypeRequestAck:
-		msg, err := messages.NewRequestAckMsg(peerMsg.MsgData)
-		if err != nil {
-			c.log.Error(err)
-			return
-		}
-		c.EnqueueRequestAckMsg(&messages.RequestAckMsgIn{
-			RequestAckMsg: *msg,
-			SenderPubKey:  peerMsg.SenderPubKey,
 		})
 	case chain.PeerMsgTypeMissingRequest:
 		msg, err := messages.NewMissingRequestMsg(peerMsg.MsgData)
