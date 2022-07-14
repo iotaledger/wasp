@@ -2,6 +2,8 @@ package tests
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -36,8 +38,10 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	checkCounter(w, 42)
 
 	// init maintenance
-
-	// TODO
+	{
+		out := w.PostRequestGetReceipt("governance", "startMaintenance", "--off-ledger")
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+	}
 
 	// stop the initial cluster
 	w.Cluster.Stop()
@@ -48,10 +52,14 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	})
 	// run DKG on the new cluster, obtain the new state controller address
 	out := w2.Run("chain", "rundkg")
-
-	println(out)
+	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	// issue a governance rotatation via CLI
+
+	{
+		out := w2.Run("chain", "rotate", newStateControllerAddr)
+		println(out)
+	}
 
 	// activate the chain on the new nodes
 

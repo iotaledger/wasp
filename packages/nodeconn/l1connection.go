@@ -32,7 +32,7 @@ type L1Client interface {
 	// sends a tx, waits for confirmation
 	PostTx(tx *iotago.Transaction, timeout ...time.Duration) error
 	// returns the outputs owned by a given address
-	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error)
+	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error)
 	// output
 	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.Output, error)
 	// used to query the health endpoint of the node
@@ -48,7 +48,7 @@ func NewL1Client(config L1Config, log *logger.Logger, timeout ...time.Duration) 
 const defaultTimeout = 1 * time.Minute
 
 // OutputMap implements L1Connection
-func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (map[iotago.OutputID]iotago.Output, error) {
+func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 

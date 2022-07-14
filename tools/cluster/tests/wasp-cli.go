@@ -100,6 +100,14 @@ func (w *WaspCLITest) Run(args ...string) []string {
 	return w.runCmd(args, nil)
 }
 
+func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
+	runArgs := []string{"chain", "post-request"}
+	runArgs = append(runArgs, args...)
+	out := w.Run(runArgs...)
+	command := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\)$`).FindStringSubmatch(out[0])[2]
+	return w.Run(strings.Split(command, " ")...)
+}
+
 func (w *WaspCLITest) Pipe(in []string, args ...string) []string {
 	return w.runCmd(args, func(cmd *exec.Cmd) {
 		cmd.Stdin = bytes.NewReader([]byte(strings.Join(in, "\n")))
