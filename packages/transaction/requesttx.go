@@ -161,7 +161,7 @@ func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, addre
 }
 
 func addNativeTokens(sumTokensOut map[iotago.NativeTokenID]*big.Int, out iotago.Output) map[iotago.NativeTokenID]*big.Int {
-	for _, nt := range out.NativeTokenSet() {
+	for _, nt := range out.NativeTokenList() {
 		s, ok := sumTokensOut[nt.ID]
 		if !ok {
 			s = new(big.Int)

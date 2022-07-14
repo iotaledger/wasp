@@ -36,7 +36,7 @@ func DefaultWaspConfig() WaspConfig {
 		FirstPeeringPort:   4000,
 		FirstNanomsgPort:   5550,
 		FirstDashboardPort: 7000,
-		FirstProfilingPort: 6060,
+		FirstProfilingPort: 1060,
 		FirstMetricsPort:   2112,
 	}
 }

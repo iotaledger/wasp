@@ -37,7 +37,6 @@ type MockedChainCore struct {
 	onDismissChain          func(reason string)
 	onAliasOutput           func(chainOutput *iscp.AliasOutputWithID)
 	onOffLedgerRequest      func(msg *messages.OffLedgerRequestMsgIn)
-	onRequestAck            func(msg *messages.RequestAckMsgIn)
 	onMissingRequestIDs     func(msg *messages.MissingRequestIDsMsgIn)
 	onMissingRequest        func(msg *messages.MissingRequestMsg)
 	onTimerTick             func(tick int)
@@ -80,7 +79,6 @@ func NewMockedChainCore(t *testing.T, chainID *iscp.ChainID, log *logger.Logger)
 			t.Fatalf("Receiving alias output not implemented, chain output ID=%v", iscp.OID(chainOutput.ID()))
 		},
 		onOffLedgerRequest:  func(msg *messages.OffLedgerRequestMsgIn) { receiveFailFun("*messages.OffLedgerRequestMsgIn", msg) },
-		onRequestAck:        func(msg *messages.RequestAckMsgIn) { receiveFailFun("*messages.RequestAckMsgIn", msg) },
 		onMissingRequestIDs: func(msg *messages.MissingRequestIDsMsgIn) { receiveFailFun("*messages.MissingRequestIDsMsgIn", msg) },
 		onMissingRequest:    func(msg *messages.MissingRequestMsg) { receiveFailFun("*messages.MissingRequestMsg", msg) },
 		onTimerTick:         func(tick int) { t.Fatalf("Receiving timer tick not implemented: index=%v", tick) },
@@ -131,10 +129,6 @@ func (m *MockedChainCore) EnqueueAliasOutput(chainOutput *iscp.AliasOutputWithID
 
 func (m *MockedChainCore) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	m.onOffLedgerRequest(msg)
-}
-
-func (m *MockedChainCore) EnqueueRequestAckMsg(msg *messages.RequestAckMsgIn) {
-	m.onRequestAck(msg)
 }
 
 func (m *MockedChainCore) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
@@ -191,10 +185,6 @@ func (m *MockedChainCore) OnAliasOutput(fun func(chainOutput *iscp.AliasOutputWi
 
 func (m *MockedChainCore) OnOffLedgerRequest(fun func(msg *messages.OffLedgerRequestMsgIn)) {
 	m.onOffLedgerRequest = fun
-}
-
-func (m *MockedChainCore) OnRequestAck(fun func(msg *messages.RequestAckMsgIn)) {
-	m.onRequestAck = fun
 }
 
 func (m *MockedChainCore) OnMissingRequestIDs(fun func(msg *messages.MissingRequestIDsMsgIn)) {

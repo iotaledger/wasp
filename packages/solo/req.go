@@ -191,6 +191,12 @@ func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptol
 	return ret.Sign(keyPair)
 }
 
+func (ch *Chain) mustStardustVM() {
+	if ch.bypassStardustVM {
+		panic("Solo: StardustVM context expected")
+	}
+}
+
 func parseParams(params []interface{}) dict.Dict {
 	if len(params) == 1 {
 		return params[0].(dict.Dict)
@@ -346,6 +352,8 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
 func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+	ch.mustStardustVM()
+
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
@@ -438,6 +446,22 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
+// EstimateNeededStorageDeposit estimates the amount of iotas that will be
+// needed to add to the request (if any) in order to cover for the storage
+// deposit.
+func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) (uint64, error) {
+	reqDeposit := uint64(0)
+	if req.ftokens != nil {
+		reqDeposit = req.ftokens.Iotas
+	}
+	tx, err := ch.createRequestTx(req, keyPair)
+	if err != nil {
+		return 0, err
+	}
+	require.GreaterOrEqual(ch.Env.T, tx.Essence.Outputs[0].Deposit(), reqDeposit)
+	return tx.Essence.Outputs[0].Deposit() - reqDeposit, nil
+}
+
 func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
 	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return ch.CallView(contractName, funcName, params)
@@ -456,6 +480,9 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 }
 
 func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...interface{}) (dict.Dict, error) {
+	if ch.bypassStardustVM {
+		return nil, xerrors.New("Solo: StardustVM context expected")
+	}
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 
 	p := parseParams(params)

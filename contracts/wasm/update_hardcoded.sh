@@ -13,5 +13,5 @@ fi
 
 cd ../../documentation/tutorial-examples
 wasm-pack build
-cp pkg/example_tutorial_bg.wasm test/
+cp pkg/solotutorial_bg.wasm test/
 cd ../../contracts/wasm/

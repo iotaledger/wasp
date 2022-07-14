@@ -4,7 +4,7 @@ Profiling is disabled by default.
 
 Running a node with `profiling.enabled = true` (in config.json or via command 
 line) will spawn a pprof server running on `profiling.bindAddress` 
-(`http://localhost:6060` by default).
+(`http://localhost:1060` by default).
 
 By accessing `http://<profiling.bindAddress>/debug/pprof/` there are some 
 profiles available, but the best way to visualize this data is using `go tool`
@@ -13,11 +13,11 @@ profiles available, but the best way to visualize this data is using `go tool`
 Examples:
 
 ```shell
-go tool pprof -http=:8080 http://localhost:6060/debug/pprof/<heap, profile?seconds=30, block, mutex>
+go tool pprof -http=:8080 http://localhost:1060/debug/pprof/<heap, profile?seconds=30, block, mutex>
 ```
 
 ```shell
-wget -O trace.out http://localhost:6060/debug/pprof/trace?seconds=5
+wget -O trace.out http://localhost:1060/debug/pprof/trace?seconds=5
 go tool trace trace.out
 ```
 
