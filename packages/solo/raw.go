@@ -5,18 +5,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) RawKVStore() kv.KVStore {
+func (ch *Chain) RawState() kv.KVStore {
 	return ch.VirtualStateAccess().KVStore()
 }
 
 func (ch *Chain) GetRaw(k []byte) []byte {
-	ret, err := ch.RawKVStore().Get(kv.Key(k))
+	ret, err := ch.RawState().Get(kv.Key(k))
 	require.NoError(ch.Env.T, err)
 	return ret
 }
 
 func (ch *Chain) HasRaw(k []byte) bool {
-	ret, err := ch.RawKVStore().Has(kv.Key(k))
+	ret, err := ch.RawState().Has(kv.Key(k))
 	require.NoError(ch.Env.T, err)
 	return ret
 }
