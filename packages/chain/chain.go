@@ -275,5 +275,4 @@ const (
 	PeerMsgTypeMissingRequestIDs = iota
 	PeerMsgTypeMissingRequest
 	PeerMsgTypeOffLedgerRequest
-	PeerMsgTypeRequestAck
 )

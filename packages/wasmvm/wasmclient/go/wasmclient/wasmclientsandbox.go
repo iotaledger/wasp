@@ -23,8 +23,10 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 	s.Err = nil
 	switch funcNr {
 	case wasmlib.FnCall:
+		s.eventReceived = false
 		return s.fnCall(args)
 	case wasmlib.FnPost:
+		s.eventReceived = false
 		return s.fnPost(args)
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)

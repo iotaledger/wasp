@@ -31,7 +31,12 @@ func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
 		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	return res.Return, ch.ResolveVMError(res.Receipt.Error).AsGoError()
+	var err *iscp.UnresolvedVMError
+	if !ch.bypassStardustVM {
+		// bypass if VM does not implement receipts
+		err = res.Receipt.Error
+	}
+	return res.Return, ch.ResolveVMError(err).AsGoError()
 }
 
 func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
@@ -76,7 +81,7 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		EstimateGasMode:      estimateGas,
 	}
 
-	ch.Env.vmRunner.Run(task)
+	ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, task.VMError)
 
 	return task
@@ -171,6 +176,9 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 }
 
 func (ch *Chain) logRequestLastBlock() {
+	if ch.bypassStardustVM {
+		return
+	}
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())

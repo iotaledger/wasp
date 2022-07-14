@@ -98,6 +98,11 @@ module.exports = {
                             label: 'Governance',
                             id: 'guide/core_concepts/core_contracts/governance',
                         },
+                        {
+                            type: 'doc',
+                            label: 'Errors',
+                            id: 'guide/core_concepts/core_contracts/errors',
+                        },
                     ],
                 },
                 {
@@ -133,11 +138,11 @@ module.exports = {
                 },
                 {
                     type: 'category',
-                    label: 'Solo',
+                    label: 'Testing Smart Contracts with Solo',
                     items: [
                         {
                             type: 'doc',
-                            label: 'Solo',
+                            label: 'What is Solo?',
                             id: 'guide/solo/what-is-solo',
                         },
                         {
@@ -147,8 +152,13 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Tokens and the UTXO Ledger',
-                            id: 'guide/solo/tokens-and-utxos',
+                            label: 'The L1 Ledger',
+                            id: 'guide/solo/the-l1-ledger',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Deploying a Smart Contract',
+                            id: 'guide/solo/deploying-sc',
                         },
                         {
                             type: 'doc',
@@ -167,23 +177,8 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Account Balances',
-                            id: 'guide/solo/balances'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending tokens to a Smart Contract',
-                            id: 'guide/solo/sending-funds'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Return of tokens in case of failure',
-                            id: 'guide/solo/reimbursed-funds'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending tokens from ISC to the Tangle',
-                            id: 'guide/solo/sending-funds-sc'
+                            label: 'Accounts',
+                            id: 'guide/solo/the-l2-ledger'
                         },
                     ]
                 }

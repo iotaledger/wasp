@@ -360,7 +360,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	tokens := iotago.NativeTokenSum{}
 	for _, out := range u.getUnspentOutputs(addr) {
 		iotas += out.Deposit()
-		tset, err := out.NativeTokenSet().Set()
+		tset, err := out.NativeTokenList().Set()
 		if err != nil {
 			panic(err)
 		}

@@ -15,7 +15,6 @@ type StateManagerMetrics interface {
 
 type ChainMetrics interface {
 	CountMessages()
-	CountRequestAckMessages()
 	CurrentStateIndex(stateIndex uint32)
 	MempoolMetrics
 	ConsensusMetrics
@@ -59,10 +58,6 @@ func (c *chainMetricsObj) CountRequestOut() {
 
 func (c *chainMetricsObj) CountMessages() {
 	c.metrics.messagesReceived.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
-}
-
-func (c *chainMetricsObj) CountRequestAckMessages() {
-	c.metrics.requestAckMessages.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
 func (c *chainMetricsObj) CurrentStateIndex(stateIndex uint32) {
@@ -110,8 +105,6 @@ func (m *defaultChainMetrics) CountOnLedgerRequestIn() {}
 func (m *defaultChainMetrics) CountRequestOut() {}
 
 func (m *defaultChainMetrics) CountMessages() {}
-
-func (m *defaultChainMetrics) CountRequestAckMessages() {}
 
 func (m *defaultChainMetrics) CurrentStateIndex(stateIndex uint32) {}
 

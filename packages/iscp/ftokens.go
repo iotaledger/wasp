@@ -90,7 +90,7 @@ func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Fungib
 func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
 	ret := &FungibleTokens{
 		Iotas:  o.Deposit(),
-		Tokens: o.NativeTokenSet().Clone(),
+		Tokens: o.NativeTokenList().Clone(),
 	}
 	return ret
 }

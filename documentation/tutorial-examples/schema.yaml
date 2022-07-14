@@ -1,0 +1,14 @@
+name: SoloTutorial
+description: Example ISCP smart contract for the Solo tutorial
+structs: {}
+typedefs: {}
+state:
+  str: String
+funcs:
+  storeString:
+    params:
+      str: String
+views:
+  getString:
+    results:
+      str: String

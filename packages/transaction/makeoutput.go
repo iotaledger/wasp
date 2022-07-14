@@ -135,6 +135,6 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTO
 func AssetsFromOutput(o iotago.Output) *iscp.FungibleTokens {
 	return &iscp.FungibleTokens{
 		Iotas:  o.Deposit(),
-		Tokens: o.NativeTokenSet(),
+		Tokens: o.NativeTokenList(),
 	}
 }

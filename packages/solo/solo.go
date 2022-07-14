@@ -58,7 +58,6 @@ type Solo struct {
 	glbMutex                     sync.RWMutex
 	ledgerMutex                  sync.RWMutex
 	chains                       map[iscp.ChainID]*Chain
-	vmRunner                     vm.VMRunner
 	processorConfig              *processors.Config
 	disableAutoAdjustDustDeposit bool
 	seed                         cryptolib.Seed
@@ -99,12 +98,16 @@ type Chain struct {
 	StateReader state.OptimisticStateReader
 	// Log is the named logger of the chain
 	log *logger.Logger
+	// instance of VM
+	vmRunner vm.VMRunner
 	// global processor cache
 	proc *processors.Cache
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
 	mempool mempool.Mempool
+	// used for non-standard VMs
+	bypassStardustVM bool
 	// receipt of the last call
 	lastReceipt *blocklog.RequestReceipt
 }
@@ -117,6 +120,16 @@ type InitOptions struct {
 	PrintStackTrace       bool
 	Seed                  cryptolib.Seed
 	Log                   *logger.Logger
+}
+
+type InitChainOptions struct {
+	// optional parameters for init request call
+	InitRequestParameters dict.Dict
+	// optional VMRunner. Default is StardustVM
+	VMRunner vm.VMRunner
+	// flag forces bypassing any StardustVM ledger-dependent calls, such as init or blocklog
+	// To be used with provided non-standard VMRunner
+	BypassStardustVM bool
 }
 
 func defaultInitOptions() *InitOptions {
@@ -153,7 +166,6 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
 		utxoDB:                       utxodb.New(utxoDBinitParams),
 		chains:                       make(map[iscp.ChainID]*Chain),
-		vmRunner:                     runvm.NewVMRunner(),
 		processorConfig:              coreprocessors.Config(),
 		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
 		seed:                         opt.Seed,
@@ -197,21 +209,35 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initParams ...dict.Dict) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initParams...)
+func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initOptions ...InitChainOptions) *Chain {
+	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initOptions...)
 	return ret
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initParams ...dict.Dict) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indexes to user
+	vmRunner := runvm.NewVMRunner()
+	var initRequestParams []dict.Dict
+	bypassStardustVM := false
+
+	if len(initOptions) > 0 {
+		if initOptions[0].VMRunner != nil {
+			vmRunner = initOptions[0].VMRunner
+		}
+		if len(initOptions[0].InitRequestParameters) > 0 {
+			initRequestParams = []dict.Dict{initOptions[0].InitRequestParameters}
+		}
+		bypassStardustVM = initOptions[0].BypassStardustVM
+	}
+
+	stateControllerKey := env.NewKeyPairFromIndex(-1) // leaving positive indices to user
 	stateControllerAddr := stateControllerKey.GetPublicKey().AsEd25519Address()
 
 	if chainOriginator == nil {
-		chainOriginator = env.NewKeyPairFromIndex(-2)
+		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
 		originatorAddr := chainOriginator.GetPublicKey().AsEd25519Address()
 		_, err := env.utxoDB.GetFundsFromFaucet(originatorAddr)
 		require.NoError(env.T, err)
@@ -230,8 +256,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 	)
 	require.NoError(env.T, err)
 
+	anchor, _, err := transaction.GetAnchorFromTransaction(originTx)
+	require.NoError(env.T, err)
+
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
+	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
@@ -262,12 +292,15 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		State:                  vs,
 		GlobalSync:             glbSync,
 		StateReader:            vs.OptimisticStateReader(glbSync),
+		bypassStardustVM:       bypassStardustVM,
+		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
 		log:                    chainlog,
 	}
 	ret.mempool = mempool.New(chainID.AsAddress(), ret.StateReader, chainlog, metrics.DefaultChainMetrics())
 	require.NoError(env.T, err)
 
+	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
 	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorPrivateKey,
@@ -275,7 +308,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		"'solo' testing chain",
 		outs,
 		ids,
-		initParams...,
+		initRequestParams...,
 	)
 	require.NoError(env.T, err)
 	require.NotNil(env.T, initTx)
@@ -289,6 +322,11 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	go ret.batchLoop()
 
+	if bypassStardustVM {
+		// force skipping the init request. It is needed for non-Stardust VMs
+		return ret, originTx, nil
+	}
+	// run the on-ledger init request for the chain
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
