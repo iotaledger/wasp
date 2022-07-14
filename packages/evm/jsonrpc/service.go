@@ -127,6 +127,18 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
+	{
+		// FIXME: https://github.com/iotaledger/wasp/issues/1120
+		// adjusting the decimals so that Metamask shows the correct value
+		const metamaskDecimals = 18
+		decimals := int64(e.evmChain.BaseToken().Decimals)
+		if decimals > metamaskDecimals {
+			panic("base token decimals is too large")
+		}
+		exp := big.NewInt(10)
+		exp.Exp(exp, big.NewInt(metamaskDecimals-decimals), nil)
+		bal = bal.Mul(bal, exp)
+	}
 	return (*hexutil.Big)(bal), nil
 }
 
