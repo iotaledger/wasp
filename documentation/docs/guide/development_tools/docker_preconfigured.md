@@ -19,7 +19,7 @@ This page describes the usage of the preconfigured developer Docker setup.
 
 ## Introduction
 
-To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp and Hornet node, that are connected with each other - ready to run out of the box.
+To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp node with a Hornet based private tangle, ready to run out of the box. 
 
 ## Running the setup
 

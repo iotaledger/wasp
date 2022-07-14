@@ -51,7 +51,7 @@ wasp-cli set wasp.N.peering 127.0.0.1:4001
 
 Alternatively, you can edit the `wasp-cli.json` file and include the desired server locations:
 
-- The hornet api address:
+- The Hornet api address:
 
   ```json
   "l1": {
