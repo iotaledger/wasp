@@ -88,6 +88,32 @@ func (d *Dashboard) agentIDToString(a iscp.AgentID) string {
 	return a.String()
 }
 
+func (d *Dashboard) getETHAddress(a iscp.AgentID) string {
+	if !d.isETHAddress(a) {
+		return ""
+	}
+
+	ethAgent, _ := a.(*iscp.EthereumAddressAgentID)
+
+	return ethAgent.EthAddress().String()
+}
+
+func (d *Dashboard) isETHAddress(a iscp.AgentID) bool {
+	_, ok := a.(*iscp.EthereumAddressAgentID)
+
+	return ok
+}
+
+func (d *Dashboard) isValidAddress(a iscp.AgentID) bool {
+	addr := d.addressFromAgentID(a)
+
+	if addr != nil {
+		return true
+	}
+
+	return d.isETHAddress(a)
+}
+
 func (d *Dashboard) addressFromAgentID(a iscp.AgentID) iotago.Address {
 	addr, _ := iscp.AddressFromAgentID(a)
 	return addr
