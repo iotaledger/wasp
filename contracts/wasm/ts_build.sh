@@ -12,4 +12,4 @@ fi
 echo "Building $example_name"
 schema -ts $flag
 echo "compiling "$example_name"_ts.wasm"
-npx asc ts/"$example_name"/lib.ts --lib ../node_modules --binaryFile ts/pkg/"$example_name"_ts.wasm
+npx asc ts/"$example_name"/lib.ts --lib ../node_modules -O --outFile ts/pkg/"$example_name"_ts.wasm

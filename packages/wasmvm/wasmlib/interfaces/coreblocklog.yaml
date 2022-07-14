@@ -15,9 +15,6 @@ views:
     params:
       blockIndex=n: Uint32 
     results:
-      blockInfo=i: Bytes
-  getLatestBlockInfo:
-    results:
       blockIndex=n: Uint32
       blockInfo=i: Bytes
   getRequestIDsForBlock:

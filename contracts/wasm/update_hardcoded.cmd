@@ -4,5 +4,5 @@ if exist testcore\pkg\testcore_bg.wasm copy /y testcore\pkg\testcore_bg.wasm ..\
 if exist inccounter\pkg\inccounter_bg.wasm copy /y inccounter\pkg\inccounter_bg.wasm ..\..\tools\cluster\tests\wasm\*.*
 cd ..\..\documentation\tutorial-examples
 wasm-pack build
-copy /y pkg\example_tutorial_bg.wasm test
+copy /y pkg\solotutorial_bg.wasm test
 cd ..\..\contracts\wasm
