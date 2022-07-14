@@ -38,4 +38,5 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(callViewCmd)
 	chainCmd.AddCommand(activateCmd)
 	chainCmd.AddCommand(deactivateCmd)
+	chainCmd.AddCommand(runDKGCmd())
 }

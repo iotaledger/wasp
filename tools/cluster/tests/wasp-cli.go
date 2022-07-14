@@ -24,8 +24,8 @@ type WaspCLITest struct {
 	dir     string
 }
 
-func newWaspCLITest(t *testing.T) *WaspCLITest {
-	clu := newCluster(t)
+func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
+	clu := newCluster(t, opt...)
 
 	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)

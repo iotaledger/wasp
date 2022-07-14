@@ -14,6 +14,7 @@ import (
 type waspClusterOpts struct {
 	nNodes       int
 	modifyConfig cluster.ModifyNodesConfigFn
+	dirName      string
 }
 
 // by default, when running the cluster tests we will automatically setup a private tangle,
@@ -29,22 +30,27 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
-
-	dataPath := path.Join(os.TempDir(), "wasp-cluster")
-
 	l1.StartPrivtangleIfNecessary(t.Logf)
+
+	dirname := "wasp-cluster"
+	var modifyNodesConfig cluster.ModifyNodesConfigFn
 
 	clusterConfig := cluster.NewConfig(
 		cluster.DefaultWaspConfig(),
 		l1.Config,
 	)
 
-	var modifyNodesConfig cluster.ModifyNodesConfigFn
 	if len(opt) > 0 {
-		clusterConfig.Wasp.NumNodes = opt[0].nNodes
+		if opt[0].dirName != "" {
+			dirname = opt[0].dirName
+		}
+		if opt[0].nNodes != 0 {
+			clusterConfig.Wasp.NumNodes = opt[0].nNodes
+		}
 		modifyNodesConfig = opt[0].modifyConfig
 	}
 
+	dataPath := path.Join(os.TempDir(), dirname)
 	clu := cluster.New(t.Name(), clusterConfig, t)
 
 	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)

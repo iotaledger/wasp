@@ -2,14 +2,13 @@ package tests
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
 
-func TestWaspCLIRotation(t *testing.T) {
+func TestWaspCLIExternalRotation(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.CommitteeConfig()
@@ -20,38 +19,41 @@ func TestWaspCLIRotation(t *testing.T) {
 
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
-	description := "inccounter SC"
 	w.CopyFile(srcFile)
 
 	// test chain deploy-contract command
-	w.Run("chain", "deploy-contract", vmtype, name, description, file,
+	w.Run("chain", "deploy-contract", vmtype, name, "inccounter SC", file,
 		"string", "counter", "int64", "42",
 	)
 
-	out := w.Run("chain", "list-contracts")
-	found := false
-	for _, s := range out {
-		if strings.Contains(s, name) {
-			found = true
-			break
-		}
-	}
-	require.True(t, found)
-
-	checkCounter := func(n int) {
+	checkCounter := func(wTest *WaspCLITest, n int) {
 		// test chain call-view command
-		out = w.Run("chain", "call-view", name, "getCounter")
-		out = w.Pipe(out, "decode", "string", "counter", "int")
+		out := wTest.Run("chain", "call-view", name, "getCounter")
+		out = wTest.Pipe(out, "decode", "string", "counter", "int")
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
 
-	checkCounter(42)
+	checkCounter(w, 42)
 
 	// init maintenance
 
-	// start a new wasp node
+	// TODO
+
+	// stop the initial cluster
+	w.Cluster.Stop()
+
+	// start a new wasp cluster
+	w2 := newWaspCLITest(t, waspClusterOpts{
+		dirName: "wasp-cluster-new-gov",
+	})
+	// run DKG on the new cluster, obtain the new state controller address
+	out := w2.Run("chain", "rundkg")
+
+	println(out)
 
 	// issue a governance rotatation via CLI
+
+	// activate the chain on the new nodes
 
 	// stop maintenance
 
@@ -59,6 +61,6 @@ func TestWaspCLIRotation(t *testing.T) {
 
 	// chain still works
 
-	w.Run("chain", "post-request", name, "increment")
-	checkCounter(43)
+	// w2.Run("chain", "post-request", name, "increment")
+	// checkCounter(43)
 }
