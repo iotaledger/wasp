@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -78,9 +79,9 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	return e.backend.EVMSendTransaction(tx)
 }
 
-func paramsWithOptionalBlockNumber(blockNumber *big.Int, parameters dict.Dict) dict.Dict {
-	ret := parameters
-	if parameters == nil {
+func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {
+	ret := params
+	if params == nil {
 		ret = dict.Dict{}
 	}
 	if blockNumber != nil {
@@ -89,12 +90,12 @@ func paramsWithOptionalBlockNumber(blockNumber *big.Int, parameters dict.Dict) d
 	return ret
 }
 
-func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash, parameters dict.Dict) dict.Dict {
+func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash, params dict.Dict) dict.Dict {
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
-		return paramsWithOptionalBlockNumber(parseBlockNumber(blockNumber), parameters)
+		return paramsWithOptionalBlockNumber(parseBlockNumber(blockNumber), params)
 	}
-	ret := parameters
-	if parameters == nil {
+	ret := params
+	if params == nil {
 		ret = dict.Dict{}
 	}
 	blockHash, _ := blockNumberOrHash.Hash()
@@ -284,4 +285,8 @@ func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 		return nil, err
 	}
 	return evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+}
+
+func (e *EVMChain) BaseToken() *parameters.BaseToken {
+	return e.backend.BaseToken()
 }

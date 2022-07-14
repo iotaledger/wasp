@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -42,7 +43,7 @@ func AddEndpoints(server echoswagger.ApiGroup, allChains chains.Provider, nodePu
 	server.EchoGroup().Any(routes.EVMJSONRPC(":chainID"), j.handleJSONRPC)
 
 	reqid := model.NewRequestID(iscp.NewRequestID(iotago.TransactionID{}, 0))
-	server.GET(routes.EVMRequestIDByTransactionHash(":chainID", ":txHash"), j.handleRequestID).
+	server.GET(routes.RequestIDByEVMTransactionHash(":chainID", ":txHash"), j.handleRequestID).
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
 		AddResponse(http.StatusOK, "Request ID", "", nil).
 		AddResponse(http.StatusNotFound, "Request ID not found", reqid, nil)
@@ -68,7 +69,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 			return nil, fmt.Errorf("node is not authenticated")
 		}
 
-		backend := newWaspBackend(chain, nodePubKey)
+		backend := newWaspBackend(chain, nodePubKey, parameters.L1.BaseToken)
 
 		var evmChainID uint16
 		{

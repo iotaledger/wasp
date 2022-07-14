@@ -51,7 +51,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := chain.Client(nil)
-		reqID, err := c.EVMRequestIDByTransactionHash(txHash)
+		reqID, err := c.RequestIDByEVMTransactionHash(txHash)
 		if err != nil {
 			return err
 		}

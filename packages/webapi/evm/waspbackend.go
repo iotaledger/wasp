@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
@@ -26,14 +27,16 @@ type jsonRPCWaspBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	requestIDs sync.Map
+	baseToken  *parameters.BaseToken
 }
 
 var _ jsonrpc.ChainBackend = &jsonRPCWaspBackend{}
 
-func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
+func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *jsonRPCWaspBackend {
 	return &jsonRPCWaspBackend{
 		chain:      ch,
 		nodePubKey: nodePubKey,
+		baseToken:  baseToken,
 	}
 }
 
@@ -98,4 +101,8 @@ func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, e
 
 func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
 	return chainutil.CallView(b.chain, iscp.Hn(scName), iscp.Hn(funName), args)
+}
+
+func (b *jsonRPCWaspBackend) BaseToken() *parameters.BaseToken {
+	return b.baseToken
 }

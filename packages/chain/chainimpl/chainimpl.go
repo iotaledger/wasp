@@ -65,7 +65,7 @@ type chainObj struct {
 	detachFromCommitteePeerMessagesFun func()
 	chainPeers                         peering.PeerDomainProvider
 	candidateNodes                     []*governance.AccessNodeInfo
-	offLedgerPeersHaveReqMutex         sync.RWMutex
+	offLedgerPeersHaveReqMutex         sync.Mutex
 	offLedgerPeersHaveReq              map[iscp.RequestID]map[cryptolib.PublicKeyKey]bool
 	offledgerBroadcastUpToNPeers       int
 	offledgerBroadcastInterval         time.Duration
