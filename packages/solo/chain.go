@@ -59,6 +59,11 @@ func (ch *Chain) DumpAccounts() string {
 	return ret
 }
 
+// RawState returns state of the chain for assess as raw KVStore
+func (ch *Chain) RawState() kv.KVStore {
+	return ch.VirtualStateAccess().KVStore()
+}
+
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
