@@ -14,7 +14,8 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.CommitteeConfig()
-	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+	out := w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(out[len(out)-1])[2]
 
 	// for running off-ledger requests
 	w.Run("chain", "deposit", "iota:10")
@@ -30,7 +31,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 	checkCounter := func(wTest *WaspCLITest, n int) {
 		// test chain call-view command
-		out := wTest.Run("chain", "call-view", name, "getCounter")
+		out = wTest.Run("chain", "call-view", name, "getCounter")
 		out = wTest.Pipe(out, "decode", "string", "counter", "int")
 		require.Regexp(t, fmt.Sprintf(`(?m)counter:\s+%d$`, n), out[0])
 	}
@@ -39,7 +40,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 	// init maintenance
 	{
-		out := w.PostRequestGetReceipt("governance", "startMaintenance", "--off-ledger")
+		out = w.PostRequestGetReceipt("governance", "startMaintenance", "--off-ledger")
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 	}
 
@@ -51,24 +52,27 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 		dirName: "wasp-cluster-new-gov",
 	})
 	// run DKG on the new cluster, obtain the new state controller address
-	out := w2.Run("chain", "rundkg")
+	out = w2.Run("chain", "rundkg")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
+	w2.Run("set", "chain", chainID)
 
 	// issue a governance rotatation via CLI
-
 	{
 		out := w2.Run("chain", "rotate", newStateControllerAddr)
 		println(out)
 	}
 
 	// activate the chain on the new nodes
+	w2.Run("chain", "activate")
 
 	// stop maintenance
-
-	// update cli api address to the new node
+	{
+		out := w2.PostRequestGetReceipt("governance", "stopMaintenance", "--off-ledger(")
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+	}
 
 	// chain still works
 
-	// w2.Run("chain", "post-request", name, "increment")
-	// checkCounter(43)
+	w2.Run("chain", "post-request", name, "increment")
+	checkCounter(w2, 43)
 }

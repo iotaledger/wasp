@@ -9,7 +9,7 @@ import (
 )
 
 func NewRotateChainStateControllerTx(
-	chainID iotago.AliasID,
+	chainID *iotago.AliasID,
 	newStateController iotago.Address,
 	unspentOutputs iotago.OutputSet,
 	kp *cryptolib.KeyPair,
@@ -17,12 +17,12 @@ func NewRotateChainStateControllerTx(
 	// search for the UTXO that has the CHAIN ID
 
 	for id, utxo := range unspentOutputs {
-		if utxo.UnlockConditionSet().ImmutableAlias().Address.AliasID() != chainID {
+		if utxo.UnlockConditionSet().ImmutableAlias().Address.AliasID() != *chainID {
 			continue
 		}
 		// found the desired output
 
-		// create a TX with that UTXO as input, and the updated addr unlock condition on the new UTXO
+		// create a TX with that UTXO as input, and the updated addr unlock condition on the new output
 		inputIDs := iotago.OutputIDs{id}
 		inputsCommitment := inputIDs.OrderedSet(unspentOutputs).MustCommitment()
 
@@ -30,10 +30,16 @@ func NewRotateChainStateControllerTx(
 		oldUnlockConditions := utxo.UnlockConditionSet()
 		newUnlockConditions := make(iotago.UnlockConditions, len(oldUnlockConditions))
 		for i, condition := range oldUnlockConditions {
-			if condition.Type() == iotago.UnlockConditionStateControllerAddress {
-				condition.(*iotago.AddressUnlockCondition) // TODO
+			if condition.Type() != iotago.UnlockConditionStateControllerAddress {
+				newUnlockConditions[i] = oldUnlockConditions[i]
+				continue
 			}
-			newUnlockConditions[i] = oldUnlockConditions[i]
+			c, ok := condition.(*iotago.StateControllerAddressUnlockCondition)
+			if !ok {
+				return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
+			}
+			c.Address = newStateController
+			newUnlockConditions[i] = c
 		}
 
 		newChainOutput.Conditions = newUnlockConditions

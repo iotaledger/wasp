@@ -30,30 +30,20 @@ var rotateCmd = &cobra.Command{
 
 		kp := wallet.Load().KeyPair
 
-		l1Client.OutputMap(kp.Address())
-
-		tx := transaction.NewRotateChainStateControllerTx(
+		outputSet, err := l1Client.OutputMap(kp.Address())
+		log.Check(err)
+		tx, err := transaction.NewRotateChainStateControllerTx(
 			GetCurrentChainID().AsAliasID(),
 			newStateControllerAddr,
+			outputSet,
+			kp,
 		)
+		log.Check(err)
 		err = l1Client.PostTx((tx))
 		log.Check(err)
 
-		println(newStateControllerAddr)
-
-		// committeePubKeys := make([]string, 0)
-		// for _, api := range config.CommitteeAPI(committee) {
-		// 	peerInfo, err := client.NewWaspClient(api).GetPeeringSelf()
-		// 	log.Check(err)
-		// 	committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
-		// }
-
-		// dkgInitiatorIndex := uint16(rand.Intn(len(committee)))
-		// stateControllerAddr, err := apilib.RunDKG(config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
-		// log.Check(err)
-
-		txID := "" // TODO
-
-		fmt.Fprintf(os.Stdout, "chain rotation transaction issued successfully. TXID: %s", txID)
+		txID, err := tx.ID()
+		log.Check(err)
+		fmt.Fprintf(os.Stdout, "chain rotation transaction issued successfully. TXID: %s", txID.ToHex())
 	},
 }
