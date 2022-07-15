@@ -104,7 +104,9 @@ func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
 	runArgs := []string{"chain", "post-request"}
 	runArgs = append(runArgs, args...)
 	out := w.Run(runArgs...)
-	command := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\)$`).FindStringSubmatch(out[0])[2]
+	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
+		FindStringSubmatch(strings.Join(out, ""))
+	command := r[2]
 	return w.Run(strings.Split(command, " ")...)
 }
 

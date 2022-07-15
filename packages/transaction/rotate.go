@@ -9,7 +9,7 @@ import (
 )
 
 func NewRotateChainStateControllerTx(
-	chainID *iotago.AliasID,
+	chainID iotago.AliasID,
 	newStateController iotago.Address,
 	unspentOutputs iotago.OutputSet,
 	kp *cryptolib.KeyPair,
@@ -17,7 +17,7 @@ func NewRotateChainStateControllerTx(
 	// search for the UTXO that has the CHAIN ID
 
 	for id, utxo := range unspentOutputs {
-		if utxo.UnlockConditionSet().ImmutableAlias().Address.AliasID() != *chainID {
+		if o, ok := utxo.(*iotago.AliasOutput); !ok || o.AliasID != chainID {
 			continue
 		}
 		// found the desired output

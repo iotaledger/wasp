@@ -17,9 +17,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	out := w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 	chainID := regexp.MustCompile(`(.*)ChainID:\s*([a-zA-Z0-9_]*),`).FindStringSubmatch(out[len(out)-1])[2]
 
-	// for running off-ledger requests
-	w.Run("chain", "deposit", "iota:10")
-
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
 	w.CopyFile(srcFile)
@@ -39,10 +36,8 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	checkCounter(w, 42)
 
 	// init maintenance
-	{
-		out = w.PostRequestGetReceipt("governance", "startMaintenance", "--off-ledger")
-		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
-	}
+	out = w.PostRequestGetReceipt("governance", "startMaintenance")
+	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// stop the initial cluster
 	w.Cluster.Stop()
@@ -54,22 +49,20 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	// run DKG on the new cluster, obtain the new state controller address
 	out = w2.Run("chain", "rundkg")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
-	w2.Run("set", "chain", chainID)
+
+	w2.Run("chain", "add", "chain1", chainID)
+	w2.Run("set", "chain", "chain1")
 
 	// issue a governance rotatation via CLI
-	{
-		out := w2.Run("chain", "rotate", newStateControllerAddr)
-		println(out)
-	}
+	out = w.Run("chain", "rotate", newStateControllerAddr)
+	println(out)
 
 	// activate the chain on the new nodes
 	w2.Run("chain", "activate")
 
 	// stop maintenance
-	{
-		out := w2.PostRequestGetReceipt("governance", "stopMaintenance", "--off-ledger(")
-		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
-	}
+	out = w2.PostRequestGetReceipt("governance", "stopMaintenance")
+	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// chain still works
 
