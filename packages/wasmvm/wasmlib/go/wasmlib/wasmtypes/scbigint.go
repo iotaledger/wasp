@@ -104,43 +104,73 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 		}
 		return o.divModSimple(rhs.bytes[0])
 	}
-	return o.divModEstimate(rhs)
+	return o.divModNormalize(rhs)
 }
 
-func (o ScBigInt) divModEstimate(rhs ScBigInt) (ScBigInt, ScBigInt) {
+func (o ScBigInt) divModNormalize(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	// shift divisor MSB until the high order bit is set
-	rhsLen := len(rhs.bytes)
-	byte1 := rhs.bytes[rhsLen-1]
-	byte2 := rhs.bytes[rhsLen-2]
-	word := uint16(byte1)<<8 + uint16(byte2)
-	shift := uint32(0)
-	for ; (word & 0x8000) == 0; word <<= 1 {
+	// so that we get the best guess possible when dividing by MSB
+	highByte := rhs.bytes[len(rhs.bytes)-1]
+	if (highByte & 0x80) != 0 {
+		// already normalized, no shifts necessary
+		return divModEstimate(o, rhs)
+	}
+
+	shift := uint32(1)
+	for highByte <<= 1; (highByte & 0x80) == 0; highByte <<= 1 {
 		shift++
 	}
 
-	// shift numerator by the same amount of bits
-	numerator := o.Shl(shift)
+	// shift both lhs and rhs
+	div, rem := divModEstimate(o.Shl(shift), rhs.Shl(shift))
+	// shift back remainder
+	return div, rem.Shr(shift)
+}
 
-	// now chop off LSBs on both sides such that only MSB of divisor remains
-	numerator.bytes = numerator.bytes[rhsLen-1:]
-	divisor := normalize([]byte{byte(word >> 8)})
-
-	// now we can use simple division by one byte to get a quotient estimate
-	// at worst case this will be 1 or 2 higher than the actual value
-	quotient, _ := numerator.divModSimple(divisor.bytes[0])
-
-	// calculate first product based on estimated quotient
-	product := rhs.Mul(quotient)
-
-	// as long as the product is too high,
-	// decrement the estimated quotient and adjust the product accordingly
-	for product.Cmp(o) > 0 {
-		quotient = quotient.Sub(NewScBigInt(1))
-		product = product.Sub(rhs)
+func divModEstimate(lhs, rhs ScBigInt) (ScBigInt, ScBigInt) {
+	lhsLen := len(lhs.bytes)
+	rhsLen := len(rhs.bytes)
+	if lhsLen <= rhsLen {
+		if lhs.Cmp(rhs) >= 0 {
+			return NewScBigInt(1), lhs.Sub(rhs)
+		}
+		return NewScBigInt(), lhs
 	}
 
-	// now that we found the actual quotient, the remainder is easy to calculate
-	return quotient, o.Sub(product)
+	buf := make([]byte, lhsLen-rhsLen)
+	lhs16 := Uint16FromBytes(lhs.bytes[lhsLen-2:])
+	rhs16 := uint16(rhs.bytes[rhsLen-1])
+	res16 := lhs16 / rhs16
+	if res16 > 0xff {
+		res16 = 0xff
+	}
+	buf[len(buf)-1] = byte(res16)
+	divGuess := normalize(buf)
+	product := rhs.Mul(divGuess)
+
+	cmp := product.Cmp(lhs)
+	if cmp == 0 {
+		// lucky guess and exactly divisible
+		return divGuess, NewScBigInt()
+	}
+
+	if cmp < 0 {
+		// calculate remainder
+		lhs = lhs.Sub(product)
+		if lhs.Cmp(rhs) < 0 {
+			return divGuess, lhs
+		}
+		div, mod := divModEstimate(lhs, rhs)
+		return divGuess.Add(div), mod
+	}
+
+	lhs = product.Sub(lhs)
+	div, mod := divModEstimate(lhs, rhs)
+	div = divGuess.Sub(div)
+	if mod.IsZero() {
+		return div, mod
+	}
+	return div.Sub(NewScBigInt(1)), rhs.Sub(mod)
 }
 
 func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
