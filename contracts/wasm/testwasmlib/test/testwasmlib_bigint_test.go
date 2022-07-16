@@ -35,9 +35,10 @@ func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
 func testLoop(bigOp64 func(lhs, rhs uint64)) {
 	if TestRandomValues {
 		bigOp64(0xffffffffffffffff, 0xffff)
-		for i := 0; i <= 100000; i++ {
+		for i := 0; i <= 10_000_000; i++ {
 			bigOp64(rand.Uint64(), (rand.Uint64()&0xffff)+1)
 		}
+		bigOp64(0xffffffffffffffff, 0xffff)
 	}
 	if TestExhaustive {
 		for lhs := 0; lhs <= ExhaustiveLimit; lhs++ {
@@ -121,6 +122,7 @@ func TestBigDiv(t *testing.T) {
 func TestBigDivMod(t *testing.T) {
 	ctx := setupBigIntTest(t)
 
+	bigDivMod64(t, ctx, 9539020753228380670, 48559)
 	bigDivMod64(t, ctx, 536870911, 511)
 
 	quo, rem := bigDivMod(t, ctx, wasmtypes.NewScBigInt(), wasmtypes.NewScBigInt(1))
@@ -138,6 +140,9 @@ func TestBigDivMod(t *testing.T) {
 	bigDivModString(t, ctx, "0", "1", "0", "0")
 	bigDivModString(t, ctx, "1", "1", "1", "0")
 	bigDivModString(t, ctx, "123456789012345678901234567", "63531", "1943252727209483227105", "26812")
+	bigDivModString(t, ctx, "123456789012345678901234567", "123456789012345678901234567", "1", "0")
+	bigDivModString(t, ctx, "123456789012345678901234567", "123456789012345678901234566", "1", "1")
+	bigDivModString(t, ctx, "123456789012345678901234567", "123456789012345678901234568", "0", "123456789012345678901234567")
 
 	testLoop(func(lhs, rhs uint64) { bigDivMod64(t, ctx, lhs, rhs) })
 }

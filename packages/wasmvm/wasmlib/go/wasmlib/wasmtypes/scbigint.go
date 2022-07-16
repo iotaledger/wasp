@@ -7,6 +7,11 @@ type ScBigInt struct {
 	bytes []byte
 }
 
+var (
+	zero = NewScBigInt()
+	one  = NewScBigInt(1)
+)
+
 func NewScBigInt(value ...uint64) ScBigInt {
 	if len(value) == 0 {
 		return ScBigInt{}
@@ -86,10 +91,10 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	if cmp <= 0 {
 		if cmp < 0 {
 			// divide by larger value, quo = 0, rem = lhs
-			return NewScBigInt(), o
+			return zero, o
 		}
 		// divide equal values, quo = 1, rem = 0
-		return NewScBigInt(1), NewScBigInt()
+		return one, zero
 	}
 	if o.IsUint64() {
 		// let standard uint64 type do the heavy lifting
@@ -100,7 +105,7 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	if len(rhs.bytes) == 1 {
 		if rhs.bytes[0] == 1 {
 			// divide by 1, quo = lhs, rem = 0
-			return o, NewScBigInt()
+			return o, zero
 		}
 		return o.divModSimple(rhs.bytes[0])
 	}
@@ -110,21 +115,22 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 func (o ScBigInt) divModNormalize(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	// shift divisor MSB until the high order bit is set
 	// so that we get the best guess possible when dividing by MSB
-	highByte := rhs.bytes[len(rhs.bytes)-1]
-	if (highByte & 0x80) != 0 {
+
+	msb := rhs.bytes[len(rhs.bytes)-1]
+	if (msb & 0x80) != 0 {
 		// already normalized, no shifts necessary
 		return divModEstimate(o, rhs)
 	}
 
 	shift := uint32(1)
-	for highByte <<= 1; (highByte & 0x80) == 0; highByte <<= 1 {
+	for msb <<= 1; (msb & 0x80) == 0; msb <<= 1 {
 		shift++
 	}
 
 	// shift both lhs and rhs
-	div, rem := divModEstimate(o.Shl(shift), rhs.Shl(shift))
+	quo, rem := divModEstimate(o.Shl(shift), rhs.Shl(shift))
 	// shift back remainder
-	return div, rem.Shr(shift)
+	return quo, rem.Shr(shift)
 }
 
 func divModEstimate(lhs, rhs ScBigInt) (ScBigInt, ScBigInt) {
@@ -132,9 +138,9 @@ func divModEstimate(lhs, rhs ScBigInt) (ScBigInt, ScBigInt) {
 	rhsLen := len(rhs.bytes)
 	if lhsLen <= rhsLen {
 		if lhs.Cmp(rhs) >= 0 {
-			return NewScBigInt(1), lhs.Sub(rhs)
+			return one, lhs.Sub(rhs)
 		}
-		return NewScBigInt(), lhs
+		return zero, lhs
 	}
 
 	buf := make([]byte, lhsLen-rhsLen)
@@ -142,35 +148,31 @@ func divModEstimate(lhs, rhs ScBigInt) (ScBigInt, ScBigInt) {
 	rhs16 := uint16(rhs.bytes[rhsLen-1])
 	res16 := lhs16 / rhs16
 	if res16 > 0xff {
+		// res16 can be up to 0x0101, reduce guess to the nearest byte value
 		res16 = 0xff
 	}
 	buf[len(buf)-1] = byte(res16)
-	divGuess := normalize(buf)
-	product := rhs.Mul(divGuess)
+	guess := normalize(buf)
+	product := rhs.Mul(guess)
 
 	cmp := product.Cmp(lhs)
 	if cmp == 0 {
 		// lucky guess and exactly divisible
-		return divGuess, NewScBigInt()
+		return guess, zero
 	}
 
 	if cmp < 0 {
-		// calculate remainder
-		lhs = lhs.Sub(product)
-		if lhs.Cmp(rhs) < 0 {
-			return divGuess, lhs
-		}
-		div, mod := divModEstimate(lhs, rhs)
-		return divGuess.Add(div), mod
+		// underestimated, correct guess by adding estimate on remainder
+		quo, rem := divModEstimate(lhs.Sub(product), rhs)
+		return guess.Add(quo), rem
 	}
 
-	lhs = product.Sub(lhs)
-	div, mod := divModEstimate(lhs, rhs)
-	div = divGuess.Sub(div)
-	if mod.IsZero() {
-		return div, mod
+	// overestimated, correct guess by subtracting estimate on surplus
+	quo, rem := divModEstimate(product.Sub(lhs), rhs)
+	if rem.IsZero() {
+		return guess.Sub(quo), rem
 	}
-	return div.Sub(NewScBigInt(1)), rhs.Sub(mod)
+	return guess.Sub(quo).Sub(one), rhs.Sub(rem)
 }
 
 func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
@@ -211,7 +213,7 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 	}
 	if rhsLen == 0 {
 		// multiply by zero, result zero
-		return NewScBigInt()
+		return zero
 	}
 	if rhsLen == 1 && rhs.bytes[0] == 1 {
 		// multiply by one, result lhs
@@ -263,7 +265,7 @@ func (o ScBigInt) Shr(shift uint32) ScBigInt {
 
 	lhsLen := len(o.bytes)
 	if wholeBytes >= lhsLen {
-		return NewScBigInt()
+		return zero
 	}
 
 	bufLen := lhsLen - wholeBytes
