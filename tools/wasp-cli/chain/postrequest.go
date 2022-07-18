@@ -46,7 +46,7 @@ func postRequestCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringSliceVarP(&allowance, "allowance", "l", []string{},
-		"include allowances as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
+		"include allowance as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
 
 	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
 		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
