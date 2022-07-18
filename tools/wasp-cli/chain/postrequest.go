@@ -12,6 +12,7 @@ import (
 
 func postRequestCmd() *cobra.Command {
 	var transfer []string
+	var allowance []string
 	var offLedger bool
 
 	cmd := &cobra.Command{
@@ -21,9 +22,12 @@ func postRequestCmd() *cobra.Command {
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			fname := args[1]
+
+			allowanceTokens := util.ParseFungibleTokens(allowance)
 			params := chainclient.PostRequestParams{
-				Args:     util.EncodeParams(args[2:]),
-				Transfer: util.ParseFungibleTokens(transfer),
+				Args:      util.EncodeParams(args[2:]),
+				Transfer:  util.ParseFungibleTokens(transfer),
+				Allowance: iscp.NewAllowanceFungibleTokens(allowanceTokens),
 			}
 
 			scClient := SCClient(iscp.Hn(args[0]))
@@ -40,6 +44,9 @@ func postRequestCmd() *cobra.Command {
 			}
 		},
 	}
+
+	cmd.Flags().StringSliceVarP(&allowance, "allowance", "l", []string{},
+		"include allowance as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
 
 	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{},
 		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
