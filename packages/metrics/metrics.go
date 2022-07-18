@@ -15,6 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const ReadHeaderTimeout = time.Second * 3
+
 type Metrics struct {
 	server                  *http.Server
 	log                     *logger.Logger
@@ -65,7 +67,7 @@ func (m *Metrics) Start(addr string) {
 			return nil
 		})
 		m.log.Infof("Prometheus metrics accessible at: %s", addr)
-		m.server = &http.Server{Addr: addr, Handler: e}
+		m.server = &http.Server{Addr: addr, Handler: e, ReadHeaderTimeout: ReadHeaderTimeout}
 		m.registerMetrics()
 		if err := m.server.ListenAndServe(); err != nil {
 			m.log.Error("Failed to start metrics server", err)
