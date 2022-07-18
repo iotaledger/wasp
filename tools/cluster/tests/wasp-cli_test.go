@@ -193,6 +193,10 @@ func TestWaspCLIContract(t *testing.T) {
 	// test off-ledger request
 	w.Run("chain", "post-request", name, "increment", "--off-ledger")
 	checkCounter(45)
+
+	// include an allowance transfer
+	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10", "--allowance=iota:10")
+	checkCounter(46)
 }
 
 func findRequestIDInOutput(out []string) string {
