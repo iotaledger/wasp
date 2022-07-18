@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const ReadHeaderTimeout = time.Second * 3
+const ReadHeaderTimeout = time.Millisecond * 500
 
 type Metrics struct {
 	server                  *http.Server
