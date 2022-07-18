@@ -45,6 +45,6 @@ You can browse the Solo Go API reference (updated to the `master` branch) in [go
 
 Of course, along with Solo you will need a smart contract to test.
 You can find example implementations of Rust/Wasm smart contracts (including source code and tests) in the Wasp repository, in the [contracts/wasm folder](https://github.com/iotaledger/wasp/tree/develop/contracts/wasm).
-For information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../../wasm_vm).
+For information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../wasm_vm/intro.mdx).
 
 In the following sections we will present some Solo usage examples. The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
