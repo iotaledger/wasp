@@ -11,10 +11,10 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func Client() *chainclient.Client {
+func Client(i ...int) *chainclient.Client {
 	return chainclient.New(
 		config.L1Client(),
-		config.WaspClient(),
+		config.WaspClient(i...),
 		GetCurrentChainID(),
 		wallet.Load().KeyPair,
 	)

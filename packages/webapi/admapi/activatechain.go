@@ -87,12 +87,15 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
 
-	chain := w.chains().Get(chainID, true)
-	committeeInfo := chain.GetCommitteeInfo()
 	chainRecord, err := w.registry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return err
 	}
+	if chainRecord == nil {
+		return httperrors.NotFound("")
+	}
+	chain := w.chains().Get(chainID, true)
+	committeeInfo := chain.GetCommitteeInfo()
 	dkShare, err := w.registry().LoadDKShare(committeeInfo.Address)
 	if err != nil {
 		return err

@@ -11,43 +11,40 @@ import (
 func NewRotateChainStateControllerTx(
 	chainID iotago.AliasID,
 	newStateController iotago.Address,
-	unspentOutputs iotago.OutputSet,
+	chainOutputID iotago.OutputID,
+	chainOutput iotago.Output,
 	kp *cryptolib.KeyPair,
 ) (*iotago.Transaction, error) {
-	// search for the UTXO that has the CHAIN ID
-
-	for id, utxo := range unspentOutputs {
-		if o, ok := utxo.(*iotago.AliasOutput); !ok || o.AliasID != chainID {
-			continue
-		}
-		// found the desired output
-
-		// create a TX with that UTXO as input, and the updated addr unlock condition on the new output
-		inputIDs := iotago.OutputIDs{id}
-		inputsCommitment := inputIDs.OrderedSet(unspentOutputs).MustCommitment()
-
-		newChainOutput := utxo.Clone().(*iotago.AliasOutput)
-		oldUnlockConditions := utxo.UnlockConditionSet()
-		newUnlockConditions := make(iotago.UnlockConditions, len(oldUnlockConditions))
-		for i, condition := range oldUnlockConditions {
-			if condition.Type() != iotago.UnlockConditionStateControllerAddress {
-				newUnlockConditions[i] = oldUnlockConditions[i]
-				continue
-			}
-			c, ok := condition.(*iotago.StateControllerAddressUnlockCondition)
-			if !ok {
-				return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
-			}
-			c.Address = newStateController
-			newUnlockConditions[i] = c
-		}
-
-		newChainOutput.Conditions = newUnlockConditions
-		newChainOutput.UnlockConditionSet().StateControllerAddress()
-		outputs := iotago.Outputs{newChainOutput}
-
-		return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1.Protocol.NetworkID())
+	if o, ok := chainOutput.(*iotago.AliasOutput); !ok || o.AliasID != chainID {
+		return nil, fmt.Errorf("provided output is not the correct one. expected ChainID: %s", chainID.ToAddress().Bech32(parameters.L1.Protocol.Bech32HRP))
 	}
 
-	return nil, fmt.Errorf("UTXO with chainID %s not found", chainID.ToAddress().Bech32(parameters.L1.Protocol.Bech32HRP))
+	// create a TX with that UTXO as input, and the updated addr unlock condition on the new output
+	inputIDs := iotago.OutputIDs{chainOutputID}
+	outSet := iotago.OutputSet{}
+	outSet[chainOutputID] = chainOutput
+	inputsCommitment := inputIDs.OrderedSet(outSet).MustCommitment()
+
+	newChainOutput := chainOutput.Clone().(*iotago.AliasOutput)
+	oldUnlockConditions := newChainOutput.UnlockConditionSet()
+	newChainOutput.Conditions = make(iotago.UnlockConditions, len(oldUnlockConditions))
+	i := 0
+	for t, condition := range oldUnlockConditions {
+		newChainOutput.Conditions[i] = condition.Clone()
+		if t != iotago.UnlockConditionStateControllerAddress {
+			i++
+			continue
+		}
+		// found the condition to alter
+		c, ok := newChainOutput.Conditions[i].(*iotago.StateControllerAddressUnlockCondition)
+		if !ok {
+			return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
+		}
+		c.Address = newStateController
+		newChainOutput.Conditions[i] = c.Clone()
+		i++
+	}
+
+	outputs := iotago.Outputs{newChainOutput}
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1.Protocol.NetworkID())
 }

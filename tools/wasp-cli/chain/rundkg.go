@@ -28,7 +28,10 @@ func runDKGCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			if committee == nil {
-				committee = []int{0, 1, 2, 3}
+				committee = getAllWaspNodes()
+			}
+			if quorum == 0 {
+				quorum = defaultQuorum(len(committee))
 			}
 
 			committeePubKeys := make([]string, 0)
@@ -49,7 +52,7 @@ func runDKGCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes  (default: 0,1,2,3)")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "peers acting as committee nodes (ex: 0,1,2,3) (default: all nodes)")
+	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum")
 	return cmd
 }

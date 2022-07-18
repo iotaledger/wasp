@@ -52,6 +52,7 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 
 	dataPath := path.Join(os.TempDir(), dirname)
 	clu := cluster.New(t.Name(), clusterConfig, t)
+	clu.DataPath = dataPath
 
 	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)
 	require.NoError(t, err)

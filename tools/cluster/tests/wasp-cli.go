@@ -19,9 +19,10 @@ import (
 )
 
 type WaspCLITest struct {
-	T       *testing.T
-	Cluster *cluster.Cluster
-	dir     string
+	T          *testing.T
+	Cluster    *cluster.Cluster
+	dir        string
+	CliAddress iotago.Address
 }
 
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
@@ -51,6 +52,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	require.Len(t, rs, 2)
 	_, addr, err := iotago.ParseBech32(rs[1])
 	require.NoError(t, err)
+	w.CliAddress = addr
 	// requested funds will take some time to be available
 	for {
 		outputs, err := clu.L1Client().OutputMap(addr)

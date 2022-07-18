@@ -88,6 +88,22 @@ func (clu *Cluster) L1Client() nodeconn.L1Client {
 	return clu.l1
 }
 
+func (clu *Cluster) AddTrustedNode(peerInfo *model.PeeringTrustedNode, onNodes ...[]int) error {
+	nodes := clu.Config.AllNodes()
+	if len(onNodes) > 0 {
+		nodes = onNodes[0]
+	}
+
+	for ni := range nodes {
+		var err error
+		if _, err = clu.WaspClient(
+			nodes[ni]).PostPeeringTrusted(peerInfo.PubKey, peerInfo.NetID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (clu *Cluster) TrustAll() error {
 	allNodes := clu.Config.AllNodes()
 	allPeers := make([]*model.PeeringTrustedNode, len(allNodes))
@@ -194,7 +210,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		Description:       description,
 		Textout:           os.Stdout,
 		Prefix:            "[cluster] ",
-	}, stateAddr)
+	}, stateAddr, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
@@ -311,8 +327,8 @@ func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
 	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
 }
 
-func waspNodeDataPath(dataPath string, i int) string {
-	return path.Join(dataPath, fmt.Sprintf("wasp%d", i))
+func (clu *Cluster) NodeDataPath(i int) string {
+	return path.Join(clu.DataPath, fmt.Sprintf("wasp%d", i))
 }
 
 func fileExists(filepath string) (bool, error) {
@@ -347,7 +363,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
 		err = initNodeConfig(
-			waspNodeDataPath(dataPath, i),
+			clu.NodeDataPath(i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
 			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
@@ -358,9 +374,6 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			return err
 		}
 	}
-
-	clu.DataPath = dataPath
-
 	return clu.Config.Save(dataPath)
 }
 
@@ -428,7 +441,7 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		_, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
+		err := clu.startWaspNode(i, initOk)
 		if err != nil {
 			return err
 		}
@@ -479,11 +492,10 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	initOk := make(chan bool, len(nodeIndex))
 	okCount := 0
 	for _, i := range nodeIndex {
-		_, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, i), i, initOk)
+		err := clu.startWaspNode(i, initOk)
 		if err != nil {
 			return err
 		}
-
 		select {
 		case <-initOk:
 			okCount++
@@ -497,12 +509,28 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	return nil
 }
 
-func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
+func (clu *Cluster) startWaspNode(i int, initOk chan<- bool) error {
+	apiURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(clu.Config.APIPort(i)))
+	cmd, err := DoStartWaspNode(
+		clu.NodeDataPath(i),
+		i,
+		apiURL,
+		initOk,
+		clu.t,
+	)
+	if err != nil {
+		return err
+	}
+	clu.waspCmds[i] = cmd
+	return nil
+}
+
+func DoStartWaspNode(cwd string, nodeIndex int, nodeAPIURL string, initOk chan<- bool, t *testing.T) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
-	cmd := exec.Command(command)
+	cmd := exec.Command("wasp")
 
 	// force the wasp processes to close if the cluster tests time out
-	if clu.t != nil {
+	if t != nil {
 		util.TerminateCmdWhenTestStops(cmd)
 	}
 
@@ -527,17 +555,17 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 		stdoutPipe,
 		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
 	)
-	go clu.waitForAPIReady(initOk, nodeIndex)
 
-	clu.waspCmds[nodeIndex] = cmd
+	go waitForAPIReady(initOk, nodeAPIURL)
+
 	return cmd, nil
 }
 
 const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
-func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
-	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
+func waitForAPIReady(initOk chan<- bool, apiUrl string) {
+	infoEndpointURL := fmt.Sprintf("%s%s", apiUrl, routes.Info())
 
 	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
@@ -545,10 +573,10 @@ func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 			<-ticker.C
 			rsp, err := http.Get(infoEndpointURL) //nolint:gosec
 			if err != nil {
-				fmt.Printf("Error Polling node %d API ready status: %v\n", nodeIndex, err)
+				fmt.Printf("Error Polling node API %s ready status: %v\n", apiUrl, err)
 				continue
 			}
-			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
+			fmt.Printf("Polling node API %s ready status: %s %s\n", apiUrl, infoEndpointURL, rsp.Status)
 			//goland:noinspection GoUnhandledErrorResult
 			rsp.Body.Close()
 			if err == nil && rsp.StatusCode != 404 {
@@ -653,7 +681,7 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 
 	// if the address is an alias output, we also need to fetch the output itself and add that balance
 	if aliasAddr, ok := addr.(*iotago.AliasAddress); ok {
-		aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
+		_, aliasOutput, err := clu.l1.GetAliasOutput(aliasAddr.AliasID())
 		if err != nil {
 			fmt.Printf("[cluster] GetAliasOutput error: %v\n", err)
 			return nil
