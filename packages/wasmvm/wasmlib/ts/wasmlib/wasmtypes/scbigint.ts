@@ -9,6 +9,9 @@ import * as wasmtypes from "./index";
 export class ScBigInt {
     bytes: u8[] = [];
 
+    private static zero: ScBigInt = new ScBigInt();
+    private static one: ScBigInt = ScBigInt.fromUint64(1);
+
     constructor() {
     }
 
@@ -86,10 +89,10 @@ export class ScBigInt {
         if (cmp <= 0) {
             if (cmp < 0) {
                 // divide by larger value, quo = 0, rem = lhs
-                return [new ScBigInt(), ScBigInt.normalize(this.bytes)];
+                return [ScBigInt.zero, ScBigInt.normalize(this.bytes)];
             }
             // divide equal values, quo = 1, rem = 0
-            return [ScBigInt.fromUint64(1), new ScBigInt()];
+            return [ScBigInt.one, ScBigInt.zero];
         }
         if (this.isUint64()) {
             // let standard uint64 type do the heavy lifting
@@ -101,51 +104,110 @@ export class ScBigInt {
         if (rhs.bytes.length == 1) {
             if (rhs.bytes[0] == 1) {
                 // divide by 1, quo = lhs, rem = 0
-                return [ScBigInt.normalize(this.bytes), new ScBigInt()];
+                return [ScBigInt.normalize(this.bytes), ScBigInt.zero];
             }
-            return this.divModSimple(rhs.bytes[0]);
+            return this.divModSingleByte(rhs.bytes[0]);
         }
-        return this.divModEstimate(rhs);
+        return this.divModMultiByte(rhs);
     }
 
+    // divModEstimate uses long division byte estimation and corrects on the remainder
+    // by recursively estimating the next byte and discounting the result in the quotient
     public divModEstimate(rhs: ScBigInt): ScBigInt[] {
-        // shift divisor MSB until the high order bit is set
-        let rhsLen = rhs.bytes.length;
-        let byte1 = rhs.bytes[rhsLen - 1];
-        let byte2 = rhs.bytes[rhsLen - 2];
-        let word = (byte1 as u16) << 8 + (byte2 as u16);
-        let shift: u32 = 0;
-        for (; (word & 0x8000) == 0; word <<= 1) {
+        // first filter out the simplest cases, when lengths are equal
+        // that either results in a quotient of one or zero
+        const lhsLen = this.bytes.length;
+        const rhsLen = rhs.bytes.length;
+        if (lhsLen <= rhsLen) {
+            if (this.cmp(rhs) < 0) {
+                return [ScBigInt.zero, this];
+            }
+            return [ScBigInt.one, this.sub(rhs)];
+        }
+
+        // Now for the big estimation trick. Since we normalized the rhs to have the msb high bit
+        // set, dividing two lhs MSBs by the rhs MSB will in over 80% of the cases be the correct
+        // value for the entire lhs / rhs, almost 20% will be 1 too high, and about 0.5% will be
+        // 2 too high. We could then use a simple compare and subtract loop to get the quotient
+        // guess correct.
+        // But we're going to correct the quotient with the estimate of the next byte instead.
+        // When we overshoot the correct value we will subtract the estimate taken on the surplus
+        // value, and otherwise we will add the estimate taken on the remainder value. This will
+        // ultimately converge the quotient to the actual value of lhs / rhs
+
+        // determine the initial guess for the quotient
+        let bufLen = lhsLen-rhsLen;
+        const buf = new Array<u8>(bufLen);
+        const lhs16 = wasmtypes.uint16FromBytes(this.bytes.slice(lhsLen-2));
+        const rhs16 = rhs.bytes[rhsLen-1] as u16;
+        let res16 = lhs16 / rhs16;
+        if (res16 > 0xff) {
+            // res16 can be up to 0x0101, reduce guess to the nearest byte value
+            // the estimate correction algorithm will take care of fixing this
+            res16 = 0xff;
+        }
+        buf[bufLen-1] = res16 as u8;
+        const guess = ScBigInt.normalize(buf);
+
+        // now see where this guess gets us when multiplying back
+        const product = rhs.mul(guess);
+
+        // compare the product to the original lhs to see where our guess get us
+        const cmp = product.cmp(this);
+        if (cmp == 0) {
+            // lucky guess, exact match, and obviously exactly divisible by rhs without remainder
+            return [guess, ScBigInt.zero];
+        }
+
+        if (cmp < 0) {
+            // underestimated, correct our guess by adding the estimate on the remainder
+            const guessRemainder = this.sub(product);
+            const quoRem = guessRemainder.divModEstimate(rhs);
+            return [guess.add(quoRem[0]), quoRem[1]];
+        }
+
+        // overestimated, correct guess by subtracting the estimate on the surplus
+        const guessSurplus = product.sub(this);
+        const quoRem = guessSurplus.divModEstimate(rhs);
+        if (quoRem[1].isZero()) {
+            // when the remainder is zero, we obviously have the exact match,
+            // so we only subtract the surplus quotient
+            return [guess.sub(quoRem[0]), ScBigInt.zero];
+        }
+
+        // When the remainder is nonzero, we subtract the surplus quotient, but since
+        // we also need to subtract the remainder, we will need to correct the quotient
+        // by subtracting one more. That will allow us to then subtract the surplus
+        // remainder from the rhs to get the actual remainder.
+        return [guess.sub(quoRem[0]).sub(ScBigInt.one), rhs.sub(quoRem[1])];
+    }
+
+    // divModMultiByte divides the lhs by a multi-byte rhs and returns quotient and remainder
+    public divModMultiByte(rhs: ScBigInt): ScBigInt[] {
+        // normalize first, shift divisor MSB until the high order bit is set
+        // so that we get the best guess possible when dividing by MSB
+
+        let msb = rhs.bytes[rhs.bytes.length-1];
+        if ((msb & 0x80) != 0) {
+            // already normalized, no shifts necessary
+            return this.divModEstimate(rhs);
+        }
+
+        // determine how far to shift
+        let shift: u32 = 1;
+        for (msb <<= 1; (msb & 0x80) == 0; msb <<= 1) {
             shift++;
         }
 
-        // shift numerator by the same amount of bits
-        let numerator = this.shl(shift);
+        // shift both lhs and rhs, that way the quotient will be the same
+        // since lhs / rhs is equal to (lhs << shift) / (rhs << shift)
+        const quoRem = this.shl(shift).divModEstimate(rhs.shl(shift));
 
-        // now chop off LSBs on both sides such that only MSB of divisor remains
-        numerator.bytes = numerator.bytes.slice(rhsLen - 1);
-        let divisor = ScBigInt.normalize([(word >> 8) as u8]);
-
-        // now we can use simple division by one byte to get a quotient estimate
-        // at worst case this will be 1 or 2 higher than the actual value
-        let quotients = numerator.divModSimple(divisor.bytes[0]);
-        let quotient = quotients[0];
-
-        // calculate first product based on estimated quotient
-        let product = rhs.mul(quotient)
-
-        // as long as the product is too high,
-        // decrement the estimated quotient and adjust the product accordingly
-        while (product.cmp(this) > 0) {
-            quotient = quotient.sub(ScBigInt.fromUint64(1))
-            product = product.sub(rhs)
-        }
-
-        // now that we found the actual quotient, the remainder is easy to calculate
-        return [quotient, this.sub(product)];
+        // note that remainder will be shifted, too, so shift back the remainder
+        return [quoRem[0], quoRem[1].shr(shift)];
     }
 
-    private divModSimple(value: u8): ScBigInt[] {
+    private divModSingleByte(value: u8): ScBigInt[] {
         const lhsLen = this.bytes.length;
         const buf = new Array<u8>(lhsLen);
         let remain: u16 = 0;
@@ -186,7 +248,7 @@ export class ScBigInt {
         }
         if (rhsLen == 0) {
             // multiply by zero, result zero
-            return new ScBigInt();
+            return ScBigInt.zero;
         }
         if (rhsLen == 1 && rhs.bytes[0] == 1) {
             // multiply by one, result lhs
@@ -238,7 +300,7 @@ export class ScBigInt {
 
         let lhs_len = this.bytes.length;
         if (whole_bytes >= (lhs_len as u32)) {
-            return new ScBigInt();
+            return ScBigInt.zero;
         }
 
         let buf_len = lhs_len - whole_bytes;
@@ -259,7 +321,7 @@ export class ScBigInt {
             if (cmp < 0) {
                 panic("subtraction underflow");
             }
-            return new ScBigInt();
+            return ScBigInt.zero;
         }
         const lhsLen = this.bytes.length;
         const rhsLen = rhs.bytes.length;

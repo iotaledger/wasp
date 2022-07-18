@@ -107,75 +107,108 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 			// divide by 1, quo = lhs, rem = 0
 			return o, zero
 		}
-		return o.divModSimple(rhs.bytes[0])
+		return o.divModSingleByte(rhs.bytes[0])
 	}
-	return o.divModNormalize(rhs)
+	return o.divModMultiByte(rhs)
 }
 
-func (o ScBigInt) divModNormalize(rhs ScBigInt) (ScBigInt, ScBigInt) {
-	// shift divisor MSB until the high order bit is set
+// divModEstimate uses long division byte estimation and corrects on the remainder
+// by recursively estimating the next byte and discounting the result in the quotient
+func (o ScBigInt) divModEstimate(rhs ScBigInt) (ScBigInt, ScBigInt) {
+	// first filter out the simplest cases, when lengths are equal
+	// that either results in a quotient of one or zero
+	lhsLen := len(o.bytes)
+	rhsLen := len(rhs.bytes)
+	if lhsLen <= rhsLen {
+		if o.Cmp(rhs) < 0 {
+			return zero, o
+		}
+		return one, o.Sub(rhs)
+	}
+
+	// Now for the big estimation trick. Since we normalized the rhs to have the msb high bit
+	// set, dividing two lhs MSBs by the rhs MSB will in over 80% of the cases be the correct
+	// value for the entire lhs / rhs, almost 20% will be 1 too high, and about 0.5% will be
+	// 2 too high. We could then use a simple compare and subtract loop to get the quotient
+	// guess correct.
+	// But we're going to correct the quotient with the estimate of the next byte instead.
+	// When we overshoot the correct value we will subtract the estimate taken on the surplus
+	// value, and otherwise we will add the estimate taken on the remainder value. This will
+	// ultimately converge the quotient to the actual value of lhs / rhs
+
+	// determine the initial guess for the quotient
+	bufLen := lhsLen - rhsLen
+	buf := make([]byte, bufLen)
+	lhs16 := Uint16FromBytes(o.bytes[lhsLen-2:])
+	rhs16 := uint16(rhs.bytes[rhsLen-1])
+	res16 := lhs16 / rhs16
+	if res16 > 0xff {
+		// res16 can be up to 0x0101, reduce guess to the nearest byte value
+		// the estimate correction algorithm will take care of fixing this
+		res16 = 0xff
+	}
+	buf[bufLen-1] = byte(res16)
+	guess := normalize(buf)
+
+	// now see where this guess gets us when multiplying back
+	product := rhs.Mul(guess)
+
+	// compare the product to the original lhs to see where our guess get us
+	cmp := product.Cmp(o)
+	if cmp == 0 {
+		// lucky guess, exact match, and obviously exactly divisible by rhs without remainder
+		return guess, zero
+	}
+
+	if cmp < 0 {
+		// underestimated, correct our guess by adding the estimate on the remainder
+		guessRemainder := o.Sub(product)
+		quo, rem := guessRemainder.divModEstimate(rhs)
+		return guess.Add(quo), rem
+	}
+
+	// overestimated, correct guess by subtracting the estimate on the surplus
+	guessSurplus := product.Sub(o)
+	quo, rem := guessSurplus.divModEstimate(rhs)
+	if rem.IsZero() {
+		// when the remainder is zero, we obviously have the exact match,
+		// so we only subtract the surplus quotient
+		return guess.Sub(quo), zero
+	}
+
+	// When the remainder is nonzero, we subtract the surplus quotient, but since
+	// we also need to subtract the remainder, we will need to correct the quotient
+	// by subtracting one more. That will allow us to then subtract the surplus
+	// remainder from the rhs to get the actual remainder.
+	return guess.Sub(quo).Sub(one), rhs.Sub(rem)
+}
+
+// divModMultiByte divides the lhs by a multi-byte rhs and returns quotient and remainder
+func (o ScBigInt) divModMultiByte(rhs ScBigInt) (ScBigInt, ScBigInt) {
+	// normalize first, shift divisor MSB until the high order bit is set
 	// so that we get the best guess possible when dividing by MSB
 
 	msb := rhs.bytes[len(rhs.bytes)-1]
 	if (msb & 0x80) != 0 {
 		// already normalized, no shifts necessary
-		return divModEstimate(o, rhs)
+		return o.divModEstimate(rhs)
 	}
 
+	// determine how far to shift
 	shift := uint32(1)
 	for msb <<= 1; (msb & 0x80) == 0; msb <<= 1 {
 		shift++
 	}
 
-	// shift both lhs and rhs
-	quo, rem := divModEstimate(o.Shl(shift), rhs.Shl(shift))
-	// shift back remainder
+	// shift both lhs and rhs, that way the quotient will be the same
+	// since lhs / rhs is equal to (lhs << shift) / (rhs << shift)
+	quo, rem := o.Shl(shift).divModEstimate(rhs.Shl(shift))
+
+	// note that remainder will be shifted, too, so shift back the remainder
 	return quo, rem.Shr(shift)
 }
 
-func divModEstimate(lhs, rhs ScBigInt) (ScBigInt, ScBigInt) {
-	lhsLen := len(lhs.bytes)
-	rhsLen := len(rhs.bytes)
-	if lhsLen <= rhsLen {
-		if lhs.Cmp(rhs) >= 0 {
-			return one, lhs.Sub(rhs)
-		}
-		return zero, lhs
-	}
-
-	buf := make([]byte, lhsLen-rhsLen)
-	lhs16 := Uint16FromBytes(lhs.bytes[lhsLen-2:])
-	rhs16 := uint16(rhs.bytes[rhsLen-1])
-	res16 := lhs16 / rhs16
-	if res16 > 0xff {
-		// res16 can be up to 0x0101, reduce guess to the nearest byte value
-		res16 = 0xff
-	}
-	buf[len(buf)-1] = byte(res16)
-	guess := normalize(buf)
-	product := rhs.Mul(guess)
-
-	cmp := product.Cmp(lhs)
-	if cmp == 0 {
-		// lucky guess and exactly divisible
-		return guess, zero
-	}
-
-	if cmp < 0 {
-		// underestimated, correct guess by adding estimate on remainder
-		quo, rem := divModEstimate(lhs.Sub(product), rhs)
-		return guess.Add(quo), rem
-	}
-
-	// overestimated, correct guess by subtracting estimate on surplus
-	quo, rem := divModEstimate(product.Sub(lhs), rhs)
-	if rem.IsZero() {
-		return guess.Sub(quo), rem
-	}
-	return guess.Sub(quo).Sub(one), rhs.Sub(rem)
-}
-
-func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
+func (o ScBigInt) divModSingleByte(value byte) (ScBigInt, ScBigInt) {
 	lhsLen := len(o.bytes)
 	buf := make([]byte, lhsLen)
 	remain := uint16(0)

@@ -25,7 +25,6 @@ const (
 )
 
 func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
-	//*wasmsolo.TsWasm = true
 	if SkipWasm {
 		return nil
 	}
@@ -35,7 +34,7 @@ func setupBigIntTest(t *testing.T) *wasmsolo.SoloContext {
 func testLoop(bigOp64 func(lhs, rhs uint64)) {
 	if TestRandomValues {
 		bigOp64(0xffffffffffffffff, 0xffff)
-		for i := 0; i <= 10_000_000; i++ {
+		for i := 0; i <= 100_000; i++ {
 			bigOp64(rand.Uint64(), (rand.Uint64()&0xffff)+1)
 		}
 		bigOp64(0xffffffffffffffff, 0xffff)
