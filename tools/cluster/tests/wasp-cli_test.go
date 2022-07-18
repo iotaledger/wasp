@@ -151,7 +151,7 @@ func TestWaspCLIContract(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
-	w.Run("chain", "deposit", "iota:10")
+	w.Run("chain", "deposit", "iota:10000000")
 
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
@@ -187,7 +187,7 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(43)
 
 	// include a funds transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10")
+	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10000000")
 	checkCounter(44)
 
 	// test off-ledger request
@@ -195,7 +195,7 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(45)
 
 	// include an allowance transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10", "--allowance=iota:10")
+	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10000000", "--allowance=iota:10000000")
 	checkCounter(46)
 }
 
