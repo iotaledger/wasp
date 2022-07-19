@@ -33,8 +33,8 @@ test-full: install
 test: install
 	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 40m --count 1 -failfast $(TEST_ARG)
 
-test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
+test-short-no-wasm:
+	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install: compile-solidity
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
@@ -54,5 +54,5 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-windows build-lint test test-short test-full install install-windows lint gofumpt-list docker-build
+.PHONY: all build build-windows build-lint test test-short-no-wasm test-full install install-windows lint gofumpt-list docker-build
 
