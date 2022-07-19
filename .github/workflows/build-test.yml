@@ -28,7 +28,7 @@ jobs:
         run: make build
 
       - name: Test
-        run: make test-short
+        run: make test-short-no-wasm
 
   golangci:
     name: lint
