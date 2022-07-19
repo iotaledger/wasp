@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -44,7 +43,6 @@ type ViewContext struct {
 	gasBudget      uint64
 	gasBurnEnabled bool
 	callStack      []*callContext
-	l1Params       *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}

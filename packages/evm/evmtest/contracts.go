@@ -62,3 +62,30 @@ var (
 	fibonacciContractBytecodeHex string
 	FibonacciContractByteCode    = common.FromHex(strings.TrimSpace(fibonacciContractBytecodeHex))
 )
+
+//go:generate solc --abi --bin --overwrite GasTestMemory.sol -o .
+var (
+	//go:embed GasTestMemory.abi
+	GasTestMemoryContractABI string
+	//go:embed GasTestMemory.bin
+	gasTestMemoryContractBytecodeHex string
+	GasTestMemoryContractBytecode    = common.FromHex(strings.TrimSpace(gasTestMemoryContractBytecodeHex))
+)
+
+//go:generate solc --abi --bin --overwrite GasTestStorage.sol -o .
+var (
+	//go:embed GasTestStorage.abi
+	GasTestStorageContractABI string
+	//go:embed GasTestStorage.bin
+	gasTestStorageContractBytecodeHex string
+	GasTestStorageContractBytecode    = common.FromHex(strings.TrimSpace(gasTestStorageContractBytecodeHex))
+)
+
+//go:generate solc --abi --bin --overwrite GasTestExecutionTime.sol -o .
+var (
+	//go:embed GasTestExecutionTime.abi
+	GasTestExecutionTimeContractABI string
+	//go:embed GasTestExecutionTime.bin
+	gasTestExecutionTimeContractBytecodeHex string
+	GasTestExecutionTimeContractBytecode    = common.FromHex(strings.TrimSpace(gasTestExecutionTimeContractBytecodeHex))
+)

@@ -31,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -108,8 +107,6 @@ type Chain struct {
 	mempool mempool.Mempool
 	// used for non-standard VMs
 	bypassStardustVM bool
-	// receipt of the last call
-	lastReceipt *blocklog.RequestReceipt
 }
 
 var _ chain.ChainCore = &Chain{}
