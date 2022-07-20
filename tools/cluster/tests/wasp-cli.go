@@ -19,10 +19,10 @@ import (
 )
 
 type WaspCLITest struct {
-	T          *testing.T
-	Cluster    *cluster.Cluster
-	dir        string
-	CliAddress iotago.Address
+	T              *testing.T
+	Cluster        *cluster.Cluster
+	dir            string
+	WaspCliAddress iotago.Address
 }
 
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
@@ -52,7 +52,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	require.Len(t, rs, 2)
 	_, addr, err := iotago.ParseBech32(rs[1])
 	require.NoError(t, err)
-	w.CliAddress = addr
+	w.WaspCliAddress = addr
 	// requested funds will take some time to be available
 	for {
 		outputs, err := clu.L1Client().OutputMap(addr)
@@ -86,12 +86,14 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		require.NoError(w.T, fmt.Errorf(
-			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
-			strings.Join(args, " "),
-			err,
-			outStr+errStr,
-		))
+		w.T.Fatal(
+			fmt.Errorf(
+				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
+				strings.Join(args, " "),
+				err,
+				outStr+errStr,
+			),
+		)
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
 	outStr = strings.TrimRight(outStr, "\n")
