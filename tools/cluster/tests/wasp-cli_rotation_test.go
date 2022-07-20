@@ -50,7 +50,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	w2 := newWaspCLITest(t, waspClusterOpts{
 		nNodes:  4,
 		dirName: "wasp-cluster-new-gov",
-		modifyConfig: func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams {
+		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 			// avoid port conflicts when running everything on localhost
 			configParams.APIPort += 100
 			configParams.DashboardPort += 100
@@ -81,7 +81,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	require.NoError(t, err)
 	jsonDict, err := governance.NewChangeAccessNodesRequest().Accept(pubKey).AsDict().MarshalJSON()
 	require.NoError(t, err)
-	// TODO needs a amore use-friendly command
+	// TODO needs a more use-friendly command
 	out = w.PostRequestGetReceipt("governance", "changeAccessNodes", "string", "n", "dict", string(jsonDict))
 	println(out)
 	// }
@@ -140,7 +140,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	// }
 
 	// run DKG on the new cluster, obtain the new state controller address
-	out = w2.Run("chain", "rundkg", "--committee=0,1,2,3")
+	out = w2.Run("chain", "rundkg")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
 	w2.Run("chain", "add", "chain1", chainID)

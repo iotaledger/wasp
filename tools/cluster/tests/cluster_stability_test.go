@@ -53,7 +53,7 @@ func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) 
 }
 
 func (e *SabotageEnv) setSabotageValidators(breakCount int) {
-	clusterSize := e.chainEnv.Clu.Config.Wasp.NumNodes
+	clusterSize := len(e.chainEnv.Clu.Config.Wasp)
 
 	from := clusterSize - e.NumValidators
 	to := from + breakCount - 1

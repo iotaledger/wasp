@@ -44,6 +44,11 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 
 	w.Run("set", "l1.apiAddress", clu.Config.L1.APIAddress)
 	w.Run("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
+	for _, node := range clu.Config.AllNodes() {
+		w.Run("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+	}
 
 	requestFundstext := w.Run("request-funds")
 	// latest line should print something like: "Request funds for address atoi...: success"
@@ -137,11 +142,11 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 
 func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	var committee []string
-	for i := 0; i < w.Cluster.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
 		committee = append(committee, fmt.Sprintf("%d", i))
 	}
 
-	quorum := 3 * w.Cluster.Config.Wasp.NumNodes / 4
+	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}

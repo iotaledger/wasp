@@ -24,7 +24,6 @@ import (
 )
 
 func getAllWaspNodes() []int {
-	// TODO test this works
 	ret := []int{}
 	for index := range viper.GetStringMap("wasp") {
 		i, err := strconv.Atoi(index)

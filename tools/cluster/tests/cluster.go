@@ -8,12 +8,13 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 )
 
 type waspClusterOpts struct {
 	nNodes       int
-	modifyConfig cluster.ModifyNodesConfigFn
+	modifyConfig templates.ModifyNodesConfigFn
 	dirName      string
 }
 
@@ -33,28 +34,31 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	l1.StartPrivtangleIfNecessary(t.Logf)
 
 	dirname := "wasp-cluster"
-	var modifyNodesConfig cluster.ModifyNodesConfigFn
+	var modifyNodesConfig templates.ModifyNodesConfigFn
 
-	clusterConfig := cluster.NewConfig(
-		cluster.DefaultWaspConfig(),
-		l1.Config,
-	)
+	waspConfig := cluster.DefaultWaspConfig()
 
 	if len(opt) > 0 {
 		if opt[0].dirName != "" {
 			dirname = opt[0].dirName
 		}
 		if opt[0].nNodes != 0 {
-			clusterConfig.Wasp.NumNodes = opt[0].nNodes
+			waspConfig.NumNodes = opt[0].nNodes
 		}
 		modifyNodesConfig = opt[0].modifyConfig
 	}
+
+	clusterConfig := cluster.NewConfig(
+		waspConfig,
+		l1.Config,
+		modifyNodesConfig,
+	)
 
 	dataPath := path.Join(os.TempDir(), dirname)
 	clu := cluster.New(t.Name(), clusterConfig, t)
 	clu.DataPath = dataPath
 
-	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)
+	err := clu.InitDataPath(".", dataPath, true)
 	require.NoError(t, err)
 
 	err = clu.Start(dataPath)

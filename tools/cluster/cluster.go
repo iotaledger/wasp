@@ -60,11 +60,15 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		}
 		lg = logger.NewLogger(name)
 	}
+
+	validatorKp := cryptolib.NewKeyPair()
+	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1.Protocol.Bech32HRP))
+
 	return &Cluster{
 		Name:             name,
 		Config:           config,
-		ValidatorKeyPair: cryptolib.NewKeyPair(),
-		waspCmds:         make([]*exec.Cmd, config.Wasp.NumNodes),
+		ValidatorKeyPair: validatorKp,
+		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
 		t:                t,
 		l1:               nodeconn.NewL1Client(config.L1, lg),
 	}
@@ -342,11 +346,9 @@ func fileExists(filepath string) (bool, error) {
 	return true, err
 }
 
-type ModifyNodesConfigFn = func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams
-
 // InitDataPath initializes the cluster data directory (cluster.json + one subdirectory
 // for each node).
-func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool, modifyConfig ModifyNodesConfigFn) error {
+func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -361,14 +363,13 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 		}
 	}
 
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		err = initNodeConfig(
 			clu.NodeDataPath(i),
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
-			clu.Config.WaspConfigTemplateParams(i, clu.ValidatorAddress()),
+			&clu.Config.Wasp[i],
 			i,
-			modifyConfig,
 		)
 		if err != nil {
 			return err
@@ -377,7 +378,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	return clu.Config.Save(dataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int, modifyConfig ModifyNodesConfigFn) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err
@@ -406,10 +407,6 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 	//goland:noinspection GoUnhandledErrorResult
 	defer f.Close()
 
-	if modifyConfig != nil {
-		params = modifyConfig(nodeIndex, params)
-	}
-
 	return configTmpl.Execute(f, params)
 }
 
@@ -436,25 +433,25 @@ func (clu *Cluster) Start(dataPath string) error {
 }
 
 func (clu *Cluster) start(dataPath string) error {
-	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
+	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
-	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
+	initOk := make(chan bool, len(clu.Config.Wasp))
 
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		err := clu.startWaspNode(i, initOk)
 		if err != nil {
 			return err
 		}
 	}
 
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
 			return xerrors.Errorf("Timeout starting wasp nodes\n")
 		}
 	}
-	fmt.Printf("[cluster] started %d Wasp nodes\n", clu.Config.Wasp.NumNodes)
+	fmt.Printf("[cluster] started %d Wasp nodes\n", len(clu.Config.Wasp))
 	return nil
 }
 
@@ -617,14 +614,14 @@ func (clu *Cluster) StopNode(nodeIndex int) {
 
 // Stop sends an interrupt signal to all nodes and waits for them to exit
 func (clu *Cluster) Stop() {
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		clu.stopNode(i)
 	}
 	clu.Wait()
 }
 
 func (clu *Cluster) Wait() {
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		waitCmd(&clu.waspCmds[i])
 	}
 }
@@ -642,7 +639,7 @@ func waitCmd(cmd **exec.Cmd) {
 
 func (clu *Cluster) AllNodes() []int {
 	nodes := make([]int, 0)
-	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(clu.Config.Wasp); i++ {
 		nodes = append(nodes, i)
 	}
 	return nodes
