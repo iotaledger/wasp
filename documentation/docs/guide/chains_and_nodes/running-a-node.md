@@ -5,7 +5,7 @@ keywords:
   - Smart Contracts
   - Running a node
   - Go-lang
-  - GoShimmer
+  - Hornet
   - Requirements
   - Configuration
   - Dashboard
@@ -17,7 +17,7 @@ keywords:
 
 In the following section, you can find information on how to use Wasp by cloning the repository and building the application. The instructions below will build both the Wasp node and the Wasp CLI to interact with the node from the command line.
 
-If you just want to run a Wasp node, you can also use the [Wasp standalone Docker image](docker_standalone.md) or a pre-configured local [Wasp and GoShimmer node setup using Docker Compose](../development_tools/docker_preconfigured.md).
+If you just want to run a Wasp node, you can also use the [Wasp standalone Docker image](docker_standalone.md) or a pre-configured local [Wasp and Hornet node setup using Docker Compose](../development_tools/docker_preconfigured.md).
 
 ## Requirements
 
@@ -28,25 +28,10 @@ If you just want to run a Wasp node, you can also use the [Wasp standalone Docke
 
 ### Software
 
-- [Go 1.16](https://golang.org/doc/install)
+- [Go 1.18](https://golang.org/doc/install)
 - [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
-- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
+- Access to a [Hornet](https://github.com/iotaledger/hornet) node for
   production operation.
-
-:::warning
-
-GoShimmer is a developing prototype, so some things are prone to break. For a smooth development experience, you should use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a).
-
-:::
-
-:::info note
-
-The Wasp node requires the Goshimmer node to have the
-[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
-plugin enabled. Being an experimental plugin, it is currently disabled by default and can
-be enabled via configuration.
-
-:::
 
 ## Download Wasp
 
@@ -119,17 +104,17 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 You can run integration and unit test together with the following command:
 
 ```shell
-go test -tags rocksdb,builtin_static -timeout 20m ./...
+make test
 ```
 
-Keep in mind that this process may take several minutes.
+Keep in mind that this process may take 30-40 minutes.
 
 ### Run Unit Tests
 
 You can run the unit tests without running integration tests with the following command:
 
 ```shell
-go test -tags rocksdb,builtin_static -short ./...
+make test-short
 ```
 
 This will take significantly less time than [running all tests](#run-all-tests).
@@ -139,6 +124,18 @@ This will take significantly less time than [running all tests](#run-all-tests).
 You can configure your node/s using the [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
 configuration file. If you plan to run several nodes in the same host, you will need to adjust the port configuration.
 
+### Hornet
+
+Wasp requires a Hornet node to communicate with the L1 Tangle.
+
+You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chains_and_nodes/testnet), or [set up your own node](https://wiki.iota.org/hornet/getting_started), or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle).
+
+### Hornet Connection Settings
+
+`l1.apiAddress` specifies the Hornet API address (default port: `14265`)
+
+`li.faucetAddress` specifies the Hornet faucet address (default port: `8091`)
+
 ### Authentication
 
 By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard uses basic auth to limit access.
@@ -146,6 +143,13 @@ By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard 
 Both authentication methods allow any form of request and have therefore 'root' permissions.
 
 You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` block such as `webapi.auth` or `dashboard.auth`. [Example configuration](https://github.com/iotaledger/wasp/blob/6b9aa273917c865b0acc83df9a1935f49498e43d/docker_config.json#L58).
+
+The following schemes are supported:
+
+- none
+- ip
+- basic
+- jwt
 
 #### JWT
 
@@ -180,12 +184,6 @@ node uses the `peering.port` setting to specify the port that will be used for p
 `peering.port`, and where `host` must resolve to the machine where the node is
 running and be reachable by other nodes in the committee. Each node in a
 committee must have a unique `netid`.
-
-### Goshimmer Connection Settings
-
-`nodeconn.address` specifies the Goshimmer host and port (exposed by the
-[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream) plugin) to
-connect to. You can find more information about the Goshimmer node in the [Goshimmer Provider section](#goshimmer-provider).
 
 ### Publisher
 
@@ -243,38 +241,6 @@ By default, Prometheus is disabled and should be enabled by setting `prometheus.
 ### Grafana
 
 Grafana provides a dashboard to visualize system metrics. It can use the prometheus metrics as a data source.
-
-## Goshimmer Provider
-
-For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled. You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chains_and_nodes/testnet), or [set up your own node](https://wiki.iota.org/goshimmer/tutorials/setup/).
-
-:::info note
-
-By default, the TXStream plugin will be listening for Wasp connections on port `5000`.
-
-:::
-
-### Default Configuration Changes
-
-If you are using the default GoShimmer docker image you will need to [edit your GoShimmer docker-compose.yml](https://wiki.iota.org/goshimmer/tutorials/setup#define-the-docker-composeyml) file to include the following settings.
-
-#### Add the TXStream plugin port
-
-```yml
-ports:
-    [...]
-      # TXStream plugin
-      - "0.0.0.0:5000:5000/tcp"
-    [...]
-```
-
-#### Enable TXStream and Faucet Plugins
-
-```yml
-[...]
---node.enablePlugins=remotelog,networkdelay,spammer,prometheus,txstream,faucet
-[...]
-```
 
 ## Running the Node
 
