@@ -17,6 +17,7 @@
 package bracha
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -207,6 +208,21 @@ func (r *rbc) Output() gpa.Output {
 		return nil
 	}
 	return r.values[r.output]
+}
+
+func (r *rbc) StatusString() string {
+	return fmt.Sprintf(
+		"{RBC:Bracha, n=%v, f=%v, output=%v,\nechoSent=%v, echoRecv=%v,\nreadySent=%v, readyRecv=%v}",
+		r.n, r.f, r.output, r.echoSent, r.echoRecv, r.readySent, r.readyRecv,
+	)
+}
+
+func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	m := &msgBracha{}
+	if err := m.UnmarshalBinary(data); err != nil {
+		return nil, xerrors.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
+	}
+	return m, nil
 }
 
 func (r *rbc) ensureValueStored(val []byte) hashing.HashValue {

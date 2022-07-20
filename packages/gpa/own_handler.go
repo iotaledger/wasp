@@ -3,6 +3,8 @@
 
 package gpa
 
+import "fmt"
+
 // OwnHandler is a GPA instance handling own messages immediately.
 type OwnHandler struct {
 	me     NodeID
@@ -38,6 +40,14 @@ func (o *OwnHandler) Message(msg Message) []Message {
 
 func (o *OwnHandler) Output() Output {
 	return o.target.Output()
+}
+
+func (o *OwnHandler) StatusString() string {
+	return fmt.Sprintf("{OwnHandler, target=%s}", o.target.StatusString())
+}
+
+func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
+	return o.target.UnmarshalMessage(data)
 }
 
 func (o *OwnHandler) handleMsgs(myMsgs, outMsgs []Message) []Message {

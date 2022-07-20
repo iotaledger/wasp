@@ -29,5 +29,5 @@ func (m *msgACSSOutput) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgACSSOutput) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
+	panic("msgACSSOutput is a local message, should not be marshaled")
 }

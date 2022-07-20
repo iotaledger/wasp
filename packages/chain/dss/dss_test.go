@@ -75,7 +75,7 @@ func TestBasic(t *testing.T) {
 		}
 		messageToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111}
 		for nid := range dsss {
-			tc.WithCall(func() []gpa.Message { return dsss[nid].DecidedIndexProposals(decidedProposals, messageToSign) })
+			tc.WithMessages([]gpa.Message{dsss[nid].NewMsgDecided(decidedProposals, messageToSign)})
 		}
 		//
 		// Run the ADKG with agreement already decided.

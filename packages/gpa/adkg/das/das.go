@@ -161,6 +161,14 @@ func (a *adkgImpl) Output() gpa.Output {
 	return a.output
 }
 
+func (a *adkgImpl) StatusString() string {
+	return "{ADKG:DAS}"
+}
+
+func (n *adkgImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	return nil, xerrors.Errorf("not implemented") // TODO: XXX: Impl.
+}
+
 func (a *adkgImpl) handleACSSMessage(msg *msgWrapper) []gpa.Message {
 	msgs := WrapMessages(msgWrapperACSS, msg.index, a.acss[msg.index].Message(msg.wrapped))
 	out := a.acss[msg.index].Output()

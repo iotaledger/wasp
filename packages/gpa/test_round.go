@@ -4,6 +4,8 @@
 package gpa
 
 import (
+	"fmt"
+
 	"golang.org/x/xerrors"
 )
 
@@ -46,6 +48,14 @@ func (tr *testRound) Output() Output {
 		return &output
 	}
 	return nil
+}
+
+func (tr *testRound) StatusString() string {
+	return fmt.Sprintf("{testRound, received=%v}", tr.received)
+}
+
+func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
+	panic(xerrors.Errorf("not implemented"))
 }
 
 type testRoundMsg struct {

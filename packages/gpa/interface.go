@@ -22,7 +22,8 @@ type GPA interface {
 	Input(inp Input) []Message
 	Message(msg Message) []Message
 	Output() Output
-	// TODO: UnmarshalMessage() (Message, error)
+	StatusString() string // Status of the protocol as a string.
+	UnmarshalMessage(data []byte) (Message, error)
 }
 
 // A convenience function to return from the Input or Message functions in GPA.

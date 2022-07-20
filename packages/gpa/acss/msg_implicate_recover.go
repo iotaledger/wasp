@@ -4,7 +4,11 @@
 package acss
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 type msgImplicateKind byte
@@ -36,9 +40,45 @@ func (m *msgImplicateRecover) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgImplicateRecover) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implemnet.
+	w := &bytes.Buffer{}
+	if err := util.WriteByte(w, msgTypeImplicateRecover); err != nil {
+		return nil, err
+	}
+	if err := util.WriteByte(w, byte(m.kind)); err != nil {
+		return nil, err
+	}
+	if err := util.WriteUint16(w, uint16(m.i)); err != nil {
+		return nil, err
+	}
+	if err := util.WriteBytes32(w, m.data); err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
 }
 
 func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
-	return nil // TODO: Implemnet.
+	r := bytes.NewReader(data)
+	t, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	if t != msgTypeImplicateRecover {
+		return xerrors.Errorf("unexpected msgType: %v", t)
+	}
+	k, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	var i uint16
+	if err := util.ReadUint16(r, &i); err != nil { // TODO: Resolve I from the context, trusting it might be unsafe.
+		return err
+	}
+	d, err := util.ReadBytes32(r)
+	if err != nil {
+		return err
+	}
+	m.kind = msgImplicateKind(k)
+	m.i = int(i)
+	m.data = d
+	return nil
 }

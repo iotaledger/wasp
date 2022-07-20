@@ -96,6 +96,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	subsystemRBC byte = iota
+
+	msgTypeImplicateRecover byte = iota
+	msgTypeVote
+	msgTypeWrapped
+)
+
 type Output struct {
 	PriShare *share.PriShare // Private share, received by this instance.
 	Commits  []kyber.Point   // Feldman's commitment to the shared polynomial.
@@ -123,6 +131,7 @@ type acssImpl struct {
 	recoverRecv   map[gpa.NodeID]*share.PriShare // Private shares from the RECOVER messages.
 	outS          *share.PriShare                // Our share of the secret (decrypted from rbcOutE).
 	output        bool
+	msgWrapper    *gpa.MsgWrapper
 	log           *logger.Logger
 }
 
@@ -165,6 +174,15 @@ func New(
 		output:        false,
 		log:           log,
 	}
+	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, func(subsystem byte, index int) (gpa.GPA, error) {
+		if subsystem == subsystemRBC {
+			if index != 0 {
+				return nil, xerrors.Errorf("unknown rbc index: %v", index)
+			}
+			return a.rbc, nil
+		}
+		return nil, xerrors.Errorf("unknown subsystem: %v", subsystem)
+	})
 	if a.myIdx = a.peerIndex(me); a.myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
@@ -190,9 +208,9 @@ func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 //
 func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 	switch m := msg.(type) {
-	case *msgWrapper:
-		switch m.subsystem {
-		case msgWrapperRBC:
+	case *gpa.WrappingMsg:
+		switch m.Subsystem() {
+		case subsystemRBC:
 			return a.handleRBCMessage(m)
 		default:
 			panic(xerrors.Errorf("unexpected wrapped message: %+v", m))
@@ -240,7 +258,7 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 	if err != nil {
 		panic(xerrors.Errorf("cannot serialize msg_rbc_ce: %w", err))
 	}
-	return WrapMessages(msgWrapperRBC, a.rbc.Input(rbcCEPayloadBytes))
+	return a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
 }
 
 //
@@ -249,9 +267,9 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 // > // party i (including the dealer)
 // > RBC(C||E)
 //
-func (a *acssImpl) handleRBCMessage(m *msgWrapper) []gpa.Message {
+func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) []gpa.Message {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
-	msgs := WrapMessages(msgWrapperRBC, a.rbc.Message(m.wrapped))
+	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Message(m.Wrapped()))
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
@@ -277,7 +295,6 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 		// Take the first RBC output only.
 		return gpa.NoMessages()
 	}
-	a.log.Debugf("handleRBCOutput: %+v", m)
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
 	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, m.payload.data)
@@ -303,7 +320,6 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 // >   send <READY> to all parties
 //
 func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
-	a.log.Debugf("handleVoteOK: %+v", m)
 	a.voteOKRecv[m.sender] = true
 	count := len(a.voteOKRecv)
 	if !a.voteREADYSent && count >= (a.n-a.f) {
@@ -528,4 +544,32 @@ func (a *acssImpl) Output() gpa.Output {
 		}
 	}
 	return nil
+}
+
+func (a *acssImpl) StatusString() string {
+	return fmt.Sprintf("{ACSS, output=%v, rbc=%v}", a.output, a.rbc.StatusString())
+}
+
+func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	if len(data) < 1 {
+		return nil, xerrors.Errorf("data to short")
+	}
+	msgType := data[0]
+	switch msgType {
+	case msgTypeImplicateRecover:
+		m := &msgImplicateRecover{}
+		if err := m.UnmarshalBinary(data); err != nil {
+			return nil, err
+		}
+		return m, nil
+	case msgTypeVote:
+		m := &msgVote{}
+		if err := m.UnmarshalBinary(data); err != nil {
+			return nil, err
+		}
+		return m, nil
+	case msgTypeWrapped:
+		return a.msgWrapper.UnmarshalMessage(data)
+	}
+	return nil, xerrors.Errorf("unexpected msgType: %v", msgType)
 }

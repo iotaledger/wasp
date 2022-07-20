@@ -3,7 +3,10 @@
 
 package das
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import (
+	"github.com/iotaledger/wasp/packages/gpa"
+	"golang.org/x/xerrors"
+)
 
 type msgWrapperSubsystem byte
 
@@ -45,5 +48,5 @@ func (m *msgWrapper) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgWrapper) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
+	return nil, xerrors.Errorf("msgWrapper::MarshalBinary not implemented") // TODO: Implement.
 }

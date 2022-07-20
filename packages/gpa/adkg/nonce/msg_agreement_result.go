@@ -32,5 +32,5 @@ func (m *msgAgreementResult) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgAgreementResult) MarshalBinary() ([]byte, error) {
-	panic("should be not needed")
+	panic("msgAgreementResult is a local message, should not be marshaled")
 }

@@ -22,22 +22,17 @@ import (
 
 // Just to debug DSS/DKG with a simple Shamir Secret Sharing.
 func TestDSS(t *testing.T) {
-	t.Skipf("why is the simple SSS not working with the DSS?") // TODO: Resolve it somehow.
-
 	n := 4
 	f := 1
 	suite := tcrypto.DefaultEd25519Suite()
 	nodeIDs := gpa.MakeTestNodeIDs("node", n)
 	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
 	nodePKs := map[gpa.NodeID]kyber.Point{}
-	// nodePKArray := make([]kyber.Point, n)
 	for i := range nodeIDs {
 		nodeSKs[nodeIDs[i]] = suite.Scalar().Pick(suite.RandomStream())
 		nodePKs[nodeIDs[i]] = suite.Point().Mul(nodeSKs[nodeIDs[i]], nil)
-		// nodePKArray[i] = nodePKs[nodeIDs[i]]
 	}
-	_, longPK, long := makeDistKeyShares(suite, nodeIDs, f+1)
-	// _, _, nonce := makeDistKeyShares(suite, nodeIDs, f+1)
+	_, longPK, long := makeDistKeyShares(suite, nodeIDs, f)
 
 	priShares := make(map[gpa.NodeID]*share.PriShare)
 	var commits []kyber.Point

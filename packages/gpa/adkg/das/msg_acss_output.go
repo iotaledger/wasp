@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
+	"golang.org/x/xerrors"
 )
 
 //
@@ -29,5 +30,5 @@ func (m *msgACSSOutput) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgACSSOutput) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
+	return nil, xerrors.Errorf("msgACSSOutput::MarshalBinary not implemented") // TODO: Implement.
 }

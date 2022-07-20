@@ -3,6 +3,10 @@
 
 package gpa
 
+import (
+	"golang.org/x/xerrors"
+)
+
 // silentNode can be used in the tests to model byzantine nodes, that
 // are just consuming messages and not sending any messages at all.
 type silentNode struct{}
@@ -23,4 +27,12 @@ func (s *silentNode) Message(msg Message) []Message {
 
 func (s *silentNode) Output() Output {
 	return nil
+}
+
+func (s *silentNode) StatusString() string {
+	return "{silentNode}"
+}
+
+func (s *silentNode) UnmarshalMessage(data []byte) (Message, error) {
+	panic(xerrors.Errorf("not implemented"))
 }

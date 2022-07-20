@@ -4,7 +4,11 @@
 package acss
 
 import (
+	"bytes"
+
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 type msgVoteKind byte
@@ -34,9 +38,29 @@ func (m *msgVote) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgVote) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implemnet.
+	w := &bytes.Buffer{}
+	if err := util.WriteByte(w, msgTypeVote); err != nil {
+		return nil, err
+	}
+	if err := util.WriteByte(w, byte(m.kind)); err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
 }
 
 func (m *msgVote) UnmarshalBinary(data []byte) error {
-	return nil // TODO: Implemnet.
+	r := bytes.NewReader(data)
+	t, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	if t != msgTypeVote {
+		return xerrors.Errorf("unexpected msgType: %v", t)
+	}
+	k, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	m.kind = msgVoteKind(k)
+	return nil
 }

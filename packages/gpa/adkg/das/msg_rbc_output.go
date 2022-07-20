@@ -5,6 +5,7 @@ package das
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
+	"golang.org/x/xerrors"
 )
 
 //
@@ -25,5 +26,5 @@ func (m *msgRBCOutput) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgRBCOutput) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
+	return nil, xerrors.Errorf("msgRBCOutput::MarshalBinary not implemented") // TODO: Implement.
 }

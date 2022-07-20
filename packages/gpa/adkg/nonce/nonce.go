@@ -33,6 +33,7 @@
 package nonce
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -63,13 +64,18 @@ type nonceDKGImpl struct {
 	stCommits map[int][]kyber.Point   // Commits for Si.
 	agreedT   []int                   // Output from the external consensus.
 	output    gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
+	wrapper   *gpa.MsgWrapper
 	log       *logger.Logger
 }
 
 var _ gpa.GPA = &nonceDKGImpl{}
 
 const (
-	msgWrapperACSS byte = iota
+	msgWrapperACSS byte = iota // subsystem code.
+)
+
+const (
+	msgTypeWrapped byte = iota
 )
 
 func New(
@@ -81,7 +87,6 @@ func New(
 	mySK kyber.Scalar,
 	log *logger.Logger,
 ) gpa.GPA {
-	n := len(nodeIDs)
 	myIdx := -1
 	for i := range nodeIDs {
 		if nodeIDs[i] == me {
@@ -91,9 +96,9 @@ func New(
 	if myIdx == -1 {
 		panic("i'm not in the peer list")
 	}
-	a := &nonceDKGImpl{
+	n := &nonceDKGImpl{
 		suite:     suite,
-		n:         n,
+		n:         len(nodeIDs),
 		f:         f,
 		me:        me,
 		myIdx:     myIdx,
@@ -103,13 +108,15 @@ func New(
 		stCommits: map[int][]kyber.Point{},   // Commits for Si/Ti.
 		agreedT:   nil,                       // Will be set, when output from the consensus will be received.
 		output:    nil,                       // Can be intermediate (PriShare == nil) or final (PriShare != nil).
+		wrapper:   nil,
 		log:       log,
 	}
-	a.acss = make([]gpa.GPA, len(nodeIDs))
-	for i := range a.acss {
-		a.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
+	n.wrapper = gpa.NewMsgWrapper(msgTypeWrapped, n.subsystemFunc)
+	n.acss = make([]gpa.GPA, len(nodeIDs))
+	for i := range n.acss {
+		n.acss[i] = acss.New(suite, nodeIDs, peerPKs, f, me, mySK, nodeIDs[i], nil, log)
 	}
-	return gpa.NewOwnHandler(me, a)
+	return gpa.NewOwnHandler(me, n)
 }
 
 func (n *nonceDKGImpl) Input(input gpa.Input) []gpa.Message {
@@ -117,12 +124,12 @@ func (n *nonceDKGImpl) Input(input gpa.Input) []gpa.Message {
 		panic(xerrors.Errorf("only expect a nil input, got: %+v", input))
 	}
 	secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-	return gpa.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
+	return n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
 }
 
 func (n *nonceDKGImpl) Message(msg gpa.Message) []gpa.Message {
 	switch msgT := msg.(type) {
-	case *gpa.MsgWrapper:
+	case *gpa.WrappingMsg:
 		switch msgT.Subsystem() {
 		case msgWrapperACSS:
 			return n.handleACSSMessage(msgT)
@@ -142,9 +149,17 @@ func (n *nonceDKGImpl) Output() gpa.Output {
 	return n.output
 }
 
-func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.MsgWrapper) []gpa.Message {
+func (n *nonceDKGImpl) StatusString() string {
+	acssStats := ""
+	for i := range n.acss {
+		acssStats += "\n" + n.acss[i].StatusString()
+	}
+	return fmt.Sprintf("{ADKG:Nonce, acss: %s}", acssStats)
+}
+
+func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.WrappingMsg) []gpa.Message {
 	msgIndex := msg.Index()
-	msgs := gpa.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
+	msgs := n.wrapper.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
 	out := n.acss[msgIndex].Output()
 	if out != nil && n.st[msgIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)

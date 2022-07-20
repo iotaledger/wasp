@@ -21,6 +21,8 @@
 package dss
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
@@ -31,7 +33,7 @@ import (
 
 type DSS interface {
 	AsGPA() gpa.GPA
-	DecidedIndexProposals(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) []gpa.Message
+	NewMsgDecided(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.Message
 }
 
 type Output struct {
@@ -60,6 +62,7 @@ type dssImpl struct {
 	dssPartialSigBuffer      map[gpa.NodeID]*dss.PartialSig // Accumulate early partial signatures
 	dssSigner                *dss.DSS
 	signature                []byte // The output.
+	msgWrapper               *gpa.MsgWrapper
 	log                      *logger.Logger
 }
 
@@ -93,6 +96,7 @@ func New(
 		dssSigner:                nil, // Will be created when indexProposals and message to sign will be created.
 		log:                      log,
 	}
+	d.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, d.msgWrapperFunc)
 	d.withWrappers = gpa.NewOwnHandler(me, d)
 	return d
 }
@@ -102,18 +106,10 @@ func (d *dssImpl) AsGPA() gpa.GPA {
 	return d.withWrappers
 }
 
-// DSS Specific Interface: Submit the decided (via ACS) indexes for the pri-share aggregation.
-func (d *dssImpl) DecidedIndexProposals(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) []gpa.Message {
-	if d.dkgDecidedIndexProposals != nil {
-		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", decidedIndexProposals)
-		return gpa.NoMessages()
-	}
-	d.dkgDecidedIndexProposals = decidedIndexProposals
-	d.messageToSign = messageToSign
-
-	decisionMsg := nonce.NewMsgAgreementResult(d.me, decidedIndexProposals)
-	msgs := gpa.WrapMessages(subsystemDKG, 0, d.dkg.Message(decisionMsg))
-	return d.tryHandleDkgOutput(msgs)
+// DSS Specific Interface: Create a message for submitting the decided (via ACS) indexes for the pri-share aggregation.
+// The message is then should be passed via all the wrappers.
+func (d *dssImpl) NewMsgDecided(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.Message {
+	return NewMsgDecided(d.me, decidedIndexProposals, messageToSign)
 }
 
 // Handle the input to the protocol.
@@ -121,7 +117,7 @@ func (d *dssImpl) Input(input gpa.Input) []gpa.Message {
 	if input != nil {
 		panic("nil input is expected")
 	}
-	return gpa.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
+	return d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
 }
 
 // Handle the messages.
@@ -129,9 +125,11 @@ func (d *dssImpl) Message(msg gpa.Message) []gpa.Message {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
 		return d.handlePartialSig(msgT)
-	case *gpa.MsgWrapper:
+	case *msgDecided:
+		return d.handleDecided(msgT)
+	case *gpa.WrappingMsg:
 		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
-			msgs := gpa.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
+			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
 			return d.tryHandleDkgOutput(msgs)
 		}
 		panic("unknown message")
@@ -163,7 +161,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
 		}
 		//
 		// Create a partial signature.
-		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, d.f+1)
+		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, len(d.nodeIDs)-d.f) // TODO: XXX: d.f+1
 		if err != nil {
 			d.log.Error("Failed to create DSS Signer: %v", err)
 			return msgs
@@ -192,6 +190,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
 				continue
 			}
 			msgs = append(msgs, &msgPartialSig{
+				suite:      d.suite,
 				sender:     d.me,
 				recipient:  d.nodeIDs[i],
 				partialSig: partialSig,
@@ -203,6 +202,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
 			sig, err := d.dssSigner.Signature()
 			if err != nil {
 				d.log.Errorf("Unable to aggregate the signature: %v", err)
+				return msgs
 			}
 			d.signature = sig
 		}
@@ -242,10 +242,27 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) []gpa.Message {
 	return gpa.NoMessages()
 }
 
+func (d *dssImpl) handleDecided(msg *msgDecided) []gpa.Message {
+	if d.dkgDecidedIndexProposals != nil {
+		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", msg.decidedIndexProposals)
+		return gpa.NoMessages()
+	}
+	d.dkgDecidedIndexProposals = msg.decidedIndexProposals
+	d.messageToSign = msg.messageToSign
+
+	decisionMsg := nonce.NewMsgAgreementResult(d.me, msg.decidedIndexProposals)
+	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(decisionMsg))
+	return d.tryHandleDkgOutput(msgs)
+}
+
 func (d *dssImpl) nodePKArray() []kyber.Point {
 	res := make([]kyber.Point, len(d.nodeIDs))
 	for i := range res {
 		res[i] = d.nodePKs[d.nodeIDs[i]]
 	}
 	return res
+}
+
+func (d *dssImpl) StatusString() string {
+	return fmt.Sprintf("{DSS, dkg=%v}", d.dkg.StatusString())
 }

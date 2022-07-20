@@ -29,6 +29,7 @@ const (
 	PeerMessageReceiverConsensus
 	PeerMessageReceiverCommonSubset
 	PeerMessageReceiverChain
+	PeerMessageReceiverChainDSS
 	PeerMessageReceiverDkg
 	PeerMessageReceiverDkgInit
 )

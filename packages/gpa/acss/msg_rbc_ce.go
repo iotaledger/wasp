@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
 )
 
 // This message is used as a payload of the RBC:
@@ -60,5 +61,5 @@ func (m *msgRBCCEOutput) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgRBCCEOutput) MarshalBinary() ([]byte, error) {
-	return nil, nil // TODO: Implement.
+	panic(xerrors.Errorf("msgRBCCEOutput is local, marshaling should be unused"))
 }
