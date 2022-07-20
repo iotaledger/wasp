@@ -23,34 +23,26 @@ To diminish the time spent on configuration and research, we have created a dock
 
 ## Running the setup
 
-Checkout the project and move to the `_devnet` folder
+Checkout the project and move to the `devnet` folder
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
-cd wasp/tools/_devnet
+cd wasp/tools/devnet
 ```
 
 :::note
 Further information about the setup is to be found in the `readme.md`.
 :::
 
-The setup requires an initial bootstrapping process. 
-
-It initializes Hornet and creates a fresh image of the checked out Wasp code. If you do modifications inside the branch, docker-compose will include them into the Wasp image too.
-
-This process is only required at the first start, or when things break. 
-
-To (re)create a fresh setup call:
+Now run:
 
 ```
-sudo ./bootstrap.sh build
+docker-compose up
 ```
 
-After the bootstrapping process is done, start the devnet by calling
+It initializes Hornet and creates a fresh image of the checked out Wasp code. 
 
-```
-sudo ./run.sh
-```
+If you do modifications inside the branch, docker-compose will include them into the Wasp image too.
 
 :::note
 All Wasp ports will bind to 127.0.0.1 by default. 
