@@ -46,7 +46,7 @@ If you do modifications inside the branch, docker-compose will include them into
 
 :::note
 All Wasp ports will bind to 127.0.0.1 by default. 
-If you want to expose the ports to the outside world, run `HOST=0.0.0.0 sudo ./run.sh`.
+If you want to expose the ports to the outside world, run `HOST=0.0.0.0 docker-compose up`.
 :::
 
 ## Usage
