@@ -42,7 +42,7 @@ Depending on the use case, it might be required to change the default Hornet con
 ```json
 "l1": {
   "apiAddress": "http://hornet:14265",
-  "faucetAddress": "http://hornet:8191"
+  "faucetAddress": "http://hornet:8091"
 },
 ```
 

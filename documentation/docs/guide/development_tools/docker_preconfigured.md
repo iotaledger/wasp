@@ -59,6 +59,7 @@ Besides this, everything should simply work as expected. Faucet requests will be
 - Wasp API (9090)
 - Hornet Dashboard (8082) (username: admin, password: admin)
 - Hornet API (14265)
+- Faucet API (8091)
 
 are available to the local machine.
 

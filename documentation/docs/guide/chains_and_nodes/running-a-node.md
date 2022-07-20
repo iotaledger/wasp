@@ -134,7 +134,7 @@ You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chain
 
 `l1.apiAddress` specifies the Hornet API address (default port: `14265`)
 
-`li.faucetAddress` specifies the Hornet faucet address (default port: `8191`)
+`li.faucetAddress` specifies the Hornet faucet address (default port: `8091`)
 
 ### Authentication
 

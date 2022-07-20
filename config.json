@@ -1,7 +1,7 @@
 {
   "l1": {
     "apiAddress": "http://localhost:14265",
-    "faucetAddress": "http://localhost:8191"
+    "faucetAddress": "http://localhost:8091"
   },
   "database": {
     "directory": "waspdb"
