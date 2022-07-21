@@ -18,7 +18,8 @@ around EVM/Solidity a familiar alternative.
 
 ### What is EVM/Solidity
 
-[EVM](https://ethereum.org/en/developers/docs/evm/) stands for "Ethereum Virtual Machine", which currently is the tried and proven virtual machine running most smart contract implementations. [Solidity](https://soliditylang.org/) is the programming language of choice with EVM, and has been created for this specific purpose.
+[EVM](https://ethereum.org/en/developers/docs/evm/) stands for "Ethereum Virtual Machine", and is currently the tried and proven virtual machine running most smart contract implementations.
+[Solidity](https://soliditylang.org/) is the programming language of choice with EVM, being created for this specific purpose.
 
 The main benefit of using EVM/Solidity right now is the sheer amount of resources available from it from years of development and experimentation on Ethereum. There are many articles, tutorials, examples and tools available for EVM/Solidity, and the IOTA Smart Contracts implementation is fully compatible with them. If you have experience developing on other EVM based chains you will feel right at home, and any existing contracts you've written will probably need no (or very minimal) changes to function on IOTA Smart Contracts as well.
 
