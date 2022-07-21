@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:dupl,unparam
+//nolint:dupl
 package yaml_test
 
 import (
@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
+	"github.com/iotaledger/wasp/tools/schema/model/yaml"
 	"github.com/stretchr/testify/assert"
 )
 

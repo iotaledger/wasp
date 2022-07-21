@@ -26,7 +26,7 @@ type callViewService struct {
 
 func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 	dictExample := dict.Dict{
-		kv.Key("key1"): []byte("value1"),
+		"key1": []byte("value1"),
 	}.JSONDict()
 
 	s := &callViewService{allChains}

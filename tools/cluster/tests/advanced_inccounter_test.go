@@ -563,7 +563,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 		nil,
 	)
 	require.NoError(t, err)
-	arr := collections.NewArray16ReadOnly(ret, string(governance.ParamAllowedStateControllerAddresses))
+	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
 	arrlen := arr.MustLen()
 	if arrlen == 0 {
 		return false

@@ -227,7 +227,7 @@ func TestISCGetParam(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
-	key := string(evm.FieldCallMsg) // callView sends an ISC request including this parameter
+	key := evm.FieldCallMsg // callView sends an ISC request including this parameter
 
 	var has bool
 	env.ISCContract(ethKey).callView("hasParam", []interface{}{key}, &has)

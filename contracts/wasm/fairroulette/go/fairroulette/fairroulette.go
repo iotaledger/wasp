@@ -234,7 +234,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	f.Events.Stop()
 }
 
-func funcForceReset(ctx wasmlib.ScFuncContext, f *ForceResetContext) {
+func funcForceReset(_ wasmlib.ScFuncContext, f *ForceResetContext) {
 	// Get the 'bets' array in state storage.
 	bets := f.State.Bets()
 
@@ -261,7 +261,7 @@ func funcPlayPeriod(ctx wasmlib.ScFuncContext, f *PlayPeriodContext) {
 	f.State.PlayPeriod().SetValue(playPeriod)
 }
 
-func viewLastWinningNumber(ctx wasmlib.ScViewContext, f *LastWinningNumberContext) {
+func viewLastWinningNumber(_ wasmlib.ScViewContext, f *LastWinningNumberContext) {
 	// Get the 'lastWinningNumber' int64 value from state storage.
 	lastWinningNumber := f.State.LastWinningNumber().Value()
 
@@ -269,7 +269,7 @@ func viewLastWinningNumber(ctx wasmlib.ScViewContext, f *LastWinningNumberContex
 	f.Results.LastWinningNumber().SetValue(lastWinningNumber)
 }
 
-func viewRoundNumber(ctx wasmlib.ScViewContext, f *RoundNumberContext) {
+func viewRoundNumber(_ wasmlib.ScViewContext, f *RoundNumberContext) {
 	// Get the 'roundNumber' int64 value from state storage.
 	roundNumber := f.State.RoundNumber().Value()
 
@@ -277,7 +277,7 @@ func viewRoundNumber(ctx wasmlib.ScViewContext, f *RoundNumberContext) {
 	f.Results.RoundNumber().SetValue(roundNumber)
 }
 
-func viewRoundStatus(ctx wasmlib.ScViewContext, f *RoundStatusContext) {
+func viewRoundStatus(_ wasmlib.ScViewContext, f *RoundStatusContext) {
 	// Get the 'roundStatus' int16 value from state storage.
 	roundStatus := f.State.RoundStatus().Value()
 
@@ -285,7 +285,7 @@ func viewRoundStatus(ctx wasmlib.ScViewContext, f *RoundStatusContext) {
 	f.Results.RoundStatus().SetValue(roundStatus)
 }
 
-func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
+func viewRoundStartedAt(_ wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	// Get the 'roundStartedAt' int32 value from state storage.
 	roundStartedAt := f.State.RoundStartedAt().Value()
 
@@ -293,7 +293,7 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }
 
-func funcForcePayout(ctx wasmlib.ScFuncContext, f *ForcePayoutContext) {
+func funcForcePayout(ctx wasmlib.ScFuncContext, _ *ForcePayoutContext) {
 	ScFuncs.PayWinners(ctx).Func.Call()
 }
 

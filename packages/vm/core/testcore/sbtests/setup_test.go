@@ -76,7 +76,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	})
 }
 
-func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
+func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
 	if forceSkipWasm || !runWasm {
 		// run core version of testcore
 		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
@@ -102,7 +102,7 @@ func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, ru
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) iscp.AgentID {
-	err := deployContract(t, chain, user, runWasm)
+	err := deployContract(chain, user, runWasm)
 	require.NoError(t, err)
 
 	deployed := iscp.NewContractAgentID(chain.ChainID, HScName)

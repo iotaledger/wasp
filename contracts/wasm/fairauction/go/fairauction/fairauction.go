@@ -175,7 +175,7 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
 }
 
-func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
+func funcSetOwnerMargin(_ wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 	ownerMargin := f.Params.OwnerMargin().Value()
 	if ownerMargin < OwnerMarginMin {
 		ownerMargin = OwnerMarginMin

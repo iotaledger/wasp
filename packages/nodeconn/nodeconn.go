@@ -319,7 +319,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			}
 		}
 		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			nc.log.Debugf("reattaching block: %s", block)
+			nc.log.Debugf("reattaching block: %v", block)
 			err = nc.doPoW(ctx, block)
 			if err != nil {
 				return err

@@ -143,7 +143,7 @@ func (c *Client) post1RequestWithOutputs(
 	if err != nil {
 		return nil, err
 	}
-	err = c.Layer1Client.PostTx((tx))
+	err = c.Layer1Client.PostTx(tx)
 	return tx, err
 }
 

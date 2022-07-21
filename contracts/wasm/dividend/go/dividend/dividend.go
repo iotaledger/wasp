@@ -59,7 +59,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 // The 'member' function will save the address/factor combination in state storage
 // and also calculate and store a running sum of all factors so that the 'divide'
 // function can simply start using these precalculated values when called.
-func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
+func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 	// Note that the schema tool has already dealt with making sure that this function
 	// can only be called by the owner and that the required parameters are present.
 	// So once we get to this point in the code we can take that as a given.
@@ -191,7 +191,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 // The 'setOwner' function takes a single mandatory parameter:
 // - 'owner', which is the agent id of the entity that will own the contract.
 // Only the current owner can change the owner.
-func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
+func funcSetOwner(_ wasmlib.ScFuncContext, f *SetOwnerContext) {
 	// Note that the schema tool has already dealt with making sure that this function
 	// can only be called by the owner and that the required parameter is present.
 	// So once we get to this point in the code we can take that as a given.
@@ -202,7 +202,7 @@ func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
 
 // 'getFactor' is a simple View function. It will retrieve the factor
 // associated with the (mandatory) address parameter it was provided with.
-func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
+func viewGetFactor(_ wasmlib.ScViewContext, f *GetFactorContext) {
 	// Since we are sure that the 'address' parameter actually exists we can
 	// retrieve its actual value into an ScAddress value type.
 	var address wasmtypes.ScAddress = f.Params.Address().Value()
@@ -221,6 +221,6 @@ func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
 }
 
 // 'getOwner' can be used to retrieve the current owner of the dividend contract
-func viewGetOwner(ctx wasmlib.ScViewContext, f *GetOwnerContext) {
+func viewGetOwner(_ wasmlib.ScViewContext, f *GetOwnerContext) {
 	f.Results.Owner().SetValue(f.State.Owner().Value())
 }

@@ -147,7 +147,7 @@ func (e *EthService) GetCode(address common.Address, blockNumberOrHash rpc.Block
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
-	return hexutil.Bytes(code), nil
+	return code, nil
 }
 
 func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
@@ -178,7 +178,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 
 func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
-	return hexutil.Bytes(ret), e.resolveError(err)
+	return ret, e.resolveError(err)
 }
 
 func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
@@ -188,7 +188,7 @@ func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
 
 func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
-	return hexutil.Bytes(ret), e.resolveError(err)
+	return ret, e.resolveError(err)
 }
 
 func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
@@ -272,7 +272,7 @@ func (e *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hexutil.Bytes(data), nil
+	return data, nil
 }
 
 func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
