@@ -24,6 +24,16 @@ func init() {
 type L1Params struct {
 	MaxTransactionSize int
 	Protocol           *iotago.ProtocolParameters
+	BaseToken          *BaseToken
+}
+
+type BaseToken struct {
+	Name            string
+	TickerSymbol    string
+	Unit            string
+	Subunit         string
+	Decimals        uint32
+	UseMetricPrefix bool
 }
 
 func InitL1ForTesting() {
@@ -42,6 +52,14 @@ func InitL1ForTesting() {
 				VBFactorKey:  1,
 			},
 			TokenSupply: tpkg.TestProtoParas.TokenSupply,
+		},
+		BaseToken: &BaseToken{
+			Name:            "Iota",
+			TickerSymbol:    "MIOTA",
+			Unit:            "MIOTA",
+			Subunit:         "IOTA",
+			Decimals:        6,
+			UseMetricPrefix: false,
 		},
 	}
 }

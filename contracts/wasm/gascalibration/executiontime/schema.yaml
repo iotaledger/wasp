@@ -1,0 +1,14 @@
+name: executiontime
+description: executiontime description
+events: {}
+structs: {}
+typedefs: {}
+state:
+    owner: AgentID # current owner of this smart contract
+funcs:
+    f:
+        params:
+            n: Uint32
+        results:
+            n: Uint32
+views:

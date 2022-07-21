@@ -15,7 +15,7 @@ keywords:
 # Deploying Wasm Smart Contracts
 
 :::note
-For information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../../wasm_vm).
+For information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../wasm_vm/intro.mdx).
 :::
 
 The following examples will make use of the [`solotutorial` Rust/Wasm smart contract](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs).

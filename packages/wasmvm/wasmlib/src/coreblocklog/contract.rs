@@ -39,11 +39,6 @@ pub struct GetEventsForRequestCall {
 	pub results: ImmutableGetEventsForRequestResults,
 }
 
-pub struct GetLatestBlockInfoCall {
-	pub func: ScView,
-	pub results: ImmutableGetLatestBlockInfoResults,
-}
-
 pub struct GetRequestIDsForBlockCall {
 	pub func: ScView,
 	pub params: MutableGetRequestIDsForBlockParams,
@@ -121,15 +116,6 @@ impl ScFuncs {
             results: ImmutableGetEventsForRequestResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
-        ScView::link_results(&mut f.results.proxy, &f.func);
-        f
-    }
-
-    pub fn get_latest_block_info(_ctx: &dyn ScViewCallContext) -> GetLatestBlockInfoCall {
-        let mut f = GetLatestBlockInfoCall {
-            func: ScView::new(HSC_NAME, HVIEW_GET_LATEST_BLOCK_INFO),
-            results: ImmutableGetLatestBlockInfoResults { proxy: Proxy::nil() },
-        };
         ScView::link_results(&mut f.results.proxy, &f.func);
         f
     }

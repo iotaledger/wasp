@@ -50,6 +50,7 @@ func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
 		Protocol:           &info.Protocol,
+		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
 	}
 }
 

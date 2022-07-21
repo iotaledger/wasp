@@ -74,6 +74,10 @@ type fibonacciContractInstance struct {
 	*evmContractInstance
 }
 
+type gasTestContractInstance struct {
+	*evmContractInstance
+}
+
 type iotaCallOptions struct {
 	wallet    *cryptolib.KeyPair
 	before    func(*solo.CallParams)
@@ -242,6 +246,18 @@ func (e *soloChainEnv) deployLoopContract(creator *ecdsa.PrivateKey) *loopContra
 
 func (e *soloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibonacciContractInstance {
 	return &fibonacciContractInstance{e.deployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
+}
+
+func (e *soloChainEnv) deployGasTestMemoryContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestMemoryContractABI, evmtest.GasTestMemoryContractBytecode)}
+}
+
+func (e *soloChainEnv) deployGasTestStorageContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestStorageContractABI, evmtest.GasTestStorageContractBytecode)}
+}
+
+func (e *soloChainEnv) deployGasTestExecutionTimeContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestExecutionTimeContractABI, evmtest.GasTestExecutionTimeContractBytecode)}
 }
 
 func (e *soloChainEnv) signer() types.Signer {
@@ -441,6 +457,12 @@ func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, e
 
 func (f *fibonacciContractInstance) fib(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
 	return f.callFn(opts, "fib", n)
+}
+
+func (g *gasTestContractInstance) f(n uint32) (res callFnResult, err error) {
+	return g.callFn([]ethCallOptions{{
+		gasLimit: 1000000000,
+	}}, "f", n)
 }
 
 func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {

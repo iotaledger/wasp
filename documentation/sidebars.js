@@ -36,7 +36,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Committees and Validators',
+                    label: 'Validators and Access Nodes',
                     id: 'guide/core_concepts/validators',
                 },
                 {

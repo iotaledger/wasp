@@ -13,14 +13,22 @@
 {{define "agentid"}}
 	{{ $chainid := (index . 0) }}
 	{{ $agentid := (index . 1) }}
-    {{ $agentidStr := (agentIDToString $agentid) }}
-    {{ $addr := (addressFromAgentID $agentid) }}
-    {{ if $addr }}
-        <a href="{{ uri "chainAccount" $chainid $agentidStr }}"><code>{{ $agentidStr }}</code></a>
-        {{ template "exploreAddressInTangle" $addr }}
-    {{ else }}
-        <code>{{ $agentidStr }}</code>
-    {{ end  }}
+	{{ $agentidStr := (agentIDToString $agentid) }}
+	{{ $isValidAddr := (isValidAddress $agentid) }}
+
+	{{ if not $isValidAddr }}
+		<code>{{$agentidStr}}</code>
+	{{ else }}
+		{{ $addr := (addressFromAgentID $agentid) }}
+		{{ $isETHAddress := (isETHAddress $agentid) }}
+		{{ if $isETHAddress }}
+			{{ $agentidStr := (getETHAddress $agentid) }}
+		{{ end }}
+			<a href="{{ uri "chainAccount" $chainid $agentidStr }}"><code>{{ $agentidStr }}</code></a>
+		{{ if $addr }}
+			{{ template "exploreAddressInTangle" $addr }}
+		{{ end  }}
+	{{ end }}
 {{end}}
 
 {{define "balances"}}

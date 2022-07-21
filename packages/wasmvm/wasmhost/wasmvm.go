@@ -171,10 +171,10 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 			// ExportWasmTag, log the wasm tag name
 			wc.log().Infof(name)
 
-			// potentially adjust gas factor multiplier
-			if strings.Contains(name, "WASM::TYPESCRIPT") {
-				wc.proc.gasFactorX = 10
-			}
+			// // potentially adjust gas fudge factor multiplier here
+			// if strings.Contains(name, "WASM::TYPESCRIPT") {
+			// 	wc.proc.gasFactorX = 1
+			// }
 			return
 		}
 		wc.ExportName(keyLen, name)

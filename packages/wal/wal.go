@@ -21,12 +21,12 @@ type WAL struct {
 	metrics  *walMetrics
 	segments map[uint32]*segment
 	synced   map[uint32]bool
-	mu       sync.RWMutex
 }
 
 type chainWAL struct {
 	*WAL
 	chainID *iscp.ChainID
+	mu      sync.RWMutex
 }
 
 func New(log *logger.Logger, dir string) *WAL {
@@ -62,7 +62,7 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 		index, _ := strconv.ParseUint(file.Name(), 10, 32)
 		w.segments[uint32(index)] = &segment{index: uint32(index), dir: w.dir}
 	}
-	return &chainWAL{w, chainID}, nil
+	return &chainWAL{WAL: w, chainID: chainID}, nil
 }
 
 func (w *chainWAL) Write(bytes []byte) error {
