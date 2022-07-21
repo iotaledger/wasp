@@ -10,7 +10,7 @@ export class SendFundsTransaction {
     this.wallet = client;
   }
 
-  private createSendFundsMetadata(evmAddress: string, amount: bigint, gas: bigint) {
+  private createSendFundsMetadata(evmAddress: string, amount: bigint, gas: bigint): Buffer {
     const metadata = new SimpleBufferCursor();
 
     /* Write contract meta data */
@@ -72,9 +72,7 @@ export class SendFundsTransaction {
       throw new Error("Could not fetch output data");
     }
 
-    const input: IUTXOInput = TransactionHelper.inputFromOutputId(outputId);
     const metadata = this.createSendFundsMetadata(evmAddress, amount, gas);
-
     const metadataHex = Converter.bytesToHex(metadata, true);
 
     const basicOutput: IBasicOutput = {
@@ -102,6 +100,11 @@ export class SendFundsTransaction {
       ]
     };
 
+    const storageDeposit = TransactionHelper.getStorageDeposit(basicOutput, this.wallet.nodeInfo.protocol.rentStructure);
+    amount = (amount - BigInt(storageDeposit));
+    basicOutput.amount = amount.toString();
+
+
     const remainderBasicOutput: IBasicOutput = {
       type: BASIC_OUTPUT_TYPE,
       amount: (BigInt(output.output.amount) - amount).toString(),
@@ -118,6 +121,7 @@ export class SendFundsTransaction {
       features: []
     };
 
+    const input: IUTXOInput = TransactionHelper.inputFromOutputId(outputId);
     const inputsCommitment = TransactionHelper.getInputsCommitment([output.output]);
     const protocolInfo = await this.wallet.client.protocolInfo();
 

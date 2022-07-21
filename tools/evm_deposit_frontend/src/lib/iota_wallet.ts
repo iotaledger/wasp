@@ -25,7 +25,6 @@ export class IotaWallet {
 
   private getKeyPairFromMnemonic(mnemonic: string): IKeyPair {
     const baseSeed = Ed25519Seed.fromMnemonic(mnemonic);
-    console.log("\tSeed", Converter.bytesToHex(baseSeed.toBytes()));
 
     const path = generateBip44Address({
       accountIndex: 0,
@@ -85,7 +84,7 @@ export class IotaWallet {
     return null;
   }
 
-  private async getBalance(outputId: string) {
+  private async getBalance(outputId: string): Promise<bigint> {
     let output = await this.client.output(outputId);
 
     if (output != null) {
@@ -116,8 +115,6 @@ export class IotaWallet {
 
   public async initialize(): Promise<void> {
     const randomMnemonic = Bip39.randomMnemonic();
-    console.log("\tMnemonic:", randomMnemonic);
-
     await this.initializeFromMnemonic(randomMnemonic);
   }
 

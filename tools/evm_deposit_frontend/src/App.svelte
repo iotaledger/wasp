@@ -1,103 +1,188 @@
 <script lang="ts">
   import { IotaWallet } from './lib/iota_wallet';
-import { SendFundsTransaction } from './lib/send_funds_transaction';
+  import { SendFundsTransaction } from './lib/send_funds_transaction';
+
   const networkOptions = [
-    {id: 0, text: "Testnet", apiEndpoint: "https://api.testnet.shimmer.network", faucetEndpoint: "https://faucet.testnet.shimmer.network"},
-    {id: 1, text: "Custom settings", default: false, apiEndpoint: "http://localhost:14265", faucetEndpoint: "http://localhost:8091"},
+    {
+      id: 0,
+      text: 'Shimmer Beta Network',
+      apiEndpoint: 'https://api.testnet.shimmer.network',
+      faucetEndpoint: 'https://faucet.testnet.shimmer.network',
+    },
+    {
+      id: 1,
+      text: 'Custom settings',
+      default: false,
+      apiEndpoint: 'http://localhost:14265',
+      faucetEndpoint: 'http://localhost:8091',
+    },
   ];
+
   let selectedNetworkOption = networkOptions[0];
-  let isRequestingFunds: boolean;
+  let isSendingFunds: boolean;
+  let errorMessage: string;
 
   let balance: bigint = 0n;
-  let chainId: string = "";
-  let evmAddress: string = "";
+  let chainId: string = '';
+  let evmAddress: string = '';
 
-  async function requestFunds() {
-    if (evmAddress.length == 0) {
+  $: enableSendFunds =
+    chainId.length == 63 &&
+    evmAddress.length == 42 &&
+    selectedNetworkOption != null &&
+    !isSendingFunds;
+
+  async function sendFunds() {
+    if (!enableSendFunds) {
       return;
     }
 
-    isRequestingFunds = true;
+    isSendingFunds = true;
 
-    let wallet: IotaWallet = new IotaWallet(selectedNetworkOption.apiEndpoint, selectedNetworkOption.faucetEndpoint);
+    let wallet: IotaWallet = new IotaWallet(
+      selectedNetworkOption.apiEndpoint,
+      selectedNetworkOption.faucetEndpoint
+    );
 
     try {
       await wallet.initialize();
       balance = await wallet.requestFunds();
+
+      const transaction = new SendFundsTransaction(wallet);
+      await transaction.sendFundsToEVMAddress(
+        evmAddress,
+        chainId,
+        balance,
+        50000000n
+      );
     } catch (ex) {
-      console.log(ex);
-      return;
+      errorMessage = ex;
     }
 
-    const transaction = new SendFundsTransaction(wallet);
-
-    await transaction.sendFundsToEVMAddress(evmAddress, chainId, balance, 50000000n);
-    isRequestingFunds = false;
+    isSendingFunds = false;
   }
-
 </script>
 
 <main>
-    <div class="border">
-      <div class="input_container">
-        <select bind:value={selectedNetworkOption}>
-          {#each networkOptions as network}
-            <option value={network} selected={network.id === 0}>
-              {network.text}
-            </option>
-          {/each}
-        </select>
+  <div class="input_container">
+    <span class="header">Network</span>
+    <select bind:value={selectedNetworkOption}>
+      {#each networkOptions as network}
+        <option value={network} >
+          {network.text}
+        </option>
+      {/each}
+    </select>
+  </div>
+
+  {#if selectedNetworkOption.id == 1}
+    <div class="input_container">
+      <span class="header">Hornet API endpoint</span>
+      <input type="text" bind:value={networkOptions[1].apiEndpoint} />
+    </div>
+
+    <div class="input_container">
+      <span class="header">Faucet API endpoint</span>
+      <input type="text" bind:value={networkOptions[1].faucetEndpoint} />
+    </div>
+  {/if}
+
+  <div class="input_container">
+    <span class="header">Chain ID</span>
+    <input type="text" bind:value={chainId} />
+  </div>
+
+  <div class="input_container">
+    <span class="header">EVM Address</span>
+    <input type="text" bind:value={evmAddress} />
+  </div>
+
+  {#if errorMessage}
+    <div class="input_container">
+      <div class="error">
+        <div class="error_title">Error</div>
+        <div class="error_message">
+          {errorMessage}
+        </div>
       </div>
+    </div>
+  {/if}
 
-      {#if selectedNetworkOption.id == 1}
-        <div class="input_container">
-          <span class="header">Hornet API endpoint</span>
-          <input type="text" bind:value={networkOptions[1].apiEndpoint}>
-        </div>
-
-        <div class="input_container">
-          <span class="header">Faucet API endpoint</span>
-          <input type="text" bind:value={networkOptions[1].faucetEndpoint}>
-        </div>
+  <div class="input_container">
+    <button class="button" disabled={!enableSendFunds} on:click={sendFunds}>
+      {#if !isSendingFunds}
+        Send funds
+      {:else}
+        Sending ..
       {/if}
-
-      <div class="input_container">
-        <span class="header">Chain ID</span>
-        <input type="text" bind:value={chainId}>
-      </div>
-
-      <div class="input_container">
-        <span class="header">EVM Address</span>
-        <input type="text" bind:value={evmAddress}>
-      </div>
-
-
-      <button class="button" on:click="{requestFunds}">Send funds</button>
+    </button>
   </div>
 </main>
 
 <style>
+  .error {
+    background-color: #9e534a47;
+    border: 2px solid #991c0d78;
+    border-radius: 10px;
+    padding: 15px;
+  }
+
+  .error_title {
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+
   button {
-    margin: 10px;
+    background: rgba(16, 140, 255, 0.12);
+    border: 1px solid #57aeff;
+    border-radius: 10px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.87);
+    font-size: 1em;
+    font-weight: 500;
+    padding: 0.6em 1.2em;
+    transition: border-color 0.25s;
     width: 100%;
+  }
+
+  button:hover {
+    border-color: #646cff;
+  }
+
+  button:focus,
+  button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+  }
+
+  button:disabled {
+    background-color: #192742;
+    border: 1px solid #405985;
+    border-radius: 10px;
+    color: #9aadce;
   }
 
   .input_container {
     margin: 15px;
   }
 
-  input, select {
-    width: 100%;
+  input,
+  select {
+    background: #1b2d4b;
+    box-sizing: border-box;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.87);
     padding: 10px;
+    width: 100%;
   }
 
-  .border {
-    display: flex;
-    flex-direction:  column;
+  main {
     border: 1px solid gray;
-    padding: 50px;
     border-radius: 25px;
+    color: rgba(255, 255, 255, 0.87);
+    display: flex;
+    flex-direction: column;
+    padding: 50px;
     width: 800px;
   }
-
 </style>
