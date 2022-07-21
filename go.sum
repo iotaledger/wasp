@@ -551,8 +551,8 @@ github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220713112541-3bfe06a592ed h
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220713112541-3bfe06a592ed/go.mod h1:7fVUqbLY+iBjCNjFwzbhOyS07OZJFIYJEDNJAItzMw8=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=
 github.com/iotaledger/iota.go v1.0.0/go.mod h1:RiKYwDyY7aCD1L0YRzHSjOsJ5mUR9yvQpvhZncNcGQI=
-github.com/iotaledger/iota.go/v3 v3.0.0-20220713111307-e56bfeff5451 h1:QyM+YqoEZ+zCFmYikmMUbCusHcD7K70r0NXlzbbhLiI=
-github.com/iotaledger/iota.go/v3 v3.0.0-20220713111307-e56bfeff5451/go.mod h1:+9a/3it5ZSsmvDzIW6UawtNATQyzmrP+6puS8mUTHwo=
+github.com/iotaledger/iota.go/v3 v3.0.0-beta.3 h1:4zJxFG7lHLPuDUr9Gxvi0gxWZynifdrxL1GCxmG9cRw=
+github.com/iotaledger/iota.go/v3 v3.0.0-beta.3/go.mod h1:+9a/3it5ZSsmvDzIW6UawtNATQyzmrP+6puS8mUTHwo=
 github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1 h1:zl4vvWDl3QvYSVAotCvSu+mCWvC9gje68U/5tPrfhIg=
 github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1/go.mod h1:51uMkJe4OWpB91nI8xJMyfLcCcwVN1TBhPuXsqBUh4o=
 github.com/ipfs/go-cid v0.0.2/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
