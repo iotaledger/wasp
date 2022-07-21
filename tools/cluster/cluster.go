@@ -561,8 +561,8 @@ func DoStartWaspNode(cwd string, nodeIndex int, nodeAPIURL string, initOk chan<-
 const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given WASP node is ready
-func waitForAPIReady(initOk chan<- bool, apiUrl string) {
-	infoEndpointURL := fmt.Sprintf("%s%s", apiUrl, routes.Info())
+func waitForAPIReady(initOk chan<- bool, apiURL string) {
+	infoEndpointURL := fmt.Sprintf("%s%s", apiURL, routes.Info())
 
 	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
@@ -570,10 +570,10 @@ func waitForAPIReady(initOk chan<- bool, apiUrl string) {
 			<-ticker.C
 			rsp, err := http.Get(infoEndpointURL) //nolint:gosec
 			if err != nil {
-				fmt.Printf("Error Polling node API %s ready status: %v\n", apiUrl, err)
+				fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
 				continue
 			}
-			fmt.Printf("Polling node API %s ready status: %s %s\n", apiUrl, infoEndpointURL, rsp.Status)
+			fmt.Printf("Polling node API %s ready status: %s %s\n", apiURL, infoEndpointURL, rsp.Status)
 			//goland:noinspection GoUnhandledErrorResult
 			rsp.Body.Close()
 			if err == nil && rsp.StatusCode != 404 {

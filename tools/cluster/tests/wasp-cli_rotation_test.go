@@ -63,28 +63,33 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	})
 
 	// adds node #0 from cluster2 as access node of the chain
-	// {
-	// set trust relations between node0 of cluster 2 and all nodes of cluster 1
-	// TODO I guess it would make sense to do these steps via CLI
-	node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
-	require.NoError(t, err)
-	w.Cluster.AddTrustedNode(node0peerInfo)
-
-	for _, nodeIndex := range w.Cluster.Config.AllNodes() {
-		peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
+	{
+		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
+		// TODO I guess it would make sense to do these steps via CLI
+		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
 		require.NoError(t, err)
-		w.Cluster.AddTrustedNode(peerInfo, []int{0})
+		w.Cluster.AddTrustedNode(node0peerInfo)
+
+		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
+			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
+			require.NoError(t, err)
+			w2.Cluster.AddTrustedNode(peerInfo, []int{0})
+		}
+
+		// add node 0 from cluster 2 as an access node in the governance contract
+		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
+		require.NoError(t, err)
+		jsonDict, err := governance.NewChangeAccessNodesRequest().Accept(pubKey).AsDict().MarshalJSON()
+		require.NoError(t, err)
+		// TODO needs a more use-friendly command
+		out = w.PostRequestGetReceipt("governance", "changeAccessNodes", "string", "n", "dict", string(jsonDict))
+		println(out)
 	}
 
-	// add node 0 from cluster 2 as an access node in the governance contract
-	pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
-	require.NoError(t, err)
-	jsonDict, err := governance.NewChangeAccessNodesRequest().Accept(pubKey).AsDict().MarshalJSON()
-	require.NoError(t, err)
-	// TODO needs a more use-friendly command
-	out = w.PostRequestGetReceipt("governance", "changeAccessNodes", "string", "n", "dict", string(jsonDict))
-	println(out)
-	// }
+	// activate the chain on the new nodes
+	w2.Run("chain", "add", "chain1", chainID)
+	w2.Run("set", "chain", "chain1")
+	w2.Run("chain", "activate")
 
 	// deploy a contract, test its working
 	{
@@ -104,8 +109,11 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// stop the initial cluster
+	// TODO is it needed to check that node0 from clust2 is synced at this point?
 	w.Cluster.Stop()
 
+	// for the approach below to work, we would need "permitionless access nodes",
+	// instead we need to add the node to the access nodes list in the gov contract as it is done above
 	// // keep add a node from the old cluster as a peer of the new cluster, so that the new nodes can sync the chain state
 	// // we're chosing 5, so that the default ports don't conflict with the new cluster
 	// initialClusterNodeIndex := 5
@@ -126,7 +134,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	// 		t.Fatal("timeout re-starting node from initial cluster")
 	// 	}
 	// }
-
+	//
 	// // establish trust connections between the node from the old cluster and the new cluster
 	// {
 	// 	nodeFromInitialClusterPeerInfo, err := w.Cluster.WaspClient(initialClusterNodeIndex).GetPeeringSelf()
@@ -143,15 +151,9 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	out = w2.Run("chain", "rundkg")
 	newStateControllerAddr := regexp.MustCompile(`(.*):\s*([a-zA-Z0-9_]*)$`).FindStringSubmatch(out[0])[2]
 
-	w2.Run("chain", "add", "chain1", chainID)
-	w2.Run("set", "chain", "chain1")
-
 	// issue a governance rotatation via CLI
 	out = w.Run("chain", "rotate", newStateControllerAddr)
 	require.Regexp(t, `.*successfully.*`, strings.Join(out, ""))
-
-	// activate the chain on the new nodes
-	w2.Run("chain", "activate", "--nodes=0,1,2,3")
 
 	// stop maintenance
 	out = w2.PostRequestGetReceipt("governance", "stopMaintenance")

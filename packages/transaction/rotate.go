@@ -46,5 +46,6 @@ func NewRotateChainStateControllerTx(
 	}
 
 	outputs := iotago.Outputs{newChainOutput}
+	println("???", len(outputs))
 	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1.Protocol.NetworkID())
 }
