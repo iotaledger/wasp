@@ -505,6 +505,7 @@ func TestAccountBalances(t *testing.T) {
 	totalGasFeeCharged := uint64(0)
 
 	checkBalance := func(numReqs int) {
+		_ = numReqs
 		require.EqualValues(t,
 			totalIotas,
 			l1Iotas(chainOwnerAddr)+l1Iotas(senderAddr)+l1Iotas(ch.ChainID.AsAddress()),

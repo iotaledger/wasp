@@ -5,7 +5,7 @@ package storage
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func funcF(ctx wasmlib.ScFuncContext, f *FContext) {
+func funcF(_ wasmlib.ScFuncContext, f *FContext) {
 	v := f.State.V()
 	n := f.Params.N().Value()
 	for i := uint32(0); i < n; i++ {

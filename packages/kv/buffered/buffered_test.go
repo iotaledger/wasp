@@ -22,7 +22,7 @@ func TestBufferedKVStore(t *testing.T) {
 
 	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
 
-	v, err = b.Get(kv.Key("cd"))
+	v, err = b.Get("cd")
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
@@ -60,14 +60,14 @@ func TestBufferedKVStore(t *testing.T) {
 	})
 	assert.Equal(t, 1, n)
 
-	b.Set(kv.Key("cd"), []byte("v2"))
+	b.Set("cd", []byte("v2"))
 
 	// not committed to DB
 	v, err = realm.Get([]byte("cd"))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	v, err = b.Get(kv.Key("cd"))
+	v, err = b.Get("cd")
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v2"), v)
 

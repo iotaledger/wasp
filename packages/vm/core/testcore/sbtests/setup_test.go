@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -49,7 +48,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, iscp.AgentID) {
+func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iscp.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
 	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
 
@@ -60,7 +59,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Add
 		root.ParamDeployer, iscp.NewAgentID(userAddr)).WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddIotas(1), nil)
 	require.NoError(t, err)
-	return user, userAddr, iscp.NewAgentID(userAddr)
+	return user, iscp.NewAgentID(userAddr)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -123,6 +122,6 @@ func testSetup1(t *testing.T, w bool) {
 func TestSetup2(t *testing.T) { run2(t, testSetup2) }
 func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user, _, _ := setupDeployer(t, chain)
+	user, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 }

@@ -25,8 +25,8 @@ func TestParse(t *testing.T) {
 		wants wants
 	}
 
-	tests := map[string]func(t *testing.T) test{
-		"successfully test1": func(t *testing.T) test {
+	tests := map[string]func(_ *testing.T) test{
+		"successfully test1": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test1.yaml",
@@ -234,7 +234,7 @@ func TestParse(t *testing.T) {
 				},
 			}
 		},
-		"successfully test2": func(t *testing.T) test {
+		"successfully test2": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test2.yaml",
@@ -346,7 +346,7 @@ func TestParse(t *testing.T) {
 				},
 			}
 		},
-		"successfully test3": func(t *testing.T) test {
+		"successfully test3": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test3.yaml",

@@ -26,8 +26,8 @@ func TestConvert(t *testing.T) {
 		wants wants
 	}
 
-	tests := map[string]func(t *testing.T) test{
-		"successfully test1": func(t *testing.T) test {
+	tests := map[string]func(_ *testing.T) test{
+		"successfully test1": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test1.yaml",
@@ -109,7 +109,7 @@ func TestConvert(t *testing.T) {
 				},
 			}
 		},
-		"successfully test2": func(t *testing.T) test {
+		"successfully test2": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test2.yaml",
@@ -154,7 +154,7 @@ func TestConvert(t *testing.T) {
 				},
 			}
 		},
-		"successfully test3": func(t *testing.T) test {
+		"successfully test3": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test3.yaml",
@@ -317,7 +317,7 @@ func TestConvert(t *testing.T) {
 				},
 			}
 		},
-		"successfully test4": func(t *testing.T) test {
+		"successfully test4": func(_ *testing.T) test {
 			return test{
 				args: args{
 					path: "testdata/test4.yaml",

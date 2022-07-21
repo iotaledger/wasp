@@ -65,12 +65,14 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 }
 
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
+	_ = addr
 	if amount != nil && amount.Sign() != 0 {
 		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
 	}
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
+	_ = addr
 	if amount != nil && amount.Sign() != 0 {
 		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
 	}
@@ -176,23 +178,34 @@ func (s *StateDB) Empty(addr common.Address) bool {
 }
 
 func (s *StateDB) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList) {
+	_ = sender
+	_ = dest
+	_ = precompiles
+	_ = txAccesses
 }
 
 func (s *StateDB) AddressInAccessList(addr common.Address) bool {
+	_ = addr
 	return true
 }
 
 func (s *StateDB) SlotInAccessList(addr common.Address, slot common.Hash) (addressOk, slotOk bool) {
+	_ = addr
+	_ = slot
 	return true, true
 }
 
 // AddAddressToAccessList adds the given address to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
-func (s *StateDB) AddAddressToAccessList(addr common.Address) {}
+func (s *StateDB) AddAddressToAccessList(addr common.Address) {
+	_ = addr
+}
 
 // AddSlotToAccessList adds the given (address,slot) to the access list. This operation is safe to perform
 // even if the feature/fork is not active yet
 func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+	_ = addr
+	_ = slot
 }
 
 func (s *StateDB) RevertToSnapshot(int) {}
@@ -204,6 +217,7 @@ func (s *StateDB) AddLog(log *types.Log) {
 }
 
 func (s *StateDB) GetLogs(hash common.Hash) []*types.Log {
+	_ = hash
 	return s.logs
 }
 
