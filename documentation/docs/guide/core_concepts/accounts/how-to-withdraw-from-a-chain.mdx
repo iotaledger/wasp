@@ -1,5 +1,5 @@
 ---
-description: The `withdraw` endpoint sends funds owned by the callee to their L1 address.
+description: The `withdraw` endpoint sends L2 funds owned by the caller to their L1 address.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - smart contracts
@@ -17,7 +17,7 @@ import TabItem from "@theme/TabItem"
 
 # How to Withdraw From a Chain
 
-The `withdraw` endpoint sends funds owned by the callee to their L1 address.
+The `withdraw` endpoint sends L2 funds owned by the caller to their L1 address.
 
 <Tabs
     defaultValue="solo"
@@ -32,7 +32,7 @@ The `withdraw` endpoint sends funds owned by the callee to their L1 address.
 ```go
 // withdraw from chain to wallet
 req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
-_, err := chain.PostRequestSync(req.WithIotas(1), wallet)
+_, err := chain.PostRequestSync(req.WithMaxAffordableGasBudget(), wallet)
 require.NoError(t, err)
 ```
 

@@ -18,12 +18,16 @@ import TabItem from "@theme/TabItem"
 
 The common account is controlled by the chain owner (defined in the chain root contract).
 
-This account is used to store funds collected by fees, or sent to the chain L1 address, or to invalid contracts. (this way the funds are not permanently lost)
+This account is used to store funds collected by fees, or sent to the chain L1 address, or to invalid contracts (this way the funds are not permanently lost).
 
-## Parameters
+## `harvest`
 
-- `ParamWithdrawAmount` - the amount to harvest (defaults to 0, which means all available funds)
-- `ParamWithdrawColor` - color of the tokens to harvest (defaults to normal iotas)
+The `harvest` entry point allows the chain owner to move all funds available in the common account to their own L2 account.
+
+### Parameters
+
+- `ParamForceMinimumBaseTokens` - specify the amount of base tokens to leave in
+  the common account (default: 3000)
 
 <Tabs
     defaultValue="solo"
@@ -37,7 +41,7 @@ This account is used to store funds collected by fees, or sent to the chain L1 a
 
 ```go
 req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name)
-_, err := chain.PostRequestSync(req.WithIotas(1), wallet)
+_, err := chain.PostRequestSync(req.WithMaxAffordableGasBudget(), wallet)
 require.NoError(t, err)
 ```
 
