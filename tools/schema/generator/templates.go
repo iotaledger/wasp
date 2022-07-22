@@ -10,9 +10,6 @@ var commonTemplates = model.StringMap{
 	"else": `
 `,
 	// *******************************
-	"nil": `
-`,
-	// *******************************
 	"newline": `
 
 `,
