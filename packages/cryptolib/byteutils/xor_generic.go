@@ -1,4 +1,5 @@
 // 3rd-party code from: https://github.com/golang/go/blob/master/src/crypto/cipher/xor_generic.go
+//go:build !amd64 && !ppc64 && !ppc64le
 // +build !amd64,!ppc64,!ppc64le
 
 package byteutils
@@ -29,6 +30,7 @@ func XORBytes(dst, a, b []byte) int {
 }
 
 const wordSize = int(unsafe.Sizeof(uintptr(0)))
+
 const supportsUnaligned = runtime.GOARCH == "386" || runtime.GOARCH == "ppc64" || runtime.GOARCH == "ppc64le" || runtime.GOARCH == "s390x"
 
 // fastXORBytes xors in bulk. It only works on architectures that support unaligned read/writes.
