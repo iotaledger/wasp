@@ -98,7 +98,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 				sm.syncingBlocks.blocksPulled()
-				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.AsString())
+				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.String())
 			}
 			sm.delayRequestBlockRetry(i)
 		}

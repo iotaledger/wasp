@@ -359,7 +359,7 @@ func (n *Node) exchangeInitiatorAcks(
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 ) error {
 	recvCB := func(recv *peering.PeerMessageGroupIn, msg initiatorMsg) (bool, error) {
-		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.AsString())
+		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.String())
 		return true, nil
 	}
 	return n.exchangeInitiatorMsgs(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB, recvCB)
@@ -384,7 +384,7 @@ func (n *Node) exchangeInitiatorMsgs(
 			return false, nil
 		}
 		if err != nil {
-			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.AsString(), recv.PeerMessageData)
+			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
 			return false, err
 		}
 		if !initMsg.IsResponse() {

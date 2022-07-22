@@ -298,7 +298,7 @@ func TestCruelWorld(t *testing.T) {
 			nodeName := env.Nodes[nodeIndex].NodeID
 			nodePubKey := env.Nodes[nodeIndex].NodePubKey
 			env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodePubKey)
-			env.Log.Debugf("Connection to node %v %v lost", nodeName, nodePubKey.AsString())
+			env.Log.Debugf("Connection to node %v %v lost", nodeName, nodePubKey.String())
 			disconnectedNodes = append(disconnectedNodes, nodeName)
 			mutex.Unlock()
 		}

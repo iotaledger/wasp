@@ -254,7 +254,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 		if err != nil {
 			return err
 		}
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromBase58String(accessNodePeering.PubKey)
 		if err != nil {
 			return err
 		}
@@ -288,7 +288,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	if err != nil {
 		return nil, err
 	}
-	accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePeering.PubKey)
+	accessNodePubKey, err := cryptolib.NewPublicKeyFromBase58String(accessNodePeering.PubKey)
 	if err != nil {
 		return nil, err
 	}

@@ -160,7 +160,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node0.StartTimer()
 	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey})
 	env.AddNode(node0)
-	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node0.PubKey=%v", node0.PubKey.AsString())
+	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node0.PubKey=%v", node0.PubKey.String())
 
 	const targetBlockIndex = 10
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
@@ -172,7 +172,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node1.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
-	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node1.PubKey=%v", node1.PubKey.AsString())
+	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node1.PubKey=%v", node1.PubKey.String())
 
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
@@ -357,9 +357,9 @@ func TestCruelWorld(t *testing.T) {
 			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
 			mutex.Lock()
 			nodePubkey := nodes[rand.Intn(numberOfPeers)].PubKey
-			handlerID := nodePubkey.AsString()
+			handlerID := nodePubkey.String()
 			env.NetworkBehaviour.WithPeerDisconnected(&handlerID, nodePubkey)
-			env.Log.Debugf("Connection to node %v lost", nodePubkey.AsString())
+			env.Log.Debugf("Connection to node %v lost", nodePubkey.String())
 			disconnectedNodes = append(disconnectedNodes, nodePubkey)
 			mutex.Unlock()
 		}
@@ -370,7 +370,7 @@ func TestCruelWorld(t *testing.T) {
 			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
 			mutex.Lock()
 			if len(disconnectedNodes) > 0 {
-				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0].AsString())
+				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0].String())
 				env.Log.Debugf("Connection to node %v restored", disconnectedNodes[0])
 				disconnectedNodes[0] = nil
 				disconnectedNodes = disconnectedNodes[1:]

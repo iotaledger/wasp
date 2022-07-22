@@ -20,6 +20,6 @@ func Client(i ...int) *chainclient.Client {
 	)
 }
 
-func SCClient(contractHname iscp.Hname) *scclient.SCClient {
-	return scclient.New(Client(), contractHname)
+func SCClient(contractHname iscp.Hname, i ...int) *scclient.SCClient {
+	return scclient.New(Client(i...), contractHname)
 }

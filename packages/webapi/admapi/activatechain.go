@@ -211,7 +211,7 @@ func makeChainNodeStatus(
 ) *model.ChainNodeStatus {
 	cns := model.ChainNodeStatus{
 		Node: model.PeeringNodeStatus{
-			PubKey: pubKey.AsString(),
+			PubKey: pubKey.String(),
 		},
 	}
 	if n, ok := peeringStatus[pubKey.AsKey()]; ok {

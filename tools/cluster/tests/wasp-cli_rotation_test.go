@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
@@ -64,12 +63,15 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
 		// TODO I guess it would make sense to do these steps via CLI
 		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
 		require.NoError(t, err)
-		w.Cluster.AddTrustedNode(node0peerInfo)
 
+		/// TODO HMM, should nodes be added as trusted peers first, or access nodes in gov contract?
+		//- It really shouldnt' matter..
+
+		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
+		w.Cluster.AddTrustedNode(node0peerInfo)
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
 			require.NoError(t, err)
@@ -77,13 +79,12 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 		}
 
 		// add node 0 from cluster 2 as an access node in the governance contract
-		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
+		pubKey, err := cryptolib.NewPublicKeyFromBase58String(node0peerInfo.PubKey)
 		require.NoError(t, err)
-		jsonDict, err := governance.NewChangeAccessNodesRequest().Accept(pubKey).AsDict().MarshalJSON()
-		require.NoError(t, err)
-		// TODO needs a more use-friendly command
-		out = w.PostRequestGetReceipt("governance", "changeAccessNodes", "string", "n", "dict", string(jsonDict))
-		println(out)
+
+		out = w.Run("chain", "change-access-nodes", "accept", pubKey.String())
+		out = w.GetReceiptFromRunPostRequestOutput(out)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 	}
 
 	// activate the chain on the new nodes
@@ -156,7 +157,9 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	require.Regexp(t, `.*successfully.*`, strings.Join(out, ""))
 
 	// stop maintenance
-	out = w2.PostRequestGetReceipt("governance", "stopMaintenance")
+	// set the new nodes as the default (so querying the receipt doesn't fail)
+	w.Run("set", "wasp.0.api", w2.Cluster.Config.APIHost(0))
+	out = w.PostRequestGetReceipt("governance", "stopMaintenance")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// chain still works

@@ -111,11 +111,11 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
-	pubKey0, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey0, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
-	pubKey1, err := cryptolib.NewPublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey1, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}

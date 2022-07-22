@@ -82,6 +82,8 @@ func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
 	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), string(governance.ParamChangeAccessNodesActions))
+	ctx.Log().Debugf("changeAccessNodes: actions len: %d", paramNodeActions.MustLen())
+
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
 		ctx.Requiref(len(actionBin) == 1, "action should be a single byte")
 		switch governance.ChangeAccessNodeAction(actionBin[0]) {

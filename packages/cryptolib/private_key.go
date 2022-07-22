@@ -38,7 +38,7 @@ func (pkT *PrivateKey) AsBytes() []byte {
 	return pkT.key
 }
 
-func (pkT *PrivateKey) AsString() string {
+func (pkT *PrivateKey) String() string {
 	return hex.EncodeToString(pkT.key)
 }
 

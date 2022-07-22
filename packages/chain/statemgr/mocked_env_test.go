@@ -74,7 +74,7 @@ func (env *MockedEnv) AddNode(node *MockedNode) {
 	defer env.mutex.Unlock()
 
 	if _, ok := env.Nodes[node.PubKey.AsKey()]; ok {
-		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.AsString())
+		env.Log.Panicf("AddNode: duplicate node index %s", node.PubKey.String())
 	}
 	env.Nodes[node.PubKey.AsKey()] = node
 }
