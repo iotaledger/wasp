@@ -15,7 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (e *ChainEnv) newWalletWithFunds(waspnode int, seedN, iotas uint64, waitOnNodes ...int) *chainclient.Client {
+func (e *ChainEnv) newWalletWithFunds(waspnode int, waitOnNodes ...int) *chainclient.Client {
+	iotas := 1000 * iscp.Mi
 	userWallet, userAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 	userAgentID := iscp.NewAgentID(userAddress)
@@ -48,7 +49,7 @@ func TestOffledgerRequest(t *testing.T) {
 	chEnv := newChainEnv(t, e.Clu, chain)
 	chEnv.deployNativeIncCounterSC()
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 0, 1, 2, 3)
 
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(
@@ -86,7 +87,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 0, 0, 1, 2, 3)
 
 	// send big blob off-ledger request via Web API
 	size := int64(1 * 900 * 1024) // 900 KB
@@ -137,10 +138,10 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	e.deployNativeIncCounterSC()
 
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
-	chClient := e.newWalletWithFunds(5, 1, 1000*iscp.Mi, 0, 2, 4, 5, 7)
+	chClient := e.newWalletWithFunds(5, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err = chClient.PostOffLedgerRequest(
@@ -169,7 +170,7 @@ func TestOffledgerNonce(t *testing.T) {
 	chEnv := newChainEnv(t, e.Clu, chain)
 	chEnv.deployNativeIncCounterSC()
 
-	chClient := chEnv.newWalletWithFunds(0, 1, 1000*iscp.Mi, 0, 1, 2, 3)
+	chClient := chEnv.newWalletWithFunds(0, 0, 1, 2, 3)
 
 	// send off-ledger request with a high nonce
 	offledgerReq, err := chClient.PostOffLedgerRequest(

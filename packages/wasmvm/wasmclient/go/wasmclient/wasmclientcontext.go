@@ -56,6 +56,7 @@ func (s *WasmClientContext) InitFuncCallContext() {
 }
 
 func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
 	_ = wasmhost.Connect(s)
 	return s.scHname
 }

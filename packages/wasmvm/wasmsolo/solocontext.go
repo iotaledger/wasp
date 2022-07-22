@@ -353,6 +353,7 @@ func (ctx *SoloContext) InitFuncCallContext() {
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
 	_ = wasmhost.Connect(ctx.wc)
 	return ctx.Cvt.ScHname(iscp.Hn(ctx.scName))
 }

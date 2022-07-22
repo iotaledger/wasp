@@ -13,7 +13,7 @@ func TestMainCallsFromFullEP(t *testing.T) { run2(t, testMainCallsFromFullEP) }
 func testMainCallsFromFullEP(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 
-	user, _, userAgentID := setupDeployer(t, chain)
+	user, userAgentID := setupDeployer(t, chain)
 
 	setupTestSandboxSC(t, chain, user, w)
 
@@ -32,7 +32,7 @@ func TestMainCallsFromViewEP(t *testing.T) { run2(t, testMainCallsFromViewEP) }
 func testMainCallsFromViewEP(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 
-	user, _, _ := setupDeployer(t, chain)
+	user, _ := setupDeployer(t, chain)
 
 	setupTestSandboxSC(t, chain, user, w)
 

@@ -16,6 +16,8 @@ import (
 )
 
 func (s *WasmClientContext) ExportName(index int32, name string) {
+	_ = index
+	_ = name
 	panic("WasmClientContext.ExportName")
 }
 
@@ -39,18 +41,23 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 }
 
 func (s *WasmClientContext) StateDelete(key []byte) {
+	_ = key
 	panic("WasmClientContext.StateDelete")
 }
 
 func (s *WasmClientContext) StateExists(key []byte) bool {
+	_ = key
 	panic("WasmClientContext.StateExists")
 }
 
 func (s *WasmClientContext) StateGet(key []byte) []byte {
+	_ = key
 	panic("WasmClientContext.StateGet")
 }
 
 func (s *WasmClientContext) StateSet(key, value []byte) {
+	_ = key
+	_ = value
 	panic("WasmClientContext.StateSet")
 }
 

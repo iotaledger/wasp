@@ -428,7 +428,7 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		_, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
+		err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
 		if err != nil {
 			return err
 		}
@@ -479,7 +479,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	initOk := make(chan bool, len(nodeIndex))
 	okCount := 0
 	for _, i := range nodeIndex {
-		_, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, i), i, initOk)
+		err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, i), i, initOk)
 		if err != nil {
 			return err
 		}
@@ -497,7 +497,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	return nil
 }
 
-func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
+func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) error {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
 
@@ -509,14 +509,14 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		return err
 	}
 
 	go scanLog(
@@ -530,7 +530,7 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	go clu.waitForAPIReady(initOk, nodeIndex)
 
 	clu.waspCmds[nodeIndex] = cmd
-	return cmd, nil
+	return nil
 }
 
 const pollAPIInterval = 500 * time.Millisecond

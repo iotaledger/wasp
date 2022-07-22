@@ -139,7 +139,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-		string(governance.ParamChainOwner), newOwnerAgentID,
+		governance.ParamChainOwner, newOwnerAgentID,
 	).WithGasBudget(100_000).
 		AddIotas(100_000)
 
@@ -166,7 +166,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr)
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, string(governance.ParamChainOwner), newOwnerAgentID)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 

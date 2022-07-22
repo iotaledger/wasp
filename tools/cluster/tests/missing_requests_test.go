@@ -31,7 +31,7 @@ func TestMissingRequests(t *testing.T) {
 
 	e.deployNativeIncCounterSC()
 
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	userWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

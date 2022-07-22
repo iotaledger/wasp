@@ -200,7 +200,7 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
-				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %V", msg)
+				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %v", msg)
 				return false, errors.New("unexpected message type instead of initiatorPubShareMsg")
 			}
 		},

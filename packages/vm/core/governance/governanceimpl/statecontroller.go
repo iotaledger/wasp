@@ -73,7 +73,7 @@ func getAllowedStateControllerAddresses(ctx iscp.SandboxView) dict.Dict {
 		return nil
 	}
 	ret := dict.New()
-	retArr := collections.NewArray16(ret, string(governance.ParamAllowedStateControllerAddresses))
+	retArr := collections.NewArray16(ret, governance.ParamAllowedStateControllerAddresses)
 	amap.MustIterateKeys(func(elemKey []byte) bool {
 		retArr.MustPush(elemKey)
 		return true

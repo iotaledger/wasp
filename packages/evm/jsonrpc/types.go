@@ -212,7 +212,7 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	ret.GasPrice = (*big.Int)(c.GasPrice)
 	ret.Value = (*big.Int)(c.Value)
 	if c.Data != nil {
-		ret.Data = []byte(*c.Data)
+		ret.Data = *c.Data
 	}
 	return
 }
@@ -271,7 +271,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 		}
 		var data []byte
 		if input != nil {
-			data = []byte(*input)
+			data = *input
 		}
 		callArgs := ethereum.CallMsg{
 			From:     args.From, // From shouldn't be nil

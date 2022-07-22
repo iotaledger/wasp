@@ -242,13 +242,13 @@ func (e *ChainEnv) accountExists(agentID iscp.AgentID) conditionFn {
 	}
 }
 
-func (e *ChainEnv) contractIsDeployed(contractName string) conditionFn {
+func (e *ChainEnv) contractIsDeployed() conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := e.findContract(contractName, nodeIndex)
+		ret, err := e.findContract(nativeIncCounterSCName, nodeIndex)
 		if err != nil {
 			return false
 		}
-		return ret.Name == contractName
+		return ret.Name == nativeIncCounterSCName
 	}
 }
 

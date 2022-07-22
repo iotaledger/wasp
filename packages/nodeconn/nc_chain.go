@@ -187,7 +187,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {
-			ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+			ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
 		}
 		//
 		// Then fetch all the existing unspent outputs owned by the chain.
@@ -241,7 +241,7 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	// Subscribe to the new outputs first.
 	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
 	if subInfo.Error() != nil {
-		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+		ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
 	}
 
 	//

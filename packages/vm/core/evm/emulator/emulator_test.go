@@ -251,7 +251,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		return receipt
 	}
 
-	return contractAddress, contractFnCaller(callFn)
+	return contractAddress, callFn
 }
 
 func TestStorageContract(t *testing.T) {

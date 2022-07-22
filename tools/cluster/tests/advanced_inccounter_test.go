@@ -39,18 +39,18 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
-	chEnv := &ChainEnv{
+	e := &ChainEnv{
 		env:   &env{t: t, Clu: clu},
 		Chain: chain,
 	}
-	tx := chEnv.deployNativeIncCounterSC(0)
+	tx := e.deployNativeIncCounterSC(0)
 
-	waitUntil(t, chEnv.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
-	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 
-	return chEnv
+	return e
 }
 
 func (e *ChainEnv) printBlocks(expected int) {
@@ -275,7 +275,7 @@ func TestRotation(t *testing.T) {
 
 	tx := e.deployNativeIncCounterSC(0)
 
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
@@ -343,7 +343,7 @@ func TestRotationFromSingle(t *testing.T) {
 
 	tx := e.deployNativeIncCounterSC(0)
 
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
 	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
@@ -455,7 +455,7 @@ func TestRotationMany(t *testing.T) {
 
 	tx := e.deployNativeIncCounterSC(0)
 
-	waitUntil(t, e.contractIsDeployed(nativeIncCounterSCName), e.Clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.contractIsDeployed(), e.Clu.Config.AllNodes(), 30*time.Second)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 	require.NoError(t, err)
 
@@ -563,7 +563,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 		nil,
 	)
 	require.NoError(t, err)
-	arr := collections.NewArray16ReadOnly(ret, string(governance.ParamAllowedStateControllerAddresses))
+	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)
 	arrlen := arr.MustLen()
 	if arrlen == 0 {
 		return false
