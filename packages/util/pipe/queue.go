@@ -121,7 +121,7 @@ func (q *LimitedPriorityHashQueue) resize() {
 //	* not prioritized element is chosen for deletion, if possible
 //	* the chosen for deletion element is always the oldest among its type
 //	* not prioritized element can not be added if there are no not prioritized
-//	  element to delete
+//    elements to delete
 // If it is a hash queue, the element is not added, if it is already in the queue.
 // If the add was successful, returns `true`.
 func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {

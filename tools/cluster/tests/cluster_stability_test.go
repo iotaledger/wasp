@@ -279,7 +279,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 	/**
 	* incCounter requests get sent, after reaching a matching counter value, nodes get shut down, new requests get send in parallel.
 	*	If frozen nodes are below the quorum level, the incCounter count should not reach numRequests until unfrozen, otherwise the opposite is expected
-	 */
+	**/
 
 	if testing.Short() {
 		t.SkipNow()
