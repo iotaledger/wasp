@@ -11,7 +11,7 @@
 // step by step what is happening in the code. We also unnecessarily annotate
 // all 'var' statements with their assignment type to improve understanding.
 
-//nolint:revive
+//nolint:revive,goimports
 package dividend
 
 import (
