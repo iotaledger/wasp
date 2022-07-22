@@ -99,7 +99,7 @@ func (e *Env) sendTransactionAndWait(tx *types.Transaction) (*types.Receipt, err
 func (e *Env) deployStorageContract(creator *ecdsa.PrivateKey) (*types.Transaction, common.Address, abi.ABI) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(e.T, err)
-	tx, _, addr := e.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, 42)
+	tx, _, addr := e.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
 	return tx, addr, contractABI
 }
 
