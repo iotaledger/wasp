@@ -233,7 +233,7 @@ func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTest
 }
 
 func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey) *storageContractInstance {
-	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, 42)}
+	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))}
 }
 
 func (e *soloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
