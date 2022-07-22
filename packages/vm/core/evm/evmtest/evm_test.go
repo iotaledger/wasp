@@ -31,7 +31,7 @@ func TestStorageContract(t *testing.T) {
 	require.EqualValues(t, 1, env.getBlockNumber()) // evm block number is incremented along with ISC block index
 
 	// deploy solidity `storage` contract
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 	require.EqualValues(t, 2, env.getBlockNumber())
 
 	// call FuncCallView to call EVM contract's `retrieve` view, get 42
@@ -91,7 +91,7 @@ func TestGetCode(t *testing.T) {
 func TestGasCharged(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 
 	// call `store(999)` with enough gas
 	res, err := storage.store(999)
@@ -107,7 +107,7 @@ func TestGasCharged(t *testing.T) {
 func TestGasRatio(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 
 	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
 
@@ -137,7 +137,7 @@ func TestGasRatio(t *testing.T) {
 func TestGasLimit(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 
 	// set a gas ratio such that evm gas cost in iotas is larger than dust cost
 	err := env.setGasRatio(util.Ratio32{A: 10, B: 1}, iotaCallOptions{wallet: env.soloChain.OriginatorPrivateKey})

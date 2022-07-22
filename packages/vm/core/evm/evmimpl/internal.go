@@ -195,6 +195,7 @@ func paramBlockNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrev
 	return current
 }
 
+//nolint:unparam
 func paramBlockNumberOrHashAsNumber(ctx iscp.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
 	if ctx.Params().MustHas(evm.FieldBlockHash) {
 		a := assert.NewAssert(ctx.Log())

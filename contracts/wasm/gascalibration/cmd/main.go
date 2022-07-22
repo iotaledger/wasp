@@ -51,6 +51,7 @@ func drawGraph(title, contract string, filenames []string) {
 }
 
 func graphData(filename string, points map[uint32]uint64) plotter.XYs {
+	_ = filename
 	xys := make(plotter.XYs, 0)
 	for x, y := range points {
 		xys = append(xys, plotter.XY{X: float64(x), Y: float64(y)})

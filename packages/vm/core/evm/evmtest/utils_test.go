@@ -232,8 +232,8 @@ func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTest
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
-func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance {
-	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
+func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey) *storageContractInstance {
+	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, 42)}
 }
 
 func (e *soloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
@@ -381,6 +381,7 @@ func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName st
 	return err
 }
 
+//nolint:unparam
 func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
