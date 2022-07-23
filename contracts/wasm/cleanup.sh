@@ -22,4 +22,14 @@ for dir in "$root"/contracts/wasm/*; do
     rm "$dir"/pkg/*.*
     rm "$dir"/ts/pkg/*.*
   fi
+
+cd gascalibration
+for dir in ./*; do
+ if [ -d "$dir" ]; then
+    rm "$dir"/ts/"$dir"/index.ts
+    rm "$dir"/ts/"$dir"/tsconfig.json
+    rm "$dir"/pkg/*.*
+    rm "$dir"/ts/pkg/*.*
+  fi
+done
 done
