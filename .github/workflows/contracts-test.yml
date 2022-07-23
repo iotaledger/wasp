@@ -44,5 +44,8 @@ jobs:
           cd contracts/wasm && bash all_build.sh
       - name: run tests
         run: |
-          cd contracts/wasm && go test ./...
+          cd contracts/wasm && go test ./... &&
+          cd ../../packages/vm/ && go test ./...
+
+          
 
