@@ -44,8 +44,8 @@ jobs:
 
       - name: Generate SC files
         run: |
-           go install ./tools/schema &&
-           cd contracts/wasm &&
+           go install ./tools/schema
+           cd contracts/wasm
            for dir in */ ; do
                 cd ${dir};
                 schema -go;
