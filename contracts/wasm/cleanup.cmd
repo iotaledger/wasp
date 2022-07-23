@@ -17,3 +17,10 @@ for /d %%f in (*.) do del %%f\ts\%%f\tsconfig.json
 for /d %%f in (*.) do del /s /q %%f\pkg\*.*
 for /d %%f in (*.) do del /s /q %%f\ts\pkg\*.*
 del /s /q target\*.*
+cd gascalibration
+for /d %%f in (*.) do del %%f\ts\%%f\index.ts
+for /d %%f in (*.) do del %%f\ts\%%f\tsconfig.json
+
+for /d %%f in (*.) do del /s /q %%f\pkg\*.*
+for /d %%f in (*.) do del /s /q %%f\ts\pkg\*.*
+del /s /q target\*.*
