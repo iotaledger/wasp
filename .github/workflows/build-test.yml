@@ -42,7 +42,7 @@ jobs:
       - name: Setup golangci-lint Action
         uses: nickhstr/action-setup-golangci-lint@v0.1.0
         with:
-          version: latest
+          version: 1.47.2
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
