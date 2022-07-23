@@ -58,7 +58,7 @@ jobs:
                 cd ..;
            done
            cd ..
-           
+           golangci-lint run --fix
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.1.0
