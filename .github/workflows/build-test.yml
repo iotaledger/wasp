@@ -51,12 +51,6 @@ jobs:
                 schema -go;
                 cd ..;
            done &&
-           rest_dirs=("/erc721" "/executiontime" "/memory" "/storage") &&
-           for dir in ${rest_dirs[@]}; do
-             cd ${dir};
-             schema -go;
-             cd ..;
-           done
            
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3.1.0
