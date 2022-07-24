@@ -384,7 +384,7 @@ func (g *GenBase) fieldIsTypeDef() bool {
 func (g *GenBase) setCommonKeys() {
 	g.keys["false"] = ""
 	g.keys["true"] = "true"
-	g.keys["empty"] = ""
+	g.keys["nil"] = ""
 	g.keys["space"] = " "
 	g.keys["package"] = g.s.PackageName
 	g.keys["Package"] = g.s.ContractName
