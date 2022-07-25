@@ -162,6 +162,7 @@ func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
 }
 
 func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
+	vmctx.Debugf("writeReceiptToBlockLog: %s err: %s", vmctx.req.ID(), errProvided)
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
 		GasBudget:     vmctx.gasBudgetAdjusted,

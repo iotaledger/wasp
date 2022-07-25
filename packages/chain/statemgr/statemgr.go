@@ -103,7 +103,6 @@ func New(
 }
 
 func (sm *stateManager) receiveChainPeerMessages(peerMsg *peering.PeerMessageIn) {
-	sm.log.Warnf("receiveChainPeerMessages ?????????????? %s", peerMsg.MsgType)
 	switch peerMsg.MsgType {
 	case peerMsgTypeGetBlock:
 		msg, err := messages.NewGetBlockMsg(peerMsg.MsgData)

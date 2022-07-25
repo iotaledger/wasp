@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		// TODO I guess it would make sense to do these steps via CLI
 		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
 		require.NoError(t, err)
 
@@ -109,8 +109,12 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	out = w.PostRequestGetReceipt("governance", "startMaintenance")
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
+	// check that node0 from clust2 is synced and maintenance is on
+	out = w2.Run("chain", "call-view", governance.Contract.Name, governance.ViewGetMaintenanceStatus.Name)
+	out = w2.Pipe(out, "decode", "string", governance.VarMaintenanceStatus, "bool")
+	require.Regexp(t, `true`, out[0])
+
 	// stop the initial cluster
-	// TODO is it needed to check that node0 from clust2 is synced at this point?
 	w.Cluster.Stop()
 
 	// for the approach below to work, we would need "permitionless access nodes",

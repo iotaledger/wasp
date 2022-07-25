@@ -452,12 +452,18 @@ func (c *consensus) postTransactionIfNeeded() {
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
 	if c.resultState == nil { // governance transaction
-		go c.nodeConn.PublishGovernanceTransaction(c.finalTx) //nolint:errcheck
+		if err := c.nodeConn.PublishGovernanceTransaction(c.finalTx); err != nil {
+			c.log.Errorf("postTransaction: error publishing gov transaction: %w", err)
+			return
+		}
 		logMsgTypeStr = "GOVERNANCE"
 		logMsgStateIndexStr = ""
 	} else {
 		stateIndex := c.resultState.BlockIndex()
-		go c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx) //nolint:errcheck
+		if err := c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx); err != nil {
+			c.log.Errorf("postTransaction: error publishing state transaction: %w", err)
+			return
+		}
 		logMsgTypeStr = "STATE"
 		logMsgStateIndexStr = fmt.Sprintf(" for state %v", stateIndex)
 	}

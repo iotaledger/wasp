@@ -82,7 +82,7 @@ func (sm *stateManager) EnqueueAliasOutput(output *iscp.AliasOutputWithID) {
 
 func (sm *stateManager) handleAliasOutput(output *iscp.AliasOutputWithID) {
 	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", iscp.OID(output.ID()), output.GetStateIndex())
-	// sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex()) //TODO!!!
+	sm.stateManagerMetrics.LastSeenStateIndex(output.GetStateIndex())
 	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {
 		sm.log.Errorf("EventAliasOutput ignored: failed to parse state commitment: %v", err)
