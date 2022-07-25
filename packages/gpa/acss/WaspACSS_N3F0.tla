@@ -1,3 +1,0 @@
----- MODULE WaspACSS_N3F0 ----
-EXTENDS  WaspACSS
-====

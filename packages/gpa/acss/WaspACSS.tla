@@ -31,7 +31,7 @@ TypeOK ==
 ---------- MODULE RBC -----------
 (*
 Here we are modelling the RBC as a blackbox, only considering its properties.
-It waits for a message to be broadcasted, and produces messahes to be delivered
+It waits for a message to be broadcasted, and produces messages to be delivered
 to particular nodes. The properties of the Uniform RBC:
 
 URB-validity:
@@ -50,19 +50,24 @@ URB-termination-2:
 *)
 CONSTANT MsgP(_)    \* Predicate detecting the message to be broadcasted.
 CONSTANT MsgS(_, _) \* Operator producing a message to be delivered.
+(*
+We have two cases here, depending on the correctness of the dealer:
+  - If the Dealer is correct, then RBC has to deliver to all the Fair nodes, and maybe to some faulty nodes.
+  - If dealer is Faulty, then two cases are possible:
+      - Either all the Fair nodes (and maybe some faulty) will deliver a message;
+      - Or no Fair node will deliver the message. The faulty nodes can still deliver it.
+*)
 Broadcast ==
-    \E msg \in msgs, someFaulty \in SUBSET Faulty: MsgP(msg) /\
-        \/ /\ Dealer \in Faulty \* All fair or none of them.
+    \E m \in msgs, someFaulty \in SUBSET Faulty: MsgP(m) /\
+        \/ /\ Dealer \notin Faulty \* Deliver to all the fair nodes, and maybe to some faulty.
+           /\ msgs' = msgs \cup {MsgS(m, n) : n \in Nodes \ someFaulty}
+        \/ /\ Dealer \in Faulty \* Deliver either to all Fair nodes plus some Faulty, or just to some faulty.
            /\ \E deliverAt \in {(Nodes \ someFaulty)} \cup SUBSET Faulty:
-                msgs' = msgs \cup {MsgS(msg, n) : n \in deliverAt}
-        \/ /\ Dealer \notin Faulty
-           /\ msgs' = msgs \cup {MsgS(msg, n) : n \in Nodes \ someFaulty}
+                msgs' = msgs \cup {MsgS(m, n) : n \in deliverAt}
 =================================
 rbc == INSTANCE RBC WITH
-        MsgP <- LAMBDA m : m.t = "DEAL_BC",
-        MsgS <- LAMBDA m, n : [t |-> "DEAL", rcp |-> n, deal |-> m.deal]
-
-\* TODO: Move the crypto abstraction to a separate module?
+         MsgP <- LAMBDA m : m.t = "DEAL_BC",
+         MsgS <- LAMBDA m, n : [t |-> "DEAL", rcp |-> n, deal |-> m.deal]
 
 --------------------------------------------------------------------------------
 (*                                ACTIONS                                     *)
@@ -94,10 +99,10 @@ RBC ==
 \* >
 HandleDeal(n) ==
     \E m \in msgs: m.t = "DEAL" /\ m.rcp = n /\
-      \/ m.deal[n]  /\ msgs' = msgs \cup {[t |-> "OK",        src |-> n]}
-      \/ ~m.deal[n] /\ msgs' = msgs \cup {[t |-> "IMPLICATE", src |-> n, sec |-> TRUE]}
-      \* False IMPLICATE messages can only be produced by the Faulty nodes.
-      \* Those messages were added in the Init state already.
+        \/ m.deal[n]  /\ msgs' = msgs \cup {[t |-> "OK",        src |-> n]}
+        \/ ~m.deal[n] /\ msgs' = msgs \cup {[t |-> "IMPLICATE", src |-> n, sec |-> TRUE]}
+        \* False IMPLICATE messages can only be produced by the Faulty nodes.
+        \* Those messages were added in the Init state already.
 
 \* >
 \* > on receiving <OK> from n-f parties:
@@ -112,7 +117,7 @@ HandleOK(n) ==
 \* >   send <READY> to all parties
 \* >
 HandleReadySupport(n) ==
-    \E q \in QF1: \A qn \in q: \E m \in msgs : m.t = "READY"
+    \E q \in QF1: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
       /\ msgs' = msgs \cup {[t |-> "READY", src |-> n]}
 
 \* >
@@ -122,7 +127,7 @@ HandleReadySupport(n) ==
 \* >     output sᵢ
 \* >
 HandleReadyQuorum(n) ==
-    \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "READY"
+    \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
       /\ msgs' = msgs \cup {[t |-> "OUTPUT", src |-> n]}
 
 \* >
@@ -153,10 +158,11 @@ HandleImplicate(n) ==
 \* >       output sᵢ
 \* >
 HandleRecover(n) ==
-    \E q \in QF1: \A qn \in q: \E m, md \in msgs:
-      /\ m.t = "RECOVER"
-      /\ md.t = "DEAL" /\ md.rcp = n
-      /\ md.deal[m.src]
+    \E q \in QF1:
+      /\ \A qn \in q: \E m, md \in msgs:
+           /\ m.t = "RECOVER" /\ m.src = qn \* F+1 RECOVER messages received.
+           /\ md.t = "DEAL" /\ md.rcp = n   \* We have received our DEAL.
+           /\ md.deal[m.src]                \* The sender of RECOVER had a correct DEAL.
       /\ msgs' = msgs \cup {[t |-> "OUTPUT", src |-> n]}
 
 --------------------------------------------------------------------------------
@@ -194,7 +200,7 @@ FairDealerAlwaysOK ==
 FairNodesWillReceiveDeals ==
     LET enough == \E md \in msgs, q \in QNF:
                     /\ md.t = "DEAL"
-                    /\ \A n \in q: md.deal[n]
+                    /\ \A qn \in q: md.deal[qn]
     IN enough ~> AllFairNodesOutput
 
 \* Either all fair nodes output, or none of them.
