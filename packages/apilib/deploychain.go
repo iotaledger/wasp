@@ -58,7 +58,7 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, e
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address, govControllerAddr iotago.Address) (*iscp.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*iscp.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {

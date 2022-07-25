@@ -49,7 +49,7 @@ type Cluster struct {
 	t                *testing.T
 }
 
-func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T) *Cluster {
 	var lg *logger.Logger
 	if t != nil {
 		lg = testlogger.NewLogger(t)
@@ -71,6 +71,7 @@ func New(name string, config *ClusterConfig, t *testing.T) *Cluster {
 		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
 		t:                t,
 		l1:               nodeconn.NewL1Client(config.L1, lg),
+		DataPath:         dataPath,
 	}
 }
 
@@ -348,16 +349,16 @@ func fileExists(filepath string) (bool, error) {
 
 // InitDataPath initializes the cluster data directory (cluster.json + one subdirectory
 // for each node).
-func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool) error {
-	exists, err := fileExists(dataPath)
+func (clu *Cluster) InitDataPath(templatesPath string, removeExisting bool) error {
+	exists, err := fileExists(clu.DataPath)
 	if err != nil {
 		return err
 	}
 	if exists {
 		if !removeExisting {
-			return xerrors.Errorf("%s directory exists", dataPath)
+			return xerrors.Errorf("%s directory exists", clu.DataPath)
 		}
-		err = os.RemoveAll(dataPath)
+		err = os.RemoveAll(clu.DataPath)
 		if err != nil {
 			return err
 		}
@@ -369,16 +370,15 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
 			&clu.Config.Wasp[i],
-			i,
 		)
 		if err != nil {
 			return err
 		}
 	}
-	return clu.Config.Save(dataPath)
+	return clu.Config.Save(clu.DataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err
@@ -420,7 +420,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return xerrors.Errorf("Data path %s does not exist", dataPath)
 	}
 
-	if err := clu.start(dataPath); err != nil {
+	if err := clu.start(); err != nil {
 		return err
 	}
 
@@ -432,7 +432,7 @@ func (clu *Cluster) Start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) start(dataPath string) error {
+func (clu *Cluster) start() error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
 	initOk := make(chan bool, len(clu.Config.Wasp))
