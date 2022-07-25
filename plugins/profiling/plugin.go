@@ -3,6 +3,7 @@ package profiling
 import (
 	"context"
 	"net/http"
+
 	// import required to profile
 	_ "net/http/pprof"
 	"runtime"
