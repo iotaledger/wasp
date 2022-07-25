@@ -17,7 +17,7 @@ import (
 func TestCreateOrigin(t *testing.T) {
 	var u *utxodb.UtxoDB
 	var originTx, txInit *iotago.Transaction
-	var user *cryptolib.KeyPair
+	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
 	var chainID *iscp.ChainID
@@ -25,13 +25,13 @@ func TestCreateOrigin(t *testing.T) {
 
 	initTest := func() {
 		u = utxodb.New()
-		user = cryptolib.NewKeyPair()
-		userAddr = user.GetPublicKey().AsEd25519Address()
+		userKey = cryptolib.NewKeyPair()
+		userAddr = userKey.GetPublicKey().AsEd25519Address()
 		_, err := u.GetFundsFromFaucet(userAddr)
 		require.NoError(t, err)
 
-		state := cryptolib.NewKeyPair()
-		stateAddr = state.GetPublicKey().AsEd25519Address()
+		stateKey := cryptolib.NewKeyPair()
+		stateAddr = stateKey.GetPublicKey().AsEd25519Address()
 
 		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceIotas(userAddr))
 		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
@@ -40,7 +40,7 @@ func TestCreateOrigin(t *testing.T) {
 		allOutputs, ids := u.GetUnspentOutputs(userAddr)
 
 		originTx, chainID, err = NewChainOriginTransaction(
-			user,
+			userKey,
 			stateAddr,
 			stateAddr,
 			1000,
@@ -66,7 +66,7 @@ func TestCreateOrigin(t *testing.T) {
 	createInitChainTx := func() {
 		allOutputs, ids := u.GetUnspentOutputs(userAddr)
 		txInit, err = NewRootInitRequestTransaction(
-			user,
+			userKey,
 			chainID,
 			"test chain",
 			allOutputs,

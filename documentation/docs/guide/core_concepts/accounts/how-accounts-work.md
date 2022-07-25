@@ -11,138 +11,74 @@ keywords:
 
 # How Accounts Work
 
-IOTA Smart Contracts provide secure, trustless transfers of digitized assets:
+On the L1 Ledger, just like with any DLT, we have **trustless** and **atomic** transfers of assets between addresses on the ledger.
+Tokens controlled by an address can be moved to another address by providing a valid signature using the private key that controls the source address.
 
-- Between smart contracts on the same or different chains
-- Between smart contracts and L1 addresses on the UTXO Ledger
+In IOTA Smart Contracts, [each chain has a L1 address](../states#digital-assets-on-the-chain) (also known as the _Chain ID_) which enables it to control L1 assets (base tokens, native tokens and NFTs).
+The chain acts as a custodian of the L1 assets on behalf of different entities, thus providing a _L2 Ledger_.
 
-On the UTXO Ledger, just like with any DLT, we have **trustless** and **atomic**
-transfers of assets between addresses on the ledger. The tokens contained in the
-address can be moved to another address by providing a valid signature using the
-private key which controls the source address.
+The L2 ledger is a collection of _on-chain accounts_ (sometimes also called just _accounts_).
+L2 accounts can be owned by different kinds of entities, which are identified by a unique _Agent ID_.
+Thus, the L2 ledger is a mapping of Agent ID => balances of L2 assets.
 
-In IOTA Smart Contracts, the smart contracts which reside on chains are also owners of their
-tokens. Each smart contract can receive tokens that are transferred to it and
-can send tokens it controls to any other owner, be it another smart
-contract, or an ordinary L1 address on the UTXO Ledger.
+## Types of Accounts
 
-There are 2 types of entities that can control tokens:
+### L1 Address
 
-* L1 addresses on the UTXO Ledger
-* Smart contracts on IOTA Smart Contracts chains
+Any L1 address can be the owner of a L2 account.
+The Agent ID of an L1 address is just the address, e.g. `iota1pr7vescn4nqc9lpvv37unzryqc43vw5wuf2zx8tlq2wud0369hjjugg54mf`.
 
-There are 3 different types of trustless token transfers possible between those
-entities. Each type involves a different mechanism of transfer:
+Tokens in an address account can only be moved trhough a request signed by the private key of the L1 address.
 
-* Between L1 address and smart contract
-* Between smart contracts on the same chain
-* Between smart contracts on different chains
+### Smart Contract
 
-To make the system homogenous, we introduce the following two concepts:
+Any smart contract can be the owner of a L2 account. Recall that a smart
+contract is uniquely identified in a chain by a [_hname_](../smart-contract-anatomy#identifying-a-smart-contract).
+However, the hname is not enough to identify the account since it could be owned by a smart contract on another chain.
 
-* `Agent ID`: Represents an owner of tokens independently of the type of
-  owning entity.
-* `On-chain account`: Represents the unit of ownership on the chain.
+Thus, the Agent ID of a smart contract is composed as the contract hname plus the [_chain ID_](../states#digital-assets-on-the-chain), with syntax `<hname>@<chain-id>`. For example: `cebf5908@tgl1pzehtgythywhnhnz26s2vtpe2wy4y64pfcwkp9qvzhpwghzxhwkps2tk0nd`.
 
-Each IOTA Smart Contracts chain keeps a ledger of on-chain account balances
+Note that this allows trustless transfers of assets between smart contracts on the same or different chains.
 
-## Account Ownership
+Tokens in a smart contract account can only be moved by that smart contract.
 
-### Smart Contract ID
+### The Common Account
 
-Unlike with blockchain systems like Ethereum, we cannot simply represent the
-smart contract by a blockchain address: IOTA Smart Contracts can have many blockchains. 
-Each chain in IOTA Smart Contracts is identified by its _chain ID_. A chain can
-contain many smart contracts on it. So, in IOTA Smart Contracts, each contract is identified by
-an identifier that consists of the chain ID, and the _hname_ of the smart
-contract. In human-readable form, the smart _contract ID_ looks like this:
+The chain itself owns a unique L2 account, called the _common account_.
+The common account is controlled by the chain owner (defined in the chain root contract), and is used to store funds collected by fees, or sent to the chain L1 address.
 
-```
-cfQL3Vzay65ZZnPgsDKwXRRGwDWK68QkQwZqzvVs8UXM::cebf5908
-```
+The Agent ID of the common account is `<hname=0>@<chain-id>`. For example: `00000000@tgl1pzehtgythywhnhnz26s2vtpe2wy4y64pfcwkp9qvzhpwghzxhwkps2tk0nd`.
 
-The part before `::` is the _chain ID_, the part after `::` is the _hname_ of
-the smart contract.
+### Ethereum Address
 
-### Agent ID
+An L2 account can also be owned by an Ethereum address. See [EVM](../../evm/introduction) for more information.
+The Agent ID of an Ethereum address is just the address prefixed with `0x`, e.g. `0xd36722adec3edcb29c8e7b5a47f352d701393462`.
 
-The agent ID is an identifier that generalizes and represents one of the two
-agent types in one identifier: either an L1 address on the UTXO Ledger or a
-smart contract ID.
-
-It is easy to determine which one is represented by the particular agent ID: an
-L1 address always has the _hname_ part all zero.
-
-### Different Types of Account
-
-Given that an on-chain account is identified by an AgentID:
-
-- The AgentID for accounts owned by L1 entities (regular IOTA wallets) looks like:
-
-```yaml
-Hname: 0
-Address: "some address"
-```
-
-- The AgentID for accounts owned by L2 entities (Smart Contracts):
-
-```yaml
-Hname: "Hname of the entity"
-Address: "Address of the chain where the entity exists"
-```
-
-For example, the smart contract with hname `123` that exists on the chain with address `000`, can be identified on **any** chain by the following AgentID:
-
-```yaml
-Hname: 123
-Address: 000
-```
+Tokens in an Ethereum account can only be moved by sending an Ethereum transaction signed by the same address.
 
 ## The Accounts Contract
 
-The `Accounts` contract manages which funds are owned by which accounts.
-
-Internally there is a mapping of `Account (AgentID)` to `balances`, which can include normal IOTAs and/or any colored tokens.
-
+The [`accounts` core contract](../core_contracts/accounts) is responsible for managing the L2 ledger.
 By calling this contract it is possible to:
 
 - [View current account balances](./view-account-balances.mdx)
 - [Deposit funds to the chain](./how-to-deposit-to-a-chain.mdx)
 - [Withdraw funds from the chain](./how-to-withdraw-from-a-chain.mdx)
-- [Harvest](./the-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common account to his account.
+- [Harvest](./the-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common account to their account.
 
-## Interoperability Between Chains
+## Example
 
-Each chain contains any number of accounts. Each account owns colored
-tokens: a collection of `color: balance` pairs.
-
-Each account on the chain is controlled by some `agent ID`. It means that tokens
-contained in the account can only be moved by the entity behind that agent ID:
-
-* If the _agent ID_ represents an address on the UTXO Ledger, the tokens can
-  only be moved by a request signed by the private key of that address.
-* If the _agent ID_ represents a smart contract, the tokens can only be moved by
-  that smart contract. Note that the smart contract may reside on the same chain
-  or another chain.
+The following diagram illustrates an example situation.
+We are shortening the IDs and hnames for simplicity.
 
 [![Example situation. There are two chains deployed, with three smart contracts and one address.](/img/tutorial/accounts.png)](/img/tutorial/accounts.png)
 
-The picture illustrates an example situation. There are two chains deployed,
-with respective IDs `Pmc7iH8b..` and `Klm314noP8..`. The pink chain `Pmc7iH8b..`
-has two smart contracts on it (`3037` and `2225`) and the blue chain
-`Klm314noP8..` has one smart contract (`7003`).
+There are two chains deployed, with respective IDs `chainA` and `chainB`.
+Chain A has two smart contracts on it (with hnames `3037` and `2225`) and chain B has one smart contract (`7003`).
 
-The UTXO Ledger has 1 address `P6ZxYXA2..`. The address `P6ZxYXA2..` controls
-1337 iotas and 42 red tokens on the UTXO Ledger. The same address also controls
-42 iotas on the pink chain and 8 green tokens on the blue chain. So, the owner
-of the private key behind the address controls 3 different accounts: 1 on the L1
-UTXO Ledger and 2 accounts on 2 different chains on L2.
+There is also an address on the L1 Ledger: `iota1a2b3c4d`.
+This address controls 1337 iotas and 42 `Red` native tokens on the L1 Ledger.
+The same address also controls 42 iotas on the chain A and 8 `Green` native tokens on chain B.
+So, the owner of the private key behind the address controls 3 different accounts: the L1 account and one L2 account on each chain.
 
-At the same time, smart contract `7003` on the blue chain has 5 iotas on its
-native chain and controls 11 iotas on the pink chain.
-
-Note that “control over account” means the entity which has the private key can
-move funds from it. For an ordinary address, it means the private key of the
-address. For a smart contract, it means the private keys of the committee which
-runs the chain (the smart contract program can only be executed with those
-private keys).
+Smart contract `7003@chainB` has 5 iotas on its native chain and controls 11 iotas on chain A.

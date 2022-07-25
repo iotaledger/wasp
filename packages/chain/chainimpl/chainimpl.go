@@ -137,7 +137,7 @@ func NewChain(
 	}
 	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID, nc, chainLog)
 	if err != nil {
-		ret.log.Errorf("NewChain: unable to create chain node connection: v", err)
+		ret.log.Errorf("NewChain: unable to create chain node connection: %v", err)
 		return nil
 	}
 

@@ -23,6 +23,7 @@ func identityFunInt(index int) int {
 }
 
 func alwaysTrueFun(index int) bool {
+	_ = index
 	return true
 }
 

@@ -31,6 +31,8 @@ type SoloSandbox struct {
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
+	_ = burnCode
+	_ = par
 	// just do nothing
 }
 
@@ -184,7 +186,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	return res.Bytes()
 }
 
-func (s *SoloSandbox) fnChainID(args []byte) []byte {
+func (s *SoloSandbox) fnChainID(_ []byte) []byte {
 	return s.ctx.CurrentChainID().Bytes()
 }
 

@@ -81,7 +81,7 @@ func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
 	accessNodes := collections.NewMap(ctx.State(), governance.VarAccessNodes)
-	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), string(governance.ParamChangeAccessNodesActions))
+	paramNodeActions := collections.NewMapReadOnly(ctx.Params(), governance.ParamChangeAccessNodesActions)
 	ctx.Log().Debugf("changeAccessNodes: actions len: %d", paramNodeActions.MustLen())
 
 	paramNodeActions.MustIterate(func(pubKey, actionBin []byte) bool {
@@ -113,8 +113,8 @@ func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 //
 func getChainNodes(ctx iscp.SandboxView) dict.Dict {
 	res := dict.New()
-	ac := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodeCandidates))
-	an := collections.NewMap(res, string(governance.ParamGetChainNodesAccessNodes))
+	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
+	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
 	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
 		ac.MustSetAt(key, value)
 		return true

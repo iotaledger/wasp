@@ -50,6 +50,8 @@ func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, iot
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
 // Returns the color of minted tokens: the hash of the transaction
 func (env *Solo) MintTokens(wallet *cryptolib.KeyPair, amount uint64) (iotago.NativeTokenID, error) {
+	_ = wallet
+	_ = amount
 	panic("not implemented")
 	// env.ledgerMutex.Lock()
 	// defer env.ledgerMutex.Unlock()

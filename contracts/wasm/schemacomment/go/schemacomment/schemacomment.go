@@ -5,8 +5,8 @@ package schemacomment
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func funcTestFunc1(ctx wasmlib.ScFuncContext, f *TestFunc1Context) {
+func funcTestFunc1(_ wasmlib.ScFuncContext, _ *TestFunc1Context) {
 }
 
-func viewTestView1(ctx wasmlib.ScViewContext, f *TestView1Context) {
+func viewTestView1(_ wasmlib.ScViewContext, _ *TestView1Context) {
 }

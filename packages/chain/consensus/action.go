@@ -644,7 +644,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 			c.contributors, c.myContributionSeqNumber, len(c.consensusBatch.RequestIDs), iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	} else {
 		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: false, %v reqs: %+v",
-			c.contributors, (c.consensusBatch.RequestIDs), iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
+			c.contributors, c.consensusBatch.RequestIDs, iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	}
 
 	c.runVMIfNeeded()
@@ -873,7 +873,7 @@ func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
 		return
 	}
 	if c.stateOutput == nil {
-		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %d, but state output is nil",
+		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %s, but state output is nil",
 			msg.SenderIndex, iscp.OID(msg.ChainInputID))
 		return
 	}

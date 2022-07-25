@@ -92,7 +92,7 @@ var TypeDependent = model.StringMapMap{
 var common = map[string]string{
 	// *******************************
 	"initGlobals": `
-$#set crate 
+$#set crate $nil
 $#if core setCrate
 `,
 	// *******************************

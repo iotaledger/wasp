@@ -525,7 +525,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 		return nil
 	}
 	ret := make([]iotago.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, string(governance.ParamAllowedStateControllerAddresses))
+	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)

@@ -17,13 +17,13 @@ import (
 
 const inccounterName = "inc"
 
-func (e *ChainEnv) deployInccounter42(counter int64) *iscp.ContractAgentID {
+func (e *ChainEnv) deployInccounter42() *iscp.ContractAgentID {
 	hname := iscp.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash
 
 	_, err := e.Chain.DeployContract(inccounterName, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: counter,
+		inccounter.VarCounter: 42,
 		root.ParamName:        inccounterName,
 	})
 	require.NoError(e.t, err)
@@ -60,7 +60,7 @@ func (e *ChainEnv) deployInccounter42(counter int64) *iscp.ContractAgentID {
 	require.NoError(e.t, err)
 	require.EqualValues(e.t, description, rec.Description)
 
-	e.expectCounter(hname, counter)
+	e.expectCounter(hname, 42)
 	return iscp.NewContractAgentID(e.Chain.ChainID, hname)
 }
 
@@ -113,14 +113,14 @@ func (e *ChainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, dura
 
 func TestPostDeployInccounter(t *testing.T) {
 	e := SetupWithChain(t)
-	contractID := e.deployInccounter42(42)
+	contractID := e.deployInccounter42()
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 }
 
 func TestPost1Request(t *testing.T) {
 	e := SetupWithChain(t)
 
-	contractID := e.deployInccounter42(42)
+	contractID := e.deployInccounter42()
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
@@ -140,7 +140,7 @@ func TestPost1Request(t *testing.T) {
 func TestPost3Recursive(t *testing.T) {
 	e := SetupWithChain(t)
 
-	contractID := e.deployInccounter42(42)
+	contractID := e.deployInccounter42()
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
@@ -166,7 +166,7 @@ func TestPost3Recursive(t *testing.T) {
 func TestPost5Requests(t *testing.T) {
 	e := SetupWithChain(t)
 
-	contractID := e.deployInccounter42(42)
+	contractID := e.deployInccounter42()
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
@@ -196,7 +196,7 @@ func TestPost5Requests(t *testing.T) {
 func TestPost5AsyncRequests(t *testing.T) {
 	e := SetupWithChain(t)
 
-	contractID := e.deployInccounter42(42)
+	contractID := e.deployInccounter42()
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()

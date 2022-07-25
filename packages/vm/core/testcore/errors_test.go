@@ -45,7 +45,7 @@ var errorContractProcessor = errorContract.Processor(nil,
 	}),
 )
 
-func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
+func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
 	chain, _, _ := env.NewChainExt(nil, 100_000, "chain1")
@@ -58,7 +58,7 @@ func setupErrorsTest(t *testing.T) (*solo.Solo, *solo.Chain) {
 
 	chain.CheckChain()
 
-	return env, chain
+	return chain
 }
 
 func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
@@ -95,7 +95,7 @@ func TestErrorWithCustomError(t *testing.T) {
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror
 func TestPanicDueMissingErrorMessage(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name).
 		WithGasBudget(100_000)
@@ -112,7 +112,7 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 }
 
 func TestSuccessfulRegisterError(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, "poof").
 		WithGasBudget(100_000)
@@ -122,7 +122,7 @@ func TestSuccessfulRegisterError(t *testing.T) {
 }
 
 func TestRetrievalOfErrorMessage(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name, errors.ParamErrorMessageFormat, errorMessageToTest).
 		WithGasBudget(100_000)
@@ -146,7 +146,7 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 }
 
 func TestErrorRegistrationWithCustomContract(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
 		WithGasBudget(100_000)
@@ -159,7 +159,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	// Register error
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
@@ -189,7 +189,7 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 }
 
 func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	// Register error
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
@@ -221,7 +221,7 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testing.T) { //nolint:dupl
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	// Register error
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).
@@ -254,7 +254,7 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) { //nolint:dupl
-	_, chain := setupErrorsTest(t)
+	chain := setupErrorsTest(t)
 
 	// Register error
 	req := solo.NewCallParams(errorContract.Name, funcRegisterErrors.Name).

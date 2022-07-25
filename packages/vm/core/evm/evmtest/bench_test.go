@@ -19,7 +19,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 	env := initEVMWithSolo(b, s)
 	// setup: deploy the `storage` EVM contract
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 
 	gasLimit := uint64(100000)
 

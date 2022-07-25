@@ -99,7 +99,7 @@ func (mlT *MockedLedger) PublishStateTransaction(stateIndex uint32, tx *iotago.T
 		if err != nil {
 			mlT.log.Panicf("Publishing state transaction for state %v: cannot calculate transaction id: %v", stateIndex, err)
 		}
-		mlT.log.Debugf("Publishing state transaction for state %v: transaction id is %s", iscp.TxID(txID))
+		mlT.log.Debugf("Publishing state transaction for state %v: transaction id is %s", stateIndex, iscp.TxID(txID))
 		mlT.txIDs[txID] = true
 		for index, output := range tx.Essence.Outputs {
 			aliasOutput, ok := output.(*iotago.AliasOutput)

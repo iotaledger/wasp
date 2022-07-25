@@ -24,6 +24,7 @@ func RunBenchmarkSync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, 
 
 // RunBenchmarkAsync processes requests asynchronously, producing 1 block per many requests
 func RunBenchmarkAsync(b *testing.B, chain *solo.Chain, reqs []*solo.CallParams, keyPair *cryptolib.KeyPair) {
+	_ = keyPair
 	txs := make([]*iotago.Transaction, b.N)
 	for i := 0; i < b.N; i++ {
 		var err error

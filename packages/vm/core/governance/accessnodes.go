@@ -28,7 +28,7 @@ func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress io
 }
 
 func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
-	return NodeOwnershipCertificate(data)
+	return data
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
@@ -191,7 +191,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		AccessNodes:          make([]*cryptolib.PublicKey, 0),
 	}
 
-	ac := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodeCandidates))
+	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
 	ac.MustIterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
@@ -201,7 +201,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		return true
 	})
 
-	an := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodes))
+	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
 		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
 		if err != nil {
@@ -252,7 +252,7 @@ func (req *ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) *ChangeAc
 
 func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
-	actionsMap := collections.NewMap(d, string(ParamChangeAccessNodesActions))
+	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range req.actions {
 		actionsMap.MustSetAt(pubKey[:], []byte{byte(action)})
 	}

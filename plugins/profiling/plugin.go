@@ -3,10 +3,9 @@ package profiling
 import (
 	"context"
 	"net/http"
-	"runtime"
-
 	// import required to profile
 	_ "net/http/pprof"
+	"runtime"
 
 	profile "github.com/bygui86/multi-profile/v2"
 	"github.com/iotaledger/hive.go/daemon"

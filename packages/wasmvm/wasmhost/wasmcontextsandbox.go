@@ -199,11 +199,11 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
+func (s *WasmContextSandbox) fnAccountID(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnAllowance(args []byte) []byte {
+func (s *WasmContextSandbox) fnAllowance(_ []byte) []byte {
 	allowance := s.ctx.AllowanceAvailable()
 	return s.cvt.ScBalances(allowance).Bytes()
 }
@@ -217,14 +217,14 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 	return codec.EncodeUint64(s.common.BalanceNativeToken(token).Uint64())
 }
 
-func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
+func (s *WasmContextSandbox) fnBalances(_ []byte) []byte {
 	allowance := &iscp.Allowance{}
 	allowance.Assets = s.common.BalanceFungibleTokens()
 	allowance.NFTs = s.common.OwnedNFTs()
 	return s.cvt.ScBalances(allowance).Bytes()
 }
 
-func (s *WasmContextSandbox) fnBlockContext(args []byte) []byte {
+func (s *WasmContextSandbox) fnBlockContext(_ []byte) []byte {
 	panic("implement me")
 }
 
@@ -251,19 +251,19 @@ func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params 
 	return s.ctxView.CallView(contract, function, params)
 }
 
-func (s *WasmContextSandbox) fnCaller(args []byte) []byte {
+func (s *WasmContextSandbox) fnCaller(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.ctx.Caller()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnChainID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainID(_ []byte) []byte {
 	return s.cvt.ScChainID(s.common.ChainID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainOwnerID(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.common.ChainOwnerID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnContract(args []byte) []byte {
+func (s *WasmContextSandbox) fnContract(_ []byte) []byte {
 	return s.cvt.ScHname(s.common.Contract()).Bytes()
 }
 
@@ -286,7 +286,7 @@ func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name,
 	s.ctx.DeployContract(programHash, name, description, params)
 }
 
-func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
+func (s *WasmContextSandbox) fnEntropy(_ []byte) []byte {
 	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
@@ -309,7 +309,7 @@ func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
+func (s *WasmContextSandbox) fnMinted(_ []byte) []byte {
 	panic("fixme: wc.fnMinted")
 	// return s.ctx.Minted().Bytes()
 }
@@ -319,7 +319,7 @@ func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnParams(args []byte) []byte {
+func (s *WasmContextSandbox) fnParams(_ []byte) []byte {
 	return s.common.Params().Dict.Bytes()
 }
 
@@ -328,16 +328,16 @@ func (s *WasmContextSandbox) fnPost(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequest(_ []byte) []byte {
 	panic("fixme: wc.fnRequest")
 	// return s.ctx.Request().Bytes()
 }
 
-func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequestID(_ []byte) []byte {
 	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnRequestSender(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequestSender(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.ctx.Request().SenderAccount()).Bytes()
 }
 
@@ -371,11 +371,11 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
+func (s *WasmContextSandbox) fnStateAnchor(_ []byte) []byte {
 	panic("implement me")
 }
 
-func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
+func (s *WasmContextSandbox) fnTimestamp(_ []byte) []byte {
 	return codec.EncodeUint64(uint64(s.common.Timestamp().UnixNano()))
 }
 

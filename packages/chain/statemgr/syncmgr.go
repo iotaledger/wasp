@@ -190,7 +190,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	}
 
 	if err != nil {
-		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
+		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %v", err)
 		if strings.Contains(err.Error(), "space left on device") {
 			sm.log.Panicf("Terminating WASP, no space left on disc.")
 		}
