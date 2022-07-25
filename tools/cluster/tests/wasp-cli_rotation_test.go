@@ -67,9 +67,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 		node0peerInfo, err := w2.Cluster.WaspClient(0).GetPeeringSelf()
 		require.NoError(t, err)
 
-		/// TODO HMM, should nodes be added as trusted peers first, or access nodes in gov contract?
-		//- It really shouldnt' matter..
-
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
 		w.Cluster.AddTrustedNode(node0peerInfo)
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
@@ -116,41 +113,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 	// stop the initial cluster
 	w.Cluster.Stop()
-
-	// for the approach below to work, we would need "permitionless access nodes",
-	// instead we need to add the node to the access nodes list in the gov contract as it is done above
-	// // keep add a node from the old cluster as a peer of the new cluster, so that the new nodes can sync the chain state
-	// // we're chosing 5, so that the default ports don't conflict with the new cluster
-	// initialClusterNodeIndex := 5
-	// {
-	// 	initOk := make(chan bool, 1)
-	// 	apiURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(w.Cluster.Config.APIPort(initialClusterNodeIndex)))
-	// 	_, err := cluster.DoStartWaspNode(
-	// 		w.Cluster.NodeDataPath(initialClusterNodeIndex),
-	// 		initialClusterNodeIndex,
-	// 		apiURL,
-	// 		initOk,
-	// 		t,
-	// 	)
-	// 	require.NoError(t, err)
-	// 	select {
-	// 	case <-initOk:
-	// 	case <-time.After(5 * time.Second):
-	// 		t.Fatal("timeout re-starting node from initial cluster")
-	// 	}
-	// }
-	//
-	// // establish trust connections between the node from the old cluster and the new cluster
-	// {
-	// 	nodeFromInitialClusterPeerInfo, err := w.Cluster.WaspClient(initialClusterNodeIndex).GetPeeringSelf()
-	// 	require.NoError(t, err)
-	// 	w2.Cluster.AddTrustedNode(nodeFromInitialClusterPeerInfo)
-	// 	for _, nodeIndex := range w2.Cluster.Config.AllNodes() {
-	// 		peerInfo, err := w2.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
-	// 		require.NoError(t, err)
-	// 		w.Cluster.AddTrustedNode(peerInfo, []int{initialClusterNodeIndex})
-	// 	}
-	// }
 
 	// run DKG on the new cluster, obtain the new state controller address
 	out = w2.Run("chain", "rundkg")
