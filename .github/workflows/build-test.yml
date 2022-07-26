@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: no wasm contract tests
+    name: general tests
     runs-on: ubuntu-latest
     steps:
       - name: Setup dependencies
