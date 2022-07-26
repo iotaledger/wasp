@@ -103,6 +103,11 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseUint(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeUint64(n)
+	case "dict":
+		d := dict.Dict{}
+		err := d.UnmarshalJSON([]byte(s))
+		log.Check(err)
+		return codec.EncodeDict(d)
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
@@ -184,7 +189,14 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
+	case "dict":
+		d, err := codec.DecodeDict(v)
+		log.Check(err)
+		s, err := d.MarshalJSON()
+		log.Check(err)
+		return string(s)
 	}
+
 	log.Fatalf("ValueToString: No handler for type %s", vtype)
 	return ""
 }

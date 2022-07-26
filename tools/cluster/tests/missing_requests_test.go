@@ -14,7 +14,7 @@ import (
 
 func TestMissingRequests(t *testing.T) {
 	// disable offledger request gossip between nodes
-	modifyConfig := func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams {
+	modifyConfig := func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 		configParams.OffledgerBroadcastUpToNPeers = 0
 		return configParams
 	}

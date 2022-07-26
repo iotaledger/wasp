@@ -322,17 +322,23 @@ func (c *chainObj) updateChainNodes(stateIndex uint32) {
 			newMembers[cm.AsKey()] = cm
 		}
 	}
+	govAccNodesListStr := ""
 	for _, newAccessNode := range govAccessNodes {
 		newMembers[newAccessNode.AsKey()] = newAccessNode
+		govAccNodesListStr += " " + newAccessNode.String()
 	}
 
 	//
 	// Pass it to the underlying domain to make a graceful update.
 	newMemberList := make([]*cryptolib.PublicKey, 0)
+	newMemberListStr := ""
 	for _, pubKey := range newMembers {
 		pubKeyCopy := pubKey
 		newMemberList = append(newMemberList, pubKeyCopy)
+		newMemberListStr += " " + pubKeyCopy.String()
 	}
+	c.log.Debugf("updateChainNodes, newMemberList=%s", newMemberListStr)
+	c.log.Debugf("updateChainNodes, govAccessNodes=%s", govAccNodesListStr)
 	c.chainPeers.UpdatePeers(newMemberList)
 	c.stateMgr.SetChainPeers(newMemberList)
 

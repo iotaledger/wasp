@@ -130,7 +130,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		}()
 	})
 	go ret.pullStateLoop()
-	ret.Log.Debugf("Mocked node %v started: id %v public key %v", ret.NodeIndex, ret.NodeID, ret.NodePubKey.AsString())
+	ret.Log.Debugf("Mocked node %v started: id %v public key %v", ret.NodeIndex, ret.NodeID, ret.NodePubKey.String())
 	return ret
 }
 

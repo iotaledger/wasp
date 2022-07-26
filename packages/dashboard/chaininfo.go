@@ -15,6 +15,7 @@ type ChainInfo struct {
 func (d *Dashboard) fetchChainInfo(chainID *iscp.ChainID) (ret *ChainInfo, err error) {
 	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.ViewGetChainInfo.Name, nil)
 	if err != nil {
+		d.log.Error(err)
 		return
 	}
 

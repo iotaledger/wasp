@@ -6,9 +6,7 @@ import (
 	"os"
 	"path"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -24,8 +22,20 @@ type WaspConfig struct {
 	FirstMetricsPort   int
 }
 
+func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams {
+	return templates.WaspConfigParams{
+		APIPort:                      w.FirstAPIPort + i,
+		DashboardPort:                w.FirstDashboardPort + i,
+		PeeringPort:                  w.FirstPeeringPort + i,
+		NanomsgPort:                  w.FirstNanomsgPort + i,
+		ProfilingPort:                w.FirstProfilingPort + i,
+		MetricsPort:                  w.FirstMetricsPort + i,
+		OffledgerBroadcastUpToNPeers: 10,
+	}
+}
+
 type ClusterConfig struct {
-	Wasp WaspConfig
+	Wasp []templates.WaspConfigParams
 	L1   nodeconn.L1Config
 }
 
@@ -45,9 +55,22 @@ func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
 }
 
-func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config) *ClusterConfig {
+func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
+	nodesConfigs := make([]templates.WaspConfigParams, waspConfig.NumNodes)
+	for i := 0; i < waspConfig.NumNodes; i++ {
+		// generate template from waspconfigs
+		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
+		// set L1 part of the template
+		nodesConfigs[i].L1APIAddress = l1Config.APIAddress
+		nodesConfigs[i].L1UseRemotePow = l1Config.UseRemotePoW
+		// modify the template if needed
+		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
+			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])
+		}
+	}
+
 	return &ClusterConfig{
-		Wasp: waspConfig,
+		Wasp: nodesConfigs,
 		L1:   l1Config,
 	}
 }
@@ -74,11 +97,17 @@ func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
 }
 
+func (c *ClusterConfig) SetOwnerAddress(address string) {
+	for i := range c.Wasp {
+		c.Wasp[i].OwnerAddress = address
+	}
+}
+
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
 	hosts := make([]string, 0)
 	for _, i := range nodeIndexes {
-		if i < 0 || i > c.Wasp.NumNodes-1 {
-			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d/%d", i, c.Wasp.NumNodes))
+		if i < 0 || i > len(c.Wasp)-1 {
+			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d/%d", i, len(c.Wasp)))
 		}
 		hosts = append(hosts, getHost(i))
 	}
@@ -86,8 +115,8 @@ func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string)
 }
 
 func (c *ClusterConfig) AllNodes() []int {
-	nodes := make([]int, c.Wasp.NumNodes)
-	for i := 0; i < c.Wasp.NumNodes; i++ {
+	nodes := make([]int, len(c.Wasp))
+	for i := 0; i < len(c.Wasp); i++ {
 		nodes[i] = i
 	}
 	return nodes
@@ -106,7 +135,7 @@ func (c *ClusterConfig) APIHost(nodeIndex int) string {
 }
 
 func (c *ClusterConfig) APIPort(nodeIndex int) int {
-	return c.Wasp.FirstAPIPort + nodeIndex
+	return c.Wasp[nodeIndex].APIPort
 }
 
 func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
@@ -122,7 +151,7 @@ func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
 }
 
 func (c *ClusterConfig) PeeringPort(nodeIndex int) int {
-	return c.Wasp.FirstPeeringPort + nodeIndex
+	return c.Wasp[nodeIndex].PeeringPort
 }
 
 func (c *ClusterConfig) NanomsgHosts(nodeIndexes ...[]int) []string {
@@ -138,11 +167,11 @@ func (c *ClusterConfig) NanomsgHost(nodeIndex int) string {
 }
 
 func (c *ClusterConfig) NanomsgPort(nodeIndex int) int {
-	return c.Wasp.FirstNanomsgPort + nodeIndex
+	return c.Wasp[nodeIndex].NanomsgPort
 }
 
 func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
-	return c.Wasp.FirstDashboardPort + nodeIndex
+	return c.Wasp[nodeIndex].DashboardPort
 }
 
 func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
@@ -150,24 +179,9 @@ func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
 }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
-	return c.Wasp.FirstProfilingPort + nodeIndex
+	return c.Wasp[nodeIndex].ProfilingPort
 }
 
 func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
-	return c.Wasp.FirstMetricsPort + nodeIndex
-}
-
-func (c *ClusterConfig) WaspConfigTemplateParams(i int, ownerAddress iotago.Address) *templates.WaspConfigParams {
-	return &templates.WaspConfigParams{
-		APIPort:                      c.APIPort(i),
-		DashboardPort:                c.DashboardPort(i),
-		PeeringPort:                  c.PeeringPort(i),
-		NanomsgPort:                  c.NanomsgPort(i),
-		ProfilingPort:                c.ProfilingPort(i),
-		L1APIAddress:                 c.L1APIAddress(i),
-		L1UseRemotePow:               c.L1.UseRemotePoW,
-		MetricsPort:                  c.PrometheusPort(i),
-		OwnerAddress:                 ownerAddress.Bech32(parameters.L1.Protocol.Bech32HRP),
-		OffledgerBroadcastUpToNPeers: 10,
-	}
+	return c.Wasp[nodeIndex].MetricsPort
 }

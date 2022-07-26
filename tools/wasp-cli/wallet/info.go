@@ -16,8 +16,8 @@ var addressCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		wallet := Load()
 		log.Printf("Address index %d\n", addressIndex)
-		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().AsString())
-		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().AsString())
+		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().String())
+		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().String())
 		if parameters.L1 == nil {
 			config.L1Client() // this will fill parameters.L1 with data from the L1 node
 		}
