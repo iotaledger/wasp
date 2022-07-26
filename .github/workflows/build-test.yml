@@ -29,6 +29,7 @@ jobs:
 
       - name: Test
         run: make test-short-no-wasm
+  
   contract-test:
     name: wasm contract tests
     runs-on: ubuntu-latest
@@ -52,25 +53,27 @@ jobs:
         uses: actions-rs/toolchain@v1.0.6
         with:
             toolchain: stable
-
       - name: install wasm-pack
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
       - name: install Node.js 
         uses: actions/setup-node@v3
         with:
           node-version: 18
       - name: install schema
         run: |
-          cd contracts/wasm && go install ../../tools/schema
+          cd contracts/wasm
+          go install ../../tools/schema
       - name: run builds
         run: |
-          cd contracts/wasm && bash all_build.sh
+          cd contracts/wasm
+          bash all_build.sh
       - name: run tests
         run: |
-          cd contracts/wasm && go test ./... &&
-          cd ../../packages/vm/ && go test ./...
+          cd contracts/wasm
+          go test ./...
+          cd ../../packages/vm/
+          go test ./...
 
   golangci:
     name: lint
