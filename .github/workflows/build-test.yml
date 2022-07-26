@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    name: Test
+    name: no wasm contract tests
     runs-on: ubuntu-latest
     steps:
       - name: Setup dependencies
@@ -29,46 +29,8 @@ jobs:
 
       - name: Test
         run: make test-short-no-wasm
-
-  golangci:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: ^1.18
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Generate SC files
-        run: |
-           go install ./tools/schema
-           cd contracts/wasm
-           for dir in */ ; do
-                cd ${dir};
-                schema -go -rust -ts;
-                cd ..;
-           done
-           cd gascalibration
-           for dir in */ ; do
-                cd ${dir};
-                schema -go;
-                cd ..;
-           done
-           cd ..
-      - name: golangci-lint in SC
-        run: |
-           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.47.2
-           cd contracts/wasm
-           ../../bin/golangci-lint run --fix --timeout 5m0s
-           
-      - name: Run global scope golangci-lint
-        run: |
-          ./bin/golangci-lint run --timeout 5m0s
-
   contract-test:
+    name: wasm contract tests
     runs-on: ubuntu-latest
     steps:
       - name: checkout to the directory
@@ -109,3 +71,41 @@ jobs:
         run: |
           cd contracts/wasm && go test ./... &&
           cd ../../packages/vm/ && go test ./...
+
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ^1.18
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Generate SC files
+        run: |
+           go install ./tools/schema
+           cd contracts/wasm
+           for dir in */ ; do
+                cd ${dir};
+                schema -go -rust -ts;
+                cd ..;
+           done
+           cd gascalibration
+           for dir in */ ; do
+                cd ${dir};
+                schema -go;
+                cd ..;
+           done
+           cd ..
+      - name: golangci-lint in SC
+        run: |
+           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.47.2
+           cd contracts/wasm
+           ../../bin/golangci-lint run --fix --timeout 5m0s
+           
+      - name: Run global scope golangci-lint
+        run: |
+          ./bin/golangci-lint run --timeout 5m0s
