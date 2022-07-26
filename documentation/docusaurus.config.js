@@ -1,71 +1,23 @@
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const path = require('path');
 
-/** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'IOTA Smart Contract Protocol',
-  tagline: 'IOTA smart contract protocol.',
-  url: 'https://iscp.docs.iota.org',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'throw',
-  favicon: '/img/logo/favicon.ico',
-  organizationName: 'iotaledger',
-  trailingSlash: true,
-  projectName: 'wasp',
-  stylesheets: [
-    'https://fonts.googleapis.com/css?family=Material+Icons',
-  ],
-  themeConfig: {
-    navbar: {
-      title: 'ISCP',
-      logo: {
-        alt: 'IOTA',
-        src: 'img/logo/WASP_logo_dark.png',
-      },
-      items: [
-        {
-          type: 'doc',
-          docId: 'overview',
-          position: 'left',
-          label: 'Documentation',
-        },
-      ],
-    },
-    footer: {
-      style: 'dark',
-      links: [
-        {
-          title: 'Documentation',
-          items: [
-            {
-              label: 'Overview',
-              to: '/docs/overview',
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} IOTA Foundation, Built with Docusaurus.`,
-    },
-    prism: {
-      additionalLanguages: ['rust'],
-      theme: lightCodeTheme,
-      darkTheme: darkCodeTheme,
-    },
-  },
-  presets: [
+  plugins: [
     [
-      '@docusaurus/preset-classic',
+      '@docusaurus/plugin-content-docs',
       {
-        docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          editUrl:
-            'https://github.com/iotaledger/chronicle.rs/tree/main/docs',
+        id: 'wasp',
+        path: path.resolve(__dirname, 'docs'),
+        routeBasePath: 'smart-contracts',
+        sidebarPath: path.resolve(__dirname, 'sidebars.js'),
+        editUrl: 'https://github.com/iotaledger/wasp/edit/master/documentation',
+        remarkPlugins: [require('remark-code-import'), require('remark-import-partial'), require('remark-remove-comments')],
+        versions: {
+          current: {
+            label: 'Stable',
+          },
         },
-        theme: {
-          customCss: require.resolve('./src/css/iota.css'),
-        },
-      },
+      }
     ],
   ],
+  staticDirectories: [path.resolve(__dirname, 'static')],
 };
