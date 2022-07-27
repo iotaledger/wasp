@@ -166,8 +166,8 @@ export class SendFundsTransaction {
       type: SIGNATURE_UNLOCK_TYPE,
       signature: {
         type: ED25519_SIGNATURE_TYPE,
-        publicKey: Converter.bytesToHex(this.wallet.keyPair.publicKey, true),
-        signature: Converter.bytesToHex(Ed25519.sign(this.wallet.keyPair.privateKey, essenceHash), true)
+        publicKey: Converter.bytesToHex(this.wallet.publicKey, true),
+        signature: Converter.bytesToHex(this.wallet.sign(essenceHash), true)
       }
     };
 

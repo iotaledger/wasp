@@ -1,4 +1,4 @@
-import { Bip32Path, Bip39 } from "@iota/crypto.js";
+import { Bip32Path, Bip39, Ed25519 } from "@iota/crypto.js";
 import {
   Bech32Helper,
   Ed25519Address,
@@ -20,10 +20,13 @@ export class IotaWallet {
   public client: IClient;
   public indexer: IndexerPluginClient;
 
-  public keyPair: IKeyPair;
+  private keyPair: IKeyPair;
   public nodeInfo: INodeInfo;
-
   public address: IAddress;
+
+  get publicKey(): Uint8Array {
+    return this.keyPair.publicKey;
+  }
 
   constructor(apiEndpointUrl: string, faucetEndpointUrl: string) {
     this.faucetEndpointUrl = faucetEndpointUrl;
@@ -134,5 +137,9 @@ export class IotaWallet {
     this.nodeInfo = await this.client.info();
     this.keyPair = this.getKeyPairFromMnemonic(mnemonic);
     this.address = new Ed25519Address(this.keyPair.publicKey);
+  }
+
+  public sign(buffer: Uint8Array) {
+    return Ed25519.sign(this.keyPair.privateKey, buffer);
   }
 }
