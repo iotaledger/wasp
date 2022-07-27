@@ -73,15 +73,15 @@ jobs:
       - name: run tests
         run: |
           cd contracts/wasm
-          echo "run SC tests with solo"
+          echo "========run SC tests with solo========"
           go test ./...
-          echo "run SC tests with gowasm"
-          go test -gowasm ./...
-          echo "run SC tests with tswasm"
-          go test -tswasm ./...
-          echo "run SC tests with rswasm"
-          go test -rswasm ./...
-          echo "run packages/vm tests"
+          echo "========run SC tests with gowasm========"
+          go test ./... -gowasm
+          echo "========run SC tests with tswasm========"
+          go test ./... -tswasm
+          echo "========run SC tests with rswasm========"
+          go test ./... -rswasm
+          echo "========run packages/vm tests========"
           cd ../../packages/vm/
           go test ./...
           
