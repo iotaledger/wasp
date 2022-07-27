@@ -71,7 +71,7 @@ func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
 }
 
 func funcEstimateMinDust(ctx wasmlib.ScFuncContext, _ *EstimateMinDustContext) {
-	provided := ctx.Allowance().Iotas()
+	provided := ctx.Allowance().BaseTokens()
 	dummy := ScFuncs.EstimateMinDust(ctx)
 	required := ctx.EstimateDust(dummy.Func)
 	ctx.Require(provided >= required, "not enough funds")
@@ -164,10 +164,10 @@ func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 }
 
 func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
-	iotas := ctx.Allowance().Iotas()
+	iotas := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
 	iotasToTransfer := uint64(1_000_000)
-	transfer := wasmlib.NewScTransferIotas(iotasToTransfer)
+	transfer := wasmlib.NewScTransferBaseTokens(iotasToTransfer)
 	for ; iotas >= iotasToTransfer; iotas -= iotasToTransfer {
 		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 		ctx.Send(address, transfer)
@@ -175,9 +175,9 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
 }
 
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTokensContext) {
-	iotas := ctx.Allowance().Iotas()
+	iotas := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
-	transfer := wasmlib.NewScTransferIotas(iotas)
+	transfer := wasmlib.NewScTransferBaseTokens(iotas)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
@@ -237,7 +237,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// gasBudget := f.Params.GasBudget().Value()
 
 	// TODO more
-	availableIotas := ctx.Allowance().Iotas()
+	availableIotas := ctx.Allowance().BaseTokens()
 	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
 	if availableIotas < 1000 {
 		ctx.Panic("not enough iotas sent to cover dust deposit")
@@ -257,7 +257,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	//}
 
 	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
-	withdraw.Func.TransferIotas(iotasToWithdrawal).PostToChain(targetChain)
+	withdraw.Func.TransferBaseTokens(iotasToWithdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {

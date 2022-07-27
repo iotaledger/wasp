@@ -67,8 +67,8 @@ var balanceCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k, v := range ret {
-			tokenStr := util.IotaTokenStr
-			if !iscp.IsIota([]byte(k)) {
+			tokenStr := util.BaseTokenStr
+			if !iscp.IsBaseToken([]byte(k)) {
 				tokenStr = codec.MustDecodeNativeTokenID([]byte(k)).String()
 			}
 			bal, err := codec.DecodeBigIntAbs(v)

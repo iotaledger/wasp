@@ -160,12 +160,11 @@ func (s *WasmContextSandbox) makeRequest(args []byte) iscp.RequestParameters {
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}
-	// Force a minimum transfer of 1000 iotas for dust and some gas
+	// Force a minimum transfer of 1million base tokens for dust and some gas
 	// excess can always be reclaimed from the chain account by the user
-	// This also removes the silly requirement to transfer 1 iota
-	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1*iscp.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*iscp.Mi {
 		transfer = transfer.Clone()
-		transfer.Assets.Iotas = 1 * iscp.Mi
+		transfer.Assets.BaseTokens = 1 * iscp.Mi
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
@@ -210,7 +209,7 @@ func (s *WasmContextSandbox) fnAllowance(_ []byte) []byte {
 
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 	if len(args) == 0 {
-		return codec.EncodeUint64(s.common.BalanceIotas())
+		return codec.EncodeUint64(s.common.BalanceBaseTokens())
 	}
 	tokenID := wasmtypes.TokenIDFromBytes(args)
 	token := s.cvt.IscpTokenID(&tokenID)

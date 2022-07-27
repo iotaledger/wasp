@@ -109,11 +109,11 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
 	// adjust the sender's account with the dust consumed or returned by internal UTXOs
-	// if iotas in the sender's account is not enough for the dust deposit of newly created TNT outputs
+	// if base tokens in the sender's account is not enough for the dust deposit of newly created TNT outputs
 	// it will panic with exceptions.ErrNotEnoughFundsForInternalDustDeposit
 	// TNT outputs will use dust deposit from the caller
-	// TODO remove attack vector when iotas for dust deposit is not enough and the request keeps being skipped
-	vmctx.adjustL2IotasIfNeeded(dustAdjustment, account)
+	// TODO remove attack vector when base tokens for dust deposit is not enough and the request keeps being skipped
+	vmctx.adjustL2BaseTokensIfNeeded(dustAdjustment, account)
 
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")
@@ -269,27 +269,27 @@ func (vmctx *VMContext) calculateAffordableGasBudget() {
 	vmctx.gasBudgetAdjusted = util.MinUint64(affordable, gas.MaxGasPerCall)
 }
 
-// calcGuaranteedFeeTokens return hiw maximum tokens (iotas or native) can be guaranteed for the fee,
+// calcGuaranteedFeeTokens return hiw maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	var tokensGuaranteed uint64
 
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
-		// iotas are used as gas tokens
-		tokensGuaranteed = vmctx.GetIotaBalance(vmctx.req.SenderAccount())
+		// base tokens are used as gas tokens
+		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
 		if allowed := vmctx.req.Allowance(); allowed != nil {
-			if tokensGuaranteed < allowed.Assets.Iotas {
+			if tokensGuaranteed < allowed.Assets.BaseTokens {
 				tokensGuaranteed = 0
 			} else {
-				tokensGuaranteed -= allowed.Assets.Iotas
+				tokensGuaranteed -= allowed.Assets.BaseTokens
 			}
 		}
 		return tokensGuaranteed
 	}
 	// native tokens are used for gas fee
 	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not IOTA
+	// to pay for gas chain is configured to use some native token, not base tokens
 	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
@@ -335,7 +335,7 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	availableToPayFee := vmctx.gasMaxTokensToSpendForGasFee
 	if !vmctx.task.EstimateGasMode && !vmctx.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(availableToPayFee) {
-		// user didn't specify enough iotas to cover the minimum request fee, charge whatever is present in the user's account
+		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = vmctx.GetSenderTokenBalanceForFees()
 	}
 
@@ -361,8 +361,8 @@ func (vmctx *VMContext) chargeGasFee() {
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
 		}
 	} else {
-		transferToValidator.Iotas = sendToValidator
-		transferToOwner.Iotas = sendToOwner
+		transferToValidator.BaseTokens = sendToValidator
+		transferToOwner.BaseTokens = sendToOwner
 	}
 	sender := vmctx.req.SenderAccount()
 

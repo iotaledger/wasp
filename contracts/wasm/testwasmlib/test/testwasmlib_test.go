@@ -193,7 +193,7 @@ func TestInvalidTypeParams(t *testing.T) {
 				invalidParam := fmt.Sprintf("invalid %s%s", strings.ToUpper(param[:1]), param[1:])
 				req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 					param, value,
-				).AddIotas(1).WithMaxAffordableGasBudget()
+				).AddBaseTokens(1).WithMaxAffordableGasBudget()
 				_, err := ctx.Chain.PostRequestSync(req, nil)
 				require.Error(t, err)
 				require.Contains(t, err.Error(), invalidParam)
@@ -228,7 +228,7 @@ func TestTakeAllowance(t *testing.T) {
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
 	const iotasToSend = 1 * iscp.Mi
-	f.Func.TransferIotas(iotasToSend).Post()
+	f.Func.TransferBaseTokens(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
 	bal.Account += iotasToSend
@@ -263,7 +263,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
 	const iotasToSend = 1 * iscp.Mi
-	f.Func.TransferIotas(iotasToSend).Post()
+	f.Func.TransferBaseTokens(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 

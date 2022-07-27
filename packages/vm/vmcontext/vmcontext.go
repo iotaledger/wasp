@@ -211,21 +211,21 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
 	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
-	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
+	totalBaseTokensInContracts, totalDustOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:                vmctx.virtualState.BlockIndex(),
-		Timestamp:                 vmctx.virtualState.Timestamp(),
-		TotalRequests:             numRequests,
-		NumSuccessfulRequests:     numSuccess,
-		NumOffLedgerRequests:      numOffLedger,
-		PreviousL1Commitment:      prevL1Commitment,
-		L1Commitment:              nil,                    // current L1Commitment not known at this point
-		AnchorTransactionID:       iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TransactionSubEssenceHash: subEssenceHash,
-		TotalIotasInL2Accounts:    totalIotasInContracts,
-		TotalDustDeposit:          totalDustOnChain,
-		GasBurned:                 vmctx.gasBurnedTotal,
-		GasFeeCharged:             vmctx.gasFeeChargedTotal,
+		BlockIndex:                  vmctx.virtualState.BlockIndex(),
+		Timestamp:                   vmctx.virtualState.Timestamp(),
+		TotalRequests:               numRequests,
+		NumSuccessfulRequests:       numSuccess,
+		NumOffLedgerRequests:        numOffLedger,
+		PreviousL1Commitment:        prevL1Commitment,
+		L1Commitment:                nil,                    // current L1Commitment not known at this point
+		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TransactionSubEssenceHash:   subEssenceHash,
+		TotalBaseTokensInL2Accounts: totalBaseTokensInContracts,
+		TotalDustDeposit:            totalDustOnChain,
+		GasBurned:                   vmctx.gasBurnedTotal,
+		GasFeeCharged:               vmctx.gasFeeChargedTotal,
 	}
 	if !state.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
 		panic("CloseVMContext: inconsistent previous state commitment")

@@ -92,27 +92,27 @@ func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-const transferAllowanceToGasBudgetIotas = 1 * iscp.Mi
+const transferAllowanceToGasBudgetBaseTokens = 1 * iscp.Mi
 
-func (e *clusterTestEnv) newEthereumAccountWithL2Funds(iotas ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()
-	iotaKey, iotaAddr, err := e.cluster.NewKeyPairWithFunds()
+	walletKey, walletAddr, err := e.cluster.NewKeyPairWithFunds()
 	require.NoError(e.T, err)
 
 	var amount uint64
-	if len(iotas) > 0 {
-		amount = iotas[0]
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
 	} else {
-		amount = e.cluster.L1Iotas(iotaAddr) - transferAllowanceToGasBudgetIotas
+		amount = e.cluster.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
 	gasBudget := uint64(math.MaxUint64)
-	_, err = e.chain.Client(iotaKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewFungibleTokens(amount+transferAllowanceToGasBudgetIotas, nil),
+	_, err = e.chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+		Transfer: iscp.NewFungibleTokens(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewEthereumAddressAgentID(ethAddr)),
 			accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 		},
-		Allowance: iscp.NewAllowanceIotas(amount),
+		Allowance: iscp.NewAllowanceBaseTokens(amount),
 		GasBudget: &gasBudget,
 	})
 	require.NoError(e.T, err)

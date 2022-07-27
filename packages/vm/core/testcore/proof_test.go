@@ -26,7 +26,7 @@ func TestProofs(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		h, err := ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -46,7 +46,7 @@ func TestProofs(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -65,7 +65,7 @@ func TestProofs(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		pastL1Commitment := ch.GetL1Commitment()
@@ -92,7 +92,7 @@ func TestProofs(t *testing.T) {
 		env := solo.New(t)
 		ch := env.NewChain(nil, "chain1")
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		pastBlockIndex := ch.State.BlockIndex()
@@ -119,7 +119,7 @@ func TestProofStateTerminals(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(100_000, nil)
+	err := ch.DepositBaseTokensToL2(100_000, nil)
 	require.NoError(t, err)
 
 	// core contracts must contain their hname at nil key in their state

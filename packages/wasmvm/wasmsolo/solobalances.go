@@ -68,10 +68,10 @@ func (bal *SoloBalances) dumpBalances() {
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
-		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.Iotas)
+		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.BaseTokens)
 		hname, _ := iscp.HnameFromAgentID(acc)
 		if hname == 0 {
-			txt += fmt.Sprintf(",\tL1: %10d", l1.Iotas)
+			txt += fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 		}
 		for _, token := range l2.Tokens {
 			txt += fmt.Sprintf("\n\tL2: %10d", token.Amount)
@@ -80,7 +80,7 @@ func (bal *SoloBalances) dumpBalances() {
 				for i := range l1.Tokens {
 					if *l1.Tokens[i] == *token {
 						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
-						tokTxt = fmt.Sprintf(",\tL1: %10d", l1.Iotas)
+						tokTxt = fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 						break
 					}
 				}
@@ -88,7 +88,7 @@ func (bal *SoloBalances) dumpBalances() {
 			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
 		}
 		for _, token := range l1.Tokens {
-			txt += fmt.Sprintf("\n\tL2: %10d,\tL1: %10d,\t%s", 0, l1.Iotas, token.ID.String())
+			txt += fmt.Sprintf("\n\tL2: %10d,\tL1: %10d,\t%s", 0, l1.BaseTokens, token.ID.String())
 		}
 	}
 	receipt := ctx.Chain.LastReceipt()

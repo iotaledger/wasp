@@ -43,7 +43,7 @@ func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
 	}
 	switch len(tokenID) {
 	case 0:
-		return a.Env.L1Iotas(address)
+		return a.Env.L1BaseTokens(address)
 	case 1:
 		token := a.Cvt.IscpTokenID(&tokenID[0])
 		return a.Env.L1NativeTokens(address, token).Uint64()

@@ -14,22 +14,22 @@ func withdrawFromChain(ctx iscp.Sandbox) dict.Dict {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
-	iotasToWithdrawal := params.MustGetUint64(ParamIotasToWithdrawal)
-	availableIotas := ctx.AllowanceAvailable().Assets.Iotas
+	baseTokensToWithdrawal := params.MustGetUint64(ParamBaseTokensToWithdrawal)
+	availableBaseTokens := ctx.AllowanceAvailable().Assets.BaseTokens
 
 	request := iscp.RequestParameters{
 		TargetAddress:  targetChain.AsAddress(),
-		FungibleTokens: iscp.NewTokensIotas(availableIotas),
+		FungibleTokens: iscp.NewFungibleBaseTokens(availableBaseTokens),
 		Metadata: &iscp.SendMetadata{
 			TargetContract: accounts.Contract.Hname(),
 			EntryPoint:     accounts.FuncWithdraw.Hname(),
 			GasBudget:      math.MaxUint64,
-			Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
+			Allowance:      iscp.NewAllowanceBaseTokens(baseTokensToWithdrawal),
 		},
 	}
 	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
-	if availableIotas < requiredDustDeposit {
-		ctx.Log().Panicf("not enough iotas sent to cover dust deposit")
+	if availableBaseTokens < requiredDustDeposit {
+		ctx.Log().Panicf("not enough base tokens sent to cover dust deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(request)

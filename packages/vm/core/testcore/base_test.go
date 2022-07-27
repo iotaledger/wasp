@@ -35,17 +35,17 @@ func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
-	env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 	ch, _, _ := env.NewChainExt(user, 10_000, "chain1")
 	_ = ch.Log().Sync()
 
 	dustCosts := transaction.NewStorageDepositEstimate()
 	cassets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, cassets.Iotas)
+	require.EqualValues(t, 10_000-dustCosts.AnchorOutput, cassets.BaseTokens)
 	require.EqualValues(t, 0, len(cassets.Tokens))
 
-	t.Logf("common iotas: %d", ch.L2CommonAccountIotas())
-	require.True(t, cassets.Iotas >= accounts.MinimumBaseTokensOnCommonAccount)
+	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
+	require.True(t, cassets.BaseTokens >= accounts.MinimumBaseTokensOnCommonAccount)
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
@@ -53,7 +53,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	genesisAddr := env.L1Ledger().GenesisAddress()
 	assets := env.L1Assets(genesisAddr)
-	require.EqualValues(t, env.L1Ledger().Supply(), assets.Iotas)
+	require.EqualValues(t, env.L1Ledger().Supply(), assets.BaseTokens)
 
 	// create chain
 	ch, _, initTx := env.NewChainExt(nil, 0, "chain1")
@@ -61,22 +61,22 @@ func TestLedgerBaseConsistency(t *testing.T) {
 		_ = ch.Log().Sync()
 	}()
 	ch.AssertControlAddresses()
-	t.Logf("originator address iotas: %d (spent %d)",
-		env.L1Iotas(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1Iotas(ch.OriginatorAddress))
+	t.Logf("originator address base tokens: %d (spent %d)",
+		env.L1BaseTokens(ch.OriginatorAddress), utxodb.FundsFromFaucetAmount-env.L1BaseTokens(ch.OriginatorAddress))
 
 	// get all native tokens. Must be empty
 	nativeTokenIDs := ch.GetOnChainTokenIDs()
 	require.EqualValues(t, 0, len(nativeTokenIDs))
 
 	// query dust parameters of the latest block
-	totalIotasInfo := ch.GetTotalIotaInfo()
-	totalIotasOnChain := ch.L2TotalIotas()
-	// all goes to dust and to total iotas on chain
-	totalSpent := totalIotasInfo.TotalDustDeposit + totalIotasInfo.TotalIotasInL2Accounts
-	t.Logf("total on chain: dust deposit: %d, total iotas on chain: %d, total spent: %d",
-		totalIotasInfo.TotalDustDeposit, totalIotasOnChain, totalSpent)
+	totalBaseTokensInfo := ch.GetTotalBaseTokensInfo()
+	totalBaseTokensOnChain := ch.L2TotalBaseTokens()
+	// all goes to dust and to total base tokens on chain
+	totalSpent := totalBaseTokensInfo.TotalDustDeposit + totalBaseTokensInfo.TotalBaseTokensInL2Accounts
+	t.Logf("total on chain: dust deposit: %d, total base tokens on chain: %d, total spent: %d",
+		totalBaseTokensInfo.TotalDustDeposit, totalBaseTokensOnChain, totalSpent)
 	// what has left on L1 address
-	env.AssertL1Iotas(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
+	env.AssertL1BaseTokens(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-totalSpent)
 
 	// let's analise dust deposit on origin and init transactions
 	vByteCostInit := GetStorageDeposit(initTx)[0]
@@ -98,13 +98,13 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.EqualValues(t, 0, len(totalAssets.Tokens))
 	// what spent all goes to the alias output
 	require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
-	// total iotas on L2 must be equal to alias output iotas - dust deposit
-	ch.AssertL2TotalIotas(aliasOut.Amount - dustCosts.AnchorOutput)
+	// total base tokens on L2 must be equal to alias output base tokens - dust deposit
+	ch.AssertL2TotalBaseTokens(aliasOut.Amount - dustCosts.AnchorOutput)
 
 	// all dust deposit of the init request goes to the user account
-	ch.AssertL2Iotas(ch.OriginatorAgentID, vByteCostInit)
+	ch.AssertL2BaseTokens(ch.OriginatorAgentID, vByteCostInit)
 	// common account is empty
-	require.EqualValues(t, 0, ch.L2CommonAccountIotas())
+	require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
@@ -116,10 +116,10 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			_ = ch.Log().Sync()
 		}()
 
-		totalIotasBefore := ch.L2TotalIotas()
-		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
-		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
+		totalBaseTokensBefore := ch.L2TotalBaseTokens()
+		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
+		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -127,20 +127,20 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
-		commonAccountIotasAfter := ch.L2CommonAccountIotas()
+		totalBaseTokensAfter := ch.L2TotalBaseTokens()
+		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
-		// total iotas on chain increase by the dust deposit from the request tx
-		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
+		// total base tokens on chain increase by the dust deposit from the request tx
+		require.EqualValues(t, int(totalBaseTokensBefore+reqDustDeposit), int(totalBaseTokensAfter))
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
+		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -152,11 +152,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
 
-		totalIotasBefore := ch.L2TotalIotas()
-		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
-		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
+		totalBaseTokensBefore := ch.L2TotalBaseTokens()
+		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
+		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
+		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams("dummyContract", "dummyEP").
 			WithGasBudget(100_000)
@@ -164,24 +164,24 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
-		commonAccountIotasAfter := ch.L2CommonAccountIotas()
+		totalBaseTokensAfter := ch.L2TotalBaseTokens()
+		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
-		// total iotas on chain increase by the dust deposit from the request tx
-		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
+		// total base tokens on chain increase by the dust deposit from the request tx
+		require.EqualValues(t, int(totalBaseTokensBefore+reqDustDeposit), int(totalBaseTokensAfter))
 		// originator on L1 does not change
-		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore)
+		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
+		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
 		// originator account does not change
-		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2Iotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -190,10 +190,10 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			_ = ch.Log().Sync()
 		}()
 
-		totalIotasBefore := ch.L2TotalIotas()
-		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
-		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
+		totalBaseTokensBefore := ch.L2TotalBaseTokens()
+		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
+		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -201,20 +201,20 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
-		commonAccountIotasAfter := ch.L2CommonAccountIotas()
+		totalBaseTokensAfter := ch.L2TotalBaseTokens()
+		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
 
-		// total iotas on chain increase by the dust deposit from the request tx
-		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
+		// total base tokens on chain increase by the dust deposit from the request tx
+		require.EqualValues(t, int(totalBaseTokensBefore+reqDustDeposit), int(totalBaseTokensAfter))
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore-reqDustDeposit)
+		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqDustDeposit)
 		// originator (user) is charged with gas fee on L2
-		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore+reqDustDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -226,11 +226,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID := iscp.NewAgentID(senderAddr)
 
-		totalIotasBefore := ch.L2TotalIotas()
-		originatorsL2IotasBefore := ch.L2Iotas(ch.OriginatorAgentID)
-		originatorsL1IotasBefore := env.L1Iotas(ch.OriginatorAddress)
-		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, 0, ch.L2CommonAccountIotas())
+		totalBaseTokensBefore := ch.L2TotalBaseTokens()
+		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
+		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
+		require.EqualValues(t, 0, ch.L2CommonAccountBaseTokens())
 
 		req := solo.NewCallParams(root.Contract.Name, "dummyEP").
 			WithGasBudget(100_000)
@@ -238,23 +238,23 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		// expecting specific error
 		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
 
-		totalIotasAfter := ch.L2TotalIotas()
-		commonAccountIotasAfter := ch.L2CommonAccountIotas()
+		totalBaseTokensAfter := ch.L2TotalBaseTokens()
+		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 
 		reqDustDeposit := GetStorageDeposit(reqTx)[0]
 		rec := ch.LastReceipt()
-		// total iotas on chain increase by the dust deposit from the request tx
-		require.EqualValues(t, int(totalIotasBefore+reqDustDeposit), int(totalIotasAfter))
+		// total base tokens on chain increase by the dust deposit from the request tx
+		require.EqualValues(t, int(totalBaseTokensBefore+reqDustDeposit), int(totalBaseTokensAfter))
 		// originator on L1 does not change
-		env.AssertL1Iotas(ch.OriginatorAddress, originatorsL1IotasBefore)
+		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
 		// user on L1 is charged with dust deposit
-		env.AssertL1Iotas(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
+		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqDustDeposit)
 		// originator account does not change
-		ch.AssertL2Iotas(ch.OriginatorAgentID, originatorsL2IotasBefore)
+		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore)
 		// user is charged with gas fee on L2
-		ch.AssertL2Iotas(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(senderAgentID, reqDustDeposit-rec.GasFeeCharged)
 		// all gas fee goes to the common account
-		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountIotasAfter)
+		require.EqualValues(t, int(rec.GasFeeCharged), commonAccountBaseTokensAfter)
 	})
 }
 
@@ -291,7 +291,7 @@ func TestEstimateGas(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain(nil, "chain1")
-	ch.MustDepositIotasToL2(10000, nil)
+	ch.MustDepositBaseTokensToL2(10000, nil)
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
@@ -316,7 +316,7 @@ func TestEstimateGas(t *testing.T) {
 	{
 		keyPair, _ := env.NewKeyPairWithFunds()
 
-		// we can call EstimateGas even with 0 iotas in L2 account
+		// we can call EstimateGas even with 0 base tokens in L2 account
 		estimatedGas, estimatedGasFee, err = ch.EstimateGasOffLedger(callParams(), keyPair, true)
 		require.NoError(t, err)
 		require.NotZero(t, estimatedGas)
@@ -334,13 +334,13 @@ func TestEstimateGas(t *testing.T) {
 		ExpectedError string
 	}{
 		{
-			Desc:          "0 iotas in L2 balance to cover gas fee",
+			Desc:          "0 base tokens in L2 balance to cover gas fee",
 			L2Balance:     0,
 			GasBudget:     estimatedGas,
 			ExpectedError: "gas budget exceeded",
 		},
 		{
-			Desc:          "insufficient iotas in L2 balance to cover gas fee",
+			Desc:          "insufficient base tokens in L2 balance to cover gas fee",
 			L2Balance:     estimatedGasFee - 1,
 			GasBudget:     estimatedGas,
 			ExpectedError: "gas budget exceeded",
@@ -371,13 +371,13 @@ func TestEstimateGas(t *testing.T) {
 						accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewAgentID(addr)),
 						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 					},
-				).AddAllowance(iscp.NewAllowanceIotas(testCase.L2Balance)).
-					AddIotas(10 * iscp.Mi).
+				).AddAllowance(iscp.NewAllowanceBaseTokens(testCase.L2Balance)).
+					AddBaseTokens(10 * iscp.Mi).
 					WithGasBudget(math.MaxUint64)
 
 				_, err = ch.PostRequestSync(req, anotherKeyPair)
 				require.NoError(t, err)
-				balance := ch.L2Iotas(agentID)
+				balance := ch.L2BaseTokens(agentID)
 				require.Equal(t, testCase.L2Balance, balance)
 			}
 
@@ -403,7 +403,7 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		err := ch.DepositIotasToL2(10_000, nil)
+		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(root.Contract.Name, "init").
 			WithGasBudget(100_000)
@@ -415,7 +415,7 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("accounts", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		err := ch.DepositIotasToL2(10_000, nil)
+		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(accounts.Contract.Name, "init").
 			WithGasBudget(100_000)
@@ -427,7 +427,7 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blocklog", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		err := ch.DepositIotasToL2(10_000, nil)
+		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blocklog.Contract.Name, "init").
 			WithGasBudget(100_000)
@@ -439,7 +439,7 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("blob", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		err := ch.DepositIotasToL2(10_000, nil)
+		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blob.Contract.Name, "init").
 			WithGasBudget(100_000)
@@ -451,7 +451,7 @@ func TestRepeatInit(t *testing.T) {
 	t.Run("governance", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 		ch := env.NewChain(nil, "chain1")
-		err := ch.DepositIotasToL2(10_000, nil)
+		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(governance.Contract.Name, "init").
 			WithGasBudget(100_000)
@@ -471,18 +471,18 @@ func TestDeployNativeContract(t *testing.T) {
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 	// userAgentID := iscp.NewAgentID(userAddr, 0)
 
-	err := ch.DepositIotasToL2(10_000, senderKeyPair)
+	err := ch.DepositBaseTokensToL2(10_000, senderKeyPair)
 	require.NoError(t, err)
 
-	// get more iotas for originator
-	originatorBalance := env.L1Assets(ch.OriginatorAddress).Iotas
+	// get more base tokens for originator
+	originatorBalance := env.L1Assets(ch.OriginatorAddress).BaseTokens
 	_, err = env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
 	require.NoError(t, err)
-	env.AssertL1Iotas(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(senderAddr)).
-		AddIotas(100_000).
+		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -506,7 +506,7 @@ func TestBurnLog(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(30_000, nil)
+	ch.MustDepositBaseTokensToL2(30_000, nil)
 	rec := ch.LastReceipt()
 	t.Logf("receipt 1:\n%s", rec)
 	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
@@ -524,7 +524,7 @@ func TestMessageSize(t *testing.T) {
 		WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(10000, nil)
+	ch.MustDepositBaseTokensToL2(10000, nil)
 
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
@@ -543,8 +543,8 @@ func TestMessageSize(t *testing.T) {
 			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
 				sbtestsc.ParamSize, uint32(reqSize),
 			).
-				AddIotas(dust).
-				AddAllowanceIotas(dust).
+				AddBaseTokens(dust).
+				AddAllowanceBaseTokens(dust).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)

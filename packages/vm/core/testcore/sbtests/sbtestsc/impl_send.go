@@ -9,20 +9,20 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// testSplitFunds calls Send in a loop by sending 200 iotas back to the caller
+// testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
 func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
-	// claim 1Mi iotas from allowance at a time
-	iotasToTransfer := 1 * iscp.Mi
-	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.Iotas >= iotasToTransfer {
+	// claim 1Mi base tokens from allowance at a time
+	baseTokensToTransfer := 1 * iscp.Mi
+	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.BaseTokens >= baseTokensToTransfer {
 		// send back to caller's address
-		// depending on the amount of iotas, it will exceed number of outputs or not
-		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(iotasToTransfer, nil, nil))
+		// depending on the amount of base tokens, it will exceed number of outputs or not
+		ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(baseTokensToTransfer, nil, nil))
 		ctx.Send(
 			iscp.RequestParameters{
 				TargetAddress:  addr,
-				FungibleTokens: iscp.NewTokensIotas(iotasToTransfer),
+				FungibleTokens: iscp.NewFungibleBaseTokens(baseTokensToTransfer),
 			},
 		)
 	}
@@ -33,8 +33,8 @@ func testSplitFunds(ctx iscp.Sandbox) dict.Dict {
 func testSplitFundsNativeTokens(ctx iscp.Sandbox) dict.Dict {
 	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
-	// claims all iotas from allowance
-	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(ctx.AllowanceAvailable().Assets.Iotas, nil, nil))
+	// claims all base tokens from allowance
+	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowance(ctx.AllowanceAvailable().Assets.BaseTokens, nil, nil))
 	for _, token := range ctx.AllowanceAvailable().Assets.Tokens {
 		for ctx.AllowanceAvailable().Assets.AmountNativeToken(&token.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
@@ -87,7 +87,7 @@ func testEstimateMinimumDust(ctx iscp.Sandbox) dict.Dict {
 	addr, ok := iscp.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
-	provided := ctx.AllowanceAvailable().Assets.Iotas
+	provided := ctx.AllowanceAvailable().Assets.BaseTokens
 
 	requestParams := iscp.RequestParameters{
 		TargetAddress: addr,
@@ -151,12 +151,12 @@ func sendLargeRequest(ctx iscp.Sandbox) dict.Dict {
 		FungibleTokens:             ctx.AllowanceAvailable().Assets,
 	}
 	dust := ctx.EstimateRequiredDustDeposit(req)
-	provided := ctx.AllowanceAvailable().Assets.Iotas
+	provided := ctx.AllowanceAvailable().Assets.BaseTokens
 	if provided < dust {
 		panic("not enough funds for dust")
 	}
-	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceIotas(dust))
-	req.FungibleTokens.Iotas = dust
+	ctx.TransferAllowedFunds(ctx.AccountID(), iscp.NewAllowanceBaseTokens(dust))
+	req.FungibleTokens.BaseTokens = dust
 	ctx.Send(req)
 	return nil
 }

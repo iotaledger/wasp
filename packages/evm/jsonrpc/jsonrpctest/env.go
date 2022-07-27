@@ -277,7 +277,7 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	return logs
 }
 
-type FuncNewAccountWithL2Funds func(iotas ...uint64) (*ecdsa.PrivateKey, common.Address)
+type FuncNewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
 
 func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	creator, creatorAddress := newAccountWithL2Funds()

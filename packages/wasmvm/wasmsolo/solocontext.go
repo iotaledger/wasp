@@ -122,7 +122,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
-		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
+		chain.MustDepositBaseTokensToL2(L2FundsCreator, creator.Pair)
 	}
 	ctx.uploadWasm(keyPair)
 	if ctx.Err != nil {
@@ -155,7 +155,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	ctx.Balances()
 
 	scAccount := iscp.NewContractAgentID(ctx.Chain.ChainID, iscp.Hn(scName))
-	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountBaseTokens(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 
 	ctx.Balances()
 
@@ -183,7 +183,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
-		chain.MustDepositIotasToL2(L2FundsCreator, creator.Pair)
+		chain.MustDepositBaseTokensToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
@@ -195,7 +195,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	}
 
 	scAccount := iscp.NewContractAgentID(ctx.Chain.ChainID, iscp.Hn(scName))
-	ctx.Err = ctx.Chain.SendFromL1ToL2AccountIotas(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountBaseTokens(0, L2FundsContract, scAccount, ctx.Creator().Pair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -231,7 +231,7 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		})
 	}
 	chain := soloEnv.NewChain(nil, chainName)
-	chain.MustDepositIotasToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
+	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }
 
@@ -255,13 +255,13 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
 // The optional tokenID parameter can be used to retrieve the balance for the specific token.
-// When tokenID is omitted, the iota balance is assumed.
+// When tokenID is omitted, the base tokens balance is assumed.
 func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
 	account := agent.AgentID()
 	switch len(tokenID) {
 	case 0:
-		iotas := ctx.Chain.L2Iotas(account)
-		return iotas
+		baseTokens := ctx.Chain.L2BaseTokens(account)
+		return baseTokens
 	case 1:
 		token := ctx.Cvt.IscpTokenID(&tokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
@@ -362,7 +362,7 @@ func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtyp
 // tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 	agent := NewSoloAgent(ctx.Chain.Env)
-	ctx.Chain.MustDepositIotasToL2(L2FundsAgent+MinGasFee, agent.Pair)
+	ctx.Chain.MustDepositBaseTokensToL2(L2FundsAgent+MinGasFee, agent.Pair)
 	return agent
 }
 

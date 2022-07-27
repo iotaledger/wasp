@@ -97,7 +97,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(amount),
+		Transfer: iscp.NewFungibleBaseTokens(amount),
 	})
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)

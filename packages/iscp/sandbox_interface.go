@@ -59,11 +59,11 @@ type Authorize interface {
 }
 
 type Balance interface {
-	// BalanceIotas returns number of iotas in the balance of the smart contract
-	BalanceIotas() uint64
+	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
+	BalanceBaseTokens() uint64
 	// BalanceNativeToken returns number of native token or nil if it is empty
 	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
-	// BalanceFungibleTokens returns all fungible tokens: iotas and native tokens
+	// BalanceFungibleTokens returns all fungible tokens: base tokens and native tokens
 	BalanceFungibleTokens() *FungibleTokens
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
 	OwnedNFTs() []iotago.NFTID
@@ -111,7 +111,7 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput
 	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
-	// EstimateRequiredDustDeposit returns the amount of iotas needed to cover for a given request's dust deposit
+	// EstimateRequiredDustDeposit returns the amount of base tokens needed to cover for a given request's dust deposit
 	EstimateRequiredDustDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
@@ -140,10 +140,10 @@ type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
 	// FungibleTokens attached to the output, always taken from the caller's account.
-	// It expected to contain iotas at least the amount required for dust deposit
-	// It depends on the context how it is handled when iotas are not enough for dust deposit
+	// It expected to contain base tokens at least the amount required for dust deposit
+	// It depends on the context how it is handled when base tokens are not enough for dust deposit
 	FungibleTokens *FungibleTokens
-	// AdjustToMinimumDustDeposit if true iotas in attached fungible tokens will be added to meet minimum dust deposit requirements
+	// AdjustToMinimumDustDeposit if true base tokens in attached fungible tokens will be added to meet minimum dust deposit requirements
 	AdjustToMinimumDustDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata

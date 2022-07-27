@@ -61,11 +61,11 @@ func checkNEvents(t *testing.T, ch *solo.Chain, reqid iscp.RequestID, n int) {
 
 func TestManyEvents(t *testing.T) {
 	ch := setupTest(t)
-	ch.MustDepositIotasToL2(10_000_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000_000, nil)
 
 	// post a request that issues too many events (nEvents)
 	tx, _, err := ch.PostRequestSyncTx(
-		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddIotas(1),
+		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).AddBaseTokens(1),
 		nil,
 	)
 	require.Error(t, err) // error expected (too many events)
@@ -180,7 +180,7 @@ func TestGetEvents(t *testing.T) {
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(10_000, nil)
+	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
 	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)

@@ -41,7 +41,7 @@ func accountStateKey(addr common.Address, hash common.Hash) kv.Key {
 type BalanceFunc func(addr common.Address) *big.Int
 
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
-// The Ethereum account balance is tied to the Iota L1 balance, and immutable
+// The Ethereum account balance is tied to the L1 balance, and immutable
 // from EVM. (Instead, funds are supposed to be manipulated via the ISC
 // sandbox).
 type StateDB struct {

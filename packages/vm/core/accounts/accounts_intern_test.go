@@ -55,7 +55,7 @@ func TestCreditDebit1(t *testing.T) {
 	require.EqualValues(t, 1, len(total.Tokens))
 	require.True(t, total.Equals(transfer))
 
-	transfer.Iotas = 1
+	transfer.BaseTokens = 1
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp2")
 
@@ -63,7 +63,7 @@ func TestCreditDebit1(t *testing.T) {
 	require.True(t, expected.Equals(total))
 
 	userAssets := GetAccountAssets(state, agentID1)
-	require.EqualValues(t, 43, userAssets.Iotas)
+	require.EqualValues(t, 43, userAssets.BaseTokens)
 	require.Zero(t, userAssets.Tokens.MustSet()[dummyAssetID].Amount.Cmp(big.NewInt(4)))
 	checkLedgerT(t, state, "cp2")
 
@@ -133,7 +133,7 @@ func TestCreditDebit4(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewTokensIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
 
@@ -147,7 +147,7 @@ func TestCreditDebit4(t *testing.T) {
 	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = iscp.NewTokensIotas(20)
+	transfer = iscp.NewFungibleBaseTokens(20)
 	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.True(t, ok)
 	total = checkLedgerT(t, state, "cp2")
@@ -175,7 +175,7 @@ func TestCreditDebit5(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewTokensIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp1")
 
@@ -189,7 +189,7 @@ func TestCreditDebit5(t *testing.T) {
 	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	transfer = iscp.NewTokensIotas(50)
+	transfer = iscp.NewFungibleBaseTokens(50)
 	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer, nil)
 	require.False(t, ok)
 	total = checkLedgerT(t, state, "cp2")
@@ -214,7 +214,7 @@ func TestCreditDebit6(t *testing.T) {
 	require.True(t, total.Equals(iscp.NewEmptyAssets()))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := iscp.NewTokensIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	checkLedgerT(t, state, "cp1")
 
@@ -261,7 +261,7 @@ func TestMoveAll(t *testing.T) {
 	agentID1 := iscp.NewRandomAgentID()
 	agentID2 := iscp.NewRandomAgentID()
 
-	transfer := iscp.NewTokensIotas(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := iscp.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	require.EqualValues(t, 1, getAccountsMapR(state).MustLen())
 	accs := getAccountsIntern(state)

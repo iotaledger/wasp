@@ -21,7 +21,7 @@ func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor
 
 func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 	divide := dividend.ScFuncs.Divide(ctx)
-	divide.Func.TransferIotas(amount).Post()
+	divide.Func.TransferBaseTokens(amount).Post()
 }
 
 func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {

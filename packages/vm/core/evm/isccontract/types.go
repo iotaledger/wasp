@@ -39,55 +39,55 @@ func (c ISCChainID) MustUnwrap() *iscp.ChainID {
 	return ret
 }
 
-// IotaNativeTokenID matches the struct definition in ISC.sol
-type IotaNativeTokenID struct {
+// NativeTokenID matches the struct definition in ISC.sol
+type NativeTokenID struct {
 	Data []byte
 }
 
-func WrapIotaNativeTokenID(id *iotago.NativeTokenID) IotaNativeTokenID {
-	return IotaNativeTokenID{Data: id[:]}
+func WrapNativeTokenID(id *iotago.NativeTokenID) NativeTokenID {
+	return NativeTokenID{Data: id[:]}
 }
 
-func (a IotaNativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
+func (a NativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
 	copy(ret[:], a.Data)
 	return
 }
 
-// IotaNativeToken matches the struct definition in ISC.sol
-type IotaNativeToken struct {
-	ID     IotaNativeTokenID
+// NativeToken matches the struct definition in ISC.sol
+type NativeToken struct {
+	ID     NativeTokenID
 	Amount *big.Int
 }
 
-func WrapIotaNativeToken(nt *iotago.NativeToken) IotaNativeToken {
-	return IotaNativeToken{
-		ID:     WrapIotaNativeTokenID(&nt.ID),
+func WrapNativeToken(nt *iotago.NativeToken) NativeToken {
+	return NativeToken{
+		ID:     WrapNativeTokenID(&nt.ID),
 		Amount: nt.Amount,
 	}
 }
 
-func (nt IotaNativeToken) Unwrap() *iotago.NativeToken {
+func (nt NativeToken) Unwrap() *iotago.NativeToken {
 	return &iotago.NativeToken{
 		ID:     nt.ID.Unwrap(),
 		Amount: nt.Amount,
 	}
 }
 
-// IotaAddress matches the struct definition in ISC.sol
-type IotaAddress struct {
+// L1Address matches the struct definition in ISC.sol
+type L1Address struct {
 	Data []byte
 }
 
-func WrapIotaAddress(a iotago.Address) IotaAddress {
-	return IotaAddress{Data: iscp.BytesFromAddress(a)}
+func WrapL1Address(a iotago.Address) L1Address {
+	return L1Address{Data: iscp.BytesFromAddress(a)}
 }
 
-func (a IotaAddress) Unwrap() (iotago.Address, error) {
+func (a L1Address) Unwrap() (iotago.Address, error) {
 	ret, _, err := iscp.AddressFromBytes(a.Data)
 	return ret, err
 }
 
-func (a IotaAddress) MustUnwrap() iotago.Address {
+func (a L1Address) MustUnwrap() iotago.Address {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)
@@ -116,8 +116,8 @@ func (a ISCAgentID) MustUnwrap() iscp.AgentID {
 	return ret
 }
 
-// IotaNFTID matches the type definition in ISC.sol
-type IotaNFTID [iotago.NFTIDLength]byte
+// NFTID matches the type definition in ISC.sol
+type NFTID [iotago.NFTIDLength]byte
 
 func init() {
 	if iotago.NFTIDLength != 32 {
@@ -125,27 +125,27 @@ func init() {
 	}
 }
 
-func WrapIotaNFTID(c iotago.NFTID) (ret IotaNFTID) {
+func WrapNFTID(c iotago.NFTID) (ret NFTID) {
 	copy(ret[:], c[:])
 	return
 }
 
-func (c IotaNFTID) Unwrap() (ret iotago.NFTID) {
+func (c NFTID) Unwrap() (ret iotago.NFTID) {
 	copy(ret[:], c[:])
 	return
 }
 
 // ISCNFT matches the struct definition in ISC.sol
 type ISCNFT struct {
-	ID       IotaNFTID
-	Issuer   IotaAddress
+	ID       NFTID
+	Issuer   L1Address
 	Metadata []byte
 }
 
 func WrapISCNFT(n *iscp.NFT) ISCNFT {
 	return ISCNFT{
-		ID:       WrapIotaNFTID(n.ID),
-		Issuer:   WrapIotaAddress(n.Issuer),
+		ID:       WrapNFTID(n.ID),
+		Issuer:   WrapL1Address(n.Issuer),
 		Metadata: n.Metadata,
 	}
 }
@@ -172,24 +172,24 @@ func (n ISCNFT) MustUnwrap() *iscp.NFT {
 
 // ISCAllowance matches the struct definition in ISC.sol
 type ISCAllowance struct {
-	Iotas  uint64
-	Tokens []IotaNativeToken
-	NFTs   []IotaNFTID
+	BaseTokens uint64
+	Tokens     []NativeToken
+	NFTs       []NFTID
 }
 
 func WrapISCAllowance(a *iscp.Allowance) ISCAllowance {
-	tokens := make([]IotaNativeToken, len(a.Assets.Tokens))
+	tokens := make([]NativeToken, len(a.Assets.Tokens))
 	for i, t := range a.Assets.Tokens {
-		tokens[i] = WrapIotaNativeToken(t)
+		tokens[i] = WrapNativeToken(t)
 	}
-	nfts := make([]IotaNFTID, len(a.NFTs))
+	nfts := make([]NFTID, len(a.NFTs))
 	for i, id := range a.NFTs {
-		nfts[i] = WrapIotaNFTID(id)
+		nfts[i] = WrapNFTID(id)
 	}
 	return ISCAllowance{
-		Iotas:  a.Assets.Iotas,
-		Tokens: tokens,
-		NFTs:   nfts,
+		BaseTokens: a.Assets.BaseTokens,
+		Tokens:     tokens,
+		NFTs:       nfts,
 	}
 }
 
@@ -202,7 +202,7 @@ func (a ISCAllowance) Unwrap() *iscp.Allowance {
 	for i, id := range a.NFTs {
 		nfts[i] = id.Unwrap()
 	}
-	return iscp.NewAllowance(a.Iotas, tokens, nfts)
+	return iscp.NewAllowance(a.BaseTokens, tokens, nfts)
 }
 
 // ISCDictItem matches the struct definition in ISC.sol
@@ -233,18 +233,18 @@ func (d ISCDict) Unwrap() dict.Dict {
 }
 
 type ISCFungibleTokens struct {
-	Iotas  uint64
-	Tokens []IotaNativeToken
+	BaseTokens uint64
+	Tokens     []NativeToken
 }
 
 func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens {
 	ret := ISCFungibleTokens{
-		Iotas:  fungibleTokens.Iotas,
-		Tokens: make([]IotaNativeToken, len(fungibleTokens.Tokens)),
+		BaseTokens: fungibleTokens.BaseTokens,
+		Tokens:     make([]NativeToken, len(fungibleTokens.Tokens)),
 	}
 
 	for i, v := range fungibleTokens.Tokens {
-		ret.Tokens[i].ID = WrapIotaNativeTokenID(&v.ID)
+		ret.Tokens[i].ID = WrapNativeTokenID(&v.ID)
 		ret.Tokens[i].Amount = v.Amount
 	}
 
@@ -253,8 +253,8 @@ func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens
 
 func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
 	ret := iscp.FungibleTokens{
-		Iotas:  t.Iotas,
-		Tokens: make(iotago.NativeTokens, len(t.Tokens)),
+		BaseTokens: t.BaseTokens,
+		Tokens:     make(iotago.NativeTokens, len(t.Tokens)),
 	}
 
 	for i, v := range t.Tokens {
@@ -303,7 +303,7 @@ func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
 
 type ISCExpiration struct {
 	Time          int64
-	ReturnAddress IotaAddress
+	ReturnAddress L1Address
 }
 
 func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
@@ -315,7 +315,7 @@ func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 
 	ret := ISCExpiration{
 		Time:          expiryTime,
-		ReturnAddress: WrapIotaAddress(data.ReturnAddress),
+		ReturnAddress: WrapL1Address(data.ReturnAddress),
 	}
 
 	return ret
@@ -376,7 +376,7 @@ func (i *ISCSendOptions) Unwrap() iscp.SendOptions {
 }
 
 type ISCRequestParameters struct {
-	TargetAddress            IotaAddress
+	TargetAddress            L1Address
 	FungibleTokens           ISCFungibleTokens
 	AdjustMinimumDustDeposit bool
 	Metadata                 ISCSendMetadata
@@ -385,7 +385,7 @@ type ISCRequestParameters struct {
 
 func WrapISCRequestParameters(parameters iscp.RequestParameters) ISCRequestParameters {
 	ret := ISCRequestParameters{
-		TargetAddress:            WrapIotaAddress(parameters.TargetAddress),
+		TargetAddress:            WrapL1Address(parameters.TargetAddress),
 		FungibleTokens:           WrapISCFungibleTokens(*parameters.FungibleTokens),
 		AdjustMinimumDustDeposit: parameters.AdjustToMinimumDustDeposit,
 		Metadata:                 WrapISCSendMetadata(*parameters.Metadata),

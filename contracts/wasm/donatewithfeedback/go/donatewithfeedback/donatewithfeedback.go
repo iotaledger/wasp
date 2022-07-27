@@ -8,8 +8,8 @@ import (
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
-	amount := ctx.Allowance().Iotas()
-	transfer := wasmlib.NewScTransferIotas(amount)
+	amount := ctx.Allowance().BaseTokens()
+	transfer := wasmlib.NewScTransferBaseTokens(amount)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	donation := &Donation{
 		Amount:    amount,
@@ -33,7 +33,7 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 }
 
 func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
-	balance := ctx.Balances().Iotas()
+	balance := ctx.Balances().BaseTokens()
 	amount := f.Params.Amount().Value()
 	if amount == 0 || amount > balance {
 		amount = balance
@@ -44,7 +44,7 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 	}
 
 	scOwner := f.State.Owner().Value().Address()
-	ctx.Send(scOwner, wasmlib.NewScTransferIotas(amount))
+	ctx.Send(scOwner, wasmlib.NewScTransferBaseTokens(amount))
 }
 
 func viewDonation(_ wasmlib.ScViewContext, f *DonationContext) {

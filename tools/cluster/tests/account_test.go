@@ -94,10 +94,10 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferIotas := 1 * iscp.Mi
+	transferBaseTokens := 1 * iscp.Mi
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
-	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
+	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
 	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(e.t, err)
 
@@ -105,7 +105,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	require.NoError(e.t, err)
 
 	fees := receipts[0].GasFeeCharged
-	e.checkBalanceOnChain(iscp.NewAgentID(myAddress), iscp.IotaTokenID, transferIotas-fees)
+	e.checkBalanceOnChain(iscp.NewAgentID(myAddress), iscp.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
@@ -113,12 +113,12 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
 	incCounterAgentID := iscp.NewContractAgentID(e.Chain.ChainID, hname)
-	e.checkBalanceOnChain(incCounterAgentID, iscp.IotaTokenID, 0)
+	e.checkBalanceOnChain(incCounterAgentID, iscp.BaseTokenID, 0)
 }
 
 func TestBasic2Accounts(t *testing.T) {
@@ -182,10 +182,10 @@ func TestBasic2Accounts(t *testing.T) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	transferIotas := 1 * iscp.Mi
+	transferBaseTokens := 1 * iscp.Mi
 	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
-	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
+	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
 	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	require.NoError(t, err)
 
@@ -198,20 +198,20 @@ func TestBasic2Accounts(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-transferIotas)) {
+	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 
 	chEnv.printAccounts("withdraw before")
 
-	// withdraw back 500 iotas to originator address
+	// withdraw back 500 base tokens to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
-	origL1Balance := e.Clu.AddressBalances(originatorAddress).Iotas
+	origL1Balance := e.Clu.AddressBalances(originatorAddress).BaseTokens
 	originatorClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	allowanceIotas := uint64(800_000)
+	allowanceBaseTokens := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: iscp.NewAllowanceIotas(allowanceIotas),
+			Allowance: iscp.NewAllowanceBaseTokens(allowanceBaseTokens),
 		},
 	)
 	require.NoError(t, err)
@@ -223,5 +223,5 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv.printAccounts("withdraw after")
 
-	require.Equal(t, e.Clu.AddressBalances(originatorAddress).Iotas, origL1Balance+allowanceIotas)
+	require.Equal(t, e.Clu.AddressBalances(originatorAddress).BaseTokens, origL1Balance+allowanceBaseTokens)
 }

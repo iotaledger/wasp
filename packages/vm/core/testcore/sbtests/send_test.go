@@ -22,12 +22,12 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
-	// send 1 tx will 1_000_000 iotas which should result in too many outputs, so the request must fail
+	// send 1 tx will 1_000_000 BaseTokens which should result in too many outputs, so the request must fail
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddIotas(1000 * iscp.Mi).
-		AddAllowanceIotas(999 * iscp.Mi). // contract is sending 1Mi per output
+		AddBaseTokens(1000 * iscp.Mi).
+		AddAllowanceBaseTokens(999 * iscp.Mi). // contract is sending 1Mi per output
 		WithGasBudget(math.MaxUint64)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
@@ -42,7 +42,7 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 
 	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	err := ch.DepositIotasToL2(100_000, wallet)
+	err := ch.DepositBaseTokensToL2(100_000, wallet)
 	require.NoError(t, err)
 
 	beforeWallet := ch.L1L2Funds(walletAddr)
@@ -51,14 +51,14 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	// this will SUCCEED because it will result in 4 outputs in the single call
 	const allowance = 4 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddAllowanceIotas(allowance).
-		AddIotas(allowance + 1*iscp.Mi).
+		AddAllowanceBaseTokens(allowance).
+		AddBaseTokens(allowance + 1*iscp.Mi).
 		WithGasBudget(math.MaxUint64)
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
 	dustDeposit := tx.Essence.Outputs[0].Deposit()
-	ch.Env.AssertL1Iotas(walletAddr, beforeWallet.AssetsL1.Iotas+allowance-dustDeposit)
+	ch.Env.AssertL1BaseTokens(walletAddr, beforeWallet.AssetsL1.BaseTokens+allowance-dustDeposit)
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
@@ -68,7 +68,7 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 
 	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	err := ch.DepositIotasToL2(100_000, wallet)
+	err := ch.DepositBaseTokensToL2(100_000, wallet)
 	require.NoError(t, err)
 
 	beforeWallet := ch.L1L2Funds(walletAddr)
@@ -77,8 +77,8 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	// this will FAIL because it will result in 5 outputs in the single call
 	const allowance = 5 * iscp.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddAllowanceIotas(allowance).
-		AddIotas(allowance + 1*iscp.Mi).
+		AddAllowanceBaseTokens(allowance).
+		AddBaseTokens(allowance + 1*iscp.Mi).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = ch.PostRequestSync(req, wallet)
@@ -93,7 +93,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	err := ch.DepositIotasToL2(2*iscp.Mi, wallet)
+	err := ch.DepositBaseTokensToL2(2*iscp.Mi, wallet)
 	require.NoError(t, err)
 
 	sn, tokenID, err := ch.NewFoundryParams(100).
@@ -104,10 +104,10 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := iscp.NewAllowanceIotas(100*iscp.Mi).AddNativeTokens(tokenID, 100)
+	allowance := iscp.NewAllowanceBaseTokens(100*iscp.Mi).AddNativeTokens(tokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddIotas(200 * iscp.Mi).
+		AddBaseTokens(200 * iscp.Mi).
 		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
@@ -122,7 +122,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 	agentID := iscp.NewAgentID(addr)
 
-	err := ch.DepositIotasToL2(2*iscp.Mi, wallet)
+	err := ch.DepositBaseTokensToL2(2*iscp.Mi, wallet)
 	require.NoError(t, err)
 
 	amountMintedTokens := int64(100)
@@ -134,10 +134,10 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	amountTokensToSend := int64(3)
-	allowance := iscp.NewAllowanceIotas(2*iscp.Mi).AddNativeTokens(tokenID, amountTokensToSend)
+	allowance := iscp.NewAllowanceBaseTokens(2*iscp.Mi).AddNativeTokens(tokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddIotas(2 * iscp.Mi).
+		AddBaseTokens(2 * iscp.Mi).
 		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
@@ -145,9 +145,9 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.Equal(t, ch.Env.L1NativeTokens(addr, &tokenID).Int64(), amountTokensToSend)
 }
 
-func TestPingIotas1(t *testing.T) { run2(t, testPingIotas1) }
-func testPingIotas1(t *testing.T, w bool) {
-	// TestPingIotas1 sends some iotas to SC and receives the whole allowance sent back to L1 as on-ledger request
+func TestPingBaseTokens1(t *testing.T) { run2(t, testPingBaseTokens1) }
+func testPingBaseTokens1(t *testing.T, w bool) {
+	// TestPingBaseTokens1 sends some base tokens to SC and receives the whole allowance sent back to L1 as on-ledger request
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
@@ -158,16 +158,16 @@ func testPingIotas1(t *testing.T, w bool) {
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
 	const expectedBack = 1 * iscp.Mi
-	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
-		AddIotas(expectedBack + 10_000). // add extra iotas besides allowance in order to estimate the gas fees
-		AddAllowanceIotas(expectedBack)
+		AddBaseTokens(expectedBack + 10_000). // add extra base tokens besides allowance in order to estimate the gas fees
+		AddAllowanceBaseTokens(expectedBack)
 
 	gas, gasFee, err := ch.EstimateGasOnLedger(req, user, true)
 	require.NoError(t, err)
 	req.
-		WithFungibleTokens(iscp.NewTokensIotas(expectedBack + gasFee)).
+		WithFungibleTokens(iscp.NewFungibleBaseTokens(expectedBack + gasFee)).
 		WithGasBudget(gas + 1)
 
 	_, err = ch.PostRequestSync(req, user)
@@ -178,10 +178,10 @@ func testPingIotas1(t *testing.T, w bool) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, userFundsAfter.AssetsL1.Iotas, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged)
-	require.EqualValues(t, int(commonBefore.Iotas+receipt.GasFeeCharged), int(commonAfter.Iotas))
-	require.EqualValues(t, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.Iotas)
-	require.Zero(t, userFundsAfter.AssetsL2.Iotas)
+	require.EqualValues(t, userFundsAfter.AssetsL1.BaseTokens, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged)
+	require.EqualValues(t, int(commonBefore.BaseTokens+receipt.GasFeeCharged), int(commonAfter.BaseTokens))
+	require.EqualValues(t, utxodb.FundsFromFaucetAmount-receipt.GasFeeCharged, userFundsAfter.AssetsL1.BaseTokens)
+	require.Zero(t, userFundsAfter.AssetsL2.BaseTokens)
 }
 
 func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
@@ -191,21 +191,21 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	// should fail without enough iotas to pay for a L1 transaction dust
-	allowance := iscp.NewAllowanceIotas(1)
+	// should fail without enough base tokens to pay for a L1 transaction dust
+	allowance := iscp.NewAllowanceBaseTokens(1)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
-		AddIotas(100_000).
+		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
 
-	// should succeed with enough iotas to pay for a L1 transaction dust
-	allowance = iscp.NewAllowanceIotas(100_000)
+	// should succeed with enough base tokens to pay for a L1 transaction dust
+	allowance = iscp.NewAllowanceBaseTokens(100_000)
 	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
 		AddAllowance(allowance).
-		AddIotas(100_000).
+		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 
 	_, err = ch.PostRequestSync(req, wallet)
@@ -229,10 +229,10 @@ func testSendNFTsBack(t *testing.T, w bool) {
 
 	nft, _ := mintDummyNFT(t, ch, wallet, addr)
 
-	iotasToSend := uint64(300_000)
-	iotasForGas := uint64(100_000)
-	assetsToSend := iscp.NewTokensIotas(iotasToSend)
-	assetsToAllow := iscp.NewTokensIotas(iotasToSend - iotasForGas)
+	baseTokensToSend := uint64(300_000)
+	baseTokensForGas := uint64(100_000)
+	assetsToSend := iscp.NewFungibleBaseTokens(baseTokensToSend)
+	assetsToAllow := iscp.NewFungibleBaseTokens(baseTokensToSend - baseTokensForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSendNFTsBack.Name).
@@ -261,7 +261,7 @@ func testNFTOffledgerWithdraw(t *testing.T, w bool) {
 	require.False(t, ch.HasL2NFT(iscp.NewAgentID(issuerAddr), &nft.ID))
 
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddFungibleTokens(iscp.NewTokensIotas(1_000_000)).
+		AddFungibleTokens(iscp.NewFungibleBaseTokens(1_000_000)).
 		WithNFT(nft).
 		WithMaxAffordableGasBudget()
 
@@ -298,10 +298,10 @@ func testNFTMintToChain(t *testing.T, w bool) {
 		Metadata: []byte("foobar"),
 	}
 
-	iotasToSend := uint64(300_000)
-	iotasForGas := uint64(100_000)
-	assetsToSend := iscp.NewTokensIotas(iotasToSend)
-	assetsToAllow := iscp.NewTokensIotas(iotasToSend - iotasForGas)
+	baseTokensToSend := uint64(300_000)
+	baseTokensForGas := uint64(100_000)
+	assetsToSend := iscp.NewFungibleBaseTokens(baseTokensToSend)
+	assetsToAllow := iscp.NewFungibleBaseTokens(baseTokensToSend - baseTokensForGas)
 
 	// receive an NFT back that is sent in the same request
 	req := solo.NewCallParams(ScName, sbtestsc.FuncClaimAllowance.Name).

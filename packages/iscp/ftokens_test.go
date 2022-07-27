@@ -35,7 +35,7 @@ func TestMarshalling(t *testing.T) {
 	bytes := assets.Bytes()
 	assets2, err := FungibleTokensFromMarshalUtil(marshalutil.New(bytes))
 	require.NoError(t, err)
-	require.Equal(t, assets.Iotas, assets2.Iotas)
+	require.Equal(t, assets.BaseTokens, assets2.BaseTokens)
 	require.Equal(t, len(assets.Tokens), len(assets2.Tokens))
 	for i := range tokens {
 		require.Equal(t, assets.Tokens[i], assets2.Tokens[i])
@@ -49,21 +49,21 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.True(t, budget.IsEmpty())
 	require.True(t, budget.IsEmpty())
 
-	budget = &FungibleTokens{Iotas: 1}
+	budget = &FungibleTokens{BaseTokens: 1}
 	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.False(t, toSpend.SpendFromFungibleTokenBudget(budget))
 
-	budget = &FungibleTokens{Iotas: 10}
+	budget = &FungibleTokens{BaseTokens: 10}
 	require.True(t, budget.SpendFromFungibleTokenBudget(budget))
 	require.True(t, budget.IsEmpty())
 
-	budget = &FungibleTokens{Iotas: 2}
-	toSpend = &FungibleTokens{Iotas: 1}
+	budget = &FungibleTokens{BaseTokens: 2}
+	toSpend = &FungibleTokens{BaseTokens: 1}
 	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.Equals(&FungibleTokens{1, nil}))
 
-	budget = &FungibleTokens{Iotas: 1}
-	toSpend = &FungibleTokens{Iotas: 2}
+	budget = &FungibleTokens{BaseTokens: 1}
+	toSpend = &FungibleTokens{BaseTokens: 2}
 	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.Equals(&FungibleTokens{1, nil}))
 
@@ -71,7 +71,7 @@ func TestAssets_SpendBudget(t *testing.T) {
 	tokenID2 := tpkg.RandNativeToken().ID
 
 	budget = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
@@ -81,14 +81,14 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.True(t, budget.IsEmpty())
 
 	budget = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	cloneBudget := budget.Clone()
 	toSpend = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(10)},
 		},
@@ -97,20 +97,20 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.True(t, budget.Equals(cloneBudget))
 
 	budget = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	expected := &FungibleTokens{
-		Iotas: 0,
+		BaseTokens: 0,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
@@ -119,13 +119,13 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.True(t, budget.Equals(expected))
 
 	budget = &FungibleTokens{
-		Iotas: 10,
+		BaseTokens: 10,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
-		Iotas: 1,
+		BaseTokens: 1,
 		Tokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},

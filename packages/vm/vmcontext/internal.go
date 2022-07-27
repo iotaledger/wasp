@@ -77,10 +77,10 @@ func (vmctx *VMContext) getChainInfo() *governance.ChainInfo {
 	return ret
 }
 
-func (vmctx *VMContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
+func (vmctx *VMContext) GetBaseTokensBalance(agentID iscp.AgentID) uint64 {
 	var ret uint64
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetIotaBalance(s, agentID)
+		ret = accounts.GetBaseTokensBalance(s, agentID)
 	})
 	return ret
 }
@@ -140,12 +140,12 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 		return 0
 	}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
-		// iotas are used as gas tokens
-		return vmctx.GetIotaBalance(sender)
+		// base tokens are used as gas tokens
+		return vmctx.GetBaseTokensBalance(sender)
 	}
 	// native tokens are used for gas fee
 	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
-	// to pay for gas chain is configured to use some native token, not IOTA
+	// to pay for gas chain is configured to use some native token, not base tokens
 	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, tokenID)
 	if tokensAvailableBig.IsUint64() {
 		return tokensAvailableBig.Uint64()
@@ -227,14 +227,14 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 	})
 }
 
-// adjustL2IotasIfNeeded adjust L2 ledger for iotas if the L1 changed because of dust deposit changes
-func (vmctx *VMContext) adjustL2IotasIfNeeded(adjustment int64, account iscp.AgentID) {
+// adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of dust deposit changes
+func (vmctx *VMContext) adjustL2BaseTokensIfNeeded(adjustment int64, account iscp.AgentID) {
 	if adjustment == 0 {
 		return
 	}
 	err := panicutil.CatchPanicReturnError(func() {
 		vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-			accounts.AdjustAccountIotas(s, account, adjustment)
+			accounts.AdjustAccountBaseTokens(s, account, adjustment)
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {

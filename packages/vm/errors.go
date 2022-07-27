@@ -6,7 +6,7 @@ import (
 
 var (
 	ErrOverflow                             = coreerrors.Register("overflow").Create()
-	ErrNotEnoughIotaBalance                 = coreerrors.Register("not enough iota balance").Create()
+	ErrNotEnoughBaseTokensBalance           = coreerrors.Register("not enough base tokens balance").Create()
 	ErrNotEnoughNativeAssetBalance          = coreerrors.Register("not enough native assets balance").Create()
 	ErrNotEnoughFundsForAllowance           = coreerrors.Register("not enough funds for allowance").Create()
 	ErrCreateFoundryMaxSupplyMustBePositive = coreerrors.Register("max supply must be positive").Create()

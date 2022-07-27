@@ -64,7 +64,7 @@ func TestIncDefaultParam(t *testing.T) {
 	checkCounter(chain, 17)
 
 	req := solo.NewCallParams(incName, FuncIncCounter.Name).
-		AddIotas(1).
+		AddBaseTokens(1).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestIncParam(t *testing.T) {
 	checkCounter(chain, 17)
 
 	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).
-		AddIotas(1).
+		AddBaseTokens(1).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -99,8 +99,8 @@ func TestIncWith1Post(t *testing.T) {
 	checkCounter(chain, 17)
 
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
-		AddIotas(2 * iscp.Mi).
-		WithAllowance(iscp.NewAllowanceIotas(1 * iscp.Mi)).
+		AddBaseTokens(2 * iscp.Mi).
+		WithAllowance(iscp.NewAllowanceBaseTokens(1 * iscp.Mi)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestSpawn(t *testing.T) {
 	req := solo.NewCallParams(incName, FuncSpawn.Name,
 		VarName, nameNew,
 		VarDescription, dscrNew,
-	).AddIotas(1).WithMaxAffordableGasBudget()
+	).AddBaseTokens(1).WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -155,7 +155,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddIotas(1)
+		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddBaseTokens(1)
 	}
 
 	return chain, reqs

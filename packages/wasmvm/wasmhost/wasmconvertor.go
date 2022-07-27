@@ -55,7 +55,7 @@ func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) iscp.AgentID 
 }
 
 func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance {
-	iscpAllowance := iscp.NewAllowanceIotas(assets.Iotas)
+	iscpAllowance := iscp.NewAllowanceBaseTokens(assets.BaseTokens)
 	iscpAssets := iscpAllowance.Assets
 	for tokenID, amount := range assets.Tokens {
 		token := &iotago.NativeToken{
@@ -138,7 +138,7 @@ func (cvt WasmConvertor) ScAgentID(agentID iscp.AgentID) wasmtypes.ScAgentID {
 }
 
 func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalances {
-	transfer := wasmlib.NewScTransferIotas(allowance.Assets.Iotas)
+	transfer := wasmlib.NewScTransferBaseTokens(allowance.Assets.BaseTokens)
 	for _, token := range allowance.Assets.Tokens {
 		tokenID := cvt.ScTokenID(&token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))

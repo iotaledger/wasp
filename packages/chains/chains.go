@@ -108,7 +108,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, all
 // Activate activates chain on the Wasp node:
 // - creates chain object
 // - insert it into the runtime registry
-// - subscribes for related transactions in he IOTA node
+// - subscribes for related transactions in the L1 node
 func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

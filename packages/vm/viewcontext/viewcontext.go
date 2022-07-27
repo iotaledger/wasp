@@ -113,8 +113,8 @@ func (ctx *ViewContext) Timestamp() time.Time {
 	return t
 }
 
-func (ctx *ViewContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
-	return accounts.GetIotaBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+func (ctx *ViewContext) GetBaseTokensBalance(agentID iscp.AgentID) uint64 {
+	return accounts.GetBaseTokensBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
 func (ctx *ViewContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {

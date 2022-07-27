@@ -33,7 +33,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		UnspentOutputIDs: outputIDs,
 		Request: &iscp.RequestParameters{
 			TargetAddress:  env.Chain.ChainAddress(),
-			FungibleTokens: &iscp.FungibleTokens{Iotas: 1 * iscp.Mi},
+			FungibleTokens: &iscp.FungibleTokens{BaseTokens: 1 * iscp.Mi},
 			Metadata: &iscp.SendMetadata{
 				TargetContract: nativeIncCounterSCHname,
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),

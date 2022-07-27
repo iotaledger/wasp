@@ -15,7 +15,7 @@ func TestDoNothing(t *testing.T) {
 		bal := ctx.Balances()
 
 		nop := testcore.ScFuncs.DoNothing(ctx)
-		nop.Func.TransferIotas(1 * iscp.Mi).Post()
+		nop.Func.TransferBaseTokens(1 * iscp.Mi).Post()
 		require.NoError(t, ctx.Err)
 
 		bal.Chain += ctx.GasFee
@@ -32,7 +32,7 @@ func TestDoNothingUser(t *testing.T) {
 		bal := ctx.Balances(user)
 
 		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
-		nop.Func.TransferIotas(1 * iscp.Mi).Post()
+		nop.Func.TransferBaseTokens(1 * iscp.Mi).Post()
 		require.NoError(t, ctx.Err)
 
 		bal.Chain += ctx.GasFee
@@ -84,7 +84,7 @@ func TestDoPanicUser(t *testing.T) {
 		userL1 := user.Balance()
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-		f.Func.TransferIotas(1 * iscp.Mi).Post()
+		f.Func.TransferBaseTokens(1 * iscp.Mi).Post()
 		require.Error(t, ctx.Err)
 		require.EqualValues(t, userL1-1*iscp.Mi, user.Balance())
 
@@ -188,7 +188,7 @@ func TestRequestToView(t *testing.T) {
 		// sending request to the view entry point should
 		// return an error and leave tokens in L2 minus gas fee
 		req := solo.NewCallParams(testcore.ScName, testcore.ViewJustView)
-		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddIotas(1*iscp.Mi), user.Pair)
+		_, ctx.Err = ctx.Chain.PostRequestSync(req.AddBaseTokens(1*iscp.Mi), user.Pair)
 		require.Error(t, ctx.Err)
 		require.EqualValues(t, userL1-1*iscp.Mi, user.Balance())
 		ctx.UpdateGasFees()

@@ -15,7 +15,7 @@ func testTypesFull(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	cID := setupTestSandboxSC(t, ch, nil, w)
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
 		"address", ch.ChainID.AsAddress(),

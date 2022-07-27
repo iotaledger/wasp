@@ -34,9 +34,9 @@ func (s *SandboxBase) AccountID() iscp.AgentID {
 	return s.Ctx.AccountID()
 }
 
-func (s *SandboxBase) BalanceIotas() uint64 {
+func (s *SandboxBase) BalanceBaseTokens() uint64 {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	return s.Ctx.GetIotaBalance(s.AccountID())
+	return s.Ctx.GetBaseTokensBalance(s.AccountID())
 }
 
 func (s *SandboxBase) BalanceNativeToken(id *iotago.NativeTokenID) *big.Int {

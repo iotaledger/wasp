@@ -195,7 +195,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 
 // NewChain deploys new chain instance.
 //
-// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (=1337) iotas are loaded from the UTXODB faucet.
+// If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
 // ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
@@ -213,7 +213,7 @@ func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initO
 
 // NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
-func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
+func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
 	vmRunner := runvm.NewVMRunner()
@@ -247,7 +247,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
-		initIotas, // will be adjusted to min dust deposit
+		initBaseTokens, // will be adjusted to min dust deposit
 		outs,
 		outIDs,
 	)
@@ -258,7 +258,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initIotas uint6
 
 	err = env.utxoDB.AddToLedger(originTx)
 	require.NoError(env.T, err)
-	env.AssertL1Iotas(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
+	env.AssertL1BaseTokens(originatorAddr, utxodb.FundsFromFaucetAmount-anchor.Deposit)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
@@ -558,8 +558,8 @@ func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeToken
 	return assets.AmountNativeToken(tokenID)
 }
 
-func (env *Solo) L1Iotas(addr iotago.Address) uint64 {
-	return env.utxoDB.GetAddressBalances(addr).Iotas
+func (env *Solo) L1BaseTokens(addr iotago.Address) uint64 {
+	return env.utxoDB.GetAddressBalances(addr).BaseTokens
 }
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
@@ -578,7 +578,7 @@ type NFTMintedInfo struct {
 }
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
-// Iotas in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+// base tokens in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*iscp.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 

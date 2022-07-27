@@ -84,8 +84,8 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-func (ch *Chain) NewEthereumAccountWithL2Funds(iotas ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
-	ch.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(addr), iotas...)
+	ch.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(addr), baseTokens...)
 	return key, addr
 }

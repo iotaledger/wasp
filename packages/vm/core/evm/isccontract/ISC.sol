@@ -3,22 +3,22 @@
 
 pragma solidity >=0.8.11;
 
-struct IotaAddress {
+struct L1Address {
 	bytes data;
 }
 
-struct IotaNativeTokenID {
+struct NativeTokenID {
 	bytes data;
 }
 
-struct IotaNativeToken {
-	IotaNativeTokenID ID;
+struct NativeToken {
+	NativeTokenID ID;
 	uint256 amount;
 }
 
-type IotaNFTID is bytes32;
+type NFTID is bytes32;
 
-type IotaTransactionID is bytes32;
+type ISCTransactionID is bytes32;
 
 type ISCHname is uint32;
 
@@ -29,13 +29,13 @@ struct ISCAgentID {
 }
 
 struct ISCNFT {
-	IotaNFTID ID;
-	IotaAddress issuer;
+	NFTID ID;
+	L1Address issuer;
 	bytes metadata;
 }
 
 struct ISCRequestID {
-	IotaTransactionID transactionID;
+	ISCTransactionID transactionID;
 	uint16 transactionOutputIndex;
 }
 
@@ -49,8 +49,8 @@ struct ISCDict {
 }
 
 struct ISCFungibleTokens {
-	uint64 iotas;
-	IotaNativeToken[] tokens;
+	uint64 baseTokens;
+	NativeToken[] tokens;
 }
 
 struct ISCSendMetadata  {
@@ -63,7 +63,7 @@ struct ISCSendMetadata  {
 
 struct ISCExpiration {
 	int64 time;
-	IotaAddress returnAddress;
+	L1Address returnAddress;
 }
 
 struct ISCSendOptions {
@@ -72,7 +72,7 @@ struct ISCSendOptions {
 }
 
 struct ISCRequestParameters {
-	IotaAddress targetAddress;
+	L1Address targetAddress;
 	ISCFungibleTokens fungibleTokens;
 	bool adjustMinimumDustDeposit;
 	ISCSendMetadata metadata;
@@ -82,9 +82,9 @@ struct ISCRequestParameters {
 type ISCError is uint16;
 
 struct ISCAllowance {
-	uint64 iotas;
-	IotaNativeToken[] assets;
-	IotaNFTID[] nfts;
+	uint64 baseTokens;
+	NativeToken[] assets;
+	NFTID[] nfts;
 }
 
 // The interface of the native ISC contract
@@ -108,24 +108,24 @@ interface ISC {
 	// like revert() but with a custom message that is saved in the ISC receipt
 	function logPanic(string memory s) external view;
 
-	function getNFTData(IotaNFTID id) external view returns (ISCNFT memory);
+	function getNFTData(NFTID id) external view returns (ISCNFT memory);
 
 	// ----- Sandbox -----
 
 	function getCaller() external view returns (ISCAgentID memory);
 	function getRequestID() external view returns (ISCRequestID memory);
 	function getSenderAccount() external view returns (ISCAgentID memory);
-	function getAllowanceIotas() external view returns (uint64);
+	function getAllowanceBaseTokens() external view returns (uint64);
 	function getAllowanceNativeTokensLen() external view returns (uint16);
-	function getAllowanceNativeToken(uint16 i) external view returns (IotaNativeToken memory);
+	function getAllowanceNativeToken(uint16 i) external view returns (NativeToken memory);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
-	function send(IotaAddress memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
-	function sendAsNFT(IotaAddress memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, IotaNFTID id) external;
+	function send(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
+	function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, NFTID id) external;
 	function registerError(string memory s) external view returns (ISCError);
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
-	function getAllowanceAvailableIotas() external view returns (uint64);
-	function getAllowanceAvailableNativeToken(uint16 i) external view returns (IotaNativeToken memory);
+	function getAllowanceAvailableBaseTokens() external view returns (uint64);
+	function getAllowanceAvailableNativeToken(uint16 i) external view returns (NativeToken memory);
 	function getAllowanceAvailableNativeTokensLen() external view returns (uint16);
 	function getAllowanceNFTsLen() external view returns (uint16);
 	function getAllowanceNFT(uint16 i) external view returns (ISCNFT memory);

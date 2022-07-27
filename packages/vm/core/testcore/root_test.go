@@ -62,7 +62,7 @@ func TestDeployExample(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(10_000, nil)
+	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
 	name := "testInc"
@@ -99,7 +99,7 @@ func TestDeployDouble(t *testing.T) {
 		WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(10_000, nil)
+	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
 	name := "testInc"
@@ -141,7 +141,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
 		governance.ParamChainOwner, newOwnerAgentID,
 	).WithGasBudget(100_000).
-		AddIotas(100_000)
+		AddBaseTokens(100_000)
 
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).
 		WithGasBudget(100_000).
-		AddIotas(100_000)
+		AddBaseTokens(100_000)
 
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)

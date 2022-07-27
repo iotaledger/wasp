@@ -177,16 +177,16 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
 		// is released and delta of anchor is positive
 		nt.dustDepositCharged = false
-		txb.addDeltaIotasToTotal(txb.dustDepositAssumption.NativeTokenOutput)
+		txb.addDeltaBaseTokensToTotal(txb.dustDepositAssumption.NativeTokenOutput)
 		return int64(txb.dustDepositAssumption.NativeTokenOutput)
 	case !nt.dustDepositCharged && nt.producesOutput():
 		// this is a new token in the on-chain ledger
 		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
 		nt.dustDepositCharged = true
-		if txb.dustDepositAssumption.NativeTokenOutput > txb.totalIotasInL2Accounts {
+		if txb.dustDepositAssumption.NativeTokenOutput > txb.totalBaseTokensInL2Accounts {
 			panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 		}
-		txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NativeTokenOutput)
+		txb.subDeltaBaseTokensFromTotal(txb.dustDepositAssumption.NativeTokenOutput)
 		return -int64(txb.dustDepositAssumption.NativeTokenOutput)
 	}
 	return 0

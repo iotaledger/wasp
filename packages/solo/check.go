@@ -22,8 +22,8 @@ func (ch *Chain) AssertL2NativeTokens(agentID iscp.AgentID, tokenID *iotago.Nati
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertL2Iotas(agentID iscp.AgentID, bal uint64) {
-	require.EqualValues(ch.Env.T, int(bal), int(ch.L2Assets(agentID).Iotas))
+func (ch *Chain) AssertL2BaseTokens(agentID iscp.AgentID, bal uint64) {
+	require.EqualValues(ch.Env.T, int(bal), int(ch.L2Assets(agentID).BaseTokens))
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -66,9 +66,9 @@ func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal in
 	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertL2TotalIotas(bal uint64) {
-	iotas := ch.L2TotalIotas()
-	require.EqualValues(ch.Env.T, int(bal), int(iotas))
+func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
+	baseTokens := ch.L2TotalBaseTokens()
+	require.EqualValues(ch.Env.T, int(bal), int(baseTokens))
 }
 
 func (ch *Chain) AssertControlAddresses() {
@@ -88,8 +88,8 @@ func (ch *Chain) HasL2NFT(agentID iscp.AgentID, nftID *iotago.NFTID) bool {
 	return false
 }
 
-func (env *Solo) AssertL1Iotas(addr iotago.Address, expected uint64) {
-	require.EqualValues(env.T, int(expected), int(env.L1Iotas(addr)))
+func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
+	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
 }
 
 func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
