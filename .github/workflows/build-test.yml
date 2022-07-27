@@ -79,6 +79,7 @@ jobs:
           go test -rswasm ./...
           cd ../../packages/vm/
           go test ./...
+          
   golangci:
     name: lint
     runs-on: ubuntu-latest
