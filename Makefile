@@ -22,9 +22,6 @@ endif
 build: compile-solidity
 	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
-build-windows: compile-solidity
-	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
-
 build-lint: build lint
 
 test-full: install
@@ -39,9 +36,6 @@ test-short:
 install: compile-solidity
 	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
 
-install-windows: compile-solidity
-	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
-
 lint:
 	golangci-lint run
 
@@ -54,5 +48,5 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-windows build-lint test test-short test-full install install-windows lint gofumpt-list docker-build
+.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build
 

@@ -27,16 +27,8 @@ git clone https://github.com/iotaledger/wasp.git
 
 Alternatively, you can install the Solo package separately using the following command:
 
-In Linux/macOS:
-
 ```shell
 go get github.com/iotaledger/wasp/packages/solo
-```
-
-In Windows:
-
-```shell
-go get -buildmode=exe github.com/iotaledger/wasp/packages/solo
 ```
 
 :::tip
