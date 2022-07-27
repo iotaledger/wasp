@@ -85,4 +85,4 @@ As all ports are locally available, this `wasp-cli.json` configuration is to be 
 
 Run `wasp-cli init` to generate a seed, and you are ready to go.
 
-See [Configuring wasp-cli](/smart-contracts/guide/chains_and_nodes/wasp-cli) for further information.
+See [Configuring wasp-cli](../chains_and_nodes/wasp-cli) for further information.

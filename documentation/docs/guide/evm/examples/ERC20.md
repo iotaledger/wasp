@@ -20,7 +20,7 @@ With the ERC20 standard you can create your own tokens and transfer them in the 
 You can use the [Remix IDE](https://remix.ethereum.org/) to deploy any regular Solidity Smart Contract.
 
 Set the environment to `Injected Web3`, and connect Remix with your MetaMask wallet. 
-Read this [how to connect your MetaMask with the public Testnet.](/smart-contracts/guide/chains_and_nodes/testnet#interact-with-evm).
+Read this [how to connect your MetaMask with the public Testnet.](../../chains_and_nodes/testnet#interact-with-evm).
 
 ## 1. Create a Smart Contract
 

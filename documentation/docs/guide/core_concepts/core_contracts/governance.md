@@ -30,6 +30,22 @@ The `governance` contract provides the following functionalities:
 
 ---
 
+## Fee Policy
+
+The Fee Policy looks like the following:
+
+```go
+{
+  TokenID []byte // id of the token used to pay for gas (nil if the base token should be used (iota/shimmer)) 
+  
+  GasPerToken uint64 // how many units of gas are payed for each token
+  
+  ValidatorFeeShare uint8 // percentage of the fees that are credited to the validators (0 - 100)
+}
+```
+
+---
+
 ## Entry Points
 
 The following are the functions/entry points of the `governance` contract. Most governance entry points can only be invoked by the chain owner.
