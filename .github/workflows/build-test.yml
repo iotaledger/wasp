@@ -3,6 +3,8 @@ name: Test
 on:
   pull_request:
     branches: [develop]
+  push:
+    branches: [artifacts]
 
 jobs:
   build:
@@ -65,7 +67,7 @@ jobs:
           cd contracts/wasm
           go install ../../tools/schema
           bash schema_all.sh
-          cd ..
+          npm install
       - name: run builds
         run: |
           cd contracts/wasm
