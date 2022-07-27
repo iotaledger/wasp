@@ -144,10 +144,10 @@ func TestGetRandomOtherPeers(t *testing.T) {
 		peers := domain.GetRandomOtherPeers(peersToGet)
 		require.Equal(t, peersToGet, len(peers))
 		for j := range peers {
-			t.Logf("\tComparing peers %v, key %v...", j, peers[j].AsString())
+			t.Logf("\tComparing peers %v, key %v...", j, peers[j].String())
 			for k := range peers[j+1:] {
 				kk := k + j + 1
-				t.Logf("\t\t and %v, key %v", kk, peers[kk].AsString())
+				t.Logf("\t\t and %v, key %v", kk, peers[kk].String())
 				require.False(t, peers[j].Equals(peers[kk]))
 			}
 		}

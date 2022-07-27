@@ -37,11 +37,11 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.log.Debugf("aliasOutputReceived: output index %v, id %v is already a state output; ignored", aliasOutputIndex, aliasOutputIDStr)
 			return false
 		}
-		// TODO implement
-		/*if !output.GetIsGovernanceUpdated() {
-			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
-		}*/
 		// it is a state controller address rotation
+		sm.syncingBlocks.setApprovalInfo(aliasOutput)
+		sm.stateOutput = aliasOutput
+		sm.stateOutputTimestamp = time.Now()
+
 		sm.log.Warnf("aliasOutputReceived: output index %v, id %v is the same index but different ID as current state output (ID %v): it is a governance update output, ignoring",
 			aliasOutputIndex, aliasOutputIDStr, iscp.OID(sm.stateOutput.ID()))
 		return false
@@ -98,7 +98,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 				sm.syncingBlocks.blocksPulled()
-				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.AsString())
+				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.String())
 			}
 			sm.delayRequestBlockRetry(i)
 		}

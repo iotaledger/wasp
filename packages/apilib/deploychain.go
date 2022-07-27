@@ -23,16 +23,17 @@ import (
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client      nodeconn.L1Client
-	CommitteeAPIHosts []string
-	CommitteePubKeys  []string
-	N                 uint16
-	T                 uint16
-	OriginatorKeyPair *cryptolib.KeyPair
-	Description       string
-	Textout           io.Writer
-	Prefix            string
-	InitParams        dict.Dict
+	Layer1Client         nodeconn.L1Client
+	CommitteeAPIHosts    []string
+	CommitteePubKeys     []string
+	N                    uint16
+	T                    uint16
+	OriginatorKeyPair    *cryptolib.KeyPair
+	Description          string
+	Textout              io.Writer
+	Prefix               string
+	InitParams           dict.Dict
+	GovernanceController iotago.Address
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
@@ -43,7 +44,11 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, e
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID, err := DeployChain(par, stateControllerAddr)
+	govControllerAddr := stateControllerAddr
+	if par.GovernanceController != nil {
+		govControllerAddr = par.GovernanceController
+	}
+	chainID, err := DeployChain(par, stateControllerAddr, govControllerAddr)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -53,7 +58,7 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, e
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*iscp.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*iscp.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -66,7 +71,14 @@ func DeployChain(par CreateChainParams, stateControllerAddr iotago.Address) (*is
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, initRequestTx, err := CreateChainOrigin(par.Layer1Client, par.OriginatorKeyPair, stateControllerAddr, par.Description, par.InitParams)
+	chainID, initRequestTx, err := CreateChainOrigin(
+		par.Layer1Client,
+		par.OriginatorKeyPair,
+		stateControllerAddr,
+		govControllerAddr,
+		par.Description,
+		par.InitParams,
+	)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
@@ -112,7 +124,13 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 }
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(layer1Client nodeconn.L1Client, originator *cryptolib.KeyPair, stateController iotago.Address, dscr string, initParams dict.Dict) (*iscp.ChainID, *iotago.Transaction, error) {
+func CreateChainOrigin(
+	layer1Client nodeconn.L1Client,
+	originator *cryptolib.KeyPair,
+	stateController iotago.Address,
+	governanceController iotago.Address,
+	dscr string, initParams dict.Dict,
+) (*iscp.ChainID, *iotago.Transaction, error) {
 	originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
@@ -124,7 +142,7 @@ func CreateChainOrigin(layer1Client nodeconn.L1Client, originator *cryptolib.Key
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		originator,
 		stateController,
-		stateController,
+		governanceController,
 		0,
 		utxoMap,
 		utxoIDsFromUtxoMap(utxoMap),

@@ -349,7 +349,7 @@ func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*cryptol
 func (n *netImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	peer, err := n.PeerByPubKey(pubKey)
 	if err != nil {
-		n.log.Warnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.AsString())
+		n.log.Warnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.String())
 		return
 	}
 	peer.SendMsg(msg)

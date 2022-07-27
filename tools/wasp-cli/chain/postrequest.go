@@ -10,6 +10,21 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger bool) {
+	scClient := SCClient(iscp.Hn(hname))
+
+	if offLedger {
+		params.Nonce = uint64(time.Now().UnixNano())
+		util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
+			return scClient.PostOffLedgerRequest(fname, params)
+		})
+	} else {
+		util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+			return scClient.PostRequest(fname, params)
+		})
+	}
+}
+
 func postRequestCmd() *cobra.Command {
 	var transfer []string
 	var allowance []string
@@ -21,6 +36,7 @@ func postRequestCmd() *cobra.Command {
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+			hname := args[0]
 			fname := args[1]
 
 			allowanceTokens := util.ParseFungibleTokens(allowance)
@@ -29,19 +45,7 @@ func postRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: iscp.NewAllowanceFungibleTokens(allowanceTokens),
 			}
-
-			scClient := SCClient(iscp.Hn(args[0]))
-
-			if offLedger {
-				params.Nonce = uint64(time.Now().UnixNano())
-				util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
-					return scClient.PostOffLedgerRequest(fname, params)
-				})
-			} else {
-				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-					return scClient.PostRequest(fname, params)
-				})
-			}
+			postRequest(hname, fname, params, offLedger)
 		},
 	}
 

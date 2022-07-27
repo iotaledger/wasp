@@ -225,7 +225,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 	c.detachFromCommitteePeerMessagesFun = func() {
 		cmtPeerGroup.Detach(attachID)
 	}
-	c.log.Debugf("creating new consensus object...")
+	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
 	c.setCommittee(cmt)
 	return nil
@@ -245,7 +245,7 @@ func (c *chainObj) addToPeersHaveReq(reqID iscp.RequestID, peer *cryptolib.Publi
 }
 
 func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
-	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.AsString(), msg.Req.ID())
+	c.log.Debugf("handleOffLedgerRequestMsg message received from peer %v, reqID: %s", msg.SenderPubKey.String(), msg.Req.ID())
 
 	if err := c.validateRequest(msg.Req); err != nil {
 		// this means some node broadcasted an invalid request (bad chainID or signature)
@@ -291,10 +291,10 @@ func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
 		for _, peerPubKey := range peerPubKeys {
 			if peersThatHaveTheRequest[peerPubKey.AsKey()] {
 				// this peer already has the request
-				c.log.Debugf("broadcastOffLedgerRequest: skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.AsString())
+				c.log.Debugf("broadcastOffLedgerRequest: skipping send offledger request ID: %s to peerPubKey: %s.", req.ID(), peerPubKey.String())
 				continue
 			}
-			c.log.Debugf("broadcastOffLedgerRequest: sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.AsString())
+			c.log.Debugf("broadcastOffLedgerRequest: sending offledger request ID: reqID: %s, peerPubKey: %s", req.ID(), peerPubKey.String())
 			c.chainPeers.SendMsgByPubKey(peerPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeOffLedgerRequest, msg.Bytes())
 			c.addToPeersHaveReq(msg.Req.ID(), peerPubKey)
 		}
@@ -335,7 +335,7 @@ func (c *chainObj) EnqueueMissingRequestIDsMsg(msg *messages.MissingRequestIDsMs
 }
 
 func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsgIn) {
-	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderPubKey.AsString(), len(msg.IDs))
+	c.log.Debugf("handleMissingRequestIDsMsg message received from peer %v, number of reqIDs: %v", msg.SenderPubKey.String(), len(msg.IDs))
 	if !c.pullMissingRequestsFromCommittee {
 		c.log.Warnf("handleMissingRequestIDsMsg ignored: pull from committee disabled")
 		return
@@ -345,7 +345,7 @@ func (c *chainObj) handleMissingRequestIDsMsg(msg *messages.MissingRequestIDsMsg
 		if req := c.mempool.GetRequest(reqID); req != nil {
 			resultMsg := &messages.MissingRequestMsg{Request: req}
 			c.chainPeers.SendMsgByPubKey(msg.SenderPubKey, peering.PeerMessageReceiverChain, chain.PeerMsgTypeMissingRequest, resultMsg.Bytes())
-			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID, msg.SenderPubKey.AsString())
+			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s sent to %v.", reqID, msg.SenderPubKey.String())
 		} else {
 			c.log.Warnf("handleMissingRequestIDsMsg: reqID %s not found.", reqID.String())
 		}

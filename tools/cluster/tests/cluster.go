@@ -8,12 +8,14 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 )
 
 type waspClusterOpts struct {
 	nNodes       int
-	modifyConfig cluster.ModifyNodesConfigFn
+	modifyConfig templates.ModifyNodesConfigFn
+	dirName      string
 }
 
 // by default, when running the cluster tests we will automatically setup a private tangle,
@@ -29,25 +31,33 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
-
-	dataPath := path.Join(os.TempDir(), "wasp-cluster")
-
 	l1.StartPrivtangleIfNecessary(t.Logf)
 
-	clusterConfig := cluster.NewConfig(
-		cluster.DefaultWaspConfig(),
-		l1.Config,
-	)
+	dirname := "wasp-cluster"
+	var modifyNodesConfig templates.ModifyNodesConfigFn
 
-	var modifyNodesConfig cluster.ModifyNodesConfigFn
+	waspConfig := cluster.DefaultWaspConfig()
+
 	if len(opt) > 0 {
-		clusterConfig.Wasp.NumNodes = opt[0].nNodes
+		if opt[0].dirName != "" {
+			dirname = opt[0].dirName
+		}
+		if opt[0].nNodes != 0 {
+			waspConfig.NumNodes = opt[0].nNodes
+		}
 		modifyNodesConfig = opt[0].modifyConfig
 	}
 
-	clu := cluster.New(t.Name(), clusterConfig, t)
+	clusterConfig := cluster.NewConfig(
+		waspConfig,
+		l1.Config,
+		modifyNodesConfig,
+	)
 
-	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)
+	dataPath := path.Join(os.TempDir(), dirname)
+	clu := cluster.New(t.Name(), clusterConfig, dataPath, t)
+
+	err := clu.InitDataPath(".", true)
 	require.NoError(t, err)
 
 	err = clu.Start(dataPath)
