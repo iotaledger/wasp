@@ -31,7 +31,7 @@ func TestDeployContract(t *testing.T) {
 	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
 	require.NoError(t, ctxb.Err)
 	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.NewSoloAgent()))
-	wasm, err := os.ReadFile("../go/pkg/corecontracts_go.wasm")
+	wasm, err := os.ReadFile("./testdata/testdata.wasm")
 	require.NoError(t, err)
 	fblob.Params.ProgBinary().SetValue(wasm)
 	fblob.Params.VmType().SetValue("wasmtime")
