@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 )
@@ -55,10 +55,10 @@ func parseCall(input []byte) (*abi.Method, []interface{}) {
 }
 
 type iscContract struct {
-	ctx iscp.Sandbox
+	ctx isc.Sandbox
 }
 
-func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
+func newISCContract(ctx isc.Sandbox) vm.ISCContract {
 	return &iscContract{ctx}
 }
 
@@ -142,8 +142,8 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		callRet := c.ctx.Call(
-			iscp.Hname(callArgs.ContractHname),
-			iscp.Hname(callArgs.EntryPoint),
+			isc.Hname(callArgs.ContractHname),
+			isc.Hname(callArgs.EntryPoint),
 			callArgs.Params.Unwrap(),
 			callArgs.Allowance.Unwrap(),
 		)
@@ -178,10 +178,10 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 }
 
 type iscContractView struct {
-	ctx iscp.SandboxView
+	ctx isc.SandboxView
 }
 
-func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
+func newISCContractView(ctx isc.SandboxView) vm.ISCContract {
 	return &iscContractView{ctx}
 }
 
@@ -207,8 +207,8 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		err := method.Inputs.Copy(&callViewArgs, args)
 		c.ctx.RequireNoError(err)
 		callRet := c.ctx.CallView(
-			iscp.Hname(callViewArgs.ContractHname),
-			iscp.Hname(callViewArgs.EntryPoint),
+			isc.Hname(callViewArgs.ContractHname),
+			isc.Hname(callViewArgs.EntryPoint),
 			callViewArgs.Params.Unwrap(),
 		)
 		outs = []interface{}{isccontract.WrapISCDict(callRet)}
@@ -225,14 +225,14 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 // TODO evm param is not used, can it be removed?
 
 //nolint:unparam
-func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
+func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
 
 	switch method.Name {
 	case "hn":
-		outs = []interface{}{iscp.Hn(args[0].(string))}
+		outs = []interface{}{isc.Hn(args[0].(string))}
 
 	case "hasParam":
 		outs = []interface{}{ctx.Params().MustHas(kv.Key(args[0].(string)))}

@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
-	var chainID *iscp.ChainID
+	var chainID *isc.ChainID
 	var originTxID iotago.TransactionID
 
 	initTest := func() {

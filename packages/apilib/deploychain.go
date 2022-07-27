@@ -12,7 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -38,7 +38,7 @@ type CreateChainParams struct {
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, error) {
+func DeployChainWithDKG(par CreateChainParams) (*isc.ChainID, iotago.Address, error) {
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
 	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
@@ -58,7 +58,7 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, iotago.Address, e
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*iscp.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -130,7 +130,7 @@ func CreateChainOrigin(
 	stateController iotago.Address,
 	governanceController iotago.Address,
 	dscr string, initParams dict.Dict,
-) (*iscp.ChainID, *iotago.Transaction, error) {
+) (*isc.ChainID, *iotago.Transaction, error) {
 	originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
@@ -187,7 +187,7 @@ func CreateChainOrigin(
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts []string, chainID *iscp.ChainID) error {
+func ActivateChainOnAccessNodes(apiHosts []string, chainID *isc.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(&registry.ChainRecord{

@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -32,7 +32,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   iotago.Address
 
-	ChainID *iscp.ChainID
+	ChainID *isc.ChainID
 
 	Cluster *Cluster
 }
@@ -62,8 +62,8 @@ func (ch *Chain) OriginatorAddress() iotago.Address {
 	return addr
 }
 
-func (ch *Chain) OriginatorID() iscp.AgentID {
-	ret := iscp.NewAgentID(ch.OriginatorAddress())
+func (ch *Chain) OriginatorID() isc.AgentID {
+	ret := isc.NewAgentID(ch.OriginatorAddress())
 	return ret
 }
 
@@ -84,7 +84,7 @@ func (ch *Chain) Client(sigScheme *cryptolib.KeyPair, nodeIndex ...int) *chaincl
 	)
 }
 
-func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *cryptolib.KeyPair, nodeIndex ...int) *scclient.SCClient {
+func (ch *Chain) SCClient(contractHname isc.Hname, sigScheme *cryptolib.KeyPair, nodeIndex ...int) *scclient.SCClient {
 	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
@@ -231,7 +231,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	return ret, nil
 }
 
-func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
+func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[isc.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(root.ViewGetContractRecords.Name, nil)
 	if err != nil {
@@ -240,7 +240,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.StateVarContractRegistry))
 }
 
-func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
+func (ch *Chain) GetCounterValue(inccounterSCHname isc.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
 	ret, err := cl.CallView(inccounter.ViewGetCounter.Name, nil)
 	if err != nil {
@@ -249,12 +249,12 @@ func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int)
 	return codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 }
 
-func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeIndex ...int) ([]byte, error) {
+func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex ...int) ([]byte, error) {
 	cl := ch.SCClient(contractHname, nil, nodeIndex...)
 	return cl.StateGet(key)
 }
 
-func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*iscp.Receipt, error) {
+func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*isc.Receipt, error) {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]

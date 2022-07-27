@@ -5,7 +5,7 @@ package wasmsolo
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -16,7 +16,7 @@ type SoloAgent struct {
 	Cvt     wasmhost.WasmConvertor
 	Env     *solo.Solo
 	Pair    *cryptolib.KeyPair
-	agentID iscp.AgentID
+	agentID isc.AgentID
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
@@ -24,7 +24,7 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 	return &SoloAgent{
 		Env:     env,
 		Pair:    pair,
-		agentID: iscp.NewAgentID(address),
+		agentID: isc.NewAgentID(address),
 	}
 }
 
@@ -32,12 +32,12 @@ func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
 	return a.Cvt.ScAgentID(a.agentID)
 }
 
-func (a *SoloAgent) AgentID() iscp.AgentID {
+func (a *SoloAgent) AgentID() isc.AgentID {
 	return a.agentID
 }
 
 func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
-	address, _ := iscp.AddressFromAgentID(a.agentID)
+	address, _ := isc.AddressFromAgentID(a.agentID)
 	if address == nil {
 		require.Fail(a.Env.T, "agent is not a L1 address")
 	}

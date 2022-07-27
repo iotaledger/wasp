@@ -6,8 +6,8 @@ import (
 
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/snapshot"
 	"github.com/iotaledger/wasp/packages/state"
@@ -26,7 +26,7 @@ func main() {
 	param := os.Args[2]
 	switch cmd {
 	case "-create", "--create":
-		chainID, err := iscp.ChainIDFromString(param)
+		chainID, err := isc.ChainIDFromString(param)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
 			os.Exit(1)
@@ -137,7 +137,7 @@ func verify(prop *snapshot.FileProperties) {
 	c := state.RootCommitment(st.TrieNodeStore())
 	fmt.Printf("root commitment is %s\n", c)
 
-	var chainID *iscp.ChainID
+	var chainID *isc.ChainID
 	err = panicutil.CatchPanic(func() {
 		chainID = st.ChainID()
 	})
@@ -199,7 +199,7 @@ func verify(prop *snapshot.FileProperties) {
 	fmt.Printf("success: file %s match the database\n", prop.FileName)
 }
 
-func createSnapshot(chainID *iscp.ChainID) {
+func createSnapshot(chainID *isc.ChainID) {
 	dbDir := chainID.String()
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		fmt.Printf("directory %s does not exists\n", dbDir)

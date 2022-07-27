@@ -6,7 +6,7 @@ package statemgr
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -69,19 +69,19 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	sm.log.Debugw("handleBlockMsg: adding block from peer ",
 		"sender", msg.SenderPubKey.String(),
 		"block index", block.BlockIndex(),
-		"approving output", iscp.OID(block.ApprovingOutputID()),
+		"approving output", isc.OID(block.ApprovingOutputID()),
 	)
 	if sm.addBlockFromPeer(block) {
 		sm.takeAction()
 	}
 }
 
-func (sm *stateManager) EnqueueAliasOutput(output *iscp.AliasOutputWithID) {
+func (sm *stateManager) EnqueueAliasOutput(output *isc.AliasOutputWithID) {
 	sm.eventAliasOutputPipe.In() <- output
 }
 
-func (sm *stateManager) handleAliasOutput(output *iscp.AliasOutputWithID) {
-	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", iscp.OID(output.ID()), output.GetStateIndex())
+func (sm *stateManager) handleAliasOutput(output *isc.AliasOutputWithID) {
+	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", isc.OID(output.ID()), output.GetStateIndex())
 	sm.stateManagerMetrics.LastSeenStateIndex(output.GetStateIndex())
 	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {

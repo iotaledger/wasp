@@ -3,7 +3,7 @@
 package blocklog
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")

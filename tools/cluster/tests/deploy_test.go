@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -34,7 +34,7 @@ func TestDeployChain(t *testing.T) {
 	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, iscp.NewAgentID(chain.OriginatorAddress()))
+	require.EqualValues(t, chainOwnerID, isc.NewAgentID(chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
@@ -65,7 +65,7 @@ func TestDeployContractOnly(t *testing.T) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
-			root.ParamHname: iscp.Hn(nativeIncCounterSCName).Bytes(),
+			root.ParamHname: isc.Hn(nativeIncCounterSCName).Bytes(),
 		})
 	require.NoError(t, err)
 	recb, err := ret.Get(root.ParamContractRecData)
@@ -77,7 +77,7 @@ func TestDeployContractOnly(t *testing.T) {
 	{
 		txID, err := tx.ID()
 		require.NoError(t, err)
-		rec, err := chain.GetRequestReceipt(iscp.NewRequestID(txID, 0))
+		rec, err := chain.GetRequestReceipt(isc.NewRequestID(txID, 0))
 		require.NoError(t, err)
 		require.Nil(t, rec.Error)
 	}
@@ -93,11 +93,11 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	chEnv.deployNativeIncCounterSC()
 
-	hname := iscp.Hn(nativeIncCounterSCName)
+	hname := isc.Hn(nativeIncCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
-	hnameNew := iscp.Hn(nameNew)
+	hnameNew := isc.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,

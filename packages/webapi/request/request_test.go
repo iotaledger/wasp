@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -31,15 +31,15 @@ var _ chain.Chain = &mockedChain{}
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) ResolveError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+func (m *mockedChain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	panic("implement me")
 }
 
-func (m *mockedChain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
+func (m *mockedChain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	panic("implement me")
 }
 
-func (m *mockedChain) AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure) {
+func (m *mockedChain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
 	panic("implement me")
 }
 
@@ -92,7 +92,7 @@ func (*mockedChain) GetTimeData() time.Time {
 // private methods
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
-	return func(chainID *iscp.ChainID) chain.Chain {
+	return func(chainID *isc.ChainID) chain.Chain {
 		chainCore := testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t))
 		chainCore.OnOffLedgerRequest(func(msg *messages.OffLedgerRequestMsgIn) {
 			t.Logf("Offledger request %v received", msg)
@@ -101,17 +101,17 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.ChainCore, _ iscp.AgentID) (*iscp.FungibleTokens, error) {
-	return iscp.NewFungibleBaseTokens(100), nil
+func getAccountBalanceMocked(_ chain.ChainCore, _ isc.AgentID) (*isc.FungibleTokens, error) {
+	return isc.NewFungibleBaseTokens(100), nil
 }
 
 func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
-	return func(_ chain.ChainCore, _ iscp.RequestID) (bool, error) {
+	return func(_ chain.ChainCore, _ isc.RequestID) (bool, error) {
 		return ret, nil
 	}
 }
 
-func checkNonceMocked(ch chain.ChainCore, req iscp.OffLedgerRequest) error {
+func checkNonceMocked(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	return nil
 }
 
@@ -125,7 +125,7 @@ func newMockedAPI(t *testing.T) *offLedgerReqAPI {
 	}
 }
 
-func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID, body interface{}, expectedStatus int) {
+func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *isc.ChainID, body interface{}, expectedStatus int) {
 	testutil.CallWebAPIRequestHandler(
 		t,
 		instance.handleNewRequest,
@@ -142,14 +142,14 @@ func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID,
 
 func TestNewRequestBase64(t *testing.T) {
 	instance := newMockedAPI(t)
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := model.OffLedgerRequestBody{Request: model.NewBytes(util.DummyOffledgerRequest(chainID).Bytes())}
 	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
 
 func TestNewRequestBinary(t *testing.T) {
 	instance := newMockedAPI(t)
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := util.DummyOffledgerRequest(chainID).Bytes()
 	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
@@ -158,13 +158,13 @@ func TestRequestAlreadyProcessed(t *testing.T) {
 	instance := newMockedAPI(t)
 	instance.hasRequestBeenProcessed = hasRequestBeenProcessedMocked(true)
 
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := util.DummyOffledgerRequest(chainID).Bytes()
 	testRequest(t, instance, chainID, body, http.StatusBadRequest)
 }
 
 func TestWrongChainID(t *testing.T) {
 	instance := newMockedAPI(t)
-	body := util.DummyOffledgerRequest(iscp.RandomChainID()).Bytes()
-	testRequest(t, instance, iscp.RandomChainID(), body, http.StatusBadRequest)
+	body := util.DummyOffledgerRequest(isc.RandomChainID()).Bytes()
+	testRequest(t, instance, isc.RandomChainID(), body, http.StatusBadRequest)
 }

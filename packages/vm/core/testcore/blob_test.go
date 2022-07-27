@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -151,7 +151,7 @@ func TestBigBlob(t *testing.T) {
 
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 
-	unresolvedError := err.(*iscp.UnresolvedVMError)
+	unresolvedError := err.(*isc.UnresolvedVMError)
 	resolvedError := ch.ResolveVMError(unresolvedError)
 
 	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")

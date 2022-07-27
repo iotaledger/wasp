@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -29,12 +29,12 @@ import (
 
 type CallParams struct {
 	targetName string
-	target     iscp.Hname
+	target     isc.Hname
 	epName     string
-	entryPoint iscp.Hname
-	ftokens    *iscp.FungibleTokens // ignored off-ledger
-	nft        *iscp.NFT
-	allowance  *iscp.Allowance
+	entryPoint isc.Hname
+	ftokens    *isc.FungibleTokens // ignored off-ledger
+	nft        *isc.NFT
+	allowance  *isc.Allowance
 	gasBudget  uint64
 	nonce      uint64 // ignored for on-ledger
 	params     dict.Dict
@@ -54,13 +54,13 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 }
 
 func NewCallParamsFromDict(scName, funName string, par dict.Dict) *CallParams {
-	ret := NewCallParamsFromDictByHname(iscp.Hn(scName), iscp.Hn(funName), par)
+	ret := NewCallParamsFromDictByHname(isc.Hn(scName), isc.Hn(funName), par)
 	ret.targetName = scName
 	ret.epName = funName
 	return ret
 }
 
-func NewCallParamsFromDictByHname(hContract, hFunction iscp.Hname, par dict.Dict) *CallParams {
+func NewCallParamsFromDictByHname(hContract, hFunction isc.Hname, par dict.Dict) *CallParams {
 	ret := &CallParams{
 		target:     hContract,
 		entryPoint: hFunction,
@@ -72,12 +72,12 @@ func NewCallParamsFromDictByHname(hContract, hFunction iscp.Hname, par dict.Dict
 	return ret
 }
 
-func (r *CallParams) WithAllowance(allowance *iscp.Allowance) *CallParams {
+func (r *CallParams) WithAllowance(allowance *isc.Allowance) *CallParams {
 	r.allowance = allowance.Clone()
 	return r
 }
 
-func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
+func (r *CallParams) AddAllowance(allowance *isc.Allowance) *CallParams {
 	if r.allowance == nil {
 		r.allowance = allowance.Clone()
 	} else {
@@ -87,14 +87,14 @@ func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
 }
 
 func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
-	return r.AddAllowance(iscp.NewAllowance(amount, nil, nil))
+	return r.AddAllowance(isc.NewAllowance(amount, nil, nil))
 }
 
 func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
 	if r.allowance == nil {
-		r.allowance = iscp.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.FungibleTokens{
+	r.allowance.Assets.Add(&isc.FungibleTokens{
 		Tokens: tokens,
 	})
 	return r
@@ -102,9 +102,9 @@ func (r *CallParams) AddAllowanceNativeTokensVect(tokens ...*iotago.NativeToken)
 
 func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
 	if r.allowance == nil {
-		r.allowance = iscp.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAllowance()
 	}
-	r.allowance.Assets.Add(&iscp.FungibleTokens{
+	r.allowance.Assets.Add(&isc.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *id,
 			Amount: util.ToBigInt(amount),
@@ -114,18 +114,18 @@ func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount i
 }
 
 func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
-	return r.AddAllowance(iscp.NewAllowance(0, nil, nfts))
+	return r.AddAllowance(isc.NewAllowance(0, nil, nfts))
 }
 
-func (r *CallParams) WithFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
+func (r *CallParams) WithFungibleTokens(assets *isc.FungibleTokens) *CallParams {
 	if r.allowance == nil {
-		r.allowance = iscp.NewEmptyAllowance()
+		r.allowance = isc.NewEmptyAllowance()
 	}
 	r.ftokens = assets.Clone()
 	return r
 }
 
-func (r *CallParams) AddFungibleTokens(assets *iscp.FungibleTokens) *CallParams {
+func (r *CallParams) AddFungibleTokens(assets *isc.FungibleTokens) *CallParams {
 	if r.ftokens == nil {
 		r.ftokens = assets.Clone()
 	} else {
@@ -135,17 +135,17 @@ func (r *CallParams) AddFungibleTokens(assets *iscp.FungibleTokens) *CallParams 
 }
 
 func (r *CallParams) AddBaseTokens(amount uint64) *CallParams {
-	return r.AddFungibleTokens(iscp.NewFungibleTokens(amount, nil))
+	return r.AddFungibleTokens(isc.NewFungibleTokens(amount, nil))
 }
 
 func (r *CallParams) AddNativeTokensVect(tokens ...*iotago.NativeToken) *CallParams {
-	return r.AddFungibleTokens(&iscp.FungibleTokens{
+	return r.AddFungibleTokens(&isc.FungibleTokens{
 		Tokens: tokens,
 	})
 }
 
 func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
-	return r.AddFungibleTokens(&iscp.FungibleTokens{
+	return r.AddFungibleTokens(&isc.FungibleTokens{
 		Tokens: iotago.NativeTokens{&iotago.NativeToken{
 			ID:     *tokenID,
 			Amount: util.ToBigInt(amount),
@@ -154,7 +154,7 @@ func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount inter
 }
 
 // Adds an nft to be sent (only applicable when the call is made via on-ledger request)
-func (r *CallParams) WithNFT(nft *iscp.NFT) *CallParams {
+func (r *CallParams) WithNFT(nft *isc.NFT) *CallParams {
 	r.nft = nft
 	return r
 }
@@ -184,8 +184,8 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(chainID *iscp.ChainID, keyPair *cryptolib.KeyPair) iscp.OffLedgerRequest {
-	ret := iscp.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
+func (r *CallParams) NewRequestOffLedger(chainID *isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
+	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithGasBudget(r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
@@ -249,17 +249,17 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 		SenderAddress:    sender,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
-		Request: &iscp.RequestParameters{
+		Request: &isc.RequestParameters{
 			TargetAddress:  ch.ChainID.AsAddress(),
 			FungibleTokens: req.ftokens,
-			Metadata: &iscp.SendMetadata{
+			Metadata: &isc.SendMetadata{
 				TargetContract: req.target,
 				EntryPoint:     req.entryPoint,
 				Params:         req.params,
 				Allowance:      req.allowance,
 				GasBudget:      req.gasBudget,
 			},
-			Options: iscp.SendOptions{},
+			Options: isc.SendOptions{},
 		},
 		NFT:                          req.nft,
 		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
@@ -276,7 +276,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 
 // requestFromParams creates an on-ledger request without posting the transaction. It is intended
 // mainly for estimating gas.
-func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) (iscp.Request, error) {
+func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) (isc.Request, error) {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
@@ -284,7 +284,7 @@ func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) 
 	if err != nil {
 		return nil, err
 	}
-	reqs, err := iscp.RequestsInTransaction(tx)
+	reqs, err := isc.RequestsInTransaction(tx)
 	require.NoError(ch.Env.T, err)
 
 	for _, r := range reqs[*ch.ChainID] {
@@ -297,13 +297,13 @@ func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) 
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on the same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, iscp.RequestID, error) {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, isc.RequestID, error) {
 	ch.Env.ledgerMutex.Lock()
 	defer ch.Env.ledgerMutex.Unlock()
 
 	tx, err := ch.createRequestTx(req, keyPair)
 	if err != nil {
-		return nil, iscp.RequestID{}, err
+		return nil, isc.RequestID{}, err
 	}
 	err = ch.Env.AddToLedger(tx)
 	// once we created transaction successfully, it should be added to the ledger smoothly
@@ -311,7 +311,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 	txid, err := tx.ID()
 	require.NoError(ch.Env.T, err)
 
-	return tx, iscp.NewRequestID(txid, 0), nil
+	return tx, isc.NewRequestID(txid, 0), nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
@@ -365,7 +365,7 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	agentID := iscp.NewAgentID(keyPair.GetPublicKey().AsEd25519Address())
+	agentID := isc.NewAgentID(keyPair.GetPublicKey().AsEd25519Address())
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
@@ -462,7 +462,7 @@ func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptoli
 	return tx.Essence.Outputs[0].Deposit() - reqDeposit, nil
 }
 
-func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
+func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return ch.CallView(contractName, funcName, params)
 	})
@@ -476,10 +476,10 @@ func (ch *Chain) ResolveVMError(e *iscp.UnresolvedVMError) *iscp.VMError {
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.CallViewByHname(iscp.Hn(scName), iscp.Hn(funName), params...)
+	return ch.CallViewByHname(isc.Hn(scName), isc.Hn(funName), params...)
 }
 
-func (ch *Chain) CallViewByHname(hContract, hFunction iscp.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	if ch.bypassStardustVM {
 		return nil, xerrors.New("Solo: StardustVM context expected")
 	}
@@ -531,7 +531,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_bl
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname iscp.Hname, key []byte) *trie_blake2b.Proof {
+func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie_blake2b.Proof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
@@ -553,7 +553,7 @@ func (ch *Chain) GetRootCommitment() trie.VCommitment {
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
-func (ch *Chain) GetContractStateCommitment(hn iscp.Hname) ([]byte, error) {
+func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 	vmctx := viewcontext.New(ch)
 	ch.StateReader.SetBaseline()
 	return vmctx.GetContractStateCommitment(hn)

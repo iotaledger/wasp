@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -36,7 +36,7 @@ func setupBlobTest(t *testing.T) *ChainEnv {
 	require.NoError(t, err)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount)) {
+		isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount)) {
 		t.Fatal()
 	}
 	return chEnv

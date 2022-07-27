@@ -17,7 +17,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -540,7 +540,7 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
+	if err = util.WriteBytes16(w, isc.BytesFromAddress(m.sharedAddress)); err != nil {
 		return err
 	}
 	{ // Ed25519 part.
@@ -580,7 +580,7 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = isc.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
 	m.sharedAddress = sharedAddress

@@ -5,7 +5,7 @@ package wasmclient
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -114,6 +114,6 @@ func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
 }
 
 func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {
-	var utils iscp.Utils
+	var utils isc.Utils
 	return codec.EncodeHname(utils.Hashing().Hname(string(args)))
 }

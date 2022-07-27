@@ -3,7 +3,7 @@ package nodeconnmetrics
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type NodeConnectionMessageMetrics interface {
@@ -29,9 +29,9 @@ type NodeConnectionMessagesMetrics interface {
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
 	GetInMilestone() NodeConnectionMessageMetrics
-	SetRegistered(*iscp.ChainID)
-	SetUnregistered(*iscp.ChainID)
-	GetRegistered() []*iscp.ChainID
+	SetRegistered(*isc.ChainID)
+	SetUnregistered(*isc.ChainID)
+	GetRegistered() []*isc.ChainID
 	RegisterMetrics()
-	NewMessagesMetrics(*iscp.ChainID) NodeConnectionMessagesMetrics
+	NewMessagesMetrics(*isc.ChainID) NodeConnectionMessagesMetrics
 }

@@ -14,7 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
@@ -227,7 +227,7 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	const iotasToSend = 1 * iscp.Mi
+	const iotasToSend = 1 * isc.Mi
 	f.Func.TransferBaseTokens(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
@@ -262,7 +262,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	const iotasToSend = 1 * iscp.Mi
+	const iotasToSend = 1 * isc.Mi
 	f.Func.TransferBaseTokens(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
@@ -354,32 +354,32 @@ func TestWasmTypes(t *testing.T) {
 	nftBytes[0] = wasmtypes.ScAddressNFT
 	scNftAddress := wasmtypes.AddressFromBytes(nftBytes)
 	nftBytes[0] = byte(iotago.AddressNFT)
-	nftAddress, _, _ := iscp.AddressFromBytes(nftBytes)
+	nftAddress, _, _ := isc.AddressFromBytes(nftBytes)
 	checkAddress(t, ctx, scNftAddress, nftAddress)
 
 	// check agent id of alias address (hname zero)
 	scAgentID := wasmtypes.NewScAgentIDFromAddress(scAliasAddress)
-	agentID := iscp.NewAgentID(aliasAddress)
+	agentID := isc.NewAgentID(aliasAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of ed25519 address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scEd25519Address)
-	agentID = iscp.NewAgentID(ed25519Address)
+	agentID = isc.NewAgentID(ed25519Address)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of NFT address (hname zero)
 	scAgentID = wasmtypes.NewScAgentIDFromAddress(scNftAddress)
-	agentID = iscp.NewAgentID(nftAddress)
+	agentID = isc.NewAgentID(nftAddress)
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check agent id of contract (hname non-zero)
 	scAgentID = wasmtypes.NewScAgentID(scAliasAddress, testwasmlib.HScName)
-	agentID = iscp.NewContractAgentID(chainID, iscp.Hname(testwasmlib.HScName))
+	agentID = isc.NewContractAgentID(chainID, isc.Hname(testwasmlib.HScName))
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// check nil agent id
 	scAgentID = wasmtypes.ScAgentID{}
-	agentID = &iscp.NilAgentID{}
+	agentID = &isc.NilAgentID{}
 	checkAgentID(t, ctx, scAgentID, agentID)
 
 	// eth
@@ -465,7 +465,7 @@ func getTokenID(ctx *wasmsolo.SoloContext) (tokenID iotago.NativeTokenID, err er
 
 func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
 	agent := ctx.NewSoloAgent()
-	addr, ok := iscp.AddressFromAgentID(agent.AgentID())
+	addr, ok := isc.AddressFromAgentID(agent.AgentID())
 	if !ok {
 		return iotago.NFTID{}, fmt.Errorf("can't get address from AgentID")
 	}
@@ -493,7 +493,7 @@ func checkBigInt(t *testing.T, ctx *wasmsolo.SoloContext, scBigInt wasmtypes.ScB
 }
 
 //nolint:dupl
-func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID iscp.AgentID) {
+func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.ScAgentID, agentID isc.AgentID) {
 	agentBytes := agentID.Bytes()
 	agentString := agentID.String()
 
@@ -511,7 +511,7 @@ func checkAgentID(t *testing.T, ctx *wasmsolo.SoloContext, scAgentID wasmtypes.S
 }
 
 func checkAddress(t *testing.T, ctx *wasmsolo.SoloContext, scAddress wasmtypes.ScAddress, address iotago.Address) {
-	addressBytes := iscp.BytesFromAddress(address)
+	addressBytes := isc.BytesFromAddress(address)
 	addressString := address.Bech32(parameters.L1.Protocol.Bech32HRP)
 
 	require.EqualValues(t, scAddress.Bytes(), addressBytes)
@@ -580,7 +580,7 @@ func checkTokenID(t *testing.T, ctx *wasmsolo.SoloContext, scTokenID wasmtypes.S
 	require.NoError(t, ctx.Err)
 }
 
-func checkRequestID(t *testing.T, ctx *wasmsolo.SoloContext, scRequestID wasmtypes.ScRequestID, requestID iscp.RequestID) {
+func checkRequestID(t *testing.T, ctx *wasmsolo.SoloContext, scRequestID wasmtypes.ScRequestID, requestID isc.RequestID) {
 	requestIDBytes := requestID.Bytes()
 	requestIDString := requestID.String()
 

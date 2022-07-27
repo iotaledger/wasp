@@ -10,8 +10,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -29,8 +29,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
-// RunTheRequest processes each iscp.Request in the batch
-func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
+// RunTheRequest processes each isc.Request in the batch
+func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (result *vm.RequestResult, err error) {
 	// prepare context for the request
 	vmctx.req = req
 	defer func() { vmctx.req = nil }() // in case `getToBeCaller()` is called afterwards
@@ -94,7 +94,7 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		return
 	}
 	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req.(iscp.OnLedgerRequest))
+	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
 	if dustAdjustment > 0 {
 		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
 	}
@@ -189,10 +189,10 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	}
 	// Otherwise, the panic is wrapped into the returned error, including gas-related panic
 	switch err := r.(type) {
-	case *iscp.VMError:
-		return r.(*iscp.VMError)
-	case iscp.VMError:
-		e := r.(iscp.VMError)
+	case *isc.VMError:
+		return r.(*isc.VMError)
+	case isc.VMError:
+		e := r.(isc.VMError)
 		return &e
 	case *kv.DBError:
 		panic(err)
@@ -294,7 +294,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := iscp.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
+			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -351,8 +351,8 @@ func (vmctx *VMContext) chargeGasFee() {
 		return
 	}
 
-	transferToValidator := &iscp.FungibleTokens{}
-	transferToOwner := &iscp.FungibleTokens{}
+	transferToValidator := &isc.FungibleTokens{}
+	transferToOwner := &isc.FungibleTokens{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		transferToValidator.Tokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
@@ -370,7 +370,7 @@ func (vmctx *VMContext) chargeGasFee() {
 	vmctx.mustMoveBetweenAccounts(sender, vmctx.ChainID().CommonAccount(), transferToOwner, nil)
 }
 
-func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+func (vmctx *VMContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
 	ret = vmctx.findContractByHname(contractHname)
 	if ret == nil {
 		vmctx.GasBurn(gas.BurnCodeCallTargetNotFound)
@@ -379,7 +379,7 @@ func (vmctx *VMContext) GetContractRecord(contractHname iscp.Hname) (ret *root.C
 	return ret
 }
 
-func (vmctx *VMContext) getOrCreateContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+func (vmctx *VMContext) getOrCreateContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
 	if contractHname == root.Contract.Hname() && vmctx.isInitChainRequest() {
 		return root.ContractRecordFromContractInfo(root.Contract)
 	}
@@ -402,7 +402,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 		return false
 	}
 	target := vmctx.req.CallTarget()
-	return target.Contract == root.Contract.Hname() && target.EntryPoint == iscp.EntryPointInit
+	return target.Contract == root.Contract.Hname() && target.EntryPoint == isc.EntryPointInit
 }
 
 // mustCheckTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit

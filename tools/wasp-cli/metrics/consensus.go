@@ -5,7 +5,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -21,7 +21,7 @@ var consensusMetricsCmd = &cobra.Command{
 		client := config.WaspClient()
 		_, chainAddress, err := iotago.ParseBech32(chainAlias)
 		log.Check(err)
-		chid := iscp.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
+		chid := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
 		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
 		log.Check(err)
 		pipeMetrics, err := client.GetChainConsensusPipeMetrics(&chid)

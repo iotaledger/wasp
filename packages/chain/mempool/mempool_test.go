@@ -7,9 +7,9 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/rotate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -27,7 +27,7 @@ var chainAddress = tpkg.RandEd25519Address()
 
 func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
 	store := mapdb.NewMapDB()
-	vs, err := state.CreateOriginState(store, iscp.RandomChainID())
+	vs, err := state.CreateOriginState(store, isc.RandomChainID())
 	require.NoError(t, err)
 	ret := state.NewOptimisticStateReader(store, glb)
 	require.NoError(t, err)
@@ -36,15 +36,15 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 
 func now() time.Time { return time.Now() }
 
-func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestParameters)) []iscp.OnLedgerRequest {
-	result := make([]iscp.OnLedgerRequest, amount)
+func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
+	result := make([]isc.OnLedgerRequest, amount)
 	for i := range result {
-		requestParams := iscp.RequestParameters{
+		requestParams := isc.RequestParameters{
 			TargetAddress:  chainAddress,
 			FungibleTokens: nil,
-			Metadata: &iscp.SendMetadata{
-				TargetContract: iscp.Hn("dummyTargetContract"),
-				EntryPoint:     iscp.Hn("dummyEP"),
+			Metadata: &isc.SendMetadata{
+				TargetContract: isc.Hn("dummyTargetContract"),
+				EntryPoint:     isc.Hn("dummyEP"),
 				Params:         dict.New(),
 				Allowance:      nil,
 				GasBudget:      1000,
@@ -56,12 +56,12 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *iscp.RequestP
 		}
 		output := transaction.BasicOutputFromPostData(
 			tpkg.RandEd25519Address(),
-			iscp.Hn("dummySenderContract"),
+			isc.Hn("dummySenderContract"),
 			requestParams,
 		)
 		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
 		var err error
-		result[i], err = iscp.OnLedgerFromUTXO(output, outputID)
+		result[i], err = isc.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)
 	}
 	return result
@@ -86,7 +86,7 @@ func (m *MockMempoolMetrics) CountRequestOut() {
 	m.processedRequestCounter++
 }
 
-func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID iscp.RequestID, elapse time.Duration) {
+func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
 }
 
 func (m *MockMempoolMetrics) CountBlocksPerChain() {}
@@ -190,7 +190,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, log, mempoolMetrics)
 
-	offLedgerRequest := iscp.NewOffLedgerRequest(iscp.RandomChainID(), iscp.Hn("dummyContract"), iscp.Hn("dummyEP"), dict.New(), 0).
+	offLedgerRequest := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("dummyContract"), isc.Hn("dummyEP"), dict.New(), 0).
 		Sign(cryptolib.NewKeyPair())
 	require.EqualValues(t, 0, mempoolMetrics.offLedgerRequestCounter)
 	pool.ReceiveRequests(offLedgerRequest)
@@ -298,7 +298,7 @@ func TestTimeLock(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, testlogger.NewLogger(t), mempoolMetrics)
 	start := time.Now()
-	requests := getRequestsOnLedger(t, 6, func(i int, p *iscp.RequestParameters) {
+	requests := getRequestsOnLedger(t, 6, func(i int, p *isc.RequestParameters) {
 		switch i {
 		case 1:
 			p.Options.Timelock = start.Add(-2 * time.Hour)
@@ -398,24 +398,24 @@ func TestExpiration(t *testing.T) {
 	mempoolMetrics := new(MockMempoolMetrics)
 	pool := New(chainAddress, rdr, testlogger.NewLogger(t), mempoolMetrics)
 	start := time.Now()
-	requests := getRequestsOnLedger(t, 4, func(i int, p *iscp.RequestParameters) {
+	requests := getRequestsOnLedger(t, 4, func(i int, p *isc.RequestParameters) {
 		switch i {
 		case 1:
 			// expired
-			p.Options.Expiration = &iscp.Expiration{
-				Time:          start.Add(-iscp.RequestConsideredExpiredWindow),
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(-isc.RequestConsideredExpiredWindow),
 				ReturnAddress: chainAddress,
 			}
 		case 2:
 			// will expire soon
-			p.Options.Expiration = &iscp.Expiration{
-				Time:          start.Add(iscp.RequestConsideredExpiredWindow / 2),
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(isc.RequestConsideredExpiredWindow / 2),
 				ReturnAddress: chainAddress,
 			}
 		case 3:
 			// not expired yet
-			p.Options.Expiration = &iscp.Expiration{
-				Time:          start.Add(iscp.RequestConsideredExpiredWindow * 2),
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(isc.RequestConsideredExpiredWindow * 2),
 				ReturnAddress: chainAddress,
 			}
 		}
@@ -582,7 +582,7 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, len(ready) == 5)
 
 	kp, addr := testkey.GenKeyAddr()
-	rotateReq := rotate.NewRotateRequestOffLedger(iscp.RandomChainID(), addr, kp)
+	rotateReq := rotate.NewRotateRequestOffLedger(isc.RandomChainID(), addr, kp)
 	require.True(t, rotate.IsRotateStateControllerRequest(rotateReq))
 
 	pool.ReceiveRequest(rotateReq)

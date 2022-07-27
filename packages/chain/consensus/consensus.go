@@ -14,8 +14,8 @@ import (
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -34,7 +34,7 @@ type consensus struct {
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
-	stateOutput                      *iscp.AliasOutputWithID
+	stateOutput                      *isc.AliasOutputWithID
 	stateTimestamp                   time.Time
 	timeData                         time.Time
 	acsSessionID                     uint64
@@ -66,7 +66,7 @@ type consensus struct {
 	eventVMResultMsgPipe             pipe.Pipe
 	eventTimerMsgPipe                pipe.Pipe
 	assert                           *assert.Assert
-	missingRequestsFromBatch         map[iscp.RequestID][32]byte
+	missingRequestsFromBatch         map[isc.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
 	receivePeerMessagesAttachID      interface{}

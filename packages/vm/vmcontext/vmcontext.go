@@ -7,8 +7,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -31,10 +31,10 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID        iscp.AgentID
+	chainOwnerID        isc.AgentID
 	virtualState        state.VirtualStateAccess
 	finalStateTimestamp time.Time
-	blockContext        map[iscp.Hname]interface{}
+	blockContext        map[isc.Hname]interface{}
 	dustAssumptions     *transaction.StorageDepositAssumption
 	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
 	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
@@ -43,7 +43,7 @@ type VMContext struct {
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
-	req                iscp.Request
+	req                isc.Request
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
@@ -68,10 +68,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             iscp.AgentID    // calling agent
-	contract           iscp.Hname      // called contract
-	params             iscp.Params     // params passed
-	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             isc.AgentID    // calling agent
+	contract           isc.Hname      // called contract
+	params             isc.Params     // params passed
+	allowanceAvailable *isc.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 // CreateVMContext creates a context for the whole batch run
@@ -106,7 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		task:                task,
 		virtualState:        optimisticStateAccess,
 		finalStateTimestamp: finalStateTimestamp,
-		blockContext:        make(map[iscp.Hname]interface{}),
+		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
 		callStack:           make([]*callContext, 0),
 	}
@@ -328,7 +328,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *iscp.FungibleTokens
+	var totalL2Assets *isc.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})

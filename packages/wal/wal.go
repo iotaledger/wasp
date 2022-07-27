@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -25,7 +25,7 @@ type WAL struct {
 
 type chainWAL struct {
 	*WAL
-	chainID *iscp.ChainID
+	chainID *isc.ChainID
 	mu      sync.RWMutex
 }
 
@@ -40,7 +40,7 @@ type segment struct {
 	dir   string
 }
 
-func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
+func (w *WAL) NewChainWAL(chainID *isc.ChainID) (chain.WAL, error) {
 	if w == nil {
 		return &defaultWAL{}, nil
 	}

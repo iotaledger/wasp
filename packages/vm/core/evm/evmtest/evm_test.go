@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
@@ -119,7 +119,7 @@ func TestGasRatio(t *testing.T) {
 	newGasRatio := util.Ratio32{A: evmtypes.DefaultGasRatio.A * 10, B: evmtypes.DefaultGasRatio.B}
 	newUserWallet, _ := env.solo.NewKeyPairWithFunds()
 	err = env.setGasRatio(newGasRatio, iscCallOptions{wallet: newUserWallet})
-	require.True(t, iscp.VMErrorIs(err, vm.ErrUnauthorized))
+	require.True(t, isc.VMErrorIs(err, vm.ErrUnauthorized))
 	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
 
 	// current owner is able to set a new gasRatio
@@ -170,7 +170,7 @@ func TestLoop(t *testing.T) {
 		baseTokensSent := evmtypes.EVMGasToISC(gasLimit, &gasRatio)
 		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds(baseTokensSent)
 		require.EqualValues(t,
-			env.soloChain.L2BaseTokens(iscp.NewEthereumAddressAgentID(ethAddr2)),
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
 			baseTokensSent,
 		)
 		loop.loop(ethCallOptions{
@@ -179,7 +179,7 @@ func TestLoop(t *testing.T) {
 		})
 		// gas fee is charged regardless of result
 		require.Less(t,
-			env.soloChain.L2BaseTokens(iscp.NewEthereumAddressAgentID(ethAddr2)),
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
 			baseTokensSent,
 		)
 	}
@@ -351,7 +351,7 @@ func TestISCGetRequestID(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	reqID := new(iscp.RequestID)
+	reqID := new(isc.RequestID)
 	iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
 
 	require.EqualValues(t, env.soloChain.LastReceipt().Request.ID(), *reqID)
@@ -366,7 +366,7 @@ func TestISCGetCaller(t *testing.T) {
 	iscTest.callFnExpectEvent(nil, "GetCallerEvent", &agentID, "emitGetCaller")
 
 	senderAddress := crypto.PubkeyToAddress(iscTest.defaultSender.PublicKey)
-	require.True(t, agentID.MustUnwrap().Equals(iscp.NewEthereumAddressAgentID(senderAddress)))
+	require.True(t, agentID.MustUnwrap().Equals(isc.NewEthereumAddressAgentID(senderAddress)))
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -388,7 +388,7 @@ func TestISCGetAllowanceBaseTokens(t *testing.T) {
 	var baseTokens uint64
 	iscTest.callFnExpectEvent([]ethCallOptions{{
 		// TODO: allowance cannot be specified directly in EVM requests
-		// allowance: iscp.NewAllowanceBaseTokens(42),
+		// allowance: isc.NewAllowanceBaseTokens(42),
 	}}, "AllowanceBaseTokensEvent", &baseTokens, "emitAllowanceBaseTokens")
 
 	require.EqualValues(t, 0, baseTokens)
@@ -402,7 +402,7 @@ func TestISCGetAllowanceAvailableBaseTokens(t *testing.T) {
 	var baseTokensAvailable uint64
 	iscTest.callFnExpectEvent([]ethCallOptions{{
 		// TODO: allowance cannot be specified directly in EVM requests
-		// allowance: iscp.NewAllowanceBaseTokens(42),
+		// allowance: isc.NewAllowanceBaseTokens(42),
 	}}, "AllowanceAvailableBaseTokensEvent", &baseTokensAvailable, "emitAllowanceAvailableBaseTokens")
 
 	require.EqualValues(t, 0, baseTokensAvailable)
@@ -449,7 +449,7 @@ func TestSendAsNFT(t *testing.T) {
 		require.NoError(t, err)
 
 		// mint an NFT and send to chain
-		env.soloChain.MustDepositBaseTokensToL2(10*iscp.Mi, nil) // for gas
+		env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
 		issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 		metadata := []byte("foobar")
 		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -460,7 +460,7 @@ func TestSendAsNFT(t *testing.T) {
 				wallet: issuerWallet,
 				before: func(cp *solo.CallParams) {
 					cp.AddBaseTokens(100000).
-						WithNFT(&iscp.NFT{
+						WithNFT(&isc.NFT{
 							ID:       nftInfo.NFTID,
 							Issuer:   issuerAddress,
 							Metadata: metadata,
@@ -483,7 +483,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// mint some native tokens
-	env.soloChain.MustDepositBaseTokensToL2(10*iscp.Mi, nil) // for gas
+	env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
 	sn, tokenID, err := env.soloChain.NewFoundryParams(10000).
 		WithUser(env.soloChain.OriginatorPrivateKey).
 		CreateFoundry()
@@ -493,7 +493,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 
 	nt := new(isccontract.NativeToken)
 	iscTest.callFnExpectEvent([]ethCallOptions{{
-		// allowance: iscp.NewAllowanceFungibleTokens(iscp.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
+		// allowance: isc.NewAllowanceFungibleTokens(isc.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
 	}}, "AllowanceAvailableNativeTokenEvent", &nt, "emitAllowanceAvailableNativeTokens")
 
 	require.EqualValues(t, tokenID[:], nt.ID.Data)
@@ -509,7 +509,7 @@ func TestISCGetAllowanceNFTs(t *testing.T) {
 		iscTest := env.deployISCTestContract(ethKey)
 
 		// mint an NFT and send to chain
-		env.soloChain.MustDepositBaseTokensToL2(10*iscp.Mi, nil) // for gas
+		env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
 		issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 		metadata := []byte("foobar")
 		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -520,14 +520,14 @@ func TestISCGetAllowanceNFTs(t *testing.T) {
 			iota: iscCallOptions{
 				wallet: issuerWallet,
 				before: func(cp *solo.CallParams) {
-					cp.AddBaseTokens(1 * iscp.Mi).
-						WithNFT(&iscp.NFT{
+					cp.AddBaseTokens(1 * isc.Mi).
+						WithNFT(&isc.NFT{
 							ID:       nftInfo.NFTID,
 							Issuer:   issuerAddress,
 							Metadata: metadata,
 						}).
-						WithAllowance(&iscp.Allowance{
-							Assets: &iscp.FungibleTokens{BaseTokens: 1000},
+						WithAllowance(&isc.Allowance{
+							Assets: &isc.FungibleTokens{BaseTokens: 1000},
 							NFTs:   []iotago.NFTID{nftInfo.NFTID},
 						}).
 						WithGasBudget(1000000)
@@ -550,7 +550,7 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 		iscTest := env.deployISCTestContract(ethKey)
 
 		// mint an NFT and send to chain
-		env.soloChain.MustDepositBaseTokensToL2(10*iscp.Mi, nil) // for gas
+		env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
 		issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
 		metadata := []byte("foobar")
 		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
@@ -561,14 +561,14 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 			iota: iotaCallOptions{
 				wallet: issuerWallet,
 				before: func(cp *solo.CallParams) {
-					cp.AddBaseTokens(1 * iscp.Mi).
-						WithNFT(&iscp.NFT{
+					cp.AddBaseTokens(1 * isc.Mi).
+						WithNFT(&isc.NFT{
 							ID:       nftInfo.NFTID,
 							Issuer:   issuerAddress,
 							Metadata: metadata,
 						}).
-						WithAllowance(&iscp.Allowance{
-							Assets: &iscp.FungibleTokens{BaseTokens: 1000},
+						WithAllowance(&isc.Allowance{
+							Assets: &isc.FungibleTokens{BaseTokens: 1000},
 							NFTs:   []iotago.NFTID{nftInfo.NFTID},
 						}).
 						WithGasBudget(1000000)

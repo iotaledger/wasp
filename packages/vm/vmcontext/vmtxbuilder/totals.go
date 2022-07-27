@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -180,7 +180,7 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	}
 }
 
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.FungibleTokens, checkpoint string) {
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.FungibleTokens, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
 		panic(xerrors.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))

@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -35,7 +35,7 @@ type AnchorTransactionBuilder struct {
 	// anchorOutputID is the ID of the anchor output
 	anchorOutputID iotago.OutputID
 	// already consumed outputs, specified by entire Request. It is needed for checking validity
-	consumed []iscp.OnLedgerRequest
+	consumed []isc.OnLedgerRequest
 	// base tokens which are on-chain. It does not include dust deposits on anchor and on internal outputs
 	totalBaseTokensInL2Accounts uint64
 	// minimum dust deposit assumption for internal outputs. It is used as constants. Assumed real dust cost never grows
@@ -76,7 +76,7 @@ func NewAnchorTransactionBuilder(
 		loadTokenOutput:             tokenBalanceLoader,
 		loadFoundry:                 foundryLoader,
 		loadNFTOutput:               nftLoader,
-		consumed:                    make([]iscp.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
+		consumed:                    make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:               make([]iotago.Output, 0, iotago.MaxOutputsCount-1),
 		invokedFoundries:            make(map[uint32]*foundryInvoked),
@@ -93,7 +93,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		dustDepositAssumption:       txb.dustDepositAssumption,
 		loadTokenOutput:             txb.loadTokenOutput,
 		loadFoundry:                 txb.loadFoundry,
-		consumed:                    make([]iscp.OnLedgerRequest, 0, cap(txb.consumed)),
+		consumed:                    make([]isc.OnLedgerRequest, 0, cap(txb.consumed)),
 		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
 		postedOutputs:               make([]iotago.Output, 0, cap(txb.postedOutputs)),
 		invokedFoundries:            make(map[uint32]*foundryInvoked),
@@ -127,7 +127,7 @@ func (txb *AnchorTransactionBuilder) TotalBaseTokensInL2Accounts() uint64 {
 // Returns delta of base tokens needed to adjust the common account due to dust deposit requirement for internal UTXOs
 // NOTE: if call panics with ErrNotEnoughFundsForInternalDustDeposit, the state of the builder becomes inconsistent
 // It means, in the caller context it should be rolled back altogether
-func (txb *AnchorTransactionBuilder) Consume(req iscp.OnLedgerRequest) int64 {
+func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume IN")
 	}

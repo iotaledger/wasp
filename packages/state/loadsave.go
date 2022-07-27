@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -111,7 +111,7 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 
 // LoadSolidState establishes VirtualStateAccess interface with the solid state in DB.
 // Checks root commitment to chainID
-func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, bool, error) {
+func LoadSolidState(store kvstore.KVStore, chainID *isc.ChainID) (VirtualStateAccess, bool, error) {
 	// check the existence of terminalCommitment at key ''. chainID is expected
 	v, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeState))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
@@ -121,7 +121,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateA
 	if err != nil {
 		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}
-	chID, err := iscp.ChainIDFromBytes(v)
+	chID, err := isc.ChainIDFromBytes(v)
 	if err != nil {
 		return nil, false, fmt.Errorf("LoadSolidState: %v", err)
 	}

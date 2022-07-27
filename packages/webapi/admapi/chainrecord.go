@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -14,7 +14,7 @@ import (
 )
 
 func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider) {
-	rnd1 := iscp.RandomChainID()
+	rnd1 := isc.RandomChainID()
 	example := model.ChainRecord{
 		ChainID: model.NewChainID(rnd1),
 		Active:  false,
@@ -70,7 +70,7 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 }
 
 func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

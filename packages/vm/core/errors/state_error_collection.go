@@ -2,7 +2,7 @@ package errors
 
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func errorTemplateKey(contractID iscp.Hname) string {
+func errorTemplateKey(contractID isc.Hname) string {
 	return prefixErrorTemplateMap + string(contractID.Bytes())
 }
 
@@ -18,10 +18,10 @@ func errorTemplateKey(contractID iscp.Hname) string {
 // It requires a reference to a KVStore such as the vmctx and the hname of the caller.
 type StateErrorCollectionWriter struct {
 	partition kv.KVStore
-	hname     iscp.Hname
+	hname     isc.Hname
 }
 
-func NewStateErrorCollectionWriter(partition kv.KVStore, hname iscp.Hname) coreerrors.ErrorCollection {
+func NewStateErrorCollectionWriter(partition kv.KVStore, hname isc.Hname) coreerrors.ErrorCollection {
 	errorCollection := StateErrorCollectionWriter{
 		partition: partition,
 		hname:     hname,
@@ -34,7 +34,7 @@ func (e *StateErrorCollectionWriter) getErrorTemplateMap() *collections.Map {
 	return collections.NewMap(e.partition, errorTemplateKey(e.hname))
 }
 
-func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
+func (e *StateErrorCollectionWriter) Get(errorID uint16) (*isc.VMErrorTemplate, error) {
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
@@ -43,7 +43,7 @@ func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate,
 		return nil, err
 	}
 
-	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +51,11 @@ func (e *StateErrorCollectionWriter) Get(errorID uint16) (*iscp.VMErrorTemplate,
 	return template, nil
 }
 
-func (e *StateErrorCollectionWriter) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {
+func (e *StateErrorCollectionWriter) Register(messageFormat string) (*isc.VMErrorTemplate, error) {
 	errorMap := e.getErrorTemplateMap()
-	errorID := iscp.GetErrorIDFromMessageFormat(messageFormat)
+	errorID := isc.GetErrorIDFromMessageFormat(messageFormat)
 
-	if len(messageFormat) > iscp.VMErrorMessageLimit {
+	if len(messageFormat) > isc.VMErrorMessageLimit {
 		return nil, coreerrors.ErrErrorMessageTooLong
 	}
 
@@ -67,7 +67,7 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*iscp.VMErr
 		return nil, coreerrors.ErrErrorAlreadyRegistered.Create(errorID)
 	}
 
-	newError := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(e.hname, errorID), messageFormat)
+	newError := isc.NewVMErrorTemplate(isc.NewVMErrorCode(e.hname, errorID), messageFormat)
 
 	if err := errorMap.SetAt(mapKey, newError.Bytes()); err != nil {
 		return nil, err
@@ -80,14 +80,14 @@ func (e *StateErrorCollectionWriter) Register(messageFormat string) (*iscp.VMErr
 // It requires a reference to a KVStoreReader such as the vmctx and the hname of the caller.
 type StateErrorCollectionReader struct {
 	partition kv.KVStoreReader
-	hname     iscp.Hname
+	hname     isc.Hname
 }
 
 func (e *StateErrorCollectionReader) getErrorTemplateMap() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(e.partition, errorTemplateKey(e.hname))
 }
 
-func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname) coreerrors.ErrorCollection {
+func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname isc.Hname) coreerrors.ErrorCollection {
 	errorCollection := StateErrorCollectionReader{
 		partition: partition,
 		hname:     hname,
@@ -96,7 +96,7 @@ func NewStateErrorCollectionReader(partition kv.KVStoreReader, hname iscp.Hname)
 	return &errorCollection
 }
 
-func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate, error) {
+func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, error) {
 	errorMap := e.getErrorTemplateMap()
 	errorIDKey := codec.EncodeUint16(errorID)
 
@@ -105,7 +105,7 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate,
 		return nil, err
 	}
 
-	template, err := iscp.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
+	template, err := isc.VMErrorTemplateFromMarshalUtil(marshalutil.New(errorBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +113,6 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*iscp.VMErrorTemplate,
 	return template, nil
 }
 
-func (e *StateErrorCollectionReader) Register(messageFormat string) (*iscp.VMErrorTemplate, error) {
+func (e *StateErrorCollectionReader) Register(messageFormat string) (*isc.VMErrorTemplate, error) {
 	return nil, xerrors.Errorf("Registering in read only maps is unsupported")
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -55,7 +55,7 @@ func TestNanoPublisher(t *testing.T) {
 
 	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	reqTx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewFungibleBaseTokens(1_000_000),
+		Transfer: isc.NewFungibleBaseTokens(1_000_000),
 	})
 	require.NoError(t, err)
 
@@ -64,9 +64,9 @@ func TestNanoPublisher(t *testing.T) {
 
 	// send 100 requests
 	numRequests := 100
-	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
 
-	reqIDs := make([]iscp.RequestID, numRequests)
+	reqIDs := make([]isc.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		reqIDs[i] = req.ID()

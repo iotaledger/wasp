@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
@@ -20,7 +20,7 @@ const (
 	DefaultBaseTokenSupply = tpkg.TestTokenSupply
 
 	// FundsFromFaucetAmount is how many base tokens are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * iscp.Mi
+	FundsFromFaucetAmount = 1000 * isc.Mi
 )
 
 var (
@@ -352,7 +352,7 @@ func (u *UtxoDB) GetAddressBalanceBaseTokens(addr iotago.Address) uint64 {
 }
 
 // GetAddressBalances returns the total amount of base tokens and tokens owned by the address
-func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *isc.FungibleTokens {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -372,7 +372,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 			tokens[token.ID] = new(big.Int).Add(val, token.Amount)
 		}
 	}
-	return iscp.FungibleTokensFromNativeTokenSum(baseTokens, tokens)
+	return isc.FungibleTokensFromNativeTokenSum(baseTokens, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address
