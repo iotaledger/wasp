@@ -1,5 +1,5 @@
 #!/bin/bash
-cd..
+cd ..
 go install ../../tools/schema
 for dir in ./*; do
   if [ -d "$dir" ]; then
