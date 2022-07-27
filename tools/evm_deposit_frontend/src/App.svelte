@@ -3,22 +3,7 @@
   import { SendFundsTransaction } from './lib/send_funds_transaction';
 
   import { SvelteToast, toast } from '@zerodevx/svelte-toast'
-
-  const networkOptions = [
-    {
-      id: 0,
-      text: 'Shimmer Beta Network',
-      apiEndpoint: 'https://api.testnet.shimmer.network',
-      faucetEndpoint: 'https://faucet.testnet.shimmer.network',
-    },
-    {
-      id: 1,
-      text: 'Custom settings',
-      default: false,
-      apiEndpoint: 'http://localhost:14265',
-      faucetEndpoint: 'http://localhost:8091',
-    },
-  ];
+  import { networkOptions } from '../networks';
 
   const ChainIdLength: number = 63;
   const EVMAddressLength: number = 42;
@@ -42,6 +27,7 @@
       return;
     }
 
+    errorMessage = undefined;
     isSendingFunds = true;
 
     let wallet: IotaWallet = new IotaWallet(
@@ -96,12 +82,12 @@
   {#if selectedNetworkOption.id == 1}
     <div class="input_container">
       <span class="header">Hornet API endpoint</span>
-      <input type="text" bind:value={networkOptions[1].apiEndpoint} />
+      <input type="text" bind:value={selectedNetworkOption.apiEndpoint} />
     </div>
 
     <div class="input_container">
       <span class="header">Faucet API endpoint</span>
-      <input type="text" bind:value={networkOptions[1].faucetEndpoint} />
+      <input type="text" bind:value={selectedNetworkOption.faucetEndpoint} />
     </div>
   {/if}
 
@@ -143,6 +129,7 @@
     border: 2px solid #991c0d78;
     border-radius: 10px;
     padding: 15px;
+    max-width: 386px;
   }
 
   .error_title {
