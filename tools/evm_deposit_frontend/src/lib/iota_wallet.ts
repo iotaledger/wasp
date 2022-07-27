@@ -96,7 +96,7 @@ export class IotaWallet {
       await this.delay(2000);
     }
 
-    return null;
+    throw new Error("Failed to find faucet output");
   }
 
   private async getBalance(outputId: string): Promise<bigint> {
@@ -114,11 +114,6 @@ export class IotaWallet {
 
     await this.sendFaucetRequest(addressBech32);
     const output = await this.getFaucetRequestOutputID(addressBech32);
-
-    if (output == null) {
-      throw new Error("Failed to find faucet output");
-    }
-
     const balance = await this.getBalance(output.items[0])
 
     if (balance == 0n) {
