@@ -10,7 +10,8 @@ cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib ./node_modules
 # gascalibration
 for dir in ./gascalibration/*; do
   if [ -d "$dir" ]; then
-    cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib "$dir"/node_modules
+    mkdir -p "$dir"/ts/node_modules
+    cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib "$dir"/ts/node_modules
   fi
 done
 
