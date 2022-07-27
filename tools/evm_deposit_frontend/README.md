@@ -1,6 +1,6 @@
 # EVM Deposit Frontend
 
-A minimalistic frontend PoC which allows the user to fill up a specific EVM address on Wasp L2 chains.
+A minimalistic frontend PoC which allows the user to fill up a specific EVM address on Wasp L2 chains with funds.
 
 Funds will be requested from a faucet and be sent to the selected address.
 
