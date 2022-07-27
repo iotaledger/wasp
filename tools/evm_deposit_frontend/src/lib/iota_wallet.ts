@@ -1,6 +1,5 @@
-import { SENDER_FEATURE_TYPE, METADATA_FEATURE_TYPE, ADDRESS_UNLOCK_CONDITION_TYPE, BASIC_OUTPUT_TYPE, Bech32Helper, Ed25519Address, Ed25519Seed, ED25519_ADDRESS_TYPE, generateBip44Address, IndexerPluginClient, SingleNodeClient, TransactionHelper, type IAddress, type IBasicOutput, type IClient, type IKeyPair, type INodeInfo, type IOutputsResponse, type IUTXOInput, type ITransactionEssence, TRANSACTION_ESSENCE_TYPE, serializeTransactionEssence, type UnlockTypes, SIGNATURE_UNLOCK_TYPE, ED25519_SIGNATURE_TYPE, type ITransactionPayload, TRANSACTION_PAYLOAD_TYPE, type IBlock, DEFAULT_PROTOCOL_VERSION, ALIAS_ADDRESS_TYPE } from "@iota/iota.js";
-import { Converter, WriteStream } from "@iota/util.js";
-import { Bip32Path, Bip39, Blake2b, Ed25519 } from "@iota/crypto.js";
+import { Bech32Helper, Ed25519Address, Ed25519Seed, ED25519_ADDRESS_TYPE, generateBip44Address, IndexerPluginClient, SingleNodeClient, type IAddress, type IClient, type IKeyPair, type INodeInfo, type IOutputsResponse } from "@iota/iota.js";
+import { Bip32Path, Bip39 } from "@iota/crypto.js";
 
 export class IotaWallet {
   private faucetEndpointUrl: string;
@@ -63,7 +62,7 @@ export class IotaWallet {
   }
 
   private async getFaucetRequestOutputID(addressBech32: string): Promise<IOutputsResponse> {
-    const maxRetries: number = 10;
+    const maxRetries: number = 20;
 
     for (let i = 0; i < maxRetries; i++) {
       let output = await this.indexer.outputs({
@@ -78,7 +77,7 @@ export class IotaWallet {
         return output;
       }
 
-      await this.delay(1250);
+      await this.delay(2000);
     }
 
     return null;

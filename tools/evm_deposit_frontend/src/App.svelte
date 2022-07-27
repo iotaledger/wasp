@@ -2,6 +2,8 @@
   import { IotaWallet } from './lib/iota_wallet';
   import { SendFundsTransaction } from './lib/send_funds_transaction';
 
+  import { SvelteToast, toast } from '@zerodevx/svelte-toast'
+
   const networkOptions = [
     {
       id: 0,
@@ -18,6 +20,9 @@
     },
   ];
 
+  const ChainIdLength: number = 63;
+  const EVMAddressLength: number = 42;
+
   let selectedNetworkOption = networkOptions[0];
   let isSendingFunds: boolean;
   let errorMessage: string;
@@ -27,8 +32,8 @@
   let evmAddress: string = '';
 
   $: enableSendFunds =
-    chainId.length == 63 &&
-    evmAddress.length == 42 &&
+    chainId.length == ChainIdLength &&
+    evmAddress.length == EVMAddressLength &&
     selectedNetworkOption != null &&
     !isSendingFunds;
 
@@ -44,10 +49,20 @@
       selectedNetworkOption.faucetEndpoint
     );
 
-    try {
-      await wallet.initialize();
-      balance = await wallet.requestFunds();
+    let toastId: number;
 
+    try {
+      toastId = toast.push('Initializing wallet');
+      await wallet.initialize();
+      toast.pop(toastId)
+
+      toastId = toast.push('Requesting funds from the faucet', {
+        duration: 20*2000, // 20 retries, 2s delay each.
+      });
+      balance = await wallet.requestFunds();
+      toast.pop(toastId)
+
+      toastId = toast.push('Sending funds');
       const transaction = new SendFundsTransaction(wallet);
       await transaction.sendFundsToEVMAddress(
         evmAddress,
@@ -55,8 +70,11 @@
         balance,
         50000000n
       );
+      toast.pop(toastId);
     } catch (ex) {
       errorMessage = ex;
+      toast.pop(toastId);
+      toast.push(ex.message);
     }
 
     isSendingFunds = false;
@@ -118,7 +136,7 @@
     </button>
   </div>
 </main>
-
+<SvelteToast/>
 <style>
   .error {
     background-color: #9e534a47;
@@ -182,7 +200,7 @@
     color: rgba(255, 255, 255, 0.87);
     display: flex;
     flex-direction: column;
-    padding: 50px;
-    width: 800px;
+    padding: 15px;
+    min-width: 450px;
   }
 </style>

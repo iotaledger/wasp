@@ -1,8 +1,9 @@
 import type { IotaWallet } from './iota_wallet';
-import { SENDER_FEATURE_TYPE, METADATA_FEATURE_TYPE, ADDRESS_UNLOCK_CONDITION_TYPE, BASIC_OUTPUT_TYPE, Bech32Helper, Ed25519Address, Ed25519Seed, ED25519_ADDRESS_TYPE, generateBip44Address, IndexerPluginClient, SingleNodeClient, TransactionHelper, type IAddress, type IBasicOutput, type IClient, type IKeyPair, type INodeInfo, type IOutputsResponse, type IUTXOInput, type ITransactionEssence, TRANSACTION_ESSENCE_TYPE, serializeTransactionEssence, type UnlockTypes, SIGNATURE_UNLOCK_TYPE, ED25519_SIGNATURE_TYPE, type ITransactionPayload, TRANSACTION_PAYLOAD_TYPE, type IBlock, DEFAULT_PROTOCOL_VERSION, ALIAS_ADDRESS_TYPE } from "@iota/iota.js";
+import { SENDER_FEATURE_TYPE, METADATA_FEATURE_TYPE, ADDRESS_UNLOCK_CONDITION_TYPE, BASIC_OUTPUT_TYPE, Bech32Helper, ED25519_ADDRESS_TYPE, TransactionHelper, type IBasicOutput, type IUTXOInput, type ITransactionEssence, TRANSACTION_ESSENCE_TYPE, serializeTransactionEssence, type UnlockTypes, SIGNATURE_UNLOCK_TYPE, ED25519_SIGNATURE_TYPE, type ITransactionPayload, TRANSACTION_PAYLOAD_TYPE, type IBlock, DEFAULT_PROTOCOL_VERSION } from "@iota/iota.js";
 import { Converter, WriteStream } from "@iota/util.js";
-import { Bip32Path, Bip39, Blake2b, Ed25519 } from "@iota/crypto.js";
+import { Blake2b, Ed25519 } from "@iota/crypto.js";
 import { SimpleBufferCursor } from './simple_buffer_cursor';
+
 export class SendFundsTransaction {
   private wallet: IotaWallet;
 
@@ -10,7 +11,7 @@ export class SendFundsTransaction {
     this.wallet = client;
   }
 
-  private createSendFundsMetadata(evmAddress: string, amount: bigint, gas: bigint): Buffer {
+  private createSendFundsMetadata(evmAddress: string, amount: bigint, gas: bigint) {
     const metadata = new SimpleBufferCursor();
 
     /* Write contract meta data */
@@ -78,7 +79,9 @@ export class SendFundsTransaction {
     const basicOutput: IBasicOutput = {
       type: BASIC_OUTPUT_TYPE,
       amount: amount.toString(),
-      nativeTokens: [],
+      nativeTokens: [
+        // Add a list native tokens here
+      ],
       unlockConditions: [
         {
           type: ADDRESS_UNLOCK_CONDITION_TYPE,
