@@ -93,7 +93,7 @@ jobs:
            go install ./tools/schema
            cd contracts/wasm
            bash schema_all.sh
-           cd ..
+
       - name: golangci-lint in SC
         run: |
            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.47.2
