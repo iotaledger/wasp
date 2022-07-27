@@ -27,6 +27,8 @@ Smart contract calls are deterministic and synchronous, meaning that they always
 By extension, if a smart contract calls another smart contract, the resulting set of instructions is also deterministic and synchronous, meaning that for a request it makes no difference if a smart contract's entry point contains the whole set of instructions or if it is composed by multiple calls to different smart contracts of the chain.
 Being able to combine smart contracts in this way is called *synchronous composability*.
 
+---
+
 ## Requests
 
 A request contains a call to a smart contract and a signature of the sender (who is also the owner of the assets and funds that are going to be processed within the request).
@@ -48,12 +50,32 @@ If all necessary assets are in the chain already, it is possible to send a reque
 This way it is not necessary to wait for the Tangle to process the message, making the overall confirmation time much shorter.
 Due to the shorter delay, off-ledger requests are preferred over on-ledger requests, unless it is required to move assets between chains or Layer 1 accounts.
 
+---
+
+## Gas
+
+Gas is used to express the "cost" of running a request in a chain. Each operaton (arithmetics, write to disk, dispatch events, etc) has an associated gas cost.
+
+In order for users to specify how much they're willing to pay for a request, they need to specify a `GasBudget` in the request. This gas buget is the "maximum of operations that this request can execute", and will be charged as a fee based on the chain's current [Fee Policy](core_contracts/governance.md#fee-policy).
+
+The funds to cover the gas used will be charged directly from the user's on-chain account.
 
 ---
 
-Allowance
+## Allowance
 
+Any funds sent to the chain via (on-ledger) requests are credited to the sender's account.
 
----
+In order for contracts to use funds owned by the caller, the caller must specify an `Allowance` in the request. Contracts can then claim whatever funds are allowed by the caller.
 
-Gas
+The Allowance properly looks like the following:
+
+```go
+{
+  FungibleTokens: {
+    BaseToken: uint64
+    NativeTokens: [{TokenID, uint256}, ...]
+  }
+  NFTs: [NFTID,...]
+}
+```
