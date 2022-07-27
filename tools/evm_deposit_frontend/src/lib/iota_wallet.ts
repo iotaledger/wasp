@@ -1,5 +1,18 @@
-import { Bech32Helper, Ed25519Address, Ed25519Seed, ED25519_ADDRESS_TYPE, generateBip44Address, IndexerPluginClient, SingleNodeClient, type IAddress, type IClient, type IKeyPair, type INodeInfo, type IOutputsResponse } from "@iota/iota.js";
 import { Bip32Path, Bip39 } from "@iota/crypto.js";
+import {
+  Bech32Helper,
+  Ed25519Address,
+  Ed25519Seed,
+  ED25519_ADDRESS_TYPE,
+  generateBip44Address,
+  IndexerPluginClient,
+  SingleNodeClient,
+  type IAddress,
+  type IClient,
+  type IKeyPair,
+  type INodeInfo,
+  type IOutputsResponse
+} from "@iota/iota.js";
 
 export class IotaWallet {
   private faucetEndpointUrl: string;
