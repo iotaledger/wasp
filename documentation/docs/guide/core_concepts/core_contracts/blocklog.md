@@ -1,5 +1,5 @@
 ---
-description: The `blocklog` contract is to keep track of the blocks of requests that were processed by the chain. It also provides views to get request status, receipts, block information, or events.
+description: The `blocklog` contract keeps track of the blocks of requests that were processed by the chain.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - core contracts
@@ -15,52 +15,7 @@ keywords:
 
 The `blocklog` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts chain.
 
-The function of the `blocklog` contract is to keep track of the blocks of
-requests that were processed by the chain.
-
-It provides views to get request status or receipts, block information, or events (per request / block / smart contract).
-
----
-
-## Block Information
-
-```go
- BlockIndex                uint32
- Timestamp                 Time
- TotalRequests             uint16
- NumSuccessfulRequests     uint16
- NumOffLedgerRequests      uint16
- PreviousL1Commitment      Hash
- L1Commitment              Hash     
- AnchorTransactionID       TransactionID  
- TransactionSubEssenceHash Hash
- TotalIotasInL2Accounts    uint64
- TotalDustDeposit          uint64
- GasBurned                 uint64
- GasFeeCharged             uint64
-```
-
----
-
-## Request Receipt
-
-```go
- Request       ISC Request
- Error         Unresolved VM Error 
- GasBudget     uint64                  
- GasBurned     uint64                  
- GasFeeCharged uint64                  
- BlockIndex   uint32       
- RequestIndex uint16       
-```
-
-:::note
-Errors on receipts queried directly from blocklog are not humanly readable.
-
-Those errors need to be translated using // TODO add link
-:::
-
----
+The purpose of the `blocklog` contract is to keep track of the blocks of requests that were processed by the chain, providing views to get request status, receipts, block and event details.
 
 ## Entry Points
 
@@ -74,38 +29,154 @@ processing to the chain.
 
 ## Views
 
-### - `getBlockInfo(n BlockIndex)`
+### `getBlockInfo(n uint32)`
 
-Returns information about the block with index `n`. If `n` is not provided, it defaults to the current (latest) block.
+Returns information about the block with index `n`.
 
-### - `getRequestIDsForBlock(n BlockIndex)`
+Parameters:
+
+- `n` (optional `uint32`): The block index. Default: the latest block.
+
+Returns:
+
+- `n`: (`uint32`) The block index
+- `i`: ([`BlockInfo`](#blockinfo)) The information about the block
+
+### `getRequestIDsForBlock(n uint32)`
 
 Returns a list with the IDs of all requests in the block with block index `n`.
 
-### - `getRequestReceipt(u RequestID)`
+Parameters:
 
-Returns the receipt for a request with ID `u`.
+- `n` (optional `uint32`) The block index. Default: the latest block.
 
-### - `getRequestReceiptsForBlock(n BlockIndex)`
+Returns:
 
-Returns all the receipt for the block with index `n`.
+- `u` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of [`RequestID`](#requestid))
 
-### - `isRequestProcessed(u RequestID)`
+### `getRequestReceipt(u RequestID)`
 
-Returns whether a request with ID `u` has been processed.
+Returns the receipt for the request with the given ID.
 
-### - `getEventsForRequest(u RequestID)`
+Parameters:
 
-Returns a list of events for a request with ID `u`.
+- `u` ([`RequestID`](#requestid)) The request ID
 
-### - `getEventsForBlock(n blockIndex)`
+Returns:
 
-Returns a list of events for a block with index `n`.
+- `d` ([`RequestReceipt`](#requestreceipt)) The request receipt
+- `n` (`uint32`) The block index
+- `r` (`uint16`) The request index
 
-### - `getEventsForContract(h Hname)`
+### `getRequestReceiptsForBlock(n uint32)`
 
-Returns a list of events for a smart contract with hname `h`.
+Returns all the receipts in the block with index `n`.
+
+Parameters:
+
+- `n` (optional `uint32`) The block index. Default: the latest block.
+
+Returns:
+
+- `d` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of [`RequestReceipt`](#requestreceipt))
+
+### `isRequestProcessed(u RequestID)`
+
+Returns whether the request with ID `u` has been processed.
+
+Parameters:
+
+- `u` ([`RequestID`](#requestid)) The request ID
+
+Returns:
+
+- `p` (`bool`) Whether the request was processed or not.
+
+### `getEventsForRequest(u RequestID)`
+
+Returns the list of events triggered during the execution of the request with ID `u`.
+
+Parameters:
+
+- `u` ([`RequestID`](#requestid)) The request ID
+
+Returns:
+
+- `e` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of `[]byte`)
+
+### `getEventsForBlock(n blockIndex)`
+
+Returns the list of events triggered during the execution of all requests in the block with index `n`.
+
+Parameters:
+
+- `n` (optional `uint32`) The block index. Default: the latest block.
+
+Returns:
+
+- `e` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of `[]byte`)
+
+### `getEventsForContract(h Hname)`
+
+Returns a list of events triggered by the smart contract with hname `h`.
+
+Parameters:
+
+- `h` (`hname`) The smart contract hname.
+- `f` (optional `uint32` - default: `0`) "From" block index
+- `t` (optional `uint32` - default: `MaxUint32`) "To" block index
+
+Returns:
+
+- `e` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of `[]byte`)
 
 ### `controlAddresses()`
 
-Returns the current "State Controller", "Governing Address" and at what BlockIndex those were set.
+Returns the current state controller and governing addresses, and at what block index they were set.
+
+Returns:
+
+- `s`: ([`iotago::Address`](https://github.com/iotaledger/iota.go/blob/develop/address.go)) The state controller address
+- `g`: ([`iotago::Address`](https://github.com/iotaledger/iota.go/blob/develop/address.go)) The governing address
+- `n`: (`uint32`) The block index where the specified addresses were set
+
+---
+
+## Schemas
+
+### `RequestID`
+
+A `RequestID` is encoded as the concatenation of:
+
+- Transaction ID (`[32]byte`)
+- Transaction output index (`uint16`)
+
+### `BlockInfo`
+
+`BlockInfo` is encoded as the concatenation of:
+
+- The block timestamp (`uint64` UNIX nanoseconds)
+- Amount of requests in the block (`uint16`)
+- Amount of successful requests (`uint16`)
+- Amount of off-ledger requests (`uint16`)
+- Anchor transaction ID ([`iotago::TransactionID`](https://github.com/iotaledger/iota.go/blob/develop/transaction.go))
+- Anchor transaction sub-essence hash (`[32]byte`)
+- Previous L1 commitment (except for block index 0)
+  - State commitment (`trie::VCommitment`)
+  - Block hash (`[20]byte`)
+- Total iotas in L2 accounts (`uint64`)
+- Total storage deposit (`uint64`)
+- Gas burned (`uint64`)
+- Gas fee charged (`uint64`)
+
+### `RequestReceipt`
+
+`RequestReceipt` is encoded as the concatenation of:
+
+- Gas budget (`uint64`)
+- Gas burned (`uint64`)
+- Gas fee charged (`uint64`)
+- The request (`iscp::Request`)
+- Whether the request produced an error (`bool`)
+- If the request produced an error, the
+  [`UnresolvedVMError`](./errors.md#unresolvedvmerror)

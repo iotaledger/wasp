@@ -28,7 +28,7 @@ Address: iota1pr7vescn4nqc9lpvv37unzryqc43vw5wuf2zx8tlq2wud0369hjjugg54mf
 	NFT 0x94cd51b79d9608ed6e38780d48e9fc8c295b893077739b28ce591c45b33dec44
 ```
 
-In this example, the address owns some base tokens (IOTA), 100 units of a native token with foundry ID `0x08fc...`, and an NFT with ID `0x94cd...`.
+In this example, the address owns some base tokens (IOTA), 100 units of a native token with ID `0x08fc...`, and an NFT with ID `0x94cd...`.
 
 You can find more information about the ledger in the [Multi-Asset Ledger TIP](https://github.com/lzpap/tips/blob/master/tips/TIP-0018/tip-0018.md).
 
