@@ -53,7 +53,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 
 	require.NoError(t, err)
 
-	chain.MustDepositIotasToL2(10_000_000, nil)
+	chain.MustDepositBaseTokensToL2(10_000_000, nil)
 	defer chain.Log().Sync()
 
 	chain.CheckChain()
@@ -66,7 +66,7 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true})
 	chain, _, _ := env.NewChainExt(nil, 1, "chain1")
 
-	chain.MustDepositIotasToL2(1, nil)
+	chain.MustDepositBaseTokensToL2(1, nil)
 	defer chain.Log().Sync()
 	chain.CheckChain()
 

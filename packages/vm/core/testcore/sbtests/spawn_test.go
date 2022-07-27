@@ -14,7 +14,7 @@ func TestSpawn(t *testing.T) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, false)
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSpawn.Name,
 		sbtestsc.ParamProgHash, sbtestsc.Contract.ProgramHash).

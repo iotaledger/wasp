@@ -67,7 +67,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	// test chain balance command
 	out = w.Run("chain", "balance", agentID)
 	// check that the chain balance of owner is > 0
-	r := regexp.MustCompile(`(?m)iota\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
+	r := regexp.MustCompile(`(?m)base tokens\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
 	require.Len(t, r, 2)
 	bal, err := strconv.ParseInt(r[1], 10, 64)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 func checkBalance(t *testing.T, out []string, expected int) {
 	amount := 0
 	for _, line := range out {
-		r := regexp.MustCompile(`(?m)iota\s+(\d+)`).FindStringSubmatch(line)
+		r := regexp.MustCompile(`(?m)base tokens\s+(\d+)`).FindStringSubmatch(line)
 		if r != nil {
 			var err error
 			amount, err = strconv.Atoi(r[1])
@@ -122,7 +122,7 @@ func TestWaspCLISendFunds(t *testing.T) {
 
 	_, alternativeAddress := getAddress(t, w.Run("address", "--address-index=1"))
 
-	w.Run("send-funds", alternativeAddress, "iota:1000000")
+	w.Run("send-funds", alternativeAddress, "base:1000000")
 	checkBalance(t, w.Run("balance", "--address-index=1"), 1000000)
 }
 
@@ -133,13 +133,13 @@ func TestWaspCLIDeposit(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	t.Run("deposit to own account", func(t *testing.T) {
-		w.Run("chain", "deposit", "iota:1000000")
+		w.Run("chain", "deposit", "base:1000000")
 		checkBalance(t, w.Run("chain", "balance"), 1000000)
 	})
 
 	t.Run("deposit to ethereum account", func(t *testing.T) {
 		_, eth := newEthereumAccount()
-		w.Run("chain", "deposit", eth.String(), "iota:1000000")
+		w.Run("chain", "deposit", eth.String(), "base:1000000")
 		checkBalance(t, w.Run("chain", "balance", eth.String()), 1000000)
 	})
 }
@@ -151,7 +151,7 @@ func TestWaspCLIContract(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
-	w.Run("chain", "deposit", "iota:10000000")
+	w.Run("chain", "deposit", "base:10000000")
 
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
@@ -187,7 +187,7 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(43)
 
 	// include a funds transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10000000")
+	w.Run("chain", "post-request", name, "increment", "--transfer=base:10000000")
 	checkCounter(44)
 
 	// test off-ledger request
@@ -195,7 +195,7 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(45)
 
 	// include an allowance transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=iota:10000000", "--allowance=iota:10000000")
+	w.Run("chain", "post-request", name, "increment", "--transfer=base:10000000", "--allowance=base:10000000")
 	checkCounter(46)
 }
 
@@ -216,7 +216,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
-	out := w.Run("chain", "deposit", "iota:100")
+	out := w.Run("chain", "deposit", "base:100")
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
@@ -280,7 +280,7 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// for running off-ledger requests
-	w.Run("chain", "deposit", "iota:10")
+	w.Run("chain", "deposit", "base:10")
 
 	// test chain list-blobs command
 	out := w.Run("chain", "list-blobs")

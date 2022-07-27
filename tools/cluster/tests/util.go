@@ -85,8 +85,8 @@ func (e *ChainEnv) getBalanceOnChain(agentID iscp.AgentID, assetID []byte, nodeI
 	actual, err := iscp.FungibleTokensFromDict(ret)
 	require.NoError(e.t, err)
 
-	if bytes.Equal(assetID, iscp.IotaTokenID) {
-		return actual.Iotas
+	if bytes.Equal(assetID, iscp.BaseTokenID) {
+		return actual.BaseTokens
 	}
 
 	tokenSet, err := actual.Tokens.Set()
@@ -238,7 +238,7 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 
 func (e *ChainEnv) accountExists(agentID iscp.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex) > 0
+		return e.getBalanceOnChain(agentID, iscp.BaseTokenID, nodeIndex) > 0
 	}
 }
 
@@ -252,11 +252,11 @@ func (e *ChainEnv) contractIsDeployed() conditionFn {
 	}
 }
 
-func (e *ChainEnv) balanceOnChainIotaEquals(agentID iscp.AgentID, iotas uint64) conditionFn {
+func (e *ChainEnv) balanceOnChainBaseTokensEquals(agentID iscp.AgentID, expected uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex)
-		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)
-		return iotas == have
+		have := e.getBalanceOnChain(agentID, iscp.BaseTokenID, nodeIndex)
+		e.t.Logf("chainEnv::balanceOnChainBaseTokensEquals: node=%v, have=%v, expected=%v", nodeIndex, have, expected)
+		return expected == have
 	}
 }
 

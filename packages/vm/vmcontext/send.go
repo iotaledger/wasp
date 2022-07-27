@@ -49,12 +49,12 @@ func (vmctx *VMContext) sendOutput(o iotago.Output) {
 	assets := iscp.FungibleTokensFromOutput(o)
 
 	vmctx.assertConsistentL2WithL1TxBuilder("sandbox.Send: begin")
-	// this call cannot panic due to not enough iotas for dust because
+	// this call cannot panic due to not enough base tokens for dust because
 	// it does not change total balance of the transaction, and it does not create new internal outputs
 	// The call can destroy internal output when all native tokens of particular ID are moved outside chain
 	// The caller will receive all the dust deposit
-	iotaAdjustmentL2 := vmctx.txbuilder.AddOutput(o)
-	vmctx.adjustL2IotasIfNeeded(iotaAdjustmentL2, vmctx.AccountID())
+	baseTokenAdjustmentL2 := vmctx.txbuilder.AddOutput(o)
+	vmctx.adjustL2BaseTokensIfNeeded(baseTokenAdjustmentL2, vmctx.AccountID())
 	// debit the assets from the on-chain account
 	// It panics with accounts.ErrNotEnoughFunds if sender's account balances are exceeded
 	vmctx.debitFromAccount(vmctx.AccountID(), assets)

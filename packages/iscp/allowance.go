@@ -20,15 +20,15 @@ func NewEmptyAllowance() *Allowance {
 	}
 }
 
-func NewAllowance(iotas uint64, tokens iotago.NativeTokens, nfts []iotago.NFTID) *Allowance {
+func NewAllowance(baseTokens uint64, tokens iotago.NativeTokens, nfts []iotago.NFTID) *Allowance {
 	return &Allowance{
-		Assets: NewFungibleTokens(iotas, tokens),
+		Assets: NewFungibleTokens(baseTokens, tokens),
 		NFTs:   nfts,
 	}
 }
 
-func NewAllowanceIotas(iotas uint64) *Allowance {
-	return NewAllowance(iotas, nil, nil)
+func NewAllowanceBaseTokens(baseTokens uint64) *Allowance {
+	return NewAllowance(baseTokens, nil, nil)
 }
 
 func NewAllowanceFungibleTokens(ftokens *FungibleTokens) *Allowance {
@@ -143,8 +143,8 @@ func (a *Allowance) Add(b *Allowance) *Allowance {
 	return a
 }
 
-func (a *Allowance) AddIotas(amount uint64) *Allowance {
-	a.Assets.Iotas += amount
+func (a *Allowance) AddBaseTokens(amount uint64) *Allowance {
+	a.Assets.BaseTokens += amount
 	return a
 }
 

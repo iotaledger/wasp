@@ -71,5 +71,5 @@ const (
 	BlockKeepAmountDefault = BlockKeepAll
 )
 
-// Gas is charged in iotas, not ETH
+// Gas is charged in isc VM (L1 currencies), not ETH
 var GasPrice = big.NewInt(0)

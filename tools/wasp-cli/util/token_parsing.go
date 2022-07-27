@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-const IotaTokenStr = "iota"
+const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
 	ret, err := hex.DecodeString(s)
@@ -22,12 +22,12 @@ func ParseFungibleTokens(args []string) *iscp.FungibleTokens {
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
-			log.Fatalf("fungible tokens syntax: <token-id>:<amount> <token-id:amount>... -- Example: iota:100")
+			log.Fatalf("fungible tokens syntax: <token-id>:<amount> <token-id:amount>... -- Example: base:100")
 		}
-		// In the past we would indicate iotas as 'IOTA:nnn'
+		// In the past we would indicate base tokens as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
 		// backward compatible for now and allow both
-		if strings.ToLower(parts[0]) == IotaTokenStr {
+		if strings.ToLower(parts[0]) == BaseTokenStr {
 			parts[0] = ""
 		}
 		tokenIDBytes := TokenIDFromString(parts[0])
@@ -37,8 +37,8 @@ func ParseFungibleTokens(args []string) *iscp.FungibleTokens {
 			log.Fatalf("error parsing token amount")
 		}
 
-		if iscp.IsIota(tokenIDBytes) {
-			tokens.AddIotas(amount.Uint64())
+		if iscp.IsBaseToken(tokenIDBytes) {
+			tokens.AddBaseTokens(amount.Uint64())
 			continue
 		}
 

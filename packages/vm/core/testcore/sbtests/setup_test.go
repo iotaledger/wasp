@@ -43,21 +43,21 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
-	err := chain.SendFromL1ToL2AccountIotas(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
+	err := chain.SendFromL1ToL2AccountBaseTokens(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
 }
 
 func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iscp.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
-	err := ch.DepositIotasToL2(10_000, user)
+	err := ch.DepositBaseTokensToL2(10_000, user)
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr)).WithGasBudget(100_000)
-	_, err = ch.PostRequestSync(req.AddIotas(1), nil)
+	_, err = ch.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 	return user, iscp.NewAgentID(userAddr)
 }

@@ -11,7 +11,7 @@ import (
 
 var Contract = coreutil.NewContract("micropay", "Micro payment PoC smart contract")
 
-const MinimumWarrantIotas = 500
+const MinimumWarrantBaseTokens = 500
 
 var (
 	FuncPublicKey      = coreutil.Func("publicKey")

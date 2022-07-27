@@ -38,20 +38,20 @@ var Processor = Contract.Processor(initialize,
 
 func initialize(ctx iscp.Sandbox) dict.Dict {
 	// validating and storing dust deposit assumption constants
-	iotasOnAnchor := ctx.StateAnchor().Deposit
+	baseTokensOnAnchor := ctx.StateAnchor().Deposit
 	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
 	dustDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(dustAssumptionsBin)
 	// checking if assumptions are consistent
-	ctx.Requiref(err == nil && iotasOnAnchor >= dustDepositAssumptions.AnchorOutput,
+	ctx.Requiref(err == nil && baseTokensOnAnchor >= dustDepositAssumptions.AnchorOutput,
 		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
 	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
 
-	// initial load with iotas from origin anchor output exceeding minimum dust deposit assumption
-	initialLoadIotas := iscp.NewFungibleTokens(iotasOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
-	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadIotas)
+	// initial load with base tokens from origin anchor output exceeding minimum dust deposit assumption
+	initialLoadBaseTokens := iscp.NewFungibleTokens(baseTokensOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadBaseTokens)
 	return nil
 }
 
@@ -124,7 +124,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 	if callerContract != nil && callerContract.Hname() != 0 {
 		// deduct the deposit fee from the allowance, so that there are enough tokens to pay for the deposit on the target chain
 		allowance := iscp.NewAllowanceFungibleTokens(
-			iscp.NewTokensIotas(fundsToWithdraw.Iotas - ConstDepositFeeTmp),
+			iscp.NewFungibleBaseTokens(fundsToWithdraw.BaseTokens - ConstDepositFeeTmp),
 		)
 		// send funds to a contract on another chain
 		tx := iscp.RequestParameters{
@@ -162,7 +162,7 @@ func withdraw(ctx iscp.Sandbox) dict.Dict {
 
 // harvest moves all the L2 balances of chain commmon account to chain owner's account
 // Params:
-//   ParamForceMinimumIotas: specify the number of IOTAs left on the common account will be not less than MinimumIotasOnCommonAccount constant
+//   ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
 // TODO refactor owner of the chain moves all tokens balance the common account to its own account
 func harvest(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
@@ -177,12 +177,12 @@ func harvest(ctx iscp.Sandbox) dict.Dict {
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
 	toWithdraw := GetAccountAssets(state, commonAccount)
-	if toWithdraw.Iotas <= bottomBaseTokens {
+	if toWithdraw.BaseTokens <= bottomBaseTokens {
 		// below minimum, nothing to withdraw
 		return nil
 	}
-	ctx.Requiref(toWithdraw.Iotas > bottomBaseTokens, "assertion failed: toWithdraw.Iotas > availableBaseTokens")
-	toWithdraw.Iotas -= bottomBaseTokens
+	ctx.Requiref(toWithdraw.BaseTokens > bottomBaseTokens, "assertion failed: toWithdraw.BaseTokens > availableBaseTokens")
+	toWithdraw.BaseTokens -= bottomBaseTokens
 	MustMoveBetweenAccounts(state, commonAccount, ctx.Caller(), toWithdraw, nil)
 	return nil
 }
@@ -202,7 +202,7 @@ func foundryCreateNew(ctx iscp.Sandbox) dict.Dict {
 	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
 	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
 	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
-	debitIotasFromAllowance(ctx, dustConsumed)
+	debitBaseTokensFromAllowance(ctx, dustConsumed)
 
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
@@ -229,7 +229,7 @@ func foundryDestroy(ctx iscp.Sandbox) dict.Dict {
 	DeleteFoundryOutput(ctx.State(), sn)
 	// the dust deposit goes to the caller's account
 	CreditToAccount(ctx.State(), ctx.Caller(), &iscp.FungibleTokens{
-		Iotas: dustDepositReleased,
+		BaseTokens: dustDepositReleased,
 	})
 	return nil
 }
@@ -274,14 +274,14 @@ func foundryModifySupply(ctx iscp.Sandbox) dict.Dict {
 		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
-	// adjust iotas on L2 due to the possible change in dust deposit
+	// adjust base tokens on L2 due to the possible change in dust deposit
 	switch {
 	case dustAdjustment < 0:
 		// dust deposit is taken from the allowance of the caller
-		debitIotasFromAllowance(ctx, uint64(-dustAdjustment))
+		debitBaseTokensFromAllowance(ctx, uint64(-dustAdjustment))
 	case dustAdjustment > 0:
 		// dust deposit is returned to the caller account
-		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewTokensIotas(uint64(dustAdjustment)))
+		CreditToAccount(ctx.State(), ctx.Caller(), iscp.NewFungibleBaseTokens(uint64(dustAdjustment)))
 	}
 	return nil
 }

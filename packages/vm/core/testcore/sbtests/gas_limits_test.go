@@ -17,10 +17,10 @@ import (
 
 func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.KeyPair) {
 	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(seedIndex))
-	iotasToSend := ch.Env.L1Iotas(address)
+	baseTokensToSend := ch.Env.L1BaseTokens(address)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
-		AddIotas(iotasToSend).
+		AddBaseTokens(baseTokensToSend).
 		WithGasBudget(math.MaxUint64)
 	return req, wallet
 }

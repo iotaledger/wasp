@@ -149,8 +149,8 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer:  iscp.NewTokensIotas(10 * iscp.Mi),
-		Allowance: iscp.NewAllowanceIotas(9 * iscp.Mi),
+		Transfer:  iscp.NewFungibleBaseTokens(10 * iscp.Mi),
+		Allowance: iscp.NewAllowanceBaseTokens(9 * iscp.Mi),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -174,21 +174,21 @@ func TestPost5Requests(t *testing.T) {
 	myAgentID := iscp.NewAgentID(myAddress)
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	e.checkBalanceOnChain(myAgentID, iscp.BaseTokenID, 0)
 	onChainBalance := uint64(0)
 	for i := 0; i < 5; i++ {
-		iotasSent := 1 * iscp.Mi
+		baseTokesSent := 1 * iscp.Mi
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+			Transfer: iscp.NewFungibleTokens(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += iotasSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, iscp.BaseTokenID, onChainBalance)
 
 	e.checkLedger()
 }
@@ -207,10 +207,10 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	tx := [5]*iotago.Transaction{}
 	onChainBalance := uint64(0)
-	iotasSent := 1 * iscp.Mi
+	baseTokesSent := 1 * iscp.Mi
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+			Transfer: iscp.NewFungibleTokens(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 	}
@@ -218,14 +218,14 @@ func TestPost5AsyncRequests(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += iotasSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, iscp.BaseTokenID, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5*iotasSent)) {
+		iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 	e.checkLedger()

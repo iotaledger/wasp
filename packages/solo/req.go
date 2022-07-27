@@ -86,7 +86,7 @@ func (r *CallParams) AddAllowance(allowance *iscp.Allowance) *CallParams {
 	return r
 }
 
-func (r *CallParams) AddAllowanceIotas(amount uint64) *CallParams {
+func (r *CallParams) AddAllowanceBaseTokens(amount uint64) *CallParams {
 	return r.AddAllowance(iscp.NewAllowance(amount, nil, nil))
 }
 
@@ -134,7 +134,7 @@ func (r *CallParams) AddFungibleTokens(assets *iscp.FungibleTokens) *CallParams 
 	return r
 }
 
-func (r *CallParams) AddIotas(amount uint64) *CallParams {
+func (r *CallParams) AddBaseTokens(amount uint64) *CallParams {
 	return r.AddFungibleTokens(iscp.NewFungibleTokens(amount, nil))
 }
 
@@ -232,9 +232,9 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	if keyPair == nil {
 		keyPair = ch.OriginatorPrivateKey
 	}
-	L1Iotas := ch.Env.L1Iotas(keyPair.Address())
-	if L1Iotas == 0 {
-		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any iotas on L1")
+	L1BaseTokens := ch.Env.L1BaseTokens(keyPair.Address())
+	if L1BaseTokens == 0 {
+		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any base tokens on L1")
 	}
 	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
@@ -369,12 +369,12 @@ func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptol
 	policy := ch.GetGasFeePolicy()
 	available := uint64(0)
 	if policy.GasFeeTokenID == nil {
-		available = ch.L2Iotas(agentID)
+		available = ch.L2BaseTokens(agentID)
 		if req.ftokens != nil {
-			available += req.ftokens.Iotas
+			available += req.ftokens.BaseTokens
 		}
 		if req.allowance != nil {
-			available -= req.allowance.Assets.Iotas
+			available -= req.allowance.Assets.BaseTokens
 		}
 	} else {
 		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
@@ -413,7 +413,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 
 // EstimateGasOnLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// if useFakeBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair, useFakeBudget ...bool) (gas, gasFee uint64, err error) {
 	if len(useFakeBudget) > 0 && useFakeBudget[0] {
@@ -431,7 +431,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
 // any changes in the ledger. It returns the amount of gas consumed.
-// if useFakeBalance is `true` the request will be executed as if the sender had enough iotas to cover the maximum gas allowed
+// if useFakeBalance is `true` the request will be executed as if the sender had enough base tokens to cover the maximum gas allowed
 // WARNING: Gas estimation is just an "estimate", there is no guarantees that the real call will bear the same cost, due to the turing-completeness of smart contracts
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair, useMaxBalance ...bool) (gas, gasFee uint64, err error) {
 	if len(useMaxBalance) > 0 && useMaxBalance[0] {
@@ -446,13 +446,13 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
 }
 
-// EstimateNeededStorageDeposit estimates the amount of iotas that will be
+// EstimateNeededStorageDeposit estimates the amount of base tokens that will be
 // needed to add to the request (if any) in order to cover for the storage
 // deposit.
 func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptolib.KeyPair) (uint64, error) {
 	reqDeposit := uint64(0)
 	if req.ftokens != nil {
-		reqDeposit = req.ftokens.Iotas
+		reqDeposit = req.ftokens.BaseTokens
 	}
 	tx, err := ch.createRequestTx(req, keyPair)
 	if err != nil {

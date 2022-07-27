@@ -77,7 +77,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(iscp.RequestParameters{
 		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             iscp.NewFungibleTokens(allowance.Assets.Iotas, nil),
+		FungibleTokens:             iscp.NewFungibleTokens(allowance.Assets.BaseTokens, nil),
 		AdjustToMinimumDustDeposit: true,
 		Metadata: &iscp.SendMetadata{
 			TargetContract: ctx.Contract(),
@@ -126,7 +126,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncAndRepeatMany.Hname(),
 			GasBudget:      math.MaxUint64,
-			Allowance:      iscp.NewAllowanceIotas(1000),
+			Allowance:      iscp.NewAllowanceBaseTokens(1000),
 		},
 		Options: iscp.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),

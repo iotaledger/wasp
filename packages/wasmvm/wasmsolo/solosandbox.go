@@ -109,15 +109,15 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		allowance = transfer
 	}
 	req.WithAllowance(allowance)
-	// Force a minimum transfer of 1Mi iotas for dust and some gas
+	// Force a minimum transfer of 1Million bas tokens for dust and some gas
 	// excess can always be reclaimed from the chain account by the user
-	// This also removes the silly requirement to transfer 1 iota
+	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = iscp.NewAllowanceIotas(1 * iscp.Mi)
+		transfer = iscp.NewAllowanceBaseTokens(1 * iscp.Mi)
 	}
-	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1*iscp.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*iscp.Mi {
 		transfer = transfer.Clone()
-		transfer.Assets.Iotas = 1 * iscp.Mi
+		transfer.Assets.BaseTokens = 1 * iscp.Mi
 	}
 	req.AddFungibleTokens(transfer.Assets)
 	if len(transfer.NFTs) != 0 {

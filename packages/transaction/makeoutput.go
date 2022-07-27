@@ -7,7 +7,7 @@ import (
 )
 
 // BasicOutputFromPostData creates extended output object from parameters.
-// It automatically adjusts amount of iotas required for the dust deposit
+// It automatically adjusts amount of base tokens required for the dust deposit
 func BasicOutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract iscp.Hname,
@@ -39,7 +39,7 @@ func BasicOutputFromPostData(
 
 // MakeBasicOutput creates new output from input parameters.
 // Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
-// If auto adjustment to dust is disabled and not enough iotas, returns an error
+// If auto adjustment to dust is disabled and not enough base tokens, returns an error
 func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
@@ -52,7 +52,7 @@ func MakeBasicOutput(
 		assets = &iscp.FungibleTokens{}
 	}
 	out := &iotago.BasicOutput{
-		Amount:       assets.Iotas,
+		Amount:       assets.BaseTokens,
 		NativeTokens: assets.Tokens,
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: targetAddress},
@@ -134,7 +134,7 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTO
 
 func AssetsFromOutput(o iotago.Output) *iscp.FungibleTokens {
 	return &iscp.FungibleTokens{
-		Iotas:  o.Deposit(),
-		Tokens: o.NativeTokenList(),
+		BaseTokens: o.Deposit(),
+		Tokens:     o.NativeTokenList(),
 	}
 }

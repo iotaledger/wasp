@@ -193,8 +193,8 @@ func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostR
 	return par
 }
 
-func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
-	par.Transfer.AddIotas(i)
+func (par *PostRequestParams) WithBaseTokens(i uint64) *PostRequestParams {
+	par.Transfer.AddBaseTokens(i)
 	return par
 }
 

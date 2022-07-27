@@ -17,11 +17,11 @@ import (
 
 // FungibleTokens is used as assets in the UTXO and as tokens in transfer
 type FungibleTokens struct {
-	Iotas  uint64
-	Tokens iotago.NativeTokens
+	BaseTokens uint64
+	Tokens     iotago.NativeTokens
 }
 
-var IotaTokenID = []byte{}
+var BaseTokenID = []byte{}
 
 func NewEmptyAssets() *FungibleTokens {
 	return &FungibleTokens{
@@ -29,20 +29,20 @@ func NewEmptyAssets() *FungibleTokens {
 	}
 }
 
-func NewFungibleTokens(iotas uint64, tokens iotago.NativeTokens) *FungibleTokens {
+func NewFungibleTokens(baseTokens uint64, tokens iotago.NativeTokens) *FungibleTokens {
 	return &FungibleTokens{
-		Iotas:  iotas,
-		Tokens: tokens,
+		BaseTokens: baseTokens,
+		Tokens:     tokens,
 	}
 }
 
-func NewTokensIotas(amount uint64) *FungibleTokens {
-	return &FungibleTokens{Iotas: amount}
+func NewFungibleBaseTokens(amount uint64) *FungibleTokens {
+	return &FungibleTokens{BaseTokens: amount}
 }
 
 func NewFungibleTokensForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *FungibleTokens {
 	if p.GasFeeTokenID == nil {
-		return NewTokensIotas(feeAmount)
+		return NewFungibleBaseTokens(feeAmount)
 	}
 	return NewEmptyAssets().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
 }
@@ -50,8 +50,8 @@ func NewFungibleTokensForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Fungible
 func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 	ret := NewEmptyAssets()
 	for key, val := range d {
-		if IsIota([]byte(key)) {
-			ret.Iotas = new(big.Int).SetBytes(d.MustGet(kv.Key(IotaTokenID))).Uint64()
+		if IsBaseToken([]byte(key)) {
+			ret.BaseTokens = new(big.Int).SetBytes(d.MustGet(kv.Key(BaseTokenID))).Uint64()
 			continue
 		}
 		id, err := NativeTokenIDFromBytes([]byte(key))
@@ -67,9 +67,9 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 	return ret, nil
 }
 
-func FungibleTokensFromNativeTokenSum(iotas uint64, tokens iotago.NativeTokenSum) *FungibleTokens {
+func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *FungibleTokens {
 	ret := NewEmptyAssets()
-	ret.Iotas = iotas
+	ret.BaseTokens = baseTokens
 	for id, val := range tokens {
 		ret.Tokens = append(ret.Tokens, &iotago.NativeToken{
 			ID:     id,
@@ -89,8 +89,8 @@ func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Fungib
 
 func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
 	ret := &FungibleTokens{
-		Iotas:  o.Deposit(),
-		Tokens: o.NativeTokenList().Clone(),
+		BaseTokens: o.Deposit(),
+		Tokens:     o.NativeTokenList().Clone(),
 	}
 	return ret
 }
@@ -117,8 +117,8 @@ func (a *FungibleTokens) Clone() *FungibleTokens {
 		return nil
 	}
 	return &FungibleTokens{
-		Iotas:  a.Iotas,
-		Tokens: a.Tokens.Clone(),
+		BaseTokens: a.BaseTokens,
+		Tokens:     a.Tokens.Clone(),
 	}
 }
 
@@ -132,7 +132,7 @@ func (a *FungibleTokens) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.I
 }
 
 func (a *FungibleTokens) String() string {
-	ret := fmt.Sprintf("iotas: %d, tokens (%d):", a.Iotas, len(a.Tokens))
+	ret := fmt.Sprintf("base tokens: %d, tokens (%d):", a.BaseTokens, len(a.Tokens))
 	for _, nt := range a.Tokens {
 		ret += fmt.Sprintf("\n       %s: %d", nt.ID.String(), nt.Amount)
 	}
@@ -146,7 +146,7 @@ func (a *FungibleTokens) Bytes() []byte {
 }
 
 func (a *FungibleTokens) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
-	mu.WriteUint64(a.Iotas)
+	mu.WriteUint64(a.BaseTokens)
 	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
 		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
 	}).Serialize()
@@ -162,7 +162,7 @@ func FungibleTokensFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FungibleTokens
 		Tokens: make(iotago.NativeTokens, 0),
 	}
 	var err error
-	if ret.Iotas, err = mu.ReadUint64(); err != nil {
+	if ret.BaseTokens, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
 	tokenBytesLength, err := mu.ReadUint16()
@@ -190,7 +190,7 @@ func (a *FungibleTokens) Equals(b *FungibleTokens) bool {
 	if a == nil || b == nil {
 		return false
 	}
-	if a.Iotas != b.Iotas {
+	if a.BaseTokens != b.BaseTokens {
 		return false
 	}
 	if len(a.Tokens) != len(b.Tokens) {
@@ -216,11 +216,11 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 		return true
 	}
 	if a.Equals(toSpend) {
-		a.Iotas = 0
+		a.BaseTokens = 0
 		a.Tokens = nil
 		return true
 	}
-	if a.Iotas < toSpend.Iotas {
+	if a.BaseTokens < toSpend.BaseTokens {
 		return false
 	}
 	targetSet := a.Tokens.Clone().MustSet()
@@ -233,7 +233,7 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 		curr.Amount.Sub(curr.Amount, nt.Amount)
 	}
 	// budget is enough
-	a.Iotas -= toSpend.Iotas
+	a.BaseTokens -= toSpend.BaseTokens
 	a.Tokens = a.Tokens[:0]
 	for _, nt := range targetSet {
 		if util.IsZeroBigInt(nt.Amount) {
@@ -245,7 +245,7 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 }
 
 func (a *FungibleTokens) Add(b *FungibleTokens) *FungibleTokens {
-	a.Iotas += b.Iotas
+	a.BaseTokens += b.BaseTokens
 	resultTokens := a.Tokens.MustSet()
 	for _, token := range b.Tokens {
 		if resultTokens[token.ID] != nil {
@@ -262,11 +262,11 @@ func (a *FungibleTokens) Add(b *FungibleTokens) *FungibleTokens {
 }
 
 func (a *FungibleTokens) IsEmpty() bool {
-	return a == nil || a.Iotas == 0 && len(a.Tokens) == 0
+	return a == nil || a.BaseTokens == 0 && len(a.Tokens) == 0
 }
 
-func (a *FungibleTokens) AddIotas(amount uint64) *FungibleTokens {
-	a.Iotas += amount
+func (a *FungibleTokens) AddBaseTokens(amount uint64) *FungibleTokens {
+	a.BaseTokens += amount
 	return a
 }
 
@@ -282,7 +282,7 @@ func (a *FungibleTokens) AddNativeTokens(tokenID iotago.NativeTokenID, amount in
 
 func (a *FungibleTokens) ToDict() dict.Dict {
 	ret := dict.New()
-	ret.Set(kv.Key(IotaTokenID), new(big.Int).SetUint64(a.Iotas).Bytes())
+	ret.Set(kv.Key(BaseTokenID), new(big.Int).SetUint64(a.BaseTokens).Bytes())
 	for _, token := range a.Tokens {
 		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
 	}
@@ -299,9 +299,9 @@ func nativeTokensFromSet(set iotago.NativeTokensSet) iotago.NativeTokens {
 	return ret
 }
 
-// IsIota return whether a given tokenID represents native Iotas
-func IsIota(tokenID []byte) bool {
-	return bytes.Equal(tokenID, IotaTokenID)
+// IsBaseToken return whether a given tokenID represents the base token
+func IsBaseToken(tokenID []byte) bool {
+	return bytes.Equal(tokenID, BaseTokenID)
 }
 
 var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()

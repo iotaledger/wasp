@@ -33,9 +33,9 @@ func TestTutorialL1(t *testing.T) {
 	env := solo.New(t)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	t.Logf("address of the user is: %s", userAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
-	numIotas := env.L1Iotas(userAddress)
-	t.Logf("balance of the user is: %d iotas", numIotas)
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount)
+	numBaseTokens := env.L1BaseTokens(userAddress)
+	t.Logf("balance of the user is: %d base tokens", numBaseTokens)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 }
 
 func TestTutorialDeploySC(t *testing.T) {
@@ -72,7 +72,7 @@ func TestTutorialInvokeSCOffLedger(t *testing.T) {
 		WithMaxAffordableGasBudget()
 
 	user, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	chain.DepositIotasToL2(10_000, user)
+	chain.DepositBaseTokensToL2(10_000, user)
 	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
@@ -101,18 +101,18 @@ func TestTutorialAccounts(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 
-	// create a wallet with some iotas on L1:
+	// create a wallet with some base tokens on L1:
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 
 	// the wallet can we identified on L2 by an AgentID:
 	userAgentID := iscp.NewAgentID(userAddress)
 	// for now our on-chain account is empty:
-	chain.AssertL2Iotas(userAgentID, 0)
+	chain.AssertL2BaseTokens(userAgentID, 0)
 
 	// send 1 Mi from the L1 wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddIotas(1 * iscp.Mi)
+		AddBaseTokens(1 * iscp.Mi)
 
 	// estimate the gas fee and storage deposit
 	gas1, gasFee1, err := chain.EstimateGasOnLedger(req, userWallet, true)
@@ -123,19 +123,19 @@ func TestTutorialAccounts(t *testing.T) {
 
 	// send the deposit request
 	req.WithGasBudget(gas1).
-		AddIotas(gasFee1) // including iotas for gas fee
+		AddBaseTokens(gasFee1) // including base tokens for gas fee
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// our L1 balance is 1 Mi + gas fee short
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-1*iscp.Mi-gasFee1)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*iscp.Mi-gasFee1)
 	// our L2 balance is 1 Mi
-	chain.AssertL2Iotas(userAgentID, 1*iscp.Mi)
+	chain.AssertL2BaseTokens(userAgentID, 1*iscp.Mi)
 	// (the gas fee went to the chain's private account)
 
-	// withdraw all iotas back to L1
+	// withdraw all base tokens back to L1
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAllowance(iscp.NewAllowanceIotas(1 * iscp.Mi))
+		WithAllowance(iscp.NewAllowanceBaseTokens(1 * iscp.Mi))
 
 	// estimate the gas fee and storage deposit
 	gas2, gasFee2, err := chain.EstimateGasOnLedger(req, userWallet, true)
@@ -145,13 +145,13 @@ func TestTutorialAccounts(t *testing.T) {
 
 	// send the withdraw request
 	req.WithGasBudget(gas2).
-		AddIotas(gasFee2 + storageDeposit2). // including iotas for gas fee and storage
-		AddAllowanceIotas(storageDeposit2)   // and withdrawing the storage as well
+		AddBaseTokens(gasFee2 + storageDeposit2). // including base tokens for gas fee and storage
+		AddAllowanceBaseTokens(storageDeposit2)   // and withdrawing the storage as well
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// we are back to the initial situation, having been charged some gas fees
 	// in the process:
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount-gasFee1-gasFee2)
-	chain.AssertL2Iotas(userAgentID, 0)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-gasFee1-gasFee2)
+	chain.AssertL2BaseTokens(userAgentID, 0)
 }

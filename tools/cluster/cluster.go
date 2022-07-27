@@ -263,7 +263,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.AsDict()).
-		WithIotas(1 * iscp.Mi)
+		WithBaseTokens(1 * iscp.Mi)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
 	if err != nil {
@@ -306,7 +306,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
-		WithIotas(1000)
+		WithBaseTokens(1000)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
@@ -688,9 +688,9 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	return balance
 }
 
-func (clu *Cluster) L1Iotas(addr iotago.Address) uint64 {
+func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
 	tokens := clu.AddressBalances(addr)
-	return tokens.Iotas
+	return tokens.BaseTokens
 }
 
 func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {

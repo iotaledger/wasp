@@ -129,8 +129,8 @@ func (f *ScFunc) Allowance(allowance *ScTransfer) *ScFunc {
 	return f
 }
 
-func (f *ScFunc) AllowanceIotas(amount uint64) *ScFunc {
-	f.allowance = NewScTransferIotas(amount)
+func (f *ScFunc) AllowanceBaseTokens(amount uint64) *ScFunc {
+	f.allowance = NewScTransferBaseTokens(amount)
 	return f
 }
 
@@ -182,7 +182,7 @@ func (f *ScFunc) Transfer(transfer *ScTransfer) *ScFunc {
 	return f
 }
 
-func (f *ScFunc) TransferIotas(amount uint64) *ScFunc {
-	f.transfer = NewScTransferIotas(amount)
+func (f *ScFunc) TransferBaseTokens(amount uint64) *ScFunc {
+	f.transfer = NewScTransferBaseTokens(amount)
 	return f
 }

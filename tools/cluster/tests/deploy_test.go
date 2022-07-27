@@ -102,7 +102,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
-	).WithIotas(100)
+	).WithBaseTokens(100)
 	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 

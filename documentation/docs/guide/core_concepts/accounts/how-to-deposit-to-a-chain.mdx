@@ -40,7 +40,7 @@ The `deposit` entry point of the [`accounts` core contract](../core_contracts/ac
 <TabItem value="solo">
 
 ```go
-err := chain.DepositIotasToL2(N, wallet)
+err := chain.DepositBaseTokensToL2(N, wallet)
 require.NoError(t, err)
 ```
 
@@ -48,9 +48,9 @@ require.NoError(t, err)
 <TabItem value="soloctx">
 
 ```go
-// deposits N iotas from wallet into chain *chainID*
+// deposits N base tokens from wallet into chain *chainID*
 d := coreaccounts.ScFuncs.Deposit(ctx.Sign(wallet))
-d.Func.TransferIotas(N).PostToChain(chainID)
+d.Func.TransferBaseTokes(N).PostToChain(chainID)
 require.NoError(t, ctx.Err)
 ```
 

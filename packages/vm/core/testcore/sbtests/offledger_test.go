@@ -21,8 +21,8 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		user, userAddr := env.NewKeyPairWithFunds()
 		userAgentID := iscp.NewAgentID(userAddr)
 
-		chain.AssertL2Iotas(userAgentID, 0)
-		chain.AssertL2Iotas(cAID, 0)
+		chain.AssertL2BaseTokens(userAgentID, 0)
+		chain.AssertL2BaseTokens(cAID, 0)
 
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
@@ -32,8 +32,8 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, "unverified account")
 
-		chain.AssertL2Iotas(userAgentID, 0)
-		chain.AssertL2Iotas(cAID, 0)
+		chain.AssertL2BaseTokens(userAgentID, 0)
+		chain.AssertL2BaseTokens(cAID, 0)
 	})
 }
 
@@ -45,13 +45,13 @@ func TestOffLedgerSuccess(t *testing.T) {
 		user, userAddr := env.NewKeyPairWithFunds()
 		userAgentID := iscp.NewAgentID(userAddr)
 
-		ch.AssertL2Iotas(userAgentID, 0)
-		ch.AssertL2Iotas(cAID, 0)
+		ch.AssertL2BaseTokens(userAgentID, 0)
+		ch.AssertL2BaseTokens(cAID, 0)
 
-		depositIotas := 1 * iscp.Mi
-		err := ch.DepositIotasToL2(depositIotas, user)
-		expectedUser := depositIotas - ch.LastReceipt().GasFeeCharged
-		ch.AssertL2Iotas(userAgentID, expectedUser)
+		depositBaseTokens := 1 * iscp.Mi
+		err := ch.DepositBaseTokensToL2(depositBaseTokens, user)
+		expectedUser := depositBaseTokens - ch.LastReceipt().GasFeeCharged
+		ch.AssertL2BaseTokens(userAgentID, expectedUser)
 		require.NoError(t, err)
 
 		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
@@ -69,6 +69,6 @@ func TestOffLedgerSuccess(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.EqualValues(t, 314, kvdecoder.New(res).MustGetUint64("ppp"))
-		ch.AssertL2Iotas(userAgentID, expectedUser-rec.GasFeeCharged)
+		ch.AssertL2BaseTokens(userAgentID, expectedUser-rec.GasFeeCharged)
 	})
 }

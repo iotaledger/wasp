@@ -61,7 +61,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	allowance := ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
-	amount := allowance.Iotas()
+	amount := allowance.BaseTokens()
 
 	// Require that there are actually some plain iotas there
 	ctx.Require(amount > 0, "empty bet")
@@ -205,7 +205,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// in a simpler to use interface. The constructor we use here creates and initializes
 			// a single token color transfer in a single statement. The actual color and amount
 			// values passed in will be stored in a new map on the host.
-			transfers := wasmlib.NewScTransferIotas(payout)
+			transfers := wasmlib.NewScTransferBaseTokens(payout)
 
 			// Perform the actual transfer of tokens from the smart contract to the address
 			// of the winner. The transfer_to_address() method receives the address value and
@@ -223,7 +223,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	remainder := totalBetAmount - totalPayout
 	if remainder != 0 {
 		// We have a remainder. First create a transfer for the remainder.
-		transfers := wasmlib.NewScTransferIotas(remainder)
+		transfers := wasmlib.NewScTransferBaseTokens(remainder)
 
 		// Send the remainder to the contract owner.
 		ctx.Send(f.State.Owner().Value().Address(), transfers)

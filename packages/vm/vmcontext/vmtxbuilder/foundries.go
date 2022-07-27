@@ -44,8 +44,8 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 	}
 	f.Amount = parameters.L1.Protocol.RentStructure.MinRent(f)
 	err := panicutil.CatchPanicReturnError(func() {
-		txb.subDeltaIotasFromTotal(f.Amount)
-	}, vm.ErrNotEnoughIotaBalance)
+		txb.subDeltaBaseTokensFromTotal(f.Amount)
+	}, vm.ErrNotEnoughBaseTokensBalance)
 	if err != nil {
 		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
 	}
@@ -134,7 +134,7 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 
 	f.out = nil
 	// return dust deposit to accounts
-	txb.addDeltaIotasToTotal(f.in.Amount)
+	txb.addDeltaBaseTokensToTotal(f.in.Amount)
 	return f.in.Amount
 }
 

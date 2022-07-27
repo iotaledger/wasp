@@ -141,7 +141,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	var allowance *wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	var amount uint64 = allowance.Iotas()
+	var amount uint64 = allowance.BaseTokens()
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
@@ -175,7 +175,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 			// interface. The constructor we use here creates and initializes a
 			// single token color transfer in a single statement. The actual color
 			// and amount values passed in will be stored in a new map on the host.
-			var transfer *wasmlib.ScTransfer = wasmlib.NewScTransferIotas(share)
+			var transfer *wasmlib.ScTransfer = wasmlib.NewScTransferBaseTokens(share)
 
 			// Perform the actual transfer of tokens from the smart contract to the
 			// member address. The transfer_to_address() method receives the address

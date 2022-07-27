@@ -261,21 +261,21 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Co
 }
 
 type DustInfo struct {
-	TotalIotasInL2Accounts uint64
-	TotalDustDeposit       uint64
-	NumNativeTokens        int
+	TotalBaseTokensInL2Accounts uint64
+	TotalDustDeposit            uint64
+	NumNativeTokens             int
 }
 
 func (d *DustInfo) Total() uint64 {
-	return d.TotalIotasInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
+	return d.TotalBaseTokensInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
 }
 
-func (ch *Chain) GetTotalIotaInfo() *DustInfo {
+func (ch *Chain) GetTotalBaseTokensInfo() *DustInfo {
 	bi := ch.GetLatestBlockInfo()
 	return &DustInfo{
-		TotalIotasInL2Accounts: bi.TotalIotasInL2Accounts,
-		TotalDustDeposit:       bi.TotalDustDeposit,
-		NumNativeTokens:        len(ch.GetOnChainTokenIDs()),
+		TotalBaseTokensInL2Accounts: bi.TotalBaseTokensInL2Accounts,
+		TotalDustDeposit:            bi.TotalDustDeposit,
+		NumNativeTokens:             len(ch.GetOnChainTokenIDs()),
 	}
 }
 
@@ -576,20 +576,20 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 	}
 }
 
-func (ch *Chain) GetL2FundsFromFaucet(agentID iscp.AgentID, iotas ...uint64) {
-	iotaKey, iotaAddr := ch.Env.NewKeyPairWithFunds()
+func (ch *Chain) GetL2FundsFromFaucet(agentID iscp.AgentID, baseTokens ...uint64) {
+	walletKey, walletAddr := ch.Env.NewKeyPairWithFunds()
 
 	var amount uint64
-	if len(iotas) > 0 {
-		amount = iotas[0]
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
 	} else {
-		amount = ch.Env.L1Iotas(iotaAddr) - TransferAllowanceToGasBudgetIotas
+		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		iscp.NewTokensIotas(amount),
+		iscp.NewFungibleBaseTokens(amount),
 		agentID,
 		true,
-		iotaKey,
+		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
 }
