@@ -64,18 +64,7 @@ jobs:
         run: |
           cd contracts/wasm
           go install ../../tools/schema
-          cd contracts/wasm
-          for dir in */ ; do
-            cd ${dir};
-            schema -go -rust -ts;
-            cd ..;
-          done
-          cd gascalibration
-          for dir in */ ; do
-            cd ${dir};
-            schema -go -rust -ts;
-            cd ..;
-          done
+          bash schema_all.sh
           cd ..
       - name: run builds
         run: |
@@ -103,17 +92,7 @@ jobs:
         run: |
            go install ./tools/schema
            cd contracts/wasm
-           for dir in */ ; do
-                cd ${dir};
-                schema -go -rust -ts;
-                cd ..;
-           done
-           cd gascalibration
-           for dir in */ ; do
-                cd ${dir};
-                schema -go -rust -ts;
-                cd ..;
-           done
+           bash schema_all.sh
            cd ..
       - name: golangci-lint in SC
         run: |
