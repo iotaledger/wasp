@@ -3,7 +3,7 @@ example_name=$1
 flag=$2
 cd $example_name
 
-if [ -f "schema.yaml" ]; then
+if [ ! -f "schema.yaml" ]; then
     exit 1
 fi
 
