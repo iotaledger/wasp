@@ -8,7 +8,6 @@ export const networkOptions = [
   {
     id: 1,
     text: 'Custom settings',
-    default: false,
     apiEndpoint: 'http://localhost:14265',
     faucetEndpoint: 'http://localhost:8091',
   },
