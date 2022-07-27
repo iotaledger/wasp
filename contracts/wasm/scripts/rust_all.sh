@@ -1,13 +1,13 @@
 #!/bin/bash
 for dir in ./*; do
  if [ -d "$dir" ]; then
-    bash rust_build.sh "$dir" $1
+    bash scripts/rust_build.sh "$dir" $1
   fi
 done
 cd gascalibration
 for dir in ./*; do
  if [ -d "$dir" ]; then
-    bash ../rust_build.sh "$dir" $1
+    bash ../scripts/rust_build.sh "$dir" $1
   fi
 done
-cd ..
+cd ../scripts

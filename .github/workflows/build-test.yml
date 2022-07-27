@@ -62,13 +62,14 @@ jobs:
           node-version: 18
       - name: install schema
         run: |
-          cd contracts/wasm
-          go install ../../tools/schema
+          go install ./tools/schema
+          cd contracts/wasm/scripts
           bash schema_all.sh
+          cd ..
           npm install
       - name: run builds
         run: |
-          cd contracts/wasm
+          cd contracts/wasm/scripts
           bash all_build.sh
       - name: run tests
         run: |
@@ -100,7 +101,7 @@ jobs:
       - name: Generate SC files
         run: |
            go install ./tools/schema
-           cd contracts/wasm
+           cd contracts/wasm/scripts
            bash schema_all.sh
 
       - name: golangci-lint in SC
