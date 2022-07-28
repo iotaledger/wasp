@@ -3,8 +3,7 @@ name: Test
 on:
   pull_request:
     branches: [develop]
-  push:
-    branches: [artifacts]
+
 jobs:
   build:
     name: Test
