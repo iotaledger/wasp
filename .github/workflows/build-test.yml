@@ -56,20 +56,23 @@ jobs:
         uses: actions-rs/toolchain@v1.0.6
         with:
             toolchain: stable
+
       - name: install wasm-pack
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: install Node.js 
         uses: actions/setup-node@v3
         with:
           node-version: 18
+
       - name: install schema
         run: |
-          go install ./tools/schema
           cd contracts/wasm/scripts
           bash schema_all.sh
           cd ..
           npm install
+
       - name: run builds
         env:
           TEST_LANG: ${{matrix.TEST_LANG}}
@@ -89,6 +92,7 @@ jobs:
             echo "========build SC in rswasm========"
             bash rust_all.sh
           fi
+
       - name: run tests
         env:
           TEST_LANG: ${{matrix.TEST_LANG}}
@@ -109,7 +113,7 @@ jobs:
           fi
           
   golangci:
-    name: lint
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v2
@@ -122,7 +126,6 @@ jobs:
 
       - name: Generate SC files
         run: |
-           go install ./tools/schema
            cd contracts/wasm/scripts
            bash schema_all.sh
 
