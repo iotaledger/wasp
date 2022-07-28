@@ -3,7 +3,7 @@ package dashboard
 import (
 	_ "embed"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/labstack/echo/v4"
 )
@@ -15,7 +15,7 @@ func (d *Dashboard) webSocketInit(e *echo.Echo) {
 	pws := publisherws.New(d.log, []string{"state"})
 
 	route := e.GET("/chain/:chainid/ws", func(c echo.Context) error {
-		chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
+		chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 		if err != nil {
 			return err
 		}

@@ -3,7 +3,7 @@ package blob
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -17,7 +17,7 @@ var Processor = Contract.Processor(initialize,
 	ViewListBlobs.WithHandler(listBlobs),
 )
 
-func initialize(ctx iscp.Sandbox) dict.Dict {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -27,7 +27,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
-func storeBlob(ctx iscp.Sandbox) dict.Dict {
+func storeBlob(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := ctx.State()
 	params := ctx.Params()
@@ -69,7 +69,7 @@ func storeBlob(ctx iscp.Sandbox) dict.Dict {
 }
 
 // getBlobInfo return lengths of all fields in the blob
-func getBlobInfo(ctx iscp.SandboxView) dict.Dict {
+func getBlobInfo(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
 	blobHash := ctx.Params().MustGetHashValue(ParamHash)
@@ -83,7 +83,7 @@ func getBlobInfo(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func getBlobField(ctx iscp.SandboxView) dict.Dict {
+func getBlobField(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
@@ -99,7 +99,7 @@ func getBlobField(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func listBlobs(ctx iscp.SandboxView) dict.Dict {
+func listBlobs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
 	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {
@@ -109,7 +109,7 @@ func listBlobs(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
+func getMaxBlobSize(ctx isc.Sandbox) uint32 {
 	r := ctx.Call(governance.Contract.Hname(), governance.ViewGetMaxBlobSize.Hname(), nil, nil)
 	maxBlobSize, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSizeUint32), 0)
 	if err != nil {

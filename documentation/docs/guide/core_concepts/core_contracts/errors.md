@@ -1,5 +1,5 @@
 ---
-description: The errors contract keeps a map of error codes to error messages templates. These error codes are used in request receipts.
+description: The errors contract keeps a map of error codes to error message templates. These error codes are used in request receipts.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - smart contracts
@@ -17,7 +17,8 @@ keywords:
 The `errors` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts
 chain.
 
-The `errors` contract keeps a map of error codes to error messages templates. These error codes are used in request receipts.
+The `errors` contract keeps a map of error codes to error message templates.
+This allows contracts to store lengthy error strings only once and then reuse them by just providing the error code (and optional extra values) when producing an error, thus saving storage and gas.
 
 ---
 
@@ -25,9 +26,15 @@ The `errors` contract keeps a map of error codes to error messages templates. Th
 
 ### `registerError(m ErrorMessageFormat) c ErrorCode`
 
-Registers an error message template. These templates support standard [go verbs](https://pkg.go.dev/fmt#hdr-Printing) for variable printing.
+Registers an error message template.
 
-The error code returned can then be used in contract panicsi, this is a way to save gas for the users of a given contract, as lengthy error strings can be stored only once and be reused just by providing the error code.
+Parameters:
+
+- `m` (`string`): The error message template, which supports standard [go verbs](https://pkg.go.dev/fmt#hdr-Printing) for variable printing.
+
+Returns:
+
+- `c` (`ErrorCode`): The error code of the registered template
 
 ---
 
@@ -36,3 +43,30 @@ The error code returned can then be used in contract panicsi, this is a way to s
 ### `getErrorMessageFormat(c ErrorCode) m ErrorMessageFormat`
 
 Returns the message template stored for a given error code.
+
+Parameters:
+
+- `c` (`ErrorCode`): The error code of the registered template
+
+Returns:
+
+- `m` (`string`): The error message template
+
+---
+
+## Schemas
+
+### `ErrorCode`
+
+`ErrorCode` is encoded as the concatenation of:
+
+- (`hname`) The contract hname
+- (`uint16`) The error ID, calculated as the hash of the error template
+
+### `UnresolvedVMError`
+
+`UnresolvedVMError` is encoded as the concatenation of:
+
+- ([`ErrorCode`](#errorcode)) The error code
+- (`uint32`) CRC32 checksum of the formatted string
+- (`string` prefixed with `uint16` size) The JSON-encoded list of parameters for the template

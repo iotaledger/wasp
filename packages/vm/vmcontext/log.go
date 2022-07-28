@@ -1,10 +1,10 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
-var _ iscp.LogInterface = &VMContext{}
+var _ isc.LogInterface = &VMContext{}
 
 func (vmctx *VMContext) Infof(format string, params ...interface{}) {
 	vmctx.task.Log.Infof(format, params...)

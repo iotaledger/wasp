@@ -2,7 +2,7 @@ package wallet
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -48,8 +48,8 @@ var balanceCmd = &cobra.Command{
 }
 
 func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
-	balance := iscp.FungibleTokensFromOutputMap(outs)
-	log.Printf("    iota %d\n", balance.Iotas)
+	balance := isc.FungibleTokensFromOutputMap(outs)
+	log.Printf("    base tokens %d\n", balance.BaseTokens)
 	for _, nt := range balance.Tokens {
 		log.Printf("    %s %s\n", nt.ID, nt.Amount)
 	}
@@ -58,7 +58,7 @@ func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
 func printOutputsByOutputID(outs map[iotago.OutputID]iotago.Output) {
 	for i, out := range outs {
 		log.Printf("    output index %d:\n", i)
-		tokens := iscp.FungibleTokensFromOutput(out)
+		tokens := isc.FungibleTokensFromOutput(out)
 		log.Printf("%s\n", tokens.String())
 	}
 }

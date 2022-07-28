@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -54,7 +54,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(100_000, nil)
+	err := ch.DepositBaseTokensToL2(100_000, nil)
 	require.NoError(t, err)
 
 	bi := ch.GetLatestBlockInfo()
@@ -76,7 +76,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(100_000, nil)
+	err := ch.DepositBaseTokensToL2(100_000, nil)
 	require.NoError(t, err)
 
 	const numReqs = 5
@@ -104,7 +104,7 @@ func TestRequestIsProcessed(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
 		WithGasBudget(100_000)
@@ -125,7 +125,7 @@ func TestRequestReceipt(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
 		WithGasBudget(100_000)
@@ -152,7 +152,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
 		WithGasBudget(100_000)
@@ -175,7 +175,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
 		WithGasBudget(100_000)
@@ -197,7 +197,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 	// try to get a receipt for a request that does not exist
-	receipt, ok := ch.GetRequestReceipt(iscp.RequestID{})
+	receipt, ok := ch.GetRequestReceipt(isc.RequestID{})
 	require.Nil(t, receipt)
 	require.False(t, ok)
 }

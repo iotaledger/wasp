@@ -7,7 +7,7 @@ import (
 	"math"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -17,11 +17,11 @@ import (
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	// TODO request may be big (blobs). Do we want to store it all?
-	Request       iscp.Request            `json:"request"`
-	Error         *iscp.UnresolvedVMError `json:"error"`
-	GasBudget     uint64                  `json:"gasBudget"`
-	GasBurned     uint64                  `json:"gasBurned"`
-	GasFeeCharged uint64                  `json:"gasFeeCharged"`
+	Request       isc.Request            `json:"request"`
+	Error         *isc.UnresolvedVMError `json:"error"`
+	GasBudget     uint64                 `json:"gasBudget"`
+	GasBurned     uint64                 `json:"gasBurned"`
+	GasFeeCharged uint64                 `json:"gasFeeCharged"`
 	// not persistent
 	BlockIndex   uint32       `json:"blockIndex"`
 	RequestIndex uint16       `json:"requestIndex"`
@@ -46,7 +46,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
-	if ret.Request, err = iscp.NewRequestFromMarshalUtil(mu); err != nil {
+	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 		return ret, nil
 	}
 
-	if ret.Error, err = iscp.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
+	if ret.Error, err = isc.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 
@@ -116,8 +116,8 @@ func (r *RequestReceipt) LookupKey() RequestLookupKey {
 	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
 }
 
-func (r *RequestReceipt) ToISCPReceipt(resolvedError *iscp.VMError) *iscp.Receipt {
-	return &iscp.Receipt{
+func (r *RequestReceipt) ToISCPReceipt(resolvedError *isc.VMError) *isc.Receipt {
+	return &isc.Receipt{
 		Request:       r.Request.Bytes(),
 		Error:         r.Error,
 		GasBudget:     r.GasBudget,
@@ -172,7 +172,7 @@ func (k *RequestLookupKey) Read(r io.Reader) error {
 
 // region RequestLookupKeyList //////////////////////////////////////////////
 
-// RequestLookupKeyList a list of RequestLookupReference of requests with colliding iscp.RequestLookupDigest
+// RequestLookupKeyList a list of RequestLookupReference of requests with colliding isc.RequestLookupDigest
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {

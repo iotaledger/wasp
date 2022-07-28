@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func (c *chainObj) GetAnchorOutput() *iscp.AliasOutputWithID {
+func (c *chainObj) GetAnchorOutput() *isc.AliasOutputWithID {
 	return c.stateMgr.GetStatusSnapshot().StateOutput
 }
 

@@ -13,7 +13,7 @@
 			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousL1Commitment.StateCommitment }}</code></dd>
 			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousL1Commitment.BlockHash }}</code></dd>
 			<dt>Anchor transaction ID</dt><dd><code>{{ .Block.AnchorTransactionID.ToHex }}</code></dd>
-			<dt>Total iotas in L2 accounts</dt><dd><code>{{ .Block.TotalIotasInL2Accounts }}</code></dd>
+			<dt>Total base tokens in L2 accounts</dt><dd><code>{{ .Block.TotalBaseTokensInL2Accounts }}</code></dd>
 			<dt>Total dust deposit</dt><dd><code>{{ .Block.TotalDustDeposit }}</code></dd>
 			<dt>Gas burned</dt><dd><code>{{ .Block.GasBurned }}</code></dd>
 			<dt>Gas fee charged</dt><dd><code>{{ .Block.GasFeeCharged }}</code></dd>
@@ -59,7 +59,7 @@
 			<h5>Attached tokens</h5>
 				{{$tokens := $req.FungibleTokens}}
 				<dl>
-					<dt>Iotas</dt><dd><code>{{$tokens.Iotas}}</code></dd>
+					<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
 					{{range $_, $t := $tokens.Tokens}}
 						<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
 					{{end}}
@@ -83,7 +83,7 @@
 				<dl>
 					{{$tokens := $allowance.Assets}}
 					{{if $tokens}}
-						<dt>Iotas</dt><dd><code>{{$tokens.Iotas}}</code></dd>
+						<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
 						{{range $_, $t := $tokens.Tokens}}
 							<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
 						{{end}}

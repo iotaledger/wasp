@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -21,12 +21,12 @@ import (
 )
 
 type reqstatusWebAPI struct {
-	getChain func(chainID *iscp.ChainID) chain.ChainRequests
+	getChain func(chainID *isc.ChainID) chain.ChainRequests
 }
 
 // TODO  add examples for receipt json
 func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
-	r := &reqstatusWebAPI{func(chainID *iscp.ChainID) chain.ChainRequests {
+	r := &reqstatusWebAPI{func(chainID *isc.ChainID) chain.ChainRequests {
 		return getChain(chainID)
 	}}
 
@@ -92,7 +92,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 
 	// subscribe to event
 	requestProcessed := make(chan bool)
-	attachID := ch.AttachToRequestProcessed(func(rid iscp.RequestID) {
+	attachID := ch.AttachToRequestProcessed(func(rid isc.RequestID) {
 		if rid == reqID {
 			requestProcessed <- true
 		}
@@ -116,23 +116,23 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 }
 
-func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp.RequestID, error) {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, isc.RequestID, error) {
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
-		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
+		return nil, isc.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
 	theChain := r.getChain(chainID)
 	if theChain == nil {
-		return nil, iscp.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
+		return nil, isc.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
 	}
-	reqID, err := iscp.RequestIDFromString(c.Param("reqID"))
+	reqID, err := isc.RequestIDFromString(c.Param("reqID"))
 	if err != nil {
-		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
+		return nil, isc.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}
 	return theChain, reqID, nil
 }
 
-func doGetISCPReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.RequestReceiptResponse, error) {
+func doGetISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.RequestReceiptResponse, error) {
 	receipt, err := ch.GetRequestReceipt(reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("error getting request receipt: %s", err)
@@ -156,7 +156,7 @@ func doGetISCPReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (*model.Requ
 	}, nil
 }
 
-func getISCPReceipt(ch chain.ChainRequests, reqID iscp.RequestID) (ret *model.RequestReceiptResponse, err error) {
+func getISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	err = optimism.RetryOnStateInvalidated(func() (err error) {
 		panicCatchErr := panicutil.CatchPanicReturnError(func() {
 			ret, err = doGetISCPReceipt(ch, reqID)

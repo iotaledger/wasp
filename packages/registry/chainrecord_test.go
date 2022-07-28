@@ -6,12 +6,12 @@ package registry
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestChainRecord(t *testing.T) {
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 
 	rec := ChainRecord{
 		ChainID: *chainID,

@@ -12,19 +12,19 @@ import (
 	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/database/textdb"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
+type ChainKVStoreProvider func(chainID *isc.ChainID) kvstore.KVStore
 
 type DBManager struct {
 	log           *logger.Logger
 	registryDB    DB
 	registryStore kvstore.KVStore
-	databases     map[iscp.ChainID]DB
-	stores        map[iscp.ChainID]kvstore.KVStore
+	databases     map[isc.ChainID]DB
+	stores        map[isc.ChainID]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
 }
@@ -32,8 +32,8 @@ type DBManager struct {
 func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Config) *DBManager {
 	dbm := DBManager{
 		log:       log,
-		databases: make(map[iscp.ChainID]DB),
-		stores:    make(map[iscp.ChainID]kvstore.KVStore),
+		databases: make(map[isc.ChainID]DB),
+		stores:    make(map[isc.ChainID]kvstore.KVStore),
 		mutex:     sync.RWMutex{},
 		inMemory:  inMemory,
 	}
@@ -47,14 +47,14 @@ func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Co
 	return &dbm
 }
 
-func getChainString(chainID *iscp.ChainID) string {
+func getChainString(chainID *isc.ChainID) string {
 	if chainID != nil {
 		return chainID.String()
 	}
 	return "CHAIN_REGISTRY"
 }
 
-func (m *DBManager) createDB(chainID *iscp.ChainID) DB {
+func (m *DBManager) createDB(chainID *isc.ChainID) DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -97,7 +97,7 @@ func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
 	return m.registryStore
 }
 
-func (m *DBManager) GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
+func (m *DBManager) GetOrCreateKVStore(chainID *isc.ChainID) kvstore.KVStore {
 	store := m.GetKVStore(chainID)
 	if store != nil {
 		return store
@@ -111,7 +111,7 @@ func (m *DBManager) GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	return store
 }
 
-func (m *DBManager) GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
+func (m *DBManager) GetKVStore(chainID *isc.ChainID) kvstore.KVStore {
 	return m.stores[*chainID]
 }
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -14,7 +14,7 @@ func PostTransaction(tx *iotago.Transaction) {
 	config.L1Client().PostTx(tx) //nolint:errcheck
 }
 
-func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (iscp.OffLedgerRequest, error)) {
+func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
@@ -25,7 +25,7 @@ func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (iscp.OffLedgerRequest
 	// TODO print receipt?
 }
 
-func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
+func WithSCTransaction(chainID *isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
 	tx, err := f()
 	log.Check(err)
 	logTx(chainID, tx)
@@ -39,8 +39,8 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*iotago.Transaction, err
 	return tx
 }
 
-func logTx(chainID *iscp.ChainID, tx *iotago.Transaction) {
-	allReqs, err := iscp.RequestsInTransaction(tx)
+func logTx(chainID *isc.ChainID, tx *iotago.Transaction) {
+	allReqs, err := isc.RequestsInTransaction(tx)
 	log.Check(err)
 	txid, err := tx.ID()
 	log.Check(err)

@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
@@ -41,7 +41,7 @@ func (e *EthService) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if vmError, ok := err.(*iscp.UnresolvedVMError); ok {
+	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
 		resolvedErr, resolveErr := errors.Resolve(vmError, e.evmChain.ViewCaller())
 		if resolveErr != nil {
 			return xerrors.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)

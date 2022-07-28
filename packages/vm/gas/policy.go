@@ -9,7 +9,7 @@ import (
 )
 
 type GasFeePolicy struct {
-	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if iotas are used for gas fee
+	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if base token are used for gas fee
 	GasFeeTokenID *iotago.NativeTokenID
 	// GasPerToken specifies how many gas units are paid for each token ( 100 means 1 tokens pays for 100 gas)
 	GasPerToken uint64
@@ -58,7 +58,7 @@ func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens ui
 
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
-		GasFeeTokenID:     nil, // default is iotas
+		GasFeeTokenID:     nil, // default is base token
 		GasPerToken:       100, // each token pays for 100 units of gas
 		ValidatorFeeShare: 0,   // by default all goes to the governor
 	}

@@ -3,7 +3,7 @@ package chainutil
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -14,7 +14,7 @@ import (
 
 // SimulateCall executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func SimulateCall(ch chain.Chain, req iscp.Request) (*vm.RequestResult, error) {
+func SimulateCall(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
 	var ret *vm.RequestResult
 	err := optimism.RetryOnStateInvalidated(func() (err error) {
@@ -30,11 +30,11 @@ func SimulateCall(ch chain.Chain, req iscp.Request) (*vm.RequestResult, error) {
 			Processors:         ch.Processors(),
 			AnchorOutput:       anchorOutput.GetAliasOutput(),
 			AnchorOutputID:     anchorOutput.OutputID(),
-			Requests:           []iscp.Request{req},
+			Requests:           []isc.Request{req},
 			TimeAssumption:     ch.GetTimeData(),
 			VirtualStateAccess: virtualStateAccess,
 			Entropy:            hashing.RandomHash(nil),
-			ValidatorFeeTarget: iscp.NewContractAgentID(ch.ID(), 0),
+			ValidatorFeeTarget: isc.NewContractAgentID(ch.ID(), 0),
 			Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 			// state baseline is always valid in Solo
 			SolidStateBaseline:   ch.GlobalStateSync().GetSolidIndexBaseline(),

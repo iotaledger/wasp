@@ -78,16 +78,16 @@ type ImmutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableHarvestParams) ForceMinimumIotas() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamForceMinimumIotas))
+func (s ImmutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamForceMinimumBaseTokens))
 }
 
 type MutableHarvestParams struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableHarvestParams) ForceMinimumIotas() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamForceMinimumIotas))
+func (s MutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamForceMinimumBaseTokens))
 }
 
 type ImmutableTransferAllowanceToParams struct {

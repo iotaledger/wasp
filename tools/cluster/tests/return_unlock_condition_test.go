@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/stretchr/testify/require"
@@ -31,10 +31,10 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		SenderAddress:    addr,
 		UnspentOutputs:   outputs,
 		UnspentOutputIDs: outputIDs,
-		Request: &iscp.RequestParameters{
+		Request: &isc.RequestParameters{
 			TargetAddress:  env.Chain.ChainAddress(),
-			FungibleTokens: &iscp.FungibleTokens{Iotas: 1 * iscp.Mi},
-			Metadata: &iscp.SendMetadata{
+			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Mi},
+			Metadata: &isc.SendMetadata{
 				TargetContract: nativeIncCounterSCHname,
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),
 				GasBudget:      math.MaxUint64,

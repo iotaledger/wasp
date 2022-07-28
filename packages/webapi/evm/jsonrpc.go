@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -25,7 +25,7 @@ import (
 type jsonRPCService struct {
 	chains            chains.Provider
 	nodePubKey        func() *cryptolib.PublicKey
-	chainServers      map[iscp.ChainID]*chainServer
+	chainServers      map[isc.ChainID]*chainServer
 	chainServersMutex sync.Mutex
 }
 
@@ -38,11 +38,11 @@ func AddEndpoints(server echoswagger.ApiGroup, allChains chains.Provider, nodePu
 	j := &jsonRPCService{
 		chains:       allChains,
 		nodePubKey:   nodePubKey,
-		chainServers: make(map[iscp.ChainID]*chainServer),
+		chainServers: make(map[isc.ChainID]*chainServer),
 	}
 	server.EchoGroup().Any(routes.EVMJSONRPC(":chainID"), j.handleJSONRPC)
 
-	reqid := model.NewRequestID(iscp.NewRequestID(iotago.TransactionID{}, 0))
+	reqid := model.NewRequestID(isc.NewRequestID(iotago.TransactionID{}, 0))
 	server.GET(routes.RequestIDByEVMTransactionHash(":chainID", ":txHash"), j.handleRequestID).
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
 		AddResponse(http.StatusOK, "Request ID", "", nil).
@@ -50,7 +50,7 @@ func AddEndpoints(server echoswagger.ApiGroup, allChains chains.Provider, nodePu
 }
 
 func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}

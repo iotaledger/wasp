@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -46,7 +46,7 @@ func NewVirtualState(db kvstore.KVStore) *virtualStateAccess { //nolint:revive
 // CreateOriginState origin state and saves it. It assumes store is empty
 func newOriginState(store kvstore.KVStore) VirtualStateAccess {
 	ret := NewVirtualState(store)
-	nilChainID := iscp.ChainID{}
+	nilChainID := isc.ChainID{}
 	// state will contain chain ID at key ''. In the origin state it 'all 0'
 	ret.KVStore().Set("", nilChainID.Bytes())
 	ret.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
@@ -61,7 +61,7 @@ func calcOriginStateCommitment() trie.VCommitment {
 }
 
 // CreateOriginState creates and saves origin state in DB
-func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, error) {
+func CreateOriginState(store kvstore.KVStore, chainID *isc.ChainID) (VirtualStateAccess, error) {
 	originState := newOriginState(store)
 	if err := originState.Save(); err != nil {
 		return nil, err
@@ -118,9 +118,9 @@ func (vs *virtualStateAccess) OptimisticStateReader(glb coreutil.ChainStateSync)
 	return NewOptimisticStateReader(vs.db, glb)
 }
 
-func (vs *virtualStateAccess) ChainID() *iscp.ChainID {
+func (vs *virtualStateAccess) ChainID() *isc.ChainID {
 	chainIDBin := vs.KVStoreReader().MustGet("")
-	ret, err := iscp.ChainIDFromBytes(chainIDBin)
+	ret, err := isc.ChainIDFromBytes(chainIDBin)
 	if err != nil {
 		panic(fmt.Errorf("state.ChainID: %w", err))
 	}

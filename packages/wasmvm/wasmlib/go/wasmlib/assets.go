@@ -12,9 +12,9 @@ import (
 type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
-	Iotas  uint64
-	NftIDs []*wasmtypes.ScNftID
-	Tokens TokenAmounts
+	BaseTokens uint64
+	NftIDs     []*wasmtypes.ScNftID
+	Tokens     TokenAmounts
 }
 
 func NewScAssets(buf []byte) *ScAssets {
@@ -24,7 +24,7 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	dec := wasmtypes.NewWasmDecoder(buf)
-	assets.Iotas = wasmtypes.Uint64Decode(dec)
+	assets.BaseTokens = wasmtypes.Uint64Decode(dec)
 
 	size := wasmtypes.Uint32Decode(dec)
 	if size > 0 {
@@ -53,7 +53,7 @@ func (a *ScAssets) Bytes() []byte {
 	}
 
 	enc := wasmtypes.NewWasmEncoder()
-	wasmtypes.Uint64Encode(enc, a.Iotas)
+	wasmtypes.Uint64Encode(enc, a.BaseTokens)
 
 	wasmtypes.Uint32Encode(enc, uint32(len(a.Tokens)))
 	for _, tokenID := range a.TokenIDs() {
@@ -69,7 +69,7 @@ func (a *ScAssets) Bytes() []byte {
 }
 
 func (a *ScAssets) IsEmpty() bool {
-	if a.Iotas != 0 {
+	if a.BaseTokens != 0 {
 		return false
 	}
 	for _, val := range a.Tokens {
@@ -111,8 +111,8 @@ func (b *ScBalances) Bytes() []byte {
 	return b.assets.Bytes()
 }
 
-func (b *ScBalances) Iotas() uint64 {
-	return b.assets.Iotas
+func (b *ScBalances) BaseTokens() uint64 {
+	return b.assets.BaseTokens
 }
 
 func (b *ScBalances) IsEmpty() bool {
@@ -140,7 +140,7 @@ func NewScTransfer() *ScTransfer {
 
 // create a new transfer object from a balances object
 func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
-	transfer := NewScTransferIotas(balances.Iotas())
+	transfer := NewScTransferBaseTokens(balances.BaseTokens())
 	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
@@ -150,10 +150,10 @@ func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
 	return transfer
 }
 
-// create a new transfer object and initialize it with the specified amount of iotas
-func NewScTransferIotas(amount uint64) *ScTransfer {
+// create a new transfer object and initialize it with the specified amount of base tokens
+func NewScTransferBaseTokens(amount uint64) *ScTransfer {
 	transfer := NewScTransfer()
-	transfer.assets.Iotas = amount
+	transfer.assets.BaseTokens = amount
 	return transfer
 }
 

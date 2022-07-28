@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type Func struct {
 	Name    string
 	Access  DefElt
 	Kind    string
-	Hname   iscp.Hname
+	Hname   isc.Hname
 	Params  []*Field
 	Results []*Field
 	Line    int
@@ -127,7 +127,7 @@ func (s *Schema) compileFuncs(schemaDef *SchemaDef, params, results *FieldMap, v
 		f := &Func{}
 		f.Name = funcName.Val
 		f.Kind = funcKind
-		f.Hname = iscp.Hn(funcName.Val)
+		f.Hname = isc.Hn(funcName.Val)
 		f.Line = funcName.Line
 		f.Comment = funcName.Comment
 

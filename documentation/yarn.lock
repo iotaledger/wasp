@@ -10898,9 +10898,9 @@ plugin-image-zoom@flexanalytics/plugin-image-zoom:
   languageName: node
   linkType: hard
 
-"wasp@workspace:.":
+"wasp-develop@workspace:.":
   version: 0.0.0-use.local
-  resolution: "wasp@workspace:."
+  resolution: "wasp-develop@workspace:."
   dependencies:
     "@iota-community/iota-wiki-cli": "iota-community/iota-wiki-cli#v2"
     remark-code-import: ^0.3.0

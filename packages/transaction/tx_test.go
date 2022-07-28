@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/stretchr/testify/require"
@@ -20,7 +20,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
-	var chainID *iscp.ChainID
+	var chainID *isc.ChainID
 	var originTxID iotago.TransactionID
 
 	initTest := func() {
@@ -33,8 +33,8 @@ func TestCreateOrigin(t *testing.T) {
 		stateKey := cryptolib.NewKeyPair()
 		stateAddr = stateKey.GetPublicKey().AsEd25519Address()
 
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceIotas(userAddr))
-		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(userAddr))
+		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 	}
 	createOrigin := func() {
 		allOutputs, ids := u.GetUnspentOutputs(userAddr)
@@ -104,13 +104,13 @@ func TestCreateOrigin(t *testing.T) {
 		createOrigin()
 		createInitChainTx()
 
-		chainIotas := originTx.Essence.Outputs[0].Deposit()
-		initIotas := txInit.Essence.Outputs[0].Deposit()
+		chainBaseTokens := originTx.Essence.Outputs[0].Deposit()
+		initBaseTokens := txInit.Essence.Outputs[0].Deposit()
 
-		t.Logf("chainIotas: %d initIotas: %d", chainIotas, initIotas)
+		t.Logf("chainBaseTokens: %d initBaseTokens: %d", chainBaseTokens, initBaseTokens)
 
-		require.EqualValues(t, utxodb.FundsFromFaucetAmount-chainIotas-initIotas, int(u.GetAddressBalanceIotas(userAddr)))
-		require.EqualValues(t, 0, u.GetAddressBalanceIotas(stateAddr))
+		require.EqualValues(t, utxodb.FundsFromFaucetAmount-chainBaseTokens-initBaseTokens, int(u.GetAddressBalanceBaseTokens(userAddr)))
+		require.EqualValues(t, 0, u.GetAddressBalanceBaseTokens(stateAddr))
 		allOutputs, ids := u.GetUnspentOutputs(chainID.AsAddress())
 		require.EqualValues(t, 2, len(allOutputs))
 		require.EqualValues(t, 2, len(ids))

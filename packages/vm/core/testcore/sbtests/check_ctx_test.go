@@ -3,7 +3,7 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -19,7 +19,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
+		sbtestsc.ParamAgentID, isc.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 	).
@@ -38,7 +38,7 @@ func testMainCallsFromViewEP(t *testing.T, w bool) {
 
 	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, iscp.NewContractAgentID(chain.ChainID, HScName),
+		sbtestsc.ParamAgentID, isc.NewContractAgentID(chain.ChainID, HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 	)
 	require.NoError(t, err)

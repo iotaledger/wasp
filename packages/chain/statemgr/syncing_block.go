@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -78,7 +78,7 @@ func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.B
 		if !candidateExisting.getApprovingOutputID().Equals(block.ApprovingOutputID()) {
 			delete(syncT.blockCandidates, hash)
 			syncT.log.Warnf("addBlockCandidate: conflicting block index %v with hash %s arrived: present approvingOutputID %v, new block approvingOutputID: %v",
-				block.BlockIndex(), hash, iscp.OID(candidateExisting.getApprovingOutputID()), iscp.OID(block.ApprovingOutputID()))
+				block.BlockIndex(), hash, isc.OID(candidateExisting.getApprovingOutputID()), isc.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
 		syncT.log.Debugf("addBlockCandidate: existing block index %v with hash %s arrived, votes increased.", block.BlockIndex(), hash)
@@ -90,7 +90,7 @@ func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.B
 	return true, candidate
 }
 
-func (syncT *syncingBlock) setApprovalInfo(output *iscp.AliasOutputWithID) {
+func (syncT *syncingBlock) setApprovalInfo(output *isc.AliasOutputWithID) {
 	approvalInfo, err := newApprovalInfo(output)
 	if err != nil {
 		syncT.log.Errorf("setApprovalInfo failed: %v", err)

@@ -14,7 +14,7 @@ package governanceimpl
 import (
 	"encoding/base64"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -27,7 +27,7 @@ import (
 //      accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
 //  ) => ()
 //
-func addCandidateNode(ctx iscp.Sandbox) dict.Dict {
+func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 	pubKeyStr := base64.StdEncoding.EncodeToString(ani.NodePubKey)
@@ -57,7 +57,7 @@ func addCandidateNode(ctx iscp.Sandbox) dict.Dict {
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
 //
-func revokeAccessNode(ctx iscp.Sandbox) dict.Dict {
+func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
 
@@ -76,7 +76,7 @@ func revokeAccessNode(ctx iscp.Sandbox) dict.Dict {
 //      actions: map(pubKey => ChangeAccessNodeAction)
 //  ) => ()
 //
-func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
+func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	accessNodeCandidates := collections.NewMap(ctx.State(), governance.VarAccessNodeCandidates)
@@ -111,7 +111,7 @@ func changeAccessNodes(ctx iscp.Sandbox) dict.Dict {
 //      accessNodes          :: map(pubKey => ())
 //  )
 //
-func getChainNodes(ctx iscp.SandboxView) dict.Dict {
+func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)

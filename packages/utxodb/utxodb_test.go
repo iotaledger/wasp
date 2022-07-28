@@ -14,7 +14,7 @@ import (
 
 func TestBasic(t *testing.T) {
 	u := New()
-	require.EqualValues(t, u.Supply(), u.GetAddressBalanceIotas(u.GenesisAddress()))
+	require.EqualValues(t, u.Supply(), u.GetAddressBalanceBaseTokens(u.GenesisAddress()))
 	gtime := u.GlobalTime()
 	expectedTime := time.Unix(1, 0).Add(1 * time.Millisecond)
 	require.EqualValues(t, expectedTime, gtime)
@@ -30,8 +30,8 @@ func TestRequestFunds(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
-	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceIotas(u.GenesisAddress()))
-	require.EqualValues(t, FundsFromFaucetAmount, u.GetAddressBalanceIotas(addr))
+	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(u.GenesisAddress()))
+	require.EqualValues(t, FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(addr))
 
 	txID, err := tx.ID()
 	require.NoError(t, err)

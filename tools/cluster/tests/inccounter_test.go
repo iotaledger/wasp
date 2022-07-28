@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -23,7 +23,7 @@ const (
 	incDescription = "IncCounter, a PoC smart contract"
 )
 
-var incHname = iscp.Hn(incName)
+var incHname = isc.Hn(incName)
 
 const (
 	varCounter    = "counter"
@@ -60,13 +60,13 @@ func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contrac
 	require.NoError(t, err)
 
 	// deposit funds onto the contract account, so it can post a L1 request
-	contractAgentID := iscp.NewContractAgentID(chEnv.Chain.ChainID, incHname)
+	contractAgentID := isc.NewContractAgentID(chEnv.Chain.ChainID, incHname)
 	tx, err := chEnv.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(1_500_000),
+		Transfer: isc.NewFungibleBaseTokens(1_500_000),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
 		},
-		Allowance: iscp.NewAllowanceIotas(1_000_000),
+		Allowance: isc.NewAllowanceBaseTokens(1_000_000),
 	})
 	require.NoError(chEnv.t, err)
 	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
@@ -75,9 +75,9 @@ func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contrac
 	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
 }
 
-func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
-	transfer := iscp.NewFungibleTokens(uint64(tokens), nil)
-	b := iscp.NewEmptyAssets()
+func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
+	transfer := isc.NewFungibleTokens(uint64(tokens), nil)
+	b := isc.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer
 	}
@@ -158,7 +158,7 @@ func TestInc5xNothing(t *testing.T) {
 func testNothing(t *testing.T, numRequests int) {
 	e := setupWithContractAndMessageCounter(t, numRequests)
 
-	entryPoint := iscp.Hn("nothing")
+	entryPoint := isc.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.NewChainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
@@ -187,7 +187,7 @@ func TestInc5xIncrement(t *testing.T) {
 func testIncrement(t *testing.T, numRequests int) {
 	e := setupWithContractAndMessageCounter(t, numRequests)
 
-	entryPoint := iscp.Hn("increment")
+	entryPoint := isc.Hn("increment")
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.NewChainClient().Post1Request(incHname, entryPoint)
 		require.NoError(t, err)
@@ -206,7 +206,7 @@ func testIncrement(t *testing.T, numRequests int) {
 func TestIncrementWithTransfer(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 
-	entryPoint := iscp.Hn("increment")
+	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
 	e.checkCounter(1)
@@ -215,7 +215,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 func TestIncCallIncrement1(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 
-	entryPoint := iscp.Hn("callIncrement")
+	entryPoint := isc.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
 
 	e.checkCounter(2)
@@ -224,7 +224,7 @@ func TestIncCallIncrement1(t *testing.T) {
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 
-	entryPoint := iscp.Hn("callIncrementRecurse5x")
+	entryPoint := isc.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 1_000, nil)
 
 	e.checkCounter(6)
@@ -233,7 +233,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 func TestIncPostIncrement(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 4) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
-	entryPoint := iscp.Hn("postIncrement")
+	entryPoint := isc.Hn("postIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
 
 	e.waitUntilCounterEquals(incHname, 2, 30*time.Second)
@@ -243,7 +243,7 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
 	e := setupWithContractAndMessageCounter(t, numRepeats+3) // NOTE: expectations are not used in this test, so the last parameter is meaningless
 
-	entryPoint := iscp.Hn("repeatMany")
+	entryPoint := isc.Hn("repeatMany")
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
 		varNumRepeats: numRepeats,
 	})
@@ -267,28 +267,28 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 
 func TestIncLocalStateInternalCall(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
-	entryPoint := iscp.Hn("localStateInternalCall")
+	entryPoint := isc.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
-	entryPoint := iscp.Hn("localStateSandboxCall")
+	entryPoint := isc.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 4)
-	entryPoint := iscp.Hn("localStatePost")
+	entryPoint := isc.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
 	e.checkCounter(0)
 }
 
 func TestIncViewCounter(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
-	entryPoint := iscp.Hn("increment")
+	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkCounter(1)
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
@@ -303,10 +303,10 @@ func TestIncViewCounter(t *testing.T) {
 
 func TestIncCounterDelay(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
-	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
+	e.postRequest(incHname, isc.Hn("increment"), 0, nil)
 	e.checkCounter(1)
 
-	e.postRequest(incHname, iscp.Hn("incrementWithDelay"), 0, map[string]interface{}{
+	e.postRequest(incHname, isc.Hn("incrementWithDelay"), 0, map[string]interface{}{
 		varDelay: int32(5), // 5s delay
 	})
 

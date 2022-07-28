@@ -5,7 +5,7 @@ import (
 	"math/big"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -14,15 +14,15 @@ import (
 
 type TransactionTotals struct {
 	// does not include internal dust deposits
-	TotalIotasInL2Accounts uint64
+	TotalBaseTokensInL2Accounts uint64
 	// internal dust deposit
-	TotalIotasInDustDeposit uint64
+	TotalBaseTokensInDustDeposit uint64
 	// balances of native tokens (in all inputs/outputs). In the tx builder only loaded those which are needed
 	NativeTokenBalances map[iotago.NativeTokenID]*big.Int
 	// token supplies in foundries
 	TokenCirculatingSupplies map[iotago.NativeTokenID]*big.Int
-	// sent out iotas by the transaction
-	SentOutIotas uint64
+	// base tokens sent out by the transaction
+	SentOutBaseTokens uint64
 	// Sent out native tokens by the transaction
 	SentOutTokenBalances map[iotago.NativeTokenID]*big.Int
 }
@@ -40,17 +40,17 @@ func (txb *AnchorTransactionBuilder) sumNativeTokens(totals *TransactionTotals, 
 		s.Add(s, value)
 		totals.NativeTokenBalances[id] = s
 		// sum up dust deposit in inputs of internal UTXOs
-		totals.TotalIotasInDustDeposit += txb.dustDepositAssumption.NativeTokenOutput
+		totals.TotalBaseTokensInDustDeposit += txb.dustDepositAssumption.NativeTokenOutput
 	}
 }
 
 // sumInputs sums up all assets in inputs
 func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		NativeTokenBalances:      make(map[iotago.NativeTokenID]*big.Int),
-		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasInL2Accounts:   txb.anchorOutput.Deposit() - txb.dustDepositAssumption.AnchorOutput,
-		TotalIotasInDustDeposit:  txb.dustDepositAssumption.AnchorOutput,
+		NativeTokenBalances:          make(map[iotago.NativeTokenID]*big.Int),
+		TokenCirculatingSupplies:     make(map[iotago.NativeTokenID]*big.Int),
+		TotalBaseTokensInL2Accounts:  txb.anchorOutput.Deposit() - txb.dustDepositAssumption.AnchorOutput,
+		TotalBaseTokensInDustDeposit: txb.dustDepositAssumption.AnchorOutput,
 	}
 	// sum over native tokens which require inputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -62,7 +62,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	// sum up all explicitly consumed outputs, except anchor output
 	for _, out := range txb.consumed {
 		a := out.FungibleTokens()
-		ret.TotalIotasInL2Accounts += a.Iotas
+		ret.TotalBaseTokensInL2Accounts += a.BaseTokens
 		for _, nt := range a.Tokens {
 			s, ok := ret.NativeTokenBalances[nt.ID]
 			if !ok {
@@ -74,7 +74,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	}
 	for _, f := range txb.invokedFoundries {
 		if f.requiresInput() {
-			ret.TotalIotasInDustDeposit += f.in.Amount
+			ret.TotalBaseTokensInDustDeposit += f.in.Amount
 			simpleTokenScheme := util.MustTokenScheme(f.in.TokenScheme)
 			ret.TokenCirculatingSupplies[f.in.MustNativeTokenID()] = new(big.Int).
 				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
@@ -82,7 +82,7 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	}
 	for _, nft := range txb.nftsIncluded {
 		if nft.input != nil {
-			ret.TotalIotasInDustDeposit += nft.in.Amount
+			ret.TotalBaseTokensInDustDeposit += nft.in.Amount
 		}
 	}
 
@@ -92,12 +92,12 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 // sumOutputs sums all balances in outputs
 func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	ret := &TransactionTotals{
-		NativeTokenBalances:      make(map[iotago.NativeTokenID]*big.Int),
-		TokenCirculatingSupplies: make(map[iotago.NativeTokenID]*big.Int),
-		TotalIotasInL2Accounts:   txb.totalIotasInL2Accounts,
-		TotalIotasInDustDeposit:  txb.dustDepositAssumption.AnchorOutput,
-		SentOutIotas:             0,
-		SentOutTokenBalances:     make(map[iotago.NativeTokenID]*big.Int),
+		NativeTokenBalances:          make(map[iotago.NativeTokenID]*big.Int),
+		TokenCirculatingSupplies:     make(map[iotago.NativeTokenID]*big.Int),
+		TotalBaseTokensInL2Accounts:  txb.totalBaseTokensInL2Accounts,
+		TotalBaseTokensInDustDeposit: txb.dustDepositAssumption.AnchorOutput,
+		SentOutBaseTokens:            0,
+		SentOutTokenBalances:         make(map[iotago.NativeTokenID]*big.Int),
 	}
 	// sum over native tokens which produce outputs
 	txb.sumNativeTokens(ret, func(ntb *nativeTokenBalance) *big.Int {
@@ -110,7 +110,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 		if !f.producesOutput() {
 			continue
 		}
-		ret.TotalIotasInDustDeposit += f.out.Amount
+		ret.TotalBaseTokensInDustDeposit += f.out.Amount
 		id := f.out.MustNativeTokenID()
 		ret.TokenCirculatingSupplies[id] = big.NewInt(0)
 		simpleTokenScheme := util.MustTokenScheme(f.out.TokenScheme)
@@ -118,7 +118,7 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	}
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)
-		ret.SentOutIotas += assets.Iotas
+		ret.SentOutBaseTokens += assets.BaseTokens
 		for _, nt := range assets.Tokens {
 			s, ok := ret.SentOutTokenBalances[nt.ID]
 			if !ok {
@@ -130,13 +130,13 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	}
 	for _, nft := range txb.nftsIncluded {
 		if !nft.sentOutside {
-			ret.TotalIotasInDustDeposit += nft.out.Amount
+			ret.TotalBaseTokensInDustDeposit += nft.out.Amount
 		}
 	}
 	return ret
 }
 
-// Totals check consistency. If input total equals with output totals, returns (iota total, native token totals, true)
+// Totals check consistency. If input total equals with output totals, returns (base tokens total, native token totals, true)
 // Otherwise returns (0, nil, false)
 func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionTotals, error) {
 	totalsIN := txb.sumInputs()
@@ -145,10 +145,10 @@ func (txb *AnchorTransactionBuilder) Totals() (*TransactionTotals, *TransactionT
 	return totalsIN, totalsOUT, err
 }
 
-// TotalIotasInOutputs returns (a) total iotas owned by SCs and (b) total iotas locked as dust deposit
-func (txb *AnchorTransactionBuilder) TotalIotasInOutputs() (uint64, uint64) {
+// TotalBaseTokensInOutputs returns (a) total base tokens owned by SCs and (b) total base tokens locked as dust deposit
+func (txb *AnchorTransactionBuilder) TotalBaseTokensInOutputs() (uint64, uint64) {
 	totals := txb.sumOutputs()
-	return totals.TotalIotasInL2Accounts, totals.TotalIotasInDustDeposit
+	return totals.TotalBaseTokensInL2Accounts, totals.TotalBaseTokensInDustDeposit
 }
 
 // InternalNativeTokenBalances returns internally maintained balances of native tokens in inputs and
@@ -180,14 +180,14 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	}
 }
 
-func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp.FungibleTokens, checkpoint string) {
+func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.FungibleTokens, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
 		panic(xerrors.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))
 	}
-	if outTotal.TotalIotasInL2Accounts != l2Totals.Iotas {
-		panic(xerrors.Errorf("'%s': iotas L1 (%d) != iotas L2 (%d): %v",
-			checkpoint, outTotal.TotalIotasInL2Accounts, l2Totals.Iotas, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
+	if outTotal.TotalBaseTokensInL2Accounts != l2Totals.BaseTokens {
+		panic(xerrors.Errorf("'%s': base tokens L1 (%d) != base tokens L2 (%d): %v",
+			checkpoint, outTotal.TotalBaseTokensInL2Accounts, l2Totals.BaseTokens, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
 	for _, nt := range l2Totals.Tokens {
 		b1, ok := outTotal.NativeTokenBalances[nt.ID]
@@ -203,13 +203,13 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *iscp
 }
 
 func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
-	tIn := t.TotalIotasInL2Accounts + t.TotalIotasInDustDeposit
-	tOut := another.TotalIotasInL2Accounts + another.TotalIotasInDustDeposit + another.SentOutIotas
+	tIn := t.TotalBaseTokensInL2Accounts + t.TotalBaseTokensInDustDeposit
+	tOut := another.TotalBaseTokensInL2Accounts + another.TotalBaseTokensInDustDeposit + another.SentOutBaseTokens
 	if tIn != tOut {
-		msgIn := fmt.Sprintf("in.TotalIotasInL2Accounts: %d\n+ in.TotalIotasInDustDeposit: %d\n (%d)",
-			t.TotalIotasInL2Accounts, t.TotalIotasInDustDeposit, tIn)
-		msgOut := fmt.Sprintf("out.TotalIotasInL2Accounts: %d\n+ out.TotalIotasInDustDeposit: %d\n+ out.SentOutIotas: %d\n (%d)",
-			another.TotalIotasInL2Accounts, another.TotalIotasInDustDeposit, another.SentOutIotas, tOut)
+		msgIn := fmt.Sprintf("in.TotalBaseTokensInL2Accounts: %d\n+ in.TotalBaseTokensInDustDeposit: %d\n (%d)",
+			t.TotalBaseTokensInL2Accounts, t.TotalBaseTokensInDustDeposit, tIn)
+		msgOut := fmt.Sprintf("out.TotalBaseTokensInL2Accounts: %d\n+ out.TotalBaseTokensInDustDeposit: %d\n+ out.SentOutBaseToken: %d\n (%d)",
+			another.TotalBaseTokensInL2Accounts, another.TotalBaseTokensInDustDeposit, another.SentOutBaseTokens, tOut)
 		return xerrors.Errorf("%v:\n %s\n    !=\n%s", vm.ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
 	tokenIDs := make(map[iotago.NativeTokenID]bool)

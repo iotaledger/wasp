@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/stretchr/testify/require"
@@ -18,16 +18,16 @@ const foo = "foo"
 
 func TestMarshalling(t *testing.T) {
 	// construct a dummy offledger request
-	contract := iscp.Hn("somecontract")
-	entrypoint := iscp.Hn("someentrypoint")
+	contract := isc.Hn("somecontract")
+	entrypoint := isc.Hn("someentrypoint")
 	args := dict.Dict{foo: []byte("bar")}
 	nonce := uint64(time.Now().UnixNano())
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	key, _ := testkey.GenKeyAddr()
 
 	msg := NewOffLedgerRequestMsg(
 		chainID,
-		iscp.NewOffLedgerRequest(iscp.RandomChainID(), contract, entrypoint, args, nonce).WithGasBudget(1000).Sign(key),
+		isc.NewOffLedgerRequest(isc.RandomChainID(), contract, entrypoint, args, nonce).WithGasBudget(1000).Sign(key),
 	)
 
 	// marshall the msg

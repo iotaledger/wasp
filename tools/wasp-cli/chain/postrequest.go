@@ -5,17 +5,17 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
 
 func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger bool) {
-	scClient := SCClient(iscp.Hn(hname))
+	scClient := SCClient(isc.Hn(hname))
 
 	if offLedger {
 		params.Nonce = uint64(time.Now().UnixNano())
-		util.WithOffLedgerRequest(GetCurrentChainID(), func() (iscp.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})
 	} else {
@@ -43,7 +43,7 @@ func postRequestCmd() *cobra.Command {
 			params := chainclient.PostRequestParams{
 				Args:      util.EncodeParams(args[2:]),
 				Transfer:  util.ParseFungibleTokens(transfer),
-				Allowance: iscp.NewAllowanceFungibleTokens(allowanceTokens),
+				Allowance: isc.NewAllowanceFungibleTokens(allowanceTokens),
 			}
 			postRequest(hname, fname, params, offLedger)
 		},

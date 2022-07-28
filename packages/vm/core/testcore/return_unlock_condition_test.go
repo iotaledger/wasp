@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -19,7 +19,7 @@ func TestSendBack(t *testing.T) {
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain(nil, "chain1")
 
-	err := ch.DepositIotasToL2(10*iscp.Mi, nil)
+	err := ch.DepositBaseTokensToL2(10*isc.Mi, nil)
 	require.NoError(t, err)
 
 	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
@@ -46,10 +46,10 @@ func TestSendBack(t *testing.T) {
 		SenderAddress:    addr,
 		UnspentOutputs:   allOuts,
 		UnspentOutputIDs: allOutIDs,
-		Request: &iscp.RequestParameters{
+		Request: &isc.RequestParameters{
 			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: &iscp.FungibleTokens{Iotas: 1 * iscp.Mi},
-			Metadata: &iscp.SendMetadata{
+			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Mi},
+			Metadata: &isc.SendMetadata{
 				TargetContract: inccounter.Contract.Hname(),
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),
 				GasBudget:      math.MaxUint64,

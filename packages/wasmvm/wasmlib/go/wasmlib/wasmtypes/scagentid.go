@@ -146,7 +146,7 @@ func AgentIDToString(value ScAgentID) string {
 	case ScAgentIDEthereum:
 		return AddressToString(value.Address())
 	case ScAgentIDNil:
-		// iscp.NilAgentID.String() returns "-" which means NilAgentID is "-"
+		// isc.NilAgentID.String() returns "-" which means NilAgentID is "-"
 		return nilAgentIDString
 	default:
 		panic("AgentIDToString: invalid AgentID type")

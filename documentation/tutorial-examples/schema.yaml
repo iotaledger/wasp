@@ -1,5 +1,5 @@
 name: SoloTutorial
-description: Example ISCP smart contract for the Solo tutorial
+description: Example ISC smart contract for the Solo tutorial
 structs: {}
 typedefs: {}
 state:
