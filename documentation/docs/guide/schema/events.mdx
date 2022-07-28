@@ -23,7 +23,7 @@ periodically call a view function to retrieve the latest state of the smart cont
 but this burdens the nodes unnecessarily. A better way is to have the smart contracts
 trigger events that the user can subscribe to and that convey changes to its state.
 
-To support events the ISCP sandbox provides a very rudimentary interface. The function
+To support events the ISC sandbox provides a very rudimentary interface. The function
 call context exposes this interface through its `event()` function, which is passed a
 completely arbitrary text string. It is up to the smart contract creator to format
 this text string and it's up to the user to interpret this text string correctly. This
@@ -41,7 +41,7 @@ Therefore, they cannot be triggered from a view.
 For each event defined in the `events` section of the schema definition file, this
 events structure will contain a member function that takes the defined types of parameters
 and will automatically encode the event as a consistently formatted string and pass it
-to the ISCP context's `event()` function. The string consists of the name of the event,
+to the ISC context's `event()` function. The string consists of the name of the event,
 a timestamp, and string representations of each field, all separated by vertical bars.
 
 Here is the `events` section that can be found in the demo `fairroulette` smart contract:

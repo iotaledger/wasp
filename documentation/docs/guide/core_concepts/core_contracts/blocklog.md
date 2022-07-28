@@ -164,7 +164,7 @@ A `RequestID` is encoded as the concatenation of:
 - Previous L1 commitment (except for block index 0)
   - State commitment (`trie::VCommitment`)
   - Block hash (`[20]byte`)
-- Total iotas in L2 accounts (`uint64`)
+- Total base tokens in L2 accounts (`uint64`)
 - Total storage deposit (`uint64`)
 - Gas burned (`uint64`)
 - Gas fee charged (`uint64`)
@@ -176,7 +176,7 @@ A `RequestID` is encoded as the concatenation of:
 - Gas budget (`uint64`)
 - Gas burned (`uint64`)
 - Gas fee charged (`uint64`)
-- The request (`iscp::Request`)
+- The request ([`isc::Request`](https://github.com/iotaledger/wasp/blob/develop/packages/isc/request.go))
 - Whether the request produced an error (`bool`)
 - If the request produced an error, the
   [`UnresolvedVMError`](./errors.md#unresolvedvmerror)

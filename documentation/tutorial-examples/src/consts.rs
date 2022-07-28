@@ -10,7 +10,7 @@
 use wasmlib::*;
 
 pub const SC_NAME        : &str = "solotutorial";
-pub const SC_DESCRIPTION : &str = "Example ISCP smart contract for the Solo tutorial";
+pub const SC_DESCRIPTION : &str = "Example ISC smart contract for the Solo tutorial";
 pub const HSC_NAME       : ScHname = ScHname(0x32fee818);
 
 pub const PARAM_STR : &str = "str";

@@ -43,9 +43,9 @@ func TestTutorialL1(t *testing.T) {
 	env := solo.New(t)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	t.Logf("address of the user is: %s", userAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
-	numIotas := env.L1Iotas(userAddress)
-	t.Logf("balance of the user is: %d iotas", numIotas)
-	env.AssertL1Iotas(userAddress, utxodb.FundsFromFaucetAmount)
+	numBaseTokens := env.L1BaseTokens(userAddress)
+	t.Logf("balance of the user is: %d base tokens", numBaseTokens)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 }
 ```
 
@@ -56,7 +56,7 @@ The output of the test is:
 47:49.136622566	INFO	TestTutorialL1.db	dbmanager/dbmanager.go:64	creating new in-memory database for: CHAIN_REGISTRY
 47:49.136781104	INFO	TestTutorialL1	solo/solo.go:162	Solo environment has been created: logical time: 00:01.001000000, time step: 1ms
     tutorial_test.go:32: address of the user is: tgl1qp5d8zm9rr9rcae2hq95plx0rquy5gu2mpedurm2kze238neuhh5csjngz0
-    tutorial_test.go:34: balance of the user is: 1000000000 iotas
+    tutorial_test.go:34: balance of the user is: 1000000000 base tokens
 --- PASS: TestTutorialL1 (0.00s)
 ```
 
