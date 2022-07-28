@@ -80,16 +80,12 @@ jobs:
           cd contracts/wasm/scripts
           bash core_build.sh
           if [ $TEST_LANG == "go" ]; then
-            echo "========build SC in go========" 
             bash schema_all.sh
           elif [ $TEST_LANG == "gowasm" ]; then
-            echo "========build SC in gowasm========"
             bash go_all.sh
           elif [ $TEST_LANG == "tswasm" ]; then
-            echo "========build SC in tswasm========"
             bash ts_all.sh
           elif [ $TEST_LANG == "rswasm" ]; then
-            echo "========build SC in rswasm========"
             bash rust_all.sh
           fi
 
@@ -99,16 +95,12 @@ jobs:
         run: |
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
-            echo "========run SC tests with go========"
             go test ./...
           elif [ $TEST_LANG == "gowasm" ]; then
-            echo "========run SC tests with gowasm========"
             go test ./... -gowasm
           elif [ $TEST_LANG == "tswasm" ]; then
-            echo "========run SC tests with tswasm========"
             go test ./... -tswasm
           elif [ $TEST_LANG == "rswasm" ]; then
-            echo "========run SC tests with rswasm========"
             go test ./... -rswasm
           fi
           
