@@ -9,7 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -29,9 +29,9 @@ func rndAliasID() (ret iotago.AliasID) {
 
 // return deposit in BaseToken
 func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addBaseTokensToDustMinimum ...uint64) uint64 {
-	var assets *iscp.FungibleTokens
+	var assets *isc.FungibleTokens
 	if amountNative > 0 {
-		assets = &iscp.FungibleTokens{
+		assets = &isc.FungibleTokens{
 			BaseTokens: 0,
 			Tokens:     iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
@@ -41,12 +41,12 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		nil,
 		assets,
 		nil,
-		iscp.SendOptions{},
+		isc.SendOptions{},
 	)
 	if len(addBaseTokensToDustMinimum) > 0 {
 		out.Amount += addBaseTokensToDustMinimum[0]
 	}
-	reqData, err := iscp.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
+	reqData, err := isc.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
 	require.NoError(t, err)
 	txb.Consume(reqData)
 	_, _, err = txb.Totals()
@@ -55,7 +55,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 }
 
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) uint64 {
-	assets := &iscp.FungibleTokens{
+	assets := &isc.FungibleTokens{
 		BaseTokens: 0,
 		Tokens: iotago.NativeTokens{
 			&iotago.NativeToken{
@@ -66,12 +66,12 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 	}
 	exout := transaction.BasicOutputFromPostData(
 		txb.anchorOutput.AliasID.ToAddress(),
-		iscp.Hn("test"),
-		iscp.RequestParameters{
+		isc.Hn("test"),
+		isc.RequestParameters{
 			TargetAddress:              tpkg.RandEd25519Address(),
 			FungibleTokens:             assets,
-			Metadata:                   &iscp.SendMetadata{},
-			Options:                    iscp.SendOptions{},
+			Metadata:                   &isc.SendMetadata{},
+			Options:                    isc.SendOptions{},
 			AdjustToMinimumDustDeposit: true,
 		},
 	)
@@ -84,7 +84,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 }
 
 func TestTxBuilderBasic(t *testing.T) {
-	const initialTotalBaseTokens = 10 * iscp.Mi
+	const initialTotalBaseTokens = 10 * isc.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -206,7 +206,7 @@ func TestTxBuilderBasic(t *testing.T) {
 }
 
 func TestTxBuilderConsistency(t *testing.T) {
-	const initialTotalBaseTokens = 10 * iscp.Mi
+	const initialTotalBaseTokens = 10 * isc.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -613,12 +613,12 @@ func TestTxBuilderConsistency(t *testing.T) {
 }
 
 func TestDustDeposit(t *testing.T) {
-	reqMetadata := iscp.RequestMetadata{
+	reqMetadata := isc.RequestMetadata{
 		SenderContract: 0,
 		TargetContract: 0,
 		EntryPoint:     0,
 		Params:         dict.New(),
-		Allowance:      iscp.NewEmptyAllowance(),
+		Allowance:      isc.NewEmptyAllowance(),
 		GasBudget:      0,
 	}
 	t.Run("calc dust assumptions", func(t *testing.T) {
@@ -631,32 +631,32 @@ func TestDustDeposit(t *testing.T) {
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
 	})
 	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
-		assets := iscp.NewEmptyAssets()
+		assets := isc.NewEmptyAssets()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			iscp.SendOptions{},
+			isc.SendOptions{},
 		)
 		expected := parameters.L1.Protocol.RentStructure.MinRent(out)
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of base tokens when enough for dust cost", func(t *testing.T) {
-		assets := iscp.NewFungibleTokens(10000, nil)
+		assets := isc.NewFungibleTokens(10000, nil)
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			iscp.SendOptions{},
+			isc.SendOptions{},
 		)
 		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1.Protocol.RentStructure, nil))
 	})
 }
 
 func TestFoundries(t *testing.T) {
-	const initialTotalBaseTokens = 1 * iscp.Mi
+	const initialTotalBaseTokens = 1 * isc.Mi
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -741,21 +741,21 @@ func TestFoundries(t *testing.T) {
 
 func TestSerDe(t *testing.T) {
 	t.Run("serde BasicOutput", func(t *testing.T) {
-		reqMetadata := iscp.RequestMetadata{
+		reqMetadata := isc.RequestMetadata{
 			SenderContract: 0,
 			TargetContract: 0,
 			EntryPoint:     0,
 			Params:         dict.New(),
-			Allowance:      iscp.NewEmptyAllowance(),
+			Allowance:      isc.NewEmptyAllowance(),
 			GasBudget:      0,
 		}
-		assets := iscp.NewEmptyAssets()
+		assets := isc.NewEmptyAssets()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
 			assets,
 			&reqMetadata,
-			iscp.SendOptions{},
+			isc.SendOptions{},
 		)
 		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 		require.NoError(t, err)

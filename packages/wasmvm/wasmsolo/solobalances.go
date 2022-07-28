@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,13 +63,13 @@ func (bal *SoloBalances) dumpBalances() {
 	txt := "ACCOUNTS:"
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
-		addr, ok := iscp.AddressFromAgentID(acc)
-		l1 := iscp.NewEmptyAssets()
+		addr, ok := isc.AddressFromAgentID(acc)
+		l1 := isc.NewEmptyAssets()
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
 		txt += fmt.Sprintf("\n%s\n\tL2: %10d", acc.String(), l2.BaseTokens)
-		hname, _ := iscp.HnameFromAgentID(acc)
+		hname, _ := isc.HnameFromAgentID(acc)
 		if hname == 0 {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 		}

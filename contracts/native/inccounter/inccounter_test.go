@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -99,8 +99,8 @@ func TestIncWith1Post(t *testing.T) {
 	checkCounter(chain, 17)
 
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
-		AddBaseTokens(2 * iscp.Mi).
-		WithAllowance(iscp.NewAllowanceBaseTokens(1 * iscp.Mi)).
+		AddBaseTokens(2 * isc.Mi).
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Mi)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

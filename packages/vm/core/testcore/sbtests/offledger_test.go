@@ -3,7 +3,7 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -19,7 +19,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		cAID := setupTestSandboxSC(t, chain, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := iscp.NewAgentID(userAddr)
+		userAgentID := isc.NewAgentID(userAddr)
 
 		chain.AssertL2BaseTokens(userAgentID, 0)
 		chain.AssertL2BaseTokens(cAID, 0)
@@ -43,12 +43,12 @@ func TestOffLedgerSuccess(t *testing.T) {
 		cAID := setupTestSandboxSC(t, ch, nil, w)
 
 		user, userAddr := env.NewKeyPairWithFunds()
-		userAgentID := iscp.NewAgentID(userAddr)
+		userAgentID := isc.NewAgentID(userAddr)
 
 		ch.AssertL2BaseTokens(userAgentID, 0)
 		ch.AssertL2BaseTokens(cAID, 0)
 
-		depositBaseTokens := 1 * iscp.Mi
+		depositBaseTokens := 1 * isc.Mi
 		err := ch.DepositBaseTokensToL2(depositBaseTokens, user)
 		expectedUser := depositBaseTokens - ch.LastReceipt().GasFeeCharged
 		ch.AssertL2BaseTokens(userAgentID, expectedUser)

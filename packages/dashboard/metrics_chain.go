@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/metrics_chain.tmpl
 var tplMetricsChain string
 
-func metricsChainBreadcrumb(e *echo.Echo, chainID *iscp.ChainID) Tab {
+func metricsChainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChain"),
 		Title: fmt.Sprintf("Metrics: %.8s", chainID.String()),
@@ -27,7 +27,7 @@ func (d *Dashboard) initMetricsChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleMetricsChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}

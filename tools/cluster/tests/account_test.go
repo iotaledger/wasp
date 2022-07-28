@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -53,7 +53,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 }
 
 func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
-	hname := iscp.Hn(nativeIncCounterSCName)
+	hname := isc.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
@@ -94,7 +94,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	transferBaseTokens := 1 * iscp.Mi
+	transferBaseTokens := 1 * isc.Mi
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
@@ -105,7 +105,7 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 	require.NoError(e.t, err)
 
 	fees := receipts[0].GasFeeCharged
-	e.checkBalanceOnChain(iscp.NewAgentID(myAddress), iscp.BaseTokenID, transferBaseTokens-fees)
+	e.checkBalanceOnChain(isc.NewAgentID(myAddress), isc.BaseTokenID, transferBaseTokens-fees)
 
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(nativeIncCounterSCHname, i)
@@ -113,12 +113,12 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 		require.EqualValues(e.t, 43, counterValue)
 	}
 
-	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		e.t.Fatal()
 	}
 
-	incCounterAgentID := iscp.NewContractAgentID(e.Chain.ChainID, hname)
-	e.checkBalanceOnChain(incCounterAgentID, iscp.BaseTokenID, 0)
+	incCounterAgentID := isc.NewContractAgentID(e.Chain.ChainID, hname)
+	e.checkBalanceOnChain(incCounterAgentID, isc.BaseTokenID, 0)
 }
 
 func TestBasic2Accounts(t *testing.T) {
@@ -137,7 +137,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	hname := iscp.Hn(nativeIncCounterSCName)
+	hname := isc.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 	require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestBasic2Accounts(t *testing.T) {
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	transferBaseTokens := 1 * iscp.Mi
+	transferBaseTokens := 1 * isc.Mi
 	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
@@ -198,7 +198,7 @@ func TestBasic2Accounts(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.Clu.AssertAddressBalances(myAddress, iscp.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 
@@ -211,7 +211,7 @@ func TestBasic2Accounts(t *testing.T) {
 	allowanceBaseTokens := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: iscp.NewAllowanceBaseTokens(allowanceBaseTokens),
+			Allowance: isc.NewAllowanceBaseTokens(allowanceBaseTokens),
 		},
 	)
 	require.NoError(t, err)

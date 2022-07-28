@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -25,13 +25,13 @@ var (
 	funcBigEvent   = coreutil.Func("bigevent")
 
 	manyEventsContractProcessor = manyEventsContract.Processor(nil,
-		funcManyEvents.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			for i := 0; i < nEvents; i++ {
 				ctx.Event(fmt.Sprintf("testing many events %d", i))
 			}
 			return nil
 		}),
-		funcBigEvent.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			buf := make([]byte, bigEventSize)
 			ctx.Event(string(buf))
 			return nil
@@ -48,7 +48,7 @@ func setupTest(t *testing.T) *solo.Chain {
 	return ch
 }
 
-func checkNEvents(t *testing.T, ch *solo.Chain, reqid iscp.RequestID, n int) {
+func checkNEvents(t *testing.T, ch *solo.Chain, reqid isc.RequestID, n int) {
 	// fetch events from blocklog
 	events, err := ch.GetEventsForContract(manyEventsContractName)
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestEventTooLarge(t *testing.T) {
 	checkNEvents(t, ch, reqID, 1)
 }
 
-func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
+func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
 	tx, _, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithGasBudget(math.MaxUint64),
 		nil,
@@ -137,7 +137,7 @@ func incrementSCCounter(t *testing.T, ch *solo.Chain) iscp.RequestID {
 	return reqs[0].ID()
 }
 
-func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID iscp.RequestID) []string {
+func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []string {
 	res, err := chain.CallView(blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
 	)

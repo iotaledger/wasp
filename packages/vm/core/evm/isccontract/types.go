@@ -8,30 +8,30 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // ISCChainID matches the type definition in ISC.sol
-type ISCChainID [iscp.ChainIDLength]byte
+type ISCChainID [isc.ChainIDLength]byte
 
 func init() {
-	if iscp.ChainIDLength != 32 {
+	if isc.ChainIDLength != 32 {
 		panic("static check: ChainID length does not match bytes32 in ISC.sol")
 	}
 }
 
-func WrapISCChainID(c *iscp.ChainID) (ret ISCChainID) {
+func WrapISCChainID(c *isc.ChainID) (ret ISCChainID) {
 	copy(ret[:], c.Bytes())
 	return
 }
 
-func (c ISCChainID) Unwrap() (*iscp.ChainID, error) {
-	return iscp.ChainIDFromBytes(c[:])
+func (c ISCChainID) Unwrap() (*isc.ChainID, error) {
+	return isc.ChainIDFromBytes(c[:])
 }
 
-func (c ISCChainID) MustUnwrap() *iscp.ChainID {
+func (c ISCChainID) MustUnwrap() *isc.ChainID {
 	ret, err := c.Unwrap()
 	if err != nil {
 		panic(err)
@@ -79,11 +79,11 @@ type L1Address struct {
 }
 
 func WrapL1Address(a iotago.Address) L1Address {
-	return L1Address{Data: iscp.BytesFromAddress(a)}
+	return L1Address{Data: isc.BytesFromAddress(a)}
 }
 
 func (a L1Address) Unwrap() (iotago.Address, error) {
-	ret, _, err := iscp.AddressFromBytes(a.Data)
+	ret, _, err := isc.AddressFromBytes(a.Data)
 	return ret, err
 }
 
@@ -100,15 +100,15 @@ type ISCAgentID struct {
 	Data []byte
 }
 
-func WrapISCAgentID(a iscp.AgentID) ISCAgentID {
+func WrapISCAgentID(a isc.AgentID) ISCAgentID {
 	return ISCAgentID{Data: a.Bytes()}
 }
 
-func (a ISCAgentID) Unwrap() (iscp.AgentID, error) {
-	return iscp.AgentIDFromBytes(a.Data)
+func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
+	return isc.AgentIDFromBytes(a.Data)
 }
 
-func (a ISCAgentID) MustUnwrap() iscp.AgentID {
+func (a ISCAgentID) MustUnwrap() isc.AgentID {
 	ret, err := a.Unwrap()
 	if err != nil {
 		panic(err)
@@ -142,7 +142,7 @@ type ISCNFT struct {
 	Metadata []byte
 }
 
-func WrapISCNFT(n *iscp.NFT) ISCNFT {
+func WrapISCNFT(n *isc.NFT) ISCNFT {
 	return ISCNFT{
 		ID:       WrapNFTID(n.ID),
 		Issuer:   WrapL1Address(n.Issuer),
@@ -150,19 +150,19 @@ func WrapISCNFT(n *iscp.NFT) ISCNFT {
 	}
 }
 
-func (n ISCNFT) Unwrap() (*iscp.NFT, error) {
+func (n ISCNFT) Unwrap() (*isc.NFT, error) {
 	issuer, err := n.Issuer.Unwrap()
 	if err != nil {
 		return nil, err
 	}
-	return &iscp.NFT{
+	return &isc.NFT{
 		ID:       n.ID.Unwrap(),
 		Issuer:   issuer,
 		Metadata: n.Metadata,
 	}, nil
 }
 
-func (n ISCNFT) MustUnwrap() *iscp.NFT {
+func (n ISCNFT) MustUnwrap() *isc.NFT {
 	ret, err := n.Unwrap()
 	if err != nil {
 		panic(err)
@@ -177,7 +177,7 @@ type ISCAllowance struct {
 	NFTs       []NFTID
 }
 
-func WrapISCAllowance(a *iscp.Allowance) ISCAllowance {
+func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	tokens := make([]NativeToken, len(a.Assets.Tokens))
 	for i, t := range a.Assets.Tokens {
 		tokens[i] = WrapNativeToken(t)
@@ -193,7 +193,7 @@ func WrapISCAllowance(a *iscp.Allowance) ISCAllowance {
 	}
 }
 
-func (a ISCAllowance) Unwrap() *iscp.Allowance {
+func (a ISCAllowance) Unwrap() *isc.Allowance {
 	tokens := make(iotago.NativeTokens, len(a.Tokens))
 	for i, t := range a.Tokens {
 		tokens[i] = t.Unwrap()
@@ -202,7 +202,7 @@ func (a ISCAllowance) Unwrap() *iscp.Allowance {
 	for i, id := range a.NFTs {
 		nfts[i] = id.Unwrap()
 	}
-	return iscp.NewAllowance(a.BaseTokens, tokens, nfts)
+	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
 }
 
 // ISCDictItem matches the struct definition in ISC.sol
@@ -237,7 +237,7 @@ type ISCFungibleTokens struct {
 	Tokens     []NativeToken
 }
 
-func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens {
+func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens {
 	ret := ISCFungibleTokens{
 		BaseTokens: fungibleTokens.BaseTokens,
 		Tokens:     make([]NativeToken, len(fungibleTokens.Tokens)),
@@ -251,8 +251,8 @@ func WrapISCFungibleTokens(fungibleTokens iscp.FungibleTokens) ISCFungibleTokens
 	return ret
 }
 
-func (t ISCFungibleTokens) Unwrap() *iscp.FungibleTokens {
-	ret := iscp.FungibleTokens{
+func (t ISCFungibleTokens) Unwrap() *isc.FungibleTokens {
+	ret := isc.FungibleTokens{
 		BaseTokens: t.BaseTokens,
 		Tokens:     make(iotago.NativeTokens, len(t.Tokens)),
 	}
@@ -277,7 +277,7 @@ type ISCSendMetadata struct {
 	GasBudget      uint64
 }
 
-func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
+func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 	ret := ISCSendMetadata{
 		GasBudget:      metadata.GasBudget,
 		Entrypoint:     uint32(metadata.EntryPoint),
@@ -289,10 +289,10 @@ func WrapISCSendMetadata(metadata iscp.SendMetadata) ISCSendMetadata {
 	return ret
 }
 
-func (i ISCSendMetadata) Unwrap() *iscp.SendMetadata {
-	ret := iscp.SendMetadata{
-		TargetContract: iscp.Hname(i.TargetContract),
-		EntryPoint:     iscp.Hname(i.Entrypoint),
+func (i ISCSendMetadata) Unwrap() *isc.SendMetadata {
+	ret := isc.SendMetadata{
+		TargetContract: isc.Hname(i.TargetContract),
+		EntryPoint:     isc.Hname(i.Entrypoint),
 		Params:         i.Params.Unwrap(),
 		Allowance:      i.Allowance.Unwrap(),
 		GasBudget:      i.GasBudget,
@@ -306,7 +306,7 @@ type ISCExpiration struct {
 	ReturnAddress L1Address
 }
 
-func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
+func WrapISCExpiration(data *isc.Expiration) ISCExpiration {
 	var expiryTime int64
 
 	if !data.Time.IsZero() {
@@ -321,7 +321,7 @@ func WrapISCExpiration(data *iscp.Expiration) ISCExpiration {
 	return ret
 }
 
-func (i *ISCExpiration) Unwrap() *iscp.Expiration {
+func (i *ISCExpiration) Unwrap() *isc.Expiration {
 	if i == nil {
 		return nil
 	}
@@ -332,7 +332,7 @@ func (i *ISCExpiration) Unwrap() *iscp.Expiration {
 
 	address := i.ReturnAddress.MustUnwrap()
 
-	ret := iscp.Expiration{
+	ret := isc.Expiration{
 		ReturnAddress: address,
 		Time:          time.UnixMilli(i.Time),
 	}
@@ -345,7 +345,7 @@ type ISCSendOptions struct {
 	Expiration ISCExpiration
 }
 
-func WrapISCSendOptions(options iscp.SendOptions) ISCSendOptions {
+func WrapISCSendOptions(options isc.SendOptions) ISCSendOptions {
 	var timeLock int64
 
 	if !options.Timelock.IsZero() {
@@ -360,14 +360,14 @@ func WrapISCSendOptions(options iscp.SendOptions) ISCSendOptions {
 	return ret
 }
 
-func (i *ISCSendOptions) Unwrap() iscp.SendOptions {
+func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	var timeLock time.Time
 
 	if i.Timelock > 0 {
 		timeLock = time.UnixMilli(i.Timelock)
 	}
 
-	ret := iscp.SendOptions{
+	ret := isc.SendOptions{
 		Timelock:   timeLock,
 		Expiration: i.Expiration.Unwrap(),
 	}
@@ -383,7 +383,7 @@ type ISCRequestParameters struct {
 	SendOptions              ISCSendOptions
 }
 
-func WrapISCRequestParameters(parameters iscp.RequestParameters) ISCRequestParameters {
+func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParameters {
 	ret := ISCRequestParameters{
 		TargetAddress:            WrapL1Address(parameters.TargetAddress),
 		FungibleTokens:           WrapISCFungibleTokens(*parameters.FungibleTokens),
@@ -395,8 +395,8 @@ func WrapISCRequestParameters(parameters iscp.RequestParameters) ISCRequestParam
 	return ret
 }
 
-func (i *ISCRequestParameters) Unwrap() iscp.RequestParameters {
-	ret := iscp.RequestParameters{
+func (i *ISCRequestParameters) Unwrap() isc.RequestParameters {
+	ret := isc.RequestParameters{
 		TargetAddress:              i.TargetAddress.MustUnwrap(),
 		FungibleTokens:             i.FungibleTokens.Unwrap(),
 		AdjustToMinimumDustDeposit: i.AdjustMinimumDustDeposit,

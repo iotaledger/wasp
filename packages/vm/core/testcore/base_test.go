@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -125,7 +125,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
 		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
+		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(isc.Hn("dummyContract")).Error())
 
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
@@ -150,7 +150,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		}()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := iscp.NewAgentID(senderAddr)
+		senderAgentID := isc.NewAgentID(senderAddr)
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -162,7 +162,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			WithGasBudget(100_000)
 		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
 		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(iscp.Hn("dummyContract")).Error())
+		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(isc.Hn("dummyContract")).Error())
 
 		totalBaseTokensAfter := ch.L2TotalBaseTokens()
 		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
@@ -224,7 +224,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		}()
 
 		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := iscp.NewAgentID(senderAddr)
+		senderAgentID := isc.NewAgentID(senderAddr)
 
 		totalBaseTokensBefore := ch.L2TotalBaseTokens()
 		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
@@ -359,7 +359,7 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
-			agentID := iscp.NewAgentID(addr)
+			agentID := isc.NewAgentID(addr)
 
 			if testCase.L2Balance > 0 {
 				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
@@ -368,11 +368,11 @@ func TestEstimateGas(t *testing.T) {
 					accounts.Contract.Name,
 					accounts.FuncTransferAllowanceTo.Name,
 					dict.Dict{
-						accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewAgentID(addr)),
+						accounts.ParamAgentID:          codec.EncodeAgentID(isc.NewAgentID(addr)),
 						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 					},
-				).AddAllowance(iscp.NewAllowanceBaseTokens(testCase.L2Balance)).
-					AddBaseTokens(10 * iscp.Mi).
+				).AddAllowance(isc.NewAllowanceBaseTokens(testCase.L2Balance)).
+					AddBaseTokens(10 * isc.Mi).
 					WithGasBudget(math.MaxUint64)
 
 				_, err = ch.PostRequestSync(req, anotherKeyPair)
@@ -469,7 +469,7 @@ func TestDeployNativeContract(t *testing.T) {
 	ch := env.NewChain(nil, "chain1")
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-	// userAgentID := iscp.NewAgentID(userAddr, 0)
+	// userAgentID := isc.NewAgentID(userAddr, 0)
 
 	err := ch.DepositBaseTokensToL2(10_000, senderKeyPair)
 	require.NoError(t, err)
@@ -481,7 +481,7 @@ func TestDeployNativeContract(t *testing.T) {
 	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(senderAddr)).
+		root.ParamDeployer, isc.NewAgentID(senderAddr)).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req, nil)
@@ -532,11 +532,11 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	dust := 1 * iscp.Mi
+	dust := 1 * isc.Mi
 
 	maxRequestsPerBlock := parameters.L1.MaxTransactionSize / reqSize
 
-	reqs := make([]iscp.Request, maxRequestsPerBlock+1)
+	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
 		req, err := solo.NewIscpRequestFromCallParams(
 			ch,

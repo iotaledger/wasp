@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -45,7 +45,7 @@ func test2Chains(t *testing.T, w bool) {
 	contractAgentID := setupTestSandboxSC(t, chain2, nil, w)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := iscp.NewAgentID(userAddress)
+	userAgentID := isc.NewAgentID(userAddress)
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 
 	chain1CommonAccountBaseTokens := chain1.L2BaseTokens(chain1.CommonAccount())
@@ -61,8 +61,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
 	// send base tokens to contractAgentID (that is an entity of chain2) on chain1
-	const baseTokensToSend = 11 * iscp.Mi
-	const baseTokensCreditedToScOnChain1 = 10 * iscp.Mi
+	const baseTokensToSend = 11 * isc.Mi
+	const baseTokensCreditedToScOnChain1 = 10 * isc.Mi
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
@@ -100,15 +100,15 @@ func test2Chains(t *testing.T, w bool) {
 	baseTokensToWithdrawalFromChain1 := baseTokensCreditedToScOnChain1 // try to withdraw all base tokens deposited to chain1 on behalf of chain2's contract
 	// reqAllowance is the allowance provided to the "withdraw from chain" contract (chain2) that needs to be enough to
 	// pay the gas fees of withdraw func on chain1
-	reqAllowance := accounts.ConstDepositFeeTmp + 1*iscp.Mi
+	reqAllowance := accounts.ConstDepositFeeTmp + 1*isc.Mi
 	// allowance + x, where x will be used for the gas costs of `FuncWithdrawFromChain` on chain2
-	baseTokensToSend2 := reqAllowance + 1*iscp.Mi
+	baseTokensToSend2 := reqAllowance + 1*isc.Mi
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
 		sbtestsc.ParamBaseTokensToWithdrawal, baseTokensToWithdrawalFromChain1).
 		AddBaseTokens(baseTokensToSend2).
-		WithAllowance(iscp.NewAllowanceBaseTokens(reqAllowance)).
+		WithAllowance(isc.NewAllowanceBaseTokens(reqAllowance)).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = chain2.PostRequestSync(req, userWallet)

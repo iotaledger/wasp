@@ -3,7 +3,7 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -106,13 +106,13 @@ func TestTutorialAccounts(t *testing.T) {
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
 
 	// the wallet can we identified on L2 by an AgentID:
-	userAgentID := iscp.NewAgentID(userAddress)
+	userAgentID := isc.NewAgentID(userAddress)
 	// for now our on-chain account is empty:
 	chain.AssertL2BaseTokens(userAgentID, 0)
 
 	// send 1 Mi from the L1 wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddBaseTokens(1 * iscp.Mi)
+		AddBaseTokens(1 * isc.Mi)
 
 	// estimate the gas fee and storage deposit
 	gas1, gasFee1, err := chain.EstimateGasOnLedger(req, userWallet, true)
@@ -128,14 +128,14 @@ func TestTutorialAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// our L1 balance is 1 Mi + gas fee short
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*iscp.Mi-gasFee1)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*isc.Mi-gasFee1)
 	// our L2 balance is 1 Mi
-	chain.AssertL2BaseTokens(userAgentID, 1*iscp.Mi)
+	chain.AssertL2BaseTokens(userAgentID, 1*isc.Mi)
 	// (the gas fee went to the chain's private account)
 
 	// withdraw all base tokens back to L1
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAllowance(iscp.NewAllowanceBaseTokens(1 * iscp.Mi))
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Mi))
 
 	// estimate the gas fee and storage deposit
 	gas2, gasFee2, err := chain.EstimateGasOnLedger(req, userWallet, true)

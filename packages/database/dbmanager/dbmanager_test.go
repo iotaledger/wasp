@@ -3,7 +3,7 @@ package dbmanager
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -21,7 +21,7 @@ func TestNewDbManager(t *testing.T) {
 func TestCreateDb(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	dbm := NewDBManager(log, true, registry.DefaultConfig())
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	require.Nil(t, dbm.GetKVStore(chainID))
 	require.NotNil(t, dbm.GetOrCreateKVStore(chainID))
 	require.Len(t, dbm.databases, 1)

@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -61,7 +61,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 		}
 		if receipt.Error != nil {
 			resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-				return c.CallView(iscp.Hn(contractName), funcName, params)
+				return c.CallView(isc.Hn(contractName), funcName, params)
 			})
 			if err != nil {
 				return err
@@ -92,7 +92,7 @@ func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-const transferAllowanceToGasBudgetBaseTokens = 1 * iscp.Mi
+const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Mi
 
 func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()
@@ -107,12 +107,12 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	}
 	gasBudget := uint64(math.MaxUint64)
 	_, err = e.chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
-		Transfer: iscp.NewFungibleTokens(amount+transferAllowanceToGasBudgetBaseTokens, nil),
+		Transfer: isc.NewFungibleTokens(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID:          codec.EncodeAgentID(iscp.NewEthereumAddressAgentID(ethAddr)),
+			accounts.ParamAgentID:          codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
 			accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 		},
-		Allowance: iscp.NewAllowanceBaseTokens(amount),
+		Allowance: isc.NewAllowanceBaseTokens(amount),
 		GasBudget: &gasBudget,
 	})
 	require.NoError(e.T, err)

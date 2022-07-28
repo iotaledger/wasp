@@ -3,7 +3,7 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -18,7 +18,7 @@ func (c *WaspClient) GetNodeConnectionMetrics() (*model.NodeConnectionMetrics, e
 }
 
 // GetNodeConnectionMetrics fetches a connection to L1 metrics by address
-func (c *WaspClient) GetChainNodeConnectionMetrics(chID *iscp.ChainID) (*model.NodeConnectionMessagesMetrics, error) {
+func (c *WaspClient) GetChainNodeConnectionMetrics(chID *isc.ChainID) (*model.NodeConnectionMessagesMetrics, error) {
 	ncmm := &model.NodeConnectionMessagesMetrics{}
 	if err := c.do(http.MethodGet, routes.GetChainNodeConnectionMetrics(chID.String()), nil, ncmm); err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func (c *WaspClient) GetChainNodeConnectionMetrics(chID *iscp.ChainID) (*model.N
 }
 
 // GetNodeConnectionMetrics fetches a consensus workflow status by address
-func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *iscp.ChainID) (*model.ConsensusWorkflowStatus, error) {
+func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *isc.ChainID) (*model.ConsensusWorkflowStatus, error) {
 	ncmm := &model.ConsensusWorkflowStatus{}
 	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chID.String()), nil, ncmm); err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *iscp.ChainID) (*model
 	return ncmm, nil
 }
 
-func (c *WaspClient) GetChainConsensusPipeMetrics(chID *iscp.ChainID) (*model.ConsensusPipeMetrics, error) {
+func (c *WaspClient) GetChainConsensusPipeMetrics(chID *isc.ChainID) (*model.ConsensusPipeMetrics, error) {
 	ncmm := &model.ConsensusPipeMetrics{}
 	if err := c.do(http.MethodGet, routes.GetChainConsensusPipeMetrics(chID.String()), nil, ncmm); err != nil {
 		return nil, err

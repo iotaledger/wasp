@@ -6,8 +6,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
@@ -20,7 +20,7 @@ type ConsoleReportParams struct {
 	StatsEveryKVPairs int
 }
 
-func FileName(chainID *iscp.ChainID, stateIndex uint32) string {
+func FileName(chainID *isc.ChainID, stateIndex uint32) string {
 	return fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
 }
 
@@ -101,7 +101,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 
 type FileProperties struct {
 	FileName   string
-	ChainID    *iscp.ChainID
+	ChainID    *isc.ChainID
 	StateIndex uint32
 	TimeStamp  time.Time
 	NumRecords int
@@ -120,7 +120,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 				errR = xerrors.New("duplicate record with chainID")
 				return false
 			}
-			if ret.ChainID, errR = iscp.ChainIDFromBytes(v); errR != nil {
+			if ret.ChainID, errR = isc.ChainIDFromBytes(v); errR != nil {
 				return false
 			}
 			chainIDFound = true

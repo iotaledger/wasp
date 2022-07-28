@@ -42,7 +42,7 @@ package micropay
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.Error(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 // 	chain.AssertL2Iotas(cAgentID, 0)
 // 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
 // }
@@ -70,7 +70,7 @@ package micropay
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 // 	chain.AssertL2Iotas(cAgentID, 600+1)
 // 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 // }
@@ -100,7 +100,7 @@ package micropay
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 // 	chain.AssertL2Iotas(cAgentID, 600+1)
 // 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
@@ -143,7 +143,7 @@ package micropay
 // 	_, providerAddr := env.NewKeyPairWithFunds()
 // 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 
 // 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 // 		ParamServiceAddress, providerAddr).
@@ -219,7 +219,7 @@ package micropay
 // 	provider, providerAddr := env.NewKeyPairWithFunds()
 // 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 
 // 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 // 		ParamServiceAddress, providerAddr).

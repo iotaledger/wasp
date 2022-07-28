@@ -9,8 +9,8 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -38,7 +38,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
-		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), iscp.OID(task.AnchorOutputID.UTXOInput()))
+		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), isc.OID(task.AnchorOutputID.UTXOInput()))
 	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests...)
 	task.VirtualStateAccess = nextvs
 	task.RotationAddress = nil
@@ -65,7 +65,7 @@ func nextState(
 	consumedOutput *iotago.AliasOutput,
 	consumedOutputID iotago.OutputID,
 	_ time.Time,
-	reqs ...iscp.Request,
+	reqs ...isc.Request,
 ) (state.VirtualStateAccess, *iotago.TransactionEssence, []byte) {
 	nextvs := vs.Copy()
 	prevBlockIndex := vs.BlockIndex()
@@ -129,7 +129,7 @@ func NextState(
 	t *testing.T,
 	chainKey *cryptolib.KeyPair,
 	vs state.VirtualStateAccess,
-	chainOutput *iscp.AliasOutputWithID,
+	chainOutput *isc.AliasOutputWithID,
 	ts time.Time,
 ) (state.VirtualStateAccess, *iotago.Transaction, *iotago.UTXOInput) {
 	if chainKey != nil {

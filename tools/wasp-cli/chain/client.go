@@ -6,7 +6,7 @@ package chain
 import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
@@ -20,6 +20,6 @@ func Client(i ...int) *chainclient.Client {
 	)
 }
 
-func SCClient(contractHname iscp.Hname, i ...int) *scclient.SCClient {
+func SCClient(contractHname isc.Hname, i ...int) *scclient.SCClient {
 	return scclient.New(Client(i...), contractHname)
 }

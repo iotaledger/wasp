@@ -8,7 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
@@ -30,9 +30,9 @@ var ErrDKShareNotFound = errors.New("dkShare not found")
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error)
+	GetChainRecordByChainID(chainID *isc.ChainID) (*ChainRecord, error)
 	GetChainRecords() ([]*ChainRecord, error)
-	UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error)
-	ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error)
-	DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error)
+	UpdateChainRecord(chainID *isc.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error)
+	ActivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error)
+	DeactivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error)
 }

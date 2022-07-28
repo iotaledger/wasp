@@ -9,7 +9,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -21,19 +21,19 @@ type contractSandbox struct {
 	sandbox.SandboxBase
 }
 
-func NewSandbox(vmctx *VMContext) iscp.Sandbox {
+func NewSandbox(vmctx *VMContext) isc.Sandbox {
 	ret := &contractSandbox{}
 	ret.Ctx = vmctx
 	return ret
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *iscp.Allowance) dict.Dict {
+func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, transfer *isc.Allowance) dict.Dict {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) Caller() iscp.AgentID {
+func (s *contractSandbox) Caller() isc.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetCallerData)
 	return s.Ctx.(*VMContext).Caller()
 }
@@ -56,37 +56,37 @@ func (s *contractSandbox) GetEntropy() hashing.HashValue {
 	return s.Ctx.(*VMContext).Entropy()
 }
 
-func (s *contractSandbox) AllowanceAvailable() *iscp.Allowance {
+func (s *contractSandbox) AllowanceAvailable() *isc.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetAllowance)
 	return s.Ctx.(*VMContext).AllowanceAvailable()
 }
 
-func (s *contractSandbox) TransferAllowedFunds(target iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, transfer...)
 }
 
-func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target iscp.AgentID, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
 	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, transfer...)
 }
 
-func (s *contractSandbox) Request() iscp.Calldata {
+func (s *contractSandbox) Request() isc.Calldata {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.(*VMContext).Request()
 }
 
-func (s *contractSandbox) Send(par iscp.RequestParameters) {
+func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
 	s.Ctx.(*VMContext).Send(par)
 }
 
-func (s *contractSandbox) SendAsNFT(par iscp.RequestParameters, nftID iotago.NFTID) {
+func (s *contractSandbox) SendAsNFT(par isc.RequestParameters, nftID iotago.NFTID) {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeSendL1Request, uint64(s.Ctx.(*VMContext).NumPostedOutputs))
 	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
 }
 
-func (s *contractSandbox) EstimateRequiredDustDeposit(par iscp.RequestParameters) uint64 {
+func (s *contractSandbox) EstimateRequiredDustDeposit(par isc.RequestParameters) uint64 {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateDustCost)
 	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)
 }
@@ -95,18 +95,18 @@ func (s *contractSandbox) State() kv.KVStore {
 	return s.Ctx.(*VMContext).State()
 }
 
-func (s *contractSandbox) StateAnchor() *iscp.StateAnchor {
+func (s *contractSandbox) StateAnchor() *isc.StateAnchor {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.(*VMContext).StateAnchor()
 }
 
-func (s *contractSandbox) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTemplate {
 	return s.Ctx.(*VMContext).RegisterError(messageFormat)
 }
 
 // helper methods
 
-func (s *contractSandbox) RequireCallerAnyOf(agentIDs []iscp.AgentID) {
+func (s *contractSandbox) RequireCallerAnyOf(agentIDs []isc.AgentID) {
 	ok := false
 	for _, agentID := range agentIDs {
 		if s.Caller().Equals(agentID) {
@@ -118,15 +118,15 @@ func (s *contractSandbox) RequireCallerAnyOf(agentIDs []iscp.AgentID) {
 	}
 }
 
-func (s *contractSandbox) RequireCaller(agentID iscp.AgentID) {
-	s.RequireCallerAnyOf([]iscp.AgentID{agentID})
+func (s *contractSandbox) RequireCaller(agentID isc.AgentID) {
+	s.RequireCallerAnyOf([]isc.AgentID{agentID})
 }
 
 func (s *contractSandbox) RequireCallerIsChainOwner() {
 	s.RequireCaller(s.ChainOwnerID())
 }
 
-func (s *contractSandbox) Privileged() iscp.Privileged {
+func (s *contractSandbox) Privileged() isc.Privileged {
 	return s
 }
 
@@ -148,7 +148,7 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.Ctx.(*VMContext).ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) SubscribeBlockContext(openFunc, closeFunc iscp.Hname) {
+func (s *contractSandbox) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {
 	s.Ctx.(*VMContext).SubscribeBlockContext(openFunc, closeFunc)
 }
 

@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -49,13 +49,13 @@ type WaspServices interface {
 	PeeringStats() (*PeeringStats, error)
 	MyNetworkID() string
 	GetChainRecords() ([]*registry.ChainRecord, error)
-	GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error)
-	GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error)
-	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
-	GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
+	GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error)
+	GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error)
+	CallView(chainID *isc.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainNodeConnectionMetrics(*isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
-	GetChainConsensusWorkflowStatus(*iscp.ChainID) (chain.ConsensusWorkflowStatus, error)
-	GetChainConsensusPipeMetrics(*iscp.ChainID) (chain.ConsensusPipeMetrics, error)
+	GetChainConsensusWorkflowStatus(*isc.ChainID) (chain.ConsensusWorkflowStatus, error)
+	GetChainConsensusPipeMetrics(*isc.ChainID) (chain.ConsensusPipeMetrics, error)
 }
 
 type Dashboard struct {

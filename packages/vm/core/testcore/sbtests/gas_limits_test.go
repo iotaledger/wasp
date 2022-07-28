@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -58,7 +58,7 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 	// produce n requests over the block gas limit (each request uses the maximum amount of gas a call can use)
 	nRequests := int(gas.MaxGasPerBlock / gas.MaxGasPerCall)
-	reqs := make([]iscp.Request, nRequests)
+	reqs := make([]isc.Request, nRequests)
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := maxGasRequest(ch, i)

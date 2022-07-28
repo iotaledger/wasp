@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
@@ -35,7 +35,7 @@ type mockedNode struct {
 	Consensus           chain.Consensus                     // Consensus needs
 	LastSolidStateIndex uint32                              // State manager mock
 	SolidStates         map[uint32]state.VirtualStateAccess // State manager mock
-	StateOutput         *iscp.AliasOutputWithID             // State manager mock
+	StateOutput         *isc.AliasOutputWithID              // State manager mock
 	Log                 *logger.Logger
 	stateSync           coreutil.ChainStateSync // Chain mock
 }
@@ -99,7 +99,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	ret.ChainCore.OnStateCandidate(func(newState state.VirtualStateAccess, approvingOutputID *iotago.UTXOInput) { // State manager mock: state candidate received and is approved by checking that L1 has approving output
 		nsCommitment := trie.RootCommitment(newState.TrieNodeStore())
 		ret.Log.Debugf("State manager mock (OnStateCandidate): received state candidate: index %v, commitment %v, approving output ID %v",
-			newState.BlockIndex(), nsCommitment, iscp.OID(approvingOutputID))
+			newState.BlockIndex(), nsCommitment, isc.OID(approvingOutputID))
 
 		if !ret.addNewState(newState) {
 			return
@@ -115,7 +115,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 				time.Sleep(50 * time.Millisecond)
 			}
 
-			ret.Log.Debugf("State manager mock (OnStateCandidate): approving output %v received", iscp.OID(approvingOutputID))
+			ret.Log.Debugf("State manager mock (OnStateCandidate): approving output %v received", isc.OID(approvingOutputID))
 			aoCommitment, err := state.L1CommitmentFromAliasOutput(output)
 			require.NoError(env.T, err)
 			require.True(env.T, state.EqualCommitments(nsCommitment, aoCommitment.StateCommitment))
@@ -126,7 +126,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 				return
 			}
 
-			ret.doStateApproved(newState, iscp.NewAliasOutputWithID(output, approvingOutputID))
+			ret.doStateApproved(newState, isc.NewAliasOutputWithID(output, approvingOutputID))
 		}()
 	})
 	go ret.pullStateLoop()
@@ -193,11 +193,11 @@ func (n *mockedNode) getStateFromNodes(index uint32) state.VirtualStateAccess {
 	return nil
 }
 
-func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newStateOutput *iscp.AliasOutputWithID) {
-	reqIDsForLastState := make([]iscp.RequestID, 0)
+func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newStateOutput *isc.AliasOutputWithID) {
+	reqIDsForLastState := make([]isc.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(newState.BlockIndex()))
 	err := newState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
-		reqid, err := iscp.RequestIDFromBytes(value)
+		reqid, err := isc.RequestIDFromBytes(value)
 		require.NoError(n.Env.T, err)
 		reqIDsForLastState = append(reqIDsForLastState, reqid)
 		return true
@@ -210,7 +210,7 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 	n.stateSync.SetSolidIndex(n.StateOutput.GetStateIndex())
 	n.Consensus.EnqueueStateTransitionMsg(false, newState, n.StateOutput, time.Now())
 	n.Log.Debugf("State manager mock: new state %v approved, commitment %v, state output ID %v",
-		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieNodeStore()), iscp.OID(n.StateOutput.ID()))
+		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieNodeStore()), isc.OID(n.StateOutput.ID()))
 }
 
 func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
@@ -220,7 +220,7 @@ func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behin
 		stateIndex := stateOutput.GetStateIndex()
 		if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
 			n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",
-				stateIndex, iscp.OID(stateOutput.ID()))
+				stateIndex, isc.OID(stateOutput.ID()))
 			vstate := n.getState(stateIndex)
 			if vstate == nil {
 				vstate = n.getStateFromNodes(stateIndex)

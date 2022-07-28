@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	dustAllowance = 1 * iscp.Mi
+	dustAllowance = 1 * isc.Mi
 	nftMetadata   = "NFT metadata"
 )
 
@@ -35,7 +35,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	const depositAmount = 1 * iscp.Mi
+	const depositAmount = 1 * isc.Mi
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -163,7 +163,7 @@ func TestHarvest(t *testing.T) {
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+iscp.Mi, creatorBal1.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Mi, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 
@@ -428,7 +428,7 @@ func TestAccountNFTs(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
-	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscpNFTID(&nftID)))
 
@@ -451,7 +451,7 @@ func TestNFTData(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
-	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	iscpNFTID := ctx.Cvt.IscpNFTID(&nftID)
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscpNFTID))
@@ -467,7 +467,7 @@ func TestNFTData(t *testing.T) {
 	v.Params.NftID().SetValue(nftID)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	nftData, err := iscp.NFTFromBytes(v.Results.NftData().Value())
+	nftData, err := isc.NFTFromBytes(v.Results.NftData().Value())
 	require.NoError(t, err)
 	require.EqualValues(t, *iscpNFTID, nftData.ID)
 	require.EqualValues(t, userAddr, nftData.Issuer)

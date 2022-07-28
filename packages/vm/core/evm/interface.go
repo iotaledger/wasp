@@ -6,7 +6,7 @@ package evm
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 

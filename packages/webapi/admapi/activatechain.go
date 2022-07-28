@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -46,7 +46,7 @@ func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
 }
 
 func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 }
 
 func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 }
 
 func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}

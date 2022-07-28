@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -20,7 +20,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * iscp.Mi).WithGasBudget(math.MaxUint64)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Mi).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -78,7 +78,7 @@ func testConcurrency(t *testing.T, w bool) {
 	commonAccountFinalBalance := chain.L2BaseTokens(chain.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 
-	contractAgentID := iscp.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
+	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2BaseTokens(contractAgentID, 0)
 }
 
@@ -94,7 +94,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
 
-	baseTokensSentPerRequest := 1 * iscp.Mi
+	baseTokensSentPerRequest := 1 * isc.Mi
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
 
@@ -129,7 +129,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	for i := range users {
 		expectedBalance := uint64(repeats[i]) * (baseTokensSentPerRequest - predictedGasFee)
-		chain.AssertL2BaseTokens(iscp.NewAgentID(userAddr[i]), expectedBalance)
+		chain.AssertL2BaseTokens(isc.NewAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1BaseTokens(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*baseTokensSentPerRequest)
 	}
 

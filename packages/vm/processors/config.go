@@ -4,33 +4,33 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-type VMConstructor func(binaryCode []byte) (iscp.VMProcessor, error)
+type VMConstructor func(binaryCode []byte) (isc.VMProcessor, error)
 
 type Config struct {
 	// vmConstructors is the collection of registered non-native VM types
 	vmConstructors map[string]VMConstructor
 
 	// nativeContracts is the collection of registered native contracts
-	nativeContracts map[hashing.HashValue]iscp.VMProcessor
+	nativeContracts map[hashing.HashValue]isc.VMProcessor
 
 	// coreContracts is the collection of core contracts
-	coreContracts map[hashing.HashValue]iscp.VMProcessor
+	coreContracts map[hashing.HashValue]isc.VMProcessor
 }
 
 func NewConfig() *Config {
 	return &Config{
 		vmConstructors:  make(map[string]VMConstructor),
-		nativeContracts: make(map[hashing.HashValue]iscp.VMProcessor),
-		coreContracts:   make(map[hashing.HashValue]iscp.VMProcessor),
+		nativeContracts: make(map[hashing.HashValue]isc.VMProcessor),
+		coreContracts:   make(map[hashing.HashValue]isc.VMProcessor),
 	}
 }
 
-func (p *Config) WithCoreContracts(coreContracts map[hashing.HashValue]iscp.VMProcessor) *Config {
+func (p *Config) WithCoreContracts(coreContracts map[hashing.HashValue]isc.VMProcessor) *Config {
 	p.coreContracts = coreContracts
 	return p
 }
@@ -55,7 +55,7 @@ func (p *Config) RegisterVMType(vmtype string, constructor VMConstructor) error 
 }
 
 // NewProcessorFromBinary creates an instance of the processor by its VM type and the binary code
-func (p *Config) NewProcessorFromBinary(vmtype string, binaryCode []byte) (iscp.VMProcessor, error) {
+func (p *Config) NewProcessorFromBinary(vmtype string, binaryCode []byte) (isc.VMProcessor, error) {
 	constructor, ok := p.vmConstructors[vmtype]
 	if !ok {
 		return nil, fmt.Errorf("unknown VM type '%s'", vmtype)
@@ -79,12 +79,12 @@ func (p *Config) RegisterNativeContract(c *coreutil.ContractProcessor) {
 	p.nativeContracts[c.Contract.ProgramHash] = c
 }
 
-func (p *Config) GetNativeProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {
+func (p *Config) GetNativeProcessor(programHash hashing.HashValue) (isc.VMProcessor, bool) {
 	proc, ok := p.nativeContracts[programHash]
 	return proc, ok
 }
 
-func (p *Config) GetCoreProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {
+func (p *Config) GetCoreProcessor(programHash hashing.HashValue) (isc.VMProcessor, bool) {
 	proc, ok := p.coreContracts[programHash]
 	return proc, ok
 }

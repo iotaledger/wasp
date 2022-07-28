@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/donatewithfeedback/go/donatewithfeedback"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func TestDonateOnce(t *testing.T) {
 
 	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate.Params.Feedback().SetValue("Nice work!")
-	const iotasToSend = 1 * iscp.Mi
+	const iotasToSend = 1 * isc.Mi
 	donate.Func.TransferBaseTokens(iotasToSend).Post()
 	require.NoError(t, ctx.Err)
 
@@ -70,7 +70,7 @@ func TestDonateTwice(t *testing.T) {
 
 	donate1 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate1.Params.Feedback().SetValue("Nice work!")
-	const donation1 = 1 * iscp.Mi
+	const donation1 = 1 * isc.Mi
 	donate1.Func.TransferBaseTokens(donation1).Post()
 	require.NoError(t, ctx.Err)
 
@@ -82,7 +82,7 @@ func TestDonateTwice(t *testing.T) {
 
 	donate2 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator2))
 	donate2.Params.Feedback().SetValue("Nice work!")
-	const donation2 = 2 * iscp.Mi
+	const donation2 = 2 * isc.Mi
 	donate2.Func.TransferBaseTokens(donation2).Post()
 	require.NoError(t, ctx.Err)
 

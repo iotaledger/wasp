@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -12,7 +12,7 @@ import (
 )
 
 // CreditNFTToAccount credits an NFT to the on chain ledger
-func CreditNFTToAccount(state kv.KVStore, agentID iscp.AgentID, nft *iscp.NFT) {
+func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
 	if nft == nil {
 		return
 	}
@@ -26,7 +26,7 @@ func CreditNFTToAccount(state kv.KVStore, agentID iscp.AgentID, nft *iscp.NFT) {
 	touchAccount(state, account)
 }
 
-func saveNFTData(state kv.KVStore, nft *iscp.NFT) {
+func saveNFTData(state kv.KVStore, nft *isc.NFT) {
 	nftMap := getNFTState(state)
 	if nftMap.MustHasAt(nft.ID[:]) {
 		panic("saveNFTData: inconsistency - NFT data already exists")
@@ -42,13 +42,13 @@ func deleteNFTData(state kv.KVStore, id iotago.NFTID) {
 	nftMap.MustDelAt(id[:])
 }
 
-func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
+func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) isc.NFT {
 	nftMap := getNFTStateR(state)
 	nftBytes := nftMap.MustGetAt(id[:])
 	if len(nftBytes) == 0 {
 		panic(ErrNFTIDNotFound.Create(id))
 	}
-	nft, err := iscp.NFTFromBytes(nftBytes, false)
+	nft, err := isc.NFTFromBytes(nftBytes, false)
 	nft.ID = id
 	if err != nil {
 		panic(fmt.Sprintf("getNFTData: error when parsing NFTdata: %v", err))
@@ -59,11 +59,11 @@ func GetNFTData(state kv.KVStoreReader, id iotago.NFTID) iscp.NFT {
 	return *nft
 }
 
-func creditNFTToAccount(state kv.KVStore, account *collections.Map, id iotago.NFTID, agentID iscp.AgentID) {
+func creditNFTToAccount(state kv.KVStore, account *collections.Map, id iotago.NFTID, agentID isc.AgentID) {
 	account.MustSetAt(id[:], codec.EncodeBool(true))
 	nftMap := getNFTState(state)
 	nftBytes := nftMap.MustGetAt(id[:])
-	nft, err := iscp.NFTFromBytes(nftBytes, false)
+	nft, err := isc.NFTFromBytes(nftBytes, false)
 	if err != nil {
 		panic(fmt.Sprintf("creditNFTToAccount: error when parsing NFTdata: %v", err))
 	}
@@ -73,7 +73,7 @@ func creditNFTToAccount(state kv.KVStore, account *collections.Map, id iotago.NF
 
 // DebitNFTFromAccount removes an NFT from an account. if that account doesn't own the nft, it panics
 // this will also delete the NFT data, as the NFT will be leaving the chain
-func DebitNFTFromAccount(state kv.KVStore, agentID iscp.AgentID, id iotago.NFTID) {
+func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID) {
 	if id.Empty() {
 		return
 	}

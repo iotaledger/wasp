@@ -9,14 +9,14 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
 
 func TestBasic(t *testing.T) {
 	logger := testlogger.NewLogger(t)
-	getOrCreateKVStore := func(chain *iscp.ChainID) kvstore.KVStore {
+	getOrCreateKVStore := func(chain *isc.ChainID) kvstore.KVStore {
 		return mapdb.NewMapDB()
 	}
 

@@ -5,7 +5,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -14,33 +14,33 @@ import (
 )
 
 type utilImpl struct {
-	gas iscp.Gas
+	gas isc.Gas
 }
 
 // needed separate implementation to resolve conflict between function names
 type utilImplBLS struct {
-	gas iscp.Gas
+	gas isc.Gas
 }
 
-func NewUtils(g iscp.Gas) iscp.Utils {
+func NewUtils(g isc.Gas) isc.Utils {
 	return utilImpl{g}
 }
 
-// ------ iscp.Utils() interface
+// ------ isc.Utils() interface
 
-func (u utilImpl) Hashing() iscp.Hashing {
+func (u utilImpl) Hashing() isc.Hashing {
 	return u
 }
 
-func (u utilImpl) ED25519() iscp.ED25519 {
+func (u utilImpl) ED25519() isc.ED25519 {
 	return u
 }
 
-func (u utilImpl) BLS() iscp.BLS {
+func (u utilImpl) BLS() isc.BLS {
 	return utilImplBLS{u.gas}
 }
 
-// --- iscp.Base58 interface
+// --- isc.Base58 interface
 
 func (u utilImpl) Decode(s string) ([]byte, error) {
 	u.gas.Burn(gas.BurnCodeUtilsBase58Decode)
@@ -52,7 +52,7 @@ func (u utilImpl) Encode(data []byte) string {
 	return base58.Encode(data)
 }
 
-// --- iscp.Hashing interface
+// --- isc.Hashing interface
 
 func (u utilImpl) Blake2b(data []byte) hashing.HashValue {
 	u.gas.Burn(gas.BurnCodeUtilsHashingBlake2b)
@@ -64,12 +64,12 @@ func (u utilImpl) Sha3(data []byte) hashing.HashValue {
 	return hashing.HashSha3(data)
 }
 
-func (u utilImpl) Hname(name string) iscp.Hname {
+func (u utilImpl) Hname(name string) isc.Hname {
 	u.gas.Burn(gas.BurnCodeUtilsHashingHname)
-	return iscp.Hn(name)
+	return isc.Hn(name)
 }
 
-// --- iscp.ED25519 interface
+// --- isc.ED25519 interface
 
 func (u utilImpl) ValidSignature(data, pubKey, signature []byte) bool {
 	u.gas.Burn(gas.BurnCodeUtilsED25519ValidSig)
@@ -93,7 +93,7 @@ func (u utilImpl) AddressFromPublicKey(pubKey []byte) (iotago.Address, error) {
 	return pk.AsEd25519Address(), nil
 }
 
-// iscp.BLS interface
+// isc.BLS interface
 var suite = bn256.NewSuite()
 
 func (u utilImplBLS) ValidSignature(data, pubKeyBin, signature []byte) bool {

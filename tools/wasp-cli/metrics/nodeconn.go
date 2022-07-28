@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -31,7 +31,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
 			)
 		} else {
-			chid, err := iscp.ChainIDFromString(chainAlias)
+			chid, err := isc.ChainIDFromString(chainAlias)
 			log.Check(err)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)

@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -17,25 +17,25 @@ import (
 // WaspContext defines the common functionality for vm context - both used in internal/external calls (SC execution/external view calls)
 type WaspContext interface {
 	LocateProgram(programHash hashing.HashValue) (vmtype string, binary []byte, err error)
-	GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord)
+	GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord)
 	GasBurnEnable(enable bool)
 	GasBurn(burnCode gas.BurnCode, par ...uint64)
 	Processors() *processors.Cache
 
 	// needed for sandbox
-	iscp.LogInterface
-	GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens
+	isc.LogInterface
+	GetAssets(agentID isc.AgentID) *isc.FungibleTokens
 	Timestamp() time.Time
-	AccountID() iscp.AgentID
-	GetBaseTokensBalance(agentID iscp.AgentID) uint64
-	GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int
-	Call(contractHname, entryPoint iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict
-	ChainID() *iscp.ChainID
-	ChainOwnerID() iscp.AgentID
-	CurrentContractHname() iscp.Hname
-	Params() *iscp.Params
+	AccountID() isc.AgentID
+	GetBaseTokensBalance(agentID isc.AgentID) uint64
+	GetNativeTokenBalance(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int
+	Call(contractHname, entryPoint isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict
+	ChainID() *isc.ChainID
+	ChainOwnerID() isc.AgentID
+	CurrentContractHname() isc.Hname
+	Params() *isc.Params
 	StateReader() kv.KVStoreReader
 	GasBudgetLeft() uint64
-	GetAccountNFTs(agentID iscp.AgentID) []iotago.NFTID
-	GetNFTData(nftID iotago.NFTID) iscp.NFT
+	GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID
+	GetNFTData(nftID iotago.NFTID) isc.NFT
 }

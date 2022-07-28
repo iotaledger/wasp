@@ -4,7 +4,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/nodeconn"
@@ -17,7 +17,7 @@ import (
 type Client struct {
 	Layer1Client nodeconn.L1Client
 	WaspClient   *client.WaspClient
-	ChainID      *iscp.ChainID
+	ChainID      *isc.ChainID
 	KeyPair      *cryptolib.KeyPair
 	nonces       map[string]uint64
 }
@@ -26,7 +26,7 @@ type Client struct {
 func New(
 	layer1Client nodeconn.L1Client,
 	waspClient *client.WaspClient,
-	chainID *iscp.ChainID,
+	chainID *isc.ChainID,
 	keyPair *cryptolib.KeyPair,
 ) *Client {
 	return &Client{
@@ -39,11 +39,11 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer  *iscp.FungibleTokens
+	Transfer  *isc.FungibleTokens
 	Args      dict.Dict
 	Nonce     uint64
-	NFT       *iscp.NFT
-	Allowance *iscp.Allowance
+	NFT       *isc.NFT
+	Allowance *isc.Allowance
 	GasBudget *uint64
 }
 
@@ -56,8 +56,8 @@ func defaultParams(params ...PostRequestParams) PostRequestParams {
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
 func (c *Client) Post1Request(
-	contractHname iscp.Hname,
-	entryPoint iscp.Hname,
+	contractHname isc.Hname,
+	entryPoint isc.Hname,
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
 	outputsSet, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
@@ -69,8 +69,8 @@ func (c *Client) Post1Request(
 
 // PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
 func (c *Client) PostNRequests(
-	contractHname iscp.Hname,
-	entryPoint iscp.Hname,
+	contractHname isc.Hname,
+	entryPoint isc.Hname,
 	requestsCount int,
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
@@ -107,8 +107,8 @@ func (c *Client) PostNRequests(
 }
 
 func (c *Client) post1RequestWithOutputs(
-	contractHname iscp.Hname,
-	entryPoint iscp.Hname,
+	contractHname isc.Hname,
+	entryPoint isc.Hname,
 	outputs iotago.OutputSet,
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
@@ -124,12 +124,12 @@ func (c *Client) post1RequestWithOutputs(
 			SenderKeyPair:    c.KeyPair,
 			SenderAddress:    c.KeyPair.Address(),
 			UnspentOutputs:   outputs,
-			UnspentOutputIDs: iscp.OutputSetToOutputIDs(outputs),
-			Request: &iscp.RequestParameters{
+			UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
+			Request: &isc.RequestParameters{
 				TargetAddress:              c.ChainID.AsAddress(),
 				FungibleTokens:             par.Transfer,
 				AdjustToMinimumDustDeposit: false,
-				Metadata: &iscp.SendMetadata{
+				Metadata: &isc.SendMetadata{
 					TargetContract: contractHname,
 					EntryPoint:     entryPoint,
 					Params:         par.Args,
@@ -149,10 +149,10 @@ func (c *Client) post1RequestWithOutputs(
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
 func (c *Client) PostOffLedgerRequest(
-	contractHname iscp.Hname,
-	entrypoint iscp.Hname,
+	contractHname isc.Hname,
+	entrypoint isc.Hname,
 	params ...PostRequestParams,
-) (iscp.OffLedgerRequest, error) {
+) (isc.OffLedgerRequest, error) {
 	par := defaultParams(params...)
 	if par.Nonce == 0 {
 		c.nonces[c.KeyPair.Address().Key()]++
@@ -164,7 +164,7 @@ func (c *Client) PostOffLedgerRequest(
 	} else {
 		gasBudget = *par.GasBudget
 	}
-	req := iscp.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
+	req := isc.NewOffLedgerRequest(c.ChainID, contractHname, entrypoint, par.Args, par.Nonce)
 	req.WithAllowance(par.Allowance)
 	if par.GasBudget != nil {
 		req = req.WithGasBudget(gasBudget)
@@ -176,7 +176,7 @@ func (c *Client) PostOffLedgerRequest(
 
 func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 	return c.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), PostRequestParams{
-		Transfer: iscp.NewFungibleTokens(n, nil),
+		Transfer: isc.NewFungibleTokens(n, nil),
 	})
 }
 
@@ -184,11 +184,11 @@ func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
 func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	return &PostRequestParams{
 		Args:     parseParams(p),
-		Transfer: iscp.NewFungibleTokens(0, nil),
+		Transfer: isc.NewFungibleTokens(0, nil),
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer *iscp.FungibleTokens) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer *isc.FungibleTokens) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }

@@ -21,8 +21,8 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -155,7 +155,7 @@ func (e *soloChainEnv) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if vmError, ok := err.(*iscp.UnresolvedVMError); ok {
+	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
 		resolvedErr := e.soloChain.ResolveVMError(vmError)
 		return resolvedErr.AsGoError()
 	}
@@ -412,7 +412,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 	}
 }
 
-func (i *iscTestContractInstance) getChainID() *iscp.ChainID {
+func (i *iscTestContractInstance) getChainID() *isc.ChainID {
 	var v isccontract.ISCChainID
 	i.callView("getChainID", nil, &v)
 	return v.MustUnwrap()

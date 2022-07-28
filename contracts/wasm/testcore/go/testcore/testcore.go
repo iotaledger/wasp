@@ -245,14 +245,14 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
-	//request := iscp.RequestParameters{
+	//request := isc.RequestParameters{
 	//	TargetAddress:  targetChain.AsAddress(),
-	//	FungibleTokens: iscp.NewTokensIotas(availableIotas),
-	//	Metadata: &iscp.SendMetadata{
+	//	FungibleTokens: isc.NewTokensIotas(availableIotas),
+	//	Metadata: &isc.SendMetadata{
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
 	//		GasBudget:      gasBudget,
-	//		Allowance:      iscp.NewAllowanceIotas(iotasToWithdrawal),
+	//		Allowance:      isc.NewAllowanceIotas(iotasToWithdrawal),
 	//	},
 	//}
 

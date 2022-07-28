@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -23,15 +23,15 @@ const (
 
 const (
 	ScName           = "testcore"
-	HScName          = iscp.Hname(0x370d33ad)
+	HScName          = isc.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
 	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/go/pkg/testcore_go.wasm"
 	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/ts/pkg/testcore_ts.wasm"
 )
 
 func init() {
-	if iscp.Hn(ScName) != HScName {
-		panic("iscp.Hn(ScName) != HScName")
+	if isc.Hn(ScName) != HScName {
+		panic("isc.Hn(ScName) != HScName")
 	}
 }
 
@@ -48,7 +48,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iscp.AgentID) {
+func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
 	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
@@ -56,10 +56,10 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iscp.Agent
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr)).WithGasBudget(100_000)
+		root.ParamDeployer, isc.NewAgentID(userAddr)).WithGasBudget(100_000)
 	_, err = ch.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	return user, iscp.NewAgentID(userAddr)
+	return user, isc.NewAgentID(userAddr)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -100,11 +100,11 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) er
 }
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) iscp.AgentID {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) isc.AgentID {
 	err := deployContract(chain, user, runWasm)
 	require.NoError(t, err)
 
-	deployed := iscp.NewContractAgentID(chain.ChainID, HScName)
+	deployed := isc.NewContractAgentID(chain.ChainID, HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
 		WithGasBudget(100_000)
 	_, err = chain.PostRequestSync(req, user)

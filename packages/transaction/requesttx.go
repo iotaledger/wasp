@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -16,15 +16,15 @@ type NewRequestTransactionParams struct {
 	SenderAddress                iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
-	Request                      *iscp.RequestParameters
-	NFT                          *iscp.NFT
+	Request                      *isc.RequestParameters
+	NFT                          *isc.NFT
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
 type NewTransferTransactionParams struct {
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
-	FungibleTokens               *iscp.FungibleTokens
-	SendOptions                  iscp.SendOptions
+	FungibleTokens               *isc.FungibleTokens
+	SendOptions                  isc.SendOptions
 	SenderAddress                iotago.Address
 	SenderKeyPair                *cryptolib.KeyPair
 	TargetAddress                iotago.Address
@@ -96,7 +96,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	assets := req.FungibleTokens
 	if assets == nil {
 		// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-		assets = &iscp.FungibleTokens{}
+		assets = &isc.FungibleTokens{}
 	}
 	var out iotago.Output
 	// will adjust to minimum dust deposit
@@ -104,7 +104,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		req.TargetAddress,
 		par.SenderAddress,
 		assets,
-		&iscp.RequestMetadata{
+		&isc.RequestMetadata{
 			SenderContract: 0,
 			TargetContract: req.Metadata.TargetContract,
 			EntryPoint:     req.Metadata.EntryPoint,

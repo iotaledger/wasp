@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -23,18 +23,18 @@ import (
 
 type Provider func() *Chains
 
-func (chains Provider) ChainProvider() func(chainID *iscp.ChainID) chain.Chain {
-	return func(chainID *iscp.ChainID) chain.Chain {
+func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
+	return func(chainID *isc.ChainID) chain.Chain {
 		return chains().Get(chainID)
 	}
 }
 
-type ChainProvider func(chainID *iscp.ChainID) chain.Chain
+type ChainProvider func(chainID *isc.ChainID) chain.Chain
 
 type Chains struct {
 	mutex                            sync.RWMutex
 	log                              *logger.Logger
-	allChains                        map[iscp.ChainID]chain.Chain
+	allChains                        map[isc.ChainID]chain.Chain
 	nodeConn                         chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
@@ -55,7 +55,7 @@ func New(
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
-		allChains:                        make(map[iscp.ChainID]chain.Chain),
+		allChains:                        make(map[isc.ChainID]chain.Chain),
 		processorConfig:                  processorConfig,
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
@@ -73,7 +73,7 @@ func (c *Chains) Dismiss() {
 	for _, ch := range c.allChains {
 		ch.Dismiss("shutdown")
 	}
-	c.allChains = make(map[iscp.ChainID]chain.Chain)
+	c.allChains = make(map[isc.ChainID]chain.Chain)
 }
 
 func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
@@ -170,7 +170,7 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *iscp.ChainID, includeDeactivated ...bool) chain.Chain {
+func (c *Chains) Get(chainID *isc.ChainID, includeDeactivated ...bool) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

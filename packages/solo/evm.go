@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -61,7 +61,7 @@ func (ch *Chain) EVMGasRatio() util.Ratio32 {
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
-	req, err := iscp.NewEVMOffLedgerRequest(ch.ChainID, tx)
+	req, err := isc.NewEVMOffLedgerRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 }
 
 func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
-	res := ch.estimateGas(iscp.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg))
+	res := ch.estimateGas(isc.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg))
 	if res.Receipt.Error != nil {
 		return 0, res.Receipt.Error
 	}
@@ -86,6 +86,6 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 
 func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
-	ch.GetL2FundsFromFaucet(iscp.NewEthereumAddressAgentID(addr), baseTokens...)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
 	return key, addr
 }

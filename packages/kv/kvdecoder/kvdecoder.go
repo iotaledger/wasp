@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"golang.org/x/xerrors"
@@ -16,13 +16,13 @@ import (
 
 type kvdecoder struct {
 	kv.KVStoreReader
-	log iscp.LogInterface
+	log isc.LogInterface
 }
 
-var _ iscp.KVDecoder = &kvdecoder{}
+var _ isc.KVDecoder = &kvdecoder{}
 
-func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) *kvdecoder { //nolint:revive
-	var l iscp.LogInterface
+func New(kvReader kv.KVStoreReader, log ...isc.LogInterface) *kvdecoder { //nolint:revive
+	var l isc.LogInterface
 	if len(log) > 0 {
 		l = log[0]
 	}
@@ -145,12 +145,12 @@ func (p *kvdecoder) MustGetString(key kv.Key, def ...string) string {
 	return ret
 }
 
-func (p *kvdecoder) GetHname(key kv.Key, def ...iscp.Hname) (iscp.Hname, error) {
+func (p *kvdecoder) GetHname(key kv.Key, def ...isc.Hname) (isc.Hname, error) {
 	v, err := codec.DecodeHname(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetHname(key kv.Key, def ...iscp.Hname) iscp.Hname {
+func (p *kvdecoder) MustGetHname(key kv.Key, def ...isc.Hname) isc.Hname {
 	ret, err := p.GetHname(key, def...)
 	p.check(err)
 	return ret
@@ -178,34 +178,34 @@ func (p *kvdecoder) MustGetAddress(key kv.Key, def ...iotago.Address) iotago.Add
 	return ret
 }
 
-func (p *kvdecoder) GetRequestID(key kv.Key, def ...iscp.RequestID) (iscp.RequestID, error) {
+func (p *kvdecoder) GetRequestID(key kv.Key, def ...isc.RequestID) (isc.RequestID, error) {
 	v, err := codec.DecodeRequestID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetRequestID(key kv.Key, def ...iscp.RequestID) iscp.RequestID {
+func (p *kvdecoder) MustGetRequestID(key kv.Key, def ...isc.RequestID) isc.RequestID {
 	ret, err := p.GetRequestID(key, def...)
 	p.check(err)
 	return ret
 }
 
-func (p *kvdecoder) GetAgentID(key kv.Key, def ...iscp.AgentID) (iscp.AgentID, error) {
+func (p *kvdecoder) GetAgentID(key kv.Key, def ...isc.AgentID) (isc.AgentID, error) {
 	v, err := codec.DecodeAgentID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...iscp.AgentID) iscp.AgentID {
+func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...isc.AgentID) isc.AgentID {
 	ret, err := p.GetAgentID(key, def...)
 	p.check(err)
 	return ret
 }
 
-func (p *kvdecoder) GetChainID(key kv.Key, def ...*iscp.ChainID) (*iscp.ChainID, error) {
+func (p *kvdecoder) GetChainID(key kv.Key, def ...*isc.ChainID) (*isc.ChainID, error) {
 	v, err := codec.DecodeChainID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetChainID(key kv.Key, def ...*iscp.ChainID) *iscp.ChainID {
+func (p *kvdecoder) MustGetChainID(key kv.Key, def ...*isc.ChainID) *isc.ChainID {
 	ret, err := p.GetChainID(key, def...)
 	p.check(err)
 	return ret

@@ -8,12 +8,12 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
 )
 
 type RequestAckMsg struct {
-	ReqID *iscp.RequestID
+	ReqID *isc.RequestID
 }
 
 type RequestAckMsgIn struct {
@@ -46,7 +46,7 @@ func (msg *RequestAckMsg) read(r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
 	}
-	reqID, err := iscp.RequestIDFromBytes(b)
+	reqID, err := isc.RequestIDFromBytes(b)
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
 	}

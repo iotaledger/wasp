@@ -4,8 +4,8 @@ package micropay
 // 	"time"
 
 // 	iotago "github.com/iotaledger/iota.go/v3"
-// 	"github.com/iotaledger/wasp/packages/iscp"
-// 	"github.com/iotaledger/wasp/packages/iscp/assert"
+// 	"github.com/iotaledger/wasp/packages/isc"
+// 	"github.com/iotaledger/wasp/packages/isc/assert"
 // 	"github.com/iotaledger/wasp/packages/kv"
 // 	"github.com/iotaledger/wasp/packages/kv/codec"
 // 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -22,11 +22,11 @@ package micropay
 // 	FuncGetChannelInfo.WithHandler(getWarrantInfo),
 // )
 
-// func initialize(_ iscp.Sandbox) (dict.Dict, error) {
+// func initialize(_ isc.Sandbox) (dict.Dict, error) {
 // 	return nil, nil
 // }
 
-// func publicKey(ctx iscp.Sandbox) (dict.Dict, error) {
+// func publicKey(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 // 	// a := assert.NewAssert(ctx.Log())
 // 	// a.Requiref(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
@@ -46,7 +46,7 @@ package micropay
 // // addWarrant adds payment warrant for specific service address
 // // Params:
 // // - ParamServiceAddress iotago.Address
-// func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
+// func addWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
 // 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -95,7 +95,7 @@ package micropay
 // // It will be in effect next 1 hour, the will be deleted
 // // Params:
 // // - ParamServiceAddress iotago.Address
-// func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
+// func revokeWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
 // 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -114,8 +114,8 @@ package micropay
 // 	// setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 // 	// // send deterred request to self to revoke the warrant
-// 	// iota1 := iscp.NewTokensIotas(1)
-// 	// meta := &iscp.SendMetadata{
+// 	// iota1 := isc.NewTokensIotas(1)
+// 	// meta := &isc.SendMetadata{
 // 	// 	TargetContract: ctx.Contract(),
 // 	// 	EntryPoint:     FuncCloseWarrant.Hname(),
 // 	// 	Params: codec.MakeDict(map[string]interface{}{
@@ -123,7 +123,7 @@ package micropay
 // 	// 		ParamServiceAddress: serviceAddr,
 // 	// 	}),
 // 	// }
-// 	// opts := iscp.SendOptions{TimeLock: uint32(revokeDeadline.Unix())}
+// 	// opts := isc.SendOptions{TimeLock: uint32(revokeDeadline.Unix())}
 // 	// succ := ctx.Send(ctx.ChainID().AsAddress(), iota1, meta, opts)
 // 	// a.Requiref(succ, "failed to issue deterred 'close warrant' request")
 // 	// return nil, nil
@@ -132,11 +132,11 @@ package micropay
 // // closeWarrant can only be sent from self. It closes the warrant account
 // // - ParamServiceAddress iotago.Address
 // // - ParamPayerAddress iotago.Address
-// func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
+// func closeWarrant(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
 // 	// a := assert.NewAssert(ctx.Log())
-// 	// myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+// 	// myAgentID := isc.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
 // 	// a.Requiref(ctx.Caller().Equals(myAgentID), "caller must be self")
 
 // 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -144,7 +144,7 @@ package micropay
 // 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
 // 	// warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// if warrant > 0 {
-// 	// 	tokens := iscp.NewTokensIotas(warrant)
+// 	// 	tokens := isc.NewTokensIotas(warrant)
 // 	// 	succ := ctx.Send(payerAddr, tokens, nil)
 // 	// 	a.Requiref(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 // 	// }
@@ -155,7 +155,7 @@ package micropay
 // // Params:
 // // - ParamPayerAddress address.address
 // // - ParamPayments - array of encoded payments
-// func settle(ctx iscp.Sandbox) (dict.Dict, error) {
+// func settle(ctx isc.Sandbox) (dict.Dict, error) {
 // 	panic("TODO implement")
 
 // 	// a := assert.NewAssert(ctx.Log())
@@ -184,7 +184,7 @@ package micropay
 // // Output:
 // // - ParamWarrant int64 if == 0 no warrant
 // // - ParamRevoked int64 is exists, timestamp in Unix nanosec when warrant will be revoked
-// func getWarrantInfo(ctx iscp.SandboxView) (dict.Dict, error) {
+// func getWarrantInfo(ctx isc.SandboxView) (dict.Dict, error) {
 // 	// par := kvdecoder.New(ctx.Params(), ctx.Log())
 // 	// payerAddr := par.MustGetAddress(ParamPayerAddress)
 // 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
@@ -203,8 +203,8 @@ package micropay
 // }
 
 // func getWarrantInfoIntern(state kv.KVStoreReader, payer, service iotago.Address, a assert.Assert) (uint64, uint64, uint64) {
-// 	payerInfo := collections.NewMapReadOnly(state, string(iscp.BytesFromAddress(payer)))
-// 	warrantBin := payerInfo.MustGetAt(iscp.BytesFromAddress(service))
+// 	payerInfo := collections.NewMapReadOnly(state, string(isc.BytesFromAddress(payer)))
+// 	warrantBin := payerInfo.MustGetAt(isc.BytesFromAddress(service))
 // 	warrant, err := codec.DecodeUint64(warrantBin, 0)
 // 	a.RequireNoError(err)
 // 	revokeBin := payerInfo.MustGetAt(getRevokeKey(service))
@@ -217,7 +217,7 @@ package micropay
 // }
 
 // func setWarrant(payerAccount *collections.Map, service iotago.Address, value uint64) {
-// 	payerAccount.MustSetAt(iscp.BytesFromAddress(service), codec.EncodeUint64(value))
+// 	payerAccount.MustSetAt(isc.BytesFromAddress(service), codec.EncodeUint64(value))
 // }
 
 // func setWarrantRevoke(payerAccount *collections.Map, service iotago.Address, deadline int64) {
@@ -229,21 +229,21 @@ package micropay
 // }
 
 // func deleteWarrant(state kv.KVStore, payer, service iotago.Address) {
-// 	payerInfo := collections.NewMap(state, string(iscp.BytesFromAddress(payer)))
-// 	payerInfo.MustDelAt(iscp.BytesFromAddress(service))
+// 	payerInfo := collections.NewMap(state, string(isc.BytesFromAddress(payer)))
+// 	payerInfo.MustDelAt(isc.BytesFromAddress(service))
 // 	payerInfo.MustDelAt(getRevokeKey(service))
 // 	payerInfo.MustDelAt(getLastOrdKey(service))
 // }
 
 // func getPublicKey(state kv.KVStoreReader, addr iotago.Address, a assert.Assert) []byte {
 // 	pkRegistry := collections.NewMapReadOnly(state, StateVarPublicKeys)
-// 	ret, err := pkRegistry.GetAt(iscp.BytesFromAddress(addr))
+// 	ret, err := pkRegistry.GetAt(isc.BytesFromAddress(addr))
 // 	a.RequireNoError(err)
 // 	return ret
 // }
 
 // func getRevokeKey(service iotago.Address) []byte {
-// 	return []byte(string(iscp.BytesFromAddress(service)) + "-revoke")
+// 	return []byte(string(isc.BytesFromAddress(service)) + "-revoke")
 // }
 
 // func getRevokeDeadline(nowis int64) time.Time {
@@ -251,7 +251,7 @@ package micropay
 // }
 
 // func getLastOrdKey(service iotago.Address) []byte {
-// 	return []byte(string(iscp.BytesFromAddress(service)) + "-last")
+// 	return []byte(string(isc.BytesFromAddress(service)) + "-last")
 // }
 
 // func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
@@ -269,7 +269,7 @@ package micropay
 // 	return ret
 // }
 
-// func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAddr iotago.Address, payerPubKey []byte) (uint64, []*Payment) {
+// func processPayments(ctx isc.Sandbox, payments []*Payment, payerAddr, targetAddr iotago.Address, payerPubKey []byte) (uint64, []*Payment) {
 // 	a := assert.NewAssert(ctx.Log())
 // 	remainingWarrant, _, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
 // 	a.Requiref(remainingWarrant > 0, "warrant == 0, can't settle payments")
@@ -298,10 +298,10 @@ package micropay
 // 		lastOrd = uint64(p.Ord)
 // 	}
 // 	if settledSum > 0 {
-// 		tokens := iscp.NewFungibleTokens(settledSum, nil)
+// 		tokens := isc.NewFungibleTokens(settledSum, nil)
 // 		ctx.Send(targetAddr, tokens, nil)
 // 	}
-// 	payerInfo := collections.NewMap(ctx.State(), string(iscp.BytesFromAddress(payerAddr)))
+// 	payerInfo := collections.NewMap(ctx.State(), string(isc.BytesFromAddress(payerAddr)))
 // 	setWarrant(payerInfo, targetAddr, remainingWarrant)
 // 	setLastOrd(payerInfo, targetAddr, lastOrd)
 // 	return settledSum, notSettled

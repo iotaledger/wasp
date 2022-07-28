@@ -21,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
@@ -68,7 +68,7 @@ func TestRPCGetBalance(t *testing.T) {
 	_, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	require.Equal(
 		t,
-		env.soloChain.L2BaseTokens(iscp.NewEthereumAddressAgentID(nonEmptyAddress))*1e12,
+		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(nonEmptyAddress))*1e12,
 		env.Balance(nonEmptyAddress).Uint64(),
 	)
 }

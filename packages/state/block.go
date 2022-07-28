@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -53,7 +53,7 @@ func (b *blockImpl) Bytes() []byte {
 func (b *blockImpl) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", iscp.OID(b.ApprovingOutputID()))
+	ret += fmt.Sprintf("state txid: %s\n", isc.OID(b.ApprovingOutputID()))
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret

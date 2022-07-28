@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -29,18 +29,18 @@ var (
 	funcThrowErrorWithArgs    = coreutil.Func("throw_error_with_args")
 )
 
-var testError *iscp.VMErrorTemplate
+var testError *isc.VMErrorTemplate
 
 var errorContractProcessor = errorContract.Processor(nil,
-	funcRegisterErrors.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+	funcRegisterErrors.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 		testError = ctx.RegisterError(errorMessageToTest)
 
 		return nil
 	}),
-	funcThrowErrorWithoutArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+	funcThrowErrorWithoutArgs.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 		panic(testError.Create())
 	}),
-	funcThrowErrorWithArgs.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+	funcThrowErrorWithArgs.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 		panic(testError.Create(42.0))
 	}),
 )
@@ -86,10 +86,10 @@ func TestErrorWithCustomError(t *testing.T) {
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
-	testError := &iscp.VMError{}
+	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
 
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 	require.Equal(t, typedError.AsTemplate(), vm.ErrGasBudgetDetail)
 }
 
@@ -102,10 +102,10 @@ func TestPanicDueMissingErrorMessage(t *testing.T) {
 
 	_, _, err := chain.PostRequestSyncTx(req, nil)
 
-	testError := &iscp.VMError{}
+	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
 
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 	require.Equal(t, typedError.AsTemplate(), coreerrors.ErrUntypedError)
 
 	require.Equal(t, err.Error(), "cannot decode key 'm': cannot decode nil bytes")
@@ -155,7 +155,7 @@ func TestErrorRegistrationWithCustomContract(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
 }
 
 func TestPanicWithCustomContractWithArgs(t *testing.T) {
@@ -175,13 +175,13 @@ func TestPanicWithCustomContractWithArgs(t *testing.T) {
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
-	errorTestType := &iscp.VMError{}
+	errorTestType := &isc.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
 
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
 	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
 
 	// Further, this error will add the arg '42'
@@ -205,13 +205,13 @@ func TestPanicWithCustomContractWithoutArgs(t *testing.T) {
 
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
-	errorTestType := &iscp.VMError{}
+	errorTestType := &isc.VMError{}
 	require.ErrorAs(t, err, &errorTestType)
 
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 
 	require.Error(t, err)
-	require.Equal(t, testError.Code().ID, iscp.GetErrorIDFromMessageFormat(errorMessageToTest))
+	require.Equal(t, testError.Code().ID, isc.GetErrorIDFromMessageFormat(errorMessageToTest))
 	require.Equal(t, testError.Code().ContractID, typedError.Code().ContractID)
 
 	t.Log(err.Error())
@@ -238,10 +238,10 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
 	receipt := chain.LastReceipt()
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 
-	errorTestType := &iscp.VMError{}
-	receiptErrorTestType := &iscp.UnresolvedVMError{}
+	errorTestType := &isc.VMError{}
+	receiptErrorTestType := &isc.UnresolvedVMError{}
 
 	require.Error(t, receipt.Error.AsGoError())
 
@@ -271,10 +271,10 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 	_, _, err = chain.PostRequestSyncTx(req, nil)
 
 	receipt := chain.LastReceipt()
-	typedError := err.(*iscp.VMError)
+	typedError := err.(*isc.VMError)
 
-	errorTestType := &iscp.VMError{}
-	receiptErrorTestType := &iscp.UnresolvedVMError{}
+	errorTestType := &isc.VMError{}
+	receiptErrorTestType := &isc.UnresolvedVMError{}
 
 	require.Error(t, receipt.Error.AsGoError())
 
@@ -287,22 +287,22 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.
 }
 
 func TestIsComparer(t *testing.T) {
-	template := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(1234, 1), "fooBar")
+	template := isc.NewVMErrorTemplate(isc.NewVMErrorCode(1234, 1), "fooBar")
 	vmerror := template.Create()
 	vmerrorUnresolved := vmerror.AsUnresolvedError()
 
-	template2 := iscp.NewVMErrorTemplate(iscp.NewVMErrorCode(4321, 2), "barFoo")
+	template2 := isc.NewVMErrorTemplate(isc.NewVMErrorCode(4321, 2), "barFoo")
 
-	require.True(t, iscp.VMErrorIs(template, vmerrorUnresolved))
-	require.True(t, iscp.VMErrorIs(template, vmerror))
-	require.True(t, iscp.VMErrorIs(vmerror, template))
-	require.True(t, iscp.VMErrorIs(vmerror, vmerrorUnresolved))
-	require.True(t, iscp.VMErrorIs(vmerrorUnresolved, template))
-	require.True(t, iscp.VMErrorIs(vmerrorUnresolved, vmerror))
+	require.True(t, isc.VMErrorIs(template, vmerrorUnresolved))
+	require.True(t, isc.VMErrorIs(template, vmerror))
+	require.True(t, isc.VMErrorIs(vmerror, template))
+	require.True(t, isc.VMErrorIs(vmerror, vmerrorUnresolved))
+	require.True(t, isc.VMErrorIs(vmerrorUnresolved, template))
+	require.True(t, isc.VMErrorIs(vmerrorUnresolved, vmerror))
 
-	require.False(t, iscp.VMErrorIs(template2, vmerrorUnresolved))
-	require.False(t, iscp.VMErrorIs(template2, vmerror))
-	require.False(t, iscp.VMErrorIs(template2, template))
-	require.False(t, iscp.VMErrorIs(vmerror, template2))
-	require.False(t, iscp.VMErrorIs(vmerrorUnresolved, template2))
+	require.False(t, isc.VMErrorIs(template2, vmerrorUnresolved))
+	require.False(t, isc.VMErrorIs(template2, vmerror))
+	require.False(t, isc.VMErrorIs(template2, template))
+	require.False(t, isc.VMErrorIs(vmerror, template2))
+	require.False(t, isc.VMErrorIs(vmerrorUnresolved, template2))
 }

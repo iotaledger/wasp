@@ -28,7 +28,7 @@ func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
 //func (s *SoloSandbox) fnUtilsBlsAddress(args []byte) []byte {
 //	address, err := s.utils.BLS().AddressFromPublicKey(args)
 //	s.checkErr(err)
-//	return iscp.BytesFromAddress(address)
+//	return isc.BytesFromAddress(address)
 //}
 //
 //func (s *SoloSandbox) fnUtilsBlsAggregate(args []byte) []byte {
@@ -60,7 +60,7 @@ func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
 //func (s *SoloSandbox) fnUtilsEd25519Address(args []byte) []byte {
 //	address, err := s.utils.ED25519().AddressFromPublicKey(args)
 //	s.checkErr(err)
-//	return iscp.BytesFromAddress(address)
+//	return isc.BytesFromAddress(address)
 //}
 //
 //func (s *SoloSandbox) fnUtilsEd25519Valid(args []byte) []byte {

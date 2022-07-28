@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -17,8 +17,8 @@ func TokenIDFromString(s string) []byte {
 	return ret
 }
 
-func ParseFungibleTokens(args []string) *iscp.FungibleTokens {
-	tokens := iscp.NewEmptyAssets()
+func ParseFungibleTokens(args []string) *isc.FungibleTokens {
+	tokens := isc.NewEmptyAssets()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
@@ -37,12 +37,12 @@ func ParseFungibleTokens(args []string) *iscp.FungibleTokens {
 			log.Fatalf("error parsing token amount")
 		}
 
-		if iscp.IsBaseToken(tokenIDBytes) {
+		if isc.IsBaseToken(tokenIDBytes) {
 			tokens.AddBaseTokens(amount.Uint64())
 			continue
 		}
 
-		tokenID, err := iscp.NativeTokenIDFromBytes(tokenIDBytes)
+		tokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
 		log.Check(err)
 
 		tokens.AddNativeTokens(tokenID, amount)

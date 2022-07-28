@@ -1,8 +1,8 @@
 package vmcontext
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -14,12 +14,12 @@ import (
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict {
+func (vmctx *VMContext) Call(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict {
 	vmctx.Debugf("Call: targetContract: %s entry point: %s", targetContract, epCode)
 	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params dict.Dict, allowance *iscp.Allowance) dict.Dict {
+func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict {
 	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
 	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
@@ -31,7 +31,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params di
 		return ep.Call(sandbox.NewSandboxView(vmctx))
 	}
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
+	if epCode == isc.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			panic(xerrors.Errorf("%v: target=(%s, %s)",
 				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
@@ -41,7 +41,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode iscp.Hname, params di
 }
 
 func (vmctx *VMContext) callerIsRoot() bool {
-	caller, ok := vmctx.Caller().(*iscp.ContractAgentID)
+	caller, ok := vmctx.Caller().(*isc.ContractAgentID)
 	if !ok {
 		return false
 	}
@@ -53,11 +53,11 @@ func (vmctx *VMContext) callerIsRoot() bool {
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, allowance *iscp.Allowance) {
+func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Allowance) {
 	ctx := &callContext{
 		caller:   vmctx.getToBeCaller(),
 		contract: contract,
-		params: iscp.Params{
+		params: isc.Params{
 			Dict:      params,
 			KVDecoder: kvdecoder.New(params, vmctx.task.Log),
 		},
@@ -77,7 +77,7 @@ func (vmctx *VMContext) popCallContext() {
 	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
 }
 
-func (vmctx *VMContext) getToBeCaller() iscp.AgentID {
+func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 	if len(vmctx.callStack) > 0 {
 		return vmctx.MyAgentID()
 	}

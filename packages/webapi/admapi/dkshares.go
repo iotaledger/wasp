@@ -14,7 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -31,7 +31,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 		Threshold:   3,
 		TimeoutMS:   10000,
 	}
-	addr1 := iscp.RandomChainID().AsAddress()
+	addr1 := isc.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
 		Address:      addr1.Bech32(parameters.L1.Protocol.Bech32HRP),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
