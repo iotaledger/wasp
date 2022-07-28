@@ -96,9 +96,9 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
             ownerFee = 1;
         }
         // finalizeAuction request nft was probably not confirmed yet
-        transferIotas(ctx, f.state.owner().value(), ownerFee - 1);
+        transferTokens(ctx, f.state.owner().value(), ownerFee - 1);
         transferNFT(ctx, auction.creator, auction.nft);
-        transferIotas(ctx, auction.creator, auction.deposit - ownerFee);
+        transferTokens(ctx, auction.creator, auction.deposit - ownerFee);
         return;
     }
 
@@ -115,14 +115,14 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
         let loser = bidderList.getAgentID(i).value();
         if (!loser.equals(auction.highestBidder)) {
             let bid = bids.getBid(loser).value();
-            transferIotas(ctx, loser, bid.amount);
+            transferTokens(ctx, loser, bid.amount);
         }
     }
 
     // finalizeAuction request nft was probably not confirmed yet
-    transferIotas(ctx, f.state.owner().value(), ownerFee - 1);
+    transferTokens(ctx, f.state.owner().value(), ownerFee - 1);
     transferNFT(ctx, auction.highestBidder, auction.nft);
-    transferIotas(ctx, auction.creator, auction.deposit + auction.highestBid - ownerFee);
+    transferTokens(ctx, auction.creator, auction.deposit + auction.highestBid - ownerFee);
 }
 
 export function funcPlaceBid(ctx: wasmlib.ScFuncContext, f: sc.PlaceBidContext): void {
@@ -196,7 +196,7 @@ export function viewGetAuctionInfo(ctx: wasmlib.ScViewContext, f: sc.GetAuctionI
     f.results.bidders().setValue(bidderList.length());
 }
 
-function transferIotas(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, amount: u64): void {
+function transferTokens(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, amount: u64): void {
     if (agent.isAddress()) {
         // send back to original Tangle address
         ctx.send(agent.address(), wasmlib.ScTransfer.iotas(amount));

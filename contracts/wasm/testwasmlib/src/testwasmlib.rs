@@ -115,7 +115,7 @@ pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().iotas());
+    f.results.tokens().set_value(ctx.balances().iotas());
 }
 
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
@@ -160,8 +160,8 @@ pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }
 
-pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().iotas());
+pub fn view_token_balance(ctx: &ScViewContext, f: &TokenBalanceContext) {
+    f.results.tokens().set_value(ctx.balances().iotas());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

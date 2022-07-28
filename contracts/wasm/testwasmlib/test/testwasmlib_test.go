@@ -239,18 +239,18 @@ func TestTakeAllowance(t *testing.T) {
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
 	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	v := testwasmlib.ScFuncs.IotaBalance(ctx)
+	v := testwasmlib.ScFuncs.TokenBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	bal = ctx.Balances()
-	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
+	require.True(t, v.Results.Tokens().Exists())
+	require.EqualValues(t, bal.Account, v.Results.Tokens().Value())
 
 	bal.VerifyBalances(t)
 }
@@ -274,18 +274,18 @@ func TestTakeNoAllowance(t *testing.T) {
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
 	g.Func.Post()
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, bal.Account, g.Results.Iotas().Value())
+	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	v := testwasmlib.ScFuncs.IotaBalance(ctx)
+	v := testwasmlib.ScFuncs.TokenBalance(ctx)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
 	bal = ctx.Balances()
-	require.True(t, v.Results.Iotas().Exists())
-	require.EqualValues(t, bal.Account, v.Results.Iotas().Value())
+	require.True(t, v.Results.Tokens().Exists())
+	require.EqualValues(t, bal.Account, v.Results.Tokens().Value())
 
 	bal.VerifyBalances(t)
 }

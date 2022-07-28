@@ -233,7 +233,7 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {
 
 func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
 	targetChain := f.Params.ChainID().Value()
-	iotasToWithdrawal := f.Params.IotasWithdrawal().Value()
+	withdrawal := f.Params.BaseTokensWithdrawal().Value()
 	// gasBudget := f.Params.GasBudget().Value()
 
 	// TODO more
@@ -252,12 +252,12 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
 	//		GasBudget:      gasBudget,
-	//		Allowance:      isc.NewAllowanceIotas(iotasToWithdrawal),
+	//		Allowance:      isc.NewAllowanceIotas(withdrawal),
 	//	},
 	//}
 
 	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
-	withdraw.Func.TransferBaseTokens(iotasToWithdrawal).PostToChain(targetChain)
+	withdraw.Func.TransferBaseTokens(withdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {

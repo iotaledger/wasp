@@ -76,7 +76,7 @@ funcs:
   withdrawFromChain:
     params:
       chainID: ChainID
-      iotasWithdrawal: Uint64
+      baseTokensWithdrawal: Uint64
       gasBudget: Uint64
 views:
   checkContextFromViewEP:

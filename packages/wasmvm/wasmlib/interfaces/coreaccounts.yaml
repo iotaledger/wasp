@@ -12,7 +12,7 @@ funcs:
   withdraw: {}
   harvest: 
     params:
-      forceMinimumIotas=f: Uint64
+      forceMinimumBaseTokens=f: Uint64
   foundryCreateNew:
     params:
       tokenScheme=t: Bytes
