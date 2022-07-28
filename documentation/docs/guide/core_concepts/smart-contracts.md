@@ -19,7 +19,11 @@ Smart contracts are software applications that run on a distributed network with
 Smart contracts can be trusted because it is guaranteed that the code that is being executed will never change.
 The rules of the smart contract define what the contract can and can not do, making it a decentralized and a predictable decision maker.
 
-Smart contracts are used for all kinds of purposes. A recurring reason to use a smart contract would be to automate a certain action without needing a centralized entity to enforce it. For example, a smart contract could exchange a certain amount of IOTA tokens for a certain amount of land ownership. That smart contract would accept both the IOTA tokens and the land ownership and predictably exchange them between both parties. It excludes the risk of one of the parties not delivering on their promise: with a smart contract, code is law.
+Smart contracts are used for all kinds of purposes.
+A recurring reason to use a smart contract would be to automate a certain action without needing a centralized entity to enforce it.
+For example, a smart contract could exchange a certain amount of base tokens for a certain amount of land ownership.
+That smart contract would accept both the base tokens and the land ownership and predictably exchange them between both parties.
+It excludes the risk of one of the parties not delivering on their promise: with a smart contract, code is law.
 
 ## Scalable Smart Contracts
 

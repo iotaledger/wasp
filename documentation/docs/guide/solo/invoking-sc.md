@@ -84,7 +84,7 @@ However, since off-ledger reuests cannot have tokens attached, in order to cover
 
 ```go
 user, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-chain.DepositIotasToL2(10_000, user) // to cover gas fees
+chain.DepositBaseTokensToL2(10_000, user) // to cover gas fees
 _, err = chain.PostRequestOffLedger(req, user)
 require.NoError(t, err)
 ```
