@@ -5,7 +5,7 @@ module.exports = {
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'wasp',
+        id: 'wasp-develop',
         path: path.resolve(__dirname, 'docs'),
         routeBasePath: 'smart-contracts',
         sidebarPath: path.resolve(__dirname, 'sidebars.js'),
