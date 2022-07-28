@@ -90,7 +90,7 @@ func TestSDRC(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, initialBlockIdx, currentBlockIndex)
 
-	require.EqualValues(t, 0, env.getCounter(nativeIncCounterSCHname))
+	require.EqualValues(t, 0, env.getNativeContractCounter(nativeIncCounterSCHname))
 
 	// send an equivalent request without StorageDepositReturnUnlockCondition
 	txNormal := buildTX(t, env, addr, keyPair, false)
@@ -100,7 +100,7 @@ func TestSDRC(t *testing.T) {
 	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, 1*time.Minute)
 	require.NoError(t, err)
 
-	require.EqualValues(t, 1, env.getCounter(nativeIncCounterSCHname))
+	require.EqualValues(t, 1, env.getNativeContractCounter(nativeIncCounterSCHname))
 
 	currentBlockIndex2, err := env.Chain.BlockIndex()
 	require.NoError(t, err)

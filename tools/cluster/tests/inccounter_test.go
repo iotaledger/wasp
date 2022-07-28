@@ -129,7 +129,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 	}
 }
 
-func (e *ChainEnv) checkCounter(expected int) {
+func (e *ChainEnv) checkWasmContractCounter(expected int) {
 	for i := range e.Chain.CommitteeNodes {
 		counterValue, err := e.Chain.GetCounterValue(incHname, i)
 		require.NoError(e.t, err)
@@ -144,7 +144,7 @@ func TestIncDeployment(t *testing.T) {
 		t.Fatal()
 	}
 	e.checkSC(0)
-	e.checkCounter(0)
+	e.checkWasmContractCounter(0)
 }
 
 func TestIncNothing(t *testing.T) {
@@ -173,7 +173,7 @@ func testNothing(t *testing.T, numRequests int) {
 	}
 
 	e.checkSC(numRequests)
-	e.checkCounter(0)
+	e.checkWasmContractCounter(0)
 }
 
 func TestIncIncrement(t *testing.T) {
@@ -200,7 +200,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	}
 
 	e.checkSC(numRequests)
-	e.checkCounter(numRequests)
+	e.checkWasmContractCounter(numRequests)
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
@@ -209,7 +209,7 @@ func TestIncrementWithTransfer(t *testing.T) {
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	e.checkCounter(1)
+	e.checkWasmContractCounter(1)
 }
 
 func TestIncCallIncrement1(t *testing.T) {
@@ -218,7 +218,7 @@ func TestIncCallIncrement1(t *testing.T) {
 	entryPoint := isc.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
 
-	e.checkCounter(2)
+	e.checkWasmContractCounter(2)
 }
 
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
@@ -227,7 +227,7 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	entryPoint := isc.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 1_000, nil)
 
-	e.checkCounter(6)
+	e.checkWasmContractCounter(6)
 }
 
 func TestIncPostIncrement(t *testing.T) {
@@ -269,28 +269,28 @@ func TestIncLocalStateInternalCall(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := isc.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkCounter(2)
+	e.checkWasmContractCounter(2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := isc.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkCounter(0)
+	e.checkWasmContractCounter(0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 4)
 	entryPoint := isc.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
-	e.checkCounter(0)
+	e.checkWasmContractCounter(0)
 }
 
 func TestIncViewCounter(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
-	e.checkCounter(1)
+	e.checkWasmContractCounter(1)
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, incHname, "getCounter", nil,
 	)
@@ -304,14 +304,14 @@ func TestIncViewCounter(t *testing.T) {
 func TestIncCounterDelay(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 2)
 	e.postRequest(incHname, isc.Hn("increment"), 0, nil)
-	e.checkCounter(1)
+	e.checkWasmContractCounter(1)
 
 	e.postRequest(incHname, isc.Hn("incrementWithDelay"), 0, map[string]interface{}{
 		varDelay: int32(5), // 5s delay
 	})
 
 	time.Sleep(3 * time.Second)
-	e.checkCounter(1)
+	e.checkWasmContractCounter(1)
 	time.Sleep(3 * time.Second)
-	e.checkCounter(2)
+	e.checkWasmContractCounter(2)
 }

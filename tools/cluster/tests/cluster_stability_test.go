@@ -187,7 +187,7 @@ func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, num
 	wg.Wait()
 	// quorum is not met, incCounter should not equal numRequests
 	time.Sleep(time.Second * 25)
-	counter := env.chainEnv.getCounter(nativeIncCounterSCHname)
+	counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 	require.NotEqual(t, numRequests, int(counter))
 }
 
@@ -236,7 +236,7 @@ func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValid
 
 	t.Log("Waiting for network to settle, no incCounter increases should be logged now")
 	time.Sleep(time.Second * 25)
-	counter := env.chainEnv.getCounter(nativeIncCounterSCHname)
+	counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 	// quorum is not met, work stops, incCounter should not equal numRequests
 	require.NotEqual(env.chainEnv.t, numRequestsBeforeFailure+numRequestsAfterFailure, int(counter))
 
@@ -367,14 +367,14 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 			// Wait and validate that not all messages have arrived
 			time.Sleep(15 * time.Second)
 
-			counter := env.chainEnv.getCounter(nativeIncCounterSCHname)
+			counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 			require.NotEqual(env.chainEnv.t, requestCounter, int(counter))
 
 			break
 		} else {
 			t.Log("Waiting for requests to come in")
 			waitUntil(t, env.chainEnv.counterEquals(int64(requestCounter)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
-			counter := env.chainEnv.getCounter(nativeIncCounterSCHname)
+			counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 
 			t.Logf("Seems good? %v", counter)
 		}
@@ -382,7 +382,7 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 
 	// Either too many nodes are down now and the process has stopped, or quorum is still fine, requiring no further interaction.
 
-	counter := env.chainEnv.getCounter(nativeIncCounterSCHname)
+	counter := env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 
 	t.Logf("Counter after first iteration: %v", counter)
 
@@ -396,7 +396,7 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 		env.chainEnv.Clu.UnfreezeNode(nodeID)
 
 		time.Sleep(time.Second * 15)
-		counter = env.chainEnv.getCounter(nativeIncCounterSCHname)
+		counter = env.chainEnv.getNativeContractCounter(nativeIncCounterSCHname)
 
 		if counter == int64(requestCounter) {
 			t.Logf("After unfreezing, the counter matches the requestCounter: %v", requestCounter)
