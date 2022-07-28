@@ -3,7 +3,8 @@ name: Test
 on:
   pull_request:
     branches: [develop]
-
+  push:
+    branches: [artifacts]
 jobs:
   build:
     name: Test
@@ -33,6 +34,9 @@ jobs:
   contract-test:
     name: Wasm contract tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TEST_LANG: [go, gowasm, tswasm, rswasm]
     steps:
       - name: checkout to the directory
         uses: actions/checkout@v3
@@ -68,23 +72,42 @@ jobs:
           cd ..
           npm install
       - name: run builds
+        env:
+          TEST_LANG: ${{matrix.TEST_LANG}}
         run: |
           cd contracts/wasm/scripts
-          bash all_build.sh
+          bash core_build.sh
+          if [ $TEST_LANG == "go" ]; then
+            echo "========build SC in go========" 
+            bash schema_all.sh
+          elif [ $TEST_LANG == "gowasm" ]; then
+            echo "========build SC in gowasm========"
+            bash go_all.sh
+          elif [ $TEST_LANG == "tswasm" ]; then
+            echo "========build SC in tswasm========"
+            bash ts_all.sh
+          elif [ $TEST_LANG == "rswasm" ]; then
+            echo "========build SC in rswasm========"
+            bash rust_all.sh
+          fi
       - name: run tests
+        env:
+          TEST_LANG: ${{matrix.TEST_LANG}}
         run: |
           cd contracts/wasm
-          echo "========run SC tests with solo========"
-          go test ./...
-          echo "========run SC tests with gowasm========"
-          go test ./... -gowasm
-          echo "========run SC tests with tswasm========"
-          go test ./... -tswasm
-          echo "========run SC tests with rswasm========"
-          go test ./... -rswasm
-          echo "========run packages/vm tests========"
-          cd ../../packages/vm/
-          go test ./...
+          if [ $TEST_LANG == "go" ]; then
+            echo "========run SC tests with go========"
+            go test ./...
+          elif [ $TEST_LANG == "gowasm" ]; then
+            echo "========run SC tests with gowasm========"
+            go test ./... -gowasm
+          elif [ $TEST_LANG == "tswasm" ]; then
+            echo "========run SC tests with tswasm========"
+            go test ./... -tswasm
+          elif [ $TEST_LANG == "rswasm" ]; then
+            echo "========run SC tests with rswasm========"
+            go test ./... -rswasm
+          fi
           
   golangci:
     name: lint
