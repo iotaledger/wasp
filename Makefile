@@ -11,6 +11,10 @@ TEST_ARG=
 
 all: build-lint
 
+wasm:
+	go install ./tools/schema
+	bash contracts/wasm/scripts/generate_wasm.sh
+
 compile-solidity:
 ifeq (, $(shell which solc))
 	@echo "no solc found in PATH, evm contracts won't be compiled"
