@@ -51,7 +51,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     if (margin == 0) {
         margin = 1;
     }
-    let deposit = allowance.iotas();
+    let deposit = allowance.baseTokens();
     if (deposit < margin) {
         ctx.panic("Insufficient deposit");
     }
@@ -75,7 +75,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     currentAuction.setValue(auction);
 
     // take custody of deposit and NFT
-    let transfer = wasmlib.ScTransfer.iotas(deposit);
+    let transfer = wasmlib.ScTransfer.baseTokens(deposit);
     transfer.addNFT(auctionNFT)
     ctx.transferAllowed(ctx.accountID(), transfer, false)
 
@@ -126,7 +126,7 @@ export function funcFinalizeAuction(ctx: wasmlib.ScFuncContext, f: sc.FinalizeAu
 }
 
 export function funcPlaceBid(ctx: wasmlib.ScFuncContext, f: sc.PlaceBidContext): void {
-    let bidAmount = ctx.allowance().iotas();
+    let bidAmount = ctx.allowance().baseTokens();
     ctx.require(bidAmount > 0, "Missing bid amount");
 
     let nft = f.params.nft().value();
@@ -199,12 +199,12 @@ export function viewGetAuctionInfo(ctx: wasmlib.ScViewContext, f: sc.GetAuctionI
 function transferTokens(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, amount: u64): void {
     if (agent.isAddress()) {
         // send back to original Tangle address
-        ctx.send(agent.address(), wasmlib.ScTransfer.iotas(amount));
+        ctx.send(agent.address(), wasmlib.ScTransfer.baseTokens(amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.send(agent.address(), wasmlib.ScTransfer.iotas(amount));
+    ctx.send(agent.address(), wasmlib.ScTransfer.baseTokens(amount));
 }
 
 function transferNFT(ctx: wasmlib.ScFuncContext, agent: wasmlib.ScAgentID, nft: wasmlib.ScNftID): void {

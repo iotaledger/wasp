@@ -92,12 +92,12 @@ func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor
     member := dividend.ScFuncs.Member(ctx)
     member.Params.Address().SetValue(agent.ScAddress())
     member.Params.Factor().SetValue(factor)
-    member.Func.TransferIotas(1).Post()
+    member.Func.TransferBaseTokens(1).Post()
 }
 
 func dividendDivide(ctx *wasmsolo.SoloContext, amount int64) {
     divide := dividend.ScFuncs.Divide(ctx)
-    divide.Func.TransferIotas(amount).Post()
+    divide.Func.TransferBaseTokens(amount).Post()
 }
 
 func dividendGetFactor(ctx *wasmsolo.SoloContext, member3 *wasmsolo.SoloAgent) int64 {

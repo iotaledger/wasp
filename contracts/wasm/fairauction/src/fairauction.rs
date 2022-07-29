@@ -54,7 +54,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     if margin == 0 {
         margin = 1;
     }
-    let deposit = allowance.iotas();
+    let deposit = allowance.base_tokens();
     if deposit < margin {
         ctx.panic("Insufficient deposit");
     }
@@ -79,7 +79,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     current_auction.set_value(&auction);
 
     // take custody of deposit and NFT
-    let mut transfer = ScTransfer::iotas(deposit);
+    let mut transfer = ScTransfer::base_tokens(deposit);
     transfer.add_nft(&auction_nft);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
 
@@ -89,7 +89,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
 }
 
 pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
-    let mut bid_amount = ctx.allowance().iotas();
+    let mut bid_amount = ctx.allowance().base_tokens();
     ctx.require(bid_amount > 0, "Missing bid amount");
 
     let nft = f.params.nft().value();
@@ -210,12 +210,12 @@ pub fn view_get_auction_info(ctx: &ScViewContext, f: &GetAuctionInfoContext) {
 fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.send(&agent.address(), &ScTransfer::iotas(amount));
+        ctx.send(&agent.address(), &ScTransfer::base_tokens(amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.send(&agent.address(), &ScTransfer::iotas(amount));
+    ctx.send(&agent.address(), &ScTransfer::base_tokens(amount));
 }
 
 fn transfer_nft(ctx: &ScFuncContext, agent: &ScAgentID, nft: &ScNftID) {

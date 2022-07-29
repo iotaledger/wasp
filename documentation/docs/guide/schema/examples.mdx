@@ -78,7 +78,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 
     member := dividend.ScFuncs.Member(ctx)
     member.Params.Factor().SetValue(100)
-    member.Func.TransferIotas(1).Post()
+    member.Func.TransferBaseTokens(1).Post()
     require.Error(t, ctx.Err)
     require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory address"))
 }
@@ -89,7 +89,7 @@ func TestAddMemberFailMissingFactor(t \*testing.T) {
     member1 := ctx.NewSoloAgent()
     f := dividend.ScFuncs.Member(ctx)
     f.Params.Address().SetValue(member1.ScAddress())
-    f.Func.TransferIotas(1).Post()
+    f.Func.TransferBaseTokens(1).Post()
     require.Error(t, ctx.Err)
     require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory factor"))
 }

@@ -5,7 +5,7 @@ import * as wasmtypes from "./wasmtypes"
 import {ScDict} from "./dict";
 
 export class ScAssets {
-    iotas: u64 = 0;
+    baseTokens: u64 = 0;
     nftIDs: wasmtypes.ScNftID[] = [];
     tokens: Map<string, wasmtypes.ScBigInt> = new Map();
 
@@ -14,7 +14,7 @@ export class ScAssets {
             return this;
         }
         const dec = new wasmtypes.WasmDecoder(buf);
-        this.iotas = wasmtypes.uint64Decode(dec);
+        this.baseTokens = wasmtypes.uint64Decode(dec);
 
         let size = wasmtypes.uint32Decode(dec);
         for (let i: u32 = 0; i < size; i++) {
@@ -35,7 +35,7 @@ export class ScAssets {
     }
 
     public isEmpty(): bool {
-        if (this.iotas != 0) {
+        if (this.baseTokens != 0) {
             return false;
         }
         const values = this.tokens.values();
@@ -49,7 +49,7 @@ export class ScAssets {
     
     public toBytes(): u8[] {
         const enc = new wasmtypes.WasmEncoder();
-        wasmtypes.uint64Encode(enc, this.iotas);
+        wasmtypes.uint64Encode(enc, this.baseTokens);
 
         let tokenIDs = this.tokenIDs();
         wasmtypes.uint32Encode(enc, tokenIDs.length as u32);
@@ -96,8 +96,8 @@ export class ScBalances {
         return this.assets.tokens.get(mapKey);
     }
 
-    public iotas(): u64 {
-        return this.assets.iotas;
+    public baseTokens(): u64 {
+        return this.assets.baseTokens;
     }
 
     public isEmpty(): bool {
@@ -123,7 +123,7 @@ export class ScTransfer extends ScBalances{
     }
 
     public static fromBalances(balances: ScBalances): ScTransfer {
-        const transfer = ScTransfer.iotas(balances.iotas());
+        const transfer = ScTransfer.baseTokens(balances.baseTokens());
         const tokenIDs = balances.tokenIDs();
         for (let i = 0; i < tokenIDs.length; i++) {
             const tokenID = tokenIDs[i];
@@ -137,9 +137,9 @@ export class ScTransfer extends ScBalances{
         return transfer;
     }
 
-    public static iotas(amount: u64): ScTransfer {
+    public static baseTokens(amount: u64): ScTransfer {
         const transfer = new ScTransfer();
-        transfer.assets.iotas = amount;
+        transfer.assets.baseTokens = amount;
         return transfer;
     }
 
