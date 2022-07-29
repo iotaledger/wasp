@@ -56,7 +56,7 @@ the 1000 tokens it passes to the function:
 
 ```go
 f := dividend.ScFuncs.Divide(ctx)
-f.Func.TransferIotas(1000).Call()
+f.Func.TransferBaseTokens(1000).Call()
 ```
 
 </TabItem>
@@ -64,7 +64,7 @@ f.Func.TransferIotas(1000).Call()
 
 ```rust
 let f = dividend::ScFuncs::divide(ctx);
-f.func.transfer_iotas(1000).call();
+f.func.transfer_base_tokens(1000).call();
 ```
 
 </TabItem>
@@ -72,7 +72,7 @@ f.func.transfer_iotas(1000).call();
 
 ```ts
 let f = dividend.ScFuncs.divide(ctx);
-f.func.transferIotas(1000).call();
+f.func.transferBaseTokens(1000).call();
 ```
 
 </TabItem>
@@ -146,7 +146,7 @@ member function like this:
 ```go
 altContract := NewScHname("alternateName")
 f := dividend.ScFuncs.Divide(ctx)
-f.Func.OfContract(altContract).TransferIotas(1000).Call()
+f.Func.OfContract(altContract).TransferBaseTokens(1000).Call()
 ```
 
 </TabItem>
@@ -155,7 +155,7 @@ f.Func.OfContract(altContract).TransferIotas(1000).Call()
 ```rust
 let alt_contract = ScHname::new("alternateName");
 let f = dividend::ScFuncs::divide(ctx);
-f.func.of_contract(alt_contract).transfer_iotas(1000).call();
+f.func.of_contract(alt_contract).transfer_base_tokens(1000).call();
 ```
 
 </TabItem>
@@ -164,7 +164,7 @@ f.func.of_contract(alt_contract).transfer_iotas(1000).call();
 ```ts
 let altContract = ScHname.fromString("alternateName");
 let f = dividend.ScFuncs.divide(ctx);
-f.func.ofContract(altContract).transferIotas(1000).call();
+f.func.ofContract(altContract).transferBaseTokens(1000).call();
 ```
 
 </TabItem>

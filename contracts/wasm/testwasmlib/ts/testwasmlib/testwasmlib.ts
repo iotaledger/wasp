@@ -84,7 +84,7 @@ export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanc
 }
 
 export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().iotas());
+    f.results.tokens().setValue(ctx.balances().baseTokens());
 }
 
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
@@ -120,8 +120,8 @@ export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext
     f.results.random().setValue(f.state.random().value());
 }
 
-export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().iotas());
+export function viewTokenBalance(ctx: wasmlib.ScViewContext, f: sc.TokenBalanceContext): void {
+    f.results.tokens().setValue(ctx.balances().baseTokens());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

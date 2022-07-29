@@ -42,7 +42,7 @@ require.NoError(t, err)
 ```go
 // withdraw from chain *chainID* to wallet
 w := coreaccounts.ScFuncs.Withdraw(ctx.Sign(wallet))
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 require.NoError(t, ctx.Err)
 ```
 
@@ -53,7 +53,7 @@ require.NoError(t, ctx.Err)
 // withdraw from chain *chainID* to current common account
 // (there is no way to specify hname for withdrawals)
 let w = coreaccounts::ScFuncs::withdraw(ctx);
-w.func.transfer_iotas(1).post_to_chain(chainID);
+w.func.transfer_base_tokens(1).post_to_chain(chainID);
 ```
 
 </TabItem>
@@ -63,7 +63,7 @@ w.func.transfer_iotas(1).post_to_chain(chainID);
 // withdraw from chain *chainID* to current common account
 // (there is no way to specify hname for withdrawals)
 w := coreaccounts.ScFuncs.Withdraw(ctx)
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 ```
 
 </TabItem>

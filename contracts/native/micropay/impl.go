@@ -59,8 +59,8 @@ package micropay
 // 	// 	fmt.Sprintf("unknown public key for address %s", payerAddr))
 
 // 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
-// 	// addWarrant := ctx.Allowance().Iotas
-// 	// a.Requiref(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
+// 	// addWarrant := ctx.Allowance().BaseTokens
+// 	// a.Requiref(addWarrant >= MinimumWarrantBaseTokens, fmt.Sprintf("warrant must be larger than %d base tokens", MinimumWarrantBaseTokens))
 
 // 	// warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
 // 	// a.Requiref(revoke == 0, fmt.Sprintf("warrant of %s for %s is being revoked", payerAddr, serviceAddr))
@@ -114,7 +114,7 @@ package micropay
 // 	// setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 // 	// // send deterred request to self to revoke the warrant
-// 	// iota1 := isc.NewTokensIotas(1)
+// 	// iota1 := isc.NewFungibleBaseTokens(1)
 // 	// meta := &isc.SendMetadata{
 // 	// 	TargetContract: ctx.Contract(),
 // 	// 	EntryPoint:     FuncCloseWarrant.Hname(),
@@ -144,9 +144,9 @@ package micropay
 // 	// serviceAddr := par.MustGetAddress(ParamServiceAddress)
 // 	// warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 // 	// if warrant > 0 {
-// 	// 	tokens := isc.NewTokensIotas(warrant)
+// 	// 	tokens := isc.NewFungibleBaseTokens(warrant)
 // 	// 	succ := ctx.Send(payerAddr, tokens, nil)
-// 	// 	a.Requiref(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
+// 	// 	a.Requiref(succ, "failed to send %d base tokens to address %s", warrant, payerAddr)
 // 	// }
 // 	// deleteWarrant(ctx.State(), payerAddr, serviceAddr)
 // 	// return nil, nil

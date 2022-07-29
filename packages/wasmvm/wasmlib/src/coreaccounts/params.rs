@@ -99,8 +99,8 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_base_tokens(&self) -> ScImmutableUint64 {
+		ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
 	}
 }
 
@@ -110,8 +110,8 @@ pub struct MutableHarvestParams {
 }
 
 impl MutableHarvestParams {
-    pub fn force_minimum_iotas(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_IOTAS))
+    pub fn force_minimum_base_tokens(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
 	}
 }
 

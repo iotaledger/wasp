@@ -68,7 +68,7 @@ func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 		bal := ctx.Balances(user)
 		userL1 := user.Balance()
 
-		// Allow 4321 iotas to be transferred, there's enough budget
+		// Allow 4321 tokens to be transferred, there's enough budget
 		// note that SetInt() will not try to grab them
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")

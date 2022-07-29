@@ -60,7 +60,7 @@ func (env *Solo) MintTokens(wallet *cryptolib.KeyPair, amount uint64) (iotago.Na
 	// allOuts := env.utxoDB.GetAddressOutputs(addr)
 
 	// txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.GlobalTime())
-	// if amount < DustThresholdIotas {
+	// if amount < DustThresholdBaseTokens {
 	// 	return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
 	// }
 	// if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
