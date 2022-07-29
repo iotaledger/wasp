@@ -159,6 +159,6 @@ func TestMaintenance(t *testing.T) {
 		require.NoError(t, err)
 		_, err = env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, notProccessedReq2.ID(), 10*time.Second)
 		require.NoError(t, err)
-		require.EqualValues(t, 2, env.getCounter(nativeIncCounterSCHname))
+		require.EqualValues(t, 2, env.getNativeContractCounter(nativeIncCounterSCHname))
 	}
 }
