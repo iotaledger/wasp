@@ -65,11 +65,11 @@ func (e *ChainEnv) deployInccounter42() *isc.ContractAgentID {
 }
 
 func (e *ChainEnv) expectCounter(hname isc.Hname, counter int64) {
-	c := e.getCounter(hname)
+	c := e.getNativeContractCounter(hname)
 	require.EqualValues(e.t, counter, c)
 }
 
-func (e *ChainEnv) getCounter(hname isc.Hname) int64 {
+func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 	return e.getCounterForNode(hname, 0)
 }
 
