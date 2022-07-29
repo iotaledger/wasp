@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -85,7 +85,7 @@ func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	errMsg := "(empty)"
 	if receipt.Error != nil {
 		resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
-			return SCClient(iscp.Hn(contractName)).CallView(funcName, params)
+			return SCClient(isc.Hn(contractName)).CallView(funcName, params)
 		})
 		log.Check(err)
 		errMsg = resolved.Error()
@@ -121,7 +121,7 @@ func requestCmd() *cobra.Command {
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			reqID, err := iscp.RequestIDFromString(args[0])
+			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
 			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
@@ -142,7 +142,7 @@ func requestCmd() *cobra.Command {
 	}
 }
 
-func logEventsInRequest(reqID iscp.RequestID) {
+func logEventsInRequest(reqID isc.RequestID) {
 	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForRequest.Name, dict.Dict{
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})

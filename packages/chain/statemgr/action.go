@@ -8,7 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -29,7 +29,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	}
 	if sm.notifiedAnchorOutputID == sm.stateOutput.ID() {
 		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v at index #%d",
-			iscp.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
+			isc.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
 		return
 	}
 	if !sm.isSynced() {
@@ -41,7 +41,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
 	sm.log.Debugf("notifyStateTransition: state IS SYNCED to index %d and is approved by output %v",
-		stateOutputIndex, iscp.OID(stateOutputID))
+		stateOutputIndex, isc.OID(stateOutputID))
 	sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{
 		IsGovernance:    false,
 		VirtualState:    sm.solidState.Copy(),
@@ -84,7 +84,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"commitment", state.RootCommitment(nextState.TrieNodeStore()),
-		"output", iscp.OID(approvingOutputID),
+		"output", isc.OID(approvingOutputID),
 	)
 
 	block, err := nextState.ExtractBlock()
@@ -134,7 +134,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.syncingBlocks.addBlockCandidate(block, nil)
 	if !sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", iscp.OID(block.ApprovingOutputID()))
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(block.ApprovingOutputID()))
 		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
 	}
 	return true
@@ -153,7 +153,7 @@ func (sm *stateManager) storeSyncingData() {
 	outputStateCommitment := outputStateL1Commitment.StateCommitment
 	solidStateCommitment := state.RootCommitment(sm.solidState.TrieNodeStore())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateCommitment %s, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputCommitment %s, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), isc.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),

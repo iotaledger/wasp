@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID) bool {
+func (sm *stateManager) aliasOutputReceived(aliasOutput *isc.AliasOutputWithID) bool {
 	aliasOutputIndex := aliasOutput.GetStateIndex()
-	aliasOutputIDStr := iscp.OID(aliasOutput.ID())
+	aliasOutputIDStr := isc.OID(aliasOutput.ID())
 	sm.log.Debugf("aliasOutputReceived: received output index %v, id %v", aliasOutputIndex, aliasOutputIDStr)
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < aliasOutputIndex {
 		sm.log.Debugf("aliasOutputReceived: output index %v, id %v is new state output", aliasOutputIndex, aliasOutputIDStr)
@@ -43,7 +43,7 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 		sm.stateOutputTimestamp = time.Now()
 
 		sm.log.Warnf("aliasOutputReceived: output index %v, id %v is the same index but different ID as current state output (ID %v): it is a governance update output, ignoring",
-			aliasOutputIndex, aliasOutputIDStr, iscp.OID(sm.stateOutput.ID()))
+			aliasOutputIndex, aliasOutputIDStr, isc.OID(sm.stateOutput.ID()))
 		return false
 	}
 	if !sm.syncingBlocks.isSyncing(aliasOutputIndex) {

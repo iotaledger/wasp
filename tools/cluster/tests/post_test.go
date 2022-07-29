@@ -7,7 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/utxodb"
@@ -17,8 +17,8 @@ import (
 
 const inccounterName = "inc"
 
-func (e *ChainEnv) deployInccounter42() *iscp.ContractAgentID {
-	hname := iscp.Hn(inccounterName)
+func (e *ChainEnv) deployInccounter42() *isc.ContractAgentID {
+	hname := isc.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash
 
@@ -61,19 +61,19 @@ func (e *ChainEnv) deployInccounter42() *iscp.ContractAgentID {
 	require.EqualValues(e.t, description, rec.Description)
 
 	e.expectCounter(hname, 42)
-	return iscp.NewContractAgentID(e.Chain.ChainID, hname)
+	return isc.NewContractAgentID(e.Chain.ChainID, hname)
 }
 
-func (e *ChainEnv) expectCounter(hname iscp.Hname, counter int64) {
-	c := e.getCounter(hname)
+func (e *ChainEnv) expectCounter(hname isc.Hname, counter int64) {
+	c := e.getNativeContractCounter(hname)
 	require.EqualValues(e.t, counter, c)
 }
 
-func (e *ChainEnv) getCounter(hname iscp.Hname) int64 {
+func (e *ChainEnv) getNativeContractCounter(hname isc.Hname) int64 {
 	return e.getCounterForNode(hname, 0)
 }
 
-func (e *ChainEnv) getCounterForNode(hname iscp.Hname, nodeIndex int) int64 {
+func (e *ChainEnv) getCounterForNode(hname isc.Hname, nodeIndex int) int64 {
 	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
 		e.Chain.ChainID, hname, "getCounter", nil,
 	)
@@ -85,7 +85,7 @@ func (e *ChainEnv) getCounterForNode(hname iscp.Hname, nodeIndex int) int64 {
 	return counter
 }
 
-func (e *ChainEnv) waitUntilCounterEquals(hname iscp.Hname, expected int64, duration time.Duration) {
+func (e *ChainEnv) waitUntilCounterEquals(hname isc.Hname, expected int64, duration time.Duration) {
 	timeout := time.After(duration)
 	var c int64
 	allNodesEqualFun := func() bool {
@@ -149,8 +149,8 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer:  iscp.NewTokensIotas(10 * iscp.Mi),
-		Allowance: iscp.NewAllowanceIotas(9 * iscp.Mi),
+		Transfer:  isc.NewFungibleBaseTokens(10 * isc.Mi),
+		Allowance: isc.NewAllowanceBaseTokens(9 * isc.Mi),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -171,24 +171,24 @@ func TestPost5Requests(t *testing.T) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress)
+	myAgentID := isc.NewAgentID(myAddress)
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
 	onChainBalance := uint64(0)
 	for i := 0; i < 5; i++ {
-		iotasSent := 1 * iscp.Mi
+		baseTokesSent := 1 * isc.Mi
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += iotasSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	e.checkLedger()
 }
@@ -201,16 +201,16 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := iscp.NewAgentID(myAddress)
+	myAgentID := isc.NewAgentID(myAddress)
 
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx := [5]*iotago.Transaction{}
 	onChainBalance := uint64(0)
-	iotasSent := 1 * iscp.Mi
+	baseTokesSent := 1 * isc.Mi
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
-			Transfer: iscp.NewFungibleTokens(iotasSent, nil),
+			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),
 		})
 		require.NoError(t, err)
 	}
@@ -218,14 +218,14 @@ func TestPost5AsyncRequests(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], 30*time.Second)
 		require.NoError(t, err)
-		onChainBalance += iotasSent - receipts[0].GasFeeCharged
+		onChainBalance += baseTokesSent - receipts[0].GasFeeCharged
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-5*iotasSent)) {
+		isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 	e.checkLedger()

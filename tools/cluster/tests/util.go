@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -68,7 +68,7 @@ func (e *ChainEnv) checkRootsOutside() {
 	}
 }
 
-func (e *ChainEnv) getBalanceOnChain(agentID iscp.AgentID, assetID []byte, nodeIndex ...int) uint64 {
+func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIndex ...int) uint64 {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -82,34 +82,34 @@ func (e *ChainEnv) getBalanceOnChain(agentID iscp.AgentID, assetID []byte, nodeI
 		return 0
 	}
 
-	actual, err := iscp.FungibleTokensFromDict(ret)
+	actual, err := isc.FungibleTokensFromDict(ret)
 	require.NoError(e.t, err)
 
-	if bytes.Equal(assetID, iscp.IotaTokenID) {
-		return actual.Iotas
+	if bytes.Equal(assetID, isc.BaseTokenID) {
+		return actual.BaseTokens
 	}
 
 	tokenSet, err := actual.Tokens.Set()
 	require.NoError(e.t, err)
-	tokenID, err := iscp.NativeTokenIDFromBytes(assetID)
+	tokenID, err := isc.NativeTokenIDFromBytes(assetID)
 	require.NoError(e.t, err)
 	return tokenSet[tokenID].Amount.Uint64()
 }
 
-func (e *ChainEnv) checkBalanceOnChain(agentID iscp.AgentID, assetID []byte, expected uint64) {
+func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expected uint64) {
 	actual := e.getBalanceOnChain(agentID, assetID)
 	require.EqualValues(e.t, expected, actual)
 }
 
-func (e *ChainEnv) getAccountsOnChain() []iscp.AgentID {
+func (e *ChainEnv) getAccountsOnChain() []isc.AgentID {
 	r, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewAccounts.Name, nil,
 	)
 	require.NoError(e.t, err)
 
-	ret := make([]iscp.AgentID, 0)
+	ret := make([]isc.AgentID, 0)
 	for key := range r {
-		aid, err := iscp.AgentIDFromBytes([]byte(key))
+		aid, err := isc.AgentIDFromBytes([]byte(key))
 		require.NoError(e.t, err)
 
 		ret = append(ret, aid)
@@ -119,8 +119,8 @@ func (e *ChainEnv) getAccountsOnChain() []iscp.AgentID {
 	return ret
 }
 
-func (e *ChainEnv) getBalancesOnChain() map[string]*iscp.FungibleTokens {
-	ret := make(map[string]*iscp.FungibleTokens)
+func (e *ChainEnv) getBalancesOnChain() map[string]*isc.FungibleTokens {
+	ret := make(map[string]*isc.FungibleTokens)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.Chain.Cluster.WaspClient(0).CallView(
@@ -130,18 +130,18 @@ func (e *ChainEnv) getBalancesOnChain() map[string]*iscp.FungibleTokens {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[string(agentID.Bytes())], err = iscp.FungibleTokensFromDict(r)
+		ret[string(agentID.Bytes())], err = isc.FungibleTokensFromDict(r)
 		require.NoError(e.t, err)
 	}
 	return ret
 }
 
-func (e *ChainEnv) getTotalBalance() *iscp.FungibleTokens {
+func (e *ChainEnv) getTotalBalance() *isc.FungibleTokens {
 	r, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
-	ret, err := iscp.FungibleTokensFromDict(r)
+	ret, err := isc.FungibleTokensFromDict(r)
 	require.NoError(e.t, err)
 	return ret
 }
@@ -150,7 +150,7 @@ func (e *ChainEnv) printAccounts(title string) {
 	allBalances := e.getBalancesOnChain()
 	s := fmt.Sprintf("------------------------------------- %s\n", title)
 	for k, bals := range allBalances {
-		aid, err := iscp.AgentIDFromBytes([]byte(k))
+		aid, err := isc.AgentIDFromBytes([]byte(k))
 		require.NoError(e.t, err)
 		s += fmt.Sprintf("     %s\n", aid.String())
 		s += fmt.Sprintf("%s\n", bals.String())
@@ -160,14 +160,14 @@ func (e *ChainEnv) printAccounts(title string) {
 
 func (e *ChainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := iscp.NewEmptyAssets()
+	sum := isc.NewEmptyAssets()
 	for _, bal := range balances {
 		sum.Add(bal)
 	}
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
-func (e *ChainEnv) getChainInfo() (*iscp.ChainID, iscp.AgentID) {
+func (e *ChainEnv) getChainInfo() (*isc.ChainID, isc.AgentID) {
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Name, nil,
 	)
@@ -187,7 +187,7 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 		i = nodeIndex[0]
 	}
 
-	hname := iscp.Hn(name)
+	hname := isc.Hn(name)
 	ret, err := e.Chain.Cluster.WaspClient(i).CallView(
 		e.Chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
@@ -236,9 +236,9 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 	}
 }
 
-func (e *ChainEnv) accountExists(agentID iscp.AgentID) conditionFn {
+func (e *ChainEnv) accountExists(agentID isc.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex) > 0
+		return e.getBalanceOnChain(agentID, isc.BaseTokenID, nodeIndex) > 0
 	}
 }
 
@@ -252,11 +252,11 @@ func (e *ChainEnv) contractIsDeployed() conditionFn {
 	}
 }
 
-func (e *ChainEnv) balanceOnChainIotaEquals(agentID iscp.AgentID, iotas uint64) conditionFn {
+func (e *ChainEnv) balanceOnChainBaseTokensEquals(agentID isc.AgentID, expected uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, iscp.IotaTokenID, nodeIndex)
-		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)
-		return iotas == have
+		have := e.getBalanceOnChain(agentID, isc.BaseTokenID, nodeIndex)
+		e.t.Logf("chainEnv::balanceOnChainBaseTokensEquals: node=%v, have=%v, expected=%v", nodeIndex, have, expected)
+		return expected == have
 	}
 }
 

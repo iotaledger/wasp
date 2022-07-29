@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +16,8 @@ func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 		t.Fatal()
 		return
 	}
-	if target, ok := target.(iscp.VMErrorBase); ok {
-		if iscp.VMErrorIs(err, target) {
+	if target, ok := target.(isc.VMErrorBase); ok {
+		if isc.VMErrorIs(err, target) {
 			return
 		}
 	}

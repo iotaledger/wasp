@@ -10,8 +10,8 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
@@ -53,7 +53,7 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
 }
 
-func (vmctx *VMContext) SubscribeBlockContext(openFunc, closeFunc iscp.Hname) {
+func (vmctx *VMContext) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {
 	vmctx.Call(root.Contract.Hname(), root.FuncSubscribeBlockContext.Hname(), dict.Dict{
 		root.ParamBlockContextOpenFunc:  codec.EncodeHname(openFunc),
 		root.ParamBlockContextCloseFunc: codec.EncodeHname(closeFunc),

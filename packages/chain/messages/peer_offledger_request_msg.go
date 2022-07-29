@@ -6,13 +6,13 @@ package messages
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
 )
 
 type OffLedgerRequestMsg struct {
-	ChainID *iscp.ChainID
-	Req     iscp.OffLedgerRequest
+	ChainID *isc.ChainID
+	Req     isc.OffLedgerRequest
 }
 
 type OffLedgerRequestMsgIn struct {
@@ -20,7 +20,7 @@ type OffLedgerRequestMsgIn struct {
 	SenderPubKey *cryptolib.PublicKey
 }
 
-func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req iscp.OffLedgerRequest) *OffLedgerRequestMsg {
+func NewOffLedgerRequestMsg(chainID *isc.ChainID, req isc.OffLedgerRequest) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
@@ -36,15 +36,15 @@ func (msg *OffLedgerRequestMsg) Bytes() []byte {
 
 func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 	mu := marshalutil.New(data)
-	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
+	chainID, err := isc.ChainIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	req, err := iscp.NewRequestFromMarshalUtil(mu)
+	req, err := isc.NewRequestFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	reqCasted, ok := req.(iscp.OffLedgerRequest)
+	reqCasted, ok := req.(isc.OffLedgerRequest)
 	if !ok {
 		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}

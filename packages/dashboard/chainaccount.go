@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/labstack/echo/v4"
@@ -21,12 +21,12 @@ func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	agentID, err := iscp.NewAgentIDFromString(c.Param("agentid"))
+	agentID, err := isc.NewAgentIDFromString(c.Param("agentid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -47,7 +47,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	result.Balances, err = iscp.FungibleTokensFromDict(bal)
+	result.Balances, err = isc.FungibleTokensFromDict(bal)
 	if err != nil {
 		return err
 	}
@@ -58,8 +58,8 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *iscp.ChainID
-	AgentID iscp.AgentID
+	ChainID *isc.ChainID
+	AgentID isc.AgentID
 
-	Balances *iscp.FungibleTokens
+	Balances *isc.FungibleTokens
 }

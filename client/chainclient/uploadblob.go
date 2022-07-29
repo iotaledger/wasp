@@ -4,13 +4,13 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
 // UploadBlob sends an off-ledger request to call 'store' in the blob contract.
-func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, iscp.OffLedgerRequest, *iscp.Receipt, error) {
+func (c *Client) UploadBlob(fields dict.Dict) (hashing.HashValue, isc.OffLedgerRequest, *isc.Receipt, error) {
 	blobHash := blob.MustGetBlobHash(fields)
 
 	req, err := c.PostOffLedgerRequest(

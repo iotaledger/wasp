@@ -7,7 +7,7 @@ package chainimpl
 import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -16,7 +16,7 @@ import (
 
 var _ chain.ChainRequests = &chainObj{}
 
-func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, error) {
+func (c *chainObj) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	blocklogStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 	res, err := blocklog.GetRequestRecordDataByRequestID(
 		blocklogStateReader,
@@ -35,12 +35,12 @@ func (c *chainObj) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestRec
 	return receipt, nil
 }
 
-func (c *chainObj) ResolveError(e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+func (c *chainObj) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	errorsStateReader := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(errors.Contract.Hname().Bytes()))
 	return errors.ResolveFromState(errorsStateReader, e)
 }
 
-func (c *chainObj) AttachToRequestProcessed(handler func(iscp.RequestID)) *events.Closure {
+func (c *chainObj) AttachToRequestProcessed(handler func(isc.RequestID)) *events.Closure {
 	closure := events.NewClosure(handler)
 	c.eventRequestProcessed.Attach(closure)
 	return closure

@@ -8,7 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -37,25 +37,25 @@ func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Addres
 	}
 }
 
-func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) iscp.AgentID {
+func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) isc.AgentID {
 	if agentID.IsAddress() {
 		address := agentID.Address()
-		return iscp.NewAgentID(cvt.IscpAddress(&address))
+		return isc.NewAgentID(cvt.IscpAddress(&address))
 	}
 
 	if agentID.IsContract() {
 		scAddress := agentID.Address()
 		address := cvt.IscpAddress(&scAddress)
-		chainID := iscp.ChainIDFromAddress(address.(*iotago.AliasAddress))
-		return iscp.NewContractAgentID(&chainID, cvt.IscpHname(agentID.Hname()))
+		chainID := isc.ChainIDFromAddress(address.(*iotago.AliasAddress))
+		return isc.NewContractAgentID(&chainID, cvt.IscpHname(agentID.Hname()))
 	}
 
 	// TODO implement missing agent id types
 	panic("WasmConvertor.IscpAgentID kind")
 }
 
-func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *iscp.Allowance {
-	iscpAllowance := iscp.NewAllowanceIotas(assets.Iotas)
+func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
+	iscpAllowance := isc.NewAllowanceBaseTokens(assets.BaseTokens)
 	iscpAssets := iscpAllowance.Assets
 	for tokenID, amount := range assets.Tokens {
 		token := &iotago.NativeToken{
@@ -77,9 +77,9 @@ func (cvt WasmConvertor) IscpBigInt(amount wasmtypes.ScBigInt) *big.Int {
 	return res
 }
 
-func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
+func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *isc.ChainID {
 	buf := wasmtypes.ChainIDToBytes(*chainID)
-	iscpChainID := new(iscp.ChainID)
+	iscpChainID := new(isc.ChainID)
 	copy(iscpChainID[:], buf)
 	return iscpChainID
 }
@@ -91,8 +91,8 @@ func (cvt WasmConvertor) IscpHash(hash *wasmtypes.ScHash) *hashing.HashValue {
 	return iscpHashValue
 }
 
-func (cvt WasmConvertor) IscpHname(hname wasmtypes.ScHname) iscp.Hname {
-	return iscp.Hname(hname)
+func (cvt WasmConvertor) IscpHname(hname wasmtypes.ScHname) isc.Hname {
+	return isc.Hname(hname)
 }
 
 func (cvt WasmConvertor) IscpNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
@@ -102,9 +102,9 @@ func (cvt WasmConvertor) IscpNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
 	return iscpNFTID
 }
 
-func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) *iscp.RequestID {
+func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) *isc.RequestID {
 	buf := wasmtypes.RequestIDToBytes(*requestID)
-	iscpRequestID := new(iscp.RequestID)
+	iscpRequestID := new(isc.RequestID)
 	copy(iscpRequestID.TransactionID[:], buf)
 	iscpRequestID.TransactionOutputIndex = wasmtypes.Uint16FromBytes(buf[wasmtypes.ScHashLength:])
 	return iscpRequestID
@@ -118,18 +118,18 @@ func (cvt WasmConvertor) IscpTokenID(tokenID *wasmtypes.ScTokenID) *iotago.Nativ
 }
 
 func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
-	buf := iscp.BytesFromAddress(address)
+	buf := isc.BytesFromAddress(address)
 	return wasmtypes.AddressFromBytes(buf)
 }
 
-func (cvt WasmConvertor) ScAgentID(agentID iscp.AgentID) wasmtypes.ScAgentID {
+func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
 	switch agentID.Kind() {
-	case iscp.AgentIDKindAddress:
-		addr, _ := iscp.AddressFromAgentID(agentID)
+	case isc.AgentIDKindAddress:
+		addr, _ := isc.AddressFromAgentID(agentID)
 		return wasmtypes.NewScAgentIDFromAddress(cvt.ScAddress(addr))
-	case iscp.AgentIDKindContract:
-		chainID, _ := iscp.AddressFromAgentID(agentID)
-		hname, _ := iscp.HnameFromAgentID(agentID)
+	case isc.AgentIDKindContract:
+		chainID, _ := isc.AddressFromAgentID(agentID)
+		hname, _ := isc.HnameFromAgentID(agentID)
 		return wasmtypes.NewScAgentID(cvt.ScAddress(chainID), cvt.ScHname(hname))
 	default:
 		// TODO implement missing agent id types
@@ -137,8 +137,8 @@ func (cvt WasmConvertor) ScAgentID(agentID iscp.AgentID) wasmtypes.ScAgentID {
 	}
 }
 
-func (cvt WasmConvertor) ScBalances(allowance *iscp.Allowance) *wasmlib.ScBalances {
-	transfer := wasmlib.NewScTransferIotas(allowance.Assets.Iotas)
+func (cvt WasmConvertor) ScBalances(allowance *isc.Allowance) *wasmlib.ScBalances {
+	transfer := wasmlib.NewScTransferBaseTokens(allowance.Assets.BaseTokens)
 	for _, token := range allowance.Assets.Tokens {
 		tokenID := cvt.ScTokenID(&token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
@@ -154,7 +154,7 @@ func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
 	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
-func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {
+func (cvt WasmConvertor) ScChainID(chainID *isc.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
 }
 
@@ -162,7 +162,7 @@ func (cvt WasmConvertor) ScHash(hash hashing.HashValue) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(hash.Bytes())
 }
 
-func (cvt WasmConvertor) ScHname(hname iscp.Hname) wasmtypes.ScHname {
+func (cvt WasmConvertor) ScHname(hname isc.Hname) wasmtypes.ScHname {
 	return wasmtypes.ScHname(hname)
 }
 
@@ -170,7 +170,7 @@ func (cvt WasmConvertor) ScNftID(nftID *iotago.NFTID) wasmtypes.ScNftID {
 	return wasmtypes.NftIDFromBytes(nftID[:])
 }
 
-func (cvt WasmConvertor) ScRequestID(requestID iscp.RequestID) wasmtypes.ScRequestID {
+func (cvt WasmConvertor) ScRequestID(requestID isc.RequestID) wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(requestID.Bytes())
 }
 

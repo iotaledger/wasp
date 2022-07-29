@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor
 
 func dividendDivide(ctx *wasmsolo.SoloContext, amount uint64) {
 	divide := dividend.ScFuncs.Divide(ctx)
-	divide.Func.TransferIotas(amount).Post()
+	divide.Func.TransferBaseTokens(amount).Post()
 }
 
 func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) uint64 {
@@ -79,7 +79,7 @@ func TestDivide1Member(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 1*iscp.Mi + 1
+	const dividendToDivide = 1*isc.Mi + 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -112,7 +112,7 @@ func TestDivide2Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 2*iscp.Mi - 1
+	const dividendToDivide = 2*isc.Mi - 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -157,7 +157,7 @@ func TestDivide3Members(t *testing.T) {
 	bal.Originator += ctx.Dust - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 2*iscp.Mi - 1
+	const dividendToDivide = 2*isc.Mi - 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -169,7 +169,7 @@ func TestDivide3Members(t *testing.T) {
 	bal.Add(member3, dividendToDivide*750/1500)
 	bal.VerifyBalances(t)
 
-	const dividendToDivide2 = 2*iscp.Mi + 234
+	const dividendToDivide2 = 2*isc.Mi + 234
 	dividendDivide(ctx, dividendToDivide2)
 	require.NoError(t, ctx.Err)
 

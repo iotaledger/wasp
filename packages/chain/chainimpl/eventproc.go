@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -39,7 +39,7 @@ func (c *chainObj) recvLoop() {
 			}
 		case msg, ok := <-aliasOutputChannel:
 			if ok {
-				c.handleAliasOutput(msg.(*iscp.AliasOutputWithID))
+				c.handleAliasOutput(msg.(*isc.AliasOutputWithID))
 			} else {
 				aliasOutputChannel = nil
 			}
@@ -89,17 +89,17 @@ func (c *chainObj) handleDismissChain(msg DismissChainMsg) {
 	c.Dismiss(msg.Reason)
 }
 
-func (c *chainObj) EnqueueAliasOutput(chainOutput *iscp.AliasOutputWithID) {
+func (c *chainObj) EnqueueAliasOutput(chainOutput *isc.AliasOutputWithID) {
 	c.aliasOutputPipe.In() <- chainOutput
 	c.chainMetrics.CountMessages()
 }
 
 // handleAliasOutput processes the only chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
-func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
+func (c *chainObj) handleAliasOutput(msg *isc.AliasOutputWithID) {
 	msgStateIndex := msg.GetStateIndex()
 	c.log.Debugf("handleAliasOutput output received: state index %v, ID %v",
-		msgStateIndex, iscp.OID(msg.ID()))
+		msgStateIndex, isc.OID(msg.ID()))
 	commitment, err := state.L1CommitmentFromAliasOutput(msg.GetAliasOutput())
 	if err != nil {
 		c.log.Error(xerrors.Errorf("handleAliasOutput: parsing L1 commitment failed %w", err))
@@ -145,11 +145,11 @@ func (c *chainObj) handleAliasOutput(msg *iscp.AliasOutputWithID) {
 		c.log.Debugf("handleAliasOutput: it is a rotation transition; skipping passing it to state manager")
 	} else {
 		c.stateMgr.EnqueueAliasOutput(msg)
-		c.log.Debugf("handleAliasOutput: output %v passed to state manager", iscp.OID(msg.ID()))
+		c.log.Debugf("handleAliasOutput: output %v passed to state manager", isc.OID(msg.ID()))
 	}
 }
 
-func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID, currentCmt chain.Committee) (bool, error) {
+func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *isc.AliasOutputWithID, currentCmt chain.Committee) (bool, error) {
 	currentCmtAddress := currentCmt.Address()
 	anchorOutputAddress := anchorOutput.GetStateAddress()
 	if currentCmtAddress.Equal(anchorOutputAddress) {
@@ -170,7 +170,7 @@ func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID,
 	return true, err
 }
 
-func (c *chainObj) createCommitteeIfNeeded(anchorOutput *iscp.AliasOutputWithID) (bool, error) {
+func (c *chainObj) createCommitteeIfNeeded(anchorOutput *isc.AliasOutputWithID) (bool, error) {
 	// check if I am in the committee
 	stateControllerAddress := anchorOutput.GetStateAddress()
 	dkShare, err := c.getChainDKShare(stateControllerAddress)
@@ -237,7 +237,7 @@ func (c *chainObj) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgI
 }
 
 // addToPeersHaveReq adds a peer to the list of known peers that have a given request, DOES NOT LOCK THE MUTEX
-func (c *chainObj) addToPeersHaveReq(reqID iscp.RequestID, peer *cryptolib.PublicKey) {
+func (c *chainObj) addToPeersHaveReq(reqID isc.RequestID, peer *cryptolib.PublicKey) {
 	if c.offLedgerPeersHaveReq[reqID] == nil {
 		c.offLedgerPeersHaveReq[reqID] = make(map[cryptolib.PublicKeyKey]bool)
 	}
@@ -266,14 +266,14 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().String())
 }
 
-func (c *chainObj) validateRequest(req iscp.OffLedgerRequest) error {
+func (c *chainObj) validateRequest(req isc.OffLedgerRequest) error {
 	if !req.ChainID().Equals(c.ID()) {
 		return fmt.Errorf("chainID mismatch")
 	}
 	return req.VerifySignature()
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req iscp.OffLedgerRequest) {
+func (c *chainObj) broadcastOffLedgerRequest(req isc.OffLedgerRequest) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
 	msg := &messages.OffLedgerRequestMsg{
 		ChainID: c.chainID,

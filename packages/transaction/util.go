@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -51,7 +51,7 @@ func FilterType(t iotago.OutputType) OutputFilter {
 }
 
 // GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information. Otherwise error
-func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotago.AliasOutput, error) {
+func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago.AliasOutput, error) {
 	anchorOutput, ok := tx.Essence.Outputs[0].(*iotago.AliasOutput)
 	if !ok {
 		return nil, nil, ErrNoAliasOutputAtIndex0
@@ -67,10 +67,10 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 		isOrigin = true
 		aliasID = iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0))
 	}
-	return &iscp.StateAnchor{
+	return &isc.StateAnchor{
 		IsOrigin:             isOrigin,
 		OutputID:             iotago.OutputIDFromTransactionIDAndIndex(txid, 0),
-		ChainID:              iscp.ChainIDFromAliasID(aliasID),
+		ChainID:              isc.ChainIDFromAliasID(aliasID),
 		StateController:      anchorOutput.StateController(),
 		GovernanceController: anchorOutput.GovernorAddress(),
 		StateIndex:           anchorOutput.StateIndex,
@@ -86,7 +86,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*iscp.StateAnchor, *iotag
 // Returned reminder is nil if not needed
 func computeInputsAndRemainder(
 	senderAddress iotago.Address,
-	iotasOut uint64,
+	baseTokenOut uint64,
 	tokensOut map[iotago.NativeTokenID]*big.Int,
 	nftsOut map[iotago.NFTID]bool,
 	unspentOutputs iotago.OutputSet,
@@ -96,7 +96,7 @@ func computeInputsAndRemainder(
 	*iotago.BasicOutput,
 	error,
 ) {
-	iotasIn := uint64(0)
+	baseTokensIn := uint64(0)
 	tokensIn := make(map[iotago.NativeTokenID]*big.Int)
 	NFTsIn := make(map[iotago.NFTID]bool)
 
@@ -130,7 +130,7 @@ func computeInputsAndRemainder(
 		}
 		inputIDs = append(inputIDs, id)
 		a := AssetsFromOutput(inp)
-		iotasIn += a.Iotas
+		baseTokensIn += a.BaseTokens
 		for _, nativeToken := range a.Tokens {
 			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]
 			if !ok {
@@ -140,7 +140,7 @@ func computeInputsAndRemainder(
 			tokensIn[nativeToken.ID] = nativeTokenAmountSum
 		}
 		// calculate remainder. It will return  err != nil if inputs not enough.
-		remainder, errLast = computeRemainderOutput(senderAddress, iotasIn, iotasOut, tokensIn, tokensOut)
+		remainder, errLast = computeRemainderOutput(senderAddress, baseTokensIn, baseTokenOut, tokensIn, tokensOut)
 		if errLast == nil && len(NFTsIn) == len(nftsOut) {
 			break
 		}
@@ -151,15 +151,15 @@ func computeInputsAndRemainder(
 	return inputIDs, remainder, nil
 }
 
-// computeRemainderOutput calculates remainders for iotas and native tokens, returns skeleton remainder output
+// computeRemainderOutput calculates remainders for base tokens and native tokens, returns skeleton remainder output
 // which only contains assets filled in.
-// - inIotas and inTokens is what is available in inputs
-// - outIotas, outTokens is what is in outputs, except the remainder output itself with its dust deposit
+// - inBaseTokens and inTokens is what is available in inputs
+// - outBaseTokens, outTokens is what is in outputs, except the remainder output itself with its dust deposit
 // Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
-func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
-	if inIotas < outIotas {
-		return nil, ErrNotEnoughIotas
+func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
+	if inBaseTokens < outBaseTokens {
+		return nil, ErrNotEnoughBaseTokens
 	}
 	// collect all token ids
 	tokenIDs := make(map[iotago.NativeTokenID]bool)
@@ -169,7 +169,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	for id := range outTokens {
 		tokenIDs[id] = true
 	}
-	remIotas := inIotas - outIotas
+	remBaseTokens := inBaseTokens - outBaseTokens
 	remTokens := make(map[iotago.NativeTokenID]*big.Int)
 
 	// calc remainders by outputs
@@ -204,12 +204,12 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 			panic("inconsistency")
 		}
 	}
-	if remIotas == 0 && len(remTokens) == 0 {
+	if remBaseTokens == 0 && len(remTokens) == 0 {
 		// no need for remainder
 		return nil, nil
 	}
 	ret := &iotago.BasicOutput{
-		Amount:       remIotas,
+		Amount:       remBaseTokens,
 		NativeTokens: iotago.NativeTokens{},
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: senderAddress},
@@ -223,7 +223,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inIotas, outIotas uint
 	}
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(ret)
 	if ret.Amount < storageDeposit {
-		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughIotasForDustDeposit, storageDeposit)
+		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForDustDeposit, storageDeposit)
 	}
 	return ret, nil
 }
@@ -280,7 +280,7 @@ func CreateAndSignTx(inputs iotago.OutputIDs, inputsCommitment []byte, outputs i
 	}, nil
 }
 
-func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.AliasOutputWithID, error) {
+func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*isc.AliasOutputWithID, error) {
 	txID, err := tx.ID()
 	if err != nil {
 		return nil, err
@@ -299,7 +299,7 @@ func GetAliasOutput(tx *iotago.Transaction, aliasAddr iotago.Address) (*iscp.Ali
 				found = aliasID.ToAddress().Equal(aliasAddr)
 			}
 			if found {
-				return iscp.NewAliasOutputWithID(out, oid), nil
+				return isc.NewAliasOutputWithID(out, oid), nil
 			}
 		}
 	}

@@ -9,7 +9,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type MockedLedgers struct {
@@ -32,14 +32,14 @@ func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	return result
 }
 
-func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) *iscp.ChainID {
+func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) *isc.ChainID {
 	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
 	mlT.ledgers[chainID.Key()] = ledger
 	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
 	return chainID
 }
 
-func (mlT *MockedLedgers) GetLedger(chainID *iscp.ChainID) *MockedLedger {
+func (mlT *MockedLedgers) GetLedger(chainID *isc.ChainID) *MockedLedger {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 

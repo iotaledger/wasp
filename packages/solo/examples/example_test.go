@@ -3,7 +3,7 @@ package examples
 // import (
 // 	"testing"
 
-// 	"github.com/iotaledger/wasp/packages/iscp"
+// 	"github.com/iotaledger/wasp/packages/isc"
 // 	"github.com/iotaledger/wasp/packages/solo"
 // 	"github.com/iotaledger/wasp/packages/vm/core"
 // 	"github.com/stretchr/testify/require"
@@ -19,7 +19,7 @@ package examples
 // 	t.Logf("chainID: %s", chainID.String())
 // 	t.Logf("chain owner ID: %s", chainOwner.String())
 // 	for hname, rec := range coreContracts {
-// 		cid := iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
+// 		cid := isc.NewAgentID(chain.ChainID.AsAddress(), hname)
 // 		t.Logf("    Core contract '%s': %s", rec.Name, cid)
 // 	}
 // }

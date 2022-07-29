@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 // region ControlAddresses ///////////////////////////////////////////////
@@ -24,10 +24,10 @@ func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddre
 	ret := &ControlAddresses{}
 	var err error
 
-	if ret.StateAddress, err = iscp.AddressFromMarshalUtil(mu); err != nil {
+	if ret.StateAddress, err = isc.AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	if ret.GoverningAddress, err = iscp.AddressFromMarshalUtil(mu); err != nil {
+	if ret.GoverningAddress, err = isc.AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	if ret.SinceBlockIndex, err = mu.ReadUint32(); err != nil {
@@ -39,8 +39,8 @@ func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddre
 func (ca *ControlAddresses) Bytes() []byte {
 	mu := marshalutil.New()
 
-	mu.WriteBytes(iscp.BytesFromAddress(ca.StateAddress)).
-		WriteBytes(iscp.BytesFromAddress(ca.GoverningAddress)).
+	mu.WriteBytes(isc.BytesFromAddress(ca.StateAddress)).
+		WriteBytes(isc.BytesFromAddress(ca.GoverningAddress)).
 		WriteUint32(ca.SinceBlockIndex)
 	return mu.Bytes()
 }

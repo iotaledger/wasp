@@ -55,7 +55,7 @@
 //    t.Logf("chainID: %s", chainInfo.ChainID)
 //    t.Logf("chain owner ID: %s", chainInfo.ChainOwnerID)
 //    for hname, rec := range coreContracts {
-//       t.Logf("    Core contract '%s': %s", rec.Name, iscp.NewContractID(chain.ChainID, hname))
+//       t.Logf("    Core contract '%s': %s", rec.Name, isc.NewContractID(chain.ChainID, hname))
 //    }
 //  }
 // will produce the following output:

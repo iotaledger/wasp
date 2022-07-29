@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -30,7 +30,7 @@ type MockedEnv struct {
 	NodePubKeys       []*cryptolib.PublicKey
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
-	ChainID           *iscp.ChainID
+	ChainID           *isc.ChainID
 	mutex             sync.Mutex
 	Nodes             map[cryptolib.PublicKeyKey]*MockedNode
 }

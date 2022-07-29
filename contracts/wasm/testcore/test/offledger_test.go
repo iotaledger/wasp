@@ -73,7 +73,7 @@ func TestOffLedgerTransferWhenEnoughBudget(t *testing.T) {
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
-		f.Func.TransferIotas(4321).Post()
+		f.Func.TransferBaseTokens(4321).Post()
 		require.NoError(t, ctx.Err)
 		ctx.Balances(user)
 
@@ -103,7 +103,7 @@ func TestOffLedgerTransferWhenNotEnoughBudget(t *testing.T) {
 		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
 		f.Params.Name().SetValue("ppp")
 		f.Params.IntValue().SetValue(314)
-		f.Func.TransferIotas(ctx.Balance(user)).Post()
+		f.Func.TransferBaseTokens(ctx.Balance(user)).Post()
 		require.Error(t, ctx.Err)
 		require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
 

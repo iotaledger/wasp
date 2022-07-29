@@ -87,11 +87,11 @@ func funcRandom(ctx wasmlib.ScFuncContext, f *RandomContext) {
 
 func funcTakeAllowance(ctx wasmlib.ScFuncContext, _ *TakeAllowanceContext) {
 	ctx.TransferAllowed(ctx.AccountID(), wasmlib.NewScTransferFromBalances(ctx.Allowance()), false)
-	ctx.Log(ctx.Utility().String(int64(ctx.Balances().Iotas())))
+	ctx.Log(ctx.Utility().String(int64(ctx.Balances().BaseTokens())))
 }
 
 func funcTakeBalance(ctx wasmlib.ScFuncContext, f *TakeBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
+	f.Results.Iotas().SetValue(ctx.Balances().BaseTokens())
 }
 
 func funcTriggerEvent(_ wasmlib.ScFuncContext, f *TriggerEventContext) {
@@ -119,7 +119,7 @@ func viewGetRandom(_ wasmlib.ScViewContext, f *GetRandomContext) {
 }
 
 func viewIotaBalance(ctx wasmlib.ScViewContext, f *IotaBalanceContext) {
-	f.Results.Iotas().SetValue(ctx.Balances().Iotas())
+	f.Results.Iotas().SetValue(ctx.Balances().BaseTokens())
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\

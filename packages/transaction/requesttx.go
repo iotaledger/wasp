@@ -6,7 +6,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -16,15 +16,15 @@ type NewRequestTransactionParams struct {
 	SenderAddress                iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
 	UnspentOutputs               iotago.OutputSet
 	UnspentOutputIDs             iotago.OutputIDs
-	Request                      *iscp.RequestParameters
-	NFT                          *iscp.NFT
+	Request                      *isc.RequestParameters
+	NFT                          *isc.NFT
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
 }
 
 type NewTransferTransactionParams struct {
 	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
-	FungibleTokens               *iscp.FungibleTokens
-	SendOptions                  iscp.SendOptions
+	FungibleTokens               *isc.FungibleTokens
+	SendOptions                  isc.SendOptions
 	SenderAddress                iotago.Address
 	SenderKeyPair                *cryptolib.KeyPair
 	TargetAddress                iotago.Address
@@ -45,11 +45,11 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < storageDeposit {
-		return nil, fmt.Errorf("%v: available %d < required %d iotas",
-			ErrNotEnoughIotasForDustDeposit, output.Deposit(), storageDeposit)
+		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
+			ErrNotEnoughBaseTokensForDustDeposit, output.Deposit(), storageDeposit)
 	}
 
-	sumIotasOut := output.Deposit()
+	sumBaseTokensOut := output.Deposit()
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 	sumTokensOut = addNativeTokens(sumTokensOut, output)
 
@@ -59,7 +59,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 	}
 
 	inputIDs, remainder, err := computeInputsAndRemainder(params.SenderAddress,
-		sumIotasOut,
+		sumBaseTokensOut,
 		sumTokensOut,
 		map[iotago.NFTID]bool{},
 		params.UnspentOutputs,
@@ -81,12 +81,12 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
-// Empty assets in the request data defaults to 1 iota, which later is adjusted to the dust minimum
+// Empty assets in the request data defaults to 1 base token, which later is adjusted to the dust minimum
 // Assumes all UnspentOutputs and corresponding UnspentOutputIDs can be used as inputs, i.e. are
 // unlockable for the sender address
 func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction, error) {
 	outputs := iotago.Outputs{}
-	sumIotasOut := uint64(0)
+	sumBaseTokensOut := uint64(0)
 	sumTokensOut := make(map[iotago.NativeTokenID]*big.Int)
 	sumNFTsOut := make(map[iotago.NFTID]bool)
 
@@ -96,7 +96,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	assets := req.FungibleTokens
 	if assets == nil {
 		// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
-		assets = &iscp.FungibleTokens{}
+		assets = &isc.FungibleTokens{}
 	}
 	var out iotago.Output
 	// will adjust to minimum dust deposit
@@ -104,7 +104,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		req.TargetAddress,
 		par.SenderAddress,
 		assets,
-		&iscp.RequestMetadata{
+		&isc.RequestMetadata{
 			SenderContract: 0,
 			TargetContract: req.Metadata.TargetContract,
 			EntryPoint:     req.Metadata.EntryPoint,
@@ -121,19 +121,19 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
-		return nil, fmt.Errorf("%v: available %d < required %d iotas",
-			ErrNotEnoughIotasForDustDeposit, out.Deposit(), storageDeposit)
+		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
+			ErrNotEnoughBaseTokensForDustDeposit, out.Deposit(), storageDeposit)
 	}
 	outputs = append(outputs, out)
-	sumIotasOut += out.Deposit()
+	sumBaseTokensOut += out.Deposit()
 	sumTokensOut = addNativeTokens(sumTokensOut, out)
 	if par.NFT != nil {
 		sumNFTsOut[par.NFT.ID] = true
 	}
 
-	outputs, sumIotasOut, sumTokensOut, sumNFTsOut = updateOutputsWhenSendingOnBehalfOf(par, outputs, sumIotasOut, sumTokensOut, sumNFTsOut)
+	outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut = updateOutputsWhenSendingOnBehalfOf(par, outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut)
 
-	inputIDs, remainder, err := computeInputsAndRemainder(par.SenderKeyPair.Address(), sumIotasOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs)
+	inputIDs, remainder, err := computeInputsAndRemainder(par.SenderKeyPair.Address(), sumBaseTokensOut, sumTokensOut, sumNFTsOut, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func addNativeTokens(sumTokensOut map[iotago.NativeTokenID]*big.Int, out iotago.
 func updateOutputsWhenSendingOnBehalfOf(
 	par NewRequestTransactionParams,
 	outputs iotago.Outputs,
-	sumIotasOut uint64,
+	sumBaseTokensOut uint64,
 	sumTokensOut map[iotago.NativeTokenID]*big.Int,
 	sumNFTsOut map[iotago.NFTID]bool,
 ) (
@@ -185,14 +185,14 @@ func updateOutputsWhenSendingOnBehalfOf(
 	map[iotago.NFTID]bool,
 ) {
 	if par.SenderAddress.Equal(par.SenderKeyPair.Address()) {
-		return outputs, sumIotasOut, sumTokensOut, sumNFTsOut
+		return outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut
 	}
 	// sending request "on behalf of" (need NFT or alias output as input/output)
 
 	for _, output := range outputs {
 		if outputMatchesSendAsAddress(output, iotago.OutputID{}, par.SenderAddress) {
 			// if already present in the outputs, no need to do anything
-			return outputs, sumIotasOut, sumTokensOut, sumNFTsOut
+			return outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut
 		}
 	}
 	for outID, out := range par.UnspentOutputs {
@@ -209,9 +209,9 @@ func updateOutputsWhenSendingOnBehalfOf(
 		}
 		// found the needed output
 		outputs = append(outputs, out)
-		sumIotasOut += out.Deposit()
+		sumBaseTokensOut += out.Deposit()
 		sumTokensOut = addNativeTokens(sumTokensOut, out)
-		return outputs, sumIotasOut, sumTokensOut, sumNFTsOut
+		return outputs, sumBaseTokensOut, sumTokensOut, sumNFTsOut
 	}
 	panic("unable to build tx, 'sendAs' output not found")
 }

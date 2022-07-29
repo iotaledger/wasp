@@ -29,7 +29,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
 	sa.Params.MinimumBid().SetValue(minBid)
 	sa.Params.Description().SetValue(description)
-	transfer := wasmlib.NewScTransferIotas(deposit) // deposit, must be >=minimum*margin
+	transfer := wasmlib.NewScTransferBaseTokens(deposit) // deposit, must be >=minimum*margin
 	transfer.AddNFT(&nftID)
 	sa.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
@@ -106,7 +106,7 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 	bidder := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder))
 	placeBid.Params.Nft().SetValue(nftID)
-	placeBid.Func.TransferIotas(100).Post()
+	placeBid.Func.TransferBaseTokens(100).Post()
 	require.Error(t, ctx.Err)
 
 	// wait for finalize_auction
@@ -128,13 +128,13 @@ func TestFinalizedOneBid(t *testing.T) {
 	bidder0 := ctx.NewSoloAgent()
 	placeBid := fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder0))
 	placeBid.Params.Nft().SetValue(nftID)
-	placeBid.Func.TransferIotas(5000).Post()
+	placeBid.Func.TransferBaseTokens(5000).Post()
 	require.NoError(t, ctx.Err)
 
 	bidder1 := ctx.NewSoloAgent()
 	placeBid = fairauction.ScFuncs.PlaceBid(ctx.Sign(bidder1))
 	placeBid.Params.Nft().SetValue(nftID)
-	placeBid.Func.TransferIotas(5001).Post()
+	placeBid.Func.TransferBaseTokens(5001).Post()
 	require.NoError(t, ctx.Err)
 
 	// wait for finalize_auction

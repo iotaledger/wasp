@@ -77,8 +77,8 @@ There are two chains deployed, with respective IDs `chainA` and `chainB`.
 Chain A has two smart contracts on it (with hnames `3037` and `2225`) and chain B has one smart contract (`7003`).
 
 There is also an address on the L1 Ledger: `iota1a2b3c4d`.
-This address controls 1337 iotas and 42 `Red` native tokens on the L1 Ledger.
-The same address also controls 42 iotas on the chain A and 8 `Green` native tokens on chain B.
+This address controls 1337 base tokens and 42 `Red` native tokens on the L1 Ledger.
+The same address also controls 42 base tokens on the chain A and 8 `Green` native tokens on chain B.
 So, the owner of the private key behind the address controls 3 different accounts: the L1 account and one L2 account on each chain.
 
-Smart contract `7003@chainB` has 5 iotas on its native chain and controls 11 iotas on chain A.
+Smart contract `7003@chainB` has 5 base tokens on its native chain and controls 11 base tokens on chain A.

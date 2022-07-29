@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
@@ -70,7 +70,7 @@ func TestGetInitialState(t *testing.T) {
 
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
 	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
-	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
+	require.True(t, isc.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(manager.solidState.TrieNodeStore())))
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
@@ -94,7 +94,7 @@ func TestGetNextState(t *testing.T) {
 	manager := node.StateManager.(*stateManager)
 
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node, 0)
-	require.True(t, iscp.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
+	require.True(t, isc.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(manager.solidState.TrieNodeStore())))
 

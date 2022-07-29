@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
@@ -263,7 +263,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, nodes []int) error {
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.AsDict()).
-		WithIotas(1 * iscp.Mi)
+		WithBaseTokens(1 * isc.Mi)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Name, *scParams)
 	if err != nil {
@@ -299,14 +299,14 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	}
 	scArgs := governance.AccessNodeInfo{
 		NodePubKey:    accessNodePubKey.AsBytes(),
-		ValidatorAddr: iscp.BytesFromAddress(chain.OriginatorAddress()),
+		ValidatorAddr: isc.BytesFromAddress(chain.OriginatorAddress()),
 		Certificate:   cert.Bytes(),
 		ForCommittee:  false,
 		AccessAPI:     clu.Config.APIHost(accessNodeIndex),
 	}
 	scParams := chainclient.
 		NewPostRequestParams(scArgs.ToAddCandidateNodeParams()).
-		WithIotas(1000)
+		WithBaseTokens(1000)
 	govClient := chain.SCClient(governance.Contract.Hname(), chain.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(governance.FuncAddCandidateNode.Name, *scParams)
 	if err != nil {
@@ -664,14 +664,14 @@ func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	return clu.l1.PostTx(tx)
 }
 
-func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
 	// get funds controlled by addr
 	outputMap, err := clu.l1.OutputMap(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := iscp.NewEmptyAssets()
+	balance := isc.NewEmptyAssets()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}
@@ -688,12 +688,12 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 	return balance
 }
 
-func (clu *Cluster) L1Iotas(addr iotago.Address) uint64 {
+func (clu *Cluster) L1BaseTokens(addr iotago.Address) uint64 {
 	tokens := clu.AddressBalances(addr)
-	return tokens.Iotas
+	return tokens.BaseTokens
 }
 
-func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *iscp.FungibleTokens) bool {
+func (clu *Cluster) AssertAddressBalances(addr iotago.Address, expected *isc.FungibleTokens) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 

@@ -98,7 +98,7 @@ func TestConcurrency(t *testing.T) {
 		// f := testcore.ScFuncs.IncCounter(ctx)
 
 		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			AddIotas(1)
+			AddBaseTokens(1)
 
 		chain := ctx.Chain
 		for r, n := range repeats {
@@ -132,7 +132,7 @@ func TestConcurrency2(t *testing.T) {
 		// f := testcore.ScFuncs.IncCounter(ctx)
 
 		req := solo.NewCallParams(testcore.ScName, testcore.FuncIncCounter).
-			AddIotas(1)
+			AddBaseTokens(1)
 
 		repeats := []int{300, 100, 100, 100, 200, 100, 100}
 		if wasmsolo.SoloDebug {

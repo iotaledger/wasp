@@ -2,7 +2,7 @@ package wallet
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -33,12 +33,12 @@ var sendFundsCmd = &cobra.Command{
 		tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
 			DisableAutoAdjustDustDeposit: !adjustDustDeposit,
 			FungibleTokens:               tokens,
-			SendOptions:                  iscp.SendOptions{},
+			SendOptions:                  isc.SendOptions{},
 			SenderAddress:                senderAddress,
 			SenderKeyPair:                wallet.KeyPair,
 			TargetAddress:                targetAddress,
 			UnspentOutputs:               outputSet,
-			UnspentOutputIDs:             iscp.OutputSetToOutputIDs(outputSet),
+			UnspentOutputIDs:             isc.OutputSetToOutputIDs(outputSet),
 		})
 		log.Check(err)
 

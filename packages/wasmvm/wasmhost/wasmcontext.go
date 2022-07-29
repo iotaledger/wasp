@@ -6,7 +6,7 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -38,8 +38,8 @@ type WasmContext struct {
 }
 
 var (
-	_ iscp.VMProcessorEntryPoint = &WasmContext{}
-	_ wasmlib.ScHost             = &WasmContext{}
+	_ isc.VMProcessorEntryPoint = &WasmContext{}
+	_ wasmlib.ScHost            = &WasmContext{}
 )
 
 func NewWasmContext(proc *WasmProcessor, function string) *WasmContext {
@@ -172,7 +172,7 @@ func (wc *WasmContext) IsView() bool {
 	return wc.proc.IsView(wc.funcName)
 }
 
-func (wc *WasmContext) log() iscp.LogInterface {
+func (wc *WasmContext) log() isc.LogInterface {
 	if wc.wcSandbox != nil && wc.wcSandbox.common != nil {
 		return wc.wcSandbox.common.Log()
 	}
