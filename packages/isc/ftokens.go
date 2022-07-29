@@ -132,7 +132,10 @@ func (a *FungibleTokens) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.I
 }
 
 func (a *FungibleTokens) String() string {
-	ret := fmt.Sprintf("base tokens: %d, tokens (%d):", a.BaseTokens, len(a.Tokens))
+	ret := fmt.Sprintf("base tokens: %d", a.BaseTokens)
+	if len(a.Tokens) > 0 {
+		ret += fmt.Sprintf(", tokens (%d):", len(a.Tokens))
+	}
 	for _, nt := range a.Tokens {
 		ret += fmt.Sprintf("\n       %s: %d", nt.ID.String(), nt.Amount)
 	}
