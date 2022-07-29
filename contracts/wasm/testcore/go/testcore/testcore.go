@@ -164,20 +164,20 @@ func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 }
 
 func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
-	iotas := ctx.Allowance().BaseTokens()
+	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
-	iotasToTransfer := uint64(1_000_000)
-	transfer := wasmlib.NewScTransferBaseTokens(iotasToTransfer)
-	for ; iotas >= iotasToTransfer; iotas -= iotasToTransfer {
+	tokensToTransfer := uint64(1_000_000)
+	transfer := wasmlib.NewScTransferBaseTokens(tokensToTransfer)
+	for ; tokens >= tokensToTransfer; tokens -= tokensToTransfer {
 		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 		ctx.Send(address, transfer)
 	}
 }
 
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTokensContext) {
-	iotas := ctx.Allowance().BaseTokens()
+	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
-	transfer := wasmlib.NewScTransferBaseTokens(iotas)
+	transfer := wasmlib.NewScTransferBaseTokens(tokens)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
@@ -237,22 +237,22 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 	// gasBudget := f.Params.GasBudget().Value()
 
 	// TODO more
-	availableIotas := ctx.Allowance().BaseTokens()
+	availableTokens := ctx.Allowance().BaseTokens()
 	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
-	if availableIotas < 1000 {
-		ctx.Panic("not enough iotas sent to cover dust deposit")
+	if availableTokens < 1000 {
+		ctx.Panic("not enough base tokens sent to cover dust deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	//request := isc.RequestParameters{
 	//	TargetAddress:  targetChain.AsAddress(),
-	//	FungibleTokens: isc.NewTokensIotas(availableIotas),
+	//	FungibleTokens: isc.NewFungibleBaseTokens(availableTokens),
 	//	Metadata: &isc.SendMetadata{
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
 	//		GasBudget:      gasBudget,
-	//		Allowance:      isc.NewAllowanceIotas(withdrawal),
+	//		Allowance:      isc.NewAllowanceBaseTokens(withdrawal),
 	//	},
 	//}
 

@@ -51,7 +51,7 @@ func TestWithdrawToAddress(t *testing.T) {
 	//		bal := ctx.Balances(user)
 	//
 	//		nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
-	//		nop.Func.TransferIotas(1*isc.Mi).Post()
+	//		nop.Func.TransferBaseTokens(1*isc.Mi).Post()
 	//		require.NoError(t, ctx.Err)
 	//
 	//		bal.Chain += ctx.GasFee
@@ -110,7 +110,7 @@ func TestDoPanicUserFeeless(t *testing.T) {
 	//	chainAccountBalances(ctx, w, 2, 2)
 	//
 	//	f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-	//	f.Func.TransferIotas(1 * isc.Mi).Post()
+	//	f.Func.TransferBaseTokens(1 * isc.Mi).Post()
 	//	require.Error(t, ctx.Err)
 	//
 	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -159,7 +159,7 @@ func TestDoPanicUserFee(t *testing.T) {
 	//	chainAccountBalances(ctx, w, 3, 3)
 	//
 	//	f := testcore.ScFuncs.TestPanicFullEP(ctx.Sign(user))
-	//	f.Func.TransferIotas(1*isc.Mi).Post()
+	//	f.Func.TransferBaseTokens(1*isc.Mi).Post()
 	//	require.Error(t, ctx.Err)
 	//
 	//	t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
@@ -182,7 +182,7 @@ func TestRequestToView(t *testing.T) {
 		// SoloContext prevents Sign()/Post() to a view
 		// Therefore we cannot simply do the following:
 		// f := testcore.ScFuncs.JustView(ctx.Sign(user))
-		// f.Func.TransferIotas(1*isc.Mi).Post()
+		// f.Func.TransferBaseTokens(1*isc.Mi).Post()
 		// require.Error(t, ctx.Err)
 
 		// sending request to the view entry point should

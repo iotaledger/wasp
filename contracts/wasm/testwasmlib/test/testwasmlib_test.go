@@ -227,11 +227,11 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	const iotasToSend = 1 * isc.Mi
-	f.Func.TransferBaseTokens(iotasToSend).Post()
+	const tokensToSend = 1 * isc.Mi
+	f.Func.TransferBaseTokens(tokensToSend).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += iotasToSend
+	bal.Account += tokensToSend
 	bal.Chain += ctx.GasFee
 	bal.Originator -= ctx.GasFee
 	bal.VerifyBalances(t)
@@ -262,13 +262,13 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	const iotasToSend = 1 * isc.Mi
-	f.Func.TransferBaseTokens(iotasToSend).Post()
+	const tokensToSend = 1 * isc.Mi
+	f.Func.TransferBaseTokens(tokensToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += iotasToSend - ctx.GasFee
+	bal.Originator += tokensToSend - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	g := testwasmlib.ScFuncs.TakeBalance(ctx)
