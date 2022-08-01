@@ -93,14 +93,11 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 	for i := range dssNodes {
 		outPartChs[i] = make(chan []int, 1)
 		outSigChs[i] = make(chan []byte, 1)
-		netDomain, err := networkProviders[i].PeerDomain(peeringID, peerPubKeys)
-		require.NoError(t, err)
 		ii := i
-		err = dssNodes[i].Start(key, index, dkShares[i], netDomain,
+		require.NoError(t, dssNodes[i].Start(key, index, dkShares[i],
 			func(part []int) { outPartChs[ii] <- part },
 			func(sig []byte) { outSigChs[ii] <- sig },
-		)
-		require.NoError(t, err)
+		))
 	}
 	//
 	// Wait for partial outputs and submit the decisions.

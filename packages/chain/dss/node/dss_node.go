@@ -35,7 +35,7 @@ import (
 )
 
 type DSSNode interface {
-	Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, netDomain peering.PeerDomainProvider, partCB func([]int), sigCB func([]byte)) error
+	Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error
 	DecidedIndexProposals(key hashing.HashValue, index int, decidedIndexProposals [][]int, messageToSign []byte) error
 	StatusString(key hashing.HashValue, index int) string
 	Close()
@@ -51,6 +51,7 @@ type dssNodeImpl struct {
 	suite     suites.Suite
 	net       peering.NetworkProvider
 	netAttach interface{}
+	peeringID *peering.PeeringID
 	nid       *cryptolib.KeyPair
 	series    map[hashing.HashValue]*dssSeriesImpl
 	seriesBuf map[hashing.HashValue]map[int][]*recvMsg
@@ -68,6 +69,7 @@ func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptol
 		suite:     tcrypto.DefaultEd25519Suite(),
 		net:       net,
 		netAttach: nil, // Set bellow.
+		peeringID: peeringID,
 		nid:       nid,
 		series:    map[hashing.HashValue]*dssSeriesImpl{},
 		seriesBuf: map[hashing.HashValue]map[int][]*recvMsg{},
@@ -107,11 +109,11 @@ func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptol
 	return n
 }
 
-func (n *dssNodeImpl) Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, netDomain peering.PeerDomainProvider, partCB func([]int), sigCB func([]byte)) error {
+func (n *dssNodeImpl) Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	if _, ok := n.series[key]; !ok {
-		n.series[key] = newSeries(n, key, dkShare, netDomain)
+		n.series[key] = newSeries(n, key, dkShare)
 		n.recvFromBuf(key)
 	}
 	return n.series[key].start(index, partCB, sigCB)

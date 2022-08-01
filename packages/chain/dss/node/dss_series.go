@@ -31,16 +31,15 @@ type dssInstance struct {
 }
 
 type dssSeriesImpl struct {
-	node      *dssNodeImpl
-	key       hashing.HashValue
-	dssInsts  map[int]*dssInstance
-	dkShare   tcrypto.DKShare
-	netDomain peering.PeerDomainProvider
-	peerPubs  map[gpa.NodeID]*cryptolib.PublicKey
-	peerNIDs  []gpa.NodeID // Index to NodeID mapping.
+	node     *dssNodeImpl
+	key      hashing.HashValue
+	dssInsts map[int]*dssInstance
+	dkShare  tcrypto.DKShare
+	peerPubs map[gpa.NodeID]*cryptolib.PublicKey
+	peerNIDs []gpa.NodeID // Index to NodeID mapping.
 }
 
-func newSeries(node *dssNodeImpl, key hashing.HashValue, dkShare tcrypto.DKShare, netDomain peering.PeerDomainProvider) *dssSeriesImpl {
+func newSeries(node *dssNodeImpl, key hashing.HashValue, dkShare tcrypto.DKShare) *dssSeriesImpl {
 	dkSharePubKeys := dkShare.GetNodePubKeys()
 	nodeIndexToPeerNIDs := make([]gpa.NodeID, len(dkSharePubKeys))
 	nodeIDsToPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
@@ -49,13 +48,12 @@ func newSeries(node *dssNodeImpl, key hashing.HashValue, dkShare tcrypto.DKShare
 		nodeIDsToPeerPubs[nodeIndexToPeerNIDs[i]] = dkSharePubKeys[i]
 	}
 	s := &dssSeriesImpl{
-		node:      node,
-		key:       key,
-		dssInsts:  map[int]*dssInstance{},
-		dkShare:   dkShare,
-		netDomain: netDomain,
-		peerPubs:  nodeIDsToPeerPubs,
-		peerNIDs:  nodeIndexToPeerNIDs,
+		node:     node,
+		key:      key,
+		dssInsts: map[int]*dssInstance{},
+		dkShare:  dkShare,
+		peerPubs: nodeIDsToPeerPubs,
+		peerNIDs: nodeIndexToPeerNIDs,
 	}
 	return s
 }
@@ -155,7 +153,13 @@ func (s *dssSeriesImpl) sendMessages(msgs []gpa.Message, index int) {
 			s.node.log.Warnf("Failed to send a message: %v", err)
 			continue
 		}
-		s.netDomain.SendMsgByPubKey(s.peerPubs[m.Recipient()], peering.PeerMessageReceiverChainDSS, msgTypeDSS, msgPayload)
+		pm := &peering.PeerMessageData{
+			PeeringID:   *s.node.peeringID,
+			MsgReceiver: peering.PeerMessageReceiverChainDSS,
+			MsgType:     msgTypeDSS,
+			MsgData:     msgPayload,
+		}
+		s.node.net.SendMsgByPubKey(s.peerPubs[m.Recipient()], pm)
 	}
 }
 

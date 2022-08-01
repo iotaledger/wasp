@@ -1,9 +1,9 @@
 ---------------------------- MODULE WaspACSS -----------------------------------
-EXTENDS Naturals, FiniteSets, TLC
+EXTENDS Naturals, FiniteSets, TLC, TLAPS
 CONSTANT Nodes
 CONSTANT Dealer
 CONSTANT Faulty
-ASSUME NodesAssm == IsFiniteSet(Nodes)
+ASSUME NodesAssm == IsFiniteSet(Nodes) /\ \E n \in Nodes : TRUE
 ASSUME DealerAssm == Dealer \in Nodes
 VARIABLE msgs
 vars == <<msgs>>
@@ -19,52 +19,39 @@ Fair == Nodes \ Faulty
 ASSUME FaultyAssm == Faulty \subseteq Nodes /\ Cardinality(Faulty) <= F
 --------------------------------------------------------------------------------
 (*                                 TYPES                                      *)
+(*
+Deal contains secret shares for all the nodes, but hidden in such way, that
+only the corresponding node can decrypt its secret share. We con't model the
+crypto part here, so a Deal is modelled by a function [Nodes -> BOOLEAN],
+which says for each node, if its deal is correct.
+*)
+Deal == [Nodes -> BOOLEAN]
+(*
+A set of possible messages.
+
+In all the message types:
+  - t -- a type of the message.
+  - src -- is a sender of a node.
+  - rcp -- is a recipient of a node.
+           If this field is omitted, a message is sent to all the nodes.
+
+The following message types are used in this spec:
+  - "DEAL_BC" -- a message sent by the dealer to the RBC to share its Deal.
+  - "DEAL"    -- a deal received by a node from the Dealer via the RBC.
+  - "OK", "READY" -- Bracha style synchronization.
+  - "OUTPUT"  -- models the final decision by the node 'src".
+  - "IMPLICATE", "RECOVER" -- handle the scenario with a dealer being faulty.
+    The field "sec" here stands for the correctness of the "src"s node secret.
+*)
 Msgs == UNION {
-    [t: {"DEAL_BC"},          deal: [Nodes -> BOOLEAN]],
-    [t: {"DEAL"}, rcp: Nodes, deal: [Nodes -> BOOLEAN]],
+    [t: {"DEAL_BC"},          deal: Deal],
+    [t: {"DEAL"}, rcp: Nodes, deal: Deal],
     [t: {"OK", "READY", "OUTPUT"}, src: Nodes],
     [t: {"IMPLICATE", "RECOVER"}, src: Nodes, sec: BOOLEAN ]
 }
 TypeOK ==
     msgs \in SUBSET Msgs
 
----------- MODULE RBC -----------
-(*
-Here we are modelling the RBC as a blackbox, only considering its properties.
-It waits for a message to be broadcasted, and produces messages to be delivered
-to particular nodes. The properties of the Uniform RBC:
-
-URB-validity:
-    If a process urb-delivers a message m, then message
-    m as been previously urb-broadcast (by p_{m.sender}).
-URB-integrity:
-    A process urb-delivers a message m at most once.
-    NOTE: We will ignore this property here, the consumer will have to handle it.
-URB-termination-1:
-    If a non-faulty process urb-broadcasts a
-    message m, it urb-delivers the message m.
-URB-termination-2:
-    If a process urb-delivers a message m, then
-    each non-faulty process urb-delivers the message m.
-    This property sometimes called “uniform agreement”.
-*)
-CONSTANT MsgP(_)    \* Predicate detecting the message to be broadcasted.
-CONSTANT MsgS(_, _) \* Operator producing a message to be delivered.
-(*
-We have two cases here, depending on the correctness of the dealer:
-  - If the Dealer is correct, then RBC has to deliver to all the Fair nodes, and maybe to some faulty nodes.
-  - If dealer is Faulty, then two cases are possible:
-      - Either all the Fair nodes (and maybe some faulty) will deliver a message;
-      - Or no Fair node will deliver the message. The faulty nodes can still deliver it.
-*)
-Broadcast ==
-    \E m \in msgs, someFaulty \in SUBSET Faulty: MsgP(m) /\
-        \/ /\ Dealer \notin Faulty \* Deliver to all the fair nodes, and maybe to some faulty.
-           /\ msgs' = msgs \cup {MsgS(m, n) : n \in Nodes \ someFaulty}
-        \/ /\ Dealer \in Faulty \* Deliver either to all Fair nodes plus some Faulty, or just to some faulty.
-           /\ \E deliverAt \in {(Nodes \ someFaulty)} \cup SUBSET Faulty:
-                msgs' = msgs \cup {MsgS(m, n) : n \in deliverAt}
-=================================
 rbc == INSTANCE RBC WITH
          MsgP <- LAMBDA m : m.t = "DEAL_BC",
          MsgS <- LAMBDA m, n : [t |-> "DEAL", rcp |-> n, deal |-> m.deal]
@@ -109,16 +96,16 @@ HandleDeal(n) ==
 \* >   send <READY> to all parties
 \* >
 HandleOK(n) ==
-    \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "OK" /\ m.src = qn
-      /\ msgs' = msgs \cup {[t |-> "READY", src |-> n]}
+    /\ \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "OK" /\ m.src = qn
+    /\ msgs' = msgs \cup {[t |-> "READY", src |-> n]}
 
 \* >
 \* > on receiving <READY> from f+1 parties:
 \* >   send <READY> to all parties
 \* >
 HandleReadySupport(n) ==
-    \E q \in QF1: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
-      /\ msgs' = msgs \cup {[t |-> "READY", src |-> n]}
+    /\ \E q \in QF1: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
+    /\ msgs' = msgs \cup {[t |-> "READY", src |-> n]}
 
 \* >
 \* > on receiving <READY> from n-f parties:
@@ -127,8 +114,8 @@ HandleReadySupport(n) ==
 \* >     output sᵢ
 \* >
 HandleReadyQuorum(n) ==
-    \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
-      /\ msgs' = msgs \cup {[t |-> "OUTPUT", src |-> n]}
+    /\ \E q \in QNF: \A qn \in q: \E m \in msgs : m.t = "READY" /\ m.src = qn
+    /\ msgs' = msgs \cup {[t |-> "OUTPUT", src |-> n]}
 
 \* >
 \* > on receiving <IMPLICATE, j, skⱼ>:
@@ -168,10 +155,10 @@ HandleRecover(n) ==
 --------------------------------------------------------------------------------
 (*                                 SPEC                                       *)
 Init ==
-    msgs = UNION (
-      {[t: {"OK", "READY", "OUTPUT"}, src: {n}] : n \in Faulty} \cup
-      {[t: {"IMPLICATE", "RECOVER"}, src: {n}, sec: BOOLEAN ] : n \in Faulty}
-    )
+    msgs = UNION {
+      [t: {"OK", "READY", "OUTPUT"}, src: Faulty],
+      [t: {"IMPLICATE", "RECOVER"}, src: Faulty, sec: BOOLEAN]
+    }
 
 NodeActions(n) ==
     \/ HandleDeal(n) \/ HandleOK(n) \/ HandleReadySupport(n) \/ HandleReadyQuorum(n)
@@ -208,7 +195,7 @@ FairNodeOutputImpliesAllFair ==
     (\E m \in msgs, n \in Fair: m.t = "OUTPUT" /\ m.src = n) ~> AllFairNodesOutput
 
 \* Check the negative case: faulty dealer with to many faulty shares means
-\* no fair nodes will evet output.
+\* no fair nodes will event output.
 ToMuchFaultyDealsMeansNoOutput ==
     (\E md \in msgs, q \in QF1: md.t = "DEAL" /\ \A qn \in q: ~md.deal[qn])
     => [](\A n \in Fair: ~\E m \in msgs: m.t = "OUTPUT" /\ m.src = n)
@@ -220,5 +207,37 @@ THEOREM Spec =>
     /\ FairNodeOutputImpliesAllFair
     /\ ToMuchFaultyDealsMeansNoOutput
 PROOF OMITTED \* Checked by the TLC
+
+--------------------------------------------------------------------------------
+(*                              SOME PROOFS                                   *)
+LEMMA Spec => []TypeOK
+  <1>0. Faulty \subseteq Nodes BY FaultyAssm
+  <1>1. Init => TypeOK  BY <1>0 DEF TypeOK, Init, Msgs
+  <1>2. TypeOK /\ [Next]_vars => TypeOK'
+    <2> SUFFICES ASSUME TypeOK, Next PROVE TypeOK' BY DEF TypeOK, vars
+    <2>1. CASE Input
+      <3>1. CASE Dealer \in Faulty BY <2>1, <3>1, DealerAssm DEF Input, TypeOK, Msgs, Deal
+      <3>2. CASE Dealer \notin Faulty
+        <4>1. [t |-> "DEAL_BC", deal |-> [n \in Nodes |-> TRUE]] \in Msgs BY DEF Msgs, Deal
+        <4>q. QED BY <4>1, <2>1, <3>2, DealerAssm DEF Input, TypeOK, Msgs
+      <3>q. QED BY <2>1, <3>1, <3>2 DEF Input
+    <2>2. CASE RBC BY <2>2, <1>0 DEF RBC, rbc!Broadcast, TypeOK, Msgs
+    <2>3. CASE \E n \in Fair : NodeActions(n)
+      <3> PICK n \in Fair : NodeActions(n) BY <2>3
+      <3> n \in Nodes BY <1>0 DEF Fair
+      <3>1. CASE HandleDeal(n)
+        <4> [t |-> "OK",        src |-> n              ] \in Msgs BY DEF Msgs
+        <4> [t |-> "IMPLICATE", src |-> n, sec |-> TRUE] \in Msgs BY DEF Msgs
+        <4>q. QED BY <3>1 DEF HandleDeal, TypeOK, Msgs
+      <3>2. CASE HandleOK(n) BY <3>2 DEF HandleOK, TypeOK, Msgs
+      <3>3. CASE HandleReadySupport(n) BY <3>3 DEF HandleReadySupport, TypeOK, Msgs
+      <3>4. CASE HandleReadyQuorum(n) BY <3>4 DEF HandleReadyQuorum, TypeOK, Msgs
+      <3>5. CASE HandleImplicate(n)
+        <4> [t |-> "RECOVER", src |-> n, sec |-> TRUE] \in Msgs BY DEF Msgs
+        <4>q. QED BY <3>5 DEF HandleImplicate, TypeOK, Msgs
+      <3>6. CASE HandleRecover(n) BY <3>6 DEF HandleRecover, TypeOK, Msgs
+      <3>q. QED BY <2>3, <3>1, <3>2, <3>3, <3>4, <3>5, <3>6 DEF NodeActions
+    <2>q. QED BY <2>1, <2>2, <2>3 DEF Next
+  <1>3. QED BY <1>1, <1>2, PTL DEF Spec, TypeOK
 
 ================================================================================
