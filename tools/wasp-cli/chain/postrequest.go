@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustDustDeposit bool) {
+func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
 	scClient := SCClient(isc.Hn(hname))
 
 	if offLedger {
@@ -23,7 +23,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		return
 	}
 
-	if !adjustDustDeposit {
+	if !adjustStorageDeposit {
 		// check if there are enough funds for SD
 		output := transaction.MakeBasicOutput(
 			GetCurrentChainID().AsAddress(),
@@ -52,7 +52,7 @@ func postRequestCmd() *cobra.Command {
 	var transfer []string
 	var allowance []string
 	var offLedger bool
-	var adjustDustDeposit bool
+	var adjustStorageDeposit bool
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -69,7 +69,7 @@ func postRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: isc.NewAllowanceFungibleTokens(allowanceTokens),
 			}
-			postRequest(hname, fname, params, offLedger, adjustDustDeposit)
+			postRequest(hname, fname, params, offLedger, adjustStorageDeposit)
 		},
 	}
 
@@ -82,7 +82,7 @@ func postRequestCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
 		"post an off-ledger request",
 	)
-	cmd.Flags().BoolVarP(&adjustDustDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }

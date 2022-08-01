@@ -80,7 +80,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 }
 
 // computeInputsAndRemainder computes inputs and remainder for given outputs balances.
-// Takes into account minimum dust deposit requirements
+// Takes into account minimum storage deposit requirements
 // The inputs are consumed one by one in the order provided in the parameters.
 // Consumes only what is needed to cover output balances
 // Returned reminder is nil if not needed
@@ -154,8 +154,8 @@ func computeInputsAndRemainder(
 // computeRemainderOutput calculates remainders for base tokens and native tokens, returns skeleton remainder output
 // which only contains assets filled in.
 // - inBaseTokens and inTokens is what is available in inputs
-// - outBaseTokens, outTokens is what is in outputs, except the remainder output itself with its dust deposit
-// Returns (nil, error) if inputs are not enough (taking into account dust deposit requirements)
+// - outBaseTokens, outTokens is what is in outputs, except the remainder output itself with its storage deposit
+// Returns (nil, error) if inputs are not enough (taking into account storage deposit requirements)
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
 func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inBaseTokens < outBaseTokens {
@@ -223,7 +223,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 	}
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(ret)
 	if ret.Amount < storageDeposit {
-		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForDustDeposit, storageDeposit)
+		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForStorageDeposit, storageDeposit)
 	}
 	return ret, nil
 }

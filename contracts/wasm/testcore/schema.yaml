@@ -23,7 +23,7 @@ funcs:
       chainOwnerID: AgentID
   claimAllowance:
   doNothing:
-  estimateMinDust:
+  estimateMinStorageDeposit:
   incCounter:
   infiniteLoop:
   init:

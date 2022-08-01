@@ -11,7 +11,7 @@ import (
 )
 
 func sendFundsCmd() *cobra.Command {
-	var adjustDustDeposit bool
+	var adjustStorageDeposit bool
 
 	cmd := &cobra.Command{
 		Use:   "send-funds <target-address> <token-id>:<amount> <token-id2>:<amount> ...",
@@ -33,7 +33,7 @@ func sendFundsCmd() *cobra.Command {
 			outputSet, err := client.OutputMap(senderAddress)
 			log.Check(err)
 
-			if !adjustDustDeposit {
+			if !adjustStorageDeposit {
 				// check if the resulting output needs to be adjusted for Storage Deposit
 				output := transaction.MakeBasicOutput(
 					targetAddress,
@@ -47,14 +47,14 @@ func sendFundsCmd() *cobra.Command {
 			}
 
 			tx, err := transaction.NewTransferTransaction(transaction.NewTransferTransactionParams{
-				DisableAutoAdjustDustDeposit: false,
-				FungibleTokens:               tokens,
-				SendOptions:                  isc.SendOptions{},
-				SenderAddress:                senderAddress,
-				SenderKeyPair:                wallet.KeyPair,
-				TargetAddress:                targetAddress,
-				UnspentOutputs:               outputSet,
-				UnspentOutputIDs:             isc.OutputSetToOutputIDs(outputSet),
+				DisableAutoAdjustStorageDeposit: false,
+				FungibleTokens:                  tokens,
+				SendOptions:                     isc.SendOptions{},
+				SenderAddress:                   senderAddress,
+				SenderKeyPair:                   wallet.KeyPair,
+				TargetAddress:                   targetAddress,
+				UnspentOutputs:                  outputSet,
+				UnspentOutputIDs:                isc.OutputSetToOutputIDs(outputSet),
 			})
 			log.Check(err)
 
@@ -68,7 +68,7 @@ func sendFundsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&adjustDustDeposit, "adjust-storage-deposit", "sd", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "sd", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }

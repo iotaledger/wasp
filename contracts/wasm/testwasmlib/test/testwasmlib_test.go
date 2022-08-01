@@ -242,7 +242,7 @@ func TestTakeAllowance(t *testing.T) {
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.TokenBalance(ctx)
@@ -277,7 +277,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.TokenBalance(ctx)

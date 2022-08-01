@@ -15,7 +15,7 @@ import (
 )
 
 func TestSendBack(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain(nil, "chain1")
 

@@ -58,10 +58,10 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
+pub fn func_estimate_min_storage_deposit(ctx: &ScFuncContext, _f: &EstimateMinStorageDepositContext) {
     let provided = ctx.allowance().base_tokens();
-    let dummy = ScFuncs::estimate_min_dust(ctx);
-    let required = ctx.estimate_dust(&dummy.func);
+    let dummy = ScFuncs::estimate_min_storage_deposit(ctx);
+    let required = ctx.estimate_storage_deposit(&dummy.func);
     ctx.require(provided >= required, "not enough funds");
 }
 

@@ -76,9 +76,9 @@ func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
-		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             isc.NewFungibleTokens(allowance.Assets.BaseTokens, nil),
-		AdjustToMinimumDustDeposit: true,
+		TargetAddress:                 ctx.ChainID().AsAddress(),
+		FungibleTokens:                isc.NewFungibleTokens(allowance.Assets.BaseTokens, nil),
+		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncCounter.Hname(),
@@ -119,9 +119,9 @@ func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(isc.RequestParameters{
-		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             isc.NewFungibleTokens(1000, nil),
-		AdjustToMinimumDustDeposit: true,
+		TargetAddress:                 ctx.ChainID().AsAddress(),
+		FungibleTokens:                isc.NewFungibleTokens(1000, nil),
+		AdjustToMinimumStorageDeposit: true,
 		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncAndRepeatMany.Hname(),

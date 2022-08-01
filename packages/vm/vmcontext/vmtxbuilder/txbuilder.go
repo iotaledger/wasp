@@ -36,10 +36,10 @@ type AnchorTransactionBuilder struct {
 	anchorOutputID iotago.OutputID
 	// already consumed outputs, specified by entire Request. It is needed for checking validity
 	consumed []isc.OnLedgerRequest
-	// base tokens which are on-chain. It does not include dust deposits on anchor and on internal outputs
+	// base tokens which are on-chain. It does not include storage deposits on anchor and on internal outputs
 	totalBaseTokensInL2Accounts uint64
-	// minimum dust deposit assumption for internal outputs. It is used as constants. Assumed real dust cost never grows
-	dustDepositAssumption transaction.StorageDepositAssumption
+	// minimum storage deposit assumption for internal outputs. It is used as constants. Assumed real storage deposit cost never grows
+	storageDepositAssumption transaction.StorageDepositAssumption
 	// balance loader for native tokens
 	loadTokenOutput tokenOutputLoader
 	// foundry loader
@@ -63,16 +63,16 @@ func NewAnchorTransactionBuilder(
 	tokenBalanceLoader tokenOutputLoader,
 	foundryLoader foundryLoader,
 	nftLoader NFTOutputLoader,
-	dustDepositAssumptions transaction.StorageDepositAssumption,
+	storageDepositAssumptions transaction.StorageDepositAssumption,
 ) *AnchorTransactionBuilder {
-	if anchorOutput.Amount < dustDepositAssumptions.AnchorOutput {
+	if anchorOutput.Amount < storageDepositAssumptions.AnchorOutput {
 		panic("internal inconsistency")
 	}
 	return &AnchorTransactionBuilder{
 		anchorOutput:                anchorOutput,
 		anchorOutputID:              anchorOutputID,
-		totalBaseTokensInL2Accounts: anchorOutput.Amount - dustDepositAssumptions.AnchorOutput,
-		dustDepositAssumption:       dustDepositAssumptions,
+		totalBaseTokensInL2Accounts: anchorOutput.Amount - storageDepositAssumptions.AnchorOutput,
+		storageDepositAssumption:    storageDepositAssumptions,
 		loadTokenOutput:             tokenBalanceLoader,
 		loadFoundry:                 foundryLoader,
 		loadNFTOutput:               nftLoader,
@@ -90,7 +90,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 		anchorOutput:                txb.anchorOutput,
 		anchorOutputID:              txb.anchorOutputID,
 		totalBaseTokensInL2Accounts: txb.totalBaseTokensInL2Accounts,
-		dustDepositAssumption:       txb.dustDepositAssumption,
+		storageDepositAssumption:    txb.storageDepositAssumption,
 		loadTokenOutput:             txb.loadTokenOutput,
 		loadFoundry:                 txb.loadFoundry,
 		consumed:                    make([]isc.OnLedgerRequest, 0, cap(txb.consumed)),
@@ -115,7 +115,7 @@ func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
 }
 
 // TotalBaseTokensInL2Accounts returns number of on-chain base tokens.
-// It does not include minimum dust deposit needed for anchor output and other internal UTXOs
+// It does not include minimum storage deposit needed for anchor output and other internal UTXOs
 func (txb *AnchorTransactionBuilder) TotalBaseTokensInL2Accounts() uint64 {
 	return txb.totalBaseTokensInL2Accounts
 }
@@ -124,8 +124,8 @@ func (txb *AnchorTransactionBuilder) TotalBaseTokensInL2Accounts() uint64 {
 // It panics if transaction cannot hold that many inputs
 // All explicitly consumed inputs will hold fixed index in the transaction
 // It updates total assets held by the chain. So it may panic due to exceed output counts
-// Returns delta of base tokens needed to adjust the common account due to dust deposit requirement for internal UTXOs
-// NOTE: if call panics with ErrNotEnoughFundsForInternalDustDeposit, the state of the builder becomes inconsistent
+// Returns delta of base tokens needed to adjust the common account due to storage deposit requirement for internal UTXOs
+// NOTE: if call panics with ErrNotEnoughFundsForInternalStorageDeposit, the state of the builder becomes inconsistent
 // It means, in the caller context it should be rolled back altogether
 func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	if DebugTxBuilder {
@@ -142,21 +142,21 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	// first we add all base tokens arrived with the output to anchor balance
 	txb.addDeltaBaseTokensToTotal(req.Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
-	deltaBaseTokensDustDepositAdjustment := int64(0)
+	deltaBaseTokensStorageDepositAdjustment := int64(0)
 	for _, nt := range req.FungibleTokens().Tokens {
-		deltaBaseTokensDustDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
+		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if req.NFT() != nil {
-		deltaBaseTokensDustDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.UTXOInput())
+		deltaBaseTokensStorageDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.UTXOInput())
 	}
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")
 	}
-	return deltaBaseTokensDustDepositAdjustment
+	return deltaBaseTokensStorageDepositAdjustment
 }
 
 // AddOutput adds an information about posted request. It will produce output
-// Return adjustment needed for the L2 ledger (adjustment on base tokens related to dust protection)
+// Return adjustment needed for the L2 ledger (adjustment on base tokens related to storage deposit)
 func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	if txb.outputsAreFull() {
 		panic(vmexceptions.ErrOutputLimitExceeded)
@@ -167,7 +167,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(o)
 	if o.Deposit() < storageDeposit {
 		panic(xerrors.Errorf("%v: available %d < required %d base tokens",
-			transaction.ErrNotEnoughBaseTokensForDustDeposit, o.Deposit(), storageDeposit))
+			transaction.ErrNotEnoughBaseTokensForStorageDeposit, o.Deposit(), storageDeposit))
 	}
 	assets := transaction.AssetsFromOutput(o)
 	txb.subDeltaBaseTokensFromTotal(assets.BaseTokens)
@@ -268,7 +268,7 @@ func (txb *AnchorTransactionBuilder) outputs(l1Commitment *state.L1Commitment) i
 		aliasID = iotago.AliasIDFromOutputID(txb.anchorOutputID)
 	}
 	anchorOutput := &iotago.AliasOutput{
-		Amount:         txb.totalBaseTokensInL2Accounts + txb.dustDepositAssumption.AnchorOutput,
+		Amount:         txb.totalBaseTokensInL2Accounts + txb.storageDepositAssumption.AnchorOutput,
 		NativeTokens:   nil, // anchor output does not contain native tokens
 		AliasID:        aliasID,
 		StateIndex:     txb.anchorOutput.StateIndex + 1,
@@ -369,7 +369,7 @@ func (txb *AnchorTransactionBuilder) addDeltaBaseTokensToTotal(delta uint64) {
 	}
 	// safe arithmetics
 	n := txb.totalBaseTokensInL2Accounts + delta
-	if n+txb.dustDepositAssumption.AnchorOutput < txb.totalBaseTokensInL2Accounts {
+	if n+txb.storageDepositAssumption.AnchorOutput < txb.totalBaseTokensInL2Accounts {
 		panic(xerrors.Errorf("addDeltaBaseTokensToTotal: %w", vm.ErrOverflow))
 	}
 	txb.totalBaseTokensInL2Accounts = n
@@ -407,8 +407,8 @@ func (txb *AnchorTransactionBuilder) String() string {
 			initial = ntb.getOutValue().String()
 		}
 		current := ntb.getOutValue().String()
-		ret += fmt.Sprintf("      %s: %s --> %s, dust deposit charged: %v\n",
-			stringNativeTokenID(&id), initial, current, ntb.dustDepositCharged)
+		ret += fmt.Sprintf("      %s: %s --> %s, storage deposit charged: %v\n",
+			stringNativeTokenID(&id), initial, current, ntb.storageDepositCharged)
 	}
 	ret += fmt.Sprintf("consumed inputs (%d):\n", len(txb.consumed))
 	//for _, inp := range txb.consumed {

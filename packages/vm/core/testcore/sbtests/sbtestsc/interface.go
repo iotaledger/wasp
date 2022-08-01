@@ -52,7 +52,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncSendLargeRequest.WithHandler(sendLargeRequest),
-	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
+	FuncEstimateMinStorageDeposit.WithHandler(testEstimateMinimumStorageDeposit),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 	FuncSendNFTsBack.WithHandler(sendNFTsBack),
@@ -103,15 +103,15 @@ var (
 
 	FuncSpawn = coreutil.Func("spawn")
 
-	FuncSplitFunds             = coreutil.Func("splitFunds")
-	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
-	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
-	FuncSendLargeRequest       = coreutil.Func("sendLargeRequest")
-	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
-	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
-	FuncInfiniteLoopView       = coreutil.ViewFunc("infiniteLoopView")
-	FuncSendNFTsBack           = coreutil.Func("sendNFTsBack")
-	FuncClaimAllowance         = coreutil.Func("claimAllowance")
+	FuncSplitFunds                = coreutil.Func("splitFunds")
+	FuncSplitFundsNativeTokens    = coreutil.Func("splitFundsNativeTokens")
+	FuncPingAllowanceBack         = coreutil.Func("pingAllowanceBack")
+	FuncSendLargeRequest          = coreutil.Func("sendLargeRequest")
+	FuncEstimateMinStorageDeposit = coreutil.Func("estimateMinStorageDeposit")
+	FuncInfiniteLoop              = coreutil.Func("infiniteLoop")
+	FuncInfiniteLoopView          = coreutil.ViewFunc("infiniteLoopView")
+	FuncSendNFTsBack              = coreutil.Func("sendNFTsBack")
+	FuncClaimAllowance            = coreutil.Func("claimAllowance")
 )
 
 const (

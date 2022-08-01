@@ -7,7 +7,7 @@ import (
 )
 
 func (vmctx *VMContext) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
-	par.AdjustToMinimumDustDeposit = false
+	par.AdjustToMinimumStorageDeposit = false
 	out := transaction.BasicOutputFromPostData(
 		vmctx.task.AnchorOutput.AliasID.ToAddress(),
 		vmctx.CurrentContractHname(),

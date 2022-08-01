@@ -31,9 +31,9 @@ func test2Chains(t *testing.T, w bool) {
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustDustDeposit: true,
-		Debug:                 true,
-		PrintStackTrace:       true,
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain(nil, "ch1")

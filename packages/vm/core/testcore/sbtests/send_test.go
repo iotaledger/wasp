@@ -57,8 +57,8 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
-	dustDeposit := tx.Essence.Outputs[0].Deposit()
-	ch.Env.AssertL1BaseTokens(walletAddr, beforeWallet.AssetsL1.BaseTokens+allowance-dustDeposit)
+	storageDeposit := tx.Essence.Outputs[0].Deposit()
+	ch.Env.AssertL1BaseTokens(walletAddr, beforeWallet.AssetsL1.BaseTokens+allowance-storageDeposit)
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
@@ -184,16 +184,16 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 	require.Zero(t, userFundsAfter.AssetsL2.BaseTokens)
 }
 
-func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
-func testEstimateMinimumDust(t *testing.T, w bool) {
+func TestEstimateMinimumStorageDeposit(t *testing.T) { run2(t, testEstimateMinimumStorageDeposit) }
+func testEstimateMinimumStorageDeposit(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	// should fail without enough base tokens to pay for a L1 transaction dust
+	// should fail without enough base tokens to pay for a L1 transaction storage deposit
 	allowance := isc.NewAllowanceBaseTokens(1)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
@@ -201,9 +201,9 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
 
-	// should succeed with enough base tokens to pay for a L1 transaction dust
+	// should succeed with enough base tokens to pay for a L1 transaction storage deposit
 	allowance = isc.NewAllowanceBaseTokens(100_000)
-	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)

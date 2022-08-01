@@ -28,7 +28,7 @@ func rndAliasID() (ret iotago.AliasID) {
 }
 
 // return deposit in BaseToken
-func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addBaseTokensToDustMinimum ...uint64) uint64 {
+func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTokenID, amountNative uint64, addBaseTokensToStorageDepositMinimum ...uint64) uint64 {
 	var assets *isc.FungibleTokens
 	if amountNative > 0 {
 		assets = &isc.FungibleTokens{
@@ -43,8 +43,8 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		nil,
 		isc.SendOptions{},
 	)
-	if len(addBaseTokensToDustMinimum) > 0 {
-		out.Amount += addBaseTokensToDustMinimum[0]
+	if len(addBaseTokensToStorageDepositMinimum) > 0 {
+		out.Amount += addBaseTokensToStorageDepositMinimum[0]
 	}
 	reqData, err := isc.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
 	require.NoError(t, err)
@@ -68,11 +68,11 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 		txb.anchorOutput.AliasID.ToAddress(),
 		isc.Hn("test"),
 		isc.RequestParameters{
-			TargetAddress:              tpkg.RandEd25519Address(),
-			FungibleTokens:             assets,
-			Metadata:                   &isc.SendMetadata{},
-			Options:                    isc.SendOptions{},
-			AdjustToMinimumDustDeposit: true,
+			TargetAddress:                 tpkg.RandEd25519Address(),
+			FungibleTokens:                assets,
+			Metadata:                      &isc.SendMetadata{},
+			Options:                       isc.SendOptions{},
+			AdjustToMinimumStorageDeposit: true,
 		},
 	)
 	txb.AddOutput(exout)
@@ -120,7 +120,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, initialTotalBaseTokens-txb.dustDepositAssumption.AnchorOutput, totals.TotalBaseTokensInL2Accounts)
+		require.EqualValues(t, initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput, totals.TotalBaseTokensInL2Accounts)
 		require.EqualValues(t, 0, len(totals.NativeTokenBalances))
 
 		require.EqualValues(t, 1, txb.numInputs())
@@ -145,7 +145,7 @@ func TestTxBuilderBasic(t *testing.T) {
 			*transaction.NewStorageDepositEstimate(),
 		)
 		txb.addDeltaBaseTokensToTotal(42)
-		require.EqualValues(t, int(initialTotalBaseTokens-txb.dustDepositAssumption.AnchorOutput+42), int(txb.totalBaseTokensInL2Accounts))
+		require.EqualValues(t, int(initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput+42), int(txb.totalBaseTokensInL2Accounts))
 		_, _, err := txb.Totals()
 		require.Error(t, err)
 	})
@@ -159,14 +159,14 @@ func TestTxBuilderBasic(t *testing.T) {
 		deposit := consumeUTXO(t, txb, tokenID, 0)
 
 		t.Logf("vByteCost anchor: %d, internal output: %d, 'empty' output deposit: %d",
-			txb.dustDepositAssumption.AnchorOutput, txb.dustDepositAssumption.NativeTokenOutput, deposit)
+			txb.storageDepositAssumption.AnchorOutput, txb.storageDepositAssumption.NativeTokenOutput, deposit)
 
 		totalsIn, totalsOut, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, totalsIn.TotalBaseTokensInDustDeposit)
-		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, totalsOut.TotalBaseTokensInDustDeposit)
+		require.EqualValues(t, txb.storageDepositAssumption.AnchorOutput, totalsIn.TotalBaseTokensInStorageDeposit)
+		require.EqualValues(t, txb.storageDepositAssumption.AnchorOutput, totalsOut.TotalBaseTokensInStorageDeposit)
 
-		expectedBaseTokens := initialTotalBaseTokens - txb.dustDepositAssumption.AnchorOutput + deposit
+		expectedBaseTokens := initialTotalBaseTokens - txb.storageDepositAssumption.AnchorOutput + deposit
 		require.EqualValues(t, expectedBaseTokens, int(totalsOut.TotalBaseTokensInL2Accounts))
 		require.EqualValues(t, 0, len(totalsOut.NativeTokenBalances))
 
@@ -185,14 +185,14 @@ func TestTxBuilderBasic(t *testing.T) {
 		deposit := consumeUTXO(t, txb, tokenID, 10)
 
 		t.Logf("vByteCost anchor: %d, internal output: %d",
-			txb.dustDepositAssumption.AnchorOutput, txb.dustDepositAssumption.NativeTokenOutput)
+			txb.storageDepositAssumption.AnchorOutput, txb.storageDepositAssumption.NativeTokenOutput)
 
 		totalsIn, totalsOut, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput), int(totalsIn.TotalBaseTokensInDustDeposit))
-		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput+txb.dustDepositAssumption.NativeTokenOutput), int(totalsOut.TotalBaseTokensInDustDeposit))
+		require.EqualValues(t, int(txb.storageDepositAssumption.AnchorOutput), int(totalsIn.TotalBaseTokensInStorageDeposit))
+		require.EqualValues(t, int(txb.storageDepositAssumption.AnchorOutput+txb.storageDepositAssumption.NativeTokenOutput), int(totalsOut.TotalBaseTokensInStorageDeposit))
 
-		expectedBaseTokens := initialTotalBaseTokens + deposit - txb.dustDepositAssumption.AnchorOutput - txb.dustDepositAssumption.NativeTokenOutput
+		expectedBaseTokens := initialTotalBaseTokens + deposit - txb.storageDepositAssumption.AnchorOutput - txb.storageDepositAssumption.NativeTokenOutput
 		require.EqualValues(t, int(expectedBaseTokens), int(totalsOut.TotalBaseTokensInL2Accounts))
 		require.EqualValues(t, 1, len(totalsOut.NativeTokenBalances))
 		require.True(t, totalsOut.NativeTokenBalances[tokenID].Cmp(new(big.Int).SetUint64(10)) == 0)
@@ -267,28 +267,28 @@ func TestTxBuilderConsistency(t *testing.T) {
 			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
 		}
 	}
-	runConsume := func(numRun int, amountNative uint64, addBaseTokensToDustMinimum ...uint64) {
+	runConsume := func(numRun int, amountNative uint64, addBaseTokensToStorageDepositMinimum ...uint64) {
 		deposit := uint64(0)
 		for i := 0; i < numRun; i++ {
 			idx := i % numTokenIDs
 			s := amounts[idx]
 			amounts[idx] = s + amountNative
 
-			deposit += consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, addBaseTokensToDustMinimum...)
+			deposit += consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, addBaseTokensToStorageDepositMinimum...)
 
 			_, _, err := txb.Totals()
 			require.NoError(t, err)
 		}
 		sumIN, sumOUT, err := txb.Totals()
 		require.NoError(t, err)
-		expectedDust := txb.dustDepositAssumption.AnchorOutput
+		expectedStorageDeposit := txb.storageDepositAssumption.AnchorOutput
 		if numRun < numTokenIDs {
-			expectedDust += uint64(numRun) * txb.dustDepositAssumption.NativeTokenOutput
+			expectedStorageDeposit += uint64(numRun) * txb.storageDepositAssumption.NativeTokenOutput
 		} else {
-			expectedDust += uint64(numTokenIDs) * txb.dustDepositAssumption.NativeTokenOutput
+			expectedStorageDeposit += uint64(numTokenIDs) * txb.storageDepositAssumption.NativeTokenOutput
 		}
-		require.EqualValues(t, int(txb.dustDepositAssumption.AnchorOutput), sumIN.TotalBaseTokensInDustDeposit)
-		require.EqualValues(t, int(expectedDust), sumOUT.TotalBaseTokensInDustDeposit)
+		require.EqualValues(t, int(txb.storageDepositAssumption.AnchorOutput), sumIN.TotalBaseTokensInStorageDeposit)
+		require.EqualValues(t, int(expectedStorageDeposit), sumOUT.TotalBaseTokensInStorageDeposit)
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
@@ -308,9 +308,9 @@ func TestTxBuilderConsistency(t *testing.T) {
 		sumIN, sumOUT, err := txb.Totals()
 		require.NoError(t, err)
 
-		expectedBaseTokens := initialTotalBaseTokens - txb.dustDepositAssumption.AnchorOutput + deposit
+		expectedBaseTokens := initialTotalBaseTokens - txb.storageDepositAssumption.AnchorOutput + deposit
 		require.EqualValues(t, expectedBaseTokens, int(sumIN.TotalBaseTokensInL2Accounts))
-		expectedBaseTokens -= uint64(len(amounts) * int(txb.dustDepositAssumption.NativeTokenOutput))
+		expectedBaseTokens -= uint64(len(amounts) * int(txb.storageDepositAssumption.NativeTokenOutput))
 		require.EqualValues(t, expectedBaseTokens, int(sumOUT.TotalBaseTokensInL2Accounts))
 	}
 
@@ -522,14 +522,14 @@ func TestTxBuilderConsistency(t *testing.T) {
 		balanceLoader = balanceLoaderWithInitialBalance
 		initTest()
 
-		// send 90 < 100 which is on-chain. 10 must be left and dust deposit should not disappear
+		// send 90 < 100 which is on-chain. 10 must be left and storage deposit should not disappear
 		addOutput(txb, 90, nativeTokenIDs[0])
 
 		totalIn, totalOut, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, int(initialTotalBaseTokens-txb.dustDepositAssumption.AnchorOutput), int(totalOut.TotalBaseTokensInL2Accounts+totalOut.SentOutBaseTokens))
-		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInDustDeposit))
-		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalOut.TotalBaseTokensInDustDeposit))
+		require.EqualValues(t, int(initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput), int(totalOut.TotalBaseTokensInL2Accounts+totalOut.SentOutBaseTokens))
+		require.EqualValues(t, int(txb.storageDepositAssumption.NativeTokenOutput+txb.storageDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInStorageDeposit))
+		require.EqualValues(t, int(txb.storageDepositAssumption.NativeTokenOutput+txb.storageDepositAssumption.AnchorOutput), int(totalOut.TotalBaseTokensInStorageDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
 
 		require.True(t, beforeTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(100)) == 0)
@@ -554,10 +554,10 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 		totalIn, totalOut, err := txb.Totals()
 		require.NoError(t, err)
-		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput+txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInDustDeposit))
+		require.EqualValues(t, int(txb.storageDepositAssumption.NativeTokenOutput+txb.storageDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInStorageDeposit))
 		require.EqualValues(t, int(sentOut), totalOut.SentOutBaseTokens)
-		require.EqualValues(t, int(initialTotalBaseTokens-txb.dustDepositAssumption.AnchorOutput-sentOut+txb.dustDepositAssumption.NativeTokenOutput), int(txb.totalBaseTokensInL2Accounts))
-		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalBaseTokensInDustDeposit))
+		require.EqualValues(t, int(initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput-sentOut+txb.storageDepositAssumption.NativeTokenOutput), int(txb.totalBaseTokensInL2Accounts))
+		require.EqualValues(t, txb.storageDepositAssumption.AnchorOutput, int(totalOut.TotalBaseTokensInStorageDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
 
 		require.True(t, beforeTokens[nativeTokenIDs[0]].Cmp(new(big.Int).SetInt64(100)) == 0)
@@ -581,17 +581,17 @@ func TestTxBuilderConsistency(t *testing.T) {
 		balanceLoader = balanceLoaderWithInitialBalance
 		initTest()
 
-		// send 90 < 100 which is on-chain. 10 must be left and dust deposit should not disappear
+		// send 90 < 100 which is on-chain. 10 must be left and storage deposit should not disappear
 		for i := range nativeTokenIDs {
 			addOutput(txb, 100, nativeTokenIDs[i])
 		}
 
 		totalIn, totalOut, err := txb.Totals()
 		require.NoError(t, err)
-		expectedBaseTokens := initialTotalBaseTokens - txb.dustDepositAssumption.AnchorOutput + txb.dustDepositAssumption.NativeTokenOutput*uint64(len(nativeTokenIDs))
+		expectedBaseTokens := initialTotalBaseTokens - txb.storageDepositAssumption.AnchorOutput + txb.storageDepositAssumption.NativeTokenOutput*uint64(len(nativeTokenIDs))
 		require.EqualValues(t, expectedBaseTokens, int(totalOut.TotalBaseTokensInL2Accounts+totalOut.SentOutBaseTokens))
-		require.EqualValues(t, int(txb.dustDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)+int(txb.dustDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInDustDeposit))
-		require.EqualValues(t, txb.dustDepositAssumption.AnchorOutput, int(totalOut.TotalBaseTokensInDustDeposit))
+		require.EqualValues(t, int(txb.storageDepositAssumption.NativeTokenOutput)*len(nativeTokenIDs)+int(txb.storageDepositAssumption.AnchorOutput), int(totalIn.TotalBaseTokensInStorageDeposit))
+		require.EqualValues(t, txb.storageDepositAssumption.AnchorOutput, int(totalOut.TotalBaseTokensInStorageDeposit))
 		beforeTokens, afterTokens := txb.InternalNativeTokenBalances()
 
 		for i := range nativeTokenIDs {
@@ -612,7 +612,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	})
 }
 
-func TestDustDeposit(t *testing.T) {
+func TestStorageDeposit(t *testing.T) {
 	reqMetadata := isc.RequestMetadata{
 		SenderContract: 0,
 		TargetContract: 0,
@@ -621,16 +621,16 @@ func TestDustDeposit(t *testing.T) {
 		Allowance:      isc.NewEmptyAllowance(),
 		GasBudget:      0,
 	}
-	t.Run("calc dust assumptions", func(t *testing.T) {
+	t.Run("calc storage deposit assumptions", func(t *testing.T) {
 		d := transaction.NewStorageDepositEstimate()
-		t.Logf("dust deposit assumptions:\n%s", d.String())
+		t.Logf("storage deposit assumptions:\n%s", d.String())
 
 		d1, err := transaction.StorageDepositAssumptionFromBytes(d.Bytes())
 		require.NoError(t, err)
 		require.EqualValues(t, d.AnchorOutput, d1.AnchorOutput)
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
 	})
-	t.Run("adjusts the output amount to the correct bytecost when needed", func(t *testing.T) {
+	t.Run("adjusts the output amount to the correct storage deposit when needed", func(t *testing.T) {
 		assets := isc.NewEmptyAssets()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
@@ -642,7 +642,7 @@ func TestDustDeposit(t *testing.T) {
 		expected := parameters.L1.Protocol.RentStructure.MinRent(out)
 		require.Equal(t, out.Deposit(), expected)
 	})
-	t.Run("keeps the same amount of base tokens when enough for dust cost", func(t *testing.T) {
+	t.Run("keeps the same amount of base tokens when enough for storage deposit cost", func(t *testing.T) {
 		assets := isc.NewFungibleTokens(10000, nil)
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
@@ -713,7 +713,7 @@ func TestFoundries(t *testing.T) {
 			tin, tout, err := txb.Totals()
 			require.NoError(t, err)
 			t.Logf("%d. total base tokens IN: %d, total base tokens OUT: %d", i, tin.TotalBaseTokensInL2Accounts, tout.TotalBaseTokensInL2Accounts)
-			t.Logf("%d. dust deposit IN: %d, dust deposit OUT: %d", i, tin.TotalBaseTokensInDustDeposit, tout.TotalBaseTokensInDustDeposit)
+			t.Logf("%d. storage deposit IN: %d, storage deposit OUT: %d", i, tin.TotalBaseTokensInStorageDeposit, tout.TotalBaseTokensInStorageDeposit)
 			t.Logf("%d. num foundries: %d", i, txb.nextFoundrySerialNumber())
 		}
 	}
@@ -729,8 +729,8 @@ func TestFoundries(t *testing.T) {
 		initTest()
 		err := panicutil.CatchPanicReturnError(func() {
 			createNFoundries(5000)
-		}, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
-		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		}, vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
+		require.Error(t, err, vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
 
 		essence, _ := txb.BuildTransactionEssence(state.RandL1Commitment())
 		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)

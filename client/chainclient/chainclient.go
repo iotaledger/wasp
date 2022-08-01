@@ -126,9 +126,9 @@ func (c *Client) post1RequestWithOutputs(
 			UnspentOutputs:   outputs,
 			UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
 			Request: &isc.RequestParameters{
-				TargetAddress:              c.ChainID.AsAddress(),
-				FungibleTokens:             par.Transfer,
-				AdjustToMinimumDustDeposit: false,
+				TargetAddress:                 c.ChainID.AsAddress(),
+				FungibleTokens:                par.Transfer,
+				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					TargetContract: contractHname,
 					EntryPoint:     entryPoint,

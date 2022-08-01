@@ -44,7 +44,7 @@ func (d *StorageDepositAssumption) Bytes() []byte {
 }
 
 func (d *StorageDepositAssumption) String() string {
-	return fmt.Sprintf("InternalDustDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
+	return fmt.Sprintf("InternalStorageDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 

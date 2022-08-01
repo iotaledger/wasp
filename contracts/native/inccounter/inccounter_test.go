@@ -28,7 +28,7 @@ func checkCounter(e *solo.Chain, expected int64) {
 
 func initSolo(t *testing.T) *solo.Solo {
 	return solo.New(t, &solo.InitOptions{
-		AutoAdjustDustDeposit: true,
+		AutoAdjustStorageDeposit: true,
 	}).WithNativeContract(Processor)
 }
 
@@ -140,10 +140,10 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	opts := &solo.InitOptions{
-		Debug:                 false,
-		PrintStackTrace:       false,
-		Seed:                  cryptolib.Seed{},
-		AutoAdjustDustDeposit: false, // is OFF by default
+		Debug:                    false,
+		PrintStackTrace:          false,
+		Seed:                     cryptolib.Seed{},
+		AutoAdjustStorageDeposit: false, // is OFF by default
 	}
 	opts.Log = log
 	env := solo.New(b, opts).WithNativeContract(Processor)

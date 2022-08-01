@@ -7,7 +7,7 @@ import (
 )
 
 // BasicOutputFromPostData creates extended output object from parameters.
-// It automatically adjusts amount of base tokens required for the dust deposit
+// It automatically adjusts amount of base tokens required for the storage deposit
 func BasicOutputFromPostData(
 	senderAddress iotago.Address,
 	senderContract isc.Hname,
@@ -32,21 +32,21 @@ func BasicOutputFromPostData(
 			GasBudget:      metadata.GasBudget,
 		},
 		par.Options,
-		!par.AdjustToMinimumDustDeposit,
+		!par.AdjustToMinimumStorageDeposit,
 	)
 	return ret
 }
 
 // MakeBasicOutput creates new output from input parameters.
-// Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
-// If auto adjustment to dust is disabled and not enough base tokens, returns an error
+// Auto adjusts minimal storage deposit if the notAutoAdjust flag is absent or false
+// If auto adjustment to storage deposit is disabled and not enough base tokens, returns an error
 func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
 	assets *isc.FungibleTokens,
 	metadata *isc.RequestMetadata,
 	options isc.SendOptions,
-	disableAutoAdjustDustDeposit ...bool,
+	disableAutoAdjustStorageDeposit ...bool,
 ) *iotago.BasicOutput {
 	if assets == nil {
 		assets = &isc.FungibleTokens{}
@@ -84,8 +84,8 @@ func MakeBasicOutput(
 		out.Conditions = append(out.Conditions, cond)
 	}
 
-	// Adjust to minimum dust deposit, if needed
-	if len(disableAutoAdjustDustDeposit) > 0 && disableAutoAdjustDustDeposit[0] {
+	// Adjust to minimum storage deposit, if needed
+	if len(disableAutoAdjustStorageDeposit) > 0 && disableAutoAdjustStorageDeposit[0] {
 		return out
 	}
 
@@ -107,7 +107,7 @@ func NFTOutputFromPostData(
 	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par)
 	out := NftOutputFromBasicOutput(basicOutput, nft)
 
-	if !par.AdjustToMinimumDustDeposit {
+	if !par.AdjustToMinimumStorageDeposit {
 		return out
 	}
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)

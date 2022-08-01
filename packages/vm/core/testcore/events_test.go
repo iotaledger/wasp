@@ -40,7 +40,7 @@ var (
 )
 
 func setupTest(t *testing.T) *solo.Chain {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(manyEventsContractProcessor)
 	ch := env.NewChain(nil, "ch")
 	err := ch.DeployContract(nil, manyEventsContract.Name, manyEventsContract.ProgramHash)
@@ -176,7 +176,7 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(inccounter.Processor)
 	ch := env.NewChain(nil, "chain1")
 

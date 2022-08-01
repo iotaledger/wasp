@@ -227,7 +227,7 @@ func (vmctx *VMContext) updateOffLedgerRequestMaxAssumedNonce() {
 	})
 }
 
-// adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of dust deposit changes
+// adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of storage deposit changes
 func (vmctx *VMContext) adjustL2BaseTokensIfNeeded(adjustment int64, account isc.AgentID) {
 	if adjustment == 0 {
 		return
@@ -238,6 +238,6 @@ func (vmctx *VMContext) adjustL2BaseTokensIfNeeded(adjustment int64, account isc
 		})
 	}, accounts.ErrNotEnoughFunds)
 	if err != nil {
-		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
 	}
 }
