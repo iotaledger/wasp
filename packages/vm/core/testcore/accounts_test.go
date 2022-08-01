@@ -72,7 +72,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 	senderAgentID := isc.NewAgentID(senderAddr)
 	ch := env.NewChain(nil, "chain1")
 
-	const baseTokensSent = 1 * isc.Mi
+	const baseTokensSent = 1 * isc.Million
 
 	// send a request where allowance == assets - so that no base tokens are available outside allowance
 	_, err := ch.PostRequestSync(
@@ -137,7 +137,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch, _, _ = env.NewChainExt(nil, 10*isc.Mi, "chain1")
+		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
 		defer func(log *logger.Logger) {
 			err := log.Sync()
 			if err != nil {
@@ -147,7 +147,7 @@ func TestFoundries(t *testing.T) {
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = isc.NewAgentID(senderAddr)
 
-		ch.MustDepositBaseTokensToL2(10*isc.Mi, senderKeyPair)
+		ch.MustDepositBaseTokensToL2(10*isc.Million, senderKeyPair)
 	}
 	t.Run("newFoundry fails when no allowance is provided", func(t *testing.T) {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
@@ -157,11 +157,11 @@ func TestFoundries(t *testing.T) {
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: util.Big0, MeltedTokens: util.Big0},
 			),
-		).AddBaseTokens(2 * isc.Mi).WithGasBudget(math.MaxUint64)
+		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
 		_, err := ch.PostRequestSync(req, nil)
 		require.Error(t, err)
 		// it succeeds when allowance is added
-		_, err = ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Mi), nil)
+		_, err = ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
 		require.NoError(t, err)
 	})
 	t.Run("newFoundry overrides bad melted/minted token counters in tokenscheme", func(t *testing.T) {
@@ -172,8 +172,8 @@ func TestFoundries(t *testing.T) {
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(
 				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(1), MintedTokens: big.NewInt(10), MeltedTokens: big.NewInt(10)},
 			),
-		).AddBaseTokens(2 * isc.Mi).WithGasBudget(math.MaxUint64)
-		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Mi), nil)
+		).AddBaseTokens(2 * isc.Million).WithGasBudget(math.MaxUint64)
+		_, err := ch.PostRequestSync(req.AddAllowanceBaseTokens(1*isc.Million), nil)
 		require.NoError(t, err)
 	})
 	t.Run("supply 10", func(t *testing.T) {
@@ -642,7 +642,7 @@ func TestDepositBaseTokens(t *testing.T) {
 // initWithdrawTest creates foundry with 1_000_000 of max supply and mint 100 tokens to user's account
 func initWithdrawTest(t *testing.T, initLoad ...uint64) *testParams {
 	v := initDepositTest(t, initLoad...)
-	v.ch.MustDepositBaseTokensToL2(2*isc.Mi, v.user)
+	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	// create foundry and mint 100 tokens
 	v.sn, v.tokenID = v.createFoundryAndMint(1_000_000, 100)
 	// prepare request parameters to withdraw everything what is in the account
@@ -663,12 +663,12 @@ func (v *testParams) printBalances(prefix string) {
 
 func TestWithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "can't be empty")
 	})
 	t.Run("withdraw not enough for dust", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		v.req.AddAllowanceNativeTokensVect(&iotago.NativeToken{
 			ID:     *v.tokenID,
 			Amount: new(big.Int).SetUint64(10),
@@ -677,7 +677,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		testmisc.RequireErrorToBe(t, err, accounts.ErrNotEnoughBaseTokensForDustDeposit)
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		// we want to withdraw as many base tokens as possible, so we add 300 because some more will come
 		// with assets attached to the 'withdraw' request. However, withdraw all is not possible due to gas
 		toWithdraw := v.ch.L2Assets(v.userAgentID).AddBaseTokens(200)
@@ -690,7 +690,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("END")
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(isc.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddBaseTokens(BaseTokensDepositFee)
@@ -707,7 +707,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(isc.NewAllowanceFungibleTokens(allSenderAssets))
@@ -732,7 +732,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.printBalances("AFTER DESTROY")
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(isc.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddBaseTokens(BaseTokensDepositFee)
@@ -754,7 +754,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(isc.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddBaseTokens(BaseTokensDepositFee)
@@ -772,7 +772,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 51)
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Mi)
+		v := initWithdrawTest(t, 2*isc.Million)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(isc.NewAllowanceFungibleTokens(allSenderAssets))
 		v.req.AddBaseTokens(BaseTokensDepositFee)
@@ -840,7 +840,7 @@ func TestTransferAndHarvest(t *testing.T) {
 func TestFoundryDestroy(t *testing.T) {
 	t.Run("destroy existing", func(t *testing.T) {
 		v := initDepositTest(t)
-		v.ch.MustDepositBaseTokensToL2(2*isc.Mi, v.user)
+		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 		sn, _, err := v.ch.NewFoundryParams(1_000_000).
 			WithUser(v.user).
 			CreateFoundry()
@@ -860,7 +860,7 @@ func TestFoundryDestroy(t *testing.T) {
 
 func TestTransferPartialAssets(t *testing.T) {
 	v := initDepositTest(t)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Mi, v.user)
+	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 	// setup a chain with some base tokens and native tokens for user1
 	sn, tokenID, err := v.ch.NewFoundryParams(10).
 		WithUser(v.user).
@@ -869,9 +869,9 @@ func TestTransferPartialAssets(t *testing.T) {
 	require.EqualValues(t, 1, int(sn))
 
 	// deposit base tokens for the chain owner (needed for L1 dust byte cost to mint tokens)
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Mi, v.ch.CommonAccount(), v.chainOwner)
+	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.ch.CommonAccount(), v.chainOwner)
 	require.NoError(t, err)
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Mi, v.userAgentID, v.user)
+	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.userAgentID, v.user)
 	require.NoError(t, err)
 
 	err = v.ch.MintTokens(sn, big.NewInt(10), v.user)
@@ -886,7 +886,7 @@ func TestTransferPartialAssets(t *testing.T) {
 
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2BaseTokens(user2AgentID, 0)
-	const baseTokensToSend = 3 * isc.Mi
+	const baseTokensToSend = 3 * isc.Million
 	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
@@ -1036,7 +1036,7 @@ func TestNFTAccount(t *testing.T) {
 	nftAddress := nftInfo.NFTID.ToAddress()
 
 	// deposit funds on behalf of the NFT
-	const baseTokensToSend = 10 * isc.Mi
+	const baseTokensToSend = 10 * isc.Million
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 		AddFungibleTokens(isc.NewFungibleBaseTokens(baseTokensToSend)).
 		WithMaxAffordableGasBudget().
@@ -1056,7 +1056,7 @@ func TestNFTAccount(t *testing.T) {
 	require.True(t, ch.Env.HasL1NFT(ownerAddress, &nftInfo.NFTID))
 
 	// withdraw to the NFT on L1
-	const baseTokensToWithdrawal = 1 * isc.Mi
+	const baseTokensToWithdrawal = 1 * isc.Million
 	wdReq := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
 		AddAllowanceBaseTokens(baseTokensToWithdrawal).
 		WithMaxAffordableGasBudget()
@@ -1099,7 +1099,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
 			WithNFT(nft).
-			AddBaseTokens(10*isc.Mi).
+			AddBaseTokens(10*isc.Million).
 			WithMaxAffordableGasBudget(),
 		initialOwnerWallet)
 	require.NoError(t, err)
@@ -1129,8 +1129,8 @@ func TestTransferNFTAllowance(t *testing.T) {
 	// withdraw to L1
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-			WithAllowance(isc.NewAllowance(1*isc.Mi, nil, []iotago.NFTID{nft.ID})).
-			AddBaseTokens(10*isc.Mi).
+			WithAllowance(isc.NewAllowance(1*isc.Million, nil, []iotago.NFTID{nft.ID})).
+			AddBaseTokens(10*isc.Million).
 			WithMaxAffordableGasBudget(),
 		finalOwnerWallet,
 	)
@@ -1152,7 +1152,7 @@ func TestDepositRandomContractMinFee(t *testing.T) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds()
 	agentID := isc.NewAgentID(addr)
 
-	sent := 1 * isc.Mi
+	sent := 1 * isc.Million
 	_, err := ch.PostRequestSync(solo.NewCallParams("", "").AddBaseTokens(sent), wallet)
 	require.Error(t, err)
 	receipt := ch.LastReceipt()
@@ -1169,7 +1169,7 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds()
 	allowances := []*isc.Allowance{
 		// test base token
-		isc.NewAllowanceBaseTokens(1000 * isc.Mi),
+		isc.NewAllowanceBaseTokens(1000 * isc.Million),
 		// test fungible tokens
 		isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
@@ -1185,7 +1185,7 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 	for _, a := range allowances {
 		_, err := ch.PostRequestSync(
 			solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-				AddBaseTokens(1*isc.Mi).
+				AddBaseTokens(1*isc.Million).
 				WithAllowance(a).
 				WithMaxAffordableGasBudget(),
 			wallet)

@@ -113,11 +113,11 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = isc.NewAllowanceBaseTokens(1 * isc.Mi)
+		transfer = isc.NewAllowanceBaseTokens(1 * isc.Million)
 	}
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Mi
+		transfer.Assets.BaseTokens = 1 * isc.Million
 	}
 	req.AddFungibleTokens(transfer.Assets)
 	if len(transfer.NFTs) != 0 {

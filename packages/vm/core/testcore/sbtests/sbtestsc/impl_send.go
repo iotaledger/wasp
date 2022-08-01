@@ -14,7 +14,7 @@ func testSplitFunds(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claim 1Mi base tokens from allowance at a time
-	baseTokensToTransfer := 1 * isc.Mi
+	baseTokensToTransfer := 1 * isc.Million
 	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.BaseTokens >= baseTokensToTransfer {
 		// send back to caller's address
 		// depending on the amount of base tokens, it will exceed number of outputs or not

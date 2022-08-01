@@ -92,7 +92,7 @@ func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Mi
+const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 
 func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()

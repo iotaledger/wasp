@@ -84,7 +84,7 @@ func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.Nati
 }
 
 func TestTxBuilderBasic(t *testing.T) {
-	const initialTotalBaseTokens = 10 * isc.Mi
+	const initialTotalBaseTokens = 10 * isc.Million
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -206,7 +206,7 @@ func TestTxBuilderBasic(t *testing.T) {
 }
 
 func TestTxBuilderConsistency(t *testing.T) {
-	const initialTotalBaseTokens = 10 * isc.Mi
+	const initialTotalBaseTokens = 10 * isc.Million
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()
@@ -656,7 +656,7 @@ func TestDustDeposit(t *testing.T) {
 }
 
 func TestFoundries(t *testing.T) {
-	const initialTotalBaseTokens = 1 * isc.Mi
+	const initialTotalBaseTokens = 1 * isc.Million
 	addr := tpkg.RandEd25519Address()
 	stateMetadata := hashing.HashStrings("test")
 	aliasID := rndAliasID()

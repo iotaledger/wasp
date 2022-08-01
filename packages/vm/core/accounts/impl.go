@@ -85,7 +85,7 @@ func transferAllowanceTo(ctx isc.Sandbox) dict.Dict {
 }
 
 // TODO this is just a temporary value, we need to make deposits fee constant across chains.
-const ConstDepositFeeTmp = 1 * isc.Mi
+const ConstDepositFeeTmp = 1 * isc.Million
 
 // withdraw sends caller's funds to the caller on-ledger (cross chain)
 // The caller explicitly specify the funds to withdraw via the allowance in the request

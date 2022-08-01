@@ -483,7 +483,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// mint some native tokens
-	env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
+	env.soloChain.MustDepositBaseTokensToL2(10*isc.Million, nil) // for gas
 	sn, tokenID, err := env.soloChain.NewFoundryParams(10000).
 		WithUser(env.soloChain.OriginatorPrivateKey).
 		CreateFoundry()

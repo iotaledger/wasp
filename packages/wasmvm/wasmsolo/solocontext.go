@@ -47,13 +47,13 @@ var (
 
 const (
 	MinGasFee         = 100
-	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Mi - MinGasFee
-	L2FundsAgent      = 10 * isc.Mi
-	L2FundsContract   = 10 * isc.Mi
-	L2FundsCreator    = 20 * isc.Mi
-	L2FundsOriginator = 30 * isc.Mi
+	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Million - MinGasFee
+	L2FundsAgent      = 10 * isc.Million
+	L2FundsContract   = 10 * isc.Million
+	L2FundsCreator    = 20 * isc.Million
+	L2FundsOriginator = 30 * isc.Million
 
-	WasmDustDeposit = 1 * isc.Mi
+	WasmDustDeposit = 1 * isc.Million
 )
 
 type SoloContext struct {
