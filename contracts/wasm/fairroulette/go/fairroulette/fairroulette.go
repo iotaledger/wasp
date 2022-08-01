@@ -34,7 +34,7 @@ const NanoTimeDivider = 1000_000_000
 // The 'placeBet' function takes 1 mandatory parameter:
 // - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
-// the amount of incoming iotas as the bet amount in its state.
+// the amount of incoming tokens as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Get the array of current bets from state storage.
 	bets := f.State.Bets()
@@ -61,9 +61,9 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	allowance := ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
-	amount := allowance.Iotas()
+	amount := allowance.BaseTokens()
 
-	// Require that there are actually some plain iotas there
+	// Require that there are actually some base tokens there
 	ctx.Require(amount > 0, "empty bet")
 
 	// Now we gather all information together into a single serializable struct
@@ -200,12 +200,12 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// Yep, keep track of the running total payout
 			totalPayout += payout
 
-			// Set up an ScTransfer proxy that transfers the correct amount of iotas.
+			// Set up an ScTransfer proxy that transfers the correct amount of tokens.
 			// Note that ScTransfer wraps an ScMutableMap of token color/amount combinations
 			// in a simpler to use interface. The constructor we use here creates and initializes
 			// a single token color transfer in a single statement. The actual color and amount
 			// values passed in will be stored in a new map on the host.
-			transfers := wasmlib.NewScTransferIotas(payout)
+			transfers := wasmlib.NewScTransferBaseTokens(payout)
 
 			// Perform the actual transfer of tokens from the smart contract to the address
 			// of the winner. The transfer_to_address() method receives the address value and
@@ -223,7 +223,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	remainder := totalBetAmount - totalPayout
 	if remainder != 0 {
 		// We have a remainder. First create a transfer for the remainder.
-		transfers := wasmlib.NewScTransferIotas(remainder)
+		transfers := wasmlib.NewScTransferBaseTokens(remainder)
 
 		// Send the remainder to the contract owner.
 		ctx.Send(f.State.Owner().Value().Address(), transfers)
@@ -234,7 +234,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	f.Events.Stop()
 }
 
-func funcForceReset(ctx wasmlib.ScFuncContext, f *ForceResetContext) {
+func funcForceReset(_ wasmlib.ScFuncContext, f *ForceResetContext) {
 	// Get the 'bets' array in state storage.
 	bets := f.State.Bets()
 
@@ -261,7 +261,7 @@ func funcPlayPeriod(ctx wasmlib.ScFuncContext, f *PlayPeriodContext) {
 	f.State.PlayPeriod().SetValue(playPeriod)
 }
 
-func viewLastWinningNumber(ctx wasmlib.ScViewContext, f *LastWinningNumberContext) {
+func viewLastWinningNumber(_ wasmlib.ScViewContext, f *LastWinningNumberContext) {
 	// Get the 'lastWinningNumber' int64 value from state storage.
 	lastWinningNumber := f.State.LastWinningNumber().Value()
 
@@ -269,7 +269,7 @@ func viewLastWinningNumber(ctx wasmlib.ScViewContext, f *LastWinningNumberContex
 	f.Results.LastWinningNumber().SetValue(lastWinningNumber)
 }
 
-func viewRoundNumber(ctx wasmlib.ScViewContext, f *RoundNumberContext) {
+func viewRoundNumber(_ wasmlib.ScViewContext, f *RoundNumberContext) {
 	// Get the 'roundNumber' int64 value from state storage.
 	roundNumber := f.State.RoundNumber().Value()
 
@@ -277,7 +277,7 @@ func viewRoundNumber(ctx wasmlib.ScViewContext, f *RoundNumberContext) {
 	f.Results.RoundNumber().SetValue(roundNumber)
 }
 
-func viewRoundStatus(ctx wasmlib.ScViewContext, f *RoundStatusContext) {
+func viewRoundStatus(_ wasmlib.ScViewContext, f *RoundStatusContext) {
 	// Get the 'roundStatus' int16 value from state storage.
 	roundStatus := f.State.RoundStatus().Value()
 
@@ -285,7 +285,7 @@ func viewRoundStatus(ctx wasmlib.ScViewContext, f *RoundStatusContext) {
 	f.Results.RoundStatus().SetValue(roundStatus)
 }
 
-func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
+func viewRoundStartedAt(_ wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	// Get the 'roundStartedAt' int32 value from state storage.
 	roundStartedAt := f.State.RoundStartedAt().Value()
 
@@ -293,7 +293,7 @@ func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
 	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }
 
-func funcForcePayout(ctx wasmlib.ScFuncContext, f *ForcePayoutContext) {
+func funcForcePayout(ctx wasmlib.ScFuncContext, _ *ForcePayoutContext) {
 	ScFuncs.PayWinners(ctx).Func.Call()
 }
 

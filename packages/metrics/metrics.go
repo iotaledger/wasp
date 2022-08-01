@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+const ReadHeaderTimeout = time.Millisecond * 500
 
 type Metrics struct {
 	server                  *http.Server
@@ -34,7 +36,7 @@ type Metrics struct {
 	nodeconnMetrics         nodeconnmetrics.NodeConnectionMetrics
 }
 
-func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
+func (m *Metrics) NewChainMetrics(chainID *isc.ChainID) ChainMetrics {
 	if m == nil {
 		return DefaultChainMetrics()
 	}
@@ -65,7 +67,7 @@ func (m *Metrics) Start(addr string) {
 			return nil
 		})
 		m.log.Infof("Prometheus metrics accessible at: %s", addr)
-		m.server = &http.Server{Addr: addr, Handler: e}
+		m.server = &http.Server{Addr: addr, Handler: e, ReadHeaderTimeout: ReadHeaderTimeout}
 		m.registerMetrics()
 		if err := m.server.ListenAndServe(); err != nil {
 			m.log.Error("Failed to start metrics server", err)

@@ -1,5 +1,5 @@
 ---
-description: Whatever happens during the execution of a smart contract's full entry point, processing of the request always results in the state transition.  The VM context catches exceptions (panics) in the program. Its consequences are recorded in the state of the chain during the fallback processing.
+description: What happens when a smart contract invocation fails?
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - testing
@@ -11,60 +11,41 @@ keywords:
 ---
 # Error Handling
 
-:::note
-
-The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
-
-:::
-
-The following test posts a request to the `example1` smart contract without
-the expected parameter `paramString`. The
-statement `ctx.require(par.exists(), "string parameter not found");` makes
-the smart contract panic if the condition is not satisfied.
+The following test posts a request to the `solotutorial` smart contract without the expected parameter `"str"`, causing the smart contract call to panic:
 
 ```go
-func TestTutorial4(t *testing.T) {
-	env := solo.New(t, false, false, seed)
-
-	chain := env.NewChain(nil, "ex4")
-	// deploy the contract on chain
-	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
+func TestTutorialInvokeSCError(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	chain := env.NewChain(nil, "ch1")
+	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 
-	// call contract incorrectly (omit 'paramString')
-	req := solo.NewCallParams("example1", "storeString").WithIotas(1)
+	// missing the required parameter "str"
+	req := solo.NewCallParams("solotutorial", "storeString").
+		WithMaxAffordableGasBudget()
+
 	_, err = chain.PostRequestSync(req, nil)
+	t.Log(err)
 	require.Error(t, err)
 }
 ```
 
-The fragments in the output of the test:
+The `t.Log(err)` line will produce the following output:
 
 ```log
-37:34.189474700	PANIC	TestTutorial4.ex4	vmcontext/log.go:12	string parameter not found
-
-37:34.192828900	INFO	TestTutorial4.ex4	solo/run.go:148	REQ: 'tx/[0]9r5zoeusdwTcWkDTEMYjeqNj8reiUsLiHF81vExPrvNW: 'panic in VM: string parameter not found''
-``` 
-
-It shows that the panic indeed occurred. The test passes because the resulting
-error was expected.
-
-The log record is a printed receipt of the request. It is stored on the chain for each request processed.
-
-```log
-37:34.192828900	INFO	TestTutorial4.ex4	solo/run.go:148	REQ: 'tx/[0]9r5zoeusdwTcWkDTEMYjeqNj8reiUsLiHF81vExPrvNW: 'panic in VM: string parameter not found''
+tutorial_test.go:94: WASM: panic in VM: missing mandatory str
 ```
 
-Note that this test ends with the state `#4`, although the last
-request to the smart contract failed. This is important: **whatever happens
-during the execution of a smart contract's full entry point, processing of the 
-request always results in the state transition**.
+This shows that the request resulted in a panic.
+The Solo test passes because of the `require.Error(t, err)` line.
 
-The VM context catches exceptions (panics) in the program. Its consequences are
-recorded in the state of the chain during the fallback processing, no matter if
-the panic was triggered by the logic of the smart contract or whether it was 
-triggered by the sandbox run-time code.
+Note that this test still ends with the state `#4`, although the last
+request to the smart contract failed:
 
-In the case of `example1` the error event was recorded in the immutable record
-log of the chain, aka `receipt`, but the data state of the smart contract wasn't modified. In
-other cases, the fallback actions may be more complex.
+```log
+20:09.974258867	INFO	TestTutorialInvokeSCError.ch1	solo/run.go:156	state transition --> #4. Requests in the block: 1. Outputs: 1
+```
+
+This shows that a chain block is always generated, regardless of whether the smart contract call succeeds or not. The result of the request is stored in the chain's `blocklog` in the form of a receipt. In fact, the received Go error `err` in the test above is just generated from the request receipt.
+
+If a panic occurs during a smart contract call, it is recovered by the VM context, and the request is marked as failed. Any state changes made prior to the panic are rolled back.

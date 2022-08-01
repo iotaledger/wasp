@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -64,7 +64,7 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 		return reqID, err
 	}
 	sc.nonce++
-	req := iscp.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, sc.nonce)
+	req := isc.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, sc.nonce)
 	iscpAllowance := sc.cvt.IscpAllowance(allowance)
 	req.WithAllowance(iscpAllowance)
 	signed := req.Sign(keyPair)

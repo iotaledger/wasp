@@ -9,7 +9,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -32,9 +32,9 @@ func ValueFromString(vtype, s string) []byte {
 		if prefix != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
-		return iscp.BytesFromAddress(addr)
+		return isc.BytesFromAddress(addr)
 	case "agentid":
-		agentid, err := iscp.NewAgentIDFromString(s)
+		agentid, err := isc.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
 	case "bool":
@@ -46,7 +46,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return b
 	case "chainid":
-		chainid, err := iscp.ChainIDFromString(s)
+		chainid, err := isc.ChainIDFromString(s)
 		log.Check(err)
 		return chainid.Bytes()
 	case "file":
@@ -56,7 +56,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return hash.Bytes()
 	case "hname":
-		hn, err := iscp.HnameFromString(s)
+		hn, err := isc.HnameFromString(s)
 		log.Check(err)
 		return hn.Bytes()
 	case "int8":
@@ -82,7 +82,7 @@ func ValueFromString(vtype, s string) []byte {
 		}
 		return n.Bytes()
 	case "requestid":
-		rid, err := iscp.RequestIDFromString(s)
+		rid, err := isc.RequestIDFromString(s)
 		log.Check(err)
 		return rid.Bytes()
 	case "string":
@@ -103,6 +103,11 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseUint(s, 10, 64)
 		log.Check(err)
 		return codec.EncodeUint64(n)
+	case "dict":
+		d := dict.Dict{}
+		err := d.UnmarshalJSON([]byte(s))
+		log.Check(err)
+		return codec.EncodeDict(d)
 	}
 	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
@@ -184,7 +189,14 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
+	case "dict":
+		d, err := codec.DecodeDict(v)
+		log.Check(err)
+		s, err := d.MarshalJSON()
+		log.Check(err)
+		return string(s)
 	}
+
 	log.Fatalf("ValueToString: No handler for type %s", vtype)
 	return ""
 }

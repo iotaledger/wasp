@@ -128,7 +128,7 @@ func funcBurn(ctx wasmlib.ScFuncContext, f *BurnContext) {
 }
 
 // Initializes the contract by setting a name and a symbol to the token collection.
-func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+func funcInit(_ wasmlib.ScFuncContext, f *InitContext) {
 	name := f.Params.Name().Value()
 	symbol := f.Params.Symbol().Value()
 
@@ -197,7 +197,7 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 ///////////////////////////  SC VIEWS  ////////////////////////////
 
 // Returns the number of tokens in owner's account if the owner exists.
-func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
+func viewBalanceOf(_ wasmlib.ScViewContext, f *BalanceOfContext) {
 	owner := f.Params.Owner().Value()
 	balance := f.State.Balances().GetUint64(owner)
 	if balance.Exists() {
@@ -206,7 +206,7 @@ func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
 }
 
 // Returns the approved account for tokenID token if there is one.
-func viewGetApproved(ctx wasmlib.ScViewContext, f *GetApprovedContext) {
+func viewGetApproved(_ wasmlib.ScViewContext, f *GetApprovedContext) {
 	tokenID := f.Params.TokenID().Value()
 	approved := f.State.ApprovedAccounts().GetAgentID(tokenID)
 	if approved.Exists() {
@@ -215,7 +215,7 @@ func viewGetApproved(ctx wasmlib.ScViewContext, f *GetApprovedContext) {
 }
 
 // Returns if the operator is allowed to manage all the assets of owner.
-func viewIsApprovedForAll(ctx wasmlib.ScViewContext, f *IsApprovedForAllContext) {
+func viewIsApprovedForAll(_ wasmlib.ScViewContext, f *IsApprovedForAllContext) {
 	owner := f.Params.Owner().Value()
 	operator := f.Params.Operator().Value()
 	operators := f.State.ApprovedOperators().GetOperators(owner)
@@ -226,12 +226,12 @@ func viewIsApprovedForAll(ctx wasmlib.ScViewContext, f *IsApprovedForAllContext)
 }
 
 // Returns the token collection name.
-func viewName(ctx wasmlib.ScViewContext, f *NameContext) {
+func viewName(_ wasmlib.ScViewContext, f *NameContext) {
 	f.Results.Name().SetValue(f.State.Name().Value())
 }
 
 // Returns the owner of the tokenID token if the token exists.
-func viewOwnerOf(ctx wasmlib.ScViewContext, f *OwnerOfContext) {
+func viewOwnerOf(_ wasmlib.ScViewContext, f *OwnerOfContext) {
 	tokenID := f.Params.TokenID().Value()
 	owner := f.State.Owners().GetAgentID(tokenID)
 	if owner.Exists() {
@@ -240,12 +240,12 @@ func viewOwnerOf(ctx wasmlib.ScViewContext, f *OwnerOfContext) {
 }
 
 // Returns the token collection symbol.
-func viewSymbol(ctx wasmlib.ScViewContext, f *SymbolContext) {
+func viewSymbol(_ wasmlib.ScViewContext, f *SymbolContext) {
 	f.Results.Symbol().SetValue(f.State.Symbol().Value())
 }
 
 // Returns the Uniform Resource Identifier (URI) for tokenID token if the token exists.
-func viewTokenURI(ctx wasmlib.ScViewContext, f *TokenURIContext) {
+func viewTokenURI(_ wasmlib.ScViewContext, f *TokenURIContext) {
 	tokenID := f.Params.TokenID()
 	if tokenID.Exists() {
 		tokenURI := baseURI + tokenID.String()

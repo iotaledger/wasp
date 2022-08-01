@@ -58,7 +58,7 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
 }
 
 export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
-    const provided = ctx.allowance().iotas();
+    const provided = ctx.allowance().baseTokens();
     let dummy = sc.ScFuncs.estimateMinDust(ctx);
     const required = ctx.estimateDust(dummy.func);
     ctx.require(provided >= required, "not enough funds");
@@ -151,20 +151,20 @@ export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void 
 }
 
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().baseTokens();
     const address = ctx.caller().address();
-    let iotasToTransfer: u64 = 1_000_000;
-    const transfer = wasmlib.ScTransfer.iotas(iotasToTransfer);
-    for (; iotas >= iotasToTransfer; iotas -= iotasToTransfer) {
+    let tokensToTransfer: u64 = 1_000_000;
+    const transfer = wasmlib.ScTransfer.baseTokens(tokensToTransfer);
+    for (; tokens >= tokensToTransfer; tokens -= tokensToTransfer) {
         ctx.transferAllowed(ctx.accountID(), transfer, false);
         ctx.send(address, transfer);
     }
 }
 
 export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().baseTokens();
     const address = ctx.caller().address();
-    let transfer = wasmlib.ScTransfer.iotas(iotas);
+    let transfer = wasmlib.ScTransfer.baseTokens(tokens);
     ctx.transferAllowed(ctx.accountID(), transfer, false);
     const tokenIDs = ctx.allowance().tokenIDs();
     const one = wasmtypes.ScBigInt.fromUint64(1);

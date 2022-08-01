@@ -5,7 +5,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -16,38 +16,38 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	var ret iscp.ChainID
+func (vmctx *VMContext) ChainID() *isc.ChainID {
+	var ret isc.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// origin
-		ret = iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
+		ret = isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
 	} else {
-		ret = iscp.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
+		ret = isc.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
 	}
 	return &ret
 }
 
-func (vmctx *VMContext) ChainOwnerID() iscp.AgentID {
+func (vmctx *VMContext) ChainOwnerID() isc.AgentID {
 	return vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) AgentID() iscp.AgentID {
-	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) AgentID() isc.AgentID {
+	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
+func (vmctx *VMContext) CurrentContractHname() isc.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) Params() *iscp.Params {
+func (vmctx *VMContext) Params() *isc.Params {
 	return &vmctx.getCallContext().params
 }
 
-func (vmctx *VMContext) MyAgentID() iscp.AgentID {
-	return iscp.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) MyAgentID() isc.AgentID {
+	return isc.NewContractAgentID(vmctx.ChainID(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) Caller() iscp.AgentID {
+func (vmctx *VMContext) Caller() isc.AgentID {
 	return vmctx.getCallContext().caller
 }
 
@@ -59,32 +59,32 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-func (vmctx *VMContext) Request() iscp.Calldata {
+func (vmctx *VMContext) Request() isc.Calldata {
 	return vmctx.req
 }
 
-func (vmctx *VMContext) AccountID() iscp.AgentID {
+func (vmctx *VMContext) AccountID() isc.AgentID {
 	hname := vmctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return vmctx.ChainID().CommonAccount()
 	}
-	return iscp.NewContractAgentID(vmctx.ChainID(), hname)
+	return isc.NewContractAgentID(vmctx.ChainID(), hname)
 }
 
-func (vmctx *VMContext) AllowanceAvailable() *iscp.Allowance {
+func (vmctx *VMContext) AllowanceAvailable() *isc.Allowance {
 	allowance := vmctx.getCallContext().allowanceAvailable
 	if allowance == nil {
-		return iscp.NewEmptyAllowance()
+		return isc.NewEmptyAllowance()
 	}
 	return allowance.Clone()
 }
 
-func (vmctx *VMContext) isOnChainAccount(agentID iscp.AgentID) bool {
+func (vmctx *VMContext) isOnChainAccount(agentID isc.AgentID) bool {
 	return vmctx.ChainID().IsSameChain(agentID)
 }
 
-func (vmctx *VMContext) IsCoreAccount(agentID iscp.AgentID) bool {
-	contract, ok := agentID.(*iscp.ContractAgentID)
+func (vmctx *VMContext) IsCoreAccount(agentID isc.AgentID) bool {
+	contract, ok := agentID.(*isc.ContractAgentID)
 	if !ok {
 		return false
 	}
@@ -93,7 +93,7 @@ func (vmctx *VMContext) IsCoreAccount(agentID iscp.AgentID) bool {
 
 // targetAccountExists check if there's an account with non-zero balance,
 // or it is an existing smart contract
-func (vmctx *VMContext) targetAccountExists(agentID iscp.AgentID) bool {
+func (vmctx *VMContext) targetAccountExists(agentID isc.AgentID) bool {
 	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
 		return true
 	}
@@ -108,21 +108,21 @@ func (vmctx *VMContext) targetAccountExists(agentID iscp.AgentID) bool {
 	if !vmctx.isOnChainAccount(agentID) {
 		return false
 	}
-	hname, _ := iscp.HnameFromAgentID(agentID)
+	hname, _ := isc.HnameFromAgentID(agentID)
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		accountExists = root.ContractExists(s, hname)
 	})
 	return accountExists
 }
 
-func (vmctx *VMContext) spendAllowedBudget(toSpend *iscp.Allowance) {
+func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Allowance) {
 	if !vmctx.getCallContext().allowanceAvailable.SpendFromBudget(toSpend) {
 		panic(accounts.ErrNotEnoughAllowance)
 	}
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccount bool, transfer ...*iscp.Allowance) *iscp.Allowance {
+func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, forceOpenAccount bool, transfer ...*isc.Allowance) *isc.Allowance {
 	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
@@ -132,7 +132,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 		panic(vm.ErrTransferTargetAccountDoesNotExists)
 	}
 
-	var toMove *iscp.Allowance
+	var toMove *isc.Allowance
 	if len(transfer) == 0 {
 		toMove = vmctx.AllowanceAvailable()
 	} else {
@@ -150,7 +150,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target iscp.AgentID, forceOpenAccou
 	return vmctx.AllowanceAvailable()
 }
 
-func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
+func (vmctx *VMContext) StateAnchor() *isc.StateAnchor {
 	var nilAliasID iotago.AliasID
 	blockset := vmctx.task.AnchorOutput.FeatureSet()
 	senderBlock := blockset.SenderFeature()
@@ -158,7 +158,7 @@ func (vmctx *VMContext) StateAnchor() *iscp.StateAnchor {
 	if senderBlock != nil {
 		sender = senderBlock.Address
 	}
-	return &iscp.StateAnchor{
+	return &isc.StateAnchor{
 		ChainID:              *vmctx.ChainID(),
 		Sender:               sender,
 		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
@@ -185,7 +185,7 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	vmctx.Call(root.Contract.Hname(), root.FuncDeployContract.Hname(), par, nil)
 }
 
-func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplate {
+func (vmctx *VMContext) RegisterError(messageFormat string) *isc.VMErrorTemplate {
 	vmctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 
 	params := dict.New()
@@ -196,5 +196,5 @@ func (vmctx *VMContext) RegisterError(messageFormat string) *iscp.VMErrorTemplat
 
 	vmctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 
-	return iscp.NewVMErrorTemplate(errorCode, messageFormat)
+	return isc.NewVMErrorTemplate(errorCode, messageFormat)
 }

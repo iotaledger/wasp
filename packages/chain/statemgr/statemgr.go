@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -32,7 +32,7 @@ type stateManager struct {
 	nodeConn                    chain.ChainNodeConnection
 	pullStateRetryTime          time.Time
 	solidState                  state.VirtualStateAccess
-	stateOutput                 *iscp.AliasOutputWithID
+	stateOutput                 *isc.AliasOutputWithID
 	stateOutputTimestamp        time.Time
 	currentSyncData             atomic.Value
 	notifiedAnchorOutputID      *iotago.UTXOInput
@@ -215,7 +215,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-eventAliasOutputCh:
 			if ok {
-				sm.handleAliasOutput(msg.(*iscp.AliasOutputWithID))
+				sm.handleAliasOutput(msg.(*isc.AliasOutputWithID))
 			} else {
 				eventAliasOutputCh = nil
 			}

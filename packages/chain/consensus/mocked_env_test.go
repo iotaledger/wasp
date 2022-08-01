@@ -13,7 +13,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -38,9 +38,9 @@ type MockedEnv struct {
 	NetworkProviders []peering.NetworkProvider
 	NetworkBehaviour *testutil.PeeringNetDynamic
 	DKShares         []tcrypto.DKShare
-	ChainID          *iscp.ChainID
+	ChainID          *isc.ChainID
 	MockedACS        chain.AsynchronousCommonSubsetRunner
-	InitStateOutput  *iscp.AliasOutputWithID
+	InitStateOutput  *isc.AliasOutputWithID
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) *MockedEnv {
@@ -189,18 +189,18 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	reqs := make([]iscp.OffLedgerRequest, n)
+	reqs := make([]isc.OffLedgerRequest, n)
 	for i := 0; i < n; i++ {
 		d := dict.New()
 		ii := uint16(i)
 		d.Set("c", []byte{byte(ii % 256), byte(ii / 256)})
-		reqs[i] = iscp.NewOffLedgerRequest(env.ChainID, iscp.Hn("dummy"), iscp.Hn("dummy"), d, rand.Uint64()).
+		reqs[i] = isc.NewOffLedgerRequest(env.ChainID, isc.Hn("dummy"), isc.Hn("dummy"), d, rand.Uint64()).
 			Sign(cryptolib.NewKeyPair())
 	}
 	rnd := len(randomize) > 0 && randomize[0]
 	for _, n := range env.Nodes {
 		for _, r := range reqs {
-			go func(node *mockedNode, req iscp.OffLedgerRequest) {
+			go func(node *mockedNode, req isc.OffLedgerRequest) {
 				if rnd {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 				}

@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -29,7 +29,7 @@ func WrapMustOptimisticVirtualStateAccess(state VirtualStateAccess, baseline cor
 	}
 }
 
-func (s *mustOptimisticVirtualStateAccess) ChainID() *iscp.ChainID {
+func (s *mustOptimisticVirtualStateAccess) ChainID() *isc.ChainID {
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 

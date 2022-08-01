@@ -1,7 +1,7 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type emptyNodeConnectionMetrics struct {
@@ -20,15 +20,15 @@ func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 
 func (encmT *emptyNodeConnectionMetrics) RegisterMetrics() {}
 
-func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {
 	return newEmptyNodeConnectionMessagesMetrics()
 }
 
-func (encmT *emptyNodeConnectionMetrics) SetRegistered(*iscp.ChainID)   {}
-func (encmT *emptyNodeConnectionMetrics) SetUnregistered(*iscp.ChainID) {}
+func (encmT *emptyNodeConnectionMetrics) SetRegistered(*isc.ChainID)   {}
+func (encmT *emptyNodeConnectionMetrics) SetUnregistered(*isc.ChainID) {}
 
-func (encmT *emptyNodeConnectionMetrics) GetRegistered() []*iscp.ChainID {
-	return []*iscp.ChainID{}
+func (encmT *emptyNodeConnectionMetrics) GetRegistered() []*isc.ChainID {
+	return []*isc.ChainID{}
 }
 
 func (encmT *emptyNodeConnectionMetrics) GetInMilestone() NodeConnectionMessageMetrics {

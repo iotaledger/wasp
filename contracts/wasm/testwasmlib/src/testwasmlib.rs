@@ -115,7 +115,7 @@ pub fn func_take_allowance(ctx: &ScFuncContext, _f: &TakeAllowanceContext) {
 }
 
 pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().iotas());
+    f.results.tokens().set_value(ctx.balances().base_tokens());
 }
 
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
@@ -160,8 +160,8 @@ pub fn view_get_random(_ctx: &ScViewContext, f: &GetRandomContext) {
     f.results.random().set_value(f.state.random().value());
 }
 
-pub fn view_iota_balance(ctx: &ScViewContext, f: &IotaBalanceContext) {
-    f.results.iotas().set_value(ctx.balances().iotas());
+pub fn view_token_balance(ctx: &ScViewContext, f: &TokenBalanceContext) {
+    f.results.tokens().set_value(ctx.balances().base_tokens());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\
@@ -1000,22 +1000,20 @@ pub fn view_check_int_and_uint(ctx: &ScViewContext, _f: &CheckIntAndUintContext)
 }
 
 pub fn view_check_bool(ctx: &ScViewContext, _f: &CheckBoolContext) {
-    let mut bool_data = true;
     ctx.require(
-        bool_data == bool_from_bytes(&bool_to_bytes(bool_data)),
+        bool_from_bytes(&bool_to_bytes(true)),
         "bytes conversion failed",
     );
     ctx.require(
-        bool_data == bool_from_string(&bool_to_string(bool_data)),
+        bool_from_string(&bool_to_string(true)),
         "string conversion failed",
     );
-    bool_data = false;
     ctx.require(
-        bool_data == bool_from_bytes(&bool_to_bytes(bool_data)),
+        !bool_from_bytes(&bool_to_bytes(false)),
         "bytes conversion failed",
     );
     ctx.require(
-        bool_data == bool_from_string(&bool_to_string(bool_data)),
+        !bool_from_string(&bool_to_string(false)),
         "string conversion failed",
     );
 }

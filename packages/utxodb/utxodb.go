@@ -11,16 +11,16 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
 const (
-	DefaultIOTASupply = tpkg.TestTokenSupply
+	DefaultBaseTokenSupply = tpkg.TestTokenSupply
 
-	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * iscp.Mi
+	// FundsFromFaucetAmount is how many base tokens are returned from the faucet.
+	FundsFromFaucetAmount = 1000 * isc.Mi
 )
 
 var (
@@ -54,7 +54,7 @@ func DefaultInitParams() *InitParams {
 	return &InitParams{
 		initialTime: time.Unix(1, 0),
 		timestep:    1 * time.Millisecond,
-		supply:      DefaultIOTASupply,
+		supply:      DefaultBaseTokenSupply,
 	}
 }
 
@@ -97,14 +97,14 @@ func (u *UtxoDB) genesisInit() {
 		AddInput(&builder.TxInput{
 			UnlockTarget: genesisAddress,
 			Input: &iotago.BasicOutput{
-				Amount: DefaultIOTASupply,
+				Amount: DefaultBaseTokenSupply,
 				Conditions: iotago.UnlockConditions{
 					&iotago.AddressUnlockCondition{Address: genesisAddress},
 				},
 			},
 		}).
 		AddOutput(&iotago.BasicOutput{
-			Amount: DefaultIOTASupply,
+			Amount: DefaultBaseTokenSupply,
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
@@ -217,7 +217,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 	return tx
 }
 
-// GetFundsFromFaucet sends FundsFromFaucetAmount IOTA tokens from the genesis address to the given address.
+// GetFundsFromFaucet sends FundsFromFaucetAmount base tokens from the genesis address to the given address.
 func (u *UtxoDB) GetFundsFromFaucet(target iotago.Address, amount ...uint64) (*iotago.Transaction, error) {
 	tx := u.mustGetFundsFromFaucetTx(target, amount...)
 	return tx, u.AddToLedger(tx)
@@ -339,8 +339,8 @@ func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotag
 	return outs, ids
 }
 
-// GetAddressBalanceIotas returns the total amount of iotas owned by the address
-func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
+// GetAddressBalanceBaseTokens returns the total amount of base token owned by the address
+func (u *UtxoDB) GetAddressBalanceBaseTokens(addr iotago.Address) uint64 {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -351,16 +351,16 @@ func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
 	return ret
 }
 
-// GetAddressBalances returns the total amount of iotas and tokens owned by the address
-func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+// GetAddressBalances returns the total amount of base tokens and tokens owned by the address
+func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *isc.FungibleTokens {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	iotas := uint64(0)
+	baseTokens := uint64(0)
 	tokens := iotago.NativeTokenSum{}
 	for _, out := range u.getUnspentOutputs(addr) {
-		iotas += out.Deposit()
-		tset, err := out.NativeTokenSet().Set()
+		baseTokens += out.Deposit()
+		tset, err := out.NativeTokenList().Set()
 		if err != nil {
 			panic(err)
 		}
@@ -372,7 +372,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 			tokens[token.ID] = new(big.Int).Add(val, token.Amount)
 		}
 	}
-	return iscp.FungibleTokensFromNativeTokenSum(iotas, tokens)
+	return isc.FungibleTokensFromNativeTokenSum(baseTokens, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address

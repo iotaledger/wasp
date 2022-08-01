@@ -105,7 +105,7 @@ func funcTransferFrom(ctx wasmlib.ScFuncContext, f *TransferFromContext) {
 // - PARAM_DELEGATION: agentID
 // Output:
 // - PARAM_AMOUNT: i64
-func viewAllowance(ctx wasmlib.ScViewContext, f *AllowanceContext) {
+func viewAllowance(_ wasmlib.ScViewContext, f *AllowanceContext) {
 	// all allowances of the address 'owner' are stored in the map of the same name
 	allowances := f.State.AllAllowances().GetAllowancesForAgent(f.Params.Account().Value())
 	allow := allowances.GetUint64(f.Params.Delegation().Value()).Value()
@@ -115,7 +115,7 @@ func viewAllowance(ctx wasmlib.ScViewContext, f *AllowanceContext) {
 // the view returns balance of the token held in the account
 // Input:
 // - PARAM_ACCOUNT: agentID
-func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
+func viewBalanceOf(_ wasmlib.ScViewContext, f *BalanceOfContext) {
 	balances := f.State.Balances()
 	balance := balances.GetUint64(f.Params.Account().Value())
 	f.Results.Amount().SetValue(balance.Value())
@@ -124,6 +124,6 @@ func viewBalanceOf(ctx wasmlib.ScViewContext, f *BalanceOfContext) {
 // the view returns total supply set when creating the contract (a constant).
 // Output:
 // - PARAM_SUPPLY: i64
-func viewTotalSupply(ctx wasmlib.ScViewContext, f *TotalSupplyContext) {
+func viewTotalSupply(_ wasmlib.ScViewContext, f *TotalSupplyContext) {
 	f.Results.Supply().SetValue(f.State.Supply().Value())
 }

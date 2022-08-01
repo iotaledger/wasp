@@ -122,7 +122,7 @@ func handlePeeringTrustedPut(c echo.Context) error {
 	if req.PubKey != pubKeyStr {
 		return httperrors.BadRequest("Pub keys do not match.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromString(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -140,7 +140,7 @@ func handlePeeringTrustedPost(c echo.Context) error {
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromString(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -155,7 +155,7 @@ func handlePeeringTrustedGet(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromBase58String(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -175,7 +175,7 @@ func handlePeeringTrustedDelete(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromBase58String(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

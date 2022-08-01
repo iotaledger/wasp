@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type WasmProcessor struct {
@@ -22,12 +22,12 @@ type WasmProcessor struct {
 	vm               WasmVM
 }
 
-var _ iscp.VMProcessor = new(WasmProcessor)
+var _ isc.VMProcessor = new(WasmProcessor)
 
 var GoWasmVM func() WasmVM
 
 // GetProcessor creates a new Wasm VM processor.
-func GetProcessor(wasmBytes []byte, log *logger.Logger) (iscp.VMProcessor, error) {
+func GetProcessor(wasmBytes []byte, log *logger.Logger) (isc.VMProcessor, error) {
 	proc := &WasmProcessor{
 		contexts:   make(map[int32]*WasmContext),
 		funcTable:  NewWasmFuncTable(),
@@ -79,7 +79,7 @@ func (proc *WasmProcessor) GetCurrentContext() *WasmContext {
 	return proc.contexts[proc.currentContextID]
 }
 
-func (proc *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
+func (proc *WasmProcessor) GetDefaultEntryPoint() isc.VMProcessorEntryPoint {
 	return NewWasmContext(proc, FuncDefault)
 }
 
@@ -87,9 +87,9 @@ func (proc *WasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (proc *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
+func (proc *WasmProcessor) GetEntryPoint(code isc.Hname) (isc.VMProcessorEntryPoint, bool) {
 	function := proc.funcTable.FunctionFromCode(uint32(code))
-	if function == "" && code != iscp.EntryPointInit {
+	if function == "" && code != isc.EntryPointInit {
 		return nil, false
 	}
 	return NewWasmContext(proc, function), true

@@ -84,7 +84,7 @@ export function funcTakeAllowance(ctx: wasmlib.ScFuncContext, f: sc.TakeAllowanc
 }
 
 export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().iotas());
+    f.results.tokens().setValue(ctx.balances().baseTokens());
 }
 
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
@@ -120,8 +120,8 @@ export function viewGetRandom(ctx: wasmlib.ScViewContext, f: sc.GetRandomContext
     f.results.random().setValue(f.state.random().value());
 }
 
-export function viewIotaBalance(ctx: wasmlib.ScViewContext, f: sc.IotaBalanceContext): void {
-    f.results.iotas().setValue(ctx.balances().iotas());
+export function viewTokenBalance(ctx: wasmlib.ScViewContext, f: sc.TokenBalanceContext): void {
+    f.results.tokens().setValue(ctx.balances().baseTokens());
 }
 
 //////////////////// array of StringArray \\\\\\\\\\\\\\\\\\\\
@@ -638,12 +638,10 @@ export function viewCheckIntAndUint(ctx: wasmlib.ScViewContext, f: sc.CheckIntAn
 }
 
 export function viewCheckBool(ctx: wasmlib.ScViewContext, f: sc.CheckBoolContext): void {
-    let boolData = true;
-	ctx.require(boolData == wasmtypes.boolFromBytes(wasmtypes.boolToBytes(boolData)), "bytes conversion failed");
-	ctx.require(boolData == wasmtypes.boolFromString(wasmtypes.boolToString(boolData)), "string conversion failed");
-	boolData = false;
-	ctx.require(boolData == wasmtypes.boolFromBytes(wasmtypes.boolToBytes(boolData)), "bytes conversion failed");
-	ctx.require(boolData == wasmtypes.boolFromString(wasmtypes.boolToString(boolData)), "string conversion failed");
+	ctx.require(wasmtypes.boolFromBytes(wasmtypes.boolToBytes(true)), "bytes conversion failed");
+	ctx.require(wasmtypes.boolFromString(wasmtypes.boolToString(true)), "string conversion failed");
+	ctx.require(!wasmtypes.boolFromBytes(wasmtypes.boolToBytes(false)), "bytes conversion failed");
+	ctx.require(!wasmtypes.boolFromString(wasmtypes.boolToString(false)), "string conversion failed");
 }
 
 export function viewCheckBytes(ctx: wasmlib.ScViewContext, f: sc.CheckBytesContext): void {

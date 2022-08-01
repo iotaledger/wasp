@@ -252,7 +252,7 @@ export function subscribeToRouletteEvents(): void {
     const winners = get(round).winners;
 
     if (winners > 0) {
-      log(LogTag.SmartContract, `Distributed the iotas to  ${winners === 1 ? '1 winner.' : `${winners} winners.`}`);
+      log(LogTag.SmartContract, `Distributed the baseTokens to  ${winners === 1 ? '1 winner.' : `${winners} winners.`}`);
     }
 
     resetRound();
@@ -300,7 +300,7 @@ export function subscribeToRouletteEvents(): void {
     if (bet.better === get(address) || get(addressesHistory).includes(bet.better)) {
       showNotification({
         type: Notification.Win,
-        message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
+        message: `Congratulations! You just won the round. You received ${bet.amount} baseTokens.`,
         timeout: DEFAULT_AUTODISMISS_TOAST_TIME,
       });
       showWinnerAnimation();

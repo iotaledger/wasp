@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +20,7 @@ func TestTypesFull(t *testing.T) {
 		f.Params.ChainID().SetValue(ctx.CurrentChainID())
 		f.Params.ContractID().SetValue(ctx.AccountID())
 		f.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
-		f.Params.Hname().SetValue(ctx.Cvt.ScHname(iscp.Hn("Hname")))
+		f.Params.Hname().SetValue(ctx.Cvt.ScHname(isc.Hn("Hname")))
 		f.Params.HnameZero().SetValue(0)
 		f.Params.Int64().SetValue(42)
 		f.Params.Int64Zero().SetValue(0)
@@ -42,7 +42,7 @@ func TestTypesView(t *testing.T) {
 		v.Params.ChainID().SetValue(ctx.CurrentChainID())
 		v.Params.ContractID().SetValue(ctx.AccountID())
 		v.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
-		v.Params.Hname().SetValue(ctx.Cvt.ScHname(iscp.Hn("Hname")))
+		v.Params.Hname().SetValue(ctx.Cvt.ScHname(isc.Hn("Hname")))
 		v.Params.HnameZero().SetValue(0)
 		v.Params.Int64().SetValue(42)
 		v.Params.Int64Zero().SetValue(0)

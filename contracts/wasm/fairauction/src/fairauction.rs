@@ -54,7 +54,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     if margin == 0 {
         margin = 1;
     }
-    let deposit = allowance.iotas();
+    let deposit = allowance.base_tokens();
     if deposit < margin {
         ctx.panic("Insufficient deposit");
     }
@@ -79,7 +79,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
     current_auction.set_value(&auction);
 
     // take custody of deposit and NFT
-    let mut transfer = ScTransfer::iotas(deposit);
+    let mut transfer = ScTransfer::base_tokens(deposit);
     transfer.add_nft(&auction_nft);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
 
@@ -89,7 +89,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
 }
 
 pub fn func_place_bid(ctx: &ScFuncContext, f: &PlaceBidContext) {
-    let mut bid_amount = ctx.allowance().iotas();
+    let mut bid_amount = ctx.allowance().base_tokens();
     ctx.require(bid_amount > 0, "Missing bid amount");
 
     let nft = f.params.nft().value();
@@ -140,9 +140,9 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
             owner_fee = 1;
         }
         // finalizeAuction request nft was probably not confirmed yet
-        transfer_iotas(ctx, &f.state.owner().value(), owner_fee - 1);
+        transfer_tokens(ctx, &f.state.owner().value(), owner_fee - 1);
         transfer_nft(ctx, &auction.creator, &auction.nft);
-        transfer_iotas(ctx, &auction.creator, auction.deposit - owner_fee);
+        transfer_tokens(ctx, &auction.creator, auction.deposit - owner_fee);
         return;
     }
 
@@ -159,14 +159,14 @@ pub fn func_finalize_auction(ctx: &ScFuncContext, f: &FinalizeAuctionContext) {
         let loser = bidder_list.get_agent_id(i).value();
         if loser != auction.highest_bidder {
             let bid = bids.get_bid(&loser).value();
-            transfer_iotas(ctx, &loser, bid.amount);
+            transfer_tokens(ctx, &loser, bid.amount);
         }
     }
 
     // finalizeAuction request nft was probably not confirmed yet
-    transfer_iotas(ctx, &f.state.owner().value(), owner_fee - 1);
+    transfer_tokens(ctx, &f.state.owner().value(), owner_fee - 1);
     transfer_nft(ctx, &auction.highest_bidder, &auction.nft);
-    transfer_iotas(
+    transfer_tokens(
         ctx,
         &auction.creator,
         auction.deposit + auction.highest_bid - owner_fee,
@@ -207,15 +207,15 @@ pub fn view_get_auction_info(ctx: &ScViewContext, f: &GetAuctionInfoContext) {
     f.results.bidders().set_value(bidder_list.length());
 }
 
-fn transfer_iotas(ctx: &ScFuncContext, agent: &ScAgentID, amount: u64) {
+fn transfer_tokens(ctx: &ScFuncContext, agent: &ScAgentID, amount: u64) {
     if agent.is_address() {
         // send back to original Tangle address
-        ctx.send(&agent.address(), &ScTransfer::iotas(amount));
+        ctx.send(&agent.address(), &ScTransfer::base_tokens(amount));
         return;
     }
 
     // TODO not an address, deposit into account on chain
-    ctx.send(&agent.address(), &ScTransfer::iotas(amount));
+    ctx.send(&agent.address(), &ScTransfer::base_tokens(amount));
 }
 
 fn transfer_nft(ctx: &ScFuncContext, agent: &ScAgentID, nft: &ScNftID) {

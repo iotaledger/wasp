@@ -1,5 +1,5 @@
 ---
-description: The `withdraw` endpoint sends funds owned by the callee to their L1 address.
+description: The `withdraw` endpoint sends L2 funds owned by the caller to their L1 address.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - smart contracts
@@ -17,7 +17,7 @@ import TabItem from "@theme/TabItem"
 
 # How to Withdraw From a Chain
 
-The `withdraw` endpoint sends funds owned by the callee to their L1 address.
+The `withdraw` endpoint sends L2 funds owned by the caller to their L1 address.
 
 <Tabs
     defaultValue="solo"
@@ -32,7 +32,7 @@ The `withdraw` endpoint sends funds owned by the callee to their L1 address.
 ```go
 // withdraw from chain to wallet
 req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
-_, err := chain.PostRequestSync(req.WithIotas(1), wallet)
+_, err := chain.PostRequestSync(req.WithMaxAffordableGasBudget(), wallet)
 require.NoError(t, err)
 ```
 
@@ -42,7 +42,7 @@ require.NoError(t, err)
 ```go
 // withdraw from chain *chainID* to wallet
 w := coreaccounts.ScFuncs.Withdraw(ctx.Sign(wallet))
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 require.NoError(t, ctx.Err)
 ```
 
@@ -53,7 +53,7 @@ require.NoError(t, ctx.Err)
 // withdraw from chain *chainID* to current common account
 // (there is no way to specify hname for withdrawals)
 let w = coreaccounts::ScFuncs::withdraw(ctx);
-w.func.transfer_iotas(1).post_to_chain(chainID);
+w.func.transfer_base_tokens(1).post_to_chain(chainID);
 ```
 
 </TabItem>
@@ -63,7 +63,7 @@ w.func.transfer_iotas(1).post_to_chain(chainID);
 // withdraw from chain *chainID* to current common account
 // (there is no way to specify hname for withdrawals)
 w := coreaccounts.ScFuncs.Withdraw(ctx)
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 ```
 
 </TabItem>

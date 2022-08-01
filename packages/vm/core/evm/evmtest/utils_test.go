@@ -21,8 +21,8 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -74,7 +74,11 @@ type fibonacciContractInstance struct {
 	*evmContractInstance
 }
 
-type iotaCallOptions struct {
+type gasTestContractInstance struct {
+	*evmContractInstance
+}
+
+type iscCallOptions struct {
 	wallet    *cryptolib.KeyPair
 	before    func(*solo.CallParams)
 	offledger bool
@@ -109,9 +113,9 @@ func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
 	}
 }
 
-func (e *soloChainEnv) parseIotaCallOptions(opts []iotaCallOptions) iotaCallOptions {
+func (e *soloChainEnv) parseISCCallOptions(opts []iscCallOptions) iscCallOptions {
 	if len(opts) == 0 {
-		opts = []iotaCallOptions{{}}
+		opts = []iscCallOptions{{}}
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
@@ -120,8 +124,8 @@ func (e *soloChainEnv) parseIotaCallOptions(opts []iotaCallOptions) iotaCallOpti
 	return opt
 }
 
-func (e *soloChainEnv) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
-	opt := e.parseIotaCallOptions(opts)
+func (e *soloChainEnv) postRequest(opts []iscCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
+	opt := e.parseISCCallOptions(opts)
 	req := solo.NewCallParams(evm.Contract.Name, funName, params...)
 	if opt.before != nil {
 		opt.before(req)
@@ -131,7 +135,7 @@ func (e *soloChainEnv) postRequest(opts []iotaCallOptions, funName string, param
 		if err != nil {
 			return nil, fmt.Errorf("could not estimate gas: %w", e.resolveError(err))
 		}
-		req.WithGasBudget(gasBudget).AddIotas(gasFee)
+		req.WithGasBudget(gasBudget).AddBaseTokens(gasFee)
 	}
 	if opt.offledger {
 		ret, err := e.soloChain.PostRequestOffLedger(req, opt.wallet)
@@ -151,7 +155,7 @@ func (e *soloChainEnv) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if vmError, ok := err.(*iscp.UnresolvedVMError); ok {
+	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
 		resolvedErr := e.soloChain.ResolveVMError(vmError)
 		return resolvedErr.AsGoError()
 	}
@@ -192,7 +196,7 @@ func (e *soloChainEnv) getGasRatio() util.Ratio32 {
 	return ratio
 }
 
-func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iotaCallOptions) error {
+func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {
 	_, err := e.postRequest(opts, evm.FuncSetGasRatio.Name, evm.FieldGasRatio, newGasRatio)
 	return err
 }
@@ -228,8 +232,8 @@ func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTest
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
 
-func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance {
-	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
+func (e *soloChainEnv) deployStorageContract(creator *ecdsa.PrivateKey) *storageContractInstance {
+	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))}
 }
 
 func (e *soloChainEnv) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
@@ -242,6 +246,18 @@ func (e *soloChainEnv) deployLoopContract(creator *ecdsa.PrivateKey) *loopContra
 
 func (e *soloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibonacciContractInstance {
 	return &fibonacciContractInstance{e.deployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
+}
+
+func (e *soloChainEnv) deployGasTestMemoryContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestMemoryContractABI, evmtest.GasTestMemoryContractBytecode)}
+}
+
+func (e *soloChainEnv) deployGasTestStorageContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestStorageContractABI, evmtest.GasTestStorageContractBytecode)}
+}
+
+func (e *soloChainEnv) deployGasTestExecutionTimeContract(creator *ecdsa.PrivateKey) *gasTestContractInstance {
+	return &gasTestContractInstance{e.deployContract(creator, evmtest.GasTestExecutionTimeContractABI, evmtest.GasTestExecutionTimeContractBytecode)}
 }
 
 func (e *soloChainEnv) signer() types.Signer {
@@ -365,6 +381,7 @@ func (e *evmContractInstance) callFnExpectError(opts []ethCallOptions, fnName st
 	return err
 }
 
+//nolint:unparam
 func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
@@ -395,7 +412,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 	}
 }
 
-func (i *iscTestContractInstance) getChainID() *iscp.ChainID {
+func (i *iscTestContractInstance) getChainID() *isc.ChainID {
 	var v isccontract.ISCChainID
 	i.callView("getChainID", nil, &v)
 	return v.MustUnwrap()
@@ -441,6 +458,12 @@ func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, e
 
 func (f *fibonacciContractInstance) fib(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
 	return f.callFn(opts, "fib", n)
+}
+
+func (g *gasTestContractInstance) f(n uint32) (res callFnResult, err error) {
+	return g.callFn([]ethCallOptions{{
+		gasLimit: 1000000000,
+	}}, "f", n)
 }
 
 func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {

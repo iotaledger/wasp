@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/stretchr/testify/require"
@@ -82,7 +82,7 @@ func genRndBlocks(start, num int) []Block {
 }
 
 func TestRnd(t *testing.T) {
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 
 	const numBlocks = 100
 	const numRepeat = 100

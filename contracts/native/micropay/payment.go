@@ -7,7 +7,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -44,8 +44,8 @@ func paymentEssence(ord uint32, amount uint64, payerAddr, targetAddr iotago.Addr
 	var buf bytes.Buffer
 	buf.Write(util.Uint32To4Bytes(ord))
 	buf.Write(util.Uint64To8Bytes(amount))
-	buf.Write(iscp.BytesFromAddress(payerAddr))
-	buf.Write(iscp.BytesFromAddress(targetAddr))
+	buf.Write(isc.BytesFromAddress(payerAddr))
+	buf.Write(isc.BytesFromAddress(targetAddr))
 	return buf.Bytes()
 }
 

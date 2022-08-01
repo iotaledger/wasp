@@ -15,7 +15,7 @@ type PeeringTrustedNode struct {
 
 func NewPeeringTrustedNode(tp *peering.TrustedPeer) *PeeringTrustedNode {
 	return &PeeringTrustedNode{
-		PubKey: tp.PubKey.AsString(),
+		PubKey: tp.PubKey.String(),
 		NetID:  tp.NetID,
 	}
 }

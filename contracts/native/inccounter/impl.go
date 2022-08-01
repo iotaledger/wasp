@@ -5,8 +5,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -37,7 +37,7 @@ const (
 	VarDescription = "dscr"
 )
 
-func initialize(ctx iscp.Sandbox) dict.Dict {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
 	val := codec.MustDecodeInt64(params.MustGet(VarCounter), 0)
@@ -46,7 +46,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func incCounter(ctx iscp.Sandbox) dict.Dict {
+func incCounter(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	inc := par.MustGetInt64(VarCounter, 1)
@@ -65,7 +65,7 @@ func incCounter(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
+func incCounterAndRepeatOnce(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
 	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
@@ -75,16 +75,16 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	ctx.Event(fmt.Sprintf("incCounterAndRepeatOnce: counter = %d", val+1))
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Send(iscp.RequestParameters{
+	ctx.Send(isc.RequestParameters{
 		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             iscp.NewFungibleTokens(allowance.Assets.Iotas, nil),
+		FungibleTokens:             isc.NewFungibleTokens(allowance.Assets.BaseTokens, nil),
 		AdjustToMinimumDustDeposit: true,
-		Metadata: &iscp.SendMetadata{
+		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncCounter.Hname(),
 			GasBudget:      math.MaxUint64,
 		},
-		Options: iscp.SendOptions{
+		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),
 		},
 	})
@@ -92,7 +92,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
+func incCounterAndRepeatMany(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
@@ -118,17 +118,17 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Send(iscp.RequestParameters{
+	ctx.Send(isc.RequestParameters{
 		TargetAddress:              ctx.ChainID().AsAddress(),
-		FungibleTokens:             iscp.NewFungibleTokens(1000, nil),
+		FungibleTokens:             isc.NewFungibleTokens(1000, nil),
 		AdjustToMinimumDustDeposit: true,
-		Metadata: &iscp.SendMetadata{
+		Metadata: &isc.SendMetadata{
 			TargetContract: ctx.Contract(),
 			EntryPoint:     FuncIncAndRepeatMany.Hname(),
 			GasBudget:      math.MaxUint64,
-			Allowance:      iscp.NewAllowanceIotas(1000),
+			Allowance:      isc.NewAllowanceBaseTokens(1000),
 		},
-		Options: iscp.SendOptions{
+		Options: isc.SendOptions{
 			Timelock: ctx.Timestamp().Add(2 * time.Second),
 		},
 	})
@@ -138,7 +138,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) dict.Dict {
 }
 
 // spawn deploys new contract and calls it
-func spawn(ctx iscp.Sandbox) dict.Dict {
+func spawn(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("inccounter.spawn")
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
@@ -152,13 +152,13 @@ func spawn(ctx iscp.Sandbox) dict.Dict {
 	ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
 
 	// increase counter in newly spawned contract
-	hname := iscp.Hn(name)
+	hname := isc.Hn(name)
 	ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 
 	return nil
 }
 
-func getCounter(ctx iscp.SandboxView) dict.Dict {
+func getCounter(ctx isc.SandboxView) dict.Dict {
 	state := ctx.State()
 	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
 	return dict.Dict{VarCounter: codec.EncodeInt64(val)}

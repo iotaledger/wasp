@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -114,7 +114,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	sync.addBlockCandidate(hash, block, nextState)
 }
 
-func (syncsT *syncingBlocks) setApprovalInfo(output *iscp.AliasOutputWithID) {
+func (syncsT *syncingBlocks) setApprovalInfo(output *isc.AliasOutputWithID) {
 	if output == nil {
 		syncsT.log.Debugf("setApprovalInfo failed, provided output is nil")
 		return

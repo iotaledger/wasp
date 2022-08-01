@@ -28,26 +28,16 @@ Before creating a pull request ensure that all tests pass locally, and that the 
 To run tests locally, execute one of the following commands:
 
 ```shell
-go test -tags rocksdb,builtin_static ./...
+go test -short -tags rocksdb,builtin_static ./...
 ```
 
 or, as an alternative:
 
 ```shell
-make test
+make test-short
 ```
 
-The commands above only trigger lightweight tests. If you have introduced major changes, consider running the whole test suite instead. That it will much longer (and will time out after an hour).
-
-::: warn
-
-Check that the `database.inMemory` parameter is set to `false` (default) before running the complete test suite. See the [source code](https://github.com/iotaledger/wasp/blob/develop/tools/cluster/tests/spam_test.go) for details.
-
-:::
-
-```shell
-make test-full
-```
+The commands above execute a subset of all available tests. If you introduced major changes, consider running the whole test suite instead, with `make test` or `make test-full` (these can take several minutes, so go and grab a coffee!).
 
 ## Running the Linter
 
@@ -92,11 +82,11 @@ func foobar() *string {
 }
 ```
 
-To be sure that linter will not ignore actual issues in the future, try to suppress only relevant warnings over an element:
+To be sure that linter will not ignore actual issues in the future, try to suppress only relevant warnings over an element. Also explain the reason why the `nolint` is needed. E.g.:
 
 ```go
-//nolint:golint,unused
-func neverUsedFoobar() *string {
+//nolint:unused // This is actually used by the xyz tool
+func foo() *string {
     // ...
 }
 ```

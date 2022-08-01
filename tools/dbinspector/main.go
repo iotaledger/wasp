@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 //nolint:unused // false positive
@@ -45,8 +45,8 @@ func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 	fmt.Printf("\n\n------------------ %s ------------------\n", dbDir.Name())
 	accLen := 0
 
-	hnameUsedSpace := make(map[iscp.Hname]int)
-	hnameCount := make(map[iscp.Hname]int)
+	hnameUsedSpace := make(map[isc.Hname]int)
+	hnameCount := make(map[isc.Hname]int)
 
 	dbKeysUsedSpace := make(map[byte]int)
 
@@ -55,7 +55,7 @@ func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 		accLen += usedSpace
 		dbKeysUsedSpace[k[0]] += usedSpace
 		if len(k) >= 5 {
-			hn, err := iscp.HnameFromBytes(k[1:5])
+			hn, err := isc.HnameFromBytes(k[1:5])
 			if err == nil {
 				fmt.Printf("HName: %s, key len: %d \t", hn, len(k))
 				hnameUsedSpace[hn] += usedSpace

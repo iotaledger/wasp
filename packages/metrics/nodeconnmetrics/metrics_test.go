@@ -6,22 +6,22 @@ package nodeconnmetrics
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRegister(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	chainID1 := iscp.RandomChainID()
-	chainID2 := iscp.RandomChainID()
-	chainID3 := iscp.RandomChainID()
+	chainID1 := isc.RandomChainID()
+	chainID2 := isc.RandomChainID()
+	chainID3 := isc.RandomChainID()
 	ncm := New(log)
 
-	require.Equal(t, []*iscp.ChainID{}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
-	require.Equal(t, []*iscp.ChainID{chainID1}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID1}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID2)
 	registered := ncm.GetRegistered()
@@ -30,7 +30,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID2)
 
 	ncm.SetUnregistered(chainID1)
-	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
@@ -39,7 +39,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID3)
 
 	ncm.SetUnregistered(chainID3)
-	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
 	registered = ncm.GetRegistered()
@@ -58,8 +58,8 @@ func TestRegister(t *testing.T) {
 func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	ncm := New(log)
-	cncm1 := ncm.NewMessagesMetrics(iscp.RandomChainID())
-	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID())
+	cncm1 := ncm.NewMessagesMetrics(isc.RandomChainID())
+	cncm2 := ncm.NewMessagesMetrics(isc.RandomChainID())
 	ncm.RegisterMetrics()
 
 	// IN State output

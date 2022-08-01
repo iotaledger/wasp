@@ -3,7 +3,7 @@ package root
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -22,7 +22,7 @@ func GetContractRegistryR(state kv.KVStoreReader) *collections.ImmutableMap {
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not directly exposed to the sandbox
 // If contract is not found by the given hname, nil is returned
-func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
+func FindContract(state kv.KVStoreReader, hname isc.Hname) *ContractRecord {
 	contractRegistry := GetContractRegistryR(state)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
 	if retBin != nil {
@@ -39,17 +39,17 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) *ContractRecord {
 	return nil
 }
 
-func ContractExists(state kv.KVStoreReader, hname iscp.Hname) bool {
+func ContractExists(state kv.KVStoreReader, hname isc.Hname) bool {
 	return GetContractRegistryR(state).MustHasAt(hname.Bytes())
 }
 
 // DecodeContractRegistry encodes the whole contract registry from the map into a Go map.
-func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[iscp.Hname]*ContractRecord, error) {
-	ret := make(map[iscp.Hname]*ContractRecord)
+func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc.Hname]*ContractRecord, error) {
+	ret := make(map[isc.Hname]*ContractRecord)
 	var err error
 	contractRegistry.MustIterate(func(k []byte, v []byte) bool {
-		var deploymentHash iscp.Hname
-		deploymentHash, err = iscp.HnameFromBytes(k)
+		var deploymentHash isc.Hname
+		deploymentHash, err = isc.HnameFromBytes(k)
 		if err != nil {
 			return false
 		}
@@ -73,11 +73,11 @@ func getBlockContextSubscriptionsR(state kv.KVStoreReader) *collections.Immutabl
 	return collections.NewMapReadOnly(state, StateVarBlockContextSubscriptions)
 }
 
-func encodeOpenClosePair(openFunc, closeFunc iscp.Hname) []byte {
+func encodeOpenClosePair(openFunc, closeFunc isc.Hname) []byte {
 	return append(codec.EncodeHname(openFunc), codec.EncodeHname(closeFunc)...)
 }
 
-func mustDecodeOpenCLosePair(b []byte) (openFunc, closeFunc iscp.Hname) {
+func mustDecodeOpenCLosePair(b []byte) (openFunc, closeFunc isc.Hname) {
 	if len(b) != 8 {
 		panic("invalid length")
 	}
@@ -86,14 +86,14 @@ func mustDecodeOpenCLosePair(b []byte) (openFunc, closeFunc iscp.Hname) {
 	return
 }
 
-func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc iscp.Hname) {
+func SubscribeBlockContext(state kv.KVStore, contract, openFunc, closeFunc isc.Hname) {
 	getBlockContextSubscriptions(state).MustSetAt(codec.EncodeHname(contract), encodeOpenClosePair(openFunc, closeFunc))
 }
 
 type BlockContextSubscription struct {
-	Contract  iscp.Hname
-	OpenFunc  iscp.Hname
-	CloseFunc iscp.Hname
+	Contract  isc.Hname
+	OpenFunc  isc.Hname
+	CloseFunc isc.Hname
 }
 
 // GetBlockContextSubscriptions returns all contracts that are subscribed to block context,

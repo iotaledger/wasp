@@ -3,6 +3,8 @@
 
 package templates
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
+
 type WaspConfigParams struct {
 	APIPort                      int
 	DashboardPort                int

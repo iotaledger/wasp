@@ -140,7 +140,7 @@ func (g *groupImpl) ExchangeRound(
 			if err != nil {
 				g.log.Warnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
-					recvMsgNoIndex.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
+					recvMsgNoIndex.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsgNoIndex.MsgType, err,
 				)
 				continue
@@ -152,7 +152,7 @@ func (g *groupImpl) ExchangeRound(
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
 				g.log.Warnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
-					recvMsg.SenderPubKey.AsString(), g.netProvider.Self().PubKey().AsString(),
+					recvMsg.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsg.MsgReceiver, recvMsg.MsgType,
 				)
 				continue
@@ -241,7 +241,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 		}
 		if err != nil {
 			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
-				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.AsString(), err)
+				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String(), err)
 			return
 		}
 		gRecv := &peering.PeerMessageGroupIn{

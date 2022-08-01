@@ -29,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (b318943)
-// https://github.com/gohornet/inx-mqtt (22374ae)
-// https://github.com/gohornet/inx-indexer (490d00e)
-// https://github.com/gohornet/inx-coordinator (9ed483b)
-// https://github.com/gohornet/inx-faucet (373b56a) (requires `git submodule update --init --recursive` before building )
+// https://github.com/gohornet/hornet (1653bf6)
+// https://github.com/gohornet/inx-mqtt (9447a3c)
+// https://github.com/gohornet/inx-indexer (2d612d1)
+// https://github.com/gohornet/inx-coordinator (4b5c458)
+// https://github.com/gohornet/inx-faucet (77dc47e) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -41,7 +41,6 @@ type PrivTangle struct {
 	CooKeyPair1   *cryptolib.KeyPair
 	CooKeyPair2   *cryptolib.KeyPair
 	FaucetKeyPair *cryptolib.KeyPair
-	NetworkName   string
 	SnapshotInit  string
 	ConfigFile    string
 	BaseDir       string
@@ -59,7 +58,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		CooKeyPair1:   cryptolib.NewKeyPair(),
 		CooKeyPair2:   cryptolib.NewKeyPair(),
 		FaucetKeyPair: cryptolib.NewKeyPair(),
-		NetworkName:   "private_tangle_wasp_cluster",
 		SnapshotInit:  "snapshot.init",
 		ConfigFile:    "config.json",
 		BaseDir:       baseDir,
@@ -108,14 +106,21 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 }
 
 func (pt *PrivTangle) generateSnapshot() {
-	if err := os.RemoveAll(filepath.Join(pt.BaseDir, pt.SnapshotInit)); err != nil {
+	snapshotPath := filepath.Join(pt.BaseDir, pt.SnapshotInit)
+	if err := os.RemoveAll(snapshotPath); err != nil {
 		panic(xerrors.Errorf("Unable to remove old snapshot: %w", err))
 	}
+
+	jsonConfigPath := filepath.Join(pt.BaseDir, "protocol_parameters.json")
+	if err := os.WriteFile(jsonConfigPath, []byte(protocolParameters), 0o600); err != nil {
+		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+	}
+
 	snapGenArgs := []string{
 		"tool", "snap-gen",
-		fmt.Sprintf("--networkName=%s", pt.NetworkName),
+		fmt.Sprintf("--protocolParametersPath=%s", jsonConfigPath),
 		fmt.Sprintf("--mintAddress=%s", pt.FaucetKeyPair.GetPublicKey().AsEd25519Address().String()[2:]), // Dropping 0x from HEX.
-		fmt.Sprintf("--outputPath=%s", filepath.Join(pt.BaseDir, pt.SnapshotInit)),
+		fmt.Sprintf("--outputPath=%s", snapshotPath),
 	}
 	snapGen := exec.CommandContext(pt.ctx, "hornet", snapGenArgs...)
 	if snapGenOut, err := snapGen.Output(); err != nil {
@@ -125,10 +130,6 @@ func (pt *PrivTangle) generateSnapshot() {
 
 func (pt *PrivTangle) startNode(i int) {
 	env := []string{}
-	plugins := "INX,Debug,Prometheus"
-	if i == 0 {
-		plugins = "Coordinator,INX,Debug,Prometheus,Faucet"
-	}
 	nodePath := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i))
 	nodePathDB := "db"               // Relative from nodePath.
 	nodeP2PStore := "p2pStore"       // Relative from nodePath.
@@ -162,11 +163,9 @@ func (pt *PrivTangle) startNode(i int) {
 
 	args := []string{
 		"-c", pt.ConfigFile,
-		fmt.Sprintf("--protocol.parameters.networkName=%s", pt.NetworkName),
 		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortRestAPI(i)),
 		fmt.Sprintf("--db.path=%s", nodePathDB),
-		fmt.Sprintf("--app.disablePlugins=%s", "Autopeering"),
-		fmt.Sprintf("--app.enablePlugins=%s", plugins),
+		fmt.Sprintf("--inx.enabled=%s", "true"),
 		fmt.Sprintf("--snapshots.fullPath=%s", nodePathSnapFull),
 		fmt.Sprintf("--snapshots.deltaPath=%s", nodePathSnapDelta),
 		fmt.Sprintf("--p2p.bindMultiAddresses=/ip4/127.0.0.1/tcp/%d", pt.NodePortPeering(i)),
@@ -417,9 +416,6 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}
-
-	fmt.Printf("faucet has %v balance\n", parsedResp.Balance)
-
 	return nil
 }
 

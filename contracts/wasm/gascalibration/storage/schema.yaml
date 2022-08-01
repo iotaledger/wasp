@@ -1,0 +1,12 @@
+name: storage
+description: storage description
+events: {}
+structs: {}
+typedefs: {}
+state:
+    v: Uint32[]
+funcs:
+    f:
+        params:
+            n: Uint32
+views: {}

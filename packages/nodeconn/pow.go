@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/contextutils"
-	serializer "github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/pow"
 	"github.com/iotaledger/wasp/packages/parameters"

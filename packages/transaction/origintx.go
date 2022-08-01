@@ -3,7 +3,7 @@ package transaction
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -21,7 +21,7 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-) (*iotago.Transaction, *iscp.ChainID, error) {
+) (*iotago.Transaction, *isc.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
@@ -82,7 +82,7 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID := iscp.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0)))
+	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0)))
 	return tx, &chainID, nil
 }
 
@@ -93,7 +93,7 @@ func NewChainOriginTransaction(
 // The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
 	keyPair *cryptolib.KeyPair,
-	chainID *iscp.ChainID,
+	chainID *isc.ChainID,
 	description string,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
@@ -111,11 +111,11 @@ func NewRootInitRequestTransaction(
 		SenderAddress:    keyPair.Address(),
 		UnspentOutputs:   unspentOutputs,
 		UnspentOutputIDs: unspentOutputIDs,
-		Request: &iscp.RequestParameters{
+		Request: &isc.RequestParameters{
 			TargetAddress: chainID.AsAddress(),
-			Metadata: &iscp.SendMetadata{
+			Metadata: &isc.SendMetadata{
 				TargetContract: root.Contract.Hname(),
-				EntryPoint:     iscp.EntryPointInit,
+				EntryPoint:     isc.EntryPointInit,
 				GasBudget:      0, // TODO. Probably we need minimum fixed budget for core contract calls. 0 for init call
 				Params:         params,
 			},

@@ -10,9 +10,6 @@ var commonTemplates = model.StringMap{
 	"else": `
 `,
 	// *******************************
-	"nil": `
-`,
-	// *******************************
 	"newline": `
 
 `,
@@ -58,7 +55,7 @@ func TestDeploy(t *testing.T) {
 `,
 	// *******************************
 	"setupInitFunc": `
-$#set initFunc 
+$#set initFunc $nil
 $#if init setInitFunc
 `,
 	// *******************************

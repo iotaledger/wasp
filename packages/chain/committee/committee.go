@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
@@ -38,7 +38,7 @@ const waitReady = false
 
 func New(
 	dkShare tcrypto.DKShare,
-	chainID *iscp.ChainID,
+	chainID *isc.ChainID,
 	netProvider peering.NetworkProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.

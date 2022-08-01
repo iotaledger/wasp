@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -58,14 +58,14 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
+		chainID := isc.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
+		chainID := isc.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -113,7 +113,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("apply block after loading", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
+		chainID := isc.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -177,7 +177,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("state reader", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
+		chainID := isc.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -229,7 +229,7 @@ func TestStateWithDB(t *testing.T) {
 }
 
 func TestStateBasic(t *testing.T) {
-	chainID := iscp.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
+	chainID := isc.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), &chainID)
 	require.NoError(t, err)
 	h1 := trie.RootCommitment(vs1.TrieNodeStore())
@@ -260,7 +260,7 @@ func TestStateBasic(t *testing.T) {
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := iscp.RandomChainID([]byte("1"))
+		chainID := isc.RandomChainID([]byte("1"))
 		os, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 		err = os.Save()
@@ -284,7 +284,7 @@ func TestVirtualStateMustOptimistic1(t *testing.T) {
 	glb := coreutil.NewChainStateSync()
 	glb.SetSolidIndex(0)
 	baseline := glb.GetSolidIndexBaseline()
-	chainID := iscp.RandomChainID([]byte("1"))
+	chainID := isc.RandomChainID([]byte("1"))
 	vs, err := CreateOriginState(db, chainID)
 	require.NoError(t, err)
 
@@ -317,7 +317,7 @@ func TestVirtualStateMustOptimistic2(t *testing.T) {
 	glb := coreutil.NewChainStateSync()
 	glb.SetSolidIndex(0)
 	baseline := glb.GetSolidIndexBaseline()
-	chainID := iscp.RandomChainID([]byte("1"))
+	chainID := isc.RandomChainID([]byte("1"))
 	vs, err := CreateOriginState(db, chainID)
 	require.NoError(t, err)
 

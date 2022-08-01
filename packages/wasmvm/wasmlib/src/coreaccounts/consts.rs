@@ -13,14 +13,14 @@ pub const SC_NAME        : &str = "accounts";
 pub const SC_DESCRIPTION : &str = "Chain account ledger contract";
 pub const HSC_NAME       : ScHname = ScHname(0x3c4b5e02);
 
-pub(crate) const PARAM_AGENT_ID            : &str = "a";
-pub(crate) const PARAM_DESTROY_TOKENS      : &str = "y";
-pub(crate) const PARAM_FORCE_MINIMUM_IOTAS : &str = "f";
-pub(crate) const PARAM_FORCE_OPEN_ACCOUNT  : &str = "c";
-pub(crate) const PARAM_FOUNDRY_SN          : &str = "s";
-pub(crate) const PARAM_NFT_ID              : &str = "z";
-pub(crate) const PARAM_SUPPLY_DELTA_ABS    : &str = "d";
-pub(crate) const PARAM_TOKEN_SCHEME        : &str = "t";
+pub(crate) const PARAM_AGENT_ID                  : &str = "a";
+pub(crate) const PARAM_DESTROY_TOKENS            : &str = "y";
+pub(crate) const PARAM_FORCE_MINIMUM_BASE_TOKENS : &str = "f";
+pub(crate) const PARAM_FORCE_OPEN_ACCOUNT        : &str = "c";
+pub(crate) const PARAM_FOUNDRY_SN                : &str = "s";
+pub(crate) const PARAM_NFT_ID                    : &str = "z";
+pub(crate) const PARAM_SUPPLY_DELTA_ABS          : &str = "d";
+pub(crate) const PARAM_TOKEN_SCHEME              : &str = "t";
 
 pub(crate) const RESULT_ACCOUNT_NONCE      : &str = "n";
 pub(crate) const RESULT_ALL_ACCOUNTS       : &str = "this";

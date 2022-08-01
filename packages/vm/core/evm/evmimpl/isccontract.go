@@ -12,7 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
 )
@@ -55,10 +55,10 @@ func parseCall(input []byte) (*abi.Method, []interface{}) {
 }
 
 type iscContract struct {
-	ctx iscp.Sandbox
+	ctx isc.Sandbox
 }
 
-func newISCContract(ctx iscp.Sandbox) vm.ISCContract {
+func newISCContract(ctx isc.Sandbox) vm.ISCContract {
 	return &iscContract{ctx}
 }
 
@@ -86,26 +86,26 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "getSenderAccount":
 		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Request().SenderAccount())}
 
-	case "getAllowanceIotas":
-		outs = []interface{}{c.ctx.Request().Allowance().Assets.Iotas}
+	case "getAllowanceBaseTokens":
+		outs = []interface{}{c.ctx.Request().Allowance().Assets.BaseTokens}
 
 	case "getAllowanceNativeTokensLen":
 		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().Assets.Tokens))}
 
 	case "getAllowanceNativeToken":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
+		outs = []interface{}{isccontract.WrapNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
 	case "getAllowanceNFTsLen":
 		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().NFTs))}
 
 	case "getAllowanceNFTID":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])}
+		outs = []interface{}{isccontract.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])}
 
 	case "getAllowanceNFT":
 		i := args[0].(uint16)
-		nftID := isccontract.WrapIotaNFTID(c.ctx.Request().Allowance().NFTs[i])
+		nftID := isccontract.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])
 		nft := c.ctx.GetNFTData(nftID.Unwrap())
 		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
@@ -125,7 +125,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	case "sendAsNFT":
 		var callArgs struct {
 			isccontract.ISCRequestParameters
-			ID isccontract.IotaNFTID
+			ID isccontract.NFTID
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
@@ -142,19 +142,19 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		callRet := c.ctx.Call(
-			iscp.Hname(callArgs.ContractHname),
-			iscp.Hname(callArgs.EntryPoint),
+			isc.Hname(callArgs.ContractHname),
+			isc.Hname(callArgs.EntryPoint),
 			callArgs.Params.Unwrap(),
 			callArgs.Allowance.Unwrap(),
 		)
 		outs = []interface{}{isccontract.WrapISCDict(callRet)}
 
-	case "getAllowanceAvailableIotas":
-		outs = []interface{}{c.ctx.AllowanceAvailable().Assets.Iotas}
+	case "getAllowanceAvailableBaseTokens":
+		outs = []interface{}{c.ctx.AllowanceAvailable().Assets.BaseTokens}
 
 	case "getAllowanceAvailableNativeToken":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapIotaNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
+		outs = []interface{}{isccontract.WrapNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
 
 	case "getAllowanceAvailableNativeTokensLen":
 		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().Assets.Tokens))}
@@ -164,7 +164,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	case "getAllowanceAvailableNFT":
 		i := args[0].(uint16)
-		nftID := isccontract.WrapIotaNFTID(c.ctx.AllowanceAvailable().NFTs[i])
+		nftID := isccontract.WrapNFTID(c.ctx.AllowanceAvailable().NFTs[i])
 		nft := c.ctx.GetNFTData(nftID.Unwrap())
 		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
 
@@ -178,10 +178,10 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 }
 
 type iscContractView struct {
-	ctx iscp.SandboxView
+	ctx isc.SandboxView
 }
 
-func newISCContractView(ctx iscp.SandboxView) vm.ISCContract {
+func newISCContractView(ctx isc.SandboxView) vm.ISCContract {
 	return &iscContractView{ctx}
 }
 
@@ -207,8 +207,8 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		err := method.Inputs.Copy(&callViewArgs, args)
 		c.ctx.RequireNoError(err)
 		callRet := c.ctx.CallView(
-			iscp.Hname(callViewArgs.ContractHname),
-			iscp.Hname(callViewArgs.EntryPoint),
+			isc.Hname(callViewArgs.ContractHname),
+			isc.Hname(callViewArgs.EntryPoint),
 			callViewArgs.Params.Unwrap(),
 		)
 		outs = []interface{}{isccontract.WrapISCDict(callRet)}
@@ -224,14 +224,15 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 
 // TODO evm param is not used, can it be removed?
 
-func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
+//nolint:unparam
+func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
 
 	switch method.Name {
 	case "hn":
-		outs = []interface{}{iscp.Hn(args[0].(string))}
+		outs = []interface{}{isc.Hn(args[0].(string))}
 
 	case "hasParam":
 		outs = []interface{}{ctx.Params().MustHas(kv.Key(args[0].(string)))}
@@ -246,7 +247,7 @@ func tryBaseCall(ctx iscp.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input
 		outs = []interface{}{isccontract.WrapISCAgentID(ctx.ChainOwnerID())}
 
 	case "getNFTData":
-		var nftID isccontract.IotaNFTID
+		var nftID isccontract.NFTID
 		err := method.Inputs.Copy(&nftID, args)
 		ctx.RequireNoError(err)
 		nft := ctx.GetNFTData(nftID.Unwrap())

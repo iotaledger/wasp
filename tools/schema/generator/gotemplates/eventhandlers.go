@@ -50,7 +50,7 @@ $#each event eventClassField
 }
 
 func (h *$PkgName$+EventHandlers) on$PkgName$EvtName$+Thunk(msg []string) {
-    if h.$evtName == nil {
+	if h.$evtName == nil {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
@@ -61,7 +61,7 @@ $#each event eventHandlerField
 `,
 	// *******************************
 	"eventClassField": `
-  	$FldName $fldLangType
+	$FldName $fldLangType
 `,
 	// *******************************
 	"eventHandlerField": `

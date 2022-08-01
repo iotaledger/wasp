@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -219,13 +219,13 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	stopMaintenceFunc := coreutil.Func("stopMaintenance")
 	ownerContract := coreutil.NewContract("chain owner contract", "N/A")
 	ownerContractProcessor := ownerContract.Processor(nil,
-		claimOwnershipFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncClaimChainOwnership.Hname(), nil, nil)
 		}),
-		startMaintenceFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		startMaintenceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncStartMaintenance.Hname(), nil, nil)
 		}),
-		stopMaintenceFunc.WithHandler(func(ctx iscp.Sandbox) dict.Dict {
+		stopMaintenceFunc.WithHandler(func(ctx isc.Sandbox) dict.Dict {
 			return ctx.Call(governance.Contract.Hname(), governance.FuncStopMaintenance.Hname(), nil, nil)
 		}),
 	)
@@ -233,7 +233,7 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 		WithNativeContract(ownerContractProcessor)
 	ch := env.NewChain(nil, "chain")
 
-	ownerContractAgentID := iscp.NewContractAgentID(ch.ChainID, ownerContract.Hname())
+	ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
 	userWallet, _ := env.NewKeyPairWithFunds()
 
 	err := ch.DeployContract(nil, ownerContract.Name, ownerContract.ProgramHash)

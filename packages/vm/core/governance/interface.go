@@ -6,7 +6,7 @@
 package governance
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 // constants

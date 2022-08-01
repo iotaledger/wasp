@@ -91,5 +91,8 @@ func (s *SoloClientService) SubscribeEvents(msg chan []string, done chan bool) e
 }
 
 func (s *SoloClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+	_ = chainID
+	_ = reqID
+	_ = timeout
 	return nil
 }

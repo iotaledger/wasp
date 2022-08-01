@@ -11,7 +11,7 @@ func (nc *nodeConn) run() {
 		if err == nil {
 			break
 		}
-		nc.log.Warnf("Unable to connect to Hornet MQTT: %w", err)
+		nc.log.Warnf("Unable to connect to Hornet MQTT: %v", err)
 		time.Sleep(1 * time.Second)
 	}
 	milestones, subInfo := nc.mqttClient.ConfirmedMilestones()

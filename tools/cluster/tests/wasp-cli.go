@@ -19,13 +19,14 @@ import (
 )
 
 type WaspCLITest struct {
-	T       *testing.T
-	Cluster *cluster.Cluster
-	dir     string
+	T              *testing.T
+	Cluster        *cluster.Cluster
+	dir            string
+	WaspCliAddress iotago.Address
 }
 
-func newWaspCLITest(t *testing.T) *WaspCLITest {
-	clu := newCluster(t)
+func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
+	clu := newCluster(t, opt...)
 
 	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)
@@ -43,6 +44,11 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 
 	w.Run("set", "l1.apiAddress", clu.Config.L1.APIAddress)
 	w.Run("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
+	for _, node := range clu.Config.AllNodes() {
+		w.Run("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+	}
 
 	requestFundstext := w.Run("request-funds")
 	// latest line should print something like: "Request funds for address atoi...: success"
@@ -51,6 +57,7 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 	require.Len(t, rs, 2)
 	_, addr, err := iotago.ParseBech32(rs[1])
 	require.NoError(t, err)
+	w.WaspCliAddress = addr
 	// requested funds will take some time to be available
 	for {
 		outputs, err := clu.L1Client().OutputMap(addr)
@@ -84,12 +91,14 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		require.NoError(w.T, fmt.Errorf(
-			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
-			strings.Join(args, " "),
-			err,
-			outStr+errStr,
-		))
+		w.T.Fatal(
+			fmt.Errorf(
+				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
+				strings.Join(args, " "),
+				err,
+				outStr+errStr,
+			),
+		)
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
 	outStr = strings.TrimRight(outStr, "\n")
@@ -98,6 +107,20 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 func (w *WaspCLITest) Run(args ...string) []string {
 	return w.runCmd(args, nil)
+}
+
+func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
+	runArgs := []string{"chain", "post-request"}
+	runArgs = append(runArgs, args...)
+	out := w.Run(runArgs...)
+	return w.GetReceiptFromRunPostRequestOutput(out)
+}
+
+func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string {
+	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
+		FindStringSubmatch(strings.Join(out, ""))
+	command := r[2]
+	return w.Run(strings.Split(command, " ")...)
 }
 
 func (w *WaspCLITest) Pipe(in []string, args ...string) []string {
@@ -123,11 +146,11 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 
 func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	var committee []string
-	for i := 0; i < w.Cluster.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
 		committee = append(committee, fmt.Sprintf("%d", i))
 	}
 
-	quorum := 3 * w.Cluster.Config.Wasp.NumNodes / 4
+	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}

@@ -105,7 +105,7 @@ $#if result initResults
 `,
 	// *******************************
 	"coreExportName": `
-    	$Kind$FuncName,
+		$Kind$FuncName,
 `,
 	// *******************************
 	"coreExportFunc": `

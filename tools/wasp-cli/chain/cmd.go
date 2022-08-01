@@ -36,6 +36,10 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(requestCmd())
 	chainCmd.AddCommand(postRequestCmd())
 	chainCmd.AddCommand(callViewCmd)
-	chainCmd.AddCommand(activateCmd)
-	chainCmd.AddCommand(deactivateCmd)
+	chainCmd.AddCommand(activateCmd())
+	chainCmd.AddCommand(deactivateCmd())
+	chainCmd.AddCommand(runDKGCmd())
+	chainCmd.AddCommand(rotateCmd)
+	chainCmd.AddCommand(changeAccessNodesCmd())
+	chainCmd.AddCommand(addChainCmd)
 }

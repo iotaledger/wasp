@@ -6,12 +6,12 @@ package micropay
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract("micropay", "Micro payment PoC smart contract")
 
-const MinimumWarrantIotas = 500
+const MinimumWarrantBaseTokens = 500
 
 var (
 	FuncPublicKey      = coreutil.Func("publicKey")

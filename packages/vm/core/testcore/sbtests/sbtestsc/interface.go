@@ -2,7 +2,7 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
@@ -121,22 +121,22 @@ const (
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
-	ParamAddress           = "address"
-	ParamAgentID           = "agentID"
-	ParamCaller            = "caller"
-	ParamChainID           = "chainID"
-	ParamChainOwnerID      = "chainOwnerID"
-	ParamContractID        = "contractID"
-	ParamFail              = "initFailParam"
-	ParamHnameContract     = "hnameContract"
-	ParamHnameEP           = "hnameEP"
-	ParamIntParamName      = "intParamName"
-	ParamIntParamValue     = "intParamValue"
-	ParamIotasToWithdrawal = "iotasWithdrawal"
-	ParamN                 = "n"
-	ParamProgHash          = "progHash"
-	ParamSize              = "size"
-	ParamVarName           = "varName"
+	ParamAddress                = "address"
+	ParamAgentID                = "agentID"
+	ParamCaller                 = "caller"
+	ParamChainID                = "chainID"
+	ParamChainOwnerID           = "chainOwnerID"
+	ParamContractID             = "contractID"
+	ParamFail                   = "initFailParam"
+	ParamHnameContract          = "hnameContract"
+	ParamHnameEP                = "hnameEP"
+	ParamIntParamName           = "intParamName"
+	ParamIntParamValue          = "intParamValue"
+	ParamBaseTokensToWithdrawal = "baseTokensWithdrawal"
+	ParamN                      = "n"
+	ParamProgHash               = "progHash"
+	ParamSize                   = "size"
+	ParamVarName                = "varName"
 
 	// error fragments for testing
 	MsgDoNothing         = "========== doing nothing"

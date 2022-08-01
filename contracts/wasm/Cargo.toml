@@ -17,6 +17,9 @@ members = [
     "testwasmlib",
     "timestamp",
     "tokenregistry",
+    "gascalibration/memory",
+    "gascalibration/storage",
+    "gascalibration/executiontime",
 ]
 
 [profile.release]

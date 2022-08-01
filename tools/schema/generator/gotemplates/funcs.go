@@ -18,11 +18,11 @@ $#emit init$Kind$FuncName
 `,
 	// *******************************
 	"initFuncInit": `
-    if f.Params.Owner().Exists() {
-        f.State.Owner().SetValue(f.Params.Owner().Value())
-        return
-    }
-    f.State.Owner().SetValue(ctx.RequestSender())
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 `,
 	// *******************************
 	"initFuncSetOwner": `
