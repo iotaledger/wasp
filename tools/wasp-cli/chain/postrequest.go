@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger bool) {
+func postRequest(hname, fname string, params chainclient.PostRequestParams, offLedger, adjustDustDeposit bool) {
 	scClient := SCClient(isc.Hn(hname))
 
 	if offLedger {
@@ -23,23 +23,25 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		return
 	}
 
-	// check if there are enough funds for SD
-	output := transaction.MakeBasicOutput(
-		GetCurrentChainID().AsAddress(),
-		scClient.ChainClient.KeyPair.Address(),
-		params.Transfer,
-		&isc.RequestMetadata{
-			SenderContract: 0,
-			TargetContract: isc.Hn(hname),
-			EntryPoint:     isc.Hn(fname),
-			Params:         params.Args,
-			Allowance:      params.Allowance,
-			GasBudget:      gas.MaxGasPerCall,
-		},
-		isc.SendOptions{},
-		true,
-	)
-	util.SDAdjustmentPrompt(output)
+	if !adjustDustDeposit {
+		// check if there are enough funds for SD
+		output := transaction.MakeBasicOutput(
+			GetCurrentChainID().AsAddress(),
+			scClient.ChainClient.KeyPair.Address(),
+			params.Transfer,
+			&isc.RequestMetadata{
+				SenderContract: 0,
+				TargetContract: isc.Hn(hname),
+				EntryPoint:     isc.Hn(fname),
+				Params:         params.Args,
+				Allowance:      params.Allowance,
+				GasBudget:      gas.MaxGasPerCall,
+			},
+			isc.SendOptions{},
+			true,
+		)
+		util.SDAdjustmentPrompt(output)
+	}
 
 	util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 		return scClient.PostRequest(fname, params)
@@ -50,6 +52,7 @@ func postRequestCmd() *cobra.Command {
 	var transfer []string
 	var allowance []string
 	var offLedger bool
+	var adjustDustDeposit bool
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -66,7 +69,7 @@ func postRequestCmd() *cobra.Command {
 				Transfer:  util.ParseFungibleTokens(transfer),
 				Allowance: isc.NewAllowanceFungibleTokens(allowanceTokens),
 			}
-			postRequest(hname, fname, params, offLedger)
+			postRequest(hname, fname, params, offLedger, adjustDustDeposit)
 		},
 	}
 
@@ -79,6 +82,7 @@ func postRequestCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
 		"post an off-ledger request",
 	)
+	cmd.Flags().BoolVarP(&adjustDustDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }

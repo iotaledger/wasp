@@ -43,7 +43,8 @@ func changeAccessNodesCmd() *cobra.Command {
 				governance.Contract.Name,
 				governance.FuncChangeAccessNodes.Name,
 				params,
-				offLedger)
+				offLedger,
+				true)
 		},
 	}
 

@@ -23,7 +23,7 @@ func SDAdjustmentPrompt(output iotago.Output) {
 		log.Printf(`
 The amount of base tokens to be sent are not enough to cover the Storage Deposit for the new output.
 (minimum:%d, have:%d)
-Do you wish to continue by sending %d base tokens? [Y/n] (you can automatically accept this prompt with: --adjust-storage-deposit or -a)
+Do you wish to continue by sending %d base tokens? [Y/n] (you can automatically accept this prompt with: -s or --adjust-storage-deposit)
 `, minStorageDeposit, output.Deposit(), minStorageDeposit)
 
 		scanner := bufio.NewScanner(os.Stdin)
