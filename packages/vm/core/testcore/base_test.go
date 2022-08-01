@@ -372,7 +372,7 @@ func TestEstimateGas(t *testing.T) {
 						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
 					},
 				).AddAllowance(isc.NewAllowanceBaseTokens(testCase.L2Balance)).
-					AddBaseTokens(10 * isc.Mi).
+					AddBaseTokens(10 * isc.Million).
 					WithGasBudget(math.MaxUint64)
 
 				_, err = ch.PostRequestSync(req, anotherKeyPair)
@@ -532,7 +532,7 @@ func TestMessageSize(t *testing.T) {
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	dust := 1 * isc.Mi
+	dust := 1 * isc.Million
 
 	maxRequestsPerBlock := parameters.L1.MaxTransactionSize / reqSize
 

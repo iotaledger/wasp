@@ -121,7 +121,7 @@ func TestNodeConn(t *testing.T) {
 	require.NoError(t, err)
 	wallet := cryptolib.NewKeyPair()
 	client.RequestFunds(wallet.Address())
-	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*isc.Mi)
+	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*isc.Million)
 	require.NoError(t, err)
 	err = nc.PublishStateTransaction(chainID, uint32(0), tx)
 	require.NoError(t, err)

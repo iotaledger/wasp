@@ -149,8 +149,8 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.Chain.SCClient(contractID.Hname(), myWallet)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer:  isc.NewFungibleBaseTokens(10 * isc.Mi),
-		Allowance: isc.NewAllowanceBaseTokens(9 * isc.Mi),
+		Transfer:  isc.NewFungibleBaseTokens(10 * isc.Million),
+		Allowance: isc.NewAllowanceBaseTokens(9 * isc.Million),
 		Args: codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		}),
@@ -177,7 +177,7 @@ func TestPost5Requests(t *testing.T) {
 	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
 	onChainBalance := uint64(0)
 	for i := 0; i < 5; i++ {
-		baseTokesSent := 1 * isc.Mi
+		baseTokesSent := 1 * isc.Million
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
 			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),
 		})
@@ -207,7 +207,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	tx := [5]*iotago.Transaction{}
 	onChainBalance := uint64(0)
-	baseTokesSent := 1 * isc.Mi
+	baseTokesSent := 1 * isc.Million
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{
 			Transfer: isc.NewFungibleTokens(baseTokesSent, nil),

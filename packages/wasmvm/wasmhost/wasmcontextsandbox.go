@@ -162,9 +162,9 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 	}
 	// Force a minimum transfer of 1million base tokens for dust and some gas
 	// excess can always be reclaimed from the chain account by the user
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Mi
+		transfer.Assets.BaseTokens = 1 * isc.Million
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())

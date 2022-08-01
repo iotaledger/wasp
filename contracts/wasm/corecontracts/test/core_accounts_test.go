@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	dustAllowance = 1 * isc.Mi
+	dustAllowance = 1 * isc.Million
 	nftMetadata   = "NFT metadata"
 )
 
@@ -35,7 +35,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	const depositAmount = 1 * isc.Mi
+	const depositAmount = 1 * isc.Million
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -163,7 +163,7 @@ func TestHarvest(t *testing.T) {
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Mi, creatorBal1.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 

@@ -169,10 +169,10 @@ type foundryParams struct {
 
 // CreateFoundryGasBudgetBaseTokens always takes 100000 base tokens as gas budget and ftokens for the call
 const (
-	DestroyTokensGasBudgetBaseTokens       = 1 * isc.Mi
-	SendToL2AccountGasBudgetBaseTokens     = 1 * isc.Mi
-	DestroyFoundryGasBudgetBaseTokens      = 1 * isc.Mi
-	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Mi
+	DestroyTokensGasBudgetBaseTokens       = 1 * isc.Million
+	SendToL2AccountGasBudgetBaseTokens     = 1 * isc.Million
+	DestroyFoundryGasBudgetBaseTokens      = 1 * isc.Million
+	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
 func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { // nolint:revive
@@ -198,8 +198,8 @@ func (fp *foundryParams) WithTokenScheme(sch iotago.TokenScheme) *foundryParams 
 }
 
 const (
-	allowanceForFoundryDustDeposit = 1 * isc.Mi
-	allowanceForModifySupply       = 1 * isc.Mi
+	allowanceForFoundryDustDeposit = 1 * isc.Million
+	allowanceForModifySupply       = 1 * isc.Million
 )
 
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {

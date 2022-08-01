@@ -48,7 +48,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		ch.AssertL2BaseTokens(userAgentID, 0)
 		ch.AssertL2BaseTokens(cAID, 0)
 
-		depositBaseTokens := 1 * isc.Mi
+		depositBaseTokens := 1 * isc.Million
 		err := ch.DepositBaseTokensToL2(depositBaseTokens, user)
 		expectedUser := depositBaseTokens - ch.LastReceipt().GasFeeCharged
 		ch.AssertL2BaseTokens(userAgentID, expectedUser)

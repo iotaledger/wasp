@@ -20,7 +20,7 @@ const (
 	DefaultBaseTokenSupply = tpkg.TestTokenSupply
 
 	// FundsFromFaucetAmount is how many base tokens are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * isc.Mi
+	FundsFromFaucetAmount = 1000 * isc.Million
 )
 
 var (
