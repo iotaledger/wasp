@@ -198,8 +198,8 @@ func (fp *foundryParams) WithTokenScheme(sch iotago.TokenScheme) *foundryParams 
 }
 
 const (
-	allowanceForFoundryDustDeposit = 1 * isc.Million
-	allowanceForModifySupply       = 1 * isc.Million
+	allowanceForFoundryStorageDeposit = 1 * isc.Million
+	allowanceForModifySupply          = 1 * isc.Million
 )
 
 func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
@@ -212,7 +212,7 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 		user = fp.user
 	}
 	req := NewCallParamsFromDict(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name, par).
-		WithAllowance(isc.NewAllowanceBaseTokens(allowanceForFoundryDustDeposit))
+		WithAllowance(isc.NewAllowanceBaseTokens(allowanceForFoundryStorageDeposit))
 
 	gas, _, err := fp.ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {
@@ -254,7 +254,7 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 		accounts.ParamFoundrySN, toFoundrySN(foundry),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 	).
-		WithAllowance(isc.NewAllowance(allowanceForModifySupply, nil, nil)) // enough allowance is needed for the dust deposit when token is minted first on the chain
+		WithAllowance(isc.NewAllowance(allowanceForModifySupply, nil, nil)) // enough allowance is needed for the storage deposit when token is minted first on the chain
 	g, _, err := ch.EstimateGasOnLedger(req, user, true)
 	if err != nil {
 		return err

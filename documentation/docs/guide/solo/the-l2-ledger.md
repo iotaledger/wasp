@@ -31,7 +31,7 @@ We could ignore those but we include them here to show exactly how they are hand
 
 ```go
 func TestTutorialAccounts(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 
 	// create a wallet with some base tokens on L1:

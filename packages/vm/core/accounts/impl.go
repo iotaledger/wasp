@@ -37,20 +37,20 @@ var Processor = Contract.Processor(initialize,
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
-	// validating and storing dust deposit assumption constants
+	// validating and storing storage deposit assumption constants
 	baseTokensOnAnchor := ctx.StateAnchor().Deposit
-	dustAssumptionsBin := ctx.Params().MustGet(ParamDustDepositAssumptionsBin)
-	dustDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(dustAssumptionsBin)
+	storageDepositAssumptionsBin := ctx.Params().MustGet(ParamStorageDepositAssumptionsBin)
+	storageDepositAssumptions, err := transaction.StorageDepositAssumptionFromBytes(storageDepositAssumptionsBin)
 	// checking if assumptions are consistent
-	ctx.Requiref(err == nil && baseTokensOnAnchor >= dustDepositAssumptions.AnchorOutput,
-		"accounts.initialize.fail: %v", ErrDustDepositAssumptionsWrong)
-	ctx.State().Set(kv.Key(stateVarMinimumDustDepositAssumptionsBin), dustAssumptionsBin)
+	ctx.Requiref(err == nil && baseTokensOnAnchor >= storageDepositAssumptions.AnchorOutput,
+		"accounts.initialize.fail: %v", ErrStorageDepositAssumptionsWrong)
+	ctx.State().Set(kv.Key(stateVarMinimumStorageDepositAssumptionsBin), storageDepositAssumptionsBin)
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
 
-	// initial load with base tokens from origin anchor output exceeding minimum dust deposit assumption
-	initialLoadBaseTokens := isc.NewFungibleTokens(baseTokensOnAnchor-dustDepositAssumptions.AnchorOutput, nil)
+	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
+	initialLoadBaseTokens := isc.NewFungibleTokens(baseTokensOnAnchor-storageDepositAssumptions.AnchorOutput, nil)
 	CreditToAccount(ctx.State(), ctx.ChainID().CommonAccount(), initialLoadBaseTokens)
 	return nil
 }
@@ -189,7 +189,7 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 
 // Params:
 // - token scheme
-// - must be enough allowance for the dust deposit
+// - must be enough allowance for the storage deposit
 func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("accounts.foundryCreateNew")
 
@@ -199,10 +199,10 @@ func foundryCreateNew(ctx isc.Sandbox) dict.Dict {
 	ts.MintedTokens = util.Big0
 
 	// create UTXO
-	sn, dustConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
-	ctx.Requiref(dustConsumed > 0, "dustConsumed > 0: assert failed")
-	// dust deposit for the foundry is taken from the allowance and removed from L2 ledger
-	debitBaseTokensFromAllowance(ctx, dustConsumed)
+	sn, storageDepositConsumed := ctx.Privileged().CreateNewFoundry(tokenScheme, nil)
+	ctx.Requiref(storageDepositConsumed > 0, "storage deposit Consumed > 0: assert failed")
+	// storage deposit for the foundry is taken from the allowance and removed from L2 ledger
+	debitBaseTokensFromAllowance(ctx, storageDepositConsumed)
 
 	// add to the ownership list of the account
 	AddFoundryToAccount(ctx.State(), ctx.Caller(), sn)
@@ -223,13 +223,13 @@ func foundryDestroy(ctx isc.Sandbox) dict.Dict {
 	simpleTokenScheme := util.MustTokenScheme(out.TokenScheme)
 	ctx.Requiref(util.IsZeroBigInt(big.NewInt(0).Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)), "can't destroy foundry with positive circulating supply")
 
-	dustDepositReleased := ctx.Privileged().DestroyFoundry(sn)
+	storageDepositReleased := ctx.Privileged().DestroyFoundry(sn)
 
 	deleteFoundryFromAccount(getAccountFoundries(ctx.State(), ctx.Caller()), sn)
 	DeleteFoundryOutput(ctx.State(), sn)
-	// the dust deposit goes to the caller's account
+	// the storage deposit goes to the caller's account
 	CreditToAccount(ctx.State(), ctx.Caller(), &isc.FungibleTokens{
-		BaseTokens: dustDepositReleased,
+		BaseTokens: storageDepositReleased,
 	})
 	return nil
 }
@@ -256,7 +256,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 
 	// accrue change on the caller's account
 	// update native tokens on L2 ledger and transit foundry UTXO
-	var dustAdjustment int64
+	var storageDepositAdjustment int64
 	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
 		// take tokens to destroy from allowance
 		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceFungibleTokens(
@@ -268,20 +268,20 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 			}),
 		))
 		DebitFromAccount(ctx.State(), ctx.AccountID(), deltaAssets)
-		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
+		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta.Neg(delta))
 	} else {
 		CreditToAccount(ctx.State(), ctx.Caller(), deltaAssets)
-		dustAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
+		storageDepositAdjustment = ctx.Privileged().ModifyFoundrySupply(sn, delta)
 	}
 
-	// adjust base tokens on L2 due to the possible change in dust deposit
+	// adjust base tokens on L2 due to the possible change in storage deposit
 	switch {
-	case dustAdjustment < 0:
-		// dust deposit is taken from the allowance of the caller
-		debitBaseTokensFromAllowance(ctx, uint64(-dustAdjustment))
-	case dustAdjustment > 0:
-		// dust deposit is returned to the caller account
-		CreditToAccount(ctx.State(), ctx.Caller(), isc.NewFungibleBaseTokens(uint64(dustAdjustment)))
+	case storageDepositAdjustment < 0:
+		// storage deposit is taken from the allowance of the caller
+		debitBaseTokensFromAllowance(ctx, uint64(-storageDepositAdjustment))
+	case storageDepositAdjustment > 0:
+		// storage deposit is returned to the caller account
+		CreditToAccount(ctx.State(), ctx.Caller(), isc.NewFungibleBaseTokens(uint64(storageDepositAdjustment)))
 	}
 	return nil
 }

@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	dustAllowance = 1 * isc.Million
-	nftMetadata   = "NFT metadata"
+	sdAllowance = 1 * isc.Million
+	nftMetadata = "NFT metadata"
 )
 
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
@@ -177,8 +177,8 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	f.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), f.Results.FoundrySN().Value())
@@ -189,7 +189,7 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(2002),
 		MaximumSupply: big.NewInt(2003),
 	}))
-	f.Func.TransferBaseTokens(dustAllowance).Post()
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, uint32(2), f.Results.FoundrySN().Value())
 }
@@ -204,8 +204,8 @@ func TestFoundryDestroy(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -226,8 +226,8 @@ func TestFoundryNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -244,7 +244,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
 	fmod1.Params.FoundrySN().SetValue(1)
 	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
-	fmod1.Func.TransferBaseTokens(dustAllowance).Post()
+	fmod1.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 
 	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
@@ -254,7 +254,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	tokenID := foundry.TokenID()
 	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
 	fmod2.Func.Allowance(allowance)
-	fmod2.Func.TransferBaseTokens(dustAllowance).Post()
+	fmod2.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 }
 
@@ -404,8 +404,8 @@ func TestFoundryOutput(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	serialNum := uint32(1)

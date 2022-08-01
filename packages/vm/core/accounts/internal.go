@@ -21,16 +21,16 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds                    = coreerrors.Register("not enough funds").Create()
-	ErrNotEnoughBaseTokensForDustDeposit = coreerrors.Register("not enough base tokens for dust deposit").Create()
-	ErrNotEnoughAllowance                = coreerrors.Register("not enough allowance").Create()
-	ErrBadAmount                         = coreerrors.Register("bad native asset amount").Create()
-	ErrRepeatingFoundrySerialNumber      = coreerrors.Register("repeating serial number of the foundry").Create()
-	ErrFoundryNotFound                   = coreerrors.Register("foundry not found").Create()
-	ErrOverflow                          = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrInvalidNFTID                      = coreerrors.Register("invalid NFT ID").Create()
-	ErrTooManyNFTsInAllowance            = coreerrors.Register("expected at most 1 NFT in allowance").Create()
-	ErrNFTIDNotFound                     = coreerrors.Register("NFTID not found: %s")
+	ErrNotEnoughFunds                       = coreerrors.Register("not enough funds").Create()
+	ErrNotEnoughBaseTokensForStorageDeposit = coreerrors.Register("not enough base tokens for storage deposit").Create()
+	ErrNotEnoughAllowance                   = coreerrors.Register("not enough allowance").Create()
+	ErrBadAmount                            = coreerrors.Register("bad native asset amount").Create()
+	ErrRepeatingFoundrySerialNumber         = coreerrors.Register("repeating serial number of the foundry").Create()
+	ErrFoundryNotFound                      = coreerrors.Register("foundry not found").Create()
+	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
+	ErrInvalidNFTID                         = coreerrors.Register("invalid NFT ID").Create()
+	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
+	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found: %s")
 )
 
 // getAccount each account is a map with the name of its controlling agentID.
@@ -507,7 +507,7 @@ func getAccountBalanceDict(account *collections.ImmutableMap) dict.Dict {
 
 // foundryOutputRec contains information to reconstruct output
 type foundryOutputRec struct {
-	Amount      uint64 // always dust deposit
+	Amount      uint64 // always storage deposit
 	TokenScheme iotago.TokenScheme
 	Metadata    []byte
 	BlockIndex  uint32
@@ -647,24 +647,24 @@ func hasFoundry(account *collections.ImmutableMap, sn uint32) bool {
 // region NativeToken outputs /////////////////////////////////
 
 type nativeTokenOutputRec struct {
-	DustBaseTokens uint64 // always dust deposit
-	Amount         *big.Int
-	BlockIndex     uint32
-	OutputIndex    uint16
+	StorageBaseTokens uint64 // always storage deposit
+	Amount            *big.Int
+	BlockIndex        uint32
+	OutputIndex       uint16
 }
 
 func (f *nativeTokenOutputRec) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.WriteUint32(f.BlockIndex).
 		WriteUint16(f.OutputIndex).
-		WriteUint64(f.DustBaseTokens)
+		WriteUint64(f.StorageBaseTokens)
 	util.WriteBytes8ToMarshalUtil(codec.EncodeBigIntAbs(f.Amount), mu)
 	return mu.Bytes()
 }
 
 func (f *nativeTokenOutputRec) String() string {
 	return fmt.Sprintf("Native Token Account: base tokens: %d, amount: %d, block: %d, outIdx: %d",
-		f.DustBaseTokens, f.Amount, f.BlockIndex, f.OutputIndex)
+		f.StorageBaseTokens, f.Amount, f.BlockIndex, f.OutputIndex)
 }
 
 func nativeTokenOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*nativeTokenOutputRec, error) {
@@ -676,7 +676,7 @@ func nativeTokenOutputRecFromMarshalUtil(mu *marshalutil.MarshalUtil) (*nativeTo
 	if ret.OutputIndex, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if ret.DustBaseTokens, err = mu.ReadUint64(); err != nil {
+	if ret.StorageBaseTokens, err = mu.ReadUint64(); err != nil {
 		return nil, err
 	}
 	bigIntBin, err := util.ReadBytes8FromMarshalUtil(mu)
@@ -707,10 +707,10 @@ func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap 
 // SaveNativeTokenOutput map tokenID -> foundryRec
 func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex uint32, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
-		DustBaseTokens: out.Amount,
-		Amount:         out.NativeTokens[0].Amount,
-		BlockIndex:     blockIndex,
-		OutputIndex:    outputIndex,
+		StorageBaseTokens: out.Amount,
+		Amount:            out.NativeTokens[0].Amount,
+		BlockIndex:        blockIndex,
+		OutputIndex:       outputIndex,
 	}
 	getNativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
@@ -726,7 +726,7 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 	}
 	tokenRec := mustNativeTokenOutputRecFromBytes(data)
 	ret := &iotago.BasicOutput{
-		Amount: tokenRec.DustBaseTokens,
+		Amount: tokenRec.StorageBaseTokens,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     *tokenID,
 			Amount: tokenRec.Amount,
@@ -827,24 +827,24 @@ func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID *isc.ChainID)
 
 // endregion //////////////////////////////////////////
 
-func GetDustAssumptions(state kv.KVStoreReader) *transaction.StorageDepositAssumption {
-	bin := state.MustGet(kv.Key(stateVarMinimumDustDepositAssumptionsBin))
+func GetStorageDepositAssumptions(state kv.KVStoreReader) *transaction.StorageDepositAssumption {
+	bin := state.MustGet(kv.Key(stateVarMinimumStorageDepositAssumptionsBin))
 	ret, err := transaction.StorageDepositAssumptionFromBytes(bin)
 	if err != nil {
-		panic(xerrors.Errorf("GetDustAssumptions: internal: %v", err))
+		panic(xerrors.Errorf("GetStorageDepositAssumptions: internal: %v", err))
 	}
 	return ret
 }
 
-// debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for dust deposit
+// debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
 func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64) {
 	if amount == 0 {
 		return
 	}
 	commonAccount := ctx.ChainID().CommonAccount()
-	dustAssets := isc.NewFungibleBaseTokens(amount)
-	transfer := isc.NewAllowanceFungibleTokens(dustAssets)
+	storageDepositAssets := isc.NewFungibleBaseTokens(amount)
+	transfer := isc.NewAllowanceFungibleTokens(storageDepositAssets)
 	ctx.TransferAllowedFunds(commonAccount, transfer)
-	DebitFromAccount(ctx.State(), commonAccount, dustAssets)
+	DebitFromAccount(ctx.State(), commonAccount, storageDepositAssets)
 }

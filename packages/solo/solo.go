@@ -50,16 +50,16 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                            TestContext
-	logger                       *logger.Logger
-	dbmanager                    *dbmanager.DBManager
-	utxoDB                       *utxodb.UtxoDB
-	glbMutex                     sync.RWMutex
-	ledgerMutex                  sync.RWMutex
-	chains                       map[isc.ChainID]*Chain
-	processorConfig              *processors.Config
-	disableAutoAdjustDustDeposit bool
-	seed                         cryptolib.Seed
+	T                               TestContext
+	logger                          *logger.Logger
+	dbmanager                       *dbmanager.DBManager
+	utxoDB                          *utxodb.UtxoDB
+	glbMutex                        sync.RWMutex
+	ledgerMutex                     sync.RWMutex
+	chains                          map[isc.ChainID]*Chain
+	processorConfig                 *processors.Config
+	disableAutoAdjustStorageDeposit bool
+	seed                            cryptolib.Seed
 }
 
 // Chain represents state of individual chain.
@@ -112,11 +112,11 @@ type Chain struct {
 var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
-	AutoAdjustDustDeposit bool
-	Debug                 bool
-	PrintStackTrace       bool
-	Seed                  cryptolib.Seed
-	Log                   *logger.Logger
+	AutoAdjustStorageDeposit bool
+	Debug                    bool
+	PrintStackTrace          bool
+	Seed                     cryptolib.Seed
+	Log                      *logger.Logger
 }
 
 type InitChainOptions struct {
@@ -131,10 +131,10 @@ type InitChainOptions struct {
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
-		Debug:                 false,
-		PrintStackTrace:       false,
-		Seed:                  cryptolib.Seed{},
-		AutoAdjustDustDeposit: false, // is OFF by default
+		Debug:                    false,
+		PrintStackTrace:          false,
+		Seed:                     cryptolib.Seed{},
+		AutoAdjustStorageDeposit: false, // is OFF by default
 	}
 }
 
@@ -158,14 +158,14 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 
 	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
-		T:                            t,
-		logger:                       opt.Log,
-		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
-		utxoDB:                       utxodb.New(utxoDBinitParams),
-		chains:                       make(map[isc.ChainID]*Chain),
-		processorConfig:              coreprocessors.Config(),
-		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
-		seed:                         opt.Seed,
+		T:                               t,
+		logger:                          opt.Log,
+		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
+		utxoDB:                          utxodb.New(utxoDBinitParams),
+		chains:                          make(map[isc.ChainID]*Chain),
+		processorConfig:                 coreprocessors.Config(),
+		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
+		seed:                            opt.Seed,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -247,7 +247,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min dust deposit
+		initBaseTokens, // will be adjusted to min storage deposit
 		outs,
 		outIDs,
 	)
@@ -578,7 +578,7 @@ type NFTMintedInfo struct {
 }
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
-// base tokens in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+// base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 

@@ -111,8 +111,8 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput
 	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
-	// EstimateRequiredDustDeposit returns the amount of base tokens needed to cover for a given request's dust deposit
-	EstimateRequiredDustDeposit(r RequestParameters) uint64
+	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
+	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 	// MintNFT mints an NFT
@@ -140,11 +140,11 @@ type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
 	// FungibleTokens attached to the output, always taken from the caller's account.
-	// It expected to contain base tokens at least the amount required for dust deposit
-	// It depends on the context how it is handled when base tokens are not enough for dust deposit
+	// It expected to contain base tokens at least the amount required for storage deposit
+	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	FungibleTokens *FungibleTokens
-	// AdjustToMinimumDustDeposit if true base tokens in attached fungible tokens will be added to meet minimum dust deposit requirements
-	AdjustToMinimumDustDeposit bool
+	// AdjustToMinimumStorageDeposit if true base tokens in attached fungible tokens will be added to meet minimum storage deposit requirements
+	AdjustToMinimumStorageDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters

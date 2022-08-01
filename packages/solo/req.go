@@ -261,15 +261,15 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: isc.SendOptions{},
 		},
-		NFT:                          req.nft,
-		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
+		NFT:                             req.nft,
+		DisableAutoAdjustStorageDeposit: ch.Env.disableAutoAdjustStorageDeposit,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if tx.Essence.Outputs[0].Deposit() == 0 {
-		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustDustDeposit: true}")
+		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
 	}
 	return tx, err
 }

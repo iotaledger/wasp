@@ -13,7 +13,7 @@ import (
 
 func TestBlockInfoLatest(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi := chain.GetLatestBlockInfo()
@@ -27,7 +27,7 @@ func TestBlockInfoLatest(t *testing.T) {
 
 func TestBlockInfo(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "chain1")
 
 	bi, err := chain.GetBlockInfo(0)
@@ -50,7 +50,7 @@ func TestBlockInfo(t *testing.T) {
 }
 
 func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 
 	ch := env.NewChain(nil, "chain1")
 
@@ -73,7 +73,7 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 }
 
 func TestBlockInfoSeveral(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
 	err := ch.DepositBaseTokensToL2(100_000, nil)
@@ -101,7 +101,7 @@ func TestBlockInfoSeveral(t *testing.T) {
 }
 
 func TestRequestIsProcessed(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -122,7 +122,7 @@ func TestRequestIsProcessed(t *testing.T) {
 }
 
 func TestRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -149,7 +149,7 @@ func TestRequestReceipt(t *testing.T) {
 }
 
 func TestRequestReceiptsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -172,7 +172,7 @@ func TestRequestReceiptsForBlocks(t *testing.T) {
 }
 
 func TestRequestIDsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
@@ -194,7 +194,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 }
 
 func TestViewGetRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain(nil, "chain1")
 	// try to get a receipt for a request that does not exist
 	receipt, ok := ch.GetRequestReceipt(isc.RequestID{})

@@ -65,7 +65,7 @@ func TestGetBlockInfo(t *testing.T) {
 		assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
 		assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
 		assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
-		assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+		assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
 		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 	}
@@ -94,7 +94,7 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
 	assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
 	assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
-	assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+	assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
 	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }
