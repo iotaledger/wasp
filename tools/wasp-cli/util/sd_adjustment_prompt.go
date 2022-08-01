@@ -19,15 +19,12 @@ func SDAdjustmentPrompt(output iotago.Output) {
 			log.Fatalf("transaction not sent.")
 		}
 
-		xxx
-
 		// query the user if they want to send the Tx with adjusted storage deposit
 		log.Printf(`
-		The amount of base tokens to be sent are not enough to cover the Storage Deposit for the new output.\n
-		need:%d, have:%d  \n
-		Do you wish to continue and issue this transaction sending %d base tokens? [Y/n]\n 
-		(you can automatically accept this prompt by using the following flags: --adjust-storage-deposit or -a)
-		`, minStorageDeposit, output.Deposit(), minStorageDeposit)
+The amount of base tokens to be sent are not enough to cover the Storage Deposit for the new output.
+(minimum:%d, have:%d)
+Do you wish to continue by sending %d base tokens? [Y/n] (you can automatically accept this prompt with: --adjust-storage-deposit or -a)
+`, minStorageDeposit, output.Deposit(), minStorageDeposit)
 
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()

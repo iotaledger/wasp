@@ -33,9 +33,7 @@ func sendFundsCmd() *cobra.Command {
 			outputSet, err := client.OutputMap(senderAddress)
 			log.Check(err)
 
-			log.Printf("1\n")
 			if !adjustDustDeposit {
-				log.Printf("2\n")
 				// check if the resulting output needs to be adjusted for Storage Deposit
 				output := transaction.MakeBasicOutput(
 					targetAddress,
@@ -43,7 +41,7 @@ func sendFundsCmd() *cobra.Command {
 					tokens,
 					nil,
 					isc.SendOptions{},
-					false,
+					true,
 				)
 				util.SDAdjustmentPrompt(output)
 			}

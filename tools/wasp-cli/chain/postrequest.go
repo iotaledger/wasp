@@ -6,6 +6,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
@@ -18,11 +20,30 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 		util.WithOffLedgerRequest(GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
 			return scClient.PostOffLedgerRequest(fname, params)
 		})
-	} else {
-		util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-			return scClient.PostRequest(fname, params)
-		})
+		return
 	}
+
+	// check if there are enough funds for SD
+	output := transaction.MakeBasicOutput(
+		GetCurrentChainID().AsAddress(),
+		scClient.ChainClient.KeyPair.Address(),
+		params.Transfer,
+		&isc.RequestMetadata{
+			SenderContract: 0,
+			TargetContract: isc.Hn(hname),
+			EntryPoint:     isc.Hn(fname),
+			Params:         params.Args,
+			Allowance:      params.Allowance,
+			GasBudget:      gas.MaxGasPerCall,
+		},
+		isc.SendOptions{},
+		true,
+	)
+	util.SDAdjustmentPrompt(output)
+
+	util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+		return scClient.PostRequest(fname, params)
+	})
 }
 
 func postRequestCmd() *cobra.Command {
