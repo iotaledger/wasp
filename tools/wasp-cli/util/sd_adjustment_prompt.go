@@ -16,7 +16,7 @@ func SDAdjustmentPrompt(output iotago.Output) {
 		// don't prompt if running in a script // https://stackoverflow.com/a/43947435/6749639
 		fi, _ := os.Stdin.Stat()
 		if (fi.Mode() & os.ModeCharDevice) == 0 {
-			log.Fatalf("transaction not sent.")
+			log.Fatalf("transaction not sent: base tokens is less than the minimum storage deposit (auto-adjust with --adjust-storage-deposit)")
 		}
 
 		// query the user if they want to send the Tx with adjusted storage deposit
