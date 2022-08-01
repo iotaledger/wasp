@@ -66,12 +66,17 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainNodeConn, err = nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
 	require.NoError(env.T, err)
 	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), timers)
-	ret.ChainNodeConn.AttachToAliasOutput(ret.StateManager.EnqueueAliasOutput)
-	ret.Log.Debugf("Mocked node %v started: id %v public key %v", nodeIndex, nodeID, ret.PubKey.String())
+	ret.Log.Debugf("Mocked node %v created: id %v public key %v", nodeIndex, nodeID, ret.PubKey.String())
 	return ret
 }
 
-func (node *MockedNode) StartTimer() {
+func (node *MockedNode) Start() {
+	node.ChainNodeConn.AttachToAliasOutput(node.StateManager.EnqueueAliasOutput)
+	node.startTimer()
+	node.Log.Debugf("Mocked node %v started", node.PubKey.String())
+}
+
+func (node *MockedNode) startTimer() {
 	go func() {
 		node.StateManager.Ready().MustWait()
 		counter := 0
