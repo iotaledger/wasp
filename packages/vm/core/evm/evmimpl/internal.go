@@ -6,6 +6,8 @@ package evmimpl
 import (
 	"math/big"
 
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
@@ -61,7 +63,14 @@ func (bctx *blockContext) mintBlock() {
 	for i := range bctx.txs {
 		if bctx.receipts[i].Status != types.ReceiptStatusSuccessful {
 			bctx.receipts[i].TransactionIndex = txCount
+
 			bctx.emu.BlockchainDB().AddTransaction(bctx.txs[i], bctx.receipts[i])
+
+			// Upon failed transactions, the nonce must be increased manually
+			sender := evmutil.MustGetSender(bctx.txs[i])
+			nonce := bctx.emu.StateDB().GetNonce(sender)
+			bctx.emu.StateDB().SetNonce(sender, nonce+1)
+
 			txCount++
 		}
 	}
