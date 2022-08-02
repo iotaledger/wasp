@@ -38,7 +38,7 @@ async function start() {
           items: [
             {
               key: "x".charCodeAt(0), 
-              value: "0x" + amount
+              value: "0x" + amount //TODO: Fix
             }
           ]
         },
@@ -48,9 +48,8 @@ async function start() {
           baseTokens: 1074,
           assets: [
             /*{
-
-              baseTokens: 1074,
-              ID: []
+              ID: [],
+              Amount: 1
             }*/
           ]
             
