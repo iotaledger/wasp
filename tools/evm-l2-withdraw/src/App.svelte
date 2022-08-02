@@ -25,7 +25,7 @@ async function start() {
         data: new Uint8Array(32) 
       }, 
       { // Fungible Tokens
-        iotas: 1074,
+        baseTokens: 1074,
         tokens: []
       }, 
       true,
@@ -45,11 +45,11 @@ async function start() {
 
         allowance: {
           nfts:[],
-          iotas: 1074,
+          baseTokens: 1074,
           assets: [
             /*{
 
-              iotas: 1074,            
+              baseTokens: 1074,
               ID: []
             }*/
           ]
