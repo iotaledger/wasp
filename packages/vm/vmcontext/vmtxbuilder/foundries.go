@@ -47,7 +47,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 		txb.subDeltaBaseTokensFromTotal(f.Amount)
 	}, vm.ErrNotEnoughBaseTokensBalance)
 	if err != nil {
-		panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		panic(vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
 	}
 	txb.invokedFoundries[f.SerialNumber] = &foundryInvoked{
 		serialNumber: f.SerialNumber,
@@ -58,7 +58,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 }
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
-// returns adjustment of the dust deposit.
+// returns adjustment of the storage deposit.
 func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	sn := tokenID.FoundrySerialNumber()
@@ -119,7 +119,7 @@ func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
 	return f
 }
 
-// DestroyFoundry destroys existing foundry. Return dust deposit
+// DestroyFoundry destroys existing foundry. Return storage deposit
 func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
 	f := txb.ensureFoundry(sn)
@@ -133,7 +133,7 @@ func (txb *AnchorTransactionBuilder) DestroyFoundry(sn uint32) uint64 {
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
 	f.out = nil
-	// return dust deposit to accounts
+	// return storage deposit to accounts
 	txb.addDeltaBaseTokensToTotal(f.in.Amount)
 	return f.in.Amount
 }

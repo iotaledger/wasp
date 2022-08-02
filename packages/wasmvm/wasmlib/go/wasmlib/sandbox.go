@@ -9,44 +9,44 @@ import (
 )
 
 const (
-	FnAccountID           = int32(-1)
-	FnAllowance           = int32(-2)
-	FnBalance             = int32(-3)
-	FnBalances            = int32(-4)
-	FnBlockContext        = int32(-5)
-	FnCall                = int32(-6)
-	FnCaller              = int32(-7)
-	FnChainID             = int32(-8)
-	FnChainOwnerID        = int32(-9)
-	FnContract            = int32(-10)
-	FnDeployContract      = int32(-11)
-	FnEntropy             = int32(-12)
-	FnEstimateDust        = int32(-13)
-	FnEvent               = int32(-14)
-	FnLog                 = int32(-15)
-	FnMinted              = int32(-16)
-	FnPanic               = int32(-17)
-	FnParams              = int32(-18)
-	FnPost                = int32(-19)
-	FnRequest             = int32(-20)
-	FnRequestID           = int32(-21)
-	FnRequestSender       = int32(-22)
-	FnResults             = int32(-23)
-	FnSend                = int32(-24)
-	FnStateAnchor         = int32(-25)
-	FnTimestamp           = int32(-26)
-	FnTrace               = int32(-27)
-	FnTransferAllowed     = int32(-28)
-	FnUtilsBech32Decode   = int32(-29)
-	FnUtilsBech32Encode   = int32(-30)
-	FnUtilsBlsAddress     = int32(-31)
-	FnUtilsBlsAggregate   = int32(-32)
-	FnUtilsBlsValid       = int32(-33)
-	FnUtilsEd25519Address = int32(-34)
-	FnUtilsEd25519Valid   = int32(-35)
-	FnUtilsHashBlake2b    = int32(-36)
-	FnUtilsHashName       = int32(-37)
-	FnUtilsHashSha3       = int32(-38)
+	FnAccountID              = int32(-1)
+	FnAllowance              = int32(-2)
+	FnBalance                = int32(-3)
+	FnBalances               = int32(-4)
+	FnBlockContext           = int32(-5)
+	FnCall                   = int32(-6)
+	FnCaller                 = int32(-7)
+	FnChainID                = int32(-8)
+	FnChainOwnerID           = int32(-9)
+	FnContract               = int32(-10)
+	FnDeployContract         = int32(-11)
+	FnEntropy                = int32(-12)
+	FnEstimateStorageDeposit = int32(-13)
+	FnEvent                  = int32(-14)
+	FnLog                    = int32(-15)
+	FnMinted                 = int32(-16)
+	FnPanic                  = int32(-17)
+	FnParams                 = int32(-18)
+	FnPost                   = int32(-19)
+	FnRequest                = int32(-20)
+	FnRequestID              = int32(-21)
+	FnRequestSender          = int32(-22)
+	FnResults                = int32(-23)
+	FnSend                   = int32(-24)
+	FnStateAnchor            = int32(-25)
+	FnTimestamp              = int32(-26)
+	FnTrace                  = int32(-27)
+	FnTransferAllowed        = int32(-28)
+	FnUtilsBech32Decode      = int32(-29)
+	FnUtilsBech32Encode      = int32(-30)
+	FnUtilsBlsAddress        = int32(-31)
+	FnUtilsBlsAggregate      = int32(-32)
+	FnUtilsBlsValid          = int32(-33)
+	FnUtilsEd25519Address    = int32(-34)
+	FnUtilsEd25519Valid      = int32(-35)
+	FnUtilsHashBlake2b       = int32(-36)
+	FnUtilsHashName          = int32(-37)
+	FnUtilsHashSha3          = int32(-38)
 )
 
 type ScSandbox struct{}
@@ -206,7 +206,7 @@ func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnEntropy, nil))
 }
 
-func (s ScSandboxFunc) EstimateDust(fn *ScFunc) uint64 {
+func (s ScSandboxFunc) EstimateStorageDeposit(fn *ScFunc) uint64 {
 	req := &wasmrequests.PostRequest{
 		Contract:  fn.hContract,
 		Function:  fn.hFunction,
@@ -215,7 +215,7 @@ func (s ScSandboxFunc) EstimateDust(fn *ScFunc) uint64 {
 		Transfer:  fn.transfer.Bytes(),
 		Delay:     fn.delay,
 	}
-	return wasmtypes.Uint64FromBytes(Sandbox(FnEstimateDust, req.Bytes()))
+	return wasmtypes.Uint64FromBytes(Sandbox(FnEstimateStorageDeposit, req.Bytes()))
 }
 
 // signals an event on the node that external entities can subscribe to

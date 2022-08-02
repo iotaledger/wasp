@@ -27,9 +27,9 @@ func withdrawFromChain(ctx isc.Sandbox) dict.Dict {
 			Allowance:      isc.NewAllowanceBaseTokens(baseTokensToWithdrawal),
 		},
 	}
-	requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
-	if availableBaseTokens < requiredDustDeposit {
-		ctx.Log().Panicf("not enough base tokens sent to cover dust deposit")
+	requiredStorageDeposit := ctx.EstimateRequiredStorageDeposit(request)
+	if availableBaseTokens < requiredStorageDeposit {
+		ctx.Log().Panicf("not enough base tokens sent to cover storage deposit")
 	}
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Send(request)

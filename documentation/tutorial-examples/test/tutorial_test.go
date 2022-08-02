@@ -39,14 +39,14 @@ func TestTutorialL1(t *testing.T) {
 }
 
 func TestTutorialDeploySC(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "example")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 }
 
 func TestTutorialInvokeSC(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func TestTutorialInvokeSC(t *testing.T) {
 }
 
 func TestTutorialInvokeSCOffLedger(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestTutorialInvokeSCOffLedger(t *testing.T) {
 }
 
 func TestTutorialInvokeSCError(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
@@ -98,7 +98,7 @@ func TestTutorialInvokeSCError(t *testing.T) {
 }
 
 func TestTutorialAccounts(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 
 	// create a wallet with some base tokens on L1:
@@ -112,7 +112,7 @@ func TestTutorialAccounts(t *testing.T) {
 
 	// send 1 Mi from the L1 wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		AddBaseTokens(1 * isc.Mi)
+		AddBaseTokens(1 * isc.Million)
 
 	// estimate the gas fee and storage deposit
 	gas1, gasFee1, err := chain.EstimateGasOnLedger(req, userWallet, true)
@@ -128,14 +128,14 @@ func TestTutorialAccounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// our L1 balance is 1 Mi + gas fee short
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*isc.Mi-gasFee1)
+	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-1*isc.Million-gasFee1)
 	// our L2 balance is 1 Mi
-	chain.AssertL2BaseTokens(userAgentID, 1*isc.Mi)
+	chain.AssertL2BaseTokens(userAgentID, 1*isc.Million)
 	// (the gas fee went to the chain's private account)
 
 	// withdraw all base tokens back to L1
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).
-		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Mi))
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million))
 
 	// estimate the gas fee and storage deposit
 	gas2, gasFee2, err := chain.EstimateGasOnLedger(req, userWallet, true)

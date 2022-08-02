@@ -163,4 +163,5 @@ func (sm *stateManager) storeSyncingData() {
 		StateOutputCommitment: outputStateCommitment,
 		StateOutputTimestamp:  sm.stateOutputTimestamp,
 	})
+	sm.log.Debugf("storeSyncingData: values stored")
 }

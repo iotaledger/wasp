@@ -227,7 +227,7 @@ func TestTakeAllowance(t *testing.T) {
 	bal := ctx.Balances()
 
 	f := testwasmlib.ScFuncs.TakeAllowance(ctx)
-	const tokensToSend = 1 * isc.Mi
+	const tokensToSend = 1 * isc.Million
 	f.Func.TransferBaseTokens(tokensToSend).Post()
 	require.NoError(t, ctx.Err)
 
@@ -242,7 +242,7 @@ func TestTakeAllowance(t *testing.T) {
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.TokenBalance(ctx)
@@ -262,7 +262,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	// FuncParamTypes without params does nothing to SC balance
 	// because it does not take the allowance
 	f := testwasmlib.ScFuncs.ParamTypes(ctx)
-	const tokensToSend = 1 * isc.Mi
+	const tokensToSend = 1 * isc.Million
 	f.Func.TransferBaseTokens(tokensToSend).Post()
 	require.NoError(t, ctx.Err)
 	ctx.Balances()
@@ -277,7 +277,7 @@ func TestTakeNoAllowance(t *testing.T) {
 	require.EqualValues(t, bal.Account, g.Results.Tokens().Value())
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	v := testwasmlib.ScFuncs.TokenBalance(ctx)

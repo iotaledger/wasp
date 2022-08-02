@@ -42,9 +42,9 @@ func NewChainOriginTransaction(
 		},
 	}
 	{
-		aliasDustDeposit := NewStorageDepositEstimate().AnchorOutput
-		if aliasOutput.Amount < aliasDustDeposit {
-			aliasOutput.Amount = aliasDustDeposit
+		aliasStorageDeposit := NewStorageDepositEstimate().AnchorOutput
+		if aliasOutput.Amount < aliasStorageDeposit {
+			aliasOutput.Amount = aliasStorageDeposit
 		}
 	}
 	txInputs, remainderOutput, err := computeInputsAndRemainder(
@@ -100,8 +100,8 @@ func NewRootInitRequestTransaction(
 	initParams ...dict.Dict,
 ) (*iotago.Transaction, error) {
 	params := dict.Dict{
-		root.ParamDustDepositAssumptionsBin: NewStorageDepositEstimate().Bytes(),
-		governance.ParamDescription:         codec.EncodeString(description),
+		root.ParamStorageDepositAssumptionsBin: NewStorageDepositEstimate().Bytes(),
+		governance.ParamDescription:            codec.EncodeString(description),
 	}
 	for _, p := range initParams {
 		params.Extend(p)

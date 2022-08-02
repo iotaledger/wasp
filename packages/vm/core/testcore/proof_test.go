@@ -14,7 +14,7 @@ import (
 
 func TestProofs(t *testing.T) {
 	t.Run("chain ID", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch := env.NewChain(nil, "chain1")
 
 		proof := ch.GetMerkleProofRaw(nil)

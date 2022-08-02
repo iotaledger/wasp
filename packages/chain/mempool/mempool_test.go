@@ -49,7 +49,7 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *isc.RequestPa
 				Allowance:      nil,
 				GasBudget:      1000,
 			},
-			AdjustToMinimumDustDeposit: true,
+			AdjustToMinimumStorageDeposit: true,
 		}
 		if len(f) == 1 {
 			f[0](i, &requestParams)

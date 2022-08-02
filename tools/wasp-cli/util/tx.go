@@ -11,7 +11,8 @@ import (
 )
 
 func PostTransaction(tx *iotago.Transaction) {
-	config.L1Client().PostTx(tx) //nolint:errcheck
+	err := config.L1Client().PostTx(tx)
+	log.Check(err)
 }
 
 func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, error)) {

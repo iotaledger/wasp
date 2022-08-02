@@ -57,10 +57,10 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
     ctx.log("doing nothing...");
 }
 
-export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
+export function funcEstimateMinStorageDeposit(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinStorageDepositContext): void {
     const provided = ctx.allowance().baseTokens();
-    let dummy = sc.ScFuncs.estimateMinDust(ctx);
-    const required = ctx.estimateDust(dummy.func);
+    let dummy = sc.ScFuncs.estimateMinStorageDeposit(ctx);
+    const required = ctx.estimateStorageDeposit(dummy.func);
     ctx.require(provided >= required, "not enough funds");
 }
 

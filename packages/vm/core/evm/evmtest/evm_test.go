@@ -139,7 +139,7 @@ func TestGasLimit(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
-	// set a gas ratio such that evm gas cost in base tokens is larger than dust cost
+	// set a gas ratio such that evm gas cost in base tokens is larger than storage deposit cost
 	err := env.setGasRatio(util.Ratio32{A: 10, B: 1}, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
 	require.NoError(t, err)
 
@@ -483,7 +483,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// mint some native tokens
-	env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
+	env.soloChain.MustDepositBaseTokensToL2(10*isc.Million, nil) // for gas
 	sn, tokenID, err := env.soloChain.NewFoundryParams(10000).
 		WithUser(env.soloChain.OriginatorPrivateKey).
 		CreateFoundry()

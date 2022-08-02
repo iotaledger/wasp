@@ -260,21 +260,21 @@ func (ch *Chain) GetInfo() (*isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contr
 	return chainID, chainOwnerID, contracts
 }
 
-type DustInfo struct {
+type StorageDepositInfo struct {
 	TotalBaseTokensInL2Accounts uint64
-	TotalDustDeposit            uint64
+	TotalStorageDeposit         uint64
 	NumNativeTokens             int
 }
 
-func (d *DustInfo) Total() uint64 {
-	return d.TotalBaseTokensInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
+func (d *StorageDepositInfo) Total() uint64 {
+	return d.TotalBaseTokensInL2Accounts + d.TotalStorageDeposit*uint64(d.NumNativeTokens)
 }
 
-func (ch *Chain) GetTotalBaseTokensInfo() *DustInfo {
+func (ch *Chain) GetTotalBaseTokensInfo() *StorageDepositInfo {
 	bi := ch.GetLatestBlockInfo()
-	return &DustInfo{
+	return &StorageDepositInfo{
 		TotalBaseTokensInL2Accounts: bi.TotalBaseTokensInL2Accounts,
-		TotalDustDeposit:            bi.TotalDustDeposit,
+		TotalStorageDeposit:         bi.TotalStorageDeposit,
 		NumNativeTokens:             len(ch.GetOnChainTokenIDs()),
 	}
 }

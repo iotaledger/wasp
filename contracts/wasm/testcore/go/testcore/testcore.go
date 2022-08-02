@@ -70,10 +70,10 @@ func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
 	ctx.Log(MsgDoNothing)
 }
 
-func funcEstimateMinDust(ctx wasmlib.ScFuncContext, _ *EstimateMinDustContext) {
+func funcEstimateMinStorageDeposit(ctx wasmlib.ScFuncContext, _ *EstimateMinStorageDepositContext) {
 	provided := ctx.Allowance().BaseTokens()
-	dummy := ScFuncs.EstimateMinDust(ctx)
-	required := ctx.EstimateDust(dummy.Func)
+	dummy := ScFuncs.EstimateMinStorageDeposit(ctx)
+	required := ctx.EstimateStorageDeposit(dummy.Func)
 	ctx.Require(provided >= required, "not enough funds")
 }
 
@@ -238,9 +238,9 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 
 	// TODO more
 	availableTokens := ctx.Allowance().BaseTokens()
-	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
+	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
 	if availableTokens < 1000 {
-		ctx.Panic("not enough base tokens sent to cover dust deposit")
+		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)

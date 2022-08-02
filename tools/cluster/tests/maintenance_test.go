@@ -20,13 +20,13 @@ func TestMaintenance(t *testing.T) {
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	ownerAgentID := isc.NewAgentID(ownerAddr)
-	env.DepositFunds(10*isc.Mi, ownerWallet)
+	env.DepositFunds(10*isc.Million, ownerWallet)
 	ownerSCClient := env.Chain.SCClient(governance.Contract.Hname(), ownerWallet)
 	ownerIncCounterSCClient := env.Chain.SCClient(nativeIncCounterSCHname, ownerWallet)
 
 	userWallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	env.DepositFunds(10*isc.Mi, userWallet)
+	env.DepositFunds(10*isc.Million, userWallet)
 	userSCClient := env.Chain.SCClient(governance.Contract.Hname(), userWallet)
 	userIncCounterSCClient := env.Chain.SCClient(nativeIncCounterSCHname, userWallet)
 

@@ -35,7 +35,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkLedger()
 
 	// deposit some base tokens to the chain
-	depositBaseTokens := 10 * isc.Mi
+	depositBaseTokens := 10 * isc.Million
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(depositBaseTokens)
@@ -56,7 +56,7 @@ func TestDepositWithdraw(t *testing.T) {
 	)
 
 	// withdraw some base tokens back
-	baseTokensToWithdraw := 1 * isc.Mi
+	baseTokensToWithdraw := 1 * isc.Million
 	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
 			Allowance: isc.NewAllowanceBaseTokens(baseTokensToWithdraw),

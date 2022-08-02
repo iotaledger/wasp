@@ -376,20 +376,20 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 }
 
 type ISCRequestParameters struct {
-	TargetAddress            L1Address
-	FungibleTokens           ISCFungibleTokens
-	AdjustMinimumDustDeposit bool
-	Metadata                 ISCSendMetadata
-	SendOptions              ISCSendOptions
+	TargetAddress               L1Address
+	FungibleTokens              ISCFungibleTokens
+	AdjustMinimumStorageDeposit bool
+	Metadata                    ISCSendMetadata
+	SendOptions                 ISCSendOptions
 }
 
 func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParameters {
 	ret := ISCRequestParameters{
-		TargetAddress:            WrapL1Address(parameters.TargetAddress),
-		FungibleTokens:           WrapISCFungibleTokens(*parameters.FungibleTokens),
-		AdjustMinimumDustDeposit: parameters.AdjustToMinimumDustDeposit,
-		Metadata:                 WrapISCSendMetadata(*parameters.Metadata),
-		SendOptions:              WrapISCSendOptions(parameters.Options),
+		TargetAddress:               WrapL1Address(parameters.TargetAddress),
+		FungibleTokens:              WrapISCFungibleTokens(*parameters.FungibleTokens),
+		AdjustMinimumStorageDeposit: parameters.AdjustToMinimumStorageDeposit,
+		Metadata:                    WrapISCSendMetadata(*parameters.Metadata),
+		SendOptions:                 WrapISCSendOptions(parameters.Options),
 	}
 
 	return ret
@@ -397,11 +397,11 @@ func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParame
 
 func (i *ISCRequestParameters) Unwrap() isc.RequestParameters {
 	ret := isc.RequestParameters{
-		TargetAddress:              i.TargetAddress.MustUnwrap(),
-		FungibleTokens:             i.FungibleTokens.Unwrap(),
-		AdjustToMinimumDustDeposit: i.AdjustMinimumDustDeposit,
-		Metadata:                   i.Metadata.Unwrap(),
-		Options:                    i.SendOptions.Unwrap(),
+		TargetAddress:                 i.TargetAddress.MustUnwrap(),
+		FungibleTokens:                i.FungibleTokens.Unwrap(),
+		AdjustToMinimumStorageDeposit: i.AdjustMinimumStorageDeposit,
+		Metadata:                      i.Metadata.Unwrap(),
+		Options:                       i.SendOptions.Unwrap(),
 	}
 
 	return ret

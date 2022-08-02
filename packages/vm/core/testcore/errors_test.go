@@ -47,7 +47,7 @@ var errorContractProcessor = errorContract.Processor(nil,
 
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true}).WithNativeContract(errorContractProcessor)
 	chain, _, _ := env.NewChainExt(nil, 100_000, "chain1")
 	err := chain.DeployContract(nil, errorContract.Name, errorContract.ProgramHash)
 
@@ -63,7 +63,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 
 func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
 	chain, _, _ := env.NewChainExt(nil, 1, "chain1")
 
 	chain.MustDepositBaseTokensToL2(1, nil)

@@ -31,9 +31,9 @@ func test2Chains(t *testing.T, w bool) {
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustDustDeposit: true,
-		Debug:                 true,
-		PrintStackTrace:       true,
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain(nil, "ch1")
@@ -61,8 +61,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
 	// send base tokens to contractAgentID (that is an entity of chain2) on chain1
-	const baseTokensToSend = 11 * isc.Mi
-	const baseTokensCreditedToScOnChain1 = 10 * isc.Mi
+	const baseTokensToSend = 11 * isc.Million
+	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
@@ -100,9 +100,9 @@ func test2Chains(t *testing.T, w bool) {
 	baseTokensToWithdrawalFromChain1 := baseTokensCreditedToScOnChain1 // try to withdraw all base tokens deposited to chain1 on behalf of chain2's contract
 	// reqAllowance is the allowance provided to the "withdraw from chain" contract (chain2) that needs to be enough to
 	// pay the gas fees of withdraw func on chain1
-	reqAllowance := accounts.ConstDepositFeeTmp + 1*isc.Mi
+	reqAllowance := accounts.ConstDepositFeeTmp + 1*isc.Million
 	// allowance + x, where x will be used for the gas costs of `FuncWithdrawFromChain` on chain2
-	baseTokensToSend2 := reqAllowance + 1*isc.Mi
+	baseTokensToSend2 := reqAllowance + 1*isc.Million
 
 	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawFromChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,

@@ -76,7 +76,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 		}, vmexceptions.AllProtocolLimits...,
 	)
 	if err != nil {
-		// transaction limits exceeded or not enough funds for internal dust deposit. Skipping the request. Rollback
+		// transaction limits exceeded or not enough funds for internal storage deposit. Skipping the request. Rollback
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
@@ -93,10 +93,10 @@ func (vmctx *VMContext) creditAssetsToChain() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	// Consume the output. Adjustment in L2 is needed because of the dust in the internal UTXOs
-	dustAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
-	if dustAdjustment > 0 {
-		panic("`dustAdjustment > 0`: assertion failed, expected always non-positive dust adjustment")
+	// Consume the output. Adjustment in L2 is needed because of the storage deposit in the internal UTXOs
+	storageDepositAdjustment := vmctx.txbuilder.Consume(vmctx.req.(isc.OnLedgerRequest))
+	if storageDepositAdjustment > 0 {
+		panic("`storageDepositAdjustment > 0`: assertion failed, expected always non-positive storage deposit adjustment")
 	}
 
 	// if sender is specified, all assets goes to sender's account
@@ -108,12 +108,12 @@ func (vmctx *VMContext) creditAssetsToChain() {
 	vmctx.creditToAccount(account, vmctx.req.FungibleTokens())
 	vmctx.creditNFTToAccount(account, vmctx.req.NFT())
 
-	// adjust the sender's account with the dust consumed or returned by internal UTXOs
-	// if base tokens in the sender's account is not enough for the dust deposit of newly created TNT outputs
-	// it will panic with exceptions.ErrNotEnoughFundsForInternalDustDeposit
-	// TNT outputs will use dust deposit from the caller
-	// TODO remove attack vector when base tokens for dust deposit is not enough and the request keeps being skipped
-	vmctx.adjustL2BaseTokensIfNeeded(dustAdjustment, account)
+	// adjust the sender's account with the storage deposit consumed or returned by internal UTXOs
+	// if base tokens in the sender's account is not enough for the storage deposit of newly created TNT outputs
+	// it will panic with exceptions.ErrNotEnoughFundsForInternalStorageDeposit
+	// TNT outputs will use storage deposit from the caller
+	// TODO remove attack vector when base tokens for storage deposit is not enough and the request keeps being skipped
+	vmctx.adjustL2BaseTokensIfNeeded(storageDepositAdjustment, account)
 
 	// here transaction builder must be consistent itself and be consistent with the state (the accounts)
 	vmctx.assertConsistentL2WithL1TxBuilder("end creditAssetsToChain")

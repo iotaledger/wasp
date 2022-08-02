@@ -33,7 +33,7 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnContract,
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
-	(*WasmContextSandbox).fnEstimateDust,
+	(*WasmContextSandbox).fnEstimateStorageDeposit,
 	(*WasmContextSandbox).fnEvent,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
@@ -79,7 +79,7 @@ var sandboxFuncNames = []string{
 	"FnContract",
 	"#FnDeployContract",
 	"FnEntropy",
-	"#FnEstimateDust",
+	"#FnEstimateStorageDeposit",
 	"$FnEvent",
 	"$FnLog",
 	"FnMinted",
@@ -160,18 +160,18 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}
-	// Force a minimum transfer of 1million base tokens for dust and some gas
+	// Force a minimum transfer of 1million base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Mi
+		transfer.Assets.BaseTokens = 1 * isc.Million
 	}
 
 	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
 	sendReq := isc.RequestParameters{
-		AdjustToMinimumDustDeposit: true,
-		TargetAddress:              chainID.AsAddress(),
-		FungibleTokens:             transfer.Assets,
+		AdjustToMinimumStorageDeposit: true,
+		TargetAddress:                 chainID.AsAddress(),
+		FungibleTokens:                transfer.Assets,
 		Metadata: &isc.SendMetadata{
 			TargetContract: contract,
 			EntryPoint:     function,
@@ -289,9 +289,9 @@ func (s *WasmContextSandbox) fnEntropy(_ []byte) []byte {
 	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnEstimateDust(args []byte) []byte {
-	dust := s.ctx.EstimateRequiredDustDeposit(s.makeRequest(args))
-	return codec.EncodeUint64(dust)
+func (s *WasmContextSandbox) fnEstimateStorageDeposit(args []byte) []byte {
+	storageDeposit := s.ctx.EstimateRequiredStorageDeposit(s.makeRequest(args))
+	return codec.EncodeUint64(storageDeposit)
 }
 
 func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
@@ -357,9 +357,9 @@ func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscpAllowance(scAssets)
 		metadata := isc.RequestParameters{
-			AdjustToMinimumDustDeposit: true,
-			TargetAddress:              address,
-			FungibleTokens:             allowance.Assets,
+			AdjustToMinimumStorageDeposit: true,
+			TargetAddress:                 address,
+			FungibleTokens:                allowance.Assets,
 		}
 		if len(allowance.NFTs) == 0 {
 			s.ctx.Send(metadata)

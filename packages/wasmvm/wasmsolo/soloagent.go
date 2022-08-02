@@ -52,8 +52,3 @@ func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
 		return 0
 	}
 }
-
-func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScTokenID, error) {
-	token, err := a.Env.MintTokens(a.Pair, amount)
-	return a.Cvt.ScTokenID(&token), err
-}

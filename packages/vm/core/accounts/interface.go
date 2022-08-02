@@ -55,23 +55,23 @@ const (
 	// prefixNFTData Records a map with all NFT data (issuer/metadata)
 	prefixNFTData
 	//
-	stateVarMinimumDustDepositAssumptionsBin
+	stateVarMinimumStorageDepositAssumptionsBin
 
-	ParamAgentID                   = "a"
-	ParamAccountNonce              = "n"
-	ParamForceMinimumBaseTokens    = "f"
-	ParamFoundrySN                 = "s"
-	ParamFoundryOutputBin          = "b"
-	ParamTokenScheme               = "t"
-	ParamSupplyDeltaAbs            = "d"
-	ParamDestroyTokens             = "y"
-	ParamDustDepositAssumptionsBin = "u"
-	ParamForceOpenAccount          = "c"
-	ParamNFTIDs                    = "i"
-	ParamNFTID                     = "z"
-	ParamNFTData                   = "e"
-	ParamBalance                   = "B"
-	ParamNativeTokenID             = "N"
+	ParamAgentID                      = "a"
+	ParamAccountNonce                 = "n"
+	ParamForceMinimumBaseTokens       = "f"
+	ParamFoundrySN                    = "s"
+	ParamFoundryOutputBin             = "b"
+	ParamTokenScheme                  = "t"
+	ParamSupplyDeltaAbs               = "d"
+	ParamDestroyTokens                = "y"
+	ParamStorageDepositAssumptionsBin = "u"
+	ParamForceOpenAccount             = "c"
+	ParamNFTIDs                       = "i"
+	ParamNFTID                        = "z"
+	ParamNFTData                      = "e"
+	ParamBalance                      = "B"
+	ParamNativeTokenID                = "N"
 )
 
-var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
+var ErrStorageDepositAssumptionsWrong = xerrors.New("'storage deposit assumptions' parameter not specified or wrong")

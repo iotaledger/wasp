@@ -74,7 +74,7 @@ struct ISCSendOptions {
 struct ISCRequestParameters {
 	L1Address targetAddress;
 	ISCFungibleTokens fungibleTokens;
-	bool adjustMinimumDustDeposit;
+	bool adjustMinimumStorageDeposit;
 	ISCSendMetadata metadata;
 	ISCSendOptions sendOptions;
 }
@@ -120,8 +120,8 @@ interface ISC {
 	function getAllowanceNativeToken(uint16 i) external view returns (NativeToken memory);
 	function triggerEvent(string memory s) external;
 	function getEntropy() external view returns (bytes32);
-	function send(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
-	function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumDustDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, NFTID id) external;
+	function send(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
+	function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, NFTID id) external;
 	function registerError(string memory s) external view returns (ISCError);
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 	function getAllowanceAvailableBaseTokens() external view returns (uint64);

@@ -20,7 +20,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Mi).WithGasBudget(math.MaxUint64)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -94,7 +94,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
 
-	baseTokensSentPerRequest := 1 * isc.Mi
+	baseTokensSentPerRequest := 1 * isc.Million
 	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
 
