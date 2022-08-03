@@ -48,7 +48,7 @@
           "127.0.0.1"
         ]
       },
-      "scheme": "ip"
+      "scheme": "none"
     },
     "bindAddress": "0.0.0.0:9090"
   },
