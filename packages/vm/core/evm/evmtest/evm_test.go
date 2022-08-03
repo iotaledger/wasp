@@ -20,8 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/stretchr/testify/require"
 )
 
@@ -185,7 +184,7 @@ func TestLoop(t *testing.T) {
 	}
 }
 
-func TestISCContract(t *testing.T) {
+func TestMagicContract(t *testing.T) {
 	// deploy the evm contract, which starts an EVM chain and automatically
 	// deploys the isc.sol EVM contract at address 0x1074
 	env := initEVM(t)
@@ -206,8 +205,8 @@ func TestISCChainOwnerID(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
-	ret := new(isccontract.ISCAgentID)
-	env.ISCContract(ethKey).callView("getChainOwnerID", nil, &ret)
+	ret := new(iscmagic.ISCAgentID)
+	env.MagicContract(ethKey).callView("getChainOwnerID", nil, &ret)
 
 	chainOwnerID := env.soloChain.OriginatorAgentID
 	require.True(t, chainOwnerID.Equals(ret.MustUnwrap()))
@@ -218,35 +217,20 @@ func TestISCTimestamp(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	var ret int64
-	env.ISCContract(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
+	env.MagicContract(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
 
 	require.EqualValues(t, env.soloChain.GetLatestBlockInfo().Timestamp.Unix(), ret)
-}
-
-func TestISCGetParam(t *testing.T) {
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-
-	key := evm.FieldCallMsg // callView sends an ISC request including this parameter
-
-	var has bool
-	env.ISCContract(ethKey).callView("hasParam", []interface{}{key}, &has)
-	require.True(t, has)
-
-	var ret []byte
-	env.ISCContract(ethKey).callView("getParam", []interface{}{key}, &ret)
-	require.NotEmpty(t, ret)
 }
 
 func TestISCCallView(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
-	ret := new(isccontract.ISCDict)
-	env.ISCContract(ethKey).callView("callView", []interface{}{
+	ret := new(iscmagic.ISCDict)
+	env.MagicContract(ethKey).callView("callView", []interface{}{
 		accounts.Contract.Hname(),
 		accounts.ViewBalance.Hname(),
-		&isccontract.ISCDict{Items: []isccontract.ISCDictItem{{
+		&iscmagic.ISCDict{Items: []iscmagic.ISCDictItem{{
 			Key:   []byte(accounts.ParamAgentID),
 			Value: env.soloChain.OriginatorAgentID.Bytes(),
 		}}},
@@ -259,7 +243,7 @@ func TestISCLogPanic(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
-	_, err := env.ISCContract(ethKey).callFn([]ethCallOptions{{
+	_, err := env.MagicContract(ethKey).callFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "logPanic", "Hi from EVM!")
 
@@ -287,10 +271,10 @@ func TestISCNFTData(t *testing.T) {
 	require.NoError(t, err)
 
 	// call getNFTData from EVM
-	ret := new(isccontract.ISCNFT)
-	env.ISCContract(ethKey).callView(
+	ret := new(iscmagic.ISCNFT)
+	env.MagicContract(ethKey).callView(
 		"getNFTData",
-		[]interface{}{isccontract.WrapNFTID(nft.ID)},
+		[]interface{}{iscmagic.WrapNFTID(nft.ID)},
 		&ret,
 	)
 
@@ -362,7 +346,7 @@ func TestISCGetCaller(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	agentID := new(isccontract.ISCAgentID)
+	agentID := new(iscmagic.ISCAgentID)
 	iscTest.callFnExpectEvent(nil, "GetCallerEvent", &agentID, "emitGetCaller")
 
 	senderAddress := crypto.PubkeyToAddress(iscTest.defaultSender.PublicKey)
@@ -374,10 +358,10 @@ func TestISCGetSenderAccount(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	sender := new(isccontract.ISCAgentID)
+	sender := new(iscmagic.ISCAgentID)
 	iscTest.callFnExpectEvent(nil, "SenderAccountEvent", &sender, "emitSenderAccount")
 
-	require.EqualValues(t, isccontract.WrapISCAgentID(env.soloChain.LastReceipt().Request.SenderAccount()), *sender)
+	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().Request.SenderAccount()), *sender)
 }
 
 func TestISCGetAllowanceBaseTokens(t *testing.T) {
@@ -433,7 +417,7 @@ func TestSend(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 	_, receiver := env.solo.NewKeyPair()
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
-	iscTest.callFn(nil, "send", isccontract.WrapL1Address(receiver))
+	iscTest.callFn(nil, "send", iscmagic.WrapL1Address(receiver))
 	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), uint64(1024))
 }
 
@@ -469,7 +453,7 @@ func TestSendAsNFT(t *testing.T) {
 						WithMaxAffordableGasBudget()
 				},
 			},
-		}}, "callSendAsNFT", isccontract.WrapBaseTokensNFTID(nftInfo.NFTID))
+		}}, "callSendAsNFT", iscmagic.WrapBaseTokensNFTID(nftInfo.NFTID))
 		require.NoError(t, err)
 	*/
 }
@@ -491,7 +475,7 @@ func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
 	err = env.soloChain.MintTokens(sn, 10000, env.soloChain.OriginatorPrivateKey)
 	require.NoError(t, err)
 
-	nt := new(isccontract.NativeToken)
+	nt := new(iscmagic.NativeToken)
 	iscTest.callFnExpectEvent([]ethCallOptions{{
 		// allowance: isc.NewAllowanceFungibleTokens(isc.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
 	}}, "AllowanceAvailableNativeTokenEvent", &nt, "emitAllowanceAvailableNativeTokens")
@@ -515,7 +499,7 @@ func TestISCGetAllowanceNFTs(t *testing.T) {
 		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 		require.NoError(t, err)
 
-		nft := new(isccontract.ISCNFT)
+		nft := new(iscmagic.ISCNFT)
 		iscTest.callFnExpectEvent([]ethCallOptions{{
 			iota: iscCallOptions{
 				wallet: issuerWallet,
@@ -556,7 +540,7 @@ func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
 		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
 		require.NoError(t, err)
 
-		nft := new(isccontract.ISCNFT)
+		nft := new(iscmagic.ISCNFT)
 		iscTest.callFnExpectEvent([]ethCallOptions{{
 			iota: iotaCallOptions{
 				wallet: issuerWallet,

@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.5;
 
-import "@isccontract/ISC.sol";
+import "@iscmagic/ISC.sol";
 
 contract ISCTest {
     ISCError TestError = isc.registerError("TestError");

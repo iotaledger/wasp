@@ -29,7 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/stretchr/testify/require"
 )
 
@@ -215,8 +215,8 @@ func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *soloChainEnv) ISCContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
-	iscABI, err := abi.JSON(strings.NewReader(isccontract.ABI))
+func (e *soloChainEnv) MagicContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	iscABI, err := abi.JSON(strings.NewReader(iscmagic.ABI))
 	require.NoError(e.t, err)
 	return &iscContractInstance{
 		evmContractInstance: &evmContractInstance{
@@ -413,7 +413,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 }
 
 func (i *iscTestContractInstance) getChainID() *isc.ChainID {
-	var v isccontract.ISCChainID
+	var v iscmagic.ISCChainID
 	i.callView("getChainID", nil, &v)
 	return v.MustUnwrap()
 }
