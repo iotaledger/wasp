@@ -1,7 +1,6 @@
 {
   "l1": {
-    "apiAddress": "http://localhost:14265",
-    "faucetAddress": "http://localhost:8091"
+    "apiAddress": "http://localhost:14265"
   },
   "database": {
     "directory": "waspdb"
@@ -79,6 +78,10 @@
   },
   "metrics": {
     "bindAddress": "127.0.0.1:2112",
+    "enabled": true
+  },
+  "wal": {
+    "directory": "wal",
     "enabled": true
   }
 }
