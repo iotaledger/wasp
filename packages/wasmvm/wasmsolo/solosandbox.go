@@ -109,7 +109,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		allowance = transfer
 	}
 	req.WithAllowance(allowance)
-	// Force a minimum transfer of 1Million bas tokens for storage deposit and some gas
+	// Force a minimum transfer of 1 Million base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
