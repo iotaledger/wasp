@@ -17,6 +17,10 @@ Alternativaly, you can run a Wasp node using one of the provided docker setups:
 - [Wasp standalone Docker image](docker_standalone.md)
 - pre-configured local [Wasp and Hornet node setup using Docker Compose](../development_tools/docker_preconfigured.md).
 
+## Requirements
+
+- [Go 1.18](https://golang.org/doc/install)
+
 ## Clone the Wasp repository
 
 You can get the source code of the latest Wasp version from the [official repository](https://github.com/iotaledger/wasp).

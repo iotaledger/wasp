@@ -26,8 +26,7 @@ keywords:
 
 ### Software
 
-- [Go 1.18](https://golang.org/doc/install)
-- Access to a [Hornet](https://github.com/iotaledger/hornet) node for
+- Access to a [Hornet](https://github.com/iotaledger/hornet) node (with mqtt enabled) for
   production operation.
 
 ## Configuration
