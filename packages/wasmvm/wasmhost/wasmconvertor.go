@@ -19,33 +19,20 @@ type WasmConvertor struct{}
 
 func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*address)
-	switch buf[0] {
-	case wasmtypes.ScAddressAlias:
-		iscpAliasAddress := new(iotago.AliasAddress)
-		copy((*iscpAliasAddress)[:], buf[1:])
-		return iscpAliasAddress
-	case wasmtypes.ScAddressEd25519:
-		iscpEd25519Address := new(iotago.Ed25519Address)
-		copy((*iscpEd25519Address)[:], buf[1:])
-		return iscpEd25519Address
-	case wasmtypes.ScAddressNFT:
-		iscpNFTAddress := new(iotago.NFTAddress)
-		copy((*iscpNFTAddress)[:], buf[1:])
-		return iscpNFTAddress
-	default:
-		panic("invalid ScAddress type")
+	addr, _, err := isc.AddressFromBytes(buf)
+	if err != nil {
+		panic(err)
 	}
+	return addr
 }
 
 func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) isc.AgentID {
+	scAddress := agentID.Address()
+	address := cvt.IscpAddress(&scAddress)
 	if agentID.IsAddress() {
-		address := agentID.Address()
-		return isc.NewAgentID(cvt.IscpAddress(&address))
+		return isc.NewAgentID(address)
 	}
-
 	if agentID.IsContract() {
-		scAddress := agentID.Address()
-		address := cvt.IscpAddress(&scAddress)
 		chainID := isc.ChainIDFromAddress(address.(*iotago.AliasAddress))
 		return isc.NewContractAgentID(&chainID, cvt.IscpHname(agentID.Hname()))
 	}
