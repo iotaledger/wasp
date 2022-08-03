@@ -13,13 +13,12 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
-// deployISCContractOnGenesis sets up the initial state of the ISC EVM contract
+// deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
 // which will go into the EVM genesis block
-func deployISCContractOnGenesis(genesisAlloc core.GenesisAlloc) {
+func deployMagicContractOnGenesis(genesisAlloc core.GenesisAlloc) {
 	genesisAlloc[vm.ISCAddress] = core.GenesisAccount{
 		// dummy code, because some contracts check the code size before calling
 		// the contract; the code itself will never get executed
@@ -33,7 +32,7 @@ var iscABI abi.ABI
 
 func init() {
 	var err error
-	iscABI, err = abi.JSON(strings.NewReader(isccontract.ABI))
+	iscABI, err = abi.JSON(strings.NewReader(iscmagic.ABI))
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +44,7 @@ func parseCall(input []byte) (*abi.Method, []interface{}) {
 		panic(err)
 	}
 	if method == nil {
-		panic(fmt.Sprintf("ISCContract: method not found: %x", input[:4]))
+		panic(fmt.Sprintf("iscmagic: method not found: %x", input[:4]))
 	}
 	args, err := method.Inputs.Unpack(input[4:])
 	if err != nil {
@@ -54,16 +53,16 @@ func parseCall(input []byte) (*abi.Method, []interface{}) {
 	return method, args
 }
 
-type iscContract struct {
+type magicContract struct {
 	ctx isc.Sandbox
 }
 
-func newISCContract(ctx isc.Sandbox) vm.ISCContract {
-	return &iscContract{ctx}
+func newMagicContract(ctx isc.Sandbox) vm.ISCContract {
+	return &magicContract{ctx}
 }
 
 //nolint:funlen
-func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
@@ -84,7 +83,7 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		outs = []interface{}{c.ctx.Request().ID()}
 
 	case "getSenderAccount":
-		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Request().SenderAccount())}
+		outs = []interface{}{iscmagic.WrapISCAgentID(c.ctx.Request().SenderAccount())}
 
 	case "getAllowanceBaseTokens":
 		outs = []interface{}{c.ctx.Request().Allowance().Assets.BaseTokens}
@@ -94,38 +93,38 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	case "getAllowanceNativeToken":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
+		outs = []interface{}{iscmagic.WrapNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
 
 	case "getAllowanceNFTsLen":
 		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().NFTs))}
 
 	case "getAllowanceNFTID":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])}
+		outs = []interface{}{iscmagic.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])}
 
 	case "getAllowanceNFT":
 		i := args[0].(uint16)
-		nftID := isccontract.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])
+		nftID := iscmagic.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])
 		nft := c.ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
 
 	case "getCaller":
-		outs = []interface{}{isccontract.WrapISCAgentID(c.ctx.Caller())}
+		outs = []interface{}{iscmagic.WrapISCAgentID(c.ctx.Caller())}
 
 	case "registerError":
 		errorMessage := args[0].(string)
 		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
 
 	case "send":
-		params := isccontract.ISCRequestParameters{}
+		params := iscmagic.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
 		c.ctx.RequireNoError(err)
 		c.ctx.Send(params.Unwrap())
 
 	case "sendAsNFT":
 		var callArgs struct {
-			isccontract.ISCRequestParameters
-			ID isccontract.NFTID
+			iscmagic.ISCRequestParameters
+			ID iscmagic.NFTID
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
@@ -136,8 +135,8 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 		var callArgs struct {
 			ContractHname uint32
 			EntryPoint    uint32
-			Params        isccontract.ISCDict
-			Allowance     isccontract.ISCAllowance
+			Params        iscmagic.ISCDict
+			Allowance     iscmagic.ISCAllowance
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
@@ -147,14 +146,14 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 			callArgs.Params.Unwrap(),
 			callArgs.Allowance.Unwrap(),
 		)
-		outs = []interface{}{isccontract.WrapISCDict(callRet)}
+		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
 
 	case "getAllowanceAvailableBaseTokens":
 		outs = []interface{}{c.ctx.AllowanceAvailable().Assets.BaseTokens}
 
 	case "getAllowanceAvailableNativeToken":
 		i := args[0].(uint16)
-		outs = []interface{}{isccontract.WrapNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
+		outs = []interface{}{iscmagic.WrapNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
 
 	case "getAllowanceAvailableNativeTokensLen":
 		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().Assets.Tokens))}
@@ -164,9 +163,9 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 
 	case "getAllowanceAvailableNFT":
 		i := args[0].(uint16)
-		nftID := isccontract.WrapNFTID(c.ctx.AllowanceAvailable().NFTs[i])
+		nftID := iscmagic.WrapNFTID(c.ctx.AllowanceAvailable().NFTs[i])
 		nft := c.ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
 
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
@@ -177,17 +176,15 @@ func (c *iscContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas 
 	return ret, remainingGas
 }
 
-type iscContractView struct {
+type magicContractView struct {
 	ctx isc.SandboxView
 }
 
-func newISCContractView(ctx isc.SandboxView) vm.ISCContract {
-	return &iscContractView{ctx}
+func newMagicContractView(ctx isc.SandboxView) vm.ISCContract {
+	return &magicContractView{ctx}
 }
 
-var _ vm.ISCContract = &iscContractView{}
-
-func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
@@ -202,7 +199,7 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		var callViewArgs struct {
 			ContractHname uint32
 			EntryPoint    uint32
-			Params        isccontract.ISCDict
+			Params        iscmagic.ISCDict
 		}
 		err := method.Inputs.Copy(&callViewArgs, args)
 		c.ctx.RequireNoError(err)
@@ -211,7 +208,7 @@ func (c *iscContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			isc.Hname(callViewArgs.EntryPoint),
 			callViewArgs.Params.Unwrap(),
 		)
-		outs = []interface{}{isccontract.WrapISCDict(callRet)}
+		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
 
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
@@ -234,24 +231,18 @@ func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input 
 	case "hn":
 		outs = []interface{}{isc.Hn(args[0].(string))}
 
-	case "hasParam":
-		outs = []interface{}{ctx.Params().MustHas(kv.Key(args[0].(string)))}
-
-	case "getParam":
-		outs = []interface{}{ctx.Params().MustGet(kv.Key(args[0].(string)))}
-
 	case "getChainID":
-		outs = []interface{}{isccontract.WrapISCChainID(ctx.ChainID())}
+		outs = []interface{}{iscmagic.WrapISCChainID(ctx.ChainID())}
 
 	case "getChainOwnerID":
-		outs = []interface{}{isccontract.WrapISCAgentID(ctx.ChainOwnerID())}
+		outs = []interface{}{iscmagic.WrapISCAgentID(ctx.ChainOwnerID())}
 
 	case "getNFTData":
-		var nftID isccontract.NFTID
+		var nftID iscmagic.NFTID
 		err := method.Inputs.Copy(&nftID, args)
 		ctx.RequireNoError(err)
 		nft := ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{isccontract.WrapISCNFT(&nft)}
+		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
 
 	case "getTimestampUnixSeconds":
 		outs = []interface{}{ctx.Timestamp().Unix()}

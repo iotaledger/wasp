@@ -84,7 +84,7 @@ func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, tim
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContract, getBalance BalanceFunc) *EVMEmulator {
+func NewEVMEmulator(store kv.KVStore, timestamp uint64, magicContract vm.ISCContract, getBalance BalanceFunc) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
@@ -94,7 +94,7 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContra
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		vmConfig:    vm.Config{ISCContract: iscContract},
+		vmConfig:    vm.Config{ISCContract: magicContract},
 		getBalance:  getBalance,
 	}
 }

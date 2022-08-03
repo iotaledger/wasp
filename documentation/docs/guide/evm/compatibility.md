@@ -21,6 +21,14 @@ Here are some of the most important properties and limitations of EVM support in
 
 - The Wasp node provides a JSON-RPC service, which is the standard protocol used by Ethereum tools. Upon receiving a signed Ethereum transaction via JSON-RPC, the transaction is wrapped into an ISC off-ledger request. The sender of the request is the Ethereum address that signed the original transaction (e.g. the Metamask account).
 
+- While ISC contracts are identified by an [hname](../core_concepts/smart-contract-anatomy.md), EVM contracts are identified by their Ethereum address.
+
+- EVM contracts are not listed in the chain's [contract registry](../core_concepts/core_contracts/root.md).
+
+- EVM contracts cannot be called via regular ISC requests; they can only be
+  called through the JSON-RPC service.
+  As a consequence, EVM contracts cannot receive on-ledger requests.
+
 - The EVM state is stored in raw form (in contrast with an Ethereum blockchain, which stores the state in a Merkle tree — it would be inefficient to do that since it would be duplicating work done by the ISC layer).
 
 - Any Ethereum transactions present in an ISC block are executed by the `evm` core contract, updating the EVM state accordingly. To provide compatibility with EVM tools, a "fake" Ethereum block is also created and stored. Not being part of a real Ethereum blockchain, some attributes of the blocks will contain dummy values (e.g. `stateRoot`, `nonce`, etc).
@@ -33,6 +41,6 @@ Here are some of the most important properties and limitations of EVM support in
 
 - The Ethereum balance of an account is tied to its L2 ISC balance in the token used to pay for gas (e.g. by default `eth_getBalance` will return the L2 base token balance of the given Ethereum account). Any attempt to directly modify an Ethereum account balance will fail (e.g. attaching value to a transaction, calling `<address>.transfer(...)`, etc).
 
-- In order to manipulate the owned ISC tokens (and in general, to access ISC functionality), there is a special Ethereum contract called [`isc`](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/isccontract/ISC.sol) that provides bindings to the ISC sandbox (e.g. `isc.send(...)` to send tokens).
+- In order to manipulate the owned ISC tokens (and in general, to access ISC functionality), there is a [special Ethereum contract](magic.md) that provides bindings to the ISC sandbox (e.g. call `isc.send(...)` to send tokens).
 
 - The used EVM gas is converted to ISC gas before being charged to the sender. The conversion ratio is configurable. The token used to pay for gas is the same token configured in the ISC chain (IOTA by default). The gas fee is debited from the sender's L2 account, and it has to be deposited beforehand.

@@ -394,6 +394,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'The Magic Contract',
+                    id: 'guide/evm/magic',
+                },
+                {
+                    type: 'doc',
                     label: 'Tooling',
                     id: 'guide/evm/tooling',
                 },

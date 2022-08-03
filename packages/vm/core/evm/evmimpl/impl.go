@@ -59,7 +59,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 
 	// add the standard ISC contract at arbitrary address 0x1074
-	deployISCContractOnGenesis(genesisAlloc)
+	deployMagicContractOnGenesis(genesisAlloc)
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	emulator.Init(

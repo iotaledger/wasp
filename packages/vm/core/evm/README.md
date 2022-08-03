@@ -43,26 +43,6 @@ the Metamask connection parameters for any given ISC chain in the Dashboard.
    your ISC chain, scroll down and you will find the EVM section with the
    JSON-RPC URL for Metamask or any other Ethereum tool.
 
-You can now deploy an EVM contract like you would on Ethereum. Use the
-[`isc` Ethereum contract](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/isccontract/ISC.sol)
-to interact with ISC functionality. For example:
+You can now deploy an EVM contract like you would on Ethereum.
 
- ```solidity
- pragma solidity >=0.8.5;
-
- import "@isccontract/ISC.sol";
-
- contract EntropyTest {
-     event EntropyEvent(bytes32 entropy);
-
-     // this will emit a "random" value, taken from the ISC entropy value
-     function emitEntropy() public {
-         bytes32 e = isc.getEntropy();
-         emit EntropyEvent(e);
-     }
- }
- ```
-
-You can find more examples in the
-[ISCTest.sol](https://github.com/iotaledger/wasp/blob/develop/packages/evm/evmtest/ISCTest.sol)
-contract (used internally in unit tests).
+For more information check out the [docs](https://wiki.iota.org/smart-contracts/guide/evm/introduction).
