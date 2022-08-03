@@ -19,22 +19,11 @@ type WasmConvertor struct{}
 
 func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Address {
 	buf := wasmtypes.AddressToBytes(*address)
-	switch buf[0] {
-	case wasmtypes.ScAddressAlias:
-		var iscpAliasAddress iotago.AliasAddress
-		copy(iscpAliasAddress[:], buf[1:])
-		return &iscpAliasAddress
-	case wasmtypes.ScAddressEd25519:
-		var iscpEd25519Address iotago.Ed25519Address
-		copy(iscpEd25519Address[:], buf[1:])
-		return &iscpEd25519Address
-	case wasmtypes.ScAddressNFT:
-		var iscpNFTAddress iotago.NFTAddress
-		copy(iscpNFTAddress[:], buf[1:])
-		return &iscpNFTAddress
-	default:
-		panic("invalid ScAddress type")
+	addr, _, err := isc.AddressFromBytes(buf)
+	if err != nil {
+		panic(err)
 	}
+	return addr
 }
 
 func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) isc.AgentID {
