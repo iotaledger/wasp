@@ -68,7 +68,7 @@ func sendFundsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "sd", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }
