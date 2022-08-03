@@ -195,8 +195,18 @@ module.exports = {
             items: [
                 {
                     type: 'doc',
+                    label: 'Installing Wasp',
+                    id: 'guide/chains_and_nodes/installing-wasp',
+                },
+                {
+                    type: 'doc',
                     label: 'Running a Node',
                     id: 'guide/chains_and_nodes/running-a-node',
+                },
+                {
+                    type: 'doc',
+                    label: 'Node Configuration',
+                    id: 'guide/chains_and_nodes/node-config',
                 },
                 {
                     type: 'doc',
