@@ -26,19 +26,13 @@ func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) iotago.Addres
 	return addr
 }
 
-func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) isc.AgentID {
-	scAddress := agentID.Address()
-	address := cvt.IscpAddress(&scAddress)
-	if agentID.IsAddress() {
-		return isc.NewAgentID(address)
+func (cvt WasmConvertor) IscpAgentID(scAgentID *wasmtypes.ScAgentID) isc.AgentID {
+	buf := scAgentID.Bytes()
+	agentID, err := isc.AgentIDFromBytes(buf)
+	if err != nil {
+		panic(err)
 	}
-	if agentID.IsContract() {
-		chainID := isc.ChainIDFromAddress(address.(*iotago.AliasAddress))
-		return isc.NewContractAgentID(&chainID, cvt.IscpHname(agentID.Hname()))
-	}
-
-	// TODO implement missing agent id types
-	panic("WasmConvertor.IscpAgentID kind")
+	return agentID
 }
 
 func (cvt WasmConvertor) IscpAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
@@ -110,18 +104,8 @@ func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
 }
 
 func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
-	switch agentID.Kind() {
-	case isc.AgentIDKindAddress:
-		addr, _ := isc.AddressFromAgentID(agentID)
-		return wasmtypes.NewScAgentIDFromAddress(cvt.ScAddress(addr))
-	case isc.AgentIDKindContract:
-		chainID, _ := isc.AddressFromAgentID(agentID)
-		hname, _ := isc.HnameFromAgentID(agentID)
-		return wasmtypes.NewScAgentID(cvt.ScAddress(chainID), cvt.ScHname(hname))
-	default:
-		// TODO implement missing agent id types
-		panic("WasmConvertor.ScAgentID kind")
-	}
+	buf := agentID.Bytes()
+	return wasmtypes.AgentIDFromBytes(buf)
 }
 
 func (cvt WasmConvertor) ScBalances(allowance *isc.Allowance) *wasmlib.ScBalances {
