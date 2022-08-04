@@ -34,7 +34,7 @@
       landingPage: true,
     },
     {
-      label: 'About ISCP',
+      label: 'About ISC',
       href: 'https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936/',
       target: '_blank',
     },

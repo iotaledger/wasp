@@ -4,14 +4,14 @@ package micropay
 
 // func TestBasics(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 // }
 
 // func TestSubmitPk(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
@@ -28,7 +28,7 @@ package micropay
 
 // func TestOpenChannelFail(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
@@ -49,7 +49,7 @@ package micropay
 
 // func TestOpenChannelOk(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
@@ -77,7 +77,7 @@ package micropay
 
 // func TestOpenChannelTwice(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
@@ -126,7 +126,7 @@ package micropay
 
 // func TestRevokeWarrant(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
@@ -202,7 +202,7 @@ package micropay
 
 // func TestPayment(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 

@@ -169,7 +169,7 @@ type dashboardTestEnv struct {
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
 	kp, _ := e.solo.NewKeyPairWithFunds()
-	ch := e.solo.NewChain(kp, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	ch, _, _ := e.solo.NewChainExt(kp, 0, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
 	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }

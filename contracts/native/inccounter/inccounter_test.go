@@ -34,7 +34,7 @@ func initSolo(t *testing.T) *solo.Solo {
 
 func TestDeployInc(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestDeployInc(t *testing.T) {
 
 func TestDeployIncInitParams(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestDeployIncInitParams(t *testing.T) {
 
 func TestIncDefaultParam(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestIncDefaultParam(t *testing.T) {
 
 func TestIncParam(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestIncParam(t *testing.T) {
 
 func TestIncWith1Post(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestIncWith1Post(t *testing.T) {
 
 func TestSpawn(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	}
 	opts.Log = log
 	env := solo.New(b, opts).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 0)
 	require.NoError(b, err)

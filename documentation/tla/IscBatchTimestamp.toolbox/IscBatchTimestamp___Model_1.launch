@@ -29,6 +29,6 @@
     <intAttribute key="modelVersion" value="20191005"/>
     <intAttribute key="numberOfWorkers" value="12"/>
     <stringAttribute key="result.mail.address" value=""/>
-    <stringAttribute key="specName" value="IscpBatchTimestamp"/>
+    <stringAttribute key="specName" value="IscBatchTimestamp"/>
     <stringAttribute key="tlcResourcesProfile" value="local custom"/>
 </launchConfiguration>

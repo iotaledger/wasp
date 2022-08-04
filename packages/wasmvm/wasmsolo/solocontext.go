@@ -230,7 +230,7 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 			AutoAdjustStorageDeposit: true,
 		})
 	}
-	chain := soloEnv.NewChain(nil, chainName)
+	chain, _, _ := soloEnv.NewChainExt(nil, 0, chainName)
 	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }

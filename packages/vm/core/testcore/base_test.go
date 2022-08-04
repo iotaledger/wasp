@@ -111,7 +111,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 func TestNoTargetPostOnLedger(t *testing.T) {
 	t.Run("no contract,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -144,7 +144,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no contract,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -185,7 +185,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no EP,originator==user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -218,7 +218,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	})
 	t.Run("no EP,originator!=user", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		defer func() {
 			_ = ch.Log().Sync()
 		}()
@@ -261,7 +261,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 func TestNoTargetView(t *testing.T) {
 	t.Run("no contract view", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
 		_, err := chain.CallView("dummyContract", "dummyEP")
@@ -269,7 +269,7 @@ func TestNoTargetView(t *testing.T) {
 	})
 	t.Run("no EP view", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		chain.AssertControlAddresses()
 
 		_, err := chain.CallView(root.Contract.Name, "dummyEP")
@@ -279,7 +279,7 @@ func TestNoTargetView(t *testing.T) {
 
 func TestOkCall(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name).
 		WithGasBudget(100_000)
@@ -290,7 +290,7 @@ func TestOkCall(t *testing.T) {
 func TestEstimateGas(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(10000, nil)
 	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
@@ -402,7 +402,7 @@ func TestEstimateGas(t *testing.T) {
 func TestRepeatInit(t *testing.T) {
 	t.Run("root", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(root.Contract.Name, "init").
@@ -414,7 +414,7 @@ func TestRepeatInit(t *testing.T) {
 	})
 	t.Run("accounts", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(accounts.Contract.Name, "init").
@@ -426,7 +426,7 @@ func TestRepeatInit(t *testing.T) {
 	})
 	t.Run("blocklog", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blocklog.Contract.Name, "init").
@@ -438,7 +438,7 @@ func TestRepeatInit(t *testing.T) {
 	})
 	t.Run("blob", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(blob.Contract.Name, "init").
@@ -450,7 +450,7 @@ func TestRepeatInit(t *testing.T) {
 	})
 	t.Run("governance", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		err := ch.DepositBaseTokensToL2(10_000, nil)
 		require.NoError(t, err)
 		req := solo.NewCallParams(governance.Contract.Name, "init").
@@ -466,7 +466,7 @@ func TestDeployNativeContract(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
 
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 	// userAgentID := isc.NewAgentID(userAddr, 0)
@@ -496,7 +496,7 @@ func TestDeployNativeContract(t *testing.T) {
 
 func TestFeeBasic(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
 	require.Nil(t, feePolicy.GasFeeTokenID)
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
@@ -504,7 +504,7 @@ func TestFeeBasic(t *testing.T) {
 
 func TestBurnLog(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(30_000, nil)
 	rec := ch.LastReceipt()
@@ -522,7 +522,7 @@ func TestBurnLog(t *testing.T) {
 func TestMessageSize(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true}).
 		WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10000, nil)
 

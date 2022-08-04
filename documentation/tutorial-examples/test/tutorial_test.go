@@ -15,7 +15,7 @@ import (
 
 func TestTutorialFirst(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "tutorial1")
+	chain := env.NewChain()
 
 	// calls views governance::ViewGetChainInfo and root:: ViewGetContractRecords
 	chainID, chainOwnerID, coreContracts := chain.GetInfo()
@@ -40,14 +40,14 @@ func TestTutorialL1(t *testing.T) {
 
 func TestTutorialDeploySC(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "example")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 }
 
 func TestTutorialInvokeSC(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 
@@ -65,7 +65,7 @@ func TestTutorialInvokeSC(t *testing.T) {
 
 func TestTutorialInvokeSCOffLedger(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 	req := solo.NewCallParams("solotutorial", "storeString", "str", "Hello, world!").
@@ -84,7 +84,7 @@ func TestTutorialInvokeSCOffLedger(t *testing.T) {
 
 func TestTutorialInvokeSCError(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 
@@ -99,7 +99,7 @@ func TestTutorialInvokeSCError(t *testing.T) {
 
 func TestTutorialAccounts(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 
 	// create a wallet with some base tokens on L1:
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))

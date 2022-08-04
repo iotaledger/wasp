@@ -38,7 +38,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 
 	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	chainOwner, _ := s.NewKeyPairWithFunds()
-	chain := s.NewChain(chainOwner, "iscpchain")
+	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
 	accounts := jsonrpc.NewAccountManager(nil)
 	rpcsrv := jsonrpc.NewServer(chain.EVM(), accounts)
