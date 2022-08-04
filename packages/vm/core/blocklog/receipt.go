@@ -116,7 +116,7 @@ func (r *RequestReceipt) LookupKey() RequestLookupKey {
 	return NewRequestLookupKey(r.BlockIndex, r.RequestIndex)
 }
 
-func (r *RequestReceipt) ToISCPReceipt(resolvedError *isc.VMError) *isc.Receipt {
+func (r *RequestReceipt) ToISCReceipt(resolvedError *isc.VMError) *isc.Receipt {
 	return &isc.Receipt{
 		Request:       r.Request.Bytes(),
 		Error:         r.Error,

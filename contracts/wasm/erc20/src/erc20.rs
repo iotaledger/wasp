@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// implementation of ERC-20 smart contract for ISCP
+// implementation of ERC-20 smart contract for ISC
 // following https://ethereum.org/en/developers/tutorials/understand-the-erc-20-token-smart-contract/
 
 use wasmlib::*;
@@ -17,7 +17,10 @@ pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
     let amount = f.params.amount().value();
 
     // all allowances are in the map under the name of he owner
-    let allowances = f.state.all_allowances().get_allowances_for_agent(&ctx.caller());
+    let allowances = f
+        .state
+        .all_allowances()
+        .get_allowances_for_agent(&ctx.caller());
     allowances.get_uint64(&delegation).set_value(amount);
     f.events.approval(amount, &ctx.caller(), &delegation);
 }
@@ -38,8 +41,10 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
     let creator = f.params.creator().value();
     f.state.balances().get_uint64(&creator).set_value(supply);
 
-    let t = "erc20.on_init.success. Supply: ".to_string() + &supply.to_string() +
-        &", creator:".to_string() + &creator.to_string();
+    let t = "erc20.on_init.success. Supply: ".to_string()
+        + &supply.to_string()
+        + &", creator:".to_string()
+        + &creator.to_string();
     ctx.log(&t);
 }
 
@@ -54,7 +59,10 @@ pub fn func_transfer(ctx: &ScFuncContext, f: &TransferContext) {
     let balances = f.state.balances();
     let source_agent = ctx.caller();
     let source_balance = balances.get_uint64(&source_agent);
-    ctx.require(source_balance.value() >= amount, "erc20.transfer.fail: not enough funds");
+    ctx.require(
+        source_balance.value() >= amount,
+        "erc20.transfer.fail: not enough funds",
+    );
 
     let target_agent = f.params.account().value();
     let target_balance = balances.get_uint64(&target_agent);
@@ -77,13 +85,22 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
 
     // allowances are in the map under the name of the account
     let source_agent = f.params.account().value();
-    let allowances = f.state.all_allowances().get_allowances_for_agent(&source_agent);
+    let allowances = f
+        .state
+        .all_allowances()
+        .get_allowances_for_agent(&source_agent);
     let allowance = allowances.get_uint64(&ctx.caller());
-    ctx.require(allowance.value() >= amount, "erc20.transfer_from.fail: not enough allowance");
+    ctx.require(
+        allowance.value() >= amount,
+        "erc20.transfer_from.fail: not enough allowance",
+    );
 
     let balances = f.state.balances();
     let source_balance = balances.get_uint64(&source_agent);
-    ctx.require(source_balance.value() >= amount, "erc20.transfer_from.fail: not enough funds");
+    ctx.require(
+        source_balance.value() >= amount,
+        "erc20.transfer_from.fail: not enough funds",
+    );
 
     let target_agent = f.params.recipient().value();
     let target_balance = balances.get_uint64(&target_agent);
@@ -104,8 +121,13 @@ pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
 // - PARAM_AMOUNT: u64
 pub fn view_allowance(_ctx: &ScViewContext, f: &AllowanceContext) {
     // all allowances of the address 'owner' are stored in the map of the same name
-    let allowances = f.state.all_allowances().get_allowances_for_agent(&f.params.account().value());
-    let allow = allowances.get_uint64(&f.params.delegation().value()).value();
+    let allowances = f
+        .state
+        .all_allowances()
+        .get_allowances_for_agent(&f.params.account().value());
+    let allow = allowances
+        .get_uint64(&f.params.delegation().value())
+        .value();
     f.results.amount().set_value(allow);
 }
 

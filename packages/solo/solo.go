@@ -609,12 +609,12 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 				Output:   out,
 				NFTID:    iotago.NFTIDFromOutputID(id),
 			}
-			iscpNFT := &isc.NFT{
+			iscNFT := &isc.NFT{
 				ID:       info.NFTID,
 				Issuer:   issuer.Address(),
 				Metadata: immutableMetadata,
 			}
-			return iscpNFT, info, nil
+			return iscNFT, info, nil
 		}
 	}
 

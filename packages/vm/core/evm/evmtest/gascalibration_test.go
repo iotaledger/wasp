@@ -19,8 +19,8 @@ func TestGasUsageMemoryContract(t *testing.T) {
 		n := i * factor
 		res, err := gasTest.f(n)
 		require.NoError(t, err)
-		t.Logf("n = %d, gas used: %d", n, res.iscpReceipt.GasBurned)
-		results[n] = res.iscpReceipt.GasBurned
+		t.Logf("n = %d, gas used: %d", n, res.iscReceipt.GasBurned)
+		results[n] = res.iscReceipt.GasBurned
 	}
 	gascalibration.SaveTestResultAsJSON("memory_sol.json", results)
 }
@@ -35,8 +35,8 @@ func TestGasUsageStorageContract(t *testing.T) {
 		n := i * factor
 		res, err := gasTest.f(n)
 		require.NoError(t, err)
-		t.Logf("n = %d, gas used: %d", n, res.iscpReceipt.GasBurned)
-		results[n] = res.iscpReceipt.GasBurned
+		t.Logf("n = %d, gas used: %d", n, res.iscReceipt.GasBurned)
+		results[n] = res.iscReceipt.GasBurned
 	}
 	gascalibration.SaveTestResultAsJSON("storage_sol.json", results)
 }
@@ -51,8 +51,8 @@ func TestGasUsageExecutionTimeContract(t *testing.T) {
 		n := i * factor
 		res, err := gasTestContract.f(n)
 		require.NoError(t, err)
-		t.Logf("n = %d, gas used: %d", n, res.iscpReceipt.GasBurned)
-		results[n] = res.iscpReceipt.GasBurned
+		t.Logf("n = %d, gas used: %d", n, res.iscReceipt.GasBurned)
+		results[n] = res.iscReceipt.GasBurned
 	}
 	gascalibration.SaveTestResultAsJSON("executiontime_sol.json", results)
 }

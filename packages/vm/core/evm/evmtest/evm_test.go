@@ -96,11 +96,11 @@ func TestGasCharged(t *testing.T) {
 	res, err := storage.store(999)
 	require.NoError(t, err)
 	t.Log("evm gas used:", res.evmReceipt.GasUsed)
-	t.Log("iscp gas used:", res.iscpReceipt.GasBurned)
-	t.Log("iscp gas fee:", res.iscpReceipt.GasFeeCharged)
+	t.Log("isc gas used:", res.iscReceipt.GasBurned)
+	t.Log("isc gas fee:", res.iscReceipt.GasFeeCharged)
 	require.Greater(t, res.evmReceipt.GasUsed, uint64(0))
-	require.Greater(t, res.iscpReceipt.GasBurned, uint64(0))
-	require.Greater(t, res.iscpReceipt.GasFeeCharged, uint64(0))
+	require.Greater(t, res.iscReceipt.GasBurned, uint64(0))
+	require.Greater(t, res.iscReceipt.GasFeeCharged, uint64(0))
 }
 
 func TestGasRatio(t *testing.T) {
@@ -112,7 +112,7 @@ func TestGasRatio(t *testing.T) {
 
 	res, err := storage.store(43)
 	require.NoError(t, err)
-	initialGasFee := res.iscpReceipt.GasFeeCharged
+	initialGasFee := res.iscReceipt.GasFeeCharged
 
 	// only the owner can call the setGasRatio endpoint
 	newGasRatio := util.Ratio32{A: evmtypes.DefaultGasRatio.A * 10, B: evmtypes.DefaultGasRatio.B}
@@ -129,7 +129,7 @@ func TestGasRatio(t *testing.T) {
 	// run an equivalent request and compare the gas fees
 	res, err = storage.store(44)
 	require.NoError(t, err)
-	require.Greater(t, res.iscpReceipt.GasFeeCharged, initialGasFee)
+	require.Greater(t, res.iscReceipt.GasFeeCharged, initialGasFee)
 }
 
 // tests that the gas limits are correctly enforced based on the base tokens sent
@@ -145,8 +145,8 @@ func TestGasLimit(t *testing.T) {
 	// estimate gas by sending a valid tx
 	result, err := storage.store(123)
 	require.NoError(t, err)
-	gas := result.iscpReceipt.GasBurned
-	fee := result.iscpReceipt.GasFeeCharged
+	gas := result.iscReceipt.GasBurned
+	fee := result.iscReceipt.GasFeeCharged
 	t.Logf("gas: %d, fee: %d", gas, fee)
 
 	// send again with same gas limit but not enough base tokens
@@ -289,7 +289,7 @@ func TestISCTriggerEvent(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call ISCTest.triggerEvent(string) function of isc-test.sol which in turn:
-	//  calls the ISC.iscpTriggerEvent(string) function of isc.sol at 0x1074, which:
+	//  calls the ISC.iscTriggerEvent(string) function of isc.sol at 0x1074, which:
 	//   triggers an ISC event with the given string parameter
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
@@ -321,7 +321,7 @@ func TestISCEntropy(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call the ISCTest.emitEntropy() function of isc-test.sol which in turn:
-	//  calls ISC.iscpEntropy() function of isc.sol at 0x1074, which:
+	//  calls ISC.iscEntropy() function of isc.sol at 0x1074, which:
 	//   returns the entropy value from the sandbox
 	//  emits an EVM event (aka log) with the entropy value
 	var entropy hashing.HashValue
@@ -594,6 +594,6 @@ func TestFibonacciContract(t *testing.T) {
 	res, err := fibo.fib(7)
 	require.NoError(t, err)
 	t.Log("evm gas used:", res.evmReceipt.GasUsed)
-	t.Log("iscp gas used:", res.iscpReceipt.GasBurned)
-	t.Log("iscpc gas fee:", res.iscpReceipt.GasFeeCharged)
+	t.Log("isc gas used:", res.iscReceipt.GasBurned)
+	t.Log("Isc gas fee:", res.iscReceipt.GasFeeCharged)
 }

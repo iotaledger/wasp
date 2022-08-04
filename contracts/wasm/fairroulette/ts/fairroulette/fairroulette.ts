@@ -109,7 +109,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the playPeriod
             // amount of seconds. This will lock in the playing period, during which more bets can
-            // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
+            // be placed. Once the 'payWinners' function gets triggered by the ISC it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
             sc.ScFuncs.payWinners(ctx).func.delay(playPeriod).post();
         }

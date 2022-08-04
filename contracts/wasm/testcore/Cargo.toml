@@ -3,7 +3,7 @@
 
 [package]
 name = "testcore"
-description = "Core test for ISCP wasmlib Rust/Wasm library"
+description = "Core test for ISC wasmlib Rust/Wasm library"
 license = "Apache-2.0"
 version = "0.1.0"
 authors = ["lunfardo314 <evaldas.drasutis@iota.org>", "Eric Hop <eric@iota.org>"]

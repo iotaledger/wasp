@@ -9,9 +9,9 @@
 
 use wasmlib::*;
 
-use crate::*;
 use crate::contract::*;
 use crate::structs::*;
+use crate::*;
 
 // Define some default configuration parameters.
 
@@ -112,7 +112,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the play_period
             // amount of seconds. This will lock in the playing period, during which more bets can
-            // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
+            // be placed. Once the 'payWinners' function gets triggered by the ISC it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
             ScFuncs::pay_winners(ctx).func.delay(play_period).post();
         }
@@ -236,7 +236,6 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 }
 
 pub fn func_force_reset(_ctx: &ScFuncContext, f: &ForceResetContext) {
-
     // Get the 'bets' array in state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
 

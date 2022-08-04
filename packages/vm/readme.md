@@ -17,10 +17,10 @@
 
 ## General
 
-By _VM abstraction_ in ISCP we understand a collection of abstract interfaces which makes the whole architecture of ISCP and Wasp
+By _VM abstraction_ in ISC we understand a collection of abstract interfaces which makes the whole architecture of ISC and Wasp
 node _agnostic_ about what exactly kind of deterministic computation machinery is used to run smart contract programs.
 
-In ISCP we distinguish two things:
+In ISC we distinguish two things:
 * The VM (Virtual Machine) itself
 * VM plugins, a pluggable part of VM
 
@@ -30,14 +30,14 @@ Naturally, results of calculations, the output, is fully defined by inputs.
 
 The VM contains multiple dynamically attached _VM plugins_ or _processors_.  
 The _VM_ invokes _VM plugins_ to perform user-defined algorithms, the smart contracts.  
-The _processor_ is attached to the VM through [iscp.VMProcessor](../iscp/vmprocessor.go#L23) interface.  
+The _processor_ is attached to the VM through [isc.VMProcessor](../isc/vmprocessor.go#L15) interface.  
 Each _VM type_ has own implementation of _VMProcessor_ interface.  
 Usually, one _processor_ represents one smart contract, however one processor can represent entirely new plugged-in VM, such as EVM.
 
 For more details about implementation of _VMProcessor_ interface see below.
 
 In Wasp node, the VM-related code is mostly located in [wasp/packages/vm](../vm) directory.  
-The globally defined data types and definitions are located in [wasp/packages/iscp](../iscp).
+The globally defined data types and definitions are located in [wasp/packages/isc](../isc).
 
 ## The VM
 
@@ -47,7 +47,7 @@ It is called each time the Wasp node needs to run computations.
 
 The function _MustRunVMTaskAsync_ start a parallel goroutine to run calculations.  
 Upon completion the VM notifies the calling code through the callback.  
-The _MustRunVMTaskAsync_ takes as a parameter [vm.VMTask](taskcontext.go#L19):
+The _MustRunVMTaskAsync_ takes as a parameter [vm.VMTask](vmtask.go#L24):
 ```go
 type VMTask struct {
 	ACSSessionID             uint64
@@ -55,11 +55,11 @@ type VMTask struct {
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []iscp.Request
+	Requests                 []isc.Request
 	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
-	ValidatorFeeTarget       *iscp.AgentID
+	ValidatorFeeTarget       *isc.AgentID
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
@@ -68,7 +68,7 @@ type VMTask struct {
 }```
 At input, the most important parameters are:
 ```
-	Requests           []iscp.Request
+	Requests           []isc.Request
 	VirtualState       state.VirtualState 
 ```
 * _VirtualState_ represents current state of the chain, a collection of key/value pairs.
@@ -97,14 +97,14 @@ of the transaction on the Tangle ledger the virtual state is immutably anchored.
 ### Structure of the VM
 
 The _VM_ wraps many _processors_. The VM wrapper implements fee logic, call between processors, smart contract  
-deployment and other generic logic. In general, one _processor_ repesents one smart contract, the VM plugin.  
-A _processor_ may implemenent any deterministic calculations as long as it conforms to the _VMProcessor_  
+deployment and other generic logic. In general, one _processor_ represents one smart contract, the VM plugin.  
+A _processor_ may implement any deterministic calculations as long as it conforms to the _VMProcessor_  
 and other related interfaces.
 
 ![](VM.png)
 
  Significant part of the VM logic is implemented as _core smart contracts_. The core smart contracts also expose  
- core logic of each ISCP chain to outside users: the core smart contracts can be called by requests just like any other  
+ core logic of each ISC chain to outside users: the core smart contracts can be called by requests just like any other  
  smart contract.
 
  The implementation of core smart contracts is hardcoded into the Wasp. Implementations of all core contract as well  
@@ -133,7 +133,7 @@ A new _VM Type_ is introduced to the rest of the VM abstraction logic through th
  [`processors.RegisterVMType`](processors/factory.go#L20).
 
 The call to `processors.RegisterVMType` takes name of the new _VM type_ and the constructor, a function which creates  
-new `iscp.Processor` object from the binary data of the program.
+new `isc.Processor` object from the binary data of the program.
 
 The following _VM types_ are pre-defined in the current release of the Wasp:
 * `core` represents core contracts
@@ -166,10 +166,10 @@ it with `processors.RegisterVMType`. The rest is handled by the generic logic of
 ## Processor and the sandbox interface
 
 In native and `wasmtime` implementations one _processor_ represents one smart contract. It gives full power
-to the smart contracts on the ISCP chain, such as manipulate native IOTA assets, call other smart contracts (processors)
-on the same chain and send requests and assets to other ISCP chains.
+to the smart contracts on the ISC chain, such as manipulate native IOTA assets, call other smart contracts (processors)
+on the same chain and send requests and assets to other ISC chains.
 
-Each processor object implements two simple [interfaces](../iscp/vmprocessor.go#L15): `iscp.VMProcessor`:and `iscp.VMProcessorEntryPoint`.
+Each processor object implements two simple [interfaces](../isc/vmprocessor.go#L15): `isc.VMProcessor`:and `isc.VMProcessorEntryPoint`.
 
 ```go
 type VMProcessor interface {
@@ -189,7 +189,7 @@ The smart contract is "plugged" into the _VM_ with this interface.
 A processor (smart contract) is a collection of callable _entry points_.
 
 Each entry point is identified in the processor with its `hname` (hashed name), a 4 byte value, normally first 4 bytes
-of `blake2b` hash of the smart contract function's name or signature. See [iscp.Hname](../iscp/hname.go#L19).
+of `blake2b` hash of the smart contract function's name or signature. See [isc.Hname](../isc/hname.go#L20).
 
 Function `GetEntryPoint` returns entry point object with the existence flag.
 
@@ -201,23 +201,23 @@ The call returns a dictionary of resulting values, a collection of key/value pai
 
 There are two types of entry points: _full entry points_ and _view entry points_.
 
-* _full entry point_ only accepts context handlers of `iscp.Sandbox` interface type. This type of context
+* _full entry point_ only accepts context handlers of `isc.Sandbox` interface type. This type of context
 provides full access to the state of the smart contract so that the smart contract could modify it.
 
-* _view entry point_ only accepts context handler of `iscp.SandboxView` interface type. It provides
+* _view entry point_ only accepts context handler of `isc.SandboxView` interface type. It provides
 limited _read-only_ access to the state.
 
 The type of entry point is recognized by `IsView()` function. Using `Call()` with the wrong context type will result
 panic in the VM.
 
-The _VM_ provides implementation of `iscp.Sandbox` and `iscp.SandboxView` interfaces. It limits access
+The _VM_ provides implementation of `isc.Sandbox` and `isc.SandboxView` interfaces. It limits access
 to the smart contract's state partition and its on-chain account of tokens.
 
 Each new VM type has to provide its own `VMProcessor` and `VMProcessorEntryPoint` implementations.
 
 ### Sandbox interface
 
-The `iscp.Sandbox` [interface](../iscp/sandbox.go) implements a number of functions which can be used by the processor's implementation  
+The `isc.Sandbox` [interface](../isc/sandbox.go) implements a number of functions which can be used by the processor's implementation  
 (a smart contract). Here are some of them:
 
 * `Params()` returns a dictionary (key/value pairs) of the call parameters
@@ -241,7 +241,7 @@ to run on the host than on an interpreter.
 The view entry points are called from outside, for example by a web server to query state of specific  
 smart contracts. By intention those entry points cannot modify the state of the chain.
 
-The `SandboxView` [interface](../iscp/sandboxview.go) must be passed as a parameter to the view entry points.  
+The `SandboxView` [interface](../isc/sandboxview.go) must be passed as a parameter to the view entry points.  
 The `SandboxView` implements limited access to the state, fo example it doesn't have a concept of  
 `IncomingTransfer` or possibility of `Send()` tokens.  
 The `State()` interface provides read-only access to the `VirtualState`.
@@ -252,19 +252,19 @@ other view entry points.
 ## Implementation of EVM on a _Virtual Ethereum_
 
 The IOTA Foundation is contemplating a plan to ensure binary compatibility with EVM/Solidity ecosystem.  
-The goal is to be able to run EVM smart contracts on ISCP chains. The EVM should be implemented in the framework of  
-the ISCP VM Abstraction.  
+The goal is to be able to run EVM smart contracts on ISC chains. The EVM should be implemented in the framework of  
+the ISC VM Abstraction.  
 The EVM would be implemented as a processor and it will be able to access key/value store of the state through `State()`  
 interface of the `Sandbox()`. It essentially means the whole EVM chain would be implemented as a state of one
-ISCP smart contract.  
+ISC smart contract.  
 This way EVM would run in an isolated environment and Solidity code won't be able to access and manipulate
-native IOTA assets, hence Virtual Ethereum. To open EVM to access all spectrum of ISCP functions
+native IOTA assets, hence Virtual Ethereum. To open EVM to access all spectrum of ISC functions
 would be the next step.
 
 The Virtual Ethereum project is in the phase of definition therefore it is open for all kind of suggestions
 to architectural design with the final goal in mind: to be able to run native EVM code (binary compatibility) as  
-a VM on the ISCP chain.
+a VM on the ISC chain.
 
-The external interfaces of Virtual Ethereum would be wrapped into the native transactions and calls of IOTA and ISCP.
+The external interfaces of Virtual Ethereum would be wrapped into the native transactions and calls of IOTA and ISC.
 
 

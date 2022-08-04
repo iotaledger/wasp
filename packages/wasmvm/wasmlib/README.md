@@ -1,7 +1,7 @@
 ## WasmLib for Rust
 
-`WasmLib` allows developers to use Rust to create smart contracts for ISCP that
-compile into Wasm and can run directly on ISCP-enabled Wasp nodes and on the
+`WasmLib` allows developers to use Rust to create smart contracts for ISC that
+compile into Wasm and can run directly on ISC-enabled Wasp nodes and on the
 Solo environment.
 
 `WasmLib` treats the programming of smart contracts as simple access to a

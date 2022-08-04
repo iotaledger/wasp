@@ -50,7 +50,7 @@ func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 		return err
 	}
 
-	receiptResponse, err := getISCPReceipt(ch, reqID)
+	receiptResponse, err := getISCReceipt(ch, reqID)
 	if err != nil {
 		return httperrors.ServerError(err.Error())
 	}
@@ -75,7 +75,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 
 	tryGetReceipt := func() (bool, error) {
-		receiptResponse, err := getISCPReceipt(ch, reqID)
+		receiptResponse, err := getISCReceipt(ch, reqID)
 		if err != nil {
 			return receiptResponse != nil, httperrors.ServerError(err.Error())
 		}
@@ -132,7 +132,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, isc.
 	return theChain, reqID, nil
 }
 
-func doGetISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.RequestReceiptResponse, error) {
+func doGetISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.RequestReceiptResponse, error) {
 	receipt, err := ch.GetRequestReceipt(reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("error getting request receipt: %s", err)
@@ -145,9 +145,9 @@ func doGetISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.Reque
 	if err != nil {
 		return nil, xerrors.Errorf("error resolving the receipt error: %s", err)
 	}
-	iscpReceipt := receipt.ToISCPReceipt(resolvedError)
+	iscReceipt := receipt.ToISCReceipt(resolvedError)
 
-	receiptJSON, err := json.Marshal(iscpReceipt)
+	receiptJSON, err := json.Marshal(iscReceipt)
 	if err != nil {
 		return nil, xerrors.Errorf("error marshaling receipt into JSON: %s", err)
 	}
@@ -156,10 +156,10 @@ func doGetISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.Reque
 	}, nil
 }
 
-func getISCPReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
+func getISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	err = optimism.RetryOnStateInvalidated(func() (err error) {
 		panicCatchErr := panicutil.CatchPanicReturnError(func() {
-			ret, err = doGetISCPReceipt(ch, reqID)
+			ret, err = doGetISCReceipt(ch, reqID)
 		}, coreutil.ErrorStateInvalidated)
 		if err != nil {
 			return err

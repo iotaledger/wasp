@@ -45,7 +45,7 @@ func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
 	case 0:
 		return a.Env.L1BaseTokens(address)
 	case 1:
-		token := a.Cvt.IscpTokenID(&tokenID[0])
+		token := a.Cvt.IscTokenID(&tokenID[0])
 		return a.Env.L1NativeTokens(address, token).Uint64()
 	default:
 		require.Fail(a.Env.T, "too many tokenID arguments")

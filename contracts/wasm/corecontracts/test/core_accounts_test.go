@@ -89,7 +89,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	err = foundry.Mint(mintAmount)
 	require.NoError(t, err)
 	scTokenID := foundry.TokenID()
-	tokenID := ctx.Cvt.IscpTokenID(&scTokenID)
+	tokenID := ctx.Cvt.IscTokenID(&scTokenID)
 
 	balanceOldUser0 = user0.Balance(scTokenID)
 	balanceOldUser1 = user1.Balance(scTokenID)
@@ -430,14 +430,14 @@ func TestAccountNFTs(t *testing.T) {
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscNFTID(&nftID)))
 
 	v := coreaccounts.ScFuncs.AccountNFTs(ctx)
 	v.Params.AgentID().SetValue(user.ScAgentID())
@@ -453,15 +453,15 @@ func TestNFTData(t *testing.T) {
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	iscpNFTID := ctx.Cvt.IscpNFTID(&nftID)
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscpNFTID))
+	iscNFTID := ctx.Cvt.IscNFTID(&nftID)
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscNFTID))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscpNFTID))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscNFTID))
 
 	v := coreaccounts.ScFuncs.NftData(ctx)
 	v.Params.NftID().SetValue(nftID)
@@ -469,7 +469,7 @@ func TestNFTData(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	nftData, err := isc.NFTFromBytes(v.Results.NftData().Value())
 	require.NoError(t, err)
-	require.EqualValues(t, *iscpNFTID, nftData.ID)
+	require.EqualValues(t, *iscNFTID, nftData.ID)
 	require.EqualValues(t, userAddr, nftData.Issuer)
 	require.EqualValues(t, []byte(nftMetadata), nftData.Metadata)
 }
