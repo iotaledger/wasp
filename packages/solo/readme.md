@@ -1,9 +1,9 @@
 ## Package Solo
 
-Package `solo` is a development tool for writing unit tests for IOTA Smart Contracts (ISCP).
+Package `solo` is a development tool for writing unit tests for IOTA Smart Contracts (ISC).
 
 The package is intended for developers of smart contracts as well as contributors to the development
-of the ISCP and the [Wasp node](https://github.com/iotaledger/wasp) itself.
+of the ISC and the [Wasp node](https://github.com/iotaledger/wasp) itself.
 
 Normally, the smart contract is developed and tested in the `solo` environment before trying 
 it out on the network of Wasp nodes. Running and testing the smart contract on 'solo' 

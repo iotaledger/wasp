@@ -1,6 +1,6 @@
 {
   "name": "wasmlib",
-  "description": "WasmLib, interface library for ISCP Wasm VM",
+  "description": "WasmLib, interface library for ISC Wasm VM",
   "version": "1.0.0",
   "author": "Eric Hop",
   "dependencies": {

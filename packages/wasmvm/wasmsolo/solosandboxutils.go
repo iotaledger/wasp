@@ -21,7 +21,7 @@ func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
 
 func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
 	scAddress := wasmtypes.AddressFromBytes(args)
-	addr := s.cvt.IscpAddress(&scAddress)
+	addr := s.cvt.IscAddress(&scAddress)
 	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 

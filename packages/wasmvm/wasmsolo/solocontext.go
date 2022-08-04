@@ -263,7 +263,7 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID
 		baseTokens := ctx.Chain.L2BaseTokens(account)
 		return baseTokens
 	case 1:
-		token := ctx.Cvt.IscpTokenID(&tokenID[0])
+		token := ctx.Cvt.IscTokenID(&tokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
