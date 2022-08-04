@@ -1,3 +1,3 @@
 ## testcore
 
-Core test for ISCP wasmlib Rust/Wasm library
+Core test for ISC wasmlib Rust/Wasm library

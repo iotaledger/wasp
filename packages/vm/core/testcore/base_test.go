@@ -538,7 +538,7 @@ func TestMessageSize(t *testing.T) {
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
-		req, err := solo.NewIscpRequestFromCallParams(
+		req, err := solo.NewIscRequestFromCallParams(
 			ch,
 			solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
 				sbtestsc.ParamSize, uint32(reqSize),

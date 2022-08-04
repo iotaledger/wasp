@@ -354,9 +354,9 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 }
 
 type callFnResult struct {
-	tx          *types.Transaction
-	evmReceipt  *types.Receipt
-	iscpReceipt *blocklog.RequestReceipt
+	tx         *types.Transaction
+	evmReceipt *types.Receipt
+	iscReceipt *blocklog.RequestReceipt
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
@@ -366,7 +366,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 
-	res.iscpReceipt = e.chain.soloChain.LastReceipt()
+	res.iscReceipt = e.chain.soloChain.LastReceipt()
 
 	var err error
 	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())

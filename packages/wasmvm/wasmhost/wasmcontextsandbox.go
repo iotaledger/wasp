@@ -108,7 +108,7 @@ var sandboxFuncNames = []string{
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
-// It acts as a change-resistant layer to wrap changes to the ISCP sandbox,
+// It acts as a change-resistant layer to wrap changes to the ISC sandbox,
 // to limit bothering users of WasmLib as little as possible with those changes.
 type WasmContextSandbox struct {
 	common  isc.SandboxBase
@@ -149,14 +149,14 @@ func (s *WasmContextSandbox) checkErr(err error) {
 
 func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 	req := wasmrequests.NewPostRequestFromBytes(args)
-	chainID := s.cvt.IscpChainID(&req.ChainID)
-	contract := s.cvt.IscpHname(req.Contract)
-	function := s.cvt.IscpHname(req.Function)
+	chainID := s.cvt.IscChainID(&req.ChainID)
+	contract := s.cvt.IscHname(req.Contract)
+	function := s.cvt.IscHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 
-	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
-	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Transfer))
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}
@@ -212,7 +212,7 @@ func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
 		return codec.EncodeUint64(s.common.BalanceBaseTokens())
 	}
 	tokenID := wasmtypes.TokenIDFromBytes(args)
-	token := s.cvt.IscpTokenID(&tokenID)
+	token := s.cvt.IscTokenID(&tokenID)
 	return codec.EncodeUint64(s.common.BalanceNativeToken(token).Uint64())
 }
 
@@ -229,11 +229,11 @@ func (s *WasmContextSandbox) fnBlockContext(_ []byte) []byte {
 
 func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract := s.cvt.IscpHname(req.Contract)
-	function := s.cvt.IscpHname(req.Function)
+	contract := s.cvt.IscHname(req.Contract)
+	function := s.cvt.IscHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
 	s.Tracef("CALL %s.%s", contract.String(), function.String())
 	results := s.callUnlocked(contract, function, params, allowance)
 	return results.Bytes()
@@ -352,10 +352,10 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 // transfer tokens to address
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
-	address := s.cvt.IscpAddress(&req.Address)
+	address := s.cvt.IscAddress(&req.Address)
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
-		allowance := s.cvt.IscpAllowance(scAssets)
+		allowance := s.cvt.IscAllowance(scAssets)
 		metadata := isc.RequestParameters{
 			AdjustToMinimumStorageDeposit: true,
 			TargetAddress:                 address,
@@ -386,10 +386,10 @@ func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 // transfer tokens to address
 func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	req := wasmrequests.NewTransferRequestFromBytes(args)
-	agentID := s.cvt.IscpAgentID(&req.AgentID)
+	agentID := s.cvt.IscAgentID(&req.AgentID)
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
-		allowance := s.cvt.IscpAllowance(scAssets)
+		allowance := s.cvt.IscAllowance(scAssets)
 		if req.Create {
 			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, allowance)
 		} else {
@@ -410,7 +410,7 @@ func (s WasmContextSandbox) fnUtilsBech32Decode(args []byte) []byte {
 
 func (s WasmContextSandbox) fnUtilsBech32Encode(args []byte) []byte {
 	scAddress := wasmtypes.AddressFromBytes(args)
-	addr := s.cvt.IscpAddress(&scAddress)
+	addr := s.cvt.IscAddress(&scAddress)
 	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 

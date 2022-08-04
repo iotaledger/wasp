@@ -58,7 +58,7 @@ state:
   arrayOfStringMap: StringMap[]
   stringMapOfStringArray: map[String]StringArray
   stringMapOfStringMap: map[String]StringMap
-  # ISCP-specific datatypes, using Address
+  # ISC-specific datatypes, using Address
   arrayOfAddressArray: AddressArray[]
   arrayOfAddressMap: AddressMap[]
   addressMapOfAddressArray: map[Address]AddressArray
