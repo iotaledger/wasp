@@ -17,16 +17,16 @@ import (
 // WasmConvertor converts ISC data types to WasmLib data types
 type WasmConvertor struct{}
 
-func (cvt WasmConvertor) IscAddress(address *wasmtypes.ScAddress) iotago.Address {
-	buf := wasmtypes.AddressToBytes(*address)
-	addr, _, err := isc.AddressFromBytes(buf)
+func (cvt WasmConvertor) IscAddress(scAddress *wasmtypes.ScAddress) iotago.Address {
+	buf := wasmtypes.AddressToBytes(*scAddress)
+	address, _, err := isc.AddressFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}
-	return addr
+	return address
 }
 
-func (cvt WasmConvertor) IscAgentID(agentID *wasmtypes.ScAgentID) isc.AgentID {
+func (cvt WasmConvertor) IscAgentID(scAgentID *wasmtypes.ScAgentID) isc.AgentID {
 	buf := scAgentID.Bytes()
 	agentID, err := isc.AgentIDFromBytes(buf)
 	if err != nil {
