@@ -394,10 +394,13 @@ func TestISCGetAllowanceAvailableBaseTokens(t *testing.T) {
 
 func TestRevert(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
+	nonce := env.getNonce(ethAddress)
+
 	res, err := iscTest.callFn([]ethCallOptions{{
+		sender:   ethKey,
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "revertWithVMError")
 	require.Error(t, err)
@@ -407,6 +410,9 @@ func TestRevert(t *testing.T) {
 	require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
 
 	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
+
+	// the nonce must increase even after failed txs
+	require.Equal(t, nonce+1, env.getNonce(ethAddress))
 }
 
 func TestSend(t *testing.T) {
