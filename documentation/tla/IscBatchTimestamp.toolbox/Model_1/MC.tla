@@ -1,5 +1,5 @@
 ---- MODULE MC ----
-EXTENDS IscpBatchTimestamp, TLC
+EXTENDS IscBatchTimestamp, TLC
 
 \* CONSTANT definitions @modelParameterConstants:0Time
 const_16297193755177000 == 

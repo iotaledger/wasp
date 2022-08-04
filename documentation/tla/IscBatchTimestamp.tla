@@ -1,4 +1,4 @@
-------------------------- MODULE IscpBatchTimestamp -------------------------
+------------------------- MODULE IscBatchTimestamp -------------------------
 (*`^
 
 Let's assume the transaction currently being built is $t_i$ and the

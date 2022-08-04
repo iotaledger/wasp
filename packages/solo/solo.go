@@ -193,7 +193,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 	return env
 }
 
-// NewChain deploys new chain instance.
+// NewChain deploys new default chain instance.
+func (env *Solo) NewChain() *Chain {
+	ret, _, _ := env.NewChainExt(nil, 0, "chain1")
+	return ret
+}
+
+// NewChainExt returns also origin and init transactions. Used for core testing
 //
 // If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
 // ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
@@ -206,12 +212,6 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initOptions ...InitChainOptions) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initOptions...)
-	return ret
-}
-
-// NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)

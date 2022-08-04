@@ -17,7 +17,7 @@ import (
 func TestSendBack(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(inccounter.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10*isc.Million, nil)
 	require.NoError(t, err)

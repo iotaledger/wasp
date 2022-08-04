@@ -32,7 +32,7 @@ const BaseTokensDepositFee = 100
 func TestDeposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(100_000, sender)
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestDepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: false})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := isc.NewAgentID(senderAddr)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	const baseTokensSent = 1 * isc.Million
 
@@ -94,7 +94,7 @@ func TestWithdrawEverything(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
 	senderAgentID := isc.NewAgentID(senderAddr)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	// deposit some base tokens to L2
 	initialL1balance := ch.Env.L1BaseTokens(senderAddr)
@@ -499,7 +499,7 @@ func TestAccountBalances(t *testing.T) {
 	l1BaseTokens := func(addr iotago.Address) uint64 { return env.L1Assets(addr).BaseTokens }
 	totalBaseTokens := l1BaseTokens(chainOwnerAddr) + l1BaseTokens(senderAddr)
 
-	ch := env.NewChain(chainOwner, "chain1")
+	ch, _, _ := env.NewChainExt(chainOwner, 0, "chain1")
 
 	l2BaseTokens := func(agentID isc.AgentID) uint64 { return ch.L2BaseTokens(agentID) }
 	totalGasFeeCharged := uint64(0)
@@ -585,11 +585,11 @@ func initDepositTest(t *testing.T, initLoad ...uint64) *testParams {
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = isc.NewAgentID(ret.userAddr)
 
-	if len(initLoad) == 0 {
-		ret.ch = ret.env.NewChain(ret.chainOwner, "chain1")
-	} else {
-		ret.ch, _, _ = ret.env.NewChainExt(ret.chainOwner, initLoad[0], "chain1")
+	initBaseTokens := uint64(0)
+	if len(initLoad) != 0 {
+		initBaseTokens = initLoad[0]
 	}
+	ret.ch, _, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1")
 
 	ret.req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	return ret
@@ -1025,7 +1025,7 @@ func TestMintedTokensBurn(t *testing.T) {
 
 func TestNFTAccount(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
 	ownerWallet, ownerAddress := ch.Env.NewKeyPairWithFunds()
@@ -1086,7 +1086,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *isc.NFT, owner isc.Age
 
 func TestTransferNFTAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	issuerWallet, _ := ch.Env.NewKeyPairWithFunds()
 	initialOwnerWallet, initialOwnerAddress := ch.Env.NewKeyPairWithFunds()
@@ -1147,7 +1147,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 
 func TestDepositRandomContractMinFee(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	wallet, addr := ch.Env.NewKeyPairWithFunds()
 	agentID := isc.NewAgentID(addr)
@@ -1164,7 +1164,7 @@ func TestDepositRandomContractMinFee(t *testing.T) {
 
 func TestAllowanceNotEnoughFunds(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds()
 	allowances := []*isc.Allowance{

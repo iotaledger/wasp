@@ -21,7 +21,7 @@ func TestGovernance1(t *testing.T) {
 
 	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
 		lst := chain.GetAllowedStateControllerAddresses()
@@ -29,7 +29,7 @@ func TestGovernance1(t *testing.T) {
 	})
 	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
 		_, addr1 := env.NewKeyPair()
@@ -71,7 +71,7 @@ func TestRotate(t *testing.T) {
 
 	t.Run("not allowed address", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
 		kp, addr := env.NewKeyPair()
@@ -81,7 +81,7 @@ func TestRotate(t *testing.T) {
 	})
 	t.Run("unauthorized", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
 		kp, addr := env.NewKeyPairWithFunds()
@@ -91,7 +91,7 @@ func TestRotate(t *testing.T) {
 	})
 	t.Run("rotate success", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		chain := env.NewChain(nil, "chain1")
+		chain := env.NewChain()
 		// defer chain.Log.Sync()
 
 		newKP, newAddr := env.NewKeyPair()
@@ -119,7 +119,7 @@ func TestAccessNodes(t *testing.T) {
 	node1KP, _ := env.NewKeyPairWithFunds()
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds()
 	chainKP, _ := env.NewKeyPairWithFunds()
-	chain := env.NewChain(chainKP, "chain1")
+	chain, _, _ := env.NewChainExt(chainKP, 0, "chain1")
 	// defer chain.Log.Sync()
 	var res dict.Dict
 	var err error
@@ -231,7 +231,7 @@ func TestDisallowMaintenanceDeadlock(t *testing.T) {
 	)
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(ownerContractProcessor)
-	ch := env.NewChain(nil, "chain")
+	ch := env.NewChain()
 
 	ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
 	userWallet, _ := env.NewKeyPairWithFunds()

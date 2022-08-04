@@ -20,7 +20,7 @@ variable "wasp_cli_config" {
 EOH
 }
 
-job "iscp-evm-server" {
+job "isc-evm-server" {
 	datacenters = ["hcloud"]
 
 	update {

@@ -15,7 +15,7 @@ import (
 func TestProofs(t *testing.T) {
 	t.Run("chain ID", func(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		proof := ch.GetMerkleProofRaw(nil)
 		l1Commitment := ch.GetL1Commitment()
@@ -24,7 +24,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI blob", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI receipt", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -63,7 +63,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI past state", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestProofs(t *testing.T) {
 
 func TestProofStateTerminals(t *testing.T) {
 	env := solo.New(t)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(100_000, nil)
 	require.NoError(t, err)

@@ -9,7 +9,7 @@ import (
 func TestSoloBasic1(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
 	env := New(t)
-	_ = env.NewChain(nil, "ch1")
+	_ = env.NewChain()
 }
 
 func TestSoloBasic2(t *testing.T) {
@@ -17,5 +17,5 @@ func TestSoloBasic2(t *testing.T) {
 	env := New(t, &InitOptions{
 		Debug: true,
 	})
-	_ = env.NewChain(nil, "ch1")
+	_ = env.NewChain()
 }
