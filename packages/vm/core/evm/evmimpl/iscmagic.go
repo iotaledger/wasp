@@ -79,7 +79,7 @@ func adjustStorageDeposit(ctx isc.Sandbox, req isc.RequestParameters) {
 // moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
 // account before sending to L1
 // TODO: should use allowance and c.ctx.TransferAllowedFunds() instead
-func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
+func moveAssetsToCommonAccount(ctx isc.Sandbox, fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
 	ctx.Privileged().MustMoveBetweenAccounts(
 		ctx.Caller(), // should be the eth caller?
 		ctx.AccountID(),
@@ -148,7 +148,7 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 		c.ctx.RequireNoError(err)
 		req := params.Unwrap()
 		adjustStorageDeposit(c.ctx, req)
-		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, nil)
+		moveAssetsToCommonAccount(c.ctx, req.FungibleTokens, nil)
 		c.ctx.Send(req)
 
 	case "sendAsNFT":
@@ -161,7 +161,7 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 		req := params.Req.Unwrap()
 		nftID := params.NFTID.Unwrap()
 		adjustStorageDeposit(c.ctx, req)
-		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
+		moveAssetsToCommonAccount(c.ctx, req.FungibleTokens, []iotago.NFTID{nftID})
 		c.ctx.SendAsNFT(req, nftID)
 
 	case "call":
@@ -174,7 +174,7 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		allowance := callArgs.Allowance.Unwrap()
-		moveAssetsToCommonAccount(c.ctx, caller, allowance.Assets, allowance.NFTs)
+		moveAssetsToCommonAccount(c.ctx, allowance.Assets, allowance.NFTs)
 		callRet := c.ctx.Call(
 			isc.Hname(callArgs.ContractHname),
 			isc.Hname(callArgs.EntryPoint),

@@ -60,17 +60,18 @@ func (bctx *blockContext) mintBlock() {
 
 	// failed txs were not stored in the pending block -- store them now
 	for i := range bctx.txs {
-		if bctx.receipts[i].Status != types.ReceiptStatusSuccessful {
-			bctx.receipts[i].TransactionIndex = txCount
-			bctx.emu.BlockchainDB().AddTransaction(bctx.txs[i], bctx.receipts[i])
-
-			// we must also increment the nonce manually since the original request was reverted
-			sender := evmutil.MustGetSender(bctx.txs[i])
-			nonce := bctx.emu.StateDB().GetNonce(sender)
-			bctx.emu.StateDB().SetNonce(sender, nonce+1)
-
-			txCount++
+		if bctx.receipts[i].Status == types.ReceiptStatusSuccessful {
+			continue
 		}
+		bctx.receipts[i].TransactionIndex = txCount
+		bctx.emu.BlockchainDB().AddTransaction(bctx.txs[i], bctx.receipts[i])
+
+		// we must also increment the nonce manually since the original request was reverted
+		sender := evmutil.MustGetSender(bctx.txs[i])
+		nonce := bctx.emu.StateDB().GetNonce(sender)
+		bctx.emu.StateDB().SetNonce(sender, nonce+1)
+
+		txCount++
 	}
 
 	bctx.emu.MintBlock()

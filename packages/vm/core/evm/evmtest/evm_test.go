@@ -429,7 +429,7 @@ func TestSendBaseTokens(t *testing.T) {
 	senderInitialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
 
 	// transfer 1 mil from ethAddress L2 to receiver L1
-	transfer := uint64(1 * isc.Million)
+	transfer := 1 * isc.Million
 	iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 
 	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
