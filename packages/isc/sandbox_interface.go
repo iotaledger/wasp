@@ -128,6 +128,7 @@ type Privileged interface {
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	GasBurnEnable(enable bool)
+	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, fungibleTokens *FungibleTokens, nfts []iotago.NFTID)
 
 	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})

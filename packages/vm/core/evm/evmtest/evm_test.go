@@ -394,10 +394,13 @@ func TestISCGetAllowanceAvailableBaseTokens(t *testing.T) {
 
 func TestRevert(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
+	nonce := env.getNonce(ethAddress)
+
 	res, err := iscTest.callFn([]ethCallOptions{{
+		sender:   ethKey,
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "revertWithVMError")
 	require.Error(t, err)
@@ -407,18 +410,30 @@ func TestRevert(t *testing.T) {
 	require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
 
 	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
+
+	// the nonce must increase even after failed txs
+	require.Equal(t, nonce+1, env.getNonce(ethAddress))
 }
 
-func TestSend(t *testing.T) {
+func TestSendBaseTokens(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
+
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
+
+	iscTest := env.deployISCTestContract(ethKey)
+
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
-	iscTest.callFn(nil, "send", iscmagic.WrapL1Address(receiver))
-	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), uint64(1024))
+	senderInitialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
+
+	// transfer 1 mil from ethAddress L2 to receiver L1
+	transfer := 1 * isc.Million
+	iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+
+	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
+	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
 }
 
 func TestSendAsNFT(t *testing.T) {

@@ -50,7 +50,8 @@ interface ISC {
     // Get a random 32-bit value based on the hash of the current ISC state transaction
 	function getEntropy() external view returns (bytes32);
 
-    // Send an on-ledger request (or a regular transaction to any L1 address)
+    // Send an on-ledger request (or a regular transaction to any L1 address).
+    // The specified funds are taken from the ISC request caller's L2 account.
 	function send(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
 
     // Send an on-ledger request as an NFTOutput
@@ -67,8 +68,7 @@ interface ISC {
 	function registerError(string memory s) external view returns (ISCError);
 
     // Call the entry point of an ISC contract on the same chain.
-    // If the entry point is a full entry point, allowance tokens are moved between caller's and
-    // target contract's accounts (if enough).
+    // The specified funds in the allowance are taken from the ISC request caller's L2 account.
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 
     // Call a view entry point of an ISC contract on the same chain.
