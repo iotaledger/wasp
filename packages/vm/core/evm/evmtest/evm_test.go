@@ -415,16 +415,25 @@ func TestRevert(t *testing.T) {
 	require.Equal(t, nonce+1, env.getNonce(ethAddress))
 }
 
-func TestSend(t *testing.T) {
+func TestSendBaseTokens(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
+
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
+
+	iscTest := env.deployISCTestContract(ethKey)
+
 	require.Zero(t, env.solo.L1BaseTokens(receiver))
-	iscTest.callFn(nil, "send", iscmagic.WrapL1Address(receiver))
-	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), uint64(1024))
+	senderInitialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
+
+	// transfer 1 mil from ethAddress L2 to receiver L1
+	transfer := uint64(1 * isc.Million)
+	iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+
+	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
+	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
 }
 
 func TestSendAsNFT(t *testing.T) {

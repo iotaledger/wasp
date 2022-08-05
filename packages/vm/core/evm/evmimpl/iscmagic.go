@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -59,6 +60,32 @@ type magicContract struct {
 
 func newMagicContract(ctx isc.Sandbox) vm.ISCContract {
 	return &magicContract{ctx}
+}
+
+func adjustStorageDeposit(ctx isc.Sandbox, req isc.RequestParameters) {
+	sd := ctx.EstimateRequiredStorageDeposit(req)
+	if req.FungibleTokens.BaseTokens < sd {
+		if !req.AdjustToMinimumStorageDeposit {
+			panic(fmt.Sprintf(
+				"base tokens (%d) not enough to cover storage deposit (%d)",
+				req.FungibleTokens.BaseTokens,
+				sd,
+			))
+		}
+		req.FungibleTokens.BaseTokens = sd
+	}
+}
+
+// moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
+// account before sending to L1
+// TODO: should use allowance and c.ctx.TransferAllowedFunds() instead
+func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
+	ctx.Privileged().MustMoveBetweenAccounts(
+		ctx.Caller(), // should be the eth caller?
+		ctx.AccountID(),
+		fungibleTokens,
+		nftIDs,
+	)
 }
 
 //nolint:funlen
@@ -119,17 +146,23 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 		params := iscmagic.ISCRequestParameters{}
 		err := method.Inputs.Copy(&params, args)
 		c.ctx.RequireNoError(err)
-		c.ctx.Send(params.Unwrap())
+		req := params.Unwrap()
+		adjustStorageDeposit(c.ctx, req)
+		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, nil)
+		c.ctx.Send(req)
 
 	case "sendAsNFT":
-		var callArgs struct {
-			iscmagic.ISCRequestParameters
-			ID iscmagic.NFTID
+		var params struct {
+			Req   iscmagic.ISCRequestParameters
+			NFTID iscmagic.NFTID
 		}
-		err := method.Inputs.Copy(&callArgs, args)
+		err := method.Inputs.Copy(&params, args)
 		c.ctx.RequireNoError(err)
-		c.ctx.TransferAllowedFunds(c.ctx.AccountID())
-		c.ctx.SendAsNFT(callArgs.Unwrap(), callArgs.ID.Unwrap())
+		req := params.Req.Unwrap()
+		nftID := params.NFTID.Unwrap()
+		adjustStorageDeposit(c.ctx, req)
+		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
+		c.ctx.SendAsNFT(req, nftID)
 
 	case "call":
 		var callArgs struct {
@@ -140,11 +173,13 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 		}
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
+		allowance := callArgs.Allowance.Unwrap()
+		moveAssetsToCommonAccount(c.ctx, caller, allowance.Assets, allowance.NFTs)
 		callRet := c.ctx.Call(
 			isc.Hname(callArgs.ContractHname),
 			isc.Hname(callArgs.EntryPoint),
 			callArgs.Params.Unwrap(),
-			callArgs.Allowance.Unwrap(),
+			allowance,
 		)
 		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
 

@@ -49,21 +49,15 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function send(L1Address memory receiver) public {
-        ISCDict memory params = ISCDict(new ISCDictItem[](1));
-        bytes memory int64Encoded42 = hex"2A00000000000000";
-        params.items[0] = ISCDictItem("x", int64Encoded42);
-
-        bytes memory emptyID = new bytes(38);
-        NativeTokenID memory tokenId;
-        tokenId.data = emptyID;
+    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens) public {
+        ISCDict memory params;
 
         ISCFungibleTokens memory fungibleTokens;
-        fungibleTokens.baseTokens = 1074;
+        fungibleTokens.baseTokens = baseTokens;
 
         ISCSendMetadata memory metadata;
-        metadata.entrypoint = ISCHname.wrap(0x1337);
-        metadata.targetContract = ISCHname.wrap(0xd34db33f);
+		metadata.targetContract = isc.hn("accounts");
+        metadata.entrypoint = isc.hn("deposit");
         metadata.params = params;
 
         ISCSendOptions memory options;

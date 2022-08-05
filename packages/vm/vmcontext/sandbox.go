@@ -163,3 +163,7 @@ func (s *contractSandbox) BlockContext() interface{} {
 func (s *contractSandbox) GasBurnEnable(enable bool) {
 	s.Ctx.GasBurnEnable(enable)
 }
+
+func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
+	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, fungibleTokens, nfts)
+}

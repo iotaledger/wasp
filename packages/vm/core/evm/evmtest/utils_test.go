@@ -332,7 +332,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			Value:    opt.value,
 			Data:     callData,
 		})
-		require.NoError(e.chain.t, err)
+		require.NoError(e.chain.t, e.chain.resolveError(err))
 	}
 	return opt
 }
