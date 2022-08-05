@@ -81,8 +81,8 @@ type Sandbox interface {
 	Request() Calldata
 
 	// Call calls the entry point of the contract with parameters and allowance.
-	// If the entry point is full entry point, allowance tokens are moved between caller's and
-	// target contract's accounts (if enough). If the entry point is view, 'allowance' has no effect
+	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
+	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() AgentID
@@ -96,7 +96,6 @@ type Sandbox interface {
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
 	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
-	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
 	AllowanceAvailable() *Allowance
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().

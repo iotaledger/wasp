@@ -11,7 +11,7 @@ keywords:
 - explanation
 ---
 
-# Smart Contracts Invocation
+# Calling a Smart Contract
 
 Just like any other computer program, a smart contract will lie dormant until someone or something would instruct it to activate. In the case of smart contracts, the basic way to activate them is to call one of their [entry points](./smart-contract-anatomy.md#entry-points). It is the same as calling a program's function, and it will take a set of instructions of the smart contract and execute it over the current chain's state. View entry points can only read the state, and full entry points can both read and write to it.
 
@@ -66,7 +66,7 @@ The funds to cover the gas used will be charged directly from the user's on-chai
 
 Any funds sent to the chain via (on-ledger) requests are credited to the sender's account.
 
-In order for contracts to use funds owned by the caller, the caller must specify an `Allowance` in the request. Contracts can then claim whatever funds are allowed by the caller.
+In order for contracts to use funds owned by the *caller*, the *caller* must specify an `Allowance` in the request. Contracts can then claim any of the allowed funds by using the sandbox `TransferAllowedFunds` function.
 
 The Allowance properly looks like the following:
 

@@ -56,7 +56,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Smart Contracts Invocation',
+                    label: 'Calling a Smart Contracts',
                     id: 'guide/core_concepts/invocation',
                 },
                 {
