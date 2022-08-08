@@ -46,7 +46,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
         ownerMargin = OWNER_MARGIN_DEFAULT;
     }
 
-    //TODO need at least 1 iota to run SC
+    // need at least 1 base token to run SC
     let margin = minimumBid * ownerMargin / 1000;
     if (margin == 0) {
         margin = 1;
