@@ -173,8 +173,8 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 // ISCAllowance matches the struct definition in ISC.sol
 type ISCAllowance struct {
 	BaseTokens uint64
-	Tokens     []NativeToken
-	NFTs       []NFTID
+	Assets     []NativeToken
+	Nfts       []NFTID
 }
 
 func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
@@ -188,18 +188,18 @@ func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	}
 	return ISCAllowance{
 		BaseTokens: a.Assets.BaseTokens,
-		Tokens:     tokens,
-		NFTs:       nfts,
+		Assets:     tokens,
+		Nfts:       nfts,
 	}
 }
 
 func (a ISCAllowance) Unwrap() *isc.Allowance {
-	tokens := make(iotago.NativeTokens, len(a.Tokens))
-	for i, t := range a.Tokens {
+	tokens := make(iotago.NativeTokens, len(a.Assets))
+	for i, t := range a.Assets {
 		tokens[i] = t.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.NFTs))
-	for i, id := range a.NFTs {
+	nfts := make([]iotago.NFTID, len(a.Nfts))
+	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}
 	return isc.NewAllowance(a.BaseTokens, tokens, nfts)

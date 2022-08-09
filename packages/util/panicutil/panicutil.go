@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 )
 
@@ -67,6 +68,29 @@ func CatchPanic(f func()) (err error) {
 				return
 			}
 			err = xerrors.Errorf("%v", r)
+		}()
+		f()
+	}()
+	return err
+}
+
+func CatchAllExcept(f func(), exceptErrors ...error) (err error) {
+	func() {
+		defer func() {
+			r := recover()
+			if r == nil {
+				return
+			}
+			if recoveredError, ok := r.(error); ok {
+				for _, e := range exceptErrors {
+					if errors.Is(recoveredError, e) {
+						panic(err)
+					}
+				}
+				err = recoveredError
+			} else {
+				err = errors.Errorf("%v", r)
+			}
 		}()
 		f()
 	}()

@@ -5,17 +5,21 @@ package evmtest
 
 import (
 	"bytes"
+	"math"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -239,18 +243,6 @@ func TestISCCallView(t *testing.T) {
 	require.NotEmpty(t, ret.Unwrap())
 }
 
-func TestISCLogPanic(t *testing.T) {
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-
-	_, err := env.MagicContract(ethKey).callFn([]ethCallOptions{{
-		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "logPanic", "Hi from EVM!")
-
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "Hi from EVM!")
-}
-
 func TestISCNFTData(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
@@ -417,8 +409,6 @@ func TestRevert(t *testing.T) {
 
 func TestSendBaseTokens(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
-	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
-	require.NoError(t, err)
 
 	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	_, receiver := env.solo.NewKeyPair()
@@ -611,4 +601,83 @@ func TestFibonacciContract(t *testing.T) {
 	t.Log("evm gas used:", res.evmReceipt.GasUsed)
 	t.Log("isc gas used:", res.iscReceipt.GasBurned)
 	t.Log("Isc gas fee:", res.iscReceipt.GasFeeCharged)
+}
+
+func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// credit base tokens to the ISC test contract
+	env.soloChain.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(iscTest.address))
+
+	randAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
+
+	t.Fail()
+	nBaseTokens := uint64(100)
+	funds := isc.NewAllowanceBaseTokens(nBaseTokens)
+	_, err := iscTest.callFn(
+		nil,
+		"moveToAccount",
+		iscmagic.WrapISCAgentID(randAgentID),
+		iscmagic.WrapISCAllowance(funds),
+	)
+	require.NoError(t, err)
+
+	env.soloChain.AssertL2BaseTokens(randAgentID, nBaseTokens)
+}
+
+func TestISCPanic(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	iscTest := env.deployISCTestContract(ethKey)
+
+	ret, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // skip estimate gas (which will fail)
+	}}, "makeISCPanic")
+
+	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
+
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "execution reverted")
+}
+
+func TestSendWithArgs(t *testing.T) {
+	env := initEVM(t, inccounter.Processor)
+	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
+	require.NoError(t, err)
+
+	checkCounter := func(c int) {
+		ret, err := env.soloChain.CallView(inccounter.Contract.Name, inccounter.ViewGetCounter.Name)
+		require.NoError(t, err)
+		counter := codec.MustDecodeUint64(ret.MustGet(inccounter.VarCounter))
+		require.EqualValues(t, c, counter)
+	}
+	checkCounter(0)
+
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	ret, err := env.MagicContract(ethKey).callFn(
+		nil,
+		"send",
+		iscmagic.WrapL1Address(env.soloChain.ChainID.AsAddress()),
+		iscmagic.WrapISCFungibleTokens(isc.FungibleTokens{}),
+		true, // auto adjust SD
+		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
+			TargetContract: inccounter.Contract.Hname(),
+			EntryPoint:     inccounter.FuncIncCounter.Hname(),
+			Params:         dict.Dict{},
+			Allowance:      isc.NewEmptyAllowance(),
+			GasBudget:      math.MaxUint64,
+		}),
+		iscmagic.ISCSendOptions{},
+	)
+	require.NoError(t, err)
+	require.Nil(t, ret.iscReceipt.Error)
+
+	time.Sleep(1 * time.Second) // wait a bit for the request going out of EVM to be processed by ISC
+
+	// assert inc counter was incremented
+	checkCounter(1)
 }

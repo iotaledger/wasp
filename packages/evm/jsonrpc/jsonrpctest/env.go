@@ -336,7 +336,6 @@ func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Fund
 	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
 	_, ok := err.(*isc.VMError)
 	require.False(e.T, ok)
-	// TODO above will fail | this shouldn't be a VM error, it means ISC VM is running
 }
 
 func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Funds) {

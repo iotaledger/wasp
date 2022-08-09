@@ -14,7 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
@@ -88,8 +90,31 @@ func moveAssetsToCommonAccount(ctx isc.Sandbox, fungibleTokens *isc.FungibleToke
 	)
 }
 
+type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64)
+
+// catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
+func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	err = panicutil.CatchAllExcept(
+		func() {
+			ret, remainingGas = run(evm, caller, input, gas, readOnly)
+		},
+		vmexceptions.AllProtocolLimits...,
+	)
+	if err != nil {
+		remainingGas = gas
+		err = vm.ErrExecutionReverted
+		// the ISC error is lost inside the EVM, a possible solution would be to wrap the ErrExecutionReverted error, but the ISC information still gets deleted at some point
+		// err = errors.Wrap(vm.ErrExecutionReverted, err.Error())
+	}
+	return ret, remainingGas, err
+}
+
+func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly)
+}
+
 //nolint:funlen
-func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
@@ -219,7 +244,11 @@ func newMagicContractView(ctx isc.SandboxView) vm.ISCContract {
 	return &magicContractView{ctx}
 }
 
-func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly)
+}
+
+func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
@@ -281,15 +310,6 @@ func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input 
 
 	case "getTimestampUnixSeconds":
 		outs = []interface{}{ctx.Timestamp().Unix()}
-
-	case "logInfo":
-		ctx.Log().Infof("%s", args[0].(string))
-
-	case "logDebug":
-		ctx.Log().Debugf("%s", args[0].(string))
-
-	case "logPanic":
-		ctx.Log().Panicf("%s", args[0].(string))
 
 	default:
 		return
