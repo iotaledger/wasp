@@ -139,7 +139,7 @@ TypeOK ==
 
 --------------------------------------------------------------------------------
 (*
-`^\center{\textbf{L1}}^'
+`^\center{\textbf{Environment: L1}}^'
 *)
 
 (*
@@ -251,7 +251,7 @@ L1Fairness == SF_vars(L1Confirm)
 
 --------------------------------------------------------------------------------
 (*
-`^\center{\textbf{CONSENSUS}}^'
+`^\center{\textbf{Environment: CONSENSUS}}^'
 
 We model consensus here as a single "centralized" variable. Thus, we only use
 the consensus abstraction, and don't bother with its implementation. In practice
@@ -440,7 +440,7 @@ NodePostL1ChainTx ==
                   ]}
                /\ nodeLastOut' = \* Consider the posted AO as the latest unspent.
                     [nodeLastOut EXCEPT ![n] = newAO]
-               /\ UNCHANGED  <<logConsensus, nodeLog, l1Vars>>
+               /\ UNCHANGED <<logConsensus, nodeLog, l1Vars>>
 
 (*
 If the consensus decided, that there is no agreement on a single alias output to
