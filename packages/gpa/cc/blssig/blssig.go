@@ -16,6 +16,8 @@
 package blssig
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
@@ -119,4 +121,12 @@ func (cc *ccImpl) Message(msg gpa.Message) []gpa.Message {
 
 func (cc *ccImpl) Output() gpa.Output {
 	return cc.output
+}
+
+func (cc *ccImpl) StatusString() string {
+	return fmt.Sprintf("{CC:blssig, sigShares=%v, output=%v}", cc.sigShares, cc.output)
+}
+
+func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	return nil, xerrors.Errorf("not implemented") // TODO: XXX: Impl.
 }
