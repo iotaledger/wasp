@@ -32,7 +32,6 @@ The nodes will then be reachable under these ports:
     - Nanomsg: tcp://localhost:5550 
     
 - Hornet:
-    - API: http://localhost:14266
-    - External Peering: 15601/tcp
-    - Dashboard: http://localhost:8082 (username: admin, password: admin)
-    - Prometheus: http://localhost:9312/metrics
+    - API: http://localhost:14265
+    - Faucet: http://localhost:8091
+    - Dashboard: http://localhost:8081 (username: admin, password: admin)
