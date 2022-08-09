@@ -350,11 +350,6 @@ func TestRPCGetLogs(t *testing.T) {
 	env.TestRPCGetLogs(env.soloChain.NewEthereumAccountWithL2Funds)
 }
 
-func TestRPCGasLimit(t *testing.T) {
-	env := newSoloTestEnv(t)
-	env.TestRPCGasLimit(env.soloChain.NewEthereumAccountWithL2Funds)
-}
-
 func TestRPCEthChainID(t *testing.T) {
 	env := newSoloTestEnv(t)
 	var chainID hexutil.Uint

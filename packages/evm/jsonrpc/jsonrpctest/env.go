@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
@@ -317,30 +318,12 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
 
-func (e *Env) TestRPCGasLimit(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
-	from, fromAddress := newAccountWithL2Funds()
-	_, toAddress := newAccountWithL2Funds()
-	value := big.NewInt(0)
-	nonce := e.NonceAt(fromAddress)
-	gasLimit := params.TxGas - 1
-	tx, err := types.SignTx(
-		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
-		e.signer(),
-		from,
-	)
-	require.NoError(e.T, err)
-
-	_, err = e.sendTransactionAndWait(tx)
-	require.Error(e.T, err)
-	require.Regexp(e.T, `\bgas\b`, err.Error())
-}
-
 func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	from, fromAddress := newAccountWithL2Funds()
 	_, toAddress := newAccountWithL2Funds()
 	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress) + 1
-	gasLimit := params.TxGas - 1
+	gasLimit := params.TxGas
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
 		e.signer(),
@@ -351,4 +334,27 @@ func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Fund
 	_, err = e.sendTransactionAndWait(tx)
 	require.Error(e.T, err)
 	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
+	_, ok := err.(*isc.VMError)
+	require.False(e.T, ok)
+	// TODO above will fail | this shouldn't be a VM error, it means ISC VM is running
+}
+
+func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
+	from, fromAddress := newAccountWithL2Funds()
+	_, toAddress := newAccountWithL2Funds()
+	value := big.NewInt(0)
+	nonce := e.NonceAt(fromAddress)
+	gasLimit := uint64(1) // lower than intrinsic gas
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
+		e.signer(),
+		from,
+	)
+	require.NoError(e.T, err)
+
+	_, err = e.sendTransactionAndWait(tx)
+	require.Error(e.T, err)
+	require.Regexp(e.T, "intrinsic gas too low", err.Error())
+	_, ok := err.(*isc.VMError)
+	require.False(e.T, ok)
 }
