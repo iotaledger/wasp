@@ -332,7 +332,10 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 	}
 }
 
-const refreshTipsDuringPoWInterval = 5 * time.Second
+const (
+	refreshTipsDuringPoWInterval = 5 * time.Second
+	parallelWorkers              = 1
+)
 
 func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 	if nc.config.UseRemotePoW {
@@ -352,10 +355,16 @@ func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 		return resp.Tips()
 	}
 
-	return doPoW(
+	targetScore := float64(parameters.L1.Protocol.MinPoWScore)
+
+	_, err := doPoW(
 		ctx,
 		block,
+		targetScore,
+		parallelWorkers,
 		refreshTipsDuringPoWInterval,
 		refreshTipsFn,
 	)
+
+	return err
 }
