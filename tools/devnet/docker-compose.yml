@@ -1,0 +1,42 @@
+version: "3.9"
+services:
+  hornet-nest:
+    image: hornet-nest
+    networks:
+      - wasp-net
+    ports:
+      - "${HOST:-127.0.0.1}:14265:14265/tcp"
+      - "${HOST:-127.0.0.1}:8081:8081/tcp"
+      - "${HOST:-127.0.0.1}:8091:8091/tcp"
+      - "${HOST:-127.0.0.1}:9029:9029/tcp"
+    stop_grace_period: 5m
+  wasp:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: wasp
+    depends_on:
+      - hornet-nest
+    restart: on-failure:10
+    networks:
+      - wasp-net
+    volumes:
+      - wasp-db:/wasp/waspdb
+      - ./wasp.config.json:/etc/wasp_config.json
+    expose:
+      - "4000/udp" # Peering
+      - "5550/tcp" # Nano MSG
+      - "7000/tcp" # Wasp Dashboard
+      - "9090/tcp" # Wasp WebAPI
+    ports:
+      - "${HOST:-127.0.0.1}:4000:4000/tcp" # Peering
+      - "${HOST:-127.0.0.1}:5550:5550/tcp" # Nano MSG
+      - "${HOST:-127.0.0.1}:7000:7000/tcp" # Wasp Dashboard
+      - "${HOST:-127.0.0.1}:9090:9090/tcp" # Wasp WebAPI
+
+networks:
+  wasp-net: {}
+
+volumes:
+  wasp-db:
+    name: wasp-db

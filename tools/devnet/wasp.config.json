@@ -3,8 +3,8 @@
     "directory": "/wasp/waspdb"
   },
   "l1": {
-    "apiAddress": "http://172.19.211.1:14265",
-    "faucetAddress": "http://172.19.211.1:8191"
+    "apiAddress": "http://hornet-nest:14265",
+    "faucetAddress": "http://hornet-nest:8091"
   },
   "logger": {
     "level": "debug",
