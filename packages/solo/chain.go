@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -59,11 +59,16 @@ func (ch *Chain) DumpAccounts() string {
 	return ret
 }
 
+// RawState returns state of the chain for assess as raw KVStore
+func (ch *Chain) RawState() kv.KVStore {
+	return ch.VirtualStateAccess().KVStore()
+}
+
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	retDict, err := ch.CallView(root.Contract.Name, root.ViewFindContract.Name,
-		root.ParamHname, iscp.Hn(scName),
+		root.ParamHname, isc.Hn(scName),
 	)
 	if err != nil {
 		return nil, err
@@ -237,7 +242,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (*iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (*isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
@@ -255,22 +260,22 @@ func (ch *Chain) GetInfo() (*iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Co
 	return chainID, chainOwnerID, contracts
 }
 
-type DustInfo struct {
-	TotalIotasInL2Accounts uint64
-	TotalDustDeposit       uint64
-	NumNativeTokens        int
+type StorageDepositInfo struct {
+	TotalBaseTokensInL2Accounts uint64
+	TotalStorageDeposit         uint64
+	NumNativeTokens             int
 }
 
-func (d *DustInfo) Total() uint64 {
-	return d.TotalIotasInL2Accounts + d.TotalDustDeposit*uint64(d.NumNativeTokens)
+func (d *StorageDepositInfo) Total() uint64 {
+	return d.TotalBaseTokensInL2Accounts + d.TotalStorageDeposit*uint64(d.NumNativeTokens)
 }
 
-func (ch *Chain) GetTotalIotaInfo() *DustInfo {
+func (ch *Chain) GetTotalBaseTokensInfo() *StorageDepositInfo {
 	bi := ch.GetLatestBlockInfo()
-	return &DustInfo{
-		TotalIotasInL2Accounts: bi.TotalIotasInL2Accounts,
-		TotalDustDeposit:       bi.TotalDustDeposit,
-		NumNativeTokens:        len(ch.GetOnChainTokenIDs()),
+	return &StorageDepositInfo{
+		TotalBaseTokensInL2Accounts: bi.TotalBaseTokensInL2Accounts,
+		TotalStorageDeposit:         bi.TotalStorageDeposit,
+		NumNativeTokens:             len(ch.GetOnChainTokenIDs()),
 	}
 }
 
@@ -289,7 +294,7 @@ func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
 func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name,
-		blocklog.ParamContractHname, iscp.Hn(name),
+		blocklog.ParamContractHname, isc.Hn(name),
 	)
 	if err != nil {
 		return nil, err
@@ -299,7 +304,7 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 }
 
 // GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
-func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
+func (ch *Chain) GetEventsForRequest(reqID isc.RequestID) ([]string, error) {
 	viewResult, err := ch.CallView(
 		blocklog.Contract.Name, blocklog.ViewGetEventsForRequest.Name,
 		blocklog.ParamRequestID, reqID,
@@ -323,7 +328,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() iscp.AgentID {
+func (ch *Chain) CommonAccount() isc.AgentID {
 	return ch.ChainID.CommonAccount()
 }
 
@@ -342,7 +347,7 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	return blockInfo
 }
 
-func (ch *Chain) GetErrorMessageFormat(code iscp.VMErrorCode) (string, error) {
+func (ch *Chain) GetErrorMessageFormat(code isc.VMErrorCode) (string, error) {
 	ret, err := ch.CallView(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
 		errors.ParamErrorCode, code.Bytes(),
 	)
@@ -379,7 +384,7 @@ func (ch *Chain) GetBlockInfo(blockIndex ...uint32) (*blocklog.BlockInfo, error)
 }
 
 // IsRequestProcessed checks if the request is booked on the chain as processed
-func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
+func (ch *Chain) IsRequestProcessed(reqID isc.RequestID) bool {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewIsRequestProcessed.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
@@ -390,7 +395,7 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, bool) {
+func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, bool) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
@@ -437,7 +442,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 }
 
 // GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
-func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
+func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
@@ -445,11 +450,11 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
-	ret := make([]iscp.RequestID, recs.MustLen())
+	ret := make([]isc.RequestID, recs.MustLen())
 	for i := range ret {
 		reqIDBin, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
-		ret[i], err = iscp.RequestIDFromBytes(reqIDBin)
+		ret[i], err = isc.RequestIDFromBytes(reqIDBin)
 		require.NoError(ch.Env.T, err)
 	}
 	return ret
@@ -520,7 +525,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []iotago.Address {
 		return nil
 	}
 	ret := make([]iotago.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, string(governance.ParamAllowedStateControllerAddresses))
+	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)
@@ -555,8 +560,8 @@ func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.Ke
 
 type L1L2AddressAssets struct {
 	Address  iotago.Address
-	AssetsL1 *iscp.FungibleTokens
-	AssetsL2 *iscp.FungibleTokens
+	AssetsL1 *isc.FungibleTokens
+	AssetsL2 *isc.FungibleTokens
 }
 
 func (a *L1L2AddressAssets) String() string {
@@ -567,24 +572,24 @@ func (ch *Chain) L1L2Funds(addr iotago.Address) *L1L2AddressAssets {
 	return &L1L2AddressAssets{
 		Address:  addr,
 		AssetsL1: ch.Env.L1Assets(addr),
-		AssetsL2: ch.L2Assets(iscp.NewAgentID(addr)),
+		AssetsL2: ch.L2Assets(isc.NewAgentID(addr)),
 	}
 }
 
-func (ch *Chain) GetL2FundsFromFaucet(agentID iscp.AgentID, iotas ...uint64) {
-	iotaKey, iotaAddr := ch.Env.NewKeyPairWithFunds()
+func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64) {
+	walletKey, walletAddr := ch.Env.NewKeyPairWithFunds()
 
 	var amount uint64
-	if len(iotas) > 0 {
-		amount = iotas[0]
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
 	} else {
-		amount = ch.Env.L1Iotas(iotaAddr) - TransferAllowanceToGasBudgetIotas
+		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		iscp.NewTokensIotas(amount),
+		isc.NewFungibleBaseTokens(amount),
 		agentID,
 		true,
-		iotaKey,
+		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
 }

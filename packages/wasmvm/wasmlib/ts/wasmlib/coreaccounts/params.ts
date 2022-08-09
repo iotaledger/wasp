@@ -61,14 +61,14 @@ export class MutableFoundryModifySupplyParams extends wasmtypes.ScProxy {
 }
 
 export class ImmutableHarvestParams extends wasmtypes.ScProxy {
-	forceMinimumIotas(): wasmtypes.ScImmutableUint64 {
-		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	forceMinimumBaseTokens(): wasmtypes.ScImmutableUint64 {
+		return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ParamForceMinimumBaseTokens));
 	}
 }
 
 export class MutableHarvestParams extends wasmtypes.ScProxy {
-	forceMinimumIotas(): wasmtypes.ScMutableUint64 {
-		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamForceMinimumIotas));
+	forceMinimumBaseTokens(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ParamForceMinimumBaseTokens));
 	}
 }
 

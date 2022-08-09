@@ -8,19 +8,19 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID iscp.ChainID
+	ChainID isc.ChainID
 	Active  bool
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	ret := &ChainRecord{}
-	chainID, err := iscp.ChainIDFromMarshalUtil(mu)
+	chainID, err := isc.ChainIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}

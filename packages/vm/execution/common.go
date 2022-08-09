@@ -2,7 +2,7 @@ package execution
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -17,7 +17,7 @@ func GetProgramBinary(ctx WaspContext, programHash hashing.HashValue) (vmtype st
 	return ctx.LocateProgram(programHash)
 }
 
-func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode iscp.Hname, progHash hashing.HashValue) iscp.VMProcessorEntryPoint {
+func GetEntryPointByProgHash(ctx WaspContext, targetContract, epCode isc.Hname, progHash hashing.HashValue) isc.VMProcessorEntryPoint {
 	getBinary := func(programHash hashing.HashValue) (vmtype string, binary []byte, err error) {
 		return GetProgramBinary(ctx, programHash)
 	}

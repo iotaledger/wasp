@@ -15,7 +15,7 @@ The following test posts a request to the `solotutorial` smart contract without 
 
 ```go
 func TestTutorialInvokeSCError(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)

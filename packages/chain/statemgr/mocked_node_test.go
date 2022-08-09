@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -66,12 +66,17 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainNodeConn, err = nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
 	require.NoError(env.T, err)
 	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), timers)
-	ret.ChainNodeConn.AttachToAliasOutput(ret.StateManager.EnqueueAliasOutput)
-	ret.Log.Debugf("Mocked node %v started: id %v public key %v", nodeIndex, nodeID, ret.PubKey.AsString())
+	ret.Log.Debugf("Mocked node %v created: id %v public key %v", nodeIndex, nodeID, ret.PubKey.String())
 	return ret
 }
 
-func (node *MockedNode) StartTimer() {
+func (node *MockedNode) Start() {
+	node.ChainNodeConn.AttachToAliasOutput(node.StateManager.EnqueueAliasOutput)
+	node.startTimer()
+	node.Log.Debugf("Mocked node %v started", node.PubKey.String())
+}
+
+func (node *MockedNode) startTimer() {
 	go func() {
 		node.StateManager.Ready().MustWait()
 		counter := 0
@@ -100,7 +105,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 
 func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
 	node.ChainCore.OnStateTransition(func(msg *chain.ChainTransitionEventData) {
-		chain.LogStateTransition(msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), state.RootCommitment(msg.VirtualState.TrieNodeStore()), nil, node.Log)
+		chain.LogStateTransition(msg.VirtualState.BlockIndex(), isc.OID(msg.ChainOutput.ID()), state.RootCommitment(msg.VirtualState.TrieNodeStore()), nil, node.Log)
 		if msg.ChainOutput.GetStateIndex() < limit {
 			go node.NextState(msg.VirtualState, msg.ChainOutput)
 		}
@@ -115,10 +120,10 @@ func (node *MockedNode) MakeNewStateTransition() {
 	node.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput)
 }
 
-func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *iscp.AliasOutputWithID) {
-	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), iscp.OID(chainOutput.ID()))
+func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *isc.AliasOutputWithID) {
+	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), isc.OID(chainOutput.ID()))
 	nextState, tx, aliasOutputID := testchain.NextState(node.Env.T, node.Env.StateKeyPair, vstate, chainOutput, time.Now())
 	go node.ChainNodeConn.PublishStateTransaction(vstate.BlockIndex(), tx)
 	go node.StateManager.EnqueueStateCandidateMsg(nextState, aliasOutputID)
-	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), iscp.OID(aliasOutputID))
+	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), isc.OID(aliasOutputID))
 }

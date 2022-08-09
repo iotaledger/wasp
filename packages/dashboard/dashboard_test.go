@@ -6,7 +6,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
@@ -64,7 +64,7 @@ func TestDashboardChainAccount(t *testing.T) {
 	ch := env.newChain()
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
 		"chainid": ch.ChainID.String(),
-		"agentid": iscp.NewRandomAgentID().String(),
+		"agentid": isc.NewRandomAgentID().String(),
 	})
 	checkProperConversionsToString(t, html)
 	require.Regexp(t, "@", html.Find(".value-agentid").Text())

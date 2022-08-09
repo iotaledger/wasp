@@ -4,111 +4,111 @@ package micropay
 
 // func TestBasics(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 // }
 
 // func TestSubmitPk(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
 // 	pubKey := payer.PublicKey.Bytes()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 // 		ParamPublicKey, pubKey,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 // }
 
 // func TestOpenChannelFail(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	_, providerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	req := solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
+// 	req := solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddBaseTokens(600)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.Error(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-// 	chain.AssertL2Iotas(cAgentID, 0)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
+// 	chain.AssertL2BaseTokens(cAgentID, 0)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 // }
 
 // func TestOpenChannelOk(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
 // 	payerPubKey := payer.PublicKey.Bytes()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 // 		ParamPublicKey, payerPubKey,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
 // 	_, providerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddIotas(600)
+// 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name, ParamServiceAddress, providerAddr).AddBaseTokens(600)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-// 	chain.AssertL2Iotas(cAgentID, 600+1)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
+// 	chain.AssertL2BaseTokens(cAgentID, 600+1)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 // }
 
 // func TestOpenChannelTwice(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
 // 	payerPubKey := payer.PublicKey.Bytes()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 // 		ParamPublicKey, payerPubKey,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
 // 	_, providerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 // 		ParamServiceAddress, providerAddr).
-// 		AddIotas(600)
+// 		AddBaseTokens(600)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
-// 	chain.AssertL2Iotas(cAgentID, 600+1)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
+// 	chain.AssertL2BaseTokens(cAgentID, 600+1)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	chain.AssertL2Iotas(cAgentID, 600+600+1)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-600-1)
+// 	chain.AssertL2BaseTokens(cAgentID, 600+600+1)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount-600-600-1)
 
 // 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 // 		ParamPayerAddress, payerAddr,
@@ -126,33 +126,33 @@ package micropay
 
 // func TestRevokeWarrant(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
 // 	payerPubKey := payer.PublicKey.Bytes()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 // 		ParamPublicKey, payerPubKey,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
 // 	_, providerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 
 // 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 // 		ParamServiceAddress, providerAddr).
-// 		AddIotas(600)
+// 		AddBaseTokens(600)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	chain.AssertL2Iotas(cAgentID, 600+1)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
+// 	chain.AssertL2BaseTokens(cAgentID, 600+1)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 // 	ret, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 // 		ParamPayerAddress, payerAddr,
@@ -167,7 +167,7 @@ package micropay
 
 // 	req = solo.NewCallParams("micropay", FuncRevokeWarrant.Name,
 // 		ParamServiceAddress, providerAddr,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
@@ -202,33 +202,33 @@ package micropay
 
 // func TestPayment(t *testing.T) {
 // 	env := solo.New(t).WithNativeContract(Processor)
-// 	chain := env.NewChain(nil, "ch1")
+// 	chain := env.NewChain()
 // 	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 // 	require.NoError(t, err)
 
 // 	payer, payerAddr := env.NewKeyPairWithFunds()
 // 	payerPubKey := payer.PublicKey.Bytes()
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount)
 
 // 	req := solo.NewCallParams("micropay", FuncPublicKey.Name,
 // 		ParamPublicKey, payerPubKey,
-// 	).AddIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
 // 	provider, providerAddr := env.NewKeyPairWithFunds()
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount)
 
-// 	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
+// 	cAgentID := isc.NewAgentID(chain.ChainID.AsAddress(), isc.Hn("micropay"))
 
 // 	req = solo.NewCallParams("micropay", FuncAddWarrant.Name,
 // 		ParamServiceAddress, providerAddr).
-// 		AddIotas(600)
+// 		AddBaseTokens(600)
 // 	_, err = chain.PostRequestSync(req, payer)
 // 	require.NoError(t, err)
 
-// 	chain.AssertL2Iotas(cAgentID, 600+1)
-// 	env.AssertAddressIotas(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
+// 	chain.AssertL2BaseTokens(cAgentID, 600+1)
+// 	env.AssertL1BaseTokens(payerAddr, utxodb.FundsFromFaucetAmount-600-1)
 
 // 	res, err := chain.CallView("micropay", FuncGetChannelInfo.Name,
 // 		ParamPayerAddress, payerAddr,
@@ -250,11 +250,11 @@ package micropay
 // 	arr := collections.NewArray16(par, ParamPayments)
 // 	_ = arr.Push(pay1)
 // 	_ = arr.Push(pay2)
-// 	req = solo.NewCallParamsFromDict("micropay", FuncSettle.Name, par).AddIotas(1)
+// 	req = solo.NewCallParamsFromDict("micropay", FuncSettle.Name, par).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, provider)
 // 	require.NoError(t, err)
 
-// 	env.AssertAddressIotas(providerAddr, utxodb.FundsFromFaucetAmount+42+41-1)
+// 	env.AssertL1BaseTokens(providerAddr, utxodb.FundsFromFaucetAmount+42+41-1)
 
 // 	res, err = chain.CallView("micropay", FuncGetChannelInfo.Name,
 // 		ParamPayerAddress, payerAddr,

@@ -3,8 +3,8 @@ package root
 import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance
@@ -19,7 +19,7 @@ type ContractRecord struct {
 	// Description of the instance
 	Description string
 	// Unique name of the contract on the chain. The real identity of the instance on the chain
-	// is hname(name) =  iscp.Hn(name)
+	// is hname(name) =  isc.Hn(name)
 	Name string
 }
 
@@ -76,6 +76,6 @@ func readString(mu *marshalutil.MarshalUtil) (string, error) {
 	return string(ret), nil
 }
 
-func (p *ContractRecord) Hname() iscp.Hname {
-	return iscp.Hn(p.Name)
+func (p *ContractRecord) Hname() isc.Hname {
+	return isc.Hn(p.Name)
 }

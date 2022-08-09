@@ -2,12 +2,12 @@ package chainutil
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func GetAccountBalance(ch chain.ChainCore, agentID iscp.AgentID) (*iscp.FungibleTokens, error) {
+func GetAccountBalance(ch chain.ChainCore, agentID isc.AgentID) (*isc.FungibleTokens, error) {
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
@@ -15,5 +15,5 @@ func GetAccountBalance(ch chain.ChainCore, agentID iscp.AgentID) (*iscp.Fungible
 	if err != nil {
 		return nil, err
 	}
-	return iscp.FungibleTokensFromDict(ret)
+	return isc.FungibleTokensFromDict(ret)
 }

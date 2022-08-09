@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -21,12 +21,12 @@ type WAL struct {
 	metrics  *walMetrics
 	segments map[uint32]*segment
 	synced   map[uint32]bool
-	mu       sync.RWMutex
 }
 
 type chainWAL struct {
 	*WAL
-	chainID *iscp.ChainID
+	chainID *isc.ChainID
+	mu      sync.RWMutex
 }
 
 func New(log *logger.Logger, dir string) *WAL {
@@ -40,7 +40,7 @@ type segment struct {
 	dir   string
 }
 
-func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
+func (w *WAL) NewChainWAL(chainID *isc.ChainID) (chain.WAL, error) {
 	if w == nil {
 		return &defaultWAL{}, nil
 	}
@@ -62,7 +62,7 @@ func (w *WAL) NewChainWAL(chainID *iscp.ChainID) (chain.WAL, error) {
 		index, _ := strconv.ParseUint(file.Name(), 10, 32)
 		w.segments[uint32(index)] = &segment{index: uint32(index), dir: w.dir}
 	}
-	return &chainWAL{w, chainID}, nil
+	return &chainWAL{WAL: w, chainID: chainID}, nil
 }
 
 func (w *chainWAL) Write(bytes []byte) error {

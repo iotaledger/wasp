@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -27,10 +27,12 @@ import (
 type SoloSandbox struct {
 	ctx   *SoloContext
 	cvt   wasmhost.WasmConvertor
-	utils iscp.Utils
+	utils isc.Utils
 }
 
 func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
+	_ = burnCode
+	_ = par
 	// just do nothing
 }
 
@@ -40,7 +42,7 @@ func (s *SoloSandbox) Budget() uint64 {
 
 var (
 	_ wasmhost.ISandbox = new(SoloSandbox)
-	_ iscp.Gas          = new(SoloSandbox)
+	_ isc.Gas           = new(SoloSandbox)
 )
 
 func NewSoloSandbox(ctx *SoloContext) *SoloSandbox {
@@ -100,22 +102,22 @@ func (s *SoloSandbox) Tracef(format string, args ...interface{}) {
 	s.ctx.Chain.Log().Debugf(format, args...)
 }
 
-func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *iscp.Allowance) []byte {
+func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allowance, transfer *isc.Allowance) []byte {
 	ctx := s.ctx
 	req := solo.NewCallParamsFromDict(contract, function, params)
 	if allowance.IsEmpty() {
 		allowance = transfer
 	}
 	req.WithAllowance(allowance)
-	// Force a minimum transfer of 1Mi iotas for dust and some gas
+	// Force a minimum transfer of 1 Million base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
-	// This also removes the silly requirement to transfer 1 iota
+	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = iscp.NewAllowanceIotas(1 * iscp.Mi)
+		transfer = isc.NewAllowanceBaseTokens(1 * isc.Million)
 	}
-	if !transfer.IsEmpty() && transfer.Assets.Iotas < 1*iscp.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.Iotas = 1 * iscp.Mi
+		transfer.Assets.BaseTokens = 1 * isc.Million
 	}
 	req.AddFungibleTokens(transfer.Assets)
 	if len(transfer.NFTs) != 0 {
@@ -156,11 +158,11 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract := s.cvt.IscpHname(req.Contract)
-	if contract != iscp.Hn(ctx.scName) {
+	contract := s.cvt.IscHname(req.Contract)
+	if contract != isc.Hn(ctx.scName) {
 		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
 	}
-	function := s.cvt.IscpHname(req.Function)
+	function := s.cvt.IscHname(req.Function)
 	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
@@ -170,7 +172,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	s.checkErr(err)
 	scAllowance := wasmlib.NewScAssets(req.Allowance)
 	if !scAllowance.IsEmpty() {
-		allowance := s.cvt.IscpAllowance(scAllowance)
+		allowance := s.cvt.IscAllowance(scAllowance)
 		return s.postSync(ctx.scName, funcName, params, allowance, nil)
 	}
 
@@ -184,7 +186,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	return res.Bytes()
 }
 
-func (s *SoloSandbox) fnChainID(args []byte) []byte {
+func (s *SoloSandbox) fnChainID(_ []byte) []byte {
 	return s.ctx.CurrentChainID().Bytes()
 }
 
@@ -198,11 +200,11 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if !bytes.Equal(req.ChainID.Bytes(), s.fnChainID(nil)) {
 		s.Panicf("unknown chain id: %s", req.ChainID.String())
 	}
-	contract := s.cvt.IscpHname(req.Contract)
-	if contract != iscp.Hn(s.ctx.scName) {
+	contract := s.cvt.IscHname(req.Contract)
+	if contract != isc.Hn(s.ctx.scName) {
 		s.Panicf("unknown contract: %s", contract.String())
 	}
-	function := s.cvt.IscpHname(req.Function)
+	function := s.cvt.IscHname(req.Function)
 	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
@@ -213,7 +215,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
-	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
-	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Transfer))
 	return s.postSync(s.ctx.scName, funcName, params, allowance, transfer)
 }

@@ -3,11 +3,11 @@ description: ""
 events:
   bet:
     address: Address # address of better
-    amount: Uint64 # amount of iotas to bet
+    amount: Uint64 # amount of tokens to bet
     number: Uint16 # number to bet on
   payout:
     address: Address # address of winner
-    amount: Uint64 # amount of iotas won
+    amount: Uint64 # amount of tokens won
   round:
     number: Uint32 # current betting round number
   start:

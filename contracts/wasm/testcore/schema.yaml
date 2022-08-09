@@ -23,7 +23,7 @@ funcs:
       chainOwnerID: AgentID
   claimAllowance:
   doNothing:
-  estimateMinDust:
+  estimateMinStorageDeposit:
   incCounter:
   infiniteLoop:
   init:
@@ -76,7 +76,7 @@ funcs:
   withdrawFromChain:
     params:
       chainID: ChainID
-      iotasWithdrawal: Uint64
+      baseTokensWithdrawal: Uint64
       gasBudget: Uint64
 views:
   checkContextFromViewEP:

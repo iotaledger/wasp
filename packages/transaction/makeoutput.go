@@ -2,28 +2,28 @@ package transaction
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 // BasicOutputFromPostData creates extended output object from parameters.
-// It automatically adjusts amount of iotas required for the dust deposit
+// It automatically adjusts amount of base tokens required for the storage deposit
 func BasicOutputFromPostData(
 	senderAddress iotago.Address,
-	senderContract iscp.Hname,
-	par iscp.RequestParameters,
+	senderContract isc.Hname,
+	par isc.RequestParameters,
 ) *iotago.BasicOutput {
 	metadata := par.Metadata
 	if metadata == nil {
 		// if metadata is not specified, target is nil. It corresponds to sending funds to the plain L1 address
-		metadata = &iscp.SendMetadata{}
+		metadata = &isc.SendMetadata{}
 	}
 
 	ret := MakeBasicOutput(
 		par.TargetAddress,
 		senderAddress,
 		par.FungibleTokens,
-		&iscp.RequestMetadata{
+		&isc.RequestMetadata{
 			SenderContract: senderContract,
 			TargetContract: metadata.TargetContract,
 			EntryPoint:     metadata.EntryPoint,
@@ -32,27 +32,27 @@ func BasicOutputFromPostData(
 			GasBudget:      metadata.GasBudget,
 		},
 		par.Options,
-		!par.AdjustToMinimumDustDeposit,
+		!par.AdjustToMinimumStorageDeposit,
 	)
 	return ret
 }
 
 // MakeBasicOutput creates new output from input parameters.
-// Auto adjusts minimal dust deposit if the notAutoAdjust flag is absent or false
-// If auto adjustment to dust is disabled and not enough iotas, returns an error
+// Auto adjusts minimal storage deposit if the notAutoAdjust flag is absent or false
+// If auto adjustment to storage deposit is disabled and not enough base tokens, returns an error
 func MakeBasicOutput(
 	targetAddress iotago.Address,
 	senderAddress iotago.Address,
-	assets *iscp.FungibleTokens,
-	metadata *iscp.RequestMetadata,
-	options iscp.SendOptions,
-	disableAutoAdjustDustDeposit ...bool,
+	assets *isc.FungibleTokens,
+	metadata *isc.RequestMetadata,
+	options isc.SendOptions,
+	disableAutoAdjustStorageDeposit ...bool,
 ) *iotago.BasicOutput {
 	if assets == nil {
-		assets = &iscp.FungibleTokens{}
+		assets = &isc.FungibleTokens{}
 	}
 	out := &iotago.BasicOutput{
-		Amount:       assets.Iotas,
+		Amount:       assets.BaseTokens,
 		NativeTokens: assets.Tokens,
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: targetAddress},
@@ -84,8 +84,8 @@ func MakeBasicOutput(
 		out.Conditions = append(out.Conditions, cond)
 	}
 
-	// Adjust to minimum dust deposit, if needed
-	if len(disableAutoAdjustDustDeposit) > 0 && disableAutoAdjustDustDeposit[0] {
+	// Adjust to minimum storage deposit, if needed
+	if len(disableAutoAdjustStorageDeposit) > 0 && disableAutoAdjustStorageDeposit[0] {
 		return out
 	}
 
@@ -100,14 +100,14 @@ func MakeBasicOutput(
 
 func NFTOutputFromPostData(
 	senderAddress iotago.Address,
-	senderContract iscp.Hname,
-	par iscp.RequestParameters,
-	nft *iscp.NFT,
+	senderContract isc.Hname,
+	par isc.RequestParameters,
+	nft *isc.NFT,
 ) *iotago.NFTOutput {
 	basicOutput := BasicOutputFromPostData(senderAddress, senderContract, par)
 	out := NftOutputFromBasicOutput(basicOutput, nft)
 
-	if !par.AdjustToMinimumDustDeposit {
+	if !par.AdjustToMinimumStorageDeposit {
 		return out
 	}
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
@@ -118,7 +118,7 @@ func NFTOutputFromPostData(
 	return out
 }
 
-func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTOutput {
+func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *isc.NFT) *iotago.NFTOutput {
 	return &iotago.NFTOutput{
 		Amount:       o.Amount,
 		NativeTokens: o.NativeTokens,
@@ -132,9 +132,9 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *iscp.NFT) *iotago.NFTO
 	}
 }
 
-func AssetsFromOutput(o iotago.Output) *iscp.FungibleTokens {
-	return &iscp.FungibleTokens{
-		Iotas:  o.Deposit(),
-		Tokens: o.NativeTokenList(),
+func AssetsFromOutput(o iotago.Output) *isc.FungibleTokens {
+	return &isc.FungibleTokens{
+		BaseTokens: o.Deposit(),
+		Tokens:     o.NativeTokenList(),
 	}
 }

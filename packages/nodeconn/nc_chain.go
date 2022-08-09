@@ -13,7 +13,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
@@ -21,7 +21,7 @@ import (
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
 	nc                 *nodeConn
-	chainID            *iscp.ChainID
+	chainID            *isc.ChainID
 	outputHandler      func(iotago.OutputID, iotago.Output)
 	stateOutputHandler func(iotago.OutputID, iotago.Output)
 	inclusionStates    *events.Event
@@ -30,7 +30,7 @@ type ncChain struct {
 
 func newNCChain(
 	nc *nodeConn,
-	chainID *iscp.ChainID,
+	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) *ncChain {
@@ -65,35 +65,35 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	if err != nil {
 		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
 	}
-	ncc.log.Debugf("publishing transaction %v...", iscp.TxID(txID))
+	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
 	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
-	ncc.log.Debugf("publishing transaction %v: posted", iscp.TxID(txID))
+	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
 	txMsgID, err := txMsg.ID()
 	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", iscp.TxID(txID), err)
+		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
 	}
 	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	if subInfo.Error() != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", iscp.TxID(txID), subInfo.Error())
+		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", isc.TxID(txID), subInfo.Error())
 	}
 	go func() {
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", iscp.TxID(txID))
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", isc.TxID(txID))
 		for msgMetaChange := range msgMetaChanges {
 			if msgMetaChange.LedgerInclusionState != "" {
 				str, err := json.Marshal(msgMetaChange)
 				if err != nil {
-					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", iscp.TxID(txID), err)
+					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", isc.TxID(txID), err)
 				} else {
-					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", iscp.TxID(txID), str)
+					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", isc.TxID(txID), str)
 				}
 				ncc.inclusionStates.Trigger(txID, msgMetaChange.LedgerInclusionState)
 			}
 		}
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", iscp.TxID(txID))
+		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
 	}()
 
 	// TODO should promote/re-attach logic not be blocking?
@@ -187,7 +187,7 @@ func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
 			nodeclient.UnlockConditionAny,
 		)
 		if subInfo.Error() != nil {
-			ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+			ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
 		}
 		//
 		// Then fetch all the existing unspent outputs owned by the chain.
@@ -241,7 +241,7 @@ func (ncc *ncChain) subscribeToChainStateUpdates() {
 	// Subscribe to the new outputs first.
 	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
 	if subInfo.Error() != nil {
-		ncc.log.Panicf("failed to subscribe: %w", subInfo.Error())
+		ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
 	}
 
 	//

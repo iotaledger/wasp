@@ -81,14 +81,14 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 }
 
 func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput iotago.UTXOInput) int64 {
-	dustDeposit := int64(txb.dustDepositAssumption.NFTOutput)
+	storageDeposit := int64(txb.storageDepositAssumption.NFTOutput)
 
-	// keep the number of iotas in the output == required dust deposit
+	// keep the number of base tokens in the output == required storage deposit
 	// take all native tokens out of the NFT output
-	txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NFTOutput)
+	txb.subDeltaBaseTokensFromTotal(txb.storageDepositAssumption.NFTOutput)
 
 	out := o.Clone().(*iotago.NFTOutput)
-	out.Amount = uint64(dustDeposit)
+	out.Amount = uint64(storageDeposit)
 	chainAddr := txb.anchorOutput.AliasID.ToAddress()
 	out.NativeTokens = nil
 	out.Conditions = iotago.UnlockConditions{
@@ -115,7 +115,7 @@ func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput i
 	}
 
 	txb.nftsIncluded[o.NFTID] = toInclude
-	return -dustDeposit
+	return -storageDeposit
 }
 
 func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
@@ -144,6 +144,6 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 
 		txb.nftsIncluded[o.NFTID] = toInclude
 	}
-	txb.addDeltaIotasToTotal(txb.dustDepositAssumption.NFTOutput)
-	return int64(txb.dustDepositAssumption.NFTOutput)
+	txb.addDeltaBaseTokensToTotal(txb.storageDepositAssumption.NFTOutput)
+	return int64(txb.storageDepositAssumption.NFTOutput)
 }

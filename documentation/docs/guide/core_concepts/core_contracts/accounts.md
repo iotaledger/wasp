@@ -1,5 +1,5 @@
 ---
-description: The `accounts` contract keeps a consistent ledger of on-chain accounts in its state for the agents that control them. There are two types of agents who can do it, L1 addresses and smart contracts.
+description: The `accounts` contract keeps the ledger of on-chain accounts.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - core contracts
@@ -9,18 +9,14 @@ keywords:
 - assets
 - balance
 - reference
---- 
-
-// TODO  update <https://stardust.iota-community.org> links to the wiki
+---
 
 # The `accounts` Contract
 
 The `accounts` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts
 chain.
 
-This contract keeps a consistent ledger of on-chain accounts in its state, establishing what is owned by who.
-There are three types of agents who can own assets on the chain: L1 addresses, ISC smart contracts and EVM smart contracts.
-Any agent can own L1 assets: tokens, NFTs and foundries
+This contract keeps a consistent ledger of on-chain accounts in its state, i.e. [the L2 ledger](../accounts/how-accounts-work).
 
 ---
 
@@ -28,103 +24,198 @@ Any agent can own L1 assets: tokens, NFTs and foundries
 
 The `accounts` contract provides functions to deposit and withdraw tokens, information about the assets deposited on the chain, as well as functionality to create/utilize foundries.  
 
-### - `deposit()`
+### `deposit()`
 
-Credits any transfered tokens to the sender's account.
-
-### - `withdraw()`
-
-Moves tokens from the caller's on-chain account to any external L1 address (can be an Agent on another chain).
-The amount of tokens to be withdrawn must be specified via allowance in the request.
+A no-op that has the side effect of crediting any transfered tokens to the sender's account.
 
 :::note
-A call to withdraw means that a L1 output will be created, because of this, the withdrawn amount must be able to cover the L1 [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system), otherwise it will fail.
+As with every call, the gas fee is debited from the L2 account right after
+executing the request.
 :::
 
-### - `transferAllowanceTo(a AgentID, c ForceOpenAccount)`
+### `withdraw()`
 
-Credits the specified allowance to any AgentID (`a`) on the chain.
+Moves tokens from the caller's on-chain account to the caller's L1 address.
+The amount of tokens to be withdrawn must be specified via the allowance of the request.
 
 :::note
-If the target AgentID doesn't yet have funds on the chain, an optional boolean parameter (`c`) "ForceOpenAccount" must specified to signal for an account to be created.
+A call to withdraw means that a L1 output will be created.
+Because of this, the withdrawn amount must be able to cover the L1 storage deposit, otherwise it will fail.
 :::
 
-### - `harvest()`
+### `transferAllowanceTo(a AgentID, c ForceOpenAccount)`
 
-Moves tokens from the common account controlled by the chain owner, to the proper owner's account on the same chain. This entry point is only authorised to whoever owns the chain.
+Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
 
-:::note
-The "common account" is an account where the gas fees collected for the chain owner are placed. Also if assets are sent to any of the core contracts, they will end up on this account.
-:::
+Parameters:
 
-### - `foundryCreateNew(t TokenScheme) s SerialNumber`
+- `a` (`AgentID`): The target L2 account
+- `c` (optional `bool` - default: `false`): If the target Agent ID doesn't yet have funds on the chain, `c = true` specifies that the account should be created; otherwise the call fails.
 
-Creates a new foundry with the specified [token scheme](https://stardust.iota-community.org/introduction/develop/protocol/foundry) `t`. The new foundry is created under the controller of the request sender.
-The serial number `s` of the newly created foundry will be returned.
+### `harvest(f ForceMinimumBaseTokens)`
 
-:::note
-The [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system) for the new foundry must be provided via allowance (only the minimum required will be used).
-:::
+Only the chain owner can call this entry point, which moves all tokens from the chain [common account](../accounts/the-common-account) to the sender's L2 account.
 
-### - `foundryModifySupply(s SerialNumber, d SupplyDeltaAbs, y DestroyTokens)`
+Parameters:
 
-Inflates (mints) or shrinks supply of token by the foundry, controlled by the caller.
-The following parameters must be provided:
+- `f` (optional `uint64` - default: `MinimumBaseTokensOnCommonAccount`): specifies the amount of base tokens to leave in the common account.
 
-- the target foundry serial number `s`
-- SupplyDeltaAbs `d` specifies by which amount the supply should increase or decrease (specified as a big.int), this is an absolute value
-- DestroyTokens `y` is a boolean that specifies whether to destroy tokens or not (defaults to `false`)
+### `foundryCreateNew(t TokenScheme) s SerialNumber`
+
+Creates a new foundry with the specified token scheme, and assigns the foundry to the sender.
+
+Parameters:
+
+- `t` ([`iotago::TokenScheme`](https://github.com/iotaledger/iota.go/blob/develop/token_scheme.go)): The token scheme for the new foundry.
+
+The storage deposit for the new foundry must be provided via allowance (only the minimum required will be used).
+
+Returns:
+
+- `s` (`uint32`): The serial number of the newly created foundry
+
+### `foundryModifySupply(s SerialNumber, d SupplyDeltaAbs, y DestroyTokens)`
+
+Mints or destroys tokens for the given foundry, which must be controlled by the caller.
+
+Parameters:
+
+- `s` (`uint32`): The serial number of the foundry
+- `d` (positive `big.Int`): Amount to mint or destroy
+- `y` (optional `bool` - default: `false`) Whether to destroy tokens (`true`) or not (`false`)
 
 When minting new tokens, the storage deposit for the new output must be provided via allowance.
 
 When destroying tokens, the tokens to be destroyed must be provided via allowance.
 
-### - `foundryDestroy(s SerialNumber)`
+### `foundryDestroy(s SerialNumber)`
 
-Destroys a given foundry output on L1, reiburses the [storage deposit](https://stardust.iota-community.org/introduction/develop/introduction/what_is_stardust#storage-deposit-system) to the caller. (Can only succeed if the foundry is owned by the caller)
+Destroys a given foundry output on L1, reinbursing the storage deposit to the caller.
+The foundry must be owned by the caller.
 
 :::warning
-This operation cannot be reverted
+This operation cannot be reverted.
 :::
+
+Parameters:
+
+- `s` (`uint32`): The serial number of the foundry
 
 ---
 
 ## Views
 
-The `accounts` contract provides ways to query information about chain accounts.
+### `balance(a AgentID)`
 
-### - `balance(a AgentID)`
+Returns the fungible tokens owned by the given Agent ID on the chain.
 
-Returns the fungible tokens owned by any AgentID `a` on the chain.
+Parameters:
 
-### - `balanceBaseToken(a AgentID)`
+- `a` (`AgentID`): The account Agent ID
+
+Returns:
+
+A map of [`TokenID`](#tokenid) => `big.Int`. The L1 base tokens is represented by an empty Token ID (a key with length 0).
+
+### `balanceBaseToken(a AgentID)`
 
 Returns amount of base tokens owned by any AgentID `a` on the chain.
 
-### - `balanceNativeToken(a AgentID, N NativeTokenID)`
+Parameters:
 
-Returns the amount of native tokens with TokenID `N` owned by any AgentID `a`  on the chain.
+- `a` (`AgentID`): The account Agent ID
 
-### - `totalAssets()`
+Returns:
 
-Returns a map with the sum of all assets controlled by the chain Base tokens, Native Tokens and NFTs.
+- `B` (`uint64`): The amount of base tokens in the account
 
-### - `accounts()`
+### `balanceNativeToken(a AgentID, N TokenID)`
+
+Returns the amount of native tokens with Token ID `N` owned by any AgentID `a`  on the chain.
+
+Parameters:
+
+- `a` (`AgentID`): The account Agent ID
+- `N` ([`TokenID`](#tokenid)): The Token ID
+
+Returns:
+
+- `B` (`big.Int`): The amount of native tokens in the account
+
+### `totalAssets()`
+
+Returns the sum of all fungible tokens controlled by the chain.
+
+Returns:
+
+A map of [`TokenID`](#tokenid) => `big.Int`. The L1 base tokens is represented by an empty Token ID (a key with length 0).
+
+### `accounts()`
 
 Returns a list of all agent IDs that own assets on the chain.
 
-### - `getNativeTokenIDRegistry()`
+Returns: a map of `AgentiD` => `0xff`.
+
+### `getNativeTokenIDRegistry()`
 
 Returns a list of all native tokenIDs that are owned by the chain.
 
-### - `foundryOutput(s FoundrySerialNumber)`
+Returns: a map of [`TokenID`](#tokenid) => `0xff`
+
+### `foundryOutput(s FoundrySerialNumber)`
 
 Returns the output corresponding to the foundry with Serial Number `s`.
 
-### - `nftData(z NFTID)`
+Returns:
 
-Returns the data for a given NFT with ID `z` that on the chain. This data includes the issuer, immutable metadata and the current on-chain owner.
+- `b`: [`iotago::FoundryOutput`](https://github.com/iotaledger/iota.go/blob/develop/output_foundry.go)
 
-### - `getAccountNonce(a AgentID)`
+### `accountNFTs(a AgentID)`
 
-Returns the current account nonce for a give AgentID `a` (the account nonce is used to issue off-ledger requests).
+Returns the NFT IDs for all NFTs owned by the given account.
+
+Parameters:
+
+- `a` (`AgentID`): The account Agent ID
+
+Returns:
+
+- `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go) of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)): The NFT IDs owned by the account
+
+### `nftData(z NFTID)`
+
+Returns the data for a given NFT with ID `z` that is on the chain.
+
+Returns:
+
+- `e`: [`NFTData`](#nftdata)
+
+### `getAccountNonce(a AgentID)`
+
+Returns the current account nonce for a give AgentID `a`.
+The account nonce is used to issue off-ledger requests.
+
+Parameters:
+
+- `a` (`AgentID`): The account Agent ID
+
+Returns:
+
+- `n` (`uint64`): The account nonce
+
+## Schemas
+
+### `TokenID`
+
+```
+TokenID = [38]byte
+```
+
+### `NFTData`
+
+`NFTData` is encoded as the concatenation of:
+
+- The issuer ([`iotago::Address`](https://github.com/iotaledger/iota.go/blob/develop/address.go))
+- The NFT metadata: the length (`uint16`) followed by the data bytes
+- The NFT owner (`AgentID`)
+

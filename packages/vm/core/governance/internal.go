@@ -4,8 +4,10 @@
 package governance
 
 import (
+	"errors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -25,6 +27,10 @@ func GetRotationAddress(state kv.KVStoreReader) iotago.Address {
 
 // GetChainInfo returns global variables of the chain
 func GetChainInfo(state kv.KVStoreReader) (*ChainInfo, error) {
+	if state.MustGet(VarChainID) == nil {
+		return nil, errors.New("chainID not found in governance state")
+	}
+
 	d := kvdecoder.New(state)
 	ret := &ChainInfo{}
 	var err error
@@ -61,7 +67,7 @@ func MustGetChainInfo(state kv.KVStoreReader) *ChainInfo {
 	return info
 }
 
-func MustGetChainOwnerID(state kv.KVStoreReader) iscp.AgentID {
+func MustGetChainOwnerID(state kv.KVStoreReader) isc.AgentID {
 	d := kvdecoder.New(state)
 	return d.MustGetAgentID(VarChainOwnerID)
 }

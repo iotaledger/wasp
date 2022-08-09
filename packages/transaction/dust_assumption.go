@@ -8,7 +8,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -44,7 +44,7 @@ func (d *StorageDepositAssumption) Bytes() []byte {
 }
 
 func (d *StorageDepositAssumption) String() string {
-	return fmt.Sprintf("InternalDustDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
+	return fmt.Sprintf("InternalStorageDepositEstimate: anchor UTXO = %d, nativetokenUTXO = %d",
 		d.AnchorOutput, d.NativeTokenOutput)
 }
 
@@ -82,15 +82,15 @@ func nativeTokenOutputStorageDeposit() uint64 {
 	o := MakeBasicOutput(
 		&addr,
 		&addr,
-		&iscp.FungibleTokens{
-			Iotas: 1,
+		&isc.FungibleTokens{
+			BaseTokens: 1,
 			Tokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
 				Amount: abi.MaxUint256,
 			}},
 		},
 		nil,
-		iscp.SendOptions{},
+		isc.SendOptions{},
 	)
 	return parameters.L1.Protocol.RentStructure.MinRent(o)
 }
@@ -100,17 +100,17 @@ func nftOutputStorageDeposit() uint64 {
 	basicOut := MakeBasicOutput(
 		&addr,
 		&addr,
-		&iscp.FungibleTokens{
-			Iotas: 1,
+		&isc.FungibleTokens{
+			BaseTokens: 1,
 			Tokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
 				Amount: abi.MaxUint256,
 			}},
 		},
 		nil,
-		iscp.SendOptions{},
+		isc.SendOptions{},
 	)
-	out := NftOutputFromBasicOutput(basicOut, &iscp.NFT{
+	out := NftOutputFromBasicOutput(basicOut, &isc.NFT{
 		ID:       iotago.NFTID{0},
 		Issuer:   tpkg.RandEd25519Address(),
 		Metadata: make([]byte, iotago.MaxMetadataLength),

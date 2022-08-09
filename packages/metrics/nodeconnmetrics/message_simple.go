@@ -3,7 +3,7 @@ package nodeconnmetrics
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
 )
@@ -18,7 +18,7 @@ type nodeConnectionMessageSimpleMetrics struct {
 
 var _ NodeConnectionMessageMetrics = &nodeConnectionMessageSimpleMetrics{}
 
-func newNodeConnectionMessageSimpleMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID, msgType string) NodeConnectionMessageMetrics {
+func newNodeConnectionMessageSimpleMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID, msgType string) NodeConnectionMessageMetrics {
 	return &nodeConnectionMessageSimpleMetrics{
 		nodeConnMetrics: ncmi,
 		metricsLabel:    getMetricsLabel(chainID, msgType),

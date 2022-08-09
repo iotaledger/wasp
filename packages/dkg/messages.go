@@ -17,7 +17,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -33,39 +33,39 @@ const (
 	//
 	// NOTE: initiatorInitMsgType must be unique across all the uses of peering package,
 	// because it is used to start new chain, thus peeringID is not used for message recognition.
-	initiatorInitMsgType byte = peering.FirstUserMsgCode + 184 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
+	initiatorInitMsgType = peering.FirstUserMsgCode + 184 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
 	//
 	// Initiator <-> Peer proc communication.
-	initiatorMsgBase         byte = peering.FirstUserMsgCode + 4 // 4 to align with round numbers.
-	initiatorStepMsgType     byte = initiatorMsgBase + 1         // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
-	initiatorDoneMsgType     byte = initiatorMsgBase + 2         // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
-	initiatorPubShareMsgType byte = initiatorMsgBase + 3         // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
-	initiatorStatusMsgType   byte = initiatorMsgBase + 4         // Peer -> Initiator; in the case of error or void ack.
-	initiatorMsgFree         byte = initiatorMsgBase + 5         // Just a placeholder for first unallocated message type.
+	initiatorMsgBase         = peering.FirstUserMsgCode + 4 // 4 to align with round numbers.
+	initiatorStepMsgType     = initiatorMsgBase + 1         // Initiator -> Peer: start new step, reply with initiatorStatusMsgType.
+	initiatorDoneMsgType     = initiatorMsgBase + 2         // Initiator -> Peer: finalize the proc, reply with initiatorStatusMsgType.
+	initiatorPubShareMsgType = initiatorMsgBase + 3         // Peer -> Initiator; if keys are already generated, that's response to initiatorStepMsgType.
+	initiatorStatusMsgType   = initiatorMsgBase + 4         // Peer -> Initiator; in the case of error or void ack.
+	initiatorMsgFree         = initiatorMsgBase + 5         // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol.
-	rabinMsgFrom                   byte = initiatorMsgFree
-	rabinDealMsgType               byte = rabinMsgFrom + 0
-	rabinResponseMsgType           byte = rabinMsgFrom + 1
-	rabinJustificationMsgType      byte = rabinMsgFrom + 2
-	rabinSecretCommitsMsgType      byte = rabinMsgFrom + 3
-	rabinComplaintCommitsMsgType   byte = rabinMsgFrom + 4
-	rabinReconstructCommitsMsgType byte = rabinMsgFrom + 5
-	rabinMsgTill                   byte = rabinMsgFrom + 6 // Just a placeholder for first unallocated message type.
+	rabinMsgFrom                   = initiatorMsgFree
+	rabinDealMsgType               = rabinMsgFrom + 0
+	rabinResponseMsgType           = rabinMsgFrom + 1
+	rabinJustificationMsgType      = rabinMsgFrom + 2
+	rabinSecretCommitsMsgType      = rabinMsgFrom + 3
+	rabinComplaintCommitsMsgType   = rabinMsgFrom + 4
+	rabinReconstructCommitsMsgType = rabinMsgFrom + 5
+	rabinMsgTill                   = rabinMsgFrom + 6 // Just a placeholder for first unallocated message type.
 	//
 	// Peer <-> Peer communication for the Rabin protocol, messages repeatedly sent
 	// in response to duplicated messages from other peers. They should be treated
 	// in a special way to avoid infinite message loops.
-	rabinEchoFrom byte = rabinMsgTill
-	rabinEchoTill byte = rabinEchoFrom + (rabinMsgTill - rabinMsgFrom)
+	rabinEchoFrom = rabinMsgTill
+	rabinEchoTill = rabinEchoFrom + (rabinMsgTill - rabinMsgFrom)
 	//
 	// The Peer<->Peer communication includes a corresponding KeySetType.
 	// We encode it to the MsgType. Messages are recognized as follows:
 	//  [rabinMsgFrom,        rabinEchoTill)       --> KeySetType = Ed25519
 	//  [rabinKeySetTypeFrom, rabinKeySetTypeTill) --> KeySetType = BLS
 	// NOTE: There is not enough bits to encode KeySetType and Echo flags as bits.
-	rabinKeySetTypeFrom byte = rabinEchoTill
-	rabinKeySetTypeTill byte = rabinKeySetTypeFrom + (rabinEchoTill - rabinMsgFrom)
+	rabinKeySetTypeFrom = rabinEchoTill
+	rabinKeySetTypeTill = rabinKeySetTypeFrom + (rabinEchoTill - rabinMsgFrom)
 )
 
 type keySetType byte
@@ -540,7 +540,7 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteByte(w, m.step); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, iscp.BytesFromAddress(m.sharedAddress)); err != nil {
+	if err = util.WriteBytes16(w, isc.BytesFromAddress(m.sharedAddress)); err != nil {
 		return err
 	}
 	{ // Ed25519 part.
@@ -580,7 +580,7 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = iscp.AddressFromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = isc.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
 	m.sharedAddress = sharedAddress

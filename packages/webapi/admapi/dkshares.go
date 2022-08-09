@@ -14,7 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -31,7 +31,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 		Threshold:   3,
 		TimeoutMS:   10000,
 	}
-	addr1 := iscp.RandomChainID().AsAddress()
+	addr1 := isc.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
 		Address:      addr1.Bech32(parameters.L1.Protocol.Bech32HRP),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
@@ -78,7 +78,7 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]*cryptolib.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			peerPubKey, err := cryptolib.NewPublicKeyFromString(req.PeerPubKeys[i])
+			peerPubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PeerPubKeys[i])
 			if err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}

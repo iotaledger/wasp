@@ -10,25 +10,24 @@ keywords:
 - Access
 - store
 - state
-description: IOTA Smart Contracts provide a very flexible way of programming smart contracts by providing an API to a sandboxed environment that allows you to interact with IOTA Smart Contracts deterministically without any security risks.
-image: /img/wasm_vm/IscpHost.png
+description: IOTA Smart Contracts (ISC) provides a very flexible way of programming smart contracts by providing an API to a sandboxed environment that allows you to interact with ISC deterministically without any security risks.
+image: /img/wasm_vm/IscHost.png
 ---
-# Introduction to the Wasm VM for IOTA Smart Contracts
+# Introduction to the Wasm VM for ISC
 
-IOTA Smart Contracts provide a very flexible way of
-programming smart contracts by providing an API to a sandboxed environment
-that allows you to interact with the IOTA Smart Contracts deterministically without any security risks.
-The API provides a generic way to store, access, and modify the state of the smart
-contract. The API can be used by any kind of Virtual Machine (VM) to implement a system to
-program, load, and run smart contracts on top of IOTA Smart Contracts. The actual VMs can be
-implemented by whoever wants to create them.
+IOTA Smart Contracts (ISC) provides a very flexible way of programming smart contracts by
+providing an API to a sandboxed environment that allows you to interact deterministically
+and without any security risks with ISC-provided functionality. The API provides a generic
+way to store, access, and modify the state of smart contracts. The API can be used by any
+kind of Virtual Machine (VM) to implement a system to load and run smart contract code on
+top of ISC. The actual VMs can be implemented by whoever wants to create them.
 
-[![Wasp node IOTA Smart Contracts Host](/img/wasm_vm/IscpHost.png)](/img/wasm_vm/IscpHost.png)
+[![Wasp node ISC Host](/img/wasm_vm/IscHost.png)](/img/wasm_vm/IscHost.png)
 
-Of course, we provide an example implementation of such a VM to allow anyone to get
-a taste of what it is like to program a smart contract for IOTA Smart Contracts. Our VM implementation
-uses [WebAssembly](https://webassembly.org/) (Wasm) code as an intermediate compilation
-target. The implementation of the Wasm VM currently uses the open-source
+Of course, we provide an example implementation of such a VM to allow anyone to get a
+taste of what it is like to program a smart contract for ISC. Our VM implementation uses
+[WebAssembly](https://webassembly.org/) (Wasm) code as an intermediate compilation target.
+The implementation of the Wasm VM currently uses the open-source
 [Wasmtime](https://wasmtime.dev/) runtime environment. The Wasm VM enables dynamic
 loading and running of smart contracts that have been compiled to Wasm code.
 
@@ -40,24 +39,25 @@ Because each Wasm code unit runs in its own memory space and cannot access anyth
 outside that memory by design, Wasm code is ideally suited for secure smart contracts.
 The Wasm runtime system will only provide access to external functionality that is needed
 for the smart contracts to be able to do their thing, but nothing more. In our case, we
-only provide access to the IOTA Smart Contracts host's sandbox API environment. The way we do that is by
-providing a simple library that can be linked to the Wasm code. This library is called `WasmLib`.
+only provide access to the ISC host's sandboxed API environment. The way we do that is by
+providing a simple library that can be linked to the Wasm code. This library is called
+`WasmLib`.
 
 ![Wasm VM](/img/wasm_vm/WasmVM.png)
 
 As you can see, we can have any number of smart contracts running in our Wasm VM. Each
 smart contract is a separately compiled Wasm code unit that contains its own copy of
-WasmLib embedded into it. Each WasmLib provides the IOTA Smart Contracts sandbox functionality to its
+WasmLib embedded into it. Each WasmLib provides the ISC sandbox functionality to its
 corresponding smart contract and knows how to access the underlying smart contract state
-storage through the VM runtime system. This makes the IOTA Smart Contracts sandbox API access seamless to the
-smart contract by hiding the details of bridging the gap between the smart contract's
-memory space, and the IOTA Smart Contracts host's memory space. It also prevents the smart contract from
-accessing and/or modifying the IOTA Smart Contracts host's memory space directly.
+storage through the VM runtime system. This makes the ISC sandbox API access seamless to
+the smart contract by hiding the details of bridging the gap between the smart contract's
+memory space, and the ISC host's memory space. It also prevents the smart contract from
+accessing and/or modifying the ISC host's memory space directly.
 
-The IOTA Smart Contracts sandbox environment enables the following functionality:
+The ISC sandbox environment enables the following functionality:
 
 - Access to smart contract metadata
-- Access to parameter data for smart contract function calls
+- Access to request data for smart contract function calls
 - Access to the smart contract state data
 - A way to return result data to the caller of a smart contract function
 - Access to tokens owned by the smart contract, and the ability to move them
@@ -65,15 +65,14 @@ The IOTA Smart Contracts sandbox environment enables the following functionality
 - Access to logging functionality
 - Access to several utility functions provided by the host
 
-The initial WasmLib implementation  was created for the [Rust](https://www.rust-lang.org/)
+The initial WasmLib implementation was created for the [Rust](https://www.rust-lang.org/)
 programming language. Rust had the most advanced and stable support for generating Wasm
-code at the time when we started implementing our Wasm VM environment. In the meantime, we
-have also implemented fully functional [Go](https://golang.org/) and
-[TypeScript](https://www.typescriptlang.org/) implementations.
-The Go implementation uses the [TinyGo](https://tinygo.org/) compiler to generate Wasm
-code.
-The TypeScript implementation uses the [AssemblyScript](https://www.assemblyscript.org/)
-compiler to generate Wasm code.
+code at the time when we started implementing our Wasm VM environment. In the meantime,
+we have also implemented fully functional [Go](https://golang.org/) and
+[TypeScript](https://www.typescriptlang.org/) implementations. The Go implementation uses
+the [TinyGo](https://tinygo.org/) compiler to generate its Wasm code. The TypeScript
+implementation uses the [AssemblyScript](https://www.assemblyscript.org/) compiler to
+generate its Wasm code.
 
 All implementations use only a very small common subset of their host languages. This
 keeps the coding style very similar, barring some syntactic idiosyncrasies. The reason for

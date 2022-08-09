@@ -58,7 +58,7 @@ state:
   arrayOfStringMap: StringMap[]
   stringMapOfStringArray: map[String]StringArray
   stringMapOfStringMap: map[String]StringMap
-  # ISCP-specific datatypes, using Address
+  # ISC-specific datatypes, using Address
   arrayOfAddressArray: AddressArray[]
   arrayOfAddressMap: AddressMap[]
   addressMapOfAddressArray: map[Address]AddressArray
@@ -194,7 +194,7 @@ funcs:
 
   takeBalance:
     results:
-      iotas: Uint64
+      tokens: Uint64
 
   triggerEvent:
     params:
@@ -350,9 +350,9 @@ views:
     results:
       count: Uint32
 
-  iotaBalance:
+  tokenBalance:
     results:
-      iotas: Uint64
+      tokens: Uint64
 
   getRandom:
     results:

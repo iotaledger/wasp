@@ -7,7 +7,7 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct ScAssets {
-    iotas: u64,
+    base_tokens: u64,
     nft_ids: Vec<ScNftID>,
     tokens: BTreeMap<Vec<u8>, ScBigInt>,
 }
@@ -15,7 +15,7 @@ pub struct ScAssets {
 impl ScAssets {
     pub fn new(buf: &[u8]) -> ScAssets {
         let mut assets = ScAssets {
-            iotas: 0,
+            base_tokens: 0,
             nft_ids: Vec::new(),
             tokens: BTreeMap::new(),
         };
@@ -24,7 +24,7 @@ impl ScAssets {
         }
 
         let mut dec = WasmDecoder::new(buf);
-        assets.iotas = uint64_decode(&mut dec);
+        assets.base_tokens = uint64_decode(&mut dec);
 
         let size = uint32_decode(&mut dec);
         for _i in 0..size {
@@ -46,7 +46,7 @@ impl ScAssets {
     }
 
     pub fn is_empty(&self) -> bool {
-        if self.iotas != 0 {
+        if self.base_tokens != 0 {
             return false;
         }
         for (_key, val) in self.tokens.iter() {
@@ -59,7 +59,7 @@ impl ScAssets {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
-        uint64_encode(&mut enc, self.iotas);
+        uint64_encode(&mut enc, self.base_tokens);
 
         uint32_encode(&mut enc, self.tokens.len() as u32);
         for (token_id, amount) in self.tokens.iter() {
@@ -101,8 +101,8 @@ impl ScBalances {
         self.assets.tokens.get(&key).unwrap().clone()
     }
 
-    pub fn iotas(&self) -> u64 {
-        self.assets.iotas
+    pub fn base_tokens(&self) -> u64 {
+        self.assets.base_tokens
     }
 
     pub fn is_empty(&self) -> bool {
@@ -133,7 +133,7 @@ impl ScTransfer {
     }
 
     pub fn from_balances(balances: &ScBalances) -> ScTransfer {
-        let mut transfer = ScTransfer::iotas(balances.iotas());
+        let mut transfer = ScTransfer::base_tokens(balances.base_tokens());
         for token_id in balances.token_ids().iter() {
             transfer.set(token_id, &balances.balance(token_id))
         }
@@ -143,9 +143,9 @@ impl ScTransfer {
         transfer
     }
 
-    pub fn iotas(amount: u64) -> ScTransfer {
+    pub fn base_tokens(amount: u64) -> ScTransfer {
         let mut transfer = ScTransfer::new();
-        transfer.balances.assets.iotas = amount;
+        transfer.balances.assets.base_tokens = amount;
         transfer
     }
 

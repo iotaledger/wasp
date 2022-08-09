@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Package 'solo' is a development tool to write unit tests for IOTA Smart Contracts (ISCP).
+// Package 'solo' is a development tool to write unit tests for IOTA Smart Contracts (ISC).
 //
 // A development tool
 //
 // The package is intended for developers of smart contracts as well as contributors to the development
-// of the ISCP and the Wasp node itself.
+// of the ISC and the Wasp node itself.
 //
 // Normally, the smart contract is developed and tested in the
 // 'solo' environment before trying it out on the network of Wasp nodes.
@@ -34,9 +34,9 @@
 // The Wasm binary is uploaded by 'solo' onto the chain and then loaded into the VM
 // and executed.
 //
-// Another option to write and run ISCP smart contracts is to use the native Go environment
+// Another option to write and run ISC smart contracts is to use the native Go environment
 // of the Wasp node and 'Sandbox' interface, provided by the Wasp for the VM: the "hardcoded" mode. The latter approach is not normally used to develop apps,
-// however is used for the 4 builtin contracts which constitutes the core of the ISCP chains.
+// however is used for the 4 builtin contracts which constitutes the core of the ISC chains.
 // The approach to write "hardcoded" smart contracts may also be very useful for
 // the development and debugging of the smart contract logic in IDE such as GoLand, before writing it as
 // a Rust/Wasm smart contract.
@@ -55,7 +55,7 @@
 //    t.Logf("chainID: %s", chainInfo.ChainID)
 //    t.Logf("chain owner ID: %s", chainInfo.ChainOwnerID)
 //    for hname, rec := range coreContracts {
-//       t.Logf("    Core contract '%s': %s", rec.Name, iscp.NewContractID(chain.ChainID, hname))
+//       t.Logf("    Core contract '%s': %s", rec.Name, isc.NewContractID(chain.ChainID, hname))
 //    }
 //  }
 // will produce the following output:

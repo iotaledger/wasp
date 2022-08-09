@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	dustAllowance = 1 * iscp.Mi
-	nftMetadata   = "NFT metadata"
+	sdAllowance = 1 * isc.Million
+	nftMetadata = "NFT metadata"
 )
 
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
@@ -35,14 +35,14 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	const depositAmount = 1 * iscp.Mi
+	const depositAmount = 1 * isc.Million
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
 	bal := ctx.Balances(user)
 
 	f := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
-	f.Func.TransferIotas(depositAmount).Post()
+	f.Func.TransferBaseTokens(depositAmount).Post()
 	require.NoError(t, ctx.Err)
 
 	balanceNew := user.Balance()
@@ -57,7 +57,7 @@ func TestDeposit(t *testing.T) {
 func TestTransferAllowanceTo(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	var transferAmountIOTA uint64 = 10_000
+	var transferAmountBaseTokens uint64 = 10_000
 	user0 := ctx.NewSoloAgent()
 	user1 := ctx.NewSoloAgent()
 	balanceOldUser0 := user0.Balance()
@@ -68,7 +68,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	f := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	f.Params.AgentID().SetValue(user1.ScAgentID())
 	f.Params.ForceOpenAccount().SetValue(false)
-	f.Func.AllowanceIotas(transferAmountIOTA).Post()
+	f.Func.AllowanceBaseTokens(transferAmountBaseTokens).Post()
 	require.NoError(t, ctx.Err)
 
 	// note: transfer took place on L2, so no change on L1
@@ -79,8 +79,8 @@ func TestTransferAllowanceTo(t *testing.T) {
 
 	// expected changes to L2, note that caller pays the gas fee
 	bal.Chain += ctx.GasFee
-	bal.Add(user0, -transferAmountIOTA-ctx.GasFee)
-	bal.Add(user1, transferAmountIOTA)
+	bal.Add(user0, -transferAmountBaseTokens-ctx.GasFee)
+	bal.Add(user1, transferAmountBaseTokens)
 	bal.VerifyBalances(t)
 
 	var mintAmount, transferAmount uint64 = 20_000, 10_000
@@ -89,7 +89,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	err = foundry.Mint(mintAmount)
 	require.NoError(t, err)
 	scTokenID := foundry.TokenID()
-	tokenID := ctx.Cvt.IscpTokenID(&scTokenID)
+	tokenID := ctx.Cvt.IscTokenID(&scTokenID)
 
 	balanceOldUser0 = user0.Balance(scTokenID)
 	balanceOldUser1 = user1.Balance(scTokenID)
@@ -122,7 +122,7 @@ func TestWithdraw(t *testing.T) {
 	balanceOldUser := user.Balance()
 
 	f := coreaccounts.ScFuncs.Withdraw(ctx.OffLedger(user))
-	f.Func.AllowanceIotas(withdrawAmount).Post()
+	f.Func.AllowanceBaseTokens(withdrawAmount).Post()
 	require.NoError(t, ctx.Err)
 	balanceNewUser := user.Balance()
 	assert.Equal(t, balanceOldUser+withdrawAmount, balanceNewUser)
@@ -131,7 +131,7 @@ func TestWithdraw(t *testing.T) {
 func TestHarvest(t *testing.T) {
 	ctx := setupAccounts(t)
 	var transferAmount, mintAmount uint64 = 10_000, 20_000
-	var minimumIotasOnCommonAccount uint64 = 3000
+	var minimumBaseTokensOnCommonAccount uint64 = 3000
 
 	user := ctx.NewSoloAgent()
 	creatorAgentID := ctx.Creator().AgentID()
@@ -145,7 +145,7 @@ func TestHarvest(t *testing.T) {
 
 	fTransfer0 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
 	fTransfer0.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
-	fTransfer0.Func.AllowanceIotas(transferAmount).Post()
+	fTransfer0.Func.AllowanceBaseTokens(transferAmount).Post()
 	require.NoError(t, ctx.Err)
 	fTransfer1 := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user))
 	fTransfer1.Params.AgentID().SetValue(ctx.Cvt.ScAgentID(commonAccount))
@@ -154,16 +154,16 @@ func TestHarvest(t *testing.T) {
 	fTransfer1.Func.Allowance(transfer).Post()
 	creatorBal0 := ctx.Chain.L2Assets(creatorAgentID)
 	commonAccountBal1 := ctx.Chain.L2Assets(commonAccount)
-	// create foundry, mint token, transfer IOTA and transfer token each charge GasFee, so there 4*GasFee in common account
-	assert.Equal(t, commonAccountBal0.Iotas+transferAmount+ctx.GasFee*4, commonAccountBal1.Iotas)
+	// create foundry, mint token, transfer BaseTokens and transfer token each charge GasFee, so there 4*GasFee in common account
+	assert.Equal(t, commonAccountBal0.BaseTokens+transferAmount+ctx.GasFee*4, commonAccountBal1.BaseTokens)
 
 	f := coreaccounts.ScFuncs.Harvest(ctx.Sign(ctx.Creator()))
 	f.Func.Post()
 	require.NoError(t, ctx.Err)
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
-	assert.Equal(t, minimumIotasOnCommonAccount+ctx.GasFee, commonAccountBal2.Iotas)
-	assert.Equal(t, creatorBal0.Iotas+(commonAccountBal1.Iotas-commonAccountBal2.Iotas)+iscp.Mi, creatorBal1.Iotas)
+	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 
@@ -177,8 +177,8 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	f.Func.TransferIotas(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), f.Results.FoundrySN().Value())
@@ -189,7 +189,7 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(2002),
 		MaximumSupply: big.NewInt(2003),
 	}))
-	f.Func.TransferIotas(dustAllowance).Post()
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, uint32(2), f.Results.FoundrySN().Value())
 }
@@ -204,8 +204,8 @@ func TestFoundryDestroy(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferIotas(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -226,8 +226,8 @@ func TestFoundryNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferIotas(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -244,7 +244,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
 	fmod1.Params.FoundrySN().SetValue(1)
 	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
-	fmod1.Func.TransferIotas(dustAllowance).Post()
+	fmod1.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 
 	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
@@ -254,7 +254,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	tokenID := foundry.TokenID()
 	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
 	fmod2.Func.Allowance(allowance)
-	fmod2.Func.TransferIotas(dustAllowance).Post()
+	fmod2.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 }
 
@@ -357,7 +357,7 @@ func TestGetAccountNonce(t *testing.T) {
 	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.OffLedger(user0))
 	ftrans.Params.AgentID().SetValue(user0.ScAgentID())
 	ftrans.Params.ForceOpenAccount().SetValue(false)
-	ftrans.Func.TransferIotas(1000).Post()
+	ftrans.Func.TransferBaseTokens(1000).Post()
 	require.NoError(t, ctx.Err)
 
 	fnon.Func.Call()
@@ -404,8 +404,8 @@ func TestFoundryOutput(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferIotas(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	serialNum := uint32(1)
@@ -428,16 +428,16 @@ func TestAccountNFTs(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
-	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscNFTID(&nftID)))
 
 	v := coreaccounts.ScFuncs.AccountNFTs(ctx)
 	v.Params.AgentID().SetValue(user.ScAgentID())
@@ -451,25 +451,25 @@ func TestNFTData(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
-	userAddr, _ := iscp.AddressFromAgentID(user.AgentID())
+	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	iscpNFTID := ctx.Cvt.IscpNFTID(&nftID)
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscpNFTID))
+	iscNFTID := ctx.Cvt.IscNFTID(&nftID)
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscNFTID))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscpNFTID))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscNFTID))
 
 	v := coreaccounts.ScFuncs.NftData(ctx)
 	v.Params.NftID().SetValue(nftID)
 	v.Func.Call()
 	require.NoError(t, ctx.Err)
-	nftData, err := iscp.NFTFromBytes(v.Results.NftData().Value())
+	nftData, err := isc.NFTFromBytes(v.Results.NftData().Value())
 	require.NoError(t, err)
-	require.EqualValues(t, *iscpNFTID, nftData.ID)
+	require.EqualValues(t, *iscNFTID, nftData.ID)
 	require.EqualValues(t, userAddr, nftData.Issuer)
 	require.EqualValues(t, []byte(nftMetadata), nftData.Metadata)
 }

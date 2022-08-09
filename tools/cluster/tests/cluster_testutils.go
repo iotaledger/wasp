@@ -5,14 +5,14 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
 const nativeIncCounterSCName = "NativeIncCounter"
 
-var nativeIncCounterSCHname = iscp.Hn(nativeIncCounterSCName)
+var nativeIncCounterSCHname = isc.Hn(nativeIncCounterSCName)
 
 func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transaction {
 	counterStartValue := 42

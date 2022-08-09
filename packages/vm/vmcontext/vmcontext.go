@@ -7,8 +7,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -31,19 +31,19 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID        iscp.AgentID
-	virtualState        state.VirtualStateAccess
-	finalStateTimestamp time.Time
-	blockContext        map[iscp.Hname]interface{}
-	dustAssumptions     *transaction.StorageDepositAssumption
-	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
-	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
-	gasBurnedTotal      uint64
-	gasFeeChargedTotal  uint64
+	chainOwnerID              isc.AgentID
+	virtualState              state.VirtualStateAccess
+	finalStateTimestamp       time.Time
+	blockContext              map[isc.Hname]interface{}
+	storageDepositAssumptions *transaction.StorageDepositAssumption
+	txbuilder                 *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot                *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal            uint64
+	gasFeeChargedTotal        uint64
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
-	req                iscp.Request
+	req                isc.Request
 	NumPostedOutputs   int // how many outputs has been posted in the request
 	requestIndex       uint16
 	requestEventIndex  uint16
@@ -68,10 +68,10 @@ type VMContext struct {
 var _ execution.WaspContext = &VMContext{}
 
 type callContext struct {
-	caller             iscp.AgentID    // calling agent
-	contract           iscp.Hname      // called contract
-	params             iscp.Params     // params passed
-	allowanceAvailable *iscp.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
+	caller             isc.AgentID    // calling agent
+	contract           isc.Hname      // called contract
+	params             isc.Params     // params passed
+	allowanceAvailable *isc.Allowance // MUTABLE: allowance budget left after TransferAllowedFunds
 }
 
 // CreateVMContext creates a context for the whole batch run
@@ -106,7 +106,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		task:                task,
 		virtualState:        optimisticStateAccess,
 		finalStateTimestamp: finalStateTimestamp,
-		blockContext:        make(map[iscp.Hname]interface{}),
+		blockContext:        make(map[isc.Hname]interface{}),
 		entropy:             task.Entropy,
 		callStack:           make([]*callContext, 0),
 	}
@@ -118,14 +118,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
-		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
+		// load and validate chain's storage deposit assumptions about internal outputs. They must not get bigger!
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			ret.dustAssumptions = accounts.GetDustAssumptions(s)
+			ret.storageDepositAssumptions = accounts.GetStorageDepositAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewStorageDepositEstimate()
-		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
-			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
-			panic(vm.ErrInconsistentDustAssumptions)
+		currentStorageDepositValues := transaction.NewStorageDepositEstimate()
+		if currentStorageDepositValues.AnchorOutput > ret.storageDepositAssumptions.AnchorOutput ||
+			currentStorageDepositValues.NativeTokenOutput > ret.storageDepositAssumptions.NativeTokenOutput {
+			panic(vm.ErrInconsistentStorageDepositAssumptions)
 		}
 
 		// save the anchor tx ID of the current state
@@ -136,8 +136,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
-		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewStorageDepositEstimate()
+		// assuming storage deposit assumptions for the first block. It must be consistent with parameters in the init request
+		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
@@ -155,7 +155,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		nftLoader,
-		*ret.dustAssumptions,
+		*ret.storageDepositAssumptions,
 	)
 
 	return ret
@@ -211,21 +211,21 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
 	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
-	totalIotasInContracts, totalDustOnChain := vmctx.txbuilder.TotalIotasInOutputs()
+	totalBaseTokensInContracts, totalStorageDepositOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
 	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:                vmctx.virtualState.BlockIndex(),
-		Timestamp:                 vmctx.virtualState.Timestamp(),
-		TotalRequests:             numRequests,
-		NumSuccessfulRequests:     numSuccess,
-		NumOffLedgerRequests:      numOffLedger,
-		PreviousL1Commitment:      prevL1Commitment,
-		L1Commitment:              nil,                    // current L1Commitment not known at this point
-		AnchorTransactionID:       iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
-		TransactionSubEssenceHash: subEssenceHash,
-		TotalIotasInL2Accounts:    totalIotasInContracts,
-		TotalDustDeposit:          totalDustOnChain,
-		GasBurned:                 vmctx.gasBurnedTotal,
-		GasFeeCharged:             vmctx.gasFeeChargedTotal,
+		BlockIndex:                  vmctx.virtualState.BlockIndex(),
+		Timestamp:                   vmctx.virtualState.Timestamp(),
+		TotalRequests:               numRequests,
+		NumSuccessfulRequests:       numSuccess,
+		NumOffLedgerRequests:        numOffLedger,
+		PreviousL1Commitment:        prevL1Commitment,
+		L1Commitment:                nil,                    // current L1Commitment not known at this point
+		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
+		TransactionSubEssenceHash:   subEssenceHash,
+		TotalBaseTokensInL2Accounts: totalBaseTokensInContracts,
+		TotalStorageDeposit:         totalStorageDepositOnChain,
+		GasBurned:                   vmctx.gasBurnedTotal,
+		GasFeeCharged:               vmctx.gasFeeChargedTotal,
 	}
 	if !state.EqualCommitments(vmctx.virtualState.PreviousL1Commitment().StateCommitment, blockInfo.PreviousL1Commitment.StateCommitment) {
 		panic("CloseVMContext: inconsistent previous state commitment")
@@ -328,7 +328,7 @@ func (vmctx *VMContext) assertConsistentL2WithL1TxBuilder(checkpoint string) {
 	if vmctx.task.AnchorOutput.StateIndex == 0 && vmctx.isInitChainRequest() {
 		return
 	}
-	var totalL2Assets *iscp.FungibleTokens
+	var totalL2Assets *isc.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		totalL2Assets = accounts.GetTotalL2Assets(s)
 	})

@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/dashboard"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -102,7 +102,7 @@ func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *isc.ChainID) (*registry_pkg.ChainRecord, error) {
 	ch, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.Chai
 	return ch, nil
 }
 
-func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
+func (w *waspServices) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -121,7 +121,7 @@ func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.Comm
 	return ch.GetCommitteeInfo(), nil
 }
 
-func (w *waspServices) GetChainNodeConnectionMetrics(chainID *iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+func (w *waspServices) GetChainNodeConnectionMetrics(chainID *isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -134,7 +134,7 @@ func (w *waspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectio
 	return chs.GetNodeConnectionMetrics(), nil
 }
 
-func (w *waspServices) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (chain.ConsensusWorkflowStatus, error) {
+func (w *waspServices) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -142,7 +142,7 @@ func (w *waspServices) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (c
 	return ch.GetConsensusWorkflowStatus(), nil
 }
 
-func (w *waspServices) GetChainConsensusPipeMetrics(chainID *iscp.ChainID) (chain.ConsensusPipeMetrics, error) {
+func (w *waspServices) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -150,7 +150,7 @@ func (w *waspServices) GetChainConsensusPipeMetrics(chainID *iscp.ChainID) (chai
 	return ch.GetConsensusPipeMetrics(), nil
 }
 
-func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(chainID *isc.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -159,7 +159,7 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallViewExternal(iscp.Hn(scName), iscp.Hn(funName), params)
+		ret, err = vctx.CallViewExternal(isc.Hn(scName), isc.Hn(funName), params)
 		return err
 	})
 	return ret, err

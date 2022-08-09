@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
@@ -384,7 +384,7 @@ func (g *GenBase) fieldIsTypeDef() bool {
 func (g *GenBase) setCommonKeys() {
 	g.keys["false"] = ""
 	g.keys["true"] = "true"
-	g.keys["empty"] = ""
+	g.keys["nil"] = ""
 	g.keys["space"] = " "
 	g.keys["package"] = g.s.PackageName
 	g.keys["Package"] = g.s.ContractName
@@ -396,7 +396,7 @@ func (g *GenBase) setCommonKeys() {
 		scName = scName[4:]
 	}
 	g.keys["scName"] = scName
-	g.keys["hscName"] = iscp.Hn(scName).String()
+	g.keys["hscName"] = isc.Hn(scName).String()
 	g.keys["scDesc"] = g.s.Description
 	g.keys["copyrightMessage"] = g.s.Copyright
 }
@@ -447,7 +447,7 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 	g.setMultiKeyValues("funcName", g.currentFunc.Name)
 	g.setMultiKeyValues("kind", g.currentFunc.Kind)
-	g.keys["hFuncName"] = iscp.Hn(g.keys["funcName"]).String()
+	g.keys["hFuncName"] = isc.Hn(g.keys["funcName"]).String()
 	grant := g.currentFunc.Access.Val
 	index := strings.Index(grant, "//")
 	if index >= 0 {

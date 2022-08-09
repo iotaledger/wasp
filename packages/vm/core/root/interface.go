@@ -1,7 +1,7 @@
 package root
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
@@ -19,17 +19,17 @@ const (
 
 // param variables
 const (
-	ParamDeployer                  = "dp"
-	ParamHname                     = "hn"
-	ParamName                      = "nm"
-	ParamProgramHash               = "ph"
-	ParamContractRecData           = "dt"
-	ParamContractFound             = "cf"
-	ParamDescription               = "ds"
-	ParamDeployPermissionsEnabled  = "de"
-	ParamDustDepositAssumptionsBin = "db"
-	ParamBlockContextOpenFunc      = "bco"
-	ParamBlockContextCloseFunc     = "bcc"
+	ParamDeployer                     = "dp"
+	ParamHname                        = "hn"
+	ParamName                         = "nm"
+	ParamProgramHash                  = "ph"
+	ParamContractRecData              = "dt"
+	ParamContractFound                = "cf"
+	ParamDescription                  = "ds"
+	ParamDeployPermissionsEnabled     = "de"
+	ParamStorageDepositAssumptionsBin = "db"
+	ParamBlockContextOpenFunc         = "bco"
+	ParamBlockContextCloseFunc        = "bcc"
 )
 
 // ParamEVM allows to pass init parameters to the EVM core contract, by decorating

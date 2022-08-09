@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -22,10 +22,10 @@ const (
 
 func TestUploadBlob(t *testing.T) {
 	t.Run("from binary", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		ch := env.NewChain()
 
-		ch.MustDepositIotasToL2(100_000, nil)
+		ch.MustDepositBaseTokensToL2(100_000, nil)
 
 		h, err := ch.UploadBlob(nil, "field", "dummy data")
 		require.NoError(t, err)
@@ -35,9 +35,9 @@ func TestUploadBlob(t *testing.T) {
 	})
 	t.Run("from file", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		h, err := ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -48,9 +48,9 @@ func TestUploadBlob(t *testing.T) {
 	})
 	t.Run("several", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
-		err := ch.DepositIotasToL2(100_000, nil)
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
 		const howMany = 5
@@ -88,8 +88,8 @@ func TestUploadBlob(t *testing.T) {
 func TestUploadWasm(t *testing.T) {
 	t.Run("upload wasm", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
-		ch.MustDepositIotasToL2(100_000, nil)
+		ch := env.NewChain()
+		ch.MustDepositBaseTokensToL2(100_000, nil)
 		binary := []byte("supposed to be wasm")
 		hwasm, err := ch.UploadWasm(nil, binary)
 		require.NoError(t, err)
@@ -101,8 +101,8 @@ func TestUploadWasm(t *testing.T) {
 	})
 	t.Run("upload twice", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
-		ch.MustDepositIotasToL2(100_000, nil)
+		ch := env.NewChain()
+		ch.MustDepositBaseTokensToL2(100_000, nil)
 		binary := []byte("supposed to be wasm")
 		hwasm1, err := ch.UploadWasm(nil, binary)
 		require.NoError(t, err)
@@ -119,9 +119,9 @@ func TestUploadWasm(t *testing.T) {
 		require.EqualValues(t, binary, binBack)
 	})
 	t.Run("upload wasm from file", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch := env.NewChain(nil, "chain1")
-		ch.MustDepositIotasToL2(100_000, nil)
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		ch := env.NewChain()
+		ch.MustDepositBaseTokensToL2(100_000, nil)
 		progHash, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
 
@@ -130,8 +130,8 @@ func TestUploadWasm(t *testing.T) {
 	})
 	t.Run("list blobs", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
-		ch.MustDepositIotasToL2(100_000, nil)
+		ch := env.NewChain()
+		ch.MustDepositBaseTokensToL2(100_000, nil)
 		_, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
 
@@ -142,8 +142,8 @@ func TestUploadWasm(t *testing.T) {
 }
 
 func TestBigBlob(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
 
 	// upload a blob that is too big
 	bigblobSize := governance.DefaultMaxBlobSize + 100
@@ -151,12 +151,12 @@ func TestBigBlob(t *testing.T) {
 
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 
-	unresolvedError := err.(*iscp.UnresolvedVMError)
+	unresolvedError := err.(*isc.UnresolvedVMError)
 	resolvedError := ch.ResolveVMError(unresolvedError)
 
 	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
 
-	ch.MustDepositIotasToL2(100_000, nil)
+	ch.MustDepositBaseTokensToL2(100_000, nil)
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncSetChainInfo.Name,
 		governance.ParamMaxBlobSizeUint32, bigblobSize,

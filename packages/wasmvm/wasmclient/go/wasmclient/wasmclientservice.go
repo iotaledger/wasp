@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/subscribe"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
@@ -41,14 +41,14 @@ func DefaultWasmClientService() *WasmClientService {
 }
 
 func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscpChainID := sc.cvt.IscpChainID(&chainID)
-	iscpContract := sc.cvt.IscpHname(hContract)
-	iscpFunction := sc.cvt.IscpHname(hFunction)
+	iscChainID := sc.cvt.IscChainID(&chainID)
+	iscContract := sc.cvt.IscHname(hContract)
+	iscFunction := sc.cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
-	res, err := sc.waspClient.CallViewByHname(iscpChainID, iscpContract, iscpFunction, params)
+	res, err := sc.waspClient.CallViewByHname(iscChainID, iscContract, iscFunction, params)
 	if err != nil {
 		return nil, err
 	}
@@ -56,19 +56,19 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 }
 
 func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
-	iscpChainID := sc.cvt.IscpChainID(&chainID)
-	iscpContract := sc.cvt.IscpHname(hContract)
-	iscpFunction := sc.cvt.IscpHname(hFunction)
+	iscChainID := sc.cvt.IscChainID(&chainID)
+	iscContract := sc.cvt.IscHname(hContract)
+	iscFunction := sc.cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return reqID, err
 	}
 	sc.nonce++
-	req := iscp.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, sc.nonce)
-	iscpAllowance := sc.cvt.IscpAllowance(allowance)
-	req.WithAllowance(iscpAllowance)
+	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, sc.nonce)
+	iscAllowance := sc.cvt.IscAllowance(allowance)
+	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
-	err = sc.waspClient.PostOffLedgerRequest(iscpChainID, signed)
+	err = sc.waspClient.PostOffLedgerRequest(iscChainID, signed)
 	if err == nil {
 		reqID = sc.cvt.ScRequestID(signed.ID())
 	}
@@ -80,8 +80,8 @@ func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) 
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
-	iscpChainID := sc.cvt.IscpChainID(&chainID)
-	iscpReqID := sc.cvt.IscpRequestID(&reqID)
-	_, err := sc.waspClient.WaitUntilRequestProcessed(iscpChainID, *iscpReqID, timeout)
+	iscChainID := sc.cvt.IscChainID(&chainID)
+	iscReqID := sc.cvt.IscRequestID(&reqID)
+	_, err := sc.waspClient.WaitUntilRequestProcessed(iscChainID, *iscReqID, timeout)
 	return err
 }

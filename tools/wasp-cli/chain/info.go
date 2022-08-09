@@ -73,7 +73,7 @@ var infoCmd = &cobra.Command{
 			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String())
 
 			if govInfo.GasFeePolicy != nil {
-				gasFeeToken := util.IotaTokenStr
+				gasFeeToken := util.BaseTokenStr
 				if govInfo.GasFeePolicy.GasFeeTokenID != nil {
 					gasFeeToken = govInfo.GasFeePolicy.GasFeeTokenID.String()
 				}

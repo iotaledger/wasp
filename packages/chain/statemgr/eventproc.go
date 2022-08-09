@@ -6,7 +6,7 @@ package statemgr
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -19,7 +19,7 @@ func (sm *stateManager) EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn) {
 
 func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 	sm.log.Debugw("handleGetBlockMsg: ",
-		"sender", msg.SenderPubKey.AsString(),
+		"sender", msg.SenderPubKey.String(),
 		"block index", msg.BlockIndex,
 	)
 	if sm.stateOutput == nil { // Not a necessary check, only for optimization.
@@ -41,7 +41,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 		return
 	}
 
-	sm.log.Debugf("handleGetBlockMsg: responding to peer %s by block %v", msg.SenderPubKey.AsString(), msg.BlockIndex)
+	sm.log.Debugf("handleGetBlockMsg: responding to peer %s by block %v", msg.SenderPubKey.String(), msg.BlockIndex)
 
 	blockMsg := &messages.BlockMsg{BlockBytes: blockBytes}
 	sm.domain.SendMsgByPubKey(msg.SenderPubKey, peering.PeerMessageReceiverStateManager, peerMsgTypeBlock, util.MustBytes(blockMsg))
@@ -55,7 +55,7 @@ func (sm *stateManager) EnqueueBlockMsg(msg *messages.BlockMsgIn) {
 func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	sm.syncingBlocks.blockReceived()
 	sm.log.Debugw("handleBlockMsg: ",
-		"sender", msg.SenderPubKey.AsString(),
+		"sender", msg.SenderPubKey.String(),
 	)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("handleBlockMsg: message ignored: stateOutput is nil")
@@ -63,26 +63,26 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	}
 	block, err := state.BlockFromBytes(msg.BlockBytes)
 	if err != nil {
-		sm.log.Warnf("handleBlockMsg: message ignored: wrong block received from peer %s. Err: %v", msg.SenderPubKey.AsString(), err)
+		sm.log.Warnf("handleBlockMsg: message ignored: wrong block received from peer %s. Err: %v", msg.SenderPubKey.String(), err)
 		return
 	}
 	sm.log.Debugw("handleBlockMsg: adding block from peer ",
-		"sender", msg.SenderPubKey.AsString(),
+		"sender", msg.SenderPubKey.String(),
 		"block index", block.BlockIndex(),
-		"approving output", iscp.OID(block.ApprovingOutputID()),
+		"approving output", isc.OID(block.ApprovingOutputID()),
 	)
 	if sm.addBlockFromPeer(block) {
 		sm.takeAction()
 	}
 }
 
-func (sm *stateManager) EnqueueAliasOutput(output *iscp.AliasOutputWithID) {
+func (sm *stateManager) EnqueueAliasOutput(output *isc.AliasOutputWithID) {
 	sm.eventAliasOutputPipe.In() <- output
 }
 
-func (sm *stateManager) handleAliasOutput(output *iscp.AliasOutputWithID) {
-	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", iscp.OID(output.ID()), output.GetStateIndex())
-	// sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex()) //TODO!!!
+func (sm *stateManager) handleAliasOutput(output *isc.AliasOutputWithID) {
+	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", isc.OID(output.ID()), output.GetStateIndex())
+	sm.stateManagerMetrics.LastSeenStateIndex(output.GetStateIndex())
 	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {
 		sm.log.Errorf("EventAliasOutput ignored: failed to parse state commitment: %v", err)

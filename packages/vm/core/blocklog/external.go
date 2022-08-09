@@ -3,7 +3,7 @@ package blocklog
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -13,9 +13,9 @@ import (
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex uint32) ([]iscp.RequestID, error) {
+func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex uint32) ([]isc.RequestID, error) {
 	if blockIndex == 0 {
-		return []iscp.RequestID{}, nil
+		return []isc.RequestID{}, nil
 	}
 	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Contract.Hname().Bytes()))
 
@@ -24,9 +24,9 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 		return nil, err
 	}
 	if !exist {
-		return []iscp.RequestID{}, fmt.Errorf("block index %v does not exist", blockIndex)
+		return []isc.RequestID{}, fmt.Errorf("block index %v does not exist", blockIndex)
 	}
-	ret := make([]iscp.RequestID, len(recsBin))
+	ret := make([]isc.RequestID, len(recsBin))
 	for i, d := range recsBin {
 		rec, err := RequestReceiptFromBytes(d)
 		if err != nil {
@@ -38,12 +38,12 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 }
 
 // IsRequestProcessed check if reqid is stored in the chain state as processed
-func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID) (bool, error) {
+func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *isc.RequestID) (bool, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 	return isRequestProcessedInternal(partition, reqid)
 }
 
-func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *iscp.RequestID) bool {
+func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *isc.RequestID) bool {
 	ret, err := IsRequestProcessed(stateReader, reqid)
 	if err != nil {
 		panic(err)
@@ -59,7 +59,7 @@ type GetRequestReceiptResult struct {
 
 // GetRequestRecordDataByRequestID tries to obtain the receipt data for a given request
 // returns nil if receipt was not found
-func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID iscp.RequestID) (*GetRequestReceiptResult, error) {
+func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.RequestID) (*GetRequestReceiptResult, error) {
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(stateReader, prefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])

@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
 )
 
@@ -38,7 +38,7 @@ func (e *RevertError) ErrorData() interface{} {
 
 var VMErrorCode = crypto.Keccak256([]byte("VMError(uint16)"))[:4]
 
-func UnpackVMError(result *core.ExecutionResult, contractID iscp.Hname) (*iscp.VMErrorCode, error) {
+func UnpackVMError(result *core.ExecutionResult, contractID isc.Hname) (*isc.VMErrorCode, error) {
 	data := result.Revert()
 
 	if len(data) < 4 {
@@ -56,7 +56,7 @@ func UnpackVMError(result *core.ExecutionResult, contractID iscp.Hname) (*iscp.V
 		return nil, err
 	}
 
-	errorCode := iscp.NewVMErrorCode(contractID, errorID[0].(uint16))
+	errorCode := isc.NewVMErrorCode(contractID, errorID[0].(uint16))
 
 	return &errorCode, nil
 }
@@ -70,7 +70,7 @@ func UnpackCommonRevertError(result *core.ExecutionResult) *RevertError {
 	}
 }
 
-func DecodeRevertError(result *core.ExecutionResult, contractID iscp.Hname) error {
+func DecodeRevertError(result *core.ExecutionResult, contractID isc.Hname) error {
 	if !result.Failed() {
 		return nil
 	}
@@ -97,7 +97,7 @@ func DecodeRevertError(result *core.ExecutionResult, contractID iscp.Hname) erro
 	}
 }
 
-func GetRevertErrorMessage(result *core.ExecutionResult, contractID iscp.Hname) string {
+func GetRevertErrorMessage(result *core.ExecutionResult, contractID isc.Hname) string {
 	err := DecodeRevertError(result, contractID)
 
 	if err == nil {

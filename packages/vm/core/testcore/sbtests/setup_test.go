@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -24,43 +23,43 @@ const (
 
 const (
 	ScName           = "testcore"
-	HScName          = iscp.Hname(0x370d33ad)
+	HScName          = isc.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
 	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/go/pkg/testcore_go.wasm"
 	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/ts/pkg/testcore_ts.wasm"
 )
 
 func init() {
-	if iscp.Hn(ScName) != HScName {
-		panic("iscp.Hn(ScName) != HScName")
+	if isc.Hn(ScName) != HScName {
+		panic("isc.Hn(ScName) != HScName")
 	}
 }
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
-		Debug:                 debug,
-		AutoAdjustDustDeposit: true,
+		Debug:                    debug,
+		AutoAdjustStorageDeposit: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
-	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
-	err := chain.SendFromL1ToL2AccountIotas(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
+	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
+	err := chain.SendFromL1ToL2AccountBaseTokens(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, iotago.Address, iscp.AgentID) {
+func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentID) {
 	user, userAddr := ch.Env.NewKeyPairWithFunds()
-	ch.Env.AssertL1Iotas(userAddr, utxodb.FundsFromFaucetAmount)
+	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
-	err := ch.DepositIotasToL2(10_000, user)
+	err := ch.DepositBaseTokensToL2(10_000, user)
 	require.NoError(t, err)
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
-		root.ParamDeployer, iscp.NewAgentID(userAddr)).WithGasBudget(100_000)
-	_, err = ch.PostRequestSync(req.AddIotas(1), nil)
+		root.ParamDeployer, isc.NewAgentID(userAddr)).WithGasBudget(100_000)
+	_, err = ch.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	return user, userAddr, iscp.NewAgentID(userAddr)
+	return user, isc.NewAgentID(userAddr)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -76,7 +75,7 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	})
 }
 
-func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
+func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) error {
 	if forceSkipWasm || !runWasm {
 		// run core version of testcore
 		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
@@ -100,12 +99,12 @@ func deployContract(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, ru
 	return err
 }
 
-// WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) iscp.AgentID {
-	err := deployContract(t, chain, user, runWasm)
+// WARNING: setupTestSandboxSC will fail if AutoAdjustStorageDeposit is not enabled
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) isc.AgentID {
+	err := deployContract(chain, user, runWasm)
 	require.NoError(t, err)
 
-	deployed := iscp.NewContractAgentID(chain.ChainID, HScName)
+	deployed := isc.NewContractAgentID(chain.ChainID, HScName)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).
 		WithGasBudget(100_000)
 	_, err = chain.PostRequestSync(req, user)
@@ -123,6 +122,6 @@ func testSetup1(t *testing.T, w bool) {
 func TestSetup2(t *testing.T) { run2(t, testSetup2) }
 func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user, _, _ := setupDeployer(t, chain)
+	user, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 }

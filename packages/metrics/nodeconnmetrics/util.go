@@ -1,7 +1,7 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -10,7 +10,7 @@ const (
 	msgTypeLabelNameConst = "message_type"
 )
 
-func getMetricsLabel(chainID *iscp.ChainID, msgType string) prometheus.Labels {
+func getMetricsLabel(chainID *isc.ChainID, msgType string) prometheus.Labels {
 	var chainIDStr string
 	if chainID == nil {
 		chainIDStr = ""

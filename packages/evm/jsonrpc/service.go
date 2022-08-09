@@ -18,7 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
@@ -41,7 +41,7 @@ func (e *EthService) resolveError(err error) error {
 	if err == nil {
 		return nil
 	}
-	if vmError, ok := err.(*iscp.UnresolvedVMError); ok {
+	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
 		resolvedErr, resolveErr := errors.Resolve(vmError, e.evmChain.ViewCaller())
 		if resolveErr != nil {
 			return xerrors.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
@@ -127,6 +127,18 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
+	{
+		// FIXME: https://github.com/iotaledger/wasp/issues/1120
+		// adjusting the decimals so that Metamask shows the correct value
+		const metamaskDecimals = 18
+		decimals := int64(e.evmChain.BaseToken().Decimals)
+		if decimals > metamaskDecimals {
+			panic("base token decimals is too large")
+		}
+		exp := big.NewInt(10)
+		exp.Exp(exp, big.NewInt(metamaskDecimals-decimals), nil)
+		bal = bal.Mul(bal, exp)
+	}
 	return (*hexutil.Big)(bal), nil
 }
 
@@ -135,7 +147,7 @@ func (e *EthService) GetCode(address common.Address, blockNumberOrHash rpc.Block
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
-	return hexutil.Bytes(code), nil
+	return code, nil
 }
 
 func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
@@ -166,7 +178,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 
 func (e *EthService) Call(args *RPCCallArgs, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.CallContract(args.parse(), blockNumberOrHash)
-	return hexutil.Bytes(ret), e.resolveError(err)
+	return ret, e.resolveError(err)
 }
 
 func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
@@ -176,7 +188,7 @@ func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
 
 func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) (hexutil.Bytes, error) {
 	ret, err := e.evmChain.StorageAt(address, key, blockNumberOrHash)
-	return hexutil.Bytes(ret), e.resolveError(err)
+	return ret, e.resolveError(err)
 }
 
 func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
@@ -260,7 +272,7 @@ func (e *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hexutil.Bytes(data), nil
+	return data, nil
 }
 
 func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {

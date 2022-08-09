@@ -7,7 +7,7 @@ description = "Simple dividend SC"
 license = "Apache-2.0"
 version = "0.1.0"
 authors = ["Eric Hop <eric@iota.org>"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/iotaledger/wasp"
 
 [lib]

@@ -2,7 +2,7 @@ package wallet
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -16,8 +16,8 @@ var addressCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		wallet := Load()
 		log.Printf("Address index %d\n", addressIndex)
-		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().AsString())
-		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().AsString())
+		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().String())
+		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().String())
 		if parameters.L1 == nil {
 			config.L1Client() // this will fill parameters.L1 with data from the L1 node
 		}
@@ -48,8 +48,8 @@ var balanceCmd = &cobra.Command{
 }
 
 func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
-	balance := iscp.FungibleTokensFromOutputMap(outs)
-	log.Printf("    iota %d\n", balance.Iotas)
+	balance := isc.FungibleTokensFromOutputMap(outs)
+	log.Printf("    base tokens %d\n", balance.BaseTokens)
 	for _, nt := range balance.Tokens {
 		log.Printf("    %s %s\n", nt.ID, nt.Amount)
 	}
@@ -58,7 +58,7 @@ func printOutputsByTokenID(outs map[iotago.OutputID]iotago.Output) {
 func printOutputsByOutputID(outs map[iotago.OutputID]iotago.Output) {
 	for i, out := range outs {
 		log.Printf("    output index %d:\n", i)
-		tokens := iscp.FungibleTokensFromOutput(out)
+		tokens := isc.FungibleTokensFromOutput(out)
 		log.Printf("%s\n", tokens.String())
 	}
 }

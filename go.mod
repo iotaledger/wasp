@@ -10,8 +10,8 @@ require (
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go v0.0.0-20220623193802-86a373581cc1
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220713112541-3bfe06a592ed
-	github.com/iotaledger/iota.go/v3 v3.0.0-20220713111307-e56bfeff5451
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220714075325-11202fe498d6
+	github.com/iotaledger/iota.go/v3 v3.0.0-beta.3.0.20220725090810-4b0c89df224c
 	github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1
 	github.com/knadh/koanf v1.4.2-0.20220512043835-4112a7258008
 	github.com/labstack/echo/v4 v4.7.2
@@ -36,21 +36,24 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/dig v1.14.1
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f
+	gonum.org/v1/plot v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
 )
 
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
+	git.sr.ht/~sbinet/gg v0.3.1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/NebulousLabs/errors v0.0.0-20181203160057-9f787ce8f69e // indirect
 	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/NebulousLabs/merkletree v0.0.0-20181203152040-08d5d54b07f5 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect
+	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/andybalholm/cascadia v1.1.0 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -71,12 +74,16 @@ require (
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/go-fonts/liberation v0.2.0 // indirect
+	github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-pdf/fpdf v0.6.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gohornet/grocksdb v1.7.1-0.20220426081058-60f50d7c59e8 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
@@ -186,14 +193,15 @@ require (
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/protobuf v1.0.11 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
+	golang.org/x/image v0.0.0-20220302094943-723b81ca9867 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220712132514-bdd2acd4974d // indirect
+	google.golang.org/genproto v0.0.0-20220722212130-b98a9ff5e252 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect

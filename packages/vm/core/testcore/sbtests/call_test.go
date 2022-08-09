@@ -18,7 +18,7 @@ func testGetSet(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314).
 		WithGasBudget(100_000)
-	_, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
@@ -36,7 +36,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	setupTestSandboxSC(t, ch, nil, w)
 
 	depth := 27
-	t.Logf("originator iotas: %d", ch.L2Iotas(ch.OriginatorAgentID))
+	t.Logf("originator base tokens: %d", ch.L2BaseTokens(ch.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, depth,
 		sbtestsc.ParamHnameContract, HScName,
@@ -101,7 +101,7 @@ func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
 		WithGasBudget(5_000_000)
-	ret, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func testIndirectCallFibonacciIndirect(t *testing.T, w bool) { //nolint:dupl
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacciIndirect.Hname()).
 		WithGasBudget(5_000_000)
-	ret, err := chain.PostRequestSync(req.AddIotas(1), nil)
+	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 	r, err := codec.DecodeUint64(ret.MustGet(sbtestsc.ParamN))
 	require.NoError(t, err)

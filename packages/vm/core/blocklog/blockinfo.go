@@ -14,19 +14,19 @@ import (
 )
 
 type BlockInfo struct {
-	BlockIndex                uint32 // not persistent. Set from key
-	Timestamp                 time.Time
-	TotalRequests             uint16
-	NumSuccessfulRequests     uint16 // which didn't panic
-	NumOffLedgerRequests      uint16
-	PreviousL1Commitment      state.L1Commitment     // always known
-	L1Commitment              *state.L1Commitment    // nil when not known yet for the current state
-	AnchorTransactionID       iotago.TransactionID   // of the input state
-	TransactionSubEssenceHash TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
-	TotalIotasInL2Accounts    uint64
-	TotalDustDeposit          uint64
-	GasBurned                 uint64
-	GasFeeCharged             uint64
+	BlockIndex                  uint32 // not persistent. Set from key
+	Timestamp                   time.Time
+	TotalRequests               uint16
+	NumSuccessfulRequests       uint16 // which didn't panic
+	NumOffLedgerRequests        uint16
+	PreviousL1Commitment        state.L1Commitment     // always known
+	L1Commitment                *state.L1Commitment    // nil when not known yet for the current state
+	AnchorTransactionID         iotago.TransactionID   // of the input state
+	TransactionSubEssenceHash   TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
+	TotalBaseTokensInL2Accounts uint64
+	TotalStorageDeposit         uint64
+	GasBurned                   uint64
+	GasFeeCharged               uint64
 }
 
 // TransactionEssenceHash is a blake2b 256 bit hash of the essence of the transaction
@@ -73,8 +73,8 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
 	ret += fmt.Sprintf("Prev L1 commitment: %s\n", bi.PreviousL1Commitment.String())
 	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
-	ret += fmt.Sprintf("Total iotas in contracts: %d\n", bi.TotalIotasInL2Accounts)
-	ret += fmt.Sprintf("Total iotas locked in dust deposit: %d\n", bi.TotalDustDeposit)
+	ret += fmt.Sprintf("Total base tokens in contracts: %d\n", bi.TotalBaseTokensInL2Accounts)
+	ret += fmt.Sprintf("Total base tokens locked in storage deposit: %d\n", bi.TotalStorageDeposit)
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
 	return ret
@@ -110,10 +110,10 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err := util.WriteUint64(w, bi.TotalIotasInL2Accounts); err != nil {
+	if err := util.WriteUint64(w, bi.TotalBaseTokensInL2Accounts); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, bi.TotalDustDeposit); err != nil {
+	if err := util.WriteUint64(w, bi.TotalStorageDeposit); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, bi.GasBurned); err != nil {
@@ -158,10 +158,10 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 			return err
 		}
 	}
-	if err := util.ReadUint64(r, &bi.TotalIotasInL2Accounts); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalBaseTokensInL2Accounts); err != nil {
 		return err
 	}
-	if err := util.ReadUint64(r, &bi.TotalDustDeposit); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalStorageDeposit); err != nil {
 		return err
 	}
 	if err := util.ReadUint64(r, &bi.GasBurned); err != nil {

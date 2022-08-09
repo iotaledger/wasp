@@ -12,3 +12,11 @@ func MakeDict(vars map[string]interface{}) dict.Dict {
 	}
 	return ret
 }
+
+func EncodeDict(value dict.Dict) []byte {
+	return value.Bytes()
+}
+
+func DecodeDict(b []byte) (dict.Dict, error) {
+	return dict.FromBytes(b)
+}

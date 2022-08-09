@@ -4,14 +4,14 @@
 package governance
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
-	ChainID         *iscp.ChainID
-	ChainOwnerID    iscp.AgentID
+	ChainID         *isc.ChainID
+	ChainOwnerID    isc.AgentID
 	Description     string
 	GasFeePolicy    *gas.GasFeePolicy
 	MaxBlobSize     uint32

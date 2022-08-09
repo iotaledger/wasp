@@ -416,9 +416,6 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	if parsedResp.Balance == 0 {
 		return fmt.Errorf("faucet has 0 balance")
 	}
-
-	fmt.Printf("faucet has %v balance\n", parsedResp.Balance)
-
 	return nil
 }
 

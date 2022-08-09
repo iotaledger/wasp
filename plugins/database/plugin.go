@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 )
@@ -58,10 +58,10 @@ func GetRegistryKVStore() kvstore.KVStore {
 	return dbm.GetRegistryKVStore()
 }
 
-func GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
+func GetOrCreateKVStore(chainID *isc.ChainID) kvstore.KVStore {
 	return dbm.GetOrCreateKVStore(chainID)
 }
 
-func GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
+func GetKVStore(chainID *isc.ChainID) kvstore.KVStore {
 	return dbm.GetKVStore(chainID)
 }

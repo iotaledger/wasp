@@ -53,6 +53,7 @@ func (vm *WasmGoVM) NewInstance(wc *WasmContext) WasmVM {
 }
 
 func (vm *WasmGoVM) RunFunction(functionName string, args ...interface{}) error {
+	_ = args
 	if functionName == "on_load" {
 		// note: on_load is funneled through onload()
 		vm.onLoad(-1)

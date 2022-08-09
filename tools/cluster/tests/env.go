@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -78,7 +78,7 @@ func (e *ChainEnv) createNewClient() *scclient.SCClient {
 		}
 		time.Sleep(300 * time.Millisecond)
 	}
-	return e.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
+	return e.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
 }
 
 func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
@@ -97,7 +97,7 @@ func (e *ChainEnv) NewChainClient() *chainclient.Client {
 func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
 	accountsClient := e.Chain.SCClient(accounts.Contract.Hname(), keyPair)
 	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(amount),
+		Transfer: isc.NewFungibleBaseTokens(amount),
 	})
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)

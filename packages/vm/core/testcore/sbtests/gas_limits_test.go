@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -17,10 +17,10 @@ import (
 
 func maxGasRequest(ch *solo.Chain, seedIndex int) (*solo.CallParams, *cryptolib.KeyPair) {
 	wallet, address := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(seedIndex))
-	iotasToSend := ch.Env.L1Iotas(address)
+	baseTokensToSend := ch.Env.L1BaseTokens(address)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncInfiniteLoop.Name).
-		AddIotas(iotasToSend).
+		AddBaseTokens(baseTokensToSend).
 		WithGasBudget(math.MaxUint64)
 	return req, wallet
 }
@@ -58,13 +58,13 @@ func testBlockGasOverflow(t *testing.T, w bool) {
 
 	// produce n requests over the block gas limit (each request uses the maximum amount of gas a call can use)
 	nRequests := int(gas.MaxGasPerBlock / gas.MaxGasPerCall)
-	reqs := make([]iscp.Request, nRequests)
+	reqs := make([]isc.Request, nRequests)
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := maxGasRequest(ch, i)
-		iscpReq, err := solo.NewIscpRequestFromCallParams(ch, req, wallet)
+		iscReq, err := solo.NewIscRequestFromCallParams(ch, req, wallet)
 		require.NoError(t, err)
-		reqs[i] = iscpReq
+		reqs[i] = iscReq
 	}
 
 	ch.Env.AddRequestsToChainMempoolWaitUntilInbufferEmpty(ch, reqs)

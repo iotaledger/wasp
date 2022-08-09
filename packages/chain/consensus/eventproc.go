@@ -10,11 +10,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-func (c *consensus) EnqueueStateTransitionMsg(isGovernance bool, virtualState state.VirtualStateAccess, stateOutput *iscp.AliasOutputWithID, stateTimestamp time.Time) {
+func (c *consensus) EnqueueStateTransitionMsg(isGovernance bool, virtualState state.VirtualStateAccess, stateOutput *isc.AliasOutputWithID, stateTimestamp time.Time) {
 	c.eventStateTransitionMsgPipe.In() <- &messages.StateTransitionMsg{
 		IsGovernance:   isGovernance,
 		State:          virtualState,
@@ -25,7 +25,7 @@ func (c *consensus) EnqueueStateTransitionMsg(isGovernance bool, virtualState st
 
 func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("StateTransitionMsg received: governance updated: %v, state index: %d, state output: %s, timestamp: %v",
-		msg.IsGovernance, msg.State.BlockIndex(), iscp.OID(msg.StateOutput.ID()), msg.StateTimestamp)
+		msg.IsGovernance, msg.State.BlockIndex(), isc.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	if c.setNewState(msg) {
 		c.takeAction()
 	}
@@ -37,7 +37,7 @@ func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
 
 func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
 	c.log.Debugf("handleSignedResultMsg message received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, iscp.OID(msg.ChainInputID))
+		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
 	c.receiveSignedResult(msg)
 	c.takeAction()
 }
@@ -48,7 +48,7 @@ func (c *consensus) EnqueueSignedResultAckMsg(msg *messages.SignedResultAckMsgIn
 
 func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
 	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, iscp.OID(msg.ChainInputID))
+		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
 	c.receiveSignedResultAck(msg)
 	c.takeAction()
 }
@@ -61,7 +61,7 @@ func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclu
 }
 
 func (c *consensus) handleTxInclusionState(msg *messages.TxInclusionStateMsg) {
-	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", iscp.TxID(msg.TxID), msg.State)
+	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", isc.TxID(msg.TxID), msg.State)
 	c.processTxInclusionState(msg)
 
 	c.takeAction()

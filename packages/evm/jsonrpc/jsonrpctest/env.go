@@ -95,10 +95,11 @@ func (e *Env) sendTransactionAndWait(tx *types.Transaction) (*types.Receipt, err
 	return e.TxReceipt(tx.Hash())
 }
 
-func (e *Env) deployStorageContract(creator *ecdsa.PrivateKey, initialValue uint32) (*types.Transaction, common.Address, abi.ABI) {
+//nolint:unparam
+func (e *Env) deployStorageContract(creator *ecdsa.PrivateKey) (*types.Transaction, common.Address, abi.ABI) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(e.T, err)
-	tx, _, addr := e.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, initialValue)
+	tx, _, addr := e.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
 	return tx, addr, contractABI
 }
 
@@ -276,7 +277,7 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	return logs
 }
 
-type FuncNewAccountWithL2Funds func(iotas ...uint64) (*ecdsa.PrivateKey, common.Address)
+type FuncNewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
 
 func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	creator, creatorAddress := newAccountWithL2Funds()

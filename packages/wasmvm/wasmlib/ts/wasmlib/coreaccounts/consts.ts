@@ -11,14 +11,14 @@ export const ScName        = "accounts";
 export const ScDescription = "Chain account ledger contract";
 export const HScName       = new wasmtypes.ScHname(0x3c4b5e02);
 
-export const ParamAgentID           = "a";
-export const ParamDestroyTokens     = "y";
-export const ParamForceMinimumIotas = "f";
-export const ParamForceOpenAccount  = "c";
-export const ParamFoundrySN         = "s";
-export const ParamNftID             = "z";
-export const ParamSupplyDeltaAbs    = "d";
-export const ParamTokenScheme       = "t";
+export const ParamAgentID                = "a";
+export const ParamDestroyTokens          = "y";
+export const ParamForceMinimumBaseTokens = "f";
+export const ParamForceOpenAccount       = "c";
+export const ParamFoundrySN              = "s";
+export const ParamNftID                  = "z";
+export const ParamSupplyDeltaAbs         = "d";
+export const ParamTokenScheme            = "t";
 
 export const ResultAccountNonce     = "n";
 export const ResultAllAccounts      = "this";

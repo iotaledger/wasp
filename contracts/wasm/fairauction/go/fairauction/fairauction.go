@@ -55,12 +55,12 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		ownerMargin = OwnerMarginDefault
 	}
 
-	// TODO need at least 1 iota (dust deposit) to run SC
+	// TODO need at least 1 iota (storage deposit) to run SC
 	margin := minimumBid * ownerMargin / 1000
 	if margin == 0 {
 		margin = 1
 	}
-	deposit := allowance.Iotas()
+	deposit := allowance.BaseTokens()
 	if deposit < margin {
 		ctx.Panic("Insufficient deposit")
 	}
@@ -85,7 +85,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	currentAuction.SetValue(auction)
 
 	// take custody of deposit and NFT
-	transfer := wasmlib.NewScTransferIotas(deposit)
+	transfer := wasmlib.NewScTransferBaseTokens(deposit)
 	transfer.AddNFT(auctionNFT)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
@@ -95,7 +95,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 }
 
 func funcPlaceBid(ctx wasmlib.ScFuncContext, f *PlaceBidContext) {
-	bidAmount := ctx.Allowance().Iotas()
+	bidAmount := ctx.Allowance().BaseTokens()
 	ctx.Require(bidAmount > 0, "Missing bid amount")
 
 	token := f.Params.Nft().Value()
@@ -146,9 +146,9 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 			ownerFee = 1
 		}
 		// finalizeAuction request token was probably not confirmed yet
-		transferIotas(ctx, f.State.Owner().Value(), ownerFee-1)
+		transferTokens(ctx, f.State.Owner().Value(), ownerFee-1)
 		transferNFT(ctx, auction.Creator, auction.Nft)
-		transferIotas(ctx, auction.Creator, auction.Deposit-ownerFee)
+		transferTokens(ctx, auction.Creator, auction.Deposit-ownerFee)
 		return
 	}
 
@@ -165,17 +165,17 @@ func funcFinalizeAuction(ctx wasmlib.ScFuncContext, f *FinalizeAuctionContext) {
 		loser := bidderList.GetAgentID(i).Value()
 		if loser != auction.HighestBidder {
 			bid := bids.GetBid(loser).Value()
-			transferIotas(ctx, loser, bid.Amount)
+			transferTokens(ctx, loser, bid.Amount)
 		}
 	}
 
 	// finalizeAuction request token was probably not confirmed yet
-	transferIotas(ctx, f.State.Owner().Value(), ownerFee-1)
+	transferTokens(ctx, f.State.Owner().Value(), ownerFee-1)
 	transferNFT(ctx, auction.HighestBidder, auction.Nft)
-	transferIotas(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
+	transferTokens(ctx, auction.Creator, auction.Deposit+auction.HighestBid-ownerFee)
 }
 
-func funcSetOwnerMargin(ctx wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
+func funcSetOwnerMargin(_ wasmlib.ScFuncContext, f *SetOwnerMarginContext) {
 	ownerMargin := f.Params.OwnerMargin().Value()
 	if ownerMargin < OwnerMarginMin {
 		ownerMargin = OwnerMarginMin
@@ -209,15 +209,15 @@ func viewGetAuctionInfo(ctx wasmlib.ScViewContext, f *GetAuctionInfoContext) {
 	f.Results.Bidders().SetValue(bidderList.Length())
 }
 
-func transferIotas(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, amount uint64) {
+func transferTokens(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, amount uint64) {
 	if agent.IsAddress() {
 		// send back to original Tangle address
-		ctx.Send(agent.Address(), wasmlib.NewScTransferIotas(amount))
+		ctx.Send(agent.Address(), wasmlib.NewScTransferBaseTokens(amount))
 		return
 	}
 
 	// TODO not an address, deposit into account on chain
-	ctx.Send(agent.Address(), wasmlib.NewScTransferIotas(amount))
+	ctx.Send(agent.Address(), wasmlib.NewScTransferBaseTokens(amount))
 }
 
 func transferNFT(ctx wasmlib.ScFuncContext, agent wasmtypes.ScAgentID, nft wasmtypes.ScNftID) {

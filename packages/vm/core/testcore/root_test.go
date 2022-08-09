@@ -6,7 +6,7 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -19,15 +19,15 @@ import (
 
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	chain.CheckChain()
 	chain.Log().Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	chain := env.NewChain()
 
 	chain.CheckChain()
 
@@ -38,7 +38,7 @@ func TestRootRepeatInit(t *testing.T) {
 
 func TestGetInfo(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
 
@@ -59,10 +59,10 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).WithNativeContract(sbtestsc.Processor)
+	ch := env.NewChain()
 
-	err := ch.DepositIotasToL2(10_000, nil)
+	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
 	name := "testInc"
@@ -82,7 +82,7 @@ func TestDeployExample(t *testing.T) {
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
-	rec, ok := contracts[iscp.Hn(name)]
+	rec, ok := contracts[isc.Hn(name)]
 	require.True(t, ok)
 
 	require.EqualValues(t, name, rec.Name)
@@ -95,11 +95,11 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
-	err := ch.DepositIotasToL2(10_000, nil)
+	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
 	name := "testInc"
@@ -122,7 +122,7 @@ func TestDeployDouble(t *testing.T) {
 	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
-	rec, ok := contracts[iscp.Hn(name)]
+	rec, ok := contracts[isc.Hn(name)]
 	require.True(t, ok)
 
 	require.EqualValues(t, name, rec.Name)
@@ -132,16 +132,16 @@ func TestDeployDouble(t *testing.T) {
 
 func TestChangeOwnerAuthorized(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := iscp.NewAgentID(ownerAddr)
+	newOwnerAgentID := isc.NewAgentID(ownerAddr)
 
 	req := solo.NewCallParams(
 		governance.Contract.Name, governance.FuncDelegateChainOwnership.Name,
-		string(governance.ParamChainOwner), newOwnerAgentID,
+		governance.ParamChainOwner, newOwnerAgentID,
 	).WithGasBudget(100_000).
-		AddIotas(100_000)
+		AddBaseTokens(100_000)
 
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -151,7 +151,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).
 		WithGasBudget(100_000).
-		AddIotas(100_000)
+		AddBaseTokens(100_000)
 
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
@@ -161,12 +161,12 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := iscp.NewAgentID(ownerAddr)
-	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, string(governance.ParamChainOwner), newOwnerAgentID)
+	newOwnerAgentID := isc.NewAgentID(ownerAddr)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 

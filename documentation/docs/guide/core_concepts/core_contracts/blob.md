@@ -15,44 +15,36 @@ keywords:
 
 The `blob` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts chain.
 
-The function of the `blob` contract is to maintain an on-chain registry of
-_blobs_, a collections of arbitrary binary data. Smart contracts reference _blobs_ via their hashes.
-
-A _blob_ is a collection of named pieces of arbitrary binary data:
+The objective of the `blob` contract is to maintain an on-chain registry of _blobs_.
+A blob is a collection of named chunks of binary data.
 
 ```
-<fieldName1> : <binaryChunk1>
-<fieldName2> : <binaryChunk2>
+<fieldName1>: <binaryChunk1>
+<fieldName2>: <binaryChunk2>
 ...
-<fieldNameN> : <binaryChunkN>
-``` 
+<fieldNameN>: <binaryChunkN>
+```
 
-Here the `fieldNameK` is an arbitrary binary (a string) used as a name for the
-binary data `binaryChunkK`. Usually `fieldNameK` is not long. Its interpretation
-is use-case specific.
+Both names and chunks are arbitrarily long byte slices.
 
-The `binaryChunkK` may be of arbitrary size (practical limits apply, of course).
+Blobs can be used to store arbitrary data; for example, the collection of Wasm binaries needed to deploy a smart contract.
 
-The order of the field-chunk pairs is essential because the hash of the blob depends on it.
-
-The hash of the _blob_ is equal to the hash of concatenation of all pieces:
+Each blob in the registry is referenced by its hash which is deterministically calculated from the concatenation of all pieces:
 
 ```
 blobHash = hash( fieldName1 || binaryChunk1 || fieldName2 || binaryChunk2 || ... || fieldNameN || binaryChunkN)
-``` 
+```
 
-There are two predefined field names which are interpreted by the VM while
-deploying smart contracts from binary:
+Usually field names are short strings, but their interpretation is use-case specific.
 
-- _fieldname_ = `"v"` is interpreted as a _VM type_
-- _fieldname_ = `"p"` is interpreted as a _smart contract program binary_
+There are two predefined field names that are interpreted by the VM while deploying smart contracts from binary:
 
-If the field `"v"` is equal to the string `"wasmtimevm"`, the binary chunk
-of `"p"` is interpreted as WebAssembly binary, loadable into the _Wasmtime_
-Wasm VM.
+- _fieldname_ = `"v"` is interpreted as the _VM type_
+- _fieldname_ = `"p"` is interpreted as the _smart contract program binary_
 
-Another use_case for a _blob_ may be a full collection of self-described
-immutable data of a smart contract program:
+If the field `"v"` is equal to the string `"wasmtime"`, the binary chunk of `"p"` is interpreted as WebAssembly binary, executable by the Wasmtime interpreter.
+
+The blob describing a smart contract may contain extra fields (ignored by the VM), for example:
 
 ```
 "v" : VM type
@@ -65,35 +57,51 @@ immutable data of a smart contract program:
 
 ## Entry Points
 
-There is only one full entry point which allows us to submit a _blob_ to the `blob` contract:
+### `storeBlob()`
 
-### - `storeBlob()`
+Stores a new blob in the registry.
 
-In the current implementation the data of the _blob_ is passed
-as parameters to the call of the entry point. It may be practically impossible
-to submit very large _blobs_ to the chain. In the future we plan to implement
-a special mechanism which allows for the nodes to download big data chunks as
-part of the committee consensus.
+Parameters:
+
+The key/value pairs of the received parameters are interpreted as the field/chunk pairs of the blob.
+
+Returns:
+
+- `hash` (`[32]byte`): The hash of the stored blob
 
 ---
 
 ## Views
 
-### - `getBlobInfo(hash BlobHash)`
+### `getBlobInfo(hash BlobHash)`
 
-Returns information about fields of the blob with specific hash and sizes of its data chunks:
+Returns the size of each chunk of the blob:
+
+Parameters:
+
+- `hash` (`[32]byte`): The hash of the blob
+
+Returns:
 
 ```
-<fieldName1>: <size of the dataChunk1>
+<fieldName1>: <size of the dataChunk1> (uint32)
 ...
-<fieldNameN>: <size of the dataChunkN>
+<fieldNameN>: <size of the dataChunkN> (uint32)
 ```
 
-### - `getBlobField(hash BlobHash, field BlobField)`
+### `getBlobField(hash BlobHash, field BlobField)`
 
-Returns the data of the specified _blob_ field.
+Returns the chunk associated with the given blob field name.
 
-### -`listBlobs()`
+Parameters:
 
-Returns a list of pairs `blob hash`: `total size of chunks` for all blobs in the registry.
-  
+- `hash` (`[32]byte`): The hash of the blob
+- `field` (`[]byte`): The field name
+
+Returns:
+
+- `bytes` (`[]byte`): The chunk associated with the given field name
+
+### `listBlobs()`
+
+Returns a list of pairs `blob hash`: `total size of chunks` (`uint32`) for all blobs in the registry.

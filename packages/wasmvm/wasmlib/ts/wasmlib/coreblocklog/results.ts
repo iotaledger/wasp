@@ -39,12 +39,20 @@ export class MutableControlAddressesResults extends wasmtypes.ScProxy {
 }
 
 export class ImmutableGetBlockInfoResults extends wasmtypes.ScProxy {
+	blockIndex(): wasmtypes.ScImmutableUint32 {
+		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
+	}
+
 	blockInfo(): wasmtypes.ScImmutableBytes {
 		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBlockInfo));
 	}
 }
 
 export class MutableGetBlockInfoResults extends wasmtypes.ScProxy {
+	blockIndex(): wasmtypes.ScMutableUint32 {
+		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
+	}
+
 	blockInfo(): wasmtypes.ScMutableBytes {
 		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBlockInfo));
 	}
@@ -119,26 +127,6 @@ export class MutableGetEventsForRequestResults extends wasmtypes.ScProxy {
 	// native contract, so this is an Array16
 	event(): sc.ArrayOfMutableBytes {
 		return new sc.ArrayOfMutableBytes(this.proxy.root(sc.ResultEvent));
-	}
-}
-
-export class ImmutableGetLatestBlockInfoResults extends wasmtypes.ScProxy {
-	blockIndex(): wasmtypes.ScImmutableUint32 {
-		return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ResultBlockIndex));
-	}
-
-	blockInfo(): wasmtypes.ScImmutableBytes {
-		return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultBlockInfo));
-	}
-}
-
-export class MutableGetLatestBlockInfoResults extends wasmtypes.ScProxy {
-	blockIndex(): wasmtypes.ScMutableUint32 {
-		return new wasmtypes.ScMutableUint32(this.proxy.root(sc.ResultBlockIndex));
-	}
-
-	blockInfo(): wasmtypes.ScMutableBytes {
-		return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultBlockInfo));
 	}
 }
 

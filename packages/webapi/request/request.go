@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -23,9 +23,9 @@ import (
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.ChainCore, agentID iscp.AgentID) (*iscp.FungibleTokens, error)
-	hasRequestBeenProcessedFn func(ch chain.ChainCore, reqID iscp.RequestID) (bool, error)
-	checkNonceFn              func(ch chain.ChainCore, req iscp.OffLedgerRequest) error
+	getAccountAssetsFn        func(ch chain.ChainCore, agentID isc.AgentID) (*isc.FungibleTokens, error)
+	hasRequestBeenProcessedFn func(ch chain.ChainCore, reqID isc.RequestID) (bool, error)
+	checkNonceFn              func(ch chain.ChainCore, req isc.OffLedgerRequest) error
 )
 
 func AddEndpoints(
@@ -136,8 +136,8 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
-func parseParams(c echo.Context) (chainID *iscp.ChainID, req iscp.OffLedgerRequest, err error) {
-	chainID, err = iscp.ChainIDFromString(c.Param("chainID"))
+func parseParams(c echo.Context) (chainID *isc.ChainID, req isc.OffLedgerRequest, err error) {
+	chainID, err = isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
@@ -148,12 +148,12 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req iscp.OffLedgerReque
 		if err = c.Bind(r); err != nil {
 			return nil, nil, httperrors.BadRequest("error parsing request from payload")
 		}
-		rGeneric, err := iscp.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
+		rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
 		}
 		var ok bool
-		if req, ok = rGeneric.(iscp.OffLedgerRequest); !ok {
+		if req, ok = rGeneric.(isc.OffLedgerRequest); !ok {
 			return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
 		}
 		return chainID, req, err
@@ -164,11 +164,11 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req iscp.OffLedgerReque
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}
-	rGeneric, err := iscp.NewRequestFromMarshalUtil(marshalutil.New(reqBytes))
+	rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(reqBytes))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("error parsing request from payload")
 	}
-	req, ok := rGeneric.(iscp.OffLedgerRequest)
+	req, ok := rGeneric.(isc.OffLedgerRequest)
 	if !ok {
 		return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
 	}

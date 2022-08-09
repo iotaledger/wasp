@@ -7,44 +7,44 @@ use crate::*;
 use crate::host::*;
 
 // @formatter:off
-pub const FN_ACCOUNT_ID            : i32 = -1;
-pub const FN_ALLOWANCE             : i32 = -2;
-pub const FN_BALANCE               : i32 = -3;
-pub const FN_BALANCES              : i32 = -4;
-pub const FN_BLOCK_CONTEXT         : i32 = -5;
-pub const FN_CALL                  : i32 = -6;
-pub const FN_CALLER                : i32 = -7;
-pub const FN_CHAIN_ID              : i32 = -8;
-pub const FN_CHAIN_OWNER_ID        : i32 = -9;
-pub const FN_CONTRACT              : i32 = -10;
-pub const FN_DEPLOY_CONTRACT       : i32 = -11;
-pub const FN_ENTROPY               : i32 = -12;
-pub const FN_ESTIMATE_DUST         : i32 = -13;
-pub const FN_EVENT                 : i32 = -14;
-pub const FN_LOG                   : i32 = -15;
-pub const FN_MINTED                : i32 = -16;
-pub const FN_PANIC                 : i32 = -17;
-pub const FN_PARAMS                : i32 = -18;
-pub const FN_POST                  : i32 = -19;
-pub const FN_REQUEST               : i32 = -20;
-pub const FN_REQUEST_ID            : i32 = -21;
-pub const FN_REQUEST_SENDER        : i32 = -22;
-pub const FN_RESULTS               : i32 = -23;
-pub const FN_SEND                  : i32 = -24;
-pub const FN_STATE_ANCHOR          : i32 = -25;
-pub const FN_TIMESTAMP             : i32 = -26;
-pub const FN_TRACE                 : i32 = -27;
-pub const FN_TRANSFER_ALLOWED      : i32 = -28;
-pub const FN_UTILS_BECH32_DECODE   : i32 = -29;
-pub const FN_UTILS_BECH32_ENCODE   : i32 = -30;
-pub const FN_UTILS_BLS_ADDRESS     : i32 = -31;
-pub const FN_UTILS_BLS_AGGREGATE   : i32 = -32;
-pub const FN_UTILS_BLS_VALID       : i32 = -33;
-pub const FN_UTILS_ED25519_ADDRESS : i32 = -34;
-pub const FN_UTILS_ED25519_VALID   : i32 = -35;
-pub const FN_UTILS_HASH_BLAKE2B    : i32 = -36;
-pub const FN_UTILS_HASH_NAME       : i32 = -37;
-pub const FN_UTILS_HASH_SHA3       : i32 = -38;
+pub const FN_ACCOUNT_ID               : i32 = -1;
+pub const FN_ALLOWANCE                : i32 = -2;
+pub const FN_BALANCE                  : i32 = -3;
+pub const FN_BALANCES                 : i32 = -4;
+pub const FN_BLOCK_CONTEXT            : i32 = -5;
+pub const FN_CALL                     : i32 = -6;
+pub const FN_CALLER                   : i32 = -7;
+pub const FN_CHAIN_ID                 : i32 = -8;
+pub const FN_CHAIN_OWNER_ID           : i32 = -9;
+pub const FN_CONTRACT                 : i32 = -10;
+pub const FN_DEPLOY_CONTRACT          : i32 = -11;
+pub const FN_ENTROPY                  : i32 = -12;
+pub const FN_ESTIMATE_STORAGE_DEPOSIT : i32 = -13;
+pub const FN_EVENT                    : i32 = -14;
+pub const FN_LOG                      : i32 = -15;
+pub const FN_MINTED                   : i32 = -16;
+pub const FN_PANIC                    : i32 = -17;
+pub const FN_PARAMS                   : i32 = -18;
+pub const FN_POST                     : i32 = -19;
+pub const FN_REQUEST                  : i32 = -20;
+pub const FN_REQUEST_ID               : i32 = -21;
+pub const FN_REQUEST_SENDER           : i32 = -22;
+pub const FN_RESULTS                  : i32 = -23;
+pub const FN_SEND                     : i32 = -24;
+pub const FN_STATE_ANCHOR             : i32 = -25;
+pub const FN_TIMESTAMP                : i32 = -26;
+pub const FN_TRACE                    : i32 = -27;
+pub const FN_TRANSFER_ALLOWED         : i32 = -28;
+pub const FN_UTILS_BECH32_DECODE      : i32 = -29;
+pub const FN_UTILS_BECH32_ENCODE      : i32 = -30;
+pub const FN_UTILS_BLS_ADDRESS        : i32 = -31;
+pub const FN_UTILS_BLS_AGGREGATE      : i32 = -32;
+pub const FN_UTILS_BLS_VALID          : i32 = -33;
+pub const FN_UTILS_ED25519_ADDRESS    : i32 = -34;
+pub const FN_UTILS_ED25519_VALID      : i32 = -35;
+pub const FN_UTILS_HASH_BLAKE2B       : i32 = -36;
+pub const FN_UTILS_HASH_NAME          : i32 = -37;
+pub const FN_UTILS_HASH_SHA3          : i32 = -38;
 // @formatter:on
 
 // Direct logging of informational text to host log
@@ -217,9 +217,9 @@ pub trait ScSandboxFunc: ScSandbox {
         return hash_from_bytes(&sandbox(FN_ENTROPY, &[]));
     }
 
-    fn estimate_dust(&self, f: &ScFunc) -> u64 {
+    fn estimate_storage_deposit(&self, f: &ScFunc) -> u64 {
         let req = f.post_request(ScFuncContext {}.current_chain_id());
-        uint64_from_bytes(&sandbox(FN_ESTIMATE_DUST, &req.to_bytes()))
+        uint64_from_bytes(&sandbox(FN_ESTIMATE_STORAGE_DEPOSIT, &req.to_bytes()))
     }
 
     // signals an event on the node that external entities can subscribe to

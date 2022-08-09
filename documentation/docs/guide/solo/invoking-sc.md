@@ -18,7 +18,7 @@ After deploying our smart contract [`solotutorial`](https://github.com/iotaledge
 
 ```go
 func TestTutorialInvokeSC(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
@@ -84,7 +84,7 @@ However, since off-ledger reuests cannot have tokens attached, in order to cover
 
 ```go
 user, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-chain.DepositIotasToL2(10_000, user) // to cover gas fees
+chain.DepositBaseTokensToL2(10_000, user) // to cover gas fees
 _, err = chain.PostRequestOffLedger(req, user)
 require.NoError(t, err)
 ```

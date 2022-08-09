@@ -5,7 +5,7 @@ package wasmsolo
 
 import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -16,7 +16,7 @@ type SoloAgent struct {
 	Cvt     wasmhost.WasmConvertor
 	Env     *solo.Solo
 	Pair    *cryptolib.KeyPair
-	agentID iscp.AgentID
+	agentID isc.AgentID
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
@@ -24,7 +24,7 @@ func NewSoloAgent(env *solo.Solo) *SoloAgent {
 	return &SoloAgent{
 		Env:     env,
 		Pair:    pair,
-		agentID: iscp.NewAgentID(address),
+		agentID: isc.NewAgentID(address),
 	}
 }
 
@@ -32,28 +32,23 @@ func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
 	return a.Cvt.ScAgentID(a.agentID)
 }
 
-func (a *SoloAgent) AgentID() iscp.AgentID {
+func (a *SoloAgent) AgentID() isc.AgentID {
 	return a.agentID
 }
 
 func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
-	address, _ := iscp.AddressFromAgentID(a.agentID)
+	address, _ := isc.AddressFromAgentID(a.agentID)
 	if address == nil {
 		require.Fail(a.Env.T, "agent is not a L1 address")
 	}
 	switch len(tokenID) {
 	case 0:
-		return a.Env.L1Iotas(address)
+		return a.Env.L1BaseTokens(address)
 	case 1:
-		token := a.Cvt.IscpTokenID(&tokenID[0])
+		token := a.Cvt.IscTokenID(&tokenID[0])
 		return a.Env.L1NativeTokens(address, token).Uint64()
 	default:
 		require.Fail(a.Env.T, "too many tokenID arguments")
 		return 0
 	}
-}
-
-func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScTokenID, error) {
-	token, err := a.Env.MintTokens(a.Pair, amount)
-	return a.Cvt.ScTokenID(&token), err
 }

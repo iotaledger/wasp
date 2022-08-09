@@ -32,11 +32,11 @@ func Parse(in []byte) *Node {
 					fmt.Printf("warning: block and line comment for line %d, line comment was ignored.\n", lineNum)
 				}
 			} else if strings.TrimSpace(oriComment) != "" {
-				cur.LineComment = ("//" + oriComment[1:] + "\n")
+				cur.LineComment = "//" + oriComment[1:] + "\n"
 			}
 			comment = ""
 		} else {
-			comment += ("//" + oriComment[1:] + "\n")
+			comment += "//" + oriComment[1:] + "\n"
 			if strings.TrimSpace(oriComment) == "" {
 				comment = ""
 			}

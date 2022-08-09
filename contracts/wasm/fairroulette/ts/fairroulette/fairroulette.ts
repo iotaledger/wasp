@@ -32,7 +32,7 @@ const NANO_TIME_DIVIDER: u64 = 1000000000;
 // The 'placeBet' function takes 1 mandatory parameter:
 // - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
-// the amount of incoming iotas as the bet amount in its state.
+// the amount of incoming tokens as the bet amount in its state.
 export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext): void {
     // Get the array of current bets from state storage.
     let bets: sc.ArrayOfMutableBet = f.state.bets();
@@ -59,9 +59,9 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
     let allowance: wasmlib.ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = allowance.iotas();
+    let amount: u64 = allowance.baseTokens();
 
-    // Require that there are actually some plain iotas there
+    // Require that there are actually some base tokens there
     ctx.require(amount > 0, "empty bet");
 
     // Now we gather all information together into a single serializable struct
@@ -109,7 +109,7 @@ export function funcPlaceBet(ctx: wasmlib.ScFuncContext, f: sc.PlaceBetContext):
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the playPeriod
             // amount of seconds. This will lock in the playing period, during which more bets can
-            // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
+            // be placed. Once the 'payWinners' function gets triggered by the ISC it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
             sc.ScFuncs.payWinners(ctx).func.delay(playPeriod).post();
         }
@@ -198,12 +198,12 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
             // Yep, keep track of the running total payout
             totalPayout += payout;
 
-            // Set up an ScTransfers proxy that transfers the correct amount of iotas.
+            // Set up an ScTransfers proxy that transfers the correct amount of tokens.
             // Note that ScTransfers wraps an ScMutableMap of token color/amount combinations
             // in a simpler to use interface. The constructor we use here creates and initializes
             // a single token color transfer in a single statement. The actual color and amount
             // values passed in will be stored in a new map on the host.
-            let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.iotas(payout);
+            let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.baseTokens(payout);
 
             // Perform the actual transfer of tokens from the smart contract to the address
             // of the winner. The transferToAddress() method receives the address value and
@@ -221,7 +221,7 @@ export function funcPayWinners(ctx: wasmlib.ScFuncContext, f: sc.PayWinnersConte
     let remainder: u64 = totalBetAmount - totalPayout;
     if (remainder != 0) {
         // We have a remainder. First create a transfer for the remainder.
-        let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.iotas(remainder);
+        let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.baseTokens(remainder);
 
         // Send the remainder to the contract owner.
         ctx.send(f.state.owner().value().address(), transfers);

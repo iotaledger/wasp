@@ -39,17 +39,17 @@ func NewSoloClientService(ctx *SoloContext, extra ...bool) *SoloClientService {
 }
 
 func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error) {
-	iscpChainID := s.ctx.Cvt.IscpChainID(&chainID)
-	iscpContract := s.ctx.Cvt.IscpHname(hContract)
-	iscpFunction := s.ctx.Cvt.IscpHname(hFunction)
+	iscChainID := s.ctx.Cvt.IscChainID(&chainID)
+	iscContract := s.ctx.Cvt.IscHname(hContract)
+	iscFunction := s.ctx.Cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return nil, err
 	}
-	if !iscpChainID.Equals(s.ctx.Chain.ChainID) {
+	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
 		return nil, errors.New("SoloClientService.CallViewByHname chain ID mismatch")
 	}
-	res, err := s.ctx.Chain.CallViewByHname(iscpContract, iscpFunction, params)
+	res, err := s.ctx.Chain.CallViewByHname(iscContract, iscFunction, params)
 	if err != nil {
 		return nil, err
 	}
@@ -62,21 +62,21 @@ func (s *SoloClientService) Event(msg string) {
 }
 
 func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
-	iscpChainID := s.ctx.Cvt.IscpChainID(&chainID)
-	iscpContract := s.ctx.Cvt.IscpHname(hContract)
-	iscpFunction := s.ctx.Cvt.IscpHname(hFunction)
+	iscChainID := s.ctx.Cvt.IscChainID(&chainID)
+	iscContract := s.ctx.Cvt.IscHname(hContract)
+	iscFunction := s.ctx.Cvt.IscHname(hFunction)
 	params, err := dict.FromBytes(args)
 	if err != nil {
 		return reqID, err
 	}
-	if !iscpChainID.Equals(s.ctx.Chain.ChainID) {
+	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
-	req := solo.NewCallParamsFromDictByHname(iscpContract, iscpFunction, params)
+	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
 	s.nonce++
 	req.WithNonce(s.nonce)
-	iscpAllowance := s.ctx.Cvt.IscpAllowance(allowance)
-	req.WithAllowance(iscpAllowance)
+	iscAllowance := s.ctx.Cvt.IscAllowance(allowance)
+	req.WithAllowance(iscAllowance)
 	req.WithGasBudget(gas.MaxGasPerCall)
 	_, err = s.ctx.Chain.PostRequestOffLedger(req, keyPair)
 	return reqID, err
@@ -91,5 +91,8 @@ func (s *SoloClientService) SubscribeEvents(msg chan []string, done chan bool) e
 }
 
 func (s *SoloClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
+	_ = chainID
+	_ = reqID
+	_ = timeout
 	return nil
 }

@@ -21,13 +21,13 @@ var defaultNode *dkg_pkg.Node // A singleton.
 func Init() *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
 		log := logger.NewLogger(pluginName)
-		registry := registry.DefaultRegistry()
+		reg := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
 		var err error
 		defaultNode, err = dkg_pkg.NewNode(
-			registry.GetNodeIdentity(),
+			reg.GetNodeIdentity(),
 			peeringProvider,
-			registry,
+			reg,
 			log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
 		)
 		if err != nil {

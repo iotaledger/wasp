@@ -1,6 +1,6 @@
 # MicroPay: a micro payment POC
 
-The package implements hardcoded ISCP contract for continuos micro payment protocol.
+The package implements hardcoded ISC contract for continuos micro payment protocol.
 
 The final implementation will be in Rust.
 

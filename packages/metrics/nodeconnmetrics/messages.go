@@ -1,7 +1,7 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type nodeConnectionMessagesMetricsImpl struct {
@@ -20,7 +20,7 @@ type nodeConnectionMessagesMetricsImpl struct {
 
 var _ NodeConnectionMessagesMetrics = &nodeConnectionMessagesMetricsImpl{}
 
-func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID) NodeConnectionMessagesMetrics {
 	createMessageMetricsFun := func(msgType string, makeRelatedMetricsFun func() NodeConnectionMessageMetrics) NodeConnectionMessageMetrics {
 		simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics(ncmi, chainID, msgType)
 		if chainID == nil {

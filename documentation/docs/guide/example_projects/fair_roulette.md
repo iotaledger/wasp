@@ -283,7 +283,7 @@ cp config.dev.sample.js config.dev.js
 
 Make sure to update the config values according to your setup.
 
-The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain).  You can get your chain id from your dashboard, or list all chains by running:
+The `chainId` is the chainId which gets defined after [deploying a chain](../chains_and_nodes/setting-up-a-chain.md#deploy-the-isc-chain).  You can get your chain id from your dashboard, or list all chains by running:
 
 ```shell
 wasp-cli chain list
@@ -308,7 +308,7 @@ If you want to expose the dev server to the public, it might be required to bind
 
 ## Deployment
 
-You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-iscp-chain) documentation until you reach the `deploy-contract` command.
+You should follow the [Deployment](../chains_and_nodes/setting-up-a-chain.md#deploy-the-isc-chain) documentation until you reach the `deploy-contract` command.
 
 The deployment of a contract requires funds to be deposited to the **chain**. 
 You can do this by executing the following command from the directory where your Wasp node was configured: 

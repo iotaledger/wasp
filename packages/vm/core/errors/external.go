@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -10,7 +10,7 @@ import (
 // ViewCaller is a generic interface for any function that can call views
 type ViewCaller func(contractName string, funcName string, params dict.Dict) (dict.Dict, error)
 
-func GetMessageFormat(code iscp.VMErrorCode, callView ViewCaller) (string, error) {
+func GetMessageFormat(code isc.VMErrorCode, callView ViewCaller) (string, error) {
 	ret, err := callView(Contract.Name, ViewGetErrorMessageFormat.Name, dict.Dict{
 		ParamErrorCode: codec.EncodeVMErrorCode(code),
 	})
@@ -20,7 +20,7 @@ func GetMessageFormat(code iscp.VMErrorCode, callView ViewCaller) (string, error
 	return codec.DecodeString(ret.MustGet(ParamErrorMessageFormat))
 }
 
-func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, error) {
+func Resolve(e *isc.UnresolvedVMError, callView ViewCaller) (*isc.VMError, error) {
 	if e == nil {
 		return nil, nil
 	}
@@ -30,10 +30,10 @@ func Resolve(e *iscp.UnresolvedVMError, callView ViewCaller) (*iscp.VMError, err
 		return nil, err
 	}
 
-	return iscp.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
+	return isc.NewVMErrorTemplate(e.Code(), messageFormat).Create(e.Params...), nil
 }
 
-func ResolveFromState(state kv.KVStoreReader, e *iscp.UnresolvedVMError) (*iscp.VMError, error) {
+func ResolveFromState(state kv.KVStoreReader, e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	if e == nil {
 		return nil, nil
 	}
@@ -41,5 +41,5 @@ func ResolveFromState(state kv.KVStoreReader, e *iscp.UnresolvedVMError) (*iscp.
 	if err != nil {
 		return nil, err
 	}
-	return iscp.NewVMErrorTemplate(e.Code(), template.MessageFormat()).Create(e.Params...), nil
+	return isc.NewVMErrorTemplate(e.Code(), template.MessageFormat()).Create(e.Params...), nil
 }

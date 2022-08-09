@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -23,22 +23,22 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(e.t, err)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount)),
 	)
 	chEnv.checkLedger()
 
-	myAgentID := iscp.NewAgentID(myAddress)
-	// origAgentID := iscp.NewAgentID(chain.OriginatorAddress(), 0)
+	myAgentID := isc.NewAgentID(myAddress)
+	// origAgentID := isc.NewAgentID(chain.OriginatorAddress(), 0)
 
-	// chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
-	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, 0)
+	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
 	chEnv.checkLedger()
 
-	// deposit some iotas to the chain
-	depositIotas := 10 * iscp.Mi
+	// deposit some base tokens to the chain
+	depositBaseTokens := 10 * isc.Million
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
 
-	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
+	par := chainclient.NewPostRequestParams().WithBaseTokens(depositBaseTokens)
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), *par)
 	require.NoError(t, err)
 
@@ -46,20 +46,20 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(t, err)
 	chEnv.checkLedger()
 
-	// chEnv.checkBalanceOnChain(origAgentID, iscp.IotaTokenID, 0)
+	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
 	gasFees1 := receipts[0].GasFeeCharged
-	onChainBalance := depositIotas - gasFees1
-	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance)
+	onChainBalance := depositBaseTokens - gasFees1
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
 
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens)),
 	)
 
-	// withdraw some iotas back
-	iotasToWithdraw := 1 * iscp.Mi
+	// withdraw some base tokens back
+	baseTokensToWithdraw := 1 * isc.Million
 	req, err := chClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
-			Allowance: iscp.NewAllowanceIotas(iotasToWithdraw),
+			Allowance: isc.NewAllowanceBaseTokens(baseTokensToWithdraw),
 		},
 	)
 	require.NoError(t, err)
@@ -68,10 +68,10 @@ func TestDepositWithdraw(t *testing.T) {
 
 	chEnv.checkLedger()
 	gasFees2 := receipt.GasFeeCharged
-	chEnv.checkBalanceOnChain(myAgentID, iscp.IotaTokenID, onChainBalance-iotasToWithdraw-gasFees2)
+	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance-baseTokensToWithdraw-gasFees2)
 	require.True(t,
-		e.Clu.AssertAddressBalances(myAddress, iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount-depositIotas+iotasToWithdraw)),
+		e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw)),
 	)
 
-	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining iotas
+	// TODO use "withdraw all base tokens" entrypoint to withdraw all remaining base tokens
 }

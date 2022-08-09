@@ -9,8 +9,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -26,7 +26,7 @@ type callViewService struct {
 
 func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 	dictExample := dict.Dict{
-		kv.Key("key1"): []byte("value1"),
+		"key1": []byte("value1"),
 	}.JSONDict()
 
 	s := &callViewService{allChains}
@@ -70,12 +70,12 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
 
-func (s *callViewService) handleCallView(c echo.Context, functionHname iscp.Hname) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname) error {
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
-	contractHname, err := iscp.HnameFromString(c.Param("contractHname"))
+	contractHname, err := isc.HnameFromString(c.Param("contractHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
 	}
@@ -100,11 +100,11 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname iscp.Hnam
 
 func (s *callViewService) handleCallViewByName(c echo.Context) error {
 	fname := c.Param("fname")
-	return s.handleCallView(c, iscp.Hn(fname))
+	return s.handleCallView(c, isc.Hn(fname))
 }
 
 func (s *callViewService) handleCallViewByHname(c echo.Context) error {
-	functionHname, err := iscp.HnameFromString(c.Param("functionHname"))
+	functionHname, err := isc.HnameFromString(c.Param("functionHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid function ID: %+v", c.Param("functionHname")))
 	}
@@ -112,7 +112,7 @@ func (s *callViewService) handleCallViewByHname(c echo.Context) error {
 }
 
 func (s *callViewService) handleStateGet(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}

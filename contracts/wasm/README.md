@@ -37,17 +37,17 @@ Sample smart contracts:
 
 - helloworld
 
-  ISCP version of the ubiquitous "Hello, world!" program.
+  ISC version of the ubiquitous "Hello, world!" program.
 
 - inccounter
 
   A simple test contract. All it does is increment a counter value. It is also
-  used to test basic ISCP capabilities, like persisting state, batching
+  used to test basic ISC capabilities, like persisting state, batching
   requests, and sending (time-locked) requests from a contract.
 
 - testcore
 
-  Helper smart contract to test the ISCP core functionality.
+  Helper smart contract to test the ISC core functionality.
 
 - testwasmlib
 
