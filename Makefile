@@ -19,8 +19,8 @@ compile-solidity:
 ifeq (, $(shell which solc))
 	@echo "no solc found in PATH, evm contracts won't be compiled"
 else
-	cd packages/vm/core/evm/iscmagic && if ! git diff --quiet *.sol; then go generate; fi
-	cd packages/evm/evmtest && if ! git diff --quiet *.sol; then go generate; fi
+	cd packages/vm/core/evm/iscmagic && go generate
+	cd packages/evm/evmtest && go generate
 endif
 
 build: compile-solidity
