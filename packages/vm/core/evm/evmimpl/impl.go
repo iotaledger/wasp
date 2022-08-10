@@ -128,7 +128,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(gasErr)
 	ctx.RequireNoError(result.Err) // panic so that the error is handled by ISC VM logic
-	ctx.Requiref(receipt.Status == types.ReceiptStatusSuccessful, GetRevertErrorMessage(result, ctx.Contract()))
 
 	return nil
 }
@@ -227,7 +226,6 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
-	ctx.Requiref(res.Err == nil, GetRevertErrorMessage(res, ctx.Contract()))
 	return result(res.Return())
 }
 
@@ -246,7 +244,6 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
-	ctx.Requiref(res.Err == nil, GetRevertErrorMessage(res, ctx.Contract()))
 
 	// TODO: this assumes that the initial budget was gas.MaxGasPerCall
 	// see evmOffLedgerEstimateGasRequest::GasBudget()
