@@ -27,7 +27,7 @@ type BaseToken struct {
 var (
 	l1Params *L1Params
 
-	l1ForTesting = &L1Params{
+	L1ForTesting = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxTransactionSize: 32000,
 		Protocol: &iotago.ProtocolParameters{
@@ -64,7 +64,7 @@ func isTestContext() bool {
 func L1() *L1Params {
 	if l1Params == nil {
 		if isTestContext() {
-			l1Params = l1ForTesting
+			l1Params = L1ForTesting
 		} else if l1ParamsLazyInit != nil {
 			l1ParamsLazyInit()
 		}

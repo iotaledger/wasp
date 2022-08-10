@@ -4,7 +4,6 @@
 package main
 
 import (
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
@@ -40,12 +39,6 @@ func init() {
 	decode.Init(rootCmd)
 	peering.Init(rootCmd)
 	metrics.Init(rootCmd)
-
-	// The first time parameters.L1() is called, it will be initialized with this function
-	parameters.InitL1Lazy(func() {
-		// this will call parameters.InitL1() with data from the L1 node
-		config.L1Client()
-	})
 }
 
 func main() {
