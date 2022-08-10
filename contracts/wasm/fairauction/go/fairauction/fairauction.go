@@ -55,7 +55,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		ownerMargin = OwnerMarginDefault
 	}
 
-	// TODO need at least 1 iota (storage deposit) to run SC
+	// need at least 1 base token (storage deposit) to run SC
 	margin := minimumBid * ownerMargin / 1000
 	if margin == 0 {
 		margin = 1

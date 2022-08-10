@@ -49,7 +49,7 @@ pub fn func_start_auction(ctx: &ScFuncContext, f: &StartAuctionContext) {
         owner_margin = OWNER_MARGIN_DEFAULT;
     }
 
-    //TODO need at least 1 iota to run SC
+    // need at least 1 base token to run SC
     let mut margin = minimum_bid * owner_margin / 1000;
     if margin == 0 {
         margin = 1;
