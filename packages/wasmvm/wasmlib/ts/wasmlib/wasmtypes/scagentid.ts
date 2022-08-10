@@ -25,8 +25,18 @@ export class ScAgentID {
 
     public static fromAddress(address: wasmtypes.ScAddress): ScAgentID {
         const agentID = new ScAgentID(address, new wasmtypes.ScHname(0));
-        if (address.id[0] != wasmtypes.ScAddressAlias) {
-            agentID.kind = ScAgentIDAddress;
+        switch(address.id[0]) {
+            case wasmtypes.ScAddressAlias: {
+                break;
+            }
+            case wasmtypes.ScAddressEth: {
+                agentID.kind = ScAgentIDEthereum;
+                break;
+            }
+            default: {
+                agentID.kind = ScAgentIDAddress;
+                break;
+            }
         }
         return agentID;
     }
@@ -97,8 +107,11 @@ export function agentIDFromBytes(buf: u8[]): ScAgentID {
             return new ScAgentID(chainID.address(), hname);
         }
         case ScAgentIDEthereum:
-            panic("AgentIDFromBytes: unsupported ScAgentIDEthereum");
-            break;
+            buf = buf.slice(1)
+            if (buf.length != wasmtypes.ScAddressEthLength) {
+                panic("invalid AgentID length: Eth agentID");
+            }
+            return ScAgentID.fromAddress(wasmtypes.addressFromBytes(buf));
         case ScAgentIDNil:
             break;
         default: {
@@ -120,8 +133,7 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
             return buf.concat(wasmtypes.hnameToBytes(value._hname));
         }
         case ScAgentIDEthereum:
-            panic("AgentIDToBytes: unsupported ScAgentIDEthereum");
-            break;
+            return buf.concat(wasmtypes.addressToBytes(value._address))
         case ScAgentIDNil:
             return buf;
         default: {
@@ -133,7 +145,6 @@ export function agentIDToBytes(value: ScAgentID): u8[] {
 }
 
 export function agentIDFromString(value: string): ScAgentID {
-    //TODO ScAgentIDEthereum
     if (value == nilAgentIDString) {
         return agentIDFromBytes([]);
     }
@@ -151,7 +162,6 @@ export function agentIDFromString(value: string): ScAgentID {
 }
 
 export function agentIDToString(value: ScAgentID): string {
-    //TODO ScAgentIDEthereum
     switch (value.kind) {
         case wasmtypes.ScAgentIDAddress:
             return wasmtypes.addressToString(value.address())
@@ -159,8 +169,7 @@ export function agentIDToString(value: ScAgentID): string {
             return wasmtypes.hnameToString(value.hname()) + "@" + wasmtypes.addressToString(value.address())
         }
         case ScAgentIDEthereum:
-            panic("AgentIDToString: unsupported ScAgentIDEthereum");
-            return "";
+            return wasmtypes.addressToString(value.address())
         case ScAgentIDNil:
             return nilAgentIDString;
         default: {

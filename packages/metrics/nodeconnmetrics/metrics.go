@@ -2,7 +2,7 @@ package nodeconnmetrics
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -11,7 +11,7 @@ type nodeConnectionMetricsImpl struct {
 	log                 *logger.Logger
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
-	registered          []*iscp.ChainID
+	registered          []*isc.ChainID
 	inMilestoneMetrics  NodeConnectionMessageMetrics
 }
 
@@ -20,7 +20,7 @@ var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 func New(log *logger.Logger) NodeConnectionMetrics {
 	ret := &nodeConnectionMetricsImpl{
 		log:        log.Named("nodeconn"),
-		registered: make([]*iscp.ChainID, 0),
+		registered: make([]*isc.ChainID, 0),
 	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
 	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics(ret, nil, "in_milestone")
@@ -42,17 +42,17 @@ func (ncmiT *nodeConnectionMetricsImpl) RegisterMetrics() {
 	ncmiT.log.Info("Registering nodeconnection metrics to prometheus... Done")
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics {
+func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {
 	return newNodeConnectionMessagesMetrics(ncmiT, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID *iscp.ChainID) {
+func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID *isc.ChainID) {
 	ncmiT.registered = append(ncmiT.registered, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *iscp.ChainID) {
+func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *isc.ChainID) {
 	var i int
 	for i = 0; i < len(ncmiT.registered); i++ {
 		if ncmiT.registered[i] == chainID {
@@ -62,7 +62,7 @@ func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *iscp.ChainID) {
 	}
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*iscp.ChainID {
+func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*isc.ChainID {
 	return ncmiT.registered
 }
 

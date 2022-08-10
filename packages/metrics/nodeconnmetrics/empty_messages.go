@@ -10,7 +10,11 @@ func newEmptyNodeConnectionMessagesMetrics() *emptyNodeConnectionMessagesMetrics
 	return &emptyNodeConnectionMessagesMetrics{emptyMessageMetrics: newEmptyNodeConnectionMessageMetrics()}
 }
 
-func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPublishTransaction() NodeConnectionMessageMetrics {
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPublishStateTransaction() NodeConnectionMessageMetrics {
+	return encmmT.emptyMessageMetrics
+}
+
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics {
 	return encmmT.emptyMessageMetrics
 }
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -27,12 +27,14 @@ const (
 
 type TimerTick int
 
-// StateTransitionMsg Notifies chain about changed state
+// StateTransitionMsg Notifies chain about changed
 type StateTransitionMsg struct {
+	// is transition a governance update
+	IsGovernance bool
 	// new variable state
 	State state.VirtualStateAccess
 	// corresponding state transaction
-	StateOutput *iscp.AliasOutputWithID
+	StateOutput *isc.AliasOutputWithID
 	//
 	StateTimestamp time.Time
 }
@@ -68,6 +70,6 @@ type TxInclusionStateMsg struct {
 
 // StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager
 type StateMsg struct {
-	ChainOutput *iscp.AliasOutputWithID
+	ChainOutput *isc.AliasOutputWithID
 	Timestamp   time.Time
 }

@@ -45,7 +45,6 @@ export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.Che
     ctx.require(f.params.caller().value().equals(ctx.caller()), "fail: caller");
     ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
-    ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
 
 export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
@@ -58,10 +57,10 @@ export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext
     ctx.log("doing nothing...");
 }
 
-export function funcEstimateMinDust(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinDustContext): void {
-    const provided = ctx.allowance().iotas();
-    let dummy = sc.ScFuncs.estimateMinDust(ctx);
-    const required = ctx.estimateDust(dummy.func);
+export function funcEstimateMinStorageDeposit(ctx: wasmlib.ScFuncContext, f: sc.EstimateMinStorageDepositContext): void {
+    const provided = ctx.allowance().baseTokens();
+    let dummy = sc.ScFuncs.estimateMinStorageDeposit(ctx);
+    const required = ctx.estimateStorageDeposit(dummy.func);
     ctx.require(provided >= required, "not enough funds");
 }
 
@@ -152,20 +151,20 @@ export function funcSpawn(ctx: wasmlib.ScFuncContext, f: sc.SpawnContext): void 
 }
 
 export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsContext): void {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().baseTokens();
     const address = ctx.caller().address();
-    let iotasToTransfer: u64 = 1_000_000;
-    const transfer = wasmlib.ScTransfer.iotas(iotasToTransfer);
-    for (; iotas >= iotasToTransfer; iotas -= iotasToTransfer) {
+    let tokensToTransfer: u64 = 1_000_000;
+    const transfer = wasmlib.ScTransfer.baseTokens(tokensToTransfer);
+    for (; tokens >= tokensToTransfer; tokens -= tokensToTransfer) {
         ctx.transferAllowed(ctx.accountID(), transfer, false);
         ctx.send(address, transfer);
     }
 }
 
 export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsNativeTokensContext): void {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().baseTokens();
     const address = ctx.caller().address();
-    let transfer = wasmlib.ScTransfer.iotas(iotas);
+    let transfer = wasmlib.ScTransfer.baseTokens(tokens);
     ctx.transferAllowed(ctx.accountID(), transfer, false);
     const tokenIDs = ctx.allowance().tokenIDs();
     const one = wasmtypes.ScBigInt.fromUint64(1);
@@ -226,7 +225,6 @@ export function viewCheckContextFromViewEP(ctx: wasmlib.ScViewContext, f: sc.Che
     ctx.require(f.params.agentID().value().equals(ctx.accountID()), "fail: agentID");
     ctx.require(f.params.chainID().value().equals(ctx.currentChainID()), "fail: chainID");
     ctx.require(f.params.chainOwnerID().value().equals(ctx.chainOwnerID()), "fail: chainOwnerID");
-    ctx.require(f.params.contractCreator().value().equals(ctx.contractCreator()), "fail: contractCreator");
 }
 
 function fibonacci(n: u64): u64 {

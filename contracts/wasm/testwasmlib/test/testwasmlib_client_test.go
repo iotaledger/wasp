@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
@@ -71,14 +71,24 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 func TestClientEvents(t *testing.T) {
 	svc := setupClient(t)
 	events := &testwasmlib.TestWasmLibEventHandlers{}
+	name := ""
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-		fmt.Printf("Name is %s\n", e.Name)
+		name = e.Name
 	})
 	svc.Register(events)
 
+	testClientEventsParam(t, svc, "Lala", &name)
+	testClientEventsParam(t, svc, "Trala", &name)
+	testClientEventsParam(t, svc, "Bar|Bar", &name)
+	testClientEventsParam(t, svc, "Bar~|~Bar", &name)
+	testClientEventsParam(t, svc, "Tilde~Tilde", &name)
+	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", &name)
+}
+
+func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, param string, name *string) {
 	// get new triggerEvent interface, pass params, and post the request
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Lala")
+	f.Params.Name().SetValue(param)
 	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
@@ -86,15 +96,11 @@ func TestClientEvents(t *testing.T) {
 	err := svc.WaitRequest()
 	require.NoError(t, err)
 
-	// get new triggerEvent interface, pass params, and post the request
-	f = testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue("Trala")
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-
-	err = svc.WaitRequest()
+	// make sure we wait for the event to show up
+	err = svc.WaitEvent()
 	require.NoError(t, err)
+
+	require.EqualValues(t, param, *name)
 }
 
 func TestClientRandom(t *testing.T) {

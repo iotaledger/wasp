@@ -10,12 +10,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
@@ -46,7 +45,7 @@ func TestSpamOnledger(t *testing.T) {
 			continue
 		}
 		go func() {
-			chainClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
+			chainClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
 			retries := 0
 			for i := 0; i < numRequestsPerAccount; i++ {
 				tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Name)
@@ -107,15 +106,9 @@ func TestSpamOffLedger(t *testing.T) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	accountsClient := env.Chain.SCClient(accounts.Contract.Hname(), keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTokensIotas(utxodb.FundsFromFaucetAmount),
-	})
-	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
+	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
 
-	myClient := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), keyPair)
+	myClient := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), keyPair)
 
 	durationsMutex := sync.Mutex{}
 	processingDurationsSum := uint64(0)
@@ -189,7 +182,7 @@ func TestSpamCallViewWasm(t *testing.T) {
 
 	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	client := env.Chain.SCClient(iscp.Hn(nativeIncCounterSCName), wallet)
+	client := env.Chain.SCClient(isc.Hn(nativeIncCounterSCName), wallet)
 	{
 		// increment counter once
 		tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)

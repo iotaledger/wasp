@@ -2,4 +2,4 @@
 
 Sample smart contract
 
-    ISCP version of the ubiquitous "Hello, world!" program.
+    ISC version of the ubiquitous "Hello, world!" program.

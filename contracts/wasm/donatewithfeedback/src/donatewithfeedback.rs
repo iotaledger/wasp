@@ -7,8 +7,8 @@ use crate::*;
 use crate::structs::*;
 
 pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
-    let amount = ctx.allowance().iotas();
-    let transfer = ScTransfer::iotas(amount);
+    let amount = ctx.allowance().base_tokens();
+    let transfer = ScTransfer::base_tokens(amount);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     let mut donation = Donation {
         amount: amount,
@@ -32,7 +32,7 @@ pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
 }
 
 pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
-    let balance = ctx.balances().iotas();
+    let balance = ctx.balances().base_tokens();
     let mut amount = f.params.amount().value();
     if amount == 0 || amount > balance {
         amount = balance;
@@ -42,8 +42,8 @@ pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
         return;
     }
 
-    let sc_creator = ctx.contract_creator().address();
-    ctx.send(&sc_creator, &ScTransfer::iotas(amount));
+    let sc_owner = f.state.owner().value().address();
+    ctx.send(&sc_owner, &ScTransfer::base_tokens(amount));
 }
 
 pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {
@@ -60,4 +60,12 @@ pub fn view_donation_info(_ctx: &ScViewContext, f: &DonationInfoContext) {
     f.results.max_donation().set_value(f.state.max_donation().value());
     f.results.total_donation().set_value(f.state.total_donation().value());
     f.results.count().set_value(f.state.log().length());
+}
+
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
+    }
+    f.state.owner().set_value(&ctx.request_sender());
 }

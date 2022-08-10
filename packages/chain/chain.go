@@ -11,12 +11,12 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -28,7 +28,7 @@ import (
 )
 
 type ChainCore interface {
-	ID() *iscp.ChainID
+	ID() *isc.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput)
 	TriggerChainTransition(*ChainTransitionEventData)
@@ -39,7 +39,7 @@ type ChainCore interface {
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
 	EnqueueDismissChain(reason string)
-	EnqueueAliasOutput(*iscp.AliasOutputWithID)
+	EnqueueAliasOutput(*isc.AliasOutputWithID)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -50,9 +50,9 @@ type ChainEntry interface {
 
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
-	GetRequestReceipt(id iscp.RequestID) (*blocklog.RequestReceipt, error)
-	TranslateError(e *iscp.UnresolvedVMError) (*iscp.VMError, error)
-	AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure)
+	GetRequestReceipt(id isc.RequestID) (*blocklog.RequestReceipt, error)
+	ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error)
+	AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure)
 	DetachFromRequestProcessed(attachID *events.Closure)
 	EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn)
 }
@@ -64,8 +64,8 @@ type ChainMetrics interface {
 }
 
 type ChainRunner interface {
-	GetAnchorOutput() *iscp.AliasOutputWithID
-	GetTimeData() iscp.TimeData
+	GetAnchorOutput() *isc.AliasOutputWithID
+	GetTimeData() time.Time
 	GetDB() kvstore.KVStore
 }
 
@@ -94,23 +94,24 @@ type Committee interface {
 }
 
 type (
-	NodeConnectionAliasOutputHandlerFun     func(*iscp.AliasOutputWithID)
-	NodeConnectionOnLedgerRequestHandlerFun func(iscp.OnLedgerRequest)
+	NodeConnectionAliasOutputHandlerFun     func(*isc.AliasOutputWithID)
+	NodeConnectionOnLedgerRequestHandlerFun func(isc.OnLedgerRequest)
 	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
 	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
 )
 
 type NodeConnection interface {
-	RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
-	UnregisterChain(chainID *iscp.ChainID)
+	RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	UnregisterChain(chainID *isc.ChainID)
 
-	PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error
-	PullLatestOutput(chainID *iscp.ChainID)
-	PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID)
-	PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput)
+	PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error
+	PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error
+	PullLatestOutput(chainID *isc.ChainID)
+	PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID)
+	PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput)
 
-	AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error
+	AttachTxInclusionStateEvents(chainID *isc.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
+	DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
@@ -130,7 +131,8 @@ type ChainNodeConnection interface {
 	DetachFromMilestones()
 	Close()
 
-	PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error
+	PublishGovernanceTransaction(tx *iotago.Transaction) error
 	PullLatestOutput()
 	PullTxInclusionState(txid iotago.TransactionID)
 	PullStateOutputByID(*iotago.UTXOInput)
@@ -142,7 +144,7 @@ type StateManager interface {
 	Ready() *ready.Ready
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
-	EnqueueAliasOutput(*iscp.AliasOutputWithID)
+	EnqueueAliasOutput(*isc.AliasOutputWithID)
 	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
@@ -151,7 +153,7 @@ type StateManager interface {
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(state.VirtualStateAccess, *iscp.AliasOutputWithID, time.Time)
+	EnqueueStateTransitionMsg(bool, state.VirtualStateAccess, *isc.AliasOutputWithID, time.Time)
 	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
 	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
@@ -162,7 +164,7 @@ type Consensus interface {
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
 	GetWorkflowStatus() ConsensusWorkflowStatus
-	ShouldReceiveMissingRequest(req iscp.Request) bool
+	ShouldReceiveMissingRequest(req isc.Request) bool
 	GetPipeMetrics() ConsensusPipeMetrics
 }
 
@@ -182,7 +184,7 @@ type SyncInfo struct {
 	SyncedBlockIndex      uint32
 	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
-	StateOutput           *iscp.AliasOutputWithID
+	StateOutput           *isc.AliasOutputWithID
 	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
@@ -191,7 +193,7 @@ type ConsensusInfo struct {
 	StateIndex uint32
 	Mempool    mempool.MempoolInfo
 	TimerTick  int
-	TimeData   iscp.TimeData
+	TimeData   time.Time
 }
 
 type ConsensusWorkflowStatus interface {
@@ -226,7 +228,7 @@ type ConsensusPipeMetrics interface {
 }
 
 type ReadyListRecord struct {
-	Request iscp.Calldata
+	Request isc.Calldata
 	Seen    map[uint16]bool
 }
 
@@ -246,8 +248,9 @@ type PeerStatus struct {
 }
 
 type ChainTransitionEventData struct {
+	IsGovernance    bool
 	VirtualState    state.VirtualStateAccess
-	ChainOutput     *iscp.AliasOutputWithID
+	ChainOutput     *isc.AliasOutputWithID
 	OutputTimestamp time.Time
 }
 
@@ -272,5 +275,4 @@ const (
 	PeerMsgTypeMissingRequestIDs = iota
 	PeerMsgTypeMissingRequest
 	PeerMsgTypeOffLedgerRequest
-	PeerMsgTypeRequestAck
 )

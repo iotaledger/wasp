@@ -8,7 +8,7 @@ import (
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
@@ -110,7 +110,7 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 	return nil
 }
 
-func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
+func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract isc.Hname) error {
 	text := fmt.Sprintf("%s: %s", contract.String(), msg)
 	if err := collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
 		return xerrors.Errorf("SaveRequestReceipt: %w", err)
@@ -128,7 +128,7 @@ func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract is
 	return nil
 }
 
-func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) (RequestLookupKeyList, error) {
+func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *isc.RequestID) (RequestLookupKeyList, error) {
 	lookupTable := collections.NewMapReadOnly(partition, prefixRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
@@ -148,7 +148,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 }
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
-func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestReceipt, error) {
+func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *isc.RequestID) (*RequestReceipt, error) {
 	records := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
@@ -169,7 +169,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 }
 
 // isRequestProcessedInternal does quick lookup to check if it wasn't seen yet
-func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *iscp.RequestID) (bool, error) {
+func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *isc.RequestID) (bool, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return false, err
@@ -178,7 +178,7 @@ func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *iscp.RequestI
 	return record != nil, err
 }
 
-func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID) ([]string, error) {
+func getRequestEventsInternal(partition kv.KVStoreReader, reqID *isc.RequestID) ([]string, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	}
 }
 
-func getSmartContractEventsInternal(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
+func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hname, fromBlock, toBlock uint32) ([]string, error) {
 	scLut := collections.NewMapReadOnly(partition, prefixSmartContractEventsLookup)
 	ret := []string{}
 	entries, err := scLut.GetAt(contract.Bytes())
@@ -340,7 +340,7 @@ func GetUTXOInput(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index
-func getBlockIndexParams(ctx iscp.SandboxView) uint32 {
+func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	ret := ctx.Params().MustGetUint32(ParamBlockIndex, math.MaxUint32)
 	if ret != math.MaxUint32 {
 		return ret

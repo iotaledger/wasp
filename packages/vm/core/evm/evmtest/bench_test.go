@@ -6,26 +6,26 @@ package evmtest
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
-func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
+func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 	// setup: deploy the EVM chain
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	s := solo.New(b, &solo.InitOptions{AutoAdjustDustDeposit: true, Log: log})
+	s := solo.New(b, &solo.InitOptions{AutoAdjustStorageDeposit: true, Log: log})
 	env := initEVMWithSolo(b, s)
 	// setup: deploy the `storage` EVM contract
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	storage := env.deployStorageContract(ethKey, 42)
+	storage := env.deployStorageContract(ethKey)
 
 	gasLimit := uint64(100000)
 
 	// setup: prepare N requests that call FuncSendTransaction with an EVM tx
 	// that calls `storage.store()`
-	reqs := make([]iscp.Request, b.N)
+	reqs := make([]isc.Request, b.N)
 	for i := 0; i < b.N; i++ {
 		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 		tx := storage.buildEthTx([]ethCallOptions{{
@@ -33,7 +33,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []iscp.Request) {
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))
 		var err error
-		reqs[i], err = iscp.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx)
+		reqs[i], err = isc.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx)
 		require.NoError(b, err)
 	}
 

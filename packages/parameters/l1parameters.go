@@ -24,13 +24,22 @@ func init() {
 type L1Params struct {
 	MaxTransactionSize int
 	Protocol           *iotago.ProtocolParameters
+	BaseToken          *BaseToken
+}
+
+type BaseToken struct {
+	Name            string
+	TickerSymbol    string
+	Unit            string
+	Subunit         string
+	Decimals        uint32
+	UseMetricPrefix bool
 }
 
 func InitL1ForTesting() {
 	L1 = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxTransactionSize: 32000,
-		// https://github.com/muXxer/protocol-rfcs/blob/master/text/0032-dust-protection/0032-dust-protection.md
 		Protocol: &iotago.ProtocolParameters{
 			Version:     tpkg.TestProtoParas.Version,
 			NetworkName: tpkg.TestProtoParas.NetworkName,
@@ -42,6 +51,14 @@ func InitL1ForTesting() {
 				VBFactorKey:  1,
 			},
 			TokenSupply: tpkg.TestProtoParas.TokenSupply,
+		},
+		BaseToken: &BaseToken{
+			Name:            "Iota",
+			TickerSymbol:    "MIOTA",
+			Unit:            "MIOTA",
+			Subunit:         "IOTA",
+			Decimals:        6,
+			UseMetricPrefix: false,
 		},
 	}
 }

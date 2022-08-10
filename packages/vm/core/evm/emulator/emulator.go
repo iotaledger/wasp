@@ -26,6 +26,7 @@ type EVMEmulator struct {
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
 	vmConfig    vm.Config
+	getBalance  BalanceFunc
 }
 
 func makeConfig(chainID int) *params.ChainConfig {
@@ -51,8 +52,8 @@ const (
 	keyBlockchainDB = "b"
 )
 
-func newStateDB(store kv.KVStore) *StateDB {
-	return NewStateDB(subrealm.New(store, keyStateDB))
+func newStateDB(store kv.KVStore, getBalance BalanceFunc) *StateDB {
+	return NewStateDB(subrealm.New(store, keyStateDB), getBalance)
 }
 
 func newBlockchainDB(store kv.KVStore) *BlockchainDB {
@@ -60,14 +61,14 @@ func newBlockchainDB(store kv.KVStore) *BlockchainDB {
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
-func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, timestamp uint64, alloc core.GenesisAlloc) {
+func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, timestamp uint64, alloc core.GenesisAlloc, getBalance BalanceFunc) {
 	bdb := newBlockchainDB(store)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
 	bdb.Init(chainID, blockKeepAmount, gasLimit, timestamp)
 
-	statedb := newStateDB(store)
+	statedb := newStateDB(store, getBalance)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
@@ -83,7 +84,7 @@ func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, tim
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContract) *EVMEmulator {
+func NewEVMEmulator(store kv.KVStore, timestamp uint64, magicContract vm.ISCContract, getBalance BalanceFunc) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
@@ -93,12 +94,13 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, iscContract vm.ISCContra
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		vmConfig:    vm.Config{ISCContract: iscContract},
+		vmConfig:    vm.Config{ISCContract: magicContract},
+		getBalance:  getBalance,
 	}
 }
 
 func (e *EVMEmulator) StateDB() *StateDB {
-	return newStateDB(e.kv)
+	return newStateDB(e.kv, e.getBalance)
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {

@@ -33,5 +33,4 @@ goshimmer.log
 /*.sh
 
 *.trie
-*.bin
 *.snapshot

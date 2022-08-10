@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -15,7 +15,7 @@ func testTypesFull(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	cID := setupTestSandboxSC(t, ch, nil, w)
 
-	ch.MustDepositIotasToL2(10_000, nil)
+	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
 		"address", ch.ChainID.AsAddress(),
@@ -23,8 +23,8 @@ func testTypesFull(t *testing.T, w bool) {
 		"chainID", ch.ChainID,
 		"contractID", cID,
 		"Hash", hashing.HashStrings("Hash"),
-		"Hname", iscp.Hn("Hname"),
-		"Hname-0", iscp.Hname(0),
+		"Hname", isc.Hn("Hname"),
+		"Hname-0", isc.Hname(0),
 		"int64", 42,
 		"int64-0", 0,
 		"string", "string",
@@ -45,8 +45,8 @@ func testTypesView(t *testing.T, w bool) {
 		"int64", 42,
 		"int64-0", 0,
 		"Hash", hashing.HashStrings("Hash"),
-		"Hname", iscp.Hn("Hname"),
-		"Hname-0", iscp.Hname(0),
+		"Hname", isc.Hn("Hname"),
+		"Hname-0", isc.Hname(0),
 		"contractID", cID,
 		"chainID", chain.ChainID,
 		"address", chain.ChainID.AsAddress(),

@@ -64,8 +64,8 @@ func TestGetBlockInfo(t *testing.T) {
 		assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
 		assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
 		assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
-		assert.Equal(t, expectBlockInfo.TotalIotasInL2Accounts, blockinfo.TotalIotasInL2Accounts)
-		assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+		assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
+		assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
 		assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 		assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 	}
@@ -75,8 +75,9 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)
 
-	expectBlockInfo := ctx.Chain.GetLatestBlockInfo()
-	f := coreblocklog.ScFuncs.GetLatestBlockInfo(ctx)
+	expectBlockInfo, err := ctx.Chain.GetBlockInfo()
+	require.NoError(t, err)
+	f := coreblocklog.ScFuncs.GetBlockInfo(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
 	index := f.Results.BlockIndex().Value()
@@ -92,8 +93,8 @@ func TestGetLatestBlockInfo(t *testing.T) {
 	assert.Equal(t, expectBlockInfo.PreviousL1Commitment, blockinfo.PreviousL1Commitment)
 	assert.Equal(t, expectBlockInfo.L1Commitment, blockinfo.L1Commitment)
 	assert.Equal(t, expectBlockInfo.AnchorTransactionID, blockinfo.AnchorTransactionID)
-	assert.Equal(t, expectBlockInfo.TotalIotasInL2Accounts, blockinfo.TotalIotasInL2Accounts)
-	assert.Equal(t, expectBlockInfo.TotalDustDeposit, blockinfo.TotalDustDeposit)
+	assert.Equal(t, expectBlockInfo.TotalBaseTokensInL2Accounts, blockinfo.TotalBaseTokensInL2Accounts)
+	assert.Equal(t, expectBlockInfo.TotalStorageDeposit, blockinfo.TotalStorageDeposit)
 	assert.Equal(t, expectBlockInfo.GasBurned, blockinfo.GasBurned)
 	assert.Equal(t, expectBlockInfo.GasFeeCharged, blockinfo.GasFeeCharged)
 }
@@ -175,7 +176,7 @@ func TestIsRequestProcessed(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
 
-	notExistReqID := wasmtypes.RequestIDFromString("JPP5jbApWDwvCFBNrVtqSqEPqZRPe9bYPWCKQ8o2HmfiUo")
+	notExistReqID := wasmtypes.RequestIDFromString("0-cc025a91fe7f071a7a53a1db5257d161d666d4aa1606422a3b3553c2b8b904e7")
 	f.Params.RequestID().SetValue(notExistReqID)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)

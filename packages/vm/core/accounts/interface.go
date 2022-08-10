@@ -1,7 +1,7 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"golang.org/x/xerrors"
 )
 
@@ -10,6 +10,8 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain accoun
 var (
 	// Views
 	ViewBalance                  = coreutil.ViewFunc("balance")
+	ViewBalanceBaseToken         = coreutil.ViewFunc("balanceBaseToken")
+	ViewBalanceNativeToken       = coreutil.ViewFunc("balanceNativeToken")
 	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
 	ViewAccounts                 = coreutil.ViewFunc("accounts")
 	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
@@ -31,8 +33,8 @@ var (
 )
 
 const (
-	// MinimumIotasOnCommonAccount can't harvest the minimum
-	MinimumIotasOnCommonAccount = 3000
+	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
+	MinimumBaseTokensOnCommonAccount = 3000
 
 	// prefix for a name of a particular account
 	prefixAccount = string(byte(iota) + 'A')
@@ -53,21 +55,23 @@ const (
 	// prefixNFTData Records a map with all NFT data (issuer/metadata)
 	prefixNFTData
 	//
-	stateVarMinimumDustDepositAssumptionsBin
+	stateVarMinimumStorageDepositAssumptionsBin
 
-	ParamAgentID                   = "a"
-	ParamAccountNonce              = "n"
-	ParamForceMinimumIotas         = "f"
-	ParamFoundrySN                 = "s"
-	ParamFoundryOutputBin          = "b"
-	ParamTokenScheme               = "t"
-	ParamSupplyDeltaAbs            = "d"
-	ParamDestroyTokens             = "y"
-	ParamDustDepositAssumptionsBin = "u"
-	ParamForceOpenAccount          = "c"
-	ParamNFTIDs                    = "i"
-	ParamNFTID                     = "z"
-	ParamNFTData                   = "e"
+	ParamAgentID                      = "a"
+	ParamAccountNonce                 = "n"
+	ParamForceMinimumBaseTokens       = "f"
+	ParamFoundrySN                    = "s"
+	ParamFoundryOutputBin             = "b"
+	ParamTokenScheme                  = "t"
+	ParamSupplyDeltaAbs               = "d"
+	ParamDestroyTokens                = "y"
+	ParamStorageDepositAssumptionsBin = "u"
+	ParamForceOpenAccount             = "c"
+	ParamNFTIDs                       = "i"
+	ParamNFTID                        = "z"
+	ParamNFTData                      = "e"
+	ParamBalance                      = "B"
+	ParamNativeTokenID                = "N"
 )
 
-var ErrDustDepositAssumptionsWrong = xerrors.New("'dust deposit assumptions' parameter not specified or wrong")
+var ErrStorageDepositAssumptionsWrong = xerrors.New("'storage deposit assumptions' parameter not specified or wrong")

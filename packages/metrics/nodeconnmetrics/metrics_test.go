@@ -6,22 +6,22 @@ package nodeconnmetrics
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRegister(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	chainID1 := iscp.RandomChainID()
-	chainID2 := iscp.RandomChainID()
-	chainID3 := iscp.RandomChainID()
+	chainID1 := isc.RandomChainID()
+	chainID2 := isc.RandomChainID()
+	chainID3 := isc.RandomChainID()
 	ncm := New(log)
 
-	require.Equal(t, []*iscp.ChainID{}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
-	require.Equal(t, []*iscp.ChainID{chainID1}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID1}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID2)
 	registered := ncm.GetRegistered()
@@ -30,7 +30,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID2)
 
 	ncm.SetUnregistered(chainID1)
-	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
@@ -39,7 +39,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID3)
 
 	ncm.SetUnregistered(chainID3)
-	require.Equal(t, []*iscp.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
 	registered = ncm.GetRegistered()
@@ -58,8 +58,8 @@ func TestRegister(t *testing.T) {
 func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	ncm := New(log)
-	cncm1 := ncm.NewMessagesMetrics(iscp.RandomChainID())
-	cncm2 := ncm.NewMessagesMetrics(iscp.RandomChainID())
+	cncm1 := ncm.NewMessagesMetrics(isc.RandomChainID())
+	cncm2 := ncm.NewMessagesMetrics(isc.RandomChainID())
 	ncm.RegisterMetrics()
 
 	// IN State output
@@ -107,14 +107,23 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 1, "InOnLedgerRequest2", cncm2.GetInOnLedgerRequest())
 	checkMetricsValues(t, 3, "InOnLedgerRequest3", ncm.GetInOnLedgerRequest())
 
-	// OUT Publish transaction
-	cncm1.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction1")
-	cncm2.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction2")
-	cncm2.GetOutPublishTransaction().CountLastMessage("OutPublishTransaction3")
+	// OUT Publish state transaction
+	cncm1.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction1")
+	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction2")
+	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction3")
 
-	checkMetricsValues(t, 1, "OutPublishTransaction1", cncm1.GetOutPublishTransaction())
-	checkMetricsValues(t, 2, "OutPublishTransaction3", cncm2.GetOutPublishTransaction())
-	checkMetricsValues(t, 3, "OutPublishTransaction3", ncm.GetOutPublishTransaction())
+	checkMetricsValues(t, 1, "OutPublishStateTransaction1", cncm1.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 2, "OutPublishStateTransaction3", cncm2.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishStateTransaction())
+
+	// OUT Publish governance transaction
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction1")
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction2")
+	cncm1.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction3")
+
+	checkMetricsValues(t, 1, "OutPublishStateTransaction3", cncm1.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 2, "OutPublishStateTransaction2", cncm2.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishGovernanceTransaction())
 
 	// OUT Pull latest output
 	ncm.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput1")

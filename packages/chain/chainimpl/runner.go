@@ -1,18 +1,20 @@
 package chainimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func (ch *chainObj) GetAnchorOutput() *iscp.AliasOutputWithID {
-	return ch.stateMgr.GetStatusSnapshot().StateOutput
+func (c *chainObj) GetAnchorOutput() *isc.AliasOutputWithID {
+	return c.stateMgr.GetStatusSnapshot().StateOutput
 }
 
-func (ch *chainObj) GetTimeData() iscp.TimeData {
-	return ch.consensus.GetStatusSnapshot().TimeData
+func (c *chainObj) GetTimeData() time.Time {
+	return c.consensus.GetStatusSnapshot().TimeData
 }
 
-func (ch *chainObj) GetDB() kvstore.KVStore {
-	return ch.db
+func (c *chainObj) GetDB() kvstore.KVStore {
+	return c.db
 }

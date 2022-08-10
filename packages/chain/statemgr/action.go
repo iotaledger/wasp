@@ -8,8 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -30,7 +29,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	}
 	if sm.notifiedAnchorOutputID == sm.stateOutput.ID() {
 		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v at index #%d",
-			iscp.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
+			isc.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
 		return
 	}
 	if !sm.isSynced() {
@@ -41,16 +40,10 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	//TODO implement
-	/*gu := ""
-	if sm.stateOutput.GetIsGovernanceUpdated() {
-		gu = " (rotation) "
-	}
-	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
-		gu, stateOutputIndex, iscp.OID(stateOutputID))*/
 	sm.log.Debugf("notifyStateTransition: state IS SYNCED to index %d and is approved by output %v",
-		stateOutputIndex, iscp.OID(stateOutputID))
+		stateOutputIndex, isc.OID(stateOutputID))
 	sm.chain.TriggerChainTransition(&chain.ChainTransitionEventData{
+		IsGovernance:    false,
 		VirtualState:    sm.solidState.Copy(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
@@ -66,7 +59,7 @@ func (sm *stateManager) isSynced() bool {
 		sm.log.Errorf("isSynced: cannot obtain state commitment from state output: %v", err)
 		return false
 	}
-	return trie.EqualCommitments(trie.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
+	return state.EqualCommitments(state.RootCommitment(sm.solidState.TrieNodeStore()), l1Commitment.StateCommitment)
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -90,8 +83,8 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"commitment", trie.RootCommitment(nextState.TrieNodeStore()),
-		"output", iscp.OID(approvingOutputID),
+		"commitment", state.RootCommitment(nextState.TrieNodeStore()),
+		"output", isc.OID(approvingOutputID),
 	)
 
 	block, err := nextState.ExtractBlock()
@@ -141,7 +134,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.syncingBlocks.addBlockCandidate(block, nil)
 	if !sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", iscp.OID(block.ApprovingOutputID()))
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(block.ApprovingOutputID()))
 		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
 	}
 	return true
@@ -158,9 +151,9 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	outputStateCommitment := outputStateL1Commitment.StateCommitment
-	solidStateCommitment := trie.RootCommitment(sm.solidState.TrieNodeStore())
+	solidStateCommitment := state.RootCommitment(sm.solidState.TrieNodeStore())
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateCommitment %s, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputCommitment %s, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), solidStateCommitment, sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), isc.OID(sm.stateOutput.ID()), outputStateCommitment, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
@@ -170,4 +163,5 @@ func (sm *stateManager) storeSyncingData() {
 		StateOutputCommitment: outputStateCommitment,
 		StateOutputTimestamp:  sm.stateOutputTimestamp,
 	})
+	sm.log.Debugf("storeSyncingData: values stored")
 }

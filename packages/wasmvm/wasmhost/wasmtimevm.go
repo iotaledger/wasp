@@ -6,7 +6,7 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/bytecodealliance/wasmtime-go"
+	wasmtime "github.com/bytecodealliance/wasmtime-go"
 )
 
 type WasmTimeVM struct {

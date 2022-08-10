@@ -6,7 +6,7 @@ package evm
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
@@ -36,6 +36,10 @@ var (
 	// evm SC management
 	FuncSetGasRatio = coreutil.Func(evmnames.FuncSetGasRatio)
 	FuncGetGasRatio = coreutil.ViewFunc(evmnames.FuncGetGasRatio)
+
+	// block context
+	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
+	FuncCloseBlockContext = coreutil.Func(evmnames.FuncCloseBlockContext)
 )
 
 const (
@@ -67,5 +71,5 @@ const (
 	BlockKeepAmountDefault = BlockKeepAll
 )
 
-// Gas is charged in iotas, not ETH
+// Gas is charged in isc VM (L1 currencies), not ETH
 var GasPrice = big.NewInt(0)

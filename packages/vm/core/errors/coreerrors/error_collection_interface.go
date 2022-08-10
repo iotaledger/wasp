@@ -1,10 +1,10 @@
 package coreerrors
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type ErrorCollection interface {
-	Get(errorID uint16) (*iscp.VMErrorTemplate, error)
-	Register(messageFormat string) (*iscp.VMErrorTemplate, error)
+	Get(errorID uint16) (*isc.VMErrorTemplate, error)
+	Register(messageFormat string) (*isc.VMErrorTemplate, error)
 }

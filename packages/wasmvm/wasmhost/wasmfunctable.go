@@ -4,7 +4,7 @@
 package wasmhost
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type WasmFuncTable struct {
@@ -35,7 +35,7 @@ func (t *WasmFuncTable) SetExport(index int32, functionName string) {
 		return
 	}
 
-	hashedName := uint32(iscp.Hn(functionName))
+	hashedName := uint32(isc.Hn(functionName))
 	_, ok = t.codeToFunc[hashedName]
 	if ok {
 		panic("SetExport: duplicate hashed name")

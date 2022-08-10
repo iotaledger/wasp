@@ -14,10 +14,11 @@ type NodeConnectionMessageMetrics struct {
 }
 
 type NodeConnectionMessagesMetrics struct {
-	OutPublishTransaction   *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PublishTransaction messages)"`
-	OutPullLatestOutput     *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullLatestOutput messages)"`
-	OutPullTxInclusionState *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTxInclusionState messages)"`
-	OutPullOutputByID       *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullOutputByID messages)"`
+	OutPublishStateTransaction      *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PublishStateTransaction messages)"`
+	OutPublishGovernanceTransaction *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PublishGovernanceTransaction messages)"`
+	OutPullLatestOutput             *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullLatestOutput messages)"`
+	OutPullTxInclusionState         *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullTxInclusionState messages)"`
+	OutPullOutputByID               *NodeConnectionMessageMetrics `swagger:"desc(Stats of sent out PullOutputByID messages)"`
 
 	InStateOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received State output messages)"`
 	InAliasOutput      *NodeConnectionMessageMetrics `swagger:"desc(Stats of received AliasOutput messages)"`
@@ -48,10 +49,11 @@ func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *No
 
 func NewNodeConnectionMessagesMetrics(metrics nodeconnmetrics.NodeConnectionMessagesMetrics) *NodeConnectionMessagesMetrics {
 	return &NodeConnectionMessagesMetrics{
-		OutPublishTransaction:   NewNodeConnectionMessageMetrics(metrics.GetOutPublishTransaction()),
-		OutPullLatestOutput:     NewNodeConnectionMessageMetrics(metrics.GetOutPullLatestOutput()),
-		OutPullTxInclusionState: NewNodeConnectionMessageMetrics(metrics.GetOutPullTxInclusionState()),
-		OutPullOutputByID:       NewNodeConnectionMessageMetrics(metrics.GetOutPullOutputByID()),
+		OutPublishStateTransaction:      NewNodeConnectionMessageMetrics(metrics.GetOutPublishStateTransaction()),
+		OutPublishGovernanceTransaction: NewNodeConnectionMessageMetrics(metrics.GetOutPublishGovernanceTransaction()),
+		OutPullLatestOutput:             NewNodeConnectionMessageMetrics(metrics.GetOutPullLatestOutput()),
+		OutPullTxInclusionState:         NewNodeConnectionMessageMetrics(metrics.GetOutPullTxInclusionState()),
+		OutPullOutputByID:               NewNodeConnectionMessageMetrics(metrics.GetOutPullOutputByID()),
 
 		InStateOutput:      NewNodeConnectionMessageMetrics(metrics.GetInStateOutput()),
 		InAliasOutput:      NewNodeConnectionMessageMetrics(metrics.GetInAliasOutput()),

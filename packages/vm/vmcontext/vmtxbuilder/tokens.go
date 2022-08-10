@@ -15,20 +15,20 @@ import (
 
 // nativeTokenBalance represents on-chain account of the specific native token
 type nativeTokenBalance struct {
-	tokenID            iotago.NativeTokenID
-	input              iotago.UTXOInput // if in != nil
-	dustDepositCharged bool
-	in                 *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
-	out                *iotago.BasicOutput // current balance of the token_id on the chain
+	tokenID               iotago.NativeTokenID
+	input                 iotago.UTXOInput // if in != nil
+	storageDepositCharged bool
+	in                    *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
+	out                   *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
 func (n *nativeTokenBalance) clone() *nativeTokenBalance {
 	return &nativeTokenBalance{
-		tokenID:            n.tokenID,
-		input:              n.input,
-		dustDepositCharged: n.dustDepositCharged,
-		in:                 cloneInternalBasicOutputOrNil(n.in),
-		out:                cloneInternalBasicOutputOrNil(n.out),
+		tokenID:               n.tokenID,
+		input:                 n.input,
+		storageDepositCharged: n.storageDepositCharged,
+		in:                    cloneInternalBasicOutputOrNil(n.in),
+		out:                   cloneInternalBasicOutputOrNil(n.out),
 	}
 }
 
@@ -101,7 +101,7 @@ func cloneInternalBasicOutputOrNil(o *iotago.BasicOutput) *iotago.BasicOutput {
 
 func (txb *AnchorTransactionBuilder) newInternalTokenOutput(aliasID iotago.AliasID, nativeTokenID iotago.NativeTokenID) *iotago.BasicOutput {
 	return &iotago.BasicOutput{
-		Amount: txb.dustDepositAssumption.NativeTokenOutput,
+		Amount: txb.storageDepositAssumption.NativeTokenOutput,
 		NativeTokens: iotago.NativeTokens{{
 			ID:     nativeTokenID,
 			Amount: big.NewInt(0),
@@ -154,8 +154,8 @@ func (txb *AnchorTransactionBuilder) NativeTokenOutputsByTokenIDs(ids []iotago.N
 
 // addNativeTokenBalanceDelta adds delta to the token balance. Use negative delta to subtract.
 // The call may result in adding new token ID to the ledger or disappearing one
-// This impacts dust amount locked in the internal UTXOs which keep respective balances
-// Returns delta of required dust deposit
+// This impacts storage deposit amount locked in the internal UTXOs which keep respective balances
+// Returns delta of required storage deposit
 func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.NativeTokenID, delta *big.Int) int64 {
 	if util.IsZeroBigInt(delta) {
 		return 0
@@ -173,21 +173,21 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 	switch {
 	case nt.identicalInOut():
 		return 0
-	case nt.dustDepositCharged && !nt.producesOutput():
-		// this is an old token in the on-chain ledger. Now it disappears and dust deposit
+	case nt.storageDepositCharged && !nt.producesOutput():
+		// this is an old token in the on-chain ledger. Now it disappears and storage deposit
 		// is released and delta of anchor is positive
-		nt.dustDepositCharged = false
-		txb.addDeltaIotasToTotal(txb.dustDepositAssumption.NativeTokenOutput)
-		return int64(txb.dustDepositAssumption.NativeTokenOutput)
-	case !nt.dustDepositCharged && nt.producesOutput():
+		nt.storageDepositCharged = false
+		txb.addDeltaBaseTokensToTotal(txb.storageDepositAssumption.NativeTokenOutput)
+		return int64(txb.storageDepositAssumption.NativeTokenOutput)
+	case !nt.storageDepositCharged && nt.producesOutput():
 		// this is a new token in the on-chain ledger
-		// There's a need for additional dust deposit on the respective UTXO, so delta for the anchor is negative
-		nt.dustDepositCharged = true
-		if txb.dustDepositAssumption.NativeTokenOutput > txb.totalIotasInL2Accounts {
-			panic(vmexceptions.ErrNotEnoughFundsForInternalDustDeposit)
+		// There's a need for additional storage deposit on the respective UTXO, so delta for the anchor is negative
+		nt.storageDepositCharged = true
+		if txb.storageDepositAssumption.NativeTokenOutput > txb.totalBaseTokensInL2Accounts {
+			panic(vmexceptions.ErrNotEnoughFundsForInternalStorageDeposit)
 		}
-		txb.subDeltaIotasFromTotal(txb.dustDepositAssumption.NativeTokenOutput)
-		return -int64(txb.dustDepositAssumption.NativeTokenOutput)
+		txb.subDeltaBaseTokensFromTotal(txb.storageDepositAssumption.NativeTokenOutput)
+		return -int64(txb.storageDepositAssumption.NativeTokenOutput)
 	}
 	return 0
 }
@@ -214,10 +214,10 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 		out = cloneInternalBasicOutputOrNil(in)
 	}
 	b := &nativeTokenBalance{
-		tokenID:            out.NativeTokens[0].ID,
-		in:                 in,
-		out:                out,
-		dustDepositCharged: in != nil,
+		tokenID:               out.NativeTokens[0].ID,
+		in:                    in,
+		out:                   out,
+		storageDepositCharged: in != nil,
 	}
 	if input != nil {
 		b.input = *input

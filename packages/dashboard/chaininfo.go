@@ -1,7 +1,7 @@
 package dashboard
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -9,12 +9,13 @@ import (
 
 type ChainInfo struct {
 	*governance.ChainInfo
-	Contracts map[iscp.Hname]*root.ContractRecord
+	Contracts map[isc.Hname]*root.ContractRecord
 }
 
-func (d *Dashboard) fetchChainInfo(chainID *iscp.ChainID) (ret *ChainInfo, err error) {
+func (d *Dashboard) fetchChainInfo(chainID *isc.ChainID) (ret *ChainInfo, err error) {
 	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.ViewGetChainInfo.Name, nil)
 	if err != nil {
+		d.log.Error(err)
 		return
 	}
 

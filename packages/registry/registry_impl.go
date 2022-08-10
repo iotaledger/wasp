@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -83,11 +83,11 @@ func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
 
 // region ChainRecordProvider /////////////////////////////////////////////////////////
 
-func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
+func MakeChainRecordDbKey(chainID *isc.ChainID) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, chainID.Bytes())
 }
 
-func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) GetChainRecordByChainID(chainID *isc.ChainID) (*ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -110,7 +110,7 @@ func (r *Impl) GetChainRecords() ([]*ChainRecord, error) {
 	return ret, err
 }
 
-func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
+func (r *Impl) UpdateChainRecord(chainID *isc.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
 	rec, err := r.GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) boo
 	return rec, nil
 }
 
-func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) ActivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if bd.Active {
 			return false
@@ -137,7 +137,7 @@ func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) 
 	})
 }
 
-func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) DeactivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if !bd.Active {
 			return false
@@ -186,7 +186,7 @@ func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error
 }
 
 func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, iscp.BytesFromAddress(sharedAddress))
+	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, isc.BytesFromAddress(sharedAddress))
 }
 
 // endregion //////////////////////////////////////////////////////////////

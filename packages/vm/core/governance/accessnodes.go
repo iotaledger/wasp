@@ -8,7 +8,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -23,18 +23,18 @@ type NodeOwnershipCertificate []byte
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress iotago.Address) NodeOwnershipCertificate {
 	certData := bytes.Buffer{}
 	certData.Write(nodeKeyPair.GetPublicKey().AsBytes())
-	certData.Write(iscp.BytesFromAddress(ownerAddress))
+	certData.Write(isc.BytesFromAddress(ownerAddress))
 	return nodeKeyPair.GetPrivateKey().Sign(certData.Bytes())
 }
 
 func NewNodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
-	return NodeOwnershipCertificate(data)
+	return data
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) bool {
 	certData := bytes.Buffer{}
 	certData.Write(nodePubKey.AsBytes())
-	certData.Write(iscp.BytesFromAddress(ownerAddress))
+	certData.Write(isc.BytesFromAddress(ownerAddress))
 	return nodePubKey.Verify(certData.Bytes(), c.Bytes())
 }
 
@@ -110,12 +110,12 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	return w.Bytes()
 }
 
-func NewAccessNodeInfoFromAddCandidateNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
-	validatorAddr, _ := iscp.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
+func NewAccessNodeInfoFromAddCandidateNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
+	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
 	ani := AccessNodeInfo{
 		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: iscp.BytesFromAddress(validatorAddr),
+		ValidatorAddr: isc.BytesFromAddress(validatorAddr),
 		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
 		ForCommittee:  ctx.Params().MustGetBool(ParamAccessNodeInfoForCommittee, false),
 		AccessAPI:     ctx.Params().MustGetString(ParamAccessNodeInfoAccessAPI, ""),
@@ -132,12 +132,12 @@ func (a *AccessNodeInfo) ToAddCandidateNodeParams() dict.Dict {
 	return d
 }
 
-func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx iscp.Sandbox) *AccessNodeInfo {
-	validatorAddr, _ := iscp.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
+func NewAccessNodeInfoFromRevokeAccessNodeParams(ctx isc.Sandbox) *AccessNodeInfo {
+	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
 	ctx.Requiref(validatorAddr != nil, "sender must have L1 address")
 	ani := AccessNodeInfo{
 		NodePubKey:    ctx.Params().MustGetBytes(ParamAccessNodeInfoPubKey),
-		ValidatorAddr: iscp.BytesFromAddress(validatorAddr), // Not from params, to have it validated.
+		ValidatorAddr: isc.BytesFromAddress(validatorAddr), // Not from params, to have it validated.
 		Certificate:   ctx.Params().MustGetBytes(ParamAccessNodeInfoCertificate),
 	}
 	return &ani
@@ -155,12 +155,12 @@ func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAdd
 	return a
 }
 
-func (a *AccessNodeInfo) ValidateCertificate(ctx iscp.Sandbox) bool {
+func (a *AccessNodeInfo) ValidateCertificate(ctx isc.Sandbox) bool {
 	nodePubKey, err := cryptolib.NewPublicKeyFromBytes(a.NodePubKey)
 	if err != nil {
 		return false
 	}
-	validatorAddr, _, err := iscp.AddressFromBytes(a.ValidatorAddr)
+	validatorAddr, _, err := isc.AddressFromBytes(a.ValidatorAddr)
 	if err != nil {
 		return false
 	}
@@ -191,7 +191,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		AccessNodes:          make([]*cryptolib.PublicKey, 0),
 	}
 
-	ac := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodeCandidates))
+	ac := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodeCandidates)
 	ac.MustIterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
@@ -201,7 +201,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 		return true
 	})
 
-	an := collections.NewMapReadOnly(d, string(ParamGetChainNodesAccessNodes))
+	an := collections.NewMapReadOnly(d, ParamGetChainNodesAccessNodes)
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
 		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
 		if err != nil {
@@ -252,7 +252,7 @@ func (req *ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) *ChangeAc
 
 func (req *ChangeAccessNodesRequest) AsDict() dict.Dict {
 	d := dict.New()
-	actionsMap := collections.NewMap(d, string(ParamChangeAccessNodesActions))
+	actionsMap := collections.NewMap(d, ParamChangeAccessNodesActions)
 	for pubKey, action := range req.actions {
 		actionsMap.MustSetAt(pubKey[:], []byte{byte(action)})
 	}

@@ -122,3 +122,36 @@ func TestRandom(t *testing.T) {
 	d2.Close()
 	require.NoError(t, netCloser.Close())
 }
+
+func TestGetRandomOtherPeers(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+
+	nodeCount := 8 // 7 excluding self
+	peersToGet := 5
+	iterationCount := 13
+	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
+	peeringID := peering.RandomPeeringID()
+
+	domain, err := nodes[0].PeerDomain(peeringID, nodePubKeys)
+	require.NoError(t, err)
+	require.NotNil(t, domain)
+
+	for i := 0; i < iterationCount; i++ {
+		t.Logf("Iteration %v...", i)
+		peers := domain.GetRandomOtherPeers(peersToGet)
+		require.Equal(t, peersToGet, len(peers))
+		for j := range peers {
+			t.Logf("\tComparing peers %v, key %v...", j, peers[j].String())
+			for k := range peers[j+1:] {
+				kk := k + j + 1
+				t.Logf("\t\t and %v, key %v", kk, peers[kk].String())
+				require.False(t, peers[j].Equals(peers[kk]))
+			}
+		}
+	}
+
+	require.NoError(t, netCloser.Close())
+}

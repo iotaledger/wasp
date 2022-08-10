@@ -6,16 +6,16 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/merkletrie"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/kv/trie"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -36,14 +36,13 @@ import (
 type ViewContext struct {
 	processors     *processors.Cache
 	stateReader    state.OptimisticStateReader
-	chainID        *iscp.ChainID
+	chainID        *isc.ChainID
 	log            *logger.Logger
 	chainInfo      *governance.ChainInfo
 	gasBurnLog     *gas.BurnLog
 	gasBudget      uint64
 	gasBurnEnabled bool
 	callStack      []*callContext
-	l1Params       *parameters.L1Params
 }
 
 var _ execution.WaspContext = &ViewContext{}
@@ -58,7 +57,7 @@ func New(ch chain.ChainCore) *ViewContext {
 	}
 }
 
-func (ctx *ViewContext) contractStateReader(contract iscp.Hname) kv.KVStoreReader {
+func (ctx *ViewContext) contractStateReader(contract isc.Hname) kv.KVStoreReader {
 	return subrealm.NewReadOnly(ctx.stateReader.KVStoreReader(), kv.Key(contract.Bytes()))
 }
 
@@ -66,7 +65,7 @@ func (ctx *ViewContext) LocateProgram(programHash hashing.HashValue) (vmtype str
 	return blob.LocateProgram(ctx.contractStateReader(blob.Contract.Hname()), programHash)
 }
 
-func (ctx *ViewContext) GetContractRecord(contractHname iscp.Hname) (ret *root.ContractRecord) {
+func (ctx *ViewContext) GetContractRecord(contractHname isc.Hname) (ret *root.ContractRecord) {
 	return root.FindContract(ctx.contractStateReader(root.Contract.Hname()), contractHname)
 }
 
@@ -82,27 +81,27 @@ func (ctx *ViewContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
 	ctx.gasBudget -= g
 }
 
-func (ctx *ViewContext) AccountID() iscp.AgentID {
+func (ctx *ViewContext) AccountID() isc.AgentID {
 	hname := ctx.CurrentContractHname()
 	if corecontracts.IsCoreHname(hname) {
 		return ctx.ChainID().CommonAccount()
 	}
-	return iscp.NewContractAgentID(ctx.ChainID(), hname)
+	return isc.NewContractAgentID(ctx.ChainID(), hname)
 }
 
 func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }
 
-func (ctx *ViewContext) GetAssets(agentID iscp.AgentID) *iscp.FungibleTokens {
+func (ctx *ViewContext) GetAssets(agentID isc.AgentID) *isc.FungibleTokens {
 	return accounts.GetAccountAssets(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetAccountNFTs(agentID iscp.AgentID) []iotago.NFTID {
+func (ctx *ViewContext) GetAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 	return accounts.GetAccountNFTs(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) iscp.NFT {
+func (ctx *ViewContext) GetNFTData(nftID iotago.NFTID) isc.NFT {
 	return accounts.GetNFTData(ctx.contractStateReader(accounts.Contract.Hname()), nftID)
 }
 
@@ -114,43 +113,35 @@ func (ctx *ViewContext) Timestamp() time.Time {
 	return t
 }
 
-func (ctx *ViewContext) GetIotaBalance(agentID iscp.AgentID) uint64 {
-	return accounts.GetIotaBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
+func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
+	return accounts.GetBaseTokensBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID iscp.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
 		ctx.contractStateReader(accounts.Contract.Hname()),
 		agentID,
 		tokenID)
 }
 
-func (ctx *ViewContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, _ *iscp.Allowance) dict.Dict {
+func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict, _ *isc.Allowance) dict.Dict {
 	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", targetContract, epCode)
 	return ctx.callView(targetContract, epCode, params)
 }
 
-func (ctx *ViewContext) ChainID() *iscp.ChainID {
+func (ctx *ViewContext) ChainID() *isc.ChainID {
 	return ctx.chainInfo.ChainID
 }
 
-func (ctx *ViewContext) ChainOwnerID() iscp.AgentID {
+func (ctx *ViewContext) ChainOwnerID() isc.AgentID {
 	return ctx.chainInfo.ChainOwnerID
 }
 
-func (ctx *ViewContext) ContractCreator() iscp.AgentID {
-	rec := ctx.GetContractRecord(ctx.CurrentContractHname())
-	if rec == nil {
-		panic("can't find current contract")
-	}
-	return rec.Creator
-}
-
-func (ctx *ViewContext) CurrentContractHname() iscp.Hname {
+func (ctx *ViewContext) CurrentContractHname() isc.Hname {
 	return ctx.getCallContext().contract
 }
 
-func (ctx *ViewContext) Params() *iscp.Params {
+func (ctx *ViewContext) Params() *isc.Params {
 	return &ctx.getCallContext().params
 }
 
@@ -179,7 +170,7 @@ func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 	return ctx.gasBurnLog
 }
 
-func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
+func (ctx *ViewContext) callView(targetContract, entryPoint isc.Hname, params dict.Dict) (ret dict.Dict) {
 	contractRecord := ctx.GetContractRecord(targetContract)
 	if contractRecord == nil {
 		panic(vm.ErrContractNotFound.Create(targetContract))
@@ -196,7 +187,7 @@ func (ctx *ViewContext) callView(targetContract, entryPoint iscp.Hname, params d
 	return ep.Call(sandbox.NewSandboxView(ctx))
 }
 
-func (ctx *ViewContext) initAndCallView(targetContract, entryPoint iscp.Hname, params dict.Dict) (ret dict.Dict) {
+func (ctx *ViewContext) initAndCallView(targetContract, entryPoint isc.Hname, params dict.Dict) (ret dict.Dict) {
 	ctx.gasBurnLog = gas.NewGasBurnLog()
 	ctx.gasBudget = gas.MaxGasExternalViewCall
 
@@ -206,7 +197,7 @@ func (ctx *ViewContext) initAndCallView(targetContract, entryPoint iscp.Hname, p
 }
 
 // CallViewExternal calls a view from outside the VM, for example API call
-func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, params dict.Dict) (ret dict.Dict, err error) {
+func (ctx *ViewContext) CallViewExternal(targetContract, epCode isc.Hname, params dict.Dict) (ret dict.Dict, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.initAndCallView(targetContract, epCode, params)
 	}, ctx.log, "CallViewExternal: ")
@@ -218,9 +209,9 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode iscp.Hname, para
 }
 
 // GetMerkleProof returns proof for the key. It may also contain proof of absence of the key
-func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *merkletrie.Proof, err error) {
+func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_blake2b.Proof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
-		ret = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
+		ret = state.GetMerkleProof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	if err != nil {
@@ -233,9 +224,9 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *merkletrie.Proof, err e
 // - blockInfo record in serialized form
 // - proof that the blockInfo is stored under the respective key.
 // Useful for proving commitment to the past state, because blockInfo contains commitment to that block
-func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *merkletrie.Proof, error) {
+func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_blake2b.Proof, error) {
 	var retBlockInfoBin []byte
-	var retProof *merkletrie.Proof
+	var retProof *trie_blake2b.Proof
 
 	err := panicutil.CatchAllButDBError(func() {
 		// retrieve serialized block info record
@@ -249,7 +240,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *merkletrie.Pr
 
 		// retrieve proof to serialized block
 		key := blocklog.Contract.FullKey(blocklog.BlockInfoKey(blockIndex))
-		retProof = state.CommitmentModel.Proof(key, ctx.stateReader.TrieNodeStore())
+		retProof = state.GetMerkleProof(key, ctx.stateReader.TrieNodeStore())
 	}, ctx.log, "GetMerkleProof: ")
 
 	return retBlockInfoBin, retProof, err
@@ -271,18 +262,18 @@ func (ctx *ViewContext) GetRootCommitment() (trie.VCommitment, error) {
 // GetContractStateCommitment returns commitment to the contract's state, if possible.
 // To be able to retrieve state commitment for the contract's state, the state must contain
 // values of contracts hname at its nil key. Otherwise, function returns error
-func (ctx *ViewContext) GetContractStateCommitment(hn iscp.Hname) (trie.VCommitment, error) {
-	var retC trie.VCommitment
+func (ctx *ViewContext) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
+	var retC []byte
 	var retErr error
 
 	err := panicutil.CatchAllButDBError(func() {
-		proof := state.CommitmentModel.Proof(hn.Bytes(), ctx.stateReader.TrieNodeStore())
+		proof := state.GetMerkleProof(hn.Bytes(), ctx.stateReader.TrieNodeStore())
 		rootC := trie.RootCommitment(ctx.stateReader.TrieNodeStore())
-		retErr = proof.Validate(rootC, hn.Bytes())
+		retErr = state.ValidateMerkleProof(proof, rootC, hn.Bytes())
 		if retErr != nil {
 			return
 		}
-		retC = proof.CommitmentToTheTerminalNode()
+		retC = trie_blake2b_verify.CommitmentToTheTerminalNode(proof)
 	}, ctx.log, "GetMerkleProof: ")
 	if err != nil {
 		return nil, err

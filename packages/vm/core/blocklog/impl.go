@@ -3,7 +3,7 @@ package blocklog
 import (
 	"math"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -16,14 +16,13 @@ var Processor = Contract.Processor(initialize,
 	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
 	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
-	ViewGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
 	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
 	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 )
 
-func initialize(ctx iscp.Sandbox) dict.Dict {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
 		Timestamp:             ctx.Timestamp(),
 		TotalRequests:         1,
@@ -41,15 +40,15 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func viewControlAddresses(ctx iscp.SandboxView) dict.Dict {
+func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
 	l := registry.MustLen()
 	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
 	ctx.RequireNoError(err)
 	return dict.Dict{
-		ParamStateControllerAddress: iscp.BytesFromAddress(rec.StateAddress),
-		ParamGoverningAddress:       iscp.BytesFromAddress(rec.GoverningAddress),
+		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
+		ParamGoverningAddress:       isc.BytesFromAddress(rec.GoverningAddress),
 		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
 	}
 }
@@ -57,21 +56,13 @@ func viewControlAddresses(ctx iscp.SandboxView) dict.Dict {
 // viewGetBlockInfo returns blockInfo for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to the latest block)
-func viewGetBlockInfo(ctx iscp.SandboxView) dict.Dict {
+func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
-	return dict.Dict{ParamBlockInfo: data}
-}
-
-func viewGetLatestBlockInfo(ctx iscp.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
-	regLen := registry.MustLen()
-	ctx.Requiref(regLen != 0, "blocklog::viewGetLatestBlockInfo: empty log")
-	data := registry.MustGetAt(regLen - 1)
 	return dict.Dict{
-		ParamBlockIndex: codec.EncodeUint32(regLen - 1),
+		ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		ParamBlockInfo:  data,
 	}
 }
@@ -79,7 +70,7 @@ func viewGetLatestBlockInfo(ctx iscp.SandboxView) dict.Dict {
 // viewGetRequestIDsForBlock returns a list of requestIDs for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetRequestIDsForBlock(ctx iscp.SandboxView) dict.Dict {
+func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
@@ -101,12 +92,13 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
+func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 	res, err := GetRequestRecordDataByRequestID(ctx.State(), requestID)
-
 	ctx.RequireNoError(err)
-
+	if res == nil {
+		return nil
+	}
 	return dict.Dict{
 		ParamRequestRecord: res.ReceiptBin,
 		ParamBlockIndex:    codec.EncodeUint32(res.BlockIndex),
@@ -117,7 +109,7 @@ func viewGetRequestReceipt(ctx iscp.SandboxView) dict.Dict {
 // viewGetRequestReceiptsForBlock returns a list of receipts for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) dict.Dict {
+func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
@@ -134,10 +126,11 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) dict.Dict {
 	for _, d := range dataArr {
 		arr.MustPush(d)
 	}
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
 	return ret
 }
 
-func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
+func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
 	ctx.RequireNoError(err)
@@ -151,7 +144,7 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) dict.Dict {
 // viewGetEventsForRequest returns a list of events for a given request.
 // params:
 // ParamRequestID - requestID
-func viewGetEventsForRequest(ctx iscp.SandboxView) dict.Dict {
+func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 
 	events, err := getRequestEventsInternal(ctx.State(), &requestID)
@@ -168,7 +161,7 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) dict.Dict {
 // viewGetEventsForBlock returns a list of events for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetEventsForBlock(ctx iscp.SandboxView) dict.Dict {
+func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
@@ -192,7 +185,7 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) dict.Dict {
 // ParamContractHname - hname of the contract
 // ParamFromBlock - defaults to 0
 // ParamToBlock - defaults to latest block
-func viewGetEventsForContract(ctx iscp.SandboxView) dict.Dict {
+func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := ctx.Params().MustGetHname(ParamContractHname)
 	fromBlock := ctx.Params().MustGetUint32(ParamFromBlock, 0)
 	toBlock := ctx.Params().MustGetUint32(ParamToBlock, math.MaxUint32)

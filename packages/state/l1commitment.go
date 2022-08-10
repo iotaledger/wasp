@@ -8,35 +8,49 @@ import (
 	"math/rand"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 )
+
+const BlockHashSize = 20
+
+type BlockHash [BlockHashSize]byte
 
 // L1Commitment represents parsed data stored as a metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
 	StateCommitment trie.VCommitment
 	// hash of the essence of the last block
-	BlockHash hashing.HashValue
+	BlockHash BlockHash
 }
 
 const (
-	// L1CommitmentSizeBlake2b is size of the L1 commitment with blake2b mode = 32 bytes for the merkle root + 32 bytes block hash
-	L1CommitmentSizeBlake2b  = 64
-	OriginStateCommitmentHex = "5924dc2f04542fc93b02fa5c8b230f62110a9fbda78fca024cf58087bd32204f"
+	OriginStateCommitmentHex = "c4f09061cd63ea506f89b7cbb3c6e0984f124158"
 )
 
-func NewL1Commitment(c trie.VCommitment, blockHash hashing.HashValue) *L1Commitment {
+var l1CommitmentSize = len(NewL1Commitment(model.NewVectorCommitment(), BlockHash{}).Bytes())
+
+func BlockHashFromData(data []byte) (ret BlockHash) {
+	r := blake2b.Sum256(data)
+	copy(ret[:BlockHashSize], r[:BlockHashSize])
+	return
+}
+
+func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		StateCommitment: c,
 		BlockHash:       blockHash,
 	}
 }
 
+func (bh BlockHash) String() string {
+	return hex.EncodeToString(bh[:])
+}
+
 func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
-	if len(data) != L1CommitmentSizeBlake2b {
+	if len(data) != l1CommitmentSize {
 		return L1Commitment{}, xerrors.New("L1CommitmentFromBytes: wrong data length")
 	}
 	ret := L1Commitment{}
@@ -69,22 +83,18 @@ func (s *L1Commitment) Write(w io.Writer) error {
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	s.StateCommitment = CommitmentModel.NewVectorCommitment()
+	s.StateCommitment = model.NewVectorCommitment()
 	if err := s.StateCommitment.Read(r); err != nil {
 		return err
 	}
-	l, err := r.Read(s.BlockHash[:])
-	if err != nil {
+	if _, err := r.Read(s.BlockHash[:]); err != nil {
 		return err
-	}
-	if l != 32 {
-		return xerrors.New("wrong data length")
 	}
 	return nil
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), s.BlockHash.String())
+	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), hex.EncodeToString(s.BlockHash[:]))
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {
@@ -94,8 +104,7 @@ func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {
 var L1CommitmentNil *L1Commitment
 
 func init() {
-	var emptyBytes [64]byte
-	zs, err := L1CommitmentFromBytes(emptyBytes[:])
+	zs, err := L1CommitmentFromBytes(make([]byte, l1CommitmentSize))
 	if err != nil {
 		panic(err)
 	}
@@ -107,14 +116,14 @@ func OriginStateCommitment() trie.VCommitment {
 	if err != nil {
 		panic(err)
 	}
-	ret, err := CommitmentModel.VectorCommitmentFromBytes(retBin)
-	if err != nil {
+	c := model.NewVectorCommitment()
+	if err = c.Read(bytes.NewReader(retBin)); err != nil {
 		panic(err)
 	}
-	return ret
+	return c
 }
 
-func OriginBlockHash() (ret [32]byte) {
+func OriginBlockHash() (ret BlockHash) {
 	return
 }
 
@@ -122,10 +131,11 @@ func OriginL1Commitment() *L1Commitment {
 	return NewL1Commitment(OriginStateCommitment(), OriginBlockHash())
 }
 
+// RandL1Commitment for testing only
 func RandL1Commitment() *L1Commitment {
-	var d [64]byte
-	rand.Read(d[:])
-	ret, err := L1CommitmentFromBytes(d[:])
+	d := make([]byte, l1CommitmentSize)
+	rand.Read(d)
+	ret, err := L1CommitmentFromBytes(d)
 	if err != nil {
 		panic(err)
 	}

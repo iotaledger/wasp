@@ -38,11 +38,6 @@ type GetEventsForRequestCall struct {
 	Results ImmutableGetEventsForRequestResults
 }
 
-type GetLatestBlockInfoCall struct {
-	Func    *wasmlib.ScView
-	Results ImmutableGetLatestBlockInfoResults
-}
-
 type GetRequestIDsForBlockCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableGetRequestIDsForBlockParams
@@ -105,12 +100,6 @@ func (sc Funcs) GetEventsForRequest(ctx wasmlib.ScViewCallContext) *GetEventsFor
 	return f
 }
 
-func (sc Funcs) GetLatestBlockInfo(ctx wasmlib.ScViewCallContext) *GetLatestBlockInfoCall {
-	f := &GetLatestBlockInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetLatestBlockInfo)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
-	return f
-}
-
 func (sc Funcs) GetRequestIDsForBlock(ctx wasmlib.ScViewCallContext) *GetRequestIDsForBlockCall {
 	f := &GetRequestIDsForBlockCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRequestIDsForBlock)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -146,7 +135,6 @@ var exportMap = wasmlib.ScExportMap{
 		ViewGetEventsForBlock,
 		ViewGetEventsForContract,
 		ViewGetEventsForRequest,
-		ViewGetLatestBlockInfo,
 		ViewGetRequestIDsForBlock,
 		ViewGetRequestReceipt,
 		ViewGetRequestReceiptsForBlock,
@@ -154,7 +142,6 @@ var exportMap = wasmlib.ScExportMap{
 	},
 	Funcs: []wasmlib.ScFuncContextFunction{},
 	Views: []wasmlib.ScViewContextFunction{
-		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

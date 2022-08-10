@@ -3,6 +3,8 @@
 
 package templates
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
+
 type WaspConfigParams struct {
 	APIPort                      int
 	DashboardPort                int
@@ -23,7 +25,7 @@ const WaspConfig = `
     "directory": "waspdb"
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",

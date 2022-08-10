@@ -34,14 +34,22 @@ func funcMintSupply(ctx wasmlib.ScFuncContext, f *MintSupplyContext) {
 	colorList.AppendTokenID().SetValue(*mintedColor)
 }
 
-func funcTransferOwnership(ctx wasmlib.ScFuncContext, f *TransferOwnershipContext) {
+func funcTransferOwnership(_ wasmlib.ScFuncContext, _ *TransferOwnershipContext) {
 	// TODO implement
 }
 
-func funcUpdateMetadata(ctx wasmlib.ScFuncContext, f *UpdateMetadataContext) {
+func funcUpdateMetadata(_ wasmlib.ScFuncContext, _ *UpdateMetadataContext) {
 	// TODO implement
 }
 
-func viewGetInfo(ctx wasmlib.ScViewContext, f *GetInfoContext) {
+func viewGetInfo(_ wasmlib.ScViewContext, _ *GetInfoContext) {
 	// TODO implement
+}
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 }

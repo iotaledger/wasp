@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -40,9 +40,11 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncGetStorage.WithHandler(getStorage),
 	evm.FuncGetLogs.WithHandler(getLogs),
 	evm.FuncGetChainID.WithHandler(getChainID),
+	evm.FuncOpenBlockContext.WithHandler(openBlockContext),
+	evm.FuncCloseBlockContext.WithHandler(closeBlockContext),
 )
 
-func initialize(ctx iscp.Sandbox) dict.Dict {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	genesisAlloc := core.GenesisAlloc{}
 	var err error
 	if ctx.Params().MustHas(evm.FieldGenesisAlloc) {
@@ -57,7 +59,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 
 	// add the standard ISC contract at arbitrary address 0x1074
-	deployISCContractOnGenesis(genesisAlloc)
+	deployMagicContractOnGenesis(genesisAlloc)
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	emulator.Init(
@@ -67,6 +69,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 		gasLimit,
 		timestamp(ctx),
 		genesisAlloc,
+		getBalanceFunc(ctx),
 	)
 
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evmtypes.DefaultGasRatio)
@@ -75,19 +78,20 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
 
+	ctx.Privileged().SubscribeBlockContext(evm.FuncOpenBlockContext.Hname(), evm.FuncCloseBlockContext.Hname())
+
 	return nil
 }
 
-func applyTransaction(ctx iscp.Sandbox) dict.Dict {
+func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
-	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(ctx.Params().MustGet(evm.FieldTransaction))
+	tx, err := evmtypes.DecodeTransaction(ctx.Params().MustGet(evm.FieldTransaction))
 	ctx.RequireNoError(err)
 
-	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
 	// next block will be minted when the ISC block is closed
 	bctx := getBlockContext(ctx)
@@ -115,47 +119,48 @@ func applyTransaction(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func getBalance(ctx iscp.SandboxView) dict.Dict {
+func getBalance(ctx isc.SandboxView) dict.Dict {
+	// TODO: balance might change between two eth blocks
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(emu.StateDB().GetBalance(addr).Bytes())
 }
 
-func getBlockNumber(ctx iscp.SandboxView) dict.Dict {
+func getBlockNumber(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	return result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes())
 }
 
-func getBlockByNumber(ctx iscp.SandboxView) dict.Dict {
+func getBlockByNumber(ctx isc.SandboxView) dict.Dict {
 	return blockResult(blockByNumber(ctx))
 }
 
-func getBlockByHash(ctx iscp.SandboxView) dict.Dict {
+func getBlockByHash(ctx isc.SandboxView) dict.Dict {
 	return blockResult(blockByHash(ctx))
 }
 
-func getTransactionByHash(ctx iscp.SandboxView) dict.Dict {
+func getTransactionByHash(ctx isc.SandboxView) dict.Dict {
 	return txResult(transactionByHash(ctx))
 }
 
-func getTransactionByBlockHashAndIndex(ctx iscp.SandboxView) dict.Dict {
+func getTransactionByBlockHashAndIndex(ctx isc.SandboxView) dict.Dict {
 	return txResult(transactionByBlockHashAndIndex(ctx))
 }
 
-func getTransactionByBlockNumberAndIndex(ctx iscp.SandboxView) dict.Dict {
+func getTransactionByBlockNumberAndIndex(ctx isc.SandboxView) dict.Dict {
 	return txResult(transactionByBlockNumberAndIndex(ctx))
 }
 
-func getTransactionCountByBlockHash(ctx iscp.SandboxView) dict.Dict {
+func getTransactionCountByBlockHash(ctx isc.SandboxView) dict.Dict {
 	return txCountResult(blockByHash(ctx))
 }
 
-func getTransactionCountByBlockNumber(ctx iscp.SandboxView) dict.Dict {
+func getTransactionCountByBlockNumber(ctx isc.SandboxView) dict.Dict {
 	return txCountResult(blockByNumber(ctx))
 }
 
-func getReceipt(ctx iscp.SandboxView) dict.Dict {
+func getReceipt(ctx isc.SandboxView) dict.Dict {
 	txHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldTransactionHash))
 	emu := createEmulatorR(ctx)
 	r := emu.BlockchainDB().GetReceiptByTxHash(txHash)
@@ -165,21 +170,21 @@ func getReceipt(ctx iscp.SandboxView) dict.Dict {
 	return result(evmtypes.EncodeReceiptFull(r))
 }
 
-func getNonce(ctx iscp.SandboxView) dict.Dict {
+func getNonce(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(codec.EncodeUint64(emu.StateDB().GetNonce(addr)))
 }
 
-func getCode(ctx iscp.SandboxView) dict.Dict {
+func getCode(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(emu.StateDB().GetCode(addr))
 }
 
-func getStorage(ctx iscp.SandboxView) dict.Dict {
+func getStorage(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(evm.FieldKey))
@@ -188,7 +193,7 @@ func getStorage(ctx iscp.SandboxView) dict.Dict {
 	return result(data[:])
 }
 
-func getLogs(ctx iscp.SandboxView) dict.Dict {
+func getLogs(ctx isc.SandboxView) dict.Dict {
 	q, err := evmtypes.DecodeFilterQuery(ctx.Params().MustGet(evm.FieldFilterQuery))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
@@ -196,12 +201,12 @@ func getLogs(ctx iscp.SandboxView) dict.Dict {
 	return result(evmtypes.EncodeLogs(logs))
 }
 
-func getChainID(ctx iscp.SandboxView) dict.Dict {
+func getChainID(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
 }
 
-func callContract(ctx iscp.SandboxView) dict.Dict {
+func callContract(ctx isc.SandboxView) dict.Dict {
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
@@ -215,14 +220,14 @@ func callContract(ctx iscp.SandboxView) dict.Dict {
 // TODO: For some reason, when EstimateGasMode == true the gas burned is less. How to automatically calculate this?
 var additionalGasBurned = gas.BurnCodeReadFromState1P.Cost(2)
 
-func estimateGas(ctx iscp.Sandbox) dict.Dict {
+func estimateGas(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
-	ctx.RequireCaller(iscp.NewEthereumAddressAgentID(callMsg.From))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)

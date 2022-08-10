@@ -14,8 +14,8 @@ import (
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -34,9 +34,9 @@ type consensus struct {
 	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
-	stateOutput                      *iscp.AliasOutputWithID
+	stateOutput                      *isc.AliasOutputWithID
 	stateTimestamp                   time.Time
-	timeData                         *iscp.TimeData
+	timeData                         time.Time
 	acsSessionID                     uint64
 	consensusBatch                   *BatchProposal
 	consensusEntropy                 hashing.HashValue
@@ -66,7 +66,7 @@ type consensus struct {
 	eventVMResultMsgPipe             pipe.Pipe
 	eventTimerMsgPipe                pipe.Pipe
 	assert                           *assert.Assert
-	missingRequestsFromBatch         map[iscp.RequestID][32]byte
+	missingRequestsFromBatch         map[isc.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
 	receivePeerMessagesAttachID      interface{}
@@ -127,10 +127,7 @@ func New(
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
-		ret.timeData = &iscp.TimeData{
-			MilestoneIndex: milestonePointer.Index,
-			Time:           time.Unix(int64(milestonePointer.Timestamp), 0),
-		}
+		ret.timeData = time.Unix(int64(milestonePointer.Timestamp), 0)
 	})
 	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
 		ret.EnqueueTxInclusionsStateMsg(txID, inclusionState)
@@ -281,11 +278,11 @@ func (c *consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	var timeData iscp.TimeData
-	if c.timeData == nil {
-		timeData = iscp.TimeData{Time: time.Now()}
+	var timeData time.Time
+	if c.timeData.IsZero() {
+		timeData = time.Now()
 	} else {
-		timeData = *c.timeData
+		timeData = c.timeData
 	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,

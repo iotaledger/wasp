@@ -6,17 +6,15 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID) bool {
+func (sm *stateManager) aliasOutputReceived(aliasOutput *isc.AliasOutputWithID) bool {
 	aliasOutputIndex := aliasOutput.GetStateIndex()
-	aliasOutputIDStr := iscp.OID(aliasOutput.ID())
+	aliasOutputIDStr := isc.OID(aliasOutput.ID())
 	sm.log.Debugf("aliasOutputReceived: received output index %v, id %v", aliasOutputIndex, aliasOutputIDStr)
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < aliasOutputIndex {
 		sm.log.Debugf("aliasOutputReceived: output index %v, id %v is new state output", aliasOutputIndex, aliasOutputIDStr)
@@ -39,13 +37,13 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *iscp.AliasOutputWithID)
 			sm.log.Debugf("aliasOutputReceived: output index %v, id %v is already a state output; ignored", aliasOutputIndex, aliasOutputIDStr)
 			return false
 		}
-		// TODO implement
-		/*if !output.GetIsGovernanceUpdated() {
-			sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
-		}*/
 		// it is a state controller address rotation
-		sm.log.Debugf("aliasOutputReceived:  output index %v, id %v is the same index but different ID as current state output (ID %v); it probably ir governance update output",
-			aliasOutputIndex, aliasOutputIDStr, iscp.OID(sm.stateOutput.ID()))
+		sm.syncingBlocks.setApprovalInfo(aliasOutput)
+		sm.stateOutput = aliasOutput
+		sm.stateOutputTimestamp = time.Now()
+
+		sm.log.Warnf("aliasOutputReceived: output index %v, id %v is the same index but different ID as current state output (ID %v): it is a governance update output, ignoring",
+			aliasOutputIndex, aliasOutputIDStr, isc.OID(sm.stateOutput.ID()))
 		return false
 	}
 	if !sm.syncingBlocks.isSyncing(aliasOutputIndex) {
@@ -100,7 +98,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			for _, p := range sm.domain.GetRandomOtherPeers(numberOfNodesToRequestBlockFromConst) {
 				sm.domain.SendMsgByPubKey(p, peering.PeerMessageReceiverStateManager, peerMsgTypeGetBlock, util.MustBytes(getBlockMsg))
 				sm.syncingBlocks.blocksPulled()
-				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.AsString())
+				sm.log.Debugf("doSyncAction: requesting block index %v, from %v", i, p.String())
 			}
 			sm.delayRequestBlockRetry(i)
 		}
@@ -120,7 +118,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32, lastBlockHash hashing.HashValue) ([]*candidateBlock, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32, lastBlockHash state.BlockHash) ([]*candidateBlock, bool) {
 	if fromStateIndex > toStateIndex {
 		sm.log.Debugf("getCandidatesToCommit: all blocks found")
 		return candidateAcc, true
@@ -141,9 +139,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	for i, candidate := range candidates {
 		block := candidate.getBlock()
 		blocks[i] = block
-		calculatedStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+		calculatedStateCommitment := state.RootCommitment(calculatedState.TrieNodeStore())
 		candidatePrevStateCommitment := block.PreviousL1Commitment().StateCommitment
-		if !trie.EqualCommitments(candidatePrevStateCommitment, calculatedStateCommitment) {
+		if !state.EqualCommitments(candidatePrevStateCommitment, calculatedStateCommitment) {
 			sm.log.Errorf("commitCandidates: candidate index %v previous state commitment does not match calculated state commitment: %s != %s",
 				block.BlockIndex(), candidatePrevStateCommitment, calculatedStateCommitment)
 			sm.syncingBlocks.restartSyncing()
@@ -163,9 +161,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	// state commitments must be equal
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
-	finalStateCommitment := trie.RootCommitment(calculatedState.TrieNodeStore())
+	finalStateCommitment := state.RootCommitment(calculatedState.TrieNodeStore())
 	finalCandidateCommitment := sm.syncingBlocks.getNextStateCommitment(to)
-	if !trie.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
+	if !state.EqualCommitments(finalStateCommitment, finalCandidateCommitment) {
 		sm.log.Debugf("commitCandidates: tentative state index %v obtained, however its commitment does not match last candidate expected state commitment: %s != %s",
 			to, finalStateCommitment, finalCandidateCommitment)
 		sm.syncingBlocks.restartSyncing()
@@ -192,7 +190,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	}
 
 	if err != nil {
-		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
+		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %v", err)
 		if strings.Contains(err.Error(), "space left on device") {
 			sm.log.Panicf("Terminating WASP, no space left on disc.")
 		}

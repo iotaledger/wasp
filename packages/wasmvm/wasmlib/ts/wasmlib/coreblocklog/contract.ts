@@ -52,14 +52,6 @@ export class GetEventsForRequestCall {
 	}
 }
 
-export class GetLatestBlockInfoCall {
-	func: wasmlib.ScView;
-	results: sc.ImmutableGetLatestBlockInfoResults = new sc.ImmutableGetLatestBlockInfoResults(wasmlib.ScView.nilProxy);
-	public constructor(ctx: wasmlib.ScViewCallContext) {
-		this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewGetLatestBlockInfo);
-	}
-}
-
 export class GetRequestIDsForBlockCall {
 	func: wasmlib.ScView;
 	params: sc.MutableGetRequestIDsForBlockParams = new sc.MutableGetRequestIDsForBlockParams(wasmlib.ScView.nilProxy);
@@ -128,12 +120,6 @@ export class ScFuncs {
 		const f = new GetEventsForRequestCall(ctx);
 		f.params = new sc.MutableGetEventsForRequestParams(wasmlib.newCallParamsProxy(f.func));
 		f.results = new sc.ImmutableGetEventsForRequestResults(wasmlib.newCallResultsProxy(f.func));
-		return f;
-	}
-
-	static getLatestBlockInfo(ctx: wasmlib.ScViewCallContext): GetLatestBlockInfoCall {
-		const f = new GetLatestBlockInfoCall(ctx);
-		f.results = new sc.ImmutableGetLatestBlockInfoResults(wasmlib.newCallResultsProxy(f.func));
 		return f;
 	}
 

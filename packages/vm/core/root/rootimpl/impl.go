@@ -10,7 +10,7 @@ package rootimpl
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -32,6 +32,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.ViewFindContract.WithHandler(findContract),
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
+	root.FuncSubscribeBlockContext.WithHandler(subscribeBlockContext),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -41,10 +42,10 @@ var Processor = root.Contract.Processor(initialize,
 // - creates record in the registry for the 'root' itself
 // - deploys other core contracts: 'accounts', 'blob', 'blocklog' by creating records in the registry and calling constructors
 // Input:
-// - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
+// - ParamChainID isc.ChainID. ID of the chain. Cannot be changed
 // - ParamDescription string defaults to "N/A"
-// - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
-func initialize(ctx iscp.Sandbox) dict.Dict {
+// - ParamStorageDepositAssumptionsBin encoded assumptions about minimum storage deposit for internal outputs
+func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.initialize.begin")
 
 	state := ctx.State()
@@ -52,8 +53,8 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	creator := stateAnchor.Sender
 
-	callerHname, _ := iscp.HnameFromAgentID(ctx.Caller())
-	callerAddress, _ := iscp.AddressFromAgentID(ctx.Caller())
+	callerHname, _ := isc.HnameFromAgentID(ctx.Caller())
+	callerAddress, _ := isc.AddressFromAgentID(ctx.Caller())
 	initConditionsCorrect := stateAnchor.IsOrigin &&
 		state.MustGet(root.StateVarStateInitialized) == nil &&
 		callerHname == 0 &&
@@ -62,7 +63,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
-	assetsOnStateAnchor := iscp.NewFungibleTokens(stateAnchor.Deposit, nil)
+	assetsOnStateAnchor := isc.NewFungibleTokens(stateAnchor.Deposit, nil)
 	ctx.Requiref(len(assetsOnStateAnchor.Tokens) == 0, "root.initialize.fail: native tokens in origin output are not allowed")
 
 	// store 'root' into the registry
@@ -73,7 +74,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 
 	// store 'accounts' into the registry and run init
 	storeAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
-		accounts.ParamDustDepositAssumptionsBin: ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin),
+		accounts.ParamStorageDepositAssumptionsBin: ctx.Params().MustGet(root.ParamStorageDepositAssumptionsBin),
 	})
 
 	// store 'blocklog' into the registry and run init
@@ -115,7 +116,7 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
-func deployContract(ctx iscp.Sandbox) dict.Dict {
+func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String())
 
@@ -142,22 +143,21 @@ func deployContract(ctx iscp.Sandbox) dict.Dict {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     ctx.Caller(),
 	})
-	ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
+	ctx.Call(isc.Hn(name), isc.EntryPointInit, initParams, nil)
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
-		name, iscp.Hn(name), progHash.String(), description))
+		name, isc.Hn(name), progHash.String(), description))
 	return nil
 }
 
 // grantDeployPermission grants permission to deploy contracts
 // Input:
-//  - ParamDeployer iscp.AgentID
-func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
+//  - ParamDeployer isc.AgentID
+func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
-	ctx.Requiref(deployer.Kind() != iscp.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
+	ctx.Requiref(deployer.Kind() != isc.AgentIDKindNil, "cannot grant deploy permission to NilAgentID")
 
 	collections.NewMap(ctx.State(), root.StateVarDeployPermissions).MustSetAt(deployer.Bytes(), []byte{0xFF})
 	ctx.Event(fmt.Sprintf("[grant deploy permission] to agentID: %s", deployer.String()))
@@ -166,8 +166,8 @@ func grantDeployPermission(ctx iscp.Sandbox) dict.Dict {
 
 // revokeDeployPermission revokes permission to deploy contracts
 // Input:
-//  - ParamDeployer iscp.AgentID
-func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
+//  - ParamDeployer isc.AgentID
+func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	deployer := ctx.Params().MustGetAgentID(root.ParamDeployer)
@@ -177,7 +177,7 @@ func revokeDeployPermission(ctx iscp.Sandbox) dict.Dict {
 	return nil
 }
 
-func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
+func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 	permissionsEnabled := ctx.Params().MustGetBool(root.ParamDeployPermissionsEnabled)
 	ctx.State().Set(root.StateVarDeployPermissionsEnabled, codec.EncodeBool(permissionsEnabled))
@@ -189,7 +189,7 @@ func requireDeployPermissions(ctx iscp.Sandbox) dict.Dict {
 // - ParamHname
 // Output:
 // - ParamData
-func findContract(ctx iscp.SandboxView) dict.Dict {
+func findContract(ctx isc.SandboxView) dict.Dict {
 	hname := ctx.Params().MustGetHname(root.ParamHname)
 	rec := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
@@ -201,7 +201,7 @@ func findContract(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func getContractRecords(ctx iscp.SandboxView) dict.Dict {
+func getContractRecords(ctx isc.SandboxView) dict.Dict {
 	src := root.GetContractRegistryR(ctx.State())
 
 	ret := dict.New()
@@ -212,4 +212,15 @@ func getContractRecords(ctx iscp.SandboxView) dict.Dict {
 	})
 
 	return ret
+}
+
+func subscribeBlockContext(ctx isc.Sandbox) dict.Dict {
+	ctx.Requiref(ctx.StateAnchor().StateIndex == 0, "subscribeBlockContext must be called when initializing the chain")
+	root.SubscribeBlockContext(
+		ctx.State(),
+		ctx.Caller().(*isc.ContractAgentID).Hname(),
+		ctx.Params().MustGetHname(root.ParamBlockContextOpenFunc),
+		ctx.Params().MustGetHname(root.ParamBlockContextCloseFunc),
+	)
+	return nil
 }

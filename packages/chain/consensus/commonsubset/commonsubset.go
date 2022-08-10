@@ -284,7 +284,7 @@ func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
 	//
 	// Check, maybe we are done.
 	if cs.impl.Done() {
-		var output map[uint64][]byte = cs.impl.Output()
+		output := cs.impl.Output()
 		out16 := make(map[uint16][]byte)
 		for index, share := range output {
 			out16[uint16(index)] = share

@@ -23,8 +23,12 @@ state:
   auctions: map[NftID]Auction
   bidderList: map[NftID]BidderList
   bids: map[NftID]Bids
+  owner: AgentID
   ownerMargin: Uint64 # default auction owner's margin in promilles
 funcs:
+  init:
+    params:
+      owner: AgentID?
   startAuction:
     params:
       description: String? # description of the NFTs being auctioned
@@ -38,7 +42,7 @@ funcs:
     params:
       nft: NftID # NFT identifies the auction
   setOwnerMargin:
-    access: creator # only SC creator can set owner margin
+    access: owner # only SC creator can set owner margin
     params:
       ownerMargin: Uint64 # new SC owner margin in promilles
 views:

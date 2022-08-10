@@ -11,19 +11,23 @@ structs:
     userDefined: String # any user defined text
 typedefs: {}
 state:
+  owner: AgentID
   tokenList: TokenID[]
   registry: map[TokenID]Token
 funcs:
+  init:
+    params:
+      owner: AgentID?
   mintSupply:
     params:
       description: String? # description what minted token represents
       userDefined: String? # any user defined text
   transferOwnership:
-    access: creator # TODO the one who can transfer token ownership
+    access: owner # TODO the one who can transfer token ownership
     params:
       token: TokenID # token of token to transfer ownership of
   updateMetadata:
-    access: creator # TODO the one who can change the token info
+    access: owner # TODO the one who can change the token info
     params:
       token: TokenID # token of token to update metadata for
 views:

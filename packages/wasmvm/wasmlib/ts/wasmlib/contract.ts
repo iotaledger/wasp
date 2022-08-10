@@ -53,7 +53,6 @@ export class ScView {
     }
 
     protected callWithAllowance(allowance: ScTransfer | null): void {
-        //TODO new ScSandboxFunc().call(...)
         const req = new wasmrequests.CallRequest();
         req.contract = this.hContract;
         req.function = this.hFunction;
@@ -103,8 +102,8 @@ export class ScFunc extends ScView {
         return this;
     }
 
-    allowanceIotas(amount: i64): ScFunc {
-        return this.allowance(ScTransfer.iotas(amount));
+    allowanceBaseTokens(amount: i64): ScFunc {
+        return this.allowance(ScTransfer.baseTokens(amount));
     }
 
     call(): void {
@@ -147,7 +146,6 @@ export class ScFunc extends ScView {
         req.delay = this.delaySeconds;
         const res = sandbox(FnPost, req.bytes());
         if (this.resultsProxy) {
-            //TODO set kvStore directly?
             this.resultsProxy = new wasmtypes.Proxy(new ScDict(res));
         }
     }
@@ -157,7 +155,7 @@ export class ScFunc extends ScView {
         return this;
     }
 
-    transferIotas(amount: i64): ScFunc {
-        return this.transfer(ScTransfer.iotas(amount));
+    transferBaseTokens(amount: i64): ScFunc {
+        return this.transfer(ScTransfer.baseTokens(amount));
     }
 }

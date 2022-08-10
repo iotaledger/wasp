@@ -13,7 +13,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createChain(t *testing.T) *iscp.ChainID {
+func createChain(t *testing.T) *isc.ChainID {
 	originator := cryptolib.NewKeyPair()
 	layer1Client := nodeconn.NewL1Client(l1.Config, testlogger.NewLogger(t))
 	layer1Client.RequestFunds(originator.Address())
@@ -121,9 +121,9 @@ func TestNodeConn(t *testing.T) {
 	require.NoError(t, err)
 	wallet := cryptolib.NewKeyPair()
 	client.RequestFunds(wallet.Address())
-	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*iscp.Mi)
+	tx, err := nodeconn.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*isc.Million)
 	require.NoError(t, err)
-	err = nc.PublishTransaction(chainID, uint32(0), tx)
+	err = nc.PublishStateTransaction(chainID, uint32(0), tx)
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh

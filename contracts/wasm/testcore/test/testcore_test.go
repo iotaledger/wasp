@@ -108,13 +108,14 @@ func TestDeployTestCoreWithCreator(t *testing.T) {
 // balance of all accounts, taking any extra uploadWasm() into account
 
 func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64) {
+	_ = chain
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
 		// chain++
 		total++
 	}
 	// ctx.Chain.AssertCommonAccountIotas(chain)
-	ctx.Chain.AssertL2TotalIotas(total)
+	ctx.Chain.AssertL2TotalBaseTokens(total)
 }
 
 // originatorBalanceReducedBy checks the balance of the originator address has
@@ -125,7 +126,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
 		minus++
 	}
-	ctx.Chain.Env.AssertL1Iotas(ctx.Chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-minus)
+	ctx.Chain.Env.AssertL1BaseTokens(ctx.Chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-minus)
 }
 
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {

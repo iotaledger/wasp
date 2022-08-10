@@ -52,12 +52,11 @@ export function hashToBytes(value: ScHash): u8[] {
 }
 
 export function hashFromString(value: string): ScHash {
-    return hashFromBytes(wasmtypes.base58Decode(value));
+    return hashFromBytes(wasmtypes.hexDecode(value));
 }
 
 export function hashToString(value: ScHash): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(hashToBytes(value));
+    return wasmtypes.hexEncode(hashToBytes(value));
 }
 
 function hashFromBytesUnchecked(buf: u8[]): ScHash {

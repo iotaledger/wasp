@@ -11,46 +11,44 @@ import {ScImmutableState, ScState} from "./state";
 import {ScFunc} from "./contract";
 
 // @formatter:off
-export const FnAccountID           : i32 = -1;
-export const FnAllowance           : i32 = -2;
-export const FnBalance             : i32 = -3;
-export const FnBalances            : i32 = -4;
-export const FnBlockContext        : i32 = -5;
-export const FnCall                : i32 = -6;
-export const FnCaller              : i32 = -7;
-export const FnChainID             : i32 = -8;
-export const FnChainOwnerID        : i32 = -9;
-export const FnContract            : i32 = -10;
-export const FnContractCreator     : i32 = -11;
-export const FnDeployContract      : i32 = -12;
-export const FnEntropy             : i32 = -13;
-export const FnEstimateDust        : i32 = -14;
-export const FnEvent               : i32 = -15;
-export const FnLog                 : i32 = -16;
-export const FnMinted              : i32 = -17;
-export const FnPanic               : i32 = -18;
-export const FnParams              : i32 = -19;
-export const FnPost                : i32 = -20;
-export const FnRequest             : i32 = -21;
-export const FnRequestID           : i32 = -22;
-export const FnResults             : i32 = -23;
-export const FnSend                : i32 = -24;
-export const FnStateAnchor         : i32 = -25;
-export const FnTimestamp           : i32 = -26;
-export const FnTrace               : i32 = -27;
-export const FnTransferAllowed     : i32 = -28;
-export const FnUtilsBase58Decode   : i32 = -29;
-export const FnUtilsBase58Encode   : i32 = -30;
-export const FnUtilsBech32Decode   : i32 = -31;
-export const FnUtilsBech32Encode   : i32 = -32;
-export const FnUtilsBlsAddress     : i32 = -33;
-export const FnUtilsBlsAggregate   : i32 = -34;
-export const FnUtilsBlsValid       : i32 = -35;
-export const FnUtilsEd25519Address : i32 = -36;
-export const FnUtilsEd25519Valid   : i32 = -37;
-export const FnUtilsHashBlake2b    : i32 = -38;
-export const FnUtilsHashName       : i32 = -39;
-export const FnUtilsHashSha3       : i32 = -40;
+export const FnAccountID              : i32 = -1;
+export const FnAllowance              : i32 = -2;
+export const FnBalance                : i32 = -3;
+export const FnBalances               : i32 = -4;
+export const FnBlockContext           : i32 = -5;
+export const FnCall                   : i32 = -6;
+export const FnCaller                 : i32 = -7;
+export const FnChainID                : i32 = -8;
+export const FnChainOwnerID           : i32 = -9;
+export const FnContract               : i32 = -10;
+export const FnDeployContract         : i32 = -11;
+export const FnEntropy                : i32 = -12;
+export const FnEstimateStorageDeposit : i32 = -13;
+export const FnEvent                  : i32 = -14;
+export const FnLog                    : i32 = -15;
+export const FnMinted                 : i32 = -16;
+export const FnPanic                  : i32 = -17;
+export const FnParams                 : i32 = -18;
+export const FnPost                   : i32 = -19;
+export const FnRequest                : i32 = -20;
+export const FnRequestID              : i32 = -21;
+export const FnRequestSender          : i32 = -22;
+export const FnResults                : i32 = -23;
+export const FnSend                   : i32 = -24;
+export const FnStateAnchor            : i32 = -25;
+export const FnTimestamp              : i32 = -26;
+export const FnTrace                  : i32 = -27;
+export const FnTransferAllowed        : i32 = -28;
+export const FnUtilsBech32Decode      : i32 = -29;
+export const FnUtilsBech32Encode      : i32 = -30;
+export const FnUtilsBlsAddress        : i32 = -31;
+export const FnUtilsBlsAggregate      : i32 = -32;
+export const FnUtilsBlsValid          : i32 = -33;
+export const FnUtilsEd25519Address    : i32 = -34;
+export const FnUtilsEd25519Valid      : i32 = -35;
+export const FnUtilsHashBlake2b       : i32 = -36;
+export const FnUtilsHashName          : i32 = -37;
+export const FnUtilsHashSha3          : i32 = -38;
 // @formatter:on
 
 // Direct logging of text to host log
@@ -89,7 +87,7 @@ export class ScSandbox {
 
     // calls a smart contract function
     protected callWithAllowance(hContract: wasmtypes.ScHname, hFunction: wasmtypes.ScHname, params: ScDict | null, allowance: ScTransfer | null): ScImmutableDict {
-         const req = new wasmrequests.CallRequest();
+        const req = new wasmrequests.CallRequest();
         req.contract = hContract;
         req.function = hFunction;
         if (params === null) {
@@ -112,11 +110,6 @@ export class ScSandbox {
     // retrieve the hname of this contract
     public contract(): wasmtypes.ScHname {
         return wasmtypes.hnameFromBytes(sandbox(FnContract, null));
-    }
-
-    // retrieve the agent id of the creator of this contract
-    public contractCreator(): wasmtypes.ScAgentID {
-        return wasmtypes.agentIDFromBytes(sandbox(FnContractCreator, null));
     }
 
     // retrieve the chain id of the chain this contract lives on
@@ -219,7 +212,7 @@ export class ScSandboxFunc extends ScSandbox {
         return wasmtypes.hashFromBytes(sandbox(FnEntropy, null));
     }
 
-    public estimateDust(fn: ScFunc): u64 {
+    public estimateStorageDeposit(fn: ScFunc): u64 {
         const req = new wasmrequests.PostRequest();
         req.contract = fn.hContract;
         req.function = fn.hFunction;
@@ -235,7 +228,7 @@ export class ScSandboxFunc extends ScSandbox {
         }
         req.transfer = transfer.toBytes();
         req.delay = fn.delaySeconds;
-        return wasmtypes.uint64FromBytes(sandbox(FnEstimateDust, req.bytes()));
+        return wasmtypes.uint64FromBytes(sandbox(FnEstimateStorageDeposit, req.bytes()));
     }
 
     // signals an event on the node that external entities can subscribe to
@@ -294,6 +287,11 @@ export class ScSandboxFunc extends ScSandbox {
     // retrieve the request id of this transaction
     public requestID(): wasmtypes.ScRequestID {
         return wasmtypes.requestIDFromBytes(sandbox(FnRequestID, null));
+    }
+
+    // retrieve the request sender of this transaction
+    public requestSender(): wasmtypes.ScAgentID {
+        return wasmtypes.agentIDFromBytes(sandbox(FnRequestSender, null));
     }
 
     // Send transfers SC assets to the specified address

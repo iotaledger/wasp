@@ -6,6 +6,8 @@ package chain
 import (
 	"strconv"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -71,7 +73,7 @@ var infoCmd = &cobra.Command{
 			log.Printf("Owner: %s\n", govInfo.ChainOwnerID.String())
 
 			if govInfo.GasFeePolicy != nil {
-				gasFeeToken := iotaTokenStr
+				gasFeeToken := util.BaseTokenStr
 				if govInfo.GasFeePolicy.GasFeeTokenID != nil {
 					gasFeeToken = govInfo.GasFeePolicy.GasFeeTokenID.String()
 				}

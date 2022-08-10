@@ -24,24 +24,18 @@ var listContractsCmd = &cobra.Command{
 			"name",
 			"description",
 			"proghash",
-			"creator",
 			"owner fee",
 			"validator fee",
 		}
 		rows := make([][]string, len(contracts))
 		i := 0
 		for hname, c := range contracts {
-			creator := ""
-			if c.HasCreator() {
-				creator = c.Creator.String()
-			}
 
 			rows[i] = []string{
 				hname.String(),
 				c.Name,
 				c.Description,
 				c.ProgramHash.String(),
-				creator,
 			}
 			i++
 		}

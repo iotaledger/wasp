@@ -39,10 +39,10 @@ export function boolToBytes(value: bool): u8[] {
 }
 
 export function boolFromString(value: string): bool {
-    switch (value) {
-    case "0":
+    if (value == "0") {
         return false;
-    case "1":
+    }
+    if (value == "1") {
         return true;
     }
     panic("invalid bool string");

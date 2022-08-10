@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func init() {
@@ -14,7 +14,7 @@ func init() {
 // for debugging
 func PrintWellKnownHnames() {
 	fmt.Printf("--------------- well known hnames ------------------\n")
-	hnames := make([]iscp.Hname, 0)
+	hnames := make([]isc.Hname, 0)
 	for h := range All {
 		hnames = append(hnames, h)
 	}
@@ -25,7 +25,7 @@ func PrintWellKnownHnames() {
 		rec := All[h]
 		fmt.Printf("    %10d, %10s: '%s'\n", rec.Hname(), rec.Hname(), rec.Name)
 	}
-	fmt.Printf("    %10d, %10s: '%s'\n", iscp.EntryPointInit, iscp.EntryPointInit, iscp.FuncInit)
-	fmt.Printf("    %10d, %10s: '%s'\n", iscp.Hn("testcore"), iscp.Hn("testcore"), "testcore")
+	fmt.Printf("    %10d, %10s: '%s'\n", isc.EntryPointInit, isc.EntryPointInit, isc.FuncInit)
+	fmt.Printf("    %10d, %10s: '%s'\n", isc.Hn("testcore"), isc.Hn("testcore"), "testcore")
 	fmt.Printf("--------------- well known hnames ------------------\n")
 }

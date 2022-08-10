@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
@@ -20,20 +20,20 @@ import (
 type BatchProposal struct {
 	ValidatorIndex          uint16
 	StateOutputID           *iotago.UTXOInput
-	RequestIDs              []iscp.RequestID
+	RequestIDs              []isc.RequestID
 	RequestHashes           [][32]byte
-	TimeData                iscp.TimeData
+	TimeData                time.Time
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
-	FeeDestination          iscp.AgentID
+	FeeDestination          isc.AgentID
 	SigShareOfStateOutputID tbls.SigShare
 }
 
 type consensusBatchParams struct {
-	timeData        iscp.TimeData // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
+	timeData        time.Time // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
-	feeDestination  iscp.AgentID
+	feeDestination  isc.AgentID
 	entropy         hashing.HashValue
 }
 
@@ -50,7 +50,7 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.StateOutputID, err = iscp.UTXOInputFromMarshalUtil(mu)
+	ret.StateOutputID, err = isc.UTXOInputFromMarshalUtil(mu)
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -62,15 +62,11 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.FeeDestination, err = iscp.AgentIDFromMarshalUtil(mu)
+	ret.FeeDestination, err = isc.AgentIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.TimeData.MilestoneIndex, err = mu.ReadUint32()
-	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
-	}
-	ret.TimeData.Time, err = mu.ReadTime()
+	ret.TimeData, err = mu.ReadTime()
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -85,10 +81,10 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if ret.SigShareOfStateOutputID, err = mu.ReadBytes(int(sigShareSize)); err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.RequestIDs = make([]iscp.RequestID, size)
+	ret.RequestIDs = make([]isc.RequestID, size)
 	ret.RequestHashes = make([][32]byte, size)
 	for i := range ret.RequestIDs {
-		ret.RequestIDs[i], err = iscp.RequestIDFromMarshalUtil(mu)
+		ret.RequestIDs[i], err = isc.RequestIDFromMarshalUtil(mu)
 		if err != nil {
 			return nil, xerrors.Errorf(errFmt, err)
 		}
@@ -110,8 +106,7 @@ func (b *BatchProposal) Bytes() []byte {
 		Write(b.AccessManaPledge).
 		Write(b.ConsensusManaPledge).
 		Write(b.FeeDestination).
-		WriteUint32(b.TimeData.MilestoneIndex).
-		WriteTime(b.TimeData.Time).
+		WriteTime(b.TimeData).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).
 		WriteBytes(b.SigShareOfStateOutputID)
@@ -125,8 +120,8 @@ func (b *BatchProposal) Bytes() []byte {
 // EnsureTimestampConsistent adjusts a batch timestamp, if it is not consistent with
 // the requests in the BatchProposal and the previous transaction. The timestamp is consistent,
 // if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
-// This implement the "fixing" part described in IscpBatchTimestamp.tla.
-func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+// This implement the "fixing" part described in IscBatchTimestamp.tla.
+func (b *BatchProposal) EnsureTimestampConsistent(requests []isc.Request, stateTimestamp time.Time) error {
 	// TODO: is this function, especially its Timestamp edditing part, still needded?
 	// maxReqTime := time.Time{}
 	for i := range b.RequestIDs {
@@ -154,7 +149,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 
 	ts := make([]time.Time, len(props))
 	for i := range ts {
-		ts[i] = props[i].TimeData.Time
+		ts[i] = props[i].TimeData
 	}
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
@@ -186,7 +181,7 @@ func (c *consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 	return &consensusBatchParams{
-		timeData:        iscp.TimeData{Time: retTS},
+		timeData:        retTS,
 		accessPledge:    props[selectedIndex].AccessManaPledge,
 		consensusPledge: props[selectedIndex].ConsensusManaPledge,
 		feeDestination:  props[selectedIndex].FeeDestination,
@@ -199,7 +194,7 @@ const keyLen = iotago.OutputIDLength + 32
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests
 // seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported
 // by more that 1/3 of nodes it means it is correct
-func calcIntersection(acs []*BatchProposal, n uint16) ([]iscp.RequestID, [][32]byte) {
+func calcIntersection(acs []*BatchProposal, n uint16) ([]isc.RequestID, [][32]byte) {
 	minNumberMentioned := n/3 + 1
 	numMentioned := make(map[[keyLen]byte]uint16)
 
@@ -216,13 +211,13 @@ func calcIntersection(acs []*BatchProposal, n uint16) ([]iscp.RequestID, [][32]b
 			maxLen = len(prop.RequestIDs)
 		}
 	}
-	retIDs := make([]iscp.RequestID, 0, maxLen)
+	retIDs := make([]isc.RequestID, 0, maxLen)
 	retHashes := make([][32]byte, 0)
 	for key, num := range numMentioned {
 		if num < minNumberMentioned {
 			continue
 		}
-		reqID, err := iscp.RequestIDFromBytes(key[:])
+		reqID, err := isc.RequestIDFromBytes(key[:])
 		if err != nil {
 			continue
 		}

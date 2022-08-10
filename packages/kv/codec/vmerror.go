@@ -1,21 +1,21 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
 )
 
-func DecodeVMErrorCode(b []byte, def ...iscp.VMErrorCode) (iscp.VMErrorCode, error) {
+func DecodeVMErrorCode(b []byte, def ...isc.VMErrorCode) (isc.VMErrorCode, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return iscp.VMErrorCode{}, xerrors.Errorf("cannot decode nil bytes")
+			return isc.VMErrorCode{}, xerrors.Errorf("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
-	return iscp.VMErrorCodeFromBytes(b)
+	return isc.VMErrorCodeFromBytes(b)
 }
 
-func MustDecodeVMErrorCode(b []byte, def ...iscp.VMErrorCode) iscp.VMErrorCode {
+func MustDecodeVMErrorCode(b []byte, def ...isc.VMErrorCode) isc.VMErrorCode {
 	code, err := DecodeVMErrorCode(b, def...)
 	if err != nil {
 		panic(err)
@@ -23,6 +23,6 @@ func MustDecodeVMErrorCode(b []byte, def ...iscp.VMErrorCode) iscp.VMErrorCode {
 	return code
 }
 
-func EncodeVMErrorCode(code iscp.VMErrorCode) []byte {
+func EncodeVMErrorCode(code isc.VMErrorCode) []byte {
 	return code.Bytes()
 }

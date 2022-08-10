@@ -15,8 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -33,7 +32,7 @@ type stateManager struct {
 	nodeConn                    chain.ChainNodeConnection
 	pullStateRetryTime          time.Time
 	solidState                  state.VirtualStateAccess
-	stateOutput                 *iscp.AliasOutputWithID
+	stateOutput                 *isc.AliasOutputWithID
 	stateOutputTimestamp        time.Time
 	currentSyncData             atomic.Value
 	notifiedAnchorOutputID      *iotago.UTXOInput
@@ -156,7 +155,7 @@ func (sm *stateManager) initLoadState() {
 		sm.solidState = solidState
 		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State commitment: %s",
-			solidState.BlockIndex(), trie.RootCommitment(solidState.TrieNodeStore()))
+			solidState.BlockIndex(), state.RootCommitment(solidState.TrieNodeStore()))
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		sm.chain.EnqueueDismissChain(fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err))
@@ -216,7 +215,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-eventAliasOutputCh:
 			if ok {
-				sm.handleAliasOutput(msg.(*iscp.AliasOutputWithID))
+				sm.handleAliasOutput(msg.(*isc.AliasOutputWithID))
 			} else {
 				eventAliasOutputCh = nil
 			}

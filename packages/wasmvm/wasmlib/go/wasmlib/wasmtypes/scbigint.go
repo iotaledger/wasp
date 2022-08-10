@@ -7,6 +7,11 @@ type ScBigInt struct {
 	bytes []byte
 }
 
+var (
+	zero = NewScBigInt()
+	one  = NewScBigInt(1)
+)
+
 func NewScBigInt(value ...uint64) ScBigInt {
 	if len(value) == 0 {
 		return ScBigInt{}
@@ -86,10 +91,10 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	if cmp <= 0 {
 		if cmp < 0 {
 			// divide by larger value, quo = 0, rem = lhs
-			return NewScBigInt(), o
+			return zero, o
 		}
 		// divide equal values, quo = 1, rem = 0
-		return NewScBigInt(1), NewScBigInt()
+		return one, zero
 	}
 	if o.IsUint64() {
 		// let standard uint64 type do the heavy lifting
@@ -100,50 +105,110 @@ func (o ScBigInt) DivMod(rhs ScBigInt) (ScBigInt, ScBigInt) {
 	if len(rhs.bytes) == 1 {
 		if rhs.bytes[0] == 1 {
 			// divide by 1, quo = lhs, rem = 0
-			return o, NewScBigInt()
+			return o, zero
 		}
-		return o.divModSimple(rhs.bytes[0])
+		return o.divModSingleByte(rhs.bytes[0])
 	}
-	return o.divModEstimate(rhs)
+	return o.divModMultiByte(rhs)
 }
 
+// divModEstimate uses long division byte estimation and corrects on the remainder
+// by recursively estimating the next byte and discounting the result in the quotient
 func (o ScBigInt) divModEstimate(rhs ScBigInt) (ScBigInt, ScBigInt) {
-	// shift divisor MSB until the high order bit is set
+	// first filter out the simplest cases, when lengths are equal
+	// that either results in a quotient of one or zero
+	lhsLen := len(o.bytes)
 	rhsLen := len(rhs.bytes)
-	byte1 := rhs.bytes[rhsLen-1]
-	byte2 := rhs.bytes[rhsLen-2]
-	word := uint16(byte1)<<8 + uint16(byte2)
-	shift := uint32(0)
-	for ; (word & 0x8000) == 0; word <<= 1 {
+	if lhsLen <= rhsLen {
+		if o.Cmp(rhs) < 0 {
+			return zero, o
+		}
+		return one, o.Sub(rhs)
+	}
+
+	// Now for the big estimation trick. Since we normalized the rhs to have the msb high bit
+	// set, dividing two lhs MSBs by the rhs MSB will in over 80% of the cases be the correct
+	// value for the entire lhs / rhs, almost 20% will be 1 too high, and about 0.5% will be
+	// 2 too high. We could then use a simple compare and subtract loop to get the quotient
+	// guess correct.
+	// But we're going to correct the quotient with the estimate of the next byte instead.
+	// When we overshoot the correct value we will subtract the estimate taken on the surplus
+	// value, and otherwise we will add the estimate taken on the remainder value. This will
+	// ultimately converge the quotient to the actual value of lhs / rhs
+
+	// determine the initial guess for the quotient
+	bufLen := lhsLen - rhsLen
+	buf := make([]byte, bufLen)
+	lhs16 := Uint16FromBytes(o.bytes[lhsLen-2:])
+	rhs16 := uint16(rhs.bytes[rhsLen-1])
+	res16 := lhs16 / rhs16
+	if res16 > 0xff {
+		// res16 can be up to 0x0101, reduce guess to the nearest byte value
+		// the estimate correction algorithm will take care of fixing this
+		res16 = 0xff
+	}
+	buf[bufLen-1] = byte(res16)
+	guess := normalize(buf)
+
+	// now see where this guess gets us when multiplying back
+	product := rhs.Mul(guess)
+
+	// compare the product to the original lhs to see where our guess get us
+	cmp := product.Cmp(o)
+	if cmp == 0 {
+		// lucky guess, exact match, and obviously exactly divisible by rhs without remainder
+		return guess, zero
+	}
+
+	if cmp < 0 {
+		// underestimated, correct our guess by adding the estimate on the remainder
+		guessRemainder := o.Sub(product)
+		quo, rem := guessRemainder.divModEstimate(rhs)
+		return guess.Add(quo), rem
+	}
+
+	// overestimated, correct guess by subtracting the estimate on the surplus
+	guessSurplus := product.Sub(o)
+	quo, rem := guessSurplus.divModEstimate(rhs)
+	if rem.IsZero() {
+		// when the remainder is zero, we obviously have the exact match,
+		// so we only subtract the surplus quotient
+		return guess.Sub(quo), zero
+	}
+
+	// When the remainder is nonzero, we subtract the surplus quotient, but since
+	// we also need to subtract the remainder, we will need to correct the quotient
+	// by subtracting one more. That will allow us to then subtract the surplus
+	// remainder from the rhs to get the actual remainder.
+	return guess.Sub(quo).Sub(one), rhs.Sub(rem)
+}
+
+// divModMultiByte divides the lhs by a multi-byte rhs and returns quotient and remainder
+func (o ScBigInt) divModMultiByte(rhs ScBigInt) (ScBigInt, ScBigInt) {
+	// normalize first, shift divisor MSB until the high order bit is set
+	// so that we get the best guess possible when dividing by MSB
+
+	msb := rhs.bytes[len(rhs.bytes)-1]
+	if (msb & 0x80) != 0 {
+		// already normalized, no shifts necessary
+		return o.divModEstimate(rhs)
+	}
+
+	// determine how far to shift
+	shift := uint32(1)
+	for msb <<= 1; (msb & 0x80) == 0; msb <<= 1 {
 		shift++
 	}
 
-	// shift numerator by the same amount of bits
-	numerator := o.Shl(shift)
+	// shift both lhs and rhs, that way the quotient will be the same
+	// since lhs / rhs is equal to (lhs << shift) / (rhs << shift)
+	quo, rem := o.Shl(shift).divModEstimate(rhs.Shl(shift))
 
-	// now chop off LSBs on both sides such that only MSB of divisor remains
-	numerator.bytes = numerator.bytes[rhsLen-1:]
-	divisor := normalize([]byte{byte(word >> 8)})
-
-	// now we can use simple division by one byte to get a quotient estimate
-	// at worst case this will be 1 or 2 higher than the actual value
-	quotient, _ := numerator.divModSimple(divisor.bytes[0])
-
-	// calculate first product based on estimated quotient
-	product := rhs.Mul(quotient)
-
-	// as long as the product is too high,
-	// decrement the estimated quotient and adjust the product accordingly
-	for product.Cmp(o) > 0 {
-		quotient = quotient.Sub(NewScBigInt(1))
-		product = product.Sub(rhs)
-	}
-
-	// now that we found the actual quotient, the remainder is easy to calculate
-	return quotient, o.Sub(product)
+	// note that remainder will be shifted, too, so shift back the remainder
+	return quo, rem.Shr(shift)
 }
 
-func (o ScBigInt) divModSimple(value byte) (ScBigInt, ScBigInt) {
+func (o ScBigInt) divModSingleByte(value byte) (ScBigInt, ScBigInt) {
 	lhsLen := len(o.bytes)
 	buf := make([]byte, lhsLen)
 	remain := uint16(0)
@@ -181,7 +246,7 @@ func (o ScBigInt) Mul(rhs ScBigInt) ScBigInt {
 	}
 	if rhsLen == 0 {
 		// multiply by zero, result zero
-		return NewScBigInt()
+		return zero
 	}
 	if rhsLen == 1 && rhs.bytes[0] == 1 {
 		// multiply by one, result lhs
@@ -233,7 +298,7 @@ func (o ScBigInt) Shr(shift uint32) ScBigInt {
 
 	lhsLen := len(o.bytes)
 	if wholeBytes >= lhsLen {
-		return NewScBigInt()
+		return zero
 	}
 
 	bufLen := lhsLen - wholeBytes
@@ -308,13 +373,13 @@ func BigIntToBytes(value ScBigInt) []byte {
 }
 
 func BigIntFromString(value string) ScBigInt {
-	digits := len(value) - 18
-	if digits <= 0 {
-		// Uint64 fits 18 digits or 1 quintillion
+	// Uint64 fits 18 digits or 1 quintillion
+	if len(value) <= 18 {
 		return NewScBigInt(Uint64FromString(value))
 	}
 
 	// build value 18 digits at a time
+	digits := len(value) - 18
 	lhs := BigIntFromString(value[:digits])
 	rhs := BigIntFromString(value[digits:])
 	return lhs.Mul(quintillion).Add(rhs)

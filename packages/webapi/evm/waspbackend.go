@@ -15,9 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
@@ -26,24 +27,26 @@ type jsonRPCWaspBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	requestIDs sync.Map
+	baseToken  *parameters.BaseToken
 }
 
 var _ jsonrpc.ChainBackend = &jsonRPCWaspBackend{}
 
-func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *jsonRPCWaspBackend {
+func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *jsonRPCWaspBackend {
 	return &jsonRPCWaspBackend{
 		chain:      ch,
 		nodePubKey: nodePubKey,
+		baseToken:  baseToken,
 	}
 }
 
-func (b *jsonRPCWaspBackend) RequestIDByTransactionHash(txHash common.Hash) (iscp.RequestID, bool) {
+func (b *jsonRPCWaspBackend) RequestIDByTransactionHash(txHash common.Hash) (isc.RequestID, bool) {
 	// TODO: should this be stored in the chain state instead of a volatile cache?
 	r, ok := b.requestIDs.Load(txHash)
 	if !ok {
-		return iscp.RequestID{}, false
+		return isc.RequestID{}, false
 	}
-	return r.(iscp.RequestID), true
+	return r.(isc.RequestID), true
 }
 
 func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
@@ -56,7 +59,7 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 }
 
 func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
-	req, err := iscp.NewEVMOffLedgerRequest(b.chain.ID(), tx)
+	req, err := isc.NewEVMOffLedgerRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}
@@ -85,17 +88,21 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	res, err := chainutil.SimulateCall(
 		b.chain,
-		iscp.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg),
+		isc.NewEVMOffLedgerEstimateGasRequest(b.chain.ID(), callMsg),
 	)
 	if err != nil {
 		return 0, err
 	}
-	if res.Error != nil {
-		return 0, res.Error
+	if res.Receipt.Error != nil {
+		return 0, res.Receipt.Error
 	}
 	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
 }
 
 func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(b.chain, iscp.Hn(scName), iscp.Hn(funName), args)
+	return chainutil.CallView(b.chain, isc.Hn(scName), isc.Hn(funName), args)
+}
+
+func (b *jsonRPCWaspBackend) BaseToken() *parameters.BaseToken {
+	return b.baseToken
 }

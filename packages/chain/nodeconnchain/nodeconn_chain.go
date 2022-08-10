@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -18,14 +18,14 @@ import (
 // nodeconnChain is responsible for maintaining the information related to a single chain.
 type nodeconnChain struct {
 	nc      chain.NodeConnection
-	chainID *iscp.ChainID
+	chainID *isc.ChainID
 	log     *logger.Logger
 
 	aliasOutputIsHandled       bool
-	aliasOutputCh              chan *iscp.AliasOutputWithID
+	aliasOutputCh              chan *isc.AliasOutputWithID
 	aliasOutputStopCh          chan bool
 	onLedgerRequestIsHandled   bool
-	onLedgerRequestCh          chan iscp.OnLedgerRequest
+	onLedgerRequestCh          chan isc.OnLedgerRequest
 	onLedgerRequestStopCh      chan bool
 	txInclusionStateIsHandled  bool
 	txInclusionStateCh         chan *txInclusionStateMsg
@@ -43,15 +43,15 @@ type txInclusionStateMsg struct {
 
 var _ chain.ChainNodeConnection = &nodeconnChain{}
 
-func NewChainNodeConnection(chainID *iscp.ChainID, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
+func NewChainNodeConnection(chainID *isc.ChainID, nc chain.NodeConnection, log *logger.Logger) (chain.ChainNodeConnection, error) {
 	var err error
 	result := nodeconnChain{
 		nc:                     nc,
 		chainID:                chainID,
 		log:                    log.Named("ncc-" + chainID.String()[2:8]),
-		aliasOutputCh:          make(chan *iscp.AliasOutputWithID),
+		aliasOutputCh:          make(chan *isc.AliasOutputWithID),
 		aliasOutputStopCh:      make(chan bool),
-		onLedgerRequestCh:      make(chan iscp.OnLedgerRequest),
+		onLedgerRequestCh:      make(chan isc.OnLedgerRequest),
 		onLedgerRequestStopCh:  make(chan bool),
 		txInclusionStateCh:     make(chan *txInclusionStateMsg),
 		txInclusionStateStopCh: make(chan bool),
@@ -76,7 +76,7 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 		Output:   output,
 	})
 	outputIDUTXO := outputID.UTXOInput()
-	outputIDstring := iscp.OID(outputIDUTXO)
+	outputIDstring := isc.OID(outputIDUTXO)
 	nccT.log.Debugf("handling state output ID %v", outputIDstring)
 	aliasOutput, ok := output.(*iotago.AliasOutput)
 	if !ok {
@@ -92,7 +92,7 @@ func (nccT *nodeconnChain) stateOutputHandler(outputID iotago.OutputID, output i
 			outputIDstring, aliasOutput.AliasID.ToAddress(), aliasOutput.StateIndex, nccT.chainID, nccT.chainID.AsAddress())
 	}
 	nccT.log.Debugf("handling state output ID %v: writing alias output to channel", outputIDstring)
-	nccT.aliasOutputCh <- iscp.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
+	nccT.aliasOutputCh <- isc.NewAliasOutputWithID(aliasOutput, outputIDUTXO)
 	nccT.log.Debugf("handling state output ID %v: alias output handled", outputIDstring)
 }
 
@@ -105,9 +105,9 @@ func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago
 		Output:   output,
 	})
 	outputIDUTXO := outputID.UTXOInput()
-	outputIDstring := iscp.OID(outputIDUTXO)
+	outputIDstring := isc.OID(outputIDUTXO)
 	nccT.log.Debugf("handling output ID %v", outputIDstring)
-	onLedgerRequest, err := iscp.OnLedgerFromUTXO(output, outputIDUTXO)
+	onLedgerRequest, err := isc.OnLedgerFromUTXO(output, outputIDUTXO)
 	if err != nil {
 		nccT.log.Warnf("handling output ID %v: unknown output type; ignoring it", outputIDstring)
 		return
@@ -118,7 +118,7 @@ func (nccT *nodeconnChain) outputHandler(outputID iotago.OutputID, output iotago
 }
 
 func (nccT *nodeconnChain) txInclusionStateHandler(txID iotago.TransactionID, state string) {
-	txIDStr := iscp.TxID(txID)
+	txIDStr := isc.TxID(txID)
 	nccT.log.Debugf("handling inclusion state of tx ID %v: %v", txIDStr, state)
 	nccT.txInclusionStateCh <- &txInclusionStateMsg{
 		txID:  txID,
@@ -243,15 +243,20 @@ func (nccT *nodeconnChain) detachFromMilestones() {
 	}
 }
 
-func (nccT *nodeconnChain) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
-	nccT.metrics.GetOutPublishTransaction().CountLastMessage(struct {
+func (nccT *nodeconnChain) PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+	nccT.metrics.GetOutPublishStateTransaction().CountLastMessage(struct {
 		StateIndex  uint32
 		Transaction *iotago.Transaction
 	}{
 		StateIndex:  stateIndex,
 		Transaction: tx,
 	})
-	return nccT.nc.PublishTransaction(nccT.chainID, stateIndex, tx)
+	return nccT.nc.PublishStateTransaction(nccT.chainID, stateIndex, tx)
+}
+
+func (nccT *nodeconnChain) PublishGovernanceTransaction(tx *iotago.Transaction) error {
+	nccT.metrics.GetOutPublishGovernanceTransaction().CountLastMessage(tx)
+	return nccT.nc.PublishGovernanceTransaction(nccT.chainID, tx)
 }
 
 func (nccT *nodeconnChain) PullLatestOutput() {

@@ -28,8 +28,6 @@ var (
 const hexDigits = "0123456789abcdef"
 
 func init() {
-	wasmtypes.Base58Decode = utils.Base58Decode
-	wasmtypes.Base58Encode = utils.Base58Encode
 	wasmtypes.Bech32Decode = utils.Bech32Decode
 	wasmtypes.Bech32Encode = utils.Bech32Encode
 	wasmtypes.NewScHname = utils.Hname

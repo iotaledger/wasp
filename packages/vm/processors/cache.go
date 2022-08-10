@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"golang.org/x/xerrors"
@@ -15,14 +15,14 @@ import (
 type Cache struct {
 	mutex      *sync.Mutex
 	Config     *Config
-	processors map[hashing.HashValue]iscp.VMProcessor
+	processors map[hashing.HashValue]isc.VMProcessor
 }
 
 func MustNew(config *Config) *Cache {
 	ret := &Cache{
 		mutex:      &sync.Mutex{},
 		Config:     config,
-		processors: make(map[hashing.HashValue]iscp.VMProcessor),
+		processors: make(map[hashing.HashValue]isc.VMProcessor),
 	}
 	// default builtin processor has root contract hash
 	err := ret.NewProcessor(root.Contract.ProgramHash, nil, vmtypes.Core)
@@ -41,7 +41,7 @@ func (cps *Cache) NewProcessor(programHash hashing.HashValue, programCode []byte
 }
 
 func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
-	var proc iscp.VMProcessor
+	var proc isc.VMProcessor
 	var ok bool
 	var err error
 
@@ -76,11 +76,11 @@ func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
 
 type GetBinaryFunc func(hashing.HashValue) (string, []byte, error)
 
-func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary GetBinaryFunc) (iscp.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary GetBinaryFunc) (isc.VMProcessor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary GetBinaryFunc) (iscp.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary GetBinaryFunc) (isc.VMProcessor, error) {
 	cps.mutex.Lock()
 	defer cps.mutex.Unlock()
 

@@ -84,7 +84,7 @@ func worker(ctx context.Context) {
 func initWebAPI() {
 	Server = echoswagger.New(echo.New(), "/doc", &echoswagger.Info{
 		Title:       "Wasp API",
-		Description: "REST API for the IOTA Wasp node",
+		Description: "REST API for the Wasp node",
 		Version:     wasp.Version,
 	})
 

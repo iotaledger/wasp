@@ -6,7 +6,7 @@ package governanceimpl
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -18,7 +18,7 @@ import (
 // - ParamMaxEventSizeUint16        - uint16 maximum size of a single event.
 // - ParamMaxEventsPerRequestUint16 - uint16 maximum number of events per request.
 // Does not set gas fee policy!
-func setChainInfo(ctx iscp.Sandbox) dict.Dict {
+func setChainInfo(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	// max blob size
@@ -52,7 +52,7 @@ func setChainInfo(ctx iscp.Sandbox) dict.Dict {
 }
 
 // getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
-func getChainInfo(ctx iscp.SandboxView) dict.Dict {
+func getChainInfo(ctx isc.SandboxView) dict.Dict {
 	info := governance.MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
@@ -66,7 +66,7 @@ func getChainInfo(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func getMaxBlobSize(ctx iscp.SandboxView) dict.Dict {
+func getMaxBlobSize(ctx isc.SandboxView) dict.Dict {
 	maxBlobSize, err := ctx.State().Get(governance.VarMaxBlobSize)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)

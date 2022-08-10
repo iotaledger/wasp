@@ -8,8 +8,8 @@ import (
 )
 
 func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
-	amount := ctx.Allowance().Iotas()
-	transfer := wasmlib.NewScTransferIotas(amount)
+	amount := ctx.Allowance().BaseTokens()
+	transfer := wasmlib.NewScTransferBaseTokens(amount)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	donation := &Donation{
 		Amount:    amount,
@@ -33,7 +33,7 @@ func funcDonate(ctx wasmlib.ScFuncContext, f *DonateContext) {
 }
 
 func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
-	balance := ctx.Balances().Iotas()
+	balance := ctx.Balances().BaseTokens()
 	amount := f.Params.Amount().Value()
 	if amount == 0 || amount > balance {
 		amount = balance
@@ -43,11 +43,11 @@ func funcWithdraw(ctx wasmlib.ScFuncContext, f *WithdrawContext) {
 		return
 	}
 
-	scCreator := ctx.ContractCreator().Address()
-	ctx.Send(scCreator, wasmlib.NewScTransferIotas(amount))
+	scOwner := f.State.Owner().Value().Address()
+	ctx.Send(scOwner, wasmlib.NewScTransferBaseTokens(amount))
 }
 
-func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {
+func viewDonation(_ wasmlib.ScViewContext, f *DonationContext) {
 	nr := f.Params.Nr().Value()
 	donation := f.State.Log().GetDonation(nr).Value()
 	f.Results.Amount().SetValue(donation.Amount)
@@ -57,8 +57,16 @@ func viewDonation(ctx wasmlib.ScViewContext, f *DonationContext) {
 	f.Results.Timestamp().SetValue(donation.Timestamp)
 }
 
-func viewDonationInfo(ctx wasmlib.ScViewContext, f *DonationInfoContext) {
+func viewDonationInfo(_ wasmlib.ScViewContext, f *DonationInfoContext) {
 	f.Results.MaxDonation().SetValue(f.State.MaxDonation().Value())
 	f.Results.TotalDonation().SetValue(f.State.TotalDonation().Value())
 	f.Results.Count().SetValue(f.State.Log().Length())
+}
+
+func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+	if f.Params.Owner().Exists() {
+		f.State.Owner().SetValue(f.Params.Owner().Value())
+		return
+	}
+	f.State.Owner().SetValue(ctx.RequestSender())
 }

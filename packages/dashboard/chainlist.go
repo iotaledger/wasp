@@ -7,7 +7,7 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/labstack/echo/v4"
 )
 
@@ -76,7 +76,7 @@ type ChainListTemplateParams struct {
 }
 
 type ChainOverview struct {
-	ChainID       *iscp.ChainID
+	ChainID       *isc.ChainID
 	Active        bool
 	ChainInfo     *ChainInfo
 	CommitteeSize int

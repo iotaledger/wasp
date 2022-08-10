@@ -27,10 +27,20 @@ func NewEmptyPublicKey() *PublicKey {
 	}
 }
 
-func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
+// TODO this should be deprecated. just use Hex everywhere
+func NewPublicKeyFromBase58String(s string) (publicKey *PublicKey, err error) {
 	b, err := base58.Decode(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from base58 string: %w", s, err)
+	}
+	publicKey, err = NewPublicKeyFromBytes(b)
+	return publicKey, err
+}
+
+func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
 	publicKey, err = NewPublicKeyFromBytes(b)
 	return publicKey, err
@@ -47,18 +57,10 @@ func (pkT *PublicKey) AsBytes() []byte {
 	return pkT.key
 }
 
-func (pkT *PublicKey) AsByteArray() [PublicKeySize]byte {
+func (pkT *PublicKey) AsKey() PublicKeyKey {
 	var result [PublicKeySize]byte
 	copy(result[:], pkT.key)
 	return result
-}
-
-func (pkT *PublicKey) AsKey() PublicKeyKey {
-	return PublicKeyKey(pkT.AsByteArray())
-}
-
-func (pkT *PublicKey) AsString() string {
-	return hex.EncodeToString(pkT.key)
 }
 
 func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
@@ -83,5 +85,5 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 }
 
 func (pkT *PublicKey) String() string {
-	return pkT.AsString()
+	return hex.EncodeToString(pkT.key)
 }

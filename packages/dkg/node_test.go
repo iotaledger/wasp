@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -33,15 +32,15 @@ func TestBasic(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(log),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
@@ -110,7 +109,7 @@ func TestUnreliableNet(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
 			80,                                         // Delivered %
@@ -120,10 +119,10 @@ func TestUnreliableNet(t *testing.T) {
 		),
 		testlogger.WithLevel(log, logger.LevelInfo, false),
 	)
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
 		dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
@@ -158,15 +157,15 @@ func TestLowN(t *testing.T) {
 		threshold := n
 		peerCount := n
 		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+		peeringNetwork := testutil.NewPeeringNetwork(
 			peerNetIDs, peerIdentities, 10000,
 			testutil.NewPeeringNetReliable(log),
 			testlogger.WithLevel(log, logger.LevelWarn, false),
 		)
-		var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+		networkProviders := peeringNetwork.NetworkProviders()
 		//
 		// Initialize the DKG subsystem in each node.
-		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+		dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
 			dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 			dkgNode, err := dkg.NewNode(

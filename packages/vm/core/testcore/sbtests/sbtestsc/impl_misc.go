@@ -3,7 +3,7 @@ package sbtestsc
 import (
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -13,7 +13,7 @@ import (
 // ParamCallOption
 // ParamCallIntParam
 // ParamHnameContract
-func callOnChain(ctx iscp.Sandbox) dict.Dict {
+func callOnChain(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramIn := params.MustGetUint64(ParamN)
@@ -32,14 +32,14 @@ func callOnChain(ctx iscp.Sandbox) dict.Dict {
 	}), nil)
 }
 
-func incCounter(ctx iscp.Sandbox) dict.Dict {
+func incCounter(ctx isc.Sandbox) dict.Dict {
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetUint64(VarCounter, 0)
 	ctx.State().Set(VarCounter, codec.EncodeUint64(counter+1))
 	return nil
 }
 
-func getCounter(ctx iscp.SandboxView) dict.Dict {
+func getCounter(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetUint64(VarCounter, 0)
@@ -47,7 +47,7 @@ func getCounter(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func runRecursion(ctx iscp.Sandbox) dict.Dict {
+func runRecursion(ctx isc.Sandbox) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	depth := params.MustGetUint64(ParamN)
 	if depth == 0 {
@@ -66,7 +66,7 @@ func fibonacci(n uint64) uint64 {
 	return fibonacci(n-1) + fibonacci(n-2)
 }
 
-func getFibonacci(ctx iscp.SandboxView) dict.Dict {
+func getFibonacci(ctx isc.SandboxView) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	n := params.MustGetUint64(ParamN)
 	ctx.Log().Infof("fibonacci( %d )", n)
@@ -76,7 +76,7 @@ func getFibonacci(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func getFibonacciIndirect(ctx iscp.SandboxView) dict.Dict {
+func getFibonacciIndirect(ctx isc.SandboxView) dict.Dict {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	n := params.MustGetUint64(ParamN)
@@ -87,13 +87,13 @@ func getFibonacciIndirect(ctx iscp.SandboxView) dict.Dict {
 		return ret
 	}
 
-	ret1 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+	ret1 := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamN: n - 1,
 	}))
 	result := kvdecoder.New(ret1, ctx.Log())
 	n1 := result.MustGetUint64(ParamN)
 
-	ret2 := ctx.Call(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
+	ret2 := ctx.CallView(ctx.Contract(), FuncGetFibonacciIndirect.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamN: n - 2,
 	}))
 	result = kvdecoder.New(ret2, ctx.Log())
@@ -105,7 +105,7 @@ func getFibonacciIndirect(ctx iscp.SandboxView) dict.Dict {
 
 // ParamIntParamName
 // ParamIntParamValue
-func setInt(ctx iscp.Sandbox) dict.Dict {
+func setInt(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Infof(FuncSetInt.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramName := params.MustGetString(ParamIntParamName)
@@ -115,7 +115,7 @@ func setInt(ctx iscp.Sandbox) dict.Dict {
 }
 
 // ParamIntParamName
-func getInt(ctx iscp.SandboxView) dict.Dict {
+func getInt(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Infof(FuncGetInt.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramName := params.MustGetString(ParamIntParamName)
@@ -126,16 +126,16 @@ func getInt(ctx iscp.SandboxView) dict.Dict {
 	return ret
 }
 
-func infiniteLoop(ctx iscp.Sandbox) dict.Dict {
+func infiniteLoop(ctx isc.Sandbox) dict.Dict {
 	for {
 		// do nothing, just waste gas
 		ctx.State().Set("foo", []byte(strings.Repeat("dummy data", 1000)))
 	}
 }
 
-func infiniteLoopView(ctx iscp.SandboxView) dict.Dict {
+func infiniteLoopView(ctx isc.SandboxView) dict.Dict {
 	for {
 		// do nothing, just waste gas
-		ctx.Call(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
+		ctx.CallView(ctx.Contract(), FuncGetCounter.Hname(), dict.Dict{})
 	}
 }

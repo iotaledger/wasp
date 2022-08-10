@@ -22,7 +22,7 @@ descriptor, you will now use the `post()` or `postToChain()` methods. `post()` p
 request within the current chain, while `postToChain()` takes the chain ID of the
 desired chain as parameter.
 
-In addition to the previously discussed [transferIotas()](call.mdx) and
+In addition to the previously discussed [transferBaseTokens()](call.mdx) and
 [ofContract()](call.mdx) methods, you can modify the behavior further by providing a
 delay() in seconds, which enables delayed execution of the request. This is of particular
 interest to smart contracts that need a delayed action like betting contracts with a timed
@@ -41,7 +41,7 @@ Here's how that works:
 
 ```go
 eor := ScFuncs.EndOfRound(ctx)
-eor.Func.Delay(3600).TransferIotas(1).Post()
+eor.Func.Delay(3600).TransferBaseTokens(1).Post()
 ```
 
 </TabItem>
@@ -49,7 +49,7 @@ eor.Func.Delay(3600).TransferIotas(1).Post()
 
 ```rust
 let eor = ScFuncs::end_of_round(ctx);
-eor.func.delay(3600).transfer_iotas(1).post();
+eor.func.delay(3600).transfer_base_tokens(1).post();
 ```
 
 </TabItem>
@@ -57,7 +57,7 @@ eor.func.delay(3600).transfer_iotas(1).post();
 
 ```ts
 let eor = sc.ScFuncs.endOfRound(ctx);
-eor.func.delay(3600).transferIotas(1).post();
+eor.func.delay(3600).transferBaseTokens(1).post();
 ```
 
 </TabItem>

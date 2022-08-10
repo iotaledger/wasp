@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
@@ -50,6 +50,7 @@ func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
 		Protocol:           &info.Protocol,
+		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
 	}
 }
 
@@ -121,7 +122,7 @@ func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
 
 // RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(
-	chainID *iscp.ChainID,
+	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
 ) {
@@ -134,7 +135,7 @@ func (nc *nodeConn) RegisterChain(
 }
 
 // UnregisterChain implements chain.NodeConnection.
-func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
+func (nc *nodeConn) UnregisterChain(chainID *isc.ChainID) {
 	nc.metrics.SetUnregistered(chainID)
 	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
@@ -146,8 +147,8 @@ func (nc *nodeConn) UnregisterChain(chainID *iscp.ChainID) {
 	nc.log.Debugf("nodeconn: chain unregistered: %s", chainID)
 }
 
-// PublishTransaction implements chain.NodeConnection.
-func (nc *nodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+// PublishStateTransaction implements chain.NodeConnection.
+func (nc *nodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
@@ -157,7 +158,19 @@ func (nc *nodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32,
 	return ncc.PublishTransaction(tx)
 }
 
-func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
+// PublishGovernanceTransaction implements chain.NodeConnection.
+// TODO: identical to PublishStateTransaction; needs to be reviewed
+func (nc *nodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
+	nc.chainsLock.RLock()
+	ncc, ok := nc.chains[chainID.Key()]
+	nc.chainsLock.RUnlock()
+	if !ok {
+		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	}
+	return ncc.PublishTransaction(tx)
+}
+
+func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
@@ -169,7 +182,7 @@ func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler 
 	return closure, nil
 }
 
-func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error {
+func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
 	nc.chainsLock.RLock()
 	ncc, ok := nc.chains[chainID.Key()]
 	nc.chainsLock.RUnlock()
@@ -196,7 +209,7 @@ func (nc *nodeConn) Close() {
 	nc.ctxCancel()
 }
 
-func (nc *nodeConn) PullLatestOutput(chainID *iscp.ChainID) {
+func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	ncc := nc.chains[chainID.Key()]
 	if ncc == nil {
 		nc.log.Errorf("PullLatestOutput: NCChain not  found for chainID %s", chainID)
@@ -205,12 +218,12 @@ func (nc *nodeConn) PullLatestOutput(chainID *iscp.ChainID) {
 	ncc.queryLatestChainStateUTXO()
 }
 
-func (nc *nodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID) {
+func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
 	// TODO - is this needed? - output should come from MQTT subscription
 	// we are also constantly polling for confirmation in the promotion/reattachment logic
 }
 
-func (nc *nodeConn) PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	ncc := nc.chains[chainID.Key()]
 	if ncc == nil {
 		nc.log.Errorf("PullOutputByID: NCChain not  found for chainID %s", chainID)
@@ -225,7 +238,7 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
 	// Build a Block and post it.
-	block, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).
+	block, err := builder.NewBlockBuilder().
 		Payload(tx).
 		Tips(ctx, nc.nodeAPIClient).
 		Build()
@@ -242,7 +255,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	}
 	txID, err := tx.ID()
 	if err == nil {
-		nc.log.Debugf("Posted transaction id %v", iscp.TxID(txID))
+		nc.log.Debugf("Posted transaction id %v", isc.TxID(txID))
 	} else {
 		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
 	}
@@ -266,16 +279,16 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
 
-		if metadataResp.ReferencedByMilestoneIndex != nil {
-			if metadataResp.LedgerInclusionState != nil && *metadataResp.LedgerInclusionState == "included" {
+		if metadataResp.ReferencedByMilestoneIndex != 0 {
+			if metadataResp.LedgerInclusionState != "" && metadataResp.LedgerInclusionState == "included" {
 				return nil // success
 			}
 			return xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d",
-				*metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
+				metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", msgID)
+			nc.log.Debugf("promoting msgID: %s", msgID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
 			if err != nil {
@@ -285,14 +298,18 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			if err != nil {
 				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
 			}
-			parents := [][]byte{msgID[:]}
+
+			parents := []iotago.BlockID{
+				msgID,
+			}
+
 			if len(tips) > 7 {
 				tips = tips[:7] // max 8 parents
 			}
 			for _, tip := range tips {
-				parents = append(parents, tip[:])
+				parents = append(parents, tip)
 			}
-			promotionMsg, err := builder.NewBlockBuilder(parameters.L1.Protocol.Version).Parents(parents).Build()
+			promotionMsg, err := builder.NewBlockBuilder().Parents(parents).Build()
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion Block: %w", err)
 			}
@@ -302,7 +319,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			}
 		}
 		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			nc.log.Debugf("reattaching block: %s", block)
+			nc.log.Debugf("reattaching block: %v", block)
 			err = nc.doPoW(ctx, block)
 			if err != nil {
 				return err
@@ -315,7 +332,10 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 	}
 }
 
-const refreshTipsDuringPoWInterval = 5 * time.Second
+const (
+	refreshTipsDuringPoWInterval = 5 * time.Second
+	parallelWorkers              = 1
+)
 
 func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 	if nc.config.UseRemotePoW {
@@ -335,10 +355,16 @@ func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 		return resp.Tips()
 	}
 
-	return doPoW(
+	targetScore := float64(parameters.L1.Protocol.MinPoWScore)
+
+	_, err := doPoW(
 		ctx,
 		block,
+		targetScore,
+		parallelWorkers,
 		refreshTipsDuringPoWInterval,
 		refreshTipsFn,
 	)
+
+	return err
 }

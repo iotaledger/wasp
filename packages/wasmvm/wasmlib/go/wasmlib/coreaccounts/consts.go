@@ -17,14 +17,14 @@ const (
 )
 
 const (
-	ParamAgentID           = "a"
-	ParamDestroyTokens     = "y"
-	ParamForceMinimumIotas = "f"
-	ParamForceOpenAccount  = "c"
-	ParamFoundrySN         = "s"
-	ParamNftID             = "z"
-	ParamSupplyDeltaAbs    = "d"
-	ParamTokenScheme       = "t"
+	ParamAgentID                = "a"
+	ParamDestroyTokens          = "y"
+	ParamForceMinimumBaseTokens = "f"
+	ParamForceOpenAccount       = "c"
+	ParamFoundrySN              = "s"
+	ParamNftID                  = "z"
+	ParamSupplyDeltaAbs         = "d"
+	ParamTokenScheme            = "t"
 )
 
 const (

@@ -16,19 +16,21 @@ keywords:
 
 ![Wasp Node Core Contracts Overview](/img/Banner/banner_wasp_core_contracts_overview.png)
 
-There are currently 6 core smart contracts that are always deployed on each
+There are currently 7 core smart contracts that are always deployed on each
 chain. These are responsible for the vital functions of the chain and
 provide infrastructure for all other smart contracts:
 
-- [__root__](root.md) - Responsible for the initialization of the chain, maintains registry of deployed contracts.
+- [`root`](./root.md) - Responsible for the initialization of the chain, maintains registry of deployed contracts.
 
-- [__accounts__](accounts.md): Responsible for the on-chain ledger of accounts (who owns what).
+- [`accounts`](./accounts.md): Manages the on-chain ledger of accounts.
 
-- [__blob__](blob.md): Responsible for the immutable registry of binary objects of arbitrary size. One blob is a collection of named binary chunks of data. For
-  example, a blob can be used to store a collections of _wasm_ binaries, needed
-  to deploy _WebAssembly_ smart contracts. Each blob in the registry is 
-  referenced by its hash which is deterministically calculated from its data.
+- [`blob`](./blob.md): Responsible for the registry of binary objects of arbitrary size.
 
-- [__blocklog__](blocklog.md): Keeps track of the blocks and receipts of requests which were processed by the chain. It also contains all events emitted by smart contracts.
+- [`blocklog`](./blocklog.md): Keeps track of the blocks and receipts of requests that were processed by the chain.
 
-- [__governance__](governance.md): Handles the administrative functions of the chain. For example: rotation of the committee of validators of the chain, fees and other chain-specific configurations.
+- [`governance`](./governance.md): Handles the administrative functions of the chain. For example: rotation of the committee of validators of the chain, fees and other chain-specific configurations.
+
+- [`errors`](./errors.md): Keeps a map of error codes to error messages templates. These error codes are used in request receipts.
+
+- [`evm`](./evm.md): Provides the necessary infrastructure to accept Ethereum
+  transactions and execute EVM code.

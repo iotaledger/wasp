@@ -14,17 +14,15 @@ import (
 
 func TestBasic(t *testing.T) {
 	u := New()
-	require.EqualValues(t, u.Supply(), u.GetAddressBalanceIotas(u.GenesisAddress()))
+	require.EqualValues(t, u.Supply(), u.GetAddressBalanceBaseTokens(u.GenesisAddress()))
 	gtime := u.GlobalTime()
-	require.EqualValues(t, 1, gtime.MilestoneIndex)
 	expectedTime := time.Unix(1, 0).Add(1 * time.Millisecond)
-	require.EqualValues(t, expectedTime, gtime.Time)
+	require.EqualValues(t, expectedTime, gtime)
 
-	u.AdvanceClockBy(10*time.Second, 3)
+	u.AdvanceClockBy(10 * time.Second)
 	gtime1 := u.GlobalTime()
-	require.EqualValues(t, 4, gtime1.MilestoneIndex)
-	expectedTime = gtime.Time.Add(10 * time.Second)
-	require.EqualValues(t, expectedTime, gtime1.Time)
+	expectedTime = gtime.Add(10 * time.Second)
+	require.EqualValues(t, expectedTime, gtime1)
 }
 
 func TestRequestFunds(t *testing.T) {
@@ -32,17 +30,16 @@ func TestRequestFunds(t *testing.T) {
 	addr := tpkg.RandEd25519Address()
 	tx, err := u.GetFundsFromFaucet(addr)
 	require.NoError(t, err)
-	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceIotas(u.GenesisAddress()))
-	require.EqualValues(t, FundsFromFaucetAmount, u.GetAddressBalanceIotas(addr))
+	require.EqualValues(t, u.Supply()-FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(u.GenesisAddress()))
+	require.EqualValues(t, FundsFromFaucetAmount, u.GetAddressBalanceBaseTokens(addr))
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
 	require.Same(t, tx, u.MustGetTransaction(txID))
 
 	gtime := u.GlobalTime()
-	require.EqualValues(t, 2, gtime.MilestoneIndex)
 	expectedTime := time.Unix(1, 0).Add(2 * time.Millisecond)
-	require.EqualValues(t, expectedTime, gtime.Time)
+	require.EqualValues(t, expectedTime, gtime)
 }
 
 func TestAddTransactionFail(t *testing.T) {
@@ -73,10 +70,10 @@ func TestDoubleSpend(t *testing.T) {
 	require.NoError(t, err)
 
 	spend2, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
-		AddInput(&builder.ToBeSignedUTXOInput{
-			Address:  addr1,
-			Output:   tx1.Essence.Outputs[0],
-			OutputID: iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
+		AddInput(&builder.TxInput{
+			UnlockTarget: addr1,
+			Input:        tx1.Essence.Outputs[0],
+			InputID:      iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,
@@ -90,10 +87,10 @@ func TestDoubleSpend(t *testing.T) {
 	require.NoError(t, err)
 
 	spend3, err := builder.NewTransactionBuilder(tpkg.TestNetworkID).
-		AddInput(&builder.ToBeSignedUTXOInput{
-			Address:  addr1,
-			Output:   tx1.Essence.Outputs[0],
-			OutputID: iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
+		AddInput(&builder.TxInput{
+			UnlockTarget: addr1,
+			Input:        tx1.Essence.Outputs[0],
+			InputID:      iotago.OutputIDFromTransactionIDAndIndex(tx1ID, 0),
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: FundsFromFaucetAmount,

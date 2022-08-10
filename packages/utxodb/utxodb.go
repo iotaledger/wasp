@@ -1,7 +1,6 @@
 package utxodb
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/big"
 	"sync"
@@ -12,17 +11,16 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
 
 const (
-	DefaultIOTASupply = tpkg.TestTokenSupply
+	DefaultBaseTokenSupply = tpkg.TestTokenSupply
 
-	// FundsFromFaucetAmount is how many iotas are returned from the faucet.
-	FundsFromFaucetAmount = 1000 * iscp.Mi
+	// FundsFromFaucetAmount is how many base tokens are returned from the faucet.
+	FundsFromFaucetAmount = 1000 * isc.Million
 )
 
 var (
@@ -39,13 +37,10 @@ type UnixSeconds uint64
 type UtxoDB struct {
 	mutex        sync.RWMutex
 	supply       uint64
-	seed         [cryptolib.SeedSize]byte
 	transactions map[iotago.TransactionID]*iotago.Transaction
 	utxo         map[iotago.OutputID]struct{}
-	// latest milestone index and time. With each added transaction, global time moves
-	// at least 1 ns and 1 milestone index. AdvanceClockBy advances the clock by duration and N milestone indices
 	// globalLogicalTime can be ahead of real time due to AdvanceClockBy
-	globalLogicalTime iscp.TimeData
+	globalLogicalTime time.Time
 	timeStep          time.Duration
 }
 
@@ -53,19 +48,13 @@ type InitParams struct {
 	initialTime time.Time
 	timestep    time.Duration
 	supply      uint64
-	seed        [cryptolib.SeedSize]byte
 }
 
-func DefaultInitParams(seed ...[]byte) *InitParams {
-	var seedBytes [cryptolib.SeedSize]byte
-	if len(seed) > 0 {
-		copy(seedBytes[:], seed[0])
-	}
+func DefaultInitParams() *InitParams {
 	return &InitParams{
 		initialTime: time.Unix(1, 0),
 		timestep:    1 * time.Millisecond,
-		supply:      DefaultIOTASupply,
-		seed:        seedBytes,
+		supply:      DefaultBaseTokenSupply,
 	}
 }
 
@@ -93,37 +82,29 @@ func New(params ...*InitParams) *UtxoDB {
 		p = DefaultInitParams()
 	}
 	u := &UtxoDB{
-		supply:       p.supply,
-		seed:         p.seed,
-		transactions: make(map[iotago.TransactionID]*iotago.Transaction),
-		utxo:         make(map[iotago.OutputID]struct{}),
-		globalLogicalTime: iscp.TimeData{
-			MilestoneIndex: 0,
-			Time:           p.initialTime,
-		},
-		timeStep: p.timestep,
+		supply:            p.supply,
+		transactions:      make(map[iotago.TransactionID]*iotago.Transaction),
+		utxo:              make(map[iotago.OutputID]struct{}),
+		globalLogicalTime: p.initialTime,
+		timeStep:          p.timestep,
 	}
 	u.genesisInit()
 	return u
 }
 
-func (u *UtxoDB) Seed() []byte {
-	return u.seed[:]
-}
-
 func (u *UtxoDB) genesisInit() {
 	genesisTx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
-		AddInput(&builder.ToBeSignedUTXOInput{
-			Address: genesisAddress,
-			Output: &iotago.BasicOutput{
-				Amount: DefaultIOTASupply,
+		AddInput(&builder.TxInput{
+			UnlockTarget: genesisAddress,
+			Input: &iotago.BasicOutput{
+				Amount: DefaultBaseTokenSupply,
 				Conditions: iotago.UnlockConditions{
 					&iotago.AddressUnlockCondition{Address: genesisAddress},
 				},
 			},
 		}).
 		AddOutput(&iotago.BasicOutput{
-			Amount: DefaultIOTASupply,
+			Amount: DefaultBaseTokenSupply,
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
@@ -160,29 +141,25 @@ func (u *UtxoDB) addTransaction(tx *iotago.Transaction, isGenesis bool) {
 		u.utxo[utxo.ID()] = struct{}{}
 	}
 	// advance clock
-	u.advanceClockBy(u.timeStep, 1)
+	u.advanceClockBy(u.timeStep)
 	u.checkLedgerBalance()
 }
 
-func (u *UtxoDB) advanceClockBy(step time.Duration, milestones uint32) {
-	if milestones == 0 {
-		panic("can't advance logical clock by 0 milestone indices")
-	}
+func (u *UtxoDB) advanceClockBy(step time.Duration) {
 	if step == 0 {
 		panic("can't advance clock by 0 nanoseconds")
 	}
-	u.globalLogicalTime.Time = u.globalLogicalTime.Time.Add(step)
-	u.globalLogicalTime.MilestoneIndex += milestones
+	u.globalLogicalTime = u.globalLogicalTime.Add(step)
 }
 
-func (u *UtxoDB) AdvanceClockBy(step time.Duration, milestones uint32) {
+func (u *UtxoDB) AdvanceClockBy(step time.Duration) {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	u.advanceClockBy(step, milestones)
+	u.advanceClockBy(step)
 }
 
-func (u *UtxoDB) GlobalTime() iscp.TimeData {
+func (u *UtxoDB) GlobalTime() time.Time {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -216,10 +193,10 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 	}
 
 	tx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
-		AddInput(&builder.ToBeSignedUTXOInput{
-			Address:  genesisAddress,
-			Output:   inputOutput,
-			OutputID: inputOutputID,
+		AddInput(&builder.TxInput{
+			UnlockTarget: genesisAddress,
+			InputID:      inputOutputID,
+			Input:        inputOutput,
 		}).
 		AddOutput(&iotago.BasicOutput{
 			Amount: fundsAmount,
@@ -240,17 +217,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 	return tx
 }
 
-// NewKeyPairByIndex deterministic private key
-func (u *UtxoDB) NewKeyPairByIndex(index uint64) (*cryptolib.KeyPair, *iotago.Ed25519Address) {
-	var tmp8 [8]byte
-	binary.LittleEndian.PutUint64(tmp8[:], index)
-	h := hashing.HashData(u.seed[:], tmp8[:])
-	keyPair := cryptolib.NewKeyPairFromSeed(cryptolib.NewSeedFromBytes(h[:]))
-	addr := keyPair.GetPublicKey().AsEd25519Address()
-	return keyPair, addr
-}
-
-// GetFundsFromFaucet sends FundsFromFaucetAmount IOTA tokens from the genesis address to the given address.
+// GetFundsFromFaucet sends FundsFromFaucetAmount base tokens from the genesis address to the given address.
 func (u *UtxoDB) GetFundsFromFaucet(target iotago.Address, amount ...uint64) (*iotago.Transaction, error) {
 	tx := u.mustGetFundsFromFaucetTx(target, amount...)
 	return tx, u.AddToLedger(tx)
@@ -315,16 +282,13 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 		}
 	}
 
-	{
-		semValCtx := &iotago.SemanticValidationContext{
-			ExtParas: &iotago.ExternalUnlockParameters{
-				ConfMsIndex: u.globalLogicalTime.MilestoneIndex,
-				ConfUnix:    uint32(u.globalLogicalTime.Time.Unix()),
-			},
-		}
-		if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {
-			return err
-		}
+	semValCtx := &iotago.SemanticValidationContext{
+		ExtParas: &iotago.ExternalUnlockParameters{
+			ConfUnix: uint32(u.globalLogicalTime.Unix()),
+		},
+	}
+	if err := tx.SemanticallyValidate(semValCtx, inputs); err != nil {
+		return err
 	}
 
 	return nil
@@ -375,8 +339,8 @@ func (u *UtxoDB) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotag
 	return outs, ids
 }
 
-// GetAddressBalanceIotas returns the total amount of iotas owned by the address
-func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
+// GetAddressBalanceBaseTokens returns the total amount of base token owned by the address
+func (u *UtxoDB) GetAddressBalanceBaseTokens(addr iotago.Address) uint64 {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
@@ -387,16 +351,16 @@ func (u *UtxoDB) GetAddressBalanceIotas(addr iotago.Address) uint64 {
 	return ret
 }
 
-// GetAddressBalances returns the total amount of iotas and tokens owned by the address
-func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
+// GetAddressBalances returns the total amount of base tokens and tokens owned by the address
+func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *isc.FungibleTokens {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
 
-	iotas := uint64(0)
+	baseTokens := uint64(0)
 	tokens := iotago.NativeTokenSum{}
 	for _, out := range u.getUnspentOutputs(addr) {
-		iotas += out.Deposit()
-		tset, err := out.NativeTokenSet().Set()
+		baseTokens += out.Deposit()
+		tset, err := out.NativeTokenList().Set()
 		if err != nil {
 			panic(err)
 		}
@@ -408,7 +372,7 @@ func (u *UtxoDB) GetAddressBalances(addr iotago.Address) *iscp.FungibleTokens {
 			tokens[token.ID] = new(big.Int).Add(val, token.Amount)
 		}
 	}
-	return iscp.FungibleTokensFromNativeTokenSum(iotas, tokens)
+	return isc.FungibleTokensFromNativeTokenSum(baseTokens, tokens)
 }
 
 // GetAliasOutputs collects all outputs of type iotago.AliasOutput for the address

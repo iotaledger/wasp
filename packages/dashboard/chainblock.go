@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -25,7 +25,7 @@ func (d *Dashboard) initChainBlock(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainBlock(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -107,7 +107,7 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 
 type ChainBlockTemplateParams struct {
 	BaseTemplateParams
-	ChainID          *iscp.ChainID
+	ChainID          *isc.ChainID
 	Index            uint32
 	LatestBlockIndex uint32
 	Block            *blocklog.BlockInfo

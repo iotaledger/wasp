@@ -4,29 +4,29 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/snapshot"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 )
 
-const usage = "USAGE: snapshot [-create | -scanfile | -restoredb] <filename>\n"
+const usage = "USAGE: snapshot [-create | -scanfile | -restoredb] <filename>"
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Printf(usage)
+		fmt.Printf("%s\n", usage)
 		os.Exit(1)
 	}
 	cmd := os.Args[1]
 	param := os.Args[2]
 	switch cmd {
 	case "-create", "--create":
-		chainID, err := iscp.ChainIDFromString(param)
+		chainID, err := isc.ChainIDFromString(param)
 		if err != nil {
 			fmt.Printf("error: %v\n", err)
 			os.Exit(1)
@@ -43,7 +43,7 @@ func main() {
 		prop := scanFile(param)
 		verify(prop)
 	default:
-		fmt.Printf(usage)
+		fmt.Printf("%s\n", usage)
 		os.Exit(1)
 	}
 }
@@ -134,10 +134,10 @@ func verify(prop *snapshot.FileProperties) {
 		os.Exit(1)
 	}
 	st := state.NewVirtualState(db.NewStore())
-	c := trie.RootCommitment(st.TrieNodeStore())
+	c := state.RootCommitment(st.TrieNodeStore())
 	fmt.Printf("root commitment is %s\n", c)
 
-	var chainID *iscp.ChainID
+	var chainID *isc.ChainID
 	err = panicutil.CatchPanic(func() {
 		chainID = st.ChainID()
 	})
@@ -172,8 +172,8 @@ func verify(prop *snapshot.FileProperties) {
 	}
 
 	err = kvstream.Iterate(func(k, v []byte) bool {
-		proof := state.CommitmentModel.Proof(k, nodeStore)
-		if errW = proof.Validate(c, v); errW != nil {
+		proof := state.GetMerkleProof(k, nodeStore)
+		if errW = state.ValidateMerkleProof(proof, c, v); errW != nil {
 			return false
 		}
 		count++
@@ -199,7 +199,7 @@ func verify(prop *snapshot.FileProperties) {
 	fmt.Printf("success: file %s match the database\n", prop.FileName)
 }
 
-func createSnapshot(chainID *iscp.ChainID) {
+func createSnapshot(chainID *isc.ChainID) {
 	dbDir := chainID.String()
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		fmt.Printf("directory %s does not exists\n", dbDir)
@@ -231,7 +231,7 @@ func createSnapshot(chainID *iscp.ChainID) {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
 	}
-	defer kvwriter.File.Close()
+	defer func() { _ = kvwriter.File.Close() }()
 
 	const reportEach = 100_000
 	var errW error
@@ -250,7 +250,7 @@ func createSnapshot(chainID *iscp.ChainID) {
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		kvwriter.File.Close()
+		func() { _ = kvwriter.File.Close() }()
 		os.Exit(1) //nolint:gocritic
 	}
 	if errW != nil {

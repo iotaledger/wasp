@@ -4,7 +4,7 @@
 package governanceimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -37,9 +37,14 @@ var Processor = governance.Contract.Processor(initialize,
 	governance.FuncChangeAccessNodes.WithHandler(changeAccessNodes),
 	governance.FuncRevokeAccessNode.WithHandler(revokeAccessNode),
 	governance.ViewGetChainNodes.WithHandler(getChainNodes),
+
+	// maintenance
+	governance.FuncStartMaintenance.WithHandler(setMaintenanceOn),
+	governance.FuncStopMaintenance.WithHandler(setMaintenanceOff),
+	governance.ViewGetMaintenanceStatus.WithHandler(getMaintenanceStatus),
 )
 
-func initialize(ctx iscp.Sandbox) dict.Dict {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("governance.initialize.begin")
 	state := ctx.State()
 
@@ -59,6 +64,8 @@ func initialize(ctx iscp.Sandbox) dict.Dict {
 	state.Set(governance.VarMaxEventsPerReq, codec.Encode(governance.DefaultMaxEventsPerRequest))
 
 	state.Set(governance.VarGasFeePolicyBytes, feePolicyBytes)
+
+	state.Set(governance.VarMaintenanceStatus, codec.Encode(false))
 
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state

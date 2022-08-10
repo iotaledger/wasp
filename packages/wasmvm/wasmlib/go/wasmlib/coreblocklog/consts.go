@@ -42,7 +42,6 @@ const (
 	ViewGetEventsForBlock          = "getEventsForBlock"
 	ViewGetEventsForContract       = "getEventsForContract"
 	ViewGetEventsForRequest        = "getEventsForRequest"
-	ViewGetLatestBlockInfo         = "getLatestBlockInfo"
 	ViewGetRequestIDsForBlock      = "getRequestIDsForBlock"
 	ViewGetRequestReceipt          = "getRequestReceipt"
 	ViewGetRequestReceiptsForBlock = "getRequestReceiptsForBlock"
@@ -55,7 +54,6 @@ const (
 	HViewGetEventsForBlock          = wasmtypes.ScHname(0x36232798)
 	HViewGetEventsForContract       = wasmtypes.ScHname(0x682a1922)
 	HViewGetEventsForRequest        = wasmtypes.ScHname(0x4f8d68e4)
-	HViewGetLatestBlockInfo         = wasmtypes.ScHname(0x084a1760)
 	HViewGetRequestIDsForBlock      = wasmtypes.ScHname(0x5a20327a)
 	HViewGetRequestReceipt          = wasmtypes.ScHname(0xb7f9534f)
 	HViewGetRequestReceiptsForBlock = wasmtypes.ScHname(0x77e3beef)

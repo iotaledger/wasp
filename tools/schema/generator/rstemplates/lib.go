@@ -212,14 +212,6 @@ $#each funcAccessComment _funcAccessComment
 $#set accessFinalize accessDone
 `,
 	// *******************************
-	"caseAccesscreator": `
-
-$#each funcAccessComment _funcAccessComment
-	ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
-$#set accessFinalize accessDone
-`,
-	// *******************************
 	"accessOther": `
 
 $#each funcAccessComment _funcAccessComment

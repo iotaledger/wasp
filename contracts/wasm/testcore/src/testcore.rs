@@ -46,7 +46,6 @@ pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFrom
     ctx.require(f.params.caller().value() == ctx.caller(), "fail: caller");
     ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
     ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
-    ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
 pub fn func_claim_allowance(ctx: &ScFuncContext, _f: &ClaimAllowanceContext) {
@@ -59,10 +58,10 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
-    let provided = ctx.allowance().iotas();
-    let dummy = ScFuncs::estimate_min_dust(ctx);
-    let required = ctx.estimate_dust(&dummy.func);
+pub fn func_estimate_min_storage_deposit(ctx: &ScFuncContext, _f: &EstimateMinStorageDepositContext) {
+    let provided = ctx.allowance().base_tokens();
+    let dummy = ScFuncs::estimate_min_storage_deposit(ctx);
+    let required = ctx.estimate_storage_deposit(&dummy.func);
     ctx.require(provided >= required, "not enough funds");
 }
 
@@ -152,21 +151,21 @@ pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
 }
 
 pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
-    let mut iotas = ctx.allowance().iotas();
+    let mut tokens = ctx.allowance().base_tokens();
     let address = ctx.caller().address();
-    let iotas_to_transfer : u64 = 1_000_000;
-    let transfer = wasmlib::ScTransfer::iotas(iotas_to_transfer);
-    while iotas >= iotas_to_transfer {
+    let tokens_to_transfer: u64 = 1_000_000;
+    let transfer = wasmlib::ScTransfer::base_tokens(tokens_to_transfer);
+    while tokens >= tokens_to_transfer {
         ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
         ctx.send(&address, &transfer);
-        iotas -= iotas_to_transfer;
+        tokens -= tokens_to_transfer;
     }
 }
 
 pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNativeTokensContext) {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().base_tokens();
     let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfer::iotas(iotas);
+    let transfer = wasmlib::ScTransfer::base_tokens(tokens);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     for token in ctx.allowance().token_ids() {
         let one = ScBigInt::from_uint64(1);
@@ -226,7 +225,6 @@ pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFrom
     ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
     ctx.require(f.params.chain_id().value() == ctx.current_chain_id(), "fail: chainID");
     ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
-    ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
 fn fibonacci(n: u64) -> u64 {

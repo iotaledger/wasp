@@ -5,39 +5,46 @@ package solo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/iotaledger/hive.go/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 )
 
-func (ch *Chain) RunOffLedgerRequest(r iscp.Request) (dict.Dict, error) {
+func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {
 	defer ch.logRequestLastBlock()
-	results := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	results := ch.RunRequestsSync([]isc.Request{r}, "off-ledger")
 	if len(results) == 0 {
-		return nil, xerrors.Errorf("request was skipped")
+		return nil, errors.New("request was skipped")
 	}
 	res := results[0]
-	return res.Return, res.Error
+	var err *isc.UnresolvedVMError
+	if !ch.bypassStardustVM {
+		// bypass if VM does not implement receipts
+		err = res.Receipt.Error
+	}
+	return res.Return, ch.ResolveVMError(err).AsGoError()
 }
 
-func (ch *Chain) RunOffLedgerRequests(reqs []iscp.Request) []*vm.RequestResult {
+func (ch *Chain) RunOffLedgerRequests(reqs []isc.Request) []*vm.RequestResult {
 	defer ch.logRequestLastBlock()
-	return ch.runRequestsSync(reqs, "off-ledger")
+	return ch.RunRequestsSync(reqs, "off-ledger")
 }
 
-func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+func (ch *Chain) RunRequestsSync(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -47,16 +54,16 @@ func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (results []*
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) estimateGas(req iscp.Request) (result *vm.RequestResult) {
+func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	task := ch.runTaskNoLock([]iscp.Request{req}, true)
+	task := ch.runTaskNoLock([]isc.Request{req}, true)
 	require.Len(ch.Env.T, task.Results, 1, "cannot estimate gas: request was skipped")
 	return task.Results[0]
 }
 
-func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask {
+func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask {
 	anchorOutput := ch.GetAnchorOutput()
 	task := &vm.VMTask{
 		Processors:         ch.proc,
@@ -74,35 +81,34 @@ func (ch *Chain) runTaskNoLock(reqs []iscp.Request, estimateGas bool) *vm.VMTask
 		EstimateGasMode:      estimateGas,
 	}
 
-	ch.Env.vmRunner.Run(task)
+	ch.vmRunner.Run(task)
 	require.NoError(ch.Env.T, task.VMError)
 
 	return task
 }
 
-func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results []*vm.RequestResult) {
+func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []*vm.RequestResult) {
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
 	task := ch.runTaskNoLock(reqs, false)
 
 	var essence *iotago.TransactionEssence
-	var inputsCommitment []byte
 	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
-		inputsCommitment = task.ResultInputsCommitment
+		copy(essence.InputsCommitment[:], task.ResultInputsCommitment)
 	} else {
-		panic("not implemented")
-		//essence, err = rotate.MakeRotateStateControllerTransaction(
-		//	task.RotationAddress,
-		//	task.AnchorOutput,
-		//	task.Timestamp.Add(2*time.Nanosecond),
-		//	identity.ID{},
-		//	identity.ID{},
-		//)
-		//require.NoError(ch.Env.T, err)
+		var err error
+		essence, err = rotate.MakeRotateStateControllerTransaction(
+			task.RotationAddress,
+			isc.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
+			task.TimeAssumption.Add(2*time.Nanosecond),
+			identity.ID{},
+			identity.ID{},
+		)
+		require.NoError(ch.Env.T, err)
 	}
 	sigs, err := essence.Sign(
-		inputsCommitment,
+		essence.InputsCommitment[:],
 		ch.StateControllerKeyPair.GetPrivateKey().AddressKeys(ch.StateControllerAddress),
 	)
 	require.NoError(ch.Env.T, err)
@@ -126,12 +132,12 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (results [
 
 	rootC := ch.GetRootCommitment()
 	l1C := ch.GetL1Commitment()
-	require.True(ch.Env.T, trie.EqualCommitments(rootC, l1C.StateCommitment))
+	require.True(ch.Env.T, state.EqualCommitments(rootC, l1C.StateCommitment))
 
 	return task.Results
 }
 
-func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []iscp.RequestID) {
+func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc.RequestID) {
 	anchor, stateOutput, err := transaction.GetAnchorFromTransaction(stateTx)
 	require.NoError(ch.Env.T, err)
 
@@ -149,7 +155,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
-	chain.PublishStateTransition(ch.ChainID, iscp.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
+	chain.PublishStateTransition(ch.ChainID, isc.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
@@ -161,7 +167,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	go ch.Env.EnqueueRequests(stateTx)
 }
 
-func batchShortStr(reqIds []iscp.RequestID) string {
+func batchShortStr(reqIds []isc.RequestID) string {
 	ret := make([]string, len(reqIds))
 	for i, r := range reqIds {
 		ret[i] = r.Short()
@@ -170,6 +176,9 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 }
 
 func (ch *Chain) logRequestLastBlock() {
+	if ch.bypassStardustVM {
+		return
+	}
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
 		ch.Log().Infof("REQ: '%s'", rec.Short())

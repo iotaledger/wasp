@@ -60,6 +60,7 @@ type WasmVMBase struct {
 
 func (vm *WasmVMBase) GasBudget(budget uint64) {
 	// ignore gas budget
+	_ = budget
 }
 
 func (vm *WasmVMBase) GasBurned() uint64 {
@@ -98,7 +99,10 @@ func (vm *WasmVMBase) HostAbort(errMsg, fileName, line, col int32) {
 	panic(fmt.Sprintf("AssemblyScript panic: %s (%s %d:%d)", string(str1), string(str2), line, col))
 }
 
-func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
+func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
+	_ = fd
+	_ = size
+
 	wc := vm.getContext()
 	vm.reportGasBurned(wc)
 	defer vm.wrapUp(wc)
@@ -109,16 +113,16 @@ func (vm *WasmVMBase) HostFdWrite(_fd, iovs, _size, written int32) int32 {
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := impl.VMGetBytes(iovs, 8)
 	text := int32(binary.LittleEndian.Uint32(ptr[0:4]))
-	size := int32(binary.LittleEndian.Uint32(ptr[4:8]))
+	textLen := int32(binary.LittleEndian.Uint32(ptr[4:8]))
 	// msg := vm.impl.VMGetBytes(text, size)
 	// fmt.Print(string(msg))
 	ptr = make([]byte, 4)
-	binary.LittleEndian.PutUint32(ptr, uint32(size))
-	impl.VMSetBytes(written, size, ptr)
+	binary.LittleEndian.PutUint32(ptr, uint32(textLen))
+	impl.VMSetBytes(written, textLen, ptr)
 
 	// strip off "panic: " prefix and call sandbox panic function
-	vm.HostStateGet(0, wasmlib.FnPanic, text+7, size)
-	return size
+	vm.HostStateGet(0, wasmlib.FnPanic, text+7, textLen)
+	return textLen
 }
 
 func (vm *WasmVMBase) HostStateGet(keyRef, keyLen, valRef, valLen int32) int32 {
@@ -169,13 +173,12 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 		name := string(impl.VMGetBytes(valRef, valLen))
 		if keyLen < 0 {
 			// ExportWasmTag, log the wasm tag name
-			if strings.Contains(name, "WASM::GO") {
-				wc.proc.gasFactorX = 2
-			}
-			if strings.Contains(name, "WASM::TYPESCRIPT") {
-				wc.proc.gasFactorX = 10
-			}
 			wc.log().Infof(name)
+
+			// // potentially adjust gas fudge factor multiplier here
+			// if strings.Contains(name, "WASM::TYPESCRIPT") {
+			// 	wc.proc.gasFactorX = 1
+			// }
 			return
 		}
 		wc.ExportName(keyLen, name)
@@ -196,6 +199,7 @@ func (vm *WasmVMBase) HostStateSet(keyRef, keyLen, valRef, valLen int32) {
 }
 
 func (vm *WasmVMBase) Instantiate(proc *WasmProcessor) error {
+	_ = proc
 	return errors.New("cannot be cloned")
 }
 

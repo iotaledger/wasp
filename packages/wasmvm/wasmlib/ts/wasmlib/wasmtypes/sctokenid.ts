@@ -23,7 +23,6 @@ export class ScTokenID {
 
     // human-readable string representation
     public toString(): string {
-        // TODO standardize human readable string
         return tokenIDToString(this);
     }
 }
@@ -53,12 +52,11 @@ export function tokenIDToBytes(value: ScTokenID): u8[] {
 }
 
 export function tokenIDFromString(value: string): ScTokenID {
-    return tokenIDFromBytes(wasmtypes.base58Decode(value));
+    return tokenIDFromBytes(wasmtypes.hexDecode(value.slice(2)));
 }
 
 export function tokenIDToString(value: ScTokenID): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(tokenIDToBytes(value));
+    return "0x"+wasmtypes.hexEncode(tokenIDToBytes(value));
 }
 
 function tokenIDFromBytesUnchecked(buf: u8[]): ScTokenID {

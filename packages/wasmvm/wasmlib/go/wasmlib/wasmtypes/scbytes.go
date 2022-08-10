@@ -22,11 +22,11 @@ func BytesToBytes(value []byte) []byte {
 }
 
 func BytesFromString(value string) []byte {
-	return Base58Decode(value)
+	return HexDecode(value)
 }
 
 func BytesToString(value []byte) string {
-	return Base58Encode(value)
+	return HexEncode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

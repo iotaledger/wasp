@@ -7,19 +7,20 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 type MockedNodeConn struct {
-	log                            *logger.Logger
-	ledgers                        *MockedLedgers
-	id                             string
-	publishTransactionAllowedFun   func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
-	pullLatestOutputAllowed        bool
-	pullTxInclusionStateAllowedFun func(chainID *iscp.ChainID, txID iotago.TransactionID) bool
-	pullOutputByIDAllowedFun       func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool
-	stopChannel                    chan bool
+	log                                    *logger.Logger
+	ledgers                                *MockedLedgers
+	id                                     string
+	publishStateTransactionAllowedFun      func(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
+	publishGovernanceTransactionAllowedFun func(chainID *isc.ChainID, tx *iotago.Transaction) bool
+	pullLatestOutputAllowed                bool
+	pullTxInclusionStateAllowedFun         func(chainID *isc.ChainID, txID iotago.TransactionID) bool
+	pullOutputByIDAllowedFun               func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool
+	stopChannel                            chan bool
 }
 
 var _ chain.NodeConnection = &MockedNodeConn{}
@@ -31,7 +32,8 @@ func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logg
 		ledgers:     ledgers,
 		stopChannel: make(chan bool),
 	}
-	result.SetPublishTransactionAllowed(true)
+	result.SetPublishStateTransactionAllowed(true)
+	result.SetPublishGovernanceTransactionAllowed(true)
 	result.SetPullLatestOutputAllowed(true)
 	result.SetPullTxInclusionStateAllowed(true)
 	result.SetPullOutputByIDAllowed(true)
@@ -43,22 +45,29 @@ func (mncT *MockedNodeConn) ID() string {
 	return mncT.id
 }
 
-func (mncT *MockedNodeConn) RegisterChain(chainID *iscp.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
+func (mncT *MockedNodeConn) RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
 	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
 }
 
-func (mncT *MockedNodeConn) UnregisterChain(chainID *iscp.ChainID) {
+func (mncT *MockedNodeConn) UnregisterChain(chainID *isc.ChainID) {
 	mncT.ledgers.GetLedger(chainID).Unregister(mncT.id)
 }
 
-func (mncT *MockedNodeConn) PublishTransaction(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
-	if mncT.publishTransactionAllowedFun(chainID, stateIndex, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishTransaction(stateIndex, tx)
+func (mncT *MockedNodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+	if mncT.publishStateTransactionAllowedFun(chainID, stateIndex, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishStateTransaction(stateIndex, tx)
 	}
-	return fmt.Errorf("Publishing transaction for address %s of index %v is not allowed", chainID, stateIndex)
+	return fmt.Errorf("Publishing state transaction for address %s of index %v is not allowed", chainID, stateIndex)
 }
 
-func (mncT *MockedNodeConn) PullLatestOutput(chainID *iscp.ChainID) {
+func (mncT *MockedNodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
+	if mncT.publishGovernanceTransactionAllowedFun(chainID, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishGovernanceTransaction(tx)
+	}
+	return fmt.Errorf("Publishing governance rotation transaction for address %s is not allowed", chainID)
+}
+
+func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	if mncT.pullLatestOutputAllowed {
 		mncT.ledgers.GetLedger(chainID).PullLatestOutput(mncT.id)
 	} else {
@@ -66,27 +75,27 @@ func (mncT *MockedNodeConn) PullLatestOutput(chainID *iscp.ChainID) {
 	}
 }
 
-func (mncT *MockedNodeConn) PullTxInclusionState(chainID *iscp.ChainID, txid iotago.TransactionID) {
+func (mncT *MockedNodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
 	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
 		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
 	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, iscp.TxID(txid))
+		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, isc.TxID(txid))
 	}
 }
 
-func (mncT *MockedNodeConn) PullStateOutputByID(chainID *iscp.ChainID, id *iotago.UTXOInput) {
+func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	if mncT.pullOutputByIDAllowedFun(chainID, id) {
 		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
 	} else {
-		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, iscp.OID(id))
+		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, isc.OID(id))
 	}
 }
 
-func (mncT *MockedNodeConn) AttachTxInclusionStateEvents(chainID *iscp.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
+func (mncT *MockedNodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
 	return mncT.ledgers.GetLedger(chainID).AttachTxInclusionStateEvents(mncT.id, handler)
 }
 
-func (mncT *MockedNodeConn) DetachTxInclusionStateEvents(chainID *iscp.ChainID, closure *events.Closure) error {
+func (mncT *MockedNodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
 	return mncT.ledgers.GetLedger(chainID).DetachTxInclusionStateEvents(mncT.id, closure)
 }
 
@@ -108,12 +117,20 @@ func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 func (mncT *MockedNodeConn) Close() {
 }
 
-func (mncT *MockedNodeConn) SetPublishTransactionAllowed(flag bool) {
-	mncT.SetPublishTransactionAllowedFun(func(*iscp.ChainID, uint32, *iotago.Transaction) bool { return flag })
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowed(flag bool) {
+	mncT.SetPublishStateTransactionAllowedFun(func(*isc.ChainID, uint32, *iotago.Transaction) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPublishTransactionAllowedFun(fun func(chainID *iscp.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
-	mncT.publishTransactionAllowedFun = fun
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
+	mncT.publishStateTransactionAllowedFun = fun
+}
+
+func (mncT *MockedNodeConn) SetPublishGovernanceTransactionAllowed(flag bool) {
+	mncT.SetPublishGovernanceTransactionAllowedFun(func(*isc.ChainID, *iotago.Transaction) bool { return flag })
+}
+
+func (mncT *MockedNodeConn) SetPublishGovernanceTransactionAllowedFun(fun func(chainID *isc.ChainID, tx *iotago.Transaction) bool) {
+	mncT.publishGovernanceTransactionAllowedFun = fun
 }
 
 func (mncT *MockedNodeConn) SetPullLatestOutputAllowed(flag bool) {
@@ -121,18 +138,18 @@ func (mncT *MockedNodeConn) SetPullLatestOutputAllowed(flag bool) {
 }
 
 func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowed(flag bool) {
-	mncT.SetPullTxInclusionStateAllowedFun(func(*iscp.ChainID, iotago.TransactionID) bool { return flag })
+	mncT.SetPullTxInclusionStateAllowedFun(func(*isc.ChainID, iotago.TransactionID) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowedFun(fun func(chainID *iscp.ChainID, txID iotago.TransactionID) bool) {
+func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowedFun(fun func(chainID *isc.ChainID, txID iotago.TransactionID) bool) {
 	mncT.pullTxInclusionStateAllowedFun = fun
 }
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
-	mncT.SetPullOutputByIDAllowedFun(func(*iscp.ChainID, *iotago.UTXOInput) bool { return flag })
+	mncT.SetPullOutputByIDAllowedFun(func(*isc.ChainID, *iotago.UTXOInput) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *iscp.ChainID, outputID *iotago.UTXOInput) bool) {
+func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
 }
 
@@ -153,12 +170,12 @@ func (m *MockedNodeConn) PullTxInclusionState(txid iotago.TransactionID) {
 }
 
 func (m *MockedNodeConn) PullOutputByID(outputID *iotago.UTXOInput) {
-	m.log.Debugf("Pull output by id %v", iscp.OID(outputID))
+	m.log.Debugf("Pull output by id %v", isc.OID(outputID))
 	if m.pullOutputByIDAllowedFun(outputID) {
-		m.log.Debugf("Pull output by id %v allowed", iscp.OID(outputID))
+		m.log.Debugf("Pull output by id %v allowed", isc.OID(outputID))
 		output := m.ledger.PullConfirmedOutput(outputID)
 		if output != nil {
-			m.log.Debugf("Pull confirmed output %v successful", iscp.OID(outputID))
+			m.log.Debugf("Pull confirmed output %v successful", isc.OID(outputID))
 			go m.handleOutputFun(output, outputID)
 		}
 	}
@@ -194,7 +211,7 @@ func (m *MockedNodeConn) SetReceiveTxAllowedFun(fun func(stateIndex uint32, tx *
 	m.receiveTxAllowedFun = fun
 }
 
-func (m *MockedNodeConn) defaultHandleTimeDataFun(*iscp.TimeData) {}
+func (m *MockedNodeConn) defaultHandleTimeDataFun(*isc.TimeData) {}
 
 func (m *MockedNodeConn) AttachToTimeData(fun chain.NodeConnectionHandleTimeDataFun) {
 	m.handleTimeDataFun = fun
@@ -226,7 +243,7 @@ func (m *MockedNodeConn) DetachFromOutputReceived() {
 	m.handleOutputFun = m.defaultHandleOutputFun
 }
 
-func (m *MockedNodeConn) defaultHandleUnspentAliasOutputFun(*iscp.AliasOutputWithID, time.Time) {}
+func (m *MockedNodeConn) defaultHandleUnspentAliasOutputFun(*isc.AliasOutputWithID, time.Time) {}
 
 func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(fun chain.NodeConnectionHandleUnspentAliasOutputFun) {
 	m.handleUnspentAliasOutputFun = fun
@@ -249,7 +266,7 @@ func (m *MockedNodeConn) pushMilestonesLoop() {
 	for {
 		select {
 		case <-time.After(100 * time.Millisecond):
-			m.handleTimeDataFun(&iscp.TimeData{
+			m.handleTimeDataFun(&isc.TimeData{
 				MilestoneIndex: milestone,
 				Time:           time.Now(),
 			})

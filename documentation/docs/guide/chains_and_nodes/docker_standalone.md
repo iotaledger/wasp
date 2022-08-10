@@ -15,7 +15,11 @@ keywords:
 
 ![Wasp Node using Docker](/img/Banner/banner_wasp_using_docker.png)
 
-This page describes the configuration of a single Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
+This page describes the configuration of a single Wasp node in combination with Docker. 
+
+The docker setup comes preconfigured and should work as is, differing setups might require a different configuration.
+
+In this case the following instructions should be read [Running a Node](running-a-node.md).
 
 ## Introduction
 
@@ -33,12 +37,13 @@ The build process will copy the docker_config.json file into the image, which wi
 
 By default, the build process will use `-tags rocksdb,builtin_static` as a build argument. This argument can be modified with `--build-arg BUILD_TAGS=<tags>`.
 
-Depending on the use case, Wasp requires a different GoShimmer hostname which can be changed at this part inside the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
+Depending on the use case, it might be required to change the default Hornet configuration, which can be changed in this location inside the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
 
 ```json
-  "nodeconn": {
-    "address": "goshimmer:5000"
-  },
+"l1": {
+  "apiAddress": "http://hornet:14265",
+  "faucetAddress": "http://hornet:8091"
+},
 ```
 
 After the build process has finished, you can start your Wasp node by running:
@@ -47,7 +52,7 @@ After the build process has finished, you can start your Wasp node by running:
 docker run wasp-node
 ```
 
-### Configuration
+### Configuration of built images 
 
 After the build process has been completed, it is still possible to inject a different configuration file into a new container by running:
 
@@ -58,7 +63,7 @@ docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-n
 You can also add further configuration using arguments:
 
 ```shell
-docker run wasp-node --nodeconn.address=alt_goshimmer:5000
+docker run wasp-node --l1.apiAddress="alt_hornet:14265"
 ```
 
 To get a list of all available arguments, run the node with the argument '--help'

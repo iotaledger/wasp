@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -26,10 +26,15 @@ func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Pr
 
 func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
 	chainExample := &model.NodeConnectionMessagesMetrics{
-		OutPublishTransaction: &model.NodeConnectionMessageMetrics{
+		OutPublishStateTransaction: &model.NodeConnectionMessageMetrics{
 			Total:       3,
 			LastEvent:   time.Now().Add(-2 * time.Millisecond),
-			LastMessage: "Last sent PublishTransaction message structure",
+			LastMessage: "Last sent PublishStateTransaction message structure",
+		},
+		OutPublishGovernanceTransaction: &model.NodeConnectionMessageMetrics{
+			Total:       0,
+			LastEvent:   time.Time{},
+			LastMessage: "Last sent PublishGovernanceTransaction message structure",
 		},
 		OutPullLatestOutput: &model.NodeConnectionMessageMetrics{
 			Total:       15,
@@ -81,8 +86,8 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 			LastMessage: "Last received Milestone message structure",
 		},
 		Registered: []model.ChainID{
-			model.NewChainID(iscp.RandomChainID()),
-			model.NewChainID(iscp.RandomChainID()),
+			model.NewChainID(isc.RandomChainID()),
+			model.NewChainID(isc.RandomChainID()),
 		},
 	}
 
@@ -157,7 +162,7 @@ func (cssT *chainMetricsService) handleGetChainsNodeConnMetrics(c echo.Context) 
 }
 
 func (cssT *chainMetricsService) handleGetChainNodeConnMetrics(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -199,7 +204,7 @@ func (cssT *chainMetricsService) handleGetChainConsensusPipeMetrics(c echo.Conte
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {
-	chainID, err := iscp.ChainIDFromString(c.Param("chainID"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, httperrors.BadRequest(err.Error())
 	}

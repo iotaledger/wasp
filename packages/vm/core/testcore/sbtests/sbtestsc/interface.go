@@ -2,7 +2,7 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
@@ -40,9 +40,9 @@ var Processor = Contract.Processor(initialize,
 	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
 	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
-	FuncTestBlockContext1.WithHandler(testBlockContext1),
-	FuncTestBlockContext2.WithHandler(testBlockContext2),
-	FuncGetStringValue.WithHandler(getStringValue),
+	FuncOpenBlockContext.WithHandler(openBlockContext),
+	FuncCloseBlockContext.WithHandler(closeBlockContext),
+	FuncGetLastBlockNumCalls.WithHandler(getLastBlockNumCalls),
 
 	FuncJustView.WithHandler(testJustView),
 
@@ -52,7 +52,7 @@ var Processor = Contract.Processor(initialize,
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncSendLargeRequest.WithHandler(sendLargeRequest),
-	FuncEstimateMinDust.WithHandler(testEstimateMinimumDust),
+	FuncEstimateMinStorageDeposit.WithHandler(testEstimateMinimumStorageDeposit),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 	FuncSendNFTsBack.WithHandler(sendNFTsBack),
@@ -79,9 +79,9 @@ var (
 	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncTestBlockContext1 = coreutil.Func("testBlockContext1")
-	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
-	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
+	FuncOpenBlockContext     = coreutil.Func("openBlockContext")
+	FuncCloseBlockContext    = coreutil.Func("closeBlockContext")
+	FuncGetLastBlockNumCalls = coreutil.ViewFunc("getLastBlockNumCalls")
 
 	FuncWithdrawFromChain = coreutil.Func("withdrawFromChain")
 
@@ -103,15 +103,15 @@ var (
 
 	FuncSpawn = coreutil.Func("spawn")
 
-	FuncSplitFunds             = coreutil.Func("splitFunds")
-	FuncSplitFundsNativeTokens = coreutil.Func("splitFundsNativeTokens")
-	FuncPingAllowanceBack      = coreutil.Func("pingAllowanceBack")
-	FuncSendLargeRequest       = coreutil.Func("sendLargeRequest")
-	FuncEstimateMinDust        = coreutil.Func("estimateMinDust")
-	FuncInfiniteLoop           = coreutil.Func("infiniteLoop")
-	FuncInfiniteLoopView       = coreutil.ViewFunc("infiniteLoopView")
-	FuncSendNFTsBack           = coreutil.Func("sendNFTsBack")
-	FuncClaimAllowance         = coreutil.Func("claimAllowance")
+	FuncSplitFunds                = coreutil.Func("splitFunds")
+	FuncSplitFundsNativeTokens    = coreutil.Func("splitFundsNativeTokens")
+	FuncPingAllowanceBack         = coreutil.Func("pingAllowanceBack")
+	FuncSendLargeRequest          = coreutil.Func("sendLargeRequest")
+	FuncEstimateMinStorageDeposit = coreutil.Func("estimateMinStorageDeposit")
+	FuncInfiniteLoop              = coreutil.Func("infiniteLoop")
+	FuncInfiniteLoopView          = coreutil.ViewFunc("infiniteLoopView")
+	FuncSendNFTsBack              = coreutil.Func("sendNFTsBack")
+	FuncClaimAllowance            = coreutil.Func("claimAllowance")
 )
 
 const (
@@ -121,23 +121,22 @@ const (
 	VarContractNameDeployed = "exampleDeployTR"
 
 	// parameters
-	ParamAddress           = "address"
-	ParamAgentID           = "agentID"
-	ParamCaller            = "caller"
-	ParamChainID           = "chainID"
-	ParamChainOwnerID      = "chainOwnerID"
-	ParamContractCreator   = "contractCreator"
-	ParamContractID        = "contractID"
-	ParamFail              = "initFailParam"
-	ParamHnameContract     = "hnameContract"
-	ParamHnameEP           = "hnameEP"
-	ParamIntParamName      = "intParamName"
-	ParamIntParamValue     = "intParamValue"
-	ParamIotasToWithdrawal = "iotasWithdrawal"
-	ParamN                 = "n"
-	ParamProgHash          = "progHash"
-	ParamSize              = "size"
-	ParamVarName           = "varName"
+	ParamAddress                = "address"
+	ParamAgentID                = "agentID"
+	ParamCaller                 = "caller"
+	ParamChainID                = "chainID"
+	ParamChainOwnerID           = "chainOwnerID"
+	ParamContractID             = "contractID"
+	ParamFail                   = "initFailParam"
+	ParamHnameContract          = "hnameContract"
+	ParamHnameEP                = "hnameEP"
+	ParamIntParamName           = "intParamName"
+	ParamIntParamValue          = "intParamValue"
+	ParamBaseTokensToWithdrawal = "baseTokensWithdrawal"
+	ParamN                      = "n"
+	ParamProgHash               = "progHash"
+	ParamSize                   = "size"
+	ParamVarName                = "varName"
 
 	// error fragments for testing
 	MsgDoNothing         = "========== doing nothing"

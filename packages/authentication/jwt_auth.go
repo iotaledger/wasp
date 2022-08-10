@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
-	jwt "github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

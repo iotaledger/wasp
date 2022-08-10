@@ -15,6 +15,14 @@ pub struct ScBigInt {
 }
 
 impl ScBigInt {
+    pub fn zero() ->ScBigInt {
+        ScBigInt::new()
+    }
+    
+    pub fn one() ->ScBigInt {
+        ScBigInt::from_uint64(1)
+    }
+    
     pub fn new() -> ScBigInt {
         ScBigInt { bytes: Vec::new() }
     }
@@ -109,49 +117,110 @@ impl ScBigInt {
                 // divide by 1, quo = lhs, rem = 0
                 return (self.clone(), ScBigInt::new());
             }
-            return self.div_mod_simple(rhs.bytes[0]);
+            return self.div_mod_single_byte(rhs.bytes[0]);
         }
-        self.div_mod_estimate(&rhs)
+        self.div_mod_multi_byte(&rhs)
     }
 
+    // divModEstimate uses long division byte estimation and corrects on the remainder
+    // by recursively estimating the next byte and discounting the result in the quotient
     fn div_mod_estimate(&self, rhs: &ScBigInt) -> (ScBigInt, ScBigInt) {
-        // shift divisor MSB until the high order bit is set
+        // first filter out the simplest cases, when lengths are equal
+        // that either results in a quotient of one or zero
+        let lhs_len = self.bytes.len();
         let rhs_len = rhs.bytes.len();
-        let byte1 = rhs.bytes[rhs_len - 1];
-        let byte2 = rhs.bytes[rhs_len - 2];
-        let mut word = (byte1 as u16) << 8 + (byte2 as u16);
-        let mut shift: u32 = 0;
-        while (word & 0x8000) == 0 {
-            shift += 1;
-            word <<= 1
+        if lhs_len <= rhs_len {
+            if self.cmp(rhs) < 0 {
+                return (ScBigInt::zero(), self.clone());
+            }
+            return (ScBigInt::one(), self.sub(rhs));
         }
 
-        // shift numerator by the same amount of bits
-        let mut numerator = self.shl(shift);
+        // Now for the big estimation trick. Since we normalized the rhs to have the msb high bit
+        // set, dividing two lhs MSBs by the rhs MSB will in over 80% of the cases be the correct
+        // value for the entire lhs / rhs, almost 20% will be 1 too high, and about 0.5% will be
+        // 2 too high. We could then use a simple compare and subtract loop to get the quotient
+        // guess correct.
+        // But we're going to correct the quotient with the estimate of the next byte instead.
+        // When we overshoot the correct value we will subtract the estimate taken on the surplus
+        // value, and otherwise we will add the estimate taken on the remainder value. This will
+        // ultimately converge the quotient to the actual value of lhs / rhs
 
-        // now chop off LSBs on both sides such that only MSB of divisor remains
-        numerator.bytes = numerator.bytes[rhs_len - 1..].to_vec();
-        let divisor = ScBigInt::normalize(&[(word >> 8) as u8]);
+        // determine the initial guess for the quotient
+        let buf_len = lhs_len - rhs_len;
+        let mut buf: Vec<u8> = vec![0; buf_len];
+        let lhs16 = uint16_from_bytes(&self.bytes[lhs_len - 2..]);
+        let rhs16 = rhs.bytes[rhs_len - 1] as u16;
+        let mut res16 = lhs16 / rhs16;
+        if res16 > 0xff {
+            // res16 can be up to 0x0101, reduce guess to the nearest byte value
+            // the estimate correction algorithm will take care of fixing self
+            res16 = 0xff;
+        }
+        buf[buf_len - 1] = res16 as u8;
+        let guess = ScBigInt::normalize(&buf);
 
-        // now we can use simple division by one byte to get a quotient estimate
-        // at worst case this will be 1 or 2 higher than the actual value
-        let (mut quotient, _remainder) = numerator.div_mod_simple(divisor.bytes[0]);
+        // now see where self guess gets us when multiplying back
+        let product = rhs.mul(&guess);
 
-        // calculate first product based on estimated quotient
-        let mut product = rhs.mul(&quotient);
-
-        // as long as the product is too high,
-        // decrement the estimated quotient and adjust the product accordingly
-        while product.cmp(self) > 0 {
-            quotient = quotient.sub(&ScBigInt::from_uint64(1));
-            product = product.sub(&rhs);
+        // compare the product to the original lhs to see where our guess get us
+        let cmp = product.cmp(self);
+        if cmp == 0 {
+            // lucky guess, exact match, and obviously exactly divisible by rhs without remainder
+            return (guess, ScBigInt::zero());
         }
 
-        // now that we found the actual quotient, the remainder is easy to calculate
-        (quotient, self.sub(&product))
+        if cmp < 0 {
+            // underestimated, correct our guess by adding the estimate on the remainder
+            let guess_remainder = self.sub(&product);
+            let (quo, rem) = guess_remainder.div_mod_estimate(rhs);
+            return (guess.add(&quo), rem);
+        }
+
+        // overestimated, correct guess by subtracting the estimate on the surplus
+        let guess_surplus = product.sub(self);
+        let (quo, rem) = guess_surplus.div_mod_estimate(rhs);
+        if rem.is_zero() {
+            // when the remainder is zero, we obviously have the exact match,
+            // so we only subtract the surplus quotient
+            return (guess.sub(&quo), ScBigInt::zero());
+        }
+
+        // When the remainder is nonzero, we subtract the surplus quotient, but since
+        // we also need to subtract the remainder, we will need to correct the quotient
+        // by subtracting one more. That will allow us to then subtract the surplus
+        // remainder from the rhs to get the actual remainder.
+        return (guess.sub(&quo).sub(&ScBigInt::one()), rhs.sub(&rem));
     }
 
-    fn div_mod_simple(&self, value: u8) -> (ScBigInt, ScBigInt) {
+    // divModMultiByte divides the lhs by a multi-byte rhs and returns quotient and remainder
+    fn div_mod_multi_byte(&self, rhs: &ScBigInt) -> (ScBigInt, ScBigInt) {
+        // normalize first, shift divisor MSB until the high order bit is set
+        // so that we get the best guess possible when dividing by MSB
+
+        let mut msb = rhs.bytes[rhs.bytes.len() - 1];
+        if (msb & 0x80) != 0 {
+            // already normalized, no shifts necessary
+            return self.div_mod_estimate(rhs);
+        }
+
+        // determine how far to shift
+        let mut shift: u32 = 1;
+        msb <<= 1;
+        while (msb & 0x80) == 0 {
+            shift += 1;
+            msb <<= 1;
+        }
+
+        // shift both lhs and rhs, that way the quotient will be the same
+        // since lhs / rhs is equal to (lhs << shift) / (rhs << shift)
+        let (quo, rem) = self.shl(shift).div_mod_estimate(&rhs.shl(shift));
+
+        // note that remainder will be shifted, too, so shift back the remainder
+        return (quo, rem.shr(shift));
+    }
+
+    fn div_mod_single_byte(&self, value: u8) -> (ScBigInt, ScBigInt) {
         let lhs_len = self.bytes.len();
         let mut buf: Vec<u8> = vec![0; lhs_len];
         let mut remain: u16 = 0;
@@ -321,13 +390,13 @@ pub fn big_int_to_bytes(value: &ScBigInt) -> Vec<u8> {
 }
 
 pub fn big_int_from_string(value: &str) -> ScBigInt {
-    let digits = value.len() - 18;
-    if digits <= 0 {
-        // Uint64 fits 18 digits or 1 quintillion
+    // Uint64 fits 18 digits or 1 quintillion
+    if value.len() <= 18 {
         return ScBigInt::from_uint64(uint64_from_string(value));
     }
 
     // build value 18 digits at a time
+    let digits = value.len() - 18;
     let quintillion = ScBigInt::from_uint64(1_000_000_000_000_000_000);
     let lhs = big_int_from_string(&value[..digits]);
     let rhs = big_int_from_string(&value[digits..]);

@@ -12,52 +12,42 @@ keywords:
 
 # Anatomy of a Smart Contract
 
-Smart contracts are programs which are immutably stored in the chain.
+Smart contracts are programs that are immutably stored in the chain.
 
-The logical structure of IOTA Smart Contracts is independent of the VM type you
-use, be it a _Wasm_ smart contract or any other VM type.
+Through _VM abstraction_, the ISC virtual machine is agnostic about the interpreter that is used to execute each smart contract, and can in fact support different _VM types_ (i.e. interpreters) at the same time on the same chain.
+For example, it is possible to have Wasm and EVM/Solidity smart contracts coexisting on the same chain.
+
+The logical structure of IOTA Smart Contracts is independent of the VM type:
 
 ![Smart Contract Structure](/img/tutorial/SC-structure.png)
 
 ## Identifying a Smart Contract
 
-Each smart contract on the chain is identified by its name hashed into 4 bytes
-and interpreted as `uint32` value: the `hname`.
-
-For example, the `hname` of the root contract is `0xcebf5908`, the unique identifier of the
-`root` contract in every chain. The exception is the `_default` contract which always has `hname` `0x00000000`.
-
-Each smart contract instance has a program with a collection of entry points and
-a state. An entry point is a function of the program through which the program
-can be invoked.
-
-Depending on the type of the entry point there are several ways to invoke an entry point: a request, a call and a view call
-
-The smart contract program can access its state and account through an interface
-layer called the _Sandbox_.
+Each smart contract on the chain is identified by a _hname_ (pronounced "aitch-name"), which is a `uint32` value calculated as hash of the smart contract's instance name (a string).
+For example, the hname of the [`root`](../core_concepts/core_contracts/root.md) core contract is `0xcebf5908`. This value uniquely identifies this contract in every chain.
 
 ## State
 
-The smart contract state is its data, with each update stored on the chain. The
-state can only be modified by the smart contract program itself. There are two
-parts of the state:
+The smart contract state is the data owned by the smart contract and stored on the chain.
+The state is a collection of key/value pairs.
+Each key and value are byte arrays of arbitrary size (there are practical limits set by the underlying database, of course).
+The smart contract state can be thought as a _partition_ of the chain's data state, which can only be written by the smart contract program itself.
 
-- A collection of key/value pairs called the `data state`. Each key and value
-  are byte arrays of arbitrary size (there are practical limits set by the
-  database, of course). The value of the key/value pair is always retrieved by
-  its key.
-- A collection of `color: balance` pairs called the `account`. The account
-  represents the balances of tokens of specific colors controlled by the smart
-  contract. Receiving and spending tokens into/from the account means changing
-  the account's balances.
+The smart contract also owns an _account_ on the chain, which is stored as
+part of the chain state.
+The smart contract account represents the balances of base tokens, native tokens and NFTs controlled by the smart contract.
 
+The smart contract program can access its state and account through an interface layer called the _Sandbox_.
 Only the smart contract program can change its data state and spend from its
 account. Tokens can be sent to the smart contract account by any other agent on
 the ledger, be it a wallet with an address or another smart contract.
 
-See [Accounts](../core_concepts/accounts/how-accounts-work.md) for more info on sending and receiving tokens.
+See [Accounts](../core_concepts/accounts/how-accounts-work.md) for more information on sending and receiving tokens.
 
 ## Entry Points
+
+Each smart contract has a program with a collection of _entry points_.
+An entry point is a function through which the program can be invoked.
 
 There are two types of entry points:
 
@@ -69,15 +59,10 @@ There are two types of entry points:
 
 ## Execution Results
 
-After a request to a Smart Contract is executed (a call to a "full entry point"),
-a `receipt` will be added to the [`BlockLog`](../core_concepts/core_contracts/blocklog.md)
-detailing the execution results of said request: whether it was successful, the block it was
-included in, and other information. Any events dispatched by the Smart Contract in context of
-this execution will also be added to the BlockLog.
+After a request to a Smart Contract is executed (a call to a full entry point), a _receipt_ will be added to the [`blocklog`](../core_concepts/core_contracts/blocklog.md) core contract detailing the execution results of said request: whether it was successful, the block it was included in, and other information.
+Any events dispatched by the smart contract in context of this execution will also be added to the receipt.
 
 ## Error Handling
 
-When a smart contract execution is interrupted for some reason (exception), or it produces an
-error (missing parameter, or other inconsistency), the funds will be refunded to the caller,
-except the fees. Any error that resulted from the SC execution can be viewed on the contract
-`receipt` (present in the [`BlockLog`](../core_concepts/core_contracts/blocklog.md)).
+Smart contract calls can fail: for example if is interrupted for any reason (e.g. an exception), or if it produces an error (missing parameter, or other inconsistency).
+In this case, any gas spent is charged to the sender, and the error message or value is stored in the receipt.

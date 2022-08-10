@@ -58,7 +58,7 @@ state:
   arrayOfStringMap: StringMap[]
   stringMapOfStringArray: map[String]StringArray
   stringMapOfStringMap: map[String]StringMap
-  # ISCP-specific datatypes, using Address
+  # ISC-specific datatypes, using Address
   arrayOfAddressArray: AddressArray[]
   arrayOfAddressMap: AddressMap[]
   addressMapOfAddressArray: map[Address]AddressArray
@@ -168,6 +168,7 @@ funcs:
     params:
       address: Address?
       agentID: AgentID?
+      bigInt: BigInt?
       bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
@@ -193,7 +194,7 @@ funcs:
 
   takeBalance:
     results:
-      iotas: Uint64
+      tokens: Uint64
 
   triggerEvent:
     params:
@@ -300,6 +301,14 @@ views:
     results:
       res: BigInt
 
+  bigIntDivMod:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      quo: BigInt
+      remainder: BigInt
+
   bigIntMul:
     params:
       lhs: BigInt
@@ -341,13 +350,19 @@ views:
     results:
       count: Uint32
 
-  iotaBalance:
+  tokenBalance:
     results:
-      iotas: Uint64
+      tokens: Uint64
 
   getRandom:
     results:
       random: Uint64
+
+  checkBigInt:
+    params:
+      scBigInt: BigInt
+      bigIntBytes: Bytes
+      bigIntString: String
 
   checkAgentID:
     params:
@@ -360,3 +375,45 @@ views:
       scAddress: Address
       addressBytes: Bytes
       addressString: String
+
+  checkEthAddressAndAgentID:
+    params:
+      ethAddress: String
+
+  checkHash:
+    params:
+      scHash: Hash
+      hashBytes: Bytes
+      hashString: String
+  
+  checkNftID:
+    params:
+      scNftID: NftID
+      nftIDBytes: Bytes
+      nftIDString: String
+
+  checkRequestID:
+    params:
+      scRequestID: RequestID
+      requestIDBytes: Bytes
+      requestIDString: String
+  
+  checkTokenID:
+    params:
+      scTokenID: TokenID
+      tokenIDBytes: Bytes
+      tokenIDString: String
+
+  checkIntAndUint:
+  checkBool:
+  checkBytes:
+    params:
+      bytes: Bytes
+  checkHname:
+    params:
+      scHname: Hname
+      hnameBytes: Bytes
+      hnameString: String
+  checkString:
+    params:
+      string: String

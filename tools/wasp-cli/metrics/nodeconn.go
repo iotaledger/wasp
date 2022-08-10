@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -31,7 +31,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
 			)
 		} else {
-			chid, err := iscp.ChainIDFromString(chainAlias)
+			chid, err := isc.ChainIDFromString(chainAlias)
 			log.Check(err)
 			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
 			log.Check(err)
@@ -42,19 +42,19 @@ var nodeconnMetricsCmd = &cobra.Command{
 
 func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics, additionalRows [][]string) {
 	header := []string{"Message name", "", "Total", "Last time", "Last message"}
-	table := make([][]string, 9+len(additionalRows))
-	table[0] = makeMessagesMetricsTableRow("Publish transaction", false, msgsMetrics.OutPublishTransaction)
-	table[1] = makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput)
-	table[2] = makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState)
-	table[3] = makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID)
-	table[4] = makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput)
-	table[5] = makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput)
-	table[6] = makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput)
-	table[7] = makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest)
-	table[8] = makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState)
-	for i := range additionalRows {
-		table[9+i] = additionalRows[i]
+	table := [][]string{
+		makeMessagesMetricsTableRow("Publish state transaction", false, msgsMetrics.OutPublishStateTransaction),
+		makeMessagesMetricsTableRow("Publish governance transaction", false, msgsMetrics.OutPublishGovernanceTransaction),
+		makeMessagesMetricsTableRow("Pull latest output", false, msgsMetrics.OutPullLatestOutput),
+		makeMessagesMetricsTableRow("Pull tx inclusion state", false, msgsMetrics.OutPullTxInclusionState),
+		makeMessagesMetricsTableRow("Pull output by ID", false, msgsMetrics.OutPullOutputByID),
+		makeMessagesMetricsTableRow("State output", true, msgsMetrics.InStateOutput),
+		makeMessagesMetricsTableRow("Alias output", true, msgsMetrics.InAliasOutput),
+		makeMessagesMetricsTableRow("Output", true, msgsMetrics.InOutput),
+		makeMessagesMetricsTableRow("On ledger request", true, msgsMetrics.InOnLedgerRequest),
+		makeMessagesMetricsTableRow("Tx inclusion state", true, msgsMetrics.InTxInclusionState),
 	}
+	table = append(table, additionalRows...)
 	log.PrintTable(header, table)
 }
 

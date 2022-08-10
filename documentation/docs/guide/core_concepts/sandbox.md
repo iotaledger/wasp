@@ -11,18 +11,19 @@ keywords:
 
 # Sandbox Interface
 
-A smart contract's access to the world has to be restricted. Imagine a smart contract that would directly tap into a weather forecast website: as the weather changes, the result of the contract's execution will change as well. This smart contract is not deterministic anymore, meaning that you cannot reproduce the result yourself to verify it.
+A smart contract's access to the world has to be restricted. Imagine a smart contract that would directly tap into a weather forecast website: as the weather changes, the result of the contract's execution will change as well. This smart contract is not deterministic, meaning that you cannot reproduce the result yourself to verify it, because the result for each execution could be different.
 
 The access to the chain's state has to be curated, too. The owner of the chain and developers of individual smart contracts are not necessarily the same entity, and a single malicious contract could ruin the whole chain if not limited to its own space. Instead of working on the state as a whole, each smart contract can only modify a part of it.
 
-The only way for smart contracts to access the data is to use the Sandbox interface. It provides them only with deterministic data and exposes the state as a structure of key/value pairs, only the ones the smart contract has access to.
+The only way for smart contracts to access data is to use the Sandbox interface (which is deterministic). It provides them with their own internal state as a list of key/value pairs.
 
 ![Sandbox](/img/sandbox.png)
 
-Besides reading and writing to the state, the Sandbox interface allows smart contracts to access:
+Besides reading and writing to the contract state, the Sandbox interface allows smart contracts to access:
 
 - The [ID](./accounts/how-accounts-work#agent-id) of the contract.
-- The details of the current request or the view call.
+- The details of the current request or view call.
+- The current request allowance, and a way to claim said allowance.
 - The balances owned by the contract.
 - The ID of whoever had deployed the contract.
 - The timestamp of the current block.
@@ -30,3 +31,6 @@ Besides reading and writing to the state, the Sandbox interface allows smart con
 - The [events](../schema/events.mdx) dispatch.
 - Entropy, which emulates randomness in an unpredictable yet deterministic way.
 - Logging, which is used for debugging in a test environment.
+
+The Sandbox API available in "view calls" is slightly more limited than the one available in normal "execution calls". 
+For example, besides the state access being read-only for view, they cannot issue requests, emit events, etc.

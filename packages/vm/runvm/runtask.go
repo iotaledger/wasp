@@ -2,8 +2,8 @@ package runvm
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -20,7 +20,7 @@ func (r VMRunner) Run(task *vm.VMTask) {
 	)
 	if err != nil {
 		switch e := err.(type) {
-		case *iscp.VMError:
+		case *isc.VMError:
 			task.VMError = e
 		case error:
 			// May require a different error type here?
@@ -43,6 +43,10 @@ func runTask(task *vm.VMTask) {
 	var numOffLedger, numSuccess uint16
 	reqIndexInTheBlock := 0
 
+	if task.AnchorOutput.StateIndex > 0 {
+		vmctx.OpenBlockContexts()
+	}
+
 	// main loop over the batch of requests
 	for _, req := range task.Requests {
 		result, skipReason := vmctx.RunTheRequest(req, uint16(reqIndexInTheBlock))
@@ -58,10 +62,10 @@ func runTask(task *vm.VMTask) {
 			numOffLedger++
 		}
 
-		if result.Error == nil {
+		if result.Receipt.Error == nil {
 			numSuccess++
 		} else {
-			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Error)
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
 		}
 		vmctx.AssertConsistentGasTotals()
 	}
@@ -94,7 +98,7 @@ func runTask(task *vm.VMTask) {
 }
 
 // checkTotalAssets asserts if assets on transaction equals assets on ledger
-func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *iscp.FungibleTokens) {
+func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *isc.FungibleTokens) {
 	// TODO implement
 	//var chainOutput *ledgerstate.AliasOutput
 	//for _, o := range essence.Outputs() {

@@ -7,39 +7,52 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/contextutils"
-	serializer "github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/pow"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-// taken from https://github.com/iotaledger/inx-spammer/blob/develop/pkg/pow/pow.go
+// taken from https://github.com/iotaledger/inx-app/blob/ea47c776549669b81a5105a0ce78c7074694f44e/pow/pow.go
+const (
+	nonceBytes = 8 // len(uint64)
+)
 
+// ErrOperationAborted is returned when the operation was aborted e.g. by a shutdown signal.
 var ErrOperationAborted = errors.New("operation was aborted")
 
 // RefreshTipsFunc refreshes tips of the block if PoW takes longer than a configured duration.
 type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 
-// doPoW does the proof-of-work required to hit the given target score.
+// DoPoW does the proof-of-work required to hit the given target score.
 // The given iota.Block's nonce is automatically updated.
-func doPoW(ctx context.Context, block *iotago.Block, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) error {
-	if err := contextutils.ReturnErrIfCtxDone(ctx, ErrOperationAborted); err != nil {
-		return err
+func doPoW(ctx context.Context, block *iotago.Block, targetScore float64, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
+	if targetScore == 0 {
+		block.Nonce = 0
+		return 0, nil
 	}
-	targetScore := float64(parameters.L1.Protocol.MinPoWScore)
+
+	if err := contextutils.ReturnErrIfCtxDone(ctx, ErrOperationAborted); err != nil {
+		return 0, err
+	}
+
+	// enforce milestone block nonce == 0
+	if _, isMilestone := block.Payload.(*iotago.Milestone); isMilestone {
+		block.Nonce = 0
+		return 0, nil
+	}
 
 	getPoWData := func(block *iotago.Block) (powData []byte, err error) {
-		blockData, err := block.Serialize(serializer.DeSeriModePerformValidation, parameters.L1.Protocol)
+		blockData, err := block.Serialize(serializer.DeSeriModeNoValidation, nil)
 		if err != nil {
 			return nil, fmt.Errorf("unable to perform PoW as block can't be serialized: %w", err)
 		}
 
-		return blockData[:len(blockData)-serializer.UInt64ByteSize], nil
+		return blockData[:len(blockData)-nonceBytes], nil
 	}
 
 	powData, err := getPoWData(block)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	doPow := func(ctx context.Context) (uint64, error) {
@@ -52,7 +65,7 @@ func doPoW(ctx context.Context, block *iotago.Block, refreshTipsInterval time.Du
 			defer powTimeoutCancel()
 		}
 
-		nonce, err := pow.New().Mine(powCtx, powData, targetScore)
+		nonce, err := pow.New(parallelism).Mine(powCtx, powData, targetScore)
 		if err != nil {
 			if errors.Is(err, pow.ErrCancelled) && refreshTipsFunc != nil {
 				// context was canceled and tips can be refreshed
@@ -81,17 +94,17 @@ func doPoW(ctx context.Context, block *iotago.Block, refreshTipsInterval time.Du
 		if err != nil {
 			// check if the external context got canceled.
 			if ctx.Err() != nil {
-				return ErrOperationAborted
+				return 0, ErrOperationAborted
 			}
 
 			if errors.Is(err, pow.ErrCancelled) {
 				// redo the PoW with new tips
 				continue
 			}
-			return err
+			return 0, err
 		}
 
 		block.Nonce = nonce
-		return nil
+		return len(powData) + nonceBytes, nil
 	}
 }

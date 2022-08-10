@@ -5,12 +5,10 @@ import (
 	"os"
 	"syscall"
 
-	"golang.org/x/term"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var (
@@ -53,6 +51,6 @@ var loginCmd = &cobra.Command{
 
 		config.SetToken(token)
 
-		log.Printf("Successfully authorized")
+		log.Printf("\nSuccessfully authorized\n")
 	},
 }

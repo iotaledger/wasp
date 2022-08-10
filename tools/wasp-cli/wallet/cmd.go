@@ -9,7 +9,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(addressCmd)
 	rootCmd.AddCommand(balanceCmd)
 	rootCmd.AddCommand(mintCmd)
-	rootCmd.AddCommand(sendFundsCmd)
+	rootCmd.AddCommand(sendFundsCmd())
 	rootCmd.AddCommand(requestFundsCmd)
 
 	rootCmd.PersistentFlags().IntVarP(&addressIndex, "address-index", "i", 0, "address index")

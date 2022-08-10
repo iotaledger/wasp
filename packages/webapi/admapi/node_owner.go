@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -66,7 +66,7 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 		if err != nil {
 			continue
 		}
-		if bytes.Equal(iscp.BytesFromAddress(reqOwnerAddress), iscp.BytesFromAddress(nodeOwnerAddress)) {
+		if bytes.Equal(isc.BytesFromAddress(reqOwnerAddress), isc.BytesFromAddress(nodeOwnerAddress)) {
 			ownerAuthorized = true
 			break
 		}

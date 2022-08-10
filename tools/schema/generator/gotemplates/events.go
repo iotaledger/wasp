@@ -40,7 +40,7 @@ $#each fldComment _eventParamComment
 `,
 	// *******************************
 	"eventSetEndFunc": `
-$#set endFunc 
+$#set endFunc $nil
 `,
 	// *******************************
 	"eventEndFunc2": `

@@ -3,11 +3,11 @@ description: ""
 events:
   bet:
     address: Address # address of better
-    amount: Uint64 # amount of iotas to bet
+    amount: Uint64 # amount of tokens to bet
     number: Uint16 # number to bet on
   payout:
     address: Address # address of winner
-    amount: Uint64 # amount of iotas won
+    amount: Uint64 # amount of tokens won
   round:
     number: Uint32 # current betting round number
   start:
@@ -23,22 +23,26 @@ typedefs: {}
 state:
   bets: Bet[]
   lastWinningNumber: Uint16
+  owner: AgentID?
   playPeriod: Uint32
   roundNumber: Uint32
   roundStartedAt: Uint32
   roundStatus: Uint16
 funcs:
+  init:
+    params:
+      owner: AgentID?
   payWinners:
     access: self # only SC itself can invoke this function
   placeBet:
     params:
       number: Uint16 # the number a better bets on
   forceReset:
-    access: creator # only SC creator can restart the round forcefully
+    access: owner # only SC owner can restart the round forcefully
   forcePayout:
-    access: creator # only SC creator can restart the round forcefully
+    access: owner # only SC owner can restart the round forcefully
   playPeriod:
-    access: creator # only SC creator can update the play period
+    access: owner # only SC owner can update the play period
     params:
       playPeriod: Uint32 # number of minutes in one playing round
 views:

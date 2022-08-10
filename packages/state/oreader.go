@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/kv/trie"
 )
 
 // optimisticStateReaderImpl state reader reads the chain state from db and validates it
@@ -21,20 +21,19 @@ type optimisticStateReaderImpl struct {
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
 func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReaderImpl { //nolint:revive
 	chainReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeState}))
-	trieReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeTrie}))
 	baseline := glb.GetSolidIndexBaseline()
 	return &optimisticStateReaderImpl{
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
-		trie:        trie.NewNodeStore(optimism.NewOptimisticKVStoreReader(trieReader, baseline), CommitmentModel),
+		trie:        NewTrieReader(trieKVStore(db), valueKVStore(db)),
 	}
 }
 
-func (r *optimisticStateReaderImpl) ChainID() (*iscp.ChainID, error) {
+func (r *optimisticStateReaderImpl) ChainID() (*isc.ChainID, error) {
 	chidBin, err := r.stateReader.Get("")
 	if err != nil {
 		return nil, err
 	}
-	return iscp.ChainIDFromBytes(chidBin)
+	return isc.ChainIDFromBytes(chidBin)
 }
 
 func (r *optimisticStateReaderImpl) BlockIndex() (uint32, error) {

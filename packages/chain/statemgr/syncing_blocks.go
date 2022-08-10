@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/trie"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -56,7 +55,7 @@ func (syncsT *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
 	return sync.getBlockCandidatesCount()
 }
 
-func (syncsT *syncingBlocks) getBlockCandidate(stateIndex uint32, hash hashing.HashValue) *candidateBlock {
+func (syncsT *syncingBlocks) getBlockCandidate(stateIndex uint32, hash state.BlockHash) *candidateBlock {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return nil
@@ -72,10 +71,10 @@ func (syncsT *syncingBlocks) hasApprovedBlockCandidate(stateIndex uint32) bool {
 	return sync.hasApprovedBlockCandidate()
 }
 
-func (syncsT *syncingBlocks) getApprovedBlockCandidateHash(stateIndex uint32) hashing.HashValue {
+func (syncsT *syncingBlocks) getApprovedBlockCandidateHash(stateIndex uint32) state.BlockHash {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
-		return hashing.NilHash
+		return state.BlockHash{}
 	}
 	return sync.getApprovedBlockCandidateHash()
 }
@@ -105,7 +104,7 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 
 func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualStateAccess) {
 	stateIndex := block.BlockIndex()
-	hash := hashing.HashData(block.EssenceBytes())
+	hash := state.BlockHashFromData(block.EssenceBytes())
 	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %s; next state provided: %v", stateIndex, hash, nextState != nil)
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
@@ -115,7 +114,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	sync.addBlockCandidate(hash, block, nextState)
 }
 
-func (syncsT *syncingBlocks) setApprovalInfo(output *iscp.AliasOutputWithID) {
+func (syncsT *syncingBlocks) setApprovalInfo(output *isc.AliasOutputWithID) {
 	if output == nil {
 		syncsT.log.Debugf("setApprovalInfo failed, provided output is nil")
 		return
