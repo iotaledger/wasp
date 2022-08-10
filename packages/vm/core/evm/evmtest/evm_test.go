@@ -613,7 +613,6 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 
 	randAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
-	t.Fail()
 	nBaseTokens := uint64(100)
 	funds := isc.NewAllowanceBaseTokens(nBaseTokens)
 	_, err := iscTest.callFn(
