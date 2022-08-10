@@ -22,3 +22,11 @@ func NewSandboxView(ctx execution.WaspContext) isc.SandboxView {
 func (s *sandboxView) State() kv.KVStoreReader {
 	return s.Ctx.StateReader()
 }
+
+func (s *sandboxView) Privileged() isc.PrivilegedView {
+	return s
+}
+
+func (s *sandboxView) GasBurnEnable(enable bool) {
+	s.Ctx.GasBurnEnable(enable)
+}
