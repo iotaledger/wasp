@@ -11,7 +11,7 @@ import (
 )
 
 func SDAdjustmentPrompt(output iotago.Output) {
-	minStorageDeposit := parameters.L1.Protocol.RentStructure.MinRent(output)
+	minStorageDeposit := parameters.L1().Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < minStorageDeposit {
 		// don't prompt if running in a script // https://stackoverflow.com/a/43947435/6749639
 		fi, _ := os.Stdin.Stat()

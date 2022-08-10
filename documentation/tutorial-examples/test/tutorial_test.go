@@ -32,7 +32,7 @@ func TestTutorialFirst(t *testing.T) {
 func TestTutorialL1(t *testing.T) {
 	env := solo.New(t)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	t.Logf("address of the user is: %s", userAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
+	t.Logf("address of the user is: %s", userAddress.Bech32(parameters.L1().Protocol.Bech32HRP))
 	numBaseTokens := env.L1BaseTokens(userAddress)
 	t.Logf("balance of the user is: %d base tokens", numBaseTokens)
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)

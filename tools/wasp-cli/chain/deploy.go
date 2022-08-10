@@ -78,8 +78,8 @@ func deployCmd() *cobra.Command {
 				var prefix iotago.NetworkPrefix
 				prefix, govControllerAddr, err = iotago.ParseBech32(govControllerStr)
 				log.Check(err)
-				if parameters.L1.Protocol.Bech32HRP != prefix {
-					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1.Protocol.Bech32HRP, prefix)
+				if parameters.L1().Protocol.Bech32HRP != prefix {
+					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 				}
 			}
 

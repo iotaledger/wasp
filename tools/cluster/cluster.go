@@ -62,7 +62,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T) *Clu
 	}
 
 	validatorKp := cryptolib.NewKeyPair()
-	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1.Protocol.Bech32HRP))
+	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
 
 	return &Cluster{
 		Name:             name,

@@ -43,7 +43,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 		params.DisableAutoAdjustStorageDeposit,
 	)
 
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(output)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < storageDeposit {
 		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
 			ErrNotEnoughBaseTokensForStorageDeposit, output.Deposit(), storageDeposit)
@@ -77,7 +77,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 
 	inputsCommitment := inputIDs.OrderedSet(params.UnspentOutputs).MustCommitment()
 
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, params.SenderKeyPair, parameters.L1.Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, params.SenderKeyPair, parameters.L1().Protocol.NetworkID())
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
@@ -119,7 +119,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
 	}
 
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
 		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
 			ErrNotEnoughBaseTokensForStorageDeposit, out.Deposit(), storageDeposit)
@@ -143,7 +143,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1.Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1().Protocol.NetworkID())
 }
 
 func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, address iotago.Address) bool {

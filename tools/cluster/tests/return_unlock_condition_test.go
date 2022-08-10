@@ -63,7 +63,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 	}
 
 	inputsCommitment := outputIDs.OrderedSet(outputs).MustCommitment()
-	tx, err = transaction.CreateAndSignTx(outputIDs, inputsCommitment, tx.Essence.Outputs, keyPair, parameters.L1.Protocol.NetworkID())
+	tx, err = transaction.CreateAndSignTx(outputIDs, inputsCommitment, tx.Essence.Outputs, keyPair, parameters.L1().Protocol.NetworkID())
 	require.NoError(t, err)
 	return tx
 }

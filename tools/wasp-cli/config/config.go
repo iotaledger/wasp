@@ -99,7 +99,7 @@ func SetToken(token string) {
 func WaspClient(i ...int) *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
-	L1Client() // this will fill parameters.L1 with data from the L1 node
+	L1Client() // this will fill parameters.L1() with data from the L1 node
 	return client.NewWaspClient(WaspAPI(i...)).WithToken(GetToken())
 }
 
