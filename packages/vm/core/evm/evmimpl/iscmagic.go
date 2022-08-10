@@ -4,6 +4,7 @@
 package evmimpl
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -16,7 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 func keyAllowance(from, to common.Address) kv.Key {
@@ -93,13 +96,36 @@ func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleT
 	)
 }
 
+type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64)
+
+// catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
+func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, err error) {
+	err = panicutil.CatchAllExcept(
+		func() {
+			ret, remainingGas = run(evm, caller, input, gas, readOnly)
+		},
+		vmexceptions.AllProtocolLimits...,
+	)
+	if err != nil {
+		remainingGas = gas
+		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), err)
+		// the ISC error is lost inside the EVM, a possible solution would be to wrap the ErrExecutionReverted error, but the ISC information still gets deleted at some point
+		// err = errors.Wrap(vm.ErrExecutionReverted, err.Error())
+		err = vm.ErrExecutionReverted
+	}
+	return ret, remainingGas, err
+}
+
+func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
+}
+
 //nolint:funlen
-func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	// During EVM execution we burn EVM gas; and during magic calls we burn ISC gas.
+func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
 	}
@@ -262,12 +288,15 @@ func newMagicContractView(ctx isc.SandboxView) vm.ISCContract {
 	return &magicContractView{ctx}
 }
 
-func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	// During EVM execution we burn EVM gas; and during magic calls we burn ISC gas.
+func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
+}
+
+func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
 	}
@@ -301,10 +330,7 @@ func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte
 	return ret, remainingGas
 }
 
-// TODO evm param is not used, can it be removed?
-
-//nolint:unparam
-func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
+func tryBaseCall(ctx isc.SandboxBase, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
@@ -328,15 +354,6 @@ func tryBaseCall(ctx isc.SandboxBase, evm *vm.EVM, caller vm.ContractRef, input 
 
 	case "getTimestampUnixSeconds":
 		outs = []interface{}{ctx.Timestamp().Unix()}
-
-	case "logInfo":
-		ctx.Log().Infof("%s", args[0].(string))
-
-	case "logDebug":
-		ctx.Log().Debugf("%s", args[0].(string))
-
-	case "logPanic":
-		ctx.Log().Panicf("%s", args[0].(string))
 
 	default:
 		return

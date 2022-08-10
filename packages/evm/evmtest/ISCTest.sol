@@ -42,7 +42,9 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens) public {
+    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
+        public
+    {
         ISCAllowance memory allowance;
         allowance.baseTokens = baseTokens;
 
@@ -92,5 +94,34 @@ contract ISCTest {
         ISCSendOptions memory options;
 
         isc.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
+    }
+
+    function makeISCPanic() public {
+        // will produce a panic in ISC
+        ISCDict memory params;
+        ISCAllowance memory allowance;
+        isc.call(
+            isc.hn("governance"),
+            isc.hn("claimChainOwnershi"),
+            params,
+            allowance
+        );
+    }
+
+    function moveToAccount(
+        ISCAgentID memory targetAgentID,
+        ISCAllowance memory allowance
+    ) public {
+        // moves funds owned by the current contract to the targetAgentID
+        ISCDict memory params = ISCDict(new ISCDictItem[](2));
+        params.items[0] = ISCDictItem("a", targetAgentID.data);
+        bytes memory forceOpenAccount = "\xFF";
+        params.items[1] = ISCDictItem("c", forceOpenAccount);
+        isc.call(
+            isc.hn("accounts"),
+            isc.hn("transferAllowanceTo"),
+            params,
+            allowance
+        );
     }
 }

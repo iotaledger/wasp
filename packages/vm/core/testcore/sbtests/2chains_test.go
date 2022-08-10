@@ -131,8 +131,9 @@ func test2Chains(t *testing.T, w bool) {
 	chain2DepositReceipt := chain2.LastReceipt()
 
 	chain1WithdrawalReceipt := chain1.LastReceipt()
-	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().Contract, accounts.Contract.Hname())
-	require.Equal(t, chain1WithdrawalReceipt.Request.CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
+
+	require.Equal(t, chain1WithdrawalReceipt.DeserializedRequest().CallTarget().Contract, accounts.Contract.Hname())
+	require.Equal(t, chain1WithdrawalReceipt.DeserializedRequest().CallTarget().EntryPoint, accounts.FuncWithdraw.Hname())
 	require.Nil(t, chain1WithdrawalReceipt.Error)
 
 	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-baseTokensToSend-baseTokensToSend2)

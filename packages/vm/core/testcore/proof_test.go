@@ -52,7 +52,8 @@ func TestProofs(t *testing.T) {
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
 
-		rec := ch.LastReceipt()
+		lastBlockReceipts := ch.GetRequestReceiptsForBlock()
+		rec := lastBlockReceipts[len(lastBlockReceipts)-1]
 
 		recKey := blocklog.RequestReceiptKey(rec.LookupKey())
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), recKey)

@@ -351,14 +351,15 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
-func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+func (ch *Chain) LastReceipt() *isc.Receipt {
 	ch.mustStardustVM()
 
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
 	}
-	return lastBlockReceipts[len(lastBlockReceipts)-1]
+	blocklogReceipt := lastBlockReceipts[len(lastBlockReceipts)-1]
+	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
 func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {

@@ -22,6 +22,7 @@ func MustDecodeAllowance(b []byte, def ...*isc.Allowance) *isc.Allowance {
 	}
 	return ret
 }
+
 func EncodeAllowance(value *isc.Allowance) []byte {
 	return value.Bytes()
 }

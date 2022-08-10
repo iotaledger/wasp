@@ -68,19 +68,8 @@ interface ISC {
     // Get the timestamp of the ISC block (seconds since UNIX epoch)
 	function getTimestampUnixSeconds() external view returns (int64);
 
-	// Get an ISC contract's hname given its instance name
+		// Get an ISC contract's hname given its instance name
 	function hn(string memory s) external view returns (ISCHname);
-
-	// Like revert() but with a custom message that is saved in the ISC receipt
-	function logPanic(string memory s) external view;
-
-	// Log a message with INFO level.
-    // Use for debugging purposes only -- the message shows up only on the wasp node's / Solo log.
-	function logInfo(string memory s) external view;
-
-	// Log a message with DEBUG level.
-    // Use for debugging purposes only -- the message shows up only on the wasp node's / Solo log.
-	function logDebug(string memory s) external view;
 }
 
 // Every ISC chain is initialized with an instance of the Magic contract at address 0x1074
