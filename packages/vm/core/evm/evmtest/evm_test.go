@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -333,18 +332,6 @@ func TestISCGetRequestID(t *testing.T) {
 	require.EqualValues(t, env.soloChain.LastReceipt().Request.ID(), *reqID)
 }
 
-func TestISCGetCaller(t *testing.T) {
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	agentID := new(iscmagic.ISCAgentID)
-	iscTest.callFnExpectEvent(nil, "GetCallerEvent", &agentID, "emitGetCaller")
-
-	senderAddress := crypto.PubkeyToAddress(iscTest.defaultSender.PublicKey)
-	require.True(t, agentID.MustUnwrap().Equals(isc.NewEthereumAddressAgentID(senderAddress)))
-}
-
 func TestISCGetSenderAccount(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
@@ -354,34 +341,6 @@ func TestISCGetSenderAccount(t *testing.T) {
 	iscTest.callFnExpectEvent(nil, "SenderAccountEvent", &sender, "emitSenderAccount")
 
 	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().Request.SenderAccount()), *sender)
-}
-
-func TestISCGetAllowanceBaseTokens(t *testing.T) {
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	var baseTokens uint64
-	iscTest.callFnExpectEvent([]ethCallOptions{{
-		// TODO: allowance cannot be specified directly in EVM requests
-		// allowance: isc.NewAllowanceBaseTokens(42),
-	}}, "AllowanceBaseTokensEvent", &baseTokens, "emitAllowanceBaseTokens")
-
-	require.EqualValues(t, 0, baseTokens)
-}
-
-func TestISCGetAllowanceAvailableBaseTokens(t *testing.T) {
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	var baseTokensAvailable uint64
-	iscTest.callFnExpectEvent([]ethCallOptions{{
-		// TODO: allowance cannot be specified directly in EVM requests
-		// allowance: isc.NewAllowanceBaseTokens(42),
-	}}, "AllowanceAvailableBaseTokensEvent", &baseTokensAvailable, "emitAllowanceAvailableBaseTokens")
-
-	require.EqualValues(t, 0, baseTokensAvailable)
 }
 
 func TestRevert(t *testing.T) {
@@ -420,8 +379,26 @@ func TestSendBaseTokens(t *testing.T) {
 
 	// transfer 1 mil from ethAddress L2 to receiver L1
 	transfer := 1 * isc.Million
-	iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 
+	// attempt the operation without first calling `allow`
+	_, err = iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // skip estimate gas (which will fail)
+	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not previously allowed")
+
+	// allow ISCTest to take the tokens
+	_, err = env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"allow",
+		iscTest.address,
+		iscmagic.WrapISCAllowance(isc.NewAllowanceBaseTokens(transfer)),
+	)
+	require.NoError(t, err)
+
+	// attempt again
+	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+	require.NoError(t, err)
 	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
 	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
 }
@@ -460,114 +437,6 @@ func TestSendAsNFT(t *testing.T) {
 			},
 		}}, "callSendAsNFT", iscmagic.WrapBaseTokensNFTID(nftInfo.NFTID))
 		require.NoError(t, err)
-	*/
-}
-
-func TestISCGetAllowanceAvailableNativeTokens(t *testing.T) {
-	// TODO: allowance cannot be specified directly in EVM requests
-	t.SkipNow()
-
-	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	// mint some native tokens
-	env.soloChain.MustDepositBaseTokensToL2(10*isc.Million, nil) // for gas
-	sn, tokenID, err := env.soloChain.NewFoundryParams(10000).
-		WithUser(env.soloChain.OriginatorPrivateKey).
-		CreateFoundry()
-	require.NoError(t, err)
-	err = env.soloChain.MintTokens(sn, 10000, env.soloChain.OriginatorPrivateKey)
-	require.NoError(t, err)
-
-	nt := new(iscmagic.NativeToken)
-	iscTest.callFnExpectEvent([]ethCallOptions{{
-		// allowance: isc.NewAllowanceFungibleTokens(isc.NewEmptyAssets().AddNativeTokens(tokenID, 42)),
-	}}, "AllowanceAvailableNativeTokenEvent", &nt, "emitAllowanceAvailableNativeTokens")
-
-	require.EqualValues(t, tokenID[:], nt.ID.Data)
-	require.EqualValues(t, 42, nt.Amount.Uint64())
-}
-
-func TestISCGetAllowanceNFTs(t *testing.T) {
-	// TODO: how to send an NFT to an ethereum address on L2?
-	t.SkipNow()
-	/*
-		env := initEVM(t)
-		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-		iscTest := env.deployISCTestContract(ethKey)
-
-		// mint an NFT and send to chain
-		env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
-		issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
-		metadata := []byte("foobar")
-		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-		require.NoError(t, err)
-
-		nft := new(iscmagic.ISCNFT)
-		iscTest.callFnExpectEvent([]ethCallOptions{{
-			iota: iscCallOptions{
-				wallet: issuerWallet,
-				before: func(cp *solo.CallParams) {
-					cp.AddBaseTokens(1 * isc.Mi).
-						WithNFT(&isc.NFT{
-							ID:       nftInfo.NFTID,
-							Issuer:   issuerAddress,
-							Metadata: metadata,
-						}).
-						WithAllowance(&isc.Allowance{
-							Assets: &isc.FungibleTokens{BaseTokens: 1000},
-							NFTs:   []iotago.NFTID{nftInfo.NFTID},
-						}).
-						WithGasBudget(1000000)
-				},
-			},
-		}}, "AllowanceNFTEvent", &nft, "emitAllowanceNFTs")
-
-		require.EqualValues(t, nftInfo.NFTID, nft.MustUnwrap().ID)
-		require.True(t, issuerAddress.Equal(nft.MustUnwrap().Issuer))
-		require.EqualValues(t, metadata, nft.MustUnwrap().Metadata)
-	*/
-}
-
-func TestISCGetAllowanceAvailableNFTs(t *testing.T) {
-	// TODO: how to send an NFT to an ethereum address on L2?
-	t.SkipNow()
-	/*
-		env := initEVM(t)
-		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-		iscTest := env.deployISCTestContract(ethKey)
-
-		// mint an NFT and send to chain
-		env.soloChain.MustDepositBaseTokensToL2(10*isc.Mi, nil) // for gas
-		issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
-		metadata := []byte("foobar")
-		nftInfo, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-		require.NoError(t, err)
-
-		nft := new(iscmagic.ISCNFT)
-		iscTest.callFnExpectEvent([]ethCallOptions{{
-			iota: iotaCallOptions{
-				wallet: issuerWallet,
-				before: func(cp *solo.CallParams) {
-					cp.AddBaseTokens(1 * isc.Mi).
-						WithNFT(&isc.NFT{
-							ID:       nftInfo.NFTID,
-							Issuer:   issuerAddress,
-							Metadata: metadata,
-						}).
-						WithAllowance(&isc.Allowance{
-							Assets: &isc.FungibleTokens{BaseTokens: 1000},
-							NFTs:   []iotago.NFTID{nftInfo.NFTID},
-						}).
-						WithGasBudget(1000000)
-				},
-			},
-		}}, "AllowanceAvailableNFTEvent", &nft, "emitAllowanceAvailableNFTs")
-
-		require.EqualValues(t, nftInfo.NFTID, nft.MustUnwrap().ID)
-		require.True(t, issuerAddress.Equal(nft.MustUnwrap().Issuer))
-		require.EqualValues(t, metadata, nft.MustUnwrap().Metadata)
 	*/
 }
 

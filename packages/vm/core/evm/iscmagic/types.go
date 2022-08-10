@@ -173,7 +173,7 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 // ISCAllowance matches the struct definition in ISC.sol
 type ISCAllowance struct {
 	BaseTokens uint64
-	Assets     []NativeToken
+	Tokens     []NativeToken
 	Nfts       []NFTID
 }
 
@@ -188,14 +188,14 @@ func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	}
 	return ISCAllowance{
 		BaseTokens: a.Assets.BaseTokens,
-		Assets:     tokens,
+		Tokens:     tokens,
 		Nfts:       nfts,
 	}
 }
 
 func (a ISCAllowance) Unwrap() *isc.Allowance {
-	tokens := make(iotago.NativeTokens, len(a.Assets))
-	for i, t := range a.Assets {
+	tokens := make(iotago.NativeTokens, len(a.Tokens))
+	for i, t := range a.Tokens {
 		tokens[i] = t.Unwrap()
 	}
 	nfts := make([]iotago.NFTID, len(a.Nfts))
@@ -370,38 +370,6 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	ret := isc.SendOptions{
 		Timelock:   timeLock,
 		Expiration: i.Expiration.Unwrap(),
-	}
-
-	return ret
-}
-
-type ISCRequestParameters struct {
-	TargetAddress               L1Address
-	FungibleTokens              ISCFungibleTokens
-	AdjustMinimumStorageDeposit bool
-	Metadata                    ISCSendMetadata
-	SendOptions                 ISCSendOptions
-}
-
-func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParameters {
-	ret := ISCRequestParameters{
-		TargetAddress:               WrapL1Address(parameters.TargetAddress),
-		FungibleTokens:              WrapISCFungibleTokens(*parameters.FungibleTokens),
-		AdjustMinimumStorageDeposit: parameters.AdjustToMinimumStorageDeposit,
-		Metadata:                    WrapISCSendMetadata(*parameters.Metadata),
-		SendOptions:                 WrapISCSendOptions(parameters.Options),
-	}
-
-	return ret
-}
-
-func (i *ISCRequestParameters) Unwrap() isc.RequestParameters {
-	ret := isc.RequestParameters{
-		TargetAddress:                 i.TargetAddress.MustUnwrap(),
-		FungibleTokens:                i.FungibleTokens.Unwrap(),
-		AdjustToMinimumStorageDeposit: i.AdjustMinimumStorageDeposit,
-		Metadata:                      i.Metadata.Unwrap(),
-		Options:                       i.SendOptions.Unwrap(),
 	}
 
 	return ret

@@ -14,10 +14,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
+
+func keyAllowance(from, to common.Address) kv.Key {
+	return kv.Key("a") + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
+}
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
 // which will go into the EVM genesis block
@@ -80,10 +86,9 @@ func adjustStorageDeposit(ctx isc.Sandbox, req isc.RequestParameters) {
 
 // moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
 // account before sending to L1
-// TODO: should use allowance and c.ctx.TransferAllowedFunds() instead
-func moveAssetsToCommonAccount(ctx isc.Sandbox, fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
+func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleTokens *isc.FungibleTokens, nftIDs []iotago.NFTID) {
 	ctx.Privileged().MustMoveBetweenAccounts(
-		ctx.Caller(), // should be the eth caller?
+		isc.NewEthereumAddressAgentID(caller.Address()),
 		ctx.AccountID(),
 		fungibleTokens,
 		nftIDs,
@@ -137,56 +142,109 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 	case "getSenderAccount":
 		outs = []interface{}{iscmagic.WrapISCAgentID(c.ctx.Request().SenderAccount())}
 
-	case "getAllowanceBaseTokens":
-		outs = []interface{}{c.ctx.Request().Allowance().Assets.BaseTokens}
-
-	case "getAllowanceNativeTokensLen":
-		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().Assets.Tokens))}
-
-	case "getAllowanceNativeToken":
-		i := args[0].(uint16)
-		outs = []interface{}{iscmagic.WrapNativeToken(c.ctx.Request().Allowance().Assets.Tokens[i])}
-
-	case "getAllowanceNFTsLen":
-		outs = []interface{}{uint16(len(c.ctx.Request().Allowance().NFTs))}
-
-	case "getAllowanceNFTID":
-		i := args[0].(uint16)
-		outs = []interface{}{iscmagic.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])}
-
-	case "getAllowanceNFT":
-		i := args[0].(uint16)
-		nftID := iscmagic.WrapNFTID(c.ctx.Request().Allowance().NFTs[i])
-		nft := c.ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
-
-	case "getCaller":
-		outs = []interface{}{iscmagic.WrapISCAgentID(c.ctx.Caller())}
-
 	case "registerError":
 		errorMessage := args[0].(string)
 		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
 
-	case "send":
-		params := iscmagic.ISCRequestParameters{}
+	case "allow":
+		params := struct {
+			Target    common.Address
+			Allowance iscmagic.ISCAllowance
+		}{}
 		err := method.Inputs.Copy(&params, args)
 		c.ctx.RequireNoError(err)
-		req := params.Unwrap()
+
+		state := iscMagicSubrealm(c.ctx.State())
+		key := keyAllowance(caller.Address(), params.Target)
+		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+		allowance.Add(params.Allowance.Unwrap())
+		state.Set(key, allowance.Bytes())
+
+	case "takeAllowedFunds":
+		params := struct {
+			Addr      common.Address
+			Allowance iscmagic.ISCAllowance
+		}{}
+		err := method.Inputs.Copy(&params, args)
+		c.ctx.RequireNoError(err)
+
+		state := iscMagicSubrealm(c.ctx.State())
+		key := keyAllowance(params.Addr, caller.Address())
+		taken := params.Allowance.Unwrap()
+		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+		ok := allowance.SpendFromBudget(taken)
+		c.ctx.Requiref(ok, "takeAllowedFunds: not previously allowed")
+		if allowance.IsEmpty() {
+			state.Del(key)
+		} else {
+			state.Set(key, allowance.Bytes())
+		}
+
+		c.ctx.Privileged().MustMoveBetweenAccounts(
+			isc.NewEthereumAddressAgentID(params.Addr),
+			isc.NewEthereumAddressAgentID(caller.Address()),
+			taken.Assets,
+			taken.NFTs,
+		)
+
+	case "send":
+		params := struct {
+			TargetAddress               iscmagic.L1Address
+			FungibleTokens              iscmagic.ISCFungibleTokens
+			AdjustMinimumStorageDeposit bool
+			Metadata                    iscmagic.ISCSendMetadata
+			SendOptions                 iscmagic.ISCSendOptions
+		}{}
+		err := method.Inputs.Copy(&params, args)
+		c.ctx.RequireNoError(err)
+		req := isc.RequestParameters{
+			TargetAddress:                 params.TargetAddress.MustUnwrap(),
+			FungibleTokens:                params.FungibleTokens.Unwrap(),
+			AdjustToMinimumStorageDeposit: params.AdjustMinimumStorageDeposit,
+			Metadata:                      params.Metadata.Unwrap(),
+			Options:                       params.SendOptions.Unwrap(),
+		}
 		adjustStorageDeposit(c.ctx, req)
-		moveAssetsToCommonAccount(c.ctx, req.FungibleTokens, nil)
+
+		// make sure that allowance <= sent tokens, so that the target contract does not
+		// spend from the common account
+		c.ctx.Requiref(
+			isc.NewAllowanceFungibleTokens(req.FungibleTokens).SpendFromBudget(req.Metadata.Allowance),
+			"allowance must not be greater than sent tokens",
+		)
+
+		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, nil)
 		c.ctx.Send(req)
 
 	case "sendAsNFT":
-		var params struct {
-			Req   iscmagic.ISCRequestParameters
-			NFTID iscmagic.NFTID
-		}
+		params := struct {
+			TargetAddress               iscmagic.L1Address
+			FungibleTokens              iscmagic.ISCFungibleTokens
+			NFTID                       iscmagic.NFTID
+			AdjustMinimumStorageDeposit bool
+			Metadata                    iscmagic.ISCSendMetadata
+			SendOptions                 iscmagic.ISCSendOptions
+		}{}
 		err := method.Inputs.Copy(&params, args)
 		c.ctx.RequireNoError(err)
-		req := params.Req.Unwrap()
+		req := isc.RequestParameters{
+			TargetAddress:                 params.TargetAddress.MustUnwrap(),
+			FungibleTokens:                params.FungibleTokens.Unwrap(),
+			AdjustToMinimumStorageDeposit: params.AdjustMinimumStorageDeposit,
+			Metadata:                      params.Metadata.Unwrap(),
+			Options:                       params.SendOptions.Unwrap(),
+		}
 		nftID := params.NFTID.Unwrap()
 		adjustStorageDeposit(c.ctx, req)
-		moveAssetsToCommonAccount(c.ctx, req.FungibleTokens, []iotago.NFTID{nftID})
+
+		// make sure that allowance <= sent tokens, so that the target contract does not
+		// spend from the common account
+		c.ctx.Requiref(
+			isc.NewAllowanceFungibleTokens(req.FungibleTokens).AddNFTs(nftID).SpendFromBudget(req.Metadata.Allowance),
+			"allowance must not be greater than sent tokens",
+		)
+
+		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
 		c.ctx.SendAsNFT(req, nftID)
 
 	case "call":
@@ -199,7 +257,7 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		err := method.Inputs.Copy(&callArgs, args)
 		c.ctx.RequireNoError(err)
 		allowance := callArgs.Allowance.Unwrap()
-		moveAssetsToCommonAccount(c.ctx, allowance.Assets, allowance.NFTs)
+		moveAssetsToCommonAccount(c.ctx, caller, allowance.Assets, allowance.NFTs)
 		callRet := c.ctx.Call(
 			isc.Hname(callArgs.ContractHname),
 			isc.Hname(callArgs.EntryPoint),
@@ -207,25 +265,6 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			allowance,
 		)
 		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
-
-	case "getAllowanceAvailableBaseTokens":
-		outs = []interface{}{c.ctx.AllowanceAvailable().Assets.BaseTokens}
-
-	case "getAllowanceAvailableNativeToken":
-		i := args[0].(uint16)
-		outs = []interface{}{iscmagic.WrapNativeToken(c.ctx.AllowanceAvailable().Assets.Tokens[i])}
-
-	case "getAllowanceAvailableNativeTokensLen":
-		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().Assets.Tokens))}
-
-	case "getAllowanceAvailableNFTsLen":
-		outs = []interface{}{uint16(len(c.ctx.AllowanceAvailable().NFTs))}
-
-	case "getAllowanceAvailableNFT":
-		i := args[0].(uint16)
-		nftID := iscmagic.WrapNFTID(c.ctx.AllowanceAvailable().NFTs[i])
-		nft := c.ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
 
 	default:
 		panic(fmt.Sprintf("no handler for method %s", method.Name))

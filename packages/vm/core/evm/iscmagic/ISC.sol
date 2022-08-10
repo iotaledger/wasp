@@ -5,44 +5,11 @@ pragma solidity >=0.8.11;
 
 // The interface of the ISC Magic Contract
 interface ISC {
-    // Get the AgentID of the caller
-	function getCaller() external view returns (ISCAgentID memory);
-
     // Get the ISC request ID
 	function getRequestID() external view returns (ISCRequestID memory);
 
     // Get the AgentID of the sender of the ISC request
 	function getSenderAccount() external view returns (ISCAgentID memory);
-
-    // Get the base tokens specified in the allowance
-	function getAllowanceBaseTokens() external view returns (uint64);
-
-    // Get the amount of native token IDs specified in the allowance
-	function getAllowanceNativeTokensLen() external view returns (uint16);
-
-    // Get the amount of native tokens at position i specified in the allowance
-	function getAllowanceNativeToken(uint16 i) external view returns (NativeToken memory);
-
-    // Get the remaining base tokens in the allowance
-	function getAllowanceAvailableBaseTokens() external view returns (uint64);
-
-    // Get the amount of native token IDs in the remaining allowance
-	function getAllowanceAvailableNativeToken(uint16 i) external view returns (NativeToken memory);
-
-    // Get the remaining native tokens at position i in the allowance
-	function getAllowanceAvailableNativeTokensLen() external view returns (uint16);
-
-    // Get the amount of NFTs specified in the allowance
-	function getAllowanceNFTsLen() external view returns (uint16);
-
-    // Get the NFT at position i specified in the allowance
-	function getAllowanceNFT(uint16 i) external view returns (ISCNFT memory);
-
-    // Get the amount of NFTs in the remaining allowance
-	function getAllowanceAvailableNFTsLen() external view returns (uint16);
-
-    // Get the NFT at position i in the remaining allowance
-	function getAllowanceAvailableNFT(uint16 i) external view returns (ISCNFT memory);
 
     // Trigger an ISC event
 	function triggerEvent(string memory s) external;
@@ -50,12 +17,27 @@ interface ISC {
     // Get a random 32-bit value based on the hash of the current ISC state transaction
 	function getEntropy() external view returns (bytes32);
 
+    // Allow the `target` EVM contract to take some funds from the caller's L2 account
+    function allow(address target, ISCAllowance memory allowance) external;
+
+    // Take some funds from the given address, which must have authorized first with `allow`.
+    function takeAllowedFunds(address addr, ISCAllowance memory allowance) external;
+
     // Send an on-ledger request (or a regular transaction to any L1 address).
-    // The specified funds are taken from the ISC request caller's L2 account.
+	// The specified `fungibleTokens` are transferred from the caller's
+	// L2 account to the `evm` core contract's account.
+	// The sent request will have the `evm` core contract as sender. It will
+	// include the transferred `fungibleTokens`.
+	// The specified `allowance` must not be greater than `fungibleTokens`.
 	function send(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
 
     // Send an on-ledger request as an NFTOutput
-	function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions, NFTID id) external;
+	// The specified `fungibleTokens` and NFT `id` are transferred from the caller's
+	// L2 account to the `evm` core contract's account.
+	// The sent request will have the `evm` core contract as sender. It will
+	// include the transferred assets.
+	// The specified `allowance` must not be greater than `fungibleTokens`.
+	function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, NFTID id, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
 
     // Register a custom ISC error message
     //
@@ -68,7 +50,7 @@ interface ISC {
 	function registerError(string memory s) external view returns (ISCError);
 
     // Call the entry point of an ISC contract on the same chain.
-    // The specified funds in the allowance are taken from the ISC request caller's L2 account.
+    // The specified funds in the allowance are taken from the caller's L2 account.
 	function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
 
     // Call a view entry point of an ISC contract on the same chain.
@@ -165,10 +147,12 @@ struct ISCSendMetadata  {
 	uint64 gasBudget;
 }
 
-// The allowance of an ISC request
+// The allowance of an ISC call.
+// The specified tokens, assets and NFTs are transferred from the caller's L2 account to
+// the callee's L2 account.
 struct ISCAllowance {
 	uint64 baseTokens;
-	NativeToken[] assets;
+	NativeToken[] tokens;
 	NFTID[] nfts;
 }
 
