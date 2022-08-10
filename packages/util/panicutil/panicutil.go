@@ -87,6 +87,9 @@ func CatchAllExcept(f func(), exceptErrors ...error) (err error) {
 						panic(err)
 					}
 				}
+				if err, ok := r.(*kv.DBError); ok {
+					panic(err)
+				}
 				err = recoveredError
 			} else {
 				err = errors.Errorf("%v", r)
