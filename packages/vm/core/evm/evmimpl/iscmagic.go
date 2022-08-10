@@ -122,6 +122,9 @@ func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, ga
 
 //nolint:funlen
 func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+	c.ctx.Privileged().GasBurnEnable(true)
+	defer c.ctx.Privileged().GasBurnEnable(false)
+
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas
@@ -290,6 +293,9 @@ func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte
 }
 
 func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
+	c.ctx.Privileged().GasBurnEnable(true)
+	defer c.ctx.Privileged().GasBurnEnable(false)
+
 	ret, remainingGas, _, ok := tryBaseCall(c.ctx, evm, caller, input, gas, readOnly)
 	if ok {
 		return ret, remainingGas

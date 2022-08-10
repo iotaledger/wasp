@@ -384,13 +384,13 @@ func TestSendBaseTokens(t *testing.T) {
 	transfer := 1 * isc.Million
 
 	// attempt the operation without first calling `allow`
-	_, err := iscTest.callFn([]ethCallOptions{{
+	_, err = iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 	require.Error(t, err)
+	require.Contains(t, err.Error(), "not previously allowed")
 	// this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
 	// require.Contains(t, err.Error(), "not previously allowed")
-
 	// allow ISCTest to take the tokens
 	_, err = env.MagicContract(ethKey).callFn(
 		[]ethCallOptions{{sender: ethKey}},

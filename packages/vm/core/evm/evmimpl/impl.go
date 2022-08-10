@@ -104,6 +104,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	// burn EVM gas as ISC gas
 	var gasErr error
 	if result != nil {
+		// convert burnt EVM gas to ISC gas
 		gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr = panicutil.CatchPanic(
@@ -220,11 +221,24 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 }
 
 func callContract(ctx isc.SandboxView) dict.Dict {
+	// we only want to charge gas for the actual execution of the ethereum tx
+	ctx.Privileged().GasBurnEnable(false)
+	defer ctx.Privileged().GasBurnEnable(true)
+
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
 	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg, nil)
+
+	if res != nil {
+		// convert burnt EVM gas to ISC gas
+		gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+		ctx.Privileged().GasBurnEnable(true)
+		ctx.Gas().Burn(gas.BurnCodeEVM1P, evmtypes.EVMGasToISC(res.UsedGas, &gasRatio))
+		ctx.Privileged().GasBurnEnable(false)
+	}
+
 	ctx.RequireNoError(err)
 	return result(res.Return())
 }
