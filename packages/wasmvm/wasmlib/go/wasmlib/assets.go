@@ -13,13 +13,12 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	BaseTokens uint64
-	NftIDs     map[wasmtypes.ScNftID]struct{}
+	NftIDs     map[wasmtypes.ScNftID]bool
 	Tokens     TokenAmounts
 }
 
 func NewScAssets(buf []byte) *ScAssets {
 	assets := &ScAssets{}
-	assets.NftIDs = make(map[wasmtypes.ScNftID]struct{})
 	if len(buf) == 0 {
 		return assets
 	}
@@ -37,9 +36,12 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	size = wasmtypes.Uint32Decode(dec)
+	if size > 0 {
+		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
+	}
 	for ; size > 0; size-- {
 		nftID := wasmtypes.NftIDDecode(dec)
-		assets.NftIDs[nftID] = struct{}{}
+		assets.NftIDs[nftID] = true
 	}
 	return assets
 }
@@ -120,7 +122,7 @@ func (b *ScBalances) IsEmpty() bool {
 	return b.assets.IsEmpty()
 }
 
-func (b *ScBalances) NftIDs() map[wasmtypes.ScNftID]struct{} {
+func (b *ScBalances) NftIDs() map[wasmtypes.ScNftID]bool {
 	return b.assets.NftIDs
 }
 
@@ -173,7 +175,10 @@ func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt
 }
 
 func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
-	t.assets.NftIDs[*nftID] = struct{}{}
+	if t.assets.NftIDs == nil {
+		t.assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
+	}
+	t.assets.NftIDs[*nftID] = true
 }
 
 func (t *ScTransfer) Bytes() []byte {
