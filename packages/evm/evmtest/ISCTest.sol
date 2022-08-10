@@ -113,8 +113,10 @@ contract ISCTest {
         ISCAllowance memory allowance
     ) public {
         // moves funds owned by the current contract to the targetAgentID
-        ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        ISCDict memory params = ISCDict(new ISCDictItem[](2));
         params.items[0] = ISCDictItem("a", targetAgentID.data);
+        bytes memory forceOpenAccount = "\xFF";
+        params.items[1] = ISCDictItem("c", forceOpenAccount);
         isc.call(
             isc.hn("accounts"),
             isc.hn("transferAllowanceTo"),

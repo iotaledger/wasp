@@ -4,6 +4,7 @@
 package evmimpl
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -98,7 +99,7 @@ func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleT
 type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64)
 
 // catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
-func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, err error) {
 	err = panicutil.CatchAllExcept(
 		func() {
 			ret, remainingGas = run(evm, caller, input, gas, readOnly)
@@ -107,15 +108,16 @@ func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byt
 	)
 	if err != nil {
 		remainingGas = gas
-		err = vm.ErrExecutionReverted
+		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), err)
 		// the ISC error is lost inside the EVM, a possible solution would be to wrap the ErrExecutionReverted error, but the ISC information still gets deleted at some point
 		// err = errors.Wrap(vm.ErrExecutionReverted, err.Error())
+		err = vm.ErrExecutionReverted
 	}
 	return ret, remainingGas, err
 }
 
 func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly)
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
 }
 
 //nolint:funlen
@@ -284,7 +286,7 @@ func newMagicContractView(ctx isc.SandboxView) vm.ISCContract {
 }
 
 func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly)
+	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
 }
 
 func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {

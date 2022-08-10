@@ -381,7 +381,7 @@ func TestSendBaseTokens(t *testing.T) {
 	transfer := 1 * isc.Million
 
 	// attempt the operation without first calling `allow`
-	_, err = iscTest.callFn([]ethCallOptions{{
+	_, err := iscTest.callFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 	require.Error(t, err)
@@ -478,21 +478,34 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// credit base tokens to the ISC test contract
-	env.soloChain.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(iscTest.address))
+	contractAgentID := isc.NewEthereumAddressAgentID(iscTest.address)
+	env.soloChain.GetL2FundsFromFaucet(contractAgentID)
+	initialContractBalance := env.soloChain.L2BaseTokens(contractAgentID)
 
 	randAgentID := isc.NewAgentID(tpkg.RandEd25519Address())
 
 	nBaseTokens := uint64(100)
-	funds := isc.NewAllowanceBaseTokens(nBaseTokens)
-	_, err := iscTest.callFn(
+	allowance := isc.NewAllowanceBaseTokens(nBaseTokens)
+
+	// allow ISCTest to take the tokens
+	_, err := env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"allow",
+		iscTest.address,
+		iscmagic.WrapISCAllowance(allowance),
+	)
+	require.NoError(t, err)
+
+	_, err = iscTest.callFn(
 		nil,
 		"moveToAccount",
 		iscmagic.WrapISCAgentID(randAgentID),
-		iscmagic.WrapISCAllowance(funds),
+		iscmagic.WrapISCAllowance(allowance),
 	)
 	require.NoError(t, err)
 
 	env.soloChain.AssertL2BaseTokens(randAgentID, nBaseTokens)
+	env.soloChain.AssertL2BaseTokens(contractAgentID, initialContractBalance-nBaseTokens)
 }
 
 func TestISCPanic(t *testing.T) {
