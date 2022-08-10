@@ -528,16 +528,7 @@ func TestEVMContractOwnsFundsL2Transfer(t *testing.T) {
 	nBaseTokens := uint64(100)
 	allowance := isc.NewAllowanceBaseTokens(nBaseTokens)
 
-	// allow ISCTest to take the tokens
-	_, err := env.MagicContract(ethKey).callFn(
-		[]ethCallOptions{{sender: ethKey}},
-		"allow",
-		iscTest.address,
-		iscmagic.WrapISCAllowance(allowance),
-	)
-	require.NoError(t, err)
-
-	_, err = iscTest.callFn(
+	_, err := iscTest.callFn(
 		nil,
 		"moveToAccount",
 		iscmagic.WrapISCAgentID(randAgentID),
