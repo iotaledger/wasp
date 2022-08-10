@@ -314,7 +314,7 @@ func testNFTMintToChain(t *testing.T, w bool) {
 	require.NoError(t, err)
 	// find out the NFTID
 	receipt := ch.LastReceipt()
-	nftID := iotago.NFTIDFromOutputID(receipt.Request.ID().OutputID())
+	nftID := iotago.NFTIDFromOutputID(receipt.DeserializedRequest().ID().OutputID())
 
 	// - Chain owns the NFT on L1
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))

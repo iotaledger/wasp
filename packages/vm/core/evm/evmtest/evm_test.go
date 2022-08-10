@@ -329,7 +329,7 @@ func TestISCGetRequestID(t *testing.T) {
 	reqID := new(isc.RequestID)
 	iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
 
-	require.EqualValues(t, env.soloChain.LastReceipt().Request.ID(), *reqID)
+	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), *reqID)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -340,7 +340,7 @@ func TestISCGetSenderAccount(t *testing.T) {
 	sender := new(iscmagic.ISCAgentID)
 	iscTest.callFnExpectEvent(nil, "SenderAccountEvent", &sender, "emitSenderAccount")
 
-	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().Request.SenderAccount()), *sender)
+	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().DeserializedRequest().SenderAccount()), *sender)
 }
 
 func TestRevert(t *testing.T) {
