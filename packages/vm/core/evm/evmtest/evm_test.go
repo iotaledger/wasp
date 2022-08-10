@@ -160,6 +160,41 @@ func TestGasLimit(t *testing.T) {
 	require.Regexp(t, `\bgas\b`, err.Error())
 }
 
+func TestNotEnoughISCGas(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	storage := env.deployStorageContract(ethKey)
+
+	_, err := storage.store(43)
+	require.NoError(t, err)
+
+	// only the owner can call the setGasRatio endpoint
+	// set the ISC gas ratio VERY HIGH
+	newGasRatio := util.Ratio32{A: evmtypes.DefaultGasRatio.A * 5000, B: evmtypes.DefaultGasRatio.B}
+	err = env.setGasRatio(newGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
+	require.NoError(t, err)
+	require.Equal(t, newGasRatio, env.getGasRatio())
+
+	// try to issue a call to store(something) in EVM
+	res, err := storage.store(44)
+
+	// the call must fail with "not enough gas"
+	require.Error(t, err)
+	require.Regexp(t, "gas budget exceeded", err)
+
+	// there must be an EVM receipt
+	require.NotNil(t, res.evmReceipt)
+	require.Equal(t, res.evmReceipt.Status, types.ReceiptStatusFailed)
+
+	// no changes should persist
+
+	// restore default gas price, so the view call doesn't fail
+	err = env.setGasRatio(evmtypes.DefaultGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
+	require.NoError(t, err)
+	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
+	require.EqualValues(t, 43, storage.retrieve())
+}
+
 // ensure the amount of base tokens sent impacts the amount of gas used
 func TestLoop(t *testing.T) {
 	env := initEVM(t)

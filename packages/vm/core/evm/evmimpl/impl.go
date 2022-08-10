@@ -116,7 +116,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		if gasErr != nil {
 			// out of gas when burning ISC gas, edit the EVM receipt so that it fails
 			receipt.Status = types.ReceiptStatusFailed
-			// TODO is this correct? - if this happens, will the TX be reverted?
 		}
 	}
 
