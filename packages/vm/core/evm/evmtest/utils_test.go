@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/stretchr/testify/require"
@@ -356,7 +355,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 type callFnResult struct {
 	tx         *types.Transaction
 	evmReceipt *types.Receipt
-	iscReceipt *blocklog.RequestReceipt
+	iscReceipt *isc.Receipt
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
