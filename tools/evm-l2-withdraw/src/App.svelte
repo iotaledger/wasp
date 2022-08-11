@@ -41,9 +41,7 @@
     });
   }
 
-  // TODO leave empty
-  let addrInput =
-    "rms1qp77q4xv2e9r3wl8txfshclq9hyr4t2q7h46f09g76n5p03qh89gy28t0ec";
+  let addrInput = "";
 
   async function onWithdrawClick() {
     if (!defaultEvmStores.$selectedAccount) {
@@ -76,27 +74,6 @@
           baseTokens: 0,
           tokens: [],
         },
-        // targetContract: $web3.utils.hexToNumber("0x3c4b5e02"),
-        // entrypoint: $web3.utils.hexToNumber("0x23f4e3a1"),
-        // gasBudget: 50000000,
-        // params: {
-        //   items: [
-        //     {
-        //       key: "x".charCodeAt(0),
-        //       value: "0x" + amount, //TODO: Fix
-        //     },
-        //   ],
-        // },
-        // allowance: {
-        //   nfts: [],
-        //   baseTokens: amount,
-        //   tokens: [
-        //     /*{
-        //       ID: [],
-        //       Amount: 1
-        //     }*/
-        //   ],
-        // },
       },
       {
         // Options
@@ -107,13 +84,6 @@
             data: [],
           },
         },
-        // timelock: 0,
-        // expiration: {
-        //   time: 0,
-        //   returnAddress: {
-        //     data: [],
-        //   },
-        // },
       },
     ];
 
