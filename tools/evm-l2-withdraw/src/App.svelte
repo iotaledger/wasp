@@ -8,66 +8,95 @@
     defaultEvmStores,
   } from "svelte-web3";
 
+  import { Bech32Helper } from "@iota/iota.js";
+
   import iscAbiAsText from "../../../packages/vm/core/evm/iscmagic/ISC.abi?raw";
+
+  const waspAddrBinaryFromBech32 = (bech32String) => {
+    let receiverAddr = Bech32Helper.addressFromBech32(bech32String, "rms");
+    let receiverAddrBinary = $web3.utils.hexToBytes(receiverAddr.pubKeyHash);
+    //  // AddressEd25519 denotes an Ed25519 address.
+    // AddressEd25519 AddressType = 0
+    // // AddressAlias denotes an Alias address.
+    // AddressAlias AddressType = 8
+    // // AddressNFT denotes an NFT address.
+    // AddressNFT AddressType = 16
+    //
+    // 0 is the ed25519 prefix
+    return new Uint8Array([0, ...receiverAddrBinary]);
+  };
 
   const iscAbi = JSON.parse(iscAbiAsText);
   const iscContractAddress: string =
     "0x0000000000000000000000000000000000001074";
 
+  let chainID;
+  let contract;
+
   async function connectToWallet() {
     await defaultEvmStores.setProvider();
+    chainID = await $web3.eth.getChainId();
+    contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
+      from: defaultEvmStores.$selectedAccount,
+    });
   }
 
-  async function start() {
-    await defaultEvmStores.setProvider();
+  // TODO leave empty
+  let addrInput =
+    "rms1qp77q4xv2e9r3wl8txfshclq9hyr4t2q7h46f09g76n5p03qh89gy28t0ec";
+
+  async function onWithdrawClick() {
     if (!defaultEvmStores.$selectedAccount) {
       console.log("no account selected");
       return;
     }
 
-    const chainId = await $web3.eth.getChainId();
-    const contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
-      from: defaultEvmStores.$selectedAccount,
-    });
-
-    var amount = $web3.utils.toBN(1074);
-
-    var parameters = [
+    let amount = 1e6; //1 million
+    let parameters = [
       {
         // Receiver
-        data: new Uint8Array(32),
+        data: waspAddrBinaryFromBech32(addrInput),
       },
       {
         // Fungible Tokens
-        baseTokens: 1074,
+        baseTokens: amount,
         tokens: [],
       },
-      true,
+      false,
       {
         // Metadata
-        targetContract: $web3.utils.hexToNumber("0x3c4b5e02"),
-        entrypoint: $web3.utils.hexToNumber("0x23f4e3a1"),
-        gasBudget: 50000000,
-
+        targetContract: 0,
+        entrypoint: 0,
+        gasBudget: 0,
         params: {
-          items: [
-            {
-              key: "x".charCodeAt(0),
-              value: "0x" + amount, //TODO: Fix
-            },
-          ],
+          items: [],
         },
-
         allowance: {
           nfts: [],
-          baseTokens: 1074,
-          tokens: [
-            /*{
-              ID: [],
-              Amount: 1
-            }*/
-          ],
+          baseTokens: 0,
+          tokens: [],
         },
+        // targetContract: $web3.utils.hexToNumber("0x3c4b5e02"),
+        // entrypoint: $web3.utils.hexToNumber("0x23f4e3a1"),
+        // gasBudget: 50000000,
+        // params: {
+        //   items: [
+        //     {
+        //       key: "x".charCodeAt(0),
+        //       value: "0x" + amount, //TODO: Fix
+        //     },
+        //   ],
+        // },
+        // allowance: {
+        //   nfts: [],
+        //   baseTokens: amount,
+        //   tokens: [
+        //     /*{
+        //       ID: [],
+        //       Amount: 1
+        //     }*/
+        //   ],
+        // },
       },
       {
         // Options
@@ -78,6 +107,13 @@
             data: [],
           },
         },
+        // timelock: 0,
+        // expiration: {
+        //   time: 0,
+        //   returnAddress: {
+        //     data: [],
+        //   },
+        // },
       },
     ];
 
@@ -87,14 +123,17 @@
     console.log(result);
   }
 
-  start();
+  connectToWallet();
 </script>
 
 <main>
   {#if !$connected}
     <button on:click={connectToWallet}>Connect to Wallet</button>
   {:else}
-    Connected to Chain {$chainId}
+    Connected to Chain {$chainId}<br /><br />
+    <input placeholder="rms..." style="width: 500px;" value={addrInput} /><br
+    /><br />
+    <button on:click={onWithdrawClick}>Withdraw</button><br />
   {/if}
 </main>
 

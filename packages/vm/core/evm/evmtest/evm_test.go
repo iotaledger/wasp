@@ -569,14 +569,17 @@ func TestSendWithArgs(t *testing.T) {
 	}
 	checkCounter(0)
 
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	senderInitialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+
+	sendBaseTokens := 700 * isc.Million
 
 	ret, err := env.MagicContract(ethKey).callFn(
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.soloChain.ChainID.AsAddress()),
-		iscmagic.WrapISCFungibleTokens(isc.FungibleTokens{}),
-		true, // auto adjust SD
+		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(sendBaseTokens)),
+		false, // auto adjust SD
 		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
 			TargetContract: inccounter.Contract.Hname(),
 			EntryPoint:     inccounter.FuncIncCounter.Hname(),
@@ -589,6 +592,8 @@ func TestSendWithArgs(t *testing.T) {
 	require.NoError(t, err)
 	require.Nil(t, ret.iscReceipt.Error)
 
+	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
 	time.Sleep(1 * time.Second) // wait a bit for the request going out of EVM to be processed by ISC
 
 	// assert inc counter was incremented
