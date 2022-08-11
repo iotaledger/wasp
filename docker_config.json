@@ -1,7 +1,6 @@
 {
   "l1": {
-    "apiAddress": "http://hornet:14265",
-    "faucetAddress": "http://hornet:8191"
+    "apiAddress": "http://hornet:14265"
   },
   "database": {
     "directory": "waspdb"
