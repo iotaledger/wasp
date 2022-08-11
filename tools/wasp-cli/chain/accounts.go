@@ -8,9 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
@@ -45,10 +43,6 @@ var balanceCmd = &cobra.Command{
 	Short: "Show the L2 balance of the given account",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if parameters.L1 == nil {
-			config.L1Client() // this will fill parameters.L1 with data from the L1 node
-		}
-
 		var agentID isc.AgentID
 		if len(args) == 0 {
 			agentID = isc.NewAgentID(wallet.Load().Address())
@@ -86,10 +80,6 @@ var depositCmd = &cobra.Command{
 	Short: "Deposit L1 funds into the given (default: your) L2 account",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if parameters.L1 == nil {
-			config.L1Client() // this will fill parameters.L1 with data from the L1 node
-		}
-
 		if strings.Contains(args[0], ":") {
 			// deposit to own agentID
 			tokens := util.ParseFungibleTokens(args)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -45,6 +46,23 @@ func Init(rootCmd *cobra.Command) {
 
 	rootCmd.AddCommand(configSetCmd)
 	rootCmd.AddCommand(checkVersionsCmd)
+
+	// The first time parameters.L1() is called, it will be initialized with this function
+	parameters.InitL1Lazy(func() {
+		if viper.Get("l1.params") == nil {
+			// get L1 params from node and save to config file
+			log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
+			L1Client() // this will call parameters.InitL1()
+			Set("l1.params", parameters.L1())
+		} else {
+			// read L1 params from config file
+			var params *parameters.L1Params
+			err := viper.UnmarshalKey("l1.params", &params)
+			log.Check(err)
+			parameters.InitL1(params)
+		}
+	})
+
 }
 
 func Read() {
@@ -99,7 +117,7 @@ func SetToken(token string) {
 func WaspClient(i ...int) *client.WaspClient {
 	// TODO: add authentication for /adm
 	log.Verbosef("using Wasp host %s\n", WaspAPI())
-	L1Client() // this will fill parameters.L1 with data from the L1 node
+	L1Client() // this will fill parameters.L1() with data from the L1 node
 	return client.NewWaspClient(WaspAPI(i...)).WithToken(GetToken())
 }
 

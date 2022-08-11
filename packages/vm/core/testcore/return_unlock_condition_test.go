@@ -74,7 +74,7 @@ func TestSendBack(t *testing.T) {
 	}
 
 	inputsCommitment := allOutIDs.OrderedSet(allOuts).MustCommitment()
-	tx, err = transaction.CreateAndSignTx(allOutIDs, inputsCommitment, tx.Essence.Outputs, wallet, parameters.L1.Protocol.NetworkID())
+	tx, err = transaction.CreateAndSignTx(allOutIDs, inputsCommitment, tx.Essence.Outputs, wallet, parameters.L1().Protocol.NetworkID())
 	require.NoError(t, err)
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(t, err)

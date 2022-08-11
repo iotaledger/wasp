@@ -27,7 +27,7 @@ import (
 func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
 	ret := make([]uint64, len(tx.Essence.Outputs))
 	for i, out := range tx.Essence.Outputs {
-		ret[i] = parameters.L1.Protocol.RentStructure.MinRent(out)
+		ret[i] = parameters.L1().Protocol.RentStructure.MinRent(out)
 	}
 	return ret
 }
@@ -534,7 +534,7 @@ func TestMessageSize(t *testing.T) {
 	reqSize := 5_000 // bytes
 	storageDeposit := 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1.MaxTransactionSize / reqSize
+	maxRequestsPerBlock := parameters.L1().MaxTransactionSize / reqSize
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {

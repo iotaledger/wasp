@@ -51,7 +51,7 @@ func (a *AddressAgentID) Bytes() []byte {
 }
 
 func (a *AddressAgentID) String() string {
-	return a.a.Bech32(parameters.L1.Protocol.Bech32HRP)
+	return a.a.Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
 func (a *AddressAgentID) Equals(other AgentID) bool {

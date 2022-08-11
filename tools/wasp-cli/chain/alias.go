@@ -2,7 +2,6 @@ package chain
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -35,9 +34,6 @@ func AddChainAlias(chainAlias, id string) {
 }
 
 func GetCurrentChainID() *isc.ChainID {
-	if parameters.L1 == nil {
-		config.L1Client() // this will fill parameters.L1 with data from the L1 node
-	}
 	chid, err := isc.ChainIDFromString(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
 	return chid

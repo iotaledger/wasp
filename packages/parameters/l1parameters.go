@@ -8,18 +8,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 )
 
-// DO NOT CHANGE THIS VAR. This global var is used to get L1 protocol parameters at runtime - it must only be set by nodeconn (after obtained from L1 node)
-var L1 *L1Params
-
-func init() {
-	// setup testing parameters when running in the context of tests
-	if strings.HasSuffix(os.Args[0], ".test") ||
-		strings.HasSuffix(os.Args[0], ".test.exe") ||
-		strings.HasSuffix(os.Args[0], "__debug_bin") {
-		InitL1ForTesting()
-	}
-}
-
 // L1Params describes parameters coming from the L1Params node
 type L1Params struct {
 	MaxTransactionSize int
@@ -36,8 +24,10 @@ type BaseToken struct {
 	UseMetricPrefix bool
 }
 
-func InitL1ForTesting() {
-	L1 = &L1Params{
+var (
+	l1Params *L1Params
+
+	L1ForTesting = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
 		MaxTransactionSize: 32000,
 		Protocol: &iotago.ProtocolParameters{
@@ -61,4 +51,36 @@ func InitL1ForTesting() {
 			UseMetricPrefix: false,
 		},
 	}
+
+	l1ParamsLazyInit func()
+)
+
+func isTestContext() bool {
+	return strings.HasSuffix(os.Args[0], ".test") ||
+		strings.HasSuffix(os.Args[0], ".test.exe") ||
+		strings.HasSuffix(os.Args[0], "__debug_bin")
+}
+
+func L1() *L1Params {
+	if l1Params == nil {
+		if isTestContext() {
+			l1Params = L1ForTesting
+		} else if l1ParamsLazyInit != nil {
+			l1ParamsLazyInit()
+		}
+	}
+	if l1Params == nil {
+		panic("call InitL1() first")
+	}
+	return l1Params
+}
+
+// InitL1Lazy sets a function to be called the first time L1() is called.
+// The function must call InitL1().
+func InitL1Lazy(f func()) {
+	l1ParamsLazyInit = f
+}
+
+func InitL1(l1 *L1Params) {
+	l1Params = l1
 }

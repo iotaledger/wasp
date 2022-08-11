@@ -221,7 +221,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 			Amount: b,
 		})
 	}
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(ret)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(ret)
 	if ret.Amount < storageDeposit {
 		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForStorageDeposit, storageDeposit)
 	}
