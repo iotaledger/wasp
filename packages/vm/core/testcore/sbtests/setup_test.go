@@ -38,11 +38,11 @@ func init() {
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
 	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
-		Debug:                 debug,
-		AutoAdjustDustDeposit: true,
+		Debug:                    debug,
+		AutoAdjustStorageDeposit: true,
 	}).
 		WithNativeContract(sbtestsc.Processor)
-	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "ch1")
+	chain, _, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1")
 	err := chain.SendFromL1ToL2AccountBaseTokens(1000, utxodb.FundsFromFaucetAmount/2, chain.OriginatorAgentID, chain.OriginatorPrivateKey)
 	require.NoError(t, err)
 	return env, chain
@@ -99,7 +99,7 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) er
 	return err
 }
 
-// WARNING: setupTestSandboxSC will fail if AutoAdjustDustDeposit is not enabled
+// WARNING: setupTestSandboxSC will fail if AutoAdjustStorageDeposit is not enabled
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) isc.AgentID {
 	err := deployContract(chain, user, runWasm)
 	require.NoError(t, err)

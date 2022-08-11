@@ -6,7 +6,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const Mi = uint64(1_000_000)
+const Million = uint64(1_000_000)
 
 func DecodeOutputID(b []byte, def ...iotago.OutputID) (iotago.OutputID, error) {
 	if len(b) != iotago.OutputIDLength {

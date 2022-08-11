@@ -44,7 +44,7 @@ var Processor = root.Contract.Processor(initialize,
 // Input:
 // - ParamChainID isc.ChainID. ID of the chain. Cannot be changed
 // - ParamDescription string defaults to "N/A"
-// - ParamDustDepositAssumptionsBin encoded assumptions about minimum dust deposit for internal outputs
+// - ParamStorageDepositAssumptionsBin encoded assumptions about minimum storage deposit for internal outputs
 func initialize(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.initialize.begin")
 
@@ -74,7 +74,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 	// store 'accounts' into the registry and run init
 	storeAndInitCoreContract(ctx, accounts.Contract, dict.Dict{
-		accounts.ParamDustDepositAssumptionsBin: ctx.Params().MustGet(root.ParamDustDepositAssumptionsBin),
+		accounts.ParamStorageDepositAssumptionsBin: ctx.Params().MustGet(root.ParamStorageDepositAssumptionsBin),
 	})
 
 	// store 'blocklog' into the registry and run init

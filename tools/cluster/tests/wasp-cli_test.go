@@ -122,7 +122,7 @@ func TestWaspCLISendFunds(t *testing.T) {
 
 	_, alternativeAddress := getAddress(t, w.Run("address", "--address-index=1"))
 
-	w.Run("send-funds", alternativeAddress, "base:1000000")
+	w.Run("send-funds", "-s", alternativeAddress, "base:1000000")
 	checkBalance(t, w.Run("balance", "--address-index=1"), 1000000)
 }
 
@@ -183,19 +183,19 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(42)
 
 	// test chain post-request command
-	w.Run("chain", "post-request", name, "increment")
+	w.Run("chain", "post-request", "-s", name, "increment")
 	checkCounter(43)
 
 	// include a funds transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=base:10000000")
+	w.Run("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000")
 	checkCounter(44)
 
 	// test off-ledger request
-	w.Run("chain", "post-request", name, "increment", "--off-ledger")
+	w.Run("chain", "post-request", "-s", name, "increment", "--off-ledger")
 	checkCounter(45)
 
 	// include an allowance transfer
-	w.Run("chain", "post-request", name, "increment", "--transfer=base:10000000", "--allowance=base:10000000")
+	w.Run("chain", "post-request", "-s", name, "increment", "--transfer=base:10000000", "--allowance=base:10000000")
 	checkCounter(46)
 }
 
@@ -246,7 +246,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.True(t, found)
 
 	// try an unsuccessful request (missing params)
-	out = w.Run("chain", "post-request", "root", "deployContract", "string", "foo", "string", "bar")
+	out = w.Run("chain", "post-request", "-s", "root", "deployContract", "string", "foo", "string", "bar")
 	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 

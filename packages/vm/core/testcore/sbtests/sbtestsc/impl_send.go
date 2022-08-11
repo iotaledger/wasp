@@ -14,7 +14,7 @@ func testSplitFunds(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claim 1Mi base tokens from allowance at a time
-	baseTokensToTransfer := 1 * isc.Mi
+	baseTokensToTransfer := 1 * isc.Million
 	for !ctx.AllowanceAvailable().IsEmpty() && ctx.AllowanceAvailable().Assets.BaseTokens >= baseTokensToTransfer {
 		// send back to caller's address
 		// depending on the amount of base tokens, it will exceed number of outputs or not
@@ -46,9 +46,9 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 			fmt.Printf("%s\n", rem)
 			ctx.Send(
 				isc.RequestParameters{
-					TargetAddress:              addr,
-					FungibleTokens:             assets,
-					AdjustToMinimumDustDeposit: true,
+					TargetAddress:                 addr,
+					FungibleTokens:                assets,
+					AdjustToMinimumStorageDeposit: true,
 				},
 			)
 		}
@@ -82,8 +82,8 @@ func pingAllowanceBack(ctx isc.Sandbox) dict.Dict {
 	return nil
 }
 
-// testEstimateMinimumDust returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
-func testEstimateMinimumDust(ctx isc.Sandbox) dict.Dict {
+// testEstimateMinimumStorageDeposit returns true if the provided allowance is enough to pay for a L1 request, panics otherwise
+func testEstimateMinimumStorageDeposit(ctx isc.Sandbox) dict.Dict {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
@@ -95,10 +95,10 @@ func testEstimateMinimumDust(ctx isc.Sandbox) dict.Dict {
 			EntryPoint:     isc.Hn("foo"),
 			TargetContract: isc.Hn("bar"),
 		},
-		AdjustToMinimumDustDeposit: true,
+		AdjustToMinimumStorageDeposit: true,
 	}
 
-	required := ctx.EstimateRequiredDustDeposit(requestParams)
+	required := ctx.EstimateRequiredStorageDeposit(requestParams)
 	ctx.Requiref(provided >= required, "not enough funds")
 	return nil
 }
@@ -112,11 +112,11 @@ func sendNFTsBack(ctx isc.Sandbox) dict.Dict {
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	for _, nftID := range allowance.NFTs {
 		ctx.SendAsNFT(isc.RequestParameters{
-			TargetAddress:              addr,
-			FungibleTokens:             &isc.FungibleTokens{},
-			AdjustToMinimumDustDeposit: true,
-			Metadata:                   &isc.SendMetadata{},
-			Options:                    isc.SendOptions{},
+			TargetAddress:                 addr,
+			FungibleTokens:                &isc.FungibleTokens{},
+			AdjustToMinimumStorageDeposit: true,
+			Metadata:                      &isc.SendMetadata{},
+			Options:                       isc.SendOptions{},
 		}, nftID)
 	}
 	return nil
@@ -147,16 +147,16 @@ func sendLargeRequest(ctx isc.Sandbox) dict.Dict {
 			TargetContract: isc.Hn("bar"),
 			Params:         dict.Dict{"x": make([]byte, ctx.Params().MustGetInt32(ParamSize))},
 		},
-		AdjustToMinimumDustDeposit: true,
-		FungibleTokens:             ctx.AllowanceAvailable().Assets,
+		AdjustToMinimumStorageDeposit: true,
+		FungibleTokens:                ctx.AllowanceAvailable().Assets,
 	}
-	dust := ctx.EstimateRequiredDustDeposit(req)
+	storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
 	provided := ctx.AllowanceAvailable().Assets.BaseTokens
-	if provided < dust {
-		panic("not enough funds for dust")
+	if provided < storageDeposit {
+		panic("not enough funds for storage deposit")
 	}
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceBaseTokens(dust))
-	req.FungibleTokens.BaseTokens = dust
+	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceBaseTokens(storageDeposit))
+	req.FungibleTokens.BaseTokens = storageDeposit
 	ctx.Send(req)
 	return nil
 }

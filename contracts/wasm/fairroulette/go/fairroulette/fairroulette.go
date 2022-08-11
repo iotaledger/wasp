@@ -34,7 +34,7 @@ const NanoTimeDivider = 1000_000_000
 // The 'placeBet' function takes 1 mandatory parameter:
 // - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
-// the amount of incoming iotas as the bet amount in its state.
+// the amount of incoming tokens as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Get the array of current bets from state storage.
 	bets := f.State.Bets()
@@ -63,7 +63,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 	// Retrieve the amount of plain iota tokens that are part of the allowance balance.
 	amount := allowance.BaseTokens()
 
-	// Require that there are actually some plain iotas there
+	// Require that there are actually some base tokens there
 	ctx.Require(amount > 0, "empty bet")
 
 	// Now we gather all information together into a single serializable struct
@@ -111,7 +111,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			// And now for our next trick we post a delayed request to ourselves on the Tangle.
 			// We are requesting to call the 'payWinners' function, but delay it for the playPeriod
 			// amount of seconds. This will lock in the playing period, during which more bets can
-			// be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather
+			// be placed. Once the 'payWinners' function gets triggered by the ISC it will gather
 			// all bets up to that moment as the ones to consider for determining the winner.
 			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).Post()
 		}
@@ -200,7 +200,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 			// Yep, keep track of the running total payout
 			totalPayout += payout
 
-			// Set up an ScTransfer proxy that transfers the correct amount of iotas.
+			// Set up an ScTransfer proxy that transfers the correct amount of tokens.
 			// Note that ScTransfer wraps an ScMutableMap of token color/amount combinations
 			// in a simpler to use interface. The constructor we use here creates and initializes
 			// a single token color transfer in a single statement. The actual color and amount

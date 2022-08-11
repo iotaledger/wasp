@@ -41,22 +41,22 @@ func TestDonateOnce(t *testing.T) {
 
 	donate := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate.Params.Feedback().SetValue("Nice work!")
-	const iotasToSend = 1 * isc.Mi
-	donate.Func.TransferBaseTokens(iotasToSend).Post()
+	const tokensToSend = 1 * isc.Million
+	donate.Func.TransferBaseTokens(tokensToSend).Post()
 	require.NoError(t, ctx.Err)
 
-	bal.Account += iotasToSend
+	bal.Account += tokensToSend
 	bal.Chain += ctx.GasFee
 	bal.Add(donator1, -ctx.GasFee)
 	bal.VerifyBalances(t)
-	require.EqualValues(t, donator1L1-iotasToSend, donator1.Balance())
+	require.EqualValues(t, donator1L1-tokensToSend, donator1.Balance())
 
 	donationInfo := donatewithfeedback.ScFuncs.DonationInfo(ctx)
 	donationInfo.Func.Call()
 
 	require.EqualValues(t, 1, donationInfo.Results.Count().Value())
-	require.EqualValues(t, iotasToSend, donationInfo.Results.MaxDonation().Value())
-	require.EqualValues(t, iotasToSend, donationInfo.Results.TotalDonation().Value())
+	require.EqualValues(t, tokensToSend, donationInfo.Results.MaxDonation().Value())
+	require.EqualValues(t, tokensToSend, donationInfo.Results.TotalDonation().Value())
 }
 
 func TestDonateTwice(t *testing.T) {
@@ -70,7 +70,7 @@ func TestDonateTwice(t *testing.T) {
 
 	donate1 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator1))
 	donate1.Params.Feedback().SetValue("Nice work!")
-	const donation1 = 1 * isc.Mi
+	const donation1 = 1 * isc.Million
 	donate1.Func.TransferBaseTokens(donation1).Post()
 	require.NoError(t, ctx.Err)
 
@@ -82,7 +82,7 @@ func TestDonateTwice(t *testing.T) {
 
 	donate2 := donatewithfeedback.ScFuncs.Donate(ctx.Sign(donator2))
 	donate2.Params.Feedback().SetValue("Nice work!")
-	const donation2 = 2 * isc.Mi
+	const donation2 = 2 * isc.Million
 	donate2.Func.TransferBaseTokens(donation2).Post()
 	require.NoError(t, ctx.Err)
 

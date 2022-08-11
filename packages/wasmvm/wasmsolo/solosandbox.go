@@ -109,15 +109,15 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 		allowance = transfer
 	}
 	req.WithAllowance(allowance)
-	// Force a minimum transfer of 1Million bas tokens for dust and some gas
+	// Force a minimum transfer of 1 Million base tokens for storage deposit and some gas
 	// excess can always be reclaimed from the chain account by the user
 	// This also removes the silly requirement to transfer 1 base token
 	if transfer.IsEmpty() && !ctx.offLedger {
-		transfer = isc.NewAllowanceBaseTokens(1 * isc.Mi)
+		transfer = isc.NewAllowanceBaseTokens(1 * isc.Million)
 	}
-	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Mi {
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
 		transfer = transfer.Clone()
-		transfer.Assets.BaseTokens = 1 * isc.Mi
+		transfer.Assets.BaseTokens = 1 * isc.Million
 	}
 	req.AddFungibleTokens(transfer.Assets)
 	if len(transfer.NFTs) != 0 {
@@ -158,11 +158,11 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract := s.cvt.IscpHname(req.Contract)
+	contract := s.cvt.IscHname(req.Contract)
 	if contract != isc.Hn(ctx.scName) {
 		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
 	}
-	function := s.cvt.IscpHname(req.Function)
+	function := s.cvt.IscHname(req.Function)
 	funcName := ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
@@ -172,7 +172,7 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	s.checkErr(err)
 	scAllowance := wasmlib.NewScAssets(req.Allowance)
 	if !scAllowance.IsEmpty() {
-		allowance := s.cvt.IscpAllowance(scAllowance)
+		allowance := s.cvt.IscAllowance(scAllowance)
 		return s.postSync(ctx.scName, funcName, params, allowance, nil)
 	}
 
@@ -200,11 +200,11 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if !bytes.Equal(req.ChainID.Bytes(), s.fnChainID(nil)) {
 		s.Panicf("unknown chain id: %s", req.ChainID.String())
 	}
-	contract := s.cvt.IscpHname(req.Contract)
+	contract := s.cvt.IscHname(req.Contract)
 	if contract != isc.Hn(s.ctx.scName) {
 		s.Panicf("unknown contract: %s", contract.String())
 	}
-	function := s.cvt.IscpHname(req.Function)
+	function := s.cvt.IscHname(req.Function)
 	funcName := s.ctx.wc.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		s.Panicf("unknown function: %s", function.String())
@@ -215,7 +215,7 @@ func (s *SoloSandbox) fnPost(args []byte) []byte {
 	if req.Delay != 0 {
 		s.Panicf("cannot delay solo post")
 	}
-	allowance := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Allowance))
-	transfer := s.cvt.IscpAllowance(wasmlib.NewScAssets(req.Transfer))
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Transfer))
 	return s.postSync(s.ctx.scName, funcName, params, allowance, transfer)
 }

@@ -19,15 +19,15 @@ import (
 
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	chain.CheckChain()
 	chain.Log().Infof("\n%s\n", chain.String())
 }
 
 func TestRootRepeatInit(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	chain := env.NewChain()
 
 	chain.CheckChain()
 
@@ -38,7 +38,7 @@ func TestRootRepeatInit(t *testing.T) {
 
 func TestGetInfo(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
 
@@ -59,8 +59,8 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).WithNativeContract(sbtestsc.Processor)
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
@@ -95,9 +95,9 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(sbtestsc.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
@@ -132,7 +132,7 @@ func TestDeployDouble(t *testing.T) {
 
 func TestChangeOwnerAuthorized(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := isc.NewAgentID(ownerAddr)
@@ -161,8 +161,8 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	chain := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := isc.NewAgentID(ownerAddr)

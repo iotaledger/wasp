@@ -47,33 +47,33 @@ var (
 
 const (
 	MinGasFee         = 100
-	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Mi - MinGasFee
-	L2FundsAgent      = 10 * isc.Mi
-	L2FundsContract   = 10 * isc.Mi
-	L2FundsCreator    = 20 * isc.Mi
-	L2FundsOriginator = 30 * isc.Mi
+	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Million - MinGasFee
+	L2FundsAgent      = 10 * isc.Million
+	L2FundsContract   = 10 * isc.Million
+	L2FundsCreator    = 20 * isc.Million
+	L2FundsOriginator = 30 * isc.Million
 
-	WasmDustDeposit = 1 * isc.Mi
+	WasmStorageDeposit = 1 * isc.Million
 )
 
 type SoloContext struct {
-	Chain       *solo.Chain
-	Cvt         wasmhost.WasmConvertor
-	creator     *SoloAgent
-	Dust        uint64
-	Err         error
-	Gas         uint64
-	GasFee      uint64
-	Hprog       hashing.HashValue
-	isRequest   bool
-	IsWasm      bool
-	keyPair     *cryptolib.KeyPair
-	nfts        map[iotago.NFTID]*isc.NFT
-	offLedger   bool
-	scName      string
-	Tx          *iotago.Transaction
-	wasmHostOld wasmlib.ScHost
-	wc          *wasmhost.WasmContext
+	Chain          *solo.Chain
+	Cvt            wasmhost.WasmConvertor
+	creator        *SoloAgent
+	StorageDeposit uint64
+	Err            error
+	Gas            uint64
+	GasFee         uint64
+	Hprog          hashing.HashValue
+	isRequest      bool
+	IsWasm         bool
+	keyPair        *cryptolib.KeyPair
+	nfts           map[iotago.NFTID]*isc.NFT
+	offLedger      bool
+	scName         string
+	Tx             *iotago.Transaction
+	wasmHostOld    wasmlib.ScHost
+	wc             *wasmhost.WasmContext
 }
 
 var (
@@ -204,7 +204,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 }
 
 func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, Dust: WasmDustDeposit}
+	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: WasmStorageDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
 	}
@@ -225,12 +225,12 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 	}
 	if soloEnv == nil {
 		soloEnv = solo.New(t, &solo.InitOptions{
-			Debug:                 SoloDebug,
-			PrintStackTrace:       SoloStackTracing,
-			AutoAdjustDustDeposit: true,
+			Debug:                    SoloDebug,
+			PrintStackTrace:          SoloStackTracing,
+			AutoAdjustStorageDeposit: true,
 		})
 	}
-	chain := soloEnv.NewChain(nil, chainName)
+	chain, _, _ := soloEnv.NewChainExt(nil, 0, chainName)
 	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
 	return chain
 }
@@ -263,7 +263,7 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID
 		baseTokens := ctx.Chain.L2BaseTokens(account)
 		return baseTokens
 	case 1:
-		token := ctx.Cvt.IscpTokenID(&tokenID[0])
+		token := ctx.Cvt.IscTokenID(&tokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:

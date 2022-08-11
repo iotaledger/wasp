@@ -33,7 +33,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 		UnspentOutputIDs: outputIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress:  env.Chain.ChainAddress(),
-			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Mi},
+			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Million},
 			Metadata: &isc.SendMetadata{
 				TargetContract: nativeIncCounterSCHname,
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),

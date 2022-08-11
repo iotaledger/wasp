@@ -22,8 +22,8 @@ const (
 
 func TestUploadBlob(t *testing.T) {
 	t.Run("from binary", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		ch := env.NewChain()
 
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 
@@ -35,7 +35,7 @@ func TestUploadBlob(t *testing.T) {
 	})
 	t.Run("from file", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -48,7 +48,7 @@ func TestUploadBlob(t *testing.T) {
 	})
 	t.Run("several", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -88,7 +88,7 @@ func TestUploadBlob(t *testing.T) {
 func TestUploadWasm(t *testing.T) {
 	t.Run("upload wasm", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 		binary := []byte("supposed to be wasm")
 		hwasm, err := ch.UploadWasm(nil, binary)
@@ -101,7 +101,7 @@ func TestUploadWasm(t *testing.T) {
 	})
 	t.Run("upload twice", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 		binary := []byte("supposed to be wasm")
 		hwasm1, err := ch.UploadWasm(nil, binary)
@@ -119,8 +119,8 @@ func TestUploadWasm(t *testing.T) {
 		require.EqualValues(t, binary, binBack)
 	})
 	t.Run("upload wasm from file", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 		progHash, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
@@ -130,7 +130,7 @@ func TestUploadWasm(t *testing.T) {
 	})
 	t.Run("list blobs", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 		ch.MustDepositBaseTokensToL2(100_000, nil)
 		_, err := ch.UploadWasmFromFile(nil, wasmFile)
 		require.NoError(t, err)
@@ -142,8 +142,8 @@ func TestUploadWasm(t *testing.T) {
 }
 
 func TestBigBlob(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-	ch := env.NewChain(nil, "chain1")
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	ch := env.NewChain()
 
 	// upload a blob that is too big
 	bigblobSize := governance.DefaultMaxBlobSize + 100

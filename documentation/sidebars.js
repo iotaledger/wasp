@@ -56,7 +56,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Smart Contracts Invocation',
+                    label: 'Calling a Smart Contracts',
                     id: 'guide/core_concepts/invocation',
                 },
                 {
@@ -195,8 +195,18 @@ module.exports = {
             items: [
                 {
                     type: 'doc',
+                    label: 'Installing Wasp',
+                    id: 'guide/chains_and_nodes/installing-wasp',
+                },
+                {
+                    type: 'doc',
                     label: 'Running a Node',
                     id: 'guide/chains_and_nodes/running-a-node',
+                },
+                {
+                    type: 'doc',
+                    label: 'Node Configuration',
+                    id: 'guide/chains_and_nodes/node-config',
                 },
                 {
                     type: 'doc',
@@ -381,6 +391,11 @@ module.exports = {
                     type: 'doc',
                     label: 'How to use',
                     id: 'guide/evm/using',
+                },
+                {
+                    type: 'doc',
+                    label: 'The Magic Contract',
+                    id: 'guide/evm/magic',
                 },
                 {
                     type: 'doc',

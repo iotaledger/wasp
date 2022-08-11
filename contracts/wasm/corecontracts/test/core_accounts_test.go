@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	dustAllowance = 1 * isc.Mi
-	nftMetadata   = "NFT metadata"
+	sdAllowance = 1 * isc.Million
+	nftMetadata = "NFT metadata"
 )
 
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
@@ -35,7 +35,7 @@ func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 func TestDeposit(t *testing.T) {
 	ctx := setupAccounts(t)
 
-	const depositAmount = 1 * isc.Mi
+	const depositAmount = 1 * isc.Million
 	user := ctx.NewSoloAgent()
 	balanceOld := user.Balance()
 
@@ -89,7 +89,7 @@ func TestTransferAllowanceTo(t *testing.T) {
 	err = foundry.Mint(mintAmount)
 	require.NoError(t, err)
 	scTokenID := foundry.TokenID()
-	tokenID := ctx.Cvt.IscpTokenID(&scTokenID)
+	tokenID := ctx.Cvt.IscTokenID(&scTokenID)
 
 	balanceOldUser0 = user0.Balance(scTokenID)
 	balanceOldUser1 = user1.Balance(scTokenID)
@@ -163,7 +163,7 @@ func TestHarvest(t *testing.T) {
 	commonAccountBal2 := ctx.Chain.L2Assets(commonAccount)
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
-	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Mi, creatorBal1.BaseTokens)
+	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
 	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
 }
 
@@ -177,8 +177,8 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	f.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), f.Results.FoundrySN().Value())
@@ -189,7 +189,7 @@ func TestFoundryCreateNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(2002),
 		MaximumSupply: big.NewInt(2003),
 	}))
-	f.Func.TransferBaseTokens(dustAllowance).Post()
+	f.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	assert.Equal(t, uint32(2), f.Results.FoundrySN().Value())
 }
@@ -204,8 +204,8 @@ func TestFoundryDestroy(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -226,8 +226,8 @@ func TestFoundryNew(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	assert.Equal(t, uint32(1), fnew.Results.FoundrySN().Value())
@@ -244,7 +244,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	fmod1 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
 	fmod1.Params.FoundrySN().SetValue(1)
 	fmod1.Params.SupplyDeltaAbs().SetValue(wasmtypes.BigIntFromString("10"))
-	fmod1.Func.TransferBaseTokens(dustAllowance).Post()
+	fmod1.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 
 	fmod2 := coreaccounts.ScFuncs.FoundryModifySupply(ctx.Sign(user0))
@@ -254,7 +254,7 @@ func TestFoundryModifySupply(t *testing.T) {
 	tokenID := foundry.TokenID()
 	allowance := wasmlib.NewScTransferTokens(&tokenID, wasmtypes.NewScBigInt(10))
 	fmod2.Func.Allowance(allowance)
-	fmod2.Func.TransferBaseTokens(dustAllowance).Post()
+	fmod2.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 }
 
@@ -404,8 +404,8 @@ func TestFoundryOutput(t *testing.T) {
 		MeltedTokens:  big.NewInt(1002),
 		MaximumSupply: big.NewInt(1003),
 	}))
-	// we need dust allowance to keep foundry transaction not being trimmed by snapshot
-	fnew.Func.TransferBaseTokens(dustAllowance).Post()
+	// we need storage deposit allowance to keep foundry transaction not being trimmed by snapshot
+	fnew.Func.TransferBaseTokens(sdAllowance).Post()
 	require.NoError(t, ctx.Err)
 	// Foundry Serial Number start from 1 and has increment 1 each func call
 	serialNum := uint32(1)
@@ -430,14 +430,14 @@ func TestAccountNFTs(t *testing.T) {
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscpNFTID(&nftID)))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), ctx.Cvt.IscNFTID(&nftID)))
 
 	v := coreaccounts.ScFuncs.AccountNFTs(ctx)
 	v.Params.AgentID().SetValue(user.ScAgentID())
@@ -453,15 +453,15 @@ func TestNFTData(t *testing.T) {
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
-	iscpNFTID := ctx.Cvt.IscpNFTID(&nftID)
-	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscpNFTID))
+	iscNFTID := ctx.Cvt.IscNFTID(&nftID)
+	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, iscNFTID))
 
 	fd := coreaccounts.ScFuncs.Deposit(ctx.Sign(user))
 	transfer := wasmlib.NewScTransferNFT(&nftID)
 	fd.Func.Transfer(transfer).Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscpNFTID))
+	require.True(t, ctx.Chain.HasL2NFT(user.AgentID(), iscNFTID))
 
 	v := coreaccounts.ScFuncs.NftData(ctx)
 	v.Params.NftID().SetValue(nftID)
@@ -469,7 +469,7 @@ func TestNFTData(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	nftData, err := isc.NFTFromBytes(v.Results.NftData().Value())
 	require.NoError(t, err)
-	require.EqualValues(t, *iscpNFTID, nftData.ID)
+	require.EqualValues(t, *iscNFTID, nftData.ID)
 	require.EqualValues(t, userAddr, nftData.Issuer)
 	require.EqualValues(t, []byte(nftMetadata), nftData.Metadata)
 }

@@ -58,10 +58,10 @@ pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
     ctx.log("doing nothing...");
 }
 
-pub fn func_estimate_min_dust(ctx: &ScFuncContext, _f: &EstimateMinDustContext) {
-    let provided = ctx.allowance().iotas();
-    let dummy = ScFuncs::estimate_min_dust(ctx);
-    let required = ctx.estimate_dust(&dummy.func);
+pub fn func_estimate_min_storage_deposit(ctx: &ScFuncContext, _f: &EstimateMinStorageDepositContext) {
+    let provided = ctx.allowance().base_tokens();
+    let dummy = ScFuncs::estimate_min_storage_deposit(ctx);
+    let required = ctx.estimate_storage_deposit(&dummy.func);
     ctx.require(provided >= required, "not enough funds");
 }
 
@@ -151,21 +151,21 @@ pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
 }
 
 pub fn func_split_funds(ctx: &ScFuncContext, _f: &SplitFundsContext) {
-    let mut iotas = ctx.allowance().iotas();
+    let mut tokens = ctx.allowance().base_tokens();
     let address = ctx.caller().address();
-    let iotas_to_transfer : u64 = 1_000_000;
-    let transfer = wasmlib::ScTransfer::iotas(iotas_to_transfer);
-    while iotas >= iotas_to_transfer {
+    let tokens_to_transfer: u64 = 1_000_000;
+    let transfer = wasmlib::ScTransfer::base_tokens(tokens_to_transfer);
+    while tokens >= tokens_to_transfer {
         ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
         ctx.send(&address, &transfer);
-        iotas -= iotas_to_transfer;
+        tokens -= tokens_to_transfer;
     }
 }
 
 pub fn func_split_funds_native_tokens(ctx: &ScFuncContext, _f: &SplitFundsNativeTokensContext) {
-    let iotas = ctx.allowance().iotas();
+    let tokens = ctx.allowance().base_tokens();
     let address = ctx.caller().address();
-    let transfer = wasmlib::ScTransfer::iotas(iotas);
+    let transfer = wasmlib::ScTransfer::base_tokens(tokens);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     for token in ctx.allowance().token_ids() {
         let one = ScBigInt::from_uint64(1);

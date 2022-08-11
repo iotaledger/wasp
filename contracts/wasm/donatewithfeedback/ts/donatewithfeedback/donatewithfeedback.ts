@@ -6,8 +6,8 @@ import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
-    const amount = ctx.allowance().iotas();
-    const transfer = wasmlib.ScTransfer.iotas(amount);
+    const amount = ctx.allowance().baseTokens();
+    const transfer = wasmlib.ScTransfer.baseTokens(amount);
     ctx.transferAllowed(ctx.accountID(), transfer, false);
     let donation = new sc.Donation();
     donation.amount = amount;
@@ -30,7 +30,7 @@ export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): voi
 }
 
 export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext): void {
-    let balance = ctx.balances().iotas();
+    let balance = ctx.balances().baseTokens();
     let amount = f.params.amount().value();
     if (amount == 0 || amount > balance) {
         amount = balance;
@@ -41,7 +41,7 @@ export function funcWithdraw(ctx: wasmlib.ScFuncContext, f: sc.WithdrawContext):
     }
 
     let scOwner = f.state.owner().value().address();
-    ctx.send(scOwner, wasmlib.ScTransfer.iotas(amount));
+    ctx.send(scOwner, wasmlib.ScTransfer.baseTokens(amount));
 }
 
 export function viewDonation(ctx: wasmlib.ScViewContext, f: sc.DonationContext): void {

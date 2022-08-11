@@ -36,9 +36,9 @@ type soloTestEnv struct {
 func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	s := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	chainOwner, _ := s.NewKeyPairWithFunds()
-	chain := s.NewChain(chainOwner, "iscpchain")
+	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
 	accounts := jsonrpc.NewAccountManager(nil)
 	rpcsrv := jsonrpc.NewServer(chain.EVM(), accounts)
@@ -348,11 +348,6 @@ func TestRPCCall(t *testing.T) {
 func TestRPCGetLogs(t *testing.T) {
 	env := newSoloTestEnv(t)
 	env.TestRPCGetLogs(env.soloChain.NewEthereumAccountWithL2Funds)
-}
-
-func TestRPCGasLimit(t *testing.T) {
-	env := newSoloTestEnv(t)
-	env.TestRPCGasLimit(env.soloChain.NewEthereumAccountWithL2Funds)
 }
 
 func TestRPCEthChainID(t *testing.T) {

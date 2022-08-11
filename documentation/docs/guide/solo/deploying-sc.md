@@ -23,7 +23,7 @@ In order to test the smart contract using Solo, we first need to deploy it:
 
 ```go
 func TestTutorialDeploySC(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain(nil, "example")
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
@@ -39,7 +39,7 @@ The second parameter to `DeployWasmContract` (`"solotutorial"`), is the name ass
 Smart contract instance names must be unique across each chain.
 
 :::note
-In the example above we enabled the `AutoAdjustDustDeposit` option.
+In the example above we enabled the `AutoAdjustStorageDeposit` option.
 This is necessary in order to automatically adjust all sent L1 transactions to include the storage deposit if necessary (provided that the sender owns the funds).
 It it is possible to disable the option and have manual control of the storage deposit, but in that case the deployment of the smart contract will have to be done "by hand".
 In most cases it is recommended to leave it enabled.

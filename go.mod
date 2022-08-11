@@ -7,11 +7,11 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bygui86/multi-profile/v2 v2.1.0
 	github.com/bytecodealliance/wasmtime-go v0.36.0
-	github.com/ethereum/go-ethereum v1.10.20
+	github.com/ethereum/go-ethereum v1.10.21
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go v0.0.0-20220623193802-86a373581cc1
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220714075325-11202fe498d6
-	github.com/iotaledger/iota.go/v3 v3.0.0-beta.3.0.20220725090810-4b0c89df224c
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220804174551-efbca20a83e4
+	github.com/iotaledger/iota.go/v3 v3.0.0-beta.4
 	github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1
 	github.com/knadh/koanf v1.4.2-0.20220512043835-4112a7258008
 	github.com/labstack/echo/v4 v4.7.2
@@ -29,7 +29,7 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.7.4
+	github.com/stretchr/testify v1.8.0
 	github.com/wasmerio/wasmer-go v1.0.4
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.4.1
@@ -195,15 +195,15 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867 // indirect
 	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/net v0.0.0-20220809012201-f428fae20770 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220722212130-b98a9ff5e252 // indirect
+	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.51.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -212,7 +212,8 @@ require (
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
-	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220305060401-18f9e3da0f84
+	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220809124259-a32cc1199f6b
+	// github.com/ethereum/go-ethereum => /home/jorge/dev/iota/go-ethereum
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
 	github.com/iotaledger/goshimmer => github.com/kape1395/goshimmer v0.7.5-0.20220126105741-2bc797667497
 	github.com/linxGnu/grocksdb => github.com/gohornet/grocksdb v1.6.38-0.20211012114404-55f425442260

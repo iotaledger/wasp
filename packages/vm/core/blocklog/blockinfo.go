@@ -24,7 +24,7 @@ type BlockInfo struct {
 	AnchorTransactionID         iotago.TransactionID   // of the input state
 	TransactionSubEssenceHash   TransactionEssenceHash // always known even without state commitment. Needed for fraud proofs
 	TotalBaseTokensInL2Accounts uint64
-	TotalDustDeposit            uint64
+	TotalStorageDeposit         uint64
 	GasBurned                   uint64
 	GasFeeCharged               uint64
 }
@@ -74,7 +74,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("Prev L1 commitment: %s\n", bi.PreviousL1Commitment.String())
 	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
 	ret += fmt.Sprintf("Total base tokens in contracts: %d\n", bi.TotalBaseTokensInL2Accounts)
-	ret += fmt.Sprintf("Total base tokens locked in dust deposit: %d\n", bi.TotalDustDeposit)
+	ret += fmt.Sprintf("Total base tokens locked in storage deposit: %d\n", bi.TotalStorageDeposit)
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("Gas fee charged: %d\n", bi.GasFeeCharged)
 	return ret
@@ -113,7 +113,7 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, bi.TotalBaseTokensInL2Accounts); err != nil {
 		return err
 	}
-	if err := util.WriteUint64(w, bi.TotalDustDeposit); err != nil {
+	if err := util.WriteUint64(w, bi.TotalStorageDeposit); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, bi.GasBurned); err != nil {
@@ -161,7 +161,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint64(r, &bi.TotalBaseTokensInL2Accounts); err != nil {
 		return err
 	}
-	if err := util.ReadUint64(r, &bi.TotalDustDeposit); err != nil {
+	if err := util.ReadUint64(r, &bi.TotalStorageDeposit); err != nil {
 		return err
 	}
 	if err := util.ReadUint64(r, &bi.GasBurned); err != nil {

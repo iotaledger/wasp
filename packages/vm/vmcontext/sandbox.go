@@ -86,8 +86,8 @@ func (s *contractSandbox) SendAsNFT(par isc.RequestParameters, nftID iotago.NFTI
 	s.Ctx.(*VMContext).SendAsNFT(par, nftID)
 }
 
-func (s *contractSandbox) EstimateRequiredDustDeposit(par isc.RequestParameters) uint64 {
-	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateDustCost)
+func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
+	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeEstimateStorageDepositCost)
 	return s.Ctx.(*VMContext).EstimateRequiredStorageDeposit(par)
 }
 
@@ -162,4 +162,8 @@ func (s *contractSandbox) BlockContext() interface{} {
 
 func (s *contractSandbox) GasBurnEnable(enable bool) {
 	s.Ctx.GasBurnEnable(enable)
+}
+
+func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
+	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, fungibleTokens, nfts)
 }

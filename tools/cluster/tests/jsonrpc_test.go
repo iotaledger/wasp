@@ -92,7 +92,7 @@ func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Mi
+const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 
 func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()
@@ -124,12 +124,8 @@ func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
 	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }
 
-func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
-	e := newClusterTestEnv(t)
-	e.TestRPCGasLimit(e.newEthereumAccountWithL2Funds)
-}
-
-func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
+func TestEVMJsonRPCClusterInvalidTx(t *testing.T) {
 	e := newClusterTestEnv(t)
 	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
+	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
 }

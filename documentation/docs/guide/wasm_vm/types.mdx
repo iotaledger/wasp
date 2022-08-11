@@ -1,5 +1,5 @@
 ---
-description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of IOTA Smart Contracts-specific value data types.
+description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of ISC-specific value data types.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - data types
@@ -28,22 +28,22 @@ direct support for the following value data types:
 - `Uint32` - 32-bit unsigned integer value.
 - `Uint64` - 64-bit unsigned integer value.
 
-## IOTA Smart Contracts-specific Value Data Types
+## ISC-specific Value Data Types
 
 - `Address` - A 33-byte Tangle address.
-- `AgentID` - A 37-byte IOTA Smart Contracts Agent ID.
-- `ChainID` - A 33-byte IOTA Smart Contracts Chain ID.
+- `AgentID` - A 37-byte ISC Agent ID.
+- `ChainID` - A 33-byte ISC Chain ID.
 - `Color` - A 32-byte token color ID.
-- `ContractID` - A 37-byte IOTA Smart Contracts smart contract ID.
+- `ContractID` - A 37-byte ISC smart contract ID.
 - `Hash` - A 32-byte hash value.
 - `Hname` - A 4-byte unsigned integer hash value derived from a name string.
 - `RequestID` - A 34-byte transaction request ID.
 
 The first group consists of the basic value data types that are found in all programming
-languages, whereas the second group consists of WasmLib versions of IOTA Smart Contracts-specific value
+languages, whereas the second group consists of WasmLib versions of ISC-specific value
 data types. More detailed explanations about their specific uses can be found in the
-[IOTA Smart Contracts documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
-. WasmLib provides its own implementations for each of the IOTA Smart Contracts value data types. They can
+[ISC documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
+. WasmLib provides its own implementations for each of the ISC value data types. They can
 all be serialized into and deserialized from a byte array. Each value data type can also
 be used as a key in key/value maps.
 
@@ -60,7 +60,7 @@ The rule is that from an immutable container proxy you can only derive immutable
 and value proxies. The referenced data can never be changed through immutable proxies.
 Separating these constraints for types into separate proxy types allows the use of
 compile-time type-checking to enforce these constraints. To guard against client code that tries to bypass
-them, the IOTA Smart Contracts sandbox will also check these constraints at runtime on the host.
+them, the ISC sandbox will also check these constraints at runtime on the host.
 
 ## Full Matrix of WasmLib Types (excluding array proxies)
 

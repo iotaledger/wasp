@@ -81,8 +81,8 @@ type Sandbox interface {
 	Request() Calldata
 
 	// Call calls the entry point of the contract with parameters and allowance.
-	// If the entry point is full entry point, allowance tokens are moved between caller's and
-	// target contract's accounts (if enough). If the entry point is view, 'allowance' has no effect
+	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
+	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
 	// Caller is the agentID of the caller.
 	Caller() AgentID
@@ -96,7 +96,6 @@ type Sandbox interface {
 	GetEntropy() hashing.HashValue
 	// AllowanceAvailable specifies max remaining (after transfers) budget of assets the smart contract can take
 	// from the caller with TransferAllowedFunds. Nil means no allowance left (zero budget)
-	// AllowanceAvailable MUTATES with each call to TransferAllowedFunds
 	AllowanceAvailable() *Allowance
 	// TransferAllowedFunds moves assets from the caller's account to specified account within the budget set by Allowance.
 	// Skipping 'assets' means transfer all Allowance().
@@ -111,8 +110,8 @@ type Sandbox interface {
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput
 	SendAsNFT(metadata RequestParameters, nftID iotago.NFTID)
-	// EstimateRequiredDustDeposit returns the amount of base tokens needed to cover for a given request's dust deposit
-	EstimateRequiredDustDeposit(r RequestParameters) uint64
+	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
+	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor output
 	StateAnchor() *StateAnchor
 	// MintNFT mints an NFT
@@ -129,6 +128,7 @@ type Privileged interface {
 	DestroyFoundry(uint32) uint64
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	GasBurnEnable(enable bool)
+	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, fungibleTokens *FungibleTokens, nfts []iotago.NFTID)
 
 	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
@@ -140,11 +140,11 @@ type RequestParameters struct {
 	// TargetAddress is the target address. It may represent another chain or L1 address
 	TargetAddress iotago.Address
 	// FungibleTokens attached to the output, always taken from the caller's account.
-	// It expected to contain base tokens at least the amount required for dust deposit
-	// It depends on the context how it is handled when base tokens are not enough for dust deposit
+	// It expected to contain base tokens at least the amount required for storage deposit
+	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	FungibleTokens *FungibleTokens
-	// AdjustToMinimumDustDeposit if true base tokens in attached fungible tokens will be added to meet minimum dust deposit requirements
-	AdjustToMinimumDustDeposit bool
+	// AdjustToMinimumStorageDeposit if true base tokens in attached fungible tokens will be added to meet minimum storage deposit requirements
+	AdjustToMinimumStorageDeposit bool
 	// Metadata is a request metadata. It may be nil if the output is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the output, such as time lock or expiry parameters

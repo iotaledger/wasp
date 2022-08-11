@@ -123,13 +123,13 @@ pub fn func_member(_ctx: &ScFuncContext, f: &MemberContext) {
     current_factor.set_value(factor);
 }
 
-// 'divide' is a function that will take any iotas it receives and properly
+// 'divide' is a function that will take any tokens it receives and properly
 // disperse them to the addresses in the member list according to the dispersion
 // factors associated with these addresses.
 // Anyone can send iota tokens to this function and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
-// integer and keeps any remaining iotas in its own account. They will be added
+// integer and keeps any remaining tokens in its own account. They will be added
 // to any next round of tokens received prior to calculation of the new
 // dividend amounts.
 pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
@@ -140,7 +140,7 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
     let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens from the account balance.
-    let amount: u64 = allowance.iotas();
+    let amount: u64 = allowance.base_tokens();
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
     let total_factor: u64 = f.state.total_factor().value();
@@ -162,19 +162,19 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
         // Retrieve the factor associated with the address from the members map.
         let factor: u64 = members.get_uint64(&address).value();
 
-        // Calculate the fair share of iotas to disperse to this member based on the
+        // Calculate the fair share of tokens to disperse to this member based on the
         // factor we just retrieved. Note that the result will be truncated.
         let share: u64 = amount * factor / total_factor;
 
         // Is there anything to disperse to this member?
         if share > 0 {
             // Yes, so let's set up an ScTransfers map proxy that transfers the
-            // calculated amount of iotas. Note that ScTransfers wraps an
+            // calculated amount of tokens. Note that ScTransfers wraps an
             // ScMutableMap of token color/amount combinations in a simpler to use
             // interface. The constructor we use here creates and initializes a
             // single token color transfer in a single statement. The actual color
             // and amount values passed in will be stored in a new map on the host.
-            let transfers: ScTransfer = ScTransfer::iotas(share);
+            let transfers: ScTransfer = ScTransfer::base_tokens(share);
 
             // Perform the actual transfer of tokens from the smart contract to the
             // member address. The transfer_to_address() method receives the address

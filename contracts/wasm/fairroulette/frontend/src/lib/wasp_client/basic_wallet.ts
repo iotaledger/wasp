@@ -57,10 +57,10 @@ export class BasicWallet {
     return unspentOutputs;
   }
 
-  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], iotas: bigint): ConsumedOutputs {
+  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], baseTokens: bigint): ConsumedOutputs {
     const outputsToConsume: { [address: string]: { [outputID: string]: IWalletOutput } } = {};
 
-    let iotasLeft = iotas;
+    let baseTokensLeft = baseTokens;
 
     for (const unspentOutput of unspentOutputs) {
       let outputsFromAddressSpent = false;
@@ -74,11 +74,11 @@ export class BasicWallet {
 
         const balance = output.balances[Colors.IOTA_COLOR_STRING];
 
-        if (iotasLeft > 0n) {
-          if (iotasLeft > balance) {
-            iotasLeft -= balance;
+        if (baseTokensLeft > 0n) {
+          if (baseTokensLeft > balance) {
+            baseTokensLeft -= balance;
           } else {
-            iotasLeft = 0n;
+            baseTokensLeft = 0n;
           }
 
           requiredColorFoundInOutput = true;
@@ -108,7 +108,7 @@ export class BasicWallet {
   public buildOutputs(
     remainderAddress: string,
     destinationAddress: string,
-    iotas: bigint,
+    baseTokens: bigint,
     consumedFunds: ColorCollection,
   ): BuiltOutputResult {
     const outputsByColor: { [address: string]: ColorCollection } = {};
@@ -123,9 +123,9 @@ export class BasicWallet {
       outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] = 0n;
     }
     const t = outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING];
-    outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] += iotas;
+    outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] += baseTokens;
 
-    consumedFunds[Colors.IOTA_COLOR_STRING] -= iotas;
+    consumedFunds[Colors.IOTA_COLOR_STRING] -= baseTokens;
     if (consumedFunds[Colors.IOTA_COLOR_STRING] === 0n) {
       delete consumedFunds[Colors.IOTA_COLOR_STRING];
     }

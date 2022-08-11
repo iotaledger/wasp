@@ -127,13 +127,13 @@ func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 	currentFactor.SetValue(factor)
 }
 
-// 'divide' is a function that will take any iotas it receives and properly
+// 'divide' is a function that will take any tokens it receives and properly
 // disperse them to the addresses in the member list according to the dispersion
 // factors associated with these addresses.
 // Anyone can send iota tokens to this function and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
-// integer and keeps any remaining iotas in the sender account.
+// integer and keeps any remaining tokens in the sender account.
 func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	// Create an ScBalances map proxy to the account balances for this
 	// smart contract. Note that ScBalances wraps an ScImmutableMap of
@@ -163,14 +163,14 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 		// Retrieve the factor associated with the address from the members map.
 		var factor uint64 = members.GetUint64(address).Value()
 
-		// Calculate the fair share of iotas to disperse to this member based on the
+		// Calculate the fair share of tokens to disperse to this member based on the
 		// factor we just retrieved. Note that the result will been truncated.
 		var share uint64 = amount * factor / totalFactor
 
 		// Is there anything to disperse to this member?
 		if share > 0 {
 			// Yes, so let's set up an ScTransfer map proxy that transfers the
-			// calculated amount of iotas. Note that ScTransfer wraps an
+			// calculated amount of tokens. Note that ScTransfer wraps an
 			// ScMutableMap of token color/amount combinations in a simpler to use
 			// interface. The constructor we use here creates and initializes a
 			// single token color transfer in a single statement. The actual color

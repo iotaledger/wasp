@@ -169,14 +169,14 @@ type dashboardTestEnv struct {
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
 	kp, _ := e.solo.NewKeyPairWithFunds()
-	ch := e.solo.NewChain(kp, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	ch, _, _ := e.solo.NewChainExt(kp, 0, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
 	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	w := &waspServicesMock{
 		solo:   s,
 		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),

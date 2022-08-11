@@ -76,10 +76,10 @@ func TestDivide1Member(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 1*isc.Mi + 1
+	const dividendToDivide = 1*isc.Million + 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -99,7 +99,7 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
@@ -109,10 +109,10 @@ func TestDivide2Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 2*isc.Mi - 1
+	const dividendToDivide = 2*isc.Million - 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -134,7 +134,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member2 := ctx.NewSoloAgent()
@@ -144,7 +144,7 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
 	member3 := ctx.NewSoloAgent()
@@ -154,10 +154,10 @@ func TestDivide3Members(t *testing.T) {
 	require.NoError(t, ctx.Err)
 
 	bal.Chain += ctx.GasFee
-	bal.Originator += ctx.Dust - ctx.GasFee
+	bal.Originator += ctx.StorageDeposit - ctx.GasFee
 	bal.VerifyBalances(t)
 
-	const dividendToDivide = 2*isc.Mi - 1
+	const dividendToDivide = 2*isc.Million - 1
 	dividendDivide(ctx, dividendToDivide)
 	require.NoError(t, ctx.Err)
 
@@ -169,7 +169,7 @@ func TestDivide3Members(t *testing.T) {
 	bal.Add(member3, dividendToDivide*750/1500)
 	bal.VerifyBalances(t)
 
-	const dividendToDivide2 = 2*isc.Mi + 234
+	const dividendToDivide2 = 2*isc.Million + 234
 	dividendDivide(ctx, dividendToDivide2)
 	require.NoError(t, ctx.Err)
 

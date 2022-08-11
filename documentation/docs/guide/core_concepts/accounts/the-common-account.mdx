@@ -50,7 +50,7 @@ require.NoError(t, err)
 
 ```go
 w := coreaccounts.ScFuncs.Harvest(ctx.Sign(wallet))
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 require.NoError(t, ctx.Err)
 ```
 
@@ -59,7 +59,7 @@ require.NoError(t, ctx.Err)
 
 ```rust
 let h = coreaccounts::ScFuncs::harvest(ctx);
-h.func.transfer_iotas(1).post_to_chain(chainID);
+h.func.transfer_base_tokens(1).post_to_chain(chainID);
 ```
 
 </TabItem>
@@ -67,7 +67,7 @@ h.func.transfer_iotas(1).post_to_chain(chainID);
 
 ```go
 w := coreaccounts.ScFuncs.Harvest(ctx)
-w.Func.TransferIotas(1).PostToChain(chainID)
+w.Func.TransferBaseTokens(1).PostToChain(chainID)
 ```
 
 </TabItem>

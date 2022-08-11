@@ -31,15 +31,15 @@ import (
 type VMContext struct {
 	task *vm.VMTask
 	// same for the block
-	chainOwnerID        isc.AgentID
-	virtualState        state.VirtualStateAccess
-	finalStateTimestamp time.Time
-	blockContext        map[isc.Hname]interface{}
-	dustAssumptions     *transaction.StorageDepositAssumption
-	txbuilder           *vmtxbuilder.AnchorTransactionBuilder
-	txsnapshot          *vmtxbuilder.AnchorTransactionBuilder
-	gasBurnedTotal      uint64
-	gasFeeChargedTotal  uint64
+	chainOwnerID              isc.AgentID
+	virtualState              state.VirtualStateAccess
+	finalStateTimestamp       time.Time
+	blockContext              map[isc.Hname]interface{}
+	storageDepositAssumptions *transaction.StorageDepositAssumption
+	txbuilder                 *vmtxbuilder.AnchorTransactionBuilder
+	txsnapshot                *vmtxbuilder.AnchorTransactionBuilder
+	gasBurnedTotal            uint64
+	gasFeeChargedTotal        uint64
 
 	// ---- request context
 	chainInfo          *governance.ChainInfo
@@ -118,14 +118,14 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	if task.AnchorOutput.StateIndex > 0 {
 		ret.currentStateUpdate = state.NewStateUpdate()
 
-		// load and validate chain's dust assumptions about internal outputs. They must not get bigger!
+		// load and validate chain's storage deposit assumptions about internal outputs. They must not get bigger!
 		ret.callCore(accounts.Contract, func(s kv.KVStore) {
-			ret.dustAssumptions = accounts.GetDustAssumptions(s)
+			ret.storageDepositAssumptions = accounts.GetStorageDepositAssumptions(s)
 		})
-		currentDustDepositValues := transaction.NewStorageDepositEstimate()
-		if currentDustDepositValues.AnchorOutput > ret.dustAssumptions.AnchorOutput ||
-			currentDustDepositValues.NativeTokenOutput > ret.dustAssumptions.NativeTokenOutput {
-			panic(vm.ErrInconsistentDustAssumptions)
+		currentStorageDepositValues := transaction.NewStorageDepositEstimate()
+		if currentStorageDepositValues.AnchorOutput > ret.storageDepositAssumptions.AnchorOutput ||
+			currentStorageDepositValues.NativeTokenOutput > ret.storageDepositAssumptions.NativeTokenOutput {
+			panic(vm.ErrInconsistentStorageDepositAssumptions)
 		}
 
 		// save the anchor tx ID of the current state
@@ -136,8 +136,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.virtualState.ApplyStateUpdate(ret.currentStateUpdate)
 		ret.currentStateUpdate = nil
 	} else {
-		// assuming dust assumptions for the first block. It must be consistent with parameters in the init request
-		ret.dustAssumptions = transaction.NewStorageDepositEstimate()
+		// assuming storage deposit assumptions for the first block. It must be consistent with parameters in the init request
+		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
 	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
@@ -155,7 +155,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		nftLoader,
-		*ret.dustAssumptions,
+		*ret.storageDepositAssumptions,
 	)
 
 	return ret
@@ -211,7 +211,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 	}
 	// sub essence hash is known without L1 commitment. It is needed for fraud proofs
 	subEssenceHash := vmctx.CalcTransactionSubEssenceHash()
-	totalBaseTokensInContracts, totalDustOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
+	totalBaseTokensInContracts, totalStorageDepositOnChain := vmctx.txbuilder.TotalBaseTokensInOutputs()
 	blockInfo := &blocklog.BlockInfo{
 		BlockIndex:                  vmctx.virtualState.BlockIndex(),
 		Timestamp:                   vmctx.virtualState.Timestamp(),
@@ -223,7 +223,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
 		TransactionSubEssenceHash:   subEssenceHash,
 		TotalBaseTokensInL2Accounts: totalBaseTokensInContracts,
-		TotalDustDeposit:            totalDustOnChain,
+		TotalStorageDeposit:         totalStorageDepositOnChain,
 		GasBurned:                   vmctx.gasBurnedTotal,
 		GasFeeCharged:               vmctx.gasFeeChargedTotal,
 	}

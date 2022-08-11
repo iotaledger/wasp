@@ -50,16 +50,16 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T                            TestContext
-	logger                       *logger.Logger
-	dbmanager                    *dbmanager.DBManager
-	utxoDB                       *utxodb.UtxoDB
-	glbMutex                     sync.RWMutex
-	ledgerMutex                  sync.RWMutex
-	chains                       map[isc.ChainID]*Chain
-	processorConfig              *processors.Config
-	disableAutoAdjustDustDeposit bool
-	seed                         cryptolib.Seed
+	T                               TestContext
+	logger                          *logger.Logger
+	dbmanager                       *dbmanager.DBManager
+	utxoDB                          *utxodb.UtxoDB
+	glbMutex                        sync.RWMutex
+	ledgerMutex                     sync.RWMutex
+	chains                          map[isc.ChainID]*Chain
+	processorConfig                 *processors.Config
+	disableAutoAdjustStorageDeposit bool
+	seed                            cryptolib.Seed
 }
 
 // Chain represents state of individual chain.
@@ -112,11 +112,11 @@ type Chain struct {
 var _ chain.ChainCore = &Chain{}
 
 type InitOptions struct {
-	AutoAdjustDustDeposit bool
-	Debug                 bool
-	PrintStackTrace       bool
-	Seed                  cryptolib.Seed
-	Log                   *logger.Logger
+	AutoAdjustStorageDeposit bool
+	Debug                    bool
+	PrintStackTrace          bool
+	Seed                     cryptolib.Seed
+	Log                      *logger.Logger
 }
 
 type InitChainOptions struct {
@@ -131,10 +131,10 @@ type InitChainOptions struct {
 
 func defaultInitOptions() *InitOptions {
 	return &InitOptions{
-		Debug:                 false,
-		PrintStackTrace:       false,
-		Seed:                  cryptolib.Seed{},
-		AutoAdjustDustDeposit: false, // is OFF by default
+		Debug:                    false,
+		PrintStackTrace:          false,
+		Seed:                     cryptolib.Seed{},
+		AutoAdjustStorageDeposit: false, // is OFF by default
 	}
 }
 
@@ -158,14 +158,14 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 
 	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
-		T:                            t,
-		logger:                       opt.Log,
-		dbmanager:                    dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
-		utxoDB:                       utxodb.New(utxoDBinitParams),
-		chains:                       make(map[isc.ChainID]*Chain),
-		processorConfig:              coreprocessors.Config(),
-		disableAutoAdjustDustDeposit: !opt.AutoAdjustDustDeposit,
-		seed:                         opt.Seed,
+		T:                               t,
+		logger:                          opt.Log,
+		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
+		utxoDB:                          utxodb.New(utxoDBinitParams),
+		chains:                          make(map[isc.ChainID]*Chain),
+		processorConfig:                 coreprocessors.Config(),
+		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
+		seed:                            opt.Seed,
 	}
 	globalTime := ret.utxoDB.GlobalTime()
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
@@ -193,7 +193,13 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 	return env
 }
 
-// NewChain deploys new chain instance.
+// NewChain deploys new default chain instance.
+func (env *Solo) NewChain() *Chain {
+	ret, _, _ := env.NewChainExt(nil, 0, "chain1")
+	return ret
+}
+
+// NewChainExt returns also origin and init transactions. Used for core testing
 //
 // If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
 // ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
@@ -206,12 +212,6 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 // Upon return, the chain is fully functional to process requests
-func (env *Solo) NewChain(chainOriginator *cryptolib.KeyPair, name string, initOptions ...InitChainOptions) *Chain {
-	ret, _, _ := env.NewChainExt(chainOriginator, 0, name, initOptions...)
-	return ret
-}
-
-// NewChainExt returns also origin and init transactions. Used for core testing
 //nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
@@ -247,7 +247,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		chainOriginator,
 		stateControllerAddr,
 		stateControllerAddr,
-		initBaseTokens, // will be adjusted to min dust deposit
+		initBaseTokens, // will be adjusted to min storage deposit
 		outs,
 		outIDs,
 	)
@@ -578,7 +578,7 @@ type NFTMintedInfo struct {
 }
 
 // MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
-// base tokens in the NFT output are sent to the minimum dust deposited and are taken from the issuer account
+// base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
@@ -609,12 +609,12 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 				Output:   out,
 				NFTID:    iotago.NFTIDFromOutputID(id),
 			}
-			iscpNFT := &isc.NFT{
+			iscNFT := &isc.NFT{
 				ID:       info.NFTID,
 				Issuer:   issuer.Address(),
 				Metadata: immutableMetadata,
 			}
-			return iscpNFT, info, nil
+			return iscNFT, info, nil
 		}
 	}
 

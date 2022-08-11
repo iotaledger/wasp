@@ -110,7 +110,7 @@ func (w *WaspCLITest) Run(args ...string) []string {
 }
 
 func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
-	runArgs := []string{"chain", "post-request"}
+	runArgs := []string{"chain", "post-request", "-s"}
 	runArgs = append(runArgs, args...)
 	out := w.Run(runArgs...)
 	return w.GetReceiptFromRunPostRequestOutput(out)

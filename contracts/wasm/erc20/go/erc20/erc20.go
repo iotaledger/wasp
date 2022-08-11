@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// implementation of ERC-20 smart contract for ISCP
+// implementation of ERC-20 smart contract for ISC
 // following https:// ethereum.org/en/developers/tutorials/understand-the-erc-20-token-smart-contract/
 
 package erc20

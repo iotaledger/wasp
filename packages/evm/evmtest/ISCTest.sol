@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.5;
 
-import "@isccontract/ISC.sol";
+import "@iscmagic/ISC.sol";
 
 contract ISCTest {
     ISCError TestError = isc.registerError("TestError");
@@ -35,13 +35,6 @@ contract ISCTest {
         emit RequestIDEvent(reqID);
     }
 
-    event GetCallerEvent(ISCAgentID agentID);
-
-    function emitGetCaller() public {
-        ISCAgentID memory agentID = isc.getCaller();
-        emit GetCallerEvent(agentID);
-    }
-
     event SenderAccountEvent(ISCAgentID sender);
 
     function emitSenderAccount() public {
@@ -49,21 +42,22 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function send(L1Address memory receiver) public {
-        ISCDict memory params = ISCDict(new ISCDictItem[](1));
-        bytes memory int64Encoded42 = hex"2A00000000000000";
-        params.items[0] = ISCDictItem("x", int64Encoded42);
+    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
+        public
+    {
+        ISCAllowance memory allowance;
+        allowance.baseTokens = baseTokens;
 
-        bytes memory emptyID = new bytes(38);
-        NativeTokenID memory tokenId;
-        tokenId.data = emptyID;
+        isc.takeAllowedFunds(msg.sender, allowance);
 
         ISCFungibleTokens memory fungibleTokens;
-        fungibleTokens.baseTokens = 1074;
+        fungibleTokens.baseTokens = baseTokens;
+
+        ISCDict memory params;
 
         ISCSendMetadata memory metadata;
-        metadata.entrypoint = ISCHname.wrap(0x1337);
-        metadata.targetContract = ISCHname.wrap(0xd34db33f);
+        metadata.targetContract = isc.hn("accounts");
+        metadata.entrypoint = isc.hn("deposit");
         metadata.params = params;
 
         ISCSendOptions memory options;
@@ -73,58 +67,6 @@ contract ISCTest {
 
     function revertWithVMError() public view {
         revert VMError(TestError);
-    }
-
-    event AllowanceBaseTokensEvent(uint64 baseTokens);
-
-    function emitAllowanceBaseTokens() public {
-        emit AllowanceBaseTokensEvent(isc.getAllowanceBaseTokens());
-    }
-
-    event AllowanceNativeTokenEvent(NativeToken token);
-
-    function emitAllowanceNativeTokens() public {
-        uint16 n = isc.getAllowanceNativeTokensLen();
-        for (uint16 i = 0; i < n; i++) {
-            emit AllowanceNativeTokenEvent(isc.getAllowanceNativeToken(i));
-        }
-    }
-
-    event AllowanceAvailableBaseTokensEvent(uint64 baseTokens);
-
-    function emitAllowanceAvailableBaseTokens() public {
-        emit AllowanceAvailableBaseTokensEvent(
-            isc.getAllowanceAvailableBaseTokens()
-        );
-    }
-
-    event AllowanceAvailableNativeTokenEvent(NativeToken token);
-
-    function emitAllowanceAvailableNativeTokens() public {
-        uint16 n = isc.getAllowanceAvailableNativeTokensLen();
-        for (uint16 i = 0; i < n; i++) {
-            emit AllowanceAvailableNativeTokenEvent(
-                isc.getAllowanceAvailableNativeToken(i)
-            );
-        }
-    }
-
-    event AllowanceNFTEvent(ISCNFT nft);
-
-    function emitAllowanceNFTs() public {
-        uint16 n = isc.getAllowanceNFTsLen();
-        for (uint16 i = 0; i < n; i++) {
-            emit AllowanceNFTEvent(isc.getAllowanceNFT(i));
-        }
-    }
-
-    event AllowanceAvailableNFTEvent(ISCNFT nft);
-
-    function emitAllowanceAvailableNFTs() public {
-        uint16 n = isc.getAllowanceAvailableNFTsLen();
-        for (uint16 i = 0; i < n; i++) {
-            emit AllowanceAvailableNFTEvent(isc.getAllowanceAvailableNFT(i));
-        }
     }
 
     function callInccounter() public {
@@ -151,6 +93,35 @@ contract ISCTest {
 
         ISCSendOptions memory options;
 
-        isc.sendAsNFT(receiver, fungibleTokens, true, metadata, options, id);
+        isc.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
+    }
+
+    function makeISCPanic() public {
+        // will produce a panic in ISC
+        ISCDict memory params;
+        ISCAllowance memory allowance;
+        isc.call(
+            isc.hn("governance"),
+            isc.hn("claimChainOwnershi"),
+            params,
+            allowance
+        );
+    }
+
+    function moveToAccount(
+        ISCAgentID memory targetAgentID,
+        ISCAllowance memory allowance
+    ) public {
+        // moves funds owned by the current contract to the targetAgentID
+        ISCDict memory params = ISCDict(new ISCDictItem[](2));
+        params.items[0] = ISCDictItem("a", targetAgentID.data);
+        bytes memory forceOpenAccount = "\xFF";
+        params.items[1] = ISCDictItem("c", forceOpenAccount);
+        isc.call(
+            isc.hn("accounts"),
+            isc.hn("transferAllowanceTo"),
+            params,
+            allowance
+        );
     }
 }

@@ -1,4 +1,4 @@
-// mempool implements a buffer of requests sent to the ISCP chain, essentially a backlog of requests
+// mempool implements a buffer of requests sent to the ISC chain, essentially a backlog of requests
 // It contains both on-ledger and off-ledger requests. The mempool consists of 2 parts: the in-buffer and the pool
 // All incoming requests are stored into the in-buffer first. Then they are asynchronously validated
 // and moved to the pool itself.

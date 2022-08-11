@@ -60,7 +60,7 @@ require.NoError(t, ctx.Err)
 ```rust
 // deposits N iotas from current SC into chain *chainID*
 let d = coreaccounts::ScFuncs::deposit(ctx);
-d.func.transfer_iotas(N).post_to_chain(chainID);
+d.func.transfer_base_tokens(N).post_to_chain(chainID);
 ```
 
 </TabItem>
@@ -69,7 +69,7 @@ d.func.transfer_iotas(N).post_to_chain(chainID);
 ```go
 // deposits N iotas from current SC into chain *chainID*
 d := coreaccounts.ScFuncs.Deposit(ctx)
-d.Func.TransferIotas(N).PostToChain(chainID)
+d.Func.TransferBaseTokens(N).PostToChain(chainID)
 ```
 
 </TabItem>

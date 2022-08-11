@@ -136,8 +136,8 @@ impl ScFunc {
         ret
     }
 
-    pub fn allowance_iotas(&self, amount: u64) -> ScFunc {
-        self.allowance(ScTransfer::iotas(amount))
+    pub fn allowance_base_tokens(&self, amount: u64) -> ScFunc {
+        self.allowance(ScTransfer::base_tokens(amount))
     }
 
     pub fn call(&self) {
@@ -190,7 +190,7 @@ impl ScFunc {
         ret
     }
 
-    pub fn transfer_iotas(&self, amount: u64) -> ScFunc {
-        self.transfer(ScTransfer::iotas(amount))
+    pub fn transfer_base_tokens(&self, amount: u64) -> ScFunc {
+        self.transfer(ScTransfer::base_tokens(amount))
     }
 }

@@ -28,13 +28,13 @@ func checkCounter(e *solo.Chain, expected int64) {
 
 func initSolo(t *testing.T) *solo.Solo {
 	return solo.New(t, &solo.InitOptions{
-		AutoAdjustDustDeposit: true,
+		AutoAdjustStorageDeposit: true,
 	}).WithNativeContract(Processor)
 }
 
 func TestDeployInc(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
 	require.NoError(t, err)
@@ -47,7 +47,7 @@ func TestDeployInc(t *testing.T) {
 
 func TestDeployIncInitParams(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestDeployIncInitParams(t *testing.T) {
 
 func TestIncDefaultParam(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -74,7 +74,7 @@ func TestIncDefaultParam(t *testing.T) {
 
 func TestIncParam(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -92,15 +92,15 @@ func TestIncParam(t *testing.T) {
 
 func TestIncWith1Post(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
-		AddBaseTokens(2 * isc.Mi).
-		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Mi)).
+		AddBaseTokens(2 * isc.Million).
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
 		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestIncWith1Post(t *testing.T) {
 
 func TestSpawn(t *testing.T) {
 	env := initSolo(t)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -140,14 +140,14 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	opts := &solo.InitOptions{
-		Debug:                 false,
-		PrintStackTrace:       false,
-		Seed:                  cryptolib.Seed{},
-		AutoAdjustDustDeposit: false, // is OFF by default
+		Debug:                    false,
+		PrintStackTrace:          false,
+		Seed:                     cryptolib.Seed{},
+		AutoAdjustStorageDeposit: false, // is OFF by default
 	}
 	opts.Log = log
 	env := solo.New(b, opts).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 0)
 	require.NoError(b, err)

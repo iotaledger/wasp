@@ -102,8 +102,8 @@ export class ScFunc extends ScView {
         return this;
     }
 
-    allowanceIotas(amount: i64): ScFunc {
-        return this.allowance(ScTransfer.iotas(amount));
+    allowanceBaseTokens(amount: i64): ScFunc {
+        return this.allowance(ScTransfer.baseTokens(amount));
     }
 
     call(): void {
@@ -155,7 +155,7 @@ export class ScFunc extends ScView {
         return this;
     }
 
-    transferIotas(amount: i64): ScFunc {
-        return this.transfer(ScTransfer.iotas(amount));
+    transferBaseTokens(amount: i64): ScFunc {
+        return this.transfer(ScTransfer.baseTokens(amount));
     }
 }

@@ -27,9 +27,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/isccontract"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/stretchr/testify/require"
 )
 
@@ -92,9 +91,9 @@ type ethCallOptions struct {
 
 func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *soloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustDustDeposit: true,
-		Debug:                 true,
-		PrintStackTrace:       true,
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
 	})
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
@@ -103,7 +102,7 @@ func initEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *solo
 }
 
 func initEVMWithSolo(t testing.TB, env *solo.Solo) *soloChainEnv {
-	soloChain := env.NewChain(nil, "ch1")
+	soloChain := env.NewChain()
 	return &soloChainEnv{
 		t:          t,
 		solo:       env,
@@ -215,8 +214,8 @@ func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *soloChainEnv) ISCContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
-	iscABI, err := abi.JSON(strings.NewReader(isccontract.ABI))
+func (e *soloChainEnv) MagicContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	iscABI, err := abi.JSON(strings.NewReader(iscmagic.ABI))
 	require.NoError(e.t, err)
 	return &iscContractInstance{
 		evmContractInstance: &evmContractInstance{
@@ -332,7 +331,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			Value:    opt.value,
 			Data:     callData,
 		})
-		require.NoError(e.chain.t, err)
+		require.NoError(e.chain.t, e.chain.resolveError(err))
 	}
 	return opt
 }
@@ -354,9 +353,9 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 }
 
 type callFnResult struct {
-	tx          *types.Transaction
-	evmReceipt  *types.Receipt
-	iscpReceipt *blocklog.RequestReceipt
+	tx         *types.Transaction
+	evmReceipt *types.Receipt
+	iscReceipt *isc.Receipt
 }
 
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
@@ -366,7 +365,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 
-	res.iscpReceipt = e.chain.soloChain.LastReceipt()
+	res.iscReceipt = e.chain.soloChain.LastReceipt()
 
 	var err error
 	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
@@ -413,7 +412,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 }
 
 func (i *iscTestContractInstance) getChainID() *isc.ChainID {
-	var v isccontract.ISCChainID
+	var v iscmagic.ISCChainID
 	i.callView("getChainID", nil, &v)
 	return v.MustUnwrap()
 }

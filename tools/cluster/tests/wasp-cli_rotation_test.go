@@ -129,6 +129,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
 	// chain still works
-	w2.Run("chain", "post-request", inccounterSCName, "increment")
+	w2.Run("chain", "post-request", "-s", inccounterSCName, "increment")
 	checkCounter(w2, 43)
 }

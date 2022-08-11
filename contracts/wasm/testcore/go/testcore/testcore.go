@@ -70,10 +70,10 @@ func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
 	ctx.Log(MsgDoNothing)
 }
 
-func funcEstimateMinDust(ctx wasmlib.ScFuncContext, _ *EstimateMinDustContext) {
+func funcEstimateMinStorageDeposit(ctx wasmlib.ScFuncContext, _ *EstimateMinStorageDepositContext) {
 	provided := ctx.Allowance().BaseTokens()
-	dummy := ScFuncs.EstimateMinDust(ctx)
-	required := ctx.EstimateDust(dummy.Func)
+	dummy := ScFuncs.EstimateMinStorageDeposit(ctx)
+	required := ctx.EstimateStorageDeposit(dummy.Func)
 	ctx.Require(provided >= required, "not enough funds")
 }
 
@@ -164,20 +164,20 @@ func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
 }
 
 func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
-	iotas := ctx.Allowance().BaseTokens()
+	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
-	iotasToTransfer := uint64(1_000_000)
-	transfer := wasmlib.NewScTransferBaseTokens(iotasToTransfer)
-	for ; iotas >= iotasToTransfer; iotas -= iotasToTransfer {
+	tokensToTransfer := uint64(1_000_000)
+	transfer := wasmlib.NewScTransferBaseTokens(tokensToTransfer)
+	for ; tokens >= tokensToTransfer; tokens -= tokensToTransfer {
 		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 		ctx.Send(address, transfer)
 	}
 }
 
 func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTokensContext) {
-	iotas := ctx.Allowance().BaseTokens()
+	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
-	transfer := wasmlib.NewScTransferBaseTokens(iotas)
+	transfer := wasmlib.NewScTransferBaseTokens(tokens)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
@@ -233,31 +233,31 @@ func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {
 
 func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
 	targetChain := f.Params.ChainID().Value()
-	iotasToWithdrawal := f.Params.IotasWithdrawal().Value()
+	withdrawal := f.Params.BaseTokensWithdrawal().Value()
 	// gasBudget := f.Params.GasBudget().Value()
 
 	// TODO more
-	availableIotas := ctx.Allowance().BaseTokens()
-	// requiredDustDeposit := ctx.EstimateRequiredDustDeposit(request)
-	if availableIotas < 1000 {
-		ctx.Panic("not enough iotas sent to cover dust deposit")
+	availableTokens := ctx.Allowance().BaseTokens()
+	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
+	if availableTokens < 1000 {
+		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	//request := isc.RequestParameters{
 	//	TargetAddress:  targetChain.AsAddress(),
-	//	FungibleTokens: isc.NewTokensIotas(availableIotas),
+	//	FungibleTokens: isc.NewFungibleBaseTokens(availableTokens),
 	//	Metadata: &isc.SendMetadata{
 	//		TargetContract: accounts.Contract.Hname(),
 	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
 	//		GasBudget:      gasBudget,
-	//		Allowance:      isc.NewAllowanceIotas(iotasToWithdrawal),
+	//		Allowance:      isc.NewAllowanceBaseTokens(withdrawal),
 	//	},
 	//}
 
 	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
-	withdraw.Func.TransferBaseTokens(iotasToWithdrawal).PostToChain(targetChain)
+	withdraw.Func.TransferBaseTokens(withdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {

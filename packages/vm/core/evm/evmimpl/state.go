@@ -19,10 +19,17 @@ const (
 
 	// keyEVMState is the subrealm prefix for the EVM state, used by the emulator
 	keyEVMState = "s"
+
+	// keyISCMagic is the subrealm prefix for the ISCmagic contract
+	keyISCMagic = "m"
 )
 
 func evmStateSubrealm(state kv.KVStore) kv.KVStore {
 	return subrealm.New(state, keyEVMState)
+}
+
+func iscMagicSubrealm(state kv.KVStore) kv.KVStore {
+	return subrealm.New(state, keyISCMagic)
 }
 
 func setGasRatio(ctx isc.Sandbox) dict.Dict {

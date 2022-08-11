@@ -26,8 +26,8 @@ func testTooManyOutputsInASingleCall(t *testing.T, w bool) {
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
-		AddBaseTokens(1000 * isc.Mi).
-		AddAllowanceBaseTokens(999 * isc.Mi). // contract is sending 1Mi per output
+		AddBaseTokens(1000 * isc.Million).
+		AddAllowanceBaseTokens(999 * isc.Million). // contract is sending 1Mi per output
 		WithGasBudget(math.MaxUint64)
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
@@ -49,16 +49,16 @@ func testSeveralOutputsInASingleCall(t *testing.T, w bool) {
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
 	// this will SUCCEED because it will result in 4 outputs in the single call
-	const allowance = 4 * isc.Mi
+	const allowance = 4 * isc.Million
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAllowanceBaseTokens(allowance).
-		AddBaseTokens(allowance + 1*isc.Mi).
+		AddBaseTokens(allowance + 1*isc.Million).
 		WithGasBudget(math.MaxUint64)
 	tx, _, err := ch.PostRequestSyncTx(req, wallet)
 	require.NoError(t, err)
 
-	dustDeposit := tx.Essence.Outputs[0].Deposit()
-	ch.Env.AssertL1BaseTokens(walletAddr, beforeWallet.AssetsL1.BaseTokens+allowance-dustDeposit)
+	storageDeposit := tx.Essence.Outputs[0].Deposit()
+	ch.Env.AssertL1BaseTokens(walletAddr, beforeWallet.AssetsL1.BaseTokens+allowance-storageDeposit)
 }
 
 func TestSeveralOutputsInASingleCallFail(t *testing.T) { run2(t, testSeveralOutputsInASingleCallFail) }
@@ -75,10 +75,10 @@ func testSeveralOutputsInASingleCallFail(t *testing.T, w bool) {
 	t.Logf("----- BEFORE wallet: %s", beforeWallet)
 
 	// this will FAIL because it will result in 5 outputs in the single call
-	const allowance = 5 * isc.Mi
+	const allowance = 5 * isc.Million
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFunds.Name).
 		AddAllowanceBaseTokens(allowance).
-		AddBaseTokens(allowance + 1*isc.Mi).
+		AddBaseTokens(allowance + 1*isc.Million).
 		WithGasBudget(math.MaxUint64)
 
 	_, err = ch.PostRequestSync(req, wallet)
@@ -93,7 +93,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	err := ch.DepositBaseTokensToL2(2*isc.Mi, wallet)
+	err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	require.NoError(t, err)
 
 	sn, tokenID, err := ch.NewFoundryParams(100).
@@ -104,10 +104,10 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := isc.NewAllowanceBaseTokens(100*isc.Mi).AddNativeTokens(tokenID, 100)
+	allowance := isc.NewAllowanceBaseTokens(100*isc.Million).AddNativeTokens(tokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddBaseTokens(200 * isc.Mi).
+		AddBaseTokens(200 * isc.Million).
 		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrExceededPostedOutputLimit)
@@ -122,7 +122,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 	agentID := isc.NewAgentID(addr)
 
-	err := ch.DepositBaseTokensToL2(2*isc.Mi, wallet)
+	err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	require.NoError(t, err)
 
 	amountMintedTokens := int64(100)
@@ -134,10 +134,10 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	amountTokensToSend := int64(3)
-	allowance := isc.NewAllowanceBaseTokens(2*isc.Mi).AddNativeTokens(tokenID, amountTokensToSend)
+	allowance := isc.NewAllowanceBaseTokens(2*isc.Million).AddNativeTokens(tokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
-		AddBaseTokens(2 * isc.Mi).
+		AddBaseTokens(2 * isc.Million).
 		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 	commonBefore := ch.L2CommonAccountAssets()
 	t.Logf("----- BEFORE -----\nUser funds left: %s\nCommon account: %s", userFundsBefore, commonBefore)
 
-	const expectedBack = 1 * isc.Mi
+	const expectedBack = 1 * isc.Million
 	ch.Env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncPingAllowanceBack.Name).
@@ -184,16 +184,16 @@ func testPingBaseTokens1(t *testing.T, w bool) {
 	require.Zero(t, userFundsAfter.AssetsL2.BaseTokens)
 }
 
-func TestEstimateMinimumDust(t *testing.T) { run2(t, testEstimateMinimumDust) }
-func testEstimateMinimumDust(t *testing.T, w bool) {
+func TestEstimateMinimumStorageDeposit(t *testing.T) { run2(t, testEstimateMinimumStorageDeposit) }
+func testEstimateMinimumStorageDeposit(t *testing.T, w bool) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromIndex(20))
 
-	// should fail without enough base tokens to pay for a L1 transaction dust
+	// should fail without enough base tokens to pay for a L1 transaction storage deposit
 	allowance := isc.NewAllowanceBaseTokens(1)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+	req := solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
@@ -201,9 +201,9 @@ func testEstimateMinimumDust(t *testing.T, w bool) {
 	_, err := ch.PostRequestSync(req, wallet)
 	require.Error(t, err)
 
-	// should succeed with enough base tokens to pay for a L1 transaction dust
+	// should succeed with enough base tokens to pay for a L1 transaction storage deposit
 	allowance = isc.NewAllowanceBaseTokens(100_000)
-	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinDust.Name).
+	req = solo.NewCallParams(ScName, sbtestsc.FuncEstimateMinStorageDeposit.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(100_000).
 		WithGasBudget(100_000)
@@ -314,7 +314,7 @@ func testNFTMintToChain(t *testing.T, w bool) {
 	require.NoError(t, err)
 	// find out the NFTID
 	receipt := ch.LastReceipt()
-	nftID := iotago.NFTIDFromOutputID(receipt.Request.ID().OutputID())
+	nftID := iotago.NFTIDFromOutputID(receipt.DeserializedRequest().ID().OutputID())
 
 	// - Chain owns the NFT on L1
 	require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))

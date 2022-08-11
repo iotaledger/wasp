@@ -12,24 +12,24 @@ import (
 )
 
 type NewRequestTransactionParams struct {
-	SenderKeyPair                *cryptolib.KeyPair
-	SenderAddress                iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
-	UnspentOutputs               iotago.OutputSet
-	UnspentOutputIDs             iotago.OutputIDs
-	Request                      *isc.RequestParameters
-	NFT                          *isc.NFT
-	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
+	SenderKeyPair                   *cryptolib.KeyPair
+	SenderAddress                   iotago.Address // might be different from the senderKP address (when sending as NFT or alias)
+	UnspentOutputs                  iotago.OutputSet
+	UnspentOutputIDs                iotago.OutputIDs
+	Request                         *isc.RequestParameters
+	NFT                             *isc.NFT
+	DisableAutoAdjustStorageDeposit bool // if true, the minimal storage deposit won't be adjusted automatically
 }
 
 type NewTransferTransactionParams struct {
-	DisableAutoAdjustDustDeposit bool // if true, the minimal dust deposit won't be adjusted automatically
-	FungibleTokens               *isc.FungibleTokens
-	SendOptions                  isc.SendOptions
-	SenderAddress                iotago.Address
-	SenderKeyPair                *cryptolib.KeyPair
-	TargetAddress                iotago.Address
-	UnspentOutputs               iotago.OutputSet
-	UnspentOutputIDs             iotago.OutputIDs
+	DisableAutoAdjustStorageDeposit bool // if true, the minimal storage deposit won't be adjusted automatically
+	FungibleTokens                  *isc.FungibleTokens
+	SendOptions                     isc.SendOptions
+	SenderAddress                   iotago.Address
+	SenderKeyPair                   *cryptolib.KeyPair
+	TargetAddress                   iotago.Address
+	UnspentOutputs                  iotago.OutputSet
+	UnspentOutputIDs                iotago.OutputIDs
 }
 
 // NewTransferTransaction creates a basic output transaction that sends L1 Token to another L1 address
@@ -40,13 +40,13 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 		params.FungibleTokens,
 		nil,
 		params.SendOptions,
-		params.DisableAutoAdjustDustDeposit,
+		params.DisableAutoAdjustStorageDeposit,
 	)
 
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(output)
 	if output.Deposit() < storageDeposit {
 		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
-			ErrNotEnoughBaseTokensForDustDeposit, output.Deposit(), storageDeposit)
+			ErrNotEnoughBaseTokensForStorageDeposit, output.Deposit(), storageDeposit)
 	}
 
 	sumBaseTokensOut := output.Deposit()
@@ -81,7 +81,7 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 }
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
-// Empty assets in the request data defaults to 1 base token, which later is adjusted to the dust minimum
+// Empty assets in the request data defaults to 1 base token, which later is adjusted to the minimum storage deposit
 // Assumes all UnspentOutputs and corresponding UnspentOutputIDs can be used as inputs, i.e. are
 // unlockable for the sender address
 func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction, error) {
@@ -95,11 +95,11 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	// create outputs, sum totals needed
 	assets := req.FungibleTokens
 	if assets == nil {
-		// if assets not specified, the minimum dust deposit will be adjusted by vmtxbuilder.MakeBasicOutput
+		// if assets not specified, the minimum storage deposit will be adjusted by vmtxbuilder.MakeBasicOutput
 		assets = &isc.FungibleTokens{}
 	}
 	var out iotago.Output
-	// will adjust to minimum dust deposit
+	// will adjust to minimum storage deposit
 	out = MakeBasicOutput(
 		req.TargetAddress,
 		par.SenderAddress,
@@ -113,7 +113,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 			GasBudget:      req.Metadata.GasBudget,
 		},
 		req.Options,
-		par.DisableAutoAdjustDustDeposit,
+		par.DisableAutoAdjustStorageDeposit,
 	)
 	if par.NFT != nil {
 		out = NftOutputFromBasicOutput(out.(*iotago.BasicOutput), par.NFT)
@@ -122,7 +122,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
 		return nil, fmt.Errorf("%v: available %d < required %d base tokens",
-			ErrNotEnoughBaseTokensForDustDeposit, out.Deposit(), storageDeposit)
+			ErrNotEnoughBaseTokensForStorageDeposit, out.Deposit(), storageDeposit)
 	}
 	outputs = append(outputs, out)
 	sumBaseTokensOut += out.Deposit()

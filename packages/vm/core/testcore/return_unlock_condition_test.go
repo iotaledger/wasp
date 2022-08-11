@@ -15,11 +15,11 @@ import (
 )
 
 func TestSendBack(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true}).
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
 		WithNativeContract(inccounter.Processor)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
-	err := ch.DepositBaseTokensToL2(10*isc.Mi, nil)
+	err := ch.DepositBaseTokensToL2(10*isc.Million, nil)
 	require.NoError(t, err)
 
 	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, inccounter.VarCounter, 0)
@@ -48,7 +48,7 @@ func TestSendBack(t *testing.T) {
 		UnspentOutputIDs: allOutIDs,
 		Request: &isc.RequestParameters{
 			TargetAddress:  ch.ChainID.AsAddress(),
-			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Mi},
+			FungibleTokens: &isc.FungibleTokens{BaseTokens: 1 * isc.Million},
 			Metadata: &isc.SendMetadata{
 				TargetContract: inccounter.Contract.Hname(),
 				EntryPoint:     inccounter.FuncIncCounter.Hname(),

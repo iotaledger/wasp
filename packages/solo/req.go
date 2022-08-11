@@ -261,15 +261,15 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 			},
 			Options: isc.SendOptions{},
 		},
-		NFT:                          req.nft,
-		DisableAutoAdjustDustDeposit: ch.Env.disableAutoAdjustDustDeposit,
+		NFT:                             req.nft,
+		DisableAutoAdjustStorageDeposit: ch.Env.disableAutoAdjustStorageDeposit,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if tx.Essence.Outputs[0].Deposit() == 0 {
-		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustDustDeposit: true}")
+		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
 	}
 	return tx, err
 }
@@ -351,14 +351,15 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *cryptolib.KeyPair) 
 }
 
 // LastReceipt returns the receipt fot the latest request processed by the chain, will return nil if the last block is empty
-func (ch *Chain) LastReceipt() *blocklog.RequestReceipt {
+func (ch *Chain) LastReceipt() *isc.Receipt {
 	ch.mustStardustVM()
 
 	lastBlockReceipts := ch.GetRequestReceiptsForBlock()
 	if len(lastBlockReceipts) == 0 {
 		return nil
 	}
-	return lastBlockReceipts[len(lastBlockReceipts)-1]
+	blocklogReceipt := lastBlockReceipts[len(lastBlockReceipts)-1]
+	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
 func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {

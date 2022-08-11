@@ -15,7 +15,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.18
+          go-version: 1.18.5
         id: go
 
       - name: Check out code into the Go module directory
@@ -29,9 +29,83 @@ jobs:
 
       - name: Test
         run: make test-short
+  
+  contract-test:
+    name: Wasm contract tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        TEST_LANG: [go, gowasm, tswasm, rswasm]
+    steps:
+      - name: checkout to the directory
+        uses: actions/checkout@v3
 
+      - name: install golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+
+      - name: install tinygo
+        # only work on x86_64
+        run: |
+          wget https://github.com/tinygo-org/tinygo/releases/download/v0.23.0/tinygo_0.23.0_amd64.deb
+          sudo dpkg -i tinygo_0.23.0_amd64.deb
+          export PATH=$PATH:/usr/local/bin
+      
+      - name: install rust-toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+            toolchain: stable
+
+      - name: install wasm-pack
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: install Node.js 
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: install schema
+        run: |
+          cd contracts/wasm/scripts
+          bash schema_all.sh
+          cd ..
+          npm install
+
+      - name: run builds
+        env:
+          TEST_LANG: ${{matrix.TEST_LANG}}
+        run: |
+          cd contracts/wasm/scripts
+          bash core_build.sh
+          if [ $TEST_LANG == "go" ]; then
+            bash schema_all.sh
+          elif [ $TEST_LANG == "gowasm" ]; then
+            bash go_all.sh
+          elif [ $TEST_LANG == "tswasm" ]; then
+            bash ts_all.sh
+          elif [ $TEST_LANG == "rswasm" ]; then
+            bash rust_all.sh
+          fi
+
+      - name: run tests
+        env:
+          TEST_LANG: ${{matrix.TEST_LANG}}
+        run: |
+          cd contracts/wasm
+          if [ $TEST_LANG == "go" ]; then
+            go test ./...
+          elif [ $TEST_LANG == "gowasm" ]; then
+            go test ./... -gowasm
+          elif [ $TEST_LANG == "tswasm" ]; then
+            go test ./... -tswasm
+          elif [ $TEST_LANG == "rswasm" ]; then
+            go test ./... -rswasm
+          fi
+          
   golangci:
-    name: lint
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v2
@@ -42,8 +116,17 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.1.0
-        with:
-          version: latest
-          args: --timeout 5m0s
+      - name: Generate SC files
+        run: |
+           cd contracts/wasm/scripts
+           bash schema_all.sh
+
+      - name: golangci-lint in SC
+        run: |
+           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.47.2
+           cd contracts/wasm
+           ../../bin/golangci-lint run --fix --timeout 5m0s
+           
+      - name: Run global scope golangci-lint
+        run: |
+          ./bin/golangci-lint run --timeout 5m0s

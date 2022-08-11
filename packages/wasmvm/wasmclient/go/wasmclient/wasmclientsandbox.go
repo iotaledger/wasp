@@ -109,7 +109,7 @@ func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
 func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
 	var cvt wasmhost.WasmConvertor
 	scAddress := wasmtypes.AddressFromBytes(args)
-	addr := cvt.IscpAddress(&scAddress)
+	addr := cvt.IscAddress(&scAddress)
 	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
 }
 

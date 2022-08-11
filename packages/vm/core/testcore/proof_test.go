@@ -14,8 +14,8 @@ import (
 
 func TestProofs(t *testing.T) {
 	t.Run("chain ID", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustDustDeposit: true})
-		ch := env.NewChain(nil, "chain1")
+		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		ch := env.NewChain()
 
 		proof := ch.GetMerkleProofRaw(nil)
 		l1Commitment := ch.GetL1Commitment()
@@ -24,7 +24,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI blob", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI receipt", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -52,7 +52,8 @@ func TestProofs(t *testing.T) {
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
 
-		rec := ch.LastReceipt()
+		lastBlockReceipts := ch.GetRequestReceiptsForBlock()
+		rec := lastBlockReceipts[len(lastBlockReceipts)-1]
 
 		recKey := blocklog.RequestReceiptKey(rec.LookupKey())
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), recKey)
@@ -63,7 +64,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("check PoI past state", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -90,7 +91,7 @@ func TestProofs(t *testing.T) {
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
-		ch := env.NewChain(nil, "chain1")
+		ch := env.NewChain()
 
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
@@ -117,7 +118,7 @@ func TestProofs(t *testing.T) {
 
 func TestProofStateTerminals(t *testing.T) {
 	env := solo.New(t)
-	ch := env.NewChain(nil, "chain1")
+	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(100_000, nil)
 	require.NoError(t, err)
