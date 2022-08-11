@@ -11,3 +11,5 @@ wasp-cli
 *.log
 waspdb/
 docOps/
+tools/devnet
+tools/cluster
