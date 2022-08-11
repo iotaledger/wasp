@@ -211,6 +211,10 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 		}
 		adjustStorageDeposit(c.ctx, req)
 
+		// TODO remove
+		c.ctx.Log().Infof("ZZZ eth: %s", isc.NewEthereumAddressAgentID(caller.Address()))
+		c.ctx.Log().Infof("ZZZ acc: %s", c.ctx.AccountID())
+
 		// make sure that allowance <= sent tokens, so that the target contract does not
 		// spend from the common account
 		c.ctx.Requiref(

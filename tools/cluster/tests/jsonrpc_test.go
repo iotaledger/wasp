@@ -34,10 +34,10 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T) *clusterTestEnv {
+func newClusterTestEnv(t *testing.T, opt ...waspClusterOpts) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	clu := newCluster(t)
+	clu := newCluster(t, opt...)
 
 	chain, err := clu.DeployDefaultChain()
 	require.NoError(t, err)
