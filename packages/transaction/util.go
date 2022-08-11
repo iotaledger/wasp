@@ -128,6 +128,10 @@ func computeInputsAndRemainder(
 			// this is an UTXO that holds an foundry that is not relevant for this tx, should be skipped
 			continue
 		}
+		if inp.UnlockConditionSet().StorageDepositReturn() != nil {
+			// don't consume anything with SDRUC
+			continue
+		}
 		inputIDs = append(inputIDs, id)
 		a := AssetsFromOutput(inp)
 		baseTokensIn += a.BaseTokens

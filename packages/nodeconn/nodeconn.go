@@ -253,9 +253,15 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
+	blockID, err := block.ID()
+	if err == nil {
+		nc.log.Infof("Posted blockID %v", blockID.ToHex())
+	} else {
+		nc.log.Warnf("Posted block; failed to calculate its id: %v", err)
+	}
 	txID, err := tx.ID()
 	if err == nil {
-		nc.log.Debugf("Posted transaction id %v", isc.TxID(txID))
+		nc.log.Infof("Posted transaction id %v", isc.TxID(txID))
 	} else {
 		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
 	}
