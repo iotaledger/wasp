@@ -34,10 +34,21 @@ var configSetCmd = &cobra.Command{
 	},
 }
 
+var refreshL1ParamsCmd = &cobra.Command{
+	Use:   "refresh-l1-params",
+	Short: "Refresh L1 params from node",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		refreshL1ParamsFromNode()
+	},
+}
+
 const (
 	HostKindAPI     = "api"
 	HostKindPeering = "peering"
 	HostKindNanomsg = "nanomsg"
+
+	l1ParamsKey = "l1.params"
 )
 
 func Init(rootCmd *cobra.Command) {
@@ -46,23 +57,30 @@ func Init(rootCmd *cobra.Command) {
 
 	rootCmd.AddCommand(configSetCmd)
 	rootCmd.AddCommand(checkVersionsCmd)
+	rootCmd.AddCommand(refreshL1ParamsCmd)
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {
-		if viper.Get("l1.params") == nil {
-			// get L1 params from node and save to config file
-			log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
-			L1Client() // this will call parameters.InitL1()
-			Set("l1.params", parameters.L1())
+		if viper.Get(l1ParamsKey) == nil {
+			refreshL1ParamsFromNode()
 		} else {
-			// read L1 params from config file
-			var params *parameters.L1Params
-			err := viper.UnmarshalKey("l1.params", &params)
-			log.Check(err)
-			parameters.InitL1(params)
+			loadL1ParamsFromConfig()
 		}
 	})
+}
 
+func refreshL1ParamsFromNode() {
+	log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
+	L1Client() // this will call parameters.InitL1()
+	Set(l1ParamsKey, parameters.L1())
+}
+
+func loadL1ParamsFromConfig() {
+	// read L1 params from config file
+	var params *parameters.L1Params
+	err := viper.UnmarshalKey("l1.params", &params)
+	log.Check(err)
+	parameters.InitL1(params)
 }
 
 func Read() {
