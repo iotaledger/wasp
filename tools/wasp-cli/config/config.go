@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/nodeconn"
@@ -48,7 +49,9 @@ const (
 	HostKindPeering = "peering"
 	HostKindNanomsg = "nanomsg"
 
-	l1ParamsKey = "l1.params"
+	l1ParamsKey          = "l1.params"
+	l1ParamsTimestampKey = "l1.timestamp"
+	l1ParamsExpiration   = 24 * time.Hour
 )
 
 func Init(rootCmd *cobra.Command) {
@@ -61,7 +64,7 @@ func Init(rootCmd *cobra.Command) {
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {
-		if viper.Get(l1ParamsKey) == nil {
+		if l1ParamsExpired() {
 			refreshL1ParamsFromNode()
 		} else {
 			loadL1ParamsFromConfig()
@@ -69,10 +72,20 @@ func Init(rootCmd *cobra.Command) {
 	})
 }
 
+func l1ParamsExpired() bool {
+	if viper.Get(l1ParamsKey) == nil {
+		return true
+	}
+	return viper.GetTime(l1ParamsTimestampKey).Add(l1ParamsExpiration).Before(time.Now())
+}
+
 func refreshL1ParamsFromNode() {
-	log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
+	if log.VerboseFlag {
+		log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
+	}
 	L1Client() // this will call parameters.InitL1()
 	Set(l1ParamsKey, parameters.L1())
+	Set(l1ParamsTimestampKey, time.Now())
 }
 
 func loadL1ParamsFromConfig() {
