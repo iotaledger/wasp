@@ -52,7 +52,7 @@ func (nc *nodeConn) OutputMap(myAddress iotago.Address, timeout ...time.Duration
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	bech32Addr := myAddress.Bech32(parameters.L1.Protocol.Bech32HRP)
+	bech32Addr := myAddress.Bech32(parameters.L1().Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
 		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
 		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
@@ -120,7 +120,7 @@ func (nc *nodeConn) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durat
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	faucetReq := fmt.Sprintf("{\"address\":%q}", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
 	faucetURL := fmt.Sprintf("%s/api/enqueue", nc.config.FaucetAddress)
 	httpReq, err := http.NewRequestWithContext(ctxWithTimeout, "POST", faucetURL, bytes.NewReader([]byte(faucetReq)))
 	if err != nil {
@@ -181,7 +181,7 @@ func MakeSimpleValueTX(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get address outputs: %w", err)
 	}
-	txBuilder := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID())
+	txBuilder := builder.NewTransactionBuilder(parameters.L1().Protocol.NetworkID())
 	inputSum := uint64(0)
 	for i, o := range senderOuts {
 		if inputSum >= amount {
@@ -210,7 +210,7 @@ func MakeSimpleValueTX(
 		})
 	}
 	tx, err := txBuilder.Build(
-		parameters.L1.Protocol,
+		parameters.L1().Protocol,
 		sender.AsAddressSigner(),
 	)
 	if err != nil {

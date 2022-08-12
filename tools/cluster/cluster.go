@@ -49,20 +49,16 @@ type Cluster struct {
 	t                *testing.T
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T) *Cluster {
-	var lg *logger.Logger
-	if t != nil {
-		lg = testlogger.NewLogger(t)
-	} else {
-		// when cluster tool is being used outside tests
-		if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
-			panic(err)
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log *logger.Logger) *Cluster {
+	if log == nil {
+		if t == nil {
+			panic("one of t or log must be set")
 		}
-		lg = logger.NewLogger(name)
+		log = testlogger.NewLogger(t)
 	}
 
 	validatorKp := cryptolib.NewKeyPair()
-	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1.Protocol.Bech32HRP))
+	config.SetOwnerAddress(validatorKp.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
 
 	return &Cluster{
 		Name:             name,
@@ -70,7 +66,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T) *Clu
 		ValidatorKeyPair: validatorKp,
 		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, lg),
+		l1:               nodeconn.NewL1Client(config.L1, log),
 		DataPath:         dataPath,
 	}
 }

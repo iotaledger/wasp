@@ -45,10 +45,7 @@ func runDKGCmd() *cobra.Command {
 			stateControllerAddr, err := apilib.RunDKG(config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
 			log.Check(err)
 
-			if parameters.L1 == nil {
-				config.L1Client() // this will fill parameters.L1 with data from the L1 node
-			}
-			fmt.Fprintf(os.Stdout, "DKG successful, address: %s", stateControllerAddr.Bech32(parameters.L1.Protocol.Bech32HRP))
+			fmt.Fprintf(os.Stdout, "DKG successful, address: %s", stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 		},
 	}
 

@@ -13,5 +13,5 @@ func (vmctx *VMContext) EstimateRequiredStorageDeposit(par isc.RequestParameters
 		vmctx.CurrentContractHname(),
 		par,
 	)
-	return parameters.L1.Protocol.RentStructure.MinRent(out)
+	return parameters.L1().Protocol.RentStructure.MinRent(out)
 }

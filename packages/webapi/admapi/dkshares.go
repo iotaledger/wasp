@@ -33,7 +33,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 	addr1 := isc.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
-		Address:      addr1.Bech32(parameters.L1.Protocol.Bech32HRP),
+		Address:      addr1.Bech32(parameters.L1().Protocol.Bech32HRP),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		PeerPubKeys:  []string{base64.StdEncoding.EncodeToString([]byte("key"))},
@@ -148,7 +148,7 @@ func makeDKSharesInfo(dkShare tcrypto.DKShare) (*model.DKSharesInfo, error) {
 	}
 
 	return &model.DKSharesInfo{
-		Address:      dkShare.GetAddress().Bech32(parameters.L1.Protocol.Bech32HRP),
+		Address:      dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,
 		PeerPubKeys:  peerPubKeys,

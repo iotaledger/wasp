@@ -39,7 +39,7 @@ func ChainIDFromString(s string) (*ChainID, error) {
 	if err != nil {
 		return nil, err
 	}
-	if prefix != parameters.L1.Protocol.Bech32HRP {
+	if prefix != parameters.L1().Protocol.Bech32HRP {
 		return nil, fmt.Errorf("prefix doesn't match expected protocol prefix")
 	}
 	aliasAddr, ok := addr.(*iotago.AliasAddress)
@@ -102,7 +102,7 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 
 // String human readable form (bech32)
 func (chid *ChainID) String() string {
-	return chid.AsAddress().Bech32(parameters.L1.Protocol.Bech32HRP)
+	return chid.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

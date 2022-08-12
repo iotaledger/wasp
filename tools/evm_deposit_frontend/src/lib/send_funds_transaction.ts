@@ -74,9 +74,9 @@ export class SendFundsTransaction {
 
   public async sendFundsToEVMAddress(evmAddress: string, chainId: string, amount: bigint, gas: bigint): Promise<void> {
     const addressHex = Converter.bytesToHex(this.wallet.address.toAddress(), true);
-    const addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.wallet.address.toAddress(), this.wallet.nodeInfo.protocol.bech32HRP);
+    const addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.wallet.address.toAddress(), this.wallet.nodeInfo.protocol.bech32Hrp);
 
-    const chainAddress = Bech32Helper.addressFromBech32(chainId, this.wallet.nodeInfo.protocol.bech32HRP);
+    const chainAddress = Bech32Helper.addressFromBech32(chainId, this.wallet.nodeInfo.protocol.bech32Hrp);
 
     const outputs = await this.wallet.indexer.outputs({
       addressBech32: addressBech32

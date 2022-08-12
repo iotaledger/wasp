@@ -74,7 +74,7 @@ func aliasOutputStorageDeposit() uint64 {
 			},
 		},
 	}
-	return parameters.L1.Protocol.RentStructure.MinRent(aliasOutput)
+	return parameters.L1().Protocol.RentStructure.MinRent(aliasOutput)
 }
 
 func nativeTokenOutputStorageDeposit() uint64 {
@@ -92,7 +92,7 @@ func nativeTokenOutputStorageDeposit() uint64 {
 		nil,
 		isc.SendOptions{},
 	)
-	return parameters.L1.Protocol.RentStructure.MinRent(o)
+	return parameters.L1().Protocol.RentStructure.MinRent(o)
 }
 
 func nftOutputStorageDeposit() uint64 {
@@ -116,5 +116,5 @@ func nftOutputStorageDeposit() uint64 {
 		Metadata: make([]byte, iotago.MaxMetadataLength),
 	})
 
-	return parameters.L1.Protocol.RentStructure.MinRent(out)
+	return parameters.L1().Protocol.RentStructure.MinRent(out)
 }

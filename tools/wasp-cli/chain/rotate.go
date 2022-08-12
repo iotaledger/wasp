@@ -24,8 +24,8 @@ var rotateCmd = &cobra.Command{
 		l1Client := config.L1Client()
 		prefix, newStateControllerAddr, err := iotago.ParseBech32(args[0])
 		log.Check(err)
-		if parameters.L1.Protocol.Bech32HRP != prefix {
-			log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1.Protocol.Bech32HRP, prefix)
+		if parameters.L1().Protocol.Bech32HRP != prefix {
+			log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.L1().Protocol.Bech32HRP, prefix)
 		}
 
 		kp := wallet.Load().KeyPair

@@ -2,6 +2,9 @@
   "database": {
     "directory": "/wasp/waspdb"
   },
+  "l1": {
+    "apiAddress": "http://hornet-nest:14265"
+  },
   "logger": {
     "level": "debug",
     "disableCaller": false,
@@ -24,7 +27,12 @@
   "users": {
     "wasp": {
       "password": "wasp",
-      "permissions": ["dashboard", "api", "chain.read", "chain.write"]
+      "permissions": [
+        "dashboard",
+        "api",
+        "chain.read",
+        "chain.write"
+      ]
     }
   },
   "webapi": {
@@ -36,7 +44,9 @@
         "username": "wasp"
       },
       "ip": {
-        "whitelist": ["127.0.0.1"]
+        "whitelist": [
+          "127.0.0.1"
+        ]
       },
       "scheme": "none"
     },
@@ -51,20 +61,23 @@
         "username": "wasp"
       },
       "ip": {
-        "whitelist": ["127.0.0.1"]
+        "whitelist": [
+          "127.0.0.1"
+        ]
       },
       "scheme": "basic"
     },
     "bindAddress": "0.0.0.0:7000"
   },
-  "peering":{
+  "peering": {
     "port": 4000,
-    "netid": "127.0.0.1:4000"
+    "netid": "0.0.0.0:4000"
   },
-  "nodeconn": {
-    "address": "devnet_goshimmer:5000"
-  },
-  "nanomsg":{
+  "nanomsg": {
     "port": 5550
+  },
+  "metrics": {
+    "bindAddress": "0.0.0.0:2112",
+    "enabled": true
   }
 }

@@ -93,7 +93,7 @@ func New(params ...*InitParams) *UtxoDB {
 }
 
 func (u *UtxoDB) genesisInit() {
-	genesisTx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
+	genesisTx, err := builder.NewTransactionBuilder(parameters.L1().Protocol.NetworkID()).
 		AddInput(&builder.TxInput{
 			UnlockTarget: genesisAddress,
 			Input: &iotago.BasicOutput{
@@ -109,7 +109,7 @@ func (u *UtxoDB) genesisInit() {
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(parameters.L1.Protocol, genesisSigner)
+		Build(parameters.L1().Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -192,7 +192,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 		fundsAmount = amount[0]
 	}
 
-	tx, err := builder.NewTransactionBuilder(parameters.L1.Protocol.NetworkID()).
+	tx, err := builder.NewTransactionBuilder(parameters.L1().Protocol.NetworkID()).
 		AddInput(&builder.TxInput{
 			UnlockTarget: genesisAddress,
 			InputID:      inputOutputID,
@@ -210,7 +210,7 @@ func (u *UtxoDB) mustGetFundsFromFaucetTx(target iotago.Address, amount ...uint6
 				&iotago.AddressUnlockCondition{Address: genesisAddress},
 			},
 		}).
-		Build(parameters.L1.Protocol, genesisSigner)
+		Build(parameters.L1().Protocol, genesisSigner)
 	if err != nil {
 		panic(err)
 	}
@@ -268,7 +268,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 
 func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 	// serialize for syntactic check
-	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, parameters.L1.Protocol); err != nil {
+	if _, err := tx.Serialize(serializer.DeSeriModePerformValidation, parameters.L1().Protocol); err != nil {
 		return err
 	}
 

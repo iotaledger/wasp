@@ -13,7 +13,7 @@ import (
 func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
 	hrp, addr, err := iotago.ParseBech32(string(args))
 	s.checkErr(err)
-	if hrp != parameters.L1.Protocol.Bech32HRP {
+	if hrp != parameters.L1().Protocol.Bech32HRP {
 		s.Panicf("Invalid protocol prefix: %s", string(hrp))
 	}
 	return s.cvt.ScAddress(addr).Bytes()
@@ -22,7 +22,7 @@ func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
 func (s *SoloSandbox) fnUtilsBech32Encode(args []byte) []byte {
 	scAddress := wasmtypes.AddressFromBytes(args)
 	addr := s.cvt.IscAddress(&scAddress)
-	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	return []byte(addr.Bech32(parameters.L1().Protocol.Bech32HRP))
 }
 
 //func (s *SoloSandbox) fnUtilsBlsAddress(args []byte) []byte {

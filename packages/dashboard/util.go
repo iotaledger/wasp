@@ -81,7 +81,7 @@ func (d *Dashboard) exploreAddressURL(address iotago.Address) string {
 }
 
 func (d *Dashboard) addressToString(a iotago.Address) string {
-	return a.Bech32(parameters.L1.Protocol.Bech32HRP)
+	return a.Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
 func (d *Dashboard) agentIDToString(a isc.AgentID) string {

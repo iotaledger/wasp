@@ -639,7 +639,7 @@ func TestStorageDeposit(t *testing.T) {
 			&reqMetadata,
 			isc.SendOptions{},
 		)
-		expected := parameters.L1.Protocol.RentStructure.MinRent(out)
+		expected := parameters.L1().Protocol.RentStructure.MinRent(out)
 		require.Equal(t, out.Deposit(), expected)
 	})
 	t.Run("keeps the same amount of base tokens when enough for storage deposit cost", func(t *testing.T) {
@@ -651,7 +651,7 @@ func TestStorageDeposit(t *testing.T) {
 			&reqMetadata,
 			isc.SendOptions{},
 		)
-		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1.Protocol.RentStructure, nil))
+		require.GreaterOrEqual(t, out.Deposit(), out.VBytes(&parameters.L1().Protocol.RentStructure, nil))
 	})
 }
 
