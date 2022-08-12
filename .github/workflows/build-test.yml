@@ -124,7 +124,7 @@ jobs:
       - name: golangci-lint in SC
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.47.2
+          version: v1.48.0
           working-directory: contracts/wasm
           args: --fix --timeout 5m0s --path-prefix=""
           skip-pkg-cache: true
@@ -132,6 +132,6 @@ jobs:
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.47.2
+          version: v1.48.0
           args: --timeout 5m0s
           skip-pkg-cache: true
