@@ -336,8 +336,6 @@ func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Fund
 	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
 	_, ok := err.(*isc.VMError)
 	require.False(e.T, ok)
-	// TODO this ^ will fail, because the TX is currently being processed in the vm
-	// we need to reject it in the JSON RPC
 }
 
 func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
