@@ -63,7 +63,7 @@ func NewChainOriginTransaction(
 		outputs = append(outputs, remainderOutput)
 	}
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.L1.Protocol.NetworkID(),
+		NetworkID: parameters.L1().Protocol.NetworkID(),
 		Inputs:    txInputs.UTXOInputs(),
 		Outputs:   outputs,
 	}

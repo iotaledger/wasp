@@ -18,10 +18,7 @@ var addressCmd = &cobra.Command{
 		log.Printf("Address index %d\n", addressIndex)
 		log.Verbosef("  Private key: %s\n", wallet.KeyPair.GetPrivateKey().String())
 		log.Verbosef("  Public key:  %s\n", wallet.KeyPair.GetPublicKey().String())
-		if parameters.L1 == nil {
-			config.L1Client() // this will fill parameters.L1 with data from the L1 node
-		}
-		log.Printf("  Address:     %s\n", wallet.Address().Bech32(parameters.L1.Protocol.Bech32HRP))
+		log.Printf("  Address:     %s\n", wallet.Address().Bech32(parameters.L1().Protocol.Bech32HRP))
 	},
 }
 
@@ -37,7 +34,7 @@ var balanceCmd = &cobra.Command{
 		log.Check(err)
 
 		log.Printf("Address index %d\n", addressIndex)
-		log.Printf("  Address: %s\n", address.Bech32(parameters.L1.Protocol.Bech32HRP))
+		log.Printf("  Address: %s\n", address.Bech32(parameters.L1().Protocol.Bech32HRP))
 		log.Printf("  Balance:\n")
 		if log.VerboseFlag {
 			printOutputsByOutputID(outs)

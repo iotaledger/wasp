@@ -69,7 +69,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 			return nil, fmt.Errorf("node is not authenticated")
 		}
 
-		backend := newWaspBackend(chain, nodePubKey, parameters.L1.BaseToken)
+		backend := newWaspBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 		var evmChainID uint16
 		{

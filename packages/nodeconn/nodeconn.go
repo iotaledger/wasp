@@ -6,7 +6,6 @@
 //   - Protocol details.
 //   - Block reattachments and promotions.
 //   - Management of PoW.
-//
 package nodeconn
 
 import (
@@ -46,12 +45,12 @@ type nodeConn struct {
 var _ chain.NodeConnection = &nodeConn{}
 
 func setL1ProtocolParams(info *nodeclient.InfoResponse) {
-	parameters.L1 = &parameters.L1Params{
+	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
 		Protocol:           &info.Protocol,
 		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
-	}
+	})
 }
 
 func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
@@ -249,13 +248,19 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	if err != nil {
 		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
-	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1.Protocol)
+	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
+	blockID, err := block.ID()
+	if err == nil {
+		nc.log.Infof("Posted blockID %v", blockID.ToHex())
+	} else {
+		nc.log.Warnf("Posted block; failed to calculate its id: %v", err)
+	}
 	txID, err := tx.ID()
 	if err == nil {
-		nc.log.Debugf("Posted transaction id %v", isc.TxID(txID))
+		nc.log.Infof("Posted transaction id %v", isc.TxID(txID))
 	} else {
 		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
 	}
@@ -313,7 +318,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion Block: %w", err)
 			}
-			_, err = nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1.Protocol)
+			_, err = nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
 			if err != nil {
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}
@@ -332,14 +337,17 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 	}
 }
 
-const refreshTipsDuringPoWInterval = 5 * time.Second
+const (
+	refreshTipsDuringPoWInterval = 5 * time.Second
+	parallelWorkers              = 1
+)
 
 func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 	if nc.config.UseRemotePoW {
 		// remote PoW: Take the Block, clear parents, clear nonce, send to node
 		block.Parents = nil
 		block.Nonce = 0
-		_, err := nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1.Protocol)
+		_, err := nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 		return err
 	}
 	// do the PoW
@@ -352,10 +360,16 @@ func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 		return resp.Tips()
 	}
 
-	return doPoW(
+	targetScore := float64(parameters.L1().Protocol.MinPoWScore)
+
+	_, err := doPoW(
 		ctx,
 		block,
+		targetScore,
+		parallelWorkers,
 		refreshTipsDuringPoWInterval,
 		refreshTipsFn,
 	)
+
+	return err
 }

@@ -79,6 +79,16 @@ func (a *Allowance) SpendFromBudget(toSpend *Allowance) bool {
 	return true
 }
 
+func AllowanceFromBytes(b []byte) (*Allowance, error) {
+	return AllowanceFromMarshalUtil(marshalutil.New(b))
+}
+
+func (a *Allowance) Bytes() []byte {
+	mu := marshalutil.New()
+	a.WriteToMarshalUtil(mu)
+	return mu.Bytes()
+}
+
 func (a *Allowance) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteBool(a.IsEmpty())
 	if a.IsEmpty() {

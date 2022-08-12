@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//---------------------------------------------
-//Tests if state manager is started and initialized correctly
+// ---------------------------------------------
+// Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
 	env := NewMockedEnv(2, t, false)
 	node0 := NewMockedNode(env, 0, NewStateManagerTimers())

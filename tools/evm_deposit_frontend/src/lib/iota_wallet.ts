@@ -110,13 +110,13 @@ export class IotaWallet {
   }
 
   public async requestFunds(): Promise<bigint> {
-    let addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.address.toAddress(), this.nodeInfo.protocol.bech32HRP);
+    let addressBech32 = Bech32Helper.toBech32(ED25519_ADDRESS_TYPE, this.address.toAddress(), this.nodeInfo.protocol.bech32Hrp);
 
     await this.sendFaucetRequest(addressBech32);
     const output = await this.getFaucetRequestOutputID(addressBech32);
     const balance = await this.getBalance(output.items[0])
 
-    if (balance == 0n) {
+    if (balance == BigInt(0)) {
       throw new Error("Requested balance is zero");
     }
 

@@ -174,7 +174,7 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 type ISCAllowance struct {
 	BaseTokens uint64
 	Tokens     []NativeToken
-	NFTs       []NFTID
+	Nfts       []NFTID
 }
 
 func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
@@ -189,7 +189,7 @@ func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	return ISCAllowance{
 		BaseTokens: a.Assets.BaseTokens,
 		Tokens:     tokens,
-		NFTs:       nfts,
+		Nfts:       nfts,
 	}
 }
 
@@ -198,8 +198,8 @@ func (a ISCAllowance) Unwrap() *isc.Allowance {
 	for i, t := range a.Tokens {
 		tokens[i] = t.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.NFTs))
-	for i, id := range a.NFTs {
+	nfts := make([]iotago.NFTID, len(a.Nfts))
+	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}
 	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
@@ -370,38 +370,6 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	ret := isc.SendOptions{
 		Timelock:   timeLock,
 		Expiration: i.Expiration.Unwrap(),
-	}
-
-	return ret
-}
-
-type ISCRequestParameters struct {
-	TargetAddress               L1Address
-	FungibleTokens              ISCFungibleTokens
-	AdjustMinimumStorageDeposit bool
-	Metadata                    ISCSendMetadata
-	SendOptions                 ISCSendOptions
-}
-
-func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParameters {
-	ret := ISCRequestParameters{
-		TargetAddress:               WrapL1Address(parameters.TargetAddress),
-		FungibleTokens:              WrapISCFungibleTokens(*parameters.FungibleTokens),
-		AdjustMinimumStorageDeposit: parameters.AdjustToMinimumStorageDeposit,
-		Metadata:                    WrapISCSendMetadata(*parameters.Metadata),
-		SendOptions:                 WrapISCSendOptions(parameters.Options),
-	}
-
-	return ret
-}
-
-func (i *ISCRequestParameters) Unwrap() isc.RequestParameters {
-	ret := isc.RequestParameters{
-		TargetAddress:                 i.TargetAddress.MustUnwrap(),
-		FungibleTokens:                i.FungibleTokens.Unwrap(),
-		AdjustToMinimumStorageDeposit: i.AdjustMinimumStorageDeposit,
-		Metadata:                      i.Metadata.Unwrap(),
-		Options:                       i.SendOptions.Unwrap(),
 	}
 
 	return ret

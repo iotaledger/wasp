@@ -16,9 +16,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-//
 // PeeringNetwork represents a global view of the mocked network.
-//
 type PeeringNetwork struct {
 	nodes     []*peeringNode
 	providers []*peeringNetworkProvider
@@ -82,11 +80,9 @@ func (p *PeeringNetwork) Close() error {
 	return nil
 }
 
-//
 // peeringNode stands for a mock of a node in a fake network.
 // It does NOT implement the peering.PeerSender, because the source
 // node should be known for the sender.
-//
 type peeringNode struct {
 	netID    string
 	identity *cryptolib.KeyPair
@@ -154,9 +150,7 @@ func (n *peeringNode) Close() error {
 	return nil
 }
 
-//
 // peeringNetworkProvider to be used in tests as a mock for the peering network.
-//
 type peeringNetworkProvider struct {
 	self    *peeringNode
 	network *PeeringNetwork
@@ -280,10 +274,8 @@ func (p *peeringNetworkProvider) senderByNetID(peerNetID string) *peeringSender 
 	return nil
 }
 
-//
 // peeringSender represents a local view of a remote node
 // and implements the peering.PeerSender interface.
-//
 type peeringSender struct {
 	node        *peeringNode
 	netProvider *peeringNetworkProvider

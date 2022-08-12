@@ -98,7 +98,7 @@ func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
 		s.Err = err
 		return nil
 	}
-	if hrp != parameters.L1.Protocol.Bech32HRP {
+	if hrp != parameters.L1().Protocol.Bech32HRP {
 		s.Err = errors.Errorf("Invalid protocol prefix: %s", string(hrp))
 		return nil
 	}
@@ -110,7 +110,7 @@ func (s *WasmClientContext) fnUtilsBech32Encode(args []byte) []byte {
 	var cvt wasmhost.WasmConvertor
 	scAddress := wasmtypes.AddressFromBytes(args)
 	addr := cvt.IscAddress(&scAddress)
-	return []byte(addr.Bech32(parameters.L1.Protocol.Bech32HRP))
+	return []byte(addr.Bech32(parameters.L1().Protocol.Bech32HRP))
 }
 
 func (s *WasmClientContext) fnUtilsHashName(args []byte) []byte {

@@ -164,7 +164,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
 
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(o)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(o)
 	if o.Deposit() < storageDeposit {
 		panic(xerrors.Errorf("%v: available %d < required %d base tokens",
 			transaction.ErrNotEnoughBaseTokensForStorageDeposit, o.Deposit(), storageDeposit))
@@ -194,7 +194,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state
 	txb.MustBalanced("BuildTransactionEssence IN")
 	inputs, inputIDs := txb.inputs()
 	essence := &iotago.TransactionEssence{
-		NetworkID: parameters.L1.Protocol.NetworkID(),
+		NetworkID: parameters.L1().Protocol.NetworkID(),
 		Inputs:    inputIDs.UTXOInputs(),
 		Outputs:   txb.outputs(l1Commitment),
 		Payload:   nil,

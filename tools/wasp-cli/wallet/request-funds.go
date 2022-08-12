@@ -14,6 +14,6 @@ var requestFundsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		address := Load().Address()
 		log.Check(config.L1Client().RequestFunds(address))
-		log.Printf("Request funds for address %s: success\n", address.Bech32(parameters.L1.Protocol.Bech32HRP))
+		log.Printf("Request funds for address %s: success\n", address.Bech32(parameters.L1().Protocol.Bech32HRP))
 	},
 }

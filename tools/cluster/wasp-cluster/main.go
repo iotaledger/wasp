@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/spf13/pflag"
@@ -55,6 +58,10 @@ func main() {
 		check(err)
 	}
 
+	if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+		panic(err)
+	}
+
 	switch os.Args[1] {
 	case "init":
 		flags := pflag.NewFlagSet("init", pflag.ExitOnError)
@@ -81,7 +88,9 @@ func main() {
 			waspConfig,
 			l1.Config,
 		)
-		err := cluster.New(cmdName, clusterConfig, dataPath, nil).InitDataPath(*templatesPath, *forceRemove)
+		clusterLogger := logger.NewLogger(cmdName)
+		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		err := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger).InitDataPath(*templatesPath, *forceRemove)
 		check(err)
 
 	case "start":
@@ -133,7 +142,9 @@ func main() {
 			)
 		}
 
-		clu := cluster.New(cmdName, clusterConfig, dataPath, nil)
+		clusterLogger := logger.NewLogger(cmdName)
+		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger)
 
 		if *disposable {
 			check(clu.InitDataPath(*templatesPath, true))

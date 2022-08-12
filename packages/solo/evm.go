@@ -48,7 +48,7 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	ret, err := ch.CallView(evm.Contract.Name, evm.FuncGetChainID.Name)
 	require.NoError(ch.Env.T, err)
 	return jsonrpc.NewEVMChain(
-		newJSONRPCSoloBackend(ch, parameters.L1.BaseToken),
+		newJSONRPCSoloBackend(ch, parameters.L1().BaseToken),
 		evmtypes.MustDecodeChainID(ret.MustGet(evm.FieldResult)),
 	)
 }

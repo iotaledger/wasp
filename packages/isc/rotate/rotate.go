@@ -44,7 +44,7 @@ func MakeRotateStateControllerTransaction(
 		}
 	}
 	result := &iotago.TransactionEssence{
-		NetworkID: parameters.L1.Protocol.NetworkID(),
+		NetworkID: parameters.L1().Protocol.NetworkID(),
 		Inputs:    iotago.Inputs{chainInput.ID()},
 		Outputs:   iotago.Outputs{output},
 		Payload:   nil,

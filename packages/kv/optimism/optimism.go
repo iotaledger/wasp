@@ -176,8 +176,8 @@ const (
 
 // RetryOnStateInvalidated repeats function while it returns ErrorStateInvalidated
 // Optional parameters:
-//  - timeouts[0] - overall timeout
-//  - timeouts[1] - repeat delay
+//   - timeouts[0] - overall timeout
+//   - timeouts[1] - repeat delay
 func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error {
 	timeout := defaultRetryTimeout
 	if len(timeouts) >= 1 {

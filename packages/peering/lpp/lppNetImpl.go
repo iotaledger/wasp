@@ -4,18 +4,17 @@
 // Package lpp implements a peering.NetworkProvider based on the libp2p.
 //
 // The set of known peers is managed in several places:
-//  - TrustManager contains a registry of trusted peers and their pub keys.
-//    That's the main reference DB for the authentication. It is persistent.
-//  - libp2p.Peerstore -- loaded with addresses and public keys based on the
-//    TrustManager. It is used by the libp2p for address resolution and
-//    protocol negotiation.
-//  - In-memory copy of the trust DB in the netImpl struct (maps: peerNy*)
-//    with additional runtime data needed for a fast lookup of peers by
-//    their libp2p IDs, as well as for authentication etc.
+//   - TrustManager contains a registry of trusted peers and their pub keys.
+//     That's the main reference DB for the authentication. It is persistent.
+//   - libp2p.Peerstore -- loaded with addresses and public keys based on the
+//     TrustManager. It is used by the libp2p for address resolution and
+//     protocol negotiation.
+//   - In-memory copy of the trust DB in the netImpl struct (maps: peerNy*)
+//     with additional runtime data needed for a fast lookup of peers by
+//     their libp2p IDs, as well as for authentication etc.
 //
 // The main identification of a peer is its public key. The address (NetID)
 // may change over time (because of NAT, and similar reasons).
-//
 package lpp
 
 import (

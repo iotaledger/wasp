@@ -626,7 +626,7 @@ func TestDepositBaseTokens(t *testing.T) {
 			require.NoError(t, err)
 			rec := v.ch.LastReceipt()
 
-			storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(tx.Essence.Outputs[0])
+			storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(tx.Essence.Outputs[0])
 			t.Logf("byteCost = %d", storageDeposit)
 
 			adjusted := addBaseTokens
