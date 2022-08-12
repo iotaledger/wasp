@@ -34,7 +34,8 @@ const (
 
 // ParamEVM allows to pass init parameters to the EVM core contract, by decorating
 // them with a prefix. For example:
-//  ParamEVM(evm.FieldBlockKeepAmount)
+//
+//	ParamEVM(evm.FieldBlockKeepAmount)
 func ParamEVM(k kv.Key) kv.Key { return "evm" + k }
 
 // function names

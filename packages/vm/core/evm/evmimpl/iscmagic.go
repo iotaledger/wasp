@@ -330,6 +330,7 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 	return ret, remainingGas
 }
 
+//nolint:unparam
 func tryBaseCall(ctx isc.SandboxBase, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)

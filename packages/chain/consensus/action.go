@@ -534,6 +534,7 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request) *BatchProposal {
 }
 
 // receiveACS processed new ACS received from ACS consensus
+//
 //nolint:funlen
 func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	if c.acsSessionID != sessionID {
