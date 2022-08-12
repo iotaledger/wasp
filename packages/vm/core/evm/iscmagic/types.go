@@ -79,6 +79,9 @@ type L1Address struct {
 }
 
 func WrapL1Address(a iotago.Address) L1Address {
+	if a == nil {
+		return L1Address{Data: []byte{}}
+	}
 	return L1Address{Data: isc.BytesFromAddress(a)}
 }
 
@@ -178,6 +181,9 @@ type ISCAllowance struct {
 }
 
 func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
+	if a == nil {
+		return WrapISCAllowance(isc.NewEmptyAllowance())
+	}
 	tokens := make([]NativeToken, len(a.Assets.Tokens))
 	for i, t := range a.Assets.Tokens {
 		tokens[i] = WrapNativeToken(t)
@@ -307,6 +313,12 @@ type ISCExpiration struct {
 }
 
 func WrapISCExpiration(data *isc.Expiration) ISCExpiration {
+	if data == nil {
+		return ISCExpiration{
+			Time:          0,
+			ReturnAddress: WrapL1Address(nil),
+		}
+	}
 	var expiryTime int64
 
 	if !data.Time.IsZero() {
