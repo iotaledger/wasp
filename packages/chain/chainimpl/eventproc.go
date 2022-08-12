@@ -318,7 +318,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req isc.OffLedgerRequest) {
 				return
 			}
 
-			func() {
+			shouldStop := func() bool {
 				// deep copy the list of peers that have the request (otherwise we get a pointer to the map instead)
 				c.offLedgerPeersHaveReqMutex.Lock()
 				defer c.offLedgerPeersHaveReqMutex.Unlock()
@@ -326,11 +326,16 @@ func (c *chainObj) broadcastOffLedgerRequest(req isc.OffLedgerRequest) {
 				peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
 				if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
 					// this node is part of the committee and the message has already been received by every other committee node
-					return
+					return true
 				}
 
 				sendMessage(peersThatHaveTheRequest)
+				return false
 			}()
+
+			if shouldStop {
+				return
+			}
 		}
 	}()
 }
