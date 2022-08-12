@@ -579,7 +579,7 @@ type NFTMintedInfo struct {
 	NFTID    iotago.NFTID
 }
 
-// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target“ account.
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target` account.
 // base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
