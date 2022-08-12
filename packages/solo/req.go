@@ -43,10 +43,11 @@ type CallParams struct {
 
 // NewCallParams creates structure which wraps in one object call parameters, used in PostRequestSync and callViewFull
 // calls:
-//  - 'scName' is a a name of the target smart contract
-//  - 'funName' is a name of the target entry point (the function) of he smart contract program
-//  - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
+//   - 'scName' is a a name of the target smart contract
+//   - 'funName' is a name of the target entry point (the function) of he smart contract program
+//   - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
+//
 // With the WithTransfers the CallParams structure may be complemented with attached ftokens
 // sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
@@ -315,14 +316,15 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *cryptolib.K
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
-//  - creates a request transaction with the request block on it. The sigScheme is used to
-//    sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
-//  - adds request transaction to UTXODB
-//  - runs the request in the VM. It results in new updated virtual state and a new transaction
-//    which anchors the state.
-//  - adds the resulting transaction to UTXODB
-//  - posts requests, contained in the resulting transaction to backlog queues of respective chains
-//  - returns the result of the call to the smart contract's entry point
+//   - creates a request transaction with the request block on it. The sigScheme is used to
+//     sign the inputs of the transaction or OriginatorKeyPair is used if parameter is nil
+//   - adds request transaction to UTXODB
+//   - runs the request in the VM. It results in new updated virtual state and a new transaction
+//     which anchors the state.
+//   - adds the resulting transaction to UTXODB
+//   - posts requests, contained in the resulting transaction to backlog queues of respective chains
+//   - returns the result of the call to the smart contract's entry point
+//
 // Note that in real network of Wasp nodes (the committee) posting the transaction is completely
 // asynchronous, i.e. result of the call is not available to the originator of the post.
 //

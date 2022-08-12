@@ -564,7 +564,7 @@ func waitForAPIReady(initOk chan<- bool, apiURL string) {
 	go func() {
 		for {
 			<-ticker.C
-			rsp, err := http.Get(infoEndpointURL) //nolint:gosec
+			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
 			if err != nil {
 				fmt.Printf("Error Polling node API %s ready status: %v\n", apiURL, err)
 				continue

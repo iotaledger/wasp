@@ -6,7 +6,6 @@
 //   - Protocol details.
 //   - Block reattachments and promotions.
 //   - Management of PoW.
-//
 package nodeconn
 
 import (

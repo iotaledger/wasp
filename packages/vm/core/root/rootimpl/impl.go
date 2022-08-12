@@ -112,10 +112,10 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 // If call to the constructor returns an error or an other error occurs,
 // removes smart contract form the registry as if it was never attempted to deploy
 // Inputs:
-// - ParamName string, the unique name of the contract in the chain. Later used as hname
-// - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
+//   - ParamName string, the unique name of the contract in the chain. Later used as hname
+//   - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
-// - ParamDescription string is an arbitrary string. Defaults to "N/A"
+//   - ParamDescription string is an arbitrary string. Defaults to "N/A"
 func deployContract(ctx isc.Sandbox) dict.Dict {
 	ctx.Log().Debugf("root.deployContract.begin")
 	ctx.Requiref(isAuthorizedToDeploy(ctx), "root.deployContract: deploy not permitted for: %s", ctx.Caller().String())
@@ -152,7 +152,7 @@ func deployContract(ctx isc.Sandbox) dict.Dict {
 
 // grantDeployPermission grants permission to deploy contracts
 // Input:
-//  - ParamDeployer isc.AgentID
+//   - ParamDeployer isc.AgentID
 func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
@@ -166,7 +166,7 @@ func grantDeployPermission(ctx isc.Sandbox) dict.Dict {
 
 // revokeDeployPermission revokes permission to deploy contracts
 // Input:
-//  - ParamDeployer isc.AgentID
+//   - ParamDeployer isc.AgentID
 func revokeDeployPermission(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
