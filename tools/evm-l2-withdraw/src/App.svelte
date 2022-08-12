@@ -12,8 +12,14 @@
 
   import iscAbiAsText from "../../../packages/vm/core/evm/iscmagic/ISC.abi?raw";
 
-  const waspAddrBinaryFromBech32 = (bech32String) => {
-    let receiverAddr = Bech32Helper.addressFromBech32(bech32String, "rms");
+  const waspAddrBinaryFromBech32 = (bech32String: string) => {
+    // Depending on the network, the human readable part can change (tst, rms, ..). 
+    // - We need some kind of API that is not the direct Hornet node to fetch it..
+    // - Maybe over some EVM info route?
+    // For this PoC it should be enough to substr the first three chars.
+    let humanReadablePart = bech32String.substring(0, 3);
+
+    let receiverAddr = Bech32Helper.addressFromBech32(bech32String, humanReadablePart);
     let receiverAddrBinary = $web3.utils.hexToBytes(receiverAddr.pubKeyHash);
     //  // AddressEd25519 denotes an Ed25519 address.
     // AddressEd25519 AddressType = 0
@@ -102,7 +108,7 @@
   {:else}
     Connected to Chain {$chainId}<br /><br />
     <input
-      placeholder="rms..."
+      placeholder="L1 address starting with (rms/tst/...)"
       style="width: 500px;"
       bind:value={addrInput}
     /><br /><br />
