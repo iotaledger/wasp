@@ -47,7 +47,6 @@ func main() {
 }
 
 func graphDrawer(dir string) func(string, string, []string) {
-
 	return func(title, contract string, filenames []string) {
 		p := plot.New()
 

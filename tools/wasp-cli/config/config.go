@@ -62,7 +62,6 @@ func Init(rootCmd *cobra.Command) {
 			parameters.InitL1(params)
 		}
 	})
-
 }
 
 func Read() {

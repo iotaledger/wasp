@@ -125,7 +125,7 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
 	if ok {
 		return ret, remainingGas
 	}
@@ -296,7 +296,7 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, caller, input, gas, readOnly)
+	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
 	if ok {
 		return ret, remainingGas
 	}
@@ -330,7 +330,7 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 	return ret, remainingGas
 }
 
-func tryBaseCall(ctx isc.SandboxBase, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
+func tryBaseCall(ctx isc.SandboxBase, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
