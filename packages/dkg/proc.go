@@ -36,9 +36,7 @@ const (
 	rabinStep7CommitAndTerminate       = byte(7)
 )
 
-//
 // Stands for a DKG procedure instance on a particular node.
-//
 type proc struct {
 	dkgRef       string            // User supplied unique ID for this instance.
 	dkgID        peering.PeeringID // DKG procedure ID we are participating in.
@@ -200,9 +198,7 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 	}
 }
 
-//
 // rabinStep1R21SendDeals
-//
 func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -229,9 +225,7 @@ func (p *proc) rabinStep1R21SendDealsMakeResp(step byte, initRecv *peering.PeerM
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 
-//
 // rabinStep2R22SendResponses
-//
 func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -277,9 +271,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeResp(step byte, initRecv *peering.P
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 
-//
 // rabinStep3R23SendJustifications
-//
 func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -330,9 +322,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeResp(step byte, initRecv *peer
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 
-//
 // rabinStep4R4SendSecretCommits
-//
 func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -401,9 +391,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeResp(step byte, initRecv *peerin
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 
-//
 // rabinStep5R5SendComplaintCommits
-//
 func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -460,9 +448,7 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeResp(step byte, initRecv *pee
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
 }
 
-//
 // rabinStep6R6SendReconstructCommits
-//
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -634,9 +620,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, pubShareMsg), nil
 }
 
-//
 // rabinStep7CommitAndTerminate
-//
 func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, kst keySetType, initRecv *peering.PeerMessageGroupIn, prevMsgs map[uint16]*peering.PeerMessageData) (map[uint16]*peering.PeerMessageData, error) {
 	return make(map[uint16]*peering.PeerMessageData), nil
 }

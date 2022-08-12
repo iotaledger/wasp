@@ -88,9 +88,9 @@ func main() {
 			waspConfig,
 			l1.Config,
 		)
-		log := logger.NewLogger(cmdName)
-		nodeconn.NewL1Client(clusterConfig.L1, log) // indirectly initializes parameters.L1
-		err := cluster.New(cmdName, clusterConfig, dataPath, nil, log).InitDataPath(*templatesPath, *forceRemove)
+		clusterLogger := logger.NewLogger(cmdName)
+		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		err := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger).InitDataPath(*templatesPath, *forceRemove)
 		check(err)
 
 	case "start":
@@ -142,9 +142,9 @@ func main() {
 			)
 		}
 
-		log := logger.NewLogger(cmdName)
-		nodeconn.NewL1Client(clusterConfig.L1, log) // indirectly initializes parameters.L1
-		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, log)
+		clusterLogger := logger.NewLogger(cmdName)
+		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger)
 
 		if *disposable {
 			check(clu.InitDataPath(*templatesPath, true))

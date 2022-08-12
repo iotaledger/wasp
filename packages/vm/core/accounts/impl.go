@@ -162,7 +162,9 @@ func withdraw(ctx isc.Sandbox) dict.Dict {
 
 // harvest moves all the L2 balances of chain commmon account to chain owner's account
 // Params:
-//   ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
+//
+//	ParamForceMinimumBaseTokens: specify the number of BaseTokens left on the common account will be not less than MinimumBaseTokensOnCommonAccount constant
+//
 // TODO refactor owner of the chain moves all tokens balance the common account to its own account
 func harvest(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()

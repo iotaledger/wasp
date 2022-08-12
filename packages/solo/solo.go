@@ -204,14 +204,16 @@ func (env *Solo) NewChain() *Chain {
 // If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
 // ValidatorFeeTarget will be set to OriginatorAgentID, and can be changed after initialization.
 // To deploy a chain instance the following steps are performed:
-//  - chain signature scheme (private key), chain address and chain ID are created
-//  - empty virtual state is initialized
-//  - origin transaction is created by the originator and added to the UTXODB
-//  - 'init' request transaction to the 'root' contract is created and added to UTXODB
-//  - backlog processing threads (goroutines) are started
-//  - VM processor cache is initialized
-//  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
+//   - chain signature scheme (private key), chain address and chain ID are created
+//   - empty virtual state is initialized
+//   - origin transaction is created by the originator and added to the UTXODB
+//   - 'init' request transaction to the 'root' contract is created and added to UTXODB
+//   - backlog processing threads (goroutines) are started
+//   - VM processor cache is initialized
+//   - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
+//
 // Upon return, the chain is fully functional to process requests
+//
 //nolint:funlen
 func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens uint64, name string, initOptions ...InitChainOptions) (*Chain, *iotago.Transaction, *iotago.Transaction) {
 	env.logger.Debugf("deploying new chain '%s'", name)
@@ -577,7 +579,7 @@ type NFTMintedInfo struct {
 	NFTID    iotago.NFTID
 }
 
-// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target`` account.
+// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target` account.
 // base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
