@@ -101,8 +101,11 @@
     <button on:click={connectToWallet}>Connect to Wallet</button>
   {:else}
     Connected to Chain {$chainId}<br /><br />
-    <input placeholder="rms..." style="width: 500px;" value={addrInput} /><br
-    /><br />
+    <input
+      placeholder="rms..."
+      style="width: 500px;"
+      bind:value={addrInput}
+    /><br /><br />
     <button on:click={onWithdrawClick}>Withdraw</button><br />
   {/if}
 </main>
