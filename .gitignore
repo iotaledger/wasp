@@ -26,3 +26,5 @@ goshimmer.log
 
 *.trie
 *.snapshot
+snapshot
+gascalibration
