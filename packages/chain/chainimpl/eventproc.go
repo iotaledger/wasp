@@ -226,7 +226,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 		cmtPeerGroup.Detach(attachID)
 	}
 	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
+	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.dssNode, c.wal)
 	c.setCommittee(cmt)
 	return nil
 }

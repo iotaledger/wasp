@@ -19,7 +19,6 @@ import (
 	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
-	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 	"golang.org/x/xerrors"
@@ -675,18 +674,18 @@ func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
 
 func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error) {
 	var err error
-	var dssPublicShareBytes []byte
-	if dssPublicShareBytes, err = p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
-		return nil, err
-	}
+	// var dssPublicShareBytes []byte
+	// if dssPublicShareBytes, err = p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
+	// 	return nil, err
+	// }
 	var blsPublicShareBytes []byte
 	if blsPublicShareBytes, err = p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
-	var dssSignature *dss.PartialSig
-	if dssSignature, err = p.dkShare.DSSSignShare(dssPublicShareBytes); err != nil {
-		return nil, err
-	}
+	// var dssSignature *dss.PartialSig // TODO: we have to add another DKG here to produce a nonce.
+	// if dssSignature, err = p.dkShare.DSSSignShare(dssPublicShareBytes); err != nil {
+	// 	return nil, err
+	// }
 	var blsSignature []byte
 	if blsSignature, err = p.dkShare.BLSSign(blsPublicShareBytes); err != nil {
 		return nil, err
@@ -696,7 +695,7 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 		sharedAddress:   p.dkShare.GetAddress(),
 		edSharedPublic:  p.dkShare.DSSSharedPublic(),
 		edPublicShare:   p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()],
-		edSignature:     dssSignature.Signature,
+		edSignature:     []byte{}, // dssSignature.Signature, // TODO: Restore this.
 		blsSharedPublic: p.dkShare.BLSSharedPublic(),
 		blsPublicShare:  p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()],
 		blsSignature:    blsSignature,

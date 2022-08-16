@@ -9,5 +9,5 @@ import (
 )
 
 func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.AsString())
+	return gpa.NodeID(pubKey.String())
 }

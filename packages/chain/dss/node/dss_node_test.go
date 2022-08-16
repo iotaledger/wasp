@@ -84,7 +84,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 	dkShares := longTermDKG(dkgType, t, peerIdentities, n, f, log)
 	//
 	//	Start the DSS instances.
-	key := hashing.HashData([]byte{1, 2, 3})
+	key := hashing.HashData([]byte{1, 2, 3}).String()
 	outPartChs := make([]chan []int, len(dssNodes))
 	outPartVals := make([][]int, len(dssNodes))
 	outSigChs := make([]chan []byte, len(dssNodes))
@@ -156,7 +156,7 @@ func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f
 	}
 	for i := range nodeIDs {
 		kyberEdDSSA := eddsa.EdDSA{}
-		nodeIDs[i] = gpa.NodeID(peerIdentities[i].GetPublicKey().AsString())
+		nodeIDs[i] = gpa.NodeID(peerIdentities[i].GetPublicKey().String())
 		require.NoError(t, kyberEdDSSA.UnmarshalBinary(peerIdentities[i].GetPrivateKey().AsBytes()))
 		nodePKs[nodeIDs[i]] = kyberEdDSSA.Public
 		nodeSKs[nodeIDs[i]] = kyberEdDSSA.Secret
@@ -235,7 +235,7 @@ func (f *fakeDKShare) DSSSharedPublic() kyber.Point {
 	return f.dssSharedPublic
 }
 
-func (f *fakeDKShare) DSSSignShare(data []byte) (*dss.PartialSig, error) {
+func (f *fakeDKShare) DSSSignShare(data []byte, nonce tcrypto.SecretShare) (*dss.PartialSig, error) {
 	panic(xerrors.New("not important"))
 }
 
@@ -243,7 +243,7 @@ func (f *fakeDKShare) DSSVerifySigShare(data []byte, sigShare *dss.PartialSig) e
 	panic(xerrors.New("not important"))
 }
 
-func (f *fakeDKShare) DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error) {
+func (f *fakeDKShare) DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte, nonce tcrypto.SecretShare) ([]byte, error) {
 	panic(xerrors.New("not important"))
 }
 

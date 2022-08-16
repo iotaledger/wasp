@@ -31,27 +31,27 @@ func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	}
 }
 
-func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
-	c.eventSignedResultMsgPipe.In() <- msg
-}
+// func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
+// 	c.eventSignedResultMsgPipe.In() <- msg
+// }
 
-func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
-	c.log.Debugf("handleSignedResultMsg message received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
-	c.receiveSignedResult(msg)
-	c.takeAction()
-}
+// func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
+// 	c.log.Debugf("handleSignedResultMsg message received: from sender %d, hash=%s, chain input id=%v",
+// 		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
+// 	c.receiveSignedResult(msg)
+// 	c.takeAction()
+// }
 
-func (c *consensus) EnqueueSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
-	c.eventSignedResultAckMsgPipe.In() <- msg
-}
+// func (c *consensus) EnqueueSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
+// 	c.eventSignedResultAckMsgPipe.In() <- msg
+// }
 
-func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
-	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
-	c.receiveSignedResultAck(msg)
-	c.takeAction()
-}
+// func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
+// 	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
+// 		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
+// 	c.receiveSignedResultAck(msg)
+// 	c.takeAction()
+// }
 
 func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclusionState string) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.TxInclusionStateMsg{

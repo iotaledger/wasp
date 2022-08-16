@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
@@ -32,14 +31,14 @@ type dssInstance struct {
 
 type dssSeriesImpl struct {
 	node     *dssNodeImpl
-	key      hashing.HashValue
+	key      string
 	dssInsts map[int]*dssInstance
 	dkShare  tcrypto.DKShare
 	peerPubs map[gpa.NodeID]*cryptolib.PublicKey
 	peerNIDs []gpa.NodeID // Index to NodeID mapping.
 }
 
-func newSeries(node *dssNodeImpl, key hashing.HashValue, dkShare tcrypto.DKShare) *dssSeriesImpl {
+func newSeries(node *dssNodeImpl, key string, dkShare tcrypto.DKShare) *dssSeriesImpl {
 	dkSharePubKeys := dkShare.GetNodePubKeys()
 	nodeIndexToPeerNIDs := make([]gpa.NodeID, len(dkSharePubKeys))
 	nodeIDsToPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
@@ -205,10 +204,15 @@ func (s *dssSeriesImpl) tryReportOutput(dssInst *dssInstance) {
 }
 
 func (s *dssSeriesImpl) decidedIndexProposals(index int, decidedIndexProposals [][]int, messageToSign []byte) error {
+	if len(decidedIndexProposals) != len(s.peerNIDs) {
+		return xerrors.Errorf("DSS expected len(decidedIndexProposals)=len(committee)")
+	}
 	if dssInst, ok := s.dssInsts[index]; ok {
 		mappedIndexProposals := map[gpa.NodeID][]int{}
 		for i := range decidedIndexProposals {
-			mappedIndexProposals[s.peerNIDs[i]] = decidedIndexProposals[i]
+			if decidedIndexProposals[i] != nil {
+				mappedIndexProposals[s.peerNIDs[i]] = decidedIndexProposals[i]
+			}
 		}
 		s.sendMessages(dssInst.asGPA.NestedMessage(dssInst.inst.NewMsgDecided(mappedIndexProposals, messageToSign)), index)
 		s.tryReportOutput(dssInst)

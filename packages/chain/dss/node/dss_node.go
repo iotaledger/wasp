@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3/suites"
@@ -35,9 +34,9 @@ import (
 )
 
 type DSSNode interface {
-	Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error
-	DecidedIndexProposals(key hashing.HashValue, index int, decidedIndexProposals [][]int, messageToSign []byte) error
-	StatusString(key hashing.HashValue, index int) string
+	Start(key string, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error
+	DecidedIndexProposals(key string, index int, decidedIndexProposals [][]int, messageToSign []byte) error
+	StatusString(key string, index int) string
 	Close()
 }
 
@@ -53,8 +52,8 @@ type dssNodeImpl struct {
 	netAttach interface{}
 	peeringID *peering.PeeringID
 	nid       *cryptolib.KeyPair
-	series    map[hashing.HashValue]*dssSeriesImpl
-	seriesBuf map[hashing.HashValue]map[int][]*recvMsg
+	series    map[string]*dssSeriesImpl
+	seriesBuf map[string]map[int][]*recvMsg
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	log       *logger.Logger
@@ -71,8 +70,8 @@ func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptol
 		netAttach: nil, // Set bellow.
 		peeringID: peeringID,
 		nid:       nid,
-		series:    map[hashing.HashValue]*dssSeriesImpl{},
-		seriesBuf: map[hashing.HashValue]map[int][]*recvMsg{},
+		series:    map[string]*dssSeriesImpl{},
+		seriesBuf: map[string]map[int][]*recvMsg{},
 		ctx:       ctx,
 		ctxCancel: ctcCancel,
 		log:       log,
@@ -109,7 +108,7 @@ func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptol
 	return n
 }
 
-func (n *dssNodeImpl) Start(key hashing.HashValue, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error {
+func (n *dssNodeImpl) Start(key string, index int, dkShare tcrypto.DKShare, partCB func([]int), sigCB func([]byte)) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	if _, ok := n.series[key]; !ok {
@@ -119,7 +118,7 @@ func (n *dssNodeImpl) Start(key hashing.HashValue, index int, dkShare tcrypto.DK
 	return n.series[key].start(index, partCB, sigCB)
 }
 
-func (n *dssNodeImpl) DecidedIndexProposals(key hashing.HashValue, index int, decidedIndexProposals [][]int, messageToSign []byte) error {
+func (n *dssNodeImpl) DecidedIndexProposals(key string, index int, decidedIndexProposals [][]int, messageToSign []byte) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	if series, ok := n.series[key]; ok {
@@ -128,7 +127,7 @@ func (n *dssNodeImpl) DecidedIndexProposals(key hashing.HashValue, index int, de
 	return xerrors.Errorf("DSS series for key=%v not found", key)
 }
 
-func (n *dssNodeImpl) StatusString(key hashing.HashValue, index int) string {
+func (n *dssNodeImpl) StatusString(key string, index int) string {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	return n.series[key].statusString(index)
@@ -138,7 +137,7 @@ func (n *dssNodeImpl) Close() {
 	n.ctxCancel()
 }
 
-func (n *dssNodeImpl) recv(key hashing.HashValue, index int, msgData []byte, sender gpa.NodeID) {
+func (n *dssNodeImpl) recv(key string, index int, msgData []byte, sender gpa.NodeID) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	if _, ok := n.series[key]; !ok {
@@ -148,7 +147,7 @@ func (n *dssNodeImpl) recv(key hashing.HashValue, index int, msgData []byte, sen
 	n.series[key].recvMessage(index, msgData, sender)
 }
 
-func (n *dssNodeImpl) saveToBuf(key hashing.HashValue, index int, msgData []byte, sender gpa.NodeID) {
+func (n *dssNodeImpl) saveToBuf(key string, index int, msgData []byte, sender gpa.NodeID) {
 	if _, ok := n.seriesBuf[key]; !ok {
 		n.seriesBuf[key] = map[int][]*recvMsg{}
 	}
@@ -158,7 +157,7 @@ func (n *dssNodeImpl) saveToBuf(key hashing.HashValue, index int, msgData []byte
 	n.seriesBuf[key][index] = append(n.seriesBuf[key][index], &recvMsg{sender, msgData})
 }
 
-func (n *dssNodeImpl) recvFromBuf(key hashing.HashValue) {
+func (n *dssNodeImpl) recvFromBuf(key string) {
 	indexes, ok := n.seriesBuf[key]
 	if !ok {
 		return

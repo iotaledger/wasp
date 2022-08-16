@@ -11,7 +11,7 @@ package chain
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type LocalView interface {
@@ -22,13 +22,13 @@ type LocalView interface {
 	GetBaseAliasOutputID() *iotago.OutputID
 	//
 	// Corresponds to the `ao_received` event in the specification.
-	AliasOutputReceived(confirmed *iscp.AliasOutputWithID)
+	AliasOutputReceived(confirmed *isc.AliasOutputWithID)
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
-	AliasOutputRejected(rejected *iscp.AliasOutputWithID)
+	AliasOutputRejected(rejected *isc.AliasOutputWithID)
 	//
 	// Corresponds to the `tx_posted` event in the specification.
-	AliasOutputPublished(consumed, published *iscp.AliasOutputWithID)
+	AliasOutputPublished(consumed, published *isc.AliasOutputWithID)
 }
 
 type localViewEntry struct {
@@ -61,7 +61,7 @@ func (lvi *localViewImpl) GetBaseAliasOutputID() *iotago.OutputID {
 
 // Return latest AO to be used as an input for the following TX.
 // nil means we have to wait: either we have no AO, or we have some rejections.
-func (lvi *localViewImpl) AliasOutputReceived(confirmed *iscp.AliasOutputWithID) {
+func (lvi *localViewImpl) AliasOutputReceived(confirmed *isc.AliasOutputWithID) {
 	foundIdx := -1
 	for i := range lvi.entries {
 		if lvi.entries[i].outputID == confirmed.OutputID() {
@@ -84,7 +84,7 @@ func (lvi *localViewImpl) AliasOutputReceived(confirmed *iscp.AliasOutputWithID)
 
 // Mark the specified AO as rejected.
 // Trim the suffix of rejected AOs.
-func (lvi *localViewImpl) AliasOutputRejected(rejected *iscp.AliasOutputWithID) {
+func (lvi *localViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) {
 	rejectedIdx := -1
 	remainingRejected := true
 	for i := range lvi.entries {
@@ -105,7 +105,7 @@ func (lvi *localViewImpl) AliasOutputRejected(rejected *iscp.AliasOutputWithID) 
 	}
 }
 
-func (lvi *localViewImpl) AliasOutputPublished(consumed, published *iscp.AliasOutputWithID) {
+func (lvi *localViewImpl) AliasOutputPublished(consumed, published *isc.AliasOutputWithID) {
 	if len(lvi.entries) == 0 {
 		// Have we done reset recently?
 		// Just ignore this call, it is outdated.

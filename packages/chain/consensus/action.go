@@ -27,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +40,7 @@ func (c *consensus) takeAction() {
 
 	c.proposeBatchIfNeeded()
 	c.runVMIfNeeded()
-	c.broadcastSignedResultIfNeeded()
+	// c.broadcastSignedResultIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
 	c.pullInclusionStateIfNeeded()
@@ -70,13 +69,17 @@ func (c *consensus) proposeBatchIfNeeded() {
 		c.log.Debugf("proposeBatch not needed: time data hasn't been received yet")
 		return
 	}
+	if c.dssIndexProposal == nil {
+		c.log.Debugf("proposeBatch not needed: dss nonce proposals are not ready yet")
+		return
+	}
 	reqs := c.mempool.ReadyNow(c.timeData)
 	if len(reqs) == 0 {
 		c.log.Debugf("proposeBatch not needed: no ready requests in mempool")
 		return
 	}
 	c.log.Debugf("proposeBatch needed: ready requests len = %d, requests: %+v", len(reqs), isc.ShortRequestIDsFromRequests(reqs))
-	proposal := c.prepareBatchProposal(reqs)
+	proposal := c.prepareBatchProposal(reqs, c.dssIndexProposal)
 	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
@@ -277,33 +280,33 @@ func (c *consensus) prepareVMTask(reqs []isc.Request) *vm.VMTask {
 	return task
 }
 
-func (c *consensus) broadcastSignedResultIfNeeded() {
-	if !c.workflow.IsVMResultSigned() {
-		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
-		return
-	}
-	acksReceived := len(c.resultSigAck)
-	acksNeeded := int(c.committee.Size() - 1)
-	if acksReceived >= acksNeeded {
-		c.log.Debugf("broadcastSignedResult not needed: acks received from %v peers, only %v needed", acksReceived, acksNeeded)
-		return
-	}
-	if time.Now().After(c.delaySendingSignedResult) {
-		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
-		msg := &messages.SignedResultMsg{
-			ChainInputID: c.stateOutput.ID(),
-			EssenceHash:  signedResult.EssenceHash,
-			SigShare:     signedResult.SigShare,
-		}
-		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
-		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
+// func (c *consensus) broadcastSignedResultIfNeeded() {
+// 	if !c.workflow.IsVMResultSigned() {
+// 		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
+// 		return
+// 	}
+// 	acksReceived := len(c.resultSigAck)
+// 	acksNeeded := int(c.committee.Size() - 1)
+// 	if acksReceived >= acksNeeded {
+// 		c.log.Debugf("broadcastSignedResult not needed: acks received from %v peers, only %v needed", acksReceived, acksNeeded)
+// 		return
+// 	}
+// 	if time.Now().After(c.delaySendingSignedResult) {
+// 		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
+// 		msg := &messages.SignedResultMsg{
+// 			ChainInputID: c.stateOutput.ID(),
+// 			EssenceHash:  signedResult.EssenceHash,
+// 			SigShare:     signedResult.SigShare,
+// 		}
+// 		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResult, util.MustBytes(msg), c.resultSigAck...)
+// 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
-		c.log.Debugf("broadcastSignedResult: broadcasted (except to %v): essence hash: %s, chain input %s",
-			c.resultSigAck, msg.EssenceHash.String(), isc.OID(msg.ChainInputID))
-	} else {
-		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
-	}
-}
+// 		c.log.Debugf("broadcastSignedResult: broadcasted (except to %v): essence hash: %s, chain input %s",
+// 			c.resultSigAck, msg.EssenceHash.String(), isc.OID(msg.ChainInputID))
+// 	} else {
+// 		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
+// 	}
+// }
 
 // checkQuorum when relevant check if quorum of signatures to the own calculated result is available
 // If so, it aggregates signatures and finalizes the transaction.
@@ -320,52 +323,54 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 		c.log.Debugf("checkQuorum not needed: vm result is not signed")
 		return
 	}
-	// must be not nil
-	ownHash := c.resultSignatures[c.committee.OwnPeerIndex()].EssenceHash
-	contributors := make([]uint16, 0, c.committee.Size())
-	for i, sig := range c.resultSignatures {
-		if sig == nil {
-			continue
-		}
-		if sig.EssenceHash == ownHash {
-			contributors = append(contributors, uint16(i))
-		} else {
-			c.log.Warnf("checkQuorum: wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
-		}
-	}
-	quorumReached := len(contributors) >= int(c.committee.Quorum())
-	c.log.Debugf("checkQuorum for essence hash %v:  contributors %+v, quorum %v reached: %v",
-		ownHash.String(), contributors, c.committee.Quorum(), quorumReached)
-	if !quorumReached {
-		return
-	}
-	sigSharesToAggregate := make([]*dss.PartialSig, len(contributors))
-	invalidSignatures := false
-	// TODO: can dss sig shares be verified separately?
-	for i, idx := range contributors {
-		/*msg, err := c.resultTxEssence.SigningMessage()
-		if err != nil {
-			c.log.Errorf("checkQuorum: cannot retrieve message to be signed: %v", err)
-			return
-		}
-		err = c.committee.DKShare().VerifySigShare(msg, c.resultSignatures[idx].SigShare)
-		if err != nil {
-			// TODO here we are ignoring wrong signatures. In general, it means it is an attack
-			//  In the future when each message will be signed by the peer's identity, the invalidity
-			//  of the BLS signature means the node is misbehaving and should be punished.
-			c.log.Warnf("checkQuorum: INVALID SIGNATURE from peer #%d: %v", i, err)
-			invalidSignatures = true
-		} else {*/
-		sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
-		//}
-	}
-	if invalidSignatures {
-		c.log.Errorf("checkQuorum: some signatures were invalid. Reset workflow")
-		c.resetWorkflow()
-		return
-	}
-	c.log.Debugf("checkQuorum: all signatures are valid")
-	tx, chainOutput, err := c.finalizeTransaction(sigSharesToAggregate)
+
+	// // must be not nil
+	// ownHash := c.resultSignatures[c.committee.OwnPeerIndex()].EssenceHash
+	// contributors := make([]uint16, 0, c.committee.Size())
+	// for i, sig := range c.resultSignatures {
+	// 	if sig == nil {
+	// 		continue
+	// 	}
+	// 	if sig.EssenceHash == ownHash {
+	// 		contributors = append(contributors, uint16(i))
+	// 	} else {
+	// 		c.log.Warnf("checkQuorum: wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
+	// 	}
+	// }
+	// quorumReached := len(contributors) >= int(c.committee.Quorum())
+	// c.log.Debugf("checkQuorum for essence hash %v:  contributors %+v, quorum %v reached: %v",
+	// 	ownHash.String(), contributors, c.committee.Quorum(), quorumReached)
+	// if !quorumReached {
+	// 	return
+	// }
+	// sigSharesToAggregate := make([]*dss.PartialSig, len(contributors))
+	// invalidSignatures := false
+	// // TODO: can dss sig shares be verified separately?
+	// for i, idx := range contributors {
+	// 	/*msg, err := c.resultTxEssence.SigningMessage()
+	// 	if err != nil {
+	// 		c.log.Errorf("checkQuorum: cannot retrieve message to be signed: %v", err)
+	// 		return
+	// 	}
+	// 	err = c.committee.DKShare().VerifySigShare(msg, c.resultSignatures[idx].SigShare)
+	// 	if err != nil {
+	// 		// TODO here we are ignoring wrong signatures. In general, it means it is an attack
+	// 		//  In the future when each message will be signed by the peer's identity, the invalidity
+	// 		//  of the BLS signature means the node is misbehaving and should be punished.
+	// 		c.log.Warnf("checkQuorum: INVALID SIGNATURE from peer #%d: %v", i, err)
+	// 		invalidSignatures = true
+	// 	} else {*/
+	// 	sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
+	// 	//}
+	// }
+	// if invalidSignatures {
+	// 	c.log.Errorf("checkQuorum: some signatures were invalid. Reset workflow")
+	// 	c.resetWorkflow()
+	// 	return
+	// }
+	// c.log.Debugf("checkQuorum: all signatures are valid")
+
+	tx, chainOutput, err := c.finalizeTransaction()
 	if err != nil {
 		c.log.Errorf("checkQuorum finalizeTransaction fail: %v", err)
 		return
@@ -504,7 +509,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
-func (c *consensus) prepareBatchProposal(reqs []isc.Request) *BatchProposal {
+func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexProposal []int) *BatchProposal {
 	consensusManaPledge := identity.ID{}
 	accessManaPledge := identity.ID{}
 	feeDestination := isc.NewContractAgentID(c.chain.ID(), 0)
@@ -523,6 +528,7 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request) *BatchProposal {
 		AccessManaPledge:        accessManaPledge,
 		FeeDestination:          feeDestination,
 		SigShareOfStateOutputID: sigShare,
+		DSSNonceIndexProposal:   util.NewFixedSizeBitVector(int(c.committee.Size())).SetBits(dssNonceIndexProposal),
 	}
 	for i, req := range reqs {
 		ret.RequestIDs[i] = req.ID()
@@ -612,6 +618,14 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 		return
 	}
+	//
+	// Collect the decided nonce proposals.
+	dssIndexProposalsDecided := make([][]int, c.committee.Size())
+	for i := range acs {
+		dssIndexProposalsDecided[acs[i].ValidatorIndex] = acs[i].DSSNonceIndexProposal.AsInts()
+	}
+	c.dssIndexProposalsDecided = dssIndexProposalsDecided
+	//
 	// calculate other batch parameters in a deterministic way
 	par, err := c.calcBatchParameters(acs)
 	if err != nil {
@@ -622,14 +636,15 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 	}
 	c.consensusBatch = &BatchProposal{
-		ValidatorIndex:      c.committee.OwnPeerIndex(),
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          inBatchIDs,
-		RequestHashes:       inBatchHashes,
-		TimeData:            par.timeData,
-		ConsensusManaPledge: par.consensusPledge,
-		AccessManaPledge:    par.accessPledge,
-		FeeDestination:      par.feeDestination,
+		ValidatorIndex:        c.committee.OwnPeerIndex(),
+		StateOutputID:         c.stateOutput.ID(),
+		RequestIDs:            inBatchIDs,
+		RequestHashes:         inBatchHashes,
+		TimeData:              par.timeData,
+		ConsensusManaPledge:   par.consensusPledge,
+		AccessManaPledge:      par.accessPledge,
+		FeeDestination:        par.feeDestination,
+		DSSNonceIndexProposal: nil, // Not needed in the final batch proposal.
 	}
 	c.consensusEntropy = par.entropy
 
@@ -682,15 +697,21 @@ func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
 	}
 }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) (*iotago.Transaction, *isc.AliasOutputWithID, error) {
-	signingBytes, err := c.resultTxEssence.SigningMessage()
-	if err != nil {
-		return nil, nil, fmt.Errorf("creating signing message failed: %v", err)
+func (c *consensus) finalizeTransaction() (*iotago.Transaction, *isc.AliasOutputWithID, error) {
+
+	if c.dssSignature == nil {
+		return nil, nil, fmt.Errorf("DSS signature not ready yet")
 	}
-	signature, err := c.committee.DKShare().DSSRecoverMasterSignature(sigSharesToAggregate, signingBytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("RecoverMasterSignature fail: %w", err)
-	}
+	signature := c.dssSignature
+
+	// signingBytes, err := c.resultTxEssence.SigningMessage()
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("creating signing message failed: %v", err)
+	// }
+	// signature, err := c.committee.DKShare().DSSRecoverMasterSignature(sigSharesToAggregate, signingBytes)
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("RecoverMasterSignature fail: %w", err)
+	// }
 
 	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := c.stateOutput.ID()
@@ -703,7 +724,10 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate []*dss.PartialSig) 
 			}
 		}
 	}
-	c.assert.Requiref(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", isc.OID(c.stateOutput.ID())))
+	c.assert.Requiref(
+		indexChainInput >= 0,
+		fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", isc.OID(c.stateOutput.ID())),
+	)
 	// check consistency ---------------- end
 
 	publicKey := c.committee.DKShare().GetSharedPublic()
@@ -786,9 +810,26 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 }
 
 func (c *consensus) resetWorkflow() {
-	for i := range c.resultSignatures {
-		c.resultSignatures[i] = nil
+	currentBlockIndex := c.currentState.BlockIndex()
+	err := c.dssNode.Start(c.currentState.PreviousL1Commitment().BlockHash.String(), int(currentBlockIndex), c.committee.DKShare(),
+		func(indexProposal []int) {
+			c.log.Debugf("DSS: IndexProposal received: %v", indexProposal)
+			c.dssIndexProposal = indexProposal
+			c.takeAction()
+		},
+		func(signature []byte) {
+			c.log.Debugf("DSS: Signature received: %v", signature)
+			c.dssSignature = signature
+			c.takeAction()
+		},
+	)
+	if err != nil {
+		c.log.Errorf("Failed to start the DSS session: %v", err) // TODO: XXX: Handle it better.
 	}
+
+	// for i := range c.resultSignatures {
+	// 	c.resultSignatures[i] = nil
+	// }
 	c.acsSessionID++
 	c.resultState = nil
 	c.resultTxEssence = nil
@@ -797,6 +838,9 @@ func (c *consensus) resetWorkflow() {
 	c.contributors = nil
 	c.resultSigAck = c.resultSigAck[:0]
 	c.workflow = newWorkflowStatus(c.stateOutput != nil && c.currentState != nil, c.workflow.stateIndex)
+	c.dssIndexProposal = nil
+	c.dssIndexProposalsDecided = nil
+	c.dssSignature = nil
 	c.log.Debugf("Workflow reset")
 }
 
@@ -830,19 +874,27 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	signingMsgHash := hashing.HashData(signingMsg)
 	c.log.Debugf("processVMResult: signing message: %s. rotate state controller: %v", signingMsgHash, rotation)
 
-	sigShare, err := c.committee.DKShare().DSSSignShare(signingMsg)
+	err = c.dssNode.DecidedIndexProposals(
+		c.currentState.PreviousL1Commitment().BlockHash.String(),
+		int(c.currentState.BlockIndex()),
+		c.dssIndexProposalsDecided,
+		signingMsgHash[:],
+	)
 	c.assert.RequireNoError(err, "processVMResult: ")
 
-	c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsgIn{
-		SignedResultMsg: messages.SignedResultMsg{
-			ChainInputID: result.AnchorOutputID.UTXOInput(),
-			EssenceHash:  signingMsgHash,
-			SigShare:     sigShare,
-		},
-		SenderIndex: c.committee.OwnPeerIndex(),
-	}
+	// sigShare, err := c.committee.DKShare().DSSSignShare(signingMsg)
+	// c.assert.RequireNoError(err, "processVMResult: ")
+	//
+	// c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsgIn{
+	// 	SignedResultMsg: messages.SignedResultMsg{
+	// 		ChainInputID: result.AnchorOutputID.UTXOInput(),
+	// 		EssenceHash:  signingMsgHash,
+	// 		SigShare:     sigShare,
+	// 	},
+	// 	SenderIndex: c.committee.OwnPeerIndex(),
+	// }
 
-	c.workflow.setVMResultSigned()
+	c.workflow.setVMResultSigned() // TODO: XXX: KP
 
 	c.log.Debugf("processVMResult signed message: %s", signingMsgHash.String())
 }
@@ -862,69 +914,69 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 	return essence
 }
 
-func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
-	if c.resultSignatures[msg.SenderIndex] != nil {
-		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
-			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare.Signature, msg.SigShare.Signature) {
-			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
-		} else {
-			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)
-		}
-		return
-	}
-	if c.stateOutput == nil {
-		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %s, but state output is nil",
-			msg.SenderIndex, isc.OID(msg.ChainInputID))
-		return
-	}
-	if !msg.ChainInputID.Equals(c.stateOutput.ID()) {
-		c.log.Warnf("receiveSignedResult: wrong chain input ID from peer %d: expected %v, received %v",
-			msg.SenderIndex, isc.OID(c.stateOutput.ID()), isc.OID(msg.ChainInputID))
-		return
-	}
-	idx := msg.SigShare.Partial.I
-	if uint16(idx) >= c.committee.Size() ||
-		uint16(idx) == c.committee.OwnPeerIndex() ||
-		uint16(idx) != msg.SenderIndex {
-		c.log.Errorf("receiveSignedResult: wrong sig share from peer %d", msg.SenderIndex)
-	} else {
-		c.resultSignatures[msg.SenderIndex] = msg
-		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
-	}
-	// send acknowledgement
-	msgAck := &messages.SignedResultAckMsg{
-		ChainInputID: msg.ChainInputID,
-		EssenceHash:  msg.EssenceHash,
-	}
-	c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck))
-}
+// func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {
+// 	if c.resultSignatures[msg.SenderIndex] != nil {
+// 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
+// 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare.Signature, msg.SigShare.Signature) {
+// 			c.log.Errorf("receiveSignedResult: conflicting signed result from peer %d", msg.SenderIndex)
+// 		} else {
+// 			c.log.Debugf("receiveSignedResult: duplicated signed result from peer %d", msg.SenderIndex)
+// 		}
+// 		return
+// 	}
+// 	if c.stateOutput == nil {
+// 		c.log.Warnf("receiveSignedResult: chain input ID %v received from peer %s, but state output is nil",
+// 			msg.SenderIndex, isc.OID(msg.ChainInputID))
+// 		return
+// 	}
+// 	if !msg.ChainInputID.Equals(c.stateOutput.ID()) {
+// 		c.log.Warnf("receiveSignedResult: wrong chain input ID from peer %d: expected %v, received %v",
+// 			msg.SenderIndex, isc.OID(c.stateOutput.ID()), isc.OID(msg.ChainInputID))
+// 		return
+// 	}
+// 	idx := msg.SigShare.Partial.I
+// 	if uint16(idx) >= c.committee.Size() ||
+// 		uint16(idx) == c.committee.OwnPeerIndex() ||
+// 		uint16(idx) != msg.SenderIndex {
+// 		c.log.Errorf("receiveSignedResult: wrong sig share from peer %d", msg.SenderIndex)
+// 	} else {
+// 		c.resultSignatures[msg.SenderIndex] = msg
+// 		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
+// 	}
+// 	// send acknowledgement
+// 	msgAck := &messages.SignedResultAckMsg{
+// 		ChainInputID: msg.ChainInputID,
+// 		EssenceHash:  msg.EssenceHash,
+// 	}
+// 	c.committeePeerGroup.SendMsgByIndex(msg.SenderIndex, peering.PeerMessageReceiverConsensus, peerMsgTypeSignedResultAck, util.MustBytes(msgAck))
+// }
 
-func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
-	own := c.resultSignatures[c.committee.OwnPeerIndex()]
-	if own == nil {
-		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because own signature is nil", msg.SenderIndex)
-		return
-	}
-	if msg.EssenceHash != own.EssenceHash {
-		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because essence hash in ack %v is different than own signature essence hash %v",
-			msg.SenderIndex, msg.EssenceHash.String(), own.EssenceHash.String())
-		return
-	}
-	if !msg.ChainInputID.Equals(own.ChainInputID) {
-		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because chain input id in ack %v is different than own chain input id %v",
-			msg.SenderIndex, isc.OID(msg.ChainInputID), isc.OID(own.ChainInputID))
-		return
-	}
+// func (c *consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsgIn) {
+// 	own := c.resultSignatures[c.committee.OwnPeerIndex()]
+// 	if own == nil {
+// 		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because own signature is nil", msg.SenderIndex)
+// 		return
+// 	}
+// 	if msg.EssenceHash != own.EssenceHash {
+// 		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because essence hash in ack %v is different than own signature essence hash %v",
+// 			msg.SenderIndex, msg.EssenceHash.String(), own.EssenceHash.String())
+// 		return
+// 	}
+// 	if !msg.ChainInputID.Equals(own.ChainInputID) {
+// 		c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because chain input id in ack %v is different than own chain input id %v",
+// 			msg.SenderIndex, isc.OID(msg.ChainInputID), isc.OID(own.ChainInputID))
+// 		return
+// 	}
 
-	for _, i := range c.resultSigAck {
-		if i == msg.SenderIndex {
-			c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because it has already been received", msg.SenderIndex)
-			return
-		}
-	}
-	c.resultSigAck = append(c.resultSigAck, msg.SenderIndex)
-	c.log.Debugf("receiveSignedResultAck: ack from %v accepted; acks from nodes %v have already been received", msg.SenderIndex, c.resultSigAck)
-}
+// 	for _, i := range c.resultSigAck {
+// 		if i == msg.SenderIndex {
+// 			c.log.Debugf("receiveSignedResultAck: ack from %v ignored, because it has already been received", msg.SenderIndex)
+// 			return
+// 		}
+// 	}
+// 	c.resultSigAck = append(c.resultSigAck, msg.SenderIndex)
+// 	c.log.Debugf("receiveSignedResultAck: ack from %v accepted; acks from nodes %v have already been received", msg.SenderIndex, c.resultSigAck)
+// }
 
 // TODO mutex inside is not good
 
