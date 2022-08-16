@@ -232,7 +232,7 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 
 	if res != nil {
 		// convert burnt EVM gas to ISC gas
-		gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+		gasRatio := codec.MustDecodeRatio32(ctx.StateR().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 		ctx.Privileged().GasBurnEnable(true)
 		ctx.Gas().Burn(gas.BurnCodeEVM1P, evmtypes.EVMGasToISC(res.UsedGas, &gasRatio))
 		ctx.Privileged().GasBurnEnable(false)

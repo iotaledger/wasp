@@ -42,16 +42,18 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
-        public
-    {
+    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens) public {
         ISCAllowance memory allowance;
-        allowance.baseTokens = baseTokens;
+        if (baseTokens == 0) {
+            allowance = isc.getAllowanceFrom(msg.sender);
+        } else {
+            allowance.baseTokens = baseTokens;
+        }
 
         isc.takeAllowedFunds(msg.sender, allowance);
 
         ISCFungibleTokens memory fungibleTokens;
-        fungibleTokens.baseTokens = baseTokens;
+        fungibleTokens.baseTokens = allowance.baseTokens;
 
         ISCDict memory params;
 

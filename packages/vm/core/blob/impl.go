@@ -74,7 +74,7 @@ func getBlobInfo(ctx isc.SandboxView) dict.Dict {
 
 	blobHash := ctx.Params().MustGetHashValue(ParamHash)
 
-	blbSizes := GetBlobSizesR(ctx.State(), blobHash)
+	blbSizes := GetBlobSizesR(ctx.StateR(), blobHash)
 	ret := dict.New()
 	blbSizes.MustIterate(func(field []byte, value []byte) bool {
 		ret.Set(kv.Key(field), value)
@@ -85,7 +85,7 @@ func getBlobInfo(ctx isc.SandboxView) dict.Dict {
 
 func getBlobField(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.getBlobField.begin")
-	state := ctx.State()
+	state := ctx.StateR()
 
 	blobHash := ctx.Params().MustGetHashValue(ParamHash)
 	field := ctx.Params().MustGetBytes(ParamField)
@@ -102,7 +102,7 @@ func getBlobField(ctx isc.SandboxView) dict.Dict {
 func listBlobs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
-	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {
+	GetDirectoryR(ctx.StateR()).MustIterate(func(hash []byte, totalSize []byte) bool {
 		ret.Set(kv.Key(hash), totalSize)
 		return true
 	})

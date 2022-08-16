@@ -125,7 +125,7 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
+	ret, remainingGas, _, ok := tryViewCall(c.ctx, caller, input, gas)
 	if ok {
 		return ret, remainingGas
 	}
@@ -175,8 +175,13 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 
 		state := iscMagicSubrealm(c.ctx.State())
 		key := keyAllowance(params.Addr, caller.Address())
-		taken := params.Allowance.Unwrap()
 		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+
+		taken := params.Allowance.Unwrap()
+		if taken.IsEmpty() {
+			taken = allowance.Clone()
+		}
+
 		ok := allowance.SpendFromBudget(taken)
 		c.ctx.Requiref(ok, "takeAllowedFunds: not previously allowed")
 		if allowance.IsEmpty() {
@@ -296,42 +301,15 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 	c.ctx.Privileged().GasBurnEnable(true)
 	defer c.ctx.Privileged().GasBurnEnable(false)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
-	if ok {
-		return ret, remainingGas
-	}
-
-	remainingGas = gas
-	method, args := parseCall(input)
-	var outs []interface{}
-
-	switch method.Name {
-	case "callView":
-		var callViewArgs struct {
-			ContractHname uint32
-			EntryPoint    uint32
-			Params        iscmagic.ISCDict
-		}
-		err := method.Inputs.Copy(&callViewArgs, args)
-		c.ctx.RequireNoError(err)
-		callRet := c.ctx.CallView(
-			isc.Hname(callViewArgs.ContractHname),
-			isc.Hname(callViewArgs.EntryPoint),
-			callViewArgs.Params.Unwrap(),
-		)
-		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
-
-	default:
+	ret, remainingGas, method, ok := tryViewCall(c.ctx, caller, input, gas)
+	if !ok {
 		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
-
-	ret, err := method.Outputs.Pack(outs...)
-	c.ctx.RequireNoError(err)
 	return ret, remainingGas
 }
 
 //nolint:unparam
-func tryBaseCall(ctx isc.SandboxBase, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
+func tryViewCall(ctx isc.SandboxBase, caller vm.ContractRef, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)
 	var outs []interface{}
@@ -355,6 +333,41 @@ func tryBaseCall(ctx isc.SandboxBase, input []byte, gas uint64) (ret []byte, rem
 
 	case "getTimestampUnixSeconds":
 		outs = []interface{}{ctx.Timestamp().Unix()}
+
+	case "callView":
+		var callViewArgs struct {
+			ContractHname uint32
+			EntryPoint    uint32
+			Params        iscmagic.ISCDict
+		}
+		err := method.Inputs.Copy(&callViewArgs, args)
+		ctx.RequireNoError(err)
+		callRet := ctx.CallView(
+			isc.Hname(callViewArgs.ContractHname),
+			isc.Hname(callViewArgs.EntryPoint),
+			callViewArgs.Params.Unwrap(),
+		)
+		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
+
+	case "getAllowanceFrom":
+		var addr common.Address
+		err := method.Inputs.Copy(&addr, args)
+		ctx.RequireNoError(err)
+
+		state := iscMagicSubrealmR(ctx.StateR())
+		key := keyAllowance(addr, caller.Address())
+		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+		outs = []interface{}{iscmagic.WrapISCAllowance(allowance)}
+
+	case "getAllowanceTo":
+		var target common.Address
+		err := method.Inputs.Copy(&target, args)
+		ctx.RequireNoError(err)
+
+		state := iscMagicSubrealmR(ctx.StateR())
+		key := keyAllowance(caller.Address(), target)
+		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+		outs = []interface{}{iscmagic.WrapISCAllowance(allowance)}
 
 	default:
 		return
