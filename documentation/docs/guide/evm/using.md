@@ -42,10 +42,10 @@ In order to send EVM transactions, you need to have an Ethereum address that own
 
 The most intuitive way to do this is by using [Metamask](https://metamask.io). In MetaMask,  you can create a wallet (it does not matter what chain it is connected to). Once a wallet is generated, you will see a wallet address under its name. You can copy this to your clipboard. This is the address that will receive the full supply of tokens on that chain.
 
-Assuming that you also have an IOTA account with some L1 funds, you can deposit some of those funds into the Ethereum address' L2 account:
+Assuming that you also have an IOTA account with some L1 funds, you can deposit some of those funds into the Ethereum address' L2 account (IOTA is referenced as `base` here, given it's the base token of the chain):
 
 ```shell
-wasp-cli chain deposit 0xa1b2c3d4... iota:1000000
+wasp-cli chain deposit 0xa1b2c3d4... base:1000000
 ```
 
 ## 3. Connect to the JSON-RPC service
