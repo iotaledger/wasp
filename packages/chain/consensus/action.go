@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -545,7 +546,7 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexPropos
 
 // receiveACS processed new ACS received from ACS consensus
 //nolint:funlen
-func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
+func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journal.LogIndex) {
 	if c.acsSessionID != sessionID {
 		c.log.Debugf("receiveACS: session id missmatch: expected %v, received %v", c.acsSessionID, sessionID)
 		return
@@ -561,6 +562,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.resetWorkflow()
 		return
 	}
+	c.consensusJournal.ConsensusReached(logIndex)
 	// decode ACS
 	acs := make([]*BatchProposal, len(values))
 	for i, data := range values {
@@ -906,6 +908,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	// }
 
 	c.workflow.setDssSigningStarted()
+	c.consensusJournalLogIndex = c.consensusJournal.GetLogIndex() // Should be the next one.
 
 	c.log.Debugf("processVMResult: dss started for message: %s", signingMsgHash.String())
 }
