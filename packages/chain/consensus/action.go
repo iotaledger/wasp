@@ -49,6 +49,10 @@ func (c *consensus) takeAction() {
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
 // for the ACS agreement
 func (c *consensus) proposeBatchIfNeeded() {
+	if !c.workflow.IsIndexProposalReceived() {
+		c.log.Debugf("proposeBatch not needed: dss nonce proposals are not ready yet")
+		return
+	}
 	if c.workflow.IsBatchProposalSent() {
 		c.log.Debugf("proposeBatch not needed: batch proposal already sent")
 		return
@@ -67,10 +71,6 @@ func (c *consensus) proposeBatchIfNeeded() {
 	}
 	if c.timeData.IsZero() {
 		c.log.Debugf("proposeBatch not needed: time data hasn't been received yet")
-		return
-	}
-	if c.dssIndexProposal == nil {
-		c.log.Debugf("proposeBatch not needed: dss nonce proposals are not ready yet")
 		return
 	}
 	reqs := c.mempool.ReadyNow(c.timeData)
@@ -817,16 +817,21 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 // TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
 // have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
-	err := c.dssNode.Start(c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()), 0, c.committee.DKShare(),
+	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
+	err := c.dssNode.Start(dssKey, 0, c.committee.DKShare(),
 		func(indexProposal []int) {
-			c.log.Debugf("DSS: IndexProposal received: %v", indexProposal)
-			c.dssIndexProposal = indexProposal
-			c.takeAction()
+			c.log.Debugf("DSS callback: index proposal of %s is %v", dssKey, indexProposal)
+			c.EnqueueDssIndexProposalMsg(&messages.DssIndexProposalMsg{
+				DssKey:        dssKey,
+				IndexProposal: indexProposal,
+			})
 		},
 		func(signature []byte) {
-			c.log.Debugf("DSS: Signature received: %v", signature)
-			c.dssSignature = signature
-			c.takeAction()
+			c.log.Debugf("DSS callback: signature of %s is %v", dssKey, signature)
+			c.EnqueueDssSignatureMsg(&messages.DssSignatureMsg{
+				DssKey:    dssKey,
+				Signature: signature,
+			})
 		},
 	)
 	if err != nil {
@@ -852,11 +857,11 @@ func (c *consensus) resetWorkflow() {
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
 	if !c.workflow.IsVMStarted() ||
-		c.workflow.IsVMResultSigned() ||
+		c.workflow.IsDssSigningStarted() ||
 		c.acsSessionID != result.ACSSessionID {
 		// out of context
-		c.log.Debugf("processVMResult: out of context vmStarted %v, vmResultSignedAndBroadcasted %v, expected ACS session ID %v, returned ACS session ID %v",
-			c.workflow.IsVMStarted(), c.workflow.IsVMResultSigned(), c.acsSessionID, result.ACSSessionID)
+		c.log.Debugf("processVMResult: out of context vmStarted %v, dssSigningStarted %v, expected ACS session ID %v, returned ACS session ID %v",
+			c.workflow.IsVMStarted(), c.workflow.IsDssSigningStarted(), c.acsSessionID, result.ACSSessionID)
 		return
 	}
 	rotation := result.RotationAddress != nil
@@ -900,10 +905,17 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	// 	SenderIndex: c.committee.OwnPeerIndex(),
 	// }
 
-	c.workflow.setVMResultSigned() // TODO: XXX: KP
+	c.workflow.setDssSigningStarted()
 
-	c.log.Debugf("processVMResult signed message: %s", signingMsgHash.String())
+	c.log.Debugf("processVMResult: dss started for message: %s", signingMsgHash.String())
 }
+
+/*func (c *consensus) getDssKey() string {
+	if c.currentState.BlockIndex() > 0 {
+		return c.currentState.PreviousL1Commitment().BlockHash.String()
+	}
+	return hashing.NilHash.String()
+}*/
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
 	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
@@ -918,6 +930,40 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotag
 	)
 	c.assert.RequireNoError(err, "makeRotateStateControllerTransaction: ")
 	return essence
+}
+
+func (c *consensus) receiveDssIndexProposal(dssKey string, indexProposal []int) {
+	if c.workflow.IsIndexProposalReceived() {
+		c.log.Debugf("receiveDssIndexProposal: proposal already received, ignoring")
+		return
+	}
+	if c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()) != dssKey {
+		c.log.Debugf("receiveDssIndexProposal: proposal for %s received but for %s expected, ignoring", dssKey, c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()))
+		return
+	}
+	c.dssIndexProposal = indexProposal
+	c.workflow.setIndexProposalReceived()
+	c.log.Debugf("receiveDssIndexProposal: proposal for %s handled", dssKey)
+	c.takeAction()
+}
+
+func (c *consensus) receiveDssSignature(dssKey string, signature []byte) {
+	if !c.workflow.IsDssSigningStarted() {
+		c.log.Debugf("receiveDssSignature: signature of key %s received but DSS signing is not yet started; ignoring", dssKey)
+		return
+	}
+	if c.workflow.IsVMResultSigned() {
+		c.log.Debugf("receiveDssSignature: signature of key %s received but VM result is already signed; ignoring", dssKey)
+		return
+	}
+	if dssKey != c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()) {
+		c.log.Debugf("receiveDssSignature: signature of key %s received but signature of key %s is expected; ignoring", dssKey, c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()))
+		return
+	}
+	c.dssSignature = signature
+	c.workflow.setVMResultSigned()
+	c.log.Debugf("receiveDssSignature: Signature of key %s handled", dssKey)
+	c.takeAction()
 }
 
 // func (c *consensus) receiveSignedResult(msg *messages.SignedResultMsgIn) {

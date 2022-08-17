@@ -31,6 +31,26 @@ func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	}
 }
 
+func (c *consensus) EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg) {
+	c.eventDssIndexProposalMsgPipe.In() <- msg
+}
+
+func (c *consensus) handleDssIndexProposalMsg(msg *messages.DssIndexProposalMsg) {
+	c.log.Debugf("handleDssIndexProposalMsg message received for %s: index proposal: %v", msg.DssKey, msg.IndexProposal)
+	c.receiveDssIndexProposal(msg.DssKey, msg.IndexProposal)
+	c.takeAction()
+}
+
+func (c *consensus) EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg) {
+	c.eventDssSignatureMsgPipe.In() <- msg
+}
+
+func (c *consensus) handleDssSignatureMsg(msg *messages.DssSignatureMsg) {
+	c.log.Debugf("handleDssSignatureMsg message received for %s: signature: %v", msg.DssKey, msg.Signature)
+	c.receiveDssSignature(msg.DssKey, msg.Signature)
+	c.takeAction()
+}
+
 // func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
 // 	c.eventSignedResultMsgPipe.In() <- msg
 // }

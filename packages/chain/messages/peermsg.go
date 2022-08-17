@@ -46,6 +46,16 @@ type StateCandidateMsg struct {
 	ApprovingOutputID *iotago.UTXOInput
 }
 
+type DssIndexProposalMsg struct {
+	DssKey        string
+	IndexProposal []int
+}
+
+type DssSignatureMsg struct {
+	DssKey    string
+	Signature []byte
+}
+
 // Level 1 sends new state output to state manager
 type OutputMsg struct {
 	Output iotago.Output

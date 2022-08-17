@@ -154,6 +154,8 @@ type StateManager interface {
 
 type Consensus interface {
 	EnqueueStateTransitionMsg(bool, state.VirtualStateAccess, *isc.AliasOutputWithID, time.Time)
+	EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg)
+	EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg)
 	// EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
 	// EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
 	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
