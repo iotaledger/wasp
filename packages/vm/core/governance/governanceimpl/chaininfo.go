@@ -53,7 +53,7 @@ func setChainInfo(ctx isc.Sandbox) dict.Dict {
 
 // getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
 func getChainInfo(ctx isc.SandboxView) dict.Dict {
-	info := governance.MustGetChainInfo(ctx.State())
+	info := governance.MustGetChainInfo(ctx.StateR())
 	ret := dict.New()
 	ret.Set(governance.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(governance.VarChainOwnerID, codec.EncodeAgentID(info.ChainOwnerID))
@@ -67,7 +67,7 @@ func getChainInfo(ctx isc.SandboxView) dict.Dict {
 }
 
 func getMaxBlobSize(ctx isc.SandboxView) dict.Dict {
-	maxBlobSize, err := ctx.State().Get(governance.VarMaxBlobSize)
+	maxBlobSize, err := ctx.StateR().Get(governance.VarMaxBlobSize)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}

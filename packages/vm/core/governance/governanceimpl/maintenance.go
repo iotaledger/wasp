@@ -30,6 +30,6 @@ func setMaintenanceOff(ctx isc.Sandbox) dict.Dict {
 
 func getMaintenanceStatus(ctx isc.SandboxView) dict.Dict {
 	return dict.Dict{
-		governance.VarMaintenanceStatus: ctx.State().MustGet(governance.VarMaintenanceStatus),
+		governance.VarMaintenanceStatus: ctx.StateR().MustGet(governance.VarMaintenanceStatus),
 	}
 }
