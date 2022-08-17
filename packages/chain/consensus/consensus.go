@@ -40,7 +40,6 @@ type consensus struct {
 	stateTimestamp           time.Time
 	timeData                 time.Time
 	acsSessionID             uint64
-	dssKey                   string
 	consensusBatch           *BatchProposal
 	consensusEntropy         hashing.HashValue
 	iAmContributor           bool
@@ -53,15 +52,15 @@ type consensus struct {
 	resultTxEssence          *iotago.TransactionEssence
 	resultState              state.VirtualStateAccess
 	// resultSignatures                 []*messages.SignedResultMsgIn
-	resultSigAck                []uint16
-	finalTx                     *iotago.Transaction
-	postTxDeadline              time.Time
-	pullInclusionStateDeadline  time.Time
-	lastTimerTick               atomic.Int64
-	consensusInfoSnapshot       atomic.Value
-	timers                      ConsensusTimers
-	log                         *logger.Logger
-	eventStateTransitionMsgPipe pipe.Pipe
+	resultSigAck                 []uint16
+	finalTx                      *iotago.Transaction
+	postTxDeadline               time.Time
+	pullInclusionStateDeadline   time.Time
+	lastTimerTick                atomic.Int64
+	consensusInfoSnapshot        atomic.Value
+	timers                       ConsensusTimers
+	log                          *logger.Logger
+	eventStateTransitionMsgPipe  pipe.Pipe
 	eventDssIndexProposalMsgPipe pipe.Pipe
 	eventDssSignatureMsgPipe     pipe.Pipe
 	// eventSignedResultMsgPipe         pipe.Pipe
@@ -123,10 +122,10 @@ func New(
 		vmRunner:           runvm.NewVMRunner(),
 		workflow:           newWorkflowStatus(false),
 		// resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
-		resultSigAck:                make([]uint16, 0, committee.Size()),
-		timers:                      timers,
-		log:                         log,
-		eventStateTransitionMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		resultSigAck:                 make([]uint16, 0, committee.Size()),
+		timers:                       timers,
+		log:                          log,
+		eventStateTransitionMsgPipe:  pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventDssIndexProposalMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventDssSignatureMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),

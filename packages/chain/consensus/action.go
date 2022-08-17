@@ -817,7 +817,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 // TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
 // have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
-	err := c.dssNode.Start(c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()), 0, c.committee.DKShare(),
+	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
+	err := c.dssNode.Start(dssKey, 0, c.committee.DKShare(),
 		func(indexProposal []int) {
 			c.log.Debugf("DSS callback: index proposal of %s is %v", dssKey, indexProposal)
 			c.EnqueueDssIndexProposalMsg(&messages.DssIndexProposalMsg{
@@ -840,7 +841,6 @@ func (c *consensus) resetWorkflow() {
 	// for i := range c.resultSignatures {
 	// 	c.resultSignatures[i] = nil
 	// }
-	c.dssKey = dssKey
 	c.acsSessionID++
 	c.resultState = nil
 	c.resultTxEssence = nil
@@ -910,12 +910,12 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: dss started for message: %s", signingMsgHash.String())
 }
 
-func (c *consensus) getDssKey() string {
+/*func (c *consensus) getDssKey() string {
 	if c.currentState.BlockIndex() > 0 {
 		return c.currentState.PreviousL1Commitment().BlockHash.String()
 	}
 	return hashing.NilHash.String()
-}
+}*/
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *iotago.TransactionEssence {
 	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Bech32(parameters.L1.Protocol.Bech32HRP))
@@ -937,8 +937,8 @@ func (c *consensus) receiveDssIndexProposal(dssKey string, indexProposal []int) 
 		c.log.Debugf("receiveDssIndexProposal: proposal already received, ignoring")
 		return
 	}
-	if c.dssKey != dssKey {
-		c.log.Debugf("receiveDssIndexProposal: proposal for %s received but for %s expected, ignoring", dssKey, c.dssKey)
+	if c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()) != dssKey {
+		c.log.Debugf("receiveDssIndexProposal: proposal for %s received but for %s expected, ignoring", dssKey, c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()))
 		return
 	}
 	c.dssIndexProposal = indexProposal
@@ -956,8 +956,8 @@ func (c *consensus) receiveDssSignature(dssKey string, signature []byte) {
 		c.log.Debugf("receiveDssSignature: signature of key %s received but VM result is already signed; ignoring", dssKey)
 		return
 	}
-	if dssKey != c.getDssKey() {
-		c.log.Debugf("receiveDssSignature: signature of key %s received but signature of key %s is expected; ignoring", dssKey, c.dssKey)
+	if dssKey != c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()) {
+		c.log.Debugf("receiveDssSignature: signature of key %s received but signature of key %s is expected; ignoring", dssKey, c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()))
 		return
 	}
 	c.dssSignature = signature
