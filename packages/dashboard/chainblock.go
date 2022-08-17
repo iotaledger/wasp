@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -79,12 +80,22 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 		}
 		arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
 		result.Receipts = make([]*blocklog.RequestReceipt, arr.MustLen())
+		result.ResolvedErrors = make([]string, arr.MustLen())
 		for i := uint16(0); i < arr.MustLen(); i++ {
 			receipt, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 			if err != nil {
 				return err
 			}
 			result.Receipts[i] = receipt
+			if receipt.Error != nil {
+				resolved, err := errors.Resolve(receipt.Error, func(c string, f string, params dict.Dict) (dict.Dict, error) {
+					return d.wasp.CallView(chainID, c, f, params)
+				})
+				if err != nil {
+					return err
+				}
+				result.ResolvedErrors[i] = resolved.Error()
+			}
 		}
 	}
 
@@ -112,5 +123,6 @@ type ChainBlockTemplateParams struct {
 	LatestBlockIndex uint32
 	Block            *blocklog.BlockInfo
 	Receipts         []*blocklog.RequestReceipt
+	ResolvedErrors   []string
 	Events           []string
 }
