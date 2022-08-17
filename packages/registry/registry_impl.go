@@ -9,6 +9,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -35,6 +36,7 @@ var (
 	_ NodeIdentityProvider        = &Impl{}
 	_ DKShareRegistryProvider     = &Impl{}
 	_ ChainRecordRegistryProvider = &Impl{}
+	_ journal.Registry            = &Impl{}
 )
 
 type Config struct {

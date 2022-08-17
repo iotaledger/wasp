@@ -11,6 +11,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -52,15 +53,15 @@ type consensus struct {
 	resultTxEssence          *iotago.TransactionEssence
 	resultState              state.VirtualStateAccess
 	// resultSignatures                 []*messages.SignedResultMsgIn
-	resultSigAck                 []uint16
-	finalTx                      *iotago.Transaction
-	postTxDeadline               time.Time
-	pullInclusionStateDeadline   time.Time
-	lastTimerTick                atomic.Int64
-	consensusInfoSnapshot        atomic.Value
-	timers                       ConsensusTimers
-	log                          *logger.Logger
-	eventStateTransitionMsgPipe  pipe.Pipe
+	resultSigAck                []uint16
+	finalTx                     *iotago.Transaction
+	postTxDeadline              time.Time
+	pullInclusionStateDeadline  time.Time
+	lastTimerTick               atomic.Int64
+	consensusInfoSnapshot       atomic.Value
+	timers                      ConsensusTimers
+	log                         *logger.Logger
+	eventStateTransitionMsgPipe pipe.Pipe
 	eventDssIndexProposalMsgPipe pipe.Pipe
 	eventDssSignatureMsgPipe     pipe.Pipe
 	// eventSignedResultMsgPipe         pipe.Pipe
@@ -79,6 +80,8 @@ type consensus struct {
 	dssIndexProposal                 []int
 	dssIndexProposalsDecided         [][]int
 	dssSignature                     []byte
+	consensusJournal                 journal.ConsensusJournal
+	consensusJournalLogIndex         journal.LogIndex // Index of the currently running log index.
 	wal                              chain.WAL
 }
 
@@ -100,6 +103,7 @@ func New(
 	pullMissingRequestsFromCommittee bool,
 	consensusMetrics metrics.ConsensusMetrics,
 	dssNode dss_node.DSSNode,
+	consensusJournal journal.ConsensusJournal,
 	wal chain.WAL,
 	timersOpt ...ConsensusTimers,
 ) chain.Consensus {
@@ -119,10 +123,10 @@ func New(
 		vmRunner:           runvm.NewVMRunner(),
 		workflow:           newWorkflowStatus(false),
 		// resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
-		resultSigAck:                 make([]uint16, 0, committee.Size()),
-		timers:                       timers,
-		log:                          log,
-		eventStateTransitionMsgPipe:  pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		resultSigAck:                make([]uint16, 0, committee.Size()),
+		timers:                      timers,
+		log:                         log,
+		eventStateTransitionMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventDssIndexProposalMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventDssSignatureMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -135,9 +139,11 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 		dssNode:                          dssNode,
+		consensusJournal:                 consensusJournal,
+		consensusJournalLogIndex:         consensusJournal.GetLogIndex(),
 		wal:                              wal,
 	}
-	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages) // TODO: Don't need to attach here at all.
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
 		ret.timeData = time.Unix(int64(milestonePointer.Timestamp), 0)
 	})

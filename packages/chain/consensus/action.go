@@ -81,11 +81,15 @@ func (c *consensus) proposeBatchIfNeeded() {
 	c.log.Debugf("proposeBatch needed: ready requests len = %d, requests: %+v", len(reqs), isc.ShortRequestIDsFromRequests(reqs))
 	proposal := c.prepareBatchProposal(reqs, c.dssIndexProposal)
 	// call the ACS consensus. The call should spawn goroutine itself
+	journalLogIndex := c.consensusJournalLogIndex
+	acsSessionID := journalLogIndex.AsUint64Key(c.consensusJournal.GetID())
+	c.acsSessionID = acsSessionID
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
 		go c.EnqueueAsynchronousCommonSubsetMsg(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
-			SessionID:          sessionID,
+			SessionID:          acsSessionID, // Use the local copy here.
+			LogIndex:           journalLogIndex,
 		})
 	})
 
@@ -754,6 +758,7 @@ func (c *consensus) finalizeTransaction() (*iotago.Transaction, *isc.AliasOutput
 }
 
 func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
+	c.consensusJournal.GetLocalView().AliasOutputReceived(msg.StateOutput)
 	sameIndex := msg.State.BlockIndex() == msg.StateOutput.GetStateIndex()
 	if !msg.IsGovernance && !sameIndex {
 		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:
@@ -809,10 +814,10 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	return true
 }
 
+// TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
+// have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
-	currentBlockIndex := c.currentState.BlockIndex()
-	dssKey := c.getDssKey()
-	err := c.dssNode.Start(dssKey, int(currentBlockIndex), c.committee.DKShare(),
+	err := c.dssNode.Start(c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()), 0, c.committee.DKShare(),
 		func(indexProposal []int) {
 			c.log.Debugf("DSS callback: index proposal of %s is %v", dssKey, indexProposal)
 			c.EnqueueDssIndexProposalMsg(&messages.DssIndexProposalMsg{
@@ -881,8 +886,8 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: signing message: %s. rotate state controller: %v", signingMsgHash, rotation)
 
 	err = c.dssNode.DecidedIndexProposals(
-		c.getDssKey(),
-		int(c.currentState.BlockIndex()),
+		c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()),
+		0,
 		c.dssIndexProposalsDecided,
 		signingMsgHash[:],
 	)

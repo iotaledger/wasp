@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -226,7 +227,11 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 		cmtPeerGroup.Detach(attachID)
 	}
 	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.dssNode, c.wal)
+	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, c.getCommittee().Address(), c.consensusJournalRegistry, c.log)
+	if err != nil {
+		return xerrors.Errorf("cannot load consensus journal: %w", err)
+	}
+	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.dssNode, consensusJournal, c.wal)
 	c.setCommittee(cmt)
 	return nil
 }

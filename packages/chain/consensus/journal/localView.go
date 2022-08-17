@@ -7,11 +7,14 @@
 // as an input for TX we build.
 //
 
-package chain
+package journal
 
 import (
+	"bytes"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type LocalView interface {
@@ -29,12 +32,46 @@ type LocalView interface {
 	//
 	// Corresponds to the `tx_posted` event in the specification.
 	AliasOutputPublished(consumed, published *isc.AliasOutputWithID)
+	//
+	// For serialization.
+	AsBytes() ([]byte, error)
 }
 
 type localViewEntry struct {
 	outputID   iotago.OutputID
 	stateIndex uint32
 	rejected   bool
+}
+
+func newLocalViewEntryFromBytes(data []byte) (*localViewEntry, error) {
+	r := bytes.NewBuffer(data)
+	var outputID iotago.OutputID
+	if _, err := r.Read(outputID[:]); err != nil {
+		return nil, err
+	}
+	var stateIndex uint32
+	if err := util.ReadUint32(r, &stateIndex); err != nil {
+		return nil, err
+	}
+	var rejected bool
+	if err := util.ReadBoolByte(r, &rejected); err != nil {
+		return nil, err
+	}
+	return &localViewEntry{outputID, stateIndex, rejected}, nil
+}
+
+func (lve *localViewEntry) AsBytes() ([]byte, error) {
+	w := bytes.NewBuffer([]byte{})
+	if _, err := w.Write(lve.outputID[:]); err != nil {
+		return nil, err
+	}
+	if err := util.WriteUint32(w, lve.stateIndex); err != nil {
+		return nil, err
+	}
+	if err := util.WriteBoolByte(w, lve.rejected); err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
 }
 
 type localViewImpl struct {
@@ -45,6 +82,43 @@ func NewLocalView() LocalView {
 	return &localViewImpl{
 		entries: []*localViewEntry{},
 	}
+}
+
+func NewLocalViewFromBytes(data []byte) (LocalView, error) {
+	r := bytes.NewBuffer(data)
+	var entriesLen uint16
+	if err := util.ReadUint16(r, &entriesLen); err != nil {
+		return nil, err
+	}
+	entries := make([]*localViewEntry, entriesLen)
+	for i := range entries {
+		entryBytes, err := util.ReadBytes16(r)
+		if err != nil {
+			return nil, err
+		}
+		entries[i], err = newLocalViewEntryFromBytes(entryBytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &localViewImpl{entries}, nil
+}
+
+func (lvi *localViewImpl) AsBytes() ([]byte, error) {
+	w := bytes.NewBuffer([]byte{})
+	if err := util.WriteUint16(w, uint16(len(lvi.entries))); err != nil {
+		return nil, err
+	}
+	for _, e := range lvi.entries {
+		entryBytes, err := e.AsBytes()
+		if err != nil {
+			return nil, err
+		}
+		if err := util.WriteBytes16(w, entryBytes); err != nil {
+			return nil, err
+		}
+	}
+	return w.Bytes(), nil
 }
 
 func (lvi *localViewImpl) GetBaseAliasOutputID() *iotago.OutputID {
