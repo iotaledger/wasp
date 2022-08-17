@@ -1,5 +1,4 @@
 #!/bin/bash
-cd ..
 root=$(git rev-parse --show-toplevel)
 
 rm "$root"/contracts/wasm/*/*/*/consts.*
@@ -25,7 +24,7 @@ for dir in "$root"/contracts/wasm/*; do
   fi
 done
 
-cd gascalibration
+cd $root/contracts/wasm/gascalibration
 for dir in ./*; do
   if [ -d "$dir" ]; then
     rm "$dir"/go/main.go
@@ -35,4 +34,3 @@ for dir in ./*; do
     rm "$dir"/ts/pkg/*.*
   fi
 done
-cd ../scripts
