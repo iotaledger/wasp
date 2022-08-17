@@ -51,6 +51,6 @@ var loginCmd = &cobra.Command{
 
 		config.SetToken(token)
 
-		log.Printf("\nSuccessfully authorized\n")
+		log.Printf("\nSuccessfully authenticated\n")
 	},
 }
