@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasic(t *testing.T) {
+func TestConsensusJournal(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -24,6 +24,9 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	lv := j.GetLocalView()
 	require.NotNil(t, lv)
+	require.Equal(t, j.GetLogIndex(), journal.LogIndex(0))
+	j.ConsensusReached(j.GetLogIndex())
+	require.Equal(t, j.GetLogIndex(), journal.LogIndex(1))
 }
 
 //
