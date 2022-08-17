@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
+	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/util"
@@ -27,7 +29,7 @@ import (
 type mockedNode struct {
 	NodeID              string
 	NodeIndex           uint16
-	NodePubKey          *cryptolib.PublicKey
+	NodeKeyPair         *cryptolib.KeyPair
 	Env                 *MockedEnv
 	NodeConn            *testchain.MockedNodeConn           // L1 mock
 	ChainCore           *testchain.MockedChainCore          // Chain mock
@@ -46,7 +48,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	ret := &mockedNode{
 		NodeID:      nodeID,
 		NodeIndex:   nodeIndex,
-		NodePubKey:  env.NodePubKeys[nodeIndex],
+		NodeKeyPair: env.NodeKeyPairs[nodeIndex],
 		Env:         env,
 		NodeConn:    testchain.NewMockedNodeConnection("Node_"+nodeID, env.Ledgers, log),
 		ChainCore:   testchain.NewMockedChainCore(env.T, env.ChainID, log),
@@ -90,7 +92,10 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 
 	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
 	require.NoError(env.T, err)
-	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), nil, wal.NewDefault(), timers) // TODO: DSS...
+	var peeringID peering.PeeringID
+	copy(peeringID[:], env.ChainID[:])
+	dss := dss_node.New(&peeringID, env.NetworkProviders[nodeIndex], ret.NodeKeyPair, log)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), dss, wal.NewDefault(), timers) // TODO: DSS...
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
@@ -130,7 +135,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		}()
 	})
 	go ret.pullStateLoop()
-	ret.Log.Debugf("Mocked node %v started: id %v public key %v", ret.NodeIndex, ret.NodeID, ret.NodePubKey.String())
+	ret.Log.Debugf("Mocked node %v started: id %v public key %v", ret.NodeIndex, ret.NodeID, ret.NodeKeyPair.GetPublicKey().String())
 	return ret
 }
 

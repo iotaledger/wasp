@@ -39,6 +39,7 @@ type consensus struct {
 	stateTimestamp           time.Time
 	timeData                 time.Time
 	acsSessionID             uint64
+	dssKey                   string
 	consensusBatch           *BatchProposal
 	consensusEntropy         hashing.HashValue
 	iAmContributor           bool
@@ -51,15 +52,17 @@ type consensus struct {
 	resultTxEssence          *iotago.TransactionEssence
 	resultState              state.VirtualStateAccess
 	// resultSignatures                 []*messages.SignedResultMsgIn
-	resultSigAck                []uint16
-	finalTx                     *iotago.Transaction
-	postTxDeadline              time.Time
-	pullInclusionStateDeadline  time.Time
-	lastTimerTick               atomic.Int64
-	consensusInfoSnapshot       atomic.Value
-	timers                      ConsensusTimers
-	log                         *logger.Logger
-	eventStateTransitionMsgPipe pipe.Pipe
+	resultSigAck                 []uint16
+	finalTx                      *iotago.Transaction
+	postTxDeadline               time.Time
+	pullInclusionStateDeadline   time.Time
+	lastTimerTick                atomic.Int64
+	consensusInfoSnapshot        atomic.Value
+	timers                       ConsensusTimers
+	log                          *logger.Logger
+	eventStateTransitionMsgPipe  pipe.Pipe
+	eventDssIndexProposalMsgPipe pipe.Pipe
+	eventDssSignatureMsgPipe     pipe.Pipe
 	// eventSignedResultMsgPipe         pipe.Pipe
 	// eventSignedResultAckMsgPipe      pipe.Pipe
 	eventInclusionStateMsgPipe       pipe.Pipe
@@ -82,8 +85,8 @@ type consensus struct {
 var _ chain.Consensus = &consensus{}
 
 const (
-	peerMsgTypeSignedResult = iota
-	peerMsgTypeSignedResultAck
+	//	peerMsgTypeSignedResult = iota
+	//	peerMsgTypeSignedResultAck
 
 	maxMsgBuffer = 1000
 )
@@ -116,10 +119,12 @@ func New(
 		vmRunner:           runvm.NewVMRunner(),
 		workflow:           newWorkflowStatus(false),
 		// resultSignatures:                 make([]*messages.SignedResultMsgIn, committee.Size()),
-		resultSigAck:                make([]uint16, 0, committee.Size()),
-		timers:                      timers,
-		log:                         log,
-		eventStateTransitionMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		resultSigAck:                 make([]uint16, 0, committee.Size()),
+		timers:                       timers,
+		log:                          log,
+		eventStateTransitionMsgPipe:  pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventDssIndexProposalMsgPipe: pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventDssSignatureMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultAckMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventInclusionStateMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -180,6 +185,8 @@ func (c *consensus) Close() {
 	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
 
 	c.eventStateTransitionMsgPipe.Close()
+	c.eventDssIndexProposalMsgPipe.Close()
+	c.eventDssSignatureMsgPipe.Close()
 	// c.eventSignedResultMsgPipe.Close()
 	// c.eventSignedResultAckMsgPipe.Close()
 	c.eventInclusionStateMsgPipe.Close()
@@ -190,6 +197,8 @@ func (c *consensus) Close() {
 
 func (c *consensus) recvLoop() {
 	eventStateTransitionMsgCh := c.eventStateTransitionMsgPipe.Out()
+	eventDssIndexProposalMsgCh := c.eventDssIndexProposalMsgPipe.Out()
+	eventDssSignatureMsgCh := c.eventDssSignatureMsgPipe.Out()
 	// eventSignedResultMsgCh := c.eventSignedResultMsgPipe.Out()
 	// eventSignedResultAckMsgCh := c.eventSignedResultAckMsgPipe.Out()
 	eventInclusionStateMsgCh := c.eventInclusionStateMsgPipe.Out()
@@ -198,6 +207,8 @@ func (c *consensus) recvLoop() {
 	eventTimerMsgCh := c.eventTimerMsgPipe.Out()
 	isClosedFun := func() bool {
 		return eventStateTransitionMsgCh == nil &&
+			eventDssIndexProposalMsgCh == nil &&
+			eventDssSignatureMsgCh == nil &&
 			// eventSignedResultMsgCh == nil &&
 			// eventSignedResultAckMsgCh == nil &&
 			eventInclusionStateMsgCh == nil &&
@@ -224,6 +235,22 @@ func (c *consensus) recvLoop() {
 				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg... Done")
 			} else {
 				eventStateTransitionMsgCh = nil
+			}
+		case msg, ok := <-eventDssIndexProposalMsgCh:
+			if ok {
+				c.log.Debugf("Consensus::recvLoop, handleDssIndexProposalMsg...")
+				c.handleDssIndexProposalMsg(msg.(*messages.DssIndexProposalMsg))
+				c.log.Debugf("Consensus::recvLoop, handleDssIndexProposalMsg... Done")
+			} else {
+				eventDssIndexProposalMsgCh = nil
+			}
+		case msg, ok := <-eventDssSignatureMsgCh:
+			if ok {
+				c.log.Debugf("Consensus::recvLoop, handleDssSignatureMsg...")
+				c.handleDssSignatureMsg(msg.(*messages.DssSignatureMsg))
+				c.log.Debugf("Consensus::recvLoop, handleDssSignatureMsg... Done")
+			} else {
+				eventDssSignatureMsgCh = nil
 			}
 		// case msg, ok := <-eventSignedResultMsgCh:
 		// 	if ok {
@@ -323,6 +350,7 @@ func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
 func (c *consensus) GetPipeMetrics() chain.ConsensusPipeMetrics {
 	return &pipeMetrics{
 		eventStateTransitionMsgPipeSize: c.eventStateTransitionMsgPipe.Len(),
+		//TODO
 		// eventSignedResultMsgPipeSize:    c.eventSignedResultMsgPipe.Len(),
 		// eventSignedResultAckMsgPipeSize: c.eventSignedResultAckMsgPipe.Len(),
 		eventInclusionStateMsgPipeSize: c.eventInclusionStateMsgPipe.Len(),
