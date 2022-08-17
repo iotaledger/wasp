@@ -73,6 +73,8 @@ func (c *consensus) EnqueueAsynchronousCommonSubsetMsg(msg *messages.Asynchronou
 
 func (c *consensus) handleAsynchronousCommonSubset(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.log.Debugf("AsynchronousCommonSubsetMsg received for session %v: len = %d", msg.SessionID, len(msg.ProposedBatchesBin))
+	c.consensusJournal.ConsensusReached(msg.LogIndex)
+	c.consensusJournalLogIndex = c.consensusJournal.GetLogIndex() // Should be the next one.
 	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
 
 	c.takeAction()

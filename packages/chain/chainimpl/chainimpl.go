@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	dss_node_pkg "github.com/iotaledger/wasp/packages/chain/dss/node"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -80,6 +81,7 @@ type chainObj struct {
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
+	consensusJournalRegistry           journal.Registry
 	wal                                chain.WAL
 }
 
@@ -101,6 +103,7 @@ func NewChain(
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	consensusJournalRegistry journal.Registry,
 	wal chain.WAL,
 ) chain.Chain {
 	var err error
@@ -141,6 +144,7 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		consensusJournalRegistry:         consensusJournalRegistry,
 		wal:                              wal,
 		dssNode:                          dss_node_pkg.New(&peeringID, netProvider, nodeIdentity, log),
 	}

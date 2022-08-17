@@ -11,6 +11,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -76,14 +77,16 @@ type consensus struct {
 	dssIndexProposal                 []int
 	dssIndexProposalsDecided         [][]int
 	dssSignature                     []byte
+	consensusJournal                 journal.ConsensusJournal
+	consensusJournalLogIndex         journal.LogIndex // Index of the currently running log index.
 	wal                              chain.WAL
 }
 
 var _ chain.Consensus = &consensus{}
 
 const (
-	peerMsgTypeSignedResult = iota
-	peerMsgTypeSignedResultAck
+	// peerMsgTypeSignedResult = iota
+	// peerMsgTypeSignedResultAck
 
 	maxMsgBuffer = 1000
 )
@@ -97,6 +100,7 @@ func New(
 	pullMissingRequestsFromCommittee bool,
 	consensusMetrics metrics.ConsensusMetrics,
 	dssNode dss_node.DSSNode,
+	consensusJournal journal.ConsensusJournal,
 	wal chain.WAL,
 	timersOpt ...ConsensusTimers,
 ) chain.Consensus {
@@ -130,9 +134,11 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		consensusMetrics:                 consensusMetrics,
 		dssNode:                          dssNode,
+		consensusJournal:                 consensusJournal,
+		consensusJournalLogIndex:         consensusJournal.GetLogIndex(),
 		wal:                              wal,
 	}
-	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages)
+	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages) // TODO: Don't need to attach here at all.
 	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
 		ret.timeData = time.Unix(int64(milestonePointer.Timestamp), 0)
 	})

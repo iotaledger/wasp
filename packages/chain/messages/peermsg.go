@@ -7,6 +7,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -60,6 +61,7 @@ type VMResultMsg struct {
 type AsynchronousCommonSubsetMsg struct {
 	ProposedBatchesBin [][]byte
 	SessionID          uint64
+	LogIndex           journal.LogIndex
 }
 
 // InclusionStateMsg txstream plugin sends inclusions state of the transaction to ConsensusOld

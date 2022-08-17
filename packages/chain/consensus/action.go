@@ -81,11 +81,15 @@ func (c *consensus) proposeBatchIfNeeded() {
 	c.log.Debugf("proposeBatch needed: ready requests len = %d, requests: %+v", len(reqs), isc.ShortRequestIDsFromRequests(reqs))
 	proposal := c.prepareBatchProposal(reqs, c.dssIndexProposal)
 	// call the ACS consensus. The call should spawn goroutine itself
+	journalLogIndex := c.consensusJournalLogIndex
+	acsSessionID := journalLogIndex.AsUint64Key(c.consensusJournal.GetID())
+	c.acsSessionID = acsSessionID
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
 		go c.EnqueueAsynchronousCommonSubsetMsg(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
-			SessionID:          sessionID,
+			SessionID:          acsSessionID, // Use the local copy here.
+			LogIndex:           journalLogIndex,
 		})
 	})
 
@@ -809,6 +813,8 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 	return true
 }
 
+// TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
+// have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
 	currentBlockIndex := c.currentState.BlockIndex()
 	err := c.dssNode.Start(c.currentState.PreviousL1Commitment().BlockHash.String(), int(currentBlockIndex), c.committee.DKShare(),
