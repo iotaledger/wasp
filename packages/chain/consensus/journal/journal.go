@@ -23,15 +23,15 @@ import (
 type ID [iotago.Ed25519AddressBytesLength]byte
 
 func MakeID(chainID isc.ChainID, committeeAddress iotago.Address) (*ID, error) {
-	var ID ID
+	var id ID
 	addressBytes, err := committeeAddress.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot serialize address: %v", err)
 	}
 	for i := range chainID {
-		ID[i] = addressBytes[i] ^ chainID[i]
+		id[i] = addressBytes[i] ^ chainID[i]
 	}
-	return &ID, nil
+	return &id, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
