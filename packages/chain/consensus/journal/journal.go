@@ -49,6 +49,13 @@ func (li *LogIndex) AsUint64Key(id ID) uint64 {
 	return util.MustUint64From8Bytes(hashing.HashData(id[:], liByes).Bytes()[:8])
 }
 
+// For the Nonce Instance mostly. Can be removed after moving stuff to GPA.
+func (li *LogIndex) AsStringKey(id ID) string {
+	liByes := make([]byte, 4)
+	binary.BigEndian.PutUint32(liByes, li.AsUint32())
+	return hashing.HashData(id[:], liByes).String()
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // ConsensusJournal tracks the consensus instances (the consensus log).

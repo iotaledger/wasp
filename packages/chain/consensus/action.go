@@ -816,8 +816,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 // TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
 // have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
-	currentBlockIndex := c.currentState.BlockIndex()
-	err := c.dssNode.Start(c.currentState.PreviousL1Commitment().BlockHash.String(), int(currentBlockIndex), c.committee.DKShare(),
+	err := c.dssNode.Start(c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()), 0, c.committee.DKShare(),
 		func(indexProposal []int) {
 			c.log.Debugf("DSS: IndexProposal received: %v", indexProposal)
 			c.dssIndexProposal = indexProposal
@@ -881,8 +880,8 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: signing message: %s. rotate state controller: %v", signingMsgHash, rotation)
 
 	err = c.dssNode.DecidedIndexProposals(
-		c.currentState.PreviousL1Commitment().BlockHash.String(),
-		int(c.currentState.BlockIndex()),
+		c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()),
+		0,
 		c.dssIndexProposalsDecided,
 		signingMsgHash[:],
 	)
