@@ -532,7 +532,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
 			p.nodePubKeys(),                 // NodePubKeys
 			p.node.edSuite,                  // Ed25519: Suite
 			keyPairE.Public,                 // Ed25519: SharedPublic
-			make([]kyber.Point, 0),          // Ed25519: PublicCommits
+			[]kyber.Point{keyPairE.Public},  // Ed25519: PublicCommits
 			[]kyber.Point{keyPairE.Public},  // Ed25519: PublicShares
 			keyPairE.Private,                // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
