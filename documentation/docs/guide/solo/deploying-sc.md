@@ -2,6 +2,7 @@
 description: Deploying Wasm smart contracts with Solo.
 image: /img/tutorial/send_request.png
 keywords:
+
 - testing
 - PostRequestSync
 - PostRequestOffLedger
@@ -11,15 +12,26 @@ keywords:
 - solo
 - on-ledger
 - off-ledger
+- how-to
+
 ---
+
 # Deploying Wasm Smart Contracts
 
-:::note
-For information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../wasm_vm/intro.mdx).
+:::note WASM VM
+
+For more information about how to create Wasm smart contracts, refer to the [Wasm VM chapter](../wasm_vm/intro.mdx).
+
 :::
 
-The following examples will make use of the [`solotutorial` Rust/Wasm smart contract](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs).
-In order to test the smart contract using Solo, we first need to deploy it:
+## Deploy the Solo Tutorial
+
+The following examples will make use of the
+[`solotutorial` Rust/Wasm smart contract](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs)
+.
+
+In order to test the smart contract using Solo, first you need to deploy it. You can use the following code to
+deploy `slotutorial_bg.wasm`:
 
 ```go
 func TestTutorialDeploySC(t *testing.T) {
@@ -30,17 +42,25 @@ func TestTutorialDeploySC(t *testing.T) {
 }
 ```
 
-That's it! This will work as long as the `solotutorial_bg.wasm` file is in the same directory as the Go test code.
+This will work as long as the `solotutorial_bg.wasm` file is in the same directory as the Go test code.
 
-The first parameters to `NewChain` and `DeployWasmContract` is the key pair of the chain originator and the deployer of the smart contract, respectively.
-Conveniently, we can pass `nil` to use a default wallet, which can be accessed as `chain.OriginatorPrivateKey`.
+### Parameters
+
+The first parameter to `NewChain` is the key pair of the chain originator, and to `DeployWasmContract`  is the key pair
+of the deployer of the smart contract.
+You can pass `nil` to use a default wallet, which can be accessed as `chain.OriginatorPrivateKey`.
 
 The second parameter to `DeployWasmContract` (`"solotutorial"`), is the name assigned to the smart contract instance.
 Smart contract instance names must be unique across each chain.
 
-:::note
+#### AutoAdjustStorageDeposit
+
 In the example above we enabled the `AutoAdjustStorageDeposit` option.
-This is necessary in order to automatically adjust all sent L1 transactions to include the storage deposit if necessary (provided that the sender owns the funds).
-It it is possible to disable the option and have manual control of the storage deposit, but in that case the deployment of the smart contract will have to be done "by hand".
+This is necessary in order to automatically adjust all sent L1 transactions to include the storage deposit if
+necessary (provided that the sender owns the funds).
+
+It is possible to disable the option and have manual control of the storage deposit, but in that case the deployment
+of the smart contract will have to be done "by hand".
+
 In most cases it is recommended to leave it enabled.
-:::
+

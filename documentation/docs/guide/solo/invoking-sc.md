@@ -2,6 +2,9 @@
 description: Invoking smart contracts with on-ledger and off-ledger requests with Solo.
 image: /img/tutorial/send_request.png
 keywords:
+
+- how-to
+- explanation
 - testing
 - PostRequestSync
 - PostRequestOffLedger
@@ -11,10 +14,14 @@ keywords:
 - solo
 - on-ledger
 - off-ledger
+
 ---
+
 # Invoking Smart Contracts
 
-After deploying our smart contract [`solotutorial`](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs), we can invoke the `storeString` function:
+After deploying
+the [`solotutorial`](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/src/solotutorial.rs)
+smart contract, you can invoke the `storeString` function:
 
 ```go
 func TestTutorialInvokeSC(t *testing.T) {
@@ -36,33 +43,53 @@ func TestTutorialInvokeSC(t *testing.T) {
 }
 ```
 
-In the above example we use `NewCallParams` to set up the parameters of the request that we will send to the contract. Here we specify that we want to invoke the `storeString` entry point of the `solotutorial` smart contract, passing the parameter named `str` with the string value `"Hello, world!"`.
+## Parameters
 
-`WithMaxAffordableGasBudget` assigns the gas budget of the request to the maximum that the sender can afford with the funds they own on L2 (including any funds attached in the request itself).
-In this case the funds attached automatically for the storage deposit will be enough to cover for the gas fee, so it is not necessary to manually deposit more funds for gas.
+### `NewCallParams()`
 
-`PostRequestSync` sends an on-ledger request to the chain. Let’s describe in detail what is going on here:
+The above example uses `NewCallParams` to set up the parameters of the request that it will send to the contract.
+It specifies that it wants to invoke the `storeString` entry point of the `solotutorial` smart contract, passing the
+parameter named `str` with the string value `"Hello, world!"`.
+
+### `WithMaxAffordableGasBudget()`
+
+`WithMaxAffordableGasBudget()` assigns the gas budget of the request to the maximum that the sender can afford with the
+funds they own on L2 (including any funds attached in the request itself).
+In this case the funds attached automatically for the storage deposit will be enough to cover for the gas fee, so it is
+not necessary to manually deposit more funds for gas.
+
+## `PostRequestSync()`
+
+`PostRequestSync` sends an on-ledger request to the chain.
+
+## On-Ledger Requests
 
 [![Generic process of posting an on-ledger request to the smart contract](/img/tutorial/send_request.png)](/img/tutorial/send_request.png)
 
 The diagram above depicts the generic process of posting an _on-ledger_ request to the smart contract.
-The same diagram is valid for the Solo environment and for any other requester which sends an on-ledger request; e.g. the IOTA Smart Contracts wallet or another chain.
+The same diagram is valid for the Solo environment and any other requester that sends an on-ledger request, e.g., the
+IOTA Smart Contracts wallet or another chain.
 
 Posting an on-ledger request always consists of the steps below.
-Note that in Solo all 7 steps are carried out by the single call to `PostRequestSync`.
+Note that in Solo, all seven steps are carried out by a single call to `PostRequestSync`.
 
-1. Creating the L1 transaction which wraps the L2 request and moves tokens.
+1. Create the L1 transaction, which wraps the L2 request and moves tokens.
+
    Each on-ledger request must be contained in a transaction on the ledger.
-   Therefore, it must be signed by the private key of the sender.
+   Therefore, it must be signed by the sender’s private key.
    This securely identifies each requester in IOTA Smart Contracts.
-   In Solo, the transaction is signed by the private key provided in the second parameter of the `PostRequestSync` call (`chain.OriginatorPrivateKey()` by default).
-2. Posting the transaction to the L1 ledger and confirming it.
-   In Solo it is just adding the transaction to the emulated L1 ledger, so it is confirmed immediately and synchronously.
+   In Solo, the transaction is signed by the private key provided in the second parameter of the `PostRequestSync` call
+   (`chain.OriginatorPrivateKey()` by default).
+
+2. Post and confirm the transaction to the L1 ledger.
+
+   In Solo, it is just adding the transaction to the emulated L1 ledger, so it is confirmed immediately and
+   synchronously.
    The confirmed transaction on the ledger becomes part of the backlog of requests to be processed by the chain.
-   In the real L1 ledger the sender would have to wait until the ledger confirms the transaction.
+   In the real L1 ledger, the sender must wait until the ledger confirms the transaction.
+
 3. The chain picks the request from the backlog and runs the request on the VM.
-4. The VM calls the target entry point of the smart contract program. The
-   program updates the state.
+4. The VM calls the target entry point of the smart contract program. The program updates the state.
 5. The VM produces a state update transaction (the _anchor_).
 6. The chain signs the transaction with its private key (the `chain.StateControllerKeyPair()` in Solo).
 7. The chain posts the resulting transaction to the L1 ledger and, after confirmation, commits the corresponding state.
@@ -79,8 +106,9 @@ bc348767e2dd285ca15 4 1]
 
 ## Off-ledger Requests
 
-Alternatively, in the example above, we could send an off-ledger request by using `chain.PostRequestOffLedger` instead of `PostRequestSync`.
-However, since off-ledger reuests cannot have tokens attached, in order to cover for the gas fee we must deposit funds to the chain beforehand:
+Alternatively, you could send an off-ledger request by using `chain.PostRequestOffLedger` instead of `PostRequestSync`.
+However, since off-ledger requests cannot have tokens attached, in order to cover the gas fee, you must deposit funds to
+the chain beforehand:
 
 ```go
 user, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
