@@ -79,6 +79,7 @@ type consensus struct {
 	dssIndexProposal                 []int
 	dssIndexProposalsDecided         [][]int
 	dssSignature                     []byte
+	markedForReset                   bool
 	consensusJournal                 journal.ConsensusJournal
 	consensusJournalLogIndex         journal.LogIndex // Index of the currently running log index.
 	wal                              chain.WAL
@@ -139,7 +140,6 @@ func New(
 		consensusMetrics:                 consensusMetrics,
 		dssNode:                          dssNode,
 		consensusJournal:                 consensusJournal,
-		consensusJournalLogIndex:         consensusJournal.GetLogIndex(),
 		wal:                              wal,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages) // TODO: Don't need to attach here at all.

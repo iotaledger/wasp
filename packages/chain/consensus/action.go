@@ -563,6 +563,11 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		return
 	}
 	c.consensusJournal.ConsensusReached(logIndex)
+	if c.markedForReset {
+		c.log.Debugf("receiveACS: ignoring ACS result and resetting workflow as the consensus was marked fo reset")
+		c.resetWorkflowNoCheck()
+		return
+	}
 	// decode ACS
 	acs := make([]*BatchProposal, len(values))
 	for i, data := range values {
@@ -819,17 +824,28 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 // TODO: KP: All that workflow reset will stop working with the ConsensusJournal introduced, because nodes
 // have to agree on the reset. I.e. consensus has to complete, then its results can be ignored. Is that OK?
 func (c *consensus) resetWorkflow() {
+	if c.workflow.IsStateReceived() && !c.workflow.IsConsensusBatchKnown() {
+		c.markedForReset = true
+		c.log.Debugf("resetWorkflow: consensus marked for reset; it will be done once ACS is finished")
+		return
+	}
+	c.resetWorkflowNoCheck()
+}
+
+func (c *consensus) resetWorkflowNoCheck() {
+	c.consensusJournalLogIndex = c.consensusJournal.GetLogIndex() // Should be the next one.
 	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
+	c.log.Debugf("resetWorkflow: starting DSS session with key %v", dssKey)
 	err := c.dssNode.Start(dssKey, 0, c.committee.DKShare(),
 		func(indexProposal []int) {
-			c.log.Debugf("DSS callback: index proposal of %s is %v", dssKey, indexProposal)
+			c.log.Debugf("resetWorkflow DSS propoal callback: index proposal of %s is %v", dssKey, indexProposal)
 			c.EnqueueDssIndexProposalMsg(&messages.DssIndexProposalMsg{
 				DssKey:        dssKey,
 				IndexProposal: indexProposal,
 			})
 		},
 		func(signature []byte) {
-			c.log.Debugf("DSS callback: signature of %s is %v", dssKey, signature)
+			c.log.Debugf("resetWorkflow DSS signature callback: signature of %s is %v", dssKey, signature)
 			c.EnqueueDssSignatureMsg(&messages.DssSignatureMsg{
 				DssKey:    dssKey,
 				Signature: signature,
@@ -837,7 +853,7 @@ func (c *consensus) resetWorkflow() {
 		},
 	)
 	if err != nil {
-		c.log.Errorf("Failed to start the DSS session: %v", err) // TODO: XXX: Handle it better.
+		c.log.Errorf("resetWorkflow: failed to start the DSS session: %v", err) // TODO: XXX: Handle it better.
 	}
 
 	// for i := range c.resultSignatures {
@@ -854,7 +870,8 @@ func (c *consensus) resetWorkflow() {
 	c.dssIndexProposal = nil
 	c.dssIndexProposalsDecided = nil
 	c.dssSignature = nil
-	c.log.Debugf("Workflow reset")
+	c.markedForReset = false
+	c.log.Debugf("resetWorkflow completed; DSS session with key %s started", dssKey)
 }
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
@@ -885,15 +902,10 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 		return
 	}
 	signingMsgHash := hashing.HashData(signingMsg)
-	c.log.Debugf("processVMResult: signing message: %s. rotate state controller: %v", signingMsgHash, rotation)
-
-	err = c.dssNode.DecidedIndexProposals(
-		c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID()),
-		0,
-		c.dssIndexProposalsDecided,
-		signingMsgHash[:],
-	)
-	c.assert.RequireNoError(err, "processVMResult: ")
+	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
+	c.log.Debugf("processVMResult: starting DSS signing with key %s for message: %s, rotate state controller: %v", dssKey, signingMsgHash, rotation)
+	err = c.dssNode.DecidedIndexProposals(dssKey, 0, c.dssIndexProposalsDecided, signingMsgHash[:])
+	c.assert.RequireNoError(err, "processVMResult: starting DSS signing failed")
 
 	// sigShare, err := c.committee.DKShare().DSSSignShare(signingMsg)
 	// c.assert.RequireNoError(err, "processVMResult: ")
@@ -908,9 +920,8 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	// }
 
 	c.workflow.setDssSigningStarted()
-	c.consensusJournalLogIndex = c.consensusJournal.GetLogIndex() // Should be the next one.
 
-	c.log.Debugf("processVMResult: dss started for message: %s", signingMsgHash.String())
+	c.log.Debugf("processVMResult: DSS signing with key %s started for message %s", dssKey, signingMsgHash.String())
 }
 
 /*func (c *consensus) getDssKey() string {
