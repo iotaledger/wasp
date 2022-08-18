@@ -20,7 +20,7 @@ the smart contract call to panic:
 ```go
 func TestTutorialInvokeSCError(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 

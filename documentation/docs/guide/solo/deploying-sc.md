@@ -36,7 +36,7 @@ deploy `slotutorial_bg.wasm`:
 ```go
 func TestTutorialDeploySC(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "example")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 }
@@ -44,16 +44,24 @@ func TestTutorialDeploySC(t *testing.T) {
 
 This will work as long as the `solotutorial_bg.wasm` file is in the same directory as the Go test code.
 
-### Parameters
+### Create a Default Wallet and Chain
 
-The first parameter to `NewChain` is the key pair of the chain originator, and to `DeployWasmContract`  is the key pair
-of the deployer of the smart contract.
-You can pass `nil` to use a default wallet, which can be accessed as `chain.OriginatorPrivateKey`.
+You can use the `NewChain()` function to create a new wallet and deploys a new chain using said wallet, and other
+default parameters. You can access the wallet calling `chain.OriginatorPrivateKey`.
+
+### DeployWasmContract Parameters
+
+#### Deployer's Key Pair
+
+The first parameter to `DeployWasmContract`  is the key pair of the deployer of the smart contract. You can pass `nil`
+to use a default wallet, which can be accessed as `chain.OriginatorPrivateKey`.
+
+#### Smart Contract Name
 
 The second parameter to `DeployWasmContract` (`"solotutorial"`), is the name assigned to the smart contract instance.
 Smart contract instance names must be unique across each chain.
 
-#### AutoAdjustStorageDeposit
+### AutoAdjustStorageDeposit
 
 In the example above we enabled the `AutoAdjustStorageDeposit` option.
 This is necessary in order to automatically adjust all sent L1 transactions to include the storage deposit if

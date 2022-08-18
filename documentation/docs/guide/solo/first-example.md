@@ -28,7 +28,7 @@ import (
 
 func TestTutorialFirst(t *testing.T) {
 	env := solo.New(t)
-	chain := env.NewChain(nil, "tutorial1")
+	chain := env.NewChain()
 
 	// calls views governance::ViewGetChainInfo and root:: ViewGetContractRecords
 	chainID, chainOwnerID, coreContracts := chain.GetInfo()

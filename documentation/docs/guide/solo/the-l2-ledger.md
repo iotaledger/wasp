@@ -42,7 +42,7 @@ You could ignore them, but we include them in the example to show you exactly ho
 ```go
 func TestTutorialAccounts(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 
 	// create a wallet with some base tokens on L1:
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))

@@ -26,7 +26,7 @@ smart contract, you can invoke the `storeString` function:
 ```go
 func TestTutorialInvokeSC(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	chain := env.NewChain(nil, "ch1")
+	chain := env.NewChain()
 	err := chain.DeployWasmContract(nil, "solotutorial", "solotutorial_bg.wasm")
 	require.NoError(t, err)
 
