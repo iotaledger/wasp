@@ -117,7 +117,8 @@ func (d *dssImpl) Input(input gpa.Input) []gpa.Message {
 	if input != nil {
 		panic("nil input is expected")
 	}
-	return d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
+	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
+	return d.tryHandleDkgOutput(msgs)
 }
 
 // Handle the messages.

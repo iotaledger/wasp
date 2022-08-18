@@ -27,6 +27,15 @@ func MakeTestDistributedKey(
 	log *logger.Logger,
 ) (kyber.Point, map[gpa.NodeID]dss.DistKeyShare) {
 	n := len(nodeIDs)
+	if n == 1 {
+		// We don't need to make secret sharing for a single node.
+		sk := suite.Scalar().Pick(suite.RandomStream())
+		pk := suite.Point().Mul(sk, nil)
+		dkss := map[gpa.NodeID]dss.DistKeyShare{
+			nodeIDs[0]: &dks{share: &share.PriShare{I: 0, V: sk}, commits: []kyber.Point{pk}},
+		}
+		return pk, dkss
+	}
 	//
 	// Setup nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}

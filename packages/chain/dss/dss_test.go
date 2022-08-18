@@ -95,6 +95,9 @@ func TestBasic(t *testing.T) {
 		}
 		require.NoError(tt, eddsa.Verify(longTermPK, messageToSign, signature))
 	}
+	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
+	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
+	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
 	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })

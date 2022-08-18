@@ -124,7 +124,8 @@ func (n *nonceDKGImpl) Input(input gpa.Input) []gpa.Message {
 		panic(xerrors.Errorf("only expect a nil input, got: %+v", input))
 	}
 	secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-	return n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
+	msgs := n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
+	return n.tryHandleACSSTermination(n.myIdx, msgs)
 }
 
 func (n *nonceDKGImpl) Message(msg gpa.Message) []gpa.Message {
@@ -160,13 +161,17 @@ func (n *nonceDKGImpl) StatusString() string {
 func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.WrappingMsg) []gpa.Message {
 	msgIndex := msg.Index()
 	msgs := n.wrapper.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
-	out := n.acss[msgIndex].Output()
-	if out != nil && n.st[msgIndex] == nil {
+	return n.tryHandleACSSTermination(msgIndex, msgs)
+}
+
+func (n *nonceDKGImpl) tryHandleACSSTermination(acssIndex int, msgs []gpa.Message) []gpa.Message {
+	out := n.acss[acssIndex].Output()
+	if out != nil && n.st[acssIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)
 		if !ok {
 			panic(xerrors.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs = append(msgs, &msgACSSOutput{me: n.me, index: msgIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
+		msgs = append(msgs, &msgACSSOutput{me: n.me, index: acssIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
 	}
 	return msgs
 }
