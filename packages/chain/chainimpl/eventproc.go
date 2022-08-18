@@ -226,8 +226,8 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 	c.detachFromCommitteePeerMessagesFun = func() {
 		cmtPeerGroup.Detach(attachID)
 	}
-	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object...")
-	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, c.getCommittee().Address(), c.consensusJournalRegistry, c.log)
+	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object for chainID=%+v, committee=%+v", c.chainID, cmt)
+	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, cmt.Address(), c.consensusJournalRegistry, c.log)
 	if err != nil {
 		return xerrors.Errorf("cannot load consensus journal: %w", err)
 	}
