@@ -258,7 +258,8 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 	if err != nil {
 		panic(xerrors.Errorf("cannot serialize msg_rbc_ce: %w", err))
 	}
-	return a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
+	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
+	return a.tryHandleRBCTermination(false, msgs)
 }
 
 //
@@ -270,6 +271,10 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) []gpa.Message {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Message(m.Wrapped()))
+	return a.tryHandleRBCTermination(wasOut, msgs)
+}
+
+func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gpa.Message {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}

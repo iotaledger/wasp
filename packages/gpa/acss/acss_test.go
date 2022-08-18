@@ -20,6 +20,9 @@ import (
 // In this test all the nodes are actually fair.
 func TestBasic(t *testing.T) {
 	t.Parallel()
+	t.Run("n=1,f=0", func(tt *testing.T) { genericTest(tt, 1, 0, 0, 0) })
+	t.Run("n=2,f=0", func(tt *testing.T) { genericTest(tt, 2, 0, 0, 0) })
+	t.Run("n=3,f=0", func(tt *testing.T) { genericTest(tt, 3, 0, 0, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { genericTest(tt, 4, 1, 0, 0) })
 	t.Run("n=10,f=3", func(tt *testing.T) { genericTest(tt, 10, 3, 0, 0) })
 	t.Run("n=31,f=10", func(tt *testing.T) { genericTest(tt, 31, 10, 0, 0) })

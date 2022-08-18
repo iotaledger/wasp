@@ -30,6 +30,9 @@ func TestBasic(t *testing.T) {
 		}
 	}
 	t.Parallel()
+	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
+	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
+	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
 	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })
@@ -60,6 +63,9 @@ func TestWithSilent(t *testing.T) {
 		}
 	}
 	t.Parallel()
+	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
+	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
+	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
 	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })
@@ -99,6 +105,9 @@ func TestPredicate(t *testing.T) {
 		}
 	}
 	t.Parallel()
+	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
+	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
+	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
 	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })
