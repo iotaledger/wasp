@@ -101,7 +101,7 @@ func TestTutorialAccounts(t *testing.T) {
 ```
 
 The example above creates a chain and a wallet with `utxodb.FundsFromFaucetAmount` base tokens on L1.
-Then, it sends 1 Mi to the corresponding on-chain account by posting a
+Then, it sends 1 million tokens to the corresponding on-chain account by posting a
 [`deposit`](../core_concepts/core_contracts/accounts.md#deposit) request to the
 [`accounts` core contract](../core_concepts/core_contracts/accounts.md) on the chain.
 
