@@ -904,7 +904,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	signingMsgHash := hashing.HashData(signingMsg)
 	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
 	c.log.Debugf("processVMResult: starting DSS signing with key %s for message: %s, rotate state controller: %v", dssKey, signingMsgHash, rotation)
-	err = c.dssNode.DecidedIndexProposals(dssKey, 0, c.dssIndexProposalsDecided, signingMsgHash[:])
+	err = c.dssNode.DecidedIndexProposals(dssKey, 0, c.dssIndexProposalsDecided, signingMsg)
 	c.assert.RequireNoError(err, "processVMResult: starting DSS signing failed")
 
 	// sigShare, err := c.committee.DKShare().DSSSignShare(signingMsg)
