@@ -188,11 +188,6 @@ func TestNotEnoughISCGas(t *testing.T) {
 	require.Equal(t, res.evmReceipt.Status, types.ReceiptStatusFailed)
 
 	// no changes should persist
-
-	// restore default gas price, so the view call doesn't fail
-	err = env.setGasRatio(evmtypes.DefaultGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
-	require.NoError(t, err)
-	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
 	require.EqualValues(t, 43, storage.retrieve())
 }
 
