@@ -41,7 +41,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
 	l := registry.MustLen()
 	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
@@ -58,7 +58,7 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 // ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
-	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
+	data, found, err := getBlockInfoDataInternal(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
 	return dict.Dict{
@@ -78,7 +78,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
 
@@ -94,7 +94,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	res, err := GetRequestRecordDataByRequestID(ctx.State(), requestID)
+	res, err := GetRequestRecordDataByRequestID(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 	if res == nil {
 		return nil
@@ -117,7 +117,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
 
@@ -132,7 +132,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
+	seen, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
 	ctx.RequireNoError(err)
 	ret := dict.New()
 	if seen {
@@ -147,7 +147,7 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 
-	events, err := getRequestEventsInternal(ctx.State(), &requestID)
+	events, err := getRequestEventsInternal(ctx.StateR(), &requestID)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()
@@ -169,7 +169,7 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
+	events, err := GetBlockEventsInternal(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()
@@ -189,7 +189,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := ctx.Params().MustGetHname(ParamContractHname)
 	fromBlock := ctx.Params().MustGetUint32(ParamFromBlock, 0)
 	toBlock := ctx.Params().MustGetUint32(ParamToBlock, math.MaxUint32)
-	events, err := getSmartContractEventsInternal(ctx.State(), contract, fromBlock, toBlock)
+	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()

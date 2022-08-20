@@ -111,11 +111,11 @@ func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
 		ac.MustSetAt(key, value)
 		return true
 	})
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
 		an.MustSetAt(key, value)
 		return true
 	})
