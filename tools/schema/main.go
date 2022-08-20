@@ -130,8 +130,8 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	// XXX: Preserve line number until here
-	// XXX: comments are still preserved during generation
+	// Preserve line number until here
+	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
 		err = g.Generate()
