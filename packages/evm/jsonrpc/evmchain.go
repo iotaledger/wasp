@@ -76,7 +76,44 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if tx.ChainId().Uint64() != uint64(e.chainID) {
 		return fmt.Errorf("Chain ID mismatch")
 	}
+	sender, err := types.Sender(e.Signer(), tx)
+	if err != nil {
+		return fmt.Errorf("invalid transaction: %w", err)
+	}
+
+	expectedNonce, err := e.TransactionCount(sender)
+	if err != nil {
+		return fmt.Errorf("invalid transaction: %w", err)
+	}
+	if tx.Nonce() != expectedNonce {
+		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
+	}
+
+	if err := e.checkEnoughL2FundsForGasBudget(sender, tx.Gas()); err != nil {
+		return err
+	}
 	return e.backend.EVMSendTransaction(tx)
+}
+
+func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas uint64) error {
+	gasRatio, err := e.GasRatio()
+	if err != nil {
+		return fmt.Errorf("could not fetch gas ratio: %w", err)
+	}
+	balance, err := e.Balance(sender, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
+	if err != nil {
+		return fmt.Errorf("could not fetch sender balance: %w", err)
+	}
+	gasFeePolicy, err := e.GasFeePolicy()
+	if err != nil {
+		return fmt.Errorf("could not fetch the gas fee policy: %w", err)
+	}
+	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
+	iscGasBudgetTx := evmtypes.EVMGasToISC(evmGas, &gasRatio)
+	if iscGasBudgetAffordable < iscGasBudgetTx {
+		return fmt.Errorf("sender has not enough L2 funds to cover tx gas budget")
+	}
+	return nil
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {
@@ -224,10 +261,14 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 	return receipt, nil
 }
 
-func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
-	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetNonce.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash ...rpc.BlockNumberOrHash) (uint64, error) {
+	params := dict.Dict{
 		evm.FieldAddress: address.Bytes(),
-	}))
+	}
+	if len(blockNumberOrHash) > 0 {
+		params = paramsWithOptionalBlockNumberOrHash(blockNumberOrHash[0], params)
+	}
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetNonce.Name, params)
 	if err != nil {
 		return 0, err
 	}

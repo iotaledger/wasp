@@ -142,6 +142,11 @@ func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, forceOpenAccoun
 	vmctx.spendAllowedBudget(toMove) // panics if not enough
 
 	caller := vmctx.Caller() // have to take it here because callCore changes that
+
+	// if the caller is a core contract, funds should be taken from the common account
+	if vmctx.IsCoreAccount(caller) {
+		caller = vmctx.ChainID().CommonAccount()
+	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
 		if !accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs) {
 			panic(vm.ErrNotEnoughFundsForAllowance)

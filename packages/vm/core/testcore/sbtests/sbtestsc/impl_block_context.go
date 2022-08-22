@@ -27,5 +27,5 @@ func getBlockContext(ctx isc.Sandbox) *blockCtx {
 }
 
 func getLastBlockNumCalls(ctx isc.SandboxView) dict.Dict {
-	return dict.Dict{"numCalls": ctx.State().MustGet("numCalls")}
+	return dict.Dict{"numCalls": ctx.StateR().MustGet("numCalls")}
 }

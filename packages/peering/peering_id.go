@@ -7,7 +7,6 @@
 // the asynchronous communication.
 //
 // It is intended to use for the committee consensus protocol.
-//
 package peering
 
 import (

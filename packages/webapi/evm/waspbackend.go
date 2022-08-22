@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
@@ -59,6 +60,15 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 }
 
 func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
+	// Ensure the transaction has more gas than the basic Ethereum tx fee.
+	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true)
+	if err != nil {
+		return err
+	}
+	if tx.Gas() < intrinsicGas {
+		return core.ErrIntrinsicGas
+	}
+
 	req, err := isc.NewEVMOffLedgerRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err

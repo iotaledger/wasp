@@ -345,6 +345,6 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixBlockRegistry)
 	return registry.MustLen() - 1
 }

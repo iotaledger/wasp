@@ -79,6 +79,9 @@ type L1Address struct {
 }
 
 func WrapL1Address(a iotago.Address) L1Address {
+	if a == nil {
+		return L1Address{Data: []byte{}}
+	}
 	return L1Address{Data: isc.BytesFromAddress(a)}
 }
 
@@ -174,10 +177,13 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 type ISCAllowance struct {
 	BaseTokens uint64
 	Tokens     []NativeToken
-	NFTs       []NFTID
+	Nfts       []NFTID
 }
 
 func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
+	if a == nil {
+		return WrapISCAllowance(isc.NewEmptyAllowance())
+	}
 	tokens := make([]NativeToken, len(a.Assets.Tokens))
 	for i, t := range a.Assets.Tokens {
 		tokens[i] = WrapNativeToken(t)
@@ -189,7 +195,7 @@ func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	return ISCAllowance{
 		BaseTokens: a.Assets.BaseTokens,
 		Tokens:     tokens,
-		NFTs:       nfts,
+		Nfts:       nfts,
 	}
 }
 
@@ -198,8 +204,8 @@ func (a ISCAllowance) Unwrap() *isc.Allowance {
 	for i, t := range a.Tokens {
 		tokens[i] = t.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.NFTs))
-	for i, id := range a.NFTs {
+	nfts := make([]iotago.NFTID, len(a.Nfts))
+	for i, id := range a.Nfts {
 		nfts[i] = id.Unwrap()
 	}
 	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
@@ -307,6 +313,12 @@ type ISCExpiration struct {
 }
 
 func WrapISCExpiration(data *isc.Expiration) ISCExpiration {
+	if data == nil {
+		return ISCExpiration{
+			Time:          0,
+			ReturnAddress: WrapL1Address(nil),
+		}
+	}
 	var expiryTime int64
 
 	if !data.Time.IsZero() {
@@ -370,38 +382,6 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	ret := isc.SendOptions{
 		Timelock:   timeLock,
 		Expiration: i.Expiration.Unwrap(),
-	}
-
-	return ret
-}
-
-type ISCRequestParameters struct {
-	TargetAddress               L1Address
-	FungibleTokens              ISCFungibleTokens
-	AdjustMinimumStorageDeposit bool
-	Metadata                    ISCSendMetadata
-	SendOptions                 ISCSendOptions
-}
-
-func WrapISCRequestParameters(parameters isc.RequestParameters) ISCRequestParameters {
-	ret := ISCRequestParameters{
-		TargetAddress:               WrapL1Address(parameters.TargetAddress),
-		FungibleTokens:              WrapISCFungibleTokens(*parameters.FungibleTokens),
-		AdjustMinimumStorageDeposit: parameters.AdjustToMinimumStorageDeposit,
-		Metadata:                    WrapISCSendMetadata(*parameters.Metadata),
-		SendOptions:                 WrapISCSendOptions(parameters.Options),
-	}
-
-	return ret
-}
-
-func (i *ISCRequestParameters) Unwrap() isc.RequestParameters {
-	ret := isc.RequestParameters{
-		TargetAddress:                 i.TargetAddress.MustUnwrap(),
-		FungibleTokens:                i.FungibleTokens.Unwrap(),
-		AdjustToMinimumStorageDeposit: i.AdjustMinimumStorageDeposit,
-		Metadata:                      i.Metadata.Unwrap(),
-		Options:                       i.SendOptions.Unwrap(),
 	}
 
 	return ret

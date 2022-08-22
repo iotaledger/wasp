@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +37,7 @@ type Env struct {
 	WaitTxConfirmed func(common.Hash) error
 }
 
-func (e *Env) signer() types.Signer {
+func (e *Env) Signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.ChainID)))
 }
 
@@ -62,7 +63,7 @@ func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
-		e.signer(),
+		e.Signer(),
 		creator,
 	)
 	require.NoError(e.T, err)
@@ -76,12 +77,12 @@ func (e *Env) DeployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 }
 
 func (e *Env) mustSendTransactionAndWait(tx *types.Transaction) *types.Receipt {
-	r, err := e.sendTransactionAndWait(tx)
+	r, err := e.SendTransactionAndWait(tx)
 	require.NoError(e.T, err)
 	return r
 }
 
-func (e *Env) sendTransactionAndWait(tx *types.Transaction) (*types.Receipt, error) {
+func (e *Env) SendTransactionAndWait(tx *types.Transaction) (*types.Receipt, error) {
 	if err := e.Client.SendTransaction(context.Background(), tx); err != nil {
 		return nil, err
 	}
@@ -308,7 +309,7 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	require.NoError(e.T, err)
 	transferTx, err := types.SignTx(
 		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
-		e.signer(),
+		e.Signer(),
 		creator,
 	)
 	require.NoError(e.T, err)
@@ -317,38 +318,42 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
 
-func (e *Env) TestRPCGasLimit(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
-	from, fromAddress := newAccountWithL2Funds()
-	_, toAddress := newAccountWithL2Funds()
-	value := big.NewInt(0)
-	nonce := e.NonceAt(fromAddress)
-	gasLimit := params.TxGas - 1
-	tx, err := types.SignTx(
-		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
-		e.signer(),
-		from,
-	)
-	require.NoError(e.T, err)
-
-	_, err = e.sendTransactionAndWait(tx)
-	require.Error(e.T, err)
-	require.Regexp(e.T, `\bgas\b`, err.Error())
-}
-
 func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	from, fromAddress := newAccountWithL2Funds()
 	_, toAddress := newAccountWithL2Funds()
 	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress) + 1
-	gasLimit := params.TxGas - 1
+	gasLimit := params.TxGas
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
-		e.signer(),
+		e.Signer(),
 		from,
 	)
 	require.NoError(e.T, err)
 
-	_, err = e.sendTransactionAndWait(tx)
+	_, err = e.SendTransactionAndWait(tx)
 	require.Error(e.T, err)
 	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
+	_, ok := err.(*isc.VMError)
+	require.False(e.T, ok)
+}
+
+func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
+	from, fromAddress := newAccountWithL2Funds()
+	_, toAddress := newAccountWithL2Funds()
+	value := big.NewInt(0)
+	nonce := e.NonceAt(fromAddress)
+	gasLimit := uint64(1) // lower than intrinsic gas
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
+		e.Signer(),
+		from,
+	)
+	require.NoError(e.T, err)
+
+	_, err = e.SendTransactionAndWait(tx)
+	require.Error(e.T, err)
+	require.Regexp(e.T, "intrinsic gas too low", err.Error())
+	_, ok := err.(*isc.VMError)
+	require.False(e.T, ok)
 }

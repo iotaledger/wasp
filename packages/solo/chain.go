@@ -32,6 +32,7 @@ import (
 )
 
 // String is string representation for main parameters of the chain
+//
 //goland:noinspection ALL
 func (ch *Chain) String() string {
 	var buf bytes.Buffer
@@ -162,7 +163,8 @@ func (ch *Chain) UploadBlobFromFile(keyPair *cryptolib.KeyPair, fileName, fieldN
 }
 
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
-//  parameter 'binaryCode' is the binary of Wasm smart contract program
+//
+//	parameter 'binaryCode' is the binary of Wasm smart contract program
 //
 // The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
@@ -239,9 +241,9 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 }
 
 // GetInfo return main parameters of the chain:
-//  - chainID
-//  - agentID of the chain owner
-//  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
+//   - chainID
+//   - agentID of the chain owner
+//   - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (*isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)

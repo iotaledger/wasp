@@ -6,9 +6,9 @@
 //
 // State of the SC (the ChainNodes part):
 //
-//    VarAccessNodeCandidates:  map[pubKey] => AccessNodeInfo    // A set of Access Node Info.
-//    VarAccessNodes:           map[pubKey] => byte[0]           // A set of nodes.
-//    VarValidatorNodes:        pubKey[]                         // An ordered list of nodes.
+//	VarAccessNodeCandidates:  map[pubKey] => AccessNodeInfo    // A set of Access Node Info.
+//	VarAccessNodes:           map[pubKey] => byte[0]           // A set of nodes.
+//	VarValidatorNodes:        pubKey[]                         // An ordered list of nodes.
 package governanceimpl
 
 import (
@@ -23,10 +23,9 @@ import (
 // SC Command Function handler.
 // Can only be invoked by the access node owner (verified via the Certificate field).
 //
-//  addCandidateNode(
-//      accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
-//  ) => ()
-//
+//	addCandidateNode(
+//	    accessNodeInfo{NodePubKey, Certificate, ForCommittee, AccessAPI}
+//	) => ()
 func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromAddCandidateNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
@@ -48,15 +47,14 @@ func addCandidateNode(ctx isc.Sandbox) dict.Dict {
 // SC Command Function handler.
 // Can only be invoked by the access node owner (verified via the Certificate field).
 //
-//  revokeAccessNode(
-//      accessNodeInfo{NodePubKey, Certificate}
-//  ) => ()
+//	revokeAccessNode(
+//	    accessNodeInfo{NodePubKey, Certificate}
+//	) => ()
 //
 // It is possible that after executing `revokeAccessNode(...)` a node will stay
 // in the list of validators, and will be absent in the candidate or an access node set.
 // The node is removed from the list of access nodes immediately, but the validator rotation
 // must be initiated by the chain owner explicitly.
-//
 func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 	ani := governance.NewAccessNodeInfoFromRevokeAccessNodeParams(ctx)
 	ctx.Requiref(ani.ValidateCertificate(ctx), "certificate invalid")
@@ -72,10 +70,9 @@ func revokeAccessNode(ctx isc.Sandbox) dict.Dict {
 // SC Command Function handler.
 // Can only be invoked by the chain owner.
 //
-//  changeAccessNodes(
-//      actions: map(pubKey => ChangeAccessNodeAction)
-//  ) => ()
-//
+//	changeAccessNodes(
+//	    actions: map(pubKey => ChangeAccessNodeAction)
+//	) => ()
 func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
@@ -106,20 +103,19 @@ func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 
 // SC Query Function handler.
 //
-//  getChainNodes() => (
-//      accessNodeCandidates :: map(pubKey => AccessNodeInfo),
-//      accessNodes          :: map(pubKey => ())
-//  )
-//
+//	getChainNodes() => (
+//	    accessNodeCandidates :: map(pubKey => AccessNodeInfo),
+//	    accessNodes          :: map(pubKey => ())
+//	)
 func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
 		ac.MustSetAt(key, value)
 		return true
 	})
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
 		an.MustSetAt(key, value)
 		return true
 	})

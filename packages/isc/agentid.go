@@ -109,7 +109,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	if hnamePart != "" {
 		return contractAgentIDFromString(hnamePart, addrPart)
 	}
-	if strings.HasPrefix(addrPart, string(parameters.L1.Protocol.Bech32HRP)) {
+	if strings.HasPrefix(addrPart, string(parameters.L1().Protocol.Bech32HRP)) {
 		return addressAgentIDFromString(s)
 	}
 	if strings.HasPrefix(addrPart, "0x") {

@@ -41,7 +41,7 @@ func incCounter(ctx isc.Sandbox) dict.Dict {
 
 func getCounter(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
-	state := kvdecoder.New(ctx.State(), ctx.Log())
+	state := kvdecoder.New(ctx.StateR(), ctx.Log())
 	counter := state.MustGetUint64(VarCounter, 0)
 	ret.Set(VarCounter, codec.EncodeUint64(counter))
 	return ret
@@ -119,7 +119,7 @@ func getInt(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Infof(FuncGetInt.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramName := params.MustGetString(ParamIntParamName)
-	state := kvdecoder.New(ctx.State(), ctx.Log())
+	state := kvdecoder.New(ctx.StateR(), ctx.Log())
 	paramValue := state.MustGetInt64(kv.Key(paramName), 0)
 	ret := dict.New()
 	ret.Set(kv.Key(paramName), codec.EncodeInt64(paramValue))

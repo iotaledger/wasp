@@ -11,7 +11,7 @@ import (
 )
 
 func TestAgentID(t *testing.T) {
-	networkPrefix := parameters.L1.Protocol.Bech32HRP
+	networkPrefix := parameters.L1().Protocol.Bech32HRP
 
 	{
 		n := &NilAgentID{}

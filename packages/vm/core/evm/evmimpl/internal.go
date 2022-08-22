@@ -88,7 +88,7 @@ func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 
 func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
-		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
+		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.StateR())),
 		timestamp(ctx),
 		newMagicContractView(ctx),
 		getBalanceFunc(ctx),

@@ -267,6 +267,7 @@ func (g *GenBase) emitFunc(line string) {
 // It processes template when the named condition is true
 // It processes the optional elseTemplate when the named condition is false
 // Produces an error if named condition is unknown
+
 //nolint:funlen
 func (g *GenBase) emitIf(line string) {
 	g.log(line)

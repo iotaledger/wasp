@@ -34,10 +34,10 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T) *clusterTestEnv {
+func newClusterTestEnv(t *testing.T, opt ...waspClusterOpts) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	clu := newCluster(t)
+	clu := newCluster(t, opt...)
 
 	chain, err := clu.DeployDefaultChain()
 	require.NoError(t, err)
@@ -124,12 +124,8 @@ func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
 	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }
 
-func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
-	e := newClusterTestEnv(t)
-	e.TestRPCGasLimit(e.newEthereumAccountWithL2Funds)
-}
-
-func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
+func TestEVMJsonRPCClusterInvalidTx(t *testing.T) {
 	e := newClusterTestEnv(t)
 	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
+	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
 }

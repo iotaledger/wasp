@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
 )
@@ -25,10 +24,7 @@ func ValueFromString(vtype, s string) []byte {
 	case "address":
 		prefix, addr, err := iotago.ParseBech32(s)
 		log.Check(err)
-		if parameters.L1 == nil {
-			config.L1Client() // this will fill parameters.L1 with data from the L1 node
-		}
-		l1Prefix := parameters.L1.Protocol.Bech32HRP
+		l1Prefix := parameters.L1().Protocol.Bech32HRP
 		if prefix != l1Prefix {
 			log.Fatalf("address prefix %s does not match L1 prefix %s", prefix, l1Prefix)
 		}
@@ -119,10 +115,7 @@ func ValueToString(vtype string, v []byte) string {
 	case "address":
 		addr, err := codec.DecodeAddress(v)
 		log.Check(err)
-		if parameters.L1 == nil {
-			config.L1Client() // this will fill parameters.L1 with data from the L1 node
-		}
-		return addr.Bech32(parameters.L1.Protocol.Bech32HRP)
+		return addr.Bech32(parameters.L1().Protocol.Bech32HRP)
 	case "agentid":
 		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
@@ -20,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"golang.org/x/xerrors"
 )
 
 func (c *chainObj) recvLoop() {
@@ -321,15 +322,25 @@ func (c *chainObj) broadcastOffLedgerRequest(req isc.OffLedgerRequest) {
 			if !c.mempool.HasRequest(req.ID()) {
 				return
 			}
-			// deep copy the list of peers that have the request (otherwise we get a pointer to the map instead)
-			c.offLedgerPeersHaveReqMutex.Lock()
-			peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
-			if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
-				// this node is part of the committee and the message has already been received by every other committee node
+
+			shouldStop := func() bool {
+				// deep copy the list of peers that have the request (otherwise we get a pointer to the map instead)
+				c.offLedgerPeersHaveReqMutex.Lock()
+				defer c.offLedgerPeersHaveReqMutex.Unlock()
+
+				peersThatHaveTheRequest := c.offLedgerPeersHaveReq[req.ID()]
+				if cmt != nil && len(peersThatHaveTheRequest) >= int(cmt.Size())-1 {
+					// this node is part of the committee and the message has already been received by every other committee node
+					return true
+				}
+
+				sendMessage(peersThatHaveTheRequest)
+				return false
+			}()
+
+			if shouldStop {
 				return
 			}
-			sendMessage(peersThatHaveTheRequest)
-			c.offLedgerPeersHaveReqMutex.Unlock()
 		}
 	}()
 }

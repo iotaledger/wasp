@@ -1,5 +1,5 @@
 ---
-description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure Hardhat, Metamask, Remix, Ether.js and Web3.js among others.
+description: Existing EVM tooling is compatible and can be used directly with an IOTA Smart Contracts chain running EVM. You can configure hardhat, metamask, remix, Ether.js and Web3.js among others.
 image: /img/logo/WASP_logo_dark.png
 keywords:
 - smart contracts
@@ -19,8 +19,9 @@ EVM on IOTA Smart Contracts has been integrated in a way that the existing EVM t
 
 ## Tooling Considerations
 
- 1. Please make sure you use the correct JSON-RPC endpoint URL in your tooling for your chain. The JSON-RPC endpoint and Chain ID can be found in the Wasp dashboard / Chains / your ISC chain page.
- 2. Fees are being handled on the IOTA Smart Contracts chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level.
+ 1. Please make sure you use the correct JSON-RPC endpoint URL in your tooling for your chain. You can find the JSON-RPC endpoint URL in the Wasp dashboard which can be found on http://localhost:7000 if you run your Wasp node locally (default login: wasp/wasp). 
+ 2. Please make sure you use the right `Chain ID` as configured while starting the JSON-RPC service. If you did not explicitly define this while starting the service, the default Chain ID will be `1074`. 
+ 3. Fees are being handled on the IOTA Smart Contracts chain level, not EVM level. Because of this, you can simply use a gas price of 0 on EVM level at this point in time.
 
 :::caution
 
@@ -28,17 +29,27 @@ Re-using an existing Chain ID is not recommended and can be a security risk. For
 
 :::
 
+## Wasp-cli
+
+The Wasp CLI has some very basic functionalities to manage an EVM chain. Given the compatibility with existing tooling, only the basics are covered to get started with IOTA Smart Contracts and EVM. The JSON-RPC endpoint automatically starts with Wasp itself and you can use the CLI tools to deploy a new chain which spawns up a new EVM chain automatically and to deposit tokens to a EVM chain address. The following example allows you to deposit your networks base token (IOTA on the IOTA network, SMR on the Shimmer network) to a EVM address (can be a metamask generated address for example).
+
+```shell
+wasp-cli chain deposit <0xEthAddress> base:1000000
+```
+
+After this you will have the balance on your Ethereum account available to pay for gas fees with for example Metamask.
+
 ## MetaMask
 
 [MetaMask](https://metamask.io/) is a popular EVM compatible wallet which runs in a browser extension that allows you to let your wallet interact with web applications utilizing an EVM chain (dApps). 
 
 To use your EVM chain with MetaMask, simply open up MetaMask and click on the network drop-down list at the very top. At the bottom of this list you will see the option `Custom RPC`, click on this. For a local setup use the values as shown in the image below:
 
-[![MetaMask Network](/img/metamask_network.png)](/img/metamask_network.png)
+[![MetaMask Network](/img/metamask_beta.png)](/img/metamask_beta.png)
 
-Make sure that your `RPC URL` and `Chain ID` are set correctly and match the settings listed in the Wasp dashboard. The `Network Name` can be whatever you see fit.
+Make sure that your `RPC Url` and `Chain ID` are set correctly and match the dashboard values. The `Network Name` can be whatever you see fit.
 
-If you wish to use additional EVM chains with Metamask, you can simply add more Custom RPC networks, as long as they have a unique `Chain ID` and `RPC URL`. Once this is done, you can start using MetaMask to manage your EVM wallet or issue/sign transactions with any dApp running on that network. 
+If you wish to use additional EVM chains with Metamask, you can simply add more Custom RPC networks, as long as they have a unique `Chain ID` and `RPC Url`. Once this is done, you can start using MetaMask to manage your EVM wallet or issue/sign transactions with any dApp running on that network. 
 
 ### Remix 
 
@@ -64,7 +75,7 @@ Metamask will ask to connect to Remix and once connected the `Environment` will 
 ```javascript
 networks: {
     local: {
-        url: 'http://localhost:9090/chain/atoi1prkduk8zfp3yzaqcweaz83dja5rqxe5nenm059pzs3mmev9nspwew95dycu/evm/jsonrpc',
+        url: 'http://localhost:9090/chain/rms1.../evm/jsonrpc',
         chainId: 1074,
         accounts: [privkey],
         timeout: 60000

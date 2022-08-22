@@ -42,7 +42,7 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 			Data: metadata,
 		}}
 	}
-	f.Amount = parameters.L1.Protocol.RentStructure.MinRent(f)
+	f.Amount = parameters.L1().Protocol.RentStructure.MinRent(f)
 	err := panicutil.CatchPanicReturnError(func() {
 		txb.subDeltaBaseTokensFromTotal(f.Amount)
 	}, vm.ErrNotEnoughBaseTokensBalance)

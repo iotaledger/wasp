@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -72,7 +73,7 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 
 	// construct request
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(c.baseURL, "/"), strings.TrimLeft(route, "/"))
-	req, err := http.NewRequest(method, url, func() io.Reader {
+	req, err := http.NewRequestWithContext(context.Background(), method, url, func() io.Reader {
 		if data == nil {
 			return nil
 		}

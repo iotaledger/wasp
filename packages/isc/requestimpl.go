@@ -25,6 +25,10 @@ const (
 	requestKindTagOffLedgerEVMEstimateGas
 )
 
+func NewRequestFromBytes(data []byte) (Request, error) {
+	return NewRequestFromMarshalUtil(marshalutil.New(data))
+}
+
 func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 	kind, err := mu.ReadByte()
 	if err != nil {

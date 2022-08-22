@@ -17,9 +17,7 @@ import (
 
 const NotInGroup uint16 = 0xFFFF
 
-//
 // groupImpl implements peering.GroupProvider
-//
 type groupImpl struct {
 	netProvider peering.NetworkProvider
 	nodes       []peering.PeerSender

@@ -16,7 +16,7 @@ func NewRotateChainStateControllerTx(
 	kp *cryptolib.KeyPair,
 ) (*iotago.Transaction, error) {
 	if o, ok := chainOutput.(*iotago.AliasOutput); !ok || o.AliasID != chainID {
-		return nil, fmt.Errorf("provided output is not the correct one. expected ChainID: %s", chainID.ToAddress().Bech32(parameters.L1.Protocol.Bech32HRP))
+		return nil, fmt.Errorf("provided output is not the correct one. expected ChainID: %s", chainID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP))
 	}
 
 	// create a TX with that UTXO as input, and the updated addr unlock condition on the new output
@@ -46,5 +46,5 @@ func NewRotateChainStateControllerTx(
 	}
 
 	outputs := iotago.Outputs{newChainOutput}
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1.Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1().Protocol.NetworkID())
 }

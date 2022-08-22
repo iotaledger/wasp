@@ -30,6 +30,6 @@ var (
 	ErrExceededPostedOutputLimit             = coreerrors.Register("exceeded maximum number of %d posted outputs in one request").Create(42)
 	ErrGasBudgetExceeded                     = coreerrors.Register("gas budget exceeded").Create()
 	ErrSenderUnknown                         = coreerrors.Register("sender unknown").Create()
-	ErrGasBudgetDetail                       = coreerrors.Register("%v: burned (budget) = %d (%d)")
+	ErrGasBudgetDetail                       = coreerrors.Register("%v: burned = %d (budget = %d)")
 	ErrUnauthorized                          = coreerrors.Register("unauthorized access").Create()
 )

@@ -27,7 +27,7 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 			&iotago.MetadataFeature{Data: par.ImmutableMetadata},
 		},
 	}
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 	out.Amount = storageDeposit
 
 	outputs := iotago.Outputs{out}
@@ -41,5 +41,5 @@ func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, e
 	}
 
 	inputsCommitment := inputIDs.OrderedSet(par.UnspentOutputs).MustCommitment()
-	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, parameters.L1.Protocol.NetworkID())
+	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.IssuerKeyPair, parameters.L1().Protocol.NetworkID())
 }

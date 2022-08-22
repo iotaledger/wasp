@@ -89,7 +89,7 @@ func MakeBasicOutput(
 		return out
 	}
 
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = storageDeposit
@@ -110,7 +110,7 @@ func NFTOutputFromPostData(
 	if !par.AdjustToMinimumStorageDeposit {
 		return out
 	}
-	storageDeposit := parameters.L1.Protocol.RentStructure.MinRent(out)
+	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
 	if out.Deposit() < storageDeposit {
 		// adjust the amount to the minimum required
 		out.Amount = storageDeposit

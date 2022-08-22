@@ -12,7 +12,7 @@
   let isSendingFunds: boolean;
   let errorMessage: string;
 
-  let balance: bigint = 0n;
+  let balance: bigint = BigInt(0);
   let chainId: string = '';
   let evmAddress: string = '';
 
@@ -54,9 +54,13 @@
         evmAddress,
         chainId,
         balance,
-        50000000n
+        BigInt(500000)
       );
       toast.pop(toastId);
+
+      toast.push('Funds successfully sent! It may take 10-30 seconds to arive.', {
+        duration: 10 * 1000
+      });
     } catch (ex) {
       errorMessage = ex;
       toast.pop(toastId);
