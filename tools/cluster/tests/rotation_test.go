@@ -142,9 +142,9 @@ func TestRotation(t *testing.T) {
 // requests are being posted. Test is designed in a way that some inccounter requests
 // are approved by the one node committee and others by rotated four node committee.
 // NOTE: the timeouts of the test are large, because all the nodes are checked. For
-// a request to be marked proccessed, the node's state manager must be synchronized
+// a request to be marked processed, the node's state manager must be synchronized
 // to any index after the transaction, which included the request. It might happen
-// that some request is approved by committee for state index 8 and some (most likelly
+// that some request is approved by committee for state index 8 and some (most likely
 // access) node is constantly behind and catches up only when the test stops producing
 // requests in state index 18. In that node, request index 8 is marked as processed
 // only after state manager reaches state index 18 and publishes the transaction.
@@ -339,6 +339,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		var a iotago.Address
 		a, err = e.callGetStateController(nodeIndex)
 		if err != nil {
+			e.t.Logf("Error received while waiting state controller change to %s in node %v", addr, nodeIndex)
 			return false
 		}
 		return a.Equal(addr)
@@ -347,7 +348,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		return err
 	}
 	if !result {
-		return xerrors.New(fmt.Sprintf("Timeout waiting state controler change to %s in node %v", addr, nodeIndex))
+		return xerrors.New(fmt.Sprintf("Timeout waiting state controller change to %s in node %v", addr, nodeIndex))
 	}
 	return nil
 }
