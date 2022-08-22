@@ -96,7 +96,9 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:])
 	dss := dss_node.New(&peeringID, env.NetworkProviders[nodeIndex], ret.NodeKeyPair, log)
-	registry, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), log)
+	cmtN := int(cmt.Size())
+	cmtF := (cmtN - 1) / 3
+	registry, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), cmtN, cmtF, log)
 	require.NoError(env.T, err)
 	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)

@@ -6,6 +6,7 @@ package journal
 import (
 	"encoding/binary"
 	"errors"
+	"sort"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -72,6 +73,14 @@ type ConsensusJournal interface {
 	//
 	// Notify, when a particular log index has been completed (decided).
 	ConsensusReached(logIndex LogIndex)
+	//
+	// Upon reception of F+1 Log indexes higher that ours, we have to move
+	// to the next log index That's to catch up with the chain, if a consensus
+	// has failed in some way for us (e.g. maybe this node was down or restarted).
+	//
+	// It is safe here to count own message, because our own log index
+	// will not be bigger that ours :)
+	PeerLogIndexReceived(peerIndex uint16, peerLogIndex LogIndex) bool
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,13 +101,16 @@ type Registry interface {
 // Here the local view is made persistent and a dimension of history added.
 //
 type consensusJournalImpl struct {
-	id        ID
-	chainID   isc.ChainID
-	committee iotago.Address
-	registry  Registry
-	logIndex  LogIndex
-	localView LocalView
-	log       *logger.Logger
+	id             ID
+	chainID        isc.ChainID
+	committee      iotago.Address
+	committeeN     int
+	committeeF     int
+	registry       Registry
+	logIndex       LogIndex
+	localView      LocalView
+	peerLogIndexes map[uint16]LogIndex // NodeIndex -> LogIndex.
+	log            *logger.Logger
 }
 
 var (
@@ -106,16 +118,19 @@ var (
 	_ LocalView        = &consensusJournalImpl{}
 )
 
-func LoadConsensusJournal(chainID isc.ChainID, committee iotago.Address, registry Registry, log *logger.Logger) (ConsensusJournal, error) {
+func LoadConsensusJournal(chainID isc.ChainID, committee iotago.Address, registry Registry, committeeN, committeeF int, log *logger.Logger) (ConsensusJournal, error) {
 	id, err := MakeID(chainID, committee)
 	if err != nil {
 		return nil, err
 	}
 	j := &consensusJournalImpl{
-		id:       *id,
-		chainID:  chainID,
-		registry: registry,
-		log:      log,
+		id:             *id,
+		chainID:        chainID,
+		registry:       registry,
+		committeeN:     committeeN,
+		committeeF:     committeeF,
+		peerLogIndexes: map[uint16]LogIndex{},
+		log:            log,
 	}
 	li, lv, err := registry.LoadConsensusJournal(j.id)
 	if err == nil {
@@ -162,6 +177,37 @@ func (j *consensusJournalImpl) ConsensusReached(logIndex LogIndex) {
 	if err := j.registry.SaveConsensusJournalLogIndex(j.id, j.logIndex); err != nil {
 		panic(xerrors.Errorf("cannot store the log index: %w", err))
 	}
+}
+
+// Implements the ConsensusJournal interface.
+func (j *consensusJournalImpl) PeerLogIndexReceived(peerIndex uint16, peerLogIndex LogIndex) bool {
+	//
+	// Record the log index for the peer, if it has been increased.
+	oldLogIndex, ok := j.peerLogIndexes[peerIndex]
+	if ok && oldLogIndex.AsUint32() >= peerLogIndex.AsUint32() {
+		return false
+	}
+	j.peerLogIndexes[peerIndex] = peerLogIndex
+	//
+	// Don't bother, if we have info from not enough of peers.
+	if len(j.peerLogIndexes) < j.committeeF+1 {
+		return false
+	}
+	//
+	// Order log indexes.
+	logIndexes := []int{}
+	for _, li := range j.peerLogIndexes {
+		logIndexes = append(logIndexes, int(li.AsUint32()))
+	}
+	sort.Ints(logIndexes)
+	//
+	// And take the F+1 of the biggest (from the tail).
+	potentialLogIndex := uint32(logIndexes[len(logIndexes)-(j.committeeF+1)])
+	if potentialLogIndex > j.logIndex.AsUint32() {
+		j.logIndex = LogIndex(potentialLogIndex)
+		return true
+	}
+	return false
 }
 
 // Implements the LocalView interface.

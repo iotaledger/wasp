@@ -4,6 +4,7 @@ type pipeMetrics struct {
 	eventStateTransitionMsgPipeSize int
 	// eventSignedResultMsgPipeSize    int
 	// eventSignedResultAckMsgPipeSize int
+	eventPeerLogIndexMsgPipeSize   int
 	eventInclusionStateMsgPipeSize int
 	eventACSMsgPipeSize            int
 	eventVMResultMsgPipeSize       int
@@ -21,6 +22,10 @@ func (p *pipeMetrics) GetEventStateTransitionMsgPipeSize() int {
 // func (p *pipeMetrics) GetEventSignedResultAckMsgPipeSize() int {
 // 	return p.eventSignedResultAckMsgPipeSize
 // }
+
+func (p *pipeMetrics) GetEventPeerLogIndexMsgPipeSize() int {
+	return p.eventPeerLogIndexMsgPipeSize
+}
 
 func (p *pipeMetrics) GetEventInclusionStateMsgPipeSize() int {
 	return p.eventInclusionStateMsgPipeSize

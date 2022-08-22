@@ -65,6 +65,7 @@ type consensus struct {
 	eventDssSignatureMsgPipe     pipe.Pipe
 	// eventSignedResultMsgPipe         pipe.Pipe
 	// eventSignedResultAckMsgPipe      pipe.Pipe
+	eventPeerLogIndexMsgPipe         pipe.Pipe
 	eventInclusionStateMsgPipe       pipe.Pipe
 	eventACSMsgPipe                  pipe.Pipe
 	eventVMResultMsgPipe             pipe.Pipe
@@ -90,6 +91,7 @@ var _ chain.Consensus = &consensus{}
 const (
 	//	peerMsgTypeSignedResult = iota
 	//	peerMsgTypeSignedResultAck
+	peerMsgTypePeerLogIndexMsg = iota
 
 	maxMsgBuffer = 1000
 )
@@ -131,6 +133,7 @@ func New(
 		eventDssSignatureMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		// eventSignedResultAckMsgPipe:      pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventPeerLogIndexMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventInclusionStateMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventACSMsgPipe:                  pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventVMResultMsgPipe:             pipe.NewLimitInfinitePipe(maxMsgBuffer),
@@ -176,6 +179,16 @@ func (c *consensus) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGro
 	// 		SignedResultAckMsg: *msg,
 	// 		SenderIndex:        peerMsg.SenderIndex,
 	// 	})
+	case peerMsgTypePeerLogIndexMsg:
+		msg, err := messages.NewPeerLogIndexMsg(peerMsg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.EnqueuePeerLogIndexMsg(&messages.PeerLogIndexMsgIn{
+			PeerLogIndexMsg: *msg,
+			SenderIndex:     peerMsg.SenderIndex,
+		})
 	default:
 		c.log.Warnf("Wrong type of consensus message: %v, ignoring it", peerMsg.MsgType)
 	}
@@ -194,6 +207,7 @@ func (c *consensus) Close() {
 	c.eventDssSignatureMsgPipe.Close()
 	// c.eventSignedResultMsgPipe.Close()
 	// c.eventSignedResultAckMsgPipe.Close()
+	c.eventPeerLogIndexMsgPipe.Close()
 	c.eventInclusionStateMsgPipe.Close()
 	c.eventACSMsgPipe.Close()
 	c.eventVMResultMsgPipe.Close()
@@ -206,6 +220,7 @@ func (c *consensus) recvLoop() {
 	eventDssSignatureMsgCh := c.eventDssSignatureMsgPipe.Out()
 	// eventSignedResultMsgCh := c.eventSignedResultMsgPipe.Out()
 	// eventSignedResultAckMsgCh := c.eventSignedResultAckMsgPipe.Out()
+	eventPeerLogIndexMsgCh := c.eventPeerLogIndexMsgPipe.Out()
 	eventInclusionStateMsgCh := c.eventInclusionStateMsgPipe.Out()
 	eventACSMsgCh := c.eventACSMsgPipe.Out()
 	eventVMResultMsgCh := c.eventVMResultMsgPipe.Out()
@@ -216,6 +231,7 @@ func (c *consensus) recvLoop() {
 			eventDssSignatureMsgCh == nil &&
 			// eventSignedResultMsgCh == nil &&
 			// eventSignedResultAckMsgCh == nil &&
+			eventPeerLogIndexMsgCh == nil &&
 			eventInclusionStateMsgCh == nil &&
 			eventACSMsgCh == nil &&
 			eventVMResultMsgCh == nil &&
@@ -273,6 +289,14 @@ func (c *consensus) recvLoop() {
 		// 	} else {
 		// 		eventSignedResultAckMsgCh = nil
 		// 	}
+		case msg, ok := <-eventPeerLogIndexMsgCh:
+			if ok {
+				c.log.Debugf("Consensus::recvLoop, handlePeerLogIndexMsg...")
+				c.handlePeerLogIndexMsg(msg.(*messages.PeerLogIndexMsgIn))
+				c.log.Debugf("Consensus::recvLoop, handlePeerLogIndexMsg... Done")
+			} else {
+				eventPeerLogIndexMsgCh = nil
+			}
 		case msg, ok := <-eventInclusionStateMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState...")
@@ -355,9 +379,10 @@ func (c *consensus) GetWorkflowStatus() chain.ConsensusWorkflowStatus {
 func (c *consensus) GetPipeMetrics() chain.ConsensusPipeMetrics {
 	return &pipeMetrics{
 		eventStateTransitionMsgPipeSize: c.eventStateTransitionMsgPipe.Len(),
-		//TODO
+		// TODO
 		// eventSignedResultMsgPipeSize:    c.eventSignedResultMsgPipe.Len(),
 		// eventSignedResultAckMsgPipeSize: c.eventSignedResultAckMsgPipe.Len(),
+		eventPeerLogIndexMsgPipeSize:   c.eventPeerLogIndexMsgPipe.Len(),
 		eventInclusionStateMsgPipeSize: c.eventInclusionStateMsgPipe.Len(),
 		eventTimerMsgPipeSize:          c.eventTimerMsgPipe.Len(),
 		eventVMResultMsgPipeSize:       c.eventVMResultMsgPipe.Len(),

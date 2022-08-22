@@ -58,6 +58,7 @@ type ConsensusPipeMetrics struct {
 	EventStateTransitionMsgPipeSize int
 	// EventSignedResultMsgPipeSize    int
 	// EventSignedResultAckMsgPipeSize int
+	EventPeerLogIndexMsgPipeSize   int
 	EventInclusionStateMsgPipeSize int
 	EventACSMsgPipeSize            int
 	EventVMResultMsgPipeSize       int
@@ -69,6 +70,7 @@ func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusP
 		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
 		// EventSignedResultMsgPipeSize:    pipeMetrics.GetEventSignedResultMsgPipeSize(),
 		// EventSignedResultAckMsgPipeSize: pipeMetrics.GetEventSignedResultAckMsgPipeSize(),
+		EventPeerLogIndexMsgPipeSize:   pipeMetrics.GetEventPeerLogIndexMsgPipeSize(),
 		EventInclusionStateMsgPipeSize: pipeMetrics.GetEventInclusionStateMsgPipeSize(),
 		EventACSMsgPipeSize:            pipeMetrics.GetEventACSMsgPipeSize(),
 		EventVMResultMsgPipeSize:       pipeMetrics.GetEventVMResultMsgPipeSize(),

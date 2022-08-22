@@ -223,6 +223,7 @@ type ConsensusPipeMetrics interface {
 	GetEventStateTransitionMsgPipeSize() int
 	// GetEventSignedResultMsgPipeSize() int
 	// GetEventSignedResultAckMsgPipeSize() int
+	GetEventPeerLogIndexMsgPipeSize() int
 	GetEventInclusionStateMsgPipeSize() int
 	GetEventACSMsgPipeSize() int
 	GetEventVMResultMsgPipeSize() int

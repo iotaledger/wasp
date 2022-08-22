@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -72,6 +73,18 @@ func (c *consensus) handleDssSignatureMsg(msg *messages.DssSignatureMsg) {
 // 	c.receiveSignedResultAck(msg)
 // 	c.takeAction()
 // }
+
+func (c *consensus) EnqueuePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
+	c.eventPeerLogIndexMsgPipe.In() <- msg
+}
+
+func (c *consensus) handlePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
+	c.log.Debugf("PeerLogIndexMsg received: from sender %d, LogIndex=%v", msg.SenderIndex, msg.LogIndex)
+	if c.consensusJournal.PeerLogIndexReceived(msg.SenderIndex, msg.LogIndex) {
+		c.log.Infof("Consensus LogIndex is going to be reset to %v -> %v", c.consensusJournalLogIndex, c.consensusJournal.GetLogIndex())
+		c.resetWorkflow()
+	}
+}
 
 func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclusionState string) {
 	c.eventInclusionStateMsgPipe.In() <- &messages.TxInclusionStateMsg{
@@ -143,5 +156,15 @@ func (c *consensus) handleTimerMsg(msg messages.TimerTick) {
 		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=nil, workflow=%+v",
 			c.workflow,
 		)
+	}
+	if msg%10 == 0 {
+		// TODO: That's temporary, here we are sending these messages to often.
+		peerLogIndexMsg := &messages.PeerLogIndexMsg{LogIndex: c.consensusJournal.GetLogIndex()}
+		peerLogIndexMsgBytes, err := peerLogIndexMsg.Bytes()
+		if err != nil {
+			c.log.Errorf("cannot serialize peerLogIndexMsg: %w", err)
+		}
+		c.log.Debugf("Broadcasting PeerLogIndexMsg with LogIndex=%v", peerLogIndexMsg.LogIndex)
+		c.committeePeerGroup.SendMsgBroadcast(peering.PeerMessageReceiverConsensus, peerMsgTypePeerLogIndexMsg, peerLogIndexMsgBytes)
 	}
 }
