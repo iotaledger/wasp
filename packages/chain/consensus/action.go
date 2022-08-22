@@ -801,6 +801,7 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		c.stateOutput = msg.StateOutput
 	} else {
 		c.log.Debugf("consensus::setNewState: ignoring the received state output %s in favor of the current one %s", isc.OID(msg.StateOutput.ID()), isc.OID(c.stateOutput.ID()))
+		return false
 	}
 	c.stateTimestamp = msg.StateTimestamp
 	oid := c.stateOutput.OutputID()
