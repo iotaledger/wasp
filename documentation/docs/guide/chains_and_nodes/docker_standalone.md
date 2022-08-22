@@ -27,7 +27,7 @@ In this case the following instructions should be read [Running a Node](running-
 
 ## Running a Wasp Node
 
-## Install and Build Your Node
+### Install and Build Your Node
 
 To run a Wasp node with Docker you will need to:
 

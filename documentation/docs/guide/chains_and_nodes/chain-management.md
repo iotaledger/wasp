@@ -35,7 +35,7 @@ The “Chain Owner” is the only one who can perform administrative tasks.
 To change the chain ownership, the current “Chain Owner” must call `delegateChainOwnership` specifying the `agentID` of
 the next owner. The next owner must call `claimChainOwnership` to finalize the process.
 
-### Changing Access nodes
+### Changing Access Nodes
 
 For new access nodes to join the network, they need to:
 

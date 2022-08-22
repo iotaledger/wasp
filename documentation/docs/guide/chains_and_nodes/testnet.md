@@ -11,7 +11,7 @@ keywords:
 
 The testnet is deployed for the community to use for testing and interacting with smart contracts.
 
-:::caution
+:::caution unscheduled network resets
 To make the barrier to entry for trying out the testnet as low as possible, we decided to set all possible fees to zero.
 Since we expect this decision will pollute the chain quickly, we’ll perform regular, unscheduled network resets if
 needed.
@@ -89,11 +89,11 @@ wasp-cli set wasp.0.api https://api.wasp.sc.iota.org
 
 ### Set the Chain ID
 
-You will need to set the chain ID in _wasp-cli_ to find the correct chain. You can find the ChainID by navigating to
+You will need to set the chain ID in `wasp-cli` to find the correct chain. You can find the ChainID by navigating to
 the [chains](https://wasp.sc.iota.org/chains) page of the wasp dashboard. Click on the ChainID of the chain. You will be
 able to copy the ChainID from the next page. It will be formatted like `jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C`.
 
-Use the ChainID to tell _wasp-cli_ which chain you want to interact with:
+Use the ChainID to tell `wasp-cli` which chain you want to interact with:
 
 ```shell
 wasp-cli set chains.testchain jaSDxeZNtum7kLuRg8oWQ6nXKgYjb3XVq7yiwnvtUG3C
@@ -102,7 +102,7 @@ wasp-cli set chain testchain
 
 ### Test Your Chain
 
-On the __testchain__, we have deployed a FairRoulette game that you can use to ensure your configuration is correct.
+We have deployed a FairRoulette game on the __testchain__. You can use to ensure your configuration is correct.
 
 ```shell
 wasp-cli --verbose chain post-request fairroulete placeBet string number int 2
@@ -110,7 +110,7 @@ wasp-cli --verbose chain post-request fairroulete placeBet string number int 2
 
 ### Putting It All Together
 
-For simplicity, here is the full set of commands to configure _wasp-cli_.
+For simplicity, here is the full set of commands to configure `wasp-cli`.
 
 ```shell
 wasp-cli init
@@ -126,10 +126,10 @@ wasp-cli set chain testchain
 We have deployed an experimental EVM chain that you can interact with. To begin, add a custom network to Metamask with
 the following configuration:
 
-| Key | Value |
-| --- | ----- |
-| RPC URL | https://evm.wasp.sc.iota.org |
-| Chain ID | 1074 |
+| Key                | Value                             |
+|--------------------|-----------------------------------|
+| RPC URL            | https://evm.wasp.sc.iota.org      |
+| Chain ID           | 1074                              |
 | Block Explorer URL | https://explorer.wasp.sc.iota.org |
 
 It should look similar to this image.
