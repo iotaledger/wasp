@@ -1,16 +1,18 @@
 ---
-description: Configuring a Wasm node.
+description: Learn how to configure a Wasp node.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-  - Smart Contracts
-  - Configuring a node
-  - Go-lang
-  - Hornet
-  - Requirements
-  - Configuration
-  - Dashboard
-  - Grafana
-  - Prometheus
+
+- Smart Contracts
+- Configuring a node
+- Go-lang
+- Hornet
+- Requirements
+- Configuration
+- Dashboard
+- Grafana
+- Prometheus
+
 ---
 
 # Node Configuration
@@ -22,7 +24,9 @@ configuration file. If you plan to run several nodes in the same host, you will 
 
 Wasp requires a Hornet node to communicate with the L1 Tangle.
 
-You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chains_and_nodes/testnet), or [set up your own node](https://wiki.iota.org/hornet/getting_started), or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle).
+You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chains_and_nodes/testnet),
+or [set up your own node](https://wiki.iota.org/hornet/getting_started),
+or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle).
 
 ## Hornet Connection Settings
 
@@ -34,9 +38,12 @@ You can use any [publicly available node](https://wiki.iota.org/wasp/guide/chain
 
 By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard uses basic auth to limit access.
 
-Both authentication methods allow any form of request and have therefore 'root' permissions.
+Both authentication methods allow any request and have 'root' permissions.
 
-You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` block such as `webapi.auth` or `dashboard.auth`. [Example configuration](https://github.com/iotaledger/wasp/blob/6b9aa273917c865b0acc83df9a1935f49498e43d/docker_config.json#L58).
+You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` block such as `webapi.auth`
+or `dashboard.auth`
+. [Example configuration](https://github.com/iotaledger/wasp/blob/6b9aa273917c865b0acc83df9a1935f49498e43d/docker_config.json#L58)
+.
 
 The following schemes are supported:
 
@@ -49,30 +56,32 @@ The following schemes are supported:
 
 A new authentication scheme `JWT` was introduced but should be treated as **experimental**.
 
-With this addition, the configuration was slightly modified and a new plugin `users` was introduced.
+With this addition, the configuration was slightly modified, and a new plugin `users` was introduced.
 
-Both, the basic authentication and the JWT authentication pull their valid users from the users plugin from now on.
+Both the basic and JWT authentication pull their valid users from the `users` plugin.
 
-Furthermore, the API and the Dashboard are now capable to use one of the three authentication schemes independently. 
+Furthermore, the API and the Dashboard can use one of the three authentication schemes independently.
 
-Users are currently stored inside the configuration (under `users`) and the passwords are saved as clear text (for now!).
+Users are currently stored inside the configuration (under `users`), and the passwords are saved as clear text for the
+time being.
 
-The default configuration contains one user "wasp" with both API and Dashboard permissions. 
+The default configuration contains one user "wasp" with API and Dashboard permissions.
 
-While the basic authentication only validates username and password, the JWT authentication validates permissions additionally.
+While the basic authentication only validates username and password, the JWT authentication validates permissions
+additionally.
 
-To enable the JWT authentication change `webapi.auth.scheme` and/or `dashboard.auth.scheme` to `jwt`. 
+To enable the JWT authentication change `webapi.auth.scheme` and/or `dashboard.auth.scheme` to `jwt`.
 
-If you have enabled JWT for the webapi, you need to call `wasp-cli login` from now on before doing any requests. 
+If you have enabled JWT for the webapi, you need to call `wasp-cli login` before making any requests.
 
-One login has a duration of exactly 24 hours by default. This can be changed inside the configuration at (webapi/dashboard)`.auth.jwt.durationHours` 
-
+One login has a duration of exactly 24 hours by default. You can change this setting in the configuration at (
+webapi/dashboard)`.auth.jwt.durationHours`
 
 ## Peering
 
-Wasp nodes connect to other Wasp peers to form committees. There is exactly one
-TCP connection between two Wasp nodes participating in the same committee. Each
-node uses the `peering.port` setting to specify the port that will be used for peering.
+Wasp nodes connect to other Wasp peers to form committees. There is exactly one TCP connection between two Wasp nodes
+participating in the same committee. Each
+node uses the `peering.port` setting to specify the port used for peering.
 
 `peering.netid` must have the form `host:port`, with a `port` value equal to
 `peering.port`, and where `host` must resolve to the machine where the node is
@@ -81,30 +90,31 @@ committee must have a unique `netid`.
 
 ## Publisher
 
-`nanomsg.port` specifies the port for the [Nanomsg](https://nanomsg.org/) event publisher. Wasp nodes
-publish important events happening in smart contracts, such as state
-transitions, incoming and processed requests, and similar. Any Nanomsg client
+`nanomsg.port` specifies the port for the [Nanomsg](https://nanomsg.org/) event publisher. Wasp nodes publish important
+events in smart contracts, such as state
+transitions, incoming and processed requests, etc. Any Nanomsg client
 can subscribe to these messages.
 
 <details>
   <summary>More Information on Wasp and Nanomsg</summary>
   <div>
-  
-  Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
-  (just like ZMQ is used in IRI). Possibly, in the future, [ZMQ](https://zeromq.org/) and [MQTT](https://mqtt.org/) publishers will be supported too.
+
+Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
+(just like ZMQ is used in IRI). In the future, Wasp will possibly support [ZMQ](https://zeromq.org/)
+and [MQTT](https://mqtt.org/) publishers too.
 
 Any Nanomsg client can subscribe to the message stream. In Go, you can use the
 `packages/subscribe` package provided in Wasp for this.
 
-The Publisher port can be configured in `config.json` with the `nanomsg.port`
+You can configure the Publisher port in the `config.json` file using the `nanomsg.port`
 setting.
 
-The Message format is simply a string consisting of a space-separated list of tokens, and the first token
+The Message format is simply a string consisting of a space-separated list of tokens; the first token
 is the message type. Below is a list of all message types published by Wasp (you can search for
 `publisher.Publish` in the code to see the exact places where each message is published).
 
 | Message                                                                       | Format                                                                                                              |
-| :---------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+|:------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|
 | Chain record has been saved in the registry                                   | `chainrec <chain ID> <color>`                                                                                       |
 | Chain committee has been activated                                            | `active_committee <chain ID>`                                                                                       |
 | Chain committee dismissed                                                     | `dismissed_committee <chain ID>`                                                                                    |
@@ -118,7 +128,7 @@ is the message type. Below is a list of all message types published by Wasp (you
 
 ## Web API
 
-`webapi.bindAddress` specifies the bind address/port for the Web API, used by
+`webapi.bindAddress` specifies the bind address/port for the Web API used by
 `wasp-cli` and other clients to interact with the Wasp node.
 
 ## Dashboard
@@ -128,10 +138,14 @@ which can be accessed with a web browser.
 
 ## Prometheus
 
-`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where it's possible to get multiple system metrics.
+`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where it's possible to get multiple
+system metrics.
 
-By default, Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
+By default, Prometheus is disabled. You can enable it by setting `prometheus.enabled` to `true`.
 
 ## Grafana
 
 Grafana provides a dashboard to visualize system metrics. It can use the prometheus metrics as a data source.
+
+
+

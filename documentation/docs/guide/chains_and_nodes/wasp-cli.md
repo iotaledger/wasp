@@ -75,8 +75,10 @@ Alternatively, you can edit the `wasp-cli.json` file and include the desired ser
     }
   ```
 
-If the Wasp node is configured to use the experimental JWT authentication, it's required to login after the configuration is done.
+If you configure the Wasp node to use the experimental [JWT authentication](node-config.md#jwt), you will need to log in after you save the configuration.
 
 ```shell
 wasp-cli login
 ``` 
+
+

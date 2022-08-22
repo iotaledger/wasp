@@ -1,16 +1,16 @@
 ---
-description: How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
+description: How to run a node. Requirements, configuration parameters, dashboard configuration, and tests.
 image: /img/logo/WASP_logo_dark.png
 keywords:
-  - Smart Contracts
-  - Running a node
-  - Go-lang
-  - Hornet
-  - Requirements
-  - Configuration
-  - Dashboard
-  - Grafana
-  - Prometheus
+- Smart Contracts
+- Running a node
+- Go-lang
+- Hornet
+- Requirements
+- Configuration
+- Dashboard
+- Grafana
+- Prometheus
 ---
 
 # Running a Node
@@ -33,7 +33,8 @@ keywords:
 
 You can configure your node/s using the [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json).
 The minimum needed configuration to run a wasp node is a L1 connection. For more advanced configuration see [Node Configuration](./node-config).
-L1 access of the node can be set following the instructions below.
+
+You can set L1 access of the node following the instructions below.
 
 ### Hornet
 
@@ -60,13 +61,13 @@ cd wasp-node
 wasp
 ```
 
-You can verify that your node is running by opening the dashboard with a web browser at [`127.0.0.1:7000`](http://127.0.0.1:7000) (default url).
+You can verify that your node is running by opening the dashboard with a web browser at [`127.0.0.1:7000`](http://127.0.0.1:7000) (default URL).
 
 Repeat this process to launch as many nodes as you want for your committee.
 
 ### Accessing Your Node From a Remote Machine
 
-If you want to access the Wasp node from outside its local network, you will need to add your public IP to the `webpi.adminWhitelist`. You can do so by adding it to your config file, or running the node with the `webapi.adminWhitelist` flag.
+To access the Wasp node from outside its local network, you must add your public IP to the `webpi.adminWhitelist`. You can add it to your config file or run the node with the `webapi.adminWhitelist` flag.
 
 ```shell
 wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
@@ -75,11 +76,11 @@ wasp --webapi.adminWhitelist=127.0.0.1,YOUR_IP
 ## Video Tutorial
 
 <iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/eV2AoV3QPC4"
-  title="Wasp Node Setup"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
-></iframe>
+width="560"
+height="315"
+src="https://www.youtube.com/embed/eV2AoV3QPC4"
+title="Wasp Node Setup"
+frameborder="0"
+allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+allowfullscreen
+/>
