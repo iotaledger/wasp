@@ -159,7 +159,9 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
-	// TODO make sure name is valid: no path characters
+	if strings.Contains(*flagInit, "/") {
+		return fmt.Errorf("name contains path characters")
+	}
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
