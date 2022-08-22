@@ -23,6 +23,7 @@ const (
 type dssInstance struct {
 	inst      dss.DSS
 	asGPA     gpa.AckHandler
+	hadInput  bool
 	outPart   []int
 	outPartCB func([]int)
 	outSig    []byte
@@ -75,8 +76,9 @@ func (s *dssSeriesImpl) start(index int, partCB func([]int), sigCB func([]byte))
 			return err
 		}
 		s.dssInsts[index] = &dssInstance{
-			inst:  dssInst,
-			asGPA: dssAsGPA,
+			inst:     dssInst,
+			asGPA:    dssAsGPA,
+			hadInput: false,
 		}
 	}
 	//
@@ -91,8 +93,11 @@ func (s *dssSeriesImpl) start(index int, partCB func([]int), sigCB func([]byte))
 	s.dssInsts[index].outSigCB = sigCB
 	//
 	// Start the protocol.
-	s.sendMessages(s.dssInsts[index].asGPA.Input(nil), index)
-	s.tryReportOutput(s.dssInsts[index])
+	if !s.dssInsts[index].hadInput {
+		s.dssInsts[index].hadInput = true
+		s.sendMessages(s.dssInsts[index].asGPA.Input(nil), index)
+		s.tryReportOutput(s.dssInsts[index])
+	}
 	return nil
 }
 
