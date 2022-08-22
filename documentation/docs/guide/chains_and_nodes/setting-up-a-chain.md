@@ -14,7 +14,7 @@ keywords:
 
 # Setting Up a Chain
 
-:::note 
+:::note
 
 It is possible to run a "committee" composed of a single Wasp node, and this may be fine for testing purposes. However,
 in normal operation the idea is to have multiple Wasp nodes in order to run the smart contracts in a distributed

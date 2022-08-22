@@ -1,26 +1,29 @@
 ---
-description: Publishing important events via a Nanomsg message stream. Subscribing to a stream with a client. Message format description.
+description: 'Publishing important events via a Nanomsg message stream. Subscribing to a stream with a client. Message
+format description.'
 image: /img/logo/WASP_logo_dark.png
 keywords:
+
 - Publisher
 - Nanomsg
 - Messages
+
 ---
 
 # Wasp Publisher
 
-Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream, just like ZMQ is used in IRI. In the future, Wasp will possibly support [ZMQ](https://zeromq.org/)
-and [MQTT](https://mqtt.org/) publishers too.
+Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream, just like ZMQ is used in
+IRI. In the future, Wasp will possibly support [ZMQ](https://zeromq.org/) and [MQTT](https://mqtt.org/) publishers too.
 
+Any Nanomsg client can subscribe to the message stream. In Go, you can use the `packages/subscribe` package provided in
+Wasp for this.
 
-Any Nanomsg client can subscribe to the message stream. In Go, you can use the
-`packages/subscribe` package provided in Wasp for this.
+You can configure the Publisher by changing the `nanomsg.port` setting in your 
+[`config.json`](https://github.com/iotaledger/wasp/blob/develop/config.json) file.
 
-You can configure the Publisher by changing the `nanomsg.port` setting in your  [`config.json`](https://github.com/iotaledger/wasp/blob/develop/config.json). file.
-
-The message format is simply a string consisting of a space-separated list of tokens. The first token
-is the message type. Below is a list of all message types published by Wasp. (You can search for
-`publisher.Publish` in the code to see the exact places where each message is published.)
+The message format is simply a string consisting of a space-separated list of tokens. The first token is the message
+type. Below is a list of all message types published by Wasp. (You can search for `publisher.Publish` in the code to see
+the exact places where each message is published.)
 
 | Message                                                                       | Format                                                                                                              |
 |:------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|

@@ -3,10 +3,12 @@ description:  'How to manage a chain using the Grafana dashboard, a client to re
 validators.'
 image: /img/logo/WASP_logo_dark.png
 keywords:
+
 - Smart Contracts
 - Chain
 - Management
 - Grafana
+
 ---
 
 # Chain Management
@@ -53,12 +55,12 @@ You can remove an access node by calling `changeAccessNodes`.
 
 ### Changing the Set of Validators
 
-You can do this in different ways, depending on who
-the [governor address](https://wiki.iota.org/introduction/develop/explanations/ledger/alias) of the alias output of the
+You can do this in different ways, depending on whom the
+[governor address](https://wiki.iota.org/introduction/develop/explanations/ledger/alias) of the alias output of the
 chain is.
 
-- If the chain governor address is the chain itself or another chain, you can perform the rotation by
-  calling `rotateStateController` after adding the next state controller via `addAllowedStateControllerAddress`.
+- If the chain governor address is the chain itself or another chain, you can perform the rotation by calling
+  `rotateStateController` after adding the next state controller via `addAllowedStateControllerAddress`.
 - If the chain governor address is a regular user wallet, you can issue the rotation transaction using wasp-cli:
 
 ```bash

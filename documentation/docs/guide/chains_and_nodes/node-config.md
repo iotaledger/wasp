@@ -80,38 +80,33 @@ webapi/dashboard)`.auth.jwt.durationHours`
 ## Peering
 
 Wasp nodes connect to other Wasp peers to form committees. There is exactly one TCP connection between two Wasp nodes
-participating in the same committee. Each
-node uses the `peering.port` setting to specify the port used for peering.
+participating in the same committee. Each node uses the `peering.port` setting to specify the port used for peering.
 
-`peering.netid` must have the form `host:port`, with a `port` value equal to
-`peering.port`, and where `host` must resolve to the machine where the node is
-running and be reachable by other nodes in the committee. Each node in a
+`peering.netid` must have the form `host:port`, with a `port` value equal to `peering.port`, and where `host` must
+resolve to the machine where the node is running and be reachable by other nodes in the committee. Each node in a
 committee must have a unique `netid`.
 
 ## Publisher
 
 `nanomsg.port` specifies the port for the [Nanomsg](https://nanomsg.org/) event publisher. Wasp nodes publish important
-events in smart contracts, such as state
-transitions, incoming and processed requests, etc. Any Nanomsg client
-can subscribe to these messages.
+events in smart contracts, such as state transitions, incoming and processed requests, etc. Any Nanomsg client can
+subscribe to these messages.
 
 <details>
   <summary>More Information on Wasp and Nanomsg</summary>
   <div>
 
-Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
-(just like ZMQ is used in IRI). In the future, Wasp will possibly support [ZMQ](https://zeromq.org/)
-and [MQTT](https://mqtt.org/) publishers too.
+Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream (just like ZMQ is used in
+IRI). In the future, Wasp will possibly support [ZMQ](https://zeromq.org/) and [MQTT](https://mqtt.org/) publishers too.
 
-Any Nanomsg client can subscribe to the message stream. In Go, you can use the
-`packages/subscribe` package provided in Wasp for this.
+Any Nanomsg client can subscribe to the message stream. In Go, you can use the `packages/subscribe` package provided in
+Wasp for this.
 
-You can configure the Publisher port in the `config.json` file using the `nanomsg.port`
-setting.
+You can configure the Publisher port in the `config.json` file using the `nanomsg.port` setting.
 
-The Message format is simply a string consisting of a space-separated list of tokens; the first token
-is the message type. Below is a list of all message types published by Wasp (you can search for
-`publisher.Publish` in the code to see the exact places where each message is published).
+The Message format is simply a string consisting of a space-separated list of tokens; the first token is the message
+type. Below is a list of all message types published by Wasp (you can search for `publisher.Publish` in the code to see
+the exact places where each message is published).
 
 | Message                                                                       | Format                                                                                                              |
 |:------------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------|
@@ -128,13 +123,13 @@ is the message type. Below is a list of all message types published by Wasp (you
 
 ## Web API
 
-`webapi.bindAddress` specifies the bind address/port for the Web API used by
-`wasp-cli` and other clients to interact with the Wasp node.
+`webapi.bindAddress` specifies the bind address/port for the Web API used by `wasp-cli` and other clients to interact
+with the Wasp node.
 
 ## Dashboard
 
-`dashboard.bindAddress` specifies the bind address/port for the node dashboard,
-which can be accessed with a web browser.
+`dashboard.bindAddress` specifies the bind address/port for the node dashboard, which can be accessed with a web
+browser.
 
 ## Prometheus
 
@@ -146,6 +141,3 @@ By default, Prometheus is disabled. You can enable it by setting `prometheus.ena
 ## Grafana
 
 Grafana provides a dashboard to visualize system metrics. It can use the prometheus metrics as a data source.
-
-
-
