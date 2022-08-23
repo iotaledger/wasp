@@ -27,7 +27,7 @@ A blob is a collection of named chunks of binary data.
 
 Both names and chunks are arbitrarily long byte slices.
 
-Blobs can be used to store arbitrary data. For example, the collection of Wasm binaries needed to deploy a smart contract.
+Blobs can be used to store arbitrary data like, for example, a collection of Wasm binaries needed to deploy a smart contract.
 
 Each blob in the registry is referenced by its hash. The hash is deterministically calculated from the concatenation of all pieces:
 

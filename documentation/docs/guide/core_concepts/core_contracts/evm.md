@@ -55,7 +55,7 @@ Some parameters of the `evm` contract can be specified by passing them to the
 
   :::
 
-- `evmw` (optional [`GasRatio`](#gasratio) - default: `1:1`): The ISC : EVM gas ratio.
+- `evmw` (optional [`GasRatio`](#gasratio) - default: `1:1`): The ISC to EVM gas ratio.
 
 ### `setGasRatio`
 
