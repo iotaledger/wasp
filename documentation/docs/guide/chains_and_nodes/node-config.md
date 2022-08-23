@@ -38,7 +38,7 @@ or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle
 
 By default, Wasp accepts any API request coming from `127.0.0.1`. The Dashboard uses basic auth to limit access.
 
-Both authentication methods allow any request and have 'root' permissions.
+Both authentication methods have 'root' permissions and would allow any request.
 
 You can disable the authentication per endpoint by setting `scheme` to `none` on any `auth` block such as `webapi.auth`
 or `dashboard.auth`

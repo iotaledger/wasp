@@ -75,7 +75,7 @@ make install
 
 ### Microsoft Windows
 
-It's recommended to use [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) on Windows and follow
+On Windows, we recommend you to use [WSL](https://docs.microsoft.com/en-us/windows/wsl/install) and follow
 the [Linux/macOS](#linuxmacos) instructions above.
 
 ##  Add Binaries to Path

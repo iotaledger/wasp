@@ -25,7 +25,7 @@ overloading the testnet because we are looking for functionality testing more th
 
 ## Endpoints
 
-You can access the testnet via a series of endpoints that have been made available.
+You can access the testnet via the following endpoints:
 
 - https://wasp.sc.iota.org . **Username**: wasp **Password**: wasp
     - The Wasp dashboard to explore the node configuration and view peering/chain configurations
