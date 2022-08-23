@@ -549,7 +549,8 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexPropos
 //nolint:funlen
 func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journal.LogIndex) {
 	if c.acsSessionID != sessionID {
-		c.log.Debugf("receiveACS: session id missmatch: expected %v, received %v", c.acsSessionID, sessionID)
+		c.log.Debugf("receiveACS: session id mismatch: expected %v, received %v", c.acsSessionID, sessionID)
+		c.resetWorkflow() // TODO: That's temporary solution.
 		return
 	}
 	if c.workflow.IsConsensusBatchKnown() {

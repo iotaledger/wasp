@@ -127,6 +127,7 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 	// Construct the DSS protocol instance.
 	n := len(nodeIDs)
 	f := (n - 1) / 3
+	s.node.log.Debugf("Constructing DSS instance, CommitteeAddress=%v, n=%v, f=%v, nodeIDs=%v", s.dkShare.DSSSharedPublic(), n, f, nodeIDs)
 	d := dss.New(
 		tcrypto.DefaultEd25519Suite(), // suite
 		nodeIDs,                       // nodeIDs
