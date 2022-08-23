@@ -208,11 +208,14 @@ func (f *fakeDKShare) GetIndex() *uint16 {
 }
 
 func (f *fakeDKShare) GetN() uint16 {
-	panic(xerrors.New("not important"))
+	return uint16(len(f.nodePubKeys))
 }
 
 func (f *fakeDKShare) GetT() uint16 {
-	panic(xerrors.New("not important"))
+	cmtN := f.GetN()
+	cmtF := (cmtN - 1) / 3
+	cmtT := cmtN - cmtF
+	return cmtT
 }
 
 func (f *fakeDKShare) GetNodePubKeys() []*cryptolib.PublicKey {
