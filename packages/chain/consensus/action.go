@@ -560,7 +560,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	}
 	if len(values) < int(c.committee.Quorum()) {
 		// should not happen. Something wrong with the ACS layer
-		c.log.Errorf("receiveACS: ACS is shorter than required quorum. Ignored")
+		c.log.Errorf("receiveACS: ACS is shorter (len=%v) than required quorum (%v). Ignored", len(values), c.committee.Quorum())
 		c.resetWorkflow()
 		return
 	}

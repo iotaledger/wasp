@@ -47,6 +47,12 @@ func newSeries(node *dssNodeImpl, key string, dkShare tcrypto.DKShare) *dssSerie
 		nodeIndexToPeerNIDs[i] = pubKeyAsNodeID(dkSharePubKeys[i])
 		nodeIDsToPeerPubs[nodeIndexToPeerNIDs[i]] = dkSharePubKeys[i]
 	}
+	cmtN := int(dkShare.GetN())
+	maxF := (cmtN - 1) / 3
+	dksT := int(dkShare.GetT())
+	if dksT < (cmtN - maxF) {
+		panic(xerrors.Errorf("cannot create DSS instance for cmtN=%v, maxF=%v, T=%v", cmtN, maxF, dksT))
+	}
 	s := &dssSeriesImpl{
 		node:     node,
 		key:      key,
@@ -126,7 +132,7 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 	//
 	// Construct the DSS protocol instance.
 	n := len(nodeIDs)
-	f := (n - 1) / 3
+	f := n - int(s.dkShare.GetT())
 	s.node.log.Debugf("Constructing DSS instance, CommitteeAddress=%v, n=%v, f=%v, nodeIDs=%v", s.dkShare.DSSSharedPublic(), n, f, nodeIDs)
 	d := dss.New(
 		tcrypto.DefaultEd25519Suite(), // suite

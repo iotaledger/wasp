@@ -597,6 +597,8 @@ github.com/jwilder/encoding v0.0.0-20170811194829-b4e1701a28ef/go.mod h1:Ct9fl0F
 github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d/go.mod h1:P2viExyCEfeWGU259JnaQ34Inuec4R38JCyBx2edgD0=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515 h1:5oWqeyYqb0A+XNeM4qIESTfrgbTdCF+YTPgb9Rc50iM=
 github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515/go.mod h1:XadZ7V3kvoIfFGVb8s/ndgVitoHRNRjzgPlHhhb9HlI=
+github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef h1:XS0PUDq7GWEuc+66yWDpCMKrNrKyGv7sbdXlS5s761M=
+github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef/go.mod h1:XadZ7V3kvoIfFGVb8s/ndgVitoHRNRjzgPlHhhb9HlI=
 github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3 h1:b7VGpy3biHI8Q0O8BthxiJfOXhx5F0Ej4TNuJ9A1omo=
 github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3/go.mod h1:kXy7p3STAurkADD+/aZcsznZGKVHEqbtmdIzvPfrs1U=
 github.com/karalabe/usb v0.0.2/go.mod h1:Od972xHfMJowv7NGVDiWVxk2zxnWgjLlJzE+F4F7AGU=
