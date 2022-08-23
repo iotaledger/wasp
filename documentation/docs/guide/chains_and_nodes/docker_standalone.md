@@ -37,7 +37,7 @@ To run a Wasp node with Docker you will need to:
 git clone https://github.com/iotaledger/wasp.git
 ```
 
-2. Switch to the `develop` branch and build the main image:
+2. Switch to the `develop` branch:
 
 ```shell
 cd wasp
