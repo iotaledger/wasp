@@ -70,7 +70,7 @@ Metamask will ask to connect to Remix and once connected the `Environment` will 
 
 ## Hardhat
 
-[Hardhat](https://hardhat.org/) is a commandline toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on IOTA Smart Contracts are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
+[Hardhat](https://hardhat.org/) is a command line toolbox that allows you to deploy, test, verify, and interact with Solidity smart contracts on an EVM chain. EVM chains running on IOTA Smart Contracts are compatible with Hardhat; simply make sure you add the correct network parameters to your `hardhat.config.js`, for example:
 
 ```javascript
 networks: {

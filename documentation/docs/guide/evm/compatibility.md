@@ -15,7 +15,7 @@ keywords:
 
 EVM support in IOTA Smart Contracts is provided by the `evm` core contract. Its main purpose is to store the EVM state (account balances, state, code, etc.) and to provide a way to execute EVM code in order to manipulate the state. All of this is done on top of the ISC layer, which itself provides the rest of the machinery needed to run smart contracts (signed requests, blocks, state, proofs, etc).
 
-However, The ISC EVM layer is also designed to be as compatibile as possible with existing Ethereum tools like [MetaMask](https://metamask.io/), which assume that the EVM code will be run on an Ethereum blockchain, composed of Ethereum blocks containing Ethereum transactions. Unfortunately, since ISC works in a fundamentally different way, providing 100% compatibility is not possible. We do our best to somehow "fool" the Ethereum tools into thinking they are interfacing with a real Ethereum node, but some differences in behavior are inevitable.
+However, The ISC EVM layer is also designed to be as compatible as possible with existing Ethereum tools like [MetaMask](https://metamask.io/), which assume that the EVM code will be run on an Ethereum blockchain, composed of Ethereum blocks containing Ethereum transactions. Unfortunately, since ISC works in a fundamentally different way, providing 100% compatibility is not possible. We do our best to somehow "fool" the Ethereum tools into thinking they are interfacing with a real Ethereum node, but some differences in behavior are inevitable.
 
 Here are some of the most important properties and limitations of EVM support in IOTA Smart Contracts:
 

@@ -48,7 +48,7 @@ type Dict map[kv.Key][]byte
 
 :::note
 Both view and non-view entry points can produce results.
-In nomal operation, retrieving the result of an on-ledger request is impossible, since it is an asynchronous operation.
+In normal operation, retrieving the result of an on-ledger request is impossible, since it is an asynchronous operation.
 However, in the Solo environment, the call to `PostRequestSync` is synchronous, allowing the caller to inspect the result.
 This is a convenient difference between the mocked Solo environment and the distributed ledger used by Wasp nodes.
 It can be used to make assertions about the results of a call in the tests.
