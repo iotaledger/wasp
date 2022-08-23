@@ -26,6 +26,7 @@ ARG FINAL_BINARY="wasp"
 EXPOSE 7000/tcp
 EXPOSE 9090/tcp
 EXPOSE 5550/tcp
+EXPOSE 6060/tcp
 EXPOSE 4000/udp
 
 COPY --from=build /wasp/${FINAL_BINARY} /usr/bin/
