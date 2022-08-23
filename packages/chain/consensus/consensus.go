@@ -203,7 +203,11 @@ func (c *consensus) Close() {
 	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
 
 	c.eventStateTransitionMsgPipe.Close()
-	c.eventDssIndexProposalMsgPipe.Close()
+
+	tmpPipe := c.eventDssIndexProposalMsgPipe // TODO: Temporary workaround.
+	c.eventDssIndexProposalMsgPipe = nil
+	tmpPipe.Close()
+
 	c.eventDssSignatureMsgPipe.Close()
 	// c.eventSignedResultMsgPipe.Close()
 	// c.eventSignedResultAckMsgPipe.Close()

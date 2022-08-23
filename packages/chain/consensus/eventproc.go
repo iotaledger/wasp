@@ -33,6 +33,10 @@ func (c *consensus) handleStateTransitionMsg(msg *messages.StateTransitionMsg) {
 }
 
 func (c *consensus) EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg) {
+	if c.eventDssIndexProposalMsgPipe == nil {
+		c.log.Debugf("Dropping DssIndexProposalMsg=%v, consensus is closed.", msg)
+		return
+	}
 	c.eventDssIndexProposalMsgPipe.In() <- msg
 }
 
