@@ -384,12 +384,12 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Limitations',
+                    label: 'Compatibility',
                     id: 'guide/evm/compatibility',
                 },
                 {
                     type: 'doc',
-                    label: 'How to use',
+                    label: 'How to Use',
                     id: 'guide/evm/using',
                 },
                 {
