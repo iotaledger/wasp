@@ -128,7 +128,7 @@ Returns the fungible tokens owned by the given Agent ID on the chain.
 
 #### Returns
 
-A map of [`TokenID`](#tokenid) => `big.Int`. An empty Token ID represents the L1 base tokens (a key with length 0).
+A map of [`TokenID`](#tokenid) => `big.Int`. An empty token ID (a string of zero length) represents the L1 base token.
 
 ### `balanceBaseToken(a AgentID)`
 
