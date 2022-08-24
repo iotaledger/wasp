@@ -64,7 +64,7 @@ func New(
 	return cc
 }
 
-func (cc *ccImpl) Input(input gpa.Input) []gpa.Message {
+func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
 		panic(xerrors.Errorf("input must be nil"))
 	}
@@ -77,16 +77,16 @@ func (cc *ccImpl) Input(input gpa.Input) []gpa.Message {
 		panic(xerrors.Errorf("cannot sign a sid: %v", err))
 	}
 	cc.sigShares[cc.me] = sigShare
-	msgs := []gpa.Message{}
+	msgs := gpa.NoMessages()
 	for _, nid := range cc.nodeIDs {
 		if nid != cc.me {
-			msgs = append(msgs, &msgSigShare{recipient: nid, sender: cc.me, sigShare: sigShare})
+			msgs.Add(&msgSigShare{recipient: nid, sender: cc.me, sigShare: sigShare})
 		}
 	}
 	return msgs
 }
 
-func (cc *ccImpl) Message(msg gpa.Message) []gpa.Message {
+func (cc *ccImpl) Message(msg gpa.Message) gpa.OutMessages {
 	shareMsg, ok := msg.(*msgSigShare)
 	if !ok {
 		panic(xerrors.Errorf("unexpected message: %+v", msg))

@@ -18,11 +18,11 @@ func New() gpa.GPA {
 	return nil
 }
 
-func (a *abaImpl) Input(input gpa.Input) []gpa.Message {
+func (a *abaImpl) Input(input gpa.Input) gpa.OutMessages {
 	return nil
 }
 
-func (a *abaImpl) Message(msg gpa.Message) []gpa.Message {
+func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 	return nil
 }
 
