@@ -51,7 +51,7 @@ install: compile-solidity
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint:
-	golangci-lint run --skip-dirs=contracts/wasm
+	golangci-lint run
 
 gofumpt-list:
 	gofumpt -l ./
