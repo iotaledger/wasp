@@ -6,30 +6,21 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type VMRunner struct{}
 
-func (r VMRunner) Run(task *vm.VMTask) {
+func (r VMRunner) Run(task *vm.VMTask) error {
 	// optimistic read panic catcher for the whole VM task
 	err := panicutil.CatchPanicReturnError(
 		func() { runTask(task) },
 		coreutil.ErrorStateInvalidated,
 	)
 	if err != nil {
-		switch e := err.(type) {
-		case *isc.VMError:
-			task.VMError = e
-		case error:
-			// May require a different error type here?
-			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
-		default:
-			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
-		}
-		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+		task.Log.Warnf("VM task (ACS session id %d) has been abandoned: %s", task.ACSSessionID, err.Error())
 	}
+	return err
 }
 
 func NewVMRunner() vm.VMRunner {
