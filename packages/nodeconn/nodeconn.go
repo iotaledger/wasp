@@ -241,6 +241,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		Payload(tx).
 		Tips(ctx, nc.nodeAPIClient).
 		Build()
+
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
@@ -249,10 +250,11 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
 	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
+
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
-	blockID, err := block.ID()
+	/*blockID, err := block.ID()
 	if err == nil {
 		nc.log.Infof("Posted blockID %v", blockID.ToHex())
 	} else {
@@ -263,7 +265,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		nc.log.Infof("Posted transaction id %v", isc.TxID(txID))
 	} else {
 		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
-	}
+	}*/
 	return block, nil
 }
 
@@ -318,7 +320,12 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 			if err != nil {
 				return xerrors.Errorf("failed to build promotion Block: %w", err)
 			}
-			_, err = nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
+			newBlock, err := nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
+			if err != nil {
+				return xerrors.Errorf("failed to promote msg: %w", err)
+			}
+
+			msgID, err = newBlock.ID()
 			if err != nil {
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}

@@ -165,9 +165,9 @@ func (c *consensus) runVMIfNeeded() { // nolint:funlen
 	c.workflow.setVMStarted()
 	c.consensusMetrics.CountVMRuns()
 	go func() {
-		c.vmRunner.Run(vmTask)
-		if vmTask.VMError != nil {
-			c.log.Errorf("runVM result: VM task failed: %v", vmTask.VMError)
+		err := c.vmRunner.Run(vmTask)
+		if err != nil {
+			c.log.Errorf("runVM result: VM task failed: %v", err)
 			return
 		}
 		finalRequestsCount := len(vmTask.Results)
