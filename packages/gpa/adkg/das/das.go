@@ -165,7 +165,7 @@ func (a *adkgImpl) StatusString() string {
 	return "{ADKG:DAS}"
 }
 
-func (n *adkgImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (a *adkgImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return nil, xerrors.Errorf("not implemented") // TODO: XXX: Impl.
 }
 

@@ -56,28 +56,6 @@ func (c *consensus) handleDssSignatureMsg(msg *messages.DssSignatureMsg) {
 	c.takeAction()
 }
 
-// func (c *consensus) EnqueueSignedResultMsg(msg *messages.SignedResultMsgIn) {
-// 	c.eventSignedResultMsgPipe.In() <- msg
-// }
-
-// func (c *consensus) handleSignedResultMsg(msg *messages.SignedResultMsgIn) {
-// 	c.log.Debugf("handleSignedResultMsg message received: from sender %d, hash=%s, chain input id=%v",
-// 		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
-// 	c.receiveSignedResult(msg)
-// 	c.takeAction()
-// }
-
-// func (c *consensus) EnqueueSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
-// 	c.eventSignedResultAckMsgPipe.In() <- msg
-// }
-
-// func (c *consensus) handleSignedResultAckMsg(msg *messages.SignedResultAckMsgIn) {
-// 	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
-// 		msg.SenderIndex, msg.EssenceHash, isc.OID(msg.ChainInputID))
-// 	c.receiveSignedResultAck(msg)
-// 	c.takeAction()
-// }
-
 func (c *consensus) EnqueuePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 	c.eventPeerLogIndexMsgPipe.In() <- msg
 }
@@ -85,8 +63,14 @@ func (c *consensus) EnqueuePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 func (c *consensus) handlePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 	c.log.Debugf("PeerLogIndexMsg received: from sender %d, LogIndex=%v", msg.SenderIndex, msg.LogIndex)
 	if c.consensusJournal.PeerLogIndexReceived(msg.SenderIndex, msg.LogIndex) {
-		c.log.Infof("Consensus LogIndex is going to be reset to %v -> %v", c.consensusJournalLogIndex, c.consensusJournal.GetLogIndex())
-		c.resetWorkflow()
+		newLogIndex := c.consensusJournal.GetLogIndex()
+		if newLogIndex.AsUint32() > c.consensusJournalLogIndex.AsUint32()+1 {
+			// If log index is the next one, we still need to work on the signature to help others to sign.
+			// Thus, we are resetting stuff only if we are lagging.
+			// But if we are lagging, we don't need to wait for the ACS to complete.
+			c.log.Infof("Consensus LogIndex is going to be reset: %v -> %v", c.consensusJournalLogIndex, c.consensusJournal.GetLogIndex())
+			c.resetWorkflowNoCheck()
+		}
 	}
 }
 

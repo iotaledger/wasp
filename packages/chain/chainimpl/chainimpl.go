@@ -55,7 +55,7 @@ type chainObj struct {
 	lastSeenOutputStateIndex           *uint32
 	stateMgr                           chain.StateManager
 	consensus                          chain.Consensus
-	dssNode                            dss_node_pkg.DSSNode // TODO: XXX: Consider it.
+	dssNode                            dss_node_pkg.DSSNode
 	log                                *logger.Logger
 	nodeConn                           chain.ChainNodeConnection
 	db                                 kvstore.KVStore

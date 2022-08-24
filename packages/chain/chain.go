@@ -156,8 +156,6 @@ type Consensus interface {
 	EnqueueStateTransitionMsg(bool, state.VirtualStateAccess, *isc.AliasOutputWithID, time.Time)
 	EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg)
 	EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg)
-	// EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
-	// EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
 	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
@@ -221,8 +219,6 @@ type ConsensusWorkflowStatus interface {
 
 type ConsensusPipeMetrics interface {
 	GetEventStateTransitionMsgPipeSize() int
-	// GetEventSignedResultMsgPipeSize() int
-	// GetEventSignedResultAckMsgPipeSize() int
 	GetEventPeerLogIndexMsgPipeSize() int
 	GetEventInclusionStateMsgPipeSize() int
 	GetEventACSMsgPipeSize() int

@@ -17,7 +17,7 @@ func threshold(n int) int {
 }
 
 // newAEAD creates a new AEAD cipher based on secret and info.
-func newAEAD(secret []byte, salt []byte, info []byte) cipher.AEAD {
+func newAEAD(secret, salt, info []byte) cipher.AEAD {
 	h := hkdf.New(sha256.New, secret, salt, info)
 	key := make([]byte, AEADKeySize)
 	if _, err := io.ReadFull(h, key); err != nil {

@@ -2,26 +2,16 @@ package consensus
 
 type pipeMetrics struct {
 	eventStateTransitionMsgPipeSize int
-	// eventSignedResultMsgPipeSize    int
-	// eventSignedResultAckMsgPipeSize int
-	eventPeerLogIndexMsgPipeSize   int
-	eventInclusionStateMsgPipeSize int
-	eventACSMsgPipeSize            int
-	eventVMResultMsgPipeSize       int
-	eventTimerMsgPipeSize          int
+	eventPeerLogIndexMsgPipeSize    int
+	eventInclusionStateMsgPipeSize  int
+	eventACSMsgPipeSize             int
+	eventVMResultMsgPipeSize        int
+	eventTimerMsgPipeSize           int
 }
 
 func (p *pipeMetrics) GetEventStateTransitionMsgPipeSize() int {
 	return p.eventStateTransitionMsgPipeSize
 }
-
-// func (p *pipeMetrics) GetEventSignedResultMsgPipeSize() int {
-// 	return p.eventSignedResultMsgPipeSize
-// }
-
-// func (p *pipeMetrics) GetEventSignedResultAckMsgPipeSize() int {
-// 	return p.eventSignedResultAckMsgPipeSize
-// }
 
 func (p *pipeMetrics) GetEventPeerLogIndexMsgPipeSize() int {
 	return p.eventPeerLogIndexMsgPipeSize
