@@ -566,7 +566,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	}
 	c.consensusJournal.ConsensusReached(logIndex)
 	if c.markedForReset {
-		c.log.Debugf("receiveACS: ignoring ACS result and resetting workflow as the consensus was marked fo reset")
+		c.log.Debugf("receiveACS: ignoring ACS result and resetting workflow as the consensus was marked for reset")
 		c.resetWorkflowNoCheck()
 		return
 	}
@@ -838,7 +838,7 @@ func (c *consensus) resetWorkflow() {
 func (c *consensus) resetWorkflowNoCheck() {
 	c.consensusJournalLogIndex = c.consensusJournal.GetLogIndex() // Should be the next one.
 	dssKey := c.consensusJournalLogIndex.AsStringKey(c.consensusJournal.GetID())
-	c.log.Debugf("resetWorkflow: starting DSS session with key %v", dssKey)
+	c.log.Debugf("resetWorkflow: LogIndex=%v, Starting DSS session with key %v", c.consensusJournalLogIndex.AsUint32(), dssKey)
 	err := c.dssNode.Start(dssKey, 0, c.committee.DKShare(),
 		func(indexProposal []int) {
 			c.log.Debugf("resetWorkflow DSS propoal callback: index proposal of %s is %v", dssKey, indexProposal)

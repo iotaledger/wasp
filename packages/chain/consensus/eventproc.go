@@ -85,8 +85,14 @@ func (c *consensus) EnqueuePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 func (c *consensus) handlePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 	c.log.Debugf("PeerLogIndexMsg received: from sender %d, LogIndex=%v", msg.SenderIndex, msg.LogIndex)
 	if c.consensusJournal.PeerLogIndexReceived(msg.SenderIndex, msg.LogIndex) {
-		c.log.Infof("Consensus LogIndex is going to be reset to %v -> %v", c.consensusJournalLogIndex, c.consensusJournal.GetLogIndex())
-		c.resetWorkflow()
+		newLogIndex := c.consensusJournal.GetLogIndex()
+		if newLogIndex.AsUint32() > c.consensusJournalLogIndex.AsUint32()+1 {
+			// If log index is the next one, we still need to work on the signature to help others to sign.
+			// Thus, we are resetting stuff only if we are lagging.
+			// But if we are lagging, we don't need to wait for the ACS to complete.
+			c.log.Infof("Consensus LogIndex is going to be reset: %v -> %v", c.consensusJournalLogIndex, c.consensusJournal.GetLogIndex())
+			c.resetWorkflowNoCheck()
+		}
 	}
 }
 
