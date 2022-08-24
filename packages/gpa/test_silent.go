@@ -17,12 +17,12 @@ func MakeTestSilentNode() GPA {
 	return &silentNode{}
 }
 
-func (s *silentNode) Input(input Input) []Message {
-	return []Message{}
+func (s *silentNode) Input(input Input) OutMessages {
+	return NoMessages()
 }
 
-func (s *silentNode) Message(msg Message) []Message {
-	return []Message{}
+func (s *silentNode) Message(msg Message) OutMessages {
+	return NoMessages()
 }
 
 func (s *silentNode) Output() Output {

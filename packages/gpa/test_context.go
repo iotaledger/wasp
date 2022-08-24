@@ -70,7 +70,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 				nids = append(nids, nid)
 			}
 			nid := nids[rand.Intn(len(nids))]
-			tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]))...)
+			tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]).AsArray())...)
 			delete(tc.inputs, nid)
 		}
 		//
@@ -81,7 +81,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 			nid := msg.Recipient()
 			tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
 			if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
-				tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Message(msg))...)
+				tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Message(msg).AsArray())...)
 			}
 		}
 	}

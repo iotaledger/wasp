@@ -6,6 +6,10 @@ package gpa
 import "fmt"
 
 // OwnHandler is a GPA instance handling own messages immediately.
+//
+// The idea is instead of checking if a message for myself in the actual
+// protocols, one just send a message, and this handler passes it back
+// as an ordinary message.
 type OwnHandler struct {
 	me     NodeID
 	target GPA
@@ -17,25 +21,16 @@ func NewOwnHandler(me NodeID, target GPA) GPA {
 	return &OwnHandler{me: me, target: target}
 }
 
-func (o *OwnHandler) Input(input Input) []Message {
+func (o *OwnHandler) Input(input Input) OutMessages {
 	msgs := o.target.Input(input)
-	myMsgs := []Message{}
-	outMsgs := []Message{}
-	for i, m := range msgs {
-		if m.Recipient() == o.me {
-			msgs[i].SetSender(o.me)
-			myMsgs = append(myMsgs, msgs[i])
-		} else {
-			outMsgs = append(outMsgs, msgs[i])
-		}
-	}
-	return o.handleMsgs(myMsgs, outMsgs)
+	outMsgs := NoMessages()
+	return o.handleMsgs(msgs, outMsgs)
 }
 
-func (o *OwnHandler) Message(msg Message) []Message {
-	myMsgs := []Message{msg}
-	outMsgs := []Message{}
-	return o.handleMsgs(myMsgs, outMsgs)
+func (o *OwnHandler) Message(msg Message) OutMessages {
+	msgs := o.target.Message(msg)
+	outMsgs := NoMessages()
+	return o.handleMsgs(msgs, outMsgs)
 }
 
 func (o *OwnHandler) Output() Output {
@@ -50,18 +45,14 @@ func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return o.target.UnmarshalMessage(data)
 }
 
-func (o *OwnHandler) handleMsgs(myMsgs, outMsgs []Message) []Message {
-	for len(myMsgs) > 0 {
-		msgs := o.target.Message(myMsgs[0])
-		myMsgs = myMsgs[1:]
-		for i, m := range msgs {
-			if m.Recipient() == o.me {
-				msgs[i].SetSender(o.me)
-				myMsgs = append(myMsgs, msgs[i])
-			} else {
-				outMsgs = append(outMsgs, msgs[i])
-			}
+func (o *OwnHandler) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
+	msgs.MustIterate(func(msg Message) {
+		if msg.Recipient() == o.me {
+			msg.SetSender(o.me)
+			msgs.AddAll(o.target.Message(msg))
+		} else {
+			outMsgs.Add(msg)
 		}
-	}
+	})
 	return outMsgs
 }

@@ -25,15 +25,15 @@ func NewTestRound(nodeIDs []NodeID, me NodeID) GPA {
 	return NewOwnHandler(me, &testRound{me: me, nodeIDs: nodeIDs, received: map[NodeID]bool{}})
 }
 
-func (tr *testRound) Input(input Input) []Message {
+func (tr *testRound) Input(input Input) OutMessages {
 	msgs := make([]Message, len(tr.nodeIDs))
 	for i := range msgs {
 		msgs[i] = &testRoundMsg{recipient: tr.nodeIDs[i]}
 	}
-	return msgs
+	return NoMessages().AddMany(msgs)
 }
 
-func (tr *testRound) Message(msg Message) []Message {
+func (tr *testRound) Message(msg Message) OutMessages {
 	from := msg.(*testRoundMsg).sender
 	if tr.received[from] {
 		panic(xerrors.Errorf("duplicate message"))

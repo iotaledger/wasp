@@ -29,8 +29,8 @@ type ackHandler struct {
 type AckHandler interface {
 	GPA
 	MakeTickMsg(time.Time) Message
-	NestedMessage(msg Message) []Message
-	NestedCall(c func(GPA) []Message) []Message
+	NestedMessage(msg Message) OutMessages
+	NestedCall(c func(GPA) OutMessages) OutMessages
 }
 
 var _ AckHandler = &ackHandler{}
@@ -50,11 +50,11 @@ func (a *ackHandler) MakeTickMsg(timestamp time.Time) Message {
 	return &ackHandlerTick{recipient: a.me, timestamp: timestamp}
 }
 
-func (a *ackHandler) Input(input Input) []Message {
+func (a *ackHandler) Input(input Input) OutMessages {
 	return a.makeBatches(a.nested.Input(input))
 }
 
-func (a *ackHandler) Message(msg Message) []Message {
+func (a *ackHandler) Message(msg Message) OutMessages {
 	switch msgT := msg.(type) {
 	case *ackHandlerTick:
 		return a.handleTickMsg(msgT)
@@ -65,11 +65,11 @@ func (a *ackHandler) Message(msg Message) []Message {
 	}
 }
 
-func (a *ackHandler) NestedMessage(msg Message) []Message {
+func (a *ackHandler) NestedMessage(msg Message) OutMessages {
 	return a.makeBatches(a.nested.Message(msg))
 }
 
-func (a *ackHandler) NestedCall(c func(GPA) []Message) []Message {
+func (a *ackHandler) NestedCall(c func(GPA) OutMessages) OutMessages {
 	return a.makeBatches(c(a.nested))
 }
 
@@ -89,9 +89,9 @@ func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
 	return msg, nil
 }
 
-func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) []Message {
+func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 	resendOlderThan := msg.timestamp.Add(-a.resendPeriod)
-	resendMsgs := []Message{}
+	resendMsgs := NoMessages()
 	for _, nodeSentUnacked := range a.sentUnacked {
 		for batchID, batch := range nodeSentUnacked {
 			if batch.sent == nil {
@@ -101,14 +101,14 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) []Message {
 			} else if batch.sent.Before(resendOlderThan) {
 				// Resent it, timeout is already passed.
 				batch.sent = &msg.timestamp
-				resendMsgs = append(resendMsgs, nodeSentUnacked[batchID])
+				resendMsgs.Add(nodeSentUnacked[batchID])
 			}
 		}
 	}
 	return resendMsgs
 }
 
-func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) []Message {
+func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 	//
 	// Process the received acknowledgements.
 	// Drop all the outgoing batches, that are now acknowledged.
@@ -134,15 +134,13 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) []Message {
 		if batchAckedIn == nil {
 			// Not acknowledged yet, just send an ack-only message for now.
 			// The sender has already re-sent the message, so it waits for the ack.
-			return []Message{
-				&ackHandlerBatch{
-					recipient: msgBatch.sender,
-					id:        nil,                 // That's ack-only.
-					msgs:      []Message{},         // No payload.
-					acks:      []int{*msgBatch.id}, // Ack single message.
-					sent:      nil,                 // We will not track this message, it has no payload.
-				},
-			}
+			return NoMessages().Add(&ackHandlerBatch{
+				recipient: msgBatch.sender,
+				id:        nil,                 // That's ack-only.
+				msgs:      []Message{},         // No payload.
+				acks:      []int{*msgBatch.id}, // Ack single message.
+				sent:      nil,                 // We will not track this message, it has no payload.
+			})
 		}
 		//
 		// We have acked it already. If we have the batch with an ack, we
@@ -158,13 +156,13 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) []Message {
 		}
 		now := time.Now()
 		ackedBatch.sent = &now
-		return []Message{ackedBatch}
+		return NoMessages().Add(ackedBatch)
 	}
 	//
 	// That's new batch, we have to process it.
-	nestedMsgs := []Message{}
+	nestedMsgs := NoMessages()
 	for i := range msgBatch.msgs {
-		nestedMsgs = append(nestedMsgs, a.nested.Message(msgBatch.msgs[i])...)
+		nestedMsgs.AddAll(a.nested.Message(msgBatch.msgs[i]))
 	}
 	if _, ok := a.recvAcksIn[msgBatch.sender]; !ok {
 		a.recvAcksIn[msgBatch.sender] = map[int]*int{}
@@ -173,17 +171,18 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) []Message {
 	return a.makeBatches(nestedMsgs)
 }
 
-func (a *ackHandler) makeBatches(msgs []Message) []Message {
+func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 	groupedMsgs := map[NodeID][]Message{}
-	for i := range msgs {
-		msgRecipient := msgs[i].Recipient()
+	msgs.MustIterate(func(msg Message) {
+		msgRecipient := msg.Recipient()
 		if recipientMsgs, ok := groupedMsgs[msgRecipient]; ok {
-			groupedMsgs[msgRecipient] = append(recipientMsgs, msgs[i])
+			groupedMsgs[msgRecipient] = append(recipientMsgs, msg)
 		} else {
-			groupedMsgs[msgRecipient] = []Message{msgs[i]}
+			groupedMsgs[msgRecipient] = []Message{msg}
 		}
-	}
-	batches := []Message{}
+	})
+
+	batches := NoMessages()
 	for nodeID, batchMsgs := range groupedMsgs {
 		//
 		// Assign batch ID.
@@ -219,7 +218,7 @@ func (a *ackHandler) makeBatches(msgs []Message) []Message {
 			a.sentUnacked[nodeID][*batch.id] = batch
 		}
 
-		batches = append(batches, batch)
+		batches.Add(batch)
 	}
 	return batches
 }
@@ -294,8 +293,6 @@ func (m *ackHandlerBatch) MarshalBinary() ([]byte, error) {
 }
 
 func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
-	// var u16 uint16
-	// var u32 uint32
 	r := bytes.NewReader(data)
 	//
 	// m.id
