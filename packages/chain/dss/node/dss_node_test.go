@@ -81,7 +81,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 			n.Close()
 		}
 	}()
-	dkShares := longTermDKG(dkgType, t, peerIdentities, n, f, log)
+	dkShares := longTermDKG(dkgType, t, peerIdentities, f, log)
 	//
 	//	Start the DSS instances.
 	key := hashing.HashData([]byte{1, 2, 3}).String()
@@ -122,19 +122,20 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 	}
 }
 
-func longTermDKG(dkgType byte, t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f int, log *logger.Logger) []tcrypto.DKShare {
+func longTermDKG(dkgType byte, t *testing.T, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
 	switch dkgType {
 	case dkgTypePregeneratedHT:
-		return longTermDKGPregeneratedHT(t, peerIdentities, n, f)
+		return longTermDKGPregeneratedHT(t, peerIdentities, f)
 	case dkgTypeRobustLT:
-		return longTermDKGRobustLT(t, peerIdentities, n, f, log)
+		return longTermDKGRobustLT(t, peerIdentities, f, log)
 	case dkgTypeTrivialHT:
-		return longTermDKGTrivialHT(t, peerIdentities, n, f)
+		return longTermDKGTrivialHT(peerIdentities, f)
 	}
 	panic("unknown dkg type")
 }
 
-func longTermDKGPregeneratedHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f int) []tcrypto.DKShare {
+func longTermDKGPregeneratedHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
+	n := len(peerIdentities)
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
 	address, dkSharesRegProviders := testpeers.SetupDkgPregenerated(t, uint16(n-f), peerIdentities)
 	for i := range peerIdentities {
@@ -145,7 +146,7 @@ func longTermDKGPregeneratedHT(t *testing.T, peerIdentities []*cryptolib.KeyPair
 	return dkShares
 }
 
-func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f int, log *logger.Logger) []tcrypto.DKShare {
+func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
 	nodeIDs := make([]gpa.NodeID, len(peerIdentities))
 	nodePKs := map[gpa.NodeID]kyber.Point{}
@@ -168,7 +169,8 @@ func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f
 	return dkShares
 }
 
-func longTermDKGTrivialHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, n, f int) []tcrypto.DKShare {
+func longTermDKGTrivialHT(peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
+	n := len(peerIdentities)
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
 	for i := range peerPubKeys {

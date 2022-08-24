@@ -7,6 +7,7 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
 )
 
 // ImplicateLen returns the length of Implicate in bytes.
@@ -36,7 +37,7 @@ func Implicate(suite suites.Suite, dealerPublic kyber.Point, ownPrivate kyber.Sc
 
 // CheckImplicate verifies whether data is a correct implicate from peer.
 // It returns the secret which can then be used to decrypt the corresponding share.
-func CheckImplicate(g kyber.Group, dealerPublic kyber.Point, peerPublic kyber.Point, data []byte) ([]byte, error) {
+func CheckImplicate(g kyber.Group, dealerPublic, peerPublic kyber.Point, data []byte) ([]byte, error) {
 	if len(data) != ImplicateLen(g) {
 		return nil, ErrInvalidInputLength
 	}
@@ -67,7 +68,7 @@ func CheckImplicate(g kyber.Group, dealerPublic kyber.Point, peerPublic kyber.Po
 	return secret, nil
 }
 
-func dleqProof(suite suites.Suite, G kyber.Point, H kyber.Point, secret kyber.Scalar) (kyber.Scalar, kyber.Point, kyber.Point) {
+func dleqProof(suite suites.Suite, G kyber.Point, H kyber.Point, secret kyber.Scalar) (kyber.Scalar, kyber.Point, kyber.Point) { //nolint:gocritic
 	// compute the corresponding public keys
 	P1 := suite.Point().Mul(secret, G)
 	P2 := suite.Point().Mul(secret, H)
@@ -79,10 +80,18 @@ func dleqProof(suite suites.Suite, G kyber.Point, H kyber.Point, secret kyber.Sc
 
 	// challenge hash
 	h := sha512.New()
-	P1.MarshalTo(h)
-	P2.MarshalTo(h)
-	R1.MarshalTo(h)
-	R2.MarshalTo(h)
+	if _, err := P1.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal P1: %w", err))
+	}
+	if _, err := P2.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal P2: %w", err))
+	}
+	if _, err := R1.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal R1: %w", err))
+	}
+	if _, err := R2.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal R2: %w", err))
+	}
 	c := suite.Scalar().SetBytes(h.Sum(nil))
 
 	// response
@@ -92,13 +101,21 @@ func dleqProof(suite suites.Suite, G kyber.Point, H kyber.Point, secret kyber.Sc
 	return s, R1, R2
 }
 
-func dleqVerify(g kyber.Group, G kyber.Point, H kyber.Point, P1 kyber.Point, P2 kyber.Point, s kyber.Scalar, R1 kyber.Point, R2 kyber.Point) bool {
+func dleqVerify(g kyber.Group, G kyber.Point, H kyber.Point, P1 kyber.Point, P2 kyber.Point, s kyber.Scalar, R1 kyber.Point, R2 kyber.Point) bool { //nolint:gocritic
 	// challenge hash
 	h := sha512.New()
-	P1.MarshalTo(h)
-	P2.MarshalTo(h)
-	R1.MarshalTo(h)
-	R2.MarshalTo(h)
+	if _, err := P1.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal P1: %w", err))
+	}
+	if _, err := P2.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal P2: %w", err))
+	}
+	if _, err := R1.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal R1: %w", err))
+	}
+	if _, err := R2.MarshalTo(h); err != nil {
+		panic(xerrors.Errorf("cannot marshal R2: %w", err))
+	}
 	c := g.Scalar().SetBytes(h.Sum(nil))
 
 	P := g.Point()

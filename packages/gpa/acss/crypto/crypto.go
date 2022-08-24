@@ -92,7 +92,7 @@ func DecryptShare(g kyber.Group, deal *Deal, index int, secret []byte) (*share.P
 }
 
 // InterpolateShare interpolates a new private share for index i.
-func InterpolateShare(g kyber.Group, shares []*Share, n int, i int) (*Share, error) {
+func InterpolateShare(g kyber.Group, shares []*Share, n, i int) (*Share, error) {
 	poly, err := share.RecoverPriPoly(g, shares, threshold(n), n)
 	if err != nil {
 		return nil, err

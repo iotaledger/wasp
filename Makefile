@@ -39,7 +39,7 @@ test-full: install
 	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 40m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast $(TEST_ARG)
 
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm | grep -v github.com/iotaledger/wasp/packages/vm/)
@@ -51,7 +51,7 @@ install: compile-solidity
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint:
-	golangci-lint run
+	golangci-lint run --skip-dirs=contracts/wasm
 
 gofumpt-list:
 	gofumpt -l ./
