@@ -20,7 +20,9 @@ wasm:
 	bash contracts/wasm/scripts/generate_wasm.sh
 
 compile-solidity:
-ifeq (, $(shell which solc))
+ifdef SKIP_SOLIDITY
+	@echo "skipping compile-solidity rule"
+else ifeq (, $(shell which solc))
 	@echo "no solc found in PATH, evm contracts won't be compiled"
 else
 	cd packages/vm/core/evm/iscmagic && go generate

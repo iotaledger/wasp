@@ -189,12 +189,14 @@ func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error 
 		retryDelay = timeouts[1]
 	}
 
-	var err error
-	for err = fun(); errors.Is(err, coreutil.ErrorStateInvalidated); err = fun() {
+	for {
+		err := fun()
+		if !errors.Is(err, coreutil.ErrorStateInvalidated) {
+			return err
+		}
 		time.Sleep(retryDelay)
 		if time.Now().After(timeoutAfter) {
 			return xerrors.Errorf("optimistic read retry timeout. Last error: %w", err)
 		}
 	}
-	return err
 }

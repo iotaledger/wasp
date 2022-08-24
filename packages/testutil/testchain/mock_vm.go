@@ -36,7 +36,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 	return ret
 }
 
-func (r *MockedVMRunner) Run(task *vm.VMTask) {
+func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
 		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), isc.OID(task.AnchorOutputID.UTXOInput()))
 	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests...)
@@ -55,8 +55,8 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 			},
 		}
 	}
-	task.VMError = nil
 	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieNodeStore()))
+	return nil
 }
 
 func nextState(
