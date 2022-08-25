@@ -17,8 +17,8 @@ keywords:
 # EVM Compatibility in IOTA Smart Contracts
 
 The [`evm`](../core_concepts/core_contracts/evm.md) [core contract](../core_concepts/core_contracts/overview.md)
-provides EVM support in IOTA Smart Contracts. Its main purpose is to store the EVM state (account balances, state, code,
-etc.) and to provide a way to execute EVM code to manipulate the state.
+provides EVM support in IOTA Smart Contracts. It stores the EVM state (account balances, state, code,
+etc.) and provides a way to execute EVM code to manipulate the state.
 
 The EVM core contract runs on top of the ISC layer, which provides the rest of the machinery needed to run smart
 contracts, such as signed requests, blocks, state, proofs, etc.
