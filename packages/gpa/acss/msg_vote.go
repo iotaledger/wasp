@@ -18,9 +18,7 @@ const (
 	msgVoteREADY
 )
 
-//
 // This message is used a vote for the "Bracha-style totality" agreement.
-//
 type msgVote struct {
 	sender    gpa.NodeID
 	recipient gpa.NodeID

@@ -1,9 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//
 // TODO: That's Craig's "Good-Case-Coin-Free" ABA consensus.
-//
 package craig
 
 import (

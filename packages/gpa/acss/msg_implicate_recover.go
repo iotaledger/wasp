@@ -18,9 +18,7 @@ const (
 	msgImplicateRecoverKindRECOVER
 )
 
-//
 // The <IMPLICATE, i, skᵢ> and <RECOVER, i, skᵢ> messages.
-//
 type msgImplicateRecover struct {
 	sender    gpa.NodeID
 	recipient gpa.NodeID

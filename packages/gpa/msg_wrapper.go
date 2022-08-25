@@ -68,9 +68,7 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	return &WrappingMsg{msgType, subsystem, index, wrapped}, nil
 }
 
-//
 // The message that contains another, and its routing info.
-//
 type WrappingMsg struct {
 	msgType   byte
 	subsystem byte
