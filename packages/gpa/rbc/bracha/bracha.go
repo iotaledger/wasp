@@ -171,8 +171,9 @@ func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 		r.output = h
 	}
 	//
-	// Support others, if quorum is enough.
-	if count >= r.f+1 {
+	// Send the READY message, when a READY message was received from at least one honest peer.
+	// This amplification assures totality.
+	if count > r.f {
 		return r.maybeSendEchoReady(msg.v)
 	}
 	return []gpa.Message{}
