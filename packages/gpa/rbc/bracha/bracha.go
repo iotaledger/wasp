@@ -3,8 +3,8 @@
 
 // package bracha implements Bracha's Reliable Broadcast, as described in
 //
-//      Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
-//      75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
+//		Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
+//		75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
 //
 // The following pseudo-code is taken from "FIG. 1. The broadcast primitive" in the above
 // paper. Here the paper assumes $0 ≤ t < n/3$.
