@@ -1,6 +1,8 @@
 package coreutil
 
 import (
+	"sync"
+
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
@@ -64,6 +66,7 @@ type StateBaseline interface {
 }
 
 type stateBaseline struct {
+	mutex           sync.Mutex
 	solidStateIndex *atomic.Uint32
 	baseline        uint32
 }
@@ -76,10 +79,16 @@ func newStateIndexBaseline(globalStateIndex *atomic.Uint32) *stateBaseline {
 }
 
 func (g *stateBaseline) Set() {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
 	g.baseline = g.solidStateIndex.Load()
 }
 
 func (g *stateBaseline) IsValid() bool {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
 	return g.baseline != ^uint32(0) && g.baseline == g.solidStateIndex.Load()
 }
 
