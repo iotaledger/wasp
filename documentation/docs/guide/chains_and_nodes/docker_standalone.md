@@ -63,8 +63,8 @@ editing the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop
 
 ```json
 "l1": {
-"apiAddress": "http://hornet:14265",
-"faucetAddress": "http://hornet:8091"
+  "apiAddress": "http://hornet:14265",
+  "faucetAddress": "http://hornet:8091"
 },
 ```
 
