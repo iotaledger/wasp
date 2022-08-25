@@ -4,34 +4,34 @@
 // package bracha implements Bracha's Reliable Broadcast.
 // The original version of this RBC can be found here (see "FIG. 1. The broadcast primitive"):
 //
-//     Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
-//     75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
+//   Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
+//   75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
 //
 // Here we follow the algorithm presentation from (see "Algorithm 2 Bracha’s RBC [14]"):
 //
-//     Sourav Das, Zhuolun Xiang, and Ling Ren. 2021. Asynchronous Data Dissemination
-//     and its Applications. In Proceedings of the 2021 ACM SIGSAC Conference on Computer
-//     and Communications Security (CCS '21). Association for Computing Machinery,
-//     New York, NY, USA, 2705–2721. DOI:https://doi.org/10.1145/3460120.3484808
+//   Sourav Das, Zhuolun Xiang, and Ling Ren. 2021. Asynchronous Data Dissemination
+//   and its Applications. In Proceedings of the 2021 ACM SIGSAC Conference on Computer
+//   and Communications Security (CCS '21). Association for Computing Machinery,
+//   New York, NY, USA, 2705–2721. DOI:https://doi.org/10.1145/3460120.3484808
 //
 // The algorithms differs a bit. The latter supports predicates and also it don't
 // imply sending ECHO messages upon receiving F+1 READY messages. The pseudo-code
 // from the Das et al.:
 //
-//      1: // only broadcaster node
-//      2: input 𝑀
-//      3: send ⟨PROPOSE, 𝑀⟩ to all
-//      4: // all nodes
-//      5: input 𝑃(·) // predicate 𝑃(·) returns true unless otherwise specified.
-//      6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
-//      7:     if 𝑃(𝑀) then
-//      8:         send ⟨ECHO, 𝑀⟩ to all
-//      9: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
-//     10:     send ⟨READY, 𝑀⟩ to all
-//     11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
-//     12:     send ⟨READY, 𝑀⟩ to all
-//     13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
-//     14:     output 𝑀
+//   01: // only broadcaster node
+//   02: input 𝑀
+//   03: send ⟨PROPOSE, 𝑀⟩ to all
+//   04: // all nodes
+//   05: input 𝑃(·) // predicate 𝑃(·) returns true unless otherwise specified.
+//   06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
+//   07:     if 𝑃(𝑀) then
+//   08:         send ⟨ECHO, 𝑀⟩ to all
+//   09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
+//   10:     send ⟨READY, 𝑀⟩ to all
+//   11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
+//   12:     send ⟨READY, 𝑀⟩ to all
+//   13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
+//   14:     output 𝑀
 //
 // In the above 𝑡 is "Given a network of 𝑛 nodes, of which up to 𝑡 could be malicious",
 // thus that's the parameter F in the specification bellow.
@@ -100,11 +100,10 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 }
 
 // Implements the GPA interface.
-// ```
-//      1: // only broadcaster node
-//      2: input 𝑀
-//      3: send ⟨PROPOSE, 𝑀⟩ to all
-// ```
+//
+//   01: // only broadcaster node
+//   02: input 𝑀
+//   03: send ⟨PROPOSE, 𝑀⟩ to all
 func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	if r.broadcaster != r.me {
 		panic(xerrors.Errorf("only broadcaster is allowed to take an input"))
@@ -140,11 +139,9 @@ func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	}
 }
 
-// ```
-//      6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
-//      7:     if 𝑃(𝑀) then
-//      8:         send ⟨ECHO, 𝑀⟩ to all
-// ```
+//   06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
+//   07:     if 𝑃(𝑀) then
+//   08:         send ⟨ECHO, 𝑀⟩ to all
 func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 	if msg.s != r.broadcaster {
 		// PROPOSE messages can only be sent by the broadcaster process.
@@ -164,10 +161,8 @@ func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 	return msgs
 }
 
-// ```
-//      9: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
-//     10:     send ⟨READY, 𝑀⟩ to all
-// ```
+//   09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
+//   10:     send ⟨READY, 𝑀⟩ to all
 func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
@@ -182,12 +177,10 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	return gpa.NoMessages()
 }
 
-// ```
-//     11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
-//     12:     send ⟨READY, 𝑀⟩ to all
-//     13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
-//     14:     output 𝑀
-// ```
+//   11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
+//   12:     send ⟨READY, 𝑀⟩ to all
+//   13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
+//   14:     output 𝑀
 func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
