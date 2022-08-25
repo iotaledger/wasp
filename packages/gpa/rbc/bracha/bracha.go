@@ -81,15 +81,20 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	}
 	inputVal := input.([]byte)
 	r.ensureValueStored(inputVal)
-	msgs := []gpa.Message{}
+	msgs := r.broadcast(msgBrachaTypeInitial, inputVal)
+	r.initialSent = true
+	return msgs
+}
+
+func (r *rbc) broadcast(t msgBrachaType, v []byte) []gpa.Message {
+	var msgs []gpa.Message
 	for i := range r.peers {
 		msgs = append(msgs, &msgBracha{
-			t: msgBrachaTypeInitial,
+			t: t,
 			r: r.peers[i],
-			v: inputVal,
+			v: v,
 		})
 	}
-	r.initialSent = true
 	return msgs
 }
 
