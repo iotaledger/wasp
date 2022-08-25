@@ -47,8 +47,8 @@ func (g *ChainStateSyncImpl) GetSolidIndexBaseline() StateBaseline {
 	return newStateIndexBaseline(&g.solidIndex)
 }
 
-// InvalidateSolidIndex invalidates state index and, globally, all baselines
-// .All vaselines remain invalid until SetSolidIndex is called globally
+// InvalidateSolidIndex invalidates state index and, globally, all baselines.
+// All baselines remain invalid until SetSolidIndex is called globally
 // and Set for each baseline individually
 func (g *ChainStateSyncImpl) InvalidateSolidIndex() ChainStateSync {
 	g.solidIndex.Store(^uint32(0))
