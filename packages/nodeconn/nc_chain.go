@@ -79,13 +79,11 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	}
 	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
 	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
-
 	if err != nil {
 		return err
 	}
 
 	txMsgID, err := txMsg.ID()
-
 	if err != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
 	}
@@ -110,7 +108,6 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 
 				for i := 0; i < 10; i++ {
 					state, err := ncc.nc.nodeAPIClient.BlockMetadataByBlockID(ctxWithTimeout, txMsgID)
-
 					if err != nil {
 						ncc.log.Debugf("BlockMEtaDataByBlockId ERROR: %v\n", err)
 						time.Sleep(1 * time.Second)

@@ -241,7 +241,6 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		Payload(tx).
 		Tips(ctx, nc.nodeAPIClient).
 		Build()
-
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
@@ -250,7 +249,6 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
 	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
-
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}

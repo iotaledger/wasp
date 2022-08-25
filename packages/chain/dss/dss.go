@@ -7,14 +7,15 @@
 // Later the DKG part can be run in advance, while waiting for transactions.
 //
 // The general workflow is the following:
-//  - Start it upon activation of a step (last stateOutput is approved).
-//  - Exchange the underlying messages until:
-//      - ACSS Intermediate output is received.
-//  - Then wait for the ACS and then the VM to complete:
-//      - pass the ACS result to the nonce-dkg (to complete the nonces).
-//      - pass the VM output as a message to sign (its hash).
-//  - Exchange messages until the signature is produced.
-//  - Output the signature.
+//
+//	1. Start it upon activation of a step (last stateOutput is approved).
+//	2. Exchange the underlying messages until:
+//	2.1. ACSS Intermediate output is received.
+//	3. Then wait for the ACS and then the VM to complete:
+//	3.1. pass the ACS result to the nonce-dkg (to complete the nonces).
+//	3.2. pass the VM output as a message to sign (its hash).
+//	4. Exchange messages until the signature is produced.
+//	5. Output the signature.
 //
 // TODO: Make sure no two signatures are ever produced by the nonce-dkg for the same
 //       base TX. That would reveal the permanent private key of the committee.
