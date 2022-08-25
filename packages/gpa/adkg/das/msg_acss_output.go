@@ -10,7 +10,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-//
 // An event to self.
 type msgACSSOutput struct {
 	me       gpa.NodeID

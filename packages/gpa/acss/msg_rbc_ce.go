@@ -42,7 +42,6 @@ func (m *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-//
 // An event to self.
 type msgRBCCEOutput struct {
 	me      gpa.NodeID

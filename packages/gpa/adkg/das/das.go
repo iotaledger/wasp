@@ -3,9 +3,9 @@
 
 // package adkg implements Async DKG as described in
 //
-// 		Sourav Das, Tom Yurek, Zhuolun Xiang, Andrew Miller, Lefteris Kokoris-Kogias,
-// 		and Ling Ren. Practical Asynchronous Distributed Key Generation. Cryptology.
-// 		https://eprint.iacr.org/2021/1591
+//	Sourav Das, Tom Yurek, Zhuolun Xiang, Andrew Miller, Lefteris Kokoris-Kogias,
+//	and Ling Ren. Practical Asynchronous Distributed Key Generation. Cryptology.
+//	https://eprint.iacr.org/2021/1591
 //
 // The algorithm adopted to the Feldman commitments is provided at
 // <https://iotaledger.github.io/crypto-tss/talks/async-dkg/slides-async-dkg.html#/6/3>.
@@ -38,7 +38,6 @@
 // > wait until all ABAs terminate			/
 // > z := sum(sⱼ for j in T)
 // > output z
-//
 package das
 
 import (
@@ -182,13 +181,11 @@ func (a *adkgImpl) handleACSSMessage(msg *msgWrapper) []gpa.Message {
 	return msgs
 }
 
-//
 // > on termination of the ACSSⱼ:
 // >   sⱼ := output of ACSSⱼ
 // >   Tᵢ = Tᵢ ∪ {j}
 // >   if len(Tᵢ) == f + 1:
 // >     RBCᵢ(Tᵢ)
-//
 func (a *adkgImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message {
 	j := acssOutput.index
 	if _, ok := a.st[j]; ok {
@@ -245,7 +242,6 @@ func (a *adkgImpl) handleRBCMessage(msg *msgWrapper) []gpa.Message {
 //
 // NOTE: Here we also have to wait for ACSS instances to terminate, whose indexes
 // are in the decided set of shares.
-//
 func (a *adkgImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Message {
 	if a.agreedT != nil {
 		return gpa.NoMessages()
@@ -260,7 +256,6 @@ func (a *adkgImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Message 
 // > on termination of RBCⱼ:
 // >   when Tⱼ ⊆ Tᵢ:
 // >     Input 1 to ABAⱼ
-//
 func (a *adkgImpl) tryInput1ToABA() []gpa.Message { // TODO: Make the check more efficient. Will be called a lot.
 	for _, r := range a.rbcs {
 		ro := r.Output()
@@ -340,11 +335,9 @@ func (a *adkgImpl) tryMakeFinalOutput() []gpa.Message {
 	return gpa.NoMessages()
 }
 
-//
 // > func P(Tⱼ):
 // >   when Tⱼ ⊆ Tᵢ:
 // >     return true
-//
 func (a *adkgImpl) rbcPredicate(rbcPayload []byte) bool {
 	parsed := &msgRBCPayload{}
 	if err := parsed.UnmarshalBinary(rbcPayload); err != nil {

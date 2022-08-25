@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
-//
 // An event to self.
 type msgAgreementResult struct {
 	me      gpa.NodeID

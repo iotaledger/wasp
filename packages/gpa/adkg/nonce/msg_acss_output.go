@@ -9,7 +9,6 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 )
 
-//
 // An event to self.
 type msgACSSOutput struct {
 	me       gpa.NodeID

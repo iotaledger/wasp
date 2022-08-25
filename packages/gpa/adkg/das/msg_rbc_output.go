@@ -8,7 +8,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-//
 // An event to self.
 type msgRBCOutput struct { // TODO: Not used.
 	me      gpa.NodeID

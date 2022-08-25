@@ -29,7 +29,6 @@
 // >                 σᵢ ← sum(sʲᵢ for j in 𝒯)
 // >             Create partial signature using the private key share and σᵢ as the nonce share
 // >         Aggregate t partial signatures to form the valid signature
-//
 package nonce
 
 import (

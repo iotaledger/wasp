@@ -139,6 +139,8 @@ func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	}
 }
 
+// Handle the PROPOSE messages.
+//
 //	06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
 //	07:     if 𝑃(𝑀) then
 //	08:         send ⟨ECHO, 𝑀⟩ to all
@@ -161,6 +163,8 @@ func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 	return msgs
 }
 
+// Handle the ECHO messages.
+//
 //	09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
 //	10:     send ⟨READY, 𝑀⟩ to all
 func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
@@ -177,6 +181,8 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	return gpa.NoMessages()
 }
 
+// Handle the READY messages.
+//
 //	11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
 //	12:     send ⟨READY, 𝑀⟩ to all
 //	13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
