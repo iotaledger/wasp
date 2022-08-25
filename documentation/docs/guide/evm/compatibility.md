@@ -31,9 +31,10 @@ Ethereum tools think they are interfacing with an actual Ethereum node, but some
 
 Here are some of the most important properties and limitations of EVM support in IOTA Smart Contracts:
 
-The Wasp node provides a JSON-RPC service, the standard protocol used by Ethereum tools. Upon receiving a signed
-Ethereum transaction via JSON-RPC, the transaction is wrapped into an ISC off-ledger request. The sender of the request
-is the Ethereum address that signed the original transaction (e.g., the Metamask account).
+- The Wasp node provides a JSON-RPC service, the standard protocol used by Ethereum tools. Upon receiving a signed
+  Ethereum transaction via JSON-RPC, the transaction is wrapped into an ISC off-ledger request. The sender of the
+  request
+  is the Ethereum address that signed the original transaction (e.g., the Metamask account).
 
 - While ISC contracts are identified by an [hname](../core_concepts/smart-contract-anatomy.md), EVM contracts are
   identified by their Ethereum address.
