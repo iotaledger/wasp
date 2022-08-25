@@ -25,7 +25,7 @@ contracts, such as signed requests, blocks, state, proofs, etc.
 
 However, the ISC EVM layer is also designed to be as compatible as possible with existing Ethereum tools
 like [MetaMask](https://metamask.io/), which assume that the EVM code runs on an Ethereum blockchain composed of
-Ethereum blocks containing Ethereum transactions. Unfortunately, since ISC works in a fundamentally different way,
+Ethereum blocks containing Ethereum transactions. Since ISC works in a fundamentally different way,
 providing 100% compatibility is not possible. We do our best to emulate the behavior of an Ethereum node, so the
 Ethereum tools think they are interfacing with an actual Ethereum node, but some differences in behavior are inevitable.
 
