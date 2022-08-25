@@ -44,7 +44,10 @@
 //
 // Here `PROPOSE` corresponds to `initial`.
 //
-// NOTE: Only a dedicated process can broadcast a value. Otherwise it would be a consensus.
+// On the predicates. If they are updated via `MakePredicateUpdateMsg` and similar,
+// they have to be monotonic. I.e. if a predicate was true for the broadcaster's
+// message, then all the following predicates supplied to the algorithm must be
+// true for that message as well.
 package bracha
 
 import (
