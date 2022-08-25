@@ -1,48 +1,40 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package bracha implements Bracha's Reliable Broadcast, as described in
+// package bracha implements Bracha's Reliable Broadcast.
+// The original version of this RBC can be found here (see "FIG. 1. The broadcast primitive"):
 //
-//		Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
-//		75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
+//     Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
+//     75, 2 (November 1, 1987), 130–143. DOI:https://doi.org/10.1016/0890-5401(87)90054-X
 //
-// The following pseudo-code is taken from "FIG. 1. The broadcast primitive" in the above
-// paper. Here the paper assumes $0 ≤ t < n/3$.
+// Here we follow the algorithm presentation from (see "Algorithm 2 Bracha’s RBC [14]"):
 //
-//      Broadcast(v)
-//      step 0. (By process p)
-//          Send (initial, v) to all the processes.
-//      step 1. Wait until the receipt of,
-//              one (initial, v) message
-//              or (n+t)/2 (echo, v) messages
-//              or (t+l) (ready, v) messages
-//              for some v.
-//          Send (echo, v) to all the processes.
-//      step 2. Wait until the receipt of,
-//              (n+t)/2 (echo, v) messages
-//              or (t+1) (ready, v) messages
-//              (including messages received in step 1)
-//              for some v.
-//          Send (ready, v) to all the processes.
-//      step 3. Wait until the receipt of,
-//              2t+1 (ready, v) messages
-//              (including messages received in step 1 and step 2) for some v.
-//          Accept v.
+//     Sourav Das, Zhuolun Xiang, and Ling Ren. 2021. Asynchronous Data Dissemination
+//     and its Applications. In Proceedings of the 2021 ACM SIGSAC Conference on Computer
+//     and Communications Security (CCS '21). Association for Computing Machinery,
+//     New York, NY, USA, 2705–2721. DOI:https://doi.org/10.1145/3460120.3484808
 //
-// Additionally a predicate is added as it was used in
+// The algorithms differs a bit. The latter supports predicates and also it don't
+// imply sending ECHO messages upon receiving F+1 READY messages. The pseudo-code
+// from the Das et al.:
 //
-//      Sourav Das, Zhuolun Xiang, and Ling Ren. 2021. Asynchronous Data Dissemination
-//      and its Applications. In Proceedings of the 2021 ACM SIGSAC Conference on Computer
-//      and Communications Security (CCS '21). Association for Computing Machinery,
-//      New York, NY, USA, 2705–2721. DOI:https://doi.org/10.1145/3460120.3484808
+//      1: // only broadcaster node
+//      2: input 𝑀
+//      3: send ⟨PROPOSE, 𝑀⟩ to all
+//      4: // all nodes
+//      5: input 𝑃(·) // predicate 𝑃(·) returns true unless otherwise specified.
+//      6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
+//      7:     if 𝑃(𝑀) then
+//      8:         send ⟨ECHO, 𝑀⟩ to all
+//      9: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
+//     10:     send ⟨READY, 𝑀⟩ to all
+//     11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
+//     12:     send ⟨READY, 𝑀⟩ to all
+//     13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
+//     14:     output 𝑀
 //
-// See "Algorithm 2 Bracha’s RBC [14]". The part relevant to the predicate is:
-//
-//		6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
-//		7:     if 𝑃(𝑀) then
-//		8:         send ⟨ECHO, 𝑀⟩ to all
-//
-// Here `PROPOSE` corresponds to `initial`.
+// In the above 𝑡 is "Given a network of 𝑛 nodes, of which up to 𝑡 could be malicious",
+// thus that's the parameter F in the specification bellow.
 //
 // On the predicates. If they are updated via `MakePredicateUpdateMsg` and similar,
 // they have to be monotonic. I.e. if a predicate was true for the broadcaster's
@@ -65,8 +57,8 @@ type rbc struct {
 	broadcaster gpa.NodeID
 	peers       []gpa.NodeID
 	predicate   func([]byte) bool
-	pendingIMsg *msgBracha // INITIAL message received, but not satisfying a predicate, if any.
-	initialSent bool
+	pendingPMsg *msgBracha // PROPOSE message received, but not satisfying a predicate, if any.
+	proposeSent bool
 	values      map[hashing.HashValue][]byte              // Map hashes to actual values.
 	echoSent    bool                                      // Have we sent the ECHO messages?
 	echoRecv    map[hashing.HashValue]map[gpa.NodeID]bool // Quorum counter for the ECHO messages.
@@ -82,10 +74,12 @@ func SendPredicateUpdate(rbc gpa.GPA, me gpa.NodeID, predicate func([]byte) bool
 	return rbc.Message(MakePredicateUpdateMsg(me, predicate))
 }
 
+// Create a message for sending it later.
 func MakePredicateUpdateMsg(me gpa.NodeID, predicate func([]byte) bool) gpa.Message {
 	return &msgPredicateUpdate{me: me, predicate: predicate}
 }
 
+// Create new instance of the RBC.
 func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([]byte) bool) gpa.GPA {
 	r := &rbc{
 		n:           len(peers),
@@ -94,7 +88,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 		broadcaster: broadcaster,
 		peers:       peers,
 		predicate:   predicate,
-		pendingIMsg: nil,
+		pendingPMsg: nil,
 		values:      make(map[hashing.HashValue][]byte),
 		echoSent:    false,
 		echoRecv:    make(map[hashing.HashValue]map[gpa.NodeID]bool),
@@ -105,26 +99,33 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 	return gpa.NewOwnHandler(me, r)
 }
 
+// Implements the GPA interface.
+// ```
+//      1: // only broadcaster node
+//      2: input 𝑀
+//      3: send ⟨PROPOSE, 𝑀⟩ to all
+// ```
 func (r *rbc) Input(input gpa.Input) []gpa.Message {
 	if r.broadcaster != r.me {
 		panic(xerrors.Errorf("only broadcaster is allowed to take an input"))
 	}
-	if r.initialSent {
+	if r.proposeSent {
 		panic(xerrors.Errorf("input can only be supplied once"))
 	}
 	inputVal := input.([]byte)
 	r.ensureValueStored(inputVal)
-	msgs := r.sendToAll(msgBrachaTypeInitial, inputVal)
-	r.initialSent = true
+	msgs := r.sendToAll(msgBrachaTypePropose, inputVal)
+	r.proposeSent = true
 	return msgs
 }
 
+// Implements the GPA interface.
 func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	switch msgT := msg.(type) {
 	case *msgBracha:
 		switch msgT.t {
-		case msgBrachaTypeInitial:
-			return r.handleInitial(msgT)
+		case msgBrachaTypePropose:
+			return r.handlePropose(msgT)
 		case msgBrachaTypeEcho:
 			return r.handleEcho(msgT)
 		case msgBrachaTypeReady:
@@ -139,18 +140,23 @@ func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	}
 }
 
-func (r *rbc) handleInitial(msg *msgBracha) []gpa.Message {
+// ```
+//      6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
+//      7:     if 𝑃(𝑀) then
+//      8:         send ⟨ECHO, 𝑀⟩ to all
+// ```
+func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 	if msg.s != r.broadcaster {
-		// Initial messages can only be sent by the broadcaster process.
+		// PROPOSE messages can only be sent by the broadcaster process.
 		// Ignore all the rest.
 		return gpa.NoMessages()
 	}
-	if r.echoSent || r.pendingIMsg != nil {
-		// Initial message was already received, ignore this one.
+	if r.echoSent || r.pendingPMsg != nil {
+		// PROPOSE message was already received, ignore this one.
 		return gpa.NoMessages()
 	}
 	if !r.predicate(msg.v) {
-		r.pendingIMsg = msg
+		r.pendingPMsg = msg
 		return gpa.NoMessages()
 	}
 	msgs := r.sendToAll(msgBrachaTypeEcho, msg.v)
@@ -158,92 +164,83 @@ func (r *rbc) handleInitial(msg *msgBracha) []gpa.Message {
 	return msgs
 }
 
+// ```
+//      9: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
+//     10:     send ⟨READY, 𝑀⟩ to all
+// ```
 func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
-	if _, ok := r.echoRecv[h]; !ok {
-		r.echoRecv[h] = map[gpa.NodeID]bool{}
-	}
-	r.echoRecv[h][msg.s] = true
+	r.markEchoRecv(h, msg)
 	//
 	// Send the READY message, if Byzantine quorum ⌈(n+f+1)/2⌉ of received ECHO messages is reached.
 	// As there are only n distinct peers, every two Byzantine quorums overlap in at least one correct peer.
-	// |echoRecv| ≥ ⌈(n+f+1)/2⌉ ⟺ |echoRecv| > ⌊(n+f)/2⌋
-	if len(r.echoRecv[h]) > (r.n+r.f)/2 {
-		return r.maybeSendEchoReady(msg.v)
+	if len(r.echoRecv[h]) > 2*r.f {
+		return r.maybeSendReady(msg.v)
 	}
-	return []gpa.Message{}
+	return gpa.NoMessages()
 }
 
+// ```
+//     11: upon receiving 𝑡 + 1 ⟨READY, 𝑀⟩ messages and not having sent a READY message do
+//     12:     send ⟨READY, 𝑀⟩ to all
+//     13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
+//     14:     output 𝑀
+// ```
 func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
 	h := r.ensureValueStored(msg.v)
-	if _, ok := r.readyRecv[h]; !ok {
-		r.readyRecv[h] = map[gpa.NodeID]bool{}
-	}
-	r.readyRecv[h][msg.s] = true
+	r.markReadyRecv(h, msg)
 	count := len(r.readyRecv[h])
 	//
 	// Decide, if quorum is enough.
-	if count >= 2*r.f+1 && r.output == hashing.NilHash {
+	if count > 2*r.f && r.output == hashing.NilHash {
 		r.output = h
 	}
 	//
 	// Send the READY message, when a READY message was received from at least one honest peer.
 	// This amplification assures totality.
 	if count > r.f {
-		return r.maybeSendEchoReady(msg.v)
+		return r.maybeSendReady(msg.v)
 	}
-	return []gpa.Message{}
+	return gpa.NoMessages()
 }
 
 func (r *rbc) handlePredicateUpdate(msg msgPredicateUpdate) []gpa.Message {
 	r.predicate = msg.predicate
-	if r.pendingIMsg == nil {
+	if r.pendingPMsg == nil {
 		return gpa.NoMessages()
 	}
 	//
-	// Try to process the initial message again, if it was postponed.
-	initialMsg := r.pendingIMsg
-	r.pendingIMsg = nil
-	return r.handleInitial(initialMsg)
+	// Try to process the PROPOSE message again, if it was postponed.
+	proposeMsg := r.pendingPMsg
+	r.pendingPMsg = nil
+	return r.handlePropose(proposeMsg)
 }
 
-func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
-	msgs := []gpa.Message{}
-	if !r.echoSent {
-		msgs = append(msgs, r.sendToAll(msgBrachaTypeEcho, v)...)
-		r.echoSent = true
+func (r *rbc) markEchoRecv(h hashing.HashValue, msg *msgBracha) {
+	if _, ok := r.echoRecv[h]; !ok {
+		r.echoRecv[h] = map[gpa.NodeID]bool{}
 	}
+	r.echoRecv[h][msg.s] = true
+}
+
+func (r *rbc) markReadyRecv(h hashing.HashValue, msg *msgBracha) {
+	if _, ok := r.readyRecv[h]; !ok {
+		r.readyRecv[h] = map[gpa.NodeID]bool{}
+	}
+	r.readyRecv[h][msg.s] = true
+}
+
+func (r *rbc) maybeSendReady(v []byte) []gpa.Message {
+	msgs := gpa.NoMessages()
 	if !r.readySent {
 		msgs = append(msgs, r.sendToAll(msgBrachaTypeReady, v)...)
 		r.readySent = true
 	}
 	return msgs
-}
-
-func (r *rbc) Output() gpa.Output {
-	if r.output == hashing.NilHash {
-		return nil
-	}
-	return r.values[r.output]
-}
-
-func (r *rbc) StatusString() string {
-	return fmt.Sprintf(
-		"{RBC:Bracha, n=%v, f=%v, output=%v,\nechoSent=%v, echoRecv=%v,\nreadySent=%v, readyRecv=%v}",
-		r.n, r.f, r.output, r.echoSent, r.echoRecv, r.readySent, r.readyRecv,
-	)
-}
-
-func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	m := &msgBracha{}
-	if err := m.UnmarshalBinary(data); err != nil {
-		return nil, xerrors.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
-	}
-	return m, nil
 }
 
 func (r *rbc) sendToAll(t msgBrachaType, v []byte) []gpa.Message {
@@ -265,4 +262,29 @@ func (r *rbc) ensureValueStored(val []byte) hashing.HashValue {
 	}
 	r.values[h] = val
 	return h
+}
+
+// Implements the GPA interface.
+func (r *rbc) Output() gpa.Output {
+	if r.output == hashing.NilHash {
+		return nil
+	}
+	return r.values[r.output]
+}
+
+// Implements the GPA interface.
+func (r *rbc) StatusString() string {
+	return fmt.Sprintf(
+		"{RBC:Bracha, n=%v, f=%v, output=%v,\nechoSent=%v, echoRecv=%v,\nreadySent=%v, readyRecv=%v}",
+		r.n, r.f, r.output, r.echoSent, r.echoRecv, r.readySent, r.readyRecv,
+	)
+}
+
+// Implements the GPA interface.
+func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	m := &msgBracha{}
+	if err := m.UnmarshalBinary(data); err != nil {
+		return nil, xerrors.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
+	}
+	return m, nil
 }
