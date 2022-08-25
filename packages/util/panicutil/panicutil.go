@@ -67,7 +67,10 @@ func CatchPanic(f func()) (err error) {
 			if r == nil {
 				return
 			}
-			err = xerrors.Errorf("%v", r)
+			var ok bool
+			if err, ok = r.(error); !ok {
+				err = xerrors.Errorf("%v", r)
+			}
 		}()
 		f()
 	}()
