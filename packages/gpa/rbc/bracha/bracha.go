@@ -142,8 +142,10 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	}
 	r.echoRecv[h][msg.s] = true
 	//
-	// Send the READY messages and support other ECHO messages, if quorum is reached.
-	if float64(len(r.echoRecv[h])) >= math.Ceil(float64(r.n+r.f)/2.0) {
+	// Send the READY message, if Byzantine quorum ⌈(n+f+1)/2⌉ of received ECHO messages is reached.
+	// As there are only n distinct peers, every two Byzantine quorums overlap in at least one correct peer.
+	// |echoRecv| ≥ ⌈(n+f+1)/2⌉ ⟺ |echoRecv| > ⌊(n+f)/2⌋
+	if len(r.echoRecv[h]) > (r.n+r.f)/2 {
 		return r.maybeSendEchoReady(msg.v)
 	}
 	return []gpa.Message{}
