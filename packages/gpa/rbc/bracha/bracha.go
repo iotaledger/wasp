@@ -36,6 +36,14 @@
 //      and Communications Security (CCS '21). Association for Computing Machinery,
 //      New York, NY, USA, 2705–2721. DOI:https://doi.org/10.1145/3460120.3484808
 //
+// See "Algorithm 2 Bracha’s RBC [14]". The part relevant to the predicate is:
+//
+//		6: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
+//		7:     if 𝑃(𝑀) then
+//		8:         send ⟨ECHO, 𝑀⟩ to all
+//
+// Here `PROPOSE` corresponds to `initial`.
+//
 // NOTE: Only a dedicated process can broadcast a value. Otherwise it would be a consensus.
 package bracha
 
@@ -54,7 +62,7 @@ type rbc struct {
 	broadcaster gpa.NodeID
 	peers       []gpa.NodeID
 	predicate   func([]byte) bool
-	pendingMsgs []gpa.Message // Messages that don't satisfy the predicate.
+	pendingIMsg *msgBracha // INITIAL message received, but not satisfying a predicate, if any.
 	initialSent bool
 	values      map[hashing.HashValue][]byte              // Map hashes to actual values.
 	echoSent    bool                                      // Have we sent the ECHO messages?
@@ -83,7 +91,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([
 		broadcaster: broadcaster,
 		peers:       peers,
 		predicate:   predicate,
-		pendingMsgs: []gpa.Message{},
+		pendingIMsg: nil,
 		values:      make(map[hashing.HashValue][]byte),
 		echoSent:    false,
 		echoRecv:    make(map[hashing.HashValue]map[gpa.NodeID]bool),
@@ -134,11 +142,12 @@ func (r *rbc) handleInitial(msg *msgBracha) []gpa.Message {
 		// Ignore all the rest.
 		return gpa.NoMessages()
 	}
-	if r.echoSent {
+	if r.echoSent || r.pendingIMsg != nil {
+		// Initial message was already received, ignore this one.
 		return gpa.NoMessages()
 	}
 	if !r.predicate(msg.v) {
-		r.pendingMsgs = append(r.pendingMsgs, msg)
+		r.pendingIMsg = msg
 		return gpa.NoMessages()
 	}
 	msgs := r.sendToAll(msgBrachaTypeEcho, msg.v)
@@ -189,16 +198,14 @@ func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 
 func (r *rbc) handlePredicateUpdate(msg msgPredicateUpdate) []gpa.Message {
 	r.predicate = msg.predicate
-	resendMsgs := r.pendingMsgs
-	r.pendingMsgs = []gpa.Message{}
-	//
-	// Resend the messages again.
-	// The OwnHandler overrides the sender, thus we can't rely on it here.
-	msgs := gpa.NoMessages()
-	for i := range resendMsgs {
-		msgs = append(msgs, r.Message(resendMsgs[i])...)
+	if r.pendingIMsg == nil {
+		return gpa.NoMessages()
 	}
-	return msgs
+	//
+	// Try to process the initial message again, if it was postponed.
+	initialMsg := r.pendingIMsg
+	r.pendingIMsg = nil
+	return r.handleInitial(initialMsg)
 }
 
 func (r *rbc) maybeSendEchoReady(v []byte) []gpa.Message {
