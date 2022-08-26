@@ -66,7 +66,7 @@ type StateBaseline interface {
 }
 
 type stateBaseline struct {
-	mutex           sync.Mutex
+	mutex           sync.RWMutex
 	solidStateIndex *atomic.Uint32
 	baseline        uint32
 }
@@ -86,8 +86,8 @@ func (g *stateBaseline) Set() {
 }
 
 func (g *stateBaseline) IsValid() bool {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
 
 	return g.baseline != ^uint32(0) && g.baseline == g.solidStateIndex.Load()
 }
