@@ -84,6 +84,7 @@ package acss
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -161,8 +162,8 @@ func New(
 		dealCB:        dealCB,
 		peerPKs:       peerPKs,
 		peerIdx:       peers,
-		rbc:           rbc.New(peers, f, me, dealer, func(b []byte) bool { return true }),
-		rbcOut:        nil, // Will be set on output from the RBC.
+		rbc:           rbc.New(peers, f, me, dealer, math.MaxInt, func(b []byte) bool { return true }), // TODO: Provide meaningful maxMsgSize
+		rbcOut:        nil,                                                                             // Will be set on output from the RBC.
 		voteOKRecv:    map[gpa.NodeID]bool{},
 		voteREADYRecv: map[gpa.NodeID]bool{},
 		voteREADYSent: false,

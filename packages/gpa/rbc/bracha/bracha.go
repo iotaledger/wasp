@@ -55,16 +55,17 @@ type rbc struct {
 	f           int
 	me          gpa.NodeID
 	broadcaster gpa.NodeID
+	maxMsgSize  int
 	peers       []gpa.NodeID
 	predicate   func([]byte) bool
 	pendingPMsg *msgBracha // PROPOSE message received, but not satisfying a predicate, if any.
 	proposeSent bool
-	values      map[hashing.HashValue][]byte              // Map hashes to actual values.
+	msgRecv     map[gpa.NodeID]map[msgBrachaType]bool     // For tracking, who's messages are received.
 	echoSent    bool                                      // Have we sent the ECHO messages?
 	echoRecv    map[hashing.HashValue]map[gpa.NodeID]bool // Quorum counter for the ECHO messages.
 	readySent   bool                                      // Have we sent the READY messages?
 	readyRecv   map[hashing.HashValue]map[gpa.NodeID]bool // Quorum counter for the READY messages.
-	output      hashing.HashValue
+	output      []byte
 }
 
 var _ gpa.GPA = &rbc{}
@@ -80,21 +81,25 @@ func MakePredicateUpdateMsg(me gpa.NodeID, predicate func([]byte) bool) gpa.Mess
 }
 
 // Create new instance of the RBC.
-func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, predicate func([]byte) bool) gpa.GPA {
+func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, predicate func([]byte) bool) gpa.GPA {
 	r := &rbc{
 		n:           len(peers),
 		f:           f,
 		me:          me,
 		broadcaster: broadcaster,
+		maxMsgSize:  maxMsgSize,
 		peers:       peers,
 		predicate:   predicate,
 		pendingPMsg: nil,
-		values:      make(map[hashing.HashValue][]byte),
+		msgRecv:     map[gpa.NodeID]map[msgBrachaType]bool{},
 		echoSent:    false,
 		echoRecv:    make(map[hashing.HashValue]map[gpa.NodeID]bool),
 		readySent:   false,
 		readyRecv:   make(map[hashing.HashValue]map[gpa.NodeID]bool),
-		output:      hashing.NilHash,
+		output:      nil,
+	}
+	for i := range peers {
+		r.msgRecv[peers[i]] = map[msgBrachaType]bool{}
 	}
 	return gpa.NewOwnHandler(me, r)
 }
@@ -112,7 +117,6 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 		panic(xerrors.Errorf("input can only be supplied once"))
 	}
 	inputVal := input.([]byte)
-	r.ensureValueStored(inputVal)
 	msgs := r.sendToAll(msgBrachaTypePropose, inputVal)
 	r.proposeSent = true
 	return msgs
@@ -122,6 +126,9 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 	switch msgT := msg.(type) {
 	case *msgBracha:
+		if !r.checkMsgRecv(msgT) {
+			return gpa.NoMessages()
+		}
 		switch msgT.t {
 		case msgBrachaTypePropose:
 			return r.handlePropose(msgT)
@@ -170,7 +177,7 @@ func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
-	h := r.ensureValueStored(msg.v)
+	h := r.valueHash(msg)
 	r.markEchoRecv(h, msg)
 	//
 	// Send the READY message, if Byzantine quorum ⌈(n+f+1)/2⌉ of received ECHO messages is reached.
@@ -190,13 +197,13 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 	//
 	// Mark the message as received.
-	h := r.ensureValueStored(msg.v)
+	h := r.valueHash(msg)
 	r.markReadyRecv(h, msg)
 	count := len(r.readyRecv[h])
 	//
 	// Decide, if quorum is enough.
-	if count > 2*r.f && r.output == hashing.NilHash {
-		r.output = h
+	if count > 2*r.f && r.output == nil {
+		r.output = msg.v
 	}
 	//
 	// Send the READY message, when a READY message was received from at least one honest peer.
@@ -217,6 +224,20 @@ func (r *rbc) handlePredicateUpdate(msg msgPredicateUpdate) []gpa.Message {
 	proposeMsg := r.pendingPMsg
 	r.pendingPMsg = nil
 	return r.handlePropose(proposeMsg)
+}
+
+func (r *rbc) checkMsgRecv(msg *msgBracha) bool {
+	if msg.v == nil || len(msg.v) > r.maxMsgSize {
+		return false // Value not set, or is to big.
+	}
+	if mt, ok := r.msgRecv[msg.s]; ok {
+		if _, ok := mt[msg.t]; !ok {
+			mt[msg.t] = true
+			return true // OK, that was the first such message.
+		}
+		return false // Was already received before, ignore it.
+	}
+	return false // Unknown peer has sent it.
 }
 
 func (r *rbc) markEchoRecv(h hashing.HashValue, msg *msgBracha) {
@@ -254,28 +275,20 @@ func (r *rbc) sendToAll(t msgBrachaType, v []byte) []gpa.Message {
 	return msgs
 }
 
-func (r *rbc) ensureValueStored(val []byte) hashing.HashValue {
-	h := hashing.HashData(val)
-	if _, ok := r.values[h]; ok {
-		return h
-	}
-	r.values[h] = val
-	return h
+func (r *rbc) valueHash(msg *msgBracha) hashing.HashValue {
+	return hashing.HashData(msg.v)
 }
 
 // Implements the GPA interface.
 func (r *rbc) Output() gpa.Output {
-	if r.output == hashing.NilHash {
-		return nil
-	}
-	return r.values[r.output]
+	return r.output
 }
 
 // Implements the GPA interface.
 func (r *rbc) StatusString() string {
 	return fmt.Sprintf(
 		"{RBC:Bracha, n=%v, f=%v, output=%v,\nechoSent=%v, echoRecv=%v,\nreadySent=%v, readyRecv=%v}",
-		r.n, r.f, r.output, r.echoSent, r.echoRecv, r.readySent, r.readyRecv,
+		r.n, r.f, r.output != nil, r.echoSent, r.echoRecv, r.readySent, r.readyRecv,
 	)
 }
 

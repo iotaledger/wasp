@@ -4,6 +4,7 @@
 package bracha_test
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 
@@ -20,7 +21,7 @@ func TestBasic(t *testing.T) {
 		input := []byte("something important to broadcast")
 		nodes := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
-			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, func(b []byte) bool { return true })
+			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, func(b []byte) bool { return true })
 		}
 		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
 		for _, n := range nodes {
@@ -50,7 +51,7 @@ func TestWithSilent(t *testing.T) {
 		input := []byte("something important to broadcast")
 		nodes := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range fair {
-			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, func(b []byte) bool { return true })
+			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, func(b []byte) bool { return true })
 		}
 		for _, nid := range faulty {
 			nodes[nid] = gpa.MakeTestSilentNode()
@@ -81,7 +82,7 @@ func TestPredicate(t *testing.T) {
 		input := []byte("something important to broadcast")
 		nodes := map[gpa.NodeID]gpa.GPA{}
 		for _, nid := range nodeIDs {
-			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, pFalse) // NOTE: Initially false.
+			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, pFalse) // NOTE: Initially false.
 		}
 		//
 		// No outputs are returned while predicates are false.

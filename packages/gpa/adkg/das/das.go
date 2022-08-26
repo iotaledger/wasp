@@ -41,6 +41,7 @@
 package das
 
 import (
+	"math"
 	"sort"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -123,7 +124,7 @@ func New(
 	}
 	a.rbcs = make([]gpa.GPA, len(nodeIDs))
 	for i := range a.rbcs {
-		a.rbcs[i] = rbc.New(nodeIDs, f, me, nodeIDs[i], a.rbcPredicate)
+		a.rbcs[i] = rbc.New(nodeIDs, f, me, nodeIDs[i], math.MaxInt, a.rbcPredicate) // TODO: Provide meaningful maxMsgSize
 	}
 	return gpa.NewOwnHandler(me, a)
 }

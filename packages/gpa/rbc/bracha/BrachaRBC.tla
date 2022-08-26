@@ -216,9 +216,22 @@ Totality ==
     \A v \in Value :
         (\E n \in CN : output[n] = v) ~> []\A n \in CN : output[n] = v
 
+(*
+Additionally: We can only receive a single message of a particular type
+from a correct peer. Thus, we can ignore the following messages and
+prevent an adversary from sending us a lot of messages to fill our memory.
+*)
+SingleValueFromPeerPerMsgType ==
+    \A m1, m2 \in msgs : (
+        /\ m1.src \in CN
+        /\ m1.src = m2.src
+        /\ m1.t = m2.t
+    ) => m1.v = m2.v
+
 THEOREM Spec =>
     /\ []TypeOK
     /\ []Agreement
+    /\ []SingleValueFromPeerPerMsgType
     /\ Validity
     /\ Totality
 PROOF OMITTED \* Checked by the TLC.
