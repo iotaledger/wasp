@@ -120,6 +120,7 @@ func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64
 
 // originatorBalanceReducedBy checks the balance of the originator address has
 // reduced by the given amount, taking any extra uploadWasm() into account
+//
 //nolint:deadcode
 func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64) {
 	if w {
