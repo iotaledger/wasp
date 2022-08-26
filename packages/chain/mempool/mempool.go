@@ -97,16 +97,15 @@ func (m *mempool) addToInBuffer(req isc.Request) bool {
 	return true
 }
 
-func (m *mempool) removeFromInBuffer(req isc.Calldata) int {
+func (m *mempool) removeFromInBuffer(req isc.Calldata) bool {
 	m.inMutex.Lock()
 	defer m.inMutex.Unlock()
 
-	removed := 0
 	if _, ok := m.inBuffer[req.ID()]; ok {
 		delete(m.inBuffer, req.ID())
-		removed++
+		return true
 	}
-	return removed
+	return false
 }
 
 // fills up the buffer with requests from the in-buffer
@@ -467,11 +466,11 @@ func (m *mempool) moveToPoolLoop() {
 			}
 			for i, req := range buf {
 				if m.addToPool(req) {
-					removed := m.removeFromInBuffer(req)
-
-					m.poolMutex.Lock()
-					m.outBufCounter += removed
-					m.poolMutex.Unlock()
+					if m.removeFromInBuffer(req) {
+						m.poolMutex.Lock()
+						m.outBufCounter++
+						m.poolMutex.Unlock()
+					}
 				}
 				buf[i] = nil // to please GC
 			}
