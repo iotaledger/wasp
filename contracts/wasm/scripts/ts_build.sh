@@ -2,7 +2,6 @@
 example_name=$1 # path relative to wasp/contracts/wasm
 flag=$2
 node_modules_path=$(git rev-parse --show-toplevel)/contracts/wasm/node_modules
-
 cd $example_name
 
 if [ ! -f "schema.yaml" ]; then

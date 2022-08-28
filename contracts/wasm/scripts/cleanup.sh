@@ -1,36 +1,50 @@
 #!/bin/bash
-root=$(git rev-parse --show-toplevel)
+example_name=$1
+cd $example_name
 
-rm "$root"/contracts/wasm/*/*/*/consts.*
-rm "$root"/contracts/wasm/*/*/*/contract.*
-rm "$root"/contracts/wasm/*/*/*/keys.*
-rm "$root"/contracts/wasm/*/*/*/lib.*
-rm "$root"/contracts/wasm/*/*/*/params.*
-rm "$root"/contracts/wasm/*/*/*/results.*
-rm "$root"/contracts/wasm/*/*/*/state.*
-rm "$root"/contracts/wasm/*/*/*/typedefs.*
-rm "$root"/contracts/wasm/*/*/*/types.*
-rm -r "$root"/contracts/wasm/target
-rm -r "$root"/contracts/wasm/*/*/pkg
-rm -r "$root"/contracts/wasm/node_modules
+# remove go files
+rm ./go/$example_name/consts.go
+rm ./go/$example_name/contract.go
+rm ./go/$example_name/keys.go
+rm ./go/$example_name/lib.go
+rm ./go/$example_name/params.go
+rm ./go/$example_name/results.go
+rm ./go/$example_name/state.go
+rm ./go/$example_name/typedefs.go
+rm ./go/$example_name/events.go
+rm ./go/$example_name/eventhandlers.go
+rm ./go/$example_name/structs.go
+rm ./go/$example_name/types.go
+rm ./go/main.go
 
-for dir in "$root"/contracts/wasm/*; do
-  if [ -d "$dir" ]; then
-    rm "$dir"/go/main.go
-    rm "$dir"/ts/"$dir"/index.ts
-    rm "$dir"/ts/"$dir"/tsconfig.json
-    rm "$dir"/pkg/*.*
-    rm "$dir"/ts/pkg/*.*
-  fi
-done
+# remove ts files
+rm ./ts/$example_name/consts.ts
+rm ./ts/$example_name/contract.ts
+rm ./ts/$example_name/keys.ts
+rm ./ts/$example_name/lib.ts
+rm ./ts/$example_name/params.ts
+rm ./ts/$example_name/results.ts
+rm ./ts/$example_name/state.ts
+rm ./ts/$example_name/typedefs.ts
+rm ./ts/$example_name/events.ts
+rm ./ts/$example_name/eventhandlers.ts
+rm ./ts/$example_name/structs.ts
+rm ./ts/$example_name/types.ts
+rm ./ts/$example_name/index.ts
+rm ./ts/$example_name/tsconfig.json
+rm ./pkg/*.*
+rm ./ts/pkg/*.*
 
-cd $root/contracts/wasm/gascalibration
-for dir in ./*; do
-  if [ -d "$dir" ]; then
-    rm "$dir"/go/main.go
-    rm "$dir"/ts/"$dir"/index.ts
-    rm "$dir"/ts/"$dir"/tsconfig.json
-    rm "$dir"/pkg/*.*
-    rm "$dir"/ts/pkg/*.*
-  fi
-done
+# remove rs files
+rm ./src/consts.rs
+rm ./src/contract.rs
+rm ./src/keys.rs
+rm ./src/lib.rs
+rm ./src/params.rs
+rm ./src/results.rs
+rm ./src/state.rs
+rm ./src/typedefs.rs
+rm ./src/events.rs
+rm ./src/eventhandlers.rs
+rm ./src/structs.rs
+rm ./src/types.rs

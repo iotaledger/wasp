@@ -1,5 +1,5 @@
 #!/bin/bash
-example_name=$1
+example_name=$1 # path relative to wasp/contracts/wasm
 flag=$2
 cd $example_name
 
