@@ -10,8 +10,10 @@ require (
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go v0.0.0-20220623193802-86a373581cc1
+	github.com/iotaledger/hive.go/core v1.0.0-beta.2
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.1
 	github.com/iotaledger/inx-app v1.0.0-beta.9
+	github.com/iotaledger/inx/go v1.0.0-beta.5
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.6
 	github.com/iotaledger/trie.go v0.0.0-20220826084637-3d853707e162
 	github.com/knadh/koanf v1.4.2
@@ -107,8 +109,6 @@ require (
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-beta.2 // indirect
-	github.com/iotaledger/inx/go v1.0.0-beta.5 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/ipfs/go-cid v0.2.0 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
