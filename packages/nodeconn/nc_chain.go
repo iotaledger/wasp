@@ -5,11 +5,16 @@ package nodeconn
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
+	"sync"
 	"time"
 
+	hive_core "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/events"
+
 	"github.com/iotaledger/hive.go/logger"
+	_ "github.com/iotaledger/inx-app/inx"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -37,6 +42,7 @@ func newNCChain(
 	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
 		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
 	})
+
 	ncc := ncChain{
 		nc:                 nc,
 		chainID:            chainID,
@@ -65,39 +71,43 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	if err != nil {
 		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
 	}
+
 	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
-	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
+
+	txMsgID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
+
+	wg := sync.WaitGroup{}
+	var onMilestoneConfirmed *hive_core.Closure
+	onMilestoneConfirmed = hive_core.NewClosure(func(ms *nodebridge.Milestone) {
+		defer wg.Done()
+		metadata, err := ncc.nc.nodeBridge.BlockMetadata(*txMsgID)
+
+		if err != nil {
+			ncc.log.Errorf("publishing transaction %v: unexpected error trying to fetch blockMetadata: %s\nTrying again next milestone.", isc.TxID(txID), err)
+			return
+		}
+
+		switch metadata.LedgerInclusionState {
+		case inx.BlockMetadata_LEDGER_INCLUSION_STATE_INCLUDED:
+			ncc.inclusionStates.Trigger(txID, "included")
+			ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
+		default:
+		}
+
+		ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Detach(onMilestoneConfirmed)
+	})
+
+	ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(onMilestoneConfirmed, 0)
+
 	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
-	txMsgID, err := txMsg.ID()
-	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
-	}
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
-	if subInfo.Error() != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", isc.TxID(txID), subInfo.Error())
-	}
-	go func() {
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", isc.TxID(txID))
-		for msgMetaChange := range msgMetaChanges {
-			if msgMetaChange.LedgerInclusionState != "" {
-				str, err := json.Marshal(msgMetaChange)
-				if err != nil {
-					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", isc.TxID(txID), err)
-				} else {
-					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", isc.TxID(txID), str)
-				}
-				ncc.inclusionStates.Trigger(txID, msgMetaChange.LedgerInclusionState)
-			}
-		}
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
-	}()
-
 	// TODO should promote/re-attach logic not be blocking?
-	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+
+	wg.Wait()
+	return nil //ncc.nc.waitUntilConfirmed(ctxWithTimeout, *txMsgID)
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {

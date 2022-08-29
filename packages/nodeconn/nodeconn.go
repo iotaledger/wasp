@@ -10,6 +10,7 @@ package nodeconn
 
 import (
 	"context"
+	"github.com/iotaledger/inx-app/nodebridge"
 	"sync"
 	"time"
 
@@ -29,17 +30,19 @@ import (
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx           context.Context
-	ctxCancel     context.CancelFunc
-	chains        map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock    sync.RWMutex
-	nodeAPIClient *nodeclient.Client
-	mqttClient    *nodeclient.EventAPIClient
-	indexerClient nodeclient.IndexerClient
-	milestones    *events.Event
-	metrics       nodeconnmetrics.NodeConnectionMetrics
-	log           *logger.Logger
-	config        L1Config
+	ctx            context.Context
+	ctxCancel      context.CancelFunc
+	chains         map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock     sync.RWMutex
+	nodeAPIClient  *nodeclient.Client
+	mqttClient     *nodeclient.EventAPIClient
+	indexerClient  nodeclient.IndexerClient
+	milestones     *events.Event
+	metrics        nodeconnmetrics.NodeConnectionMetrics
+	log            *logger.Logger
+	config         L1Config
+	nodeBridge     *nodebridge.NodeBridge
+	tangleListener *nodebridge.TangleListener
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -86,6 +89,13 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
+
+	nb, err := nodebridge.NewNodeBridge(context.Background(), "localhost:9012", log.Named("NodeBridge"))
+
+	if err != nil {
+		panic(err)
+	}
+
 	nc := nodeConn{
 		ctx:           ctx,
 		ctxCancel:     ctxCancel,
@@ -97,9 +107,11 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
-		metrics: nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
-		log:     log.Named("nc"),
-		config:  config,
+		metrics:        nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		log:            log.Named("nc"),
+		config:         config,
+		nodeBridge:     nb,
+		tangleListener: nodebridge.NewTangleListener(nb),
 	}
 
 	if initMqttClient {
@@ -235,51 +247,38 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.metrics
 }
 
-func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
+func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.BlockID, error) {
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().
 		Payload(tx).
 		Tips(ctx, nc.nodeAPIClient).
 		Build()
+
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
+
 	err = nc.doPoW(ctx, block)
 	if err != nil {
 		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
-	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
+
+	blockID, err := nc.nodeBridge.SubmitBlock(ctx, block)
 	if err != nil {
 		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
 	}
-	blockID, err := block.ID()
-	if err == nil {
-		nc.log.Infof("Posted blockID %v", blockID.ToHex())
-	} else {
-		nc.log.Warnf("Posted block; failed to calculate its id: %v", err)
-	}
-	txID, err := tx.ID()
-	if err == nil {
-		nc.log.Infof("Posted transaction id %v", isc.TxID(txID))
-	} else {
-		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
-	}
-	return block, nil
+
+	return &blockID, nil
 }
 
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block) error {
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockId *iotago.BlockID) error {
 	// wait until tx is confirmed
-	msgID, err := block.ID()
-	if err != nil {
-		return xerrors.Errorf("failed to get msg ID: %w", err)
-	}
-
 	// poll the node by getting `BlockMetadataByBlockID`
 	for {
-		metadataResp, err := nc.nodeAPIClient.BlockMetadataByBlockID(ctx, msgID)
+		metadataResp, err := nc.nodeAPIClient.BlockMetadataByBlockID(ctx, *blockId)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -292,44 +291,6 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block)
 				metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
 		}
 		// reattach or promote if needed
-		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", msgID.ToHex())
-			// create an empty Block and the BlockID as one of the parents
-			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
-			if err != nil {
-				return xerrors.Errorf("failed to fetch Tips: %w", err)
-			}
-			tips, err := tipsResp.Tips()
-			if err != nil {
-				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
-			}
-
-			parents := []iotago.BlockID{
-				msgID,
-			}
-
-			if len(tips) > 7 {
-				tips = tips[:7] // max 8 parents
-			}
-			for _, tip := range tips {
-				parents = append(parents, tip)
-			}
-			promotionMsg, err := builder.NewBlockBuilder().Parents(parents).Build()
-			if err != nil {
-				return xerrors.Errorf("failed to build promotion Block: %w", err)
-			}
-			_, err = nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
-			if err != nil {
-				return xerrors.Errorf("failed to promote msg: %w", err)
-			}
-		}
-		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			nc.log.Debugf("reattaching block: %v", block)
-			err = nc.doPoW(ctx, block)
-			if err != nil {
-				return err
-			}
-		}
 		if err = ctx.Err(); err != nil {
 			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
 		}

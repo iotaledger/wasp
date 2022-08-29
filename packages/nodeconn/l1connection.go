@@ -87,12 +87,12 @@ func (nc *nodeConn) PostTx(tx *iotago.Transaction, timeout ...time.Duration) err
 	ctxWithTimeout, cancelContext := newCtx(nc.ctx, timeout...)
 	defer cancelContext()
 
-	txMsg, err := nc.doPostTx(ctxWithTimeout, tx)
+	txId, err := nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
 
-	return nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+	return nc.waitUntilConfirmed(ctxWithTimeout, txId)
 }
 
 func (nc *nodeConn) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.OutputID, iotago.Output, error) {
