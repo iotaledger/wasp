@@ -271,7 +271,7 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gp
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
-			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload"))
+			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
 		msgs = append(msgs, &msgRBCCEOutput{me: a.me, payload: outParsed})
 	}
