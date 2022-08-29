@@ -103,7 +103,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	}
 	block.SetApprovingOutputID(approvingOutputID)
 	sm.syncingBlocks.startSyncingIfNeeded(nextState.BlockIndex())
-	sm.syncingBlocks.addBlockCandidate(block, nextState)
+	sm.syncingBlocks.addBlockCandidate(block, nextState) // TODO: is it needed? State candidate should have already been put in wal by consensus and retrieved by startSyncingIfNeeded
 	sm.delayRequestBlockRetry(block.BlockIndex())
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < nextState.BlockIndex() {

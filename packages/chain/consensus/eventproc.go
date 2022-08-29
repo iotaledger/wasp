@@ -126,22 +126,25 @@ func (c *consensus) EnqueueTimerMsg(msg messages.TimerTick) {
 }
 
 func (c *consensus) handleTimerMsg(msg messages.TimerTick) {
+	c.log.Debugf("Consensus handleTimerMsg: timerMsg received")
 	c.lastTimerTick.Store(int64(msg))
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {
 		if snap := c.GetStatusSnapshot(); snap != nil {
-			c.log.Infof("timer tick #%d: state index: %d, mempool = (total: %d, ready: %d, in: %d, out: %d)",
+			c.log.Infof("Consensus handleTimerMsg: timer tick #%d: state index: %d, mempool = (total: %d, ready: %d, in: %d, out: %d)",
 				snap.TimerTick, snap.StateIndex, snap.Mempool.TotalPool, snap.Mempool.ReadyCounter, snap.Mempool.InPoolCounter, snap.Mempool.OutPoolCounter)
+		} else {
+			c.log.Debugf("Consensus handleTimerMsg: timer tick #%d, no status snapshot", msg)
 		}
 	}
 	c.takeAction()
 	if c.stateOutput != nil {
-		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=%v, workflow=%+v",
+		c.log.Debugf("Consensus handleTimerMsg: stateIndex=%v, workflow=%+v",
 			c.stateOutput.GetStateIndex(),
 			c.workflow,
 		)
 	} else {
-		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=nil, workflow=%+v",
+		c.log.Debugf("Consensus handleTimerMsg: stateIndex=nil, workflow=%+v",
 			c.workflow,
 		)
 	}
