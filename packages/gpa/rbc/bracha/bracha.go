@@ -282,6 +282,9 @@ func (r *rbc) valueHash(msg *msgBracha) hashing.HashValue {
 
 // Implements the GPA interface.
 func (r *rbc) Output() gpa.Output {
+	if r.output == nil {
+		return nil // Return untyped nil!
+	}
 	return r.output
 }
 

@@ -53,8 +53,10 @@ ASSUME ValueAssms == \E v \in Value : TRUE
 AN  == CN \cup FN       \* All nodes.
 N   == Cardinality(AN)  \* Number of nodes in the system.
 F   == Cardinality(FN)  \* Number of faulty nodes.
-Q1F == {q \in SUBSET AN : Cardinality(q) = F+1}
-Q2F == {q \in SUBSET AN : Cardinality(q) = 2*F+1}
+Q1F == {q \in SUBSET AN : Cardinality(q) = F+1}     \* Contains >= 1 correct node.
+Q2F == {q \in SUBSET AN : Cardinality(q) = 2*F+1}   \* Contains >= F+1 correct nodes.
+QNF == {q \in SUBSET AN : Cardinality(q) = N-F}                 \* Max quorum.
+QXF == {q \in SUBSET AN : Cardinality(q) = ((N+F) \div 2) + 1}  \* Intersection is F+1.
 ASSUME QuorumAssms == N > 3*F
 
 VARIABLE bcNode     \* The broadcaster node.
@@ -125,7 +127,7 @@ RecvPropose(pm) ==
 *)
 RecvEcho(eq) ==
     \E n \in CN, v \in Value :
-        /\ eq \in Q2F
+        /\ eq \in QXF
         /\ \A qn \in eq : HaveEchoMsg(qn, {v})
         /\ ~HaveReadyMsg(n, Value)
         /\ msgs' = msgs \cup {[t |-> "READY", src |-> n, v |-> v]}
@@ -172,7 +174,7 @@ Next ==
     \/ Broadcast
     \/ UpdatePredicate
     \/ \E pm \in msgs : RecvPropose(pm)
-    \/ \E eq \in Q2F  : RecvEcho(eq)
+    \/ \E eq \in QXF  : RecvEcho(eq)
     \/ \E rq \in Q1F  : RecvReadySupport(rq)
     \/ \E rq \in Q2F  : RecvReadyOutput(rq)
 
@@ -180,7 +182,7 @@ Fairness ==
     /\ WF_vars(Broadcast)
     /\ WF_vars(UpdatePredicate)
     /\ WF_vars(\E pm \in msgs : pm.src \in CN   /\ RecvPropose(pm))
-    /\ WF_vars(\E eq \in Q2F  : eq \subseteq CN /\ RecvEcho(eq))
+    /\ WF_vars(\E eq \in QXF  : eq \subseteq CN /\ RecvEcho(eq))
     /\ WF_vars(\E rq \in Q1F  : rq \subseteq CN /\ RecvReadySupport(rq))
     /\ WF_vars(\E rq \in Q2F  : rq \subseteq CN /\ RecvReadyOutput(rq))
 
