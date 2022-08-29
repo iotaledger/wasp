@@ -11,6 +11,7 @@ package nodeconn
 import (
 	"context"
 	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 	"sync"
 	"time"
 
@@ -95,6 +96,8 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 	if err != nil {
 		panic(err)
 	}
+
+	go nb.Run(context.Background())
 
 	nc := nodeConn{
 		ctx:           ctx,
@@ -274,17 +277,17 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockId *iotago.BlockID) error {
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.BlockID) error {
 	// wait until tx is confirmed
 	// poll the node by getting `BlockMetadataByBlockID`
 	for {
-		metadataResp, err := nc.nodeAPIClient.BlockMetadataByBlockID(ctx, *blockId)
+		metadataResp, err := nc.nodeBridge.BlockMetadata(*blockID)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
 
 		if metadataResp.ReferencedByMilestoneIndex != 0 {
-			if metadataResp.LedgerInclusionState != "" && metadataResp.LedgerInclusionState == "included" {
+			if metadataResp.LedgerInclusionState == inx.BlockMetadata_LEDGER_INCLUSION_STATE_INCLUDED {
 				return nil // success
 			}
 			return xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d",

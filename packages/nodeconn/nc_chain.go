@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/iotaledger/inx-app/nodebridge"
 	inx "github.com/iotaledger/inx/go"
-	"sync"
 	"time"
 
 	hive_core "github.com/iotaledger/hive.go/core/events"
@@ -79,10 +78,8 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 		return err
 	}
 
-	wg := sync.WaitGroup{}
 	var onMilestoneConfirmed *hive_core.Closure
 	onMilestoneConfirmed = hive_core.NewClosure(func(ms *nodebridge.Milestone) {
-		defer wg.Done()
 		metadata, err := ncc.nc.nodeBridge.BlockMetadata(*txMsgID)
 
 		if err != nil {
@@ -100,14 +97,12 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 		ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Detach(onMilestoneConfirmed)
 	})
 
-	ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(onMilestoneConfirmed, 0)
+	ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(onMilestoneConfirmed)
 
 	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
 	// TODO should promote/re-attach logic not be blocking?
-
-	wg.Wait()
-	return nil //ncc.nc.waitUntilConfirmed(ctxWithTimeout, *txMsgID)
+	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID)
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
