@@ -352,8 +352,8 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
 		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber) * c.timers.PostTxSequenceStep)
 
-		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: true, postSeqNum: %d, permutation: %+v",
-			isc.TxID(txID), postSeqNumber, permutation.GetArray())
+		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: true, postSeqNum: %d (time: %v), permutation: %+v",
+			isc.TxID(txID), postSeqNumber, c.postTxDeadline, permutation.GetArray())
 	} else {
 		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: false", isc.TxID(txID))
 	}
@@ -396,7 +396,7 @@ func (c *consensus) postTransactionIfNeeded() {
 	} else {
 		stateIndex := c.resultState.BlockIndex()
 		if err := c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx); err != nil {
-			c.log.Errorf("postTransaction: error publishing state transaction: %w", err)
+			c.log.Errorf("postTransaction: error publishing state transaction: %v", err)
 			return
 		}
 		logMsgTypeStr = "STATE"
@@ -597,7 +597,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 			c.contributors, c.myContributionSeqNumber, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	} else {
 		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: false, %v reqs: %+v",
-			c.contributors, c.consensusBatch.RequestIDs, isc.ShortRequestIDs(c.consensusBatch.RequestIDs))
+			c.contributors, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	}
 
 	c.runVMIfNeeded()
@@ -756,7 +756,7 @@ func (c *consensus) resetWorkflowNoCheck() {
 	c.log.Debugf("resetWorkflow: LogIndex=%v, Starting DSS session with key %v", c.consensusJournalLogIndex.AsUint32(), dssKey)
 	err := c.dssNode.Start(dssKey, 0, c.committee.DKShare(),
 		func(indexProposal []int) {
-			c.log.Debugf("resetWorkflow DSS propoal callback: index proposal of %s is %v", dssKey, indexProposal)
+			c.log.Debugf("resetWorkflow DSS proposal callback: index proposal of %s is %v", dssKey, indexProposal)
 			c.EnqueueDssIndexProposalMsg(&messages.DssIndexProposalMsg{
 				DssKey:        dssKey,
 				IndexProposal: indexProposal,

@@ -35,37 +35,49 @@ func (c *chainObj) recvLoop() {
 		select {
 		case msg, ok := <-dismissChainMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleDismissChain...")
 				c.handleDismissChain(msg.(DismissChainMsg))
+				c.log.Debugf("Chainimpl::recvLoop, handleDismissChain... Done")
 			} else {
 				dismissChainMsgChannel = nil
 			}
 		case msg, ok := <-aliasOutputChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleAliasOutput...")
 				c.handleAliasOutput(msg.(*isc.AliasOutputWithID))
+				c.log.Debugf("Chainimpl::recvLoop, handleAliasOutput... Done")
 			} else {
 				aliasOutputChannel = nil
 			}
 		case msg, ok := <-offLedgerRequestMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleOffLedgerRequestMsg...")
 				c.handleOffLedgerRequestMsg(msg.(*messages.OffLedgerRequestMsgIn))
+				c.log.Debugf("Chainimpl::recvLoop, handleOffLedgerRequestMsg... Done")
 			} else {
 				offLedgerRequestMsgChannel = nil
 			}
 		case msg, ok := <-missingRequestIDsMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestIDsMsg...")
 				c.handleMissingRequestIDsMsg(msg.(*messages.MissingRequestIDsMsgIn))
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestIDsMsg... Done")
 			} else {
 				missingRequestIDsMsgChannel = nil
 			}
 		case msg, ok := <-missingRequestMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestMsg...")
 				c.handleMissingRequestMsg(msg.(*messages.MissingRequestMsg))
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestMsg... Done")
 			} else {
 				missingRequestMsgChannel = nil
 			}
 		case msg, ok := <-timerTickMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleTimerTick...")
 				c.handleTimerTick(msg.(messages.TimerTick))
+				c.log.Debugf("Chainimpl::recvLoop, handleTimerTick... Done")
 			} else {
 				timerTickMsgChannel = nil
 			}
@@ -261,17 +273,19 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: %v", err)
 		return
 	}
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s has been validated", msg.Req.ID())
 
 	c.offLedgerPeersHaveReqMutex.Lock()
 	c.addToPeersHaveReq(msg.Req.ID(), msg.SenderPubKey)
 	c.offLedgerPeersHaveReqMutex.Unlock()
 
 	if !c.mempool.ReceiveRequest(msg.Req) {
-		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
+		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted request %s", msg.Req.ID())
 		return
 	}
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s added to mempool", msg.Req.ID())
 	c.broadcastOffLedgerRequest(msg.Req)
-	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().String())
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s broadcasted", msg.Req.ID())
 }
 
 func (c *chainObj) validateRequest(req isc.OffLedgerRequest) error {
