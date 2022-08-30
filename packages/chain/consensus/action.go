@@ -93,8 +93,8 @@ func (c *consensus) proposeBatchIfNeeded() {
 		})
 	})
 
-	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, ",
-		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex())
+	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, timestamp: %v",
+		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), proposal.TimeData)
 	c.workflow.setBatchProposalSent()
 }
 
@@ -328,8 +328,8 @@ func (c *consensus) checkQuorum() { //nolint:funlen
 		// if it is state controller rotation, state manager is not notified
 		c.workflow.setCurrentStateIndex(c.resultState.BlockIndex())
 		c.chain.StateCandidateToStateManager(c.resultState, chainOutputID)
-		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
-			c.resultState.BlockIndex(), isc.OID(chainOutputID))
+		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v, timestamp %v",
+			c.resultState.BlockIndex(), isc.OID(chainOutputID), c.resultState.Timestamp())
 	}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
@@ -593,11 +593,11 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	c.workflow.setConsensusBatchKnown()
 
 	if c.iAmContributor {
-		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: true, seqnr: %d, %v reqs: %+v",
-			c.contributors, c.myContributionSeqNumber, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs))
+		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: true, seqnr: %d, %v reqs: %+v, timestamp: %v",
+			c.contributors, c.myContributionSeqNumber, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs), c.consensusBatch.TimeData)
 	} else {
-		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: false, %v reqs: %+v",
-			c.contributors, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs))
+		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: false, %v reqs: %+v, timestamp: %v",
+			c.contributors, len(c.consensusBatch.RequestIDs), isc.ShortRequestIDs(c.consensusBatch.RequestIDs), c.consensusBatch.TimeData)
 	}
 
 	c.runVMIfNeeded()

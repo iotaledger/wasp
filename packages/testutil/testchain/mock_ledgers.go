@@ -13,10 +13,11 @@ import (
 )
 
 type MockedLedgers struct {
-	ledgers    map[string]*MockedLedger
-	milestones *events.Event
-	log        *logger.Logger
-	mutex      sync.Mutex
+	ledgers              map[string]*MockedLedger
+	milestones           *events.Event
+	pushMilestonesNeeded bool
+	log                  *logger.Logger
+	mutex                sync.Mutex
 }
 
 func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
@@ -27,6 +28,7 @@ func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 		}),
 		log: log.Named("mls"),
 	}
+	result.SetPushMilestonesToNodesNeeded(true)
 	go result.pushMilestonesLoop()
 	result.log.Debugf("Mocked ledgers created")
 	return result
@@ -64,15 +66,21 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 	milestone := uint32(0)
 	for {
 		if milestone%10 == 0 {
-			mlT.log.Debugf("Milestone %v reached", milestone)
+			mlT.log.Debugf("Milestone %v reached, will push to nodes: %v", milestone, mlT.pushMilestonesNeeded)
+		}
+		if mlT.pushMilestonesNeeded {
+			mlT.milestones.Trigger(&nodeclient.MilestoneInfo{
+				Index:     milestone,
+				Timestamp: uint32(time.Now().Unix()),
+			})
 		}
 		time.Sleep(100 * time.Millisecond)
-		mlT.milestones.Trigger(&nodeclient.MilestoneInfo{
-			Index:     milestone,
-			Timestamp: uint32(time.Now().Unix()),
-		})
 		milestone++
 	}
+}
+
+func (mlT *MockedLedgers) SetPushMilestonesToNodesNeeded(flag bool) {
+	mlT.pushMilestonesNeeded = flag
 }
 
 func (mlT *MockedLedgers) SetPushOutputToNodesNeeded(flag bool) {
