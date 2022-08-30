@@ -74,14 +74,13 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
 
-	// TODO: Move this into a separate plugin? (including the go nb.Run())
-	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
+	nb, err := nodebridge.NewNodeBridge(ctx, config.INXAddress, log.Named("NodeBridge"))
 
 	if err != nil {
 		panic(err)
 	}
 
-	go nb.Run(context.Background())
+	go nb.Run(ctx)
 	inxNodeClient := nb.INXNodeClient()
 
 	nodeInfo, err := inxNodeClient.Info(ctxWithTimeout)
@@ -91,12 +90,12 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 
 	setL1ProtocolParams(nodeInfo)
 
-	mqttClient, err := inxNodeClient.EventAPI(ctxWithTimeout)
+	mqttClient, err := inxNodeClient.EventAPI(ctx)
 	if err != nil {
 		panic(xerrors.Errorf("error getting node event client: %w", err))
 	}
 
-	indexerClient, err := inxNodeClient.Indexer(ctxWithTimeout)
+	indexerClient, err := inxNodeClient.Indexer(ctx)
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
