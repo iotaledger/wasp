@@ -9,8 +9,44 @@ import (
 	"github.com/iotaledger/hive.go/contextutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/iota.go/v3/pow"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
+
+type submitBlockFn = func(ctx context.Context, block *iotago.Block) error
+
+func DoBlockPow(ctx context.Context, block *iotago.Block, useRemotePow bool, submitBlock submitBlockFn, nodeClient *nodeclient.Client) error {
+	if useRemotePow {
+		// remote PoW: Take the Block, clear parents, clear nonce, send to node
+		block.Parents = nil
+		block.Nonce = 0
+		err := submitBlock(ctx, block)
+		return err
+	}
+	// do the PoW
+	refreshTipsFn := func() (tips iotago.BlockIDs, err error) {
+		// refresh tips if PoW takes longer than a configured duration.
+		resp, err := nodeClient.Tips(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return resp.Tips()
+	}
+
+	targetScore := float64(parameters.L1().Protocol.MinPoWScore)
+
+	_, err := doPoW(
+		ctx,
+		block,
+		targetScore,
+		parallelWorkers,
+		refreshTipsDuringPoWInterval,
+		refreshTipsFn,
+	)
+
+	return err
+}
 
 // taken from https://github.com/iotaledger/inx-app/blob/ea47c776549669b81a5105a0ce78c7074694f44e/pow/pow.go
 const (

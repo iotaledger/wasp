@@ -20,7 +20,7 @@ import (
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/libp2p/go-libp2p"
@@ -490,12 +490,12 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
+func (pt *PrivTangle) L1Config(i ...int) l1connection.Config {
 	nodeIndex := 0
 	if len(i) > 0 {
 		nodeIndex = i[0]
 	}
-	return nodeconn.L1Config{
+	return l1connection.Config{
 		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
 		INXAddress:    fmt.Sprintf("localhost:%d", pt.NodePortINX(nodeIndex)),
 		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),

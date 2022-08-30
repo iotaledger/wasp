@@ -11,7 +11,6 @@ type WaspConfigParams struct {
 	PeeringPort                  int
 	NanomsgPort                  int
 	L1INXAddress                 string
-	L1APIAddress                 string
 	L1UseRemotePow               bool
 	ProfilingPort                int
 	MetricsPort                  int

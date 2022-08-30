@@ -10,10 +10,11 @@ package nodeconn
 
 import (
 	"context"
-	"github.com/iotaledger/inx-app/nodebridge"
-	inx "github.com/iotaledger/inx/go"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -26,6 +27,11 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
 )
+
+type ChainL1Config struct {
+	INXAddress   string
+	UseRemotePoW bool
+}
 
 // nodeconn implements chain.NodeConnection.
 // Single Wasp node is expected to connect to a single L1 node, thus
@@ -40,7 +46,7 @@ type nodeConn struct {
 	milestones    *events.Event
 	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
-	config        L1Config
+	config        ChainL1Config
 	nodeBridge    *nodebridge.NodeBridge
 	nodeClient    *nodeclient.Client
 }
@@ -56,6 +62,8 @@ func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	})
 }
 
+const defaultTimeout = 1 * time.Minute
+
 func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
@@ -64,11 +72,7 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 	return context.WithTimeout(ctx, t)
 }
 
-func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, log, true, timeout...)
-}
-
-func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeout ...time.Duration) *nodeConn {
+func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
@@ -117,15 +121,13 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 		nodeClient: inxNodeClient,
 	}
 
-	if initMqttClient {
-		go nc.run()
-		for {
-			if nc.mqttClient.MQTTClient.IsConnected() {
-				break
-			}
-			nc.log.Debugf("waiting until mqtt client is connected")
-			time.Sleep(1 * time.Second)
+	go nc.run()
+	for {
+		if nc.mqttClient.MQTTClient.IsConnected() {
+			break
 		}
+		nc.log.Debugf("waiting until mqtt client is connected")
+		time.Sleep(1 * time.Second)
 	}
 	return &nc
 }
@@ -260,7 +262,11 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
 
-	err = nc.doPoW(ctx, block)
+	submitBlock := func(ctx context.Context, block *iotago.Block) error {
+		_, err := nc.nodeBridge.SubmitBlock(ctx, block)
+		return err
+	}
+	err = DoBlockPow(ctx, block, nc.config.UseRemotePoW, submitBlock, nc.nodeClient)
 	if err != nil {
 		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
@@ -334,7 +340,11 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 
 			nc.log.Debugf("reattaching block: %v", block)
 
-			err = nc.doPoW(ctx, block)
+			submitBlock := func(ctx context.Context, block *iotago.Block) error {
+				_, err := nc.nodeBridge.SubmitBlock(ctx, block)
+				return err
+			}
+			err = DoBlockPow(ctx, block, nc.config.UseRemotePoW, submitBlock, nc.nodeClient)
 			if err != nil {
 				return err
 			}
@@ -351,35 +361,3 @@ const (
 	refreshTipsDuringPoWInterval = 5 * time.Second
 	parallelWorkers              = 1
 )
-
-func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
-	if nc.config.UseRemotePoW {
-		// remote PoW: Take the Block, clear parents, clear nonce, send to node
-		block.Parents = nil
-		block.Nonce = 0
-		_, err := nc.nodeBridge.SubmitBlock(ctx, block)
-		return err
-	}
-	// do the PoW
-	refreshTipsFn := func() (tips iotago.BlockIDs, err error) {
-		// refresh tips if PoW takes longer than a configured duration.
-		resp, err := nc.nodeClient.Tips(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Tips()
-	}
-
-	targetScore := float64(parameters.L1().Protocol.MinPoWScore)
-
-	_, err := doPoW(
-		ctx,
-		block,
-		targetScore,
-		parallelWorkers,
-		refreshTipsDuringPoWInterval,
-		refreshTipsFn,
-	)
-
-	return err
-}
