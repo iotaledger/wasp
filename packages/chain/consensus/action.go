@@ -448,12 +448,17 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexPropos
 	sigShare, err := c.committee.DKShare().BLSSignShare(outputID[:])
 	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", isc.OID(c.stateOutput.ID())))
 
+	timestamp := c.timeData
+	if timestamp.Before(c.currentState.Timestamp()) {
+		timestamp = c.currentState.Timestamp().Add(time.Nanosecond)
+	}
+
 	ret := &BatchProposal{
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
 		RequestIDs:              make([]isc.RequestID, len(reqs)),
 		RequestHashes:           make([][32]byte, len(reqs)),
-		TimeData:                c.timeData,
+		TimeData:                timestamp,
 		ConsensusManaPledge:     consensusManaPledge,
 		AccessManaPledge:        accessManaPledge,
 		FeeDestination:          feeDestination,
