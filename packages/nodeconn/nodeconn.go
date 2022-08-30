@@ -296,6 +296,47 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 				metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
 		}
 		// reattach or promote if needed
+
+		if metadataResp.ShouldPromote {
+			nc.log.Debugf("promoting msgID: %s", blockID.ToHex())
+			// create an empty Block and the BlockID as one of the parents
+			tipsResp, err := nc.nodeClient.Tips(ctx)
+			if err != nil {
+				return xerrors.Errorf("failed to fetch Tips: %w", err)
+			}
+			tips, err := tipsResp.Tips()
+			if err != nil {
+				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
+			}
+
+			parents := []iotago.BlockID{
+				*blockID,
+			}
+
+			if len(tips) > 7 {
+				tips = tips[:7] // max 8 parents
+			}
+			for _, tip := range tips {
+				parents = append(parents, tip)
+			}
+			promotionMsg, err := builder.NewBlockBuilder().Parents(parents).Build()
+			if err != nil {
+				return xerrors.Errorf("failed to build promotion Block: %w", err)
+			}
+			_, err = nc.nodeClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
+			if err != nil {
+				return xerrors.Errorf("failed to promote msg: %w", err)
+			}
+		}
+		
+		if metadataResp.ShouldReattach {
+			nc.log.Debugf("reattaching block: %v", block)
+			err = nc.doPoW(ctx, block)
+			if err != nil {
+				return err
+			}
+		}
+
 		if err = ctx.Err(); err != nil {
 			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
 		}
