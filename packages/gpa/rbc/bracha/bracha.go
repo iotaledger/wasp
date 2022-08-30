@@ -97,7 +97,7 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 //	01: // only broadcaster node
 //	02: input 𝑀
 //	03: send ⟨PROPOSE, 𝑀⟩ to all
-func (r *rbc) Input(input gpa.Input) []gpa.Message {
+func (r *rbc) Input(input gpa.Input) gpa.OutMessages {
 	if r.broadcaster != r.me {
 		panic(xerrors.Errorf("only broadcaster is allowed to take an input"))
 	}
@@ -111,11 +111,11 @@ func (r *rbc) Input(input gpa.Input) []gpa.Message {
 }
 
 // Implements the GPA interface.
-func (r *rbc) Message(msg gpa.Message) []gpa.Message {
+func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgBracha:
 		if !r.checkMsgRecv(msgT) {
-			return gpa.NoMessages()
+			return nil
 		}
 		switch msgT.t {
 		case msgBrachaTypePropose:
@@ -137,14 +137,14 @@ func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 //	06: upon receiving ⟨PROPOSE, 𝑀⟩ from the broadcaster do
 //	07:     if 𝑃(𝑀) then
 //	08:         send ⟨ECHO, 𝑀⟩ to all
-func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
+func (r *rbc) handlePropose(msg *msgBracha) gpa.OutMessages {
 	if msg.s != r.broadcaster {
 		// PROPOSE messages can only be sent by the broadcaster process.
 		// Ignore all the rest.
-		return gpa.NoMessages()
+		return nil
 	}
 	if !r.predicate(msg.v) {
-		return gpa.NoMessages()
+		return nil
 	}
 	msgs := r.sendToAll(msgBrachaTypeEcho, msg.v)
 	r.echoSent = true
@@ -155,7 +155,7 @@ func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 //
 //	09: upon receiving 2𝑡 + 1 ⟨ECHO, 𝑀⟩ messages and not having sent a READY message do
 //	10:     send ⟨READY, 𝑀⟩ to all
-func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
+func (r *rbc) handleEcho(msg *msgBracha) gpa.OutMessages {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -167,7 +167,7 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 	if len(r.echoRecv[h]) > (r.n+r.f)/2 {
 		return r.maybeSendReady(msg.v)
 	}
-	return gpa.NoMessages()
+	return nil
 }
 
 // Handle the READY messages.
@@ -176,7 +176,7 @@ func (r *rbc) handleEcho(msg *msgBracha) []gpa.Message {
 //	12:     send ⟨READY, 𝑀⟩ to all
 //	13: upon receiving 2𝑡 + 1 ⟨READY, 𝑀⟩ messages do
 //	14:     output 𝑀
-func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
+func (r *rbc) handleReady(msg *msgBracha) gpa.OutMessages {
 	//
 	// Mark the message as received.
 	h := r.valueHash(msg)
@@ -193,7 +193,7 @@ func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 	if count > r.f {
 		return r.maybeSendReady(msg.v)
 	}
-	return gpa.NoMessages()
+	return nil
 }
 
 func (r *rbc) checkMsgRecv(msg *msgBracha) bool {
@@ -224,16 +224,16 @@ func (r *rbc) markReadyRecv(h hashing.HashValue, msg *msgBracha) {
 	r.readyRecv[h][msg.s] = true
 }
 
-func (r *rbc) maybeSendReady(v []byte) []gpa.Message {
-	msgs := gpa.NoMessages()
-	if !r.readySent {
-		msgs = append(msgs, r.sendToAll(msgBrachaTypeReady, v)...)
-		r.readySent = true
+func (r *rbc) maybeSendReady(v []byte) gpa.OutMessages {
+	if r.readySent {
+		return nil
 	}
+	msgs := r.sendToAll(msgBrachaTypeReady, v)
+	r.readySent = true
 	return msgs
 }
 
-func (r *rbc) sendToAll(t msgBrachaType, v []byte) []gpa.Message {
+func (r *rbc) sendToAll(t msgBrachaType, v []byte) gpa.OutMessages {
 	msgs := make([]gpa.Message, len(r.peers))
 	for i := range r.peers {
 		msgs[i] = &msgBracha{
@@ -242,7 +242,7 @@ func (r *rbc) sendToAll(t msgBrachaType, v []byte) []gpa.Message {
 			v: v,
 		}
 	}
-	return msgs
+	return gpa.NoMessages().AddMany(msgs)
 }
 
 func (r *rbc) valueHash(msg *msgBracha) hashing.HashValue {
