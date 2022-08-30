@@ -58,7 +58,6 @@ type rbc struct {
 	maxMsgSize  int
 	peers       []gpa.NodeID
 	predicate   func([]byte) bool
-	pendingPMsg *msgBracha // PROPOSE message received, but not satisfying a predicate, if any.
 	proposeSent bool
 	msgRecv     map[gpa.NodeID]map[msgBrachaType]bool     // For tracking, who's messages are received.
 	echoSent    bool                                      // Have we sent the ECHO messages?
@@ -70,16 +69,6 @@ type rbc struct {
 
 var _ gpa.GPA = &rbc{}
 
-// Update predicate for the RBC instance.
-func SendPredicateUpdate(rbc gpa.GPA, me gpa.NodeID, predicate func([]byte) bool) []gpa.Message {
-	return rbc.Message(MakePredicateUpdateMsg(me, predicate))
-}
-
-// Create a message for sending it later.
-func MakePredicateUpdateMsg(me gpa.NodeID, predicate func([]byte) bool) gpa.Message {
-	return &msgPredicateUpdate{me: me, predicate: predicate}
-}
-
 // Create new instance of the RBC.
 func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, predicate func([]byte) bool) gpa.GPA {
 	r := &rbc{
@@ -90,7 +79,6 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 		maxMsgSize:  maxMsgSize,
 		peers:       peers,
 		predicate:   predicate,
-		pendingPMsg: nil,
 		msgRecv:     map[gpa.NodeID]map[msgBrachaType]bool{},
 		echoSent:    false,
 		echoRecv:    make(map[hashing.HashValue]map[gpa.NodeID]bool),
@@ -139,8 +127,6 @@ func (r *rbc) Message(msg gpa.Message) []gpa.Message {
 		default:
 			panic(xerrors.Errorf("unexpected message: %+v", msgT))
 		}
-	case *msgPredicateUpdate:
-		return r.handlePredicateUpdate(*msgT)
 	default:
 		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
@@ -157,12 +143,7 @@ func (r *rbc) handlePropose(msg *msgBracha) []gpa.Message {
 		// Ignore all the rest.
 		return gpa.NoMessages()
 	}
-	if r.echoSent || r.pendingPMsg != nil {
-		// PROPOSE message was already received, ignore this one.
-		return gpa.NoMessages()
-	}
 	if !r.predicate(msg.v) {
-		r.pendingPMsg = msg
 		return gpa.NoMessages()
 	}
 	msgs := r.sendToAll(msgBrachaTypeEcho, msg.v)
@@ -213,18 +194,6 @@ func (r *rbc) handleReady(msg *msgBracha) []gpa.Message {
 		return r.maybeSendReady(msg.v)
 	}
 	return gpa.NoMessages()
-}
-
-func (r *rbc) handlePredicateUpdate(msg msgPredicateUpdate) []gpa.Message {
-	r.predicate = msg.predicate
-	if r.pendingPMsg == nil {
-		return gpa.NoMessages()
-	}
-	//
-	// Try to process the PROPOSE message again, if it was postponed.
-	proposeMsg := r.pendingPMsg
-	r.pendingPMsg = nil
-	return r.handlePropose(proposeMsg)
 }
 
 func (r *rbc) checkMsgRecv(msg *msgBracha) bool {

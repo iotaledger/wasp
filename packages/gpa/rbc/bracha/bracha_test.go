@@ -74,7 +74,6 @@ func TestWithSilent(t *testing.T) {
 
 // Check if predicate is considered properly.
 func TestPredicate(t *testing.T) {
-	pTrue := func(b []byte) bool { return true }
 	pFalse := func(b []byte) bool { return false }
 	test := func(tt *testing.T, n, f int) {
 		nodeIDs := gpa.MakeTestNodeIDs("node", n)
@@ -89,20 +88,7 @@ func TestPredicate(t *testing.T) {
 		tc := gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)})
 		tc.RunAll()
 		for nid := range nodes {
-			require.Nil(t, nodes[nid].Output())
-		}
-		//
-		// Update the predicate to TRUE for at least N-F nodes.
-		// That should make the RBC to terminate at all the fair instances.
-		predicateUpdates := make([]gpa.Message, n-f)
-		for i := range predicateUpdates {
-			predicateUpdates[i] = bracha.MakePredicateUpdateMsg(nodeIDs[i], pTrue)
-		}
-		tc.WithMessages(predicateUpdates).RunAll()
-		for nid := range nodes {
-			o := nodes[nid].Output()
-			require.NotNil(tt, o)
-			require.Equal(tt, o.([]byte), input)
+			require.Nil(tt, nodes[nid].Output())
 		}
 	}
 	t.Parallel()

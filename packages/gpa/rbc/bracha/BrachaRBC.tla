@@ -101,6 +101,8 @@ Broadcast ==
 >    5: input 𝑃(·) // predicate 𝑃(·) returns true unless otherwise specified.
 
 NOTE: Additionally we allow to update a predicate monotonically.
+NOTE: Implementation for the predicate update has been removed from the
+      code, just to simplify it. Its use was removed by dropping the adkg/das.
 *)
 UpdatePredicate ==
     \E n \in CN, p \in BOOLEAN  :
