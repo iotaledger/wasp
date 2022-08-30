@@ -61,7 +61,7 @@ const WaspConfig = `
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "l1": {
-    "apiAddress": "{{.L1APIAddress}}",
+    "inxAddress": "{{.L1INXAddress}}",
     "useRemotePow": {{.L1UseRemotePow}}
   },
   "nanomsg":{
