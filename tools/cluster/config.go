@@ -61,6 +61,7 @@ func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config, modifyConfig .
 		// generate template from waspconfigs
 		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
 		// set L1 part of the template
+		nodesConfigs[i].L1INXAddress = l1Config.INXAddress
 		nodesConfigs[i].L1APIAddress = l1Config.APIAddress
 		nodesConfigs[i].L1UseRemotePow = l1Config.UseRemotePoW
 		// modify the template if needed

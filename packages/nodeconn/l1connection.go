@@ -19,6 +19,7 @@ import (
 
 type L1Config struct {
 	APIAddress    string
+	INXAddress    string
 	FaucetAddress string
 	FaucetKey     *cryptolib.KeyPair
 	UseRemotePoW  bool
@@ -223,6 +224,5 @@ func MakeSimpleValueTX(
 func (nc *nodeConn) Health(timeout ...time.Duration) (bool, error) {
 	ctxWithTimeout, cancelContext := newCtx(context.Background(), timeout...)
 	defer cancelContext()
-
-	return nc.nodeAPIClient.Health(ctxWithTimeout)
+	return nc.nodeBridge.INXNodeClient().Health(ctxWithTimeout)
 }

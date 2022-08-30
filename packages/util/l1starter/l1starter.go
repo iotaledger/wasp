@@ -21,6 +21,7 @@ type L1Starter struct {
 func New(flags *flag.FlagSet) *L1Starter {
 	s := &L1Starter{}
 	flags.StringVar(&s.Config.APIAddress, "layer1-api", "", "layer1 API address")
+	flags.StringVar(&s.Config.INXAddress, "layer1-inx", "", "layer1 INX address")
 	flags.StringVar(&s.Config.FaucetAddress, "layer1-faucet", "", "layer1 faucet port")
 	flags.BoolVar(&s.Config.UseRemotePoW, "layer1-remote-pow", false, "use remote PoW (must be enabled on the Hornet node)")
 	flags.IntVar(&s.privtangleNumNodes, "privtangle-num-nodes", 2, "number of hornet nodes to be spawned in the private tangle")

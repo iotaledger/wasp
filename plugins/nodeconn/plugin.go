@@ -39,6 +39,7 @@ func configure(_ *node.Plugin) {
 	nc = nodeconn.New(
 		nodeconn.L1Config{
 			APIAddress: parameters.GetString(parameters.L1APIAddress),
+			INXAddress: parameters.GetString(parameters.L1INXAddress),
 		},
 		log,
 	)

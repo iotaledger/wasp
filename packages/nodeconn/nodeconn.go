@@ -31,19 +31,18 @@ import (
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx            context.Context
-	ctxCancel      context.CancelFunc
-	chains         map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock     sync.RWMutex
-	nodeAPIClient  *nodeclient.Client
-	mqttClient     *nodeclient.EventAPIClient
-	indexerClient  nodeclient.IndexerClient
-	milestones     *events.Event
-	metrics        nodeconnmetrics.NodeConnectionMetrics
-	log            *logger.Logger
-	config         L1Config
-	nodeBridge     *nodebridge.NodeBridge
-	tangleListener *nodebridge.TangleListener
+	ctx           context.Context
+	ctxCancel     context.CancelFunc
+	chains        map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock    sync.RWMutex
+	mqttClient    *nodeclient.EventAPIClient
+	indexerClient nodeclient.IndexerClient
+	milestones    *events.Event
+	metrics       nodeconnmetrics.NodeConnectionMetrics
+	log           *logger.Logger
+	config        L1Config
+	nodeBridge    *nodebridge.NodeBridge
+	nodeClient    *nodeclient.Client
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -71,50 +70,53 @@ func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.No
 
 func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeout ...time.Duration) *nodeConn {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeAPIClient := nodeclient.New(config.APIAddress)
 
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
-	l1Info, err := nodeAPIClient.Info(ctxWithTimeout)
-	if err != nil {
-		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
-	}
-	setL1ProtocolParams(l1Info)
 
-	mqttClient, err := nodeAPIClient.EventAPI(ctxWithTimeout)
-	if err != nil {
-		panic(xerrors.Errorf("error getting node event client: %w", err))
-	}
-
-	indexerClient, err := nodeAPIClient.Indexer(ctxWithTimeout)
-	if err != nil {
-		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
-	}
-
-	nb, err := nodebridge.NewNodeBridge(context.Background(), "localhost:9012", log.Named("NodeBridge"))
+	// TODO: Move this into a separate plugin? (including the go nb.Run())
+	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
 
 	if err != nil {
 		panic(err)
 	}
 
 	go nb.Run(context.Background())
+	inxNodeClient := nb.INXNodeClient()
+
+	nodeInfo, err := inxNodeClient.Info(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("error getting node info: %w", err))
+	}
+
+	setL1ProtocolParams(nodeInfo)
+
+	mqttClient, err := inxNodeClient.EventAPI(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("error getting node event client: %w", err))
+	}
+
+	indexerClient, err := inxNodeClient.Indexer(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
+	}
 
 	nc := nodeConn{
-		ctx:           ctx,
-		ctxCancel:     ctxCancel,
-		chains:        make(map[string]*ncChain),
-		chainsLock:    sync.RWMutex{},
-		nodeAPIClient: nodeAPIClient,
+		ctx:        ctx,
+		ctxCancel:  ctxCancel,
+		chains:     make(map[string]*ncChain),
+		chainsLock: sync.RWMutex{},
+
 		mqttClient:    mqttClient,
 		indexerClient: indexerClient,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
-		metrics:        nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
-		log:            log.Named("nc"),
-		config:         config,
-		nodeBridge:     nb,
-		tangleListener: nodebridge.NewTangleListener(nb),
+		metrics:    nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		log:        log.Named("nc"),
+		config:     config,
+		nodeBridge: nb,
+		nodeClient: inxNodeClient,
 	}
 
 	if initMqttClient {
@@ -254,7 +256,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().
 		Payload(tx).
-		Tips(ctx, nc.nodeAPIClient).
+		Tips(ctx, nc.nodeClient).
 		Build()
 
 	if err != nil {
@@ -311,13 +313,13 @@ func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
 		// remote PoW: Take the Block, clear parents, clear nonce, send to node
 		block.Parents = nil
 		block.Nonce = 0
-		_, err := nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
+		_, err := nc.nodeBridge.SubmitBlock(ctx, block)
 		return err
 	}
 	// do the PoW
 	refreshTipsFn := func() (tips iotago.BlockIDs, err error) {
 		// refresh tips if PoW takes longer than a configured duration.
-		resp, err := nc.nodeAPIClient.Tips(ctx)
+		resp, err := nc.nodeClient.Tips(ctx)
 		if err != nil {
 			return nil, err
 		}

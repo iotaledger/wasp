@@ -1,6 +1,7 @@
 {
   "l1": {
-    "apiAddress": "http://localhost:14265"
+    "apiAddress": "http://localhost:14265",
+    "inxAddress": "localhost:9012"
   },
   "database": {
     "directory": "waspdb"

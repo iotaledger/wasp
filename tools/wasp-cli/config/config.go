@@ -113,6 +113,18 @@ func L1APIAddress() string {
 	)
 }
 
+func L1INXAddress() string {
+	host := viper.GetString("l1.inxAddress")
+	if host != "" {
+		return host
+	}
+	return fmt.Sprintf(
+		"%s:%d",
+		privtangledefaults.INXHost,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetINX,
+	)
+}
+
 func L1FaucetAddress() string {
 	address := viper.GetString("l1.faucetAddress")
 	if address != "" {
@@ -131,6 +143,7 @@ func L1Client() nodeconn.L1Client {
 	return nodeconn.NewL1Client(
 		nodeconn.L1Config{
 			APIAddress:    L1APIAddress(),
+			INXAddress:    L1INXAddress(),
 			FaucetAddress: L1FaucetAddress(),
 		},
 		log.HiveLogger(),

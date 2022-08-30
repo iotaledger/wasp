@@ -37,6 +37,7 @@ const (
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
+	L1INXAddress   = "l1.inxAddress"
 	L1APIAddress   = "l1.apiAddress"
 	L1UseRemotePoW = "l1.useRemotePow"
 
