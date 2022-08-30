@@ -13,7 +13,7 @@ import (
 type msgBrachaType byte
 
 const (
-	msgBrachaTypeInitial msgBrachaType = iota
+	msgBrachaTypePropose msgBrachaType = iota
 	msgBrachaTypeEcho
 	msgBrachaTypeReady
 )

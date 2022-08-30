@@ -51,6 +51,7 @@ app "wasp-evm" {
                 artifact = artifact
                 adminWhitelist = jsonencode(var.adminWhitelist)
                 auth = var.ghcr
+                workspace = workspace.name
             })
         }
     }

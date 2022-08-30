@@ -99,7 +99,6 @@ type Registry interface {
 
 // consensusJournalImpl implements ConsensusJournal and LocalView.
 // Here the local view is made persistent and a dimension of history added.
-//
 type consensusJournalImpl struct {
 	id             ID
 	chainID        isc.ChainID

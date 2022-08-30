@@ -7,9 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 )
 
-//
 // Mock for the journal.RegistryProvider.
-//
 type mockedConsensusJournalRegistryImpl struct {
 	li map[journal.ID]journal.LogIndex
 	lv map[journal.ID][]byte

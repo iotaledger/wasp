@@ -8,7 +8,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-//
 // An event to self.
 type msgAgreementResult struct {
 	me        gpa.NodeID

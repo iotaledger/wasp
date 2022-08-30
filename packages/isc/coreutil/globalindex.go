@@ -1,6 +1,8 @@
 package coreutil
 
 import (
+	"sync"
+
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
@@ -45,8 +47,8 @@ func (g *ChainStateSyncImpl) GetSolidIndexBaseline() StateBaseline {
 	return newStateIndexBaseline(&g.solidIndex)
 }
 
-// InvalidateSolidIndex invalidates state index and, globally, all baselines
-// .All vaselines remain invalid until SetSolidIndex is called globally
+// InvalidateSolidIndex invalidates state index and, globally, all baselines.
+// All baselines remain invalid until SetSolidIndex is called globally
 // and Set for each baseline individually
 func (g *ChainStateSyncImpl) InvalidateSolidIndex() ChainStateSync {
 	g.solidIndex.Store(^uint32(0))
@@ -64,6 +66,7 @@ type StateBaseline interface {
 }
 
 type stateBaseline struct {
+	mutex           sync.RWMutex
 	solidStateIndex *atomic.Uint32
 	baseline        uint32
 }
@@ -76,10 +79,16 @@ func newStateIndexBaseline(globalStateIndex *atomic.Uint32) *stateBaseline {
 }
 
 func (g *stateBaseline) Set() {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
 	g.baseline = g.solidStateIndex.Load()
 }
 
 func (g *stateBaseline) IsValid() bool {
+	g.mutex.RLock()
+	defer g.mutex.RUnlock()
+
 	return g.baseline != ^uint32(0) && g.baseline == g.solidStateIndex.Load()
 }
 

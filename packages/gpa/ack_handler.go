@@ -223,9 +223,7 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 	return batches
 }
 
-//
-//	Message conveying the message batches and acknowledgements.
-//
+// Message conveying the message batches and acknowledgements.
 type ackHandlerBatch struct {
 	sender    NodeID
 	recipient NodeID
@@ -345,9 +343,7 @@ func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-//
 // Event representing a timer tick.
-//
 type ackHandlerTick struct {
 	recipient NodeID
 	timestamp time.Time

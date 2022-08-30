@@ -9,10 +9,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-//
 // A protocol for testing infrastructure.
 // A peer outputs true when it receives a message from each peer.
-//
 type testRound struct {
 	me       NodeID
 	nodeIDs  []NodeID

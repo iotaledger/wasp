@@ -4,15 +4,14 @@
 // blssig package implements a Common Coin (CC) based on a BLS Threshold signatures as
 // described in the Appendix C of
 //
-// 		Andrew Miller, Yu Xia, Kyle Croman, Elaine Shi, and Dawn Song. 2016.
-//		The Honey Badger of BFT Protocols. In Proceedings of the 2016 ACM SIGSAC
-//		Conference on Computer and Communications Security (CCS '16).
-//		Association for Computing Machinery, New York, NY, USA, 31–42.
-//		DOI:https://doi.org/10.1145/2976749.2978399
+//	Andrew Miller, Yu Xia, Kyle Croman, Elaine Shi, and Dawn Song. 2016.
+//	The Honey Badger of BFT Protocols. In Proceedings of the 2016 ACM SIGSAC
+//	Conference on Computer and Communications Security (CCS '16).
+//	Association for Computing Machinery, New York, NY, USA, 31–42.
+//	DOI:https://doi.org/10.1145/2976749.2978399
 //
 // We con't use the DKShare here, because in some cases this CC will be used while
 // creating the DKShare.
-//
 package blssig
 
 import (

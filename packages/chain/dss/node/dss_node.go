@@ -10,13 +10,13 @@
 // done to have a way to pre-generate the nonces for future signatures.
 //
 // The main interaction with this subsystem is the following:
-//   - Start the DSS instance (the most expensive part).
-//   - Wait for DSS input to the ACS, provide the ACS output to the DSS.
-//   - Provide the data to sign.
-//   - Wait for a signature.
+//
+//  1. Start the DSS instance (the most expensive part).
+//  2. Wait for DSS input to the ACS, provide the ACS output to the DSS.
+//  3. Provide the data to sign.
+//  4. Wait for a signature.
 //
 // TODO: Instance cleanup.
-//
 package node
 
 import (

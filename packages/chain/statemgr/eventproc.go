@@ -121,6 +121,6 @@ func (sm *stateManager) EnqueueTimerMsg(msg messages.TimerTick) {
 }
 
 func (sm *stateManager) handleTimerMsg() {
-	sm.log.Debugf("EventTimerMsg received")
+	sm.log.Debugf("StateManager handleTimerMsg: timerMsg received")
 	sm.takeAction()
 }

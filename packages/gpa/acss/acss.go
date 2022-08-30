@@ -80,11 +80,11 @@
 // The Crypto part shown the pseudo-code above is replaced in the implementation with the
 // scheme allowing to keep the private keys secret. The scheme implementation is taken
 // from the PoC mentioned above. It is described in <https://hackmd.io/@CcRtfCBnRbW82-AdbFJUig/S1qcPiUN5>.
-//
 package acss
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -162,8 +162,8 @@ func New(
 		dealCB:        dealCB,
 		peerPKs:       peerPKs,
 		peerIdx:       peers,
-		rbc:           rbc.New(peers, f, me, dealer, func(b []byte) bool { return true }),
-		rbcOut:        nil, // Will be set on output from the RBC.
+		rbc:           rbc.New(peers, f, me, dealer, math.MaxInt, func(b []byte) bool { return true }), // TODO: Provide meaningful maxMsgSize
+		rbcOut:        nil,                                                                             // Will be set on output from the RBC.
 		voteOKRecv:    map[gpa.NodeID]bool{},
 		voteREADYRecv: map[gpa.NodeID]bool{},
 		voteREADYSent: false,
@@ -189,10 +189,8 @@ func New(
 	return gpa.NewOwnHandler(me, &a)
 }
 
-//
 // Input for the algorithm is the secret to share.
 // It can be provided by the dealer only.
-//
 func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 	if a.me != a.dealer {
 		panic(xerrors.Errorf("only dealer can initiate the sharing"))
@@ -203,9 +201,7 @@ func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 	return a.handleInput(input.(kyber.Scalar))
 }
 
-//
 // Receive all the messages and route them to the appropriate handlers.
-//
 func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 	switch m := msg.(type) {
 	case *gpa.WrappingMsg:
@@ -233,7 +229,6 @@ func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 	}
 }
 
-//
 // > // dealer with input s
 // > sample random polynomial ϕ such that ϕ(0) = s
 // > C, S := VSS.Share(ϕ, f+1, n)
@@ -241,7 +236,6 @@ func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 // >
 // > // party i (including the dealer)
 // > RBC(C||E)
-//
 func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 	pubKeys := make([]kyber.Point, 0)
 	for _, peerID := range a.peerIdx {
@@ -262,12 +256,10 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 	return a.tryHandleRBCTermination(false, msgs)
 }
 
-//
 // Delegate received messages to the RBC and handle its output.
 //
 // > // party i (including the dealer)
 // > RBC(C||E)
-//
 func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) []gpa.Message {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Message(m.Wrapped()))
@@ -279,14 +271,13 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gp
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
-			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload"))
+			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
 		msgs = append(msgs, &msgRBCCEOutput{me: a.me, payload: outParsed})
 	}
 	return msgs
 }
 
-//
 // Upon receiving the RBC output...
 //
 // > sᵢ := PKI.Dec(eᵢ, skᵢ)
@@ -294,7 +285,6 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gp
 // >   send <IMPLICATE, i, skᵢ> to all parties
 // > else:
 // >   send <OK>
-//
 func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
@@ -320,10 +310,8 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 	return a.handleImplicateRecoverPending(a.broadcastVote(msgVoteOK, msgs))
 }
 
-//
 // > on receiving <OK> from n-f parties:
 // >   send <READY> to all parties
-//
 func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
 	a.voteOKRecv[m.sender] = true
 	count := len(a.voteOKRecv)
@@ -334,7 +322,6 @@ func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
 	return gpa.NoMessages()
 }
 
-//
 // > on receiving <READY> from f+1 parties:
 // >   send <READY> to all parties
 // >
@@ -342,7 +329,6 @@ func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
 // >   if sᵢ is valid:
 // >     out = true
 // >     output sᵢ
-//
 func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
 	a.voteREADYRecv[m.sender] = true
 	count := len(a.voteREADYRecv)
@@ -413,7 +399,6 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Messa
 // >       return
 //
 // NOTE: We assume `if out == true:` stands for a wait for such condition.
-//
 func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
 	peerIndex := a.peerIndex(m.sender)
 	if peerIndex == -1 {
@@ -455,7 +440,6 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
 // >       sᵢ = SSS.Recover(T, f+1, n)(i)
 // >       out = true
 // >       output sᵢ
-//
 func (a *acssImpl) handleRecover(m *msgImplicateRecover) []gpa.Message {
 	if a.output {
 		// Ignore the RECOVER messages, if we are done with the output.

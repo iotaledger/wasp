@@ -1,11 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//
 // Here we implement the local view of a chain, maintained by a committee to decide which
 // alias output to propose to the ACS. The alias output decided by the ACS will be used
 // as an input for TX we build.
-//
 
 package journal
 

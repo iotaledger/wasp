@@ -41,12 +41,15 @@ func SimulateCall(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 			EnableGasBurnLogging: true,
 			EstimateGasMode:      true,
 		}
-		vmRunner.Run(task)
+		err = vmRunner.Run(task)
+		if err != nil {
+			return err
+		}
 		if len(task.Results) == 0 {
 			return xerrors.Errorf("request was skipped")
 		}
 		ret = task.Results[0]
-		return task.VMError
+		return nil
 	})
 	return ret, err
 }

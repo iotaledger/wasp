@@ -15,7 +15,6 @@ import (
 // This message is used as a payload of the RBC:
 //
 // > RBC(C||E)
-//
 type msgRBCCEPayload struct {
 	suite suites.Suite
 	data  []byte
@@ -43,7 +42,6 @@ func (m *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-//
 // An event to self.
 type msgRBCCEOutput struct {
 	me      gpa.NodeID

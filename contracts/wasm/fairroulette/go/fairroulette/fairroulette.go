@@ -121,6 +121,7 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 // 'payWinners' is a function whose execution gets initiated by the 'placeBet' function.
 // It collects a list of all bets, generates a random number, sorts out the winners and transfers
 // the calculated winning sum to each attendee.
+//
 //nolint:funlen
 func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// Use the built-in random number generator which has been automatically initialized by
