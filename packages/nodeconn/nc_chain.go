@@ -82,50 +82,8 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	if err != nil {
 		return err
 	}
-
-	txMsgID, err := txMsg.ID()
-	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
-	}
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
 	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
-	if subInfo.Error() != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", isc.TxID(txID), subInfo.Error())
-	}
-
-	go func() {
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", isc.TxID(txID))
-
-		for {
-			select {
-			case msgMetaChange := <-msgMetaChanges:
-				ncc.handleMetadataUpdate(txID, msgMetaChange)
-			case <-ctxWithTimeout.Done():
-				return
-			case <-time.After(20 * time.Second):
-				ncc.log.Debugf("FOUND A BLOCKING METADATA CHANNEL\n")
-
-				for i := 0; i < 10; i++ {
-					state, err := ncc.nc.nodeAPIClient.BlockMetadataByBlockID(ctxWithTimeout, txMsgID)
-					if err != nil {
-						ncc.log.Debugf("BlockMEtaDataByBlockId ERROR: %v\n", err)
-						time.Sleep(1 * time.Second)
-						continue
-					}
-
-					if state != nil && state.LedgerInclusionState != "" {
-						ncc.handleMetadataUpdate(txID, state)
-						return
-					}
-
-					time.Sleep(1 * time.Second)
-				}
-			}
-		}
-	}()
-
-	// TODO should promote/re-attach logic not be blocking?
 	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
 }
 
