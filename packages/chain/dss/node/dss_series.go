@@ -152,17 +152,17 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 	return d, dAsGPA, nil
 }
 
-func (s *dssSeriesImpl) sendMessages(msgs []gpa.Message, index int) {
-	for _, m := range msgs {
+func (s *dssSeriesImpl) sendMessages(msgs gpa.OutMessages, index int) {
+	msgs.MustIterate(func(m gpa.Message) {
 		msgData, err := m.MarshalBinary()
 		if err != nil {
 			s.node.log.Warnf("Failed to send a message: %v", err)
-			continue
+			return
 		}
 		msgPayload, err := makeMsgData(s.key, index, msgData)
 		if err != nil {
 			s.node.log.Warnf("Failed to send a message: %v", err)
-			continue
+			return
 		}
 		pm := &peering.PeerMessageData{
 			PeeringID:   *s.node.peeringID,
@@ -171,7 +171,7 @@ func (s *dssSeriesImpl) sendMessages(msgs []gpa.Message, index int) {
 			MsgData:     msgPayload,
 		}
 		s.node.net.SendMsgByPubKey(s.peerPubs[m.Recipient()], pm)
-	}
+	})
 }
 
 func (s *dssSeriesImpl) recvMessage(index int, msgData []byte, sender gpa.NodeID) {

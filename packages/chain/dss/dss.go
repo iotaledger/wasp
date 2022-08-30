@@ -115,7 +115,7 @@ func (d *dssImpl) NewMsgDecided(decidedIndexProposals map[gpa.NodeID][]int, mess
 }
 
 // Handle the input to the protocol.
-func (d *dssImpl) Input(input gpa.Input) []gpa.Message {
+func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
 		panic("nil input is expected")
 	}
@@ -124,7 +124,7 @@ func (d *dssImpl) Input(input gpa.Input) []gpa.Message {
 }
 
 // Handle the messages.
-func (d *dssImpl) Message(msg gpa.Message) []gpa.Message {
+func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
 		return d.handlePartialSig(msgT)
@@ -152,7 +152,7 @@ func (d *dssImpl) Output() gpa.Output {
 	}
 }
 
-func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
+func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	dkgOut := d.dkg.Output()
 	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {
 		d.dkgOutIndexes = dkgOut.(*nonce.Output).Indexes
@@ -192,7 +192,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
 			if d.nodeIDs[i] == d.me {
 				continue
 			}
-			msgs = append(msgs, &msgPartialSig{
+			msgs.Add(&msgPartialSig{
 				suite:      d.suite,
 				sender:     d.me,
 				recipient:  d.nodeIDs[i],
@@ -213,28 +213,28 @@ func (d *dssImpl) tryHandleDkgOutput(msgs []gpa.Message) []gpa.Message {
 	return msgs
 }
 
-func (d *dssImpl) handlePartialSig(msg *msgPartialSig) []gpa.Message {
+func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	if d.signature != nil {
 		// Signature already aggregated, ignore the remaining shares.
-		return gpa.NoMessages()
+		return nil
 	}
 	if d.dssSigner == nil {
 		if _, ok := d.dssPartialSigBuffer[msg.sender]; ok {
 			d.log.Warn("duplicate partial signature from %v", msg.sender)
-			return gpa.NoMessages()
+			return nil
 		}
 		d.dssPartialSigBuffer[msg.sender] = msg.partialSig
-		return gpa.NoMessages()
+		return nil
 	}
 	//
 	// Then process the one received with the current message.
 	err := d.dssSigner.ProcessPartialSig(msg.partialSig)
 	if err != nil {
 		d.log.Warnf("Failed to process a partial signature: %v", err)
-		return gpa.NoMessages()
+		return nil
 	}
 	if !d.dssSigner.EnoughPartialSig() {
-		return gpa.NoMessages()
+		return nil
 	}
 
 	sig, err := d.dssSigner.Signature()
@@ -242,13 +242,13 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) []gpa.Message {
 		d.log.Errorf("Unable to aggregate the signature: %v", err)
 	}
 	d.signature = sig
-	return gpa.NoMessages()
+	return nil
 }
 
-func (d *dssImpl) handleDecided(msg *msgDecided) []gpa.Message {
+func (d *dssImpl) handleDecided(msg *msgDecided) gpa.OutMessages {
 	if d.dkgDecidedIndexProposals != nil {
 		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", msg.decidedIndexProposals)
-		return gpa.NoMessages()
+		return nil
 	}
 	d.dkgDecidedIndexProposals = msg.decidedIndexProposals
 	d.messageToSign = msg.messageToSign

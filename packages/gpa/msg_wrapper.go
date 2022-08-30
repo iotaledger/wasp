@@ -25,11 +25,14 @@ func (w *MsgWrapper) WrapMessage(subsystem byte, index int, msg Message) Message
 	return &WrappingMsg{w.msgType, subsystem, index, msg}
 }
 
-func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs []Message) []Message {
-	wrapped := make([]Message, len(msgs))
-	for i := range msgs {
-		wrapped[i] = w.WrapMessage(subsystem, index, msgs[i])
+func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs OutMessages) OutMessages {
+	if msgs == nil {
+		return nil
 	}
+	wrapped := NoMessages()
+	msgs.MustIterate(func(msg Message) {
+		wrapped.Add(w.WrapMessage(subsystem, index, msg))
+	})
 	return wrapped
 }
 

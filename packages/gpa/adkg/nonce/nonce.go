@@ -118,7 +118,7 @@ func New(
 	return gpa.NewOwnHandler(me, n)
 }
 
-func (n *nonceDKGImpl) Input(input gpa.Input) []gpa.Message {
+func (n *nonceDKGImpl) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
 		panic(xerrors.Errorf("only expect a nil input, got: %+v", input))
 	}
@@ -127,7 +127,7 @@ func (n *nonceDKGImpl) Input(input gpa.Input) []gpa.Message {
 	return n.tryHandleACSSTermination(n.myIdx, msgs)
 }
 
-func (n *nonceDKGImpl) Message(msg gpa.Message) []gpa.Message {
+func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *gpa.WrappingMsg:
 		switch msgT.Subsystem() {
@@ -157,29 +157,29 @@ func (n *nonceDKGImpl) StatusString() string {
 	return fmt.Sprintf("{ADKG:Nonce, acss: %s}", acssStats)
 }
 
-func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.WrappingMsg) []gpa.Message {
+func (n *nonceDKGImpl) handleACSSMessage(msg *gpa.WrappingMsg) gpa.OutMessages {
 	msgIndex := msg.Index()
 	msgs := n.wrapper.WrapMessages(msgWrapperACSS, msgIndex, n.acss[msgIndex].Message(msg.Wrapped()))
 	return n.tryHandleACSSTermination(msgIndex, msgs)
 }
 
-func (n *nonceDKGImpl) tryHandleACSSTermination(acssIndex int, msgs []gpa.Message) []gpa.Message {
+func (n *nonceDKGImpl) tryHandleACSSTermination(acssIndex int, msgs gpa.OutMessages) gpa.OutMessages {
 	out := n.acss[acssIndex].Output()
 	if out != nil && n.st[acssIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)
 		if !ok {
 			panic(xerrors.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs = append(msgs, &msgACSSOutput{me: n.me, index: acssIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
+		msgs.Add(&msgACSSOutput{me: n.me, index: acssIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
 	}
 	return msgs
 }
 
-func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message {
+func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) gpa.OutMessages {
 	j := acssOutput.index
 	if _, ok := n.st[j]; ok {
 		// Already set. Ignore the duplicate messages.
-		return gpa.NoMessages()
+		return nil
 	}
 	n.st[j] = acssOutput.priShare
 	n.stCommits[j] = acssOutput.commits
@@ -197,9 +197,9 @@ func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) []gpa.Message
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDKGImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Message {
+func (n *nonceDKGImpl) handleAgreementResult(msg *msgAgreementResult) gpa.OutMessages {
 	if n.agreedT != nil {
-		return gpa.NoMessages()
+		return nil
 	}
 
 	if len(msg.proposals) < n.n-n.f {
@@ -237,15 +237,15 @@ func (n *nonceDKGImpl) handleAgreementResult(msg *msgAgreementResult) []gpa.Mess
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDKGImpl) tryMakeFinalOutput() []gpa.Message {
+func (n *nonceDKGImpl) tryMakeFinalOutput() gpa.OutMessages {
 	if n.agreedT == nil {
-		return gpa.NoMessages()
+		return nil
 	}
 	var sumCommitPoly *share.PubPoly
 	sum := n.suite.Scalar().Zero()
 	for _, j := range n.agreedT {
 		if _, ok := n.st[j]; !ok {
-			return gpa.NoMessages()
+			return nil
 		}
 		sum.Add(sum.Clone(), n.st[j].V)
 		//
@@ -258,7 +258,7 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() []gpa.Message {
 			sumCommitPoly, err = sumCommitPoly.Add(jCommitPoly)
 			if err != nil {
 				n.log.Error("Unable to sum public commitments: %v", err)
-				return gpa.NoMessages()
+				return nil
 			}
 		}
 	}
@@ -269,5 +269,5 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() []gpa.Message {
 		PriShare: &share.PriShare{I: n.myIdx, V: sum},
 		Commits:  sumCommit,
 	}
-	return gpa.NoMessages()
+	return nil
 }
