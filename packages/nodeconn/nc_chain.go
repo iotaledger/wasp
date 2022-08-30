@@ -5,15 +5,15 @@ package nodeconn
 
 import (
 	"context"
-	"github.com/iotaledger/inx-app/nodebridge"
-	inx "github.com/iotaledger/inx/go"
 	"time"
 
-	hive_core "github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
+
+	hivecore "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/events"
 
 	"github.com/iotaledger/hive.go/logger"
-	_ "github.com/iotaledger/inx-app/inx"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -78,10 +78,9 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 		return err
 	}
 
-	var onMilestoneConfirmed *hive_core.Closure
-	onMilestoneConfirmed = hive_core.NewClosure(func(ms *nodebridge.Milestone) {
+	var onMilestoneConfirmed *hivecore.Closure
+	onMilestoneConfirmed = hivecore.NewClosure(func(ms *nodebridge.Milestone) {
 		metadata, err := ncc.nc.nodeBridge.BlockMetadata(*txMsgID)
-
 		if err != nil {
 			ncc.log.Errorf("publishing transaction %v: unexpected error trying to fetch blockMetadata: %s\nTrying again next milestone.", isc.TxID(txID), err)
 			return

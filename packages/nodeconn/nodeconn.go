@@ -74,9 +74,7 @@ func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeo
 	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
 	defer cancelContext()
 
-	// TODO: Move this into a separate plugin? (including the go nb.Run())
 	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
-
 	if err != nil {
 		panic(err)
 	}
@@ -258,7 +256,6 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 		Payload(tx).
 		Tips(ctx, nc.nodeClient).
 		Build()
-
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
 	}
