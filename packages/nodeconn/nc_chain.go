@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 
 	"github.com/iotaledger/hive.go/logger"
+	_ "github.com/iotaledger/inx-app/inx"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
