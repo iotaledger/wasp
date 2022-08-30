@@ -328,9 +328,15 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 				return xerrors.Errorf("failed to promote msg: %w", err)
 			}
 		}
-		
+
 		if metadataResp.ShouldReattach {
+			block, err := nc.nodeBridge.Block(*blockID)
+			if err != nil {
+				return xerrors.Errorf("failed to get block for reattachment: %w", err)
+			}
+
 			nc.log.Debugf("reattaching block: %v", block)
+
 			err = nc.doPoW(ctx, block)
 			if err != nil {
 				return err
