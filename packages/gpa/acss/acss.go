@@ -135,6 +135,8 @@ type acssImpl struct {
 	log           *logger.Logger
 }
 
+var _ gpa.GPA = &acssImpl{}
+
 func New(
 	suite suites.Suite, // Ed25519
 	peers []gpa.NodeID, // Participating nodes in a specific order.
@@ -191,7 +193,7 @@ func New(
 
 // Input for the algorithm is the secret to share.
 // It can be provided by the dealer only.
-func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
+func (a *acssImpl) Input(input gpa.Input) gpa.OutMessages {
 	if a.me != a.dealer {
 		panic(xerrors.Errorf("only dealer can initiate the sharing"))
 	}
@@ -202,7 +204,7 @@ func (a *acssImpl) Input(input gpa.Input) []gpa.Message {
 }
 
 // Receive all the messages and route them to the appropriate handlers.
-func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
+func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch m := msg.(type) {
 	case *gpa.WrappingMsg:
 		switch m.Subsystem() {
@@ -236,7 +238,7 @@ func (a *acssImpl) Message(msg gpa.Message) []gpa.Message {
 // >
 // > // party i (including the dealer)
 // > RBC(C||E)
-func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
+func (a *acssImpl) handleInput(secretToShare kyber.Scalar) gpa.OutMessages {
 	pubKeys := make([]kyber.Point, 0)
 	for _, peerID := range a.peerIdx {
 		pubKeys = append(pubKeys, a.peerPKs[peerID])
@@ -260,20 +262,20 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) []gpa.Message {
 //
 // > // party i (including the dealer)
 // > RBC(C||E)
-func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) []gpa.Message {
+func (a *acssImpl) handleRBCMessage(m *gpa.WrappingMsg) gpa.OutMessages {
 	wasOut := a.rbc.Output() != nil // To send the msgRBCCEOutput message once (for perf reasons).
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Message(m.Wrapped()))
 	return a.tryHandleRBCTermination(wasOut, msgs)
 }
 
-func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gpa.OutMessages {
 	if out := a.rbc.Output(); !wasOut && out != nil {
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
 			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
-		msgs = append(msgs, &msgRBCCEOutput{me: a.me, payload: outParsed})
+		msgs.Add(&msgRBCCEOutput{me: a.me, payload: outParsed})
 	}
 	return msgs
 }
@@ -285,10 +287,10 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs []gpa.Message) []gp
 // >   send <IMPLICATE, i, skᵢ> to all parties
 // > else:
 // >   send <OK>
-func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
+func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) gpa.OutMessages {
 	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
-		return gpa.NoMessages()
+		return nil
 	}
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
@@ -312,14 +314,14 @@ func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) []gpa.Message {
 
 // > on receiving <OK> from n-f parties:
 // >   send <READY> to all parties
-func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
+func (a *acssImpl) handleVoteOK(m *msgVote) gpa.OutMessages {
 	a.voteOKRecv[m.sender] = true
 	count := len(a.voteOKRecv)
 	if !a.voteREADYSent && count >= (a.n-a.f) {
 		a.voteREADYSent = true
 		return a.broadcastVote(msgVoteREADY, gpa.NoMessages())
 	}
-	return gpa.NoMessages()
+	return nil
 }
 
 // > on receiving <READY> from f+1 parties:
@@ -329,7 +331,7 @@ func (a *acssImpl) handleVoteOK(m *msgVote) []gpa.Message {
 // >   if sᵢ is valid:
 // >     out = true
 // >     output sᵢ
-func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
+func (a *acssImpl) handleVoteREADY(m *msgVote) gpa.OutMessages {
 	a.voteREADYRecv[m.sender] = true
 	count := len(a.voteREADYRecv)
 	msgs := gpa.NoMessages()
@@ -343,10 +345,10 @@ func (a *acssImpl) handleVoteREADY(m *msgVote) []gpa.Message {
 
 // It is possible that we are receiving IMPLICATE/RECOVER messages before our RBC is completed.
 // We store these messages for processing after that, if RBC is not done and process it otherwise.
-func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) []gpa.Message {
+func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) gpa.OutMessages {
 	if a.rbcOut == nil {
 		a.pendingIRMsgs = append(a.pendingIRMsgs, m)
-		return gpa.NoMessages()
+		return nil
 	}
 	switch m.kind {
 	case msgImplicateRecoverKindIMPLICATE:
@@ -358,7 +360,7 @@ func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) []gpa.
 	}
 }
 
-func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMessages {
 	//
 	// Only process the IMPLICATE/RECOVER messages, if this node has RBC completed.
 	if a.rbcOut == nil {
@@ -375,12 +377,12 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Messa
 			// >       return
 			//
 			if a.output {
-				msgs = append(msgs, a.handleImplicate(m)...)
+				msgs.AddAll(a.handleImplicate(m))
 			} else {
 				postponedIRMsgs = append(postponedIRMsgs, m)
 			}
 		case msgImplicateRecoverKindRECOVER:
-			msgs = append(msgs, a.handleRecover(m)...)
+			msgs.AddAll(a.handleRecover(m))
 		default:
 			panic(xerrors.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
 		}
@@ -399,17 +401,17 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs []gpa.Message) []gpa.Messa
 // >       return
 //
 // NOTE: We assume `if out == true:` stands for a wait for such condition.
-func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
+func (a *acssImpl) handleImplicate(m *msgImplicateRecover) gpa.OutMessages {
 	peerIndex := a.peerIndex(m.sender)
 	if peerIndex == -1 {
 		a.log.Warnf("implicate received from unknown peer: %v", m.sender)
-		return gpa.NoMessages()
+		return nil
 	}
 	//
 	// Check message duplicates.
 	if _, ok := a.implicateRecv[m.sender]; ok {
 		// Received the implicate before, just ignore it.
-		return gpa.NoMessages()
+		return nil
 	}
 	a.implicateRecv[m.sender] = true
 	//
@@ -417,13 +419,13 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
 	secret, err := crypto.CheckImplicate(a.suite, a.rbcOut.PubKey, a.peerPKs[m.sender], m.data)
 	if err != nil {
 		a.log.Warnf("Invalid implication received: %v", err)
-		return gpa.NoMessages()
+		return nil
 	}
 	_, err = crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, secret)
 	if err == nil {
 		// if we are able to decrypt the share, the implication is not correct
 		a.log.Warnf("encrypted share is valid")
-		return gpa.NoMessages()
+		return nil
 	}
 	//
 	// Create the reveal message.
@@ -440,25 +442,25 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) []gpa.Message {
 // >       sᵢ = SSS.Recover(T, f+1, n)(i)
 // >       out = true
 // >       output sᵢ
-func (a *acssImpl) handleRecover(m *msgImplicateRecover) []gpa.Message {
+func (a *acssImpl) handleRecover(m *msgImplicateRecover) gpa.OutMessages {
 	if a.output {
 		// Ignore the RECOVER messages, if we are done with the output.
-		return gpa.NoMessages()
+		return nil
 	}
 	peerIndex := a.peerIndex(m.sender)
 	if peerIndex == -1 {
 		a.log.Warnf("Recover received from unexpected sender: %v", m.sender)
-		return gpa.NoMessages()
+		return nil
 	}
 	if _, ok := a.recoverRecv[m.sender]; ok {
 		a.log.Warnf("Recover was already received from %v", m.sender)
-		return gpa.NoMessages()
+		return nil
 	}
 
 	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, m.data)
 	if err != nil {
 		a.log.Warnf("invalid secret revealed")
-		return gpa.NoMessages()
+		return nil
 	}
 	a.recoverRecv[m.sender] = peerSecret
 
@@ -478,33 +480,33 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) []gpa.Message {
 		}
 		a.outS = myPriShare
 		a.output = true
-		return gpa.NoMessages()
+		return nil
 	}
 
-	return gpa.NoMessages()
+	return nil
 }
 
-func (a *acssImpl) broadcastVote(voteKind msgVoteKind, msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) broadcastVote(voteKind msgVoteKind, msgs gpa.OutMessages) gpa.OutMessages {
 	for i := range a.peerIdx {
-		msgs = append(msgs, &msgVote{sender: a.me, recipient: a.peerIdx[i], kind: voteKind})
+		msgs.Add(&msgVote{sender: a.me, recipient: a.peerIdx[i], kind: voteKind})
 	}
 	return msgs
 }
 
-func (a *acssImpl) broadcastImplicate(reason error, msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) broadcastImplicate(reason error, msgs gpa.OutMessages) gpa.OutMessages {
 	a.log.Warnf("Sending implicate because of: %v", reason)
 	implicate := crypto.Implicate(a.suite, a.rbcOut.PubKey, a.mySK)
 	return a.broadcastImplicateRecover(msgImplicateRecoverKindIMPLICATE, implicate, msgs)
 }
 
-func (a *acssImpl) broadcastRecover(msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) broadcastRecover(msgs gpa.OutMessages) gpa.OutMessages {
 	secret := crypto.Secret(a.suite, a.rbcOut.PubKey, a.mySK)
 	return a.broadcastImplicateRecover(msgImplicateRecoverKindRECOVER, secret, msgs)
 }
 
-func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, data []byte, msgs []gpa.Message) []gpa.Message {
+func (a *acssImpl) broadcastImplicateRecover(kind msgImplicateKind, data []byte, msgs gpa.OutMessages) gpa.OutMessages {
 	for i := range a.peerIdx {
-		msgs = append(msgs, &msgImplicateRecover{kind: kind, recipient: a.peerIdx[i], i: a.myIdx, data: data})
+		msgs.Add(&msgImplicateRecover{kind: kind, recipient: a.peerIdx[i], i: a.myIdx, data: data})
 	}
 	return msgs
 }

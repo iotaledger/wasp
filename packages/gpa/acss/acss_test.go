@@ -113,14 +113,14 @@ type silentNode struct {
 
 var _ gpa.GPA = &silentNode{}
 
-func (s *silentNode) Input(input gpa.Input) []gpa.Message {
+func (s *silentNode) Input(input gpa.Input) gpa.OutMessages {
 	// Return the messages, if that's a dealer, otherwise the execution is not meaningful.
 	return s.nested.Input(input)
 }
 
-func (s *silentNode) Message(msg gpa.Message) []gpa.Message {
+func (s *silentNode) Message(msg gpa.Message) gpa.OutMessages {
 	// Just drop all the received messages.
-	return gpa.NoMessages()
+	return nil
 }
 
 func (s *silentNode) Output() gpa.Output {
