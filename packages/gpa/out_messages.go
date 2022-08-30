@@ -78,17 +78,26 @@ func (omi *outMessagesImpl) addElem(elem *outMessagesElem) {
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) Done() OutMessages {
+	if omi == nil {
+		panic("trying to close nil OutMessages")
+	}
 	omi.done = true
 	return omi
 }
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) Count() int {
+	if omi == nil {
+		return 0
+	}
 	return omi.count
 }
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) Iterate(callback func(msg Message) error) error {
+	if omi == nil {
+		return nil
+	}
 	for elem := omi.head; elem != nil; elem = elem.next {
 		if elem.msg != nil {
 			if err := callback(elem.msg); err != nil {
@@ -113,6 +122,9 @@ func (omi *outMessagesImpl) Iterate(callback func(msg Message) error) error {
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) MustIterate(callback func(msg Message)) {
+	if omi == nil {
+		return
+	}
 	for elem := omi.head; elem != nil; elem = elem.next {
 		if elem.msg != nil {
 			callback(elem.msg)
@@ -130,6 +142,9 @@ func (omi *outMessagesImpl) MustIterate(callback func(msg Message)) {
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) AsArray() []Message {
+	if omi == nil {
+		return nil
+	}
 	out := make([]Message, omi.count)
 	pos := 0
 	omi.MustIterate(func(msg Message) {
