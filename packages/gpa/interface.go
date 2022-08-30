@@ -55,8 +55,8 @@ type OutMessages interface {
 // Generic interface for functional style distributed algorithms.
 // GPA stands for Generic Pure Algorithm.
 type GPA interface {
-	Input(inp Input) OutMessages
-	Message(msg Message) OutMessages
+	Input(inp Input) OutMessages     // Can return nil for NoMessages.
+	Message(msg Message) OutMessages // Can return nil for NoMessages.
 	Output() Output
 	StatusString() string // Status of the protocol as a string.
 	UnmarshalMessage(data []byte) (Message, error)

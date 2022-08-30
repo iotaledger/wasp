@@ -26,6 +26,9 @@ func NoMessages() OutMessages {
 
 // Implements the OutMessages interface.
 func (omi *outMessagesImpl) Add(msg Message) OutMessages {
+	if msg == nil {
+		panic("trying to add nil message, is that a mistake?")
+	}
 	if omi.done {
 		panic("out messages marked as done")
 	}
@@ -39,7 +42,7 @@ func (omi *outMessagesImpl) AddMany(msgs []Message) OutMessages {
 	if omi.done {
 		panic("out messages marked as done")
 	}
-	if len(msgs) == 0 {
+	if msgs == nil || len(msgs) == 0 {
 		return omi
 	}
 	omi.addElem(&outMessagesElem{msgs: msgs, next: nil})
@@ -55,7 +58,7 @@ func (omi *outMessagesImpl) AddAll(msgs OutMessages) OutMessages {
 	if omi == msgs {
 		panic("cannot append self to itself")
 	}
-	if msgs.Count() == 0 {
+	if msgs == nil || msgs.Count() == 0 {
 		return omi
 	}
 	omi.addElem(&outMessagesElem{out: msgs.Done(), next: nil})

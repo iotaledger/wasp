@@ -37,7 +37,7 @@ func (tr *testRound) Message(msg Message) OutMessages {
 		panic(xerrors.Errorf("duplicate message"))
 	}
 	tr.received[from] = true
-	return NoMessages()
+	return nil
 }
 
 func (tr *testRound) Output() Output {

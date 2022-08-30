@@ -70,7 +70,10 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 				nids = append(nids, nid)
 			}
 			nid := nids[rand.Intn(len(nids))]
-			tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]).AsArray())...)
+			newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]).AsArray())
+			if newMsgs != nil {
+				tc.msgs = append(tc.msgs, newMsgs...)
+			}
 			delete(tc.inputs, nid)
 		}
 		//
@@ -81,7 +84,10 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 			nid := msg.Recipient()
 			tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
 			if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
-				tc.msgs = append(tc.msgs, tc.setMessageSender(nid, tc.nodes[nid].Message(msg).AsArray())...)
+				newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(msg).AsArray())
+				if newMsgs != nil {
+					tc.msgs = append(tc.msgs, newMsgs...)
+				}
 			}
 		}
 	}
@@ -115,6 +121,9 @@ func (tc *TestContext) OutOfMessagesPredicate() func() bool {
 }
 
 func (tc *TestContext) setMessageSender(sender NodeID, msgs []Message) []Message {
+	if msgs == nil {
+		return nil
+	}
 	for i := range msgs {
 		msgs[i].SetSender(sender)
 	}

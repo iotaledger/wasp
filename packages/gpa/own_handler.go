@@ -46,6 +46,9 @@ func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
 }
 
 func (o *OwnHandler) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
+	if msgs == nil {
+		return outMsgs
+	}
 	msgs.MustIterate(func(msg Message) {
 		if msg.Recipient() == o.me {
 			msg.SetSender(o.me)

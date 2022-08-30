@@ -18,11 +18,11 @@ func MakeTestSilentNode() GPA {
 }
 
 func (s *silentNode) Input(input Input) OutMessages {
-	return NoMessages()
+	return nil
 }
 
 func (s *silentNode) Message(msg Message) OutMessages {
-	return NoMessages()
+	return nil
 }
 
 func (s *silentNode) Output() Output {

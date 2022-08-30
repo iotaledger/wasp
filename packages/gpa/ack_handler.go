@@ -172,6 +172,9 @@ func (a *ackHandler) handleBatchMsg(msgBatch *ackHandlerBatch) OutMessages {
 }
 
 func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
+	if msgs == nil {
+		return nil
+	}
 	groupedMsgs := map[NodeID][]Message{}
 	msgs.MustIterate(func(msg Message) {
 		msgRecipient := msg.Recipient()

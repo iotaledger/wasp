@@ -26,6 +26,9 @@ func (w *MsgWrapper) WrapMessage(subsystem byte, index int, msg Message) Message
 }
 
 func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs []Message) []Message {
+	if msgs == nil {
+		return nil
+	}
 	wrapped := make([]Message, len(msgs))
 	for i := range msgs {
 		wrapped[i] = w.WrapMessage(subsystem, index, msgs[i])
