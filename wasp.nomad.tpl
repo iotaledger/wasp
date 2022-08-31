@@ -1,6 +1,11 @@
 variable "wasp_config" {
   default = <<EOH
 {
+    "debug": {
+      "rawblocksEnabled": true,
+      "rawblocksDir": "{{ env "NOMAD_TASK_DIR" }}/blocks"
+    },
+
 	"database": {
 		"directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb"
 	},
