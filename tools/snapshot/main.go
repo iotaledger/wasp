@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
@@ -22,16 +23,15 @@ func main() {
 		fmt.Printf("%s\n", usage)
 		os.Exit(1)
 	}
+
+	//parameters.L1ForTesting.Protocol.Bech32HRP = "rms"
+	//parameters.InitL1(parameters.L1ForTesting)
+
 	cmd := os.Args[1]
 	param := os.Args[2]
 	switch cmd {
 	case "-create", "--create":
-		chainID, err := isc.ChainIDFromString(param)
-		if err != nil {
-			fmt.Printf("error: %v\n", err)
-			os.Exit(1)
-		}
-		createSnapshot(chainID)
+		createSnapshot(param)
 	case "-scanfile", "--scanfile":
 		scanFile(param)
 	case "-restoredb", "--restoredb":
@@ -48,6 +48,15 @@ func main() {
 	}
 }
 
+func dbdirFromSnapshotFile(fname string) string {
+	psplit := strings.Split(fname, ".")
+	if len(psplit) < 1 {
+		fmt.Printf("cannot parse directory name\n")
+		os.Exit(1)
+	}
+	return psplit[0]
+}
+
 func scanFile(fname string) *snapshot.FileProperties {
 	fmt.Printf("scaning snapshot file %s\n", fname)
 	tm := util.NewTimer()
@@ -57,7 +66,7 @@ func scanFile(fname string) *snapshot.FileProperties {
 		os.Exit(1)
 	}
 	fmt.Printf("scan file took %v\n", tm.Duration())
-	fmt.Printf("Chain ID: %s\n", prop.ChainID)
+	fmt.Printf("Chain ID (implied from directory name): %s\n", dbdirFromSnapshotFile(prop.FileName))
 	fmt.Printf("State index: %d\n", prop.StateIndex)
 	fmt.Printf("Timestamp: %v\n", prop.TimeStamp)
 	fmt.Printf("Number of records: %d\n", prop.NumRecords)
@@ -67,12 +76,12 @@ func scanFile(fname string) *snapshot.FileProperties {
 }
 
 func restoreDb(prop *snapshot.FileProperties) {
+	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
 	if err != nil {
 		fmt.Printf("error: %d\n", err)
 		os.Exit(1)
 	}
-	dbDir := prop.ChainID.String()
 	if _, err := os.Stat(dbDir); !os.IsNotExist(err) {
 		fmt.Printf("directory %s already exists. Can't create new database\n", dbDir)
 		os.Exit(1)
@@ -121,12 +130,12 @@ func verify(prop *snapshot.FileProperties) {
 		fmt.Printf("error: %d\n", err)
 		os.Exit(1)
 	}
-	dbDir := prop.ChainID.String()
+	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		fmt.Printf("directory %s does not exists\n", dbDir)
 		os.Exit(1)
 	}
-	fmt.Printf("verifying database for chain ID %s\n", prop.ChainID)
+	fmt.Printf("verifying database for chain ID/dbDir %s\n", dbDir)
 
 	db, err := dbmanager.NewDB(dbDir)
 	if err != nil {
@@ -146,7 +155,7 @@ func verify(prop *snapshot.FileProperties) {
 		os.Exit(1)
 	}
 	if !prop.ChainID.Equals(chainID) {
-		fmt.Printf("chain IDs in db and in file do not match the state in the database: %s != %s\n", chainID, prop.ChainID)
+		fmt.Printf("chain IDs in db and in file do not match the state in the database")
 		os.Exit(1)
 	}
 
@@ -199,13 +208,12 @@ func verify(prop *snapshot.FileProperties) {
 	fmt.Printf("success: file %s match the database\n", prop.FileName)
 }
 
-func createSnapshot(chainID *isc.ChainID) {
-	dbDir := chainID.String()
+func createSnapshot(dbDir string) {
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		fmt.Printf("directory %s does not exists\n", dbDir)
 		os.Exit(1)
 	}
-	fmt.Printf("creating shapshot for chain ID %s\n", chainID)
+	fmt.Printf("creating shapshot for directory/chain ID %s\n", dbDir)
 
 	db, err := dbmanager.NewDB(dbDir)
 	if err != nil {
@@ -223,7 +231,7 @@ func createSnapshot(chainID *isc.ChainID) {
 		os.Exit(1)
 	}
 
-	fname := fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
+	fname := fmt.Sprintf("%s.%d.snapshot", dbDir, stateIndex)
 	fmt.Printf("will be writing to file %s\n", fname)
 
 	kvwriter, err := kv.CreateKVStreamFile(fname)
