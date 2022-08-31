@@ -12,7 +12,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20220623193802-86a373581cc1
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.3
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.8
-	github.com/iotaledger/trie.go v0.0.0-20220826130533-9c2d263b052b
+	github.com/iotaledger/trie.go v0.0.0-20220831125128-ee0850058e60
 	github.com/knadh/koanf v1.4.2-0.20220512043835-4112a7258008
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.21.0
