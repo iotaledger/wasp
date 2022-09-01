@@ -17,7 +17,7 @@ keywords:
 The state of the chain consists of:
 
 - A ledger of accounts owning IOTA digital assets (base tokens, native tokens and NFTs). The chain acts as a custodian for those funds on behalf of each account's owner.
-- A collection of arbitrary key/value pairs (the _data state_) that contains use case-specific data stored by the smart contracts in the chain.
+- A collection of arbitrary key/value pairs (the _data state_) that contains usecase-specific data stored by the smart contracts in the chain.
 
 The state of the chain is an append-only (immutable) data structure maintained by the distributed consensus of its validators.
 

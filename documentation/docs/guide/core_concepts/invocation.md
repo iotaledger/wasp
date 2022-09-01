@@ -54,9 +54,9 @@ Due to the shorter delay, off-ledger requests are preferred over on-ledger reque
 
 ## Gas
 
-Gas is used to express the "cost" of running a request in a chain. Each operaton (arithmetics, write to disk, dispatch events, etc) has an associated gas cost.
+Gas is used to express the "cost" of running a request in a chain. Each operation (arithmetics, write to disk, dispatch events, etc) has an associated gas cost.
 
-In order for users to specify how much they're willing to pay for a request, they need to specify a `GasBudget` in the request. This gas buget is the "maximum of operations that this request can execute", and will be charged as a fee based on the chain's current [Fee Policy](core_contracts/governance.md#fee-policy).
+In order for users to specify how much they're willing to pay for a request, they need to specify a `GasBudget` in the request. This gas budget is the "maximum of operations that this request can execute", and will be charged as a fee based on the chain's current [Fee Policy](core_contracts/governance.md#fee-policy).
 
 The funds to cover the gas used will be charged directly from the user's on-chain account.
 

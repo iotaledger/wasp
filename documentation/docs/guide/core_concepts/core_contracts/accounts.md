@@ -26,7 +26,7 @@ The `accounts` contract provides functions to deposit and withdraw tokens, infor
 
 ### `deposit()`
 
-A no-op that has the side effect of crediting any transfered tokens to the sender's account.
+A no-op that has the side effect of crediting any transferred tokens to the sender's account.
 
 :::note
 As with every call, the gas fee is debited from the L2 account right after
@@ -90,7 +90,7 @@ When destroying tokens, the tokens to be destroyed must be provided via allowanc
 
 ### `foundryDestroy(s SerialNumber)`
 
-Destroys a given foundry output on L1, reinbursing the storage deposit to the caller.
+Destroys a given foundry output on L1, reimbursing the storage deposit to the caller.
 The foundry must be owned by the caller.
 
 :::warning
@@ -154,7 +154,7 @@ A map of [`TokenID`](#tokenid) => `big.Int`. The L1 base tokens is represented b
 
 Returns a list of all agent IDs that own assets on the chain.
 
-Returns: a map of `AgentiD` => `0xff`.
+Returns: a map of `AgentID` => `0xff`.
 
 ### `getNativeTokenIDRegistry()`
 

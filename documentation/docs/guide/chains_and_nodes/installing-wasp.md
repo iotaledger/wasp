@@ -12,7 +12,7 @@ keywords:
 
 In this page you can find information on how to use Wasp by cloning the repository and building the application. The instructions below will build both the Wasp node and the Wasp CLI to interact with the node from the command line.
 
-Alternativaly, you can run a Wasp node using one of the provided docker setups:
+Alternatively, you can run a Wasp node using one of the provided docker setups:
 
 - [Wasp standalone Docker image](docker_standalone.md)
 - pre-configured local [Wasp and Hornet node setup using Docker Compose](../development_tools/docker_preconfigured.md).

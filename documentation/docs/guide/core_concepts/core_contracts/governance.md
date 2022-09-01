@@ -122,7 +122,7 @@ Adds a node to the list of candidates.
 Parameters:
 
 - `ip` (`[]byte`) The public key of the node to be added
-- `ic` (`[]byte`) The certficate, which is a signed binary containing both the node public key, and their L1 address
+- `ic` (`[]byte`) The certificate, which is a signed binary containing both the node public key, and their L1 address
 - `ia` (`string`) The API base URL for the node
 - `i` (optional `bool` - default: `false`): Whether the candidate node is being added to be part of the committee, or just an access node
 
@@ -135,7 +135,7 @@ Removes a node from the list of candidates.
 Parameters:
 
 - `ip` (`[]byte`) The public key of the node to be removed
-- `ic` (`[]byte`) The certficate of the node to be removed
+- `ic` (`[]byte`) The certificate of the node to be removed
 
 Can only be invoked by the access node owner (verified via the Certificate field).
 

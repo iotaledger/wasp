@@ -28,7 +28,7 @@ Thus, the L2 ledger is a mapping of Agent ID => balances of L2 assets.
 Any L1 address can be the owner of a L2 account.
 The Agent ID of an L1 address is just the address, e.g. `iota1pr7vescn4nqc9lpvv37unzryqc43vw5wuf2zx8tlq2wud0369hjjugg54mf`.
 
-Tokens in an address account can only be moved trhough a request signed by the private key of the L1 address.
+Tokens in an address account can only be moved through a request signed by the private key of the L1 address.
 
 ### Smart Contract
 
