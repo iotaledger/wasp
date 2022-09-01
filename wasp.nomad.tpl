@@ -82,7 +82,7 @@ variable "wasp_config" {
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
   "l1": {
-    "apiAddress": "https://api.testnet.shimmer.network"
+    "inxAddress": "10.0.0.10:29980"
   },
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
