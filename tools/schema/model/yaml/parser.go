@@ -55,11 +55,22 @@ func Parse(in []byte) *Node {
 				elts := strings.Split(val, ":")
 				cur.Val = strings.TrimSpace(elts[0])
 				value := strings.TrimSpace(elts[1])
-				// TODO note that value string could be quoted! What if there is only one quote?
-				// what about special characters in value string?
-				if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
-					value = value[1 : len(value)-1]
+				// TODO  what about special characters in value string?
+				if len(value) >= 2 {
+					if value[0] == '"' && value[len(value)-1] == '"' {
+						value = value[1 : len(value)-1]
+					} else if value[0] == '"' || value[len(value)-1] == '"' {
+						fmt.Printf("value is not enclosed by \" at line: %d.\n", lineNum)
+						return nil
+					}
+					if len(value) >= 2 && value[0] == '\'' && value[len(value)-1] == '\'' {
+						value = value[1 : len(value)-1]
+					} else if value[0] == '\'' || value[len(value)-1] == '\'' {
+						fmt.Printf("value is not enclosed by ' at line: %d.\n", lineNum)
+						return nil
+					}
 				}
+
 				cur.Contents = append(cur.Contents,
 					&Node{
 						Val:  value,
