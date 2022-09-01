@@ -57,15 +57,16 @@ func Parse(in []byte) *Node {
 				value := strings.TrimSpace(elts[1])
 				// TODO  what about special characters in value string?
 				if len(value) >= 2 {
-					if value[0] == '"' && value[len(value)-1] == '"' {
-						value = value[1 : len(value)-1]
-					} else if value[0] == '"' || value[len(value)-1] == '"' {
+					last := len(value) - 1
+					if value[0] == '"' && value[last] == '"' {
+						value = value[1:last]
+					} else if value[0] == '"' || value[last] == '"' {
 						fmt.Printf("value is not enclosed by \" at line: %d.\n", lineNum)
 						return nil
 					}
-					if len(value) >= 2 && value[0] == '\'' && value[len(value)-1] == '\'' {
-						value = value[1 : len(value)-1]
-					} else if value[0] == '\'' || value[len(value)-1] == '\'' {
+					if value[0] == '\'' && value[last] == '\'' {
+						value = value[1:last]
+					} else if value[0] == '\'' || value[last] == '\'' {
 						fmt.Printf("value is not enclosed by ' at line: %d.\n", lineNum)
 						return nil
 					}
