@@ -169,7 +169,7 @@ func verify(prop *snapshot.FileProperties) {
 		os.Exit(1)
 	}
 
-	const reportEach = 100_000
+	const reportEach = 10_000
 	var count int
 	var errW error
 
@@ -295,6 +295,7 @@ func extractBlocks(dbDir string, from uint32, targetDir string) {
 		indices = append(indices, blockIndex)
 		return true
 	})
+	mustNoErr(err)
 	sort.Slice(indices, func(i, j int) bool {
 		return indices[i] < indices[j]
 	})
