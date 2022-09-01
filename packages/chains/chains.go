@@ -137,11 +137,13 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		chainKVStore,
 		c.networkProvider,
 		defaultRegistry,
+		defaultRegistry,
 		c.processorConfig,
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
 		chainMetrics,
+		defaultRegistry,
 		chainWAL,
 	)
 	if newChain == nil {

@@ -78,29 +78,6 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 		return err
 	}
 
-	var onMilestoneConfirmed *hivecore.Closure
-	onMilestoneConfirmed = hivecore.NewClosure(func(ms *nodebridge.Milestone) {
-		metadata, err := ncc.nc.nodeBridge.BlockMetadata(*txMsgID)
-		if err != nil {
-			ncc.log.Errorf("publishing transaction %v: unexpected error trying to fetch blockMetadata: %s\nTrying again next milestone.", isc.TxID(txID), err)
-			return
-		}
-
-		switch metadata.LedgerInclusionState {
-		case inx.BlockMetadata_LEDGER_INCLUSION_STATE_INCLUDED:
-			ncc.inclusionStates.Trigger(txID, "included")
-			ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
-		default:
-		}
-
-		ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Detach(onMilestoneConfirmed)
-	})
-
-	ncc.nc.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(onMilestoneConfirmed)
-
-	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
-
-	// TODO should promote/re-attach logic not be blocking?
 	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID)
 }
 

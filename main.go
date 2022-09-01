@@ -1,6 +1,11 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	_ "net/http/pprof"
+	"runtime"
+
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/banner"
@@ -25,6 +30,13 @@ import (
 )
 
 func main() {
+	// TODO: Remove before merging to develop
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	}()
+	runtime.SetMutexProfileFraction(1)
+	runtime.SetBlockProfileRate(1)
+
 	params := parameters.Init()
 
 	plugins := node.Plugins(

@@ -64,7 +64,7 @@ func nextState(
 	vs state.VirtualStateAccess,
 	consumedOutput *iotago.AliasOutput,
 	consumedOutputID iotago.OutputID,
-	_ time.Time,
+	timeAssumption time.Time,
 	reqs ...isc.Request,
 ) (state.VirtualStateAccess, *iotago.TransactionEssence, []byte) {
 	nextvs := vs.Copy()
@@ -79,7 +79,7 @@ func nextState(
 
 	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
 	require.NoError(t, err)
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, &prev)
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, timeAssumption.Add(time.Duration(len(reqs))*time.Nanosecond), &prev)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)

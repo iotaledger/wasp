@@ -1,6 +1,11 @@
 variable "wasp_config" {
   default = <<EOH
 {
+    "debug": {
+      "rawblocksEnabled": true,
+      "rawblocksDir": "{{ env "NOMAD_TASK_DIR" }}/blocks"
+    },
+
 	"database": {
 		"directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb"
 	},
@@ -21,55 +26,89 @@ variable "wasp_config" {
 	},
 	"node": {
 		"disablePlugins": [],
-		"enablePlugins": ["metrics"]
+		"enablePlugins": []
 	},
-	"webapi": {
-		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
-		"adminWhitelist": ${adminWhitelist}
-	},
+  "webapi": {
+    "auth": {
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": ${adminWhitelist}
+      },
+      "scheme": "none"
+    },
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}"
+  },
 	"metrics": {
-        "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
-        "enabled": true
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
+    "enabled": true
 	},
-	"dashboard": {
-		"auth": {
-			"scheme": "basic",
-			"username": "wasp",
-			"password": "wasp"
-		},
-		"bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_dashboard" }}"
-	},
+  "dashboard": {
+    "auth": {
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": ${adminWhitelist}
+      },
+      "scheme": "basic"
+    },
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_dashboard" }}"
+  },
+  "users": {
+    "wasp": {
+      "password": "wasp",
+      "permissions": [
+        "dashboard",
+        "api",
+        "chain.read",
+        "chain.write"
+      ]
+    }
+  },
 	"peering":{
 		"port": {{ env "NOMAD_PORT_peering" }},
 		"netid": "{{ env "NOMAD_ADDR_peering" }}"
 	},
   "profiling":{
-    "enabled": true
+    "enabled": true,
+    "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
-	"nodeconn": {
-		"address": "goshimmer.sc.iota.org:5000"
-	},
+  "l1": {
+    "apiAddress": "https://api.testnet.shimmer.network"
+  },
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
-	}
+	},
+  "wal": {
+    "directory": "wal",
+    "enabled": true
+  }
 }
 EOH
 }
 
-job "isc-evm" {
+job "isc-${workspace}" {
   datacenters = ["hcloud"]
 
-  update {
-    max_parallel      = 1
-    health_check      = "task_states"
-    min_healthy_time  = "1s"
-    healthy_deadline  = "30s"
-    progress_deadline = "5m"
-    auto_revert       = true
-    auto_promote      = true
-    canary            = 1
-    stagger           = "15s"
-  }
+  // update {
+  //   max_parallel      = 1
+  //   health_check      = "task_states"
+  //   min_healthy_time  = "1s"
+  //   healthy_deadline  = "30s"
+  //   progress_deadline = "5m"
+  //   auto_revert       = true
+  //   auto_promote      = true
+  //   canary            = 1
+  //   stagger           = "15s"
+  // }
 
   group "node" {
     ephemeral_disk {
@@ -97,6 +136,10 @@ job "isc-evm" {
       port "metrics" {
         host_network = "private"
       }
+      port "pprof" {
+        host_network = "private"
+        to = 6060
+      }
     }
 
     task "wasp" {
@@ -112,6 +155,7 @@ job "isc-evm" {
           "nanomsg",
           "peering",
           "metrics",
+          "pprof",
         ]
 
         labels = {
@@ -119,14 +163,14 @@ job "isc-evm" {
           "wasp"                   = "node"
         }
 
-        logging {
-          type = "gelf"
-          config {
-            gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
-            tag                   = "wasp"
-            labels                = "wasp"
-          }
-        }
+        // logging {
+        //   type = "gelf"
+        //   config {
+        //     gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
+        //     tag                   = "wasp"
+        //     labels                = "wasp"
+        //   }
+        // }
 
         auth {
           username       = "${auth.username}"
@@ -202,10 +246,21 @@ job "isc-evm" {
       port "metrics" {
         host_network = "private"
       }
+      port "profiling" {
+        host_network = "private"
+      }
+      port "pprof" {
+        host_network = "private"
+        static = 6060
+      }
     }
 
     task "wasp" {
       driver = "docker"
+
+      env {
+        PPROF_ADDR = "$${NOMAD_PORT_pprof}"
+      }
 
       config {
         network_mode = "host"
@@ -221,21 +276,23 @@ job "isc-evm" {
           "nanomsg",
           "peering",
           "metrics",
+          "pprof",
         ]
+
 
         labels = {
           "co.elastic.metrics/raw" = "[{\"metricsets\":[\"collector\"],\"module\":\"prometheus\",\"period\":\"10s\",\"metrics_path\":\"/metrics\",\"hosts\":[\"$${NOMAD_ADDR_metrics}\"]}]"
           "wasp"                   = "access"
         }
 
-        logging {
-          type = "gelf"
-          config {
-            gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
-            tag                   = "wasp"
-            labels                = "wasp"
-          }
-        }
+        // logging {
+        //   type = "gelf"
+        //   config {
+        //     gelf-address          = "tcp://elastic-logstash-beats-logstash.service.consul:12201"
+        //     tag                   = "wasp"
+        //     labels                = "wasp"
+        //   }
+        // }
 
         auth {
           username       = "${auth.username}"
@@ -271,6 +328,10 @@ job "isc-evm" {
         tags = ["wasp", "metrics"]
         port = "metrics"
       }
+      service {
+        tags = ["wasp", "pprof"]
+        port = "pprof"
+      }
 
       template {
         data        = var.wasp_config
@@ -279,8 +340,8 @@ job "isc-evm" {
       }
 
       resources {
-        memory = 3000
-        cpu    = 2000
+        memory = 8000
+        cpu    = 6000
       }
     }
   }

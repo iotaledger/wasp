@@ -67,7 +67,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	// test chain balance command
 	out = w.Run("chain", "balance", agentID)
 	// check that the chain balance of owner is > 0
-	r := regexp.MustCompile(`(?m)base tokens\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
+	r := regexp.MustCompile(`(?m)base\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
 	require.Len(t, r, 2)
 	bal, err := strconv.ParseInt(r[1], 10, 64)
 	require.NoError(t, err)
@@ -90,10 +90,10 @@ func TestWaspCLI1Chain(t *testing.T) {
 func checkBalance(t *testing.T, out []string, expected int) {
 	amount := 0
 	for _, line := range out {
-		r := regexp.MustCompile(`(?m)base tokens\s+(\d+)`).FindStringSubmatch(line)
+		r := regexp.MustCompile(`(?m)base( tokens)?\s+(\d+)`).FindStringSubmatch(line)
 		if r != nil {
 			var err error
-			amount, err = strconv.Atoi(r[1])
+			amount, err = strconv.Atoi(r[2])
 			require.NoError(t, err)
 			break
 		}

@@ -102,7 +102,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
 	outStr = strings.TrimRight(outStr, "\n")
-	return strings.Split(outStr, "\n")
+	outLines := strings.Split(outStr, "\n")
+	w.T.Logf("OUTPUT #lines=%v", len(outLines))
+	for _, outLine := range outLines {
+		w.T.Logf("OUTPUT: %v", outLine)
+	}
+	return outLines
 }
 
 func (w *WaspCLITest) Run(args ...string) []string {
