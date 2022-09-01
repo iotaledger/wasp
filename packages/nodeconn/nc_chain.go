@@ -164,7 +164,7 @@ func (ncc *ncChain) handleUnlockableOutputs(ledgerOutput *inx.LedgerOutput) {
 		return
 	}
 
-	if unlockAddress.Address != ncc.chainID.AsAddress() {
+	if !unlockAddress.Address.Equal(ncc.chainID.AsAddress()) {
 		return
 	}
 
@@ -204,7 +204,7 @@ func (ncc *ncChain) handleAliasOutput(ledgerOutput *inx.LedgerOutput) {
 		aliasID = iotago.AliasIDFromOutputID(outputID)
 	}
 
-	if aliasID != *ncc.chainID.AsAliasID() {
+	if !aliasID.Matches(*ncc.chainID.AsAliasID()) {
 		return
 	}
 
