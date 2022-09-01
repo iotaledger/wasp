@@ -16,16 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 )
 
-const usage = "USAGE: snapshot [-create | -scanfile | -restoredb] <filename>"
+const usage = `USAGE: snap-cli [-create | -scanfile | -restoredb | -verify] <filename>
+or
+USAGE: snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>`
 
 func main() {
 	if len(os.Args) < 3 {
 		fmt.Printf("%s\n", usage)
 		os.Exit(1)
 	}
-
-	//parameters.L1ForTesting.Protocol.Bech32HRP = "rms"
-	//parameters.InitL1(parameters.L1ForTesting)
 
 	cmd := os.Args[1]
 	param := os.Args[2]
@@ -42,6 +41,9 @@ func main() {
 		fmt.Printf("verifying state against snapshot file %s\n", param)
 		prop := scanFile(param)
 		verify(prop)
+	case "-validate", "--validate":
+		fmt.Printf("'validate' option is NOT IMPLEMENTED\n")
+		os.Exit(1)
 	default:
 		fmt.Printf("%s\n", usage)
 		os.Exit(1)
@@ -51,7 +53,7 @@ func main() {
 func dbdirFromSnapshotFile(fname string) string {
 	psplit := strings.Split(fname, ".")
 	if len(psplit) < 1 {
-		fmt.Printf("cannot parse directory name\n")
+		fmt.Printf("error: cannot parse directory name\n")
 		os.Exit(1)
 	}
 	return psplit[0]
@@ -59,6 +61,8 @@ func dbdirFromSnapshotFile(fname string) string {
 
 func scanFile(fname string) *snapshot.FileProperties {
 	fmt.Printf("scaning snapshot file %s\n", fname)
+	dbDir := dbdirFromSnapshotFile(fname)
+	fmt.Printf("assuming chainID and DB directory name is (taken from file name): %s\n", dbDir)
 	tm := util.NewTimer()
 	prop, err := snapshot.ScanFile(fname)
 	if err != nil {
@@ -66,7 +70,7 @@ func scanFile(fname string) *snapshot.FileProperties {
 		os.Exit(1)
 	}
 	fmt.Printf("scan file took %v\n", tm.Duration())
-	fmt.Printf("Chain ID (implied from directory name): %s\n", dbdirFromSnapshotFile(prop.FileName))
+	fmt.Printf("Chain ID (implied from directory name): %s\n", dbDir)
 	fmt.Printf("State index: %d\n", prop.StateIndex)
 	fmt.Printf("Timestamp: %v\n", prop.TimeStamp)
 	fmt.Printf("Number of records: %d\n", prop.NumRecords)
@@ -241,7 +245,7 @@ func createSnapshot(dbDir string) {
 	}
 	defer func() { _ = kvwriter.File.Close() }()
 
-	const reportEach = 100_000
+	const reportEach = 10_000
 	var errW error
 
 	tm := util.NewTimer()

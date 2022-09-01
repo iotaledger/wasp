@@ -37,7 +37,7 @@ For example for chainID = `210fc7bb818639ac48a4c6afa2f1581a8b9525e2` snapshot fi
 
 #### Create snapshot file
 
-`snapshot -create <chainID>`
+`snap-cli -create <chainID>`
 
 The command expect database of the chain in the current directory. The chain must be deactivated or the node must be stopped.
 
@@ -49,7 +49,7 @@ The above, however, does not violate consistency of the database. It is always g
 
 #### Scan snapshot file
 
-`snapshot -scan <chainID>` scans the file, checks the formatting and extracts main parameters of the state stored in the snapshot itself (not in the file name):
+`snap-cli -scan <chainID>` scans the file, checks the formatting and extracts main parameters of the state stored in the snapshot itself (not in the file name):
 
 * chainID
 * state index
@@ -58,7 +58,7 @@ The above, however, does not violate consistency of the database. It is always g
 
 #### Restore database from the snapshot file
 
-`snapshot -restoredb <snapshot file>`
+`snap-cli -restoredb <snapshot file>`
 
 The command scans file and rebuilds chain's database from it. It may take some time. 
 The command does the following:
@@ -68,7 +68,7 @@ The command does the following:
 
 #### Verify snapshot file against database
 
-`snapshot -verify <snapshot file>`
+`snap-cli -verify <snapshot file>`
 
 The command assumes databae is already restored. The command does the follwing:
 * reads key/value from the file one-by-one.
@@ -79,11 +79,11 @@ The command may be lengthy because proof generation and verification are expensi
 The `-verify` command is rarely needed practice if the database is restored from snapshot. 
 It is mostly used for testing and benchmarking.
 
-#### Validating the snapshot
+#### Validating the snapshot TBD
 
 **TODO not yet implemented** because it requires special WEB APIs to L1 and L2 (Wasp) nodes.
 
-`snapshot -validate <chainID> <L1 API endpoint> <L2 API endpoint>`
+`snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>`
 
 The purpose of the command is to make sure the restored state in the database is indeed a valid state snapshot of the chain.
 
@@ -99,7 +99,7 @@ To perform the `-validate` operation we need the following WEB APIs:
 
 ## Benchmarks
 
-The benchmarks were obtained by using `snapshot` tool on randomly 
+The benchmarks were obtained by using `snap-cli` tool on randomly 
 generated state data (max key len 64 byte, max value 128 bytes): 
 one with ~1 mil of key/value pairs, another with 10 mil of key/value pairs. 
 On the laptop 4 core, 2.6 GHz with 32 MB RAM and SDD HD.
