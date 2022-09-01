@@ -26,7 +26,7 @@ const usage = `USAGE: snap-cli [-create | -scanfile | -restoredb | -verify] <fil
 or
 USAGE: snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>
 or
-USAGE: snap-cli -extractblocks <chainID> <from> [<to>]
+USAGE: snap-cli -extractblocks <chainID> <fromIndex> <target directory>
 `
 
 func main() {
@@ -52,14 +52,10 @@ func main() {
 		fmt.Printf("'validate' option is NOT IMPLEMENTED\n")
 		os.Exit(1)
 	case "-extractblocks":
-		ensureMinimumArgs(4)
+		ensureMinimumArgs(5)
 		fromInt, err := strconv.Atoi(os.Args[3])
 		mustNoErr(err)
-		targetDir := ""
-		if len(os.Args) > 4 {
-			targetDir = os.Args[4]
-		}
-		extractBlocks(param, uint32(fromInt), targetDir)
+		extractBlocks(param, uint32(fromInt), os.Args[4])
 	default:
 		fmt.Printf("%s\n", usage)
 		os.Exit(1)
