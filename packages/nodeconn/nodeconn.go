@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	hivecore "github.com/iotaledger/hive.go/core/events"
+
 	"github.com/iotaledger/inx-app/nodebridge"
 	inx "github.com/iotaledger/inx/go"
 
@@ -33,6 +35,8 @@ type ChainL1Config struct {
 	UseRemotePoW bool
 }
 
+type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
+
 // nodeconn implements chain.NodeConnection.
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
@@ -41,7 +45,6 @@ type nodeConn struct {
 	ctxCancel     context.CancelFunc
 	chains        map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock    sync.RWMutex
-	mqttClient    *nodeclient.EventAPIClient
 	indexerClient nodeclient.IndexerClient
 	milestones    *events.Event
 	metrics       nodeconnmetrics.NodeConnectionMetrics
@@ -49,6 +52,8 @@ type nodeConn struct {
 	config        ChainL1Config
 	nodeBridge    *nodebridge.NodeBridge
 	nodeClient    *nodeclient.Client
+
+	onLedgerUpdate *events.Event
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -93,26 +98,22 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 
 	setL1ProtocolParams(nodeInfo)
 
-	mqttClient, err := inxNodeClient.EventAPI(ctxWithTimeout)
-	if err != nil {
-		panic(xerrors.Errorf("error getting node event client: %w", err))
-	}
-
 	indexerClient, err := inxNodeClient.Indexer(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
 
 	nc := nodeConn{
-		ctx:        ctx,
-		ctxCancel:  ctxCancel,
-		chains:     make(map[string]*ncChain),
-		chainsLock: sync.RWMutex{},
-
-		mqttClient:    mqttClient,
+		ctx:           ctx,
+		ctxCancel:     ctxCancel,
+		chains:        make(map[string]*ncChain),
+		chainsLock:    sync.RWMutex{},
 		indexerClient: indexerClient,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
+		}),
+		onLedgerUpdate: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(_ *nodebridge.LedgerUpdate))(params[0].(*nodebridge.LedgerUpdate))
 		}),
 		metrics:    nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log:        log.Named("nc"),
@@ -121,15 +122,39 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 		nodeClient: inxNodeClient,
 	}
 
-	go nc.run()
-	for {
-		if nc.mqttClient.MQTTClient.IsConnected() {
-			break
+	// TODO: Handle error properly, move this handler into some background worker instead of an anonymous thread.
+	go func() {
+		err := nb.ListenToLedgerUpdates(ctx, 0, 0, func(update *nodebridge.LedgerUpdate) error {
+			if len(update.Created) > 0 {
+				nc.log.Infof("Got new ledger updates\n")
+
+				go nc.onLedgerUpdate.Trigger(update)
+			}
+
+			return nil
+		})
+		if err != nil {
+			log.Panic(err)
 		}
-		nc.log.Debugf("waiting until mqtt client is connected")
-		time.Sleep(1 * time.Second)
-	}
+	}()
+	nc.enableMilestoneTrigger()
+
 	return &nc
+}
+
+func (nc *nodeConn) enableMilestoneTrigger() {
+	nc.nodeBridge.Events.LatestMilestoneChanged.Hook(hivecore.NewClosure(func(metadata *nodebridge.Milestone) {
+		milestone := nodeclient.MilestoneInfo{
+			MilestoneID: metadata.MilestoneID.String(),
+			Index:       metadata.Milestone.Index,
+			Timestamp:   metadata.Milestone.Timestamp,
+		}
+
+		nc.log.Debugf("Milestone received, index=%v, timestamp=%v", milestone.Index, milestone.Timestamp)
+
+		nc.metrics.GetInMilestone().CountLastMessage(milestone)
+		nc.milestones.Trigger(&milestone)
+	}))
 }
 
 func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
@@ -286,7 +311,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 	// wait until tx is confirmed
 	// poll the node by getting `BlockMetadataByBlockID`
 	for {
-		metadataResp, err := nc.nodeBridge.BlockMetadata(*blockID)
+		metadataResp, err := nc.nodeBridge.BlockMetadata(ctx, *blockID)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -333,7 +358,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 		}
 
 		if metadataResp.ShouldReattach {
-			block, err := nc.nodeBridge.Block(*blockID)
+			block, err := nc.nodeBridge.Block(ctx, *blockID)
 			if err != nil {
 				return xerrors.Errorf("failed to get block for reattachment: %w", err)
 			}

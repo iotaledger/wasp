@@ -7,10 +7,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/nodebridge"
 	inx "github.com/iotaledger/inx/go"
 
-	hivecore "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/events"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -97,6 +97,11 @@ func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 	ncc.stateOutputHandler(id, out)
 }
 
+func shouldBeProcessed(out iotago.Output) bool {
+	// only outputs without SDRC should be processed.
+	return !out.UnlockConditionSet().HasStorageDepositReturnCondition()
+}
+
 func (ncc *ncChain) queryChainUTXOs() {
 	bech32Addr := ncc.chainID.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 	queries := []nodeclient.IndexerQuery{
@@ -115,6 +120,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 		}
 		// TODO what should be an adequate timeout for each of these queries?
 		ctxWithTimeout, cancelContext = newCtx(ncc.nc.ctx)
+
 		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
@@ -145,64 +151,64 @@ func (ncc *ncChain) queryChainUTXOs() {
 	cancelContext()
 }
 
-func shouldBeProcessed(out iotago.Output) bool {
-	// only outputs without SDRC should be processed.
-	return !out.UnlockConditionSet().HasStorageDepositReturnCondition()
+func (ncc *ncChain) handleUnlockableOutputs(ledgerOutput *inx.LedgerOutput) {
+	output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, ncc.nc.nodeBridge.ProtocolParameters())
+	if err != nil {
+		return
+	}
+
+	unlockConditions := output.UnlockConditionSet()
+	unlockAddress := unlockConditions.Address()
+
+	if unlockAddress == nil {
+		return
+	}
+
+	if unlockAddress.Address != ncc.chainID.AsAddress() {
+		return
+	}
+
+	if shouldBeProcessed(output) {
+		outputID := ledgerOutput.GetOutputId().Unwrap()
+		ncc.outputHandler(outputID, output)
+	}
 }
 
 func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
-	init := true
-	for {
-		if init {
-			init = false
-		} else {
-			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainID.String())
-			time.Sleep(500 * time.Millisecond) // Delay between retries.
+	ncc.nc.onLedgerUpdate.Attach(events.NewClosure(func(update *nodebridge.LedgerUpdate) {
+		for _, ledgerOutput := range update.Created {
+			ncc.handleUnlockableOutputs(ledgerOutput)
 		}
+	}))
 
-		//
-		// Subscribe to the new outputs first.
-		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
-			ncc.chainID.AsAddress(),
-			parameters.L1().Protocol.Bech32HRP,
-			nodeclient.UnlockConditionAny,
-		)
-		if subInfo.Error() != nil {
-			ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
-		}
-		//
-		// Then fetch all the existing unspent outputs owned by the chain.
-		ncc.queryChainUTXOs()
+	ncc.queryChainUTXOs()
+}
 
-		//
-		// Then receive all the subscribed new outputs.
-		for {
-			select {
-			case outResponse := <-eventsCh:
-				out, err := outResponse.Output()
-				if err != nil {
-					ncc.log.Warnf("error while receiving unspent output: %v", err)
-					continue
-				}
-				if outResponse.Metadata == nil {
-					ncc.log.Warnf("error while receiving unspent output, metadata is nil")
-					continue
-				}
-				tid, err := outResponse.Metadata.TxID()
-				if err != nil {
-					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
-					continue
-				}
-				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
-				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
-				if shouldBeProcessed(out) {
-					ncc.outputHandler(outID, out)
-				}
-			case <-ncc.nc.ctx.Done():
-				return
-			}
-		}
+func (ncc *ncChain) handleAliasOutput(ledgerOutput *inx.LedgerOutput) {
+	output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, ncc.nc.nodeBridge.ProtocolParameters())
+	if err != nil {
+		return
 	}
+
+	aliasOutput, success := output.(*iotago.AliasOutput)
+
+	if !success {
+		return
+	}
+
+	outputID := ledgerOutput.GetOutputId().Unwrap()
+	aliasID := aliasOutput.AliasID
+
+	if aliasID.Empty() {
+		// Use implicit AliasID
+		aliasID = iotago.AliasIDFromOutputID(outputID)
+	}
+
+	if aliasID != *ncc.chainID.AsAliasID() {
+		return
+	}
+
+	ncc.stateOutputHandler(outputID, aliasOutput)
 }
 
 func (ncc *ncChain) queryLatestChainStateUTXO() {
@@ -210,54 +216,29 @@ func (ncc *ncChain) queryLatestChainStateUTXO() {
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
 	cancelContext()
+
 	if err != nil {
 		ncc.log.Panicf("error while fetching chain state output: %v", err)
 	}
+
 	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
 	ncc.stateOutputHandler(*stateOutputID, stateOutput)
 }
 
 func (ncc *ncChain) subscribeToChainStateUpdates() {
-	//
-	// Subscribe to the new outputs first.
-	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
-	if subInfo.Error() != nil {
-		ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
-	}
-
-	//
-	// Then fetch the latest chain state UTXO.
-	ncc.queryLatestChainStateUTXO()
-
-	//
-	// Then receive all the subscribed state outputs.
-	for {
-		select {
-		case outResponse := <-eventsCh:
-			out, err := outResponse.Output()
-			if err != nil {
-				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
-				continue
-			}
-			if outResponse.Metadata == nil {
-				ncc.log.Warnf("error while receiving chain state unspent output, metadata is nil")
-				continue
-			}
-			tid, err := outResponse.Metadata.TxID()
-			if err != nil {
-				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
-				continue
-			}
-			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
-			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
-			ncc.stateOutputHandler(outID, out)
-		case <-ncc.nc.ctx.Done():
-			return
+	ncc.nc.onLedgerUpdate.Attach(events.NewClosure(func(update *nodebridge.LedgerUpdate) {
+		for _, ledgerOutput := range update.Created {
+			ncc.handleAliasOutput(ledgerOutput)
 		}
-	}
+	}))
+
+	ncc.queryLatestChainStateUTXO()
 }
 
 func (ncc *ncChain) run() {
+	ncc.log.Infof("Subscribing to ledger updates")
+
+	// TODO: We most likely can unify both handlers into one LedgerUpdateEvent instead of two.
 	go ncc.subscribeToChainStateUpdates()
 	go ncc.subscribeToChainOwnedUTXOs()
 }

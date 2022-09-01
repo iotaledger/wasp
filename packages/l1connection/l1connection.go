@@ -73,6 +73,7 @@ func NewClient(config Config, log *logger.Logger, timeout ...time.Duration) Clie
 		ctx:           ctx,
 		ctxCancel:     ctxCancel,
 		indexerClient: indexerClient,
+		nodeAPIClient: nodeAPIClient,
 		log:           log.Named("nc"),
 		config:        config,
 	}
