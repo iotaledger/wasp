@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -20,34 +24,54 @@ import (
 
 const usage = `USAGE: snap-cli [-create | -scanfile | -restoredb | -verify] <filename>
 or
-USAGE: snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>`
+USAGE: snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>
+or
+USAGE: snap-cli -extractblocks <chainID> <fromIndex> <target directory>
+`
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Printf("%s\n", usage)
-		os.Exit(1)
-	}
-
+	ensureMinimumArgs(3)
 	cmd := os.Args[1]
 	param := os.Args[2]
 	switch cmd {
-	case "-create", "--create":
+	case "-create":
 		createSnapshot(param)
-	case "-scanfile", "--scanfile":
+	case "-scanfile":
 		scanFile(param)
-	case "-restoredb", "--restoredb":
+	case "-restoredb":
 		fmt.Printf("creating db from snapshot file %s\n", param)
 		prop := scanFile(param)
 		restoreDb(prop)
-	case "-verify", "--verify":
+	case "-verify":
 		fmt.Printf("verifying state against snapshot file %s\n", param)
 		prop := scanFile(param)
 		verify(prop)
-	case "-validate", "--validate":
+	case "-validate":
+		ensureMinimumArgs(4)
+		// TODO implement me
 		fmt.Printf("'validate' option is NOT IMPLEMENTED\n")
 		os.Exit(1)
+	case "-extractblocks":
+		ensureMinimumArgs(5)
+		fromInt, err := strconv.Atoi(os.Args[3])
+		mustNoErr(err)
+		extractBlocks(param, uint32(fromInt), os.Args[4])
 	default:
 		fmt.Printf("%s\n", usage)
+		os.Exit(1)
+	}
+}
+
+func ensureMinimumArgs(n int) {
+	if len(os.Args) < n {
+		fmt.Printf("%s\n", usage)
+		os.Exit(1)
+	}
+}
+
+func mustNoErr(err error) {
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -67,10 +91,7 @@ func scanFile(fname string) *snapshot.FileProperties {
 	fmt.Printf("assuming chainID and DB directory name is (taken from file name): %s\n", dbDir)
 	tm := util.NewTimer()
 	prop, err := snapshot.ScanFile(fname)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	fmt.Printf("scan file took %v\n", tm.Duration())
 	fmt.Printf("Chain ID (implied from directory name): %s\n", dbDir)
 	fmt.Printf("State index: %d\n", prop.StateIndex)
@@ -84,20 +105,14 @@ func scanFile(fname string) *snapshot.FileProperties {
 func restoreDb(prop *snapshot.FileProperties) {
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
-	if err != nil {
-		fmt.Printf("error: %d\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	if _, err := os.Stat(dbDir); !os.IsNotExist(err) {
 		fmt.Printf("directory %s already exists. Can't create new database\n", dbDir)
 		os.Exit(1)
 	}
-	fmt.Printf("creating new database for chain ID %s\n", prop.ChainID)
+	fmt.Printf("creating new database for chain ID %s\n", dbDir)
 	db, err := dbmanager.NewDB(dbDir)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	st := state.NewVirtualState(db.NewStore())
 
 	const persistEach = 1_000_000
@@ -116,10 +131,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 		}
 		return true
 	})
-	if err != nil {
-		fmt.Printf("error: %d\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	if err = st.Save(); errW != nil {
 		fmt.Printf("error: %d\n", err)
 		os.Exit(1)
@@ -132,10 +144,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 
 func verify(prop *snapshot.FileProperties) {
 	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
-	if err != nil {
-		fmt.Printf("error: %d\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		fmt.Printf("directory %s does not exists\n", dbDir)
@@ -144,10 +153,8 @@ func verify(prop *snapshot.FileProperties) {
 	fmt.Printf("verifying database for chain ID/dbDir %s\n", dbDir)
 
 	db, err := dbmanager.NewDB(dbDir)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
+
 	st := state.NewVirtualState(db.NewStore())
 	c := state.RootCommitment(st.TrieNodeStore())
 	fmt.Printf("root commitment is %s\n", c)
@@ -156,16 +163,13 @@ func verify(prop *snapshot.FileProperties) {
 	err = panicutil.CatchPanic(func() {
 		chainID = st.ChainID()
 	})
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
+	mustNoErr(err)
 	if !prop.ChainID.Equals(chainID) {
 		fmt.Printf("chain IDs in db and in file do not match the state in the database")
 		os.Exit(1)
 	}
 
-	const reportEach = 100_000
+	const reportEach = 10_000
 	var count int
 	var errW error
 
@@ -201,14 +205,8 @@ func verify(prop *snapshot.FileProperties) {
 		}
 		return true
 	})
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
-	if errW != nil {
-		fmt.Printf("error: %v\n", errW)
-		os.Exit(1)
-	}
+	mustNoErr(err)
+	mustNoErr(errW)
 	fmt.Printf("verified total %d records. It took %v\n", count, tm.Duration())
 
 	fmt.Printf("success: file %s match the database\n", prop.FileName)
@@ -273,4 +271,51 @@ func createSnapshot(dbDir string) {
 	}
 	count, byteCount := kvwriter.Stats()
 	fmt.Printf("wrote TOTAL %d key/value pairs, %d bytes. It took %v\n", count, byteCount, tm.Duration())
+}
+
+func extractBlocks(dbDir string, from uint32, targetDir string) {
+	fmt.Printf("Database directory/chainID: %s\n", dbDir)
+	fmt.Printf("Extracting blocks starting from #%d\n", from)
+
+	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+		fmt.Printf("directory %s does not exists\n", dbDir)
+		os.Exit(1)
+	}
+	fmt.Printf("using database for chain ID/dbDir %s\n", dbDir)
+	fmt.Printf("writing files to directory '%s'\n", targetDir)
+
+	db, err := dbmanager.NewDB(dbDir)
+	mustNoErr(err)
+	err = os.MkdirAll(targetDir, 0o777)
+	mustNoErr(err)
+
+	indices := make([]uint32, 0)
+	store := db.NewStore()
+	err = state.ForEachBlockIndex(store, func(blockIndex uint32) bool {
+		indices = append(indices, blockIndex)
+		return true
+	})
+	mustNoErr(err)
+	sort.Slice(indices, func(i, j int) bool {
+		return indices[i] < indices[j]
+	})
+	var data []byte
+	for _, idx := range indices {
+		if idx < from {
+			continue
+		}
+		data, err = state.LoadBlockBytes(store, idx)
+		if err != nil {
+			fmt.Printf("error: failed to load block data for index #%d: %v\n", idx, err)
+			continue
+		}
+		fname := snapshot.BlockFileName(dbDir, idx, hashing.HashData(data))
+		fullName := path.Join(targetDir, fname)
+		err = os.WriteFile(fullName, data, 0o600)
+		if err != nil {
+			fmt.Printf("error: failed to write block data to file %s: %v\n", fullName, err)
+			continue
+		}
+		fmt.Printf("block #%d -> %s\n", idx, fullName)
+	}
 }
