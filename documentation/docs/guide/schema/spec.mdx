@@ -1,7 +1,7 @@
 ---
 keywords:
 - spec
-- meta-progamming
+- meta-programming
 - compile
 description: The spec of schema tool and how to develop schema tool.
 image: /img/logo/WASP_logo_dark.png
@@ -21,7 +21,7 @@ image: /img/logo/WASP_logo_dark.png
 ### model.SchemaDef
 
 `model.SchemaDef` is a intermediate object during the Smart Contract generation. An YAML file will be converted to `model.SchemaDef` object.
-During the conversion, each YAML attribute  except the top-level ones (`name`, `description`, `events`, `structs`, `typedefs`, `state`, `funcs`, `views`) will be converted into `DefElt`.
+During the conversion, each YAML attribute except the top-level ones (`name`, `description`, `events`, `structs`, `typedefs`, `state`, `funcs`, `views`) will be converted into `DefElt`.
 
 Therefore, for YAML tags `name`, `description`, the values of them will be converted into 2 independent `DefElt`.
 
@@ -333,7 +333,7 @@ $#if condition template [elseTemplate]
 
 `if` processes template when the named condition is true, and it processes the optional `elseTemplate` when the named condition is false
 
-`condition` is either the predifined conditions (explained as following) or a key that may exist in `keys`.
+`condition` is either the predefined conditions (explained as following) or a key that may exist in `keys`.
 If a key is presented, then `if` instruction would be used for check whether this key exists in `keys` or not. If the key exists, then `if` will return true, otherwise it will return false.
 
 And here are the predefined conditions.

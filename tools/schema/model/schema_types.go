@@ -5,7 +5,6 @@ package model
 
 import "fmt"
 
-// TODO describe schema details in docs
 type (
 	FieldMap       map[string]*Field
 	StringMap      map[string]string
