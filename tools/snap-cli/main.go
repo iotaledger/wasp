@@ -16,6 +16,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 )
 
+// implements 'snap-cli', a snapshot tool for Wasp databases
+
 const usage = `USAGE: snap-cli [-create | -scanfile | -restoredb | -verify] <filename>
 or
 USAGE: snap-cli -validate <chainID> <L1 API endpoint> <L2 API endpoint>`
