@@ -16,12 +16,13 @@ keywords:
 
 On the L1 Ledger, like with any DLT, we have **trustless** and **atomic** transfers of assets between addresses on the
 ledger.
+
 Tokens controlled by an address can be moved to another address by providing a valid signature using the private key
 that controls the source address.
 
 In IOTA Smart Contracts, [each chain has a L1 address](../states#digital-assets-on-the-chain) (also known as the _Chain
-ID_), which enables it to control L1 assets (base tokens, native tokens, and NFTs).
-The chain acts as a custodian of the L1 assets on behalf of different entities, providing a _L2 Ledger_.
+ID_) which enables it to control L1 assets (base tokens, native tokens and NFTs).
+The chain acts as a custodian of the L1 assets on behalf of different entities, thus providing a _L2 Ledger_.
 
 The L2 ledger is a collection of _on-chain accounts_ (sometimes called just _accounts_).
 L2 accounts can be owned by different entities, identified by a unique _Agent ID_.
@@ -33,7 +34,8 @@ The L2 ledger is a mapping of Agent ID => balances of L2 assets.
 
 Any L1 address can be the owner of a L2 account.
 The Agent ID of an L1 address is just the address,
-e.g., `iota1pr7vescn4nqc9lpvv37unzryqc43vw5wuf2zx8tlq2wud0369hjjugg54mf`.
+
+e.g. `iota1pr7vescn4nqc9lpvv37unzryqc43vw5wuf2zx8tlq2wud0369hjjugg54mf`.
 
 Tokens in an address account can only be moved through a request signed by the private key of the L1 address.
 
@@ -91,6 +93,7 @@ Two chains are deployed, with IDs `chainA` and `chainB`.
 
 There is also an address on the L1 Ledger: `iota1a2b3c4d`.
 This address controls 1337 base tokens and 42 `Red` native tokens on the L1 Ledger.
+
 The same address also controls 42 base tokens on `chainA` and 8 `Green` native tokens on `chainB`.
 
 So, the owner of the private key behind the address controls three different accounts: the L1 account and one L2 account

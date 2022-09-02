@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -187,11 +188,6 @@ func TestNotEnoughISCGas(t *testing.T) {
 	require.Equal(t, res.evmReceipt.Status, types.ReceiptStatusFailed)
 
 	// no changes should persist
-
-	// restore default gas price, so the view call doesn't fail
-	err = env.setGasRatio(evmtypes.DefaultGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
-	require.NoError(t, err)
-	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
 	require.EqualValues(t, 43, storage.retrieve())
 }
 
@@ -435,11 +431,24 @@ func TestSendBaseTokens(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	getAllowanceTo := func(target common.Address) *isc.Allowance {
+		var ret struct{ Allowance iscmagic.ISCAllowance }
+		env.MagicContract(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
+		return ret.Allowance.Unwrap()
+	}
+
+	// stored allowance should be == transfer
+	require.Equal(t, transfer, getAllowanceTo(iscTest.address).Assets.BaseTokens)
+
 	// attempt again
-	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+	const allAllowed = uint64(0)
+	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), allAllowed)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
 	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
+
+	// allowance should be empty now
+	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
 
 // this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM

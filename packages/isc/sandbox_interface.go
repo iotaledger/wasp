@@ -40,6 +40,8 @@ type SandboxBase interface {
 	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
 	// CallView calls another contract. Only calls view entry points
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
+	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
+	StateR() kv.KVStoreReader
 }
 
 type Params struct {

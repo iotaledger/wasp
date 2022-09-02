@@ -299,6 +299,7 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 
 	_, recipientAddress := newAccountWithL2Funds()
 	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
+	require.NoError(e.T, err)
 	value := big.NewInt(0)
 	gas := e.estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
@@ -306,7 +307,6 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 		Value: value,
 		Data:  callArguments,
 	})
-	require.NoError(e.T, err)
 	transferTx, err := types.SignTx(
 		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
 		e.Signer(),

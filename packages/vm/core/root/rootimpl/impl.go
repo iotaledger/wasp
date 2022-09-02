@@ -191,7 +191,7 @@ func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
 // - ParamData
 func findContract(ctx isc.SandboxView) dict.Dict {
 	hname := ctx.Params().MustGetHname(root.ParamHname)
-	rec := root.FindContract(ctx.State(), hname)
+	rec := root.FindContract(ctx.StateR(), hname)
 	ret := dict.New()
 	found := rec != nil
 	ret.Set(root.ParamContractFound, codec.EncodeBool(found))
@@ -202,7 +202,7 @@ func findContract(ctx isc.SandboxView) dict.Dict {
 }
 
 func getContractRecords(ctx isc.SandboxView) dict.Dict {
-	src := root.GetContractRegistryR(ctx.State())
+	src := root.GetContractRegistryR(ctx.StateR())
 
 	ret := dict.New()
 	dst := collections.NewMap(ret, root.StateVarContractRegistry)

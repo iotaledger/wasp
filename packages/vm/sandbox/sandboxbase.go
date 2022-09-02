@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -120,4 +121,8 @@ func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.
 		params = make(dict.Dict)
 	}
 	return s.Ctx.Call(contractHname, entryPoint, params, nil)
+}
+
+func (s *SandboxBase) StateR() kv.KVStoreReader {
+	return s.Ctx.StateReader()
 }

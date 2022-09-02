@@ -12,7 +12,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20220623193802-86a373581cc1
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220804174551-efbca20a83e4
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.4
-	github.com/iotaledger/trie.go v0.0.0-20220619075112-88616f0415b1
+	github.com/iotaledger/trie.go v0.0.0-20220831125128-ee0850058e60
 	github.com/knadh/koanf v1.4.2-0.20220512043835-4112a7258008
 	github.com/labstack/echo/v4 v4.7.2
 	github.com/libp2p/go-libp2p v0.21.0
@@ -201,7 +201,7 @@ require (
 )
 
 replace (
-	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
+	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef
 	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220809124259-a32cc1199f6b
 	// github.com/ethereum/go-ethereum => /home/jorge/dev/iota/go-ethereum
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go

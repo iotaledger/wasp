@@ -27,6 +27,7 @@ type BatchProposal struct {
 	AccessManaPledge        identity.ID
 	FeeDestination          isc.AgentID
 	SigShareOfStateOutputID tbls.SigShare
+	DSSNonceIndexProposal   util.BitVector
 }
 
 type consensusBatchParams struct {
@@ -81,6 +82,10 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if ret.SigShareOfStateOutputID, err = mu.ReadBytes(int(sigShareSize)); err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
+	if ret.DSSNonceIndexProposal, err = util.NewFixedSizeBitVectorFromMarshalUtil(mu); err != nil {
+		return nil, xerrors.Errorf(errFmt, err)
+	}
+	//
 	ret.RequestIDs = make([]isc.RequestID, size)
 	ret.RequestHashes = make([][32]byte, size)
 	for i := range ret.RequestIDs {
@@ -109,7 +114,8 @@ func (b *BatchProposal) Bytes() []byte {
 		WriteTime(b.TimeData).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).
-		WriteBytes(b.SigShareOfStateOutputID)
+		WriteBytes(b.SigShareOfStateOutputID).
+		Write(b.DSSNonceIndexProposal)
 	for i := range b.RequestIDs {
 		mu.Write(b.RequestIDs[i])
 		mu.WriteBytes(b.RequestHashes[i][:])

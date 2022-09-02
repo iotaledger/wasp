@@ -31,6 +31,8 @@ NOTE: this is alpha software, only suitable for testing purposes.`,
 }
 
 func init() {
+	rootCmd.AddCommand(completionCmd(rootCmd.Root().Name()))
+
 	authentication.Init(rootCmd)
 	log.Init(rootCmd)
 	config.Init(rootCmd)
