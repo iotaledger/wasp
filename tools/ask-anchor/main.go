@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 
@@ -15,8 +15,8 @@ import (
 
 const (
 	defaultBechPrefix = "rms"
-	getOutputIdUrl    = "https://api.testnet.shimmer.network/api/indexer/v1/outputs/alias/"
-	getAliasUrl       = "https://api.testnet.shimmer.network/api/core/v2/outputs/"
+	getOutputIdURL    = "https://api.testnet.shimmer.network/api/indexer/v1/outputs/alias/"
+	getAliasURL       = "https://api.testnet.shimmer.network/api/core/v2/outputs/"
 )
 
 func main() {
@@ -36,14 +36,14 @@ func main() {
 	fmt.Printf("chainid = %s\naliasID = %s\n", chainID, chainID.AsAliasID())
 
 	// get output ID for alias ID
-	body := mustGetUrl(getOutputIdUrl, chainID.AsAliasID().String())
+	body := mustGetURL(getOutputIdURL, chainID.AsAliasID().String())
 	var decoded map[string]any
 	err = json.Unmarshal(body, &decoded)
 	mustNoErr(err)
 
 	// get alias output by outputID
 	var parsed map[string]map[string]any
-	body = mustGetUrl(getAliasUrl, decoded["items"].([]any)[0].(string))
+	body = mustGetURL(getAliasURL, decoded["items"].([]any)[0].(string))
 	err = json.Unmarshal(body, &parsed)
 	mustNoErr(err)
 
@@ -65,14 +65,16 @@ func mustNoErr(err error) {
 	}
 }
 
-func mustGetUrl(url1, url2 string) []byte {
-	//fmt.Printf("mustGetUrl: %s\n", url)
+func mustGetURL(url1, url2 string) []byte {
 	resp, err := http.Get(url1 + url2)
 	mustNoErr(err)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
 	//We Read the response body on the line below.
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	mustNoErr(err)
-	//fmt.Printf("mustGetUrl result: %s\n", string(jsonPrettyPrint(body)))
 
 	return body
 }
