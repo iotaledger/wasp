@@ -29,11 +29,11 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (v2.0.0-beta.6)
-// https://github.com/gohornet/inx-mqtt (v1.0.0-beta.5)
-// https://github.com/gohornet/inx-indexer (v1.0.0-beta.5)
-// https://github.com/gohornet/inx-coordinator (v1.0.0-beta.5)
-// https://github.com/gohornet/inx-faucet (v1.0.0-beta.5) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (v2.0.0-beta.7)
+// https://github.com/iotaledger/inx-mqtt (v1.0.0-beta.6)
+// https://github.com/iotaledger/inx-indexer (v1.0.0-beta.6)
+// https://github.com/iotaledger/inx-coordinator (v1.0.0-beta.6)
+// https://github.com/iotaledger/inx-faucet (v1.0.0-beta.6) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 

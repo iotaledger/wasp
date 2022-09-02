@@ -1,6 +1,6 @@
 {
   "l1": {
-    "inxAddress": "localhost:9011"
+    "inxAddress": "localhost:9029"
   },
   "database": {
     "directory": "waspdb"
