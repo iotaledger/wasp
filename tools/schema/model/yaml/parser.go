@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+//nolint:funlen
 func Parse(in []byte) *Node {
 	var root Node
 	path := []*Node{&root} // Nodes in each hierarchy
