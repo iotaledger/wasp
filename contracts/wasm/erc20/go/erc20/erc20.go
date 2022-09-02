@@ -12,8 +12,8 @@ import (
 
 // Sets the allowance value for delegated account
 // inputs:
-//  - PARAM_DELEGATION: agentID
-//  - PARAM_AMOUNT: i64
+//   - PARAM_DELEGATION: agentID
+//   - PARAM_AMOUNT: i64
 func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 	delegation := f.Params.Delegation().Value()
 	amount := f.Params.Amount().Value()
@@ -26,9 +26,9 @@ func funcApprove(ctx wasmlib.ScFuncContext, f *ApproveContext) {
 
 // on_init is a constructor entry point. It initializes the smart contract with the
 // initial value of the token supply and the owner of that supply
-// - input:
-//   -- PARAM_SUPPLY must be nonzero positive integer. Mandatory
-//   -- PARAM_CREATOR is the AgentID where initial supply is placed. Mandatory
+//   - input:
+//     -- PARAM_SUPPLY must be nonzero positive integer. Mandatory
+//     -- PARAM_CREATOR is the AgentID where initial supply is placed. Mandatory
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	supply := f.Params.Supply().Value()
 	ctx.Require(supply > 0, "erc20.onInit.fail: wrong 'supply' parameter")

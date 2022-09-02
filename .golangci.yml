@@ -20,7 +20,7 @@ issues:
         - "`[0-9A-Za-z_.]+` - `[0-9A-Za-z_.]+` always receives `[0-9A-Za-z_.]+`" # unparam
         - "should have comment .*or be unexported" # revive
         - "exported: comment on exported" # revive
-        - "package-comments: package comment should be of the form" # revive
+        - "package-comments" # revive
         - "blank-imports" # revive
         - "var-naming: don't use leading k in Go names;" #revive
         - 'shadow: declaration of "err"' # govet
