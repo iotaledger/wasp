@@ -127,7 +127,8 @@ func (clu *Cluster) TrustAll() error {
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	committee := clu.Config.AllNodes()
-	minQuorum := len(committee)/2 + 1
+	maxFaulty := (len(committee) - 1) / 3
+	minQuorum := len(committee) - maxFaulty
 	quorum := len(committee) * 3 / 4
 	if quorum < minQuorum {
 		quorum = minQuorum
@@ -136,7 +137,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
-	cmt := util.MakeRange(0, committeeNodeCount)
+	cmt := util.MakeRange(0, committeeNodeCount-1) // End is inclusive for some reason.
 	quorum := uint16((2*len(cmt))/3 + 1)
 
 	address, err := clu.RunDKG(cmt, quorum)

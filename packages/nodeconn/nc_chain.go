@@ -57,6 +57,18 @@ func (ncc *ncChain) Close() {
 	// Nothing. The ncc.nc.ctx is used for that.
 }
 
+func (ncc *ncChain) handleMetadataUpdate(txID iotago.TransactionID, metaDataChange *nodeclient.BlockMetadataResponse) {
+	if metaDataChange.LedgerInclusionState != "" {
+		str, err := json.Marshal(metaDataChange)
+		if err != nil {
+			ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", isc.TxID(txID), err)
+		} else {
+			ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", isc.TxID(txID), str)
+		}
+		ncc.inclusionStates.Trigger(txID, metaDataChange.LedgerInclusionState)
+	}
+}
+
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
 	defer cancelContext()
@@ -70,30 +82,47 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	if err != nil {
 		return err
 	}
-	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
 	txMsgID, err := txMsg.ID()
 	if err != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
 	}
 	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
+	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
+
 	if subInfo.Error() != nil {
 		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", isc.TxID(txID), subInfo.Error())
 	}
+
 	go func() {
 		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", isc.TxID(txID))
-		for msgMetaChange := range msgMetaChanges {
-			if msgMetaChange.LedgerInclusionState != "" {
-				str, err := json.Marshal(msgMetaChange)
-				if err != nil {
-					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", isc.TxID(txID), err)
-				} else {
-					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", isc.TxID(txID), str)
+
+		for {
+			select {
+			case msgMetaChange := <-msgMetaChanges:
+				ncc.handleMetadataUpdate(txID, msgMetaChange)
+			case <-ctxWithTimeout.Done():
+				return
+			case <-time.After(20 * time.Second):
+				ncc.log.Debugf("FOUND A BLOCKING METADATA CHANNEL\n")
+
+				for i := 0; i < 10; i++ {
+					state, err := ncc.nc.nodeAPIClient.BlockMetadataByBlockID(ctxWithTimeout, txMsgID)
+					if err != nil {
+						ncc.log.Debugf("BlockMEtaDataByBlockId ERROR: %v\n", err)
+						time.Sleep(1 * time.Second)
+						continue
+					}
+
+					if state != nil && state.LedgerInclusionState != "" {
+						ncc.handleMetadataUpdate(txID, state)
+						return
+					}
+
+					time.Sleep(1 * time.Second)
 				}
-				ncc.inclusionStates.Trigger(txID, msgMetaChange.LedgerInclusionState)
 			}
 		}
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
 	}()
 
 	// TODO should promote/re-attach logic not be blocking?

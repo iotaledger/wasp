@@ -8,9 +8,15 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 )
+
+type SecretShare interface {
+	PriShare() *share.PriShare
+	Commitments() []kyber.Point
+}
 
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
@@ -27,10 +33,11 @@ type DKShare interface {
 	// Schnorr based crypto (for L1 signatures).
 	DSSPublicShares() []kyber.Point
 	DSSSharedPublic() kyber.Point
-	DSSSignShare(data []byte) (*dss.PartialSig, error)
+	DSSSignShare(data []byte, nonce SecretShare) (*dss.PartialSig, error)
 	DSSVerifySigShare(data []byte, sigshare *dss.PartialSig) error
-	DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error)
+	DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte, nonce SecretShare) ([]byte, error)
 	DSSVerifyMasterSignature(data, signature []byte) error
+	DSSSecretShare() SecretShare
 	//
 	// BLS based crypto (for randomness only.)
 	BLSSharedPublic() kyber.Point

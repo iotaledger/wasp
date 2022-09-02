@@ -6,6 +6,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -178,4 +179,8 @@ func ScanFile(fname string) (*FileProperties, error) {
 	}
 	ret.FileName = fname
 	return ret, nil
+}
+
+func BlockFileName(chainid string, index uint32, h hashing.HashValue) string {
+	return fmt.Sprintf("%08d.%s.%s.mut", index, h.String(), chainid)
 }
