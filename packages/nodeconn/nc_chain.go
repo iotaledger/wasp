@@ -7,12 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/inx-app/nodebridge"
-	inx "github.com/iotaledger/inx/go"
-
 	"github.com/iotaledger/hive.go/events"
-
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -151,66 +146,6 @@ func (ncc *ncChain) queryChainUTXOs() {
 	cancelContext()
 }
 
-func (ncc *ncChain) handleUnlockableOutputs(ledgerOutput *inx.LedgerOutput) {
-	output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, ncc.nc.nodeBridge.ProtocolParameters())
-	if err != nil {
-		return
-	}
-
-	unlockConditions := output.UnlockConditionSet()
-	unlockAddress := unlockConditions.Address()
-
-	if unlockAddress == nil {
-		return
-	}
-
-	if !unlockAddress.Address.Equal(ncc.chainID.AsAddress()) {
-		return
-	}
-
-	if shouldBeProcessed(output) {
-		outputID := ledgerOutput.GetOutputId().Unwrap()
-		ncc.outputHandler(outputID, output)
-	}
-}
-
-func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
-	ncc.nc.onLedgerUpdate.Attach(events.NewClosure(func(update *nodebridge.LedgerUpdate) {
-		for _, ledgerOutput := range update.Created {
-			ncc.handleUnlockableOutputs(ledgerOutput)
-		}
-	}))
-
-	ncc.queryChainUTXOs()
-}
-
-func (ncc *ncChain) handleAliasOutput(ledgerOutput *inx.LedgerOutput) {
-	output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, ncc.nc.nodeBridge.ProtocolParameters())
-	if err != nil {
-		return
-	}
-
-	aliasOutput, success := output.(*iotago.AliasOutput)
-
-	if !success {
-		return
-	}
-
-	outputID := ledgerOutput.GetOutputId().Unwrap()
-	aliasID := aliasOutput.AliasID
-
-	if aliasID.Empty() {
-		// Use implicit AliasID
-		aliasID = iotago.AliasIDFromOutputID(outputID)
-	}
-
-	if !aliasID.Matches(*ncc.chainID.AsAliasID()) {
-		return
-	}
-
-	ncc.stateOutputHandler(outputID, aliasOutput)
-}
-
 func (ncc *ncChain) queryLatestChainStateUTXO() {
 	// TODO what should be an adequate timeout for this query?
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
@@ -225,20 +160,19 @@ func (ncc *ncChain) queryLatestChainStateUTXO() {
 	ncc.stateOutputHandler(*stateOutputID, stateOutput)
 }
 
-func (ncc *ncChain) subscribeToChainStateUpdates() {
-	ncc.nc.onLedgerUpdate.Attach(events.NewClosure(func(update *nodebridge.LedgerUpdate) {
-		for _, ledgerOutput := range update.Created {
-			ncc.handleAliasOutput(ledgerOutput)
-		}
-	}))
+func (ncc *ncChain) HandleUnlockableOutput(outputID iotago.OutputID, output iotago.Output) {
+	if shouldBeProcessed(output) {
+		ncc.outputHandler(outputID, output)
+	}
+}
 
-	ncc.queryLatestChainStateUTXO()
+func (ncc *ncChain) HandleStateUpdate(outputID iotago.OutputID, output iotago.Output) {
+	ncc.stateOutputHandler(outputID, output)
 }
 
 func (ncc *ncChain) run() {
 	ncc.log.Infof("Subscribing to ledger updates")
 
-	// TODO: We most likely can unify both handlers into one LedgerUpdateEvent instead of two.
-	go ncc.subscribeToChainStateUpdates()
-	go ncc.subscribeToChainOwnedUTXOs()
+	go ncc.queryLatestChainStateUTXO()
+	go ncc.queryChainUTXOs()
 }

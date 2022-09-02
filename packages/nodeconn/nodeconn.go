@@ -14,12 +14,11 @@ import (
 	"time"
 
 	hivecore "github.com/iotaledger/hive.go/core/events"
-
-	"github.com/iotaledger/inx-app/nodebridge"
-	inx "github.com/iotaledger/inx/go"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -27,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -122,24 +122,51 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 		nodeClient: inxNodeClient,
 	}
 
-	// TODO: Handle error properly, move this handler into some background worker instead of an anonymous thread.
-	go func() {
-		err := nb.ListenToLedgerUpdates(ctx, 0, 0, func(update *nodebridge.LedgerUpdate) error {
-			if len(update.Created) > 0 {
-				nc.log.Infof("Got new ledger updates\n")
-
-				go nc.onLedgerUpdate.Trigger(update)
-			}
-
-			return nil
-		})
-		if err != nil {
-			log.Panic(err)
-		}
-	}()
+	go nc.subscribeToLedgerUpdates()
 	nc.enableMilestoneTrigger()
 
 	return &nc
+}
+
+func (nc *nodeConn) subscribeToLedgerUpdates() {
+	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
+	if err != nil {
+		nc.log.Panic(err)
+	}
+}
+
+func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
+	for _, ledgerOutput := range update.Created {
+		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			return err
+		}
+
+		// notify chains about state updates
+		if aliasOutput, ok := output.(*iotago.AliasOutput); ok {
+			outputID := ledgerOutput.GetOutputId().Unwrap()
+			aliasID := util.AliasIDFromAliasOutput(aliasOutput, outputID)
+			chainID := isc.ChainIDFromAliasID(aliasID)
+			ncChain := nc.chains[chainID.Key()]
+			if ncChain != nil {
+				ncChain.HandleStateUpdate(outputID, aliasOutput)
+			}
+		}
+
+		// notify chains about new UTXOS owned by them
+		unlockAddr := output.UnlockConditionSet().Address()
+		if unlockAddr == nil {
+			continue
+		}
+		if unlockAliasAddr, ok := unlockAddr.Address.(*iotago.AliasAddress); ok {
+			chainID := isc.ChainIDFromAliasID(unlockAliasAddr.AliasID())
+			ncChain := nc.chains[chainID.Key()]
+			if ncChain != nil {
+				ncChain.HandleUnlockableOutput(ledgerOutput.GetOutputId().Unwrap(), output)
+			}
+		}
+	}
+	return nil
 }
 
 func (nc *nodeConn) enableMilestoneTrigger() {
