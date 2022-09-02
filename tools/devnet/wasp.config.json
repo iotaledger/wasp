@@ -3,7 +3,7 @@
     "directory": "/wasp/waspdb"
   },
   "l1": {
-    "apiAddress": "http://hornet-nest:14265"
+    "inxAddress": "hornet-nest:9029"
   },
   "logger": {
     "level": "debug",
