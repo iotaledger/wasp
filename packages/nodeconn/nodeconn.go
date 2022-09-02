@@ -52,8 +52,6 @@ type nodeConn struct {
 	config        ChainL1Config
 	nodeBridge    *nodebridge.NodeBridge
 	nodeClient    *nodeclient.Client
-
-	onLedgerUpdate *events.Event
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -111,9 +109,6 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 		indexerClient: indexerClient,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
-		}),
-		onLedgerUpdate: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ *nodebridge.LedgerUpdate))(params[0].(*nodebridge.LedgerUpdate))
 		}),
 		metrics:    nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log:        log.Named("nc"),
