@@ -82,7 +82,7 @@ variable "wasp_config" {
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
   "l1": {
-    "inxAddress": "10.0.0.10:29980"
+    "inxAddress": "10.0.0.3:23361"
   },
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
