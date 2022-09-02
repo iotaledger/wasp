@@ -11,6 +11,8 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	dss_node_pkg "github.com/iotaledger/wasp/packages/chain/dss/node"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
@@ -53,6 +55,7 @@ type chainObj struct {
 	lastSeenOutputStateIndex           *uint32
 	stateMgr                           chain.StateManager
 	consensus                          chain.Consensus
+	dssNode                            dss_node_pkg.DSSNode
 	log                                *logger.Logger
 	nodeConn                           chain.ChainNodeConnection
 	db                                 kvstore.KVStore
@@ -78,6 +81,7 @@ type chainObj struct {
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
+	consensusJournalRegistry           journal.Registry
 	wal                                chain.WAL
 }
 
@@ -93,15 +97,22 @@ func NewChain(
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
+	nidProvider registry.NodeIdentityProvider,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	consensusJournalRegistry journal.Registry,
 	wal chain.WAL,
 ) chain.Chain {
 	var err error
 	log.Debugf("creating chain object for %s", chainID.String())
+
+	nodeIdentity := nidProvider.GetNodeIdentity()
+
+	var peeringID peering.PeeringID
+	copy(peeringID[:], chainID.Bytes())
 
 	chainLog := log.Named("c-" + chainID.AsAddress().String()[2:8])
 	chainStateSync := coreutil.NewChainStateSync()
@@ -133,7 +144,9 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		consensusJournalRegistry:         consensusJournalRegistry,
 		wal:                              wal,
+		dssNode:                          dss_node_pkg.New(&peeringID, netProvider, nodeIdentity, log),
 	}
 	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID, nc, chainLog)
 	if err != nil {
@@ -142,9 +155,6 @@ func NewChain(
 	}
 
 	ret.committee.Store(&committeeStruct{})
-
-	var peeringID peering.PeeringID
-	copy(peeringID[:], chainID.Bytes())
 
 	chainPeerNodes := []*cryptolib.PublicKey{netProvider.Self().PubKey()}
 	ret.chainPeers, err = netProvider.PeerDomain(peeringID, chainPeerNodes)

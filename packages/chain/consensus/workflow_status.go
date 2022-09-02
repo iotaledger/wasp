@@ -10,24 +10,28 @@ import (
 )
 
 type workflowStatus struct {
-	flagStateReceived        bool
-	flagBatchProposalSent    bool
-	flagConsensusBatchKnown  bool
-	flagVMStarted            bool
-	flagVMResultSigned       bool
-	flagTransactionFinalized bool
-	flagTransactionPosted    bool
-	flagTransactionSeen      bool
-	flagInProgress           bool
+	flagStateReceived         bool
+	flagIndexProposalReceived bool
+	flagBatchProposalSent     bool
+	flagConsensusBatchKnown   bool
+	flagVMStarted             bool
+	flagDssSigningStarted     bool
+	flagVMResultSigned        bool
+	flagTransactionFinalized  bool
+	flagTransactionPosted     bool
+	flagTransactionSeen       bool
+	flagInProgress            bool
 
-	timeBatchProposalSent    time.Time
-	timeConsensusBatchKnown  time.Time
-	timeVMStarted            time.Time
-	timeVMResultSigned       time.Time
-	timeTransactionFinalized time.Time
-	timeTransactionPosted    time.Time
-	timeTransactionSeen      time.Time
-	timeCompleted            time.Time
+	timeIndexProposalReceived time.Time
+	timeBatchProposalSent     time.Time
+	timeConsensusBatchKnown   time.Time
+	timeVMStarted             time.Time
+	timeDssSigningStarted     time.Time
+	timeVMResultSigned        time.Time
+	timeTransactionFinalized  time.Time
+	timeTransactionPosted     time.Time
+	timeTransactionSeen       time.Time
+	timeCompleted             time.Time
 
 	stateIndex uint32
 }
@@ -46,6 +50,11 @@ func newWorkflowStatus(stateReceived bool, stateIndex ...uint32) *workflowStatus
 	}
 }
 
+func (wsT *workflowStatus) setIndexProposalReceived() {
+	wsT.flagIndexProposalReceived = true
+	wsT.timeIndexProposalReceived = time.Now()
+}
+
 func (wsT *workflowStatus) setBatchProposalSent() {
 	wsT.flagBatchProposalSent = true
 	wsT.timeBatchProposalSent = time.Now()
@@ -59,6 +68,11 @@ func (wsT *workflowStatus) setConsensusBatchKnown() {
 func (wsT *workflowStatus) setVMStarted() {
 	wsT.flagVMStarted = true
 	wsT.timeVMStarted = time.Now()
+}
+
+func (wsT *workflowStatus) setDssSigningStarted() {
+	wsT.flagDssSigningStarted = true
+	wsT.timeDssSigningStarted = time.Now()
 }
 
 func (wsT *workflowStatus) setVMResultSigned() {
@@ -94,6 +108,10 @@ func (wsT *workflowStatus) IsStateReceived() bool {
 	return wsT.flagStateReceived
 }
 
+func (wsT *workflowStatus) IsIndexProposalReceived() bool {
+	return wsT.flagIndexProposalReceived
+}
+
 func (wsT *workflowStatus) IsBatchProposalSent() bool {
 	return wsT.flagBatchProposalSent
 }
@@ -104,6 +122,10 @@ func (wsT *workflowStatus) IsConsensusBatchKnown() bool {
 
 func (wsT *workflowStatus) IsVMStarted() bool {
 	return wsT.flagVMStarted
+}
+
+func (wsT *workflowStatus) IsDssSigningStarted() bool {
+	return wsT.flagDssSigningStarted
 }
 
 func (wsT *workflowStatus) IsVMResultSigned() bool {
@@ -126,6 +148,10 @@ func (wsT *workflowStatus) IsInProgress() bool {
 	return wsT.flagInProgress
 }
 
+func (wsT *workflowStatus) GetIndexProposalReceived() time.Time {
+	return wsT.timeIndexProposalReceived
+}
+
 func (wsT *workflowStatus) GetBatchProposalSentTime() time.Time {
 	return wsT.timeBatchProposalSent
 }
@@ -136,6 +162,10 @@ func (wsT *workflowStatus) GetConsensusBatchKnownTime() time.Time {
 
 func (wsT *workflowStatus) GetVMStartedTime() time.Time {
 	return wsT.timeVMStarted
+}
+
+func (wsT *workflowStatus) GetDssSigningStartedTime() time.Time {
+	return wsT.timeDssSigningStarted
 }
 
 func (wsT *workflowStatus) GetVMResultSignedTime() time.Time {

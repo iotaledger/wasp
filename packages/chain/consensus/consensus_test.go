@@ -108,7 +108,7 @@ func TestConsensusMoreNodesMockedACS(t *testing.T) {
 		err := env.WaitMempool(1, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
-	t.Run("post 1 request randomize mocked ACS", func(t *testing.T) {
+	t.Run("post 1 request randomized mocked ACS", func(t *testing.T) {
 		env := consensus.NewMockedEnvWithMockedACS(t, numNodes, quorum, false)
 		env.CreateNodes(consensus.NewConsensusTimers())
 		defer env.Log.Sync()
@@ -269,6 +269,37 @@ func TestConsensusMoreNodes(t *testing.T) {
 	})
 }
 
+func TestMilestoneNotReceived(t *testing.T) {
+	const numNodes = 10
+	const quorum = (numNodes*2)/3 + 1
+	env := consensus.NewMockedEnv(t, numNodes, quorum, false)
+	env.CreateNodes(consensus.NewConsensusTimers())
+	defer env.Log.Sync()
+
+	env.StartTimers()
+	totalRequests := 0
+	stateIndex := 0
+	iterationFun := func(requests int) {
+		env.PostDummyRequests(requests, true)
+		totalRequests += requests
+		stateIndex++
+		err := env.WaitMempool(totalRequests, quorum, waitMempoolTimeout)
+		require.NoError(t, err)
+		err = env.WaitStateIndex(quorum, uint32(stateIndex))
+		require.NoError(t, err)
+	}
+
+	iterationFun(10)
+	env.Ledgers.SetPushMilestonesToNodesNeeded(false)
+	for i := 0; i < 5; i++ {
+		iterationFun(10 - i)
+	}
+	env.Ledgers.SetPushMilestonesToNodesNeeded(true)
+	for i := 0; i < 5; i++ {
+		iterationFun(10)
+	}
+}
+
 func TestCruelWorld(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -296,7 +327,7 @@ func TestCruelWorld(t *testing.T) {
 			mutex.Lock()
 			nodeIndex := rand.Intn(numNodes)
 			nodeName := env.Nodes[nodeIndex].NodeID
-			nodePubKey := env.Nodes[nodeIndex].NodePubKey
+			nodePubKey := env.Nodes[nodeIndex].NodeKeyPair.GetPublicKey()
 			env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodePubKey)
 			env.Log.Debugf("Connection to node %v %v lost", nodeName, nodePubKey.String())
 			disconnectedNodes = append(disconnectedNodes, nodeName)

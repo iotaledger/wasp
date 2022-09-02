@@ -53,9 +53,10 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 // addresses and dispersal factors one by one prior to sending tokens to the
 // smart contract's 'divide' function. The 'member' function takes 2 parameters,
 // which are both required:
-// - 'address', which is an Address to use as member in the group, and
-// - 'factor',  which is an Int64 relative dispersal factor associated with
-//              that address
+//   - 'address', which is an Address to use as member in the group, and
+//   - 'factor',  which is an Int64 relative dispersal factor associated with
+//     that address
+//
 // The 'member' function will save the address/factor combination in state storage
 // and also calculate and store a running sum of all factors so that the 'divide'
 // function can simply start using these precalculated values when called.

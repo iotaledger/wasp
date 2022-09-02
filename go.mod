@@ -201,7 +201,7 @@ require (
 )
 
 replace (
-	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
+	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef
 	github.com/ethereum/go-ethereum => github.com/dessaya/go-ethereum v1.10.10-0.20220809124259-a32cc1199f6b
 	// github.com/ethereum/go-ethereum => /home/jorge/dev/iota/go-ethereum
 	//github.com/iotaledger/iota.go/v3 => C:\Users\evaldas\Documents\proj\Go\src\github.com\lunfardo314\iota.go
