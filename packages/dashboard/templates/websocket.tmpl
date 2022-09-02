@@ -1,6 +1,13 @@
 {{define "ws"}}
 	<script>
-		const url = 'ws://' +  location.host + '{{ uri "chainWebSocket" . }}';
+
+		let websocketProtocol = 'ws://';
+
+		if (location.protocol === 'https:') {
+			websocketProtocol = 'wss://';
+		}
+
+		const url = websocketProtocol +  location.host + '{{ uri "chainWebSocket" . }}';
 		console.log('opening WebSocket to ' + url);
 		const ws = new WebSocket(url);
 
