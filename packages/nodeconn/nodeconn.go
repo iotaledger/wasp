@@ -131,6 +131,9 @@ func (nc *nodeConn) subscribeToLedgerUpdates() {
 }
 
 func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
+	nc.chainsLock.RLock()
+	defer nc.chainsLock.RUnlock()
+
 	for _, ledgerOutput := range update.Created {
 		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, nc.nodeBridge.ProtocolParameters())
 		if err != nil {
