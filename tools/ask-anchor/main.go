@@ -1,58 +1,38 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 const (
-	defaultBechPrefix = "rms"
-	getOutputIdURL    = "https://api.testnet.shimmer.network/api/indexer/v1/outputs/alias/"
-	getAliasURL       = "https://api.testnet.shimmer.network/api/core/v2/outputs/"
+	APIAddress = "https://api.testnet.shimmer.network"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: ask-anchor <chainID> [<Bech prefix>]\n")
+		fmt.Printf("Usage: ask-anchor <chainID>\n")
 		os.Exit(1)
 	}
-	aliasID := os.Args[1]
-	bechPrefix := defaultBechPrefix
-	if len(os.Args) > 2 {
-		bechPrefix = os.Args[2]
-	}
-	parameters.L1ForTesting.Protocol.Bech32HRP = iotago.NetworkPrefix(bechPrefix)
-	parameters.InitL1(parameters.L1ForTesting)
-	chainID, err := isc.ChainIDFromString(aliasID)
-	mustNoErr(err)
-	fmt.Printf("chainid = %s\naliasID = %s\n", chainID, chainID.AsAliasID())
 
-	// get output ID for alias ID
-	body := mustGetURL(getOutputIdURL, chainID.AsAliasID().String())
-	var decoded map[string]any
-	err = json.Unmarshal(body, &decoded)
+	chainID, err := isc.ChainIDFromString(os.Args[1])
 	mustNoErr(err)
 
-	// get alias output by outputID
-	var parsed map[string]map[string]any
-	body = mustGetURL(getAliasURL, decoded["items"].([]any)[0].(string))
-	err = json.Unmarshal(body, &parsed)
+	indexerClient, err := nodeclient.New(APIAddress).Indexer(context.Background())
+	mustNoErr(err)
+	stateOutputID, stateOutput, err := indexerClient.Alias(context.Background(), *chainID.AsAliasID())
 	mustNoErr(err)
 
-	fmt.Printf("stateIndex: %v\n", parsed["output"]["stateIndex"])
-	fmt.Printf("amount: %v\n", parsed["output"]["amount"])
-	fmt.Printf("foundryCounter: %v\n", parsed["output"]["foundryCounter"])
-	stateMetadataBin, err := iotago.DecodeHex(parsed["output"]["stateMetadata"].(string))
-	mustNoErr(err)
-	l1Commitment, err := state.L1CommitmentFromBytes(stateMetadataBin)
+	fmt.Printf("outputID: %v\n", stateOutputID.ToHex())
+	fmt.Printf("stateIndex: %v\n", stateOutput.StateIndex)
+	fmt.Printf("amount: %v\n", stateOutput.Deposit())
+	fmt.Printf("foundryCounter: %v\n", stateOutput.FoundryCounter)
+	l1Commitment, err := state.L1CommitmentFromBytes(*&stateOutput.StateMetadata)
 	mustNoErr(err)
 	fmt.Printf("L1Commitment:\n     state commitment: %s\n     block hash:       %s\n",
 		l1Commitment.StateCommitment, l1Commitment.BlockHash)
@@ -64,27 +44,3 @@ func mustNoErr(err error) {
 		os.Exit(1)
 	}
 }
-
-func mustGetURL(url1, url2 string) []byte {
-	resp, err := http.Get(url1 + url2)
-	mustNoErr(err)
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	//We Read the response body on the line below.
-	body, err := io.ReadAll(resp.Body)
-	mustNoErr(err)
-
-	return body
-}
-
-//
-//func jsonPrettyPrint(in []byte) []byte {
-//	var out bytes.Buffer
-//	err := json.Indent(&out, in, "", "\t")
-//	if err != nil {
-//		return in
-//	}
-//	return out.Bytes()
-//}
