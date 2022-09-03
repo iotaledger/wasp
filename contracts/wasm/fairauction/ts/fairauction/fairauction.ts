@@ -16,8 +16,8 @@ const OWNER_MARGIN_MAX: u64 = 100;
 export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
     let allowance = ctx.allowance();
     let nfts = allowance.nftIDs();
-    ctx.require(nfts.length == 1, "single NFT allowance expected")
-    let auctionNFT = nfts[0]
+    ctx.require(nfts.size == 1, "single NFT allowance expected")
+    let auctionNFT = nfts.values()[0];
 
     let minimumBid = f.params.minimumBid().value();
 

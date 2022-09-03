@@ -122,7 +122,7 @@ export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackC
     let allowance = ctx.allowance();
     let transfer = wasmlib.ScTransfer.fromBalances(allowance);
     ctx.transferAllowed(ctx.accountID(), transfer, false);
-    const nftIDs = allowance.nftIDs();
+    const nftIDs = allowance.nftIDs().values();
     for (let i = 0; i < nftIDs.length; i++) {
         let transfer = wasmlib.ScTransfer.nft(nftIDs[i]);
         ctx.send(address, transfer);
