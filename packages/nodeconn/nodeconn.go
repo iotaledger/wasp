@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	hivecore "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -26,7 +28,6 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 type ChainL1Config struct {
@@ -212,48 +213,57 @@ func (nc *nodeConn) UnregisterChain(chainID *isc.ChainID) {
 	nc.log.Debugf("nodeconn: chain unregistered: %s", chainID)
 }
 
+// GetChain returns the chain if it was registered, otherwise it returns an error.
+func (nc *nodeConn) GetChain(chainID *isc.ChainID) (*ncChain, error) {
+	nc.chainsLock.RLock()
+	defer nc.chainsLock.RUnlock()
+
+	ncc, exists := nc.chains[chainID.Key()]
+	if !exists {
+		return nil, xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	}
+
+	return ncc, nil
+}
+
 // PublishStateTransaction implements chain.NodeConnection.
 func (nc *nodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
+
 	return ncc.PublishTransaction(tx)
 }
 
 // PublishGovernanceTransaction implements chain.NodeConnection.
 // TODO: identical to PublishStateTransaction; needs to be reviewed
 func (nc *nodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
+
 	return ncc.PublishTransaction(tx)
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return nil, xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return nil, err
 	}
+
 	closure := events.NewClosure(handler)
 	ncc.inclusionStates.Attach(closure)
 	return closure, nil
 }
 
 func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
+
 	ncc.inclusionStates.Detach(closure)
 	return nil
 }
