@@ -10,7 +10,6 @@ import (
 
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -299,19 +298,19 @@ func extractBlocks(dbDir string, from uint32, targetDir string) {
 	sort.Slice(indices, func(i, j int) bool {
 		return indices[i] < indices[j]
 	})
-	var data []byte
+	var blk state.Block
 	for _, idx := range indices {
 		if idx < from {
 			continue
 		}
-		data, err = state.LoadBlockBytes(store, idx)
+		blk, err = state.LoadBlock(store, idx)
 		if err != nil {
 			fmt.Printf("error: failed to load block data for index #%d: %v\n", idx, err)
 			continue
 		}
-		fname := snapshot.BlockFileName(dbDir, idx, hashing.HashData(data))
+		fname := snapshot.BlockFileName(dbDir, idx, state.BlockHashFromData(blk.EssenceBytes()))
 		fullName := path.Join(targetDir, fname)
-		err = os.WriteFile(fullName, data, 0o600)
+		err = os.WriteFile(fullName, blk.Bytes(), 0o600)
 		if err != nil {
 			fmt.Printf("error: failed to write block data to file %s: %v\n", fullName, err)
 			continue
