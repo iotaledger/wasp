@@ -3,7 +3,7 @@ variable "wasp_config" {
 {
     "debug": {
       "rawblocksEnabled": true,
-      "rawblocksDir": "{{ env "NOMAD_TASK_DIR" }}/blocks"
+      "rawblocksDirectory": "{{ env "NOMAD_TASK_DIR" }}/blocks"
     },
 
 	"database": {
@@ -88,7 +88,7 @@ variable "wasp_config" {
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
 	},
   "wal": {
-    "directory": "wal",
+    "directory": "{{ env "NOMAD_TASK_DIR" }}/wal",
     "enabled": true
   }
 }
