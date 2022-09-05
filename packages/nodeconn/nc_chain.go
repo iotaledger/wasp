@@ -7,6 +7,8 @@ import (
 	"context"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
@@ -61,19 +62,33 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
-	txID, err := tx.ID()
+	ctxPendingTransaction, cancelPendingTransaction := context.WithCancel(ctxWithTimeout)
+
+	pendingTx, err := NewPendingTransaction(ctxPendingTransaction, cancelPendingTransaction, tx)
 	if err != nil {
-		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
+		return xerrors.Errorf("publishing transaction: %w", err)
 	}
 
-	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
+	// track pending tx before publishing the transaction
+	ncc.nc.addPendingTransactionWithoutLocking(pendingTx)
 
-	txMsgID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
+	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
+	blockID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
 	if err != nil {
 		return err
 	}
 
-	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID, tx)
+	// check if the transaction was already included (race condition with other validators)
+	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), ncc.nc.nodeBridge.ProtocolParameters()); err == nil {
+		// transaction was already included
+		pendingTx.Confirmed.Store(true)
+		cancelPendingTransaction()
+	} else {
+		// set the current blockID for promote/reattach checks
+		pendingTx.SetBlockID(blockID)
+	}
+
+	return pendingTx.waitUntilConfirmed()
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
