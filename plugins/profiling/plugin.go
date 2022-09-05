@@ -67,6 +67,7 @@ func run(_ *node.Plugin) {
 	go func() {
 		bindAddr := parameters.GetString(parameters.ProfilingBindAddress)
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
+		//nolint:gosec // false positive, we don't care about timeouts since this is just for testing purposes
 		err := http.ListenAndServe(bindAddr, nil)
 		if err != nil {
 			panic(err)
