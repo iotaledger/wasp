@@ -73,7 +73,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 		return err
 	}
 
-	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID)
+	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID, tx)
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {

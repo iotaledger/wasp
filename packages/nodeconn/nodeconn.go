@@ -321,11 +321,13 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.BlockID) error {
+func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.BlockID, tx *iotago.Transaction) error {
 	// wait until tx is confirmed
 	// poll the node by getting `BlockMetadataByBlockID`
+
+	currentBlockID := blockID
 	for {
-		metadataResp, err := nc.nodeBridge.BlockMetadata(ctx, *blockID)
+		metadataResp, err := nc.nodeBridge.BlockMetadata(ctx, *currentBlockID)
 		if err != nil {
 			return xerrors.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -340,7 +342,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 		// reattach or promote if needed
 
 		if metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", blockID.ToHex())
+			nc.log.Debugf("promoting msgID: %s", currentBlockID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := nc.nodeClient.Tips(ctx)
 			if err != nil {
@@ -352,7 +354,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 			}
 
 			parents := []iotago.BlockID{
-				*blockID,
+				*currentBlockID,
 			}
 
 			if len(tips) > 7 {
@@ -372,14 +374,8 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 		}
 
 		if metadataResp.ShouldReattach {
-			block, err := nc.nodeBridge.Block(ctx, *blockID)
-			if err != nil {
-				return xerrors.Errorf("failed to get block for reattachment: %w", err)
-			}
-
-			nc.log.Debugf("reattaching block: %v", block)
-
-			_, err = nc.nodeBridge.SubmitBlock(ctx, block)
+			nc.log.Debugf("reattaching tx")
+			currentBlockID, err = nc.doPostTx(ctx, tx)
 			if err != nil {
 				return err
 			}
