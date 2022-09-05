@@ -62,7 +62,6 @@ func NewConfig(waspConfig WaspConfig, l1Config l1connection.Config, modifyConfig
 		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
 		// set L1 part of the template
 		nodesConfigs[i].L1INXAddress = l1Config.INXAddress
-		nodesConfigs[i].L1UseRemotePow = l1Config.UseRemotePoW
 		// modify the template if needed
 		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
 			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])

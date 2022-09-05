@@ -1,4 +1,4 @@
-package nodeconn
+package l1connection
 
 import (
 	"context"
@@ -16,7 +16,12 @@ import (
 
 type submitBlockFn = func(ctx context.Context, block *iotago.Block) error
 
-func DoBlockPow(ctx context.Context, block *iotago.Block, useRemotePow bool, submitBlock submitBlockFn, nodeClient *nodeclient.Client) error {
+const (
+	refreshTipsDuringPoWInterval = 5 * time.Second
+	parallelWorkers              = 1
+)
+
+func doBlockPow(ctx context.Context, block *iotago.Block, useRemotePow bool, submitBlock submitBlockFn, nodeClient *nodeclient.Client) error {
 	if useRemotePow {
 		// remote PoW: Take the Block, clear parents, clear nonce, send to node
 		block.Parents = nil

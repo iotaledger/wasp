@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 )
@@ -131,7 +130,7 @@ func (c *l1client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) erro
 		_, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 		return err
 	}
-	err = nodeconn.DoBlockPow(ctxWithTimeout, block, c.config.UseRemotePoW, submitBlock, c.nodeAPIClient)
+	err = doBlockPow(ctxWithTimeout, block, c.config.UseRemotePoW, submitBlock, c.nodeAPIClient)
 	if err != nil {
 		return fmt.Errorf("failed duing PoW: %w", err)
 	}
@@ -215,7 +214,7 @@ func (c *l1client) waitUntilConfirmed(ctx context.Context, block *iotago.Block) 
 				_, err := c.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
 				return err
 			}
-			err = nodeconn.DoBlockPow(ctx, block, c.config.UseRemotePoW, submitBlock, c.nodeAPIClient)
+			err = doBlockPow(ctx, block, c.config.UseRemotePoW, submitBlock, c.nodeAPIClient)
 			if err != nil {
 				return err
 			}

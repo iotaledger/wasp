@@ -37,9 +37,7 @@ const (
 	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
-	L1INXAddress   = "l1.inxAddress"
-	L1APIAddress   = "l1.apiAddress"
-	L1UseRemotePoW = "l1.useRemotePow"
+	L1INXAddress = "l1.inxAddress"
 
 	PeeringMyNetID                   = "peering.netid"
 	PeeringPort                      = "peering.port"
@@ -93,9 +91,6 @@ func Init() *configuration.Configuration {
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
 	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
-
-	flag.String(L1APIAddress, "http://127.0.0.1:5000", "L1 node API URL")
-	flag.Bool(L1UseRemotePoW, false, "whether Wasp does the PoW to issue transactions locally, or relies on Hornet remote-PoW")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")

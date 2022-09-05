@@ -5,7 +5,6 @@
 // This component is responsible for:
 //   - Protocol details.
 //   - Block reattachments and promotions.
-//   - Management of PoW.
 package nodeconn
 
 import (
@@ -306,19 +305,9 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iota
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().
 		Payload(tx).
-		Tips(ctx, nc.nodeClient).
 		Build()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to build a tx: %w", err)
-	}
-
-	submitBlock := func(ctx context.Context, block *iotago.Block) error {
-		_, err := nc.nodeBridge.SubmitBlock(ctx, block)
-		return err
-	}
-	err = DoBlockPow(ctx, block, nc.config.UseRemotePoW, submitBlock, nc.nodeClient)
-	if err != nil {
-		return nil, xerrors.Errorf("failed duing PoW: %w", err)
 	}
 
 	blockID, err := nc.nodeBridge.SubmitBlock(ctx, block)
@@ -390,11 +379,7 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 
 			nc.log.Debugf("reattaching block: %v", block)
 
-			submitBlock := func(ctx context.Context, block *iotago.Block) error {
-				_, err := nc.nodeBridge.SubmitBlock(ctx, block)
-				return err
-			}
-			err = DoBlockPow(ctx, block, nc.config.UseRemotePoW, submitBlock, nc.nodeClient)
+			_, err = nc.nodeBridge.SubmitBlock(ctx, block)
 			if err != nil {
 				return err
 			}
@@ -406,8 +391,3 @@ func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, blockID *iotago.Bloc
 		time.Sleep(pollConfirmedTxInterval)
 	}
 }
-
-const (
-	refreshTipsDuringPoWInterval = 5 * time.Second
-	parallelWorkers              = 1
-)

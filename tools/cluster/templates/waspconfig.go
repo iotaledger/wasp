@@ -11,7 +11,6 @@ type WaspConfigParams struct {
 	PeeringPort                  int
 	NanomsgPort                  int
 	L1INXAddress                 string
-	L1UseRemotePow               bool
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
@@ -61,8 +60,7 @@ const WaspConfig = `
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
   "l1": {
-    "inxAddress": "{{.L1INXAddress}}",
-    "useRemotePow": {{.L1UseRemotePow}}
+    "inxAddress": "{{.L1INXAddress}}"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}
