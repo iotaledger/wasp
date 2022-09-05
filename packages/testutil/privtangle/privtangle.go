@@ -30,7 +30,6 @@ import (
 
 // requires hornet, and inx plugins binaries to be in PATH
 // https://github.com/iotaledger/hornet (v2.0.0-beta.7)
-// https://github.com/iotaledger/inx-mqtt (v1.0.0-beta.6)
 // https://github.com/iotaledger/inx-indexer (v1.0.0-beta.6)
 // https://github.com/iotaledger/inx-coordinator (v1.0.0-beta.6)
 // https://github.com/iotaledger/inx-faucet (v1.0.0-beta.6) (requires `git submodule update --init --recursive` before building )
@@ -48,7 +47,6 @@ type PrivTangle struct {
 	NodeCount     int
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
-	MqttCmd       []*exec.Cmd
 	ctx           context.Context
 	logfunc       LogFunc
 }
@@ -65,7 +63,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeCount:     nodeCount,
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
-		MqttCmd:       make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
 	}
 	for i := range pt.NodeKeyPairs {
@@ -96,7 +93,6 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
-		pt.MqttCmd[i] = pt.startMqtt(i)
 	}
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
@@ -232,14 +228,6 @@ func (pt *PrivTangle) startIndexer(i int) *exec.Cmd {
 	return pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
 
-func (pt *PrivTangle) startMqtt(i int) *exec.Cmd {
-	args := []string{
-		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
-	}
-	return pt.startINXPlugin(i, "inx-mqtt", args, nil)
-}
-
 func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) *exec.Cmd {
 	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
 	if err := os.MkdirAll(path, 0o755); err != nil {
@@ -277,17 +265,6 @@ func (pt *PrivTangle) Stop() {
 		}
 	}
 	pt.logf("Stopping... Done")
-}
-
-func (pt *PrivTangle) RestartMqtt() {
-	// kill cmd
-	for i := range pt.NodeKeyPairs {
-		if err := pt.MqttCmd[i].Process.Kill(); err != nil {
-			panic(fmt.Errorf("unable to kill mqtt process %w", err))
-		}
-		pt.MqttCmd[i] = pt.startMqtt(i)
-	}
-	pt.waitInxPlugins()
 }
 
 func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
@@ -360,12 +337,6 @@ func (pt *PrivTangle) waitInxPlugins() {
 		for i := range pt.NodeCommands {
 			// indexer
 			_, err := pt.nodeClient(i).Indexer(pt.ctx)
-			if err != nil {
-				allOK = false
-				continue
-			}
-			// mqtt
-			_, err = pt.nodeClient(i).EventAPI(pt.ctx)
 			if err != nil {
 				allOK = false
 				continue
@@ -466,10 +437,6 @@ func (pt *PrivTangle) NodePortPrometheus(i int) int {
 
 func (pt *PrivTangle) NodePortFaucet(i int) int {
 	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetFaucet
-}
-
-func (pt *PrivTangle) NodePortMQTT(i int) int {
-	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTT
 }
 
 func (pt *PrivTangle) NodePortCoordinator(i int) int {

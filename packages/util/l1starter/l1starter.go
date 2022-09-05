@@ -37,11 +37,6 @@ func (s *L1Starter) StartPrivtangleIfNecessary(logfunc privtangle.LogFunc) {
 	if s.Config.APIAddress != "" {
 		return
 	}
-	if s.Privtangle != nil {
-		// restart mqtt server (to avoid some errors when running many tests in a row)
-		s.Privtangle.RestartMqtt()
-		return
-	}
 	s.Privtangle = privtangle.Start(
 		context.Background(),
 		path.Join(os.TempDir(), "privtangle"),

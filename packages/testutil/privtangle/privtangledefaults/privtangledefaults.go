@@ -11,7 +11,6 @@ const (
 	NodePortOffsetProfiling
 	NodePortOffsetPrometheus
 	NodePortOffsetFaucet
-	NodePortOffsetMQTT
 	NodePortOffsetIndexer
 	NodePortOffsetINX
 	NodePortOffsetCoordinator

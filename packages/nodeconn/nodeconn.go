@@ -285,7 +285,7 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 }
 
 func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-	// TODO - is this needed? - output should come from MQTT subscription
+	// TODO - is this needed? - output should come from INX subscription
 	// we are also constantly polling for confirmation in the promotion/reattachment logic
 }
 
