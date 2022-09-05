@@ -70,7 +70,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	}
 
 	// track pending tx before publishing the transaction
-	ncc.nc.addPendingTransactionWithoutLocking(pendingTx)
+	ncc.nc.addPendingTransaction(pendingTx)
 
 	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
 	blockID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)

@@ -60,8 +60,9 @@ type nodeConn struct {
 	nodeClient    *nodeclient.Client
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
-	pendingTransactionsMap map[iotago.TransactionID]*PendingTransaction
-	reattachWorkerPool     *workerpool.WorkerPool
+	pendingTransactionsMap  map[iotago.TransactionID]*PendingTransaction
+	pendingTransactionsLock sync.Mutex
+	reattachWorkerPool      *workerpool.WorkerPool
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -120,12 +121,13 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
-		metrics:                nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
-		log:                    log.Named("nc"),
-		config:                 config,
-		nodeBridge:             nb,
-		nodeClient:             inxNodeClient,
-		pendingTransactionsMap: make(map[iotago.TransactionID]*PendingTransaction),
+		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		log:                     log.Named("nc"),
+		config:                  config,
+		nodeBridge:              nb,
+		nodeClient:              inxNodeClient,
+		pendingTransactionsMap:  make(map[iotago.TransactionID]*PendingTransaction),
+		pendingTransactionsLock: sync.Mutex{},
 	}
 
 	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
@@ -160,45 +162,51 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	nc.chainsLock.RLock()
 	defer nc.chainsLock.RUnlock()
 
-	// check if pending transactions were affected by the ledger update.
-	for _, pendingTx := range nc.pendingTransactionsMap {
-		inputWasSpent := false
-		for _, consumedInput := range pendingTx.ConsumedInputs {
-			if _, spent := newSpentsMap[consumedInput]; spent {
-				inputWasSpent = true
+	// inline function used to release the lock with defer
+	func() {
+		nc.pendingTransactionsLock.Lock()
+		defer nc.pendingTransactionsLock.Unlock()
 
-				break
-			}
-		}
+		// check if pending transactions were affected by the ledger update.
+		for _, pendingTx := range nc.pendingTransactionsMap {
+			inputWasSpent := false
+			for _, consumedInput := range pendingTx.ConsumedInputs {
+				if _, spent := newSpentsMap[consumedInput]; spent {
+					inputWasSpent = true
 
-		if inputWasSpent {
-			// a referenced input of this transaction was spent, so the pending transaction is affected by this ledger update.
-			// => we need to check if the outputs were created, otherwise this is a conflicting transaction.
-
-			// we can easily check this by searching for output index 0.
-			// if this was created, the rest was created as well because transactions are atomic.
-			txOutputIndexZero := iotago.UTXOInput{
-				TransactionID:          pendingTx.transactionID,
-				TransactionOutputIndex: 0,
+					break
+				}
 			}
 
-			if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
-				// transaction was conflicting
-				pendingTx.Conflicting.Store(true)
+			if inputWasSpent {
+				// a referenced input of this transaction was spent, so the pending transaction is affected by this ledger update.
+				// => we need to check if the outputs were created, otherwise this is a conflicting transaction.
+
+				// we can easily check this by searching for output index 0.
+				// if this was created, the rest was created as well because transactions are atomic.
+				txOutputIndexZero := iotago.UTXOInput{
+					TransactionID:          pendingTx.transactionID,
+					TransactionOutputIndex: 0,
+				}
+
+				if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
+					// transaction was conflicting
+					pendingTx.Conflicting.Store(true)
+				} else {
+					// transaction was confirmed
+					pendingTx.Confirmed.Store(true)
+				}
+
+				nc.clearPendingTransactionWithoutLocking(pendingTx.transactionID)
+
+				// mark waiting for pending transaction as done
+				pendingTx.CtxCancel()
 			} else {
-				// transaction was confirmed
-				pendingTx.Confirmed.Store(true)
+				// check if the transaction needs to be reattached
+				nc.reattachWorkerPool.TrySubmit(pendingTx)
 			}
-
-			nc.clearPendingTransactionWithoutLocking(pendingTx.transactionID)
-
-			// mark waiting for pending transaction as done
-			pendingTx.CtxCancel()
-		} else {
-			// check if the transaction needs to be reattached
-			nc.reattachWorkerPool.TrySubmit(pendingTx)
 		}
-	}
+	}()
 
 	for _, ledgerOutput := range update.Created {
 		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, nc.nodeBridge.ProtocolParameters())
@@ -395,9 +403,11 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotag
 	return blockID, nil
 }
 
-// addPendingTransactionWithoutLocking tracks a pending transaction.
-// write lock must be acquired outside.
-func (nc *nodeConn) addPendingTransactionWithoutLocking(pending *PendingTransaction) {
+// addPendingTransaction tracks a pending transaction.
+func (nc *nodeConn) addPendingTransaction(pending *PendingTransaction) {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
+
 	nc.pendingTransactionsMap[pending.transactionID] = pending
 }
 
