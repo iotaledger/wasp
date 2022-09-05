@@ -262,7 +262,7 @@ func (c *l1client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durati
 	if err != nil {
 		return fmt.Errorf("unable to call faucet: %w", err)
 	}
-	if res.StatusCode != 202 {
+	if res.StatusCode != http.StatusAccepted {
 		resBody, err := io.ReadAll(res.Body)
 		defer res.Body.Close()
 		if err != nil {
