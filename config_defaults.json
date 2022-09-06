@@ -1,0 +1,98 @@
+{
+  "app": {
+    "checkForUpdates": true,
+    "stopGracePeriod": "5m"
+  },
+  "nodeconn": {
+    "inxAddress": "localhost:9029"
+  },
+  "database": {
+    "inMemory": false,
+    "directory": "waspdb"
+  },
+  "registry": {
+    "useText": false,
+    "fileName": "chain-registry.json"
+  },
+  "peering": {
+    "netID": "127.0.0.1:4000",
+    "port": 4000
+  },
+  "chains": {
+    "broadcastUpToNPeers": 2,
+    "broadcastInterval": "5s",
+    "apiCacheTTL": "5m",
+    "pullMissingRequestsFromCommittee": true
+  },
+  "rawBlocks": {
+    "enabled": false,
+    "directory": "blocks"
+  },
+  "profiling": {
+    "enabled": false,
+    "bindAddress": "localhost:6060"
+  },
+  "wal": {
+    "enabled": true,
+    "directory": "wal"
+  },
+  "metrics": {
+    "enabled": true,
+    "bindAddress": "127.0.0.1:2112"
+  },
+  "webapi": {
+    "enabled": true,
+    "nodeOwnerAddresses": [],
+    "bindAddress": "127.0.0.1:9090",
+    "auth": {
+      "scheme": "ip",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "userName": "wasp"
+      },
+      "ip": {
+        "ipWhiteList": [
+          "127.0.0.1"
+        ]
+      }
+    }
+  },
+  "nanomsg": {
+    "enabled": true,
+    "port": 5550
+  },
+  "dashboard": {
+    "enabled": true,
+    "bindAddress": "127.0.0.1:7000",
+    "exploreAddressURL": "",
+    "auth": {
+      "scheme": "ip",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "userName": "wasp"
+      },
+      "ip": {
+        "ipWhiteList": [
+          "127.0.0.1"
+        ]
+      }
+    }
+  },
+  "users": {
+    "users": {
+      "wasp": {
+        "Password": "wasp",
+        "Permissions": [
+          "dashboard",
+          "api",
+          "chain.read",
+          "chain.write"
+        ]
+      }
+    }
+  }
+}
