@@ -20,7 +20,7 @@ import (
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/libp2p/go-libp2p"
@@ -29,11 +29,10 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/gohornet/hornet (1653bf6)
-// https://github.com/gohornet/inx-mqtt (9447a3c)
-// https://github.com/gohornet/inx-indexer (2d612d1)
-// https://github.com/gohornet/inx-coordinator (4b5c458)
-// https://github.com/gohornet/inx-faucet (77dc47e) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (v2.0.0-beta.7)
+// https://github.com/iotaledger/inx-indexer (v1.0.0-beta.6)
+// https://github.com/iotaledger/inx-coordinator (v1.0.0-beta.6)
+// https://github.com/iotaledger/inx-faucet (v1.0.0-beta.6) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -48,7 +47,6 @@ type PrivTangle struct {
 	NodeCount     int
 	NodeKeyPairs  []*cryptolib.KeyPair
 	NodeCommands  []*exec.Cmd
-	MqttCmd       []*exec.Cmd
 	ctx           context.Context
 	logfunc       LogFunc
 }
@@ -65,8 +63,8 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeCount:     nodeCount,
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
-		MqttCmd:       make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
+		logfunc:       logfunc,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
@@ -96,11 +94,11 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
-		pt.MqttCmd[i] = pt.startMqtt(i)
 	}
+	pt.waitInxPluginsIndexer()
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
-	pt.waitInxPlugins()
+	pt.waitInxPluginsFaucet()
 
 	return &pt
 }
@@ -232,14 +230,6 @@ func (pt *PrivTangle) startIndexer(i int) *exec.Cmd {
 	return pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
 
-func (pt *PrivTangle) startMqtt(i int) *exec.Cmd {
-	args := []string{
-		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--mqtt.websocket.bindAddress=localhost:%d", pt.NodePortMQTT(i)),
-	}
-	return pt.startINXPlugin(i, "inx-mqtt", args, nil)
-}
-
 func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) *exec.Cmd {
 	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
 	if err := os.MkdirAll(path, 0o755); err != nil {
@@ -277,17 +267,6 @@ func (pt *PrivTangle) Stop() {
 		}
 	}
 	pt.logf("Stopping... Done")
-}
-
-func (pt *PrivTangle) RestartMqtt() {
-	// kill cmd
-	for i := range pt.NodeKeyPairs {
-		if err := pt.MqttCmd[i].Process.Kill(); err != nil {
-			panic(fmt.Errorf("unable to kill mqtt process %w", err))
-		}
-		pt.MqttCmd[i] = pt.startMqtt(i)
-	}
-	pt.waitInxPlugins()
 }
 
 func (pt *PrivTangle) nodeClient(i int) *nodeclient.Client {
@@ -354,25 +333,13 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
-func (pt *PrivTangle) waitInxPlugins() {
+func (pt *PrivTangle) waitInxPluginsIndexer() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			// indexer
 			_, err := pt.nodeClient(i).Indexer(pt.ctx)
 			if err != nil {
-				allOK = false
-				continue
-			}
-			// mqtt
-			_, err = pt.nodeClient(i).EventAPI(pt.ctx)
-			if err != nil {
-				allOK = false
-				continue
-			}
-			// faucet
-			err = pt.queryFaucetInfo()
-			if err != nil {
+				pt.logf("Waiting for INX: Indexer, err=%v", err)
 				allOK = false
 				continue
 			}
@@ -380,8 +347,20 @@ func (pt *PrivTangle) waitInxPlugins() {
 		if allOK {
 			return
 		}
-		pt.logf("Waiting to all nodes INX plugings to startup.")
+		pt.logf("Waiting to all nodes INX Indexer plugins to startup.")
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (pt *PrivTangle) waitInxPluginsFaucet() {
+	for {
+		err := pt.queryFaucetInfo()
+		if err != nil {
+			pt.logf("Waiting for INX: Faucet, err=%v", err)
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		return
 	}
 }
 
@@ -468,10 +447,6 @@ func (pt *PrivTangle) NodePortFaucet(i int) int {
 	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetFaucet
 }
 
-func (pt *PrivTangle) NodePortMQTT(i int) int {
-	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetMQTT
-}
-
 func (pt *PrivTangle) NodePortCoordinator(i int) int {
 	return pt.BasePort + i*100 + privtangledefaults.NodePortOffsetCoordinator
 }
@@ -490,13 +465,14 @@ func (pt *PrivTangle) logf(msg string, args ...interface{}) {
 	}
 }
 
-func (pt *PrivTangle) L1Config(i ...int) nodeconn.L1Config {
+func (pt *PrivTangle) L1Config(i ...int) l1connection.Config {
 	nodeIndex := 0
 	if len(i) > 0 {
 		nodeIndex = i[0]
 	}
-	return nodeconn.L1Config{
+	return l1connection.Config{
 		APIAddress:    fmt.Sprintf("http://localhost:%d", pt.NodePortRestAPI(nodeIndex)),
+		INXAddress:    fmt.Sprintf("localhost:%d", pt.NodePortINX(nodeIndex)),
 		FaucetAddress: fmt.Sprintf("http://localhost:%d", pt.NodePortFaucet(nodeIndex)),
 		FaucetKey:     pt.FaucetKeyPair,
 		UseRemotePoW:  false,

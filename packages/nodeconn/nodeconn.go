@@ -5,7 +5,6 @@
 // This component is responsible for:
 //   - Protocol details.
 //   - Block reattachments and promotions.
-//   - Management of PoW.
 package nodeconn
 
 import (
@@ -13,8 +12,15 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/xerrors"
+
+	hivecore "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/hive.go/workerpool"
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -22,8 +28,22 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/util"
 )
+
+const (
+	inxTimeoutBlockMetadata      = 500 * time.Millisecond
+	inxTimeoutSubmitBlock        = 60 * time.Second
+	inxTimeoutPublishTransaction = 120 * time.Second
+	reattachWorkerPoolQueueSize  = 100
+)
+
+type ChainL1Config struct {
+	INXAddress   string
+	UseRemotePoW bool
+}
+
+type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 
 // nodeconn implements chain.NodeConnection.
 // Single Wasp node is expected to connect to a single L1 node, thus
@@ -33,13 +53,18 @@ type nodeConn struct {
 	ctxCancel     context.CancelFunc
 	chains        map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock    sync.RWMutex
-	nodeAPIClient *nodeclient.Client
-	mqttClient    *nodeclient.EventAPIClient
 	indexerClient nodeclient.IndexerClient
 	milestones    *events.Event
 	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
-	config        L1Config
+	config        ChainL1Config
+	nodeBridge    *nodebridge.NodeBridge
+	nodeClient    *nodeclient.Client
+
+	// pendingTransactionsMap is a map of sent transactions that are pending.
+	pendingTransactionsMap  map[iotago.TransactionID]*PendingTransaction
+	pendingTransactionsLock sync.Mutex
+	reattachWorkerPool      *workerpool.WorkerPool
 }
 
 var _ chain.NodeConnection = &nodeConn{}
@@ -53,7 +78,9 @@ func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	})
 }
 
-func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
+const defaultTimeout = 1 * time.Minute
+
+func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
@@ -61,58 +88,173 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 	return context.WithTimeout(ctx, t)
 }
 
-func New(config L1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	return newNodeConn(config, log, true, timeout...)
-}
-
-func newNodeConn(config L1Config, log *logger.Logger, initMqttClient bool, timeout ...time.Duration) *nodeConn {
+func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	nodeAPIClient := nodeclient.New(config.APIAddress)
 
-	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ctx, timeout...)
 	defer cancelContext()
-	l1Info, err := nodeAPIClient.Info(ctxWithTimeout)
-	if err != nil {
-		panic(xerrors.Errorf("error getting L1 connection info: %w", err))
-	}
-	setL1ProtocolParams(l1Info)
 
-	mqttClient, err := nodeAPIClient.EventAPI(ctxWithTimeout)
+	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
 	if err != nil {
-		panic(xerrors.Errorf("error getting node event client: %w", err))
+		panic(err)
 	}
 
-	indexerClient, err := nodeAPIClient.Indexer(ctxWithTimeout)
+	go nb.Run(context.Background())
+	inxNodeClient := nb.INXNodeClient()
+
+	nodeInfo, err := inxNodeClient.Info(ctxWithTimeout)
+	if err != nil {
+		panic(xerrors.Errorf("error getting node info: %w", err))
+	}
+
+	setL1ProtocolParams(nodeInfo)
+
+	indexerClient, err := inxNodeClient.Indexer(ctxWithTimeout)
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
+
 	nc := nodeConn{
 		ctx:           ctx,
 		ctxCancel:     ctxCancel,
 		chains:        make(map[string]*ncChain),
 		chainsLock:    sync.RWMutex{},
-		nodeAPIClient: nodeAPIClient,
-		mqttClient:    mqttClient,
 		indexerClient: indexerClient,
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
 		}),
-		metrics: nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
-		log:     log.Named("nc"),
-		config:  config,
+		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		log:                     log.Named("nc"),
+		config:                  config,
+		nodeBridge:              nb,
+		nodeClient:              inxNodeClient,
+		pendingTransactionsMap:  make(map[iotago.TransactionID]*PendingTransaction),
+		pendingTransactionsLock: sync.Mutex{},
 	}
 
-	if initMqttClient {
-		go nc.run()
-		for {
-			if nc.mqttClient.MQTTClient.IsConnected() {
-				break
+	nc.reattachWorkerPool = workerpool.New(nc.reattachWorkerpoolFunc, workerpool.WorkerCount(1), workerpool.QueueSize(reattachWorkerPoolQueueSize))
+	nc.reattachWorkerPool.Start()
+
+	go nc.subscribeToLedgerUpdates()
+	nc.enableMilestoneTrigger()
+
+	return &nc
+}
+
+func (nc *nodeConn) subscribeToLedgerUpdates() {
+	err := nc.nodeBridge.ListenToLedgerUpdates(nc.ctx, 0, 0, nc.handleLedgerUpdate)
+	if err != nil {
+		nc.log.Panic(err)
+	}
+}
+
+func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
+	// create maps for faster lookup.
+	// outputs that are created and consumed in the same milestone exist in both maps.
+	newSpentsMap := make(map[iotago.OutputID]struct{})
+	for _, spent := range update.Consumed {
+		newSpentsMap[spent.GetOutput().GetOutputId().Unwrap()] = struct{}{}
+	}
+
+	newOutputsMap := make(map[iotago.OutputID]struct{})
+	for _, output := range update.Created {
+		newOutputsMap[output.GetOutputId().Unwrap()] = struct{}{}
+	}
+
+	nc.chainsLock.RLock()
+	defer nc.chainsLock.RUnlock()
+
+	// inline function used to release the lock with defer
+	func() {
+		nc.pendingTransactionsLock.Lock()
+		defer nc.pendingTransactionsLock.Unlock()
+
+		// check if pending transactions were affected by the ledger update.
+		for _, pendingTx := range nc.pendingTransactionsMap {
+			inputWasSpent := false
+			for _, consumedInput := range pendingTx.ConsumedInputs() {
+				if _, spent := newSpentsMap[consumedInput]; spent {
+					inputWasSpent = true
+
+					break
+				}
 			}
-			nc.log.Debugf("waiting until mqtt client is connected")
-			time.Sleep(1 * time.Second)
+
+			if inputWasSpent {
+				// a referenced input of this transaction was spent, so the pending transaction is affected by this ledger update.
+				// => we need to check if the outputs were created, otherwise this is a conflicting transaction.
+
+				// we can easily check this by searching for output index 0.
+				// if this was created, the rest was created as well because transactions are atomic.
+				txOutputIndexZero := iotago.UTXOInput{
+					TransactionID:          pendingTx.ID(),
+					TransactionOutputIndex: 0,
+				}
+
+				// mark waiting for pending transaction as done
+				nc.clearPendingTransactionWithoutLocking(pendingTx.ID())
+
+				if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
+					// transaction was conflicting
+					pendingTx.SetConflicting(xerrors.New("input was used in another transaction"))
+				} else {
+					// transaction was confirmed
+					pendingTx.SetConfirmed()
+				}
+			} else {
+				// check if the transaction needs to be reattached
+				nc.reattachWorkerPool.TrySubmit(pendingTx)
+			}
+		}
+	}()
+
+	for _, ledgerOutput := range update.Created {
+		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			return err
+		}
+
+		// notify chains about state updates
+		if aliasOutput, ok := output.(*iotago.AliasOutput); ok {
+			outputID := ledgerOutput.GetOutputId().Unwrap()
+			aliasID := util.AliasIDFromAliasOutput(aliasOutput, outputID)
+			chainID := isc.ChainIDFromAliasID(aliasID)
+			ncChain := nc.chains[chainID.Key()]
+			if ncChain != nil {
+				ncChain.HandleStateUpdate(outputID, aliasOutput)
+			}
+		}
+
+		// notify chains about new UTXOS owned by them
+		unlockAddr := output.UnlockConditionSet().Address()
+		if unlockAddr == nil {
+			continue
+		}
+		if unlockAliasAddr, ok := unlockAddr.Address.(*iotago.AliasAddress); ok {
+			chainID := isc.ChainIDFromAliasID(unlockAliasAddr.AliasID())
+			ncChain := nc.chains[chainID.Key()]
+			if ncChain != nil {
+				ncChain.HandleUnlockableOutput(ledgerOutput.GetOutputId().Unwrap(), output)
+			}
 		}
 	}
-	return &nc
+
+	return nil
+}
+
+func (nc *nodeConn) enableMilestoneTrigger() {
+	nc.nodeBridge.Events.LatestMilestoneChanged.Hook(hivecore.NewClosure(func(metadata *nodebridge.Milestone) {
+		milestone := nodeclient.MilestoneInfo{
+			MilestoneID: metadata.MilestoneID.String(),
+			Index:       metadata.Milestone.Index,
+			Timestamp:   metadata.Milestone.Timestamp,
+		}
+
+		nc.log.Debugf("Milestone received, index=%v, timestamp=%v", milestone.Index, milestone.Timestamp)
+
+		nc.metrics.GetInMilestone().CountLastMessage(milestone)
+		nc.milestones.Trigger(&milestone)
+	}))
 }
 
 func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
@@ -146,48 +288,57 @@ func (nc *nodeConn) UnregisterChain(chainID *isc.ChainID) {
 	nc.log.Debugf("nodeconn: chain unregistered: %s", chainID)
 }
 
+// GetChain returns the chain if it was registered, otherwise it returns an error.
+func (nc *nodeConn) GetChain(chainID *isc.ChainID) (*ncChain, error) {
+	nc.chainsLock.RLock()
+	defer nc.chainsLock.RUnlock()
+
+	ncc, exists := nc.chains[chainID.Key()]
+	if !exists {
+		return nil, xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	}
+
+	return ncc, nil
+}
+
 // PublishStateTransaction implements chain.NodeConnection.
 func (nc *nodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
-	return ncc.PublishTransaction(tx)
+
+	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
 }
 
 // PublishGovernanceTransaction implements chain.NodeConnection.
 // TODO: identical to PublishStateTransaction; needs to be reviewed
 func (nc *nodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
-	return ncc.PublishTransaction(tx)
+
+	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return nil, xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return nil, err
 	}
+
 	closure := events.NewClosure(handler)
 	ncc.inclusionStates.Attach(closure)
 	return closure, nil
 }
 
 func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
-	nc.chainsLock.RLock()
-	ncc, ok := nc.chains[chainID.Key()]
-	nc.chainsLock.RUnlock()
-	if !ok {
-		return xerrors.Errorf("Chain %v is not connected.", chainID.String())
+	ncc, err := nc.GetChain(chainID)
+	if err != nil {
+		return err
 	}
+
 	ncc.inclusionStates.Detach(closure)
 	return nil
 }
@@ -218,7 +369,7 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 }
 
 func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-	// TODO - is this needed? - output should come from MQTT subscription
+	// TODO - is this needed? - output should come from INX subscription
 	// we are also constantly polling for confirmation in the promotion/reattachment logic
 }
 
@@ -235,146 +386,133 @@ func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.metrics
 }
 
-func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (*iotago.Block, error) {
+func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotago.BlockID, error) {
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().
 		Payload(tx).
-		Tips(ctx, nc.nodeAPIClient).
 		Build()
 	if err != nil {
-		return nil, xerrors.Errorf("failed to build a tx: %w", err)
+		return iotago.EmptyBlockID(), xerrors.Errorf("failed to build a tx: %w", err)
 	}
-	err = nc.doPoW(ctx, block)
+
+	blockID, err := nc.nodeBridge.SubmitBlock(ctx, block)
 	if err != nil {
-		return nil, xerrors.Errorf("failed duing PoW: %w", err)
+		if xerrors.Is(ctx.Err(), context.Canceled) {
+			// context was canceled
+			return iotago.EmptyBlockID(), ctx.Err()
+		}
+		return iotago.EmptyBlockID(), xerrors.Errorf("failed to submit a tx: %w", err)
 	}
-	block, err = nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
-	if err != nil {
-		return nil, xerrors.Errorf("failed to submit a tx: %w", err)
-	}
-	/*blockID, err := block.ID()
-	if err == nil {
-		nc.log.Infof("Posted blockID %v", blockID.ToHex())
-	} else {
-		nc.log.Warnf("Posted block; failed to calculate its id: %v", err)
-	}
-	txID, err := tx.ID()
-	if err == nil {
-		nc.log.Infof("Posted transaction id %v", isc.TxID(txID))
-	} else {
-		nc.log.Warnf("Posted transaction; failed to calculate its id: %v", err)
-	}*/
-	return block, nil
+
+	return blockID, nil
 }
 
-const pollConfirmedTxInterval = 200 * time.Millisecond
+// addPendingTransaction tracks a pending transaction.
+func (nc *nodeConn) addPendingTransaction(pending *PendingTransaction) {
+	nc.pendingTransactionsLock.Lock()
+	defer nc.pendingTransactionsLock.Unlock()
 
-// waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
-func (nc *nodeConn) waitUntilConfirmed(ctx context.Context, block *iotago.Block) error {
-	// wait until tx is confirmed
-	msgID, err := block.ID()
-	if err != nil {
-		return xerrors.Errorf("failed to get msg ID: %w", err)
+	nc.pendingTransactionsMap[pending.ID()] = pending
+}
+
+// clearPendingTransactionWithoutLocking removes tracking of a pending transaction.
+// write lock must be acquired outside.
+func (nc *nodeConn) clearPendingTransactionWithoutLocking(transactionID iotago.TransactionID) {
+	delete(nc.pendingTransactionsMap, transactionID)
+}
+
+func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
+	defer task.Return(nil)
+
+	pendingTx := task.Param(0).(*PendingTransaction)
+
+	if pendingTx.Conflicting() || pendingTx.Confirmed() {
+		// no need to reattach
+		return
 	}
 
-	// poll the node by getting `BlockMetadataByBlockID`
-	for {
-		metadataResp, err := nc.nodeAPIClient.BlockMetadataByBlockID(ctx, msgID)
+	blockID := pendingTx.BlockID()
+	if blockID == iotago.EmptyBlockID() {
+		// no need to check because no block was posted by this node
+		return
+	}
+
+	ctxMetadata, cancelCtxMetadata := context.WithTimeout(nc.ctx, inxTimeoutBlockMetadata)
+	defer cancelCtxMetadata()
+
+	blockMetadata, err := nc.nodeBridge.BlockMetadata(ctxMetadata, blockID)
+	if err != nil {
+		// block not found
+		nc.log.Debugf("reattaching transaction %s failed, error: block not found", pendingTx.ID().ToHex(), blockID.ToHex())
+		return
+	}
+
+	// check confirmation while we are at it anyway
+	if blockMetadata.ReferencedByMilestoneIndex != 0 {
+		// block was referenced
+
+		if blockMetadata.LedgerInclusionState == inx.BlockMetadata_LEDGER_INCLUSION_STATE_INCLUDED {
+			// block was included => confirmed
+			pendingTx.SetConfirmed()
+
+			return
+		}
+
+		// block was referenced, but not included in the ledger
+		pendingTx.SetConflicting(xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d", blockMetadata.LedgerInclusionState, blockMetadata.ConflictReason))
+
+		return
+	}
+
+	if blockMetadata.ShouldReattach {
+		nc.log.Debugf("reattaching transaction %s", pendingTx.ID().ToHex())
+
+		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
+		defer cancelSubmitBlock()
+
+		newBlockID, err := nc.doPostTx(ctxSubmitBlock, pendingTx.Transaction())
 		if err != nil {
-			return xerrors.Errorf("failed to get msg metadata: %w", err)
+			nc.log.Debugf("reattaching transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
+			return
 		}
 
-		if metadataResp.ReferencedByMilestoneIndex != 0 {
-			if metadataResp.LedgerInclusionState != "" && metadataResp.LedgerInclusionState == "included" {
-				return nil // success
-			}
-			return xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d",
-				metadataResp.LedgerInclusionState, metadataResp.ConflictReason)
-		}
-		// reattach or promote if needed
-		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			nc.log.Debugf("promoting msgID: %s", msgID.ToHex())
-			// create an empty Block and the BlockID as one of the parents
-			tipsResp, err := nc.nodeAPIClient.Tips(ctx)
-			if err != nil {
-				return xerrors.Errorf("failed to fetch Tips: %w", err)
-			}
-			tips, err := tipsResp.Tips()
-			if err != nil {
-				return xerrors.Errorf("failed to get Tips from tips response: %w", err)
-			}
+		// set the new blockID for promote/reattach checks
+		pendingTx.SetBlockID(newBlockID)
 
-			parents := []iotago.BlockID{
-				msgID,
-			}
+		return
+	}
 
-			if len(tips) > 7 {
-				tips = tips[:7] // max 8 parents
-			}
-			for _, tip := range tips {
-				parents = append(parents, tip)
-			}
-			promotionMsg, err := builder.NewBlockBuilder().Parents(parents).Build()
-			if err != nil {
-				return xerrors.Errorf("failed to build promotion Block: %w", err)
-			}
-			newBlock, err := nc.nodeAPIClient.SubmitBlock(ctx, promotionMsg, parameters.L1().Protocol)
-			if err != nil {
-				return xerrors.Errorf("failed to promote msg: %w", err)
-			}
+	// reattach or promote if needed
+	if blockMetadata.ShouldPromote {
+		nc.log.Debugf("promoting transaction %s", pendingTx.ID().ToHex())
 
-			msgID, err = newBlock.ID()
-			if err != nil {
-				return xerrors.Errorf("failed to promote msg: %w", err)
-			}
+		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
+		defer cancelSubmitBlock()
+
+		if err := nc.promoteBlock(ctxSubmitBlock, blockID); err != nil {
+			nc.log.Debugf("promoting transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
+			return
 		}
-		if metadataResp.ShouldReattach != nil && *metadataResp.ShouldReattach {
-			nc.log.Debugf("reattaching block: %v", block)
-			err = nc.doPoW(ctx, block)
-			if err != nil {
-				return err
-			}
-		}
-		if err = ctx.Err(); err != nil {
-			return xerrors.Errorf("failed to wait for tx confimation within timeout: %s", err)
-		}
-		time.Sleep(pollConfirmedTxInterval)
 	}
 }
 
-const (
-	refreshTipsDuringPoWInterval = 5 * time.Second
-	parallelWorkers              = 1
-)
-
-func (nc *nodeConn) doPoW(ctx context.Context, block *iotago.Block) error {
-	if nc.config.UseRemotePoW {
-		// remote PoW: Take the Block, clear parents, clear nonce, send to node
-		block.Parents = nil
-		block.Nonce = 0
-		_, err := nc.nodeAPIClient.SubmitBlock(ctx, block, parameters.L1().Protocol)
-		return err
-	}
-	// do the PoW
-	refreshTipsFn := func() (tips iotago.BlockIDs, err error) {
-		// refresh tips if PoW takes longer than a configured duration.
-		resp, err := nc.nodeAPIClient.Tips(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return resp.Tips()
+func (nc *nodeConn) promoteBlock(ctx context.Context, blockID iotago.BlockID) error {
+	tips, err := nc.nodeBridge.RequestTips(ctx, iotago.BlockMaxParents/2, false)
+	if err != nil {
+		return xerrors.Errorf("failed to fetch tips: %w", err)
 	}
 
-	targetScore := float64(parameters.L1().Protocol.MinPoWScore)
+	// add the blockID we want to promote
+	tips = append(tips, blockID)
 
-	_, err := doPoW(
-		ctx,
-		block,
-		targetScore,
-		parallelWorkers,
-		refreshTipsDuringPoWInterval,
-		refreshTipsFn,
-	)
+	block, err := builder.NewBlockBuilder().Parents(tips).Build()
+	if err != nil {
+		return xerrors.Errorf("failed to build promotion block: %w", err)
+	}
 
-	return err
+	if _, err = nc.nodeBridge.SubmitBlock(ctx, block); err != nil {
+		return xerrors.Errorf("failed to submit promotion block: %w", err)
+	}
+
+	return nil
 }

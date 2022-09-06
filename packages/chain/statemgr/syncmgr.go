@@ -24,6 +24,13 @@ func (sm *stateManager) aliasOutputReceived(aliasOutput *isc.AliasOutputWithID) 
 		} else {
 			from = sm.stateOutput.GetStateIndex() + 1
 		}
+		solidStateIndex := sm.solidState.BlockIndex()
+		if solidStateIndex >= from {
+			newFrom := solidStateIndex + 1
+			sm.log.Debugf("aliasOutputReceived: according to stateOutput syncing should be started from index %v, but solidState is at index %v -> starting syncing from index %v",
+				from, solidStateIndex, newFrom)
+			from = newFrom
+		}
 		for i := from; i <= aliasOutputIndex; i++ {
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 		}
