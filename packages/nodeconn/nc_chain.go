@@ -7,6 +7,8 @@ import (
 	"context"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
@@ -58,26 +59,47 @@ func (ncc *ncChain) Close() {
 }
 
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
-	txID, err := tx.ID()
+	ctxPendingTransaction, cancelPendingTransaction := context.WithCancel(ctxWithTimeout)
+
+	pendingTx, err := NewPendingTransaction(ctxPendingTransaction, cancelPendingTransaction, tx)
 	if err != nil {
-		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
+		return xerrors.Errorf("publishing transaction: %w", err)
 	}
 
-	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
+	// track pending tx before publishing the transaction
+	ncc.nc.addPendingTransaction(pendingTx)
 
-	txMsgID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
-	if err != nil {
+	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
+
+	// we use the context of the pending transaction to post the transaction. this way
+	// the proof of work will be canceled if the transaction already got confirmed in L1.
+	// (e.g. another validator finished PoW and tx was confirmed)
+	// the given context will be canceled by the pending transaction checks.
+	blockID, err := ncc.nc.doPostTx(ctxPendingTransaction, tx)
+	if err != nil && !xerrors.Is(err, context.Canceled) {
 		return err
 	}
 
-	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsgID, tx)
+	// check if the transaction was already included (race condition with other validators)
+	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), ncc.nc.nodeBridge.ProtocolParameters()); err == nil {
+		// transaction was already included
+		pendingTx.SetConfirmed()
+	} else {
+		// set the current blockID for promote/reattach checks
+		pendingTx.SetBlockID(blockID)
+	}
+
+	return pendingTx.WaitUntilConfirmed()
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
+
+	// TODO: replace this with nodebridge.Client().ReadOutput if still needed
+	// MH: With this you would also apply spent outputs to the current state, is that intended?
 	res, err := ncc.nc.nodeClient.OutputByID(ctxWithTimeout, id)
 	cancelContext()
 	if err != nil {
@@ -114,7 +136,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 			cancelContext()
 		}
 		// TODO what should be an adequate timeout for each of these queries?
-		ctxWithTimeout, cancelContext = newCtx(ncc.nc.ctx)
+		ctxWithTimeout, cancelContext = newCtxWithTimeout(ncc.nc.ctx)
 
 		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
@@ -148,7 +170,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 
 func (ncc *ncChain) queryLatestChainStateUTXO() {
 	// TODO what should be an adequate timeout for this query?
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
 	cancelContext()
 

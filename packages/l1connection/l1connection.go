@@ -157,14 +157,14 @@ const pollConfirmedTxInterval = 200 * time.Millisecond
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
 func (c *l1client) waitUntilConfirmed(ctx context.Context, block *iotago.Block) error {
 	// wait until tx is confirmed
-	msgID, err := block.ID()
+	blockID, err := block.ID()
 	if err != nil {
 		return fmt.Errorf("failed to get msg ID: %w", err)
 	}
 
 	// poll the node by getting `BlockMetadataByBlockID`
 	for {
-		metadataResp, err := c.nodeAPIClient.BlockMetadataByBlockID(ctx, msgID)
+		metadataResp, err := c.nodeAPIClient.BlockMetadataByBlockID(ctx, blockID)
 		if err != nil {
 			return fmt.Errorf("failed to get msg metadata: %w", err)
 		}
@@ -178,7 +178,7 @@ func (c *l1client) waitUntilConfirmed(ctx context.Context, block *iotago.Block) 
 		}
 		// reattach or promote if needed
 		if metadataResp.ShouldPromote != nil && *metadataResp.ShouldPromote {
-			c.log.Debugf("promoting msgID: %s", msgID.ToHex())
+			c.log.Debugf("promoting blockID: %s", blockID.ToHex())
 			// create an empty Block and the BlockID as one of the parents
 			tipsResp, err := c.nodeAPIClient.Tips(ctx)
 			if err != nil {
@@ -190,7 +190,7 @@ func (c *l1client) waitUntilConfirmed(ctx context.Context, block *iotago.Block) 
 			}
 
 			parents := []iotago.BlockID{
-				msgID,
+				blockID,
 			}
 
 			if len(tips) > 7 {
