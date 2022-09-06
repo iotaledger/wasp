@@ -18,8 +18,12 @@ COPY . .
 
 RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ${BUILD_TARGET}
 
-# Wasp build
-FROM gcr.io/distroless/cc
+############################
+# Image
+############################
+# https://console.cloud.google.com/gcr/images/distroless/global/cc-debian11
+# using distroless cc "nonroot" image, which includes everything in the base image (glibc, libssl and openssl)
+FROM gcr.io/distroless/cc-debian11:nonroot
 
 ARG FINAL_BINARY="wasp"
 
@@ -29,7 +33,10 @@ EXPOSE 5550/tcp
 EXPOSE 6060/tcp
 EXPOSE 4000/udp
 
-COPY --from=build /wasp/${FINAL_BINARY} /usr/bin/
-COPY docker_config.json /etc/wasp_config.json
+# Copy the app dir into distroless image
+COPY --chown=nonroot:nonroot --from=build /wasp/${FINAL_BINARY} /usr/bin/
 
-CMD ["wasp", "-c", "/etc/wasp_config.json"]
+WORKDIR /usr/bin/
+USER nonroot
+
+ENTRYPOINT ["/usr/bin/wasp"]
