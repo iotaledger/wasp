@@ -499,7 +499,7 @@ func (nc *nodeConn) promoteBlock(ctx context.Context, blockID iotago.BlockID) er
 		return xerrors.Errorf("failed to build promotion block: %w", err)
 	}
 
-	if _, err = nc.nodeClient.SubmitBlock(ctx, block, nc.nodeBridge.ProtocolParameters()); err != nil {
+	if _, err = nc.nodeBridge.SubmitBlock(ctx, block); err != nil {
 		return xerrors.Errorf("failed to submit promotion block: %w", err)
 	}
 
