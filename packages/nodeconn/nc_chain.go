@@ -81,14 +81,13 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	// check if the transaction was already included (race condition with other validators)
 	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), ncc.nc.nodeBridge.ProtocolParameters()); err == nil {
 		// transaction was already included
-		pendingTx.Confirmed.Store(true)
-		cancelPendingTransaction()
+		pendingTx.SetConfirmed()
 	} else {
 		// set the current blockID for promote/reattach checks
 		pendingTx.SetBlockID(blockID)
 	}
 
-	return pendingTx.waitUntilConfirmed()
+	return pendingTx.WaitUntilConfirmed()
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {

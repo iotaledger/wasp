@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/hive.go/workerpool"
 	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -170,7 +171,7 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 		// check if pending transactions were affected by the ledger update.
 		for _, pendingTx := range nc.pendingTransactionsMap {
 			inputWasSpent := false
-			for _, consumedInput := range pendingTx.ConsumedInputs {
+			for _, consumedInput := range pendingTx.ConsumedInputs() {
 				if _, spent := newSpentsMap[consumedInput]; spent {
 					inputWasSpent = true
 
@@ -185,22 +186,20 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 				// we can easily check this by searching for output index 0.
 				// if this was created, the rest was created as well because transactions are atomic.
 				txOutputIndexZero := iotago.UTXOInput{
-					TransactionID:          pendingTx.transactionID,
+					TransactionID:          pendingTx.ID(),
 					TransactionOutputIndex: 0,
 				}
 
+				// mark waiting for pending transaction as done
+				nc.clearPendingTransactionWithoutLocking(pendingTx.ID())
+
 				if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
 					// transaction was conflicting
-					pendingTx.Conflicting.Store(true)
+					pendingTx.SetConflicting(xerrors.New("input was used in another transaction"))
 				} else {
 					// transaction was confirmed
-					pendingTx.Confirmed.Store(true)
+					pendingTx.SetConfirmed()
 				}
-
-				nc.clearPendingTransactionWithoutLocking(pendingTx.transactionID)
-
-				// mark waiting for pending transaction as done
-				pendingTx.CtxCancel()
 			} else {
 				// check if the transaction needs to be reattached
 				nc.reattachWorkerPool.TrySubmit(pendingTx)
@@ -408,7 +407,7 @@ func (nc *nodeConn) addPendingTransaction(pending *PendingTransaction) {
 	nc.pendingTransactionsLock.Lock()
 	defer nc.pendingTransactionsLock.Unlock()
 
-	nc.pendingTransactionsMap[pending.transactionID] = pending
+	nc.pendingTransactionsMap[pending.ID()] = pending
 }
 
 // clearPendingTransactionWithoutLocking removes tracking of a pending transaction.
@@ -422,8 +421,8 @@ func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
 
 	pendingTx := task.Param(0).(*PendingTransaction)
 
-	if pendingTx.Conflicting.Load() {
-		// transaction is conflicting
+	if pendingTx.Conflicting() || pendingTx.Confirmed() {
+		// no need to reattach
 		return
 	}
 
@@ -434,6 +433,23 @@ func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
 	if err != nil {
 		// block not found
 		nc.log.Debugf("reattaching transaction %s failed, error: block not found", pendingTx.ID().ToHex(), pendingTx.BlockID().ToHex())
+		return
+	}
+
+	// check confirmation while we are at it anyway
+	if blockMetadata.ReferencedByMilestoneIndex != 0 {
+		// block was referenced
+
+		if blockMetadata.LedgerInclusionState == inx.BlockMetadata_LEDGER_INCLUSION_STATE_INCLUDED {
+			// block was included => confirmed
+			pendingTx.SetConfirmed()
+
+			return
+		}
+
+		// block was referenced, but not included in the ledger
+		pendingTx.SetConflicting(xerrors.Errorf("tx was not included in the ledger. LedgerInclusionState: %s, ConflictReason: %d", blockMetadata.LedgerInclusionState, blockMetadata.ConflictReason))
+
 		return
 	}
 
