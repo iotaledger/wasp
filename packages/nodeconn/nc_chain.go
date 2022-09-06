@@ -59,7 +59,7 @@ func (ncc *ncChain) Close() {
 }
 
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
 	ctxPendingTransaction, cancelPendingTransaction := context.WithCancel(ctxWithTimeout)
@@ -73,8 +73,13 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	ncc.nc.addPendingTransaction(pendingTx)
 
 	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
-	blockID, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
-	if err != nil {
+
+	// we use the context of the pending transaction to post the transaction. this way
+	// the proof of work will be canceled if the transaction already got confirmed in L1.
+	// (e.g. another validator finished PoW and tx was confirmed)
+	// the given context will be canceled by the pending transaction checks.
+	blockID, err := ncc.nc.doPostTx(ctxPendingTransaction, tx)
+	if err != nil && !xerrors.Is(err, context.Canceled) {
 		return err
 	}
 
@@ -91,8 +96,10 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
 
+	// TODO: replace this with nodebridge.Client().ReadOutput if still needed
+	// MH: With this you would also apply spent outputs to the current state, is that intended?
 	res, err := ncc.nc.nodeClient.OutputByID(ctxWithTimeout, id)
 	cancelContext()
 	if err != nil {
@@ -129,7 +136,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 			cancelContext()
 		}
 		// TODO what should be an adequate timeout for each of these queries?
-		ctxWithTimeout, cancelContext = newCtx(ncc.nc.ctx)
+		ctxWithTimeout, cancelContext = newCtxWithTimeout(ncc.nc.ctx)
 
 		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
@@ -163,7 +170,7 @@ func (ncc *ncChain) queryChainUTXOs() {
 
 func (ncc *ncChain) queryLatestChainStateUTXO() {
 	// TODO what should be an adequate timeout for this query?
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
 	cancelContext()
 

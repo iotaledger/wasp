@@ -32,9 +32,10 @@ import (
 )
 
 const (
-	inxTimeoutBlockMetadata     = 500 * time.Millisecond
-	inxTimeoutSubmitBlock       = 60 * time.Second
-	reattachWorkerPoolQueueSize = 100
+	inxTimeoutBlockMetadata      = 500 * time.Millisecond
+	inxTimeoutSubmitBlock        = 60 * time.Second
+	inxTimeoutPublishTransaction = 120 * time.Second
+	reattachWorkerPoolQueueSize  = 100
 )
 
 type ChainL1Config struct {
@@ -79,7 +80,7 @@ func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 
 const defaultTimeout = 1 * time.Minute
 
-func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
+func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
@@ -90,7 +91,7 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
-	ctxWithTimeout, cancelContext := newCtx(ctx, timeout...)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ctx, timeout...)
 	defer cancelContext()
 
 	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
@@ -307,7 +308,7 @@ func (nc *nodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uin
 		return err
 	}
 
-	return ncc.PublishTransaction(tx)
+	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
 }
 
 // PublishGovernanceTransaction implements chain.NodeConnection.
@@ -318,7 +319,7 @@ func (nc *nodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotag
 		return err
 	}
 
-	return ncc.PublishTransaction(tx)
+	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
 }
 
 func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
@@ -396,6 +397,10 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotag
 
 	blockID, err := nc.nodeBridge.SubmitBlock(ctx, block)
 	if err != nil {
+		if xerrors.Is(ctx.Err(), context.Canceled) {
+			// context was canceled
+			return iotago.EmptyBlockID(), ctx.Err()
+		}
 		return iotago.EmptyBlockID(), xerrors.Errorf("failed to submit a tx: %w", err)
 	}
 
@@ -426,13 +431,19 @@ func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
 		return
 	}
 
+	blockID := pendingTx.BlockID()
+	if blockID == iotago.EmptyBlockID() {
+		// no need to check because no block was posted by this node
+		return
+	}
+
 	ctxMetadata, cancelCtxMetadata := context.WithTimeout(nc.ctx, inxTimeoutBlockMetadata)
 	defer cancelCtxMetadata()
 
-	blockMetadata, err := nc.nodeBridge.BlockMetadata(ctxMetadata, pendingTx.BlockID())
+	blockMetadata, err := nc.nodeBridge.BlockMetadata(ctxMetadata, blockID)
 	if err != nil {
 		// block not found
-		nc.log.Debugf("reattaching transaction %s failed, error: block not found", pendingTx.ID().ToHex(), pendingTx.BlockID().ToHex())
+		nc.log.Debugf("reattaching transaction %s failed, error: block not found", pendingTx.ID().ToHex(), blockID.ToHex())
 		return
 	}
 
@@ -459,14 +470,14 @@ func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
 		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
 		defer cancelSubmitBlock()
 
-		blockID, err := nc.doPostTx(ctxSubmitBlock, pendingTx.Transaction())
+		newBlockID, err := nc.doPostTx(ctxSubmitBlock, pendingTx.Transaction())
 		if err != nil {
 			nc.log.Debugf("reattaching transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
 			return
 		}
 
 		// set the new blockID for promote/reattach checks
-		pendingTx.SetBlockID(blockID)
+		pendingTx.SetBlockID(newBlockID)
 
 		return
 	}
@@ -478,7 +489,7 @@ func (nc *nodeConn) reattachWorkerpoolFunc(task workerpool.Task) {
 		ctxSubmitBlock, cancelSubmitBlock := context.WithTimeout(nc.ctx, inxTimeoutSubmitBlock)
 		defer cancelSubmitBlock()
 
-		if err := nc.promoteBlock(ctxSubmitBlock, pendingTx.BlockID()); err != nil {
+		if err := nc.promoteBlock(ctxSubmitBlock, blockID); err != nil {
 			nc.log.Debugf("promoting transaction %s failed, error: %w", pendingTx.ID().ToHex(), err)
 			return
 		}
