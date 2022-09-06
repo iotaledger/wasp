@@ -15,8 +15,6 @@
 //  2. Wait for DSS input to the ACS, provide the ACS output to the DSS.
 //  3. Provide the data to sign.
 //  4. Wait for a signature.
-//
-// TODO: Instance cleanup.
 package node
 
 import (
@@ -52,14 +50,17 @@ type dssNodeImpl struct {
 	netAttach interface{}
 	peeringID *peering.PeeringID
 	nid       *cryptolib.KeyPair
-	series    map[string]*dssSeriesImpl
-	seriesBuf map[string]map[int][]*recvMsg
+	series    map[string]*dssSeriesImpl     // Particular protocol instances.
+	seriesBuf map[string]map[int][]*recvMsg // Messages received for future DSS instances.
+	seriesLog []string                      // Ordered list of series started (for cleanup).
 	ctx       context.Context
 	ctxCancel context.CancelFunc
 	log       *logger.Logger
 }
 
 var _ DSSNode = &dssNodeImpl{}
+
+const maxSeriesHist = 10
 
 func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptolib.KeyPair, log *logger.Logger) DSSNode {
 	ctx, ctcCancel := context.WithCancel(context.Background())
@@ -72,6 +73,7 @@ func New(peeringID *peering.PeeringID, net peering.NetworkProvider, nid *cryptol
 		nid:       nid,
 		series:    map[string]*dssSeriesImpl{},
 		seriesBuf: map[string]map[int][]*recvMsg{},
+		seriesLog: []string{},
 		ctx:       ctx,
 		ctxCancel: ctcCancel,
 		log:       log,
@@ -113,9 +115,30 @@ func (n *dssNodeImpl) Start(key string, index int, dkShare tcrypto.DKShare, part
 	defer n.lock.Unlock()
 	if _, ok := n.series[key]; !ok {
 		n.series[key] = newSeries(n, key, dkShare)
+		n.seriesLog = append(n.seriesLog, key)
 		n.recvFromBuf(key)
 	}
+	n.cleanupOldSeries()
 	return n.series[key].start(index, partCB, sigCB)
+}
+
+func (n *dssNodeImpl) cleanupOldSeries() {
+	seriesLogLen := len(n.seriesLog)
+	if seriesLogLen > maxSeriesHist {
+		n.seriesLog = n.seriesLog[(seriesLogLen - maxSeriesHist):seriesLogLen]
+		for key := range n.series {
+			found := false
+			for _, sl := range n.seriesLog {
+				if key == sl {
+					found = true
+					break
+				}
+			}
+			if !found {
+				delete(n.series, key)
+			}
+		}
+	}
 }
 
 func (n *dssNodeImpl) DecidedIndexProposals(key string, index int, decidedIndexProposals [][]int, messageToSign []byte) error {
