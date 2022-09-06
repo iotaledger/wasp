@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   hornet-nest:
-    image: iotaledger/hornet-nest:2.0.0-beta.5
+    image: iotaledger/hornet-nest:2.0.0-beta.7
     networks:
       - wasp-net
     ports:

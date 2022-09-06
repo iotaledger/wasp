@@ -1,6 +1,6 @@
 {
   "l1": {
-    "apiAddress": "http://hornet:14265"
+    "inxAddress": "hornet:9029"
   },
   "database": {
     "directory": "waspdb"
@@ -78,6 +78,10 @@
   },
   "metrics": {
     "bindAddress": "0.0.0.0:2112",
+    "enabled": true
+  },
+  "wal": {
+    "directory": "wal",
     "enabled": true
   }
 }

@@ -17,8 +17,6 @@ var configFileContentTemplate = `
       },
       "publicRoutes":[
          "/health",
-         "/mqtt/v1",
-         "/mqtt",
          "/api/info",
          "/api/routes",
          "/api/core/v2/*",
@@ -156,11 +154,6 @@ var configFileContentTemplate = `
       "workers":0,
       "autostart":true
    },
-   "mqtt":{
-      "bindAddress":"localhost:1883",
-      "wsPort":1888,
-      "workerCount":100
-   },
    "profiling":{
       "bindAddress":"localhost:6060"
    },
@@ -178,7 +171,6 @@ var configFileContentTemplate = `
       "restAPIMetrics":true,
       "migrationMetrics":true,
       "coordinatorMetrics":true,
-      "mqttBrokerMetrics":true,
       "debugMetrics":false,
       "goMetrics":false,
       "processMetrics":false,

@@ -37,8 +37,8 @@ func NodeConnection() chain.NodeConnection {
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
 	nc = nodeconn.New(
-		nodeconn.L1Config{
-			APIAddress: parameters.GetString(parameters.L1APIAddress),
+		nodeconn.ChainL1Config{
+			INXAddress: parameters.GetString(parameters.L1INXAddress),
 		},
 		log,
 	)

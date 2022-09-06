@@ -25,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -44,7 +44,7 @@ type Cluster struct {
 	Started          bool
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               nodeconn.L1Client
+	l1               l1connection.Client
 	waspCmds         []*exec.Cmd
 	t                *testing.T
 }
@@ -66,7 +66,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		ValidatorKeyPair: validatorKp,
 		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, log),
+		l1:               l1connection.NewClient(config.L1, log),
 		DataPath:         dataPath,
 	}
 }
@@ -85,7 +85,7 @@ func (clu *Cluster) RequestFunds(addr iotago.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() nodeconn.L1Client {
+func (clu *Cluster) L1Client() l1connection.Client {
 	return clu.l1
 }
 

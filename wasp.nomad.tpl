@@ -77,14 +77,18 @@ variable "wasp_config" {
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
   "l1": {
-    "apiAddress": "https://api.testnet.shimmer.network"
+    "inxAddress": "10.0.0.2:31171"
   },
 	"nanomsg":{
 		"port": {{ env "NOMAD_PORT_nanomsg" }}
 	},
   "wal": {
-    "directory": "wal",
+    "directory": "{{ env "NOMAD_TASK_DIR" }}/wal",
     "enabled": true
+  },
+  "debug": {
+    "rawblocksEnabled": false,
+    "rawblocksDirectory": "{{ env "NOMAD_TASK_DIR" }}/blocks"
   }
 }
 EOH
