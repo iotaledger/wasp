@@ -92,6 +92,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+
 	res, err := ncc.nc.nodeClient.OutputByID(ctxWithTimeout, id)
 	cancelContext()
 	if err != nil {

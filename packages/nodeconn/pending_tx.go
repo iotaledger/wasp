@@ -16,7 +16,7 @@ import (
 // PendingTransaction holds info about a sent transaction that is pending.
 type PendingTransaction struct {
 	ctx            context.Context
-	CtxCancel      context.CancelFunc
+	ctxCancel      context.CancelFunc
 	transaction    *iotago.Transaction
 	consumedInputs iotago.OutputIDs
 	transactionID  iotago.TransactionID
@@ -47,11 +47,12 @@ func NewPendingTransaction(ctxPendingTransaction context.Context, cancelPendingT
 
 	return &PendingTransaction{
 		ctx:            ctxPendingTransaction,
-		CtxCancel:      cancelPendingTransaction,
+		ctxCancel:      cancelPendingTransaction,
 		transaction:    transaction,
 		consumedInputs: consumedInputs,
 		transactionID:  txID,
 		conflicting:    atomic.NewBool(false),
+		conflictReason: nil,
 		confirmed:      atomic.NewBool(false),
 		blockID:        iotago.EmptyBlockID(),
 		blockIDLock:    sync.RWMutex{},
@@ -90,7 +91,7 @@ func (tx *PendingTransaction) Confirmed() bool {
 
 func (tx *PendingTransaction) SetConfirmed() {
 	tx.confirmed.Store(true)
-	tx.CtxCancel()
+	tx.ctxCancel()
 }
 
 func (tx *PendingTransaction) Conflicting() bool {
@@ -100,7 +101,7 @@ func (tx *PendingTransaction) Conflicting() bool {
 func (tx *PendingTransaction) SetConflicting(reason error) {
 	tx.conflictReason = reason
 	tx.conflicting.Store(true)
-	tx.CtxCancel()
+	tx.ctxCancel()
 }
 
 func (tx *PendingTransaction) ConflictReason() error {
@@ -112,11 +113,11 @@ func (tx *PendingTransaction) WaitUntilConfirmed() error {
 	// wait until the context is done
 	<-tx.ctx.Done()
 
-	if tx.conflicting.Load() {
-		return xerrors.Errorf("transaction was conflicting: %s", tx.transactionID.ToHex())
+	if tx.Conflicting() {
+		return xerrors.Errorf("transaction was conflicting: %s, error: %w", tx.transactionID.ToHex(), tx.conflictReason)
 	}
 
-	if !tx.confirmed.Load() {
+	if !tx.Confirmed() {
 		return xerrors.Errorf("context was canceled but transaction was not confirmed: %s, error: %s", tx.transactionID.ToHex(), tx.ctx.Err())
 	}
 
