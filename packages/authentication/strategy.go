@@ -32,7 +32,7 @@ type IPWhiteListAuthConfiguration struct {
 }
 
 type AuthConfiguration struct {
-	Scheme string `default:"ip" usage:"selects which authentication to choose"`
+	Scheme string `default:"none" usage:"selects which authentication to choose"`
 
 	JWTConfig         JWTAuthConfiguration         `name:"jwt" usage:"defines the jwt configuration"`
 	BasicAuthConfig   BasicAuthConfiguration       `name:"basic" usage:"defines the basic auth configuration"`
