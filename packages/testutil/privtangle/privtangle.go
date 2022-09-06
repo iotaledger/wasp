@@ -64,6 +64,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 		NodeKeyPairs:  make([]*cryptolib.KeyPair, nodeCount),
 		NodeCommands:  make([]*exec.Cmd, nodeCount),
 		ctx:           ctx,
+		logfunc:       logfunc,
 	}
 	for i := range pt.NodeKeyPairs {
 		pt.NodeKeyPairs[i] = cryptolib.NewKeyPair()
@@ -94,9 +95,10 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	for i := range pt.NodeKeyPairs {
 		pt.startIndexer(i)
 	}
+	pt.waitInxPluginsIndexer()
 
 	pt.startFaucet(0) // faucet needs to be started after the indexer, otherwise it will take 1 milestone for the faucet get the correct balance
-	pt.waitInxPlugins()
+	pt.waitInxPluginsFaucet()
 
 	return &pt
 }
@@ -331,19 +333,13 @@ func (pt *PrivTangle) waitAllHealthy() {
 	}
 }
 
-func (pt *PrivTangle) waitInxPlugins() {
+func (pt *PrivTangle) waitInxPluginsIndexer() {
 	for {
 		allOK := true
 		for i := range pt.NodeCommands {
-			// indexer
 			_, err := pt.nodeClient(i).Indexer(pt.ctx)
 			if err != nil {
-				allOK = false
-				continue
-			}
-			// faucet
-			err = pt.queryFaucetInfo()
-			if err != nil {
+				pt.logf("Waiting for INX: Indexer, err=%v", err)
 				allOK = false
 				continue
 			}
@@ -351,8 +347,20 @@ func (pt *PrivTangle) waitInxPlugins() {
 		if allOK {
 			return
 		}
-		pt.logf("Waiting to all nodes INX plugings to startup.")
+		pt.logf("Waiting to all nodes INX Indexer plugins to startup.")
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (pt *PrivTangle) waitInxPluginsFaucet() {
+	for {
+		err := pt.queryFaucetInfo()
+		if err != nil {
+			pt.logf("Waiting for INX: Faucet, err=%v", err)
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		return
 	}
 }
 

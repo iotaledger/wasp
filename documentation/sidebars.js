@@ -162,6 +162,11 @@ module.exports = {
                         },
                         {
                             type: 'doc',
+                            label: 'The L2 Ledger',
+                            id: 'guide/solo/the-l2-ledger'
+                        },
+                        {
+                            type: 'doc',
                             label: 'Deploying a Smart Contract',
                             id: 'guide/solo/deploying-sc',
                         },
@@ -179,11 +184,6 @@ module.exports = {
                             type: 'doc',
                             label: 'Error Handling',
                             id: 'guide/solo/error-handling',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Accounts',
-                            id: 'guide/solo/the-l2-ledger'
                         },
                     ]
                 }

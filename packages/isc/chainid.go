@@ -35,12 +35,9 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
-	prefix, addr, err := iotago.ParseBech32(s)
+	_, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
-	}
-	if prefix != parameters.L1().Protocol.Bech32HRP {
-		return nil, fmt.Errorf("prefix doesn't match expected protocol prefix")
 	}
 	aliasAddr, ok := addr.(*iotago.AliasAddress)
 	if !ok {

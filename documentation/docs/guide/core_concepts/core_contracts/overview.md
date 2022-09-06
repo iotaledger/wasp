@@ -20,7 +20,7 @@ There are currently 7 core smart contracts that are always deployed on each
 chain. These are responsible for the vital functions of the chain and
 provide infrastructure for all other smart contracts:
 
-- [`root`](./root.md) - Responsible for the initialization of the chain, maintains registry of deployed contracts.
+- [`root`](./root.md): Responsible for the initialization of the chain, maintains registry of deployed contracts.
 
 - [`accounts`](./accounts.md): Manages the on-chain ledger of accounts.
 
