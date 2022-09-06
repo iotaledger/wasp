@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -54,7 +54,7 @@ func (mlT *MockedLedgers) GetLedger(chainID *isc.ChainID) *MockedLedger {
 
 func (mlT *MockedLedgers) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
 	closure := events.NewClosure(handler)
-	mlT.milestones.Attach(closure)
+	mlT.milestones.Hook(closure)
 	return closure
 }
 

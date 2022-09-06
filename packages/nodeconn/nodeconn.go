@@ -14,11 +14,11 @@ import (
 
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/events"
 	hivecore "github.com/iotaledger/hive.go/core/events"
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/hive.go/workerpool"
 	"github.com/iotaledger/inx-app/nodebridge"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -329,7 +329,7 @@ func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler c
 	}
 
 	closure := events.NewClosure(handler)
-	ncc.inclusionStates.Attach(closure)
+	ncc.inclusionStates.Hook(closure)
 	return closure, nil
 }
 
@@ -346,7 +346,7 @@ func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *
 // AttachMilestones implements chain.NodeConnection.
 func (nc *nodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
 	closure := events.NewClosure(handler)
-	nc.milestones.Attach(closure)
+	nc.milestones.Hook(closure)
 	return closure
 }
 

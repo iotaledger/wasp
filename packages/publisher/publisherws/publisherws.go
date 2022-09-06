@@ -7,11 +7,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"nhooyr.io/websocket"
+
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"nhooyr.io/websocket"
 )
 
 type PublisherWebSocket struct {
@@ -63,7 +64,7 @@ func (p *PublisherWebSocket) ServeHTTP(chainID *isc.ChainID, w http.ResponseWrit
 			p.log.Warnf("dropping websocket message for %s", r.RemoteAddr)
 		}
 	})
-	publisher.Event.Attach(cl)
+	publisher.Event.Hook(cl)
 	defer publisher.Event.Detach(cl)
 
 	for {

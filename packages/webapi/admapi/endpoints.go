@@ -4,17 +4,17 @@
 package admapi
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 var log *logger.Logger
@@ -33,6 +33,8 @@ func AddEndpoints(
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
 	w *wal.WAL,
+	authConfig authentication.AuthConfiguration,
+	nodeOwnerAddresses []string,
 ) {
 	initLogger()
 
@@ -41,9 +43,9 @@ func AddEndpoints(
 		return claims.HasPermission(permissions.API)
 	}
 
-	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, claimValidator)
+	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, authConfig, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
-	addNodeOwnerEndpoints(adm, registryProvider)
+	addNodeOwnerEndpoints(adm, registryProvider, nodeOwnerAddresses)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{

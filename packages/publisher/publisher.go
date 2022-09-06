@@ -1,7 +1,7 @@
 package publisher
 
 import (
-	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/core/events"
 )
 
 var Event = events.NewEvent(func(handler interface{}, params ...interface{}) {

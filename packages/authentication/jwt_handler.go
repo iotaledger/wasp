@@ -10,8 +10,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
-	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/users"
 )
 
 type AuthHandler struct {
@@ -80,7 +81,7 @@ func (a *AuthHandler) handleFormAuthRequest(c echo.Context, token string, errorR
 		Name:     "jwt",
 		Value:    token,
 		HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
-		Expires:  time.Now().Add(a.Jwt.durationHours * time.Hour),
+		Expires:  time.Now().Add(a.Jwt.duration),
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	}

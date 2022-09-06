@@ -3,21 +3,25 @@ package info
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 type infoService struct {
-	network peering.NetworkProvider
+	network       peering.NetworkProvider
+	publisherPort int
 }
 
-func AddEndpoints(server echoswagger.ApiRouter, network peering.NetworkProvider) {
-	s := &infoService{network}
+func AddEndpoints(server echoswagger.ApiRouter, network peering.NetworkProvider, publisherPort int) {
+	s := &infoService{
+		network:       network,
+		publisherPort: publisherPort,
+	}
 
 	server.GET(routes.Info(), s.handleInfo).
 		SetSummary("Get information about the node").
@@ -29,6 +33,6 @@ func (s *infoService) handleInfo(c echo.Context) error {
 		Version:       wasp.Version,
 		VersionHash:   wasp.VersionHash,
 		NetworkID:     s.network.Self().NetID(),
-		PublisherPort: parameters.GetInt(parameters.NanomsgPublisherPort),
+		PublisherPort: s.publisherPort,
 	})
 }

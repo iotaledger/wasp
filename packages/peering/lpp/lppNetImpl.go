@@ -26,14 +26,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/peering/domain"
-	"github.com/iotaledger/wasp/packages/peering/group"
-	"github.com/iotaledger/wasp/packages/util"
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
@@ -44,6 +37,14 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/domain"
+	"github.com/iotaledger/wasp/packages/peering/group"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -362,7 +363,7 @@ func (n *netImpl) Attach(peeringID *peering.PeeringID, receiver byte, callback f
 			callback(recv)
 		}
 	})
-	n.recvEvents.Attach(closure)
+	n.recvEvents.Hook(closure)
 	return closure
 }
 

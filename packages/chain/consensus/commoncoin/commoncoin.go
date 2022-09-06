@@ -14,11 +14,12 @@ import (
 	"io"
 
 	"github.com/anthdm/hbbft"
-	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/crypto/bls"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // region blsCommonCoin ////////////////////////////////////////////////////////

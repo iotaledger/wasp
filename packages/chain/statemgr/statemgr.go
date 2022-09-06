@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -21,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/util/ready"
-	"go.uber.org/atomic"
 )
 
 type stateManager struct {
@@ -40,6 +41,11 @@ type stateManager struct {
 	receivePeerMessagesAttachID interface{}
 	timers                      StateManagerTimers
 	log                         *logger.Logger
+	stateManagerMetrics         metrics.StateManagerMetrics
+	wal                         chain.WAL
+	rawBlocksEnabled            bool
+	rawBlocksDir                string
+	unitTests                   bool
 
 	// Channels for accepting external events.
 	eventGetBlockMsgPipe       pipe.Pipe
@@ -47,8 +53,6 @@ type stateManager struct {
 	eventAliasOutputPipe       pipe.Pipe
 	eventStateCandidateMsgPipe pipe.Pipe
 	eventTimerMsgPipe          pipe.Pipe
-	stateManagerMetrics        metrics.StateManagerMetrics
-	wal                        chain.WAL
 }
 
 var _ chain.StateManager = &stateManager{}
@@ -69,6 +73,9 @@ func New(
 	nodeconn chain.ChainNodeConnection,
 	stateManagerMetrics metrics.StateManagerMetrics,
 	wal chain.WAL,
+	rawBlocksEnabled bool,
+	rawBlocksDir string,
+	unitTests bool,
 	timersOpt ...StateManagerTimers,
 ) chain.StateManager {
 	var timers StateManagerTimers
@@ -95,6 +102,9 @@ func New(
 		eventTimerMsgPipe:          pipe.NewLimitInfinitePipe(1),
 		stateManagerMetrics:        stateManagerMetrics,
 		wal:                        wal,
+		rawBlocksEnabled:           rawBlocksEnabled,
+		rawBlocksDir:               rawBlocksDir,
+		unitTests:                  unitTests,
 	}
 	ret.receivePeerMessagesAttachID = ret.domain.Attach(peering.PeerMessageReceiverStateManager, ret.receiveChainPeerMessages)
 	go ret.initLoadState()
