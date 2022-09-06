@@ -15,7 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
@@ -161,17 +160,7 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
-	var r *regexp.Regexp
-	switch runtime.GOOS {
-	case "windows":
-		pattern := "^[^<>:\"/\\|?*]+$"
-		r = regexp.MustCompile(pattern)
-	default:
-		// assume UNIX-like systems
-		pattern := "^[^/]+$"
-		r = regexp.MustCompile(pattern)
-	}
-
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
 	if !r.MatchString(*flagInit) {
 		return fmt.Errorf("name contains path characters")
 	}
