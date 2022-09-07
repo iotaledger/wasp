@@ -72,9 +72,9 @@ var _ chain.NodeConnection = &nodeConn{}
 func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
-		MaxTransactionSize: parameters.MaxTransactionSize,
-		Protocol:           &info.Protocol,
-		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
+		MaxPayloadSize: parameters.MaxPayloadSize,
+		Protocol:       &info.Protocol,
+		BaseToken:      (*parameters.BaseToken)(info.BaseToken),
 	})
 }
 

@@ -534,7 +534,7 @@ func TestMessageSize(t *testing.T) {
 	reqSize := 5_000 // bytes
 	storageDeposit := 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1().MaxTransactionSize / reqSize
+	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
