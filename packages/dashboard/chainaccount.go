@@ -17,7 +17,7 @@ var tplChainAccount string
 func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/account/:agentid", d.handleChainAccount)
 	route.Name = "chainAccount"
-	r[route.Path] = d.makeTemplate(e, tplChainAccount, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainAccount)
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
