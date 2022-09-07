@@ -311,36 +311,6 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	require.Contains(t, out[0], description)
 }
 
-func TestWaspCLIBalance(t *testing.T) {
-	newWaspCLITest(t)
-	// TODO: Implement!
-	// w.Run("mint", "1000")
-
-	// out := w.Run("balance")
-
-	// bals := map[string]uint64{}
-	// var mintedColor string
-	// for _, line := range out {
-	// 	m := regexp.MustCompile(`(?m)(\w+):\s+(\d+)$`).FindStringSubmatch(line)
-	// 	if len(m) == 0 {
-	// 		continue
-	// 	}
-	// 	if m[1] == "Total" {
-	// 		continue
-	// 	}
-	// 	v, err := strconv.Atoi(m[2])
-	// 	require.NoError(t, err)
-	// 	bals[m[1]] = uint64(v)
-	// 	if m[1] != "IOTA" {
-	// 		mintedColor = m[1]
-	// 	}
-	// }
-	// t.Logf("%+v", bals)
-	// require.Equal(t, 2, len(bals))
-	// require.EqualValues(t, utxodb.RequestFundsAmount-1000, bals["IOTA"])
-	// require.EqualValues(t, 1000, bals[mintedColor])
-}
-
 func TestWaspCLIRejoinChain(t *testing.T) {
 	w := newWaspCLITest(t)
 
