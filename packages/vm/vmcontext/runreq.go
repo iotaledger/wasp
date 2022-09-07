@@ -409,7 +409,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 func (vmctx *VMContext) mustCheckTransactionSize() {
 	essence, _ := vmctx.txbuilder.BuildTransactionEssence(state.L1CommitmentNil)
 	tx := transaction.MakeAnchorTransaction(essence, &iotago.Ed25519Signature{})
-	if tx.Size() > parameters.L1().MaxTransactionSize {
+	if tx.Size() > parameters.L1().MaxPayloadSize {
 		panic(vmexceptions.ErrMaxTransactionSizeExceeded)
 	}
 }

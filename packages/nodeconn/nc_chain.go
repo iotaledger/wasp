@@ -84,7 +84,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	}
 
 	// check if the transaction was already included (race condition with other validators)
-	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), ncc.nc.nodeBridge.ProtocolParameters()); err == nil {
+	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), parameters.L1().Protocol); err == nil {
 		// transaction was already included
 		pendingTx.SetConfirmed()
 	} else {

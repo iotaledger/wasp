@@ -321,6 +321,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		testConsenseusReconnectingNodesHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
+	// TODO this seems to be failing
 	t.Run("cluster=12,numValidators=10,numBrokenNodes=4,req=35,quorum=YES", func(t *testing.T) {
 		testutil.RunHeavy(t)
 		const clusterSize = 12
