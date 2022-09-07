@@ -40,7 +40,7 @@ func init() {
 			Run:       run,
 		},
 		IsEnabled: func() bool {
-			return true
+			return ParamsDashboard.Enabled
 		},
 	}
 }

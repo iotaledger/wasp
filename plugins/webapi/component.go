@@ -35,7 +35,7 @@ func init() {
 			Run:      run,
 		},
 		IsEnabled: func() bool {
-			return true
+			return ParamsWebAPI.Enabled
 		},
 	}
 }
