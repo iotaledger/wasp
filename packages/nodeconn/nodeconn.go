@@ -72,7 +72,7 @@ var _ chain.NodeConnection = &nodeConn{}
 func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
-		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
+		MaxTransactionSize: parameters.MaxTransactionSize,
 		Protocol:           &info.Protocol,
 		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
 	})
@@ -209,7 +209,7 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	}()
 
 	for _, ledgerOutput := range update.Created {
-		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, nc.nodeBridge.ProtocolParameters())
+		output, err := ledgerOutput.UnwrapOutput(serializer.DeSeriModeNoValidation, parameters.L1().Protocol)
 		if err != nil {
 			return err
 		}

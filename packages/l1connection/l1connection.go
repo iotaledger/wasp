@@ -370,7 +370,7 @@ func newCtx(ctx context.Context, timeout ...time.Duration) (context.Context, con
 func setL1ProtocolParams(info *nodeclient.InfoResponse) {
 	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
-		MaxTransactionSize: 32000, // TODO should this value come from the API in the future? or some const in iotago?
+		MaxTransactionSize: parameters.MaxTransactionSize,
 		Protocol:           &info.Protocol,
 		BaseToken:          (*parameters.BaseToken)(info.BaseToken),
 	})
