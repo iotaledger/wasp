@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -159,7 +160,8 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
-	if strings.Contains(*flagInit, "/") {
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
+	if !r.MatchString(*flagInit) {
 		return fmt.Errorf("name contains path characters")
 	}
 	name := *flagInit
