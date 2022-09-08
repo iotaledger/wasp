@@ -124,7 +124,7 @@ pub fn func_send_nf_ts_back(ctx: &ScFuncContext, _f: &SendNFTsBackContext) {
     let transfer = wasmlib::ScTransfer::from_balances(&allowance);
     ctx.transfer_allowed(&ctx.account_id(), &transfer, false);
     for nft_id in allowance.nft_ids() {
-        let transfer = ScTransfer::nft(nft_id);
+        let transfer = ScTransfer::nft(&nft_id);
         ctx.send(&address, &transfer);
     }
 }
