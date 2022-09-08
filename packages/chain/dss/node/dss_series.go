@@ -39,6 +39,11 @@ type dssSeriesImpl struct {
 	peerNIDs []gpa.NodeID // Index to NodeID mapping.
 }
 
+func IsEnoughQuorum(n, t int) (bool, int) {
+	maxF := (n - 1) / 3
+	return t >= (n - maxF), maxF
+}
+
 func newSeries(node *dssNodeImpl, key string, dkShare tcrypto.DKShare) *dssSeriesImpl {
 	dkSharePubKeys := dkShare.GetNodePubKeys()
 	nodeIndexToPeerNIDs := make([]gpa.NodeID, len(dkSharePubKeys))
@@ -48,9 +53,8 @@ func newSeries(node *dssNodeImpl, key string, dkShare tcrypto.DKShare) *dssSerie
 		nodeIDsToPeerPubs[nodeIndexToPeerNIDs[i]] = dkSharePubKeys[i]
 	}
 	cmtN := int(dkShare.GetN())
-	maxF := (cmtN - 1) / 3
 	dksT := int(dkShare.GetT())
-	if dksT < (cmtN - maxF) {
+	if ok, maxF := IsEnoughQuorum(cmtN, dksT); !ok {
 		panic(xerrors.Errorf("cannot create DSS instance for cmtN=%v, maxF=%v, T=%v", cmtN, maxF, dksT))
 	}
 	s := &dssSeriesImpl{
