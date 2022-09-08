@@ -978,7 +978,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				Amount:         OneMi,
 				NativeTokens:   nil,
 				AliasID:        aliasIdent1.AliasID(),
-				StateIndex:     1,
+				StateIndex:     2,
 				StateMetadata:  nil,
 				FoundryCounter: 1,
 				Conditions: iotago.UnlockConditions{
