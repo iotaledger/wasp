@@ -31,7 +31,7 @@ func chainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
 func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid", d.handleChain)
 	route.Name = "chain"
-	r[route.Path] = d.makeTemplate(e, tplChain, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChain)
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {

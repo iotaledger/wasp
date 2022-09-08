@@ -85,8 +85,6 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 		d.metricsInit(server, r),
 	}
 
-	d.webSocketInit(server)
-
 	return d
 }
 
