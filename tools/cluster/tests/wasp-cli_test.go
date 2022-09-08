@@ -314,6 +314,13 @@ func TestWaspCLIBlobContract(t *testing.T) {
 func TestWaspCLIRejoinChain(t *testing.T) {
 	w := newWaspCLITest(t)
 
+	// make sure deploying with a bad quorum breaks
+	require.Panics(
+		t,
+		func() {
+			w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3,4,5", "--quorum=4")
+		})
+
 	alias := "chain1"
 
 	committee, quorum := w.CommitteeConfig()

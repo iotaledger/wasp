@@ -91,7 +91,7 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		w.T.Fatal(
+		panic(
 			fmt.Errorf(
 				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
 				strings.Join(args, " "),
