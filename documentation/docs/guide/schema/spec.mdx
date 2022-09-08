@@ -144,7 +144,7 @@ However, after the compilation, information is extracted from the raw string, so
 
 ### Compile
 
-An emitter is used for filling corresponding values into templates under [`tools/schema/generator`](../../../tools/schema/generator).
+An emitter is used for filling corresponding values into templates under `tools/schema/generator`.
 For how to do meta-programming with emitter, see section [Emitter](#Emitter)
 
 ```go
@@ -216,7 +216,7 @@ will be kept and presented in the final Smart Contract.
 ### Access Keys
 
 With `$` prepending a key (keys are set in `GenBase.setCommonKeys()`, `GenBase.setFieldKeys()`, `GenBase.setFuncKeys()`),  schema tool can access the value of the key in `GenBase.keys` according to the current context. For example, if you want to access lower case package name, you can access it with `$package`.
-To dynamically add a new key in templates (under [gotemplates](../../../tools/schema/generator/gotemplates), [rstemplates](../../../tools/schema/generator/rstemplates), and [tstemplates](../../../tools/schema/generator/tstemplates)), you can call `$#set` instruction, see section [set](#set) for more information.
+To dynamically add a new key in templates (under gotemplates, rstemplates, and tstemplates), you can call `$#set` instruction, see section [set](#set) for more information.
 
 ### Key And Plain String Concatenation
 
@@ -252,7 +252,7 @@ We are going to introduce how to use each instruction as follows. Or you can che
 $#emit template
 ```
 
-Here, `tamplate` is any template which defined under [gotemplates](../../../tools/schema/generator/gotemplates), [rstemplates](../../../tools/schema/generator/rstemplates).
+Here, `template` is any template which defined under gotemplates,rstemplates).
 Templates are defined in `model.StringMap`. In the instruction call of `emit` just simply use the name of the template (the key in `model.StringMap`).
 If you want to insert the `copyright` template to a assigned location, then you should call 
 
@@ -344,7 +344,7 @@ Is the current processed field an array?
 
 ##### basetype
 
-Is the current processed field in basetype? `basetype`s are defined in the map `FieldTypes` in [`tools/schema/model/field.go`](../../../tools/schema/model/field.go).
+Is the current processed field in basetype? `basetype`s are defined in the map `FieldTypes` in `tools/schema/model/field.go`.
 
 ##### core
 
@@ -438,7 +438,7 @@ If you want to process a template under negate condition, then you can call
 $#if condition else elseTemplate
 ```
 
-Here `else` is a predefined empty template, which is defined at [`tools/schema/generator/templates.go`](../../../tools/schema/generator/templates.go).
+Here `else` is a predefined empty template, which is defined at[`tools/schema/generator/templates.go`.
 
 #### set
 
