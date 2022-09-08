@@ -64,8 +64,7 @@ func Parse(in []byte) *Node {
 					} else if value[0] == '"' || value[last] == '"' {
 						fmt.Printf("value is not enclosed by \" at line: %d.\n", lineNum)
 						return nil
-					}
-					if value[0] == '\'' && value[last] == '\'' {
+					} else if value[0] == '\'' && value[last] == '\'' {
 						value = value[1:last]
 					} else if value[0] == '\'' || value[last] == '\'' {
 						fmt.Printf("value is not enclosed by ' at line: %d.\n", lineNum)
