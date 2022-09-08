@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -130,8 +131,8 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	// XXX: Preserve line number until here
-	// XXX: comments are still preserved during generation
+	// Preserve line number until here
+	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
 		err = g.Generate()
@@ -159,7 +160,10 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
-	// TODO make sure name is valid: no path characters
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
+	if !r.MatchString(*flagInit) {
+		return fmt.Errorf("name contains path characters")
+	}
 	name := *flagInit
 	fmt.Println("initializing " + name)
 

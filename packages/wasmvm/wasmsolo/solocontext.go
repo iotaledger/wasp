@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const ( // TODO set back to false
+const (
 	SoloDebug        = false
 	SoloHostTracing  = false
 	SoloStackTracing = false

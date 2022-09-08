@@ -16,8 +16,8 @@ const OWNER_MARGIN_MAX: u64 = 100;
 export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionContext): void {
     let allowance = ctx.allowance();
     let nfts = allowance.nftIDs();
-    ctx.require(nfts.length == 1, "single NFT allowance expected")
-    let auctionNFT = nfts[0]
+    ctx.require(nfts.size == 1, "single NFT allowance expected")
+    let auctionNFT = nfts.values()[0];
 
     let minimumBid = f.params.minimumBid().value();
 
@@ -46,7 +46,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
         ownerMargin = OWNER_MARGIN_DEFAULT;
     }
 
-    //TODO need at least 1 iota to run SC
+    // need at least 1 base token to run SC
     let margin = minimumBid * ownerMargin / 1000;
     if (margin == 0) {
         margin = 1;

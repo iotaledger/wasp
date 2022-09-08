@@ -13,7 +13,7 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	BaseTokens uint64
-	NftIDs     []*wasmtypes.ScNftID
+	NftIDs     map[wasmtypes.ScNftID]bool
 	Tokens     TokenAmounts
 }
 
@@ -36,9 +36,12 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	size = wasmtypes.Uint32Decode(dec)
+	if size > 0 {
+		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
+	}
 	for ; size > 0; size-- {
 		nftID := wasmtypes.NftIDDecode(dec)
-		assets.NftIDs = append(assets.NftIDs, &nftID)
+		assets.NftIDs[nftID] = true
 	}
 	return assets
 }
@@ -62,8 +65,8 @@ func (a *ScAssets) Bytes() []byte {
 	}
 
 	wasmtypes.Uint32Encode(enc, uint32(len(a.NftIDs)))
-	for _, nftID := range a.NftIDs {
-		wasmtypes.NftIDEncode(enc, *nftID)
+	for nftID := range a.NftIDs {
+		wasmtypes.NftIDEncode(enc, nftID)
 	}
 	return enc.Buf()
 }
@@ -119,7 +122,7 @@ func (b *ScBalances) IsEmpty() bool {
 	return b.assets.IsEmpty()
 }
 
-func (b *ScBalances) NftIDs() []*wasmtypes.ScNftID {
+func (b *ScBalances) NftIDs() map[wasmtypes.ScNftID]bool {
 	return b.assets.NftIDs
 }
 
@@ -135,7 +138,7 @@ type ScTransfer struct {
 
 // create a new transfer object ready to add token transfers
 func NewScTransfer() *ScTransfer {
-	return &ScTransfer{ScBalances{assets: &ScAssets{}}}
+	return &ScTransfer{ScBalances{assets: NewScAssets(nil)}}
 }
 
 // create a new transfer object from a balances object
@@ -144,8 +147,8 @@ func NewScTransferFromBalances(balances *ScBalances) *ScTransfer {
 	for _, tokenID := range balances.TokenIDs() {
 		transfer.Set(tokenID, balances.Balance(tokenID))
 	}
-	for _, nftID := range balances.NftIDs() {
-		transfer.AddNFT(nftID)
+	for nftID := range balances.NftIDs() {
+		transfer.AddNFT(&nftID)
 	}
 	return transfer
 }
@@ -172,8 +175,10 @@ func NewScTransferTokens(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt
 }
 
 func (t *ScTransfer) AddNFT(nftID *wasmtypes.ScNftID) {
-	// TODO filter doubles
-	t.assets.NftIDs = append(t.assets.NftIDs, nftID)
+	if t.assets.NftIDs == nil {
+		t.assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
+	}
+	t.assets.NftIDs[*nftID] = true
 }
 
 func (t *ScTransfer) Bytes() []byte {
