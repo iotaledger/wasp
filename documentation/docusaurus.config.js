@@ -5,16 +5,15 @@ module.exports = {
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'wasp-develop',
+        id: 'wasp',
         path: path.resolve(__dirname, 'docs'),
         routeBasePath: 'smart-contracts',
         sidebarPath: path.resolve(__dirname, 'sidebars.js'),
-        editUrl: 'https://github.com/iotaledger/wasp/edit/develop/documentation',
+        editUrl: 'https://github.com/iotaledger/wasp/edit/master/documentation',
         remarkPlugins: [require('remark-code-import'), require('remark-import-partial'), require('remark-remove-comments')],
         versions: {
           current: {
-            label: 'Develop',
-            path: 'develop'
+            label: 'Stable'
           },
         },
       }
