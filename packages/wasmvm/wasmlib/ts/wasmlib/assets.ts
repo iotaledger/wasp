@@ -6,7 +6,7 @@ import {ScDict} from "./dict";
 
 export class ScAssets {
     baseTokens: u64 = 0;
-    nftIDs: wasmtypes.ScNftID[] = [];
+    nftIDs: Set<wasmtypes.ScNftID> = new Set();
     tokens: Map<string, wasmtypes.ScBigInt> = new Map();
 
     public constructor(buf: u8[]) {
@@ -26,7 +26,7 @@ export class ScAssets {
         size = wasmtypes.uint32Decode(dec);
         for (let i: u32 = 0; i < size; i++) {
             const nftID = wasmtypes.nftIDDecode(dec);
-            this.nftIDs.push(nftID)
+            this.nftIDs.add(nftID)
         }
     }
 
@@ -44,7 +44,7 @@ export class ScAssets {
                 return false;
             }
         }
-        return this.nftIDs.length == 0;
+        return this.nftIDs.size == 0;
     }
     
     public toBytes(): u8[] {
@@ -61,9 +61,10 @@ export class ScAssets {
             wasmtypes.bigIntEncode(enc, amount);
         }
 
-        wasmtypes.uint32Encode(enc, this.nftIDs.length as u32);
-        for (let i = 0; i < this.nftIDs.length; i++) {
-            const nftID = this.nftIDs[i]
+        wasmtypes.uint32Encode(enc, this.nftIDs.size as u32);
+        let arr = this.nftIDs.values();
+        for (let i = 0; i < arr.length; i++) {
+            let nftID = arr[i];
             wasmtypes.nftIDEncode(enc, nftID);
         }
         return enc.buf()
@@ -104,7 +105,7 @@ export class ScBalances {
         return this.assets.isEmpty();
     }
 
-    public nftIDs(): wasmtypes.ScNftID[] {
+    public nftIDs(): Set<wasmtypes.ScNftID> {
         return this.assets.nftIDs;
     }
 
@@ -129,10 +130,9 @@ export class ScTransfer extends ScBalances{
             const tokenID = tokenIDs[i];
             transfer.set(tokenID, balances.balance(tokenID));
         }
-        const nftIDs = balances.nftIDs();
+        const nftIDs = balances.nftIDs().values();
         for (let i = 0; i < nftIDs.length; i++) {
-            const nftID = nftIDs[i];
-            transfer.addNFT(nftID);
+            transfer.addNFT(nftIDs[i]);
         }
         return transfer;
     }
@@ -156,7 +156,7 @@ export class ScTransfer extends ScBalances{
     }
 
     public addNFT(nftID: wasmtypes.ScNftID): void {
-        this.assets.nftIDs.push(nftID);
+        this.assets.nftIDs.add(nftID);
     }
 
     public set(tokenID: wasmtypes.ScTokenID, amount: wasmtypes.ScBigInt): void {

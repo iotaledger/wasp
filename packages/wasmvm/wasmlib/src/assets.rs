@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use crate::*;
 
 #[derive(Clone)]
 pub struct ScAssets {
     base_tokens: u64,
-    nft_ids: Vec<ScNftID>,
+    nft_ids: HashSet<ScNftID>,
     tokens: BTreeMap<Vec<u8>, ScBigInt>,
 }
 
@@ -16,7 +16,7 @@ impl ScAssets {
     pub fn new(buf: &[u8]) -> ScAssets {
         let mut assets = ScAssets {
             base_tokens: 0,
-            nft_ids: Vec::new(),
+            nft_ids: HashSet::new(),
             tokens: BTreeMap::new(),
         };
         if buf.len() == 0 {
@@ -36,13 +36,15 @@ impl ScAssets {
         let size = uint32_decode(&mut dec);
         for _i in 0..size {
             let nft_id = nft_id_decode(&mut dec);
-            assets.nft_ids.push(nft_id);
+            assets.nft_ids.insert(nft_id);
         }
         assets
     }
 
     pub fn balances(&self) -> ScBalances {
-        ScBalances { assets: self.clone() }
+        ScBalances {
+            assets: self.clone(),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -90,7 +92,9 @@ pub struct ScBalances {
 
 impl ScBalances {
     fn new() -> ScBalances {
-        ScBalances { assets: ScAssets::new(&[]) }
+        ScBalances {
+            assets: ScAssets::new(&[]),
+        }
     }
 
     pub fn balance(&self, token: &ScTokenID) -> ScBigInt {
@@ -109,8 +113,12 @@ impl ScBalances {
         self.assets.is_empty()
     }
 
-    pub fn nft_ids(&self) -> &Vec<ScNftID> {
-        &self.assets.nft_ids
+    pub fn nft_ids(&self) -> Vec<ScNftID> {
+        let mut nft_ids = Vec::new();
+        for nft_id in self.assets.nft_ids.iter() {
+            nft_ids.push(*nft_id);
+        }
+        return nft_ids;
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -129,7 +137,9 @@ pub struct ScTransfer {
 
 impl ScTransfer {
     pub fn new() -> ScTransfer {
-        ScTransfer { balances: ScBalances::new() }
+        ScTransfer {
+            balances: ScBalances::new(),
+        }
     }
 
     pub fn from_balances(balances: &ScBalances) -> ScTransfer {
@@ -162,11 +172,14 @@ impl ScTransfer {
     }
 
     pub fn add_nft(&mut self, nft_id: &ScNftID) {
-        self.balances.assets.nft_ids.push(nft_id.clone());
+        self.balances.assets.nft_ids.insert(nft_id.clone());
     }
 
     pub fn set(&mut self, token: &ScTokenID, amount: &ScBigInt) {
-        self.balances.assets.tokens.insert(token.to_bytes(), amount.clone());
+        self.balances
+            .assets
+            .tokens
+            .insert(token.to_bytes(), amount.clone());
     }
 }
 

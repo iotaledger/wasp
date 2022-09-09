@@ -25,7 +25,12 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 	allowance := ctx.Allowance()
 	nfts := allowance.NftIDs()
 	ctx.Require(len(nfts) == 1, "single NFT allowance expected")
-	auctionNFT := nfts[0]
+
+	var auctionNFT wasmtypes.ScNftID
+	for nft := range nfts {
+		auctionNFT = nft
+		break
+	}
 
 	minimumBid := f.Params.MinimumBid().Value()
 
@@ -55,7 +60,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		ownerMargin = OwnerMarginDefault
 	}
 
-	// TODO need at least 1 iota (storage deposit) to run SC
+	// need at least 1 base token (storage deposit) to run SC
 	margin := minimumBid * ownerMargin / 1000
 	if margin == 0 {
 		margin = 1
@@ -65,7 +70,7 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		ctx.Panic("Insufficient deposit")
 	}
 
-	currentAuction := f.State.Auctions().GetAuction(*auctionNFT)
+	currentAuction := f.State.Auctions().GetAuction(auctionNFT)
 	if currentAuction.Exists() {
 		ctx.Panic("Auction for this nft already exists")
 	}
@@ -79,14 +84,14 @@ func funcStartAuction(ctx wasmlib.ScFuncContext, f *StartAuctionContext) {
 		HighestBidder: ctx.Caller(),
 		MinimumBid:    minimumBid,
 		OwnerMargin:   ownerMargin,
-		Nft:           *auctionNFT,
+		Nft:           auctionNFT,
 		WhenStarted:   ctx.Timestamp(),
 	}
 	currentAuction.SetValue(auction)
 
 	// take custody of deposit and NFT
 	transfer := wasmlib.NewScTransferBaseTokens(deposit)
-	transfer.AddNFT(auctionNFT)
+	transfer.AddNFT(&auctionNFT)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 
 	fa := ScFuncs.FinalizeAuction(ctx)
