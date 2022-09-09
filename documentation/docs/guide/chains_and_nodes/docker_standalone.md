@@ -63,7 +63,7 @@ editing the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop
 
 ```json
 "l1": {
-  "inxAddress": "http://hornet:9029",
+  "inxAddress": "hornet:9029",
 },
 ```
 
