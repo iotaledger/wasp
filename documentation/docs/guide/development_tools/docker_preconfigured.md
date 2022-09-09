@@ -57,7 +57,7 @@ Besides this, everything should simply work as expected. Faucet requests will be
 
 - Wasp Dashboard (7000) (username: wasp, password: wasp)
 - Wasp API (9090)
-- Hornet Dashboard (8082) (username: admin, password: admin)
+- Hornet Dashboard (8081) (username: admin, password: admin)
 - Hornet API (14265)
 - Faucet API (8091)
 
