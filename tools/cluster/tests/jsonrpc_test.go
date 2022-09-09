@@ -34,20 +34,27 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T, opt ...waspClusterOpts) *clusterTestEnv {
-	evmtest.InitGoEthLogger(t)
-
-	clu := newCluster(t, opt...)
-
-	chain, err := clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	jsonRPCEndpoint := "http://" + clu.Config.APIHost(0) + routes.EVMJSONRPC(chain.ChainID.String())
-
+func getEVMClient(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain, index int) (*ethclient.Client, *rpc.Client) {
+	jsonRPCEndpoint := "http://" + clu.Config.APIHost(index) + routes.EVMJSONRPC(chain.ChainID.String())
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
 	t.Cleanup(client.Close)
+	return client, rawClient
+}
+
+func newClusterTestEnv(t *testing.T, committee []int, opt ...waspClusterOpts) *clusterTestEnv {
+	evmtest.InitGoEthLogger(t)
+
+	clu := newCluster(t, opt...)
+
+	quorum := uint16((2*len(committee))/3 + 1)
+	addr, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+	t.Logf("deployed chainID: %s", chain.ChainID)
 
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := chain.Client(nil)
@@ -70,6 +77,8 @@ func newClusterTestEnv(t *testing.T, opt ...waspClusterOpts) *clusterTestEnv {
 		}
 		return nil
 	}
+
+	client, rawClient := getEVMClient(t, clu, chain, 0)
 
 	return &clusterTestEnv{
 		Env: jsonrpctest.Env{
@@ -124,12 +133,26 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 }
 
 func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
-	e := newClusterTestEnv(t)
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, waspClusterOpts{
+		nNodes: 4,
+	})
 	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }
 
 func TestEVMJsonRPCClusterInvalidTx(t *testing.T) {
-	e := newClusterTestEnv(t)
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, waspClusterOpts{
+		nNodes: 4,
+	})
 	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
 	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
+}
+
+func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, waspClusterOpts{
+		nNodes: 5, // node #4 is an access node
+	})
+	client, rawClient := getEVMClient(t, e.cluster, e.chain, 4)
+	e.Client = client // use the access node to send EVM requests
+	e.RawClient = rawClient
+	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }

@@ -17,7 +17,7 @@ import (
 var magicContractAddress = common.HexToAddress("1074")
 
 func TestEVMChainHalt(t *testing.T) {
-	e := newClusterTestEnv(t, waspClusterOpts{
+	e := newClusterTestEnv(t, []int{0}, waspClusterOpts{
 		nNodes: 1,
 	})
 
