@@ -4,9 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/assert"
@@ -14,16 +16,16 @@ import (
 )
 
 func TestSetThenGet(t *testing.T) {
-	chainID := iscp.RandomChainID([]byte("hmm"))
+	chainID := isc.RandomChainID([]byte("hmm"))
 	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
-	hname := iscp.Hn("test")
+	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
+		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		callStack:          []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
@@ -74,15 +76,15 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	chainID := iscp.RandomChainID([]byte("hmm"))
+	chainID := isc.RandomChainID([]byte("hmm"))
 	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
-	hname := iscp.Hn("test")
+	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
+		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
 		virtualState:       virtualState,
-		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -100,4 +102,27 @@ func TestIterate(t *testing.T) {
 	require.Equal(t, []byte{42}, arr[0])
 	require.Equal(t, []byte{42 * 2}, arr[1])
 	assert.NoError(t, err)
+}
+
+func TestVmctxStateDeletion(t *testing.T) {
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), isc.RandomChainID())
+	// stateUpdate := state.NewStateUpdate()
+	store := virtualState.KVStore()
+	foo := kv.Key("foo")
+	store.Set(foo, []byte("bar"))
+	virtualState.Commit()
+	require.EqualValues(t, "bar", store.MustGet(foo))
+
+	stateUpdate := state.NewStateUpdate()
+	vmctx := &VMContext{
+		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
+		virtualState:       virtualState,
+		currentStateUpdate: stateUpdate,
+	}
+	vmctxStore := vmctx.chainState()
+	require.EqualValues(t, "bar", vmctxStore.MustGet(foo))
+	vmctxStore.Del(foo)
+	require.False(t, vmctxStore.MustHas(foo))
+	val := vmctxStore.MustGet(foo)
+	require.Nil(t, val)
 }

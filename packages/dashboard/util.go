@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -18,8 +19,12 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
-func colorref(color colored.Color) *colored.Color {
-	return &color
+func chainIDref(chID isc.ChainID) *isc.ChainID {
+	return &chID
+}
+
+func assetID(aID []byte) []byte {
+	return aID
 }
 
 func trim(max int, s string) string {
@@ -71,8 +76,45 @@ func formatTimestampOrNever(t time.Time) string {
 	return formatTimestamp(t)
 }
 
-func exploreAddressURL(baseURL string) func(address ledgerstate.Address) string {
-	return func(address ledgerstate.Address) string {
-		return baseURL + "/" + address.Base58()
+func (d *Dashboard) exploreAddressURL(address iotago.Address) string {
+	return d.wasp.ExploreAddressBaseURL() + "/" + d.addressToString(address)
+}
+
+func (d *Dashboard) addressToString(a iotago.Address) string {
+	return a.Bech32(parameters.L1().Protocol.Bech32HRP)
+}
+
+func (d *Dashboard) agentIDToString(a isc.AgentID) string {
+	return a.String()
+}
+
+func (d *Dashboard) getETHAddress(a isc.AgentID) string {
+	if !d.isETHAddress(a) {
+		return ""
 	}
+
+	ethAgent, _ := a.(*isc.EthereumAddressAgentID)
+
+	return ethAgent.EthAddress().String()
+}
+
+func (d *Dashboard) isETHAddress(a isc.AgentID) bool {
+	_, ok := a.(*isc.EthereumAddressAgentID)
+
+	return ok
+}
+
+func (d *Dashboard) isValidAddress(a isc.AgentID) bool {
+	addr := d.addressFromAgentID(a)
+
+	if addr != nil {
+		return true
+	}
+
+	return d.isETHAddress(a)
+}
+
+func (d *Dashboard) addressFromAgentID(a isc.AgentID) iotago.Address {
+	addr, _ := isc.AddressFromAgentID(a)
+	return addr
 }

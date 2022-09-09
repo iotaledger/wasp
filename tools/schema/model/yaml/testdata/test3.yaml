@@ -1,0 +1,64 @@
+name: SchemaComment
+description: test description
+
+
+
+events: 
+  TestEvent1: 
+    eventParam11: String 
+  TestEvent2: 
+    eventParam21: String 
+    eventParam22: String 
+
+
+
+structs:
+  TestStruct1:
+    x: Int32
+    y: Int32
+    
+  TestStruct2:
+    x: 
+      Int32
+
+funcs:
+  TestFunc1:
+    access: owner
+    params:
+      name: String
+      value: String
+    results:
+      length: Uint32
+  TestFunc2:
+    access: owner
+    params:
+      name: String
+      value: String
+    results:
+      length: Uint32
+    
+
+views:
+  TestView1:
+    access: owner
+    params:
+      name: String
+      id: Int32
+    results:
+      length: Uint32
+  TestView2:
+    access: owner
+    params:
+      name: String
+      id: Int32
+    results:
+      length: Uint32
+
+typedefs:
+  TestTypedef: String[]
+
+   ##################################
+
+state:
+
+  TestState: Int64[]

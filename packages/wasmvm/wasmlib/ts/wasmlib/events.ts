@@ -4,6 +4,10 @@
 import * as wasmtypes from "./wasmtypes"
 import {ScFuncContext} from "./context";
 
+export interface IEventHandler {
+    callHandler(topic: string, params: string[]): void;
+}
+
 export class EventEncoder {
     event: string;
 
@@ -19,7 +23,25 @@ export class EventEncoder {
     }
 
     encode(value: string): void {
-        //TODO encode potential vertical bars that are present in the value string
+        value = value.replaceAll("~", "~~")
+        value = value.replaceAll("|", "~/")
+        value = value.replaceAll(" ", "~_")
         this.event += "|" + value;
+    }
+}
+
+export class EventDecoder {
+    msg: string[];
+
+    constructor(msg: string[]) {
+        this.msg = msg;
+    }
+
+    decode(): string {
+        return this.msg.shift();
+    }
+
+    timestamp(): u32 {
+        return wasmtypes.uint32FromString(this.decode());
     }
 }

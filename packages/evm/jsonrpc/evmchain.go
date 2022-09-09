@@ -4,48 +4,44 @@
 package jsonrpc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/contracts/native/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type EVMChain struct {
-	backend      ChainBackend
-	chainID      int
-	contractName string
+	backend ChainBackend
+	chainID uint16
 }
 
-func NewEVMChain(backend ChainBackend, chainID int, contractName string) *EVMChain {
-	return &EVMChain{backend, chainID, contractName}
+func NewEVMChain(backend ChainBackend, chainID uint16) *EVMChain {
+	return &EVMChain{backend, chainID}
 }
 
 func (e *EVMChain) Signer() types.Signer {
-	return evmtypes.Signer(big.NewInt(int64(e.chainID)))
+	return evmutil.Signer(big.NewInt(int64(e.chainID)))
 }
 
-func (e *EVMChain) GasPerIota() (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetGasPerIota.Name, nil)
-	if err != nil {
-		return 0, err
-	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult))
+func (e *EVMChain) ViewCaller() errors.ViewCaller {
+	return e.backend.ISCCallView
 }
 
 func (e *EVMChain) BlockNumber() (*big.Int, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockNumber.Name, nil)
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetBlockNumber.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,64 +51,69 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 	return bal, nil
 }
 
-func (e *EVMChain) FeeColor() (colored.Color, error) {
-	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
-		root.ParamHname: iscp.Hn(e.contractName).Bytes(),
-	})
+func (e *EVMChain) GasRatio() (util.Ratio32, error) {
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetGasRatio.Name, nil)
 	if err != nil {
-		return colored.Color{}, err
+		return util.Ratio32{}, err
 	}
-	return codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
+	return codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
 }
 
-func (e *EVMChain) GasLimitFee(tx *types.Transaction) (colored.Color, uint64, error) {
-	gpi, err := e.GasPerIota()
-	if err != nil {
-		return colored.Color{}, 0, err
-	}
-	feeColor, err := e.FeeColor()
-	if err != nil {
-		return colored.Color{}, 0, err
-	}
-	return feeColor, tx.Gas() / gpi, nil
-}
-
-func (e *EVMChain) GetOnChainBalance() (colored.Balances, error) {
-	agentID := iscp.NewAgentID(ledgerstate.NewED25519Address(e.backend.Signer().PublicKey), 0)
-	ret, err := e.backend.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
-		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
-	}))
+func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
+	res, err := e.backend.ISCCallView(governance.Contract.Name, governance.ViewGetFeePolicy.Name, nil)
 	if err != nil {
 		return nil, err
 	}
-	return accounts.DecodeBalances(ret)
+	fpBin := res.MustGet(governance.ParamFeePolicyBytes)
+	feePolicy, err := gas.FeePolicyFromBytes(fpBin)
+	if err != nil {
+		return nil, err
+	}
+	return feePolicy, nil
 }
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
-	feeColor, feeAmount, err := e.GasLimitFee(tx)
+	if tx.ChainId().Uint64() != uint64(e.chainID) {
+		return fmt.Errorf("Chain ID mismatch")
+	}
+	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
+		return fmt.Errorf("invalid transaction: %w", err)
+	}
+
+	expectedNonce, err := e.TransactionCount(sender)
+	if err != nil {
+		return fmt.Errorf("invalid transaction: %w", err)
+	}
+	if tx.Nonce() != expectedNonce {
+		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
+	}
+
+	if err := e.checkEnoughL2FundsForGasBudget(sender, tx.Gas()); err != nil {
 		return err
 	}
-	bal, err := e.GetOnChainBalance()
+	return e.backend.EVMSendTransaction(tx)
+}
+
+func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas uint64) error {
+	gasRatio, err := e.GasRatio()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not fetch gas ratio: %w", err)
 	}
-	fee := colored.NewBalancesForColor(feeColor, feeAmount)
-	if bal[feeColor] < feeAmount {
-		// make a deposit if not enough on-chain balance to cover the fees
-		err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
-		if err != nil {
-			return err
-		}
-	}
-	txdata, err := tx.MarshalBinary()
+	balance, err := e.Balance(sender, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
 	if err != nil {
-		return err
+		return fmt.Errorf("could not fetch sender balance: %w", err)
 	}
-	// send the Ethereum transaction
-	return e.backend.PostOffLedgerRequest(e.contractName, evm.FuncSendTransaction.Name, fee, dict.Dict{
-		evm.FieldTransactionData: txdata,
-	})
+	gasFeePolicy, err := e.GasFeePolicy()
+	if err != nil {
+		return fmt.Errorf("could not fetch the gas fee policy: %w", err)
+	}
+	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
+	iscGasBudgetTx := evmtypes.EVMGasToISC(evmGas, &gasRatio)
+	if iscGasBudgetAffordable < iscGasBudgetTx {
+		return fmt.Errorf("sender has not enough L2 funds to cover tx gas budget")
+	}
+	return nil
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {
@@ -140,7 +141,7 @@ func paramsWithOptionalBlockNumberOrHash(blockNumberOrHash rpc.BlockNumberOrHash
 }
 
 func (e *EVMChain) Balance(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (*big.Int, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBalance.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetBalance.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
@@ -153,7 +154,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash rpc.BlockNu
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetCode.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetCode.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 	}))
 	if err != nil {
@@ -163,7 +164,7 @@ func (e *EVMChain) Code(address common.Address, blockNumberOrHash rpc.BlockNumbe
 }
 
 func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockByNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetBlockByNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +182,7 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 
 func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
 	var ret dict.Dict
-	ret, err = e.backend.CallView(e.contractName, funcName, args)
+	ret, err = e.backend.ISCCallView(evm.Contract.Name, funcName, args)
 	if err != nil {
 		return
 	}
@@ -223,7 +224,7 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetBlockByHash.Name, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetBlockByHash.Name, dict.Dict{
 		evm.FieldBlockHash: hash.Bytes(),
 	})
 	if err != nil {
@@ -242,7 +243,7 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 }
 
 func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetReceipt.Name, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetReceipt.Name, dict.Dict{
 		evm.FieldTransactionHash: txHash.Bytes(),
 	})
 	if err != nil {
@@ -260,10 +261,14 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error
 	return receipt, nil
 }
 
-func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash rpc.BlockNumberOrHash) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetNonce.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash ...rpc.BlockNumberOrHash) (uint64, error) {
+	params := dict.Dict{
 		evm.FieldAddress: address.Bytes(),
-	}))
+	}
+	if len(blockNumberOrHash) > 0 {
+		params = paramsWithOptionalBlockNumberOrHash(blockNumberOrHash[0], params)
+	}
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetNonce.Name, params)
 	if err != nil {
 		return 0, err
 	}
@@ -271,7 +276,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash rp
 }
 
 func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncCallContract.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncCallContract.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	}))
 	if err != nil {
@@ -280,18 +285,12 @@ func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumberOrHash rpc.Blo
 	return ret.MustGet(evm.FieldResult), nil
 }
 
-func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncEstimateGas.Name, dict.Dict{
-		evm.FieldCallMsg: evmtypes.EncodeCallMsg(args),
-	})
-	if err != nil {
-		return 0, err
-	}
-	return codec.DecodeUint64(ret.MustGet(evm.FieldResult), 0)
+func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+	return e.backend.EVMEstimateGas(callMsg)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
 		evm.FieldKey:     key.Bytes(),
 	}))
@@ -302,7 +301,7 @@ func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumbe
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
 		evm.FieldBlockHash: blockHash.Bytes(),
 	})
 	if err != nil {
@@ -312,7 +311,7 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetTransactionCountByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetTransactionCountByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
 	if err != nil {
 		return 0, err
 	}
@@ -320,11 +319,15 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 }
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
-	ret, err := e.backend.CallView(e.contractName, evm.FuncGetLogs.Name, dict.Dict{
+	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetLogs.Name, dict.Dict{
 		evm.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
 	})
 	if err != nil {
 		return nil, err
 	}
 	return evmtypes.DecodeLogs(ret.MustGet(evm.FieldResult))
+}
+
+func (e *EVMChain) BaseToken() *parameters.BaseToken {
+	return e.backend.BaseToken()
 }

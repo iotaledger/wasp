@@ -1,29 +1,45 @@
 ---
-description: Smart Contracts can only interact with the world by using the Sandbox interface which provides limited and deterministic access to the state through a key/value storage abstraction.
+description: 'Smart Contracts can only interact with the world by using the Sandbox interface which provides limited and
+deterministic access to the state through a key/value storage abstraction.'
 image: /img/sandbox.png
 keywords:
-- Smart Contracts
-- Sandbox
+
+- smart contracts
+- sandbox
 - interface
 - storage abstraction
+- explanation
+
 ---
 
 # Sandbox Interface
 
-The only way a smart contract can interact with the world (access the state, call other smart contracts or send transactions) is by using the Sandbox interface.
+A smart contract's access to the world has to be restricted. Imagine a smart contract that would directly tap into a
+weather forecast website: as the weather changes, the result of the contract's execution will also change. This smart
+contract is not deterministic, meaning that you cannot reproduce the result yourself to verify it because the result for
+each execution could be different.
 
-The Sandbox provides limited and deterministic access to the state through a key/value storage abstraction.
+The access to the chain's state has to be curated, too. The chain owner and developers of individual smart contracts are
+not necessarily the same entity. A single malicious contract could ruin the whole chain if not limited to its own space.
+Instead of working on the state as a whole, each smart contract can only modify a part of it.
+
+The only way for smart contracts to access data is to use the Sandbox interface, which is deterministic. It provides
+their internal state as a list of key/value pairs.
 
 ![Sandbox](/img/sandbox.png)
 
 Besides reading and writing to the contract state, the Sandbox interface allows smart contracts to access:
 
-- the AgentID of the contract
-- the details of the current function invocation (request or view call)
-- the balances owned by the contract
-- the AgentID of whoever deployed the contract
-- the timestamp of the current block
-- cryptographic utilities (hashing, verify signatures, obtain addresses from public keys, etc)
-- events dispatch
-- Entropy (deterministic randomness)
-- logging (usually only used for debugging when testing)
+- The [ID](./accounts/how-accounts-work#agent-id) of the contract.
+- The details of the current request or view call.
+- The current request allowance and a way to claim the allowance.
+- The balances owned by the contract.
+- The ID of whoever had deployed the contract.
+- The timestamp of the current block.
+- Cryptographic utilities like hashing, signature verification, and so on.
+- The [events](../schema/events.mdx) dispatch.
+- Entropy that emulates randomness in an unpredictable yet deterministic way.
+- Logging. Used for debugging in a test environment.
+
+The Sandbox API available in "view calls" is slightly more limited than the one available in normal "execution calls".
+For example, besides the state access being read-only for a view, they cannot issue requests, emit events, etc.

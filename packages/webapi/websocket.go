@@ -4,7 +4,7 @@ import (
 	_ "embed"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -25,7 +25,7 @@ func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocket
 }
 
 func (w *webSocketAPI) handleWebSocket(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return err
 	}

@@ -4,11 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/ethereum/go-ethereum/common/math"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +20,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -27,7 +29,7 @@ func testCounter(t *testing.T, w bool) {
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	deco := kvdecoder.New(ret, chain.Log)
+	deco := kvdecoder.New(ret, chain.Log())
 	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, 33, res)
 }
@@ -41,7 +43,14 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
+
+	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
+
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
+		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
+
+	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
+	require.NoError(t, err)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	sum := 0
@@ -57,23 +66,20 @@ func testConcurrency(t *testing.T, w bool) {
 			}
 		}(r, n)
 	}
-	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 180*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	deco := kvdecoder.New(ret, chain.Log)
+	deco := kvdecoder.New(ret, chain.Log())
 	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, sum, res)
 
-	extraIota := uint64(0)
-	if w {
-		extraIota = 1
-	}
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
-	chain.AssertCommonAccountIotas(extraIota + 2)
-	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	chain.AssertIotas(agentID, uint64(sum)+1)
+	commonAccountFinalBalance := chain.L2BaseTokens(chain.CommonAccount())
+	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
+
+	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
+	chain.AssertL2BaseTokens(contractAgentID, 0)
 }
 
 func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
@@ -85,11 +91,19 @@ func testConcurrency2(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
+
+	commonAccountInitialBalance := chain.L2BaseTokens(chain.CommonAccount())
+
+	baseTokensSentPerRequest := 1 * isc.Million
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).
+		AddBaseTokens(baseTokensSentPerRequest).WithGasBudget(math.MaxUint64)
+
+	_, predictedGasFee, err := chain.EstimateGasOnLedger(req, nil, true)
+	require.NoError(t, err)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
-	users := make([]*ed25519.KeyPair, len(repeats))
-	userAddr := make([]ledgerstate.Address, len(repeats))
+	users := make([]*cryptolib.KeyPair, len(repeats))
+	userAddr := make([]iotago.Address, len(repeats))
 	sum := 0
 	for _, i := range repeats {
 		sum += i
@@ -104,26 +118,21 @@ func testConcurrency2(t *testing.T, w bool) {
 			}
 		}(r, n)
 	}
-
-	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 180*time.Second))
+	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	deco := kvdecoder.New(ret, chain.Log)
+	deco := kvdecoder.New(ret, chain.Log())
 	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		chain.AssertIotas(iscp.NewAgentID(userAddr[i], 0), 0)
-		chain.Env.AssertAddressIotas(userAddr[i], solo.Saldo-uint64(repeats[i]))
+		expectedBalance := uint64(repeats[i]) * (baseTokensSentPerRequest - predictedGasFee)
+		chain.AssertL2BaseTokens(isc.NewAgentID(userAddr[i]), expectedBalance)
+		chain.Env.AssertL1BaseTokens(userAddr[i], utxodb.FundsFromFaucetAmount-uint64(repeats[i])*baseTokensSentPerRequest)
 	}
-	extraIota := uint64(0)
-	if w {
-		extraIota = 1
-	}
-	chain.AssertIotas(chain.OriginatorAgentID, 0)
-	chain.AssertCommonAccountIotas(extraIota + 2)
-	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	chain.AssertIotas(agentID, uint64(sum)+1)
+
+	commonAccountFinalBalance := chain.L2BaseTokens(chain.CommonAccount())
+	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance+predictedGasFee*uint64(sum))
 }

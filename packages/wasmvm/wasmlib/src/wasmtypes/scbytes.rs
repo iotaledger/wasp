@@ -23,9 +23,12 @@ pub fn bytes_to_bytes(value: &[u8]) -> Vec<u8> {
     value.to_vec()
 }
 
+pub fn bytes_from_string(value: &str) -> Vec<u8> {
+    hex_decode(value)
+}
+
 pub fn bytes_to_string(value: &[u8]) -> String {
-    // TODO standardize human readable string
-    base58_encode(value)
+    hex_encode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

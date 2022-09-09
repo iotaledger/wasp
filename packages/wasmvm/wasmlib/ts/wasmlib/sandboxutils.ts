@@ -6,14 +6,14 @@ import * as wasmtypes from "./wasmtypes"
 import {sandbox} from "./host";
 
 export class ScSandboxUtils {
-    // decodes the specified base58-encoded string value to its original bytes
-    public base58Decode(value: string): u8[] {
-        return sandbox(util.FnUtilsBase58Decode, wasmtypes.stringToBytes(value));
+    // decodes the specified bech32-encoded string value to its original bytes
+    public bech32Decode(value: string): wasmtypes.ScAddress {
+        return wasmtypes.addressFromBytes(sandbox(util.FnUtilsBech32Decode, wasmtypes.stringToBytes(value)));
     }
 
-    // encodes the specified bytes to a base-58-encoded string
-    public base58Encode(bytes: u8[]): string {
-        return wasmtypes.bytesToString(sandbox(util.FnUtilsBase58Encode, bytes));
+    // encodes the specified bytes to a bech32-encoded string
+    public bech32Encode(addr: wasmtypes.ScAddress): string {
+        return wasmtypes.stringFromBytes(sandbox(util.FnUtilsBech32Encode, wasmtypes.addressToBytes(addr)));
     }
 
     public blsAddressFromPubKey(pubKey: u8[]): wasmtypes.ScAddress {

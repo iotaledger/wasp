@@ -1,68 +1,31 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-type blockCtx1 struct {
-	numcalls int
+type blockCtx struct {
+	numCalls uint8
 }
 
-func getBlockContext1(ctx iscp.Sandbox) *blockCtx1 {
-	construct := func(ctx iscp.Sandbox) interface{} {
-		return &blockCtx1{1}
-	}
-	log := ctx.Log()
-	onClose := func(obj interface{}) {
-		log.Infof("closing block context with numcalls = %d", obj.(*blockCtx1).numcalls)
-	}
-	bctxi := ctx.BlockContext(construct, onClose)
-	bctx, ok := bctxi.(*blockCtx1)
-	assert.NewAssert(ctx.Log()).Require(ok, "unexpected block context type")
-	return bctx
+func openBlockContext(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	ctx.Privileged().SetBlockContext(&blockCtx{})
+	return nil
 }
 
-func testBlockContext1(ctx iscp.Sandbox) (dict.Dict, error) {
-	bctx := getBlockContext1(ctx)
-	bctx.numcalls++
-
-	return nil, nil
+func closeBlockContext(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	ctx.State().Set("numCalls", codec.EncodeUint8(getBlockContext(ctx).numCalls))
+	return nil
 }
 
-type blockCtx2 struct {
-	state kv.KVStore
-	log   iscp.LogInterface
+func getBlockContext(ctx isc.Sandbox) *blockCtx {
+	return ctx.Privileged().BlockContext().(*blockCtx)
 }
 
-func construct2(ctx iscp.Sandbox) interface{} {
-	return &blockCtx2{
-		state: ctx.State(),
-		log:   ctx.Log(),
-	}
-}
-
-func onClose2(obj interface{}) {
-	bctx := obj.(*blockCtx2)
-	bctx.state.Set("atTheEndKey", []byte("atTheEndValue"))
-	bctx.log.Infof("closing block context...")
-}
-
-func testBlockContext2(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.BlockContext(construct2, onClose2) // just creating context, doing nothing, checking side effect
-	return nil, nil
-}
-
-func getStringValue(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Infof(FuncGetStringValue.Name)
-	deco := kvdecoder.New(ctx.Params(), ctx.Log())
-	varName := deco.MustGetString(ParamVarName)
-	value := string(ctx.State().MustGet(kv.Key(varName)))
-	ret := dict.New()
-	ret.Set(kv.Key(varName), codec.EncodeString(value))
-	return ret, nil
+func getLastBlockNumCalls(ctx isc.SandboxView) dict.Dict {
+	return dict.Dict{"numCalls": ctx.StateR().MustGet("numCalls")}
 }

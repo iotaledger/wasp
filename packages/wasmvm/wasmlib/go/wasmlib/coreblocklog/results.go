@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreblocklog
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -13,6 +14,7 @@ type ImmutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s ImmutableControlAddressesResults) BlockIndex() wasmtypes.ScImmutableUint32 {
 	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
 }
@@ -29,6 +31,7 @@ type MutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// the addresses have been set as state controller address or governing address since the following block index
 func (s MutableControlAddressesResults) BlockIndex() wasmtypes.ScMutableUint32 {
 	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
 }
@@ -45,12 +48,20 @@ type ImmutableGetBlockInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func (s ImmutableGetBlockInfoResults) BlockIndex() wasmtypes.ScImmutableUint32 {
+	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
+}
+
 func (s ImmutableGetBlockInfoResults) BlockInfo() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBlockInfo))
 }
 
 type MutableGetBlockInfoResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func (s MutableGetBlockInfoResults) BlockIndex() wasmtypes.ScMutableUint32 {
+	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
 }
 
 func (s MutableGetBlockInfoResults) BlockInfo() wasmtypes.ScMutableBytes {
@@ -73,6 +84,7 @@ type ImmutableGetEventsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetEventsForBlockResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultEvent)}
 }
@@ -101,6 +113,7 @@ type MutableGetEventsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetEventsForBlockResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultEvent)}
 }
@@ -109,6 +122,7 @@ type ImmutableGetEventsForContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetEventsForContractResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultEvent)}
 }
@@ -117,6 +131,7 @@ type MutableGetEventsForContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetEventsForContractResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultEvent)}
 }
@@ -125,6 +140,7 @@ type ImmutableGetEventsForRequestResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetEventsForRequestResults) Event() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultEvent)}
 }
@@ -133,32 +149,9 @@ type MutableGetEventsForRequestResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetEventsForRequestResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultEvent)}
-}
-
-type ImmutableGetLatestBlockInfoResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s ImmutableGetLatestBlockInfoResults) BlockIndex() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultBlockIndex))
-}
-
-func (s ImmutableGetLatestBlockInfoResults) BlockInfo() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultBlockInfo))
-}
-
-type MutableGetLatestBlockInfoResults struct {
-	proxy wasmtypes.Proxy
-}
-
-func (s MutableGetLatestBlockInfoResults) BlockIndex() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultBlockIndex))
-}
-
-func (s MutableGetLatestBlockInfoResults) BlockInfo() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultBlockInfo))
 }
 
 type ArrayOfImmutableRequestID struct {
@@ -177,6 +170,7 @@ type ImmutableGetRequestIDsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetRequestIDsForBlockResults) RequestID() ArrayOfImmutableRequestID {
 	return ArrayOfImmutableRequestID{proxy: s.proxy.Root(ResultRequestID)}
 }
@@ -205,6 +199,7 @@ type MutableGetRequestIDsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetRequestIDsForBlockResults) RequestID() ArrayOfMutableRequestID {
 	return ArrayOfMutableRequestID{proxy: s.proxy.Root(ResultRequestID)}
 }
@@ -245,6 +240,7 @@ type ImmutableGetRequestReceiptsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s ImmutableGetRequestReceiptsForBlockResults) RequestRecord() ArrayOfImmutableBytes {
 	return ArrayOfImmutableBytes{proxy: s.proxy.Root(ResultRequestRecord)}
 }
@@ -253,6 +249,7 @@ type MutableGetRequestReceiptsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// native contract, so this is an Array16
 func (s MutableGetRequestReceiptsForBlockResults) RequestRecord() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultRequestRecord)}
 }
@@ -261,14 +258,14 @@ type ImmutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultRequestProcessed))
+func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ResultRequestProcessed))
 }
 
 type MutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ResultRequestProcessed))
+func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ResultRequestProcessed))
 }

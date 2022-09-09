@@ -38,6 +38,17 @@ export function boolToBytes(value: bool): u8[] {
     return [(value ? ScBoolTrue : ScBoolFalse) as u8];
 }
 
+export function boolFromString(value: string): bool {
+    if (value == "0") {
+        return false;
+    }
+    if (value == "1") {
+        return true;
+    }
+    panic("invalid bool string");
+    return false;
+}
+
 export function boolToString(value: bool): string {
     return value ? "1" : "0";
 }

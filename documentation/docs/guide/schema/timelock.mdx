@@ -1,16 +1,17 @@
 ---
 keywords:
-- testing
-- colored tokens
-- time locks
-- solo
-- plain iotas
-- balance
-- mint
-- delay
+  - testing
+  - colored tokens
+  - time locks
+  - solo
+  - plain iotas
+  - balance
+  - mint
+  - delay
 description: You can post a time-locked request by using the Delay() method. You can convert plan tokens to colored tokens using the Mint() method.
 image: /img/logo/WASP_logo_dark.png
 ---
+
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
@@ -40,7 +41,7 @@ func startAuction(t *testing.T) *wasmsolo.SoloContext {
     auctioneer = ctx.NewSoloAgent()
     tokenColor, ctx.Err = auctioneer.Mint(10)
     require.NoError(t, ctx.Err)
-    require.EqualValues(t, solo.Saldo-10, auctioneer.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount-10, auctioneer.Balance())
     require.EqualValues(t, 10, auctioneer.Balance(tokenColor))
 
     // start the auction
@@ -94,7 +95,7 @@ example. After the parameters have been set up, we see something new happening. 
 a `Transfer` proxy and initialize it with the 25 iota that we need to deposit, plus the 10
 tokens of the saved tokenColor that we are auctioning. Next we use the `Transfer()` method
 to pass this proxy before posting the request. This is exactly how we would do it from
-within the smart contract code. We also have a shorthand function called TransferIotas()
+within the smart contract code. We also have a shorthand function called TransferBaseTokens()
 that can be used when all you need to transfer is plain iotas which encapsulates the
 creation of the Transfer proxy, and the initialization with the required amount of iotas.
 
@@ -119,7 +120,7 @@ func TestFaStartAuction(t *testing.T) {
     require.EqualValues(t, 10, ctx.Balance(nil, tokenColor))
 
     // auctioneer sent 25 deposit + 10 tokenColor
-    require.EqualValues(t, solo.Saldo-25-10, auctioneer.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount-25-10, auctioneer.Balance())
     require.EqualValues(t, 0, auctioneer.Balance(tokenColor))
     require.EqualValues(t, 0, ctx.Balance(auctioneer))
 

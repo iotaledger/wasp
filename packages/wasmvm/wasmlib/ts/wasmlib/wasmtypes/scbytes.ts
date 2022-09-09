@@ -31,8 +31,12 @@ export function bytesToBytes(buf: u8[]): u8[] {
     return buf;
 }
 
+export function bytesFromString(value: string): u8[] {
+    return wasmtypes.hexDecode(value);
+}
+
 export function bytesToString(value: u8[]): string {
-    return wasmtypes.base58Encode(value);
+    return wasmtypes.hexEncode(value);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

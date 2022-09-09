@@ -8,25 +8,24 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
-const ( // TODO set back to false
-	SoloDebug        = true
-	SoloHostTracing  = true
-	SoloStackTracing = true
+const (
+	SoloDebug        = false
+	SoloHostTracing  = false
+	SoloStackTracing = false
 )
 
 var (
@@ -47,55 +46,42 @@ var (
 )
 
 const (
-	L2FundsContract   = 1_000_000
-	L2FundsCreator    = 2_000_000
-	L2FundsOriginator = 3_000_000
+	MinGasFee         = 100
+	L1FundsAgent      = utxodb.FundsFromFaucetAmount - 10*isc.Million - MinGasFee
+	L2FundsAgent      = 10 * isc.Million
+	L2FundsContract   = 10 * isc.Million
+	L2FundsCreator    = 20 * isc.Million
+	L2FundsOriginator = 30 * isc.Million
 
-	WasmDustDeposit = 1000
+	WasmStorageDeposit = 1 * isc.Million
 )
 
 type SoloContext struct {
-	Chain       *solo.Chain
-	Convertor   wasmhost.WasmConvertor
-	creator     *SoloAgent
-	Dust        uint64
-	Err         error
-	Gas         uint64
-	GasFee      uint64
-	Hprog       hashing.HashValue
-	isRequest   bool
-	IsWasm      bool
-	keyPair     *cryptolib.KeyPair
-	mint        uint64
-	offLedger   bool
-	scName      string
-	Tx          *ledgerstate.Transaction
-	wasmHostOld wasmlib.ScHost
-	wc          *wasmhost.WasmContext
+	Chain          *solo.Chain
+	Cvt            wasmhost.WasmConvertor
+	creator        *SoloAgent
+	StorageDeposit uint64
+	Err            error
+	Gas            uint64
+	GasFee         uint64
+	Hprog          hashing.HashValue
+	isRequest      bool
+	IsWasm         bool
+	keyPair        *cryptolib.KeyPair
+	nfts           map[iotago.NFTID]*isc.NFT
+	offLedger      bool
+	scName         string
+	Tx             *iotago.Transaction
+	wasmHostOld    wasmlib.ScHost
+	wc             *wasmhost.WasmContext
 }
 
 var (
-	//_ iscp.Gas                  = &SoloContext{}
-	_        wasmlib.ScFuncCallContext = &SoloContext{}
-	_        wasmlib.ScViewCallContext = &SoloContext{}
-	SoloSeed                           = cryptolib.NewSeed([]byte("SoloSeedSoloSeedSoloSeedSoloSeed"))
+	_ wasmlib.ScFuncCallContext = &SoloContext{}
+	_ wasmlib.ScViewCallContext = &SoloContext{}
 )
 
-func (ctx *SoloContext) Burn(i int64) {
-	// ignore gas for now
-}
-
-func (ctx *SoloContext) Budget() int64 {
-	// ignore gas for now
-	return 0
-}
-
-func (ctx *SoloContext) SetBudget(i int64) {
-	// ignore gas for now
-}
-
-//nolint:unused,deadcode
-func contains(s []*iscp.AgentID, e *iscp.AgentID) bool {
+func contains(s []isc.AgentID, e isc.AgentID) bool {
 	for _, a := range s {
 		if a.Equals(e) {
 			return true
@@ -127,17 +113,23 @@ func NewSoloContext(t *testing.T, scName string, onLoad wasmhost.ScOnloadFunc, i
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
 func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string,
-	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc) *SoloContext {
+	onLoad wasmhost.ScOnloadFunc, init ...*wasmlib.ScInitFunc,
+) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
+
+	ctx.Balances()
 
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositBaseTokensToL2(L2FundsCreator, creator.Pair)
 	}
 	ctx.uploadWasm(keyPair)
 	if ctx.Err != nil {
 		return ctx
 	}
+
+	ctx.Balances()
 
 	var params []interface{}
 	if len(init) != 0 {
@@ -160,6 +152,16 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 		return ctx
 	}
 
+	ctx.Balances()
+
+	scAccount := isc.NewContractAgentID(ctx.Chain.ChainID, isc.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountBaseTokens(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+
+	ctx.Balances()
+
+	if ctx.Err != nil {
+		return ctx
+	}
 	return ctx.init(onLoad)
 }
 
@@ -172,7 +174,8 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 // the contract's init() function can be specified.
 // You can check for any error that occurred by checking the ctx.Err member.
 func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent, scName string, onLoad wasmhost.ScOnloadFunc,
-	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc) *SoloContext {
+	proc *coreutil.ContractProcessor, init ...*wasmlib.ScInitFunc,
+) *SoloContext {
 	ctx := soloContext(t, chain, scName, creator)
 	ctx.Chain.Env.WithNativeContract(proc)
 	ctx.Hprog = proc.Contract.ProgramHash
@@ -180,6 +183,7 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 	var keyPair *cryptolib.KeyPair
 	if creator != nil {
 		keyPair = creator.Pair
+		chain.MustDepositBaseTokensToL2(L2FundsCreator, creator.Pair)
 	}
 	var params []interface{}
 	if len(init) != 0 {
@@ -190,11 +194,17 @@ func NewSoloContextForNative(t *testing.T, chain *solo.Chain, creator *SoloAgent
 		return ctx
 	}
 
+	scAccount := isc.NewContractAgentID(ctx.Chain.ChainID, isc.Hn(scName))
+	ctx.Err = ctx.Chain.SendFromL1ToL2AccountBaseTokens(0, L2FundsContract, scAccount, ctx.Creator().Pair)
+	if ctx.Err != nil {
+		return ctx
+	}
+
 	return ctx.init(onLoad)
 }
 
 func soloContext(t *testing.T, chain *solo.Chain, scName string, creator *SoloAgent) *SoloContext {
-	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, Dust: WasmDustDeposit}
+	ctx := &SoloContext{scName: scName, Chain: chain, creator: creator, StorageDeposit: WasmStorageDeposit}
 	if chain == nil {
 		ctx.Chain = StartChain(t, "chain1")
 	}
@@ -214,9 +224,15 @@ func StartChain(t *testing.T, chainName string, env ...*solo.Solo) *solo.Chain {
 		soloEnv = env[0]
 	}
 	if soloEnv == nil {
-		soloEnv = solo.New(t, SoloDebug, SoloStackTracing, SoloSeed)
+		soloEnv = solo.New(t, &solo.InitOptions{
+			Debug:                    SoloDebug,
+			PrintStackTrace:          SoloStackTracing,
+			AutoAdjustStorageDeposit: true,
+		})
 	}
-	return soloEnv.NewChain(nil, chainName)
+	chain, _, _ := soloEnv.NewChainExt(nil, 0, chainName)
+	chain.MustDepositBaseTokensToL2(L2FundsOriginator, chain.OriginatorPrivateKey)
+	return chain
 }
 
 // Account returns a SoloAgent for the smart contract associated with ctx
@@ -224,8 +240,7 @@ func (ctx *SoloContext) Account() *SoloAgent {
 	return &SoloAgent{
 		Env:     ctx.Chain.Env,
 		Pair:    nil,
-		address: ctx.Chain.ChainID.AsAddress(),
-		hname:   iscp.Hn(ctx.scName),
+		agentID: isc.NewContractAgentID(ctx.Chain.ChainID, isc.Hn(ctx.scName)),
 	}
 }
 
@@ -239,34 +254,42 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
-// The optional color parameter can be used to retrieve the balance for the specific color.
-// When color is omitted, wasmlib.IOTA is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmtypes.ScColor) uint64 {
-	account := iscp.NewAgentID(agent.address, agent.hname)
-	balances := ctx.Chain.GetAccountBalance(account)
-	switch len(color) {
+// The optional tokenID parameter can be used to retrieve the balance for the specific token.
+// When tokenID is omitted, the base tokens balance is assumed.
+func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
+	account := agent.AgentID()
+	switch len(tokenID) {
 	case 0:
-		return balances.Get(colored.IOTA)
+		baseTokens := ctx.Chain.L2BaseTokens(account)
+		return baseTokens
 	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(ctx.Chain.Env.T, err)
-		return balances.Get(col)
+		token := ctx.Cvt.IscTokenID(&tokenID[0])
+		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
+		return tokens
 	default:
-		require.Fail(ctx.Chain.Env.T, "too many color arguments")
+		require.Fail(ctx.Chain.Env.T, "too many tokenID arguments")
 		return 0
 	}
 }
 
-func (ctx *SoloContext) ChainID() wasmtypes.ScChainID {
-	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
+// Balances prints all known accounts, both L2 and L1.
+// It uses the L2 ledger to enumerate the known accounts.
+// Any newly created SoloAgents can be specified as extra accounts
+func (ctx *SoloContext) Balances(agents ...*SoloAgent) *SoloBalances {
+	return NewSoloBalances(ctx, agents...)
+}
+
+// ChainAccount returns a SoloAgent for the chain associated with ctx
+func (ctx *SoloContext) ChainAccount() *SoloAgent {
+	return &SoloAgent{
+		Env:     ctx.Chain.Env,
+		Pair:    nil,
+		agentID: ctx.Chain.ChainID.CommonAccount(),
+	}
 }
 
 func (ctx *SoloContext) ChainOwnerID() wasmtypes.ScAgentID {
-	return ctx.Convertor.ScAgentID(ctx.Chain.OriginatorAgentID)
-}
-
-func (ctx *SoloContext) ContractCreator() wasmtypes.ScAgentID {
-	return ctx.Creator().ScAgentID()
+	return ctx.Cvt.ScAgentID(ctx.Chain.OriginatorAgentID)
 }
 
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
@@ -281,6 +304,10 @@ func (ctx *SoloContext) Creator() *SoloAgent {
 		return ctx.creator
 	}
 	return ctx.Originator()
+}
+
+func (ctx *SoloContext) CurrentChainID() wasmtypes.ScChainID {
+	return ctx.Cvt.ScChainID(ctx.Chain.ChainID)
 }
 
 func (ctx *SoloContext) EnqueueRequest() {
@@ -326,30 +353,35 @@ func (ctx *SoloContext) InitFuncCallContext() {
 
 // InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
 func (ctx *SoloContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
+	_ = hContract
 	_ = wasmhost.Connect(ctx.wc)
-	return ctx.Convertor.ScHname(iscp.Hn(ctx.scName))
+	return ctx.Cvt.ScHname(isc.Hn(ctx.scName))
 }
 
-// Minted returns the color and amount of newly minted tokens
-func (ctx *SoloContext) Minted() (wasmtypes.ScColor, uint64) {
-	t := ctx.Chain.Env.T
-	t.Logf("minting request tx: %s", ctx.Tx.ID().Base58())
-	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(ctx.Tx))
-	require.Len(t, mintedAmounts, 1)
-	var mintedColor wasmtypes.ScColor
-	var mintedAmount uint64
-	for c := range mintedAmounts {
-		mintedColor = ctx.Convertor.ScColor(&c)
-		mintedAmount = mintedAmounts[c]
-		break
-	}
-	t.Logf("Minted: amount = %d color = %s", mintedAmount, mintedColor.String())
-	return mintedColor, mintedAmount
-}
-
-// NewSoloAgent creates a new SoloAgent with solo.Saldo tokens in its address
+// NewSoloAgent creates a new SoloAgent with utxodb.FundsFromFaucetAmount (1 Gi)
+// tokens in its address and pre-deposits 10Mi into the corresponding chain account
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
-	return NewSoloAgent(ctx.Chain.Env)
+	agent := NewSoloAgent(ctx.Chain.Env)
+	ctx.Chain.MustDepositBaseTokensToL2(L2FundsAgent+MinGasFee, agent.Pair)
+	return agent
+}
+
+// NewSoloFoundry creates a new SoloFoundry
+func (ctx *SoloContext) NewSoloFoundry(maxSupply interface{}, agent ...*SoloAgent) (*SoloFoundry, error) {
+	return NewSoloFoundry(ctx, maxSupply, agent...)
+}
+
+// NFTs returns the list of NFTs in the account of the specified agent on
+// the chain associated with ctx.
+func (ctx *SoloContext) NFTs(agent *SoloAgent) []wasmtypes.ScNftID {
+	account := agent.AgentID()
+	l2nfts := ctx.Chain.L2NFTs(account)
+	nfts := make([]wasmtypes.ScNftID, 0, len(l2nfts))
+	for _, l2nft := range l2nfts {
+		theNft := l2nft
+		nfts = append(nfts, ctx.Cvt.ScNftID(&theNft))
+	}
+	return nfts
 }
 
 // OffLedger tells SoloContext to Post() the next request off-ledger
@@ -359,18 +391,37 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	return ctx
 }
 
+// MintNFT tells SoloContext to mint a new NFT issued/owned by the specified agent
+// note that SoloContext will cache the NFT data to be able to use it
+// in Post()s that go through the *SAME* SoloContext
+func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScNftID {
+	addr, ok := isc.AddressFromAgentID(agent.AgentID())
+	if !ok {
+		panic("agent should be an address")
+	}
+	nft, _, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
+	if err != nil {
+		panic(err)
+	}
+	if ctx.nfts == nil {
+		ctx.nfts = make(map[iotago.NFTID]*isc.NFT)
+	}
+	ctx.nfts[nft.ID] = nft
+	return ctx.Cvt.ScNftID(&nft.ID)
+}
+
 // Originator returns a SoloAgent representing the chain originator
 func (ctx *SoloContext) Originator() *SoloAgent {
-	c := ctx.Chain
-	return &SoloAgent{Env: c.Env, Pair: c.OriginatorKeyPair, address: c.OriginatorAddress}
+	return &SoloAgent{
+		Env:     ctx.Chain.Env,
+		Pair:    ctx.Chain.OriginatorPrivateKey,
+		agentID: ctx.Chain.OriginatorAgentID,
+	}
 }
 
 // Sign is used to force a different agent for signing a Post() request
-func (ctx *SoloContext) Sign(agent *SoloAgent, mint ...uint64) wasmlib.ScFuncCallContext {
+func (ctx *SoloContext) Sign(agent *SoloAgent) wasmlib.ScFuncCallContext {
 	ctx.keyPair = agent.Pair
-	if len(mint) != 0 {
-		ctx.mint = mint[0]
-	}
 	return ctx
 }
 
@@ -378,11 +429,6 @@ func (ctx *SoloContext) SoloContextForCore(t *testing.T, scName string, onLoad w
 	ctxCore := soloContext(t, ctx.Chain, scName, nil).init(onLoad)
 	ctxCore.wasmHostOld = ctx.wasmHostOld
 	return ctxCore
-}
-
-// Transfer creates a new ScTransfers proxy
-func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
-	return wasmlib.NewScTransfers()
 }
 
 func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
@@ -414,7 +460,7 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 // WaitForPendingRequests waits for expectedRequests pending requests to be processed.
 // a negative value indicates the absolute amount of requests
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
-// The function returns the false in case of a timeout.
+// The function returns false in case of a timeout.
 func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
 	_ = wasmhost.Connect(ctx.wasmHostOld)
 	if expectedRequests > 0 {
@@ -427,4 +473,10 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
+}
+
+func (ctx *SoloContext) UpdateGasFees() {
+	receipt := ctx.Chain.LastReceipt()
+	ctx.Gas = receipt.GasBurned
+	ctx.GasFee = receipt.GasFeeCharged
 }

@@ -2,7 +2,7 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
@@ -10,7 +10,6 @@ var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
 var Processor = Contract.Processor(initialize,
 	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
 	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
-	FuncGetMintedSupply.WithHandler(getMintedSupply),
 
 	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
 	FuncEventLogEventData.WithHandler(testEventLogEventData),
@@ -24,13 +23,14 @@ var Processor = Contract.Processor(initialize,
 	FuncCallPanicViewEPFromView.WithHandler(testCallPanicViewEPFromView),
 
 	FuncDoNothing.WithHandler(doNothing),
-	FuncSendToAddress.WithHandler(sendToAddress),
+	// FuncSendToAddress.WithHandler(sendToAddress),
 
-	FuncWithdrawToChain.WithHandler(withdrawToChain),
+	FuncWithdrawFromChain.WithHandler(withdrawFromChain),
 	FuncCallOnChain.WithHandler(callOnChain),
 	FuncSetInt.WithHandler(setInt),
 	FuncGetInt.WithHandler(getInt),
 	FuncGetFibonacci.WithHandler(getFibonacci),
+	FuncGetFibonacciIndirect.WithHandler(getFibonacciIndirect),
 	FuncIncCounter.WithHandler(incCounter),
 	FuncGetCounter.WithHandler(getCounter),
 	FuncRunRecursion.WithHandler(runRecursion),
@@ -40,13 +40,23 @@ var Processor = Contract.Processor(initialize,
 	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
 	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
-	FuncTestBlockContext1.WithHandler(testBlockContext1),
-	FuncTestBlockContext2.WithHandler(testBlockContext2),
-	FuncGetStringValue.WithHandler(getStringValue),
+	FuncOpenBlockContext.WithHandler(openBlockContext),
+	FuncCloseBlockContext.WithHandler(closeBlockContext),
+	FuncGetLastBlockNumCalls.WithHandler(getLastBlockNumCalls),
 
 	FuncJustView.WithHandler(testJustView),
 
 	FuncSpawn.WithHandler(spawn),
+
+	FuncSplitFunds.WithHandler(testSplitFunds),
+	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
+	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
+	FuncSendLargeRequest.WithHandler(sendLargeRequest),
+	FuncEstimateMinStorageDeposit.WithHandler(testEstimateMinimumStorageDeposit),
+	FuncInfiniteLoop.WithHandler(infiniteLoop),
+	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
+	FuncSendNFTsBack.WithHandler(sendNFTsBack),
+	FuncClaimAllowance.WithHandler(claimAllowance),
 )
 
 var (
@@ -62,7 +72,6 @@ var (
 	FuncSandboxCall            = coreutil.ViewFunc("testSandboxCall")
 	FuncCheckContextFromFullEP = coreutil.Func("checkContextFromFullEP")
 	FuncCheckContextFromViewEP = coreutil.ViewFunc("checkContextFromViewEP")
-	FuncGetMintedSupply        = coreutil.Func("getMintedSupply")
 
 	FuncPanicFullEP             = coreutil.Func("testPanicFullEP")
 	FuncPanicViewEP             = coreutil.ViewFunc("testPanicViewEP")
@@ -70,28 +79,39 @@ var (
 	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncTestBlockContext1 = coreutil.Func("testBlockContext1")
-	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
-	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
+	FuncOpenBlockContext     = coreutil.Func("openBlockContext")
+	FuncCloseBlockContext    = coreutil.Func("closeBlockContext")
+	FuncGetLastBlockNumCalls = coreutil.ViewFunc("getLastBlockNumCalls")
 
-	FuncWithdrawToChain = coreutil.Func("withdrawToChain")
+	FuncWithdrawFromChain = coreutil.Func("withdrawFromChain")
 
-	FuncDoNothing     = coreutil.Func("doNothing")
-	FuncSendToAddress = coreutil.Func("sendToAddress")
-	FuncJustView      = coreutil.ViewFunc("justView")
+	FuncDoNothing = coreutil.Func("doNothing")
+	// FuncSendToAddress = coreutil.Func("sendToAddress")
+	FuncJustView = coreutil.ViewFunc("justView")
 
-	FuncCallOnChain  = coreutil.Func("callOnChain")
-	FuncSetInt       = coreutil.Func("setInt")
-	FuncGetInt       = coreutil.ViewFunc("getInt")
-	FuncGetFibonacci = coreutil.ViewFunc("fibonacci")
-	FuncGetCounter   = coreutil.ViewFunc("getCounter")
-	FuncIncCounter   = coreutil.Func("incCounter")
-	FuncRunRecursion = coreutil.Func("runRecursion")
+	FuncCallOnChain          = coreutil.Func("callOnChain")
+	FuncSetInt               = coreutil.Func("setInt")
+	FuncGetInt               = coreutil.ViewFunc("getInt")
+	FuncGetFibonacci         = coreutil.ViewFunc("fibonacci")
+	FuncGetFibonacciIndirect = coreutil.ViewFunc("fibonacciIndirect")
+	FuncGetCounter           = coreutil.ViewFunc("getCounter")
+	FuncIncCounter           = coreutil.Func("incCounter")
+	FuncRunRecursion         = coreutil.Func("runRecursion")
 
 	FuncPassTypesFull = coreutil.Func("passTypesFull")
 	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
 
 	FuncSpawn = coreutil.Func("spawn")
+
+	FuncSplitFunds                = coreutil.Func("splitFunds")
+	FuncSplitFundsNativeTokens    = coreutil.Func("splitFundsNativeTokens")
+	FuncPingAllowanceBack         = coreutil.Func("pingAllowanceBack")
+	FuncSendLargeRequest          = coreutil.Func("sendLargeRequest")
+	FuncEstimateMinStorageDeposit = coreutil.Func("estimateMinStorageDeposit")
+	FuncInfiniteLoop              = coreutil.Func("infiniteLoop")
+	FuncInfiniteLoopView          = coreutil.ViewFunc("infiniteLoopView")
+	FuncSendNFTsBack              = coreutil.Func("sendNFTsBack")
+	FuncClaimAllowance            = coreutil.Func("claimAllowance")
 )
 
 const (
@@ -99,27 +119,28 @@ const (
 	VarCounter              = "counter"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
-	VarMintedSupply         = "mintedSupply"
-	VarMintedColor          = "mintedColor"
 
 	// parameters
-	ParamFail            = "initFailParam"
-	ParamAddress         = "address"
-	ParamChainID         = "chainID"
-	ParamChainOwnerID    = "chainOwnerID"
-	ParamCaller          = "caller"
-	ParamAgentID         = "agentID"
-	ParamContractCreator = "contractCreator"
-	ParamContractID      = "contractID"
-	ParamIntParamName    = "intParamName"
-	ParamIntParamValue   = "intParamValue"
-	ParamHnameContract   = "hnameContract"
-	ParamHnameEP         = "hnameEP"
-	ParamVarName         = "varName"
+	ParamAddress                = "address"
+	ParamAgentID                = "agentID"
+	ParamCaller                 = "caller"
+	ParamChainID                = "chainID"
+	ParamChainOwnerID           = "chainOwnerID"
+	ParamContractID             = "contractID"
+	ParamFail                   = "initFailParam"
+	ParamHnameContract          = "hnameContract"
+	ParamHnameEP                = "hnameEP"
+	ParamIntParamName           = "intParamName"
+	ParamIntParamValue          = "intParamValue"
+	ParamBaseTokensToWithdrawal = "baseTokensWithdrawal"
+	ParamN                      = "n"
+	ParamProgHash               = "progHash"
+	ParamSize                   = "size"
+	ParamVarName                = "varName"
 
 	// error fragments for testing
-	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
-	MsgViewPanic         = "========== panic VIEW ========="
 	MsgDoNothing         = "========== doing nothing"
+	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
 	MsgPanicUnauthorized = "============== panic due to unauthorized call"
+	MsgViewPanic         = "========== panic VIEW ========="
 )

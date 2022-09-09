@@ -10,8 +10,8 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
 // interface WasmLib to the VM host
 
-// These 2 external functions are funneling the entire WasmLib functionality
-// to their counterparts on the host.
+// These 2 external functions are funneling the entire
+// WasmLib functionality to their counterparts on the host.
 
 //go:wasm-module WasmLib
 //export hostStateGet
@@ -77,7 +77,7 @@ func (w *WasmVMHost) StateDelete(key []byte) {
 
 func (w *WasmVMHost) StateExists(key []byte) bool {
 	// value size -1 means only test for existence
-	// returned size -1 indicates keyID not found (or error)
+	// returned size -1 indicates key not found (or error)
 	// this removes the need for a separate hostStateExists function
 	return hostStateGet(&key[0], int32(len(key)), nil, -1) >= 0
 }

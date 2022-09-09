@@ -9,9 +9,9 @@
 
 use wasmlib::*;
 
-use crate::*;
 use crate::contract::*;
 use crate::structs::*;
+use crate::*;
 
 // Define some default configuration parameters.
 
@@ -34,7 +34,7 @@ const NANO_TIME_DIVIDER: u64 = 1_000_000_000;
 // The 'placeBet' function takes 1 mandatory parameter:
 // - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
-// the amount of incoming iotas as the bet amount in its state.
+// the amount of incoming tokens as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Get the array of current bets from state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
@@ -58,12 +58,12 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
     // Create ScBalances proxy to the incoming balances for this request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
     // in a simpler to use interface.
-    let incoming: ScBalances = ctx.incoming();
+    let allowance: ScBalances = ctx.allowance();
 
     // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-    let amount: u64 = incoming.balance(&ScColor::IOTA);
+    let amount: u64 = allowance.base_tokens();
 
-    // Require that there are actually some plain iotas there
+    // Require that there are actually some base tokens there
     ctx.require(amount > 0, "empty bet");
 
     // Now we gather all information together into a single serializable struct
@@ -112,7 +112,7 @@ pub fn func_place_bet(ctx: &ScFuncContext, f: &PlaceBetContext) {
             // And now for our next trick we post a delayed request to ourselves on the Tangle.
             // We are requesting to call the 'payWinners' function, but delay it for the play_period
             // amount of seconds. This will lock in the playing period, during which more bets can
-            // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
+            // be placed. Once the 'payWinners' function gets triggered by the ISC it will gather all
             // bets up to that moment as the ones to consider for determining the winner.
             ScFuncs::pay_winners(ctx).func.delay(play_period).post();
         }
@@ -201,12 +201,12 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
             // Yep, keep track of the running total payout
             total_payout += payout;
 
-            // Set up an ScTransfers proxy that transfers the correct amount of iotas.
+            // Set up an ScTransfers proxy that transfers the correct amount of tokens.
             // Note that ScTransfers wraps an ScMutableMap of token color/amount combinations
             // in a simpler to use interface. The constructor we use here creates and initializes
             // a single token color transfer in a single statement. The actual color and amount
             // values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::iotas(payout);
+            let transfers: ScTransfer = ScTransfer::base_tokens(payout);
 
             // Perform the actual transfer of tokens from the smart contract to the address
             // of the winner. The transfer_to_address() method receives the address value and
@@ -224,10 +224,10 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
     let remainder: u64 = total_bet_amount - total_payout;
     if remainder != 0 {
         // We have a remainder. First create a transfer for the remainder.
-        let transfers: ScTransfers = ScTransfers::iotas(remainder);
+        let transfers: ScTransfer = ScTransfer::base_tokens(remainder);
 
-        // Send the remainder to the contract creator.
-        ctx.send(&ctx.contract_creator().address(), &transfers);
+        // Send the remainder to the contract owner.
+        ctx.send(&f.state.owner().value().address(), &transfers);
     }
 
     // Set round status to 0, send out event to notify that the round has ended
@@ -236,7 +236,6 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
 }
 
 pub fn func_force_reset(_ctx: &ScFuncContext, f: &ForceResetContext) {
-
     // Get the 'bets' array in state storage.
     let bets: ArrayOfMutableBet = f.state.bets();
 
@@ -299,4 +298,12 @@ pub fn view_round_started_at(_ctx: &ScViewContext, f: &RoundStartedAtContext) {
 
 pub fn func_force_payout(ctx: &ScFuncContext, _f: &ForcePayoutContext) {
     ScFuncs::pay_winners(ctx).func.call();
+}
+
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.owner().exists() {
+        f.state.owner().set_value(&f.params.owner().value());
+        return;
+    }
+    f.state.owner().set_value(&ctx.request_sender());
 }

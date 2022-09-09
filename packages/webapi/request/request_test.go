@@ -5,18 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/kvstore"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -26,21 +27,19 @@ type mockedChain struct {
 	*testchain.MockedChainCore
 }
 
-var (
-	_ chain.Chain         = &mockedChain{}
-	_ chain.ChainCore     = &mockedChain{} // from testchain.MockedChainCore
-	_ chain.ChainEntry    = &mockedChain{}
-	_ chain.ChainRequests = &mockedChain{}
-	_ chain.ChainMetrics  = &mockedChain{}
-)
+var _ chain.Chain = &mockedChain{}
 
 // chain.ChainRequests implementation
 
-func (m *mockedChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
+func (m *mockedChain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	panic("implement me")
 }
 
-func (m *mockedChain) AttachToRequestProcessed(func(iscp.RequestID)) (attachID *events.Closure) {
+func (m *mockedChain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
+	panic("implement me")
+}
+
+func (m *mockedChain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
 	panic("implement me")
 }
 
@@ -50,11 +49,11 @@ func (m *mockedChain) DetachFromRequestProcessed(attachID *events.Closure) {
 
 // chain.ChainEntry implementation
 
-func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
+func (m *mockedChain) ReceiveTransaction(_ *iotago.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
+func (m *mockedChain) ReceiveState(_ *iotago.AliasOutput, _ time.Time) {
 	panic("implement me")
 }
 
@@ -80,10 +79,20 @@ func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("implement me")
 }
 
+// chain.ChainRunner implementation
+
+func (*mockedChain) GetDB() kvstore.KVStore {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetTimeData() time.Time {
+	panic("unimplemented")
+}
+
 // private methods
 
 func createMockedGetChain(t *testing.T) chains.ChainProvider {
-	return func(chainID *iscp.ChainID) chain.Chain {
+	return func(chainID *isc.ChainID) chain.Chain {
 		chainCore := testchain.NewMockedChainCore(t, chainID, testlogger.NewLogger(t))
 		chainCore.OnOffLedgerRequest(func(msg *messages.OffLedgerRequestMsgIn) {
 			t.Logf("Offledger request %v received", msg)
@@ -92,32 +101,37 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (colored.Balances, error) {
-	return colored.NewBalancesForIotas(100), nil
+func getAccountBalanceMocked(_ chain.ChainCore, _ isc.AgentID) (*isc.FungibleTokens, error) {
+	return isc.NewFungibleBaseTokens(100), nil
 }
 
 func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
-	return func(_ chain.Chain, _ iscp.RequestID) (bool, error) {
+	return func(_ chain.ChainCore, _ isc.RequestID) (bool, error) {
 		return ret, nil
 	}
+}
+
+func checkNonceMocked(ch chain.ChainCore, req isc.OffLedgerRequest) error {
+	return nil
 }
 
 func newMockedAPI(t *testing.T) *offLedgerReqAPI {
 	return &offLedgerReqAPI{
 		getChain:                createMockedGetChain(t),
-		getAccountBalance:       getAccountBalanceMocked,
+		getAccountAssets:        getAccountBalanceMocked,
 		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		checkNonce:              checkNonceMocked,
 		requestsCache:           expiringcache.New(10 * time.Second),
 	}
 }
 
-func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID, body interface{}, expectedStatus int) {
+func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *isc.ChainID, body interface{}, expectedStatus int) {
 	testutil.CallWebAPIRequestHandler(
 		t,
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": chainID.Base58()},
+		map[string]string{"chainID": chainID.String()},
 		body,
 		nil,
 		expectedStatus,
@@ -128,14 +142,14 @@ func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *iscp.ChainID,
 
 func TestNewRequestBase64(t *testing.T) {
 	instance := newMockedAPI(t)
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := model.OffLedgerRequestBody{Request: model.NewBytes(util.DummyOffledgerRequest(chainID).Bytes())}
 	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
 
 func TestNewRequestBinary(t *testing.T) {
 	instance := newMockedAPI(t)
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := util.DummyOffledgerRequest(chainID).Bytes()
 	testRequest(t, instance, chainID, body, http.StatusAccepted)
 }
@@ -144,13 +158,13 @@ func TestRequestAlreadyProcessed(t *testing.T) {
 	instance := newMockedAPI(t)
 	instance.hasRequestBeenProcessed = hasRequestBeenProcessedMocked(true)
 
-	chainID := iscp.RandomChainID()
+	chainID := isc.RandomChainID()
 	body := util.DummyOffledgerRequest(chainID).Bytes()
 	testRequest(t, instance, chainID, body, http.StatusBadRequest)
 }
 
 func TestWrongChainID(t *testing.T) {
 	instance := newMockedAPI(t)
-	body := util.DummyOffledgerRequest(iscp.RandomChainID()).Bytes()
-	testRequest(t, instance, iscp.RandomChainID(), body, http.StatusBadRequest)
+	body := util.DummyOffledgerRequest(isc.RandomChainID()).Bytes()
+	testRequest(t, instance, isc.RandomChainID(), body, http.StatusBadRequest)
 }

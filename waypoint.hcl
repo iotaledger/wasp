@@ -1,10 +1,10 @@
 # The name of your project. A project typically maps 1:1 to a VCS repository.
 # This name must be unique for your Waypoint server. If you're running in
 # local mode, this must be unique to your machine.
-project = "iscp"
+project = "isc"
 
 # Labels can be specified for organizational purposes.
-labels = { "team" = "iscp" }
+labels = { "team" = "isc" }
 
 variable "adminWhitelist" {
     type = list(string)
@@ -26,17 +26,17 @@ app "wasp-evm" {
         use "docker" {
             disable_entrypoint = true
             buildkit   = true
-            dockerfile = "./Dockerfile"
+            dockerfile = "./Dockerfile.dlv"
             build_args = {
                 BUILD_TAGS = "rocksdb,builtin_static"
-                BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefhash()}"
+                BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefpretty()}"
             }
         }
 
         registry {
             use "docker" {
                 image = "ghcr.io/luke-thorne/wasp"
-                tag = gitrefhash()
+                tag = gitrefpretty()
                 encoded_auth = base64encode(jsonencode(var.ghcr))
             }
         }
@@ -51,6 +51,7 @@ app "wasp-evm" {
                 artifact = artifact
                 adminWhitelist = jsonencode(var.adminWhitelist)
                 auth = var.ghcr
+                workspace = workspace.name
             })
         }
     }

@@ -10,29 +10,30 @@ package wasmrequests
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 type CallRequest struct {
-	Contract wasmtypes.ScHname
-	Function wasmtypes.ScHname
-	Params   []byte
-	Transfer []byte
+	// caller assets that the call is allowed to access
+	Allowance []byte
+	Contract  wasmtypes.ScHname
+	Function  wasmtypes.ScHname
+	Params    []byte
 }
 
 func NewCallRequestFromBytes(buf []byte) *CallRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &CallRequest{}
+	data.Allowance = wasmtypes.BytesDecode(dec)
 	data.Contract = wasmtypes.HnameDecode(dec)
 	data.Function = wasmtypes.HnameDecode(dec)
 	data.Params = wasmtypes.BytesDecode(dec)
-	data.Transfer = wasmtypes.BytesDecode(dec)
 	dec.Close()
 	return data
 }
 
 func (o *CallRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BytesEncode(enc, o.Allowance)
 	wasmtypes.HnameEncode(enc, o.Contract)
 	wasmtypes.HnameEncode(enc, o.Function)
 	wasmtypes.BytesEncode(enc, o.Params)
-	wasmtypes.BytesEncode(enc, o.Transfer)
 	return enc.Buf()
 }
 
@@ -128,17 +129,21 @@ func (o MutableDeployRequest) Value() *DeployRequest {
 }
 
 type PostRequest struct {
-	ChainID  wasmtypes.ScChainID
-	Contract wasmtypes.ScHname
-	Delay    uint32
-	Function wasmtypes.ScHname
-	Params   []byte
+	// caller assets that the call is allowed to access
+	Allowance []byte
+	ChainID   wasmtypes.ScChainID
+	Contract  wasmtypes.ScHname
+	Delay     uint32
+	Function  wasmtypes.ScHname
+	Params    []byte
+	// assets that are transferred into caller account
 	Transfer []byte
 }
 
 func NewPostRequestFromBytes(buf []byte) *PostRequest {
 	dec := wasmtypes.NewWasmDecoder(buf)
 	data := &PostRequest{}
+	data.Allowance = wasmtypes.BytesDecode(dec)
 	data.ChainID = wasmtypes.ChainIDDecode(dec)
 	data.Contract = wasmtypes.HnameDecode(dec)
 	data.Delay = wasmtypes.Uint32Decode(dec)
@@ -151,6 +156,7 @@ func NewPostRequestFromBytes(buf []byte) *PostRequest {
 
 func (o *PostRequest) Bytes() []byte {
 	enc := wasmtypes.NewWasmEncoder()
+	wasmtypes.BytesEncode(enc, o.Allowance)
 	wasmtypes.ChainIDEncode(enc, o.ChainID)
 	wasmtypes.HnameEncode(enc, o.Contract)
 	wasmtypes.Uint32Encode(enc, o.Delay)

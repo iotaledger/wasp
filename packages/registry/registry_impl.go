@@ -8,13 +8,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -25,27 +27,69 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	log   *logger.Logger
-	store kvstore.KVStore
+	log          *logger.Logger
+	store        kvstore.KVStore
+	nodeIdentity *cryptolib.KeyPair
+}
+
+var (
+	_ NodeIdentityProvider        = &Impl{}
+	_ DKShareRegistryProvider     = &Impl{}
+	_ ChainRecordRegistryProvider = &Impl{}
+	_ journal.Registry            = &Impl{}
+)
+
+type Config struct {
+	UseText  bool
+	Filename string
+}
+
+func DefaultConfig() *Config {
+	return &Config{
+		UseText:  false,
+		Filename: "",
+	}
 }
 
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
-	return &Impl{
+	result := &Impl{
 		log:   log.Named("registry"),
 		store: store,
 	}
+	// Read or create node identity - private/public key pair
+	dbKey := dbKeyForNodeIdentity()
+	exists, _ := result.store.Has(dbKey)
+	if !exists {
+		result.nodeIdentity = cryptolib.NewKeyPair()
+		data := result.nodeIdentity.GetPrivateKey().AsBytes()
+		result.log.Infof("Node identity key pair generated. PublicKey: %s", result.nodeIdentity.GetPublicKey())
+		if err := result.store.Set(dbKey, data); err != nil {
+			result.log.Error("Generated node identity cannot be stored: %v", err)
+		}
+	}
+	data, err := result.store.Get(dbKey)
+	if err != nil {
+		result.log.Panicf("Cannot read node identity: %v", err)
+	}
+	privateKey, err := cryptolib.NewPrivateKeyFromBytes(data)
+	if err != nil {
+		result.log.Panicf("Cannot read create private key from read node identity: %v", err)
+	}
+	result.nodeIdentity = cryptolib.NewKeyPairFromPrivateKey(privateKey)
+
+	return result
 }
 
 // endregion ////////////////////////////////////////////////////////
 
 // region ChainRecordProvider /////////////////////////////////////////////////////////
 
-func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
+func MakeChainRecordDbKey(chainID *isc.ChainID) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, chainID.Bytes())
 }
 
-func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) GetChainRecordByChainID(chainID *isc.ChainID) (*ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -68,7 +112,7 @@ func (r *Impl) GetChainRecords() ([]*ChainRecord, error) {
 	return ret, err
 }
 
-func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
+func (r *Impl) UpdateChainRecord(chainID *isc.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
 	rec, err := r.GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -85,7 +129,7 @@ func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) boo
 	return rec, nil
 }
 
-func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) ActivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if bd.Active {
 			return false
@@ -95,7 +139,7 @@ func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) 
 	})
 }
 
-func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+func (r *Impl) DeactivateChainRecord(chainID *isc.ChainID) (*ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if !bd.Active {
 			return false
@@ -115,10 +159,12 @@ func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 // region DKShareRegistryProvider ////////////////////////////////////////////////////
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
+func (r *Impl) SaveDKShare(dkShare tcrypto.DKShare) error {
 	var err error
 	var exists bool
-	dbKey := dbKeyForDKShare(dkShare.Address)
+	dbKey := dbKeyForDKShare(dkShare.GetAddress())
+
+	r.log.Infof("Saving DKShare for address=%v as key %v", dkShare.GetAddress().String(), dbKey)
 
 	if exists, err = r.store.Has(dbKey); err != nil {
 		return err
@@ -130,7 +176,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
-func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
+func (r *Impl) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
 	data, err := r.store.Get(dbKeyForDKShare(sharedAddress))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
@@ -138,11 +184,11 @@ func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare,
 		}
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultEd25519Suite(), tcrypto.DefaultBLSSuite(), r.nodeIdentity.GetPrivateKey())
 }
 
-func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, sharedAddress.Bytes())
+func dbKeyForDKShare(sharedAddress iotago.Address) []byte {
+	return dbkeys.MakeKey(dbkeys.ObjectTypeDistributedKeyData, isc.BytesFromAddress(sharedAddress))
 }
 
 // endregion //////////////////////////////////////////////////////////////
@@ -150,7 +196,7 @@ func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {
 // region TrustedNetworkManager ////////////////////////////////////////////////////
 
 // IsTrustedPeer implements TrustedNetworkManager interface.
-func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+func (r *Impl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -161,7 +207,7 @@ func (r *Impl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
 }
 
 // TrustPeer implements TrustedNetworkManager interface.
-func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (r *Impl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey, NetID: netID}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -180,7 +226,7 @@ func (r *Impl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Trust
 
 // DistrustPeer implements TrustedNetworkManager interface.
 // Get is kind of optional, so we ignore errors related to it.
-func (r *Impl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+func (r *Impl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	tp := &peering.TrustedPeer{PubKey: pubKey}
 	tpKeyBytes, err := dbKeyForTrustedPeer(tp)
 	if err != nil {
@@ -248,10 +294,10 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	nowis := time.Now()
-	cleanAfter := nowis.Add(BlobCacheDefaultTTL).UnixNano()
+	currentTime := time.Now()
+	cleanAfter := currentTime.Add(BlobCacheDefaultTTL).UnixNano()
 	if len(ttl) > 0 {
-		cleanAfter = nowis.Add(ttl[0]).UnixNano()
+		cleanAfter = currentTime.Add(ttl[0]).UnixNano()
 	}
 	if cleanAfter > 0 {
 		err = r.store.Set(dbKeyForBlobTTL(h), codec.EncodeInt64(cleanAfter))
@@ -281,40 +327,13 @@ func (r *Impl) HasBlob(h hashing.HashValue) (bool, error) {
 // region NodeIdentity //////////////////////////////////////////
 
 // GetNodeIdentity implements NodeIdentityProvider.
-func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
-	var err error
-	var pair ed25519.KeyPair
-	dbKey := dbKeyForNodeIdentity()
-	var exists bool
-	var data []byte
-	exists, _ = r.store.Has(dbKey)
-	if !exists {
-		pair = ed25519.GenerateKeyPair()
-		data = pair.PrivateKey.Bytes()
-		if err := r.store.Set(dbKey, data); err != nil {
-			return nil, err
-		}
-		r.log.Info("Node identity key pair generated.")
-		return &pair, nil
-	}
-	if data, err = r.store.Get(dbKey); err != nil {
-		return nil, err
-	}
-	if pair.PrivateKey, err, _ = ed25519.PrivateKeyFromBytes(data); err != nil {
-		return nil, err
-	}
-	pair.PublicKey = pair.PrivateKey.Public()
-	return &pair, nil
+func (r *Impl) GetNodeIdentity() *cryptolib.KeyPair {
+	return r.nodeIdentity
 }
 
 // GetNodePublicKey implements NodeIdentityProvider.
-func (r *Impl) GetNodePublicKey() (*ed25519.PublicKey, error) {
-	var err error
-	var pair *ed25519.KeyPair
-	if pair, err = r.GetNodeIdentity(); err != nil {
-		return nil, err
-	}
-	return &pair.PublicKey, nil
+func (r *Impl) GetNodePublicKey() *cryptolib.PublicKey {
+	return r.GetNodeIdentity().GetPublicKey()
 }
 
 func dbKeyForNodeIdentity() []byte {

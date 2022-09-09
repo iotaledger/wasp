@@ -3,13 +3,14 @@
 
 package templates
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
+
 type WaspConfigParams struct {
 	APIPort                      int
 	DashboardPort                int
 	PeeringPort                  int
 	NanomsgPort                  int
-	TxStreamPort                 int
-	TxStreamHost                 string
+	L1INXAddress                 string
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
@@ -19,11 +20,11 @@ type WaspConfigParams struct {
 const WaspConfig = `
 {
   "database": {
-    "inMemory": true,
+    "inMemory": false,
     "directory": "waspdb"
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",
@@ -43,17 +44,23 @@ const WaspConfig = `
     "ownerAddresses": ["{{.OwnerAddress}}"]
   },
   "webapi": {
+    "auth": {
+      "scheme": "none"
+    },
     "bindAddress": "0.0.0.0:{{.APIPort}}"
   },
   "dashboard": {
+    "auth": {
+      "scheme": "none"
+    },
     "bindAddress": "0.0.0.0:{{.DashboardPort}}"
   },
   "peering":{
     "port": {{.PeeringPort}},
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
-  "nodeconn": {
-    "address": "{{.TxStreamHost}}:{{.TxStreamPort}}"
+  "l1": {
+    "inxAddress": "{{.L1INXAddress}}"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}
@@ -73,6 +80,10 @@ const WaspConfig = `
   "wal": {
     "directory": "wal",
     "enabled": true
+  },
+  "debug": {
+    "rawblocksEnabled": false,
+    "rawblocksDirectory": "blocks"
   }
 }
 `

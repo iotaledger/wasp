@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/marshalutil"
 )
 
 type MockedACSRunner struct {
@@ -14,9 +15,10 @@ type MockedACSRunner struct {
 }
 
 type acsSession struct {
-	values    [][]byte
-	callbacks []func(session uint64, values [][]byte)
-	closed    bool
+	validators map[uint16]bool
+	values     [][]byte
+	callbacks  []func(session uint64, values [][]byte)
+	closed     bool
 }
 
 func NewMockedACSRunner(quorum uint16, log *logger.Logger) *MockedACSRunner {
@@ -31,20 +33,39 @@ func (acs *MockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stat
 	acs.mutex.Lock()
 	defer acs.mutex.Unlock()
 
+	acs.log.Debugf("mockedACSRunner: started %v", sessionID)
 	session, exist := acs.sessions[sessionID]
 	if !exist {
+		acs.log.Debugf("mockedACSRunner: creating new session %v", sessionID)
 		session = &acsSession{
-			values:    make([][]byte, 0),
-			callbacks: make([]func(session uint64, values [][]byte), 0),
+			validators: make(map[uint16]bool),
+			values:     make([][]byte, 0),
+			callbacks:  make([]func(session uint64, values [][]byte), 0),
 		}
 		acs.sessions[sessionID] = session
+	} else {
+		acs.log.Debugf("mockedACSRunner: session %v is not new", sessionID)
 	}
 	if session.closed {
+		acs.log.Debugf("mockedACSRunner: session %v is closed; returning without callbacks", sessionID)
 		return
 	}
+
+	validator, err := marshalutil.New(value).ReadUint16()
+	if err != nil {
+		acs.log.Errorf("mockedACSRunner: cannot retrieve validator from batch proposal: %v", err)
+		return
+	}
+	if session.validators[validator] {
+		acs.log.Debugf("mockedACSRunner: batch proposal from %v is already present", err)
+		return
+	}
+
 	session.values = append(session.values, value)
 	session.callbacks = append(session.callbacks, callback)
+	session.validators[validator] = true
 
+	acs.log.Debugf("mockedACSRunner: %v values collected out of needed %v", len(session.values), int(acs.quorum))
 	if len(session.values) >= int(acs.quorum) {
 		acs.log.Infof("mockedACSRunner: 'consensus' reached for sessionID %d", sessionID)
 		session.closed = true

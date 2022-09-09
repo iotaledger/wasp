@@ -6,6 +6,7 @@ wasp.log
 /evmemulator
 /schema
 /submsg
+/vendor
 waspdb/
 cluster-data/
 dist/
@@ -13,6 +14,14 @@ dist/
 .vscode/
 *.bat
 *.bak
+packages/gpa/**/*.dvi
+packages/gpa/**/*.tex
+packages/gpa/**/*.pdf
+packages/gpa/**/*.out
+packages/gpa/**/*.log
+packages/gpa/**/*.aux
+packages/gpa/**/states/
+packages/gpa/**/*.toolbox/
 wasp-cli.json
 **/pkg/
 **/target/
@@ -22,3 +31,8 @@ wasp-cli.json
 **/node_modules/
 goshimmer.log
 /*.sh
+
+*.trie
+*.snapshot
+snapshot
+gascalibration

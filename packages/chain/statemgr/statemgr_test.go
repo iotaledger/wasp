@@ -9,34 +9,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
 
-//---------------------------------------------
-//Tests if state manager is started and initialized correctly
+// ---------------------------------------------
+// Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, false)
-	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	env := NewMockedEnv(2, t, false)
+	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
 
 	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.StateCommitment())
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(node0.StateManager.(*stateManager).solidState.TrieNodeStore())))
 	require.False(t, node0.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
 	env.AddNode(node0)
 
-	node0.StartTimer()
+	node0.Start()
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node0, 0)
 
 	require.Panics(t, func() {
 		env.AddNode(node0)
 	})
 
-	node1 := env.NewMockedNode(1, NewStateManagerTimers())
+	node1 := NewMockedNode(env, 1, NewStateManagerTimers())
 	require.NotPanics(t, func() {
 		env.AddNode(node1)
 	})
@@ -44,9 +43,9 @@ func TestEnv(t *testing.T) {
 
 	require.NotNil(t, node1.StateManager.(*stateManager).solidState)
 	require.False(t, node1.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.StateCommitment())
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(node1.StateManager.(*stateManager).solidState.TrieNodeStore())))
 
-	node1.StartTimer()
+	node1.Start()
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node1, 0)
 
 	env.RemoveNode(node0)
@@ -57,51 +56,43 @@ func TestEnv(t *testing.T) {
 }
 
 func TestGetInitialState(t *testing.T) {
-	env, originTx := NewMockedEnv(1, t, false)
-	node := env.NewMockedNode(0, NewStateManagerTimers())
+	env := NewMockedEnv(1, t, false)
+	node := NewMockedNode(env, 0, NewStateManagerTimers())
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.StateCommitment())
-
-	node.StartTimer()
-
-	originOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(node.StateManager.(*stateManager).solidState.TrieNodeStore())))
 	env.AddNode(node)
-	manager := node.StateManager.(*stateManager)
 
+	node.Start()
 	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
-	require.True(t, originOut.Compare(manager.stateOutput) == 0)
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
+	manager := node.StateManager.(*stateManager)
+	require.True(t, isc.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(manager.solidState.TrieNodeStore())))
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
-	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
+	require.EqualValues(t, 0, syncInfo.StateOutput.GetStateIndex())
 }
 
 func TestGetNextState(t *testing.T) {
-	env, originTx := NewMockedEnv(1, t, false)
+	env := NewMockedEnv(1, t, false)
+	originOutput := env.Ledgers.GetLedger(env.ChainID).GetOriginOutput().GetAliasOutput()
 	timers := NewStateManagerTimers()
 	timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
-	node := env.NewMockedNode(0, timers)
+	node := NewMockedNode(env, 0, timers)
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.StateCommitment())
-
-	node.StartTimer()
-
-	originOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
-	require.NoError(t, err)
-
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(node.StateManager.(*stateManager).solidState.TrieNodeStore())))
 	env.AddNode(node)
-	manager := node.StateManager.(*stateManager)
 
+	node.Start()
 	waitSyncBlockIndexAndCheck(1*time.Second, t, node, 0)
-	require.True(t, originOut.Compare(manager.stateOutput) == 0)
+	manager := node.StateManager.(*stateManager)
+	require.True(t, isc.AliasOutputsEqual(originOutput, manager.stateOutput.GetAliasOutput()))
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.StateCommitment(), state.OriginStateHash())
+	require.True(t, state.EqualCommitments(state.OriginStateCommitment(), state.RootCommitment(manager.solidState.TrieNodeStore())))
 
 	//-------------------------------------------------------------
 
@@ -109,14 +100,18 @@ func TestGetNextState(t *testing.T) {
 	require.NotNil(t, currentState)
 	currentStateOutput := manager.stateOutput
 	require.NotNil(t, currentState)
-	currh := currentState.StateCommitment()
-	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
+	currSH := state.RootCommitment(currentState.TrieNodeStore())
+	currOH, err := state.L1CommitmentFromAliasOutput(currentStateOutput.GetAliasOutput())
+	require.NoError(t, err)
+	require.True(t, state.EqualCommitments(currSH, currOH.StateCommitment))
 
-	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
+	node.NextState(currentState, currentStateOutput)
 	waitSyncBlockIndexAndCheck(3*time.Second, t, node, 1)
 
+	soc, err := state.L1CommitmentFromAliasOutput(manager.stateOutput.GetAliasOutput())
+	require.NoError(t, err)
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
-	require.EqualValues(t, manager.solidState.StateCommitment().Bytes(), manager.stateOutput.GetStateData())
+	require.True(t, state.EqualCommitments(state.RootCommitment(manager.solidState.TrieNodeStore()), soc.StateCommitment))
 	require.False(t, manager.syncingBlocks.hasBlockCandidates())
 }
 
@@ -131,7 +126,7 @@ func TestManyStateTransitionsNoPush(t *testing.T) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
-	env, _ := NewMockedEnv(1, t, false)
+	env := NewMockedEnv(1, t, false)
 	env.SetPushStateToNodesOption(pushStateToNodes)
 
 	timers := NewStateManagerTimers()
@@ -139,55 +134,53 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 		timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
 	}
 
-	node := env.NewMockedNode(0, timers)
+	node := NewMockedNode(env, 0, timers)
 	node.StateManager.Ready().MustWait()
-	node.StartTimer()
-
 	env.AddNode(node)
 
 	const targetBlockIndex = 30
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	node.Start()
 	waitSyncBlockIndexAndCheck(20*time.Second, t, node, targetBlockIndex)
 }
 
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func TestManyStateTransitionsSeveralNodes(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, true)
+	env := NewMockedEnv(2, t, false)
 	env.SetPushStateToNodesOption(true)
 
-	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
-	node0.StartTimer()
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey})
 	env.AddNode(node0)
 	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node0.PubKey=%v", node0.PubKey.String())
 
 	const targetBlockIndex = 10
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	node0.Start()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
-	node1 := env.NewMockedNode(1, NewStateManagerTimers())
+	node1 := NewMockedNode(env, 1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
-	node1.StartTimer()
-	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node1.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
 	env.Log.Infof("TestManyStateTransitionsSeveralNodes: node1.PubKey=%v", node1.PubKey.String())
 
+	node1.Start()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
 
 func TestManyStateTransitionsManyNodes(t *testing.T) {
 	numberOfCatchingPeers := 10
-	env, _ := NewMockedEnv(numberOfCatchingPeers+1, t, true)
+	env := NewMockedEnv(numberOfCatchingPeers+1, t, false)
 	env.SetPushStateToNodesOption(true)
 
-	allPubKeys := make([]*ed25519.PublicKey, 0)
+	allPubKeys := make([]*cryptolib.PublicKey, 0)
 
-	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
-	node0.StartTimer()
 	allPubKeys = append(allPubKeys, node0.PubKey)
 
 	env.AddNode(node0)
@@ -195,23 +188,24 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 
 	const targetBlockIndex = 5
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
+	node0.Start()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
 	catchingNodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
 		timers := NewStateManagerTimers()
 		timers.GetBlockRetry = 200 * time.Millisecond
-		catchingNodes[i] = env.NewMockedNode(i+1, timers)
+		catchingNodes[i] = NewMockedNode(env, i+1, timers)
 		catchingNodes[i].StateManager.Ready().MustWait()
 		allPubKeys = append(allPubKeys, catchingNodes[i].PubKey)
 	}
 	node0.StateManager.SetChainPeers(allPubKeys)
 	for i := 0; i < numberOfCatchingPeers; i++ {
 		catchingNodes[i].StateManager.SetChainPeers(allPubKeys)
-		catchingNodes[i].StartTimer()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
 		env.AddNode(catchingNodes[i])
+		catchingNodes[i].Start()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
 		waitSyncBlockIndexAndCheck(30*time.Second, t, catchingNodes[i], targetBlockIndex)
@@ -221,33 +215,33 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 // Call to MsgGetConfirmetOutput does not return anything. Synchronization must
 // be done using stateOutput only.
 func TestCatchUpNoConfirmedOutput(t *testing.T) {
-	env, _ := NewMockedEnv(2, t, true)
+	env := NewMockedEnv(2, t, false)
 	env.SetPushStateToNodesOption(true)
 
-	node0 := env.NewMockedNode(0, NewStateManagerTimers())
+	node0 := NewMockedNode(env, 0, NewStateManagerTimers())
 	node0.StateManager.Ready().MustWait()
-	node0.StartTimer()
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey})
 	env.AddNode(node0)
 
 	const targetBlockIndex = 10
 	node0.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	node0.NodeConn.OnPullConfirmedOutput(func(outputID ledgerstate.OutputID) {})
+	node0.NodeConn.SetPullOutputByIDAllowed(false)
+	node0.Start()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node0, targetBlockIndex)
 
-	node1 := env.NewMockedNode(1, NewStateManagerTimers())
+	node1 := NewMockedNode(env, 1, NewStateManagerTimers())
 	node1.StateManager.Ready().MustWait()
-	node1.StartTimer()
-	node1.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
-	node0.StateManager.SetChainPeers([]*ed25519.PublicKey{node0.PubKey, node1.PubKey})
+	node1.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
+	node0.StateManager.SetChainPeers([]*cryptolib.PublicKey{node0.PubKey, node1.PubKey})
 	env.AddNode(node1)
 
+	node1.Start()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
 
 func TestNodeDisconnected(t *testing.T) {
 	numberOfConnectedPeers := 5
-	env, _ := NewMockedEnv(numberOfConnectedPeers+1, t, true)
+	env := NewMockedEnv(numberOfConnectedPeers+1, t, false)
 	env.SetPushStateToNodesOption(false)
 
 	createNodeFun := func(nodeIndex int) *MockedNode {
@@ -255,10 +249,10 @@ func TestNodeDisconnected(t *testing.T) {
 		timers.PullStateAfterStateCandidateDelay = 150 * time.Millisecond
 		timers.PullStateRetry = 150 * time.Millisecond
 		timers.GetBlockRetry = 150 * time.Millisecond
-		result := env.NewMockedNode(nodeIndex, timers)
+		result := NewMockedNode(env, nodeIndex, timers)
 		result.StateManager.Ready().MustWait()
-		result.StartTimer()
 		env.AddNode(result)
+		result.Start()
 		waitSyncBlockIndexAndCheck(10*time.Second, t, result, 0)
 		return result
 	}
@@ -327,7 +321,7 @@ func TestCruelWorld(t *testing.T) {
 	}
 
 	numberOfPeers := 10
-	env, _ := NewMockedEnv(numberOfPeers, t, true)
+	env := NewMockedEnv(numberOfPeers, t, false)
 	env.NetworkBehaviour.
 		WithLosingChannel(nil, 80).
 		WithRepeatingChannel(nil, 25).
@@ -344,14 +338,14 @@ func TestCruelWorld(t *testing.T) {
 		timers.PullStateAfterStateCandidateDelay = randFromIntervalFun(200, 500) * time.Millisecond
 		timers.PullStateRetry = randFromIntervalFun(50, 200) * time.Millisecond
 		timers.GetBlockRetry = randFromIntervalFun(50, 200) * time.Millisecond
-		nodes[i] = env.NewMockedNode(i, timers)
+		nodes[i] = NewMockedNode(env, i, timers)
 		nodes[i].StateManager.Ready().MustWait()
-		nodes[i].StartTimer()
 		nodes[i].StateManager.SetChainPeers(env.NodePubKeys)
 		env.AddNode(nodes[i])
+		nodes[i].Start()
 	}
 
-	var disconnectedNodes []*ed25519.PublicKey
+	var disconnectedNodes []*cryptolib.PublicKey
 	var mutex sync.Mutex
 	go func() { // Connection cutter
 		for {

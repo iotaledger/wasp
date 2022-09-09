@@ -4,6 +4,7 @@
 package domain_test
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -23,7 +24,7 @@ func TestDomainProvider(t *testing.T) {
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 
 	//
@@ -71,7 +72,7 @@ func TestRandom(t *testing.T) {
 	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
 	for i := range nodes {
-		go nodes[i].Run(make(<-chan struct{}))
+		go nodes[i].Run(context.Background())
 	}
 	peeringID := peering.RandomPeeringID()
 
@@ -93,10 +94,10 @@ func TestRandom(t *testing.T) {
 		ii := i
 		nodes[i].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
 			t.Logf("%d received", ii)
-			if nodePubKeys[1] == recv.SenderPubKey {
+			if nodePubKeys[1].Equals(recv.SenderPubKey) {
 				r1++
 			}
-			if nodePubKeys[2] == recv.SenderPubKey {
+			if nodePubKeys[2].Equals(recv.SenderPubKey) {
 				r2++
 			}
 			wg.Done()
@@ -119,5 +120,38 @@ func TestRandom(t *testing.T) {
 	require.EqualValues(t, sendTo*5, r2)
 	d1.Close()
 	d2.Close()
+	require.NoError(t, netCloser.Close())
+}
+
+func TestGetRandomOtherPeers(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+
+	nodeCount := 8 // 7 excluding self
+	peersToGet := 5
+	iterationCount := 13
+	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
+	nodePubKeys := testpeers.PublicKeys(nodeIdentities)
+	peeringID := peering.RandomPeeringID()
+
+	domain, err := nodes[0].PeerDomain(peeringID, nodePubKeys)
+	require.NoError(t, err)
+	require.NotNil(t, domain)
+
+	for i := 0; i < iterationCount; i++ {
+		t.Logf("Iteration %v...", i)
+		peers := domain.GetRandomOtherPeers(peersToGet)
+		require.Equal(t, peersToGet, len(peers))
+		for j := range peers {
+			t.Logf("\tComparing peers %v, key %v...", j, peers[j].String())
+			for k := range peers[j+1:] {
+				kk := k + j + 1
+				t.Logf("\t\t and %v, key %v", kk, peers[kk].String())
+				require.False(t, peers[j].Equals(peers[kk]))
+			}
+		}
+	}
+
 	require.NoError(t, netCloser.Close())
 }

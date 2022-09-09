@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"nhooyr.io/websocket"
 )
@@ -31,7 +31,7 @@ func New(log *logger.Logger, msgTypes []string) *PublisherWebSocket {
 	}
 }
 
-func (p *PublisherWebSocket) ServeHTTP(chainID *iscp.ChainID, w http.ResponseWriter, r *http.Request) error {
+func (p *PublisherWebSocket) ServeHTTP(chainID *isc.ChainID, w http.ResponseWriter, r *http.Request) error {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true, // TODO: make accept origin configurable
 	})
@@ -53,7 +53,7 @@ func (p *PublisherWebSocket) ServeHTTP(chainID *iscp.ChainID, w http.ResponseWri
 		if len(parts) < 1 {
 			return
 		}
-		if parts[0] != chainID.Base58() {
+		if parts[0] != chainID.String() {
 			return
 		}
 

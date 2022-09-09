@@ -1,27 +1,34 @@
 name: CoreRoot
-description: Core root contract
+description: Root Contract
 structs: {}
 typedefs: {}
 state: {}
-funcs:
+funcs: 
   deployContract:
     params:
-      description=ds: String? // default 'N/A'
+      programHash=ph: Hash # TODO variable init params for deployed contract
+      description=ds: String? # default 'N/A'
       name=nm: String
-      programHash=ph: Hash //TODO variable init params for deployed contract
   grantDeployPermission:
     params:
       deployer=dp: AgentID
   revokeDeployPermission:
     params:
       deployer=dp: AgentID
+  requireDeployPermissions:
+    params:
+      deployPermissionsEnabled=de: Bool
+  subscribeBlockContext:
+    params:
+      openFunc=bco: Hname
+      closeFunc=bcc: Hname
 views:
   findContract:
     params:
       hname=hn: Hname
     results:
-      contractFound=cf: Bytes // encoded contract record
-      contractRecData=dt: Bytes // encoded contract record
+      contractFound=cf: Bytes # encoded contract record
+      contractRecData=dt: Bytes # encoded contract record
   getContractRecords:
     results:
-      contractRegistry=r: map[Hname]Bytes // contract records
+      contractRegistry=r: map[Hname]Bytes # contract records

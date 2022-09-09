@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,19 +21,19 @@ var tplChainBlob string
 func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/blob/:hash", d.handleChainBlob)
 	route.Name = "chainBlob"
-	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainBlob)
 
 	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
 }
 
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
@@ -48,7 +48,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		Hash:    hash,
 	}
 
-	fields, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
+	fields, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash: hash,
 	}))
 	if err != nil {
@@ -59,7 +59,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	fields.MustIterateKeysSorted("", func(key kv.Key) bool {
 		field := []byte(key)
 		var value dict.Dict
-		value, err = d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+		value, err = d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash:  hash,
 			blob.ParamField: field,
 		}))
@@ -81,12 +81,12 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 }
 
 func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
-	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
+	hash, err := hashing.HashValueFromHex(c.Param("hash"))
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	value, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))
@@ -110,7 +110,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 type ChainBlobTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *iscp.ChainID
+	ChainID *isc.ChainID
 	Hash    hashing.HashValue
 
 	Blob []BlobField

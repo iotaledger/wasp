@@ -17,14 +17,6 @@ pub struct ImmutableAddAllowedStateControllerAddressParams {
 }
 
 impl ImmutableAddAllowedStateControllerAddressParams {
-    pub fn chain_owner(&self) -> ScImmutableAgentID {
-		ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
-	}
-
-    pub fn fee_color(&self) -> ScImmutableColor {
-		ScImmutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
-	}
-
     pub fn state_controller_address(&self) -> ScImmutableAddress {
 		ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
 	}
@@ -36,16 +28,102 @@ pub struct MutableAddAllowedStateControllerAddressParams {
 }
 
 impl MutableAddAllowedStateControllerAddressParams {
-    pub fn chain_owner(&self) -> ScMutableAgentID {
-		ScMutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
-	}
-
-    pub fn fee_color(&self) -> ScMutableColor {
-		ScMutableColor::new(self.proxy.root(PARAM_FEE_COLOR))
-	}
-
     pub fn state_controller_address(&self) -> ScMutableAddress {
 		ScMutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
+	}
+}
+
+#[derive(Clone)]
+pub struct ImmutableAddCandidateNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableAddCandidateNodeParams {
+    pub fn access_node_info_access_api(&self) -> ScImmutableString {
+		ScImmutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+	}
+
+    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_for_committee(&self) -> ScImmutableBool {
+		ScImmutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableAddCandidateNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableAddCandidateNodeParams {
+    pub fn access_node_info_access_api(&self) -> ScMutableString {
+		ScMutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
+	}
+
+    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_for_committee(&self) -> ScMutableBool {
+		ScMutableBool::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_FOR_COMMITTEE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
+pub struct MapBytesToImmutableUint8 {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapBytesToImmutableUint8 {
+    pub fn get_uint8(&self, key: &[u8]) -> ScImmutableUint8 {
+        ScImmutableUint8::new(self.proxy.key(&bytes_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableChangeAccessNodesParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableChangeAccessNodesParams {
+    pub fn change_access_nodes_actions(&self) -> MapBytesToImmutableUint8 {
+		MapBytesToImmutableUint8 { proxy: self.proxy.root(PARAM_CHANGE_ACCESS_NODES_ACTIONS) }
+	}
+}
+
+#[derive(Clone)]
+pub struct MapBytesToMutableUint8 {
+	pub(crate) proxy: Proxy,
+}
+
+impl MapBytesToMutableUint8 {
+    pub fn clear(&self) {
+        self.proxy.clear_map();
+    }
+
+    pub fn get_uint8(&self, key: &[u8]) -> ScMutableUint8 {
+        ScMutableUint8::new(self.proxy.key(&bytes_to_bytes(key)))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableChangeAccessNodesParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableChangeAccessNodesParams {
+    pub fn change_access_nodes_actions(&self) -> MapBytesToMutableUint8 {
+		MapBytesToMutableUint8 { proxy: self.proxy.root(PARAM_CHANGE_ACCESS_NODES_ACTIONS) }
 	}
 }
 
@@ -94,6 +172,36 @@ impl MutableRemoveAllowedStateControllerAddressParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableRevokeAccessNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl ImmutableRevokeAccessNodeParams {
+    pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
+pub struct MutableRevokeAccessNodeParams {
+	pub(crate) proxy: Proxy,
+}
+
+impl MutableRevokeAccessNodeParams {
+    pub fn access_node_info_certificate(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
+	}
+
+    pub fn access_node_info_pub_key(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_PUB_KEY))
+	}
+}
+
+#[derive(Clone)]
 pub struct ImmutableRotateStateControllerParams {
 	pub(crate) proxy: Proxy,
 }
@@ -121,24 +229,19 @@ pub struct ImmutableSetChainInfoParams {
 }
 
 impl ImmutableSetChainInfoParams {
-    pub fn max_blob_size(&self) -> ScImmutableInt32 {
-		ScImmutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
+    // default maximum size of a blob
+    pub fn max_blob_size(&self) -> ScImmutableUint32 {
+		ScImmutableUint32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
-    pub fn max_event_size(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
+    // default maximum size of a single event
+    pub fn max_event_size(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
-    pub fn max_events_per_req(&self) -> ScImmutableInt16 {
-		ScImmutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
-	}
-
-    pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
+    // default maximum number of events per request
+    pub fn max_events_per_req(&self) -> ScImmutableUint16 {
+		ScImmutableUint16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 }
 
@@ -148,113 +251,40 @@ pub struct MutableSetChainInfoParams {
 }
 
 impl MutableSetChainInfoParams {
-    pub fn max_blob_size(&self) -> ScMutableInt32 {
-		ScMutableInt32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
+    // default maximum size of a blob
+    pub fn max_blob_size(&self) -> ScMutableUint32 {
+		ScMutableUint32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
 	}
 
-    pub fn max_event_size(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
+    // default maximum size of a single event
+    pub fn max_event_size(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.proxy.root(PARAM_MAX_EVENT_SIZE))
 	}
 
-    pub fn max_events_per_req(&self) -> ScMutableInt16 {
-		ScMutableInt16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
-	}
-
-    pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
+    // default maximum number of events per request
+    pub fn max_events_per_req(&self) -> ScMutableUint16 {
+		ScMutableUint16::new(self.proxy.root(PARAM_MAX_EVENTS_PER_REQ))
 	}
 }
 
 #[derive(Clone)]
-pub struct ImmutableSetContractFeeParams {
+pub struct ImmutableSetFeePolicyParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl ImmutableSetContractFeeParams {
-    pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
-	}
-
-    pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
+impl ImmutableSetFeePolicyParams {
+    pub fn fee_policy_bytes(&self) -> ScImmutableBytes {
+		ScImmutableBytes::new(self.proxy.root(PARAM_FEE_POLICY_BYTES))
 	}
 }
 
 #[derive(Clone)]
-pub struct MutableSetContractFeeParams {
+pub struct MutableSetFeePolicyParams {
 	pub(crate) proxy: Proxy,
 }
 
-impl MutableSetContractFeeParams {
-    pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
-	}
-
-    pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableSetDefaultFeeParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableSetDefaultFeeParams {
-    pub fn owner_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScImmutableInt64 {
-		ScImmutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableSetDefaultFeeParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableSetDefaultFeeParams {
-    pub fn owner_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_OWNER_FEE))
-	}
-
-    pub fn validator_fee(&self) -> ScMutableInt64 {
-		ScMutableInt64::new(self.proxy.root(PARAM_VALIDATOR_FEE))
-	}
-}
-
-#[derive(Clone)]
-pub struct ImmutableGetFeeInfoParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl ImmutableGetFeeInfoParams {
-    pub fn hname(&self) -> ScImmutableHname {
-		ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
-	}
-}
-
-#[derive(Clone)]
-pub struct MutableGetFeeInfoParams {
-	pub(crate) proxy: Proxy,
-}
-
-impl MutableGetFeeInfoParams {
-    pub fn hname(&self) -> ScMutableHname {
-		ScMutableHname::new(self.proxy.root(PARAM_HNAME))
+impl MutableSetFeePolicyParams {
+    pub fn fee_policy_bytes(&self) -> ScMutableBytes {
+		ScMutableBytes::new(self.proxy.root(PARAM_FEE_POLICY_BYTES))
 	}
 }

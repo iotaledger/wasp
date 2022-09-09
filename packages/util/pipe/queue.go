@@ -118,10 +118,11 @@ func (q *LimitedPriorityHashQueue) resize() {
 // Add puts an element to the start or end of the queue, depending
 // on the result of priorityFun. If the limited queue is full it adds a new element
 // removing the previously added element, according to the following rules:
-//	* not prioritized element is chosen for deletion, if possible
-//	* the chosen for deletion element is always the oldest among its type
-//	* not prioritized element can not be added if there are no not prioritized
-//	  element to delete
+//   - not prioritized element is chosen for deletion, if possible
+//   - the chosen for deletion element is always the oldest among its type
+//   - not prioritized element can not be added if there are no not prioritized
+//     elements to delete
+//
 // If it is a hash queue, the element is not added, if it is already in the queue.
 // If the add was successful, returns `true`.
 func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {

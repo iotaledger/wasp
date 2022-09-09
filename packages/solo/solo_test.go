@@ -3,24 +3,19 @@ package solo
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
-func TestPutBlobData(t *testing.T) {
-	env := New(t, false, false)
-	data := []byte("data-datadatadatadatadatadatadatadata")
-	h := env.PutBlobDataIntoRegistry(data)
-	require.EqualValues(t, h, hashing.HashData(data))
+func TestSoloBasic1(t *testing.T) {
+	corecontracts.PrintWellKnownHnames()
+	env := New(t)
+	_ = env.NewChain()
+}
 
-	p := requestargs.New(nil)
-	h1 := p.AddAsBlobRef("dataName", data)
-	require.EqualValues(env.T, h, h1)
-
-	sargs, ok, err := p.SolidifyRequestArguments(env.blobCache)
-	require.NoError(env.T, err)
-	require.True(env.T, ok)
-	require.Len(env.T, sargs, 1)
-	require.EqualValues(env.T, data, sargs.MustGet("dataName"))
+func TestSoloBasic2(t *testing.T) {
+	corecontracts.PrintWellKnownHnames()
+	env := New(t, &InitOptions{
+		Debug: true,
+	})
+	_ = env.NewChain()
 }

@@ -4,6 +4,8 @@
 package wasmlib
 
 import (
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -13,9 +15,7 @@ type EventEncoder struct {
 
 func NewEventEncoder(eventName string) *EventEncoder {
 	e := &EventEncoder{event: eventName}
-	timestamp := ScFuncContext{}.Timestamp()
-	// convert nanoseconds to seconds
-	e.Encode(wasmtypes.Uint64ToString(timestamp / 1_000_000_000))
+	e.Encode(wasmtypes.Uint64ToString(ScFuncContext{}.Timestamp()))
 	return e
 }
 
@@ -24,6 +24,28 @@ func (e *EventEncoder) Emit() {
 }
 
 func (e *EventEncoder) Encode(value string) {
-	// TODO encode potential vertical bars that are present in the value string
+	value = strings.ReplaceAll(value, "~", "~~")
+	value = strings.ReplaceAll(value, "|", "~/")
+	value = strings.ReplaceAll(value, " ", "~_")
 	e.event += "|" + value
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+type EventDecoder struct {
+	msg []string
+}
+
+func NewEventDecoder(msg []string) *EventDecoder {
+	return &EventDecoder{msg: msg}
+}
+
+func (d *EventDecoder) Decode() string {
+	next := d.msg[0]
+	d.msg = d.msg[1:]
+	return next
+}
+
+func (d *EventDecoder) Timestamp() uint64 {
+	return wasmtypes.Uint64FromString(d.Decode())
 }

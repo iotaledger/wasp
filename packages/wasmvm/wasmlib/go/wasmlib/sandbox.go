@@ -9,42 +9,44 @@ import (
 )
 
 const (
-	FnAccountID           = int32(-1)
-	FnBalance             = int32(-2)
-	FnBalances            = int32(-3)
-	FnBlockContext        = int32(-4)
-	FnCall                = int32(-5)
-	FnCaller              = int32(-6)
-	FnChainID             = int32(-7)
-	FnChainOwnerID        = int32(-8)
-	FnContract            = int32(-9)
-	FnContractCreator     = int32(-10)
-	FnDeployContract      = int32(-11)
-	FnEntropy             = int32(-12)
-	FnEvent               = int32(-13)
-	FnIncomingTransfer    = int32(-14)
-	FnLog                 = int32(-15)
-	FnMinted              = int32(-16)
-	FnPanic               = int32(-17)
-	FnParams              = int32(-18)
-	FnPost                = int32(-19)
-	FnRequest             = int32(-20)
-	FnRequestID           = int32(-21)
-	FnResults             = int32(-22)
-	FnSend                = int32(-23)
-	FnStateAnchor         = int32(-24)
-	FnTimestamp           = int32(-25)
-	FnTrace               = int32(-26)
-	FnUtilsBase58Decode   = int32(-27)
-	FnUtilsBase58Encode   = int32(-28)
-	FnUtilsBlsAddress     = int32(-29)
-	FnUtilsBlsAggregate   = int32(-30)
-	FnUtilsBlsValid       = int32(-31)
-	FnUtilsEd25519Address = int32(-32)
-	FnUtilsEd25519Valid   = int32(-33)
-	FnUtilsHashBlake2b    = int32(-34)
-	FnUtilsHashName       = int32(-35)
-	FnUtilsHashSha3       = int32(-36)
+	FnAccountID              = int32(-1)
+	FnAllowance              = int32(-2)
+	FnBalance                = int32(-3)
+	FnBalances               = int32(-4)
+	FnBlockContext           = int32(-5)
+	FnCall                   = int32(-6)
+	FnCaller                 = int32(-7)
+	FnChainID                = int32(-8)
+	FnChainOwnerID           = int32(-9)
+	FnContract               = int32(-10)
+	FnDeployContract         = int32(-11)
+	FnEntropy                = int32(-12)
+	FnEstimateStorageDeposit = int32(-13)
+	FnEvent                  = int32(-14)
+	FnLog                    = int32(-15)
+	FnMinted                 = int32(-16)
+	FnPanic                  = int32(-17)
+	FnParams                 = int32(-18)
+	FnPost                   = int32(-19)
+	FnRequest                = int32(-20)
+	FnRequestID              = int32(-21)
+	FnRequestSender          = int32(-22)
+	FnResults                = int32(-23)
+	FnSend                   = int32(-24)
+	FnStateAnchor            = int32(-25)
+	FnTimestamp              = int32(-26)
+	FnTrace                  = int32(-27)
+	FnTransferAllowed        = int32(-28)
+	FnUtilsBech32Decode      = int32(-29)
+	FnUtilsBech32Encode      = int32(-30)
+	FnUtilsBlsAddress        = int32(-31)
+	FnUtilsBlsAggregate      = int32(-32)
+	FnUtilsBlsValid          = int32(-33)
+	FnUtilsEd25519Address    = int32(-34)
+	FnUtilsEd25519Valid      = int32(-35)
+	FnUtilsHashBlake2b       = int32(-36)
+	FnUtilsHashName          = int32(-37)
+	FnUtilsHashSha3          = int32(-38)
 )
 
 type ScSandbox struct{}
@@ -72,30 +74,26 @@ func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnAccountID, nil))
 }
 
-func (s ScSandbox) Balance(color wasmtypes.ScColor) uint64 {
-	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, color.Bytes()))
+func (s ScSandbox) Balance(tokenID wasmtypes.ScTokenID) uint64 {
+	return wasmtypes.Uint64FromBytes(Sandbox(FnBalance, tokenID.Bytes()))
 }
 
 // access the current balances for all assets
-func (s ScSandbox) Balances() ScBalances {
-	return NewScAssetsFromBytes(Sandbox(FnBalances, nil)).Balances()
+func (s ScSandbox) Balances() *ScBalances {
+	balances := NewScAssets(Sandbox(FnBalances, nil)).Balances()
+	return &balances
 }
 
 // calls a smart contract function
-func (s ScSandbox) call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
+func (s ScSandbox) callWithAllowance(hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance *ScTransfer) *ScImmutableDict {
 	req := &wasmrequests.CallRequest{
-		Contract: hContract,
-		Function: hFunction,
-		Params:   params.Bytes(),
-		Transfer: ScAssets(transfer).Bytes(),
+		Contract:  hContract,
+		Function:  hFunction,
+		Params:    params.Bytes(),
+		Allowance: allowance.Bytes(),
 	}
 	res := Sandbox(FnCall, req.Bytes())
 	return NewScDictFromBytes(res).Immutable()
-}
-
-// retrieve the chain id of the chain this contract lives on
-func (s ScSandbox) ChainID() wasmtypes.ScChainID {
-	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
 }
 
 // retrieve the agent id of the owner of the chain this contract lives on
@@ -108,9 +106,9 @@ func (s ScSandbox) Contract() wasmtypes.ScHname {
 	return wasmtypes.HnameFromBytes(Sandbox(FnContract, nil))
 }
 
-// retrieve the agent id of the creator of this contract
-func (s ScSandbox) ContractCreator() wasmtypes.ScAgentID {
-	return wasmtypes.AgentIDFromBytes(Sandbox(FnContractCreator, nil))
+// retrieve the chain id of the chain this contract lives on
+func (s ScSandbox) CurrentChainID() wasmtypes.ScChainID {
+	return wasmtypes.ChainIDFromBytes(Sandbox(FnChainID, nil))
 }
 
 // logs informational text message
@@ -143,7 +141,7 @@ func (s ScSandbox) Results(results *ScDict) {
 	Sandbox(FnResults, results.Bytes())
 }
 
-// deterministic time stamp fixed at the moment of calling the smart contract
+// deterministic timestamp in nanosecond fixed at the moment of calling the smart contract
 func (s ScSandbox) Timestamp() uint64 {
 	return wasmtypes.Uint64FromBytes(Sandbox(FnTimestamp, nil))
 }
@@ -164,11 +162,18 @@ type ScSandboxView struct {
 
 // calls a smart contract view
 func (s ScSandboxView) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, nil)
+	return s.callWithAllowance(hContract, hFunction, params, nil)
 }
 
 type ScSandboxFunc struct {
 	ScSandbox
+}
+
+// access the allowance assets
+func (s ScSandboxFunc) Allowance() *ScBalances {
+	buf := Sandbox(FnAllowance, nil)
+	balances := NewScAssets(buf).Balances()
+	return &balances
 }
 
 //func (s ScSandbox) BlockContext(construct func(sandbox ScSandbox) interface{}, onClose func(interface{})) interface{} {
@@ -176,8 +181,8 @@ type ScSandboxFunc struct {
 //}
 
 // calls a smart contract function
-func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers) *ScImmutableDict {
-	return s.call(hContract, hFunction, params, transfer)
+func (s ScSandboxFunc) Call(hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance *ScTransfer) *ScImmutableDict {
+	return s.callWithAllowance(hContract, hFunction, params, allowance)
 }
 
 // retrieve the agent id of the caller of the smart contract
@@ -201,31 +206,38 @@ func (s ScSandboxFunc) Entropy() wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(Sandbox(FnEntropy, nil))
 }
 
+func (s ScSandboxFunc) EstimateStorageDeposit(fn *ScFunc) uint64 {
+	req := &wasmrequests.PostRequest{
+		Contract:  fn.hContract,
+		Function:  fn.hFunction,
+		Params:    fn.params.Bytes(),
+		Allowance: fn.allowance.Bytes(),
+		Transfer:  fn.transfer.Bytes(),
+		Delay:     fn.delay,
+	}
+	return wasmtypes.Uint64FromBytes(Sandbox(FnEstimateStorageDeposit, req.Bytes()))
+}
+
 // signals an event on the node that external entities can subscribe to
 func (s ScSandboxFunc) Event(msg string) {
 	Sandbox(FnEvent, []byte(msg))
 }
 
-// access the incoming balances for all assets
-func (s ScSandboxFunc) IncomingTransfer() ScBalances {
-	buf := Sandbox(FnIncomingTransfer, nil)
-	return NewScAssetsFromBytes(buf).Balances()
-}
-
 // retrieve the assets that were minted in this transaction
 func (s ScSandboxFunc) Minted() ScBalances {
-	return NewScAssetsFromBytes(Sandbox(FnMinted, nil)).Balances()
+	return NewScAssets(Sandbox(FnMinted, nil)).Balances()
 }
 
-// (delayed) posts a smart contract function request
-func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, transfer ScTransfers, delay uint32) {
+// Post (delayed) posts a SC function request
+func (s ScSandboxFunc) Post(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, params *ScDict, allowance, transfer ScTransfer, delay uint32) {
 	req := &wasmrequests.PostRequest{
-		ChainID:  chainID,
-		Contract: hContract,
-		Function: hFunction,
-		Params:   params.Bytes(),
-		Transfer: ScAssets(transfer).Bytes(),
-		Delay:    delay,
+		ChainID:   chainID,
+		Contract:  hContract,
+		Function:  hFunction,
+		Params:    params.Bytes(),
+		Allowance: allowance.Bytes(),
+		Transfer:  transfer.Bytes(),
+		Delay:     delay,
 	}
 	Sandbox(FnPost, req.Bytes())
 }
@@ -270,8 +282,13 @@ func (s ScSandboxFunc) RequestID() wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(Sandbox(FnRequestID, nil))
 }
 
-// transfer assets to the specified Tangle ledger address
-func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
+// retrieve the request sender of this transaction
+func (s ScSandboxFunc) RequestSender() wasmtypes.ScAgentID {
+	return wasmtypes.AgentIDFromBytes(Sandbox(FnRequestSender, nil))
+}
+
+// Send transfers SC assets to the specified address
+func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer *ScTransfer) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return
@@ -279,7 +296,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 
 	req := wasmrequests.SendRequest{
 		Address:  address,
-		Transfer: ScAssets(transfer).Bytes(),
+		Transfer: transfer.Bytes(),
 	}
 	Sandbox(FnSend, req.Bytes())
 }
@@ -287,3 +304,18 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer ScTransfers) {
 //func (s ScSandboxFunc) StateAnchor() interface{} {
 //	panic("implement me")
 //}
+
+// TransferAllowed transfers allowed assets from caller to the specified account
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *ScTransfer, create bool) {
+	// we need some assets to send
+	if transfer.IsEmpty() {
+		return
+	}
+
+	req := wasmrequests.TransferRequest{
+		AgentID:  agentID,
+		Create:   create,
+		Transfer: transfer.Bytes(),
+	}
+	Sandbox(FnTransferAllowed, req.Bytes())
+}

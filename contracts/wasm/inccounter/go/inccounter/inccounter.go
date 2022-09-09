@@ -14,7 +14,7 @@ const hex = "0123456789abcdef"
 
 var LocalStateMustIncrement = false
 
-func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
+func funcInit(_ wasmlib.ScFuncContext, f *InitContext) {
 	if f.Params.Counter().Exists() {
 		counter := f.Params.Counter().Value()
 		f.State.Counter().SetValue(counter)
@@ -39,15 +39,13 @@ func funcCallIncrementRecurse5x(ctx wasmlib.ScFuncContext, f *CallIncrementRecur
 	}
 }
 
-//nolint:unparam
-func funcEndlessLoop(ctx wasmlib.ScFuncContext, f *EndlessLoopContext) {
-	//nolint:staticcheck
+func funcEndlessLoop(_ wasmlib.ScFuncContext, _ *EndlessLoopContext) {
 	for {
 		// intentional endless loop to see if Wasm VM can be interrupted
 	}
 }
 
-func funcIncrement(ctx wasmlib.ScFuncContext, f *IncrementContext) {
+func funcIncrement(_ wasmlib.ScFuncContext, f *IncrementContext) {
 	counter := f.State.Counter()
 	counter.SetValue(counter.Value() + 1)
 }
@@ -67,8 +65,7 @@ func funcLocalStateInternalCall(ctx wasmlib.ScFuncContext, f *LocalStateInternal
 	// counter ends up as 2
 }
 
-//nolint:unparam
-func funcLocalStatePost(ctx wasmlib.ScFuncContext, f *LocalStatePostContext) {
+func funcLocalStatePost(ctx wasmlib.ScFuncContext, _ *LocalStatePostContext) {
 	LocalStateMustIncrement = false
 	// prevent multiple identical posts, need a dummy param to differentiate them
 	localStatePost(ctx, 1)
@@ -78,8 +75,7 @@ func funcLocalStatePost(ctx wasmlib.ScFuncContext, f *LocalStatePostContext) {
 	// counter ends up as 0
 }
 
-//nolint:unparam
-func funcLocalStateSandboxCall(ctx wasmlib.ScFuncContext, f *LocalStateSandboxCallContext) {
+func funcLocalStateSandboxCall(ctx wasmlib.ScFuncContext, _ *LocalStateSandboxCallContext) {
 	LocalStateMustIncrement = false
 	ScFuncs.WhenMustIncrement(ctx).Func.Call()
 	LocalStateMustIncrement = true
@@ -113,8 +109,7 @@ func funcRepeatMany(ctx wasmlib.ScFuncContext, f *RepeatManyContext) {
 	ScFuncs.RepeatMany(ctx).Func.Post()
 }
 
-//nolint:unparam
-func funcTestVliCodec(ctx wasmlib.ScFuncContext, f *TestVliCodecContext) {
+func funcTestVliCodec(ctx wasmlib.ScFuncContext, _ *TestVliCodecContext) {
 	vliSave(ctx, "v-129", -129)
 	vliSave(ctx, "v-128", -128)
 	vliSave(ctx, "v-127", -127)
@@ -138,8 +133,7 @@ func funcTestVliCodec(ctx wasmlib.ScFuncContext, f *TestVliCodecContext) {
 	vliSave(ctx, "v+129", 129)
 }
 
-//nolint:unparam
-func funcTestVluCodec(ctx wasmlib.ScFuncContext, f *TestVluCodecContext) {
+func funcTestVluCodec(ctx wasmlib.ScFuncContext, _ *TestVluCodecContext) {
 	vluSave(ctx, "v 0", 0)
 	vluSave(ctx, "v+1", 1)
 	vluSave(ctx, "v+2", 2)
@@ -159,7 +153,7 @@ func funcWhenMustIncrement(ctx wasmlib.ScFuncContext, f *WhenMustIncrementContex
 
 // note that getCounter mirrors the state of the 'counter' state variable
 // which means that if the state variable was not present it also will not be present in the result
-func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
+func viewGetCounter(_ wasmlib.ScViewContext, f *GetCounterContext) {
 	counter := f.State.Counter()
 	if counter.Exists() {
 		f.Results.Counter().SetValue(counter.Value())
@@ -167,7 +161,7 @@ func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
 }
 
 //nolint:dupl
-func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
+func viewGetVli(_ wasmlib.ScViewContext, f *GetVliContext) {
 	enc := wasmtypes.NewWasmEncoder()
 	n := f.Params.Ni64().Value()
 	buf := enc.VliEncode(n).Buf()
@@ -188,7 +182,7 @@ func viewGetVli(ctx wasmlib.ScViewContext, f *GetVliContext) {
 }
 
 //nolint:dupl
-func viewGetVlu(ctx wasmlib.ScViewContext, f *GetVluContext) {
+func viewGetVlu(_ wasmlib.ScViewContext, f *GetVluContext) {
 	enc := wasmtypes.NewWasmEncoder()
 	n := f.Params.Nu64().Value()
 	buf := enc.VluEncode(n).Buf()

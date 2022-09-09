@@ -15,6 +15,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
+$#each structComment _structComment
 #[derive(Clone)]
 pub struct $StrName {
 $#each struct structField
@@ -41,7 +42,8 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-    pub $fld_name$fld_pad : $fldLangType, $fldComment
+$#each fldComment _structFieldComment
+    pub $fld_name$fld_pad : $fldLangType,
 `,
 	// *******************************
 	"structDecode": `

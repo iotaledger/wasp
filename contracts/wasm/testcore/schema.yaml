@@ -1,34 +1,31 @@
 name: TestCore
-description: Core test for ISCP wasmlib Rust/Wasm library
+description: Wasm equivalent of built-in TestCore contract
 structs: {}
 typedefs: {}
 state:
-  counter: Int64
-  hnameEP: Hname
+  counter: Uint64
   ints: map[String]Int64
-  mintedColor: Color
-  mintedSupply: Uint64
+  strings: map[String]String
+
 funcs:
   callOnChain:
     params:
       hnameContract: Hname?
       hnameEP: Hname?
-      intValue=intParamValue: Int64
+      n: Uint64
     results:
-      intValue=intParamValue: Int64
+      n: Uint64
   checkContextFromFullEP:
     params:
       agentID: AgentID
       caller: AgentID
       chainID: ChainID
       chainOwnerID: AgentID
-      contractCreator: AgentID
-  doNothing: {}
-  getMintedSupply:
-    results:
-      mintedColor: Color
-      mintedSupply: Uint64
-  incCounter: {}
+  claimAllowance:
+  doNothing:
+  estimateMinStorageDeposit:
+  incCounter:
+  infiniteLoop:
   init:
     params:
       fail=initFailParam: Int64?
@@ -45,15 +42,15 @@ funcs:
       int64Zero=int64-0: Int64
       string: String
       stringZero=string-0: String
+  pingAllowanceBack:
   runRecursion:
     params:
-      intValue=intParamValue: Int64
+      n: Uint64
     results:
-      intValue=intParamValue: Int64
+      n: Uint64
+  sendLargeRequest:
+  sendNFTsBack:
   sendToAddress:
-    access: creator
-    params:
-      address: Address
   setInt:
     params:
       intValue=intParamValue: Int64
@@ -61,37 +58,45 @@ funcs:
   spawn:
     params:
       progHash: Hash
-  testBlockContext1: {}
-  testBlockContext2: {}
-  testCallPanicFullEP: {}
-  testCallPanicViewEPFromFull: {}
+  splitFunds:
+  splitFundsNativeTokens:
+  testBlockContext1:
+  testBlockContext2:
+  testCallPanicFullEP:
+  testCallPanicViewEPFromFull:
   testChainOwnerIDFull:
     results:
-      chainOwnerID=chainOwnerID: AgentID
-  testEventLogDeploy: {}
-  testEventLogEventData: {}
+      chainOwnerID: AgentID
+  testEventLogDeploy:
+  testEventLogEventData:
   testEventLogGenericData:
     params:
-      counter: Int64
-  testPanicFullEP: {}
-  withdrawToChain:
+      counter: Uint64
+  testPanicFullEP:
+  withdrawFromChain:
     params:
-      chainID=chainID: ChainID
+      chainID: ChainID
+      baseTokensWithdrawal: Uint64
+      gasBudget: Uint64
 views:
   checkContextFromViewEP:
     params:
       agentID: AgentID
       chainID: ChainID
       chainOwnerID: AgentID
-      contractCreator: AgentID
   fibonacci:
     params:
-      intValue=intParamValue: Int64
+      n: Uint64
     results:
-      intValue=intParamValue: Int64
+      n: Uint64
+  fibonacciIndirect:
+    params:
+      n: Uint64
+    results:
+      n: Uint64
   getCounter:
     results:
-      counter: Int64
+      counter: Uint64
   getInt:
     params:
       name=intParamName: String
@@ -102,7 +107,8 @@ views:
       varName: String
     results:
       vars=this: map[String]String
-  justView: {}
+  infiniteLoopView:
+  justView:
   passTypesView:
     params:
       address: Address
@@ -116,11 +122,11 @@ views:
       int64Zero=int64-0: Int64
       string: String
       stringZero=string-0: String
-  testCallPanicViewEPFromView: {}
+  testCallPanicViewEPFromView:
   testChainOwnerIDView:
     results:
       chainOwnerID: AgentID
-  testPanicViewEP: {}
+  testPanicViewEP:
   testSandboxCall:
     results:
       sandboxCall: String

@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
@@ -30,6 +31,9 @@ NOTE: this is alpha software, only suitable for testing purposes.`,
 }
 
 func init() {
+	rootCmd.AddCommand(completionCmd(rootCmd.Root().Name()))
+
+	authentication.Init(rootCmd)
 	log.Init(rootCmd)
 	config.Init(rootCmd)
 	wallet.Init(rootCmd)

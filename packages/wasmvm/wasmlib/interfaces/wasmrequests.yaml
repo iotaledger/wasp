@@ -6,7 +6,7 @@ structs:
     contract: Hname
     function: Hname
     params: Bytes
-    transfer: Bytes
+    allowance: Bytes # caller assets that the call is allowed to access
 
   DeployRequest:
     progHash: Hash
@@ -19,7 +19,8 @@ structs:
     contract: Hname
     function: Hname
     params: Bytes
-    transfer: Bytes
+    allowance: Bytes # caller assets that the call is allowed to access
+    transfer: Bytes # assets that are transferred into caller account
     delay: Uint32
 
   SendRequest:

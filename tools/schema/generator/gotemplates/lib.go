@@ -33,7 +33,7 @@ $#each func libThunk
 `,
 	// *******************************
 	"libExportName": `
-    	$Kind$FuncName,
+		$Kind$FuncName,
 `,
 	// *******************************
 	"libExportFunc": `
@@ -41,7 +41,7 @@ $#if func libExportFuncThunk
 `,
 	// *******************************
 	"libExportFuncThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libExportView": `
@@ -49,7 +49,7 @@ $#if view libExportViewThunk
 `,
 	// *******************************
 	"libExportViewThunk": `
-    	$kind$FuncName$+Thunk,
+		$kind$FuncName$+Thunk,
 `,
 	// *******************************
 	"libThunk": `
@@ -58,8 +58,7 @@ type $FuncName$+Context struct {
 $#if func PackageEvents
 $#if param ImmutableFuncNameParams
 $#if result MutableFuncNameResults
-$#if func MutablePackageState
-$#if view ImmutablePackageState
+$#if state PackageState
 }
 
 func $kind$FuncName$+Thunk(ctx wasmlib.Sc$Kind$+Context) {
@@ -68,8 +67,7 @@ $#if result initResultDict
 	f := &$FuncName$+Context{
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
-$#if func MutablePackageStateInit
-$#if view ImmutablePackageStateInit
+$#if state PackageStateInit
 	}
 $#emit accessCheck
 $#each mandatory requireMandatory
@@ -111,18 +109,28 @@ $#if events PackageEventsExist
 		},
 `,
 	// *******************************
+	"PackageState": `
+$#if func MutablePackageState
+$#if view ImmutablePackageState
+`,
+	// *******************************
 	"MutablePackageState": `
 	State   Mutable$Package$+State
+`,
+	// *******************************
+	"ImmutablePackageState": `
+	State   Immutable$Package$+State
+`,
+	// *******************************
+	"PackageStateInit": `
+$#if func MutablePackageStateInit
+$#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"MutablePackageStateInit": `
 		State: Mutable$Package$+State{
 			proxy: wasmlib.NewStateProxy(),
 		},
-`,
-	// *******************************
-	"ImmutablePackageState": `
-	State   Immutable$Package$+State
 `,
 	// *******************************
 	"ImmutablePackageStateInit": `
@@ -150,28 +158,24 @@ $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccessself": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
 	"caseAccesschain": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	ctx.Require(ctx.Caller() == ctx.ChainOwnerID(), "no permission")
 
 $#set accessFinalize accessDone
 `,
 	// *******************************
-	"caseAccesscreator": `
-$#if funcAccessComment accessComment
-	ctx.Require(ctx.Caller() == ctx.ContractCreator(), "no permission")
-
-$#set accessFinalize accessDone
-`,
-	// *******************************
 	"accessOther": `
-$#if funcAccessComment accessComment
+
+$#each funcAccessComment _funcAccessComment
 	access := f.State.$FuncAccess()
 	ctx.Require(access.Exists(), "access not set: $funcAccess")
 	ctx.Require(ctx.Caller() == access.Value(), "no permission")
@@ -179,10 +183,5 @@ $#if funcAccessComment accessComment
 `,
 	// *******************************
 	"accessDone": `
-`,
-	// *******************************
-	"accessComment": `
-
-	$funcAccessComment
 `,
 }

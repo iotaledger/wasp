@@ -8,28 +8,29 @@
 import * as wasmtypes from "wasmlib/wasmtypes";
 
 export class CallRequest {
-	contract : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
-	function : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
-	params   : u8[] = []; 
-	transfer : u8[] = []; 
+	// caller assets that the call is allowed to access
+	allowance : u8[] = [];
+	contract  : wasmtypes.ScHname = new wasmtypes.ScHname(0);
+	function  : wasmtypes.ScHname = new wasmtypes.ScHname(0);
+	params    : u8[] = [];
 
 	static fromBytes(buf: u8[]): CallRequest {
 		const dec = new wasmtypes.WasmDecoder(buf);
 		const data = new CallRequest();
-		data.contract = wasmtypes.hnameDecode(dec);
-		data.function = wasmtypes.hnameDecode(dec);
-		data.params   = wasmtypes.bytesDecode(dec);
-		data.transfer = wasmtypes.bytesDecode(dec);
+		data.allowance = wasmtypes.bytesDecode(dec);
+		data.contract  = wasmtypes.hnameDecode(dec);
+		data.function  = wasmtypes.hnameDecode(dec);
+		data.params    = wasmtypes.bytesDecode(dec);
 		dec.close();
 		return data;
 	}
 
 	bytes(): u8[] {
 		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.bytesEncode(enc, this.allowance);
 		wasmtypes.hnameEncode(enc, this.contract);
 		wasmtypes.hnameEncode(enc, this.function);
 		wasmtypes.bytesEncode(enc, this.params);
-		wasmtypes.bytesEncode(enc, this.transfer);
 		return enc.buf();
 	}
 }
@@ -65,10 +66,10 @@ export class MutableCallRequest extends wasmtypes.ScProxy {
 }
 
 export class DeployRequest {
-	description : string = ""; 
-	name        : string = ""; 
-	params      : u8[] = []; 
-	progHash    : wasmtypes.ScHash = new wasmtypes.ScHash(); 
+	description : string = "";
+	name        : string = "";
+	params      : u8[] = [];
+	progHash    : wasmtypes.ScHash = new wasmtypes.ScHash();
 
 	static fromBytes(buf: u8[]): DeployRequest {
 		const dec = new wasmtypes.WasmDecoder(buf);
@@ -122,28 +123,33 @@ export class MutableDeployRequest extends wasmtypes.ScProxy {
 }
 
 export class PostRequest {
-	chainID  : wasmtypes.ScChainID = new wasmtypes.ScChainID(); 
-	contract : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
-	delay    : u32 = 0; 
-	function : wasmtypes.ScHname = new wasmtypes.ScHname(0); 
-	params   : u8[] = []; 
-	transfer : u8[] = []; 
+	// caller assets that the call is allowed to access
+	allowance : u8[] = [];
+	chainID   : wasmtypes.ScChainID = new wasmtypes.ScChainID();
+	contract  : wasmtypes.ScHname = new wasmtypes.ScHname(0);
+	delay     : u32 = 0;
+	function  : wasmtypes.ScHname = new wasmtypes.ScHname(0);
+	params    : u8[] = [];
+	// assets that are transferred into caller account
+	transfer  : u8[] = [];
 
 	static fromBytes(buf: u8[]): PostRequest {
 		const dec = new wasmtypes.WasmDecoder(buf);
 		const data = new PostRequest();
-		data.chainID  = wasmtypes.chainIDDecode(dec);
-		data.contract = wasmtypes.hnameDecode(dec);
-		data.delay    = wasmtypes.uint32Decode(dec);
-		data.function = wasmtypes.hnameDecode(dec);
-		data.params   = wasmtypes.bytesDecode(dec);
-		data.transfer = wasmtypes.bytesDecode(dec);
+		data.allowance = wasmtypes.bytesDecode(dec);
+		data.chainID   = wasmtypes.chainIDDecode(dec);
+		data.contract  = wasmtypes.hnameDecode(dec);
+		data.delay     = wasmtypes.uint32Decode(dec);
+		data.function  = wasmtypes.hnameDecode(dec);
+		data.params    = wasmtypes.bytesDecode(dec);
+		data.transfer  = wasmtypes.bytesDecode(dec);
 		dec.close();
 		return data;
 	}
 
 	bytes(): u8[] {
 		const enc = new wasmtypes.WasmEncoder();
+		wasmtypes.bytesEncode(enc, this.allowance);
 		wasmtypes.chainIDEncode(enc, this.chainID);
 		wasmtypes.hnameEncode(enc, this.contract);
 		wasmtypes.uint32Encode(enc, this.delay);
@@ -185,8 +191,8 @@ export class MutablePostRequest extends wasmtypes.ScProxy {
 }
 
 export class SendRequest {
-	address  : wasmtypes.ScAddress = new wasmtypes.ScAddress(); 
-	transfer : u8[] = []; 
+	address  : wasmtypes.ScAddress = new wasmtypes.ScAddress();
+	transfer : u8[] = [];
 
 	static fromBytes(buf: u8[]): SendRequest {
 		const dec = new wasmtypes.WasmDecoder(buf);
@@ -236,9 +242,9 @@ export class MutableSendRequest extends wasmtypes.ScProxy {
 }
 
 export class TransferRequest {
-	agentID  : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]); 
-	create   : bool = false; 
-	transfer : u8[] = []; 
+	agentID  : wasmtypes.ScAgentID = wasmtypes.agentIDFromBytes([]);
+	create   : bool = false;
+	transfer : u8[] = [];
 
 	static fromBytes(buf: u8[]): TransferRequest {
 		const dec = new wasmtypes.WasmDecoder(buf);

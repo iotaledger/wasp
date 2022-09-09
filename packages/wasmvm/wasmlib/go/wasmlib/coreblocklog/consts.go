@@ -5,13 +5,14 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreblocklog
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 
 const (
 	ScName        = "blocklog"
-	ScDescription = "Core block log contract"
+	ScDescription = "Block log contract"
 	HScName       = wasmtypes.ScHname(0xf538ef2b)
 )
 
@@ -41,7 +42,6 @@ const (
 	ViewGetEventsForBlock          = "getEventsForBlock"
 	ViewGetEventsForContract       = "getEventsForContract"
 	ViewGetEventsForRequest        = "getEventsForRequest"
-	ViewGetLatestBlockInfo         = "getLatestBlockInfo"
 	ViewGetRequestIDsForBlock      = "getRequestIDsForBlock"
 	ViewGetRequestReceipt          = "getRequestReceipt"
 	ViewGetRequestReceiptsForBlock = "getRequestReceiptsForBlock"
@@ -54,7 +54,6 @@ const (
 	HViewGetEventsForBlock          = wasmtypes.ScHname(0x36232798)
 	HViewGetEventsForContract       = wasmtypes.ScHname(0x682a1922)
 	HViewGetEventsForRequest        = wasmtypes.ScHname(0x4f8d68e4)
-	HViewGetLatestBlockInfo         = wasmtypes.ScHname(0x084a1760)
 	HViewGetRequestIDsForBlock      = wasmtypes.ScHname(0x5a20327a)
 	HViewGetRequestReceipt          = wasmtypes.ScHname(0xb7f9534f)
 	HViewGetRequestReceiptsForBlock = wasmtypes.ScHname(0x77e3beef)

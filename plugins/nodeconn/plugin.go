@@ -1,59 +1,59 @@
 package nodeconn
 
 import (
-	"net"
+	"context"
 	"time"
-
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/metrics"
 )
 
 // PluginName is the name of the NodeConn plugin.
 const PluginName = "NodeConn"
 
-const dialTimeout = 1 * time.Second
-
 var (
 	log *logger.Logger
 
-	nodeConn    *txstream.Client
+	nc          chain.NodeConnection
 	initialized = ready.New("NodeConn")
 )
 
 // Init initializes the plugin
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
-func NodeConnection() *txstream.Client {
+func NodeConnection() chain.NodeConnection {
 	initialized.MustWait(5 * time.Second)
-	return nodeConn
+	return nc
 }
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(PluginName)
+	nc = nodeconn.New(
+		nodeconn.ChainL1Config{
+			INXAddress: parameters.GetString(parameters.L1INXAddress),
+		},
+		log,
+	)
 }
 
 func run(_ *node.Plugin) {
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		addr := parameters.GetString(parameters.NodeAddress)
-		dial := txstream.DialFunc(func() (string, net.Conn, error) {
-			log.Infof("connecting with node at %s", addr)
-			conn, err := net.DialTimeout("tcp", addr, dialTimeout)
-			return addr, conn, err
-		})
+	err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
+		if parameters.GetBool(parameters.MetricsEnabled) {
+			nc.SetMetrics(metrics.AllMetrics().GetNodeConnectionMetrics())
+		}
+		defer nc.Close()
 
-		nodeConn = txstream.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
 		initialized.SetReady()
-		defer nodeConn.Close()
 
-		<-shutdownSignal
+		<-ctx.Done()
 
 		log.Info("Stopping node connection..")
 	}, parameters.PriorityNodeConnection)

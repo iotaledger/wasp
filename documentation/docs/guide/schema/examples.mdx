@@ -1,16 +1,17 @@
 ---
 keywords:
-- solo
-- testing
-- errors
-- member function
-- post
-- ctx
-- divide function
-- error message
+  - solo
+  - testing
+  - errors
+  - member function
+  - post
+  - ctx
+  - divide function
+  - error message
 description: Use the SoloContext to create full-blown tests for the dividend example smart contract.
 image: /img/logo/WASP_logo_dark.png
 ---
+
 import Tabs from "@theme/Tabs"
 import TabItem from "@theme/TabItem"
 
@@ -46,7 +47,7 @@ func TestAddMemberOk(t *testing.T) {
 
 The above test first deploys the `dividend` smart contract to a new chain, and returns a
 SoloContext `ctx`. Then it uses `ctx` to create a new SoloAgent. A SoloAgent is an actor
-with its own Tangle address, which contains solo.Saldo tokens. The SoloAgent can be used
+with its own Tangle address, which contains utxodb.FundsFromFaucetAmount tokens. The SoloAgent can be used
 whenever an address or agent ID needs to be provided, it can be used to sign a token
 transfer from its address, and can be used to inspect the balance of tokens on the
 address.
@@ -77,7 +78,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 
     member := dividend.ScFuncs.Member(ctx)
     member.Params.Factor().SetValue(100)
-    member.Func.TransferIotas(1).Post()
+    member.Func.TransferBaseTokens(1).Post()
     require.Error(t, ctx.Err)
     require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory address"))
 }
@@ -88,7 +89,7 @@ func TestAddMemberFailMissingFactor(t \*testing.T) {
     member1 := ctx.NewSoloAgent()
     f := dividend.ScFuncs.Member(ctx)
     f.Params.Address().SetValue(member1.ScAddress())
-    f.Func.TransferIotas(1).Post()
+    f.Func.TransferBaseTokens(1).Post()
     require.Error(t, ctx.Err)
     require.True(t, strings.HasSuffix(ctx.Err.Error(), "missing mandatory factor"))
 }
@@ -127,7 +128,7 @@ func TestDivide1Member(t *testing.T) {
     require.NoError(t, ctx.Err)
 
     // 99 from divide() + 1 from the member() call
-    require.EqualValues(t, solo.Saldo+100, member1.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+100, member1.Balance())
     require.EqualValues(t, 0, ctx.Balance(nil))
 }
 ```
@@ -178,9 +179,9 @@ func TestDivide3Members(t *testing.T) {
     require.NoError(t, ctx.Err)
 
     // 97 from divide() + 3 from the member() calls
-    require.EqualValues(t, solo.Saldo+16, member1.Balance())
-    require.EqualValues(t, solo.Saldo+33, member2.Balance())
-    require.EqualValues(t, solo.Saldo+50, member3.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+16, member1.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+33, member2.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+50, member3.Balance())
     // 1 remaining due to fractions
     require.EqualValues(t, 1, ctx.Balance(nil))
 }
@@ -215,9 +216,9 @@ this:
     require.NoError(t, ctx.Err)
 
     // 100 from divide() + 1 remaining
-    require.EqualValues(t, solo.Saldo+16+16, member1.Balance())
-    require.EqualValues(t, solo.Saldo+33+33, member2.Balance())
-    require.EqualValues(t, solo.Saldo+50+50, member3.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+16+16, member1.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+33+33, member2.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+50+50, member3.Balance())
     // now we have 2 remaining due to fractions
     require.EqualValues(t, 2, ctx.Balance(nil))
 
@@ -225,9 +226,9 @@ this:
     require.NoError(t, ctx.Err)
 
     // 100 from divide() + 2 remaining
-    require.EqualValues(t, solo.Saldo+16+16+17, member1.Balance())
-    require.EqualValues(t, solo.Saldo+33+33+34, member2.Balance())
-    require.EqualValues(t, solo.Saldo+50+50+51, member3.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+16+16+17, member1.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+33+33+34, member2.Balance())
+    require.EqualValues(t, utxodb.FundsFromFaucetAmount+50+50+51, member3.Balance())
     // managed to give every one an exact integer amount, so no remainder
     require.EqualValues(t, 0, ctx.Balance(nil))
 ```

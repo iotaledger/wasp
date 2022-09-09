@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreroot
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -13,10 +14,12 @@ type ImmutableFindContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// encoded contract record
 func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractFound))
 }
 
+// encoded contract record
 func (s ImmutableFindContractResults) ContractRecData() wasmtypes.ScImmutableBytes {
 	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractRecData))
 }
@@ -25,10 +28,12 @@ type MutableFindContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// encoded contract record
 func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractFound))
 }
 
+// encoded contract record
 func (s MutableFindContractResults) ContractRecData() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractRecData))
 }
@@ -45,6 +50,7 @@ type ImmutableGetContractRecordsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract records
 func (s ImmutableGetContractRecordsResults) ContractRegistry() MapHnameToImmutableBytes {
 	return MapHnameToImmutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }
@@ -65,6 +71,7 @@ type MutableGetContractRecordsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+// contract records
 func (s MutableGetContractRecordsResults) ContractRegistry() MapHnameToMutableBytes {
 	return MapHnameToMutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
 }

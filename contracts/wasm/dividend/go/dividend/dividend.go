@@ -11,7 +11,7 @@
 // step by step what is happening in the code. We also unnecessarily annotate
 // all 'var' statements with their assignment type to improve understanding.
 
-//nolint:revive
+//nolint:revive,goimports
 package dividend
 
 import (
@@ -30,9 +30,9 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	// The schema tool has already created a proper InitContext for this function that
 	// allows us to access call parameters and state storage in a type-safe manner.
 
-	// First we set up a default value for the owner in case the optional
-	// 'owner' parameter was omitted.
-	var owner wasmtypes.ScAgentID = ctx.ContractCreator()
+	// First we set up a default value for the owner in case the optional 'owner'
+	// parameter was omitted. We use the agent that sent the deploy request.
+	var owner wasmtypes.ScAgentID = ctx.RequestSender()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
 	if f.Params.Owner().Exists() {
@@ -53,13 +53,14 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 // addresses and dispersal factors one by one prior to sending tokens to the
 // smart contract's 'divide' function. The 'member' function takes 2 parameters,
 // which are both required:
-// - 'address', which is an Address to use as member in the group, and
-// - 'factor',  which is an Int64 relative dispersal factor associated with
-//              that address
+//   - 'address', which is an Address to use as member in the group, and
+//   - 'factor',  which is an Int64 relative dispersal factor associated with
+//     that address
+//
 // The 'member' function will save the address/factor combination in state storage
 // and also calculate and store a running sum of all factors so that the 'divide'
 // function can simply start using these precalculated values when called.
-func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
+func funcMember(_ wasmlib.ScFuncContext, f *MemberContext) {
 	// Note that the schema tool has already dealt with making sure that this function
 	// can only be called by the owner and that the required parameters are present.
 	// So once we get to this point in the code we can take that as a given.
@@ -127,23 +128,21 @@ func funcMember(ctx wasmlib.ScFuncContext, f *MemberContext) {
 	currentFactor.SetValue(factor)
 }
 
-// 'divide' is a function that will take any iotas it receives and properly
+// 'divide' is a function that will take any tokens it receives and properly
 // disperse them to the addresses in the member list according to the dispersion
 // factors associated with these addresses.
 // Anyone can send iota tokens to this function and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
-// integer and keeps any remaining iotas in its own account. They will be added
-// to any next round of tokens received prior to calculation of the new
-// dividend amounts.
+// integer and keeps any remaining tokens in the sender account.
 func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 	// Create an ScBalances map proxy to the account balances for this
 	// smart contract. Note that ScBalances wraps an ScImmutableMap of
 	// token color/amount combinations in a simpler to use interface.
-	var balances wasmlib.ScBalances = ctx.Balances()
+	var allowance *wasmlib.ScBalances = ctx.Allowance()
 
 	// Retrieve the amount of plain iota tokens from the account balance
-	var amount uint64 = balances.Balance(wasmtypes.IOTA)
+	var amount uint64 = allowance.BaseTokens()
 
 	// Retrieve the pre-calculated totalFactor value from the state storage.
 	var totalFactor uint64 = f.State.TotalFactor().Value()
@@ -165,25 +164,25 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 		// Retrieve the factor associated with the address from the members map.
 		var factor uint64 = members.GetUint64(address).Value()
 
-		// Calculate the fair share of iotas to disperse to this member based on the
+		// Calculate the fair share of tokens to disperse to this member based on the
 		// factor we just retrieved. Note that the result will been truncated.
 		var share uint64 = amount * factor / totalFactor
 
 		// Is there anything to disperse to this member?
 		if share > 0 {
-			// Yes, so let's set up an ScTransfers map proxy that transfers the
-			// calculated amount of iotas. Note that ScTransfers wraps an
+			// Yes, so let's set up an ScTransfer map proxy that transfers the
+			// calculated amount of tokens. Note that ScTransfer wraps an
 			// ScMutableMap of token color/amount combinations in a simpler to use
 			// interface. The constructor we use here creates and initializes a
 			// single token color transfer in a single statement. The actual color
 			// and amount values passed in will be stored in a new map on the host.
-			var transfers wasmlib.ScTransfers = wasmlib.NewScTransferIotas(share)
+			var transfer *wasmlib.ScTransfer = wasmlib.NewScTransferBaseTokens(share)
 
 			// Perform the actual transfer of tokens from the smart contract to the
 			// member address. The transfer_to_address() method receives the address
 			// value and the proxy to the new transfers map on the host, and will
 			// call the corresponding host sandbox function with these values.
-			ctx.Send(address, transfers)
+			ctx.TransferAllowed(address.AsAgentID(), transfer, true)
 		}
 	}
 }
@@ -193,7 +192,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 // The 'setOwner' function takes a single mandatory parameter:
 // - 'owner', which is the agent id of the entity that will own the contract.
 // Only the current owner can change the owner.
-func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
+func funcSetOwner(_ wasmlib.ScFuncContext, f *SetOwnerContext) {
 	// Note that the schema tool has already dealt with making sure that this function
 	// can only be called by the owner and that the required parameter is present.
 	// So once we get to this point in the code we can take that as a given.
@@ -204,7 +203,7 @@ func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
 
 // 'getFactor' is a simple View function. It will retrieve the factor
 // associated with the (mandatory) address parameter it was provided with.
-func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
+func viewGetFactor(_ wasmlib.ScViewContext, f *GetFactorContext) {
 	// Since we are sure that the 'address' parameter actually exists we can
 	// retrieve its actual value into an ScAddress value type.
 	var address wasmtypes.ScAddress = f.Params.Address().Value()
@@ -223,6 +222,6 @@ func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
 }
 
 // 'getOwner' can be used to retrieve the current owner of the dividend contract
-func viewGetOwner(ctx wasmlib.ScViewContext, f *GetOwnerContext) {
+func viewGetOwner(_ wasmlib.ScViewContext, f *GetOwnerContext) {
 	f.Results.Owner().SetValue(f.State.Owner().Value())
 }

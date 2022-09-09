@@ -28,9 +28,10 @@ var storeBlobCmd = &cobra.Command{
 }
 
 func uploadBlob(fieldValues dict.Dict) (hash hashing.HashValue) {
-	hash, _, err := Client().UploadBlob(fieldValues)
+	hash, _, _, err := Client().UploadBlob(fieldValues)
 	log.Check(err)
 	log.Printf("uploaded blob to chain -- hash: %s", hash)
+	// TODO print receipt?
 	return hash
 }
 
@@ -39,20 +40,23 @@ var showBlobCmd = &cobra.Command{
 	Short: "Show a blob in chain",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		hash := util.ValueFromString("base58", args[0])
-		fields, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncGetBlobInfo.Name,
-			dict.Dict{
-				blob.ParamHash: hash,
-			})
+		hash, err := hashing.HashValueFromHex(args[0])
+		log.Check(err)
+		fields, err := SCClient(blob.Contract.Hname()).CallView(
+			blob.ViewGetBlobInfo.Name,
+			dict.Dict{blob.ParamHash: hash.Bytes()},
+		)
 		log.Check(err)
 
 		values := dict.New()
 		for field := range fields {
-			value, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncGetBlobField.Name,
+			value, err := SCClient(blob.Contract.Hname()).CallView(
+				blob.ViewGetBlobField.Name,
 				dict.Dict{
-					blob.ParamHash:  hash,
+					blob.ParamHash:  hash.Bytes(),
 					blob.ParamField: []byte(field),
-				})
+				},
+			)
 			log.Check(err)
 			values.Set(field, value[blob.ParamBytes])
 		}
@@ -65,7 +69,7 @@ var listBlobsCmd = &cobra.Command{
 	Short: "List blobs in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncListBlobs.Name, nil)
+		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.ViewListBlobs.Name, nil)
 		log.Check(err)
 
 		blobs, err := blob.DecodeSizesMap(ret)

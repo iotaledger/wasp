@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -23,7 +24,7 @@ import (
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[ledgerstate.AddressLength]byte]*solo.Chain
+	chains map[[iotago.AliasIDLength]byte]*solo.Chain
 }
 
 var _ WaspServices = &waspServicesMock{}
@@ -32,6 +33,10 @@ func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
 		"foo": "bar",
 	}
+}
+
+func (*waspServicesMock) WebAPIPort() string {
+	return "8080"
 }
 
 func (w *waspServicesMock) ExploreAddressBaseURL() string {
@@ -60,11 +65,11 @@ func (w *waspServicesMock) PeeringStats() (*PeeringStats, error) {
 		TrustedPeers: []TrustedPeer{
 			{
 				NetID:  "127.0.0.1:4000",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 			{
 				NetID:  "127.0.0.1:4001",
-				PubKey: [32]byte{},
+				PubKey: cryptolib.PublicKey{},
 			},
 		},
 	}, nil
@@ -86,36 +91,39 @@ func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 	return ret, nil
 }
 
-func (w *waspServicesMock) GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error) {
+func (w *waspServicesMock) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
 	return &registry.ChainRecord{
-		ChainID: chainID,
+		ChainID: *chainID,
 		Active:  true,
 	}, nil
 }
 
-func (w *waspServicesMock) CallView(chainID *iscp.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
-	ch, ok := w.chains[chainID.Array()]
+func (w *waspServicesMock) CallView(chainID *isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
+	ch, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
 	return ch.CallView(scName, fname, args)
 }
 
-func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
-	_, ok := w.chains[chainID.Array()]
+func (w *waspServicesMock) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error) {
+	_, ok := w.chains[*chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
-	pubKey0, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey0, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
-	pubKey1, err := ed25519.PublicKeyFromString("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
+	pubKey1, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
 	if err != nil {
 		return nil, err
 	}
+
+	address := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
+
 	return &chain.CommitteeInfo{
-		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
+		Address:       address,
 		Size:          2,
 		Quorum:        1,
 		QuorumIsAlive: true,
@@ -123,20 +131,20 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.
 			{
 				Index:     0,
 				NetID:     "localhost:2000",
-				PubKey:    &pubKey0,
+				PubKey:    pubKey0,
 				Connected: true,
 			},
 			{
 				Index:     1,
 				NetID:     "localhost:2001",
-				PubKey:    &pubKey1,
+				PubKey:    pubKey1,
 				Connected: true,
 			},
 		},
 	}, nil
 }
 
-func (w *waspServicesMock) GetChainNodeConnectionMetrics(*iscp.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+func (w *waspServicesMock) GetChainNodeConnectionMetrics(*isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -144,11 +152,11 @@ func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConne
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *iscp.ChainID) (chain.ConsensusWorkflowStatus, error) {
+func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID *iscp.ChainID) (chain.ConsensusPipeMetrics, error) {
+func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -160,17 +168,18 @@ type dashboardTestEnv struct {
 }
 
 func (e *dashboardTestEnv) newChain() *solo.Chain {
-	ch := e.solo.NewChain(nil, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[ch.ChainID.Array()] = ch
+	kp, _ := e.solo.NewKeyPairWithFunds()
+	ch, _, _ := e.solo.NewChainExt(kp, 0, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
+	e.wasp.chains[*ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, false, true)
+	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[ledgerstate.AddressLength]byte]*solo.Chain),
+		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
 	}
 	d := Init(e, w, testlogger.NewLogger(t))
 	return &dashboardTestEnv{

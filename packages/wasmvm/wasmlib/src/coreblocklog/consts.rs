@@ -10,7 +10,7 @@
 use crate::*;
 
 pub const SC_NAME        : &str = "blocklog";
-pub const SC_DESCRIPTION : &str = "Core block log contract";
+pub const SC_DESCRIPTION : &str = "Block log contract";
 pub const HSC_NAME       : ScHname = ScHname(0xf538ef2b);
 
 pub(crate) const PARAM_BLOCK_INDEX    : &str = "n";
@@ -34,7 +34,6 @@ pub(crate) const VIEW_GET_BLOCK_INFO                 : &str = "getBlockInfo";
 pub(crate) const VIEW_GET_EVENTS_FOR_BLOCK           : &str = "getEventsForBlock";
 pub(crate) const VIEW_GET_EVENTS_FOR_CONTRACT        : &str = "getEventsForContract";
 pub(crate) const VIEW_GET_EVENTS_FOR_REQUEST         : &str = "getEventsForRequest";
-pub(crate) const VIEW_GET_LATEST_BLOCK_INFO          : &str = "getLatestBlockInfo";
 pub(crate) const VIEW_GET_REQUEST_I_DS_FOR_BLOCK     : &str = "getRequestIDsForBlock";
 pub(crate) const VIEW_GET_REQUEST_RECEIPT            : &str = "getRequestReceipt";
 pub(crate) const VIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK : &str = "getRequestReceiptsForBlock";
@@ -45,7 +44,6 @@ pub(crate) const HVIEW_GET_BLOCK_INFO                 : ScHname = ScHname(0xbe89
 pub(crate) const HVIEW_GET_EVENTS_FOR_BLOCK           : ScHname = ScHname(0x36232798);
 pub(crate) const HVIEW_GET_EVENTS_FOR_CONTRACT        : ScHname = ScHname(0x682a1922);
 pub(crate) const HVIEW_GET_EVENTS_FOR_REQUEST         : ScHname = ScHname(0x4f8d68e4);
-pub(crate) const HVIEW_GET_LATEST_BLOCK_INFO          : ScHname = ScHname(0x084a1760);
 pub(crate) const HVIEW_GET_REQUEST_I_DS_FOR_BLOCK     : ScHname = ScHname(0x5a20327a);
 pub(crate) const HVIEW_GET_REQUEST_RECEIPT            : ScHname = ScHname(0xb7f9534f);
 pub(crate) const HVIEW_GET_REQUEST_RECEIPTS_FOR_BLOCK : ScHname = ScHname(0x77e3beef);

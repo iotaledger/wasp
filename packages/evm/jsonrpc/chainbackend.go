@@ -4,14 +4,15 @@
 package jsonrpc
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type ChainBackend interface {
-	PostOnLedgerRequest(scName string, funName string, transfer colored.Balances, args dict.Dict) error
-	PostOffLedgerRequest(scName string, funName string, transfer colored.Balances, args dict.Dict) error
-	CallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
-	Signer() *ed25519.KeyPair
+	EVMSendTransaction(tx *types.Transaction) error
+	EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error)
+	ISCCallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
+	BaseToken() *parameters.BaseToken
 }

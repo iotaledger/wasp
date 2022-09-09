@@ -3,8 +3,7 @@ package nodeconnmetrics
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type NodeConnectionMessageMetrics interface {
@@ -15,21 +14,24 @@ type NodeConnectionMessageMetrics interface {
 }
 
 type NodeConnectionMessagesMetrics interface {
-	GetOutPullState() NodeConnectionMessageMetrics
-	GetOutPullTransactionInclusionState() NodeConnectionMessageMetrics
-	GetOutPullConfirmedOutput() NodeConnectionMessageMetrics
-	GetOutPostTransaction() NodeConnectionMessageMetrics
-	GetInTransaction() NodeConnectionMessageMetrics
-	GetInInclusionState() NodeConnectionMessageMetrics
+	GetOutPublishStateTransaction() NodeConnectionMessageMetrics
+	GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics
+	GetOutPullLatestOutput() NodeConnectionMessageMetrics
+	GetOutPullTxInclusionState() NodeConnectionMessageMetrics
+	GetOutPullOutputByID() NodeConnectionMessageMetrics
+	GetInStateOutput() NodeConnectionMessageMetrics
+	GetInAliasOutput() NodeConnectionMessageMetrics
 	GetInOutput() NodeConnectionMessageMetrics
-	GetInUnspentAliasOutput() NodeConnectionMessageMetrics
+	GetInOnLedgerRequest() NodeConnectionMessageMetrics
+	GetInTxInclusionState() NodeConnectionMessageMetrics
 }
 
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
-	SetSubscribed(ledgerstate.Address)
-	SetUnsubscribed(ledgerstate.Address)
-	GetSubscribed() []ledgerstate.Address
+	GetInMilestone() NodeConnectionMessageMetrics
+	SetRegistered(*isc.ChainID)
+	SetUnregistered(*isc.ChainID)
+	GetRegistered() []*isc.ChainID
 	RegisterMetrics()
-	NewMessagesMetrics(chainID *iscp.ChainID) NodeConnectionMessagesMetrics
+	NewMessagesMetrics(*isc.ChainID) NodeConnectionMessagesMetrics
 }

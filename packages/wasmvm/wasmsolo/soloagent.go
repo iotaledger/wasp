@@ -4,51 +4,51 @@
 package wasmsolo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	cryptolib "github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/stretchr/testify/require"
 )
 
 type SoloAgent struct {
+	Cvt     wasmhost.WasmConvertor
 	Env     *solo.Solo
 	Pair    *cryptolib.KeyPair
-	address ledgerstate.Address
-	hname   iscp.Hname
+	agentID isc.AgentID
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
-	agent := &SoloAgent{Env: env}
-	agent.Pair, agent.address = agent.Env.NewKeyPairWithFunds()
-	return agent
-}
-
-func (a *SoloAgent) ScAddress() wasmtypes.ScAddress {
-	return wasmtypes.AddressFromBytes(a.address.Bytes())
-}
-
-func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
-	return wasmtypes.NewScAgentID(a.ScAddress(), wasmtypes.ScHname(a.hname))
-}
-
-func (a *SoloAgent) Balance(color ...wasmtypes.ScColor) uint64 {
-	switch len(color) {
-	case 0:
-		return a.Env.GetAddressBalance(a.address, colored.IOTA)
-	case 1:
-		col, err := colored.ColorFromBytes(color[0].Bytes())
-		require.NoError(a.Env.T, err)
-		return a.Env.GetAddressBalance(a.address, col)
-	default:
-		require.Fail(a.Env.T, "too many color arguments")
-		return 0
+	pair, address := env.NewKeyPairWithFunds()
+	return &SoloAgent{
+		Env:     env,
+		Pair:    pair,
+		agentID: isc.NewAgentID(address),
 	}
 }
 
-func (a *SoloAgent) Mint(amount uint64) (wasmtypes.ScColor, error) {
-	color, err := a.Env.MintTokens(a.Pair, amount)
-	return wasmtypes.ColorFromBytes(color.Bytes()), err
+func (a *SoloAgent) ScAgentID() wasmtypes.ScAgentID {
+	return a.Cvt.ScAgentID(a.agentID)
+}
+
+func (a *SoloAgent) AgentID() isc.AgentID {
+	return a.agentID
+}
+
+func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
+	address, _ := isc.AddressFromAgentID(a.agentID)
+	if address == nil {
+		require.Fail(a.Env.T, "agent is not a L1 address")
+	}
+	switch len(tokenID) {
+	case 0:
+		return a.Env.L1BaseTokens(address)
+	case 1:
+		token := a.Cvt.IscTokenID(&tokenID[0])
+		return a.Env.L1NativeTokens(address, token).Uint64()
+	default:
+		require.Fail(a.Env.T, "too many tokenID arguments")
+		return 0
+	}
 }

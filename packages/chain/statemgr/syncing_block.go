@@ -6,221 +6,104 @@ package statemgr
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-const (
-	pollFallbackDelay = 5 * time.Second
-)
-
-type syncingBlocks struct {
-	blocks            map[uint32]*syncingBlock // StateIndex -> BlockCandidates
-	log               *logger.Logger
-	initialBlockRetry time.Duration
-	lastPullTime      time.Time // Time, when we pulled for some block last time.
-	lastRecvTime      time.Time // Time, when we received any block we pulled. Used to determine, if fallback nodes should be used.
-}
-
 type syncingBlock struct {
 	requestBlockRetryTime time.Time
-	blockCandidates       map[hashing.HashValue]*candidateBlock
+	blockCandidates       map[state.BlockHash]*candidateBlock
+	approvalInfo          *approvalInfo
 	receivedFromWAL       bool
+	log                   *logger.Logger
 }
 
-func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *syncingBlocks {
-	return &syncingBlocks{
-		blocks:            make(map[uint32]*syncingBlock),
-		log:               log,
-		initialBlockRetry: initialBlockRetry,
+func newSyncingBlock(log *logger.Logger) *syncingBlock {
+	return &syncingBlock{
+		requestBlockRetryTime: time.Time{},
+		blockCandidates:       make(map[state.BlockHash]*candidateBlock),
+		approvalInfo:          nil,
+		receivedFromWAL:       false,
+		log:                   log,
 	}
 }
 
-func (syncsT *syncingBlocks) getRequestBlockRetryTime(stateIndex uint32) time.Time {
-	if sync, ok := syncsT.blocks[stateIndex]; ok {
-		return sync.requestBlockRetryTime
-	}
-	return time.Time{}
+func (syncT *syncingBlock) getRequestBlockRetryTime() time.Time {
+	return syncT.requestBlockRetryTime
 }
 
-func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, requestBlockRetryTime time.Time) {
-	if sync, ok := syncsT.blocks[stateIndex]; ok {
-		sync.requestBlockRetryTime = requestBlockRetryTime
-	}
+func (syncT *syncingBlock) setRequestBlockRetryTime(requestBlockRetryTime time.Time) {
+	syncT.requestBlockRetryTime = requestBlockRetryTime
 }
 
-func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
-	sync, ok := syncsT.blocks[stateIndex]
+func (syncT *syncingBlock) getBlockCandidatesCount() int {
+	return len(syncT.blockCandidates)
+}
+
+func (syncT *syncingBlock) getBlockCandidate(hash state.BlockHash) *candidateBlock {
+	result, ok := syncT.blockCandidates[hash]
 	if !ok {
-		return make([]*candidateBlock, 0)
-	}
-	result := make([]*candidateBlock, len(sync.blockCandidates))
-	i := 0
-	for _, candidate := range sync.blockCandidates {
-		result[i] = candidate
-		i++
+		return nil
 	}
 	return result
 }
 
-func (syncsT *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
-	result := make([]*candidateBlock, 0, 1)
-	sync, ok := syncsT.blocks[stateIndex]
-	if ok {
-		for _, candidate := range sync.blockCandidates {
-			if candidate.isApproved() {
-				result = append(result, candidate)
-			}
-		}
+func (syncT *syncingBlock) hasApprovedBlockCandidate() bool {
+	if syncT.approvalInfo == nil {
+		return false
 	}
-	return result
+	return syncT.getBlockCandidate(syncT.approvalInfo.getBlockHash()) != nil
 }
 
-func (syncsT *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return 0
+func (syncT *syncingBlock) getApprovedBlockCandidateHash() state.BlockHash {
+	if syncT.approvalInfo == nil {
+		return state.BlockHash{}
 	}
-	return len(sync.blockCandidates)
+	return syncT.approvalInfo.getBlockHash()
 }
 
-func (syncsT *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) int {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return 0
+func (syncT *syncingBlock) getNextStateCommitment() trie.VCommitment {
+	if syncT.approvalInfo == nil {
+		return nil
 	}
-	approvedCount := 0
-	for _, candidate := range sync.blockCandidates {
-		if candidate.isApproved() {
-			approvedCount++
-		}
-	}
-	return approvedCount
+	return syncT.approvalInfo.getNextStateCommitment()
 }
 
-func (syncsT *syncingBlocks) hasBlockCandidates() bool {
-	return syncsT.hasBlockCandidatesNotOlderThan(0)
-}
-
-func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
-	for i, sync := range syncsT.blocks {
-		if i >= index {
-			if len(sync.blockCandidates) > 0 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
-	stateIndex := block.BlockIndex()
-	hash := hashing.HashData(block.EssenceBytes())
-	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %v; next state provided: %v", stateIndex, hash.String(), nextState != nil)
-	syncsT.startSyncingIfNeeded(stateIndex)
-	sync := syncsT.blocks[stateIndex]
-	candidateExisting, ok := sync.blockCandidates[hash]
+func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
+	candidateExisting, ok := syncT.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
-		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
-			delete(sync.blockCandidates, hash)
-			syncsT.log.Debugf("addBlockCandidate: conflicting block index %v with hash %v arrived: prsent approvingOutputID %v, new block approvingOutputID: %v",
-				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), iscp.OID(block.ApprovingOutputID()))
+		if !candidateExisting.getApprovingOutputID().Equals(block.ApprovingOutputID()) {
+			delete(syncT.blockCandidates, hash)
+			syncT.log.Warnf("addBlockCandidate: conflicting block index %v with hash %s arrived: present approvingOutputID %v, new block approvingOutputID: %v",
+				block.BlockIndex(), hash, isc.OID(candidateExisting.getApprovingOutputID()), isc.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
-		candidateExisting.addVote()
-		syncsT.log.Debugf("addBlockCandidate: existing block index %v with hash %v arrived, votes increased.", stateIndex, hash.String())
+		syncT.log.Debugf("addBlockCandidate: existing block index %v with hash %s arrived, votes increased.", block.BlockIndex(), hash)
 		return false, candidateExisting
 	}
 	candidate = newCandidateBlock(block, nextState)
-	sync.blockCandidates[hash] = candidate
-	syncsT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
+	syncT.blockCandidates[hash] = candidate
+	syncT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", block.BlockIndex(), hash)
 	return true, candidate
 }
 
-func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) bool {
-	if output == nil {
-		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
-		return false
+func (syncT *syncingBlock) setApprovalInfo(output *isc.AliasOutputWithID) {
+	approvalInfo, err := newApprovalInfo(output)
+	if err != nil {
+		syncT.log.Errorf("setApprovalInfo failed: %v", err)
+		return
 	}
-	someApproved := false
-	stateIndex := output.GetStateIndex()
-	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", iscp.OID(output.ID()), stateIndex)
-	sync, ok := syncsT.blocks[stateIndex]
-	if ok {
-		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
-		for blockHash, candidate := range sync.blockCandidates {
-			alreadyApproved := candidate.isApproved()
-			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
-			if !alreadyApproved {
-				candidate.approveIfRightOutput(output)
-				if candidate.isApproved() {
-					syncsT.log.Debugf("approveBlockCandidates: candidate %v got approved", blockHash.String())
-					someApproved = true
-				}
-			}
-		}
-	}
-	return someApproved
+	syncT.approvalInfo = approvalInfo
+	syncT.log.Debugf("setApprovalInfo succeeded for state %v; approval info is %s", output.GetStateIndex(), approvalInfo)
 }
 
-func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
-	if !syncsT.isSyncing(stateIndex) {
-		syncsT.log.Debugf("Starting syncing state index %v", stateIndex)
-		syncsT.blocks[stateIndex] = &syncingBlock{
-			requestBlockRetryTime: time.Now().Add(syncsT.initialBlockRetry),
-			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
-		}
-	}
+func (syncT *syncingBlock) setReceivedFromWAL() {
+	syncT.receivedFromWAL = true
 }
 
-func (syncsT *syncingBlocks) isSyncing(stateIndex uint32) bool {
-	_, ok := syncsT.blocks[stateIndex]
-	return ok
-}
-
-func (syncsT *syncingBlocks) restartSyncing() {
-	syncsT.blocks = make(map[uint32]*syncingBlock)
-}
-
-func (syncsT *syncingBlocks) deleteSyncingBlock(stateIndex uint32) {
-	delete(syncsT.blocks, stateIndex)
-}
-
-//
-// Track poll/reception times, to determine, if no one responds to our polls.
-//
-
-func (syncsT *syncingBlocks) blocksPulled() {
-	syncsT.lastPullTime = time.Now()
-}
-
-func (syncsT *syncingBlocks) blockReceived() {
-	syncsT.lastRecvTime = time.Now()
-}
-
-func (syncsT *syncingBlocks) blockPollFallbackNeeded() bool {
-	if len(syncsT.blocks) == 0 {
-		return false
-	}
-	return syncsT.lastPullTime.Sub(syncsT.lastRecvTime) >= pollFallbackDelay
-}
-
-func (syncsT *syncingBlocks) setReceivedFromWAL(i uint32) {
-	block, ok := syncsT.blocks[i]
-	if ok {
-		block.receivedFromWAL = true
-	}
-}
-
-func (syncsT *syncingBlocks) isObtainedFromWAL(i uint32) bool {
-	block, ok := syncsT.blocks[i]
-	if ok {
-		return block.receivedFromWAL
-	}
-	return false
+func (syncT *syncingBlock) isReceivedFromWAL() bool {
+	return syncT.receivedFromWAL
 }

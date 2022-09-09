@@ -6,67 +6,58 @@ import (
 	"path"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 )
 
-var defaultConfig = cluster.DefaultConfig()
+type waspClusterOpts struct {
+	nNodes       int
+	modifyConfig templates.ModifyNodesConfigFn
+	dirName      string
+}
 
-var (
-	numNodes                 = flag.Int("num-nodes", 4, "amount of wasp nodes")
-	goShimmerUseProvidedNode = flag.Bool("goshimmer-use-provided-node", defaultConfig.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
-	goShimmerHostname        = flag.String("goshimmer-hostname", defaultConfig.Goshimmer.Hostname, "Goshimmer hostname")
-	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.Goshimmer.TxStreamPort, "Goshimmer port")
-)
+// by default, when running the cluster tests we will automatically setup a private tangle,
+// however its possible to run the tests on any compatible network, by providing the L1 node configuration:
+// example:
+// go test -timeout 30m github.com/iotaledger/wasp/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
+var l1 = l1starter.New(flag.CommandLine)
 
 // newCluster starts a new cluster environment for tests.
 // It is a private function because cluster tests cannot be run in parallel,
 // so all cluster tests MUST be in this same package.
-// opt: [n nodes, custom cluster config, modifyNodesConfigFn]
-func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
+func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
+	l1.StartPrivtangleIfNecessary(t.Logf)
 
-	config := cluster.DefaultConfig()
+	dirname := "wasp-cluster"
+	var modifyNodesConfig templates.ModifyNodesConfigFn
 
-	config.Goshimmer.Hostname = *goShimmerHostname
-	config.Goshimmer.UseProvidedNode = *goShimmerUseProvidedNode
-	if *goShimmerUseProvidedNode {
-		config.Goshimmer.FaucetPoWTarget = -1
-	}
-	config.Goshimmer.TxStreamPort = *goShimmerPort
+	waspConfig := cluster.DefaultWaspConfig()
 
-	nNodes := *numNodes
 	if len(opt) > 0 {
-		n, ok := opt[0].(int)
-		if ok {
-			nNodes = n
+		if opt[0].dirName != "" {
+			dirname = opt[0].dirName
 		}
+		if opt[0].nNodes != 0 {
+			waspConfig.NumNodes = opt[0].nNodes
+		}
+		modifyNodesConfig = opt[0].modifyConfig
 	}
 
-	if len(opt) > 1 {
-		customConfig, ok := opt[1].(*cluster.ClusterConfig)
-		if ok {
-			config = customConfig
-		}
-	}
+	clusterConfig := cluster.NewConfig(
+		waspConfig,
+		l1.Config,
+		modifyNodesConfig,
+	)
 
-	var modifyNodesConfig cluster.ModifyNodesConfigFn
+	dataPath := path.Join(os.TempDir(), dirname)
+	clu := cluster.New(t.Name(), clusterConfig, dataPath, t, nil)
 
-	if len(opt) > 2 {
-		fn, ok := opt[2].(cluster.ModifyNodesConfigFn)
-		if ok {
-			modifyNodesConfig = fn
-		}
-	}
-
-	config.Wasp.NumNodes = nNodes
-
-	clu := cluster.New(t.Name(), config)
-
-	dataPath := path.Join(os.TempDir(), "wasp-cluster")
-	err := clu.InitDataPath(".", dataPath, true, modifyNodesConfig)
+	err := clu.InitDataPath(".", true)
 	require.NoError(t, err)
 
 	err = clu.Start(dataPath)

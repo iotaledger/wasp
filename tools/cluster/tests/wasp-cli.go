@@ -11,20 +11,22 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
 type WaspCLITest struct {
-	T       *testing.T
-	Cluster *cluster.Cluster
-	dir     string
+	T              *testing.T
+	Cluster        *cluster.Cluster
+	dir            string
+	WaspCliAddress iotago.Address
 }
 
-func newWaspCLITest(t *testing.T) *WaspCLITest {
-	clu := newCluster(t)
+func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
+	clu := newCluster(t, opt...)
 
 	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)
@@ -38,7 +40,34 @@ func newWaspCLITest(t *testing.T) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
-	w.Run("set", "utxodb", "true")
+	w.Run("init")
+
+	w.Run("set", "l1.apiAddress", clu.Config.L1.APIAddress)
+	w.Run("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
+	for _, node := range clu.Config.AllNodes() {
+		w.Run("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
+		w.Run("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+	}
+
+	requestFundstext := w.Run("request-funds")
+	// latest line should print something like: "Request funds for address atoi...: success"
+	expectedRegexp := regexp.MustCompile("Request funds for address (.{64}): success")
+	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
+	require.Len(t, rs, 2)
+	_, addr, err := iotago.ParseBech32(rs[1])
+	require.NoError(t, err)
+	w.WaspCliAddress = addr
+	// requested funds will take some time to be available
+	for {
+		outputs, err := clu.L1Client().OutputMap(addr)
+		require.NoError(t, err)
+		if len(outputs) > 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	return w
 }
 
@@ -62,20 +91,41 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		require.NoError(w.T, fmt.Errorf(
-			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
-			strings.Join(args, " "),
-			err,
-			outStr+errStr,
-		))
+		panic(
+			fmt.Errorf(
+				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
+				strings.Join(args, " "),
+				err,
+				outStr+errStr,
+			),
+		)
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
 	outStr = strings.TrimRight(outStr, "\n")
-	return strings.Split(outStr, "\n")
+	outLines := strings.Split(outStr, "\n")
+	w.T.Logf("OUTPUT #lines=%v", len(outLines))
+	for _, outLine := range outLines {
+		w.T.Logf("OUTPUT: %v", outLine)
+	}
+	return outLines
 }
 
 func (w *WaspCLITest) Run(args ...string) []string {
 	return w.runCmd(args, nil)
+}
+
+func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
+	runArgs := []string{"chain", "post-request", "-s"}
+	runArgs = append(runArgs, args...)
+	out := w.Run(runArgs...)
+	return w.GetReceiptFromRunPostRequestOutput(out)
+}
+
+func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string {
+	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
+		FindStringSubmatch(strings.Join(out, ""))
+	command := r[2]
+	return w.Run(strings.Split(command, " ")...)
 }
 
 func (w *WaspCLITest) Pipe(in []string, args ...string) []string {
@@ -101,11 +151,11 @@ func (w *WaspCLITest) CopyFile(srcFile string) {
 
 func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	var committee []string
-	for i := 0; i < w.Cluster.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < len(w.Cluster.Config.Wasp); i++ {
 		committee = append(committee, fmt.Sprintf("%d", i))
 	}
 
-	quorum := 3 * w.Cluster.Config.Wasp.NumNodes / 4
+	quorum := 3 * len(w.Cluster.Config.Wasp) / 4
 	if quorum < 1 {
 		quorum = 1
 	}
@@ -113,10 +163,10 @@ func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
 }
 
-func (w *WaspCLITest) Address() ledgerstate.Address {
+func (w *WaspCLITest) Address() iotago.Address {
 	out := w.Run("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	addr, err := ledgerstate.AddressFromBase58EncodedString(s)
+	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
 	return addr
 }

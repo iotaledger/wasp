@@ -1,0 +1,9 @@
+# This is the testing copyright message
+# copyright message is the comment block
+# ahead of copyright yaml tag.
+# No other yaml item should exist ahead of
+# the copyright message, and the value of
+# copyright tag should leave empty.
+copyright: 
+name: SchemaComment
+description: test description

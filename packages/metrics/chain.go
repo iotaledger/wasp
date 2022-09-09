@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,7 +15,6 @@ type StateManagerMetrics interface {
 
 type ChainMetrics interface {
 	CountMessages()
-	CountRequestAckMessages()
 	CurrentStateIndex(stateIndex uint32)
 	MempoolMetrics
 	ConsensusMetrics
@@ -26,7 +25,7 @@ type MempoolMetrics interface {
 	CountOffLedgerRequestIn()
 	CountOnLedgerRequestIn()
 	CountRequestOut()
-	RecordRequestProcessingTime(iscp.RequestID, time.Duration)
+	RecordRequestProcessingTime(isc.RequestID, time.Duration)
 	CountBlocksPerChain()
 }
 
@@ -37,7 +36,7 @@ type ConsensusMetrics interface {
 
 type chainMetricsObj struct {
 	metrics *Metrics
-	chainID *iscp.ChainID
+	chainID *isc.ChainID
 }
 
 var (
@@ -61,15 +60,11 @@ func (c *chainMetricsObj) CountMessages() {
 	c.metrics.messagesReceived.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (c *chainMetricsObj) CountRequestAckMessages() {
-	c.metrics.requestAckMessages.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
-}
-
 func (c *chainMetricsObj) CurrentStateIndex(stateIndex uint32) {
 	c.metrics.currentStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
 }
 
-func (c *chainMetricsObj) RecordRequestProcessingTime(reqID iscp.RequestID, elapse time.Duration) {
+func (c *chainMetricsObj) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
 	c.metrics.requestProcessingTime.With(prometheus.Labels{"chain": c.chainID.String(), "request": reqID.String()}).Set(elapse.Seconds())
 }
 
@@ -111,11 +106,9 @@ func (m *defaultChainMetrics) CountRequestOut() {}
 
 func (m *defaultChainMetrics) CountMessages() {}
 
-func (m *defaultChainMetrics) CountRequestAckMessages() {}
-
 func (m *defaultChainMetrics) CurrentStateIndex(stateIndex uint32) {}
 
-func (m *defaultChainMetrics) RecordRequestProcessingTime(_ iscp.RequestID, _ time.Duration) {}
+func (m *defaultChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
 
 func (m *defaultChainMetrics) RecordVMRunTime(_ time.Duration) {}
 

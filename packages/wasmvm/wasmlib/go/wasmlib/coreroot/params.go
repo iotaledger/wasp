@@ -5,6 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
+//nolint:revive
 package coreroot
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -13,6 +14,7 @@ type ImmutableDeployContractParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default 'N/A'
 func (s ImmutableDeployContractParams) Description() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
 }
@@ -21,6 +23,7 @@ func (s ImmutableDeployContractParams) Name() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
 }
 
+// TODO variable init params for deployed contract
 func (s ImmutableDeployContractParams) ProgramHash() wasmtypes.ScImmutableHash {
 	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgramHash))
 }
@@ -29,6 +32,7 @@ type MutableDeployContractParams struct {
 	proxy wasmtypes.Proxy
 }
 
+// default 'N/A'
 func (s MutableDeployContractParams) Description() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
 }
@@ -37,6 +41,7 @@ func (s MutableDeployContractParams) Name() wasmtypes.ScMutableString {
 	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
 }
 
+// TODO variable init params for deployed contract
 func (s MutableDeployContractParams) ProgramHash() wasmtypes.ScMutableHash {
 	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgramHash))
 }
@@ -57,6 +62,22 @@ func (s MutableGrantDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentI
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
 }
 
+type ImmutableRequireDeployPermissionsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+}
+
+type MutableRequireDeployPermissionsParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+}
+
 type ImmutableRevokeDeployPermissionParams struct {
 	proxy wasmtypes.Proxy
 }
@@ -71,6 +92,30 @@ type MutableRevokeDeployPermissionParams struct {
 
 func (s MutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
+}
+
+type ImmutableSubscribeBlockContextParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamCloseFunc))
+}
+
+func (s ImmutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScImmutableHname {
+	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamOpenFunc))
+}
+
+type MutableSubscribeBlockContextParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamCloseFunc))
+}
+
+func (s MutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScMutableHname {
+	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamOpenFunc))
 }
 
 type ImmutableFindContractParams struct {

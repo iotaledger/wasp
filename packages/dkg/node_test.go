@@ -13,7 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -31,19 +31,20 @@ func TestBasic(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(log),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
+	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+		registries[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
-			peerIdentities[i], networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -59,8 +60,38 @@ func TestBasic(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
+	//
+	// Aggregate the signatures: generate signature shares.
+	dataToSign := []byte{112, 117, 116, 105, 110, 32, 99, 104, 117, 105, 108, 111, 33}
+	require.NoError(t, err)
+	// dssPartSigs := make([]*dss.PartialSig, len(peerNetIDs))
+	blsPartSigs := make([][]byte, len(peerNetIDs))
+	var aggrDks tcrypto.DKShare
+	for i, r := range registries {
+		dks, err := r.LoadDKShare(dkShare.GetAddress())
+		if i == 0 {
+			aggrDks = dks
+		}
+		require.NoError(t, err)
+		// dssPartSigs[i], err = dks.DSSSignShare(dataToSign) // TODO: Check the signature.
+		// require.NoError(t, err)
+		blsPartSigs[i], err = dks.BLSSignShare(dataToSign)
+		require.NoError(t, err)
+	}
+	//
+	// Aggregate the signatures: check the DSS signature. // TODO: Check the signature.
+	// dssAggrSig, err := aggrDks.DSSRecoverMasterSignature(dssPartSigs, dataToSign)
+	// require.NoError(t, err)
+	// require.NotNil(t, dssAggrSig)
+	// require.True(t, aggrDks.GetSharedPublic().Verify(dataToSign, dssAggrSig))
+	//
+	// Aggregate the signatures: check the BLS signature.
+	blsAggrSig, err := aggrDks.BLSRecoverMasterSignature(blsPartSigs, dataToSign)
+	require.NoError(t, err)
+	require.NotNil(t, blsAggrSig)
+	require.NoError(t, aggrDks.BLSVerifyMasterSignature(dataToSign, blsAggrSig.Signature[:]))
 }
 
 // TestUnreliableNet checks, if DKG runs on an unreliable network.
@@ -77,7 +108,7 @@ func TestUnreliableNet(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
 			80,                                         // Delivered %
@@ -87,14 +118,14 @@ func TestUnreliableNet(t *testing.T) {
 		),
 		testlogger.WithLevel(log, logger.LevelInfo, false),
 	)
-	var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
 	//
 	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+		dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
-			peerIdentities[i], networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], dksReg,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 		require.NoError(t, err)
@@ -110,8 +141,8 @@ func TestUnreliableNet(t *testing.T) {
 		timeout,
 	)
 	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
+	require.NotNil(t, dkShare.GetAddress())
+	require.NotNil(t, dkShare.GetSharedPublic())
 }
 
 // TestLowN checks, if the DKG works with N=1 and other low values. N=1 is a special case.
@@ -125,19 +156,19 @@ func TestLowN(t *testing.T) {
 		threshold := n
 		peerCount := n
 		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
+		peeringNetwork := testutil.NewPeeringNetwork(
 			peerNetIDs, peerIdentities, 10000,
 			testutil.NewPeeringNetReliable(log),
 			testlogger.WithLevel(log, logger.LevelWarn, false),
 		)
-		var networkProviders []peering.NetworkProvider = peeringNetwork.NetworkProviders()
+		networkProviders := peeringNetwork.NetworkProviders()
 		//
 		// Initialize the DKG subsystem in each node.
-		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
+		dkgNodes := make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
-			registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
+			dksReg := testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 			dkgNode, err := dkg.NewNode(
-				peerIdentities[i], networkProviders[i], registry,
+				peerIdentities[i], networkProviders[i], dksReg,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 			)
 			require.NoError(t, err)
@@ -153,7 +184,7 @@ func TestLowN(t *testing.T) {
 			timeout,
 		)
 		require.Nil(t, err)
-		require.NotNil(t, dkShare.Address)
-		require.NotNil(t, dkShare.SharedPublic)
+		require.NotNil(t, dkShare.GetAddress())
+		require.NotNil(t, dkShare.GetSharedPublic())
 	}
 }

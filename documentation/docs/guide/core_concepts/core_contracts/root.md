@@ -1,80 +1,122 @@
 ---
-description: The root contract is the first smart contract deployed on the chain. It functions as a smart contract factory for the chain, and manages chain ownership and fees.
+description: 'The root contract is the first smart contract deployed on the chain. It functions as a smart contract
+factory for the chain.'
 image: /img/logo/WASP_logo_dark.png
 keywords:
-- ISCP
+
+- smart contracts
 - core
 - root
 - initialization
 - entry points
 - fees
 - ownership
-- Views
---- 
+- views
+- reference
+
+---
+
 # The `root` Contract
 
 The `root` contract is one of the [core contracts](overview.md) on each IOTA Smart Contracts
 chain.
 
-The `root` contract provides the following functions:
+The `root` contract is responsible for the initialization of the chain.
+It is the first smart contract deployed on the chain and, upon receiving the `init` request, bootstraps the state of the
+chain.
+Deploying all of the other core contracts is a part of the state initialization.
 
-- It is the first smart contract deployed on the chain. Upon receiving the `init` request, bootstraps the state of the chain. Part of the state initialization is the deployment of all other core contracts.
+The `root` contract also functions as a smart contract factory for the chain: upon request, it deploys other smart
+contracts and maintains an on-chain registry of smart contracts in its state.
+The contract registry keeps a list of contract records containing their respective name, hname, description, and
+creator.
 
-- It functions as a smart contract factory for the chain: upon request, it deploys other smart contracts and maintains an on-chain registry of smart contracts in its state.
-
-- The contract registry keeps a list of contract records, which contain their respective name, hname, description and creator.
+---
 
 ## Entry Points
 
-The following are the functions/entry points of the `root` contract. Some of
-them may require authorisation, i.e. can only be invoked by a specific caller,
-for example the _chain owner_.
+### `init()`
 
-### init
+The constructor. Automatically called immediately after confirmation of the origin transaction and never called again.
+When executed, this function:
 
-The constructor. Automatically posted to the chain immediately after confirmation of the origin transaction, as the first call.
+- Initializes base values of the chain according to parameters.
+- Sets the caller as the _chain owner_.
+- Deploys all the core contracts.
 
-* Initializes base values of the chain according to parameters
-* Sets the caller as the _chain owner_
-* Sets chain fee color (default is _IOTA color_)
-* Deploys all core contracts. The core contracts become part of the immutable state.
-  It makes them callable just like any other smart contract deployed on the chain.
+### `deployContract(ph ProgramHash, ds Description, nm Name)`
 
-### deployContract
-
-Deploys a smart contract on the chain, if the caller has deploy permission. 
+Deploys a non-EVM smart contract on the chain if the caller has deploy permission.
 
 #### Parameters
 
-* Hash of the _blob_ with the binary of the program and VM type
-* Name of the instance. This is later used in the hashed form of _hname_
-* Description of the instance
+- `ph` (`[32]byte`): The hash of the binary _blob_ (that has been previously stored in the [`blob` contract](blob.md)).
+- `ds` (`string`): Description of the contract to be deployed.
+- `nm` (`string`): The name of the contract to be deployed, used to calculate the
+  contract's _hname_. The name must be unique among all contract names in the
+  chain.
 
-### grantDeployPermission
+### `grantDeployPermission(dp AgentID)`
 
-The chain owner grants deploy permission to an agent ID.
-
-### revokeDeployPermission
-
-The chain owner revokes deploy permission from an agent ID.
-
-### requireDeployPermissions
+The chain owner grants deploy permission to the agent ID `dp`.
 
 #### Parameters
 
-- enabled: true | false - whether permissions should be required to deploy a contract on the chain.
+`dp`(AgentID): The agent ID.
 
-By default permissions are enabled (addresses need to be granted the right to deploy), but the chain owner can override this setting to allow anyone to deploy contracts on the chain.
+### `revokeDeployPermission(dp AgentID)`
+
+The chain owner revokes the deploy permission of the agent ID `dp`.
+
+#### Parameters
+
+`dp`(AgentID): The agent ID.
+
+### `requireDeployPermissions(de DeployPermissionsEnabled)`
+
+#### Parameters
+
+- `de` (`bool`): Whether permissions should be required to deploy a contract on the chain.
+
+By default, permissions are enabled (addresses need to be granted the right to deploy), but the chain owner can override
+this setting to allow anyone to deploy contracts on the chain.
+
+---
 
 ## Views
 
-Can be called directly. Calling a view does not modify the state of the smart
-contract.
+### `findContract(hn Hname)`
 
-###  findContract
+Returns the record for a given smart contract with Hname `hn` (if it exists).
 
-Returns the record for a given smart contract (if it exists).
+#### Parameters
 
-### getContractRecords
+`hn`: The smart contract’s Hname
+
+#### Returns
+
+- `cf` (`bool`): Whether or not the contract exists.
+- `dt` ([`ContractRecord`](#contractrecord)): The requested contract record (if it exists).
+
+### `getContractRecords()`
 
 Returns the list of all smart contracts deployed on the chain and related records.
+
+#### Returns
+
+A map of `Hname` => [`ContractRecord`](#contractrecord)
+
+---
+
+## Schemas
+
+### `ContractRecord`
+
+A `ContractRecord` is encoded as the concatenation of:
+
+- Program hash (`[32]byte`).
+- Contract description (`string`).
+- Contract name (`string`).
+
+
+

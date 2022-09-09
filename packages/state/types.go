@@ -3,8 +3,10 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -12,53 +14,52 @@ import (
 // VirtualStateAccess is a virtualized access interface to the chain's database
 // It consists of state reader and the buffer to collect mutations to key values
 type VirtualStateAccess interface {
+	ChainID() *isc.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
-	PreviousStateHash() hashing.HashValue
-	StateCommitment() hashing.HashValue
+	TrieNodeStore() trie.NodeStore
+	PreviousL1Commitment() *L1Commitment
+	Commit()
+	ReconcileTrie() []kv.Key
 	KVStoreReader() kv.KVStoreReader
-	ApplyStateUpdates(...StateUpdate)
+	OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader
+	ApplyStateUpdate(Update)
 	ApplyBlock(Block) error
+	ProofGeneric(key []byte) *trie.ProofGeneric
 	ExtractBlock() (Block, error)
-	Commit(blocks ...Block) error
+	Save(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStoreAccess
 	Copy() VirtualStateAccess
 	DangerouslyConvertToString() string
+	WithOnBlockSave(fun OnBlockSaveClosure)
 }
 
 type OptimisticStateReader interface {
+	ChainID() (*isc.ChainID, error)
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
-	Hash() (hashing.HashValue, error)
 	KVStoreReader() kv.KVStoreReader
 	SetBaseline()
+	TrieNodeStore() trie.NodeStore
 }
 
-// StateUpdate is a set of mutations
-type StateUpdate interface {
+// Update is a set of mutations
+type Update interface {
 	Mutations() *buffered.Mutations
-	Clone() StateUpdate
+	Clone() Update
 	Bytes() []byte
 	String() string
 }
 
-// Block is a sequence of state updates applicable to the virtual state
+// Block is a wrapped update
 type Block interface {
 	BlockIndex() uint32
-	ApprovingOutputID() ledgerstate.OutputID
-	SetApprovingOutputID(ledgerstate.OutputID)
+	ApprovingOutputID() *iotago.UTXOInput
+	SetApprovingOutputID(*iotago.UTXOInput)
 	Timestamp() time.Time
-	PreviousStateHash() hashing.HashValue
+	PreviousL1Commitment() *L1Commitment
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }
 
-const OriginStateHashBase58 = "96yCdioNdifMb8xTeHQVQ8BzDnXDbRBoYzTq7iVaymvV"
-
-func OriginStateHash() hashing.HashValue {
-	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
+type OnBlockSaveClosure func(stateCommitment trie.VCommitment, block Block)

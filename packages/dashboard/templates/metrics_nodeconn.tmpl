@@ -5,7 +5,7 @@
 	<h2 class="section">Chains, subscribed to L1</h2>
 	<ul>
 		{{range $_, $addr := (.Metrics.GetSubscribed)}}
-			{{ $id := $addr.Base58 }}
+			{{ $id := $addr }}
 			<li><a href="{{ uri "metricsChainNodeconn" $id }}"><code>{{ $id }}</code></a></li>
 		{{end}}
 	</ul>

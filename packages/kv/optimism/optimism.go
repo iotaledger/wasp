@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
 )
@@ -36,6 +36,10 @@ func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline coreutil.StateB
 // Each and check if it wasn't invalidated by the global variable (the state manager)
 func (o *OptimisticKVStoreReader) SetBaseline() {
 	o.baseline.Set()
+}
+
+func (o *OptimisticKVStoreReader) Baseline() coreutil.StateBaseline {
+	return o.baseline
 }
 
 // IsStateValid check the validity of the baseline
@@ -172,8 +176,8 @@ const (
 
 // RetryOnStateInvalidated repeats function while it returns ErrorStateInvalidated
 // Optional parameters:
-//  - timeouts[0] - overall timeout
-//  - timeouts[1] - repeat delay
+//   - timeouts[0] - overall timeout
+//   - timeouts[1] - repeat delay
 func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error {
 	timeout := defaultRetryTimeout
 	if len(timeouts) >= 1 {
@@ -185,12 +189,14 @@ func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error 
 		retryDelay = timeouts[1]
 	}
 
-	var err error
-	for err = fun(); errors.Is(err, coreutil.ErrorStateInvalidated); err = fun() {
+	for {
+		err := fun()
+		if !errors.Is(err, coreutil.ErrorStateInvalidated) {
+			return err
+		}
 		time.Sleep(retryDelay)
 		if time.Now().After(timeoutAfter) {
 			return xerrors.Errorf("optimistic read retry timeout. Last error: %w", err)
 		}
 	}
-	return err
 }

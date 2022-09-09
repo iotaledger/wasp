@@ -11,25 +11,27 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
-	"gopkg.in/yaml.v2"
+	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	flagCore   = flag.Bool("core", false, "generate core contract interface")
-	flagClient = flag.Bool("client", false, "generate client side contract interface")
-	flagForce  = flag.Bool("force", false, "force code generation")
-	flagGo     = flag.Bool("go", false, "generate Go code")
-	flagInit   = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust   = flag.Bool("rust", false, "generate Rust code")
-	flagTs     = flag.Bool("ts", false, "generate TypScript code")
-	flagType   = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
+	flagCore  = flag.Bool("core", false, "generate core contract interface")
+	flagForce = flag.Bool("force", false, "force code generation")
+	flagGo    = flag.Bool("go", false, "generate Go code")
+	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
+	flagRust  = flag.Bool("rust", false, "generate Rust code")
+	flagTs    = flag.Bool("ts", false, "generate TypScript code")
+	flagType  = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {
@@ -39,8 +41,7 @@ func init() {
 func main() {
 	err := generator.FindModulePath()
 	if err != nil && *flagGo {
-		fmt.Println(err)
-		return
+		log.Panic(err)
 	}
 
 	if *flagCore {
@@ -55,12 +56,11 @@ func main() {
 	if err == nil {
 		defer file.Close()
 		if *flagInit != "" {
-			fmt.Println("schema definition file already exists")
-			return
+			log.Panic("schema definition file already exists")
 		}
 		err = generateSchema(file)
 		if err != nil {
-			fmt.Println(err)
+			log.Panic(err)
 		}
 		return
 	}
@@ -68,7 +68,11 @@ func main() {
 	if *flagInit != "" {
 		err = generateSchemaNew()
 		if err != nil {
-			fmt.Println(err)
+			if _, err := os.Stat(*flagInit); err == nil {
+				log.Println("schema already exists")
+				return
+			}
+			log.Panic(err)
 		}
 		return
 	}
@@ -93,7 +97,7 @@ func generateCoreInterfaces() {
 		return generateSchema(file)
 	})
 	if err != nil {
-		fmt.Println(err)
+		log.Panic(err)
 	}
 }
 
@@ -127,22 +131,13 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	if *flagClient && !*flagGo && !*flagTs {
-		return errors.New("missing language specification")
-	}
-
+	// Preserve line number until here
+	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
 		err = g.Generate()
 		if err != nil {
 			return err
-		}
-		if *flagClient {
-			cg := generator.NewGoClientGenerator(s)
-			err = cg.Generate()
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -160,19 +155,15 @@ func generateSchema(file *os.File) error {
 		if err != nil {
 			return err
 		}
-		if *flagClient {
-			cg := generator.NewTsClientGenerator(s)
-			err = cg.Generate()
-			if err != nil {
-				return err
-			}
-		}
 	}
 	return nil
 }
 
 func generateSchemaNew() error {
-	// TODO make sure name is valid: no path characters
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
+	if !r.MatchString(*flagInit) {
+		return fmt.Errorf("name contains path characters")
+	}
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -187,31 +178,33 @@ func generateSchemaNew() error {
 	}
 
 	schemaDef := &model.SchemaDef{}
-	schemaDef.Name = name
-	schemaDef.Description = name + " description"
-	schemaDef.Structs = make(model.StringMapMap)
-	schemaDef.Events = make(model.StringMapMap)
-	schemaDef.Typedefs = make(model.StringMap)
-	schemaDef.State = make(model.StringMap)
-	schemaDef.State["owner"] = "AgentID // current owner of this smart contract"
+	schemaDef.Name = model.DefElt{Val: name}
+	schemaDef.Description = model.DefElt{Val: name + " description"}
+	schemaDef.Structs = make(model.DefMapMap)
+	schemaDef.Events = make(model.DefMapMap)
+	schemaDef.Typedefs = make(model.DefMap)
+	schemaDef.State = make(model.DefMap)
+
+	defMapKey := model.DefElt{Val: "owner"}
+	schemaDef.State[defMapKey] = &model.DefElt{Val: "AgentID // current owner of this smart contract"}
 	schemaDef.Funcs = make(model.FuncDefMap)
 	schemaDef.Views = make(model.FuncDefMap)
 
 	funcInit := &model.FuncDef{}
-	funcInit.Params = make(model.StringMap)
-	funcInit.Params["owner"] = "AgentID? // optional owner of this smart contract"
-	schemaDef.Funcs["init"] = funcInit
+	funcInit.Params = make(model.DefMap)
+	funcInit.Params[defMapKey] = &model.DefElt{Val: "AgentID? // optional owner of this smart contract"}
+	schemaDef.Funcs[model.DefElt{Val: "init"}] = funcInit
 
 	funcSetOwner := &model.FuncDef{}
-	funcSetOwner.Access = "owner // current owner of this smart contract"
-	funcSetOwner.Params = make(model.StringMap)
-	funcSetOwner.Params["owner"] = "AgentID // new owner of this smart contract"
-	schemaDef.Funcs["setOwner"] = funcSetOwner
+	funcSetOwner.Access = model.DefElt{Val: "owner // current owner of this smart contract"}
+	funcSetOwner.Params = make(model.DefMap)
+	funcSetOwner.Params[defMapKey] = &model.DefElt{Val: "AgentID // new owner of this smart contract"}
+	schemaDef.Funcs[model.DefElt{Val: "setOwner"}] = funcSetOwner
 
 	viewGetOwner := &model.FuncDef{}
-	viewGetOwner.Results = make(model.StringMap)
-	viewGetOwner.Results["owner"] = "AgentID // current owner of this smart contract"
-	schemaDef.Views["getOwner"] = viewGetOwner
+	viewGetOwner.Results = make(model.DefMap)
+	viewGetOwner.Results[defMapKey] = &model.DefElt{Val: "AgentID // current owner of this smart contract"}
+	schemaDef.Views[model.DefElt{Val: "getOwner"}] = viewGetOwner
 	switch *flagType {
 	case "json":
 		return WriteJSONSchema(schemaDef)
@@ -226,13 +219,16 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 	schemaDef := &model.SchemaDef{}
 	switch filepath.Ext(file.Name()) {
 	case ".json":
-		err = json.NewDecoder(file).Decode(schemaDef)
+		var jsonSchemaDef model.JSONSchemaDef
+		err = json.NewDecoder(file).Decode(&jsonSchemaDef)
+		schemaDef = jsonSchemaDef.ToSchemaDef()
 		if err == nil && *flagType == "convert" {
 			err = WriteYAMLSchema(schemaDef)
 		}
 	case ".yaml":
 		fileByteArray, _ := io.ReadAll(file)
-		err = yaml.Unmarshal(fileByteArray, schemaDef)
+		schemaDef = model.NewSchemaDef()
+		err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
 		if err == nil && *flagType == "convert" {
 			err = WriteJSONSchema(schemaDef)
 		}
@@ -258,7 +254,7 @@ func WriteJSONSchema(schemaDef *model.SchemaDef) error {
 	}
 	defer file.Close()
 
-	b, err := json.Marshal(schemaDef)
+	b, err := json.Marshal(schemaDef.ToRawSchemaDef())
 	if err != nil {
 		return err
 	}
@@ -280,10 +276,12 @@ func WriteYAMLSchema(schemaDef *model.SchemaDef) error {
 	}
 	defer file.Close()
 
-	b, err := yaml.Marshal(schemaDef)
+	b, err := yaml.Marshal(schemaDef.ToRawSchemaDef())
 	if err != nil {
 		return err
 	}
+
+	b = bytes.ReplaceAll(b, []byte("//"), []byte("#"))
 	_, err = file.Write(b)
 	return err
 }

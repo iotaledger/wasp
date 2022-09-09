@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,13 +15,12 @@ func TestTypesFull(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.PassTypesFull(ctx)
-		f.Params.Address().SetValue(ctx.ChainID().Address())
+		f.Params.Address().SetValue(ctx.CurrentChainID().Address())
 		f.Params.AgentID().SetValue(ctx.Originator().ScAgentID())
-		f.Params.ChainID().SetValue(ctx.ChainID())
+		f.Params.ChainID().SetValue(ctx.CurrentChainID())
 		f.Params.ContractID().SetValue(ctx.AccountID())
-		hashValue := hashing.HashStrings("Hash")
-		f.Params.Hash().SetValue(ctx.Convertor.ScHash(hashValue))
-		f.Params.Hname().SetValue(ctx.Convertor.ScHname(iscp.Hn("Hname")))
+		f.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
+		f.Params.Hname().SetValue(ctx.Cvt.ScHname(isc.Hn("Hname")))
 		f.Params.HnameZero().SetValue(0)
 		f.Params.Int64().SetValue(42)
 		f.Params.Int64Zero().SetValue(0)
@@ -38,13 +37,12 @@ func TestTypesView(t *testing.T) {
 		ctx := deployTestCore(t, w)
 
 		v := testcore.ScFuncs.PassTypesView(ctx)
-		v.Params.Address().SetValue(ctx.ChainID().Address())
+		v.Params.Address().SetValue(ctx.CurrentChainID().Address())
 		v.Params.AgentID().SetValue(ctx.Originator().ScAgentID())
-		v.Params.ChainID().SetValue(ctx.ChainID())
+		v.Params.ChainID().SetValue(ctx.CurrentChainID())
 		v.Params.ContractID().SetValue(ctx.AccountID())
-		hashValue := hashing.HashStrings("Hash")
-		v.Params.Hash().SetValue(ctx.Convertor.ScHash(hashValue))
-		v.Params.Hname().SetValue(ctx.Convertor.ScHname(iscp.Hn("Hname")))
+		v.Params.Hash().SetValue(ctx.Cvt.ScHash(hashing.HashStrings("Hash")))
+		v.Params.Hname().SetValue(ctx.Cvt.ScHname(isc.Hn("Hname")))
 		v.Params.HnameZero().SetValue(0)
 		v.Params.Int64().SetValue(42)
 		v.Params.Int64Zero().SetValue(0)

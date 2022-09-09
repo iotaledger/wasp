@@ -26,8 +26,9 @@ func testChainOwnerIDFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncChainOwnerIDFull.Name)
-	ret, err := chain.PostRequestSync(req.WithIotas(1), nil)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncChainOwnerIDFull.Name).
+		WithGasBudget(100_000)
+	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	c := ret.MustGet(sbtestsc.ParamChainOwnerID)

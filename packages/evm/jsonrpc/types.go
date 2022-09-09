@@ -15,8 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
@@ -161,7 +161,7 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction) map[string]inter
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
 		"blockHash":         r.BlockHash,
 		"blockNumber":       (*hexutil.Big)(r.BlockNumber),
-		"from":              evmtypes.GetSender(tx),
+		"from":              evmutil.MustGetSender(tx),
 		"to":                tx.To(),
 		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
 		"gasUsed":           hexutil.Uint64(r.GasUsed),
@@ -212,7 +212,7 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	ret.GasPrice = (*big.Int)(c.GasPrice)
 	ret.Value = (*big.Int)(c.Value)
 	if c.Data != nil {
-		ret.Data = []byte(*c.Data)
+		ret.Data = *c.Data
 	}
 	return
 }
@@ -271,7 +271,7 @@ func (args *SendTxArgs) setDefaults(e *EthService) error {
 		}
 		var data []byte
 		if input != nil {
-			data = []byte(*input)
+			data = *input
 		}
 		callArgs := ethereum.CallMsg{
 			From:     args.From, // From shouldn't be nil

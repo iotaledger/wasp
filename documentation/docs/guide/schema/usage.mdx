@@ -23,7 +23,8 @@ through the steps to create a new smart contract from scratch.
 First, you need to decide on a central folder where you want to keep all your smart
 contracts. Each smart contract you create will be maintained in a separate subfolder in
 this folder. We will use certain naming conventions that the schema tool expects
-throughout this section. First we will select a camel case name for our smart contract.
+throughout this section, and the name should be alphanumeric or `_`.
+ First we will select a camel case name for our smart contract.
 For our example, `MySmartContract`.
 
 Once you know what your smart contract will be named, it is time to set up your subfolder.
@@ -260,7 +261,7 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
         f.State.Owner().SetValue(f.Params.Owner().Value())
         return
     }
-    f.State.Owner().SetValue(ctx.ContractCreator())
+    f.State.Owner().SetValue(ctx.RequestSender())
 }
 
 func funcSetOwner(ctx wasmlib.ScFuncContext, f *SetOwnerContext) {
@@ -285,7 +286,7 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
         f.state.owner().set_value(&f.params.owner().value());
         return;
     }
-    f.state.owner().set_value(&ctx.contract_creator());
+    f.state.owner().set_value(&ctx.request_sender());
 }
 
 pub fn func_set_owner(_ctx: &ScFuncContext, f: &SetOwnerContext) {
@@ -309,7 +310,7 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
         f.state.owner().setValue(f.params.owner().value());
         return;
     }
-    f.state.owner().setValue(ctx.contractCreator());
+    f.state.owner().setValue(ctx.requestSender());
 }
 
 export function funcSetOwner(ctx: wasmlib.ScFuncContext, f: sc.SetOwnerContext): void {

@@ -1,0 +1,34 @@
+{
+  "name": "evm-l2-withdraw",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^1.0.1",
+    "@tsconfig/svelte": "^3.0.0",
+    "svelte": "^3.49.0",
+    "svelte-check": "^2.8.0",
+    "svelte-preprocess": "^4.10.7",
+    "tslib": "^2.4.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.0.0"
+  },
+  "dependencies": {
+    "@iota/iota.js": "^1.9.0-stardust.24",
+    "browserify-zlib": "^0.2.0",
+    "events": "^3.3.0",
+    "install": "^0.13.0",
+    "npm": "^8.15.0",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "svelte-web3": "^3.5.1",
+    "util": "^0.12.4",
+    "web3": "^1.7.4"
+  }
+}

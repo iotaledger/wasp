@@ -14,12 +14,17 @@ import (
 const (
 	ContractNameDeployed = "exampleDeployTR"
 	MsgCoreOnlyPanic     = "========== core only ========="
+	MsgCounterNumber     = "[GenericData] Counter Number: "
+	MsgDoNothing         = "========== doing nothing"
+	MsgFailOnPurpose     = "failing on purpose"
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="
+	MsgJustView          = "calling empty view entry point"
+	MsgTestingEvent      = "[Event] - Testing Event..."
 	MsgViewPanic         = "========== panic VIEW ========="
 )
 
 func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
-	paramInt := f.Params.IntValue().Value()
+	n := f.Params.N().Value()
 
 	hnameContract := ctx.Contract()
 	if f.Params.HnameContract().Exists() {
@@ -33,7 +38,7 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 
 	counter := f.State.Counter()
 
-	ctx.Log("call depth = " + f.Params.IntValue().String() +
+	ctx.Log("param IN = " + f.Params.N().String() +
 		", hnameContract = " + hnameContract.String() +
 		", hnameEP = " + hnameEP.String() +
 		", counter = " + counter.String())
@@ -41,88 +46,165 @@ func funcCallOnChain(ctx wasmlib.ScFuncContext, f *CallOnChainContext) {
 	counter.SetValue(counter.Value() + 1)
 
 	params := wasmlib.NewScDict()
-	key := []byte(ParamIntValue)
-	params.Set(key, wasmtypes.Int64ToBytes(paramInt))
+	key := []byte(ParamN)
+	params.Set(key, wasmtypes.Uint64ToBytes(n))
 	ret := ctx.Call(hnameContract, hnameEP, params, nil)
-	retVal := wasmtypes.Int64FromBytes(ret.Get(key))
-	f.Results.IntValue().SetValue(retVal)
+	retVal := wasmtypes.Uint64FromBytes(ret.Get(key))
+	f.Results.N().SetValue(retVal)
 }
 
 func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFullEPContext) {
 	ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "fail: agentID")
 	ctx.Require(f.Params.Caller().Value() == ctx.Caller(), "fail: caller")
-	ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "fail: chainID")
+	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
-//nolint:unparam
-func funcDoNothing(ctx wasmlib.ScFuncContext, f *DoNothingContext) {
-	ctx.Log("doing nothing...")
+func funcClaimAllowance(ctx wasmlib.ScFuncContext, _ *ClaimAllowanceContext) {
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
 }
 
-func funcGetMintedSupply(ctx wasmlib.ScFuncContext, f *GetMintedSupplyContext) {
-	minted := ctx.Minted()
-	mintedColors := minted.Colors()
-	ctx.Require(len(mintedColors) == 1, "test only supports one minted color")
-	color := mintedColors[0]
-	amount := minted.Balance(color)
-	f.Results.MintedColor().SetValue(color)
-	f.Results.MintedSupply().SetValue(amount)
+func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
+	ctx.Log(MsgDoNothing)
 }
 
-func funcIncCounter(ctx wasmlib.ScFuncContext, f *IncCounterContext) {
+func funcEstimateMinStorageDeposit(ctx wasmlib.ScFuncContext, _ *EstimateMinStorageDepositContext) {
+	provided := ctx.Allowance().BaseTokens()
+	dummy := ScFuncs.EstimateMinStorageDeposit(ctx)
+	required := ctx.EstimateStorageDeposit(dummy.Func)
+	ctx.Require(provided >= required, "not enough funds")
+}
+
+func funcIncCounter(_ wasmlib.ScFuncContext, f *IncCounterContext) {
 	counter := f.State.Counter()
 	counter.SetValue(counter.Value() + 1)
 }
 
+func funcInfiniteLoop(_ wasmlib.ScFuncContext, _ *InfiniteLoopContext) {
+	for {
+		// do nothing, just waste gas
+	}
+}
+
 func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	if f.Params.Fail().Exists() {
-		ctx.Panic("failing on purpose")
+		ctx.Panic(MsgFailOnPurpose)
 	}
 }
 
 func funcPassTypesFull(ctx wasmlib.ScFuncContext, f *PassTypesFullContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(ParamHash))
-	ctx.Require(f.Params.Hash().Value() == hash, "Hash wrong")
-	ctx.Require(f.Params.Int64().Value() == 42, "int64 wrong")
-	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
-	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
-	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
+	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "wrong hname")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
+	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
+	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
+	ctx.Require(f.Params.String().Value() == ParamString, "wrong string")
+	ctx.Require(f.Params.StringZero().Value() == "", "wrong string-0")
+	// TODO more?
+}
+
+func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, _ *PingAllowanceBackContext) {
+	caller := ctx.Caller()
+	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
+	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.Send(caller.Address(), transfer)
 }
 
 func funcRunRecursion(ctx wasmlib.ScFuncContext, f *RunRecursionContext) {
-	depth := f.Params.IntValue().Value()
+	depth := f.Params.N().Value()
 	if depth <= 0 {
 		return
 	}
 
 	callOnChain := ScFuncs.CallOnChain(ctx)
-	callOnChain.Params.IntValue().SetValue(depth - 1)
+	callOnChain.Params.N().SetValue(depth - 1)
 	callOnChain.Params.HnameEP().SetValue(HFuncRunRecursion)
 	callOnChain.Func.Call()
-	retVal := callOnChain.Results.IntValue().Value()
-	f.Results.IntValue().SetValue(retVal)
+	retVal := callOnChain.Results.N().Value()
+	f.Results.N().SetValue(retVal)
 }
 
-func funcSendToAddress(ctx wasmlib.ScFuncContext, f *SendToAddressContext) {
-	transfer := wasmlib.NewScTransfersFromBalances(ctx.Balances())
-	ctx.TransferToAddress(f.Params.Address().Value(), transfer)
+func funcSendLargeRequest(_ wasmlib.ScFuncContext, _ *SendLargeRequestContext) {
 }
 
-func funcSetInt(ctx wasmlib.ScFuncContext, f *SetIntContext) {
+func funcSendNFTsBack(ctx wasmlib.ScFuncContext, _ *SendNFTsBackContext) {
+	address := ctx.Caller().Address()
+	allowance := ctx.Allowance()
+	transfer := wasmlib.NewScTransferFromBalances(allowance)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for nftID := range allowance.NftIDs() {
+		transfer = wasmlib.NewScTransferNFT(&nftID)
+		ctx.Send(address, transfer)
+	}
+}
+
+func funcSendToAddress(_ wasmlib.ScFuncContext, _ *SendToAddressContext) {
+	// transfer := wasmlib.NewScTransferFromBalances(ctx.Balances())
+	// ctx.Send(f.Params.Address().Value(), transfer)
+}
+
+func funcSetInt(_ wasmlib.ScFuncContext, f *SetIntContext) {
 	f.State.Ints().GetInt64(f.Params.Name().Value()).SetValue(f.Params.IntValue().Value())
 }
 
-//nolint:unparam
-func funcTestCallPanicFullEP(ctx wasmlib.ScFuncContext, f *TestCallPanicFullEPContext) {
+func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
+	programHash := f.Params.ProgHash().Value()
+	spawnName := ScName + "_spawned"
+	spawnDescr := "spawned contract description"
+	ctx.DeployContract(programHash, spawnName, spawnDescr, nil)
+
+	spawnHname := wasmtypes.NewScHname(spawnName)
+	for i := 0; i < 5; i++ {
+		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
+	}
+}
+
+func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
+	tokens := ctx.Allowance().BaseTokens()
+	address := ctx.Caller().Address()
+	tokensToTransfer := uint64(1_000_000)
+	transfer := wasmlib.NewScTransferBaseTokens(tokensToTransfer)
+	for ; tokens >= tokensToTransfer; tokens -= tokensToTransfer {
+		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+		ctx.Send(address, transfer)
+	}
+}
+
+func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTokensContext) {
+	tokens := ctx.Allowance().BaseTokens()
+	address := ctx.Caller().Address()
+	transfer := wasmlib.NewScTransferBaseTokens(tokens)
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	for _, token := range ctx.Allowance().TokenIDs() {
+		one := wasmtypes.NewScBigInt(1)
+		transfer = wasmlib.NewScTransferTokens(token, one)
+		tokens := ctx.Allowance().Balance(token)
+		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
+			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+			ctx.Send(address, transfer)
+		}
+	}
+}
+
+func funcTestBlockContext1(ctx wasmlib.ScFuncContext, _ *TestBlockContext1Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+func funcTestBlockContext2(ctx wasmlib.ScFuncContext, _ *TestBlockContext2Context) {
+	ctx.Panic(MsgCoreOnlyPanic)
+}
+
+func funcTestCallPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestCallPanicFullEPContext) {
+	ctx.Log("will be calling entry point '" + FuncTestPanicFullEP + "' from full EP")
 	ScFuncs.TestPanicFullEP(ctx).Func.Call()
 }
 
-//nolint:unparam
-func funcTestCallPanicViewEPFromFull(ctx wasmlib.ScFuncContext, f *TestCallPanicViewEPFromFullContext) {
+func funcTestCallPanicViewEPFromFull(ctx wasmlib.ScFuncContext, _ *TestCallPanicViewEPFromFullContext) {
+	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from full EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
 }
 
@@ -130,87 +212,134 @@ func funcTestChainOwnerIDFull(ctx wasmlib.ScFuncContext, f *TestChainOwnerIDFull
 	f.Results.ChainOwnerID().SetValue(ctx.ChainOwnerID())
 }
 
-//nolint:unparam
-func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, f *TestEventLogDeployContext) {
+func funcTestEventLogDeploy(ctx wasmlib.ScFuncContext, _ *TestEventLogDeployContext) {
 	// deploy the same contract with another name
-	programHash := ctx.Utility().HashBlake2b([]byte("testcore"))
+	programHash := ctx.Utility().HashBlake2b([]byte(ScName))
 	ctx.DeployContract(programHash, ContractNameDeployed, "test contract deploy log", nil)
 }
 
-//nolint:unparam
-func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, f *TestEventLogEventDataContext) {
-	ctx.Event("[Event] - Testing Event...")
+func funcTestEventLogEventData(ctx wasmlib.ScFuncContext, _ *TestEventLogEventDataContext) {
+	ctx.Event(MsgTestingEvent)
 }
 
 func funcTestEventLogGenericData(ctx wasmlib.ScFuncContext, f *TestEventLogGenericDataContext) {
-	event := "[GenericData] Counter Number: " + f.Params.Counter().String()
+	event := MsgCounterNumber + f.Params.Counter().String()
 	ctx.Event(event)
 }
 
-//nolint:unparam
-func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, f *TestPanicFullEPContext) {
+func funcTestPanicFullEP(ctx wasmlib.ScFuncContext, _ *TestPanicFullEPContext) {
 	ctx.Panic(MsgFullPanic)
 }
 
-func funcWithdrawToChain(ctx wasmlib.ScFuncContext, f *WithdrawToChainContext) {
-	coreaccounts.ScFuncs.Withdraw(ctx).Func.PostToChain(f.Params.ChainID().Value())
+func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContext) {
+	targetChain := f.Params.ChainID().Value()
+	withdrawal := f.Params.BaseTokensWithdrawal().Value()
+	// gasBudget := f.Params.GasBudget().Value()
+
+	// TODO more
+	availableTokens := ctx.Allowance().BaseTokens()
+	// requiredStorageDepositDeposit := ctx.EstimateRequiredStorageDepositDeposit(request)
+	if availableTokens < 1000 {
+		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
+	}
+	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
+	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+
+	//request := isc.RequestParameters{
+	//	TargetAddress:  targetChain.AsAddress(),
+	//	FungibleTokens: isc.NewFungibleBaseTokens(availableTokens),
+	//	Metadata: &isc.SendMetadata{
+	//		TargetContract: accounts.Contract.Hname(),
+	//		EntryPoint:     accounts.FuncWithdraw.Hname(),
+	//		GasBudget:      gasBudget,
+	//		Allowance:      isc.NewAllowanceBaseTokens(withdrawal),
+	//	},
+	//}
+
+	withdraw := coreaccounts.ScFuncs.Withdraw(ctx)
+	withdraw.Func.TransferBaseTokens(withdrawal).PostToChain(targetChain)
 }
 
 func viewCheckContextFromViewEP(ctx wasmlib.ScViewContext, f *CheckContextFromViewEPContext) {
 	ctx.Require(f.Params.AgentID().Value() == ctx.AccountID(), "fail: agentID")
-	ctx.Require(f.Params.ChainID().Value() == ctx.ChainID(), "fail: chainID")
+	ctx.Require(f.Params.ChainID().Value() == ctx.CurrentChainID(), "fail: chainID")
 	ctx.Require(f.Params.ChainOwnerID().Value() == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	ctx.Require(f.Params.ContractCreator().Value() == ctx.ContractCreator(), "fail: contractCreator")
 }
 
-func viewFibonacci(ctx wasmlib.ScViewContext, f *FibonacciContext) {
-	n := f.Params.IntValue().Value()
+func fibonacci(n uint64) uint64 {
+	if n <= 1 {
+		return n
+	}
+	return fibonacci(n-1) + fibonacci(n-2)
+}
+
+func viewFibonacci(_ wasmlib.ScViewContext, f *FibonacciContext) {
+	n := f.Params.N().Value()
+	result := fibonacci(n)
+	f.Results.N().SetValue(result)
+}
+
+func viewFibonacciIndirect(ctx wasmlib.ScViewContext, f *FibonacciIndirectContext) {
+	n := f.Params.N().Value()
 	if n == 0 || n == 1 {
-		f.Results.IntValue().SetValue(n)
+		f.Results.N().SetValue(n)
 		return
 	}
 
-	fib := ScFuncs.Fibonacci(ctx)
-	fib.Params.IntValue().SetValue(n - 1)
+	fib := ScFuncs.FibonacciIndirect(ctx)
+	fib.Params.N().SetValue(n - 1)
 	fib.Func.Call()
-	n1 := fib.Results.IntValue().Value()
+	n1 := fib.Results.N().Value()
 
-	fib.Params.IntValue().SetValue(n - 2)
+	fib.Params.N().SetValue(n - 2)
 	fib.Func.Call()
-	n2 := fib.Results.IntValue().Value()
+	n2 := fib.Results.N().Value()
 
-	f.Results.IntValue().SetValue(n1 + n2)
+	f.Results.N().SetValue(n1 + n2)
 }
 
-func viewGetCounter(ctx wasmlib.ScViewContext, f *GetCounterContext) {
+func viewGetCounter(_ wasmlib.ScViewContext, f *GetCounterContext) {
 	f.Results.Counter().SetValue(f.State.Counter().Value())
 }
 
 func viewGetInt(ctx wasmlib.ScViewContext, f *GetIntContext) {
 	name := f.Params.Name().Value()
 	value := f.State.Ints().GetInt64(name)
-	ctx.Require(value.Exists(), "param 'value' not found")
+	ctx.Require(value.Exists(), "param '"+name+"' not found")
 	f.Results.Values().GetInt64(name).SetValue(value.Value())
 }
 
-//nolint:unparam
-func viewJustView(ctx wasmlib.ScViewContext, f *JustViewContext) {
-	ctx.Log("doing nothing...")
+func viewGetStringValue(ctx wasmlib.ScViewContext, _ *GetStringValueContext) {
+	ctx.Panic(MsgCoreOnlyPanic)
+	// varName := f.Params.VarName().Value()
+	// value := f.State.Strings().GetString(varName).Value()
+	// f.Results.Vars().GetString(varName).SetValue(value)
+}
+
+func viewInfiniteLoopView(_ wasmlib.ScViewContext, _ *InfiniteLoopViewContext) {
+	for {
+		// do nothing, just waste gas
+	}
+}
+
+func viewJustView(ctx wasmlib.ScViewContext, _ *JustViewContext) {
+	ctx.Log(MsgJustView)
 }
 
 func viewPassTypesView(ctx wasmlib.ScViewContext, f *PassTypesViewContext) {
 	hash := ctx.Utility().HashBlake2b([]byte(ParamHash))
-	ctx.Require(f.Params.Hash().Value() == hash, "Hash wrong")
-	ctx.Require(f.Params.Int64().Value() == 42, "int64 wrong")
-	ctx.Require(f.Params.Int64Zero().Value() == 0, "int64-0 wrong")
-	ctx.Require(f.Params.String().Value() == string(ParamString), "string wrong")
-	ctx.Require(f.Params.StringZero().Value() == "", "string-0 wrong")
-	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "Hname wrong")
-	ctx.Require(f.Params.HnameZero().Value() == 0, "Hname-0 wrong")
+	ctx.Require(f.Params.Hash().Value() == hash, "wrong hash")
+	ctx.Require(f.Params.Hname().Value() == ctx.Utility().Hname(ParamHname), "wrong hname")
+	ctx.Require(f.Params.HnameZero().Value() == 0, "wrong hname-0")
+	ctx.Require(f.Params.Int64().Value() == 42, "wrong int64")
+	ctx.Require(f.Params.Int64Zero().Value() == 0, "wrong int64-0")
+	ctx.Require(f.Params.String().Value() == ParamString, "wrong string")
+	ctx.Require(f.Params.StringZero().Value() == "", "wrong string-0")
+	// TODO more?
 }
 
-//nolint:unparam
-func viewTestCallPanicViewEPFromView(ctx wasmlib.ScViewContext, f *TestCallPanicViewEPFromViewContext) {
+func viewTestCallPanicViewEPFromView(ctx wasmlib.ScViewContext, _ *TestCallPanicViewEPFromViewContext) {
+	ctx.Log("will be calling entry point '" + ViewTestPanicViewEP + "' from view EP")
 	ScFuncs.TestPanicViewEP(ctx).Func.Call()
 }
 
@@ -218,8 +347,7 @@ func viewTestChainOwnerIDView(ctx wasmlib.ScViewContext, f *TestChainOwnerIDView
 	f.Results.ChainOwnerID().SetValue(ctx.ChainOwnerID())
 }
 
-//nolint:unparam
-func viewTestPanicViewEP(ctx wasmlib.ScViewContext, f *TestPanicViewEPContext) {
+func viewTestPanicViewEP(ctx wasmlib.ScViewContext, _ *TestPanicViewEPContext) {
 	ctx.Panic(MsgViewPanic)
 }
 
@@ -227,30 +355,4 @@ func viewTestSandboxCall(ctx wasmlib.ScViewContext, f *TestSandboxCallContext) {
 	getChainInfo := coregovernance.ScFuncs.GetChainInfo(ctx)
 	getChainInfo.Func.Call()
 	f.Results.SandboxCall().SetValue(getChainInfo.Results.Description().Value())
-}
-
-//nolint:unparam
-func funcTestBlockContext1(ctx wasmlib.ScFuncContext, f *TestBlockContext1Context) {
-	ctx.Panic(MsgCoreOnlyPanic)
-}
-
-//nolint:unparam
-func funcTestBlockContext2(ctx wasmlib.ScFuncContext, f *TestBlockContext2Context) {
-	ctx.Panic(MsgCoreOnlyPanic)
-}
-
-//nolint:unparam
-func viewGetStringValue(ctx wasmlib.ScViewContext, f *GetStringValueContext) {
-	ctx.Panic(MsgCoreOnlyPanic)
-}
-
-func funcSpawn(ctx wasmlib.ScFuncContext, f *SpawnContext) {
-	spawnName := ScName + "_spawned"
-	spawnDescr := "spawned contract description"
-	ctx.DeployContract(f.Params.ProgHash().Value(), spawnName, spawnDescr, nil)
-
-	spawnHname := ctx.Utility().Hname(spawnName)
-	for i := 0; i < 5; i++ {
-		ctx.Call(spawnHname, HFuncIncCounter, nil, nil)
-	}
 }

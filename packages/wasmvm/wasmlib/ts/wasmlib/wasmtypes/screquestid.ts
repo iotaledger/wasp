@@ -7,6 +7,7 @@ import * as wasmtypes from "./index";
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScRequestIDLength = 34;
+const RequestIDSeparator = "-"
 
 export class ScRequestID {
     id: u8[] = wasmtypes.zeroes(ScRequestIDLength);
@@ -33,7 +34,7 @@ export function requestIDDecode(dec: wasmtypes.WasmDecoder): ScRequestID {
 }
 
 export function requestIDEncode(enc: wasmtypes.WasmEncoder, value: ScRequestID): void {
-    enc.fixedBytes(value.toBytes(), ScRequestIDLength);
+    enc.fixedBytes(value.id, ScRequestIDLength);
 }
 
 export function requestIDFromBytes(buf: u8[]): ScRequestID {
@@ -54,9 +55,18 @@ export function requestIDToBytes(value: ScRequestID): u8[] {
     return value.id;
 }
 
+export function requestIDFromString(value: string): ScRequestID {
+    let elts = value.split(RequestIDSeparator);
+    let index = wasmtypes.uint16ToBytes(wasmtypes.uint16FromString(elts[0]));
+    let buf = wasmtypes.hexDecode(elts[1])
+    return requestIDFromBytes(buf.concat(index));
+}
+
 export function requestIDToString(value: ScRequestID): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    let reqID = requestIDToBytes(value)
+    let txID = wasmtypes.hexEncode(reqID.slice(0, ScRequestIDLength-2))
+    let index = wasmtypes.uint16FromBytes(reqID.slice(ScRequestIDLength-2))
+    return wasmtypes.uint16ToString(index) + RequestIDSeparator + txID;
 }
 
 function requestIDFromBytesUnchecked(buf: u8[]): ScRequestID {

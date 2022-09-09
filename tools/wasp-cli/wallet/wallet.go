@@ -1,9 +1,8 @@
 package wallet
 
 import (
-	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
@@ -16,7 +15,7 @@ type WalletConfig struct {
 }
 
 type Wallet struct {
-	seed *seed.Seed
+	KeyPair *cryptolib.KeyPair
 }
 
 var initCmd = &cobra.Command{
@@ -24,15 +23,16 @@ var initCmd = &cobra.Command{
 	Short: "Initialize a new wallet",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		seed := base58.Encode(seed.NewSeed().Bytes())
-		viper.Set("wallet.seed", seed)
+		seed := cryptolib.NewSeed()
+		seedString := base58.Encode(seed[:])
+		viper.Set("wallet.seed", seedString)
 		log.Check(viper.WriteConfig())
 
 		log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
 		log.Printf("\nIMPORTANT: wasp-cli is alpha phase. The seed is currently being stored " +
 			"in a plain text file which is NOT secure. Do not use this seed to store funds " +
 			"in the mainnet!\n")
-		log.Verbosef("\nSeed: %s\n", seed)
+		log.Verbosef("\nSeed: %s\n", seedString)
 	},
 }
 
@@ -43,15 +43,17 @@ func Load() *Wallet {
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)
-	return &Wallet{seed.NewSeed(seedBytes)}
+	seed := cryptolib.NewSeedFromBytes(seedBytes)
+	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
+	return &Wallet{KeyPair: kp}
 }
 
 var addressIndex int
 
-func (w *Wallet) KeyPair() *ed25519.KeyPair {
-	return w.seed.KeyPair(uint64(addressIndex))
+func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
+	return w.KeyPair.GetPrivateKey()
 }
 
-func (w *Wallet) Address() ledgerstate.Address {
-	return w.seed.Address(uint64(addressIndex)).Address()
+func (w *Wallet) Address() iotago.Address {
+	return w.KeyPair.GetPublicKey().AsEd25519Address()
 }

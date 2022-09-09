@@ -6,27 +6,27 @@ package wasmhost
 import (
 	"errors"
 
-	"github.com/bytecodealliance/wasmtime-go"
+	wasmtime "github.com/bytecodealliance/wasmtime-go"
 )
 
 type WasmTimeVM struct {
 	WasmVMBase
 	engine     *wasmtime.Engine
 	instance   *wasmtime.Instance
-	interrupt  *wasmtime.InterruptHandle
 	linker     *wasmtime.Linker
 	memory     *wasmtime.Memory
 	module     *wasmtime.Module
 	store      *wasmtime.Store
 	lastBudget uint64
+	instances  uint32
 }
 
 func NewWasmTimeVM() WasmVM {
-	vm := &WasmTimeVM{}
 	config := wasmtime.NewConfig()
-	config.SetInterruptable(true)
-	// config.SetConsumeFuel(true)
-	vm.engine = wasmtime.NewEngineWithConfig(config)
+	// config.SetInterruptable(true)
+	config.SetConsumeFuel(true)
+	vm := &WasmTimeVM{engine: wasmtime.NewEngineWithConfig(config)}
+	vm.timeoutStarted = true // DisableWasmTimeout
 	return vm
 }
 
@@ -61,47 +61,23 @@ func (vm *WasmTimeVM) GasBurned() uint64 {
 	// consume 0 fuel to determine remaining budget
 	remainingBudget, err := vm.store.ConsumeFuel(0)
 	if err != nil {
-		panic("GasBurned.determine: " + err.Error())
+		vm.wc.proc.log.Infof("GasBurned.determine: " + err.Error())
 	}
 
 	burned := vm.lastBudget - remainingBudget
 	return burned
 }
 
-func (vm *WasmTimeVM) Instantiate() (err error) {
-	// vm.GasBudget(1_000_000)
-	// vm.GasDisable(true)
-	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
-	// vm.GasDisable(false)
-	// burned := vm.GasBurned()
-	// _ = burned
-	if err != nil {
-		return err
-	}
-	memory := vm.instance.GetExport(vm.store, "memory")
-	if memory == nil {
-		return errors.New("no memory export")
-	}
-	vm.memory = memory.Memory()
-	if vm.memory == nil {
-		return errors.New("not a memory type")
-	}
-	return nil
-}
-
 func (vm *WasmTimeVM) Interrupt() {
-	vm.interrupt.Interrupt()
+	// interrupt, err := vm.store.InterruptHandle()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// interrupt.Interrupt()
 }
 
-func (vm *WasmTimeVM) LinkHost(proc *WasmProcessor) (err error) {
-	_ = vm.WasmVMBase.LinkHost(proc)
-
+func (vm *WasmTimeVM) LinkHost() (err error) {
 	vm.store = wasmtime.NewStore(vm.engine)
-	vm.interrupt, err = vm.store.InterruptHandle()
-	if err != nil {
-		return err
-	}
-
 	vm.linker = wasmtime.NewLinker(vm.engine)
 
 	// new Wasm VM interface
@@ -130,14 +106,70 @@ func (vm *WasmTimeVM) LinkHost(proc *WasmProcessor) (err error) {
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) (err error) {
 	vm.module, err = wasmtime.NewModule(vm.engine, wasmData)
+	return err
+}
+
+func (vm *WasmTimeVM) NewInstance(wc *WasmContext) WasmVM {
+	if vm.wc == nil {
+		vm.wc = wc
+	}
+
+	// WasmTime stores instances in a store, but provides no way to release an
+	// obsolete instance. They keep on being retained by the store after usage,
+	// until at 10,000 instances we get an error 'max instances exceeded', i.e.
+	// there is a memory leak here we need to work around.
+	//
+	// To combat this leak we keep track of the number of instances and when we
+	// hit a magic number (256 in this case) we tell our main WasmVM to do a hard
+	// relink of the Wasm module. Since this means we get a new linker with a new
+	// store for the loaded Wasm module, the old store is now being abandoned.
+	// Instances keep track of the store they are in through their WasmContext.
+	// That means that store will stay alive as long as there still are instances
+	// using it (usually because of nested calls). Once all WasmContexts that
+	// reference the old store have been released, there is nothing referencing
+	// the old store any more, and it will be cleaned up by WasmTime-Go.
+	vm.instances++
+	if (vm.instances & 0xff) == 0 {
+		err := vm.LinkHost()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	vmInstance := &WasmTimeVM{
+		engine: vm.engine,
+		module: vm.module,
+		linker: vm.linker,
+		store:  vm.store,
+	}
+	vmInstance.wc = wc
+	vmInstance.timeoutStarted = true // DisableWasmTimeout
+	err := vmInstance.newInstance()
+	if err != nil {
+		panic("cannot instantiate: " + err.Error())
+	}
+	return vmInstance
+}
+
+func (vm *WasmTimeVM) newInstance() (err error) {
+	vm.GasBudget(1_000_000)
+	vm.wc.GasDisable(true)
+	vm.instance, err = vm.linker.Instantiate(vm.store, vm.module)
+	vm.wc.GasDisable(false)
+	burned := vm.GasBurned()
+	_ = burned
 	if err != nil {
 		return err
 	}
-	return vm.Instantiate()
-}
-
-func (vm *WasmTimeVM) NewInstance() WasmVM {
-	return &WasmTimeVM{engine: vm.engine, module: vm.module}
+	memory := vm.instance.GetExport(vm.store, "memory")
+	if memory == nil {
+		return errors.New("no memory export")
+	}
+	vm.memory = memory.Memory()
+	if vm.memory == nil {
+		return errors.New("not a memory type")
+	}
+	return nil
 }
 
 func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) error {
@@ -159,6 +191,7 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(vm.store, index)
+		vm.store.GC()
 		return err
 	})
 }

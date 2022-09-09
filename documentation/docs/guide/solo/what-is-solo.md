@@ -1,54 +1,83 @@
 ---
-description: Solo is a testing framework that allows developers to validate real smart contracts and entire inter-chain protocols
+description: 'Solo is a testing framework that allows developers to validate real smart contracts and entire inter-chain
+protocols.'
 image: /img/logo/WASP_logo_dark.png
 keywords:
+
 - testing framework
 - golang
 - rust
 - inter-chain protocols
 - validate smart contracts
 - install
+- how-to
+
 ---
-# Solo
+
+# Testing Smart Contracts with Solo
 
 ## What is Solo?
 
-[_Solo_](https://github.com/iotaledger/wasp/tree/master/packages/solo) is a testing framework that allows developers to validate real smart contracts and entire inter-chain protocols before deploying them on the distributed network.
+[_Solo_](https://github.com/iotaledger/wasp/tree/develop/packages/solo) is a testing framework that allows developers to
+validate real smart contracts and entire inter-chain protocols before deploying them on the distributed network.
 
 ## Installation
 
-_Solo_ tests are written in Go. Go (version 1.16) needs to be installed on your machine.
+### Prerequisites
 
-_Solo_ is part of the [_Wasp_ codebase repository](https://github.com/iotaledger/wasp.git). You can access the Solo framework by cloning the repository with the following command:
+[Go (version 1.18)](https://tip.golang.org/doc/go1.18). As _Solo_ tests are written in Go, you must 
+[install Go](https://go.dev/doc/install).
+
+### Access the Solo Framework
+
+You can access the Solo package by cloning the [Wasp repository](#clone-the-wasp-repository)
+or [installing the Solo package](#install-the-solo-package).
+
+#### Clone the Wasp Repository
+
+_Solo_ is part of the [_Wasp_ codebase repository](https://github.com/iotaledger/wasp.git). You can access the Solo
+framework by cloning the repository with the following command:
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
 ```
 
-Alternatively, you can install the Solo package separately using the following command:
+After you have cloned the repository, you can access the Solo package in the `/packages/solo` folder.
 
-In Linux/macOS:
+#### Install the Solo Package
+
+You can install the Solo package separately using the following command:
 
 ```shell
 go get github.com/iotaledger/wasp/packages/solo
 ```
 
-In Windows:
+:::tip Go Docs
 
-```shell
-go get -buildmode=exe github.com/iotaledger/wasp/packages/solo
-```
+You can browse the Solo Go API reference (updated to the `master` branch) in 
+[go-docs](https://pkg.go.dev/github.com/iotaledger/wasp/packages/solo).
 
-To run Rust/Wasm smart contracts you will also need [Rust](https://www.rust-lang.org/tools/install) and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/) installed.
-You can use any development environment for Rust and Go.
-The GoLang environment with the Rust plugin is a good combination.
-
-You can find example implementations of smart contracts (including source code
-and tests) in the Wasp repository, in the
-[contracts/wasm folder](https://github.com/iotaledger/wasp/tree/master/contracts/wasm).
-
-:::tip
-You can find the documentation for all the functionalities available in solo in [go-docs](https://pkg.go.dev/github.com/iotaledger/wasp/packages/solo).
 :::
 
-In the following pages some usage examples will be presented. The example code can be found in the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
+### Example Contracts
+
+You will need a smart contract to test along with Solo.
+You can find example implementations of Rust/Wasm smart contracts, including source code and tests, in the Wasp
+repository’s [contracts/wasm folder](https://github.com/iotaledger/wasp/tree/develop/contracts/wasm).
+
+For information on creating Wasm smart contracts, refer to the [Wasm VM chapter](../wasm_vm/intro.mdx).
+
+The following sections will present some Solo usage examples. You can find the example code in
+the [Wasp repository](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).
+
+### Run `*_test` Files
+
+You can run `*_test` files by moving to their directory and running the following command:
+
+```bash
+go test
+```
+
+If you run this command from the `/documentation/tutorial-examples` folder, you will run the 
+[Tutorial Test](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples/tutorial-test.go), which
+contains all the examples explained in the following sections. 

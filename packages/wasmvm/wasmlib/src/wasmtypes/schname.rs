@@ -13,8 +13,8 @@ pub const SC_HNAME_LENGTH: usize = 4;
 pub struct ScHname(pub u32);
 
 impl ScHname {
-    pub fn new(buf: &[u8]) -> ScHname {
-        ScHname(uint32_from_bytes(buf))
+    pub fn new(name: &str) -> ScHname {
+        hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -48,6 +48,13 @@ pub fn hname_from_bytes(buf: &[u8]) -> ScHname {
 
 pub fn hname_to_bytes(value: ScHname) -> Vec<u8> {
     value.0.to_le_bytes().to_vec()
+}
+
+pub fn hname_from_string(value: &str) -> ScHname {
+    if value.len() > 8 {
+        panic("invalid Hname string");
+    }
+    ScHname(u32::from_str_radix(value, 16).unwrap())
 }
 
 pub fn hname_to_string(value: ScHname) -> String {

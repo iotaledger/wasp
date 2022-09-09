@@ -130,7 +130,7 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	ctx := setupTest(t)
 
 	localStatePost := inccounter.ScFuncs.LocalStatePost(ctx)
-	localStatePost.Func.TransferIotas(3).Post()
+	localStatePost.Func.Post()
 	require.NoError(t, ctx.Err)
 
 	require.True(t, ctx.WaitForPendingRequests(3))
@@ -211,7 +211,7 @@ func TestLoop(t *testing.T) {
 	endlessLoop := inccounter.ScFuncs.EndlessLoop(ctx)
 	endlessLoop.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "interrupt")
+	require.Contains(t, ctx.Err.Error(), "gas budget exceeded")
 	wasmhost.DisableWasmTimeout = save
 
 	inccounter.ScFuncs.Increment(ctx).Func.Post()

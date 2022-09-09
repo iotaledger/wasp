@@ -10,15 +10,20 @@ var commonTemplates = model.StringMap{
 	"else": `
 `,
 	// *******************************
-	"nil": `
-`,
-	// *******************************
 	"newline": `
 
 `,
 	// *******************************
 	"copyright": `
 $#emit initGlobals
+$#if copyrightMessage userCopyrightMessage defaultCopyrightMessage
+`,
+	// *******************************
+	"userCopyrightMessage": `
+$copyrightMessage
+`,
+	// *******************************
+	"defaultCopyrightMessage": `
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
@@ -50,7 +55,7 @@ func TestDeploy(t *testing.T) {
 `,
 	// *******************************
 	"setupInitFunc": `
-$#set initFunc 
+$#set initFunc $nil
 $#if init setInitFunc
 `,
 	// *******************************

@@ -2,6 +2,9 @@
   "database": {
     "directory": "/wasp/waspdb"
   },
+  "l1": {
+    "inxAddress": "hornet-nest:9029"
+  },
   "logger": {
     "level": "debug",
     "disableCaller": false,
@@ -21,26 +24,60 @@
     "disablePlugins": [],
     "enablePlugins": []
   },
+  "users": {
+    "wasp": {
+      "password": "wasp",
+      "permissions": [
+        "dashboard",
+        "api",
+        "chain.read",
+        "chain.write"
+      ]
+    }
+  },
   "webapi": {
-    "bindAddress": "0.0.0.0:9090",
-    "adminWhitelistDisabled": true
+    "auth": {
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      },
+      "scheme": "none"
+    },
+    "bindAddress": "0.0.0.0:9090"
   },
   "dashboard": {
     "auth": {
-      "scheme": "basic",
-      "username": "wasp",
-      "password": "wasp"
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      },
+      "scheme": "basic"
     },
     "bindAddress": "0.0.0.0:7000"
   },
-  "peering":{
+  "peering": {
     "port": 4000,
-    "netid": "127.0.0.1:4000"
+    "netid": "0.0.0.0:4000"
   },
-  "nodeconn": {
-    "address": "devnet_goshimmer:5000"
-  },
-  "nanomsg":{
+  "nanomsg": {
     "port": 5550
+  },
+  "metrics": {
+    "bindAddress": "0.0.0.0:2112",
+    "enabled": true
   }
 }

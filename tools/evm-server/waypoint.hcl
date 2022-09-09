@@ -1,10 +1,10 @@
 # The name of your project. A project typically maps 1:1 to a VCS repository.
 # This name must be unique for your Waypoint server. If you're running in
 # local mode, this must be unique to your machine.
-project = "iscp"
+project = "isc"
 
 # Labels can be specified for organizational purposes.
-labels = { "team" = "iscp" }
+labels = { "team" = "isc" }
 
 variable "chainid" {
     type = string
@@ -37,7 +37,7 @@ app "wasp-evm-server" {
             dockerfile = "../../Dockerfile"
             context    = "../.."
             build_args = {
-                GOLANG_IMAGE_TAG = "1.17-buster"
+                GOLANG_IMAGE_TAG = "1.18-buster"
                 BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${gitrefhash()}"
                 BUILD_TARGET = "./tools/wasp-cli"
                 FINAL_BINARY = "wasp-cli"

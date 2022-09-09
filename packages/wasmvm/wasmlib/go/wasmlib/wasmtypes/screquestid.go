@@ -3,9 +3,16 @@
 
 package wasmtypes
 
+import (
+	"strings"
+)
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-const ScRequestIDLength = 34
+const (
+	ScRequestIDLength  = 34
+	RequestIDSeparator = "-"
+)
 
 type ScRequestID struct {
 	id [ScRequestIDLength]byte
@@ -26,7 +33,7 @@ func RequestIDDecode(dec *WasmDecoder) ScRequestID {
 }
 
 func RequestIDEncode(enc *WasmEncoder, value ScRequestID) {
-	enc.FixedBytes(value.Bytes(), ScRequestIDLength)
+	enc.FixedBytes(value.id[:], ScRequestIDLength)
 }
 
 func RequestIDFromBytes(buf []byte) ScRequestID {
@@ -47,9 +54,19 @@ func RequestIDToBytes(value ScRequestID) []byte {
 	return value.id[:]
 }
 
+func RequestIDFromString(value string) ScRequestID {
+	elts := strings.Split(value, RequestIDSeparator)
+	index := Uint16ToBytes(Uint16FromString(elts[0]))
+	buf := HexDecode(elts[1])
+	return RequestIDFromBytes(append(buf, index...))
+}
+
 func RequestIDToString(value ScRequestID) string {
-	// TODO standardize human readable string
-	return Base58Encode(value.id[:])
+	reqID := RequestIDToBytes(value)
+	// the last 2 byte is the TransactionOutputIndex
+	txID := HexEncode(reqID[:ScRequestIDLength-2])
+	index := Uint16FromBytes(reqID[ScRequestIDLength-2:])
+	return Uint16ToString(index) + RequestIDSeparator + txID
 }
 
 func requestIDFromBytesUnchecked(buf []byte) ScRequestID {

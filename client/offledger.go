@@ -1,15 +1,16 @@
 package client
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
+	"net/http"
+
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func (c *WaspClient) PostOffLedgerRequest(chainID *iscp.ChainID, req *request.OffLedger) error {
+func (c *WaspClient) PostOffLedgerRequest(chainID *isc.ChainID, req isc.OffLedgerRequest) error {
 	data := model.OffLedgerRequestBody{
 		Request: model.NewBytes(req.Bytes()),
 	}
-	return c.do("POST", routes.NewRequest(chainID.Base58()), data, nil)
+	return c.do(http.MethodPost, routes.NewRequest(chainID.String()), data, nil)
 }

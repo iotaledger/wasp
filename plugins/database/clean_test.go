@@ -1,4 +1,4 @@
-// +build rocksdb
+//go:build rocksdb
 
 package database
 
@@ -7,8 +7,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,10 +31,10 @@ func TestDbClean(t *testing.T) {
 
 	defer os.RemoveAll(dir)
 
-	tmpdb, err := database.NewDB(dir)
+	tmpdb, err := dbmanager.NewDB(dir)
 	assert.NoError(t, err)
 
-	storeTmp := tmpdb.NewStore().WithRealm([]byte("realm"))
+	storeTmp := tmpdb.NewStore()
 
 	err = storeTmp.Clear()
 	assert.NoError(t, err)

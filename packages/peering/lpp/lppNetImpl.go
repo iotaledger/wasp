@@ -4,18 +4,17 @@
 // Package lpp implements a peering.NetworkProvider based on the libp2p.
 //
 // The set of known peers is managed in several places:
-//  - TrustManager contains a registry of trusted peers and their pub keys.
-//    That's the main reference DB for the authentication. It is persistent.
-//  - libp2p.Peerstore -- loaded with addresses and public keys based on the
-//    TrustManager. It is used by the libp2p for address resolution and
-//    protocol negotiation.
-//  - In-memory copy of the trust DB in the netImpl struct (maps: peerNy*)
-//    with additional runtime data needed for a fast lookup of peers by
-//    their libp2p IDs, as well as for authentication etc.
+//   - TrustManager contains a registry of trusted peers and their pub keys.
+//     That's the main reference DB for the authentication. It is persistent.
+//   - libp2p.Peerstore -- loaded with addresses and public keys based on the
+//     TrustManager. It is used by the libp2p for address resolution and
+//     protocol negotiation.
+//   - In-memory copy of the trust DB in the netImpl struct (maps: peerNy*)
+//     with additional runtime data needed for a fast lookup of peers by
+//     their libp2p IDs, as well as for authentication etc.
 //
 // The main identification of a peer is its public key. The address (NetID)
 // may change over time (because of NAT, and similar reasons).
-//
 package lpp
 
 import (
@@ -27,22 +26,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
-	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/peerstore"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
-	libp2ptls "github.com/libp2p/go-libp2p-tls"
-	"github.com/libp2p/go-tcp-transport"
+	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	libp2ppeer "github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
+	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
 )
@@ -64,7 +63,7 @@ type netImpl struct {
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
 	peersLock   *sync.RWMutex
 	recvEvents  *events.Event // Used to publish events to all attached clients.
-	nodeKeyPair *ed25519.KeyPair
+	nodeKeyPair *cryptolib.KeyPair
 	trusted     peering.TrustedNetworkManager
 	log         *logger.Logger
 }
@@ -79,16 +78,16 @@ var (
 func NewNetworkProvider(
 	myNetID string,
 	port int,
-	nodeKeyPair *ed25519.KeyPair,
+	nodeKeyPair *cryptolib.KeyPair,
 	trusted peering.TrustedNetworkManager,
 	log *logger.Logger,
 ) (peering.NetworkProvider, peering.TrustedNetworkManager, error) {
-	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.PrivateKey.Bytes())
+	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.GetPrivateKey().AsBytes())
 	if err != nil {
 		return nil, nil, xerrors.Errorf("unable to convert the private key: %w", err)
 	}
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	lppHost, err := libp2p.New(ctx,
+	lppHost, err := libp2p.New(
 		libp2p.Identity(privKey),
 		libp2p.ListenAddrStrings(
 			fmt.Sprintf("/ip4/0.0.0.0/udp/%v/quic", port),
@@ -139,17 +138,17 @@ func NewNetworkProvider(
 func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, error) {
 	lppPeerID, lppPeerPub, err := n.lppTrustedPeerID(trustedPeer)
 	if err != nil {
-		return libp2ppeer.ID(""), err
+		return "", err
 	}
 	peerHost, peerPort, err := peering.ParseNetID(trustedPeer.NetID)
 	if err != nil {
-		return libp2ppeer.ID(""), xerrors.Errorf("failed to parse trusted peer NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", xerrors.Errorf("failed to parse trusted peer NetID=%v, error: %w", trustedPeer.NetID, err)
 	}
 	//
 	// Resolve IP addresses.
 	peerIPs, err := net.LookupIP(peerHost)
 	if err != nil {
-		return libp2ppeer.ID(""), xerrors.Errorf("failed to lookup IPs for NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", xerrors.Errorf("failed to lookup IPs for NetID=%v, error: %w", trustedPeer.NetID, err)
 	}
 	//
 	// Create multiaddresses.
@@ -169,7 +168,7 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 			}
 			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
 			if err != nil {
-				return libp2ppeer.ID(""), xerrors.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
+				return "", xerrors.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
 			}
 			addrs = append(addrs, addr)
 		}
@@ -178,19 +177,19 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 	n.lppHost.Peerstore().AddAddrs(lppPeerID, addrs, peerstore.PermanentAddrTTL)
 	err = n.lppHost.Peerstore().AddPubKey(lppPeerID, lppPeerPub)
 	if err != nil {
-		return libp2ppeer.ID(""), xerrors.Errorf("failed add PubKey for NetID=%v, error: %w", trustedPeer.NetID, err)
+		return "", xerrors.Errorf("failed add PubKey for NetID=%v, error: %w", trustedPeer.NetID, err)
 	}
 	return lppPeerID, nil
 }
 
 func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, crypto.PubKey, error) {
-	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey.Bytes())
+	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey.AsBytes())
 	if err != nil {
-		return libp2ppeer.ID(""), nil, xerrors.Errorf("failed to convert pub key: %w", err)
+		return "", nil, xerrors.Errorf("failed to convert pub key: %w", err)
 	}
 	lppPeerID, err := libp2ppeer.IDFromPublicKey(lppPeerPub)
 	if err != nil {
-		return libp2ppeer.ID(""), nil, xerrors.Errorf("failed to make libp2p:peer.ID: %w", err)
+		return "", nil, xerrors.Errorf("failed to make libp2p:peer.ID: %w", err)
 	}
 	return lppPeerID, lppPeerPub, nil
 }
@@ -214,7 +213,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	}
 	peerMsg, err := peering.NewPeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
-		n.log.Warnf("Error while decoding a message, reason=%v", err)
+		n.log.Warnf("error while decoding a message, reason=%v", err)
 		return
 	}
 	remotePeer.RecvMsg(peerMsg)
@@ -276,7 +275,7 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 		p.trust(true)                 // It might be distrusted previously.
 		p.setNetID(trustedPeer.NetID) // It might be changed.
 	} else {
-		p = newPeer(trustedPeer.NetID, &trustedPeer.PubKey, lppPeerID, n)
+		p = newPeer(trustedPeer.NetID, trustedPeer.PubKey, lppPeerID, n)
 		n.peers[lppPeerID] = p
 	}
 	return nil
@@ -299,13 +298,13 @@ func (n *netImpl) eventHandler(handler interface{}, params ...interface{}) {
 }
 
 // Run starts listening and communicating with the network.
-func (n *netImpl) Run(shutdownSignal <-chan struct{}) {
+func (n *netImpl) Run(ctx context.Context) {
 	queueRecvStopCh := make(chan bool)
 	receiveStopCh := make(chan bool)
 	maintenanceStopCh := make(chan bool)
 	go n.maintenanceLoop(maintenanceStopCh)
 
-	<-shutdownSignal
+	<-ctx.Done()
 	n.ctxCancel()
 	close(maintenanceStopCh)
 	close(receiveStopCh)
@@ -318,7 +317,7 @@ func (n *netImpl) Self() peering.PeerSender {
 }
 
 // Group creates peering.GroupProvider.
-func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.GroupProvider, error) {
+func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*cryptolib.PublicKey) (peering.GroupProvider, error) {
 	var err error
 	groupPeers := make([]peering.PeerSender, len(peerPubKeys))
 	for i := range peerPubKeys {
@@ -330,10 +329,10 @@ func (n *netImpl) PeerGroup(peeringID peering.PeeringID, peerPubKeys []*ed25519.
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*ed25519.PublicKey) (peering.PeerDomainProvider, error) {
+func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*cryptolib.PublicKey) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, 0, len(peerPubKeys))
 	for _, peerPubKey := range peerPubKeys {
-		if *peerPubKey == *n.Self().PubKey() {
+		if peerPubKey.Equals(n.Self().PubKey()) {
 			continue
 		}
 		p, err := n.usePeer(peerPubKey)
@@ -346,7 +345,7 @@ func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*ed25519
 }
 
 // SendMsgByPubKey sends a message to the specified peer.
-func (n *netImpl) SendMsgByPubKey(pubKey *ed25519.PublicKey, msg *peering.PeerMessageData) {
+func (n *netImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	peer, err := n.PeerByPubKey(pubKey)
 	if err != nil {
 		n.log.Warnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.String())
@@ -375,7 +374,7 @@ func (n *netImpl) Detach(attachID interface{}) {
 
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *netImpl) PeerByPubKey(peerPubKey *ed25519.PublicKey) (peering.PeerSender, error) {
+func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSender, error) {
 	return n.usePeer(peerPubKey)
 }
 
@@ -396,8 +395,8 @@ func (n *netImpl) NetID() string {
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
-func (n *netImpl) PubKey() *ed25519.PublicKey {
-	return &n.nodeKeyPair.PublicKey
+func (n *netImpl) PubKey() *cryptolib.PublicKey {
+	return n.nodeKeyPair.GetPublicKey()
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.
@@ -406,7 +405,7 @@ func (n *netImpl) SendMsg(msg *peering.PeerMessageData) {
 	n.triggerRecvEvents(n.Self().PubKey(), &peering.PeerMessageNet{PeerMessageData: *msg})
 }
 
-func (n *netImpl) triggerRecvEvents(from *ed25519.PublicKey, msg *peering.PeerMessageNet) {
+func (n *netImpl) triggerRecvEvents(from *cryptolib.PublicKey, msg *peering.PeerMessageNet) {
 	n.recvEvents.Trigger(&peering.PeerMessageIn{
 		PeerMessageData: msg.PeerMessageData,
 		SenderPubKey:    from,
@@ -439,13 +438,13 @@ func (n *netImpl) Close() {
 }
 
 // IsTrustedPeer implements the peering.TrustedNetworkManager interface.
-func (n *netImpl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+func (n *netImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
 	return n.trusted.IsTrustedPeer(pubKey)
 }
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
-func (n *netImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (n *netImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	trustedPeer, err := n.trusted.TrustPeer(pubKey, netID)
 	if err != nil {
 		return trustedPeer, err
@@ -455,11 +454,11 @@ func (n *netImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.Tr
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
-func (n *netImpl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+func (n *netImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	n.peersLock.Lock()
 	for _, peer := range n.peers {
 		peerPubKey := peer.remotePubKey
-		if peerPubKey != nil && *peerPubKey == pubKey {
+		if peerPubKey != nil && pubKey.Equals(peerPubKey) {
 			peer.trust(false)
 		}
 	}
@@ -472,14 +471,14 @@ func (n *netImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return n.trusted.TrustedPeers()
 }
 
-func (n *netImpl) usePeer(remotePubKey *ed25519.PublicKey) (peering.PeerSender, error) {
-	if *remotePubKey == n.nodeKeyPair.PublicKey {
+func (n *netImpl) usePeer(remotePubKey *cryptolib.PublicKey) (peering.PeerSender, error) {
+	if remotePubKey.Equals(n.nodeKeyPair.GetPublicKey()) {
 		return n, nil
 	}
 	n.peersLock.Lock()
 	defer n.peersLock.Unlock()
 	for _, p := range n.peers {
-		if *p.remotePubKey == *remotePubKey {
+		if p.remotePubKey.Equals(remotePubKey) {
 			p.usePeer()
 			return p, nil
 		}

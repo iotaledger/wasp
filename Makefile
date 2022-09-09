@@ -9,13 +9,31 @@ BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_
 TEST_PKG=./...
 TEST_ARG=
 
+BUILD_PKGS=./ ./tools/wasp-cli/ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
+BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
+INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) 
+
 all: build-lint
 
-build:
-	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
+wasm:
+	go install ./tools/schema
+	bash contracts/wasm/scripts/generate_wasm.sh
 
-build-windows:
-	go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
+compile-solidity:
+ifdef SKIP_SOLIDITY
+	@echo "skipping compile-solidity rule"
+else ifeq (, $(shell which solc))
+	@echo "no solc found in PATH, evm contracts won't be compiled"
+else
+	cd packages/vm/core/evm/iscmagic && go generate
+	cd packages/evm/evmtest && go generate
+endif
+
+build-full: compile-solidity
+	$(BUILD_CMD) ./...
+
+build: compile-solidity
+	$(BUILD_CMD) $(BUILD_PKGS)
 
 build-lint: build lint
 
@@ -23,16 +41,16 @@ test-full: install
 	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 30m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast ./...
+	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
-install:
-	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) ./...
+install-full: compile-solidity
+	$(INSTALL_CMD) ./...
 
-install-windows:
-	go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) -buildmode=exe ./...
+install: compile-solidity
+	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint:
 	golangci-lint run
@@ -46,5 +64,5 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-windows build-lint test test-short test-full install install-windows lint gofumpt-list docker-build
+.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build
 

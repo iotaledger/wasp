@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
-	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
-	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
+	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
 )
 
 type NodeProvider func() *Node
@@ -27,11 +27,11 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *ed25519.KeyPair                 // Keys of the current node.
+	identity     *cryptolib.KeyPair               // Keys of the current node.
 	secKey       kyber.Scalar                     // Derived from the identity.
 	pubKey       kyber.Point                      // Derived from the identity.
 	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
-	edSuite      rabin_dkg.Suite                  // Cryptography to use for the Ed25519 based operations.
+	edSuite      suites.Suite                     // Cryptography to use for the Ed25519 based operations.
 	netProvider  peering.NetworkProvider          // Network to communicate through.
 	registry     registry.DKShareRegistryProvider // Where to store the generated keys.
 	processes    map[string]*proc                 // Only for introspection.
@@ -44,20 +44,20 @@ type Node struct {
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	identity *ed25519.KeyPair,
+	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
 	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+	if err := kyberEdDSSA.UnmarshalBinary(identity.GetPrivateKey().AsBytes()); err != nil {
 		return nil, err
 	}
 	n := Node{
 		identity:     identity,
 		secKey:       kyberEdDSSA.Secret,
 		pubKey:       kyberEdDSSA.Public,
-		blsSuite:     tcrypto.DefaultSuite(),
+		blsSuite:     tcrypto.DefaultBLSSuite(),
 		edSuite:      edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider:  netProvider,
 		registry:     reg,
@@ -97,19 +97,20 @@ func (n *Node) Close() {
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
+//
 //nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
-	peerPubs []*ed25519.PublicKey,
+	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
 	timeout time.Duration, // Timeout for the entire procedure.
-) (*tcrypto.DKShare, error) {
+) (tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerPubs)
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
-	// Some validationfor the parameters.
+	// Some validation for the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}
@@ -135,7 +136,7 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]*ed25519.PublicKey, peerCount)
+		peerPubs = make([]*cryptolib.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
@@ -156,7 +157,7 @@ func (n *Node) GenerateDistributedKey(
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
 				peerPubs:     peerPubs,
-				initiatorPub: &n.identity.PublicKey,
+				initiatorPub: n.identity.GetPublicKey(),
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
@@ -200,7 +201,7 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
-				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %V", msg)
+				n.log.Errorf("unexpected message type instead of initiatorPubShareMsg: %v", msg)
 				return false, errors.New("unexpected message type instead of initiatorPubShareMsg")
 			}
 		},
@@ -208,56 +209,82 @@ func (n *Node) GenerateDistributedKey(
 		return nil, err
 	}
 	sharedAddress := pubShareResponses[0].sharedAddress
-	sharedPublic := pubShareResponses[0].sharedPublic
-	publicShares := make([]kyber.Point, peerCount)
+	edSharedPublic := pubShareResponses[0].edSharedPublic
+	edPublicShares := make([]kyber.Point, peerCount)
+	blsSharedPublic := pubShareResponses[0].blsSharedPublic
+	blsPublicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
+		if !sharedAddress.Equal(pubShareResponses[i].sharedAddress) {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
-		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {
-			return nil, fmt.Errorf("nodes generated different shared public keys")
+		if !edSharedPublic.Equal(pubShareResponses[i].edSharedPublic) {
+			return nil, fmt.Errorf("nodes generated different Ed25519 shared public keys")
 		}
-		publicShares[i] = pubShareResponses[i].publicShare
-		{
-			var pubShareBytes []byte
-			if pubShareBytes, err = pubShareResponses[i].publicShare.MarshalBinary(); err != nil {
-				return nil, err
-			}
-			err = bdn.Verify(
-				n.blsSuite,
-				pubShareResponses[i].publicShare,
-				pubShareBytes,
-				pubShareResponses[i].signature,
-			)
-			if err != nil {
-				return nil, err
-			}
+		if !blsSharedPublic.Equal(pubShareResponses[i].blsSharedPublic) {
+			return nil, fmt.Errorf("nodes generated different BLS shared public keys")
 		}
+		edPublicShares[i] = pubShareResponses[i].edPublicShare
+		blsPublicShares[i] = pubShareResponses[i].blsPublicShare
 	}
-	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, sharedPublic)
+	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, edSharedPublic)
 	//
-	// Commit the keys to persistent storage.
+	// CommitToNode the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
 			peer.SendMsg(makePeerMessage(dkgID, peering.PeerMessageReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
-				pubShares: publicShares,
+				edPubShares:  edPublicShares,
+				blsPubShares: blsPublicShares,
 			}))
 		},
 	); err != nil {
 		return nil, err
 	}
-	dkShare := tcrypto.DKShare{
-		Address:       sharedAddress,
-		N:             peerCount,
-		T:             threshold,
-		Index:         nil, // Not meaningful in this case.
-		SharedPublic:  sharedPublic,
-		PublicCommits: nil, // Not meaningful in this case.
-		PublicShares:  publicShares,
-		PrivateShare:  nil, // Not meaningful in this case.
+	dkShare := tcrypto.NewDKSharePublic(
+		sharedAddress,
+		peerCount,
+		threshold,
+		n.identity.GetPrivateKey(),
+		peerPubs,
+		n.edSuite,
+		edSharedPublic,
+		edPublicShares,
+		n.blsSuite,
+		blsSharedPublic,
+		blsPublicShares,
+	)
+	for i := range pubShareResponses {
+		// { // Verify Ed25519 key signatures. // TODO: XXX: Can we check the partial keys in this way?
+		// 	var edPubShareBytes []byte
+		// 	if edPubShareBytes, err = pubShareResponses[i].edPublicShare.MarshalBinary(); err != nil {
+		// 		return nil, err
+		// 	}
+		// 	err = schnorr.Verify(
+		// 		n.edSuite,
+		// 		pubShareResponses[i].edPublicShare,
+		// 		edPubShareBytes,
+		// 		pubShareResponses[i].edSignature,
+		// 	)
+		// 	if err != nil {
+		// 		return nil, xerrors.Errorf("failed to verify DSS signature: %w", err)
+		// 	}
+		// }
+		{ // Verify the BLS key signatures.
+			var blsPubShareBytes []byte
+			if blsPubShareBytes, err = pubShareResponses[i].blsPublicShare.MarshalBinary(); err != nil {
+				return nil, err
+			}
+			err = dkShare.BLSVerify(
+				pubShareResponses[i].blsPublicShare,
+				blsPubShareBytes,
+				pubShareResponses[i].blsSignature,
+			)
+			if err != nil {
+				return nil, xerrors.Errorf("failed to verify BLS signature: %w", err)
+			}
+		}
 	}
-	return &dkShare, nil
+	return dkShare, nil
 }
 
 // Async recv is needed to avoid locking on the even publisher (Recv vs Attach in proc).
@@ -353,7 +380,7 @@ func (n *Node) exchangeInitiatorMsgs(
 		var err error
 		var initMsg initiatorMsg
 		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(&recv.PeerMessageData, n.blsSuite)
+		isInitMsg, initMsg, err = readInitiatorMsg(&recv.PeerMessageData, n.edSuite, n.blsSuite)
 		if !isInitMsg {
 			return false, nil
 		}

@@ -1,16 +1,15 @@
 package chain
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +36,7 @@ func blockCmd() *cobra.Command {
 
 func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
-		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
+		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetBlockInfo.Name, nil)
 		log.Check(err)
 		index, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
@@ -47,7 +46,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	}
 	index, err := strconv.Atoi(args[0])
 	log.Check(err)
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetBlockInfo.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 	})
 	log.Check(err)
@@ -57,7 +56,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 }
 
 func logRequestsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -72,53 +71,44 @@ func logRequestsInBlock(index uint32) {
 func logReceipt(receipt *blocklog.RequestReceipt, index ...uint16) {
 	req := receipt.Request
 
-	feePrepaid := "no"
-	if req.IsFeePrepaid() {
-		feePrepaid = "yes"
-	}
-
 	kind := "on-ledger"
 	if req.IsOffLedger() {
 		kind = "off-ledger"
 	}
 
-	timestamp := "n/a"
-	if !req.IsOffLedger() {
-		timestamp = req.Timestamp().UTC().Format(time.RFC3339)
-	}
-
-	// TODO: use req.Params() instead (buggy atm)
-	args := req.(request.SolidifiableRequest).Args()
+	args := req.Params()
 	var argsTree interface{} = "(empty)"
 	if len(args) > 0 {
-		argsTree = dict.Dict(args)
+		argsTree = args
 	}
 
 	errMsg := "(empty)"
-	if receipt.Error != "" {
-		errMsg = fmt.Sprintf("%q", receipt.Error)
+	if receipt.Error != nil {
+		resolved, err := errors.Resolve(receipt.Error, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+			return SCClient(isc.Hn(contractName)).CallView(funcName, params)
+		})
+		log.Check(err)
+		errMsg = resolved.Error()
 	}
 
 	tree := []log.TreeItem{
 		{K: "Kind", V: kind},
-		{K: "Fee prepaid", V: feePrepaid},
 		{K: "Sender", V: req.SenderAccount().String()},
-		{K: "Contract Hname", V: req.Target().Contract.String()},
-		{K: "Entry point", V: req.Target().EntryPoint.String()},
-		{K: "Timestamp", V: timestamp},
+		{K: "Contract Hname", V: req.CallTarget().Contract.String()},
+		{K: "Entry point", V: req.CallTarget().EntryPoint.String()},
 		{K: "Arguments", V: argsTree},
 		{K: "Error", V: errMsg},
 	}
 	if len(index) > 0 {
-		log.Printf("Request #%d (%s):\n", index[0], req.ID().Base58())
+		log.Printf("Request #%d (%s):\n", index[0], req.ID().String())
 	} else {
-		log.Printf("Request %s:\n", req.ID().Base58())
+		log.Printf("Request %s:\n", req.ID().String())
 	}
 	log.PrintTree(tree, 2, 2)
 }
 
 func logEventsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForBlock.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -131,9 +121,9 @@ func requestCmd() *cobra.Command {
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			reqID, err := iscp.RequestIDFromBase58(args[0])
+			reqID, err := isc.RequestIDFromString(args[0])
 			log.Check(err)
-			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{
+			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetRequestReceipt.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 			})
 			log.Check(err)
@@ -152,8 +142,8 @@ func requestCmd() *cobra.Command {
 	}
 }
 
-func logEventsInRequest(reqID iscp.RequestID) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForRequest.Name, dict.Dict{
+func logEventsInRequest(reqID isc.RequestID) {
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.ViewGetEventsForRequest.Name, dict.Dict{
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})
 	log.Check(err)

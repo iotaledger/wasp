@@ -1,102 +1,43 @@
-//go:build !noevm
-// +build !noevm
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
 
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/evm"
-	"github.com/iotaledger/wasp/contracts/native/evm/evmchain"
+	"encoding/base64"
+
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/tools/evm/evmcli"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	plugins = append(plugins, func(chainCmd *cobra.Command) {
-		evmCmd := &cobra.Command{
-			Use:   "evm <command>",
-			Short: "Interact with EVM chains",
-			Args:  cobra.NoArgs,
-			Run: func(cmd *cobra.Command, args []string) {
-				log.Check(cmd.Help())
-			},
-		}
-		chainCmd.AddCommand(evmCmd)
-
-		initEVMDeploy(evmCmd)
-		initJSONRPCCommand(evmCmd)
-	})
+type evmDeployParams struct {
+	ChainID         uint16
+	allocBase64     string
+	GasRatio        util.Ratio32
+	BlockGasLimit   uint64
+	BlockKeepAmount int32
 }
 
-func initEVMDeploy(evmCmd *cobra.Command) {
-	var deployParams evmcli.DeployParams
-	evmDeployCmd := &cobra.Command{
-		Use:   "deploy",
-		Short: "Deploy the evmchain/evmlight contract (i.e. create a new EVM chain)",
-		Run: func(cmd *cobra.Command, args []string) {
-			blockTime := deployParams.BlockTime()
-			blockKeepAmount := deployParams.BlockKeepAmount()
-			deployContract(deployParams.Name(), deployParams.Description(), deployParams.EVMFlavor().ProgramHash, dict.Dict{
-				evm.FieldChainID:         codec.EncodeUint16(uint16(deployParams.ChainID)),
-				evm.FieldGenesisAlloc:    evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
-				evm.FieldGasLimit:        codec.EncodeUint64(deployParams.GasLimit),
-				evm.FieldBlockKeepAmount: codec.EncodeInt32(blockKeepAmount),
-			})
-			log.Printf("%s contract successfully deployed.\n", deployParams.Name())
-
-			if blockTime > 0 {
-				log.Printf("Setting block time to %ds...\n", blockTime)
-				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
-					return SCClient(deployParams.EVMFlavor().Hname()).PostRequest(
-						evm.FuncSetBlockTime.Name,
-						chainclient.PostRequestParams{
-							Transfer: colored.NewBalancesForIotas(1),
-							Args: requestargs.New().AddEncodeSimple(
-								evm.FieldBlockTime, codec.EncodeUint32(blockTime),
-							),
-						},
-					)
-				})
-			}
-		},
-	}
-	evmCmd.AddCommand(evmDeployCmd)
-
-	deployParams.InitFlags(evmDeployCmd)
+func (d *evmDeployParams) initFlags(cmd *cobra.Command) {
+	cmd.Flags().Uint16VarP(&d.ChainID, "evm-chainid", "", evm.DefaultChainID, "ChainID")
+	cmd.Flags().StringVarP(&d.allocBase64, "evm-alloc", "", "", "Genesis allocation (base64-encoded)")
+	d.GasRatio = util.Ratio32{A: 1, B: 1}
+	cmd.Flags().VarP(&d.GasRatio, "evm-gas-ratio", "", "ISC Gas : EVM gas ratio")
+	cmd.Flags().Uint64VarP(&d.BlockGasLimit, "evm-gas-limit", "", evm.BlockGasLimitDefault, "Block gas limit")
+	cmd.Flags().Int32VarP(&d.BlockKeepAmount, "evm-block-keep-amount", "", evm.BlockKeepAmountDefault, "Amount of blocks to keep in DB (-1: keep all blocks)")
 }
 
-func initJSONRPCCommand(evmCmd *cobra.Command) {
-	var jsonRPCServer evmcli.JSONRPCServer
-	var chainID int
-	var contractName string
-
-	jsonRPCCmd := &cobra.Command{
-		Args:  cobra.NoArgs,
-		Use:   "jsonrpc",
-		Short: "Start a JSON-RPC service to interact with an Ethereum blockchain running on ISCP",
-		Long: `Start a JSON-RPC service to interact with an Ethereum blockchain running on ISCP.
-
-By default the server has no unlocked accounts. To send transactions, either:
-
-- use eth_sendRawTransaction
-- configure an unlocked account with --account, and use eth_sendTransaction`,
-		Run: func(cmd *cobra.Command, args []string) {
-			backend := jsonrpc.NewWaspClientBackend(Client())
-			jsonRPCServer.ServeJSONRPC(backend, chainID, contractName)
-		},
+func (d *evmDeployParams) getGenesis(def core.GenesisAlloc) core.GenesisAlloc {
+	if d.allocBase64 == "" {
+		return def
 	}
-
-	jsonRPCServer.InitFlags(jsonRPCCmd)
-	jsonRPCCmd.Flags().IntVarP(&chainID, "chainid", "", evm.DefaultChainID, "ChainID (used for signing transactions)")
-	jsonRPCCmd.Flags().StringVarP(&contractName, "name", "", evmchain.Contract.Name, "evmchain/evmlight contract name")
-	evmCmd.AddCommand(jsonRPCCmd)
+	b, err := base64.StdEncoding.DecodeString(d.allocBase64)
+	log.Check(err)
+	ret, err := evmtypes.DecodeGenesisAlloc(b)
+	log.Check(err)
+	return ret
 }

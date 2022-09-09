@@ -3,6 +3,7 @@ name: Test Docs Build
 on:
   pull_request:
     branches:
+      - develop
       - master
 
 concurrency:

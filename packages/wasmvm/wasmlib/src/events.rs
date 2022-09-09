@@ -10,7 +10,9 @@ pub struct EventEncoder {
 
 impl EventEncoder {
     pub fn new(event_name: &str) -> EventEncoder {
-        let mut e = EventEncoder { event: event_name.to_string() };
+        let mut e = EventEncoder {
+            event: event_name.to_string(),
+        };
         let timestamp = ScFuncContext {}.timestamp();
         e.encode(&uint64_to_string(timestamp / 1_000_000_000));
         e
@@ -21,9 +23,11 @@ impl EventEncoder {
     }
 
     pub fn encode(&mut self, value: &str) -> &EventEncoder {
-        // TODO encode potential vertical bars that are present in the value string
+        let mut replaced_value = str::replace(value, "~", "~~");
+        replaced_value = str::replace(&replaced_value, "|", "~/");
+        replaced_value = str::replace(&replaced_value, " ", "~_");
         self.event += "|";
-        self.event += &value;
+        self.event += &replaced_value;
         self
     }
 }

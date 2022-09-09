@@ -25,7 +25,7 @@ package test
 // 	for i := 1; i < 6; i++ {
 // 		req := solo.NewCallParams(ScName, sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
+// 		).AddBaseTokens(1)
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
 // 	}
@@ -51,7 +51,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, i,
-// 		).WithIotas(1)
+// 		).AddBaseTokens(1)
 // 		_, err = chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
 // 	}
@@ -75,7 +75,7 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -106,7 +106,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogEventData.Name,
 // 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		).AddBaseTokens(1)
 // 		count++
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
@@ -116,7 +116,7 @@ package test
 // 		req := solo.NewCallParams(ScName,
 // 			sbtestsc.FuncEventLogGenericData.Name,
 // 			sbtestsc.VarCounter, count,
-// 		).WithIotas(1)
+// 		).AddBaseTokens(1)
 // 		count++
 // 		_, err := chain.PostRequestSync(req, nil)
 // 		require.NoError(t, err)
@@ -155,8 +155,8 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogGenericData.Name,
-// 		sbtestsc.VarCounter, solo.Saldo,
-// 	).WithIotas(1)
+// 		sbtestsc.VarCounter, utxodb.FundsFromFaucetAmount,
+// 	).AddBaseTokens(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -178,7 +178,7 @@ package test
 // 	require.EqualValues(t, 0, strings.Count(str, "[req]"))
 // 	require.EqualValues(t, 1, strings.Count(str, "[GenericData]"))
 // 	require.EqualValues(t, 0, strings.Count(str, "[Event]"))
-// 	require.EqualValues(t, 1, strings.Count(str, strconv.FormatUint(solo.Saldo, 10)))
+// 	require.EqualValues(t, 1, strings.Count(str, strconv.FormatUint(utxodb.FundsFromFaucetAmount, 10)))
 
 // 	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 // 	str = strings.Join(recStr, "\n")
@@ -197,7 +197,7 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogDeploy.Name,
-// 	).WithIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
@@ -234,14 +234,14 @@ package test
 
 // 	req := solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogEventData.Name,
-// 	).WithIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err := chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 
 // 	req = solo.NewCallParams(ScName,
 // 		sbtestsc.FuncEventLogGenericData.Name,
 // 		sbtestsc.VarCounter, 33333,
-// 	).WithIotas(1)
+// 	).AddBaseTokens(1)
 // 	_, err = chain.PostRequestSync(req, nil)
 // 	require.NoError(t, err)
 

@@ -1,105 +1,104 @@
 package vmcontext
 
 import (
-	"errors"
-	"fmt"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/execution"
+	"github.com/iotaledger/wasp/packages/vm/sandbox"
+	"golang.org/x/xerrors"
 )
 
-var ErrContractNotFound = errors.New("contract not found")
-
-// Call
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
-	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode)
-	rec, ok := vmctx.findContractByHname(targetContract)
-	if !ok {
-		return nil, ErrContractNotFound
-	}
-	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
+// Call implements sandbox logic of the call between contracts on-chain
+func (vmctx *VMContext) Call(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict {
+	vmctx.Debugf("Call: targetContract: %s entry point: %s", targetContract, epCode)
+	return vmctx.callProgram(targetContract, epCode, params, allowance)
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
-	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
-	if err != nil {
-		return nil, err
-	}
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		ep = proc.GetDefaultEntryPoint()
-	}
-	// distinguishing between two types of entry points. Passing different types of sandboxes
-	if ep.IsView() {
-		if epCode == iscp.EntryPointInit {
-			return nil, fmt.Errorf("'init' entry point can't be a view")
-		}
-		// passing nil as transfer: calling the view should not have effect on chain ledger
-		if err := vmctx.pushCallContextWithTransfer(targetContract, params, nil); err != nil {
-			return nil, err
-		}
-		defer vmctx.popCallContext()
+func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict {
+	contractRecord := vmctx.getOrCreateContractRecord(targetContract)
+	ep := execution.GetEntryPointByProgHash(vmctx, targetContract, epCode, contractRecord.ProgramHash)
 
-		return ep.Call(NewSandboxView(vmctx))
-	}
-	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
-		return nil, err
-	}
+	vmctx.pushCallContext(targetContract, params, allowance)
 	defer vmctx.popCallContext()
 
-	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
-		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
-		}
-	}
-	return ep.Call(NewSandbox(vmctx))
-}
-
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
-	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
-	if err != nil {
-		return nil, err
-	}
-	ep, ok := proc.GetEntryPoint(epCode)
-	if !ok {
-		ep = proc.GetDefaultEntryPoint()
-	}
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
-		return nil, fmt.Errorf("non-view entry point expected")
+		return ep.Call(sandbox.NewSandboxView(vmctx))
 	}
-	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
-		return nil, err
-	}
-	defer vmctx.popCallContext()
-
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
+	if epCode == isc.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
+			panic(xerrors.Errorf("%v: target=(%s, %s)",
+				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
 		}
 	}
 	return ep.Call(NewSandbox(vmctx))
 }
 
 func (vmctx *VMContext) callerIsRoot() bool {
-	caller := vmctx.Caller()
-	if !caller.Address().Equals(vmctx.chainID.AsAddress()) {
+	caller, ok := vmctx.Caller().(*isc.ContractAgentID)
+	if !ok {
+		return false
+	}
+	if !caller.ChainID().Equals(vmctx.ChainID()) {
 		return false
 	}
 	return caller.Hname() == root.Contract.Hname()
 }
 
-func (vmctx *VMContext) requesterIsLocal() bool {
-	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAccount()) ||
-		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAccount().Address())
+const traceStack = false
+
+func (vmctx *VMContext) pushCallContext(contract isc.Hname, params dict.Dict, allowance *isc.Allowance) {
+	ctx := &callContext{
+		caller:   vmctx.getToBeCaller(),
+		contract: contract,
+		params: isc.Params{
+			Dict:      params,
+			KVDecoder: kvdecoder.New(params, vmctx.task.Log),
+		},
+		allowanceAvailable: allowance.Clone(), // we have to clone it because it will be mutated by TransferAllowedFunds
+	}
+	if traceStack {
+		vmctx.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), ctx.caller)
+	}
+	vmctx.callStack = append(vmctx.callStack, ctx)
 }
 
-func (vmctx *VMContext) Params() dict.Dict {
-	return vmctx.getCallContext().params
+func (vmctx *VMContext) popCallContext() {
+	if traceStack {
+		vmctx.Debugf("+++++++++++ POP @ depth %d", len(vmctx.callStack))
+	}
+	vmctx.callStack[len(vmctx.callStack)-1] = nil // for GC
+	vmctx.callStack = vmctx.callStack[:len(vmctx.callStack)-1]
+}
+
+func (vmctx *VMContext) getToBeCaller() isc.AgentID {
+	if len(vmctx.callStack) > 0 {
+		return vmctx.MyAgentID()
+	}
+	if vmctx.req == nil {
+		// e.g. saving the anchor ID
+		return vmctx.chainOwnerID
+	}
+	// request context
+	return vmctx.req.SenderAccount()
+}
+
+func (vmctx *VMContext) getCallContext() *callContext {
+	if len(vmctx.callStack) == 0 {
+		panic("getCallContext: stack is empty")
+	}
+	return vmctx.callStack[len(vmctx.callStack)-1]
+}
+
+func (vmctx *VMContext) callCore(c *coreutil.ContractInfo, f func(s kv.KVStore)) {
+	vmctx.pushCallContext(c.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	f(vmctx.State())
 }

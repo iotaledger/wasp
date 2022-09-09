@@ -4,12 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -17,29 +19,35 @@ import (
 const incName = "incTest"
 
 func checkCounter(e *solo.Chain, expected int64) {
-	ret, err := e.CallView(incName, FuncGetCounter.Name)
+	ret, err := e.CallView(incName, ViewGetCounter.Name)
 	require.NoError(e.Env.T, err)
 	c, err := codec.DecodeInt64(ret.MustGet(VarCounter))
 	require.NoError(e.Env.T, err)
 	require.EqualValues(e.Env.T, expected, c)
 }
 
+func initSolo(t *testing.T) *solo.Solo {
+	return solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+	}).WithNativeContract(Processor)
+}
+
 func TestDeployInc(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
+	require.EqualValues(t, len(corecontracts.All)+1, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -48,14 +56,16 @@ func TestDeployIncInitParams(t *testing.T) {
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name).
+		AddBaseTokens(1).
+		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
@@ -63,14 +73,16 @@ func TestIncDefaultParam(t *testing.T) {
 }
 
 func TestIncParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).
+		AddBaseTokens(1).
+		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
@@ -79,14 +91,17 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter2s.Name).
+		AddBaseTokens(2 * isc.Million).
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
+		WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -99,8 +114,8 @@ func TestIncWith1Post(t *testing.T) {
 }
 
 func TestSpawn(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	env := initSolo(t)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -111,21 +126,28 @@ func TestSpawn(t *testing.T) {
 	req := solo.NewCallParams(incName, FuncSpawn.Name,
 		VarName, nameNew,
 		VarDescription, dscrNew,
-	).WithIotas(1)
+	).AddBaseTokens(1).WithMaxAffordableGasBudget()
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	res, err := chain.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
+	res, err := chain.CallView(root.Contract.Name, root.ViewGetContractRecords.Name)
 	require.NoError(t, err)
-	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
-	require.True(t, int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2)
+	creg := collections.NewMapReadOnly(res, root.StateVarContractRegistry)
+	require.True(t, int(creg.MustLen()) == len(corecontracts.All)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
-	chain := env.NewChain(nil, "chain1")
+	opts := &solo.InitOptions{
+		Debug:                    false,
+		PrintStackTrace:          false,
+		Seed:                     cryptolib.Seed{},
+		AutoAdjustStorageDeposit: false, // is OFF by default
+	}
+	opts.Log = log
+	env := solo.New(b, opts).WithNativeContract(Processor)
+	chain := env.NewChain()
 
 	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 0)
 	require.NoError(b, err)
@@ -133,7 +155,7 @@ func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: prepare N requests that call FuncIncCounter
 	reqs := make([]*solo.CallParams, b.N)
 	for i := 0; i < b.N; i++ {
-		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
+		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).AddBaseTokens(1)
 	}
 
 	return chain, reqs

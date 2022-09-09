@@ -1,7 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import {sandbox} from "../host";
+import {FnUtilsHashName, panic} from "../sandbox";
 import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -13,6 +14,10 @@ export class ScHname {
 
     constructor(id: u32) {
         this.id = wasmtypes.uint32ToBytes(id);
+    }
+
+    static fromName(name: string): ScHname {
+        return hnameFromBytes(sandbox(FnUtilsHashName, wasmtypes.stringToBytes(name)));
     }
 
     public equals(other: ScHname): bool {
@@ -52,6 +57,13 @@ export function hnameFromBytes(buf: u8[]): ScHname {
 
 export function hnameToBytes(value: ScHname): u8[] {
     return value.id;
+}
+
+export function hnameFromString(value: string): ScHname {
+    if (value.length > 8) {
+        panic("invalid Hname string");
+    }
+    return new ScHname(parseInt(value, 16) as u32);
 }
 
 export function hnameToString(value: ScHname): string {

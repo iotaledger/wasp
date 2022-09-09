@@ -4,103 +4,112 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/vm/core"
+	"bytes"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-// AssertAddressBalance asserts the UTXODB address balance of specific color in the address
-func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col colored.Color, expected uint64) {
-	require.EqualValues(env.T, int(expected), int(env.GetAddressBalance(addr, col)))
+func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
+	bals := ch.L2Assets(agentID)
+	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
-	env.AssertAddressBalance(addr, colored.IOTA, expected)
+func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal uint64) {
+	require.EqualValues(ch.Env.T, int(bal), int(ch.L2Assets(agentID).BaseTokens))
 }
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
+	_, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	for _, rec := range core.AllCoreContractsByHash {
-		recFromState, err := ch.FindContract(rec.Contract.Name)
+	for _, c := range corecontracts.All {
+		recFromState, err := ch.FindContract(c.Name)
 		require.NoError(ch.Env.T, err)
-		require.EqualValues(ch.Env.T, rec.Contract.Name, recFromState.Name)
-		require.EqualValues(ch.Env.T, rec.Contract.Description, recFromState.Description)
-		require.EqualValues(ch.Env.T, rec.Contract.ProgramHash, recFromState.ProgramHash)
-		require.True(ch.Env.T, recFromState.Creator.IsNil())
+		require.EqualValues(ch.Env.T, c.Name, recFromState.Name)
+		require.EqualValues(ch.Env.T, c.Description, recFromState.Description)
+		require.EqualValues(ch.Env.T, c.ProgramHash, recFromState.ProgramHash)
 	}
 	ch.CheckAccountLedger()
 }
 
 // CheckAccountLedger check integrity of the on-chain ledger.
-// Sum of all accounts must be equal to total assets
+// Sum of all accounts must be equal to total ftokens
 func (ch *Chain) CheckAccountLedger() {
-	total := ch.GetTotalAssets()
-	accs := ch.GetAccounts()
-	sum := colored.NewBalances()
+	total := ch.L2TotalAssets()
+	accs := ch.L2Accounts()
+	sum := isc.NewEmptyAssets()
 	for i := range accs {
 		acc := accs[i]
-		bals := ch.GetAccountBalance(acc)
-		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
-			sum.Add(col, bal)
-			return true
-		})
+		sum.Add(ch.L2Assets(acc))
 	}
 	require.True(ch.Env.T, total.Equals(sum))
-	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
-	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
+	coreacc := isc.NewContractAgentID(ch.ChainID, root.Contract.Hname())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
+	coreacc = isc.NewContractAgentID(ch.ChainID, blob.Contract.Hname())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
+	coreacc = isc.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
+	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 }
 
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, col colored.Color, bal uint64) {
-	bals := ch.GetAccountBalance(agentID)
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
+func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal interface{}) {
+	bals := ch.L2TotalAssets()
+	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
 }
 
-func (ch *Chain) AssertIotas(agentID *iscp.AgentID, bal uint64) {
-	ch.AssertAccountBalance(agentID, colored.IOTA, bal)
+func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
+	baseTokens := ch.L2TotalBaseTokens()
+	require.EqualValues(ch.Env.T, int(bal), int(baseTokens))
 }
 
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertOwnersBalance(col colored.Color, bal uint64) {
-	bals := ch.GetCommonAccountBalance()
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
-}
-
-func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
-	require.EqualValues(ch.Env.T, int(bal), int(ch.GetCommonAccountIotas()))
-}
-
-// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertTotalAssets(col colored.Color, bal uint64) {
-	bals := ch.GetTotalAssets()
-	b := bals.Get(col)
-	require.EqualValues(ch.Env.T, int(bal), int(b))
-}
-
-func (ch *Chain) AssertTotalIotas(bal uint64) {
-	iotas := ch.GetTotalIotas()
-	require.EqualValues(ch.Env.T, int(bal), int(iotas))
-}
-
-func (ch *Chain) CheckControlAddresses() {
+func (ch *Chain) AssertControlAddresses() {
 	rec := ch.GetControlAddresses()
-	require.True(ch.Env.T, rec.StateAddress.Equals(ch.StateControllerAddress))
-	require.True(ch.Env.T, rec.GoverningAddress.Equals(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.StateAddress.Equal(ch.StateControllerAddress))
+	require.True(ch.Env.T, rec.GoverningAddress.Equal(ch.StateControllerAddress))
 	require.EqualValues(ch.Env.T, 0, rec.SinceBlockIndex)
+}
+
+func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID *iotago.NFTID) bool {
+	accNFTIDs := ch.L2NFTs(agentID)
+	for _, id := range accNFTIDs {
+		if bytes.Equal(id[:], nftID[:]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
+	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
+}
+
+func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
+	require.True(env.T, env.L1NativeTokens(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
+}
+
+func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {
+	accountNFTs := env.L1NFTs(addr)
+	for outputID, nftOutput := range accountNFTs {
+		nftID := nftOutput.NFTID
+		if nftID.Empty() {
+			nftID = iotago.NFTIDFromOutputID(outputID)
+		}
+		if bytes.Equal(nftID[:], id[:]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (env *Solo) GetUnspentOutputs(addr iotago.Address) (iotago.OutputSet, iotago.OutputIDs) {
+	return env.utxoDB.GetUnspentOutputs(addr)
 }

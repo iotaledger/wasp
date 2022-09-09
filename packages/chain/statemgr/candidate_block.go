@@ -4,37 +4,19 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type candidateBlock struct {
-	block         state.Block
-	local         bool
-	votes         int
-	approved      bool
-	nextStateHash hashing.HashValue
-	nextState     state.VirtualStateAccess
+	block     state.Block
+	nextState state.VirtualStateAccess
 }
 
 func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualStateAccess) *candidateBlock {
-	var local bool
-	var stateHash hashing.HashValue
-	if nextStateIfProvided == nil {
-		local = false
-		stateHash = hashing.NilHash
-	} else {
-		local = true
-		stateHash = nextStateIfProvided.StateCommitment()
-	}
 	return &candidateBlock{
-		block:         block,
-		local:         local,
-		votes:         1,
-		approved:      false,
-		nextStateHash: stateHash,
-		nextState:     nextStateIfProvided,
+		block:     block,
+		nextState: nextStateIfProvided,
 	}
 }
 
@@ -42,55 +24,18 @@ func (cT *candidateBlock) getBlock() state.Block {
 	return cT.block
 }
 
-func (cT *candidateBlock) addVote() {
-	cT.votes++
-}
-
-func (cT *candidateBlock) getVotes() int {
-	return cT.votes
-}
-
-func (cT *candidateBlock) isLocal() bool {
-	return cT.local
-}
-
-func (cT *candidateBlock) isApproved() bool {
-	return cT.approved
-}
-
-func (cT *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
-	if cT.block.BlockIndex() == output.GetStateIndex() {
-		outputID := output.ID()
-		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
-		if err != nil {
-			return
-		}
-		if cT.isLocal() {
-			if cT.nextStateHash == finalHash {
-				cT.approved = true
-				cT.block.SetApprovingOutputID(outputID)
-			}
-		} else {
-			if cT.block.ApprovingOutputID() == outputID {
-				cT.approved = true
-				cT.nextStateHash = finalHash
-			}
-		}
-	}
-}
-
-func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
-	return cT.nextStateHash
-}
-
 func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {
-	if cT.isLocal() {
-		return cT.nextState.Copy(), nil
+	if cT.nextState == nil {
+		err := currentState.ApplyBlock(cT.block)
+		return currentState, err
 	}
-	err := currentState.ApplyBlock(cT.block)
-	return currentState, err
+	return cT.nextState.Copy(), nil
 }
 
-func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
+func (cT *candidateBlock) getApprovingOutputID() *iotago.UTXOInput {
 	return cT.block.ApprovingOutputID()
+}
+
+func (cT *candidateBlock) getPreviousL1Commitment() *state.L1Commitment {
+	return cT.block.PreviousL1Commitment()
 }

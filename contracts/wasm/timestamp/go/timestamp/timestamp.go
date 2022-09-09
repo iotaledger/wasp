@@ -5,7 +5,7 @@ package timestamp
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 
-func funcNow(ctx wasmlib.ScFuncContext, f *NowContext) {
+func funcNow(_ wasmlib.ScFuncContext, _ *NowContext) {
 }
 
 func viewGetTimestamp(ctx wasmlib.ScViewContext, f *GetTimestampContext) {

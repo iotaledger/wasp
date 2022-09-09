@@ -1,19 +1,16 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/request"
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
-func DummyOffledgerRequest(chainID *iscp.ChainID) *request.OffLedger {
-	contract := iscp.Hn("somecontract")
-	entrypoint := iscp.Hn("someentrypoint")
-	args := requestargs.New(dict.Dict{})
-	req := request.NewOffLedger(chainID, contract, entrypoint, args)
+func DummyOffledgerRequest(chainID *isc.ChainID) isc.OffLedgerRequest {
+	contract := isc.Hn("somecontract")
+	entrypoint := isc.Hn("someentrypoint")
+	args := dict.Dict{}
+	req := isc.NewOffLedgerRequest(chainID, contract, entrypoint, args, 0)
 	keys, _ := testkey.GenKeyAddr()
-	req.Sign(keys)
-	return req
+	return req.Sign(keys)
 }

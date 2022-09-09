@@ -23,7 +23,7 @@ func (s *SampleSource) Seed(seed int64) {
 
 func TestHashValueFromString(t *testing.T) {
 	h1 := HashStrings("test string")
-	h2, e := HashValueFromBase58(h1.String())
+	h2, e := HashValueFromHex(h1.String())
 	if e != nil {
 		t.Fatalf("error occurs")
 	}
@@ -61,7 +61,6 @@ func TestString(t *testing.T) {
 	stringified := h1.String()
 	require.EqualValues(t, reflect.TypeOf(stringType), reflect.TypeOf(stringified))
 	require.EqualValues(t, h1.String(), (&h1).String())
-	require.EqualValues(t, h1.Base58(), (&h1).Base58())
 }
 
 func TestSha3(t *testing.T) {

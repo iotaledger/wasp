@@ -4,10 +4,9 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -28,8 +27,8 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 		return
 	}
 	if msg.BlockIndex > sm.stateOutput.GetStateIndex() { // Not a necessary check, only for optimization.
-		sm.log.Debugf("handleGetBlockMsg: message ignored 1: block #%d not found. Current state index: #%d",
-			msg.BlockIndex, sm.stateOutput.GetStateIndex())
+		sm.log.Debugf("handleGetBlockMsg ignored: current state output index #%d is older than requested block index #%d",
+			sm.stateOutput.GetStateIndex(), msg.BlockIndex)
 		return
 	}
 	blockBytes, err := state.LoadBlockBytes(sm.store, msg.BlockIndex)
@@ -38,8 +37,7 @@ func (sm *stateManager) handleGetBlockMsg(msg *messages.GetBlockMsgIn) {
 		return
 	}
 	if blockBytes == nil {
-		sm.log.Debugf("handleGetBlockMsg message ignored 2: block #%d not found. Current state index: #%d",
-			msg.BlockIndex, sm.stateOutput.GetStateIndex())
+		sm.log.Debugf("handleGetBlockMsg ignored: block index #%d not found", msg.BlockIndex)
 		return
 	}
 
@@ -71,53 +69,32 @@ func (sm *stateManager) handleBlockMsg(msg *messages.BlockMsgIn) {
 	sm.log.Debugw("handleBlockMsg: adding block from peer ",
 		"sender", msg.SenderPubKey.String(),
 		"block index", block.BlockIndex(),
-		"approving output", iscp.OID(block.ApprovingOutputID()),
+		"approving output", isc.OID(block.ApprovingOutputID()),
 	)
 	if sm.addBlockFromPeer(block) {
 		sm.takeAction()
 	}
 }
 
-func (sm *stateManager) EnqueueOutputMsg(msg ledgerstate.Output) {
-	sm.eventOutputMsgPipe.In() <- msg
+func (sm *stateManager) EnqueueAliasOutput(output *isc.AliasOutputWithID) {
+	sm.eventAliasOutputPipe.In() <- output
 }
 
-func (sm *stateManager) handleOutputMsg(msg ledgerstate.Output) {
-	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID()))
-	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
-	if !ok {
-		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *ledgerstate.AliasOutput", msg)
-		return
-	}
-	if sm.outputPulled(chainOutput) {
-		sm.takeAction()
-	}
-}
-
-// EventStateTransactionMsg triggered whenever new state transaction arrives
-// the state transaction may be confirmed or not
-func (sm *stateManager) EnqueueStateMsg(msg *messages.StateMsg) {
-	sm.eventStateOutputMsgPipe.In() <- msg
-}
-
-func (sm *stateManager) handleStateMsg(msg *messages.StateMsg) {
-	sm.log.Debugw("EventStateMsg received: ",
-		"state index", msg.ChainOutput.GetStateIndex(),
-		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
-	)
-	sm.stateManagerMetrics.LastSeenStateIndex(msg.ChainOutput.GetStateIndex())
-	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+func (sm *stateManager) handleAliasOutput(output *isc.AliasOutputWithID) {
+	sm.log.Debugf("EventAliasOutput received: output id %s for state index %v", isc.OID(output.ID()), output.GetStateIndex())
+	sm.stateManagerMetrics.LastSeenStateIndex(output.GetStateIndex())
+	stateL1Commitment, err := state.L1CommitmentFromAliasOutput(output.GetAliasOutput())
 	if err != nil {
-		sm.log.Errorf("EventStateMsg ignored: failed to parse state hash: %v", err)
+		sm.log.Errorf("EventAliasOutput ignored: failed to parse state commitment: %v", err)
 		return
 	}
-	sm.log.Debugf("EventStateMsg state hash is %v", stateHash.String())
-	if sm.stateOutputReceived(msg.ChainOutput, msg.Timestamp) {
+	sm.log.Debugf("EventAliasOutput received: state commitment is %s", stateL1Commitment.StateCommitment)
+	if sm.aliasOutputReceived(output) {
 		sm.takeAction()
 	}
 }
 
-func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID ledgerstate.OutputID) {
+func (sm *stateManager) EnqueueStateCandidateMsg(virtualState state.VirtualStateAccess, outputID *iotago.UTXOInput) {
 	sm.eventStateCandidateMsgPipe.In() <- &messages.StateCandidateMsg{
 		State:             virtualState,
 		ApprovingOutputID: outputID,
@@ -144,6 +121,6 @@ func (sm *stateManager) EnqueueTimerMsg(msg messages.TimerTick) {
 }
 
 func (sm *stateManager) handleTimerMsg() {
-	sm.log.Debugf("EventTimerMsg received")
+	sm.log.Debugf("StateManager handleTimerMsg: timerMsg received")
 	sm.takeAction()
 }

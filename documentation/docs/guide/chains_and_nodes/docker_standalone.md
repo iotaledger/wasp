@@ -1,43 +1,73 @@
 ---
 description: How to run a Wasp node in using Docker. Build the image, configure it, run it.
-image: /img/logo/WASP_logo_dark.png
+image: /img/Banner/banner_wasp_using_docker.png
 keywords:
-  - Smart Contracts
-  - Running a node
-  - docker
-  - image
-  - build
-  - configure
-  - arguments
+
+- Smart Contracts
+- Running a node
+- docker
+- image
+- build
+- configure
+- arguments
+
 ---
 
 # Docker (Standalone)
 
-This page describes the configuration of a single Wasp node in combination with Docker. If you followed the instructions in [Running a Node](running-a-node.md), you can skip to [Configuring wasp-cli](wasp-cli.md).
+![Wasp Node using Docker](/img/Banner/banner_wasp_using_docker.png)
+
+This page describes the configuration of a single Wasp node in combination with Docker.
+
+The docker setup comes preconfigured and should work as is, differing setups might require a different configuration.
+
+In this case the following instructions should be read [Running a Node](running-a-node.md).
 
 ## Introduction
 
 ## Running a Wasp Node
 
-Checkout the project, switch to 'develop' and build the main image:
+### Install and Build Your Node
+
+To run a Wasp node with Docker you will need to:
+
+1. Check out the project:
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
-cd wasp
-docker build -t wasp-node .
 ```
 
-The build process will copy the docker_config.json file into the image, which will be used when the node gets started.
+2. Switch to the `develop` branch:
 
-By default, the build process will use `-tags rocksdb,builtin_static` as a build argument. This argument can be modified with `--build-arg BUILD_TAGS=<tags>`.
+```shell
+cd wasp
+git checkout develop
+```
 
-Depending on the use case, Wasp requires a different GoShimmer hostname which can be changed at this part inside the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
+3. Build the main image:
+
+```shell
+docker build -t wasp-node .
+````
+
+### Default Configuration
+
+The build process will copy the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json)
+file into the image, which will be used when the node gets started.
+
+By default, the build process will use `-tags rocksdb,builtin_static` as a build argument.You can modify this argument  
+with `--build-arg BUILD_TAGS=<tags>`.
+
+Depending on the use case, you may need to change the default Hornet [configuration](node-config.md). You can do so by
+editing the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
 
 ```json
-  "nodeconn": {
-    "address": "goshimmer:5000"
-  },
+"l1": {
+  "inxAddress": "hornet:9029",
+},
 ```
+
+### Run Your Node
 
 After the build process has finished, you can start your Wasp node by running:
 
@@ -45,9 +75,10 @@ After the build process has finished, you can start your Wasp node by running:
 docker run wasp-node
 ```
 
-### Configuration
+#### Configuration of built images
 
-After the build process has been completed, it is still possible to inject a different configuration file into a new container by running:
+After the build process has been completed, you can still inject a different configuration file into a new
+container by running:
 
 ```shell
 docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-node
@@ -56,7 +87,7 @@ docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-n
 You can also add further configuration using arguments:
 
 ```shell
-docker run wasp-node --nodeconn.address=alt_goshimmer:5000
+docker run wasp-node --l1.inxAddress="alt_hornet:9029"
 ```
 
 To get a list of all available arguments, run the node with the argument '--help'

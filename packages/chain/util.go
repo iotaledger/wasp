@@ -3,38 +3,34 @@ package chain
 import (
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, log *logger.Logger) {
-	if msg.ChainOutput.GetStateIndex() > 0 {
-		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
-			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("STATE TRANSITION. State hash: %s",
-			msg.VirtualState.StateCommitment().String())
+func LogStateTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, reqids []isc.RequestID, log *logger.Logger) {
+	if blockIndex > 0 {
+		log.Infof("STATE TRANSITION TO #%d. Requests: %d, chain output: %s", blockIndex, len(reqids), outputID)
+		log.Debugf("STATE TRANSITION. Root commitment: %s", rootCommitment)
 	} else {
-		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
-		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
-			msg.VirtualState.StateCommitment().String())
+		log.Infof("ORIGIN STATE SAVED. State output id: %s", outputID)
+		log.Debugf("ORIGIN STATE SAVED. Root commitment: %s", rootCommitment)
 	}
 }
 
 // LogGovernanceTransition
-func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) {
-	stateHash, _ := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
-	log.Infof("GOVERNANCE TRANSITION state index #%d, anchor output: %s, state hash: %s",
-		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
+func LogGovernanceTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, log *logger.Logger) {
+	log.Infof("GOVERNANCE TRANSITION. State index #%d, anchor output: %s", blockIndex, outputID)
+	log.Debugf("GOVERNANCE TRANSITION. Root commitment: %s", rootCommitment)
 }
 
-func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
+func PublishRequestsSettled(chainID *isc.ChainID, stateIndex uint32, reqids []isc.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",
-			chainID.Base58(),
+			chainID.String(),
 			reqid.String(),
 			strconv.Itoa(int(stateIndex)),
 			strconv.Itoa(len(reqids)),
@@ -42,26 +38,26 @@ func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []i
 	}
 }
 
-func PublishStateTransition(chainID *iscp.ChainID, stateOutput *ledgerstate.AliasOutput, reqIDsLength int) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
+func PublishStateTransition(chainID *isc.ChainID, stateOutput *isc.AliasOutputWithID, reqIDsLength int) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateMetadata())
 
 	publisher.Publish("state",
-		chainID.Base58(),
+		chainID.String(),
 		strconv.Itoa(int(stateOutput.GetStateIndex())),
 		strconv.Itoa(reqIDsLength),
-		iscp.OID(stateOutput.ID()),
+		isc.OID(stateOutput.ID()),
 		stateHash.String(),
 	)
 }
 
-func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
-	chainID := iscp.NewChainID(stateOutput.GetAliasAddress())
+func PublishGovernanceTransition(stateOutput *isc.AliasOutputWithID) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateMetadata())
+	chainID := isc.ChainIDFromAliasID(stateOutput.GetAliasID())
 
 	publisher.Publish("rotate",
-		chainID.Base58(),
+		chainID.String(),
 		strconv.Itoa(int(stateOutput.GetStateIndex())),
-		iscp.OID(stateOutput.ID()),
+		isc.OID(stateOutput.ID()),
 		stateHash.String(),
 	)
 }

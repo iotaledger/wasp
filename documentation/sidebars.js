@@ -31,12 +31,12 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP Architecture',
-                    id: 'guide/core_concepts/iscp-architecture',
+                    label: 'ISC Architecture',
+                    id: 'guide/core_concepts/isc-architecture',
                 },
                 {
                     type: 'doc',
-                    label: 'Committees and Validators',
+                    label: 'Validators and Access Nodes',
                     id: 'guide/core_concepts/validators',
                 },
                 {
@@ -56,6 +56,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Calling a Smart Contracts',
+                    id: 'guide/core_concepts/invocation',
+                },
+                {
+                    type: 'doc',
                     label: 'Sandbox Interface',
                     id: 'guide/core_concepts/sandbox'
                 },
@@ -70,33 +75,38 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Root',
+                            label: 'root',
                             id: 'guide/core_concepts/core_contracts/root',
                         },
                         {
                             type: 'doc',
-                            label: 'Default',
-                            id: 'guide/core_concepts/core_contracts/default',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Accounts',
+                            label: 'accounts',
                             id: 'guide/core_concepts/core_contracts/accounts',
                         },
                         {
                             type: 'doc',
-                            label: 'Blob',
+                            label: 'blob',
                             id: 'guide/core_concepts/core_contracts/blob',
                         },
                         {
                             type: 'doc',
-                            label: 'Blocklog',
+                            label: 'blocklog',
                             id: 'guide/core_concepts/core_contracts/blocklog',
                         },
                         {
                             type: 'doc',
-                            label: 'Governance',
+                            label: 'governance',
                             id: 'guide/core_concepts/core_contracts/governance',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'errors',
+                            id: 'guide/core_concepts/core_contracts/errors',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'evm',
+                            id: 'guide/core_concepts/core_contracts/evm',
                         },
                     ],
                 },
@@ -133,27 +143,11 @@ module.exports = {
                 },
                 {
                     type: 'category',
-                    label: 'Interacting With Smart Contracts',
+                    label: 'Testing Smart Contracts with Solo',
                     items: [
                         {
                             type: 'doc',
-                            label: 'On-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/on-ledger-requests',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Off-ledger Requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
-                        }
-                    ]
-                },
-                {
-                    type: 'category',
-                    label: 'Solo',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Solo',
+                            label: 'What is Solo?',
                             id: 'guide/solo/what-is-solo',
                         },
                         {
@@ -163,8 +157,18 @@ module.exports = {
                         },
                         {
                             type: 'doc',
-                            label: 'Tokens and the UTXO Ledger',
-                            id: 'guide/solo/tokens-and-utxos',
+                            label: 'The L1 Ledger',
+                            id: 'guide/solo/the-l1-ledger',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'The L2 Ledger',
+                            id: 'guide/solo/the-l2-ledger'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Deploying a Smart Contract',
+                            id: 'guide/solo/deploying-sc',
                         },
                         {
                             type: 'doc',
@@ -181,38 +185,28 @@ module.exports = {
                             label: 'Error Handling',
                             id: 'guide/solo/error-handling',
                         },
-                        {
-                            type: 'doc',
-                            label: 'Account Balances',
-                            id: 'guide/solo/balances'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending tokens to a Smart Contract',
-                            id: 'guide/solo/sending-funds'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Return of tokens in case of failure',
-                            id: 'guide/solo/reimbursed-funds'
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Sending tokens from ISCP to the Tangle',
-                            id: 'guide/solo/sending-funds-sc'
-                        },
                     ]
                 }
             ],
         },
         {
             type: 'category',
-            label: 'ISCP Chains and Nodes',
+            label: 'ISC Chains and Nodes',
             items: [
+                {
+                    type: 'doc',
+                    label: 'Installing Wasp',
+                    id: 'guide/chains_and_nodes/installing-wasp',
+                },
                 {
                     type: 'doc',
                     label: 'Running a Node',
                     id: 'guide/chains_and_nodes/running-a-node',
+                },
+                {
+                    type: 'doc',
+                    label: 'Node Configuration',
+                    id: 'guide/chains_and_nodes/node-config',
                 },
                 {
                     type: 'doc',
@@ -251,7 +245,7 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'Wasm VM for ISCP',
+                            label: 'Wasm VM for ISC',
                             id: 'guide/wasm_vm/intro',
                         },
                         {
@@ -270,12 +264,12 @@ module.exports = {
                             id: 'guide/wasm_vm/context',
                         },
                     ]
-                 },
+                },
                 {
                     type: 'category',
                     label: 'Schema tool',
                     items: [
-                       {
+                        {
                             type: 'doc',
                             label: 'Smart Contract Schema Tool',
                             id: 'guide/schema/schema',
@@ -391,12 +385,17 @@ module.exports = {
                 {
                     type: 'doc',
                     label: 'Limitations',
-                    id: 'guide/evm/limitations',
+                    id: 'guide/evm/compatibility',
                 },
                 {
                     type: 'doc',
-                    label: 'Creating a Chain',
-                    id: 'guide/evm/create-chain',
+                    label: 'How to use',
+                    id: 'guide/evm/using',
+                },
+                {
+                    type: 'doc',
+                    label: 'The Magic Contract',
+                    id: 'guide/evm/magic',
                 },
                 {
                     type: 'doc',
@@ -416,6 +415,11 @@ module.exports = {
                             type: 'doc',
                             label: 'ERC20',
                             id: 'guide/evm/examples/ERC20',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'ERC721',
+                            id: 'guide/evm/examples/ERC721',
                         },
                     ]
                 },

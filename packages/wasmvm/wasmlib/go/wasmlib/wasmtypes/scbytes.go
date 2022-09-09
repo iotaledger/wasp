@@ -17,12 +17,16 @@ func BytesFromBytes(buf []byte) []byte {
 	return buf
 }
 
-func BytesToBytes(buf []byte) []byte {
-	return buf
+func BytesToBytes(value []byte) []byte {
+	return value
+}
+
+func BytesFromString(value string) []byte {
+	return HexDecode(value)
 }
 
 func BytesToString(value []byte) string {
-	return Base58Encode(value)
+	return HexEncode(value)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -13,7 +13,8 @@ func TestBufferedKVStore(t *testing.T) {
 	db := mapdb.NewMapDB()
 	_ = db.Set([]byte("abcd"), []byte("v1"))
 
-	realm := db.WithRealm([]byte("ab"))
+	realm, err := db.WithRealm([]byte("ab"))
+	require.NoError(t, err)
 
 	v, err := realm.Get([]byte("cd"))
 	assert.NoError(t, err)
@@ -21,14 +22,14 @@ func TestBufferedKVStore(t *testing.T) {
 
 	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
 
-	v, err = b.Get(kv.Key([]byte("cd")))
+	v, err = b.Get("cd")
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
 	assert.EqualValues(
 		t,
 		map[kv.Key][]byte{
-			kv.Key("cd"): []byte("v1"),
+			"cd": []byte("v1"),
 		},
 		b.DangerouslyDumpToDict(),
 	)
@@ -43,7 +44,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.Equal(t, 1, n)
 
 	n = 0
-	b.MustIterate(kv.Key("c"), func(key kv.Key, value []byte) bool {
+	b.MustIterate("c", func(key kv.Key, value []byte) bool {
 		assert.Equal(t, kv.Key("cd"), key)
 		assert.Equal(t, []byte("v1"), value)
 		n++
@@ -53,27 +54,27 @@ func TestBufferedKVStore(t *testing.T) {
 
 	n = 0
 	b.MustIterateKeys(kv.EmptyPrefix, func(key kv.Key) bool {
-		assert.Equal(t, kv.Key([]byte("cd")), key)
+		assert.Equal(t, kv.Key("cd"), key)
 		n++
 		return true
 	})
 	assert.Equal(t, 1, n)
 
-	b.Set(kv.Key([]byte("cd")), []byte("v2"))
+	b.Set("cd", []byte("v2"))
 
 	// not committed to DB
 	v, err = realm.Get([]byte("cd"))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	v, err = b.Get(kv.Key([]byte("cd")))
+	v, err = b.Get("cd")
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v2"), v)
 
 	assert.EqualValues(
 		t,
 		map[kv.Key][]byte{
-			kv.Key("cd"): []byte("v2"),
+			"cd": []byte("v2"),
 		},
 		b.DangerouslyDumpToDict(),
 	)
@@ -92,7 +93,8 @@ func TestIterateSorted(t *testing.T) {
 	_ = db.Set([]byte("1323"), []byte("v1323"))
 	_ = db.Set([]byte("1245"), []byte("v1245"))
 
-	realm := db.WithRealm([]byte("1"))
+	realm, err := db.WithRealm([]byte("1"))
+	require.NoError(t, err)
 	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
 
 	b.Del("246")

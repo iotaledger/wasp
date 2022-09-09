@@ -4,90 +4,156 @@
 package wasmhost
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"math/big"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-// WasmConvertor converts ISCP data types to WasmLib data types
+// WasmConvertor converts ISC data types to WasmLib data types
 type WasmConvertor struct{}
 
-func (cvt WasmConvertor) IscpAddress(address *wasmtypes.ScAddress) ledgerstate.Address {
-	ret, _, err := ledgerstate.AddressFromBytes(address.Bytes())
+func (cvt WasmConvertor) IscAddress(scAddress *wasmtypes.ScAddress) iotago.Address {
+	buf := wasmtypes.AddressToBytes(*scAddress)
+	address, _, err := isc.AddressFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}
-	return ret
+	return address
 }
 
-func (cvt WasmConvertor) IscpAgentID(agentID *wasmtypes.ScAgentID) *iscp.AgentID {
-	address := agentID.Address()
-	hname := agentID.Hname()
-	return iscp.NewAgentID(cvt.IscpAddress(&address), cvt.IscpHname(hname))
-}
-
-func (cvt WasmConvertor) IscpChainID(chainID *wasmtypes.ScChainID) *iscp.ChainID {
-	ret, err := iscp.ChainIDFromBytes(chainID.Bytes())
+func (cvt WasmConvertor) IscAgentID(scAgentID *wasmtypes.ScAgentID) isc.AgentID {
+	buf := scAgentID.Bytes()
+	agentID, err := isc.AgentIDFromBytes(buf)
 	if err != nil {
 		panic(err)
 	}
-	return ret
+	return agentID
 }
 
-func (cvt WasmConvertor) IscpColor(color *wasmtypes.ScColor) colored.Color {
-	ret, err := colored.ColorFromBytes(color.Bytes())
-	if err != nil {
-		panic(err)
+func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
+	iscAllowance := isc.NewAllowanceBaseTokens(assets.BaseTokens)
+	iscAssets := iscAllowance.Assets
+	for tokenID, amount := range assets.Tokens {
+		token := &iotago.NativeToken{
+			ID:     *cvt.IscTokenID(&tokenID),
+			Amount: cvt.IscBigInt(amount),
+		}
+		iscAssets.Tokens = append(iscAssets.Tokens, token)
 	}
-	return ret
-}
-
-func (cvt WasmConvertor) IscpHash(hash *wasmtypes.ScHash) hashing.HashValue {
-	ret, err := hashing.HashValueFromBytes(hash.Bytes())
-	if err != nil {
-		panic(err)
+	for nftID := range assets.NftIDs {
+		nft := cvt.IscNFTID(&nftID)
+		iscAllowance.NFTs = append(iscAllowance.NFTs, *nft)
 	}
-	return ret
+	return iscAllowance
 }
 
-func (cvt WasmConvertor) IscpHname(hname wasmtypes.ScHname) iscp.Hname {
-	return iscp.Hname(hname)
+func (cvt WasmConvertor) IscBigInt(amount wasmtypes.ScBigInt) *big.Int {
+	res := new(big.Int)
+	res.SetBytes(wasmtypes.BigIntToBytes(amount))
+	return res
 }
 
-func (cvt WasmConvertor) IscpRequestID(requestID *wasmtypes.ScRequestID) iscp.RequestID {
-	ret, err := iscp.RequestIDFromBytes(requestID.Bytes())
-	if err != nil {
-		panic(err)
+func (cvt WasmConvertor) IscChainID(chainID *wasmtypes.ScChainID) *isc.ChainID {
+	buf := wasmtypes.ChainIDToBytes(*chainID)
+	iscChainID := new(isc.ChainID)
+	copy(iscChainID[:], buf)
+	return iscChainID
+}
+
+func (cvt WasmConvertor) IscHash(hash *wasmtypes.ScHash) *hashing.HashValue {
+	buf := wasmtypes.HashToBytes(*hash)
+	iscHashValue := new(hashing.HashValue)
+	copy(iscHashValue[:], buf)
+	return iscHashValue
+}
+
+func (cvt WasmConvertor) IscHname(hname wasmtypes.ScHname) isc.Hname {
+	return isc.Hname(hname)
+}
+
+func (cvt WasmConvertor) IscNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
+	buf := wasmtypes.NftIDToBytes(*nftID)
+	iscNFTID := new(iotago.NFTID)
+	copy(iscNFTID[:], buf)
+	return iscNFTID
+}
+
+func (cvt WasmConvertor) IscRequestID(requestID *wasmtypes.ScRequestID) *isc.RequestID {
+	buf := wasmtypes.RequestIDToBytes(*requestID)
+	iscRequestID := new(isc.RequestID)
+	copy(iscRequestID.TransactionID[:], buf)
+	iscRequestID.TransactionOutputIndex = wasmtypes.Uint16FromBytes(buf[wasmtypes.ScHashLength:])
+	return iscRequestID
+}
+
+func (cvt WasmConvertor) IscTokenID(tokenID *wasmtypes.ScTokenID) *iotago.NativeTokenID {
+	buf := wasmtypes.TokenIDToBytes(*tokenID)
+	iscTokenID := new(iotago.NativeTokenID)
+	copy(iscTokenID[:], buf)
+	return iscTokenID
+}
+
+func (cvt WasmConvertor) ScAddress(address iotago.Address) wasmtypes.ScAddress {
+	buf := isc.BytesFromAddress(address)
+	return wasmtypes.AddressFromBytes(buf)
+}
+
+func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
+	buf := agentID.Bytes()
+	return wasmtypes.AgentIDFromBytes(buf)
+}
+
+func (cvt WasmConvertor) ScBalances(allowance *isc.Allowance) *wasmlib.ScBalances {
+	transfer := wasmlib.NewScTransferBaseTokens(allowance.Assets.BaseTokens)
+	for _, token := range allowance.Assets.Tokens {
+		tokenID := cvt.ScTokenID(&token.ID)
+		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
 	}
-	return ret
+	for _, nft := range allowance.NFTs {
+		nftID := cvt.ScNftID(&nft) //nolint:gosec
+		transfer.AddNFT(&nftID)
+	}
+	return &transfer.ScBalances
 }
 
-func (cvt WasmConvertor) ScAddress(address ledgerstate.Address) wasmtypes.ScAddress {
-	return wasmtypes.AddressFromBytes(address.Bytes())
+func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
+	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
-func (cvt WasmConvertor) ScAgentID(agentID *iscp.AgentID) wasmtypes.ScAgentID {
-	return wasmtypes.AgentIDFromBytes(agentID.Bytes())
-}
-
-func (cvt WasmConvertor) ScChainID(chainID *iscp.ChainID) wasmtypes.ScChainID {
+func (cvt WasmConvertor) ScChainID(chainID *isc.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
-}
-
-func (cvt WasmConvertor) ScColor(color *colored.Color) wasmtypes.ScColor {
-	return wasmtypes.ColorFromBytes(color.Bytes())
 }
 
 func (cvt WasmConvertor) ScHash(hash hashing.HashValue) wasmtypes.ScHash {
 	return wasmtypes.HashFromBytes(hash.Bytes())
 }
 
-func (cvt WasmConvertor) ScHname(hname iscp.Hname) wasmtypes.ScHname {
+func (cvt WasmConvertor) ScHname(hname isc.Hname) wasmtypes.ScHname {
 	return wasmtypes.ScHname(hname)
 }
 
-func (cvt WasmConvertor) ScRequestID(requestID iscp.RequestID) wasmtypes.ScRequestID {
+func (cvt WasmConvertor) ScNftID(nftID *iotago.NFTID) wasmtypes.ScNftID {
+	return wasmtypes.NftIDFromBytes(nftID[:])
+}
+
+func (cvt WasmConvertor) ScRequestID(requestID isc.RequestID) wasmtypes.ScRequestID {
 	return wasmtypes.RequestIDFromBytes(requestID.Bytes())
+}
+
+func (cvt WasmConvertor) ScTokenID(tokenID *iotago.NativeTokenID) wasmtypes.ScTokenID {
+	return wasmtypes.TokenIDFromBytes(tokenID[:])
+}
+
+func (cvt WasmConvertor) ToBigInt(amount interface{}) *big.Int {
+	switch it := amount.(type) {
+	case wasmtypes.ScBigInt:
+		return cvt.IscBigInt(it)
+	default:
+		return util.ToBigInt(amount)
+	}
 }

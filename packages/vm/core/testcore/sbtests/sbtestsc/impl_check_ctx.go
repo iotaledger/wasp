@@ -2,39 +2,36 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-func testCheckContextFromFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
+func testCheckContextFromFullEP(ctx isc.Sandbox) dict.Dict {
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	ctx.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	ctx.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	ctx.Requiref(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
+	myAgentID := isc.NewContractAgentID(ctx.ChainID(), ctx.Contract())
+	ctx.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	return nil
+}
+
+func testCheckContextFromViewEP(ctx isc.SandboxView) dict.Dict {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
-	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
-	return nil, nil
+	a.Requiref(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Requiref(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	myAgentID := isc.NewContractAgentID(ctx.ChainID(), ctx.Contract())
+	a.Requiref(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	return nil
 }
 
-func testCheckContextFromViewEP(ctx iscp.SandboxView) (dict.Dict, error) {
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	a := assert.NewAssert(ctx.Log())
-
-	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
-	return nil, nil
-}
-
-func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
+func passTypesFull(ctx isc.Sandbox) dict.Dict {
 	ret := dict.New()
 	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkFull(ctx, err)
@@ -64,7 +61,7 @@ func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	hname, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
 	checkFull(ctx, err)
-	if hname != iscp.Hn("Hname") {
+	if hname != isc.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
 	hname0, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
@@ -83,10 +80,10 @@ func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkFull(ctx, err)
-	return nil, nil
+	return nil
 }
 
-func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
+func passTypesView(ctx isc.SandboxView) dict.Dict {
 	s, err := codec.DecodeString(ctx.Params().MustGet("string"))
 	checkView(ctx, err)
 	if s != "string" {
@@ -109,7 +106,7 @@ func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
 	}
 	hname, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
 	checkView(ctx, err)
-	if hname != iscp.Hn("Hname") {
+	if hname != isc.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
 	hname0, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
@@ -128,16 +125,16 @@ func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
 
 	_, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkView(ctx, err)
-	return nil, nil
+	return nil
 }
 
-func checkFull(ctx iscp.Sandbox, err error) {
+func checkFull(ctx isc.Sandbox, err error) {
 	if err != nil {
 		ctx.Log().Panicf("Full sandbox: %v", err)
 	}
 }
 
-func checkView(ctx iscp.SandboxView, err error) {
+func checkView(ctx isc.SandboxView, err error) {
 	if err != nil {
 		ctx.Log().Panicf("View sandbox: %v", err)
 	}

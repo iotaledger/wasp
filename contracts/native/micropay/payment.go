@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -17,32 +18,34 @@ type Payment struct {
 }
 
 type BatchPayment struct {
-	Payer    ledgerstate.Address
-	Provider ledgerstate.Address
+	Payer    iotago.Address
+	Provider iotago.Address
 	Payments []Payment
 }
 
-func NewPayment(ord uint32, amount uint64, targetAddr ledgerstate.Address, payerKeyPair *ed25519.KeyPair) *Payment {
-	payerAddr := ledgerstate.NewED25519Address(payerKeyPair.PublicKey)
-	data := paymentEssence(ord, amount, payerAddr, targetAddr)
-	shortSig := payerKeyPair.PrivateKey.Sign(data)
-	signature := ledgerstate.NewED25519Signature(payerKeyPair.PublicKey, shortSig)
-	if !signature.AddressSignatureValid(payerAddr, data) {
-		panic("NewPayment: internal error, signature invalid")
-	}
-	return &Payment{
-		Ord:            ord,
-		Amount:         amount,
-		SignatureShort: shortSig[:],
-	}
+func NewPayment(ord uint32, amount uint64, targetAddr iotago.Address, payerKeyPair *cryptolib.KeyPair) *Payment {
+	panic("TODO implement")
+	// payerAddr := ledgerstate.NewED25519Address(payerKeyPair.PublicKey)
+	// data := paymentEssence(ord, amount, payerAddr, targetAddr)
+	// shortSig := payerKeyPair.PrivateKey.Sign(data)
+	// signature := ledgerstate.NewED25519Signature(payerKeyPair.PublicKey, shortSig)
+	// if !signature.AddressSignatureValid(payerAddr, data) {
+	// 	panic("NewPayment: internal error, signature invalid")
+	// }
+	// return &Payment{
+	// 	Ord:            ord,
+	// 	Amount:         amount,
+	// 	SignatureShort: shortSig[:],
+	// }
 }
 
-func paymentEssence(ord uint32, amount uint64, payerAddr, targetAddr ledgerstate.Address) []byte {
+//nolint:deadcode
+func paymentEssence(ord uint32, amount uint64, payerAddr, targetAddr iotago.Address) []byte {
 	var buf bytes.Buffer
 	buf.Write(util.Uint32To4Bytes(ord))
 	buf.Write(util.Uint64To8Bytes(amount))
-	buf.Write(payerAddr.Bytes())
-	buf.Write(targetAddr.Bytes())
+	buf.Write(isc.BytesFromAddress(payerAddr))
+	buf.Write(isc.BytesFromAddress(targetAddr))
 	return buf.Bytes()
 }
 
@@ -83,7 +86,7 @@ func (p *Payment) Read(r io.Reader) error {
 	if p.SignatureShort, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if len(p.SignatureShort) != ed25519.SignatureSize {
+	if len(p.SignatureShort) != cryptolib.SignatureSize {
 		return fmt.Errorf("wrong public key bytes")
 	}
 	return nil

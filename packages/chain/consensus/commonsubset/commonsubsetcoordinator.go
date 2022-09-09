@@ -31,18 +31,17 @@ const (
 // NOTE: On the termination of the ACS instances. The instances are initiated either
 // by the current node or by a message from other node.
 //
-//  * If we have a newer StateOutput, older ACS are irrelevant, because the state
-//    is already in the Ledger and is confirmed.
+//   - If we have a newer StateOutput, older ACS are irrelevant, because the state
+//     is already in the Ledger and is confirmed.
 //
-//  * It is safe to drop messages for some future ACS instances, because if they
-//    are correct ones, they will redeliver the messages until we wil catch up
-//    to their StateIndex. So the handling of the future ACS instance is only a
-//    performance optimization.
+//   - It is safe to drop messages for some future ACS instances, because if they
+//     are correct ones, they will redeliver the messages until we wil catch up
+//     to their StateIndex. So the handling of the future ACS instance is only a
+//     performance optimization.
 //
 // What to do in the case of reset? Set the current state index as the last one
 // this node has provided. Some future ACS instances will be left for some time,
 // until they will be discarded because of the growing StateIndex in the new branch.
-//
 type CommonSubsetCoordinator struct {
 	csInsts                     map[uint64]*CommonSubset // The actual instances can be created on request or on peer message.
 	csAsked                     map[uint64]bool          // Indicates, which instances are already asked by this nodes.
@@ -51,14 +50,14 @@ type CommonSubsetCoordinator struct {
 	lock                        sync.RWMutex
 
 	netGroup peering.GroupProvider
-	dkShare  *tcrypto.DKShare
+	dkShare  tcrypto.DKShare
 	log      *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
-	dkShare *tcrypto.DKShare,
+	dkShare tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
 	ret := &CommonSubsetCoordinator{

@@ -23,6 +23,10 @@ pub fn string_to_bytes(value: &str) -> Vec<u8> {
     value.as_bytes().to_vec()
 }
 
+pub fn string_from_string(value: &str) -> String {
+    value.to_string()
+}
+
 pub fn string_to_string(value: &str) -> String {
     value.to_string()
 }

@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "example_tutorial"
-description = "Example ISCP smart contract to the tutorial"
+name = "solotutorial"
+description = "Example ISC smart contract for the Solo tutorial"
 license = "Apache-2.0"
 version = "0.1.0"
-authors = ["Evaldas Drasutis <evaldas.drasutis@iota.org>"]
-edition = "2018"
+authors = ["Evaldas Drasutis <evaldas.drasutis@iota.org>", "Diego Essaya <dessaya@iota.org>"]
+edition = "2021"
 repository = "https://github.com/iotaledger/wasp"
 
 [lib]

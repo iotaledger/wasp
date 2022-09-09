@@ -2,208 +2,182 @@ package blocklog
 
 import (
 	"math"
-	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 var Processor = Contract.Processor(initialize,
-	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
-	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
-	FuncGetRequestReceipt.WithHandler(viewGetRequestReceipt),
-	FuncGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
-	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
-	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
-	FuncControlAddresses.WithHandler(viewControlAddresses),
-	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
-	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
-	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
+	ViewControlAddresses.WithHandler(viewControlAddresses),
+	ViewGetBlockInfo.WithHandler(viewGetBlockInfo),
+	ViewGetEventsForBlock.WithHandler(viewGetEventsForBlock),
+	ViewGetEventsForContract.WithHandler(viewGetEventsForContract),
+	ViewGetEventsForRequest.WithHandler(viewGetEventsForRequest),
+	ViewGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
+	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
+	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
+	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 )
 
-func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
+func initialize(ctx isc.Sandbox) dict.Dict {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
-		Timestamp:             time.Unix(0, ctx.GetTimestamp()),
+		Timestamp:             ctx.Timestamp(),
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
+		PreviousL1Commitment:  *state.OriginL1Commitment(),
+		L1Commitment:          nil, // not known yet
 	})
-	a := assert.NewAssert(ctx.Log())
-	a.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	// storing hname as a terminal value of the contract's state root.
+	// This way we will be able to retrieve commitment to the contract's state
+	ctx.State().Set("", ctx.Contract().Bytes())
+
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
-	return nil, nil
+	return nil
 }
 
-func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	blockIndex := params.MustGetUint32(ParamBlockIndex)
-	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
-	if err != nil {
-		return nil, err
+func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
+	l := registry.MustLen()
+	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
+	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+	ctx.RequireNoError(err)
+	return dict.Dict{
+		ParamStateControllerAddress: isc.BytesFromAddress(rec.StateAddress),
+		ParamGoverningAddress:       isc.BytesFromAddress(rec.GoverningAddress),
+		ParamBlockIndex:             codec.EncodeUint32(rec.SinceBlockIndex),
 	}
-	if !found {
-		return nil, xerrors.New("not found")
-	}
-	ret := dict.New()
-	ret.Set(ParamBlockInfo, data)
-	return ret, nil
 }
 
-func viewGetLatestBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
-	regLen := registry.MustLen()
-	if regLen == 0 {
-		return nil, xerrors.New("blocklog::viewGetLatestBlockInfo: empty log")
+// viewGetBlockInfo returns blockInfo for a given block.
+// params:
+// ParamBlockIndex - index of the block (defaults to the latest block)
+func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
+	blockIndex := getBlockIndexParams(ctx)
+	data, found, err := getBlockInfoDataInternal(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
+	ctx.Requiref(found, "not found")
+	return dict.Dict{
+		ParamBlockIndex: codec.EncodeUint32(blockIndex),
+		ParamBlockInfo:  data,
 	}
-	data := registry.MustGetAt(regLen - 1)
-	ret := dict.New()
-	ret.Set(ParamBlockIndex, codec.EncodeUint32(regLen-1))
-	ret.Set(ParamBlockInfo, data)
-	return ret, nil
 }
 
-func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	requestID := params.MustGetRequestID(ParamRequestID)
-	a := assert.NewAssert(ctx.Log())
-	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
-	a.RequireNoError(err)
-	ret := dict.New()
-	if seen {
-		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
-	}
-	return ret, nil
-}
-
-func viewGetRequestReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	requestID := params.MustGetRequestID(ParamRequestID)
-	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
-	ret := dict.New()
-	if !found {
-		return ret, nil
-	}
-	ret.Set(ParamRequestRecord, recBin)
-	ret.Set(ParamBlockIndex, codec.EncodeUint32(blockIndex))
-	ret.Set(ParamRequestIndex, codec.EncodeUint16(requestIndex))
-	return ret, nil
-}
-
-func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	a := assert.NewAssert(ctx.Log())
-	blockIndex := params.MustGetUint32(ParamBlockIndex)
+// viewGetRequestIDsForBlock returns a list of requestIDs for a given block.
+// params:
+// ParamBlockIndex - index of the block (defaults to latest block)
+func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
+	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return dict.Dict{}, nil
+		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
-	a.RequireNoError(err)
-	a.Require(found, "not found")
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
+	ctx.Requiref(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
-		a.RequireNoError(err)
+		ctx.RequireNoError(err)
 		arr.MustPush(rec.Request.ID().Bytes())
 	}
-	return ret, nil
+	return ret
 }
 
-func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	a := assert.NewAssert(ctx.Log())
-	blockIndex := params.MustGetUint32(ParamBlockIndex)
+func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
+	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+	res, err := GetRequestRecordDataByRequestID(ctx.StateR(), requestID)
+	ctx.RequireNoError(err)
+	if res == nil {
+		return nil
+	}
+	return dict.Dict{
+		ParamRequestRecord: res.ReceiptBin,
+		ParamBlockIndex:    codec.EncodeUint32(res.BlockIndex),
+		ParamRequestIndex:  codec.EncodeUint16(res.RequestIndex),
+	}
+}
+
+// viewGetRequestReceiptsForBlock returns a list of receipts for a given block.
+// params:
+// ParamBlockIndex - index of the block (defaults to latest block)
+func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
+	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return dict.Dict{}, nil
+		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
-	a.RequireNoError(err)
-	a.Require(found, "not found")
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
+	ctx.Requiref(found, "not found")
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
 	for _, d := range dataArr {
 		arr.MustPush(d)
 	}
-	return ret, nil
+	ret.Set(ParamBlockIndex, codec.Encode(blockIndex))
+	return ret
 }
 
-func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarControlAddresses)
-	l := registry.MustLen()
-	a.Require(l > 0, "inconsistency: unknown control addresses")
-	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
-	a.RequireNoError(err)
+func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
+	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
+	seen, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
+	ctx.RequireNoError(err)
 	ret := dict.New()
-	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
-	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
-	ret.Set(ParamBlockIndex, codec.EncodeUint32(rec.SinceBlockIndex))
-	return ret, nil
+	if seen {
+		ret.Set(ParamRequestProcessed, codec.EncodeBool(true))
+	}
+	return ret
 }
 
 // viewGetEventsForRequest returns a list of events for a given request.
 // params:
 // ParamRequestID - requestID
-func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	requestID := params.MustGetRequestID(ParamRequestID)
+func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
+	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 
-	events, err := getRequestEventsInternal(ctx.State(), &requestID)
-	if err != nil {
-		return nil, err
-	}
+	events, err := getRequestEventsInternal(ctx.StateR(), &requestID)
+	ctx.RequireNoError(err)
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
-	return ret, nil
+	return ret
 }
 
 // viewGetEventsForBlock returns a list of events for a given block.
 // params:
 // ParamBlockIndex - index of the block (defaults to latest block)
-func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-
-	var blockIndex uint32
-	if ctx.Params().MustHas(ParamBlockIndex) {
-		blockIndex = params.MustGetUint32(ParamBlockIndex)
-	} else {
-		registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
-		blockIndex = registry.MustLen() - 1
-	}
+func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
+	blockIndex := getBlockIndexParams(ctx)
 
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return dict.Dict{}, nil
+		return nil
 	}
 
-	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
-	if err != nil {
-		return nil, err
-	}
+	events, err := GetBlockEventsInternal(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
-	return ret, nil
+	return ret
 }
 
 // viewGetEventsForContract returns a list of events for a given smart contract.
@@ -211,26 +185,17 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 // ParamContractHname - hname of the contract
 // ParamFromBlock - defaults to 0
 // ParamToBlock - defaults to latest block
-func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
-	params := kvdecoder.New(ctx.Params())
-	contract := params.MustGetHname(ParamContractHname)
-	fromBlock, err := params.GetUint32(ParamFromBlock, 0)
-	if err != nil {
-		return nil, err
-	}
-	toBlock, _ := params.GetUint32(ParamToBlock, math.MaxUint32)
-	if err != nil {
-		return nil, err
-	}
-	events, err := getSmartContractEventsInternal(ctx.State(), contract, fromBlock, toBlock)
-	if err != nil {
-		return nil, err
-	}
+func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
+	contract := ctx.Params().MustGetHname(ParamContractHname)
+	fromBlock := ctx.Params().MustGetUint32(ParamFromBlock, 0)
+	toBlock := ctx.Params().MustGetUint32(ParamToBlock, math.MaxUint32)
+	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
+	ctx.RequireNoError(err)
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
 		arr.MustPush([]byte(event))
 	}
-	return ret, nil
+	return ret
 }

@@ -9,11 +9,12 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/client/goshimmer"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"golang.org/x/xerrors"
@@ -22,26 +23,32 @@ import (
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Node              *goshimmer.Client
-	CommitteeAPIHosts []string
-	CommitteePubKeys  []string
-	N                 uint16
-	T                 uint16
-	OriginatorKeyPair *ed25519.KeyPair
-	Description       string
-	Textout           io.Writer
-	Prefix            string
+	Layer1Client         l1connection.Client
+	CommitteeAPIHosts    []string
+	CommitteePubKeys     []string
+	N                    uint16
+	T                    uint16
+	OriginatorKeyPair    *cryptolib.KeyPair
+	Description          string
+	Textout              io.Writer
+	Prefix               string
+	InitParams           dict.Dict
+	GovernanceController iotago.Address
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, ledgerstate.Address, error) {
+func DeployChainWithDKG(par CreateChainParams) (*isc.ChainID, iotago.Address, error) {
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
 	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID, err := DeployChain(par, stateControllerAddr)
+	govControllerAddr := stateControllerAddr
+	if par.GovernanceController != nil {
+		govControllerAddr = par.GovernanceController
+	}
+	chainID, err := DeployChain(par, stateControllerAddr, govControllerAddr)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -51,56 +58,82 @@ func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, ledgerstate.Addre
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*iscp.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := ledgerstate.NewED25519Address(par.OriginatorKeyPair.PublicKey)
+	originatorAddr := par.OriginatorKeyPair.GetPublicKey().AsEd25519Address()
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
-		originatorAddr.Base58(), stateControllerAddr.Base58(), par.N, par.T)
+		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	chainID, initRequestTx, err := CreateChainOrigin(par.Node, par.OriginatorKeyPair, stateControllerAddr, par.Description)
+	chainID, initRequestTx, err := CreateChainOrigin(
+		par.Layer1Client,
+		par.OriginatorKeyPair,
+		stateControllerAddr,
+		govControllerAddr,
+		par.Description,
+		par.InitParams,
+	)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", initRequestTx.ID().Base58())
+	txID, err := initRequestTx.ID()
+	if err != nil {
+		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
+		return nil, xerrors.Errorf("DeployChain: %w", err)
+	}
+	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
 	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Base58(), err)
+		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.AsAddress(), err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.Base58())
-
-	peers := multiclient.New(par.CommitteeAPIHosts)
+	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.AsAddress())
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	if err = peers.WaitUntilAllRequestsProcessed(chainID, initRequestTx, 30*time.Second); err != nil {
+	_, err = multiclient.New(par.CommitteeAPIHosts).
+		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
+	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
-		chainID.String(), stateControllerAddr.Base58(), par.N, par.T)
+		chainID.String(), stateControllerAddr, par.N, par.T)
 
 	return chainID, err
 }
 
+func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
+	var utxoIDs iotago.OutputIDs
+	for id := range utxoMap {
+		utxoIDs = append(utxoIDs, id)
+	}
+	return utxoIDs
+}
+
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stateController ledgerstate.Address, dscr string) (*iscp.ChainID, *ledgerstate.Transaction, error) {
-	originatorAddr := ledgerstate.NewED25519Address(originator.PublicKey)
+func CreateChainOrigin(
+	layer1Client l1connection.Client,
+	originator *cryptolib.KeyPair,
+	stateController iotago.Address,
+	governanceController iotago.Address,
+	dscr string, initParams dict.Dict,
+) (*isc.ChainID, *iotago.Transaction, error) {
+	originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// ----------- request owner address' outputs from the ledger
-	allOuts, err := node.GetConfirmedOutputs(originatorAddr)
+	utxoMap, err := layer1Client.OutputMap(originatorAddr)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
@@ -109,21 +142,22 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		originator,
 		stateController,
-		nil,
-		time.Now(),
-		allOuts...,
+		governanceController,
+		0,
+		utxoMap,
+		utxoIDsFromUtxoMap(utxoMap),
 	)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ------------- post origin transaction and wait for confirmation
-	err = node.PostAndWaitForConfirmation(originTx)
+	err = layer1Client.PostTx(originTx)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
-	allOuts, err = node.GetConfirmedOutputs(originatorAddr)
+	utxoMap, err = layer1Client.OutputMap(originatorAddr)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
@@ -134,15 +168,16 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 		originator,
 		chainID,
 		dscr,
-		time.Now(),
-		allOuts...,
+		utxoMap,
+		utxoIDsFromUtxoMap(utxoMap),
+		initParams,
 	)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ---------- post root init request transaction and wait for confirmation
-	err = node.PostAndWaitForConfirmation(reqTx)
+	err = layer1Client.PostTx(reqTx)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
@@ -152,11 +187,11 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts []string, chainID *iscp.ChainID) error {
+func ActivateChainOnAccessNodes(apiHosts []string, chainID *isc.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(&registry.ChainRecord{
-		ChainID: chainID,
+		ChainID: *chainID,
 	})
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)

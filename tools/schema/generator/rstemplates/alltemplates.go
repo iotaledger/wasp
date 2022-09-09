@@ -34,18 +34,20 @@ var TypeDependent = model.StringMapMap{
 	"fldLangType": {
 		"Address":   "ScAddress",
 		"AgentID":   "ScAgentID",
+		"BigInt":    "ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "Vec<u8>",
 		"ChainID":   "ScChainID",
-		"Color":     "ScColor",
 		"Hash":      "ScHash",
 		"Hname":     "ScHname",
 		"Int8":      "i8",
 		"Int16":     "i16",
 		"Int32":     "i32",
 		"Int64":     "i64",
+		"NftID":     "ScNftID",
 		"RequestID": "ScRequestID",
 		"String":    "String",
+		"TokenID":   "ScTokenID",
 		"Uint8":     "u8",
 		"Uint16":    "u16",
 		"Uint32":    "u32",
@@ -54,18 +56,20 @@ var TypeDependent = model.StringMapMap{
 	"fldParamLangType": {
 		"Address":   "ScAddress",
 		"AgentID":   "ScAgentID",
+		"BigInt":    "ScBigInt",
 		"Bool":      "bool",
 		"Bytes":     "[u8]",
 		"ChainID":   "ScChainID",
-		"Color":     "ScColor",
 		"Hash":      "ScHash",
 		"Hname":     "ScHname",
 		"Int8":      "i8",
 		"Int16":     "i16",
 		"Int32":     "i32",
 		"Int64":     "i64",
+		"NftID":     "ScNftID",
 		"RequestID": "ScRequestID",
 		"String":    "str",
+		"TokenID":   "ScTokenID",
 		"Uint8":     "u8",
 		"Uint16":    "u16",
 		"Uint32":    "u32",
@@ -73,20 +77,22 @@ var TypeDependent = model.StringMapMap{
 	},
 	"fldRef": {
 		"Address":   "&",
-		"Bytes":     "&",
 		"AgentID":   "&",
+		"BigInt":    "&",
+		"Bytes":     "&",
 		"ChainID":   "&",
-		"Color":     "&",
 		"Hash":      "&",
+		"NftID":     "&",
 		"RequestID": "&",
 		"String":    "&",
+		"TokenID":   "&",
 	},
 }
 
 var common = map[string]string{
 	// *******************************
 	"initGlobals": `
-$#set crate 
+$#set crate $nil
 $#if core setCrate
 `,
 	// *******************************
@@ -104,5 +110,37 @@ use crate::*;
 	// *******************************
 	"useWasmLib": `
 use wasmlib::*;
+`,
+	// *******************************
+	"_eventComment": `
+    $nextLine
+`,
+	// *******************************
+	"_eventParamComment": `
+        $nextLine
+`,
+	// *******************************
+	"_fldComment": `
+    $nextLine
+`,
+	// *******************************
+	"_funcComment": `
+    $nextLine
+`,
+	// *******************************
+	"_funcAccessComment": `
+	$nextLine
+`,
+	// *******************************
+	"_structComment": `
+$nextLine
+`,
+	// *******************************
+	"_structFieldComment": `
+    $nextLine
+`,
+	// *******************************
+	"_typedefComment": `
+$nextLine
 `,
 }

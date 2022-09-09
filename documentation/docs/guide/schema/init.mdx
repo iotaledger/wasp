@@ -7,7 +7,7 @@ keywords:
 - smart contract creator
 - one-time
 - contract deployment
-description: The init function will automatically be called immediately after the first time the contract has been deployed to the VM.  This is a one-time initialization call, meant to be performed by the contract deployment mechanism.
+description: The init function will automatically be called immediately after the first time the contract has been deployed to the VM. This is a one-time initialization call, meant to be performed by the contract deployment mechanism.
 image: /img/logo/WASP_logo_dark.png
 ---
 import Tabs from "@theme/Tabs"
@@ -70,9 +70,9 @@ func funcInit(ctx wasmlib.ScFuncContext, f *InitContext) {
 	// The schema tool has already created a proper InitContext for this function that
 	// allows us to access call parameters and state storage in a type-safe manner.
 
-	// First we set up a default value for the owner in case the optional
-	// 'owner' parameter was omitted.
-	var owner wasmlib.ScAgentID = ctx.ContractCreator()
+    // First we set up a default value for the owner in case the optional 'owner'
+    // parameter was omitted. We use the agent that sent the deploy request.
+	var owner wasmlib.ScAgentID = ctx.RequestSender()
 
 	// Now we check if the optional 'owner' parameter is present in the params map.
 	if f.Params.Owner().Exists() {
@@ -118,9 +118,9 @@ pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
     // The schema tool has already created a proper InitContext for this function that
     // allows us to access call parameters and state storage in a type-safe manner.
 
-    // First we set up a default value for the owner in case the optional
-    // 'owner' parameter was omitted.
-    let mut owner: ScAgentID = ctx.contract_creator();
+    // First we set up a default value for the owner in case the optional 'owner'
+    // parameter was omitted. We use the agent that sent the deploy request.
+    let mut owner: ScAgentID = ctx.request_sender();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if f.params.owner().exists() {
@@ -165,9 +165,9 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
     // The schema tool has already created a proper InitContext for this function that
     // allows us to access call parameters and state storage in a type-safe manner.
 
-    // First we set up a default value for the owner in case the optional
-    // 'owner' parameter was omitted.
-    let owner: wasmlib.ScAgentID = ctx.contractCreator();
+    // First we set up a default value for the owner in case the optional 'owner'
+    // parameter was omitted. We use the agent that sent the deploy request.
+    let owner: wasmlib.ScAgentID = ctx.requestSender();
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if (f.params.owner().exists()) {

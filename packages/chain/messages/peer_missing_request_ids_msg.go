@@ -4,18 +4,18 @@
 package messages
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type MissingRequestIDsMsg struct {
-	IDs []iscp.RequestID
+	IDs []isc.RequestID
 }
 
 type MissingRequestIDsMsgIn struct {
 	MissingRequestIDsMsg
-	SenderPubKey *ed25519.PublicKey
+	SenderPubKey *cryptolib.PublicKey
 }
 
 func (msg *MissingRequestIDsMsg) Bytes() []byte {
@@ -34,10 +34,10 @@ func NewMissingRequestIDsMsg(data []byte) (*MissingRequestIDsMsg, error) {
 		return nil, err
 	}
 	ret := &MissingRequestIDsMsg{
-		IDs: make([]iscp.RequestID, num),
+		IDs: make([]isc.RequestID, num),
 	}
 	for i := range ret.IDs {
-		if ret.IDs[i], err = iscp.RequestIDFromMarshalUtil(mu); err != nil {
+		if ret.IDs[i], err = isc.RequestIDFromMarshalUtil(mu); err != nil {
 			return nil, err
 		}
 	}

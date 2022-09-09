@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"context"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -16,7 +18,7 @@ var (
 )
 
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -30,7 +32,7 @@ func run(_ *node.Plugin) {
 	}
 
 	log.Infof("Starting %s ...", PluginName)
-	if err := daemon.BackgroundWorker("Prometheus exporter", func(shutdownSignal <-chan struct{}) {
+	if err := daemon.BackgroundWorker("Prometheus exporter", func(ctx context.Context) {
 		log.Info("Starting Prometheus exporter ... done")
 
 		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
@@ -41,16 +43,16 @@ func run(_ *node.Plugin) {
 		}()
 
 		select {
-		case <-shutdownSignal:
+		case <-ctx.Done():
 		case <-stopped:
 		}
 		log.Infof("Stopping %s ...", PluginName)
 		defer log.Infof("Stopping %s ... done", PluginName)
 		if err := allMetrics.Stop(); err != nil {
-			log.Errorf("Error stopping: %s", err)
+			log.Errorf("error stopping: %s", err)
 		}
 	}, parameters.PriorityMetrics); err != nil {
-		log.Warnf("Error starting as daemon: %s", err)
+		log.Warnf("error starting as daemon: %s", err)
 	}
 }
 

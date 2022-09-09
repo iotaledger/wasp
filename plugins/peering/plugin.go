@@ -4,7 +4,6 @@
 package peering
 
 import (
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -28,19 +27,11 @@ var (
 func Init() *node.Plugin {
 	configure := func(_ *node.Plugin) {
 		log = logger.NewLogger(pluginName)
-		var err error
-		var nodeKeyPair *ed25519.KeyPair
-		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
-			panic(err)
-		}
-		if err != nil {
-			log.Panicf("Init.peering: %v", err)
-		}
 		netID := parameters.GetString(parameters.PeeringMyNetID)
 		netImpl, tnmImpl, err := peering_lpp.NewNetworkProvider(
 			netID,
 			parameters.GetInt(parameters.PeeringPort),
-			nodeKeyPair,
+			registry.DefaultRegistry().GetNodeIdentity(),
 			registry.DefaultRegistry(),
 			log,
 		)
@@ -61,7 +52,7 @@ func Init() *node.Plugin {
 			panic(err)
 		}
 	}
-	return node.NewPlugin(pluginName, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, nil, node.Enabled, configure, run)
 }
 
 // DefaultNetworkProvider returns the default network provider implementation.

@@ -14,7 +14,7 @@ import (
 var tplConfig string
 
 func (d *Dashboard) configInit(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/", d.handleConfig)
+	route := e.GET("/config", d.handleConfig)
 	route.Name = "config"
 
 	r[route.Path] = d.makeTemplate(e, tplConfig)

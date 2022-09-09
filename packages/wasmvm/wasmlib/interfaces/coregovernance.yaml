@@ -1,62 +1,77 @@
 name: CoreGovernance
-description: Core governance contract
+description: Governance contract
 structs: {}
-typedefs: {}
+typedefs: {} 
 state: {}
 funcs:
-  addAllowedStateControllerAddress:
-    params:
-      chainOwner=oi: AgentID
-      feeColor=fc: Color? // default colored.IOTA
-      stateControllerAddress=S: Address
-  claimChainOwnership: {}
-  delegateChainOwnership:
-    params:
-      chainOwner=oi: AgentID
-  removeAllowedStateControllerAddress:
-    params:
-      stateControllerAddress=S: Address
+  # state controller
   rotateStateController:
     params:
       stateControllerAddress=S: Address
+  addAllowedStateControllerAddress:
+    params:
+      stateControllerAddress=S: Address
+  removeAllowedStateControllerAddress:
+    params:
+      stateControllerAddress=S: Address
+  # chain owner
+  claimChainOwnership: {}
+  delegateChainOwnership:
+    params:
+      chainOwner=o: AgentID
+  # fees
+  setFeePolicy:
+    params:
+      feePolicyBytes=g: Bytes
+  # chain info
   setChainInfo:
     params:
-      maxBlobSize=bs: Int32? // default no change
-      maxEventSize=es: Int16? // default no change
-      maxEventsPerReq=ne: Int16? // default no change
-      ownerFee=of: Int64? // default no change
-      validatorFee=vf: Int64? // default no change
-  setContractFee:
+      maxBlobSize=mb: Uint32? # default maximum size of a blob
+      maxEventSize=ms: Uint16? # default maximum size of a single event
+      maxEventsPerReq=mr: Uint16? # default maximum number of events per request
+  # access nodes
+  addCandidateNode:
     params:
-      hname=hn: Hname // contract id
-      ownerFee=of: Int64? // default 0 (no fee)
-      validatorFee=vf: Int64? // default 0 (no fee)
-  setDefaultFee:
+      accessNodeInfoForCommittee=i: Bool
+      accessNodeInfoPubKey=ip: Bytes
+      accessNodeInfoCertificate=ic: Bytes
+      accessNodeInfoAccessAPI=ia: String
+  revokeAccessNode:
     params:
-      ownerFee=of: Int64? // default -1 (not set)
-      validatorFee=vf: Int64? // default -1 (not set)
+      accessNodeInfoPubKey=ip: Bytes
+      accessNodeInfoCertificate=ic: Bytes
+  changeAccessNodes:
+    params:
+      changeAccessNodesActions=n: map[Bytes]Uint8
+
 views:
+  # state controller
   getAllowedStateControllerAddresses:
     results:
-      allowedStateControllerAddresses=a: Bytes[] // native contract, so this is an Array16
+      allowedStateControllerAddresses=a: Address[] # native contract, so this is an Array16
+  # chain owner
+  getChainOwner:
+    results:
+      chainOwner=o: AgentID
+  # fees
+  getFeePolicy:
+    results:
+      feePolicyBytes=g: Bytes
+  # chain info
   getChainInfo:
     results:
       chainID=c: ChainID
       chainOwnerID=o: AgentID
-      defaultOwnerFee=do: Int64
-      defaultValidatorFee=dv: Int64
       description=d: String
-      feeColor=f: Color
-      maxBlobSize=mb: Int32
-      maxEventSize=me: Int16
-      maxEventsPerReq=mr: Int16
-  getFeeInfo:
-    params:
-      hname=hn: Hname
-    results:
-      feeColor=f: Color
-      ownerFee=of: Int64
-      validatorFee=vf: Int64
+      gasFeePolicyBytes=g: Bytes
+      maxBlobSize=mb: Uint32
+      maxEventSize=me: Uint16
+      maxEventsPerReq=mr: Uint16
   getMaxBlobSize:
     results:
-      maxBlobSize=mb: Int32
+      maxBlobSize=mb: Uint32
+  # access nodes
+  getChainNodes:
+    results:
+      accessNodeCandidates=ac: map[Bytes]Bytes
+      accessNodes=an: map[Bytes]Bytes

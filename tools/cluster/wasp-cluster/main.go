@@ -1,14 +1,22 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/spf13/pflag"
 )
+
+const cmdName = "wasp-cluster"
 
 func check(err error) {
 	if err != nil {
@@ -27,20 +35,19 @@ func usage(flags *pflag.FlagSet) {
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
-	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & goshimmer config.json templates (optional)")
+	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & layer1 config.json templates (optional)")
 
-	config := cluster.DefaultConfig()
+	waspConfig := cluster.DefaultWaspConfig()
 
-	commonFlags.IntVarP(&config.Wasp.NumNodes, "num-nodes", "n", config.Wasp.NumNodes, "Amount of wasp nodes")
-	commonFlags.IntVarP(&config.Wasp.FirstAPIPort, "first-api-port", "a", config.Wasp.FirstAPIPort, "First wasp API port")
-	commonFlags.IntVarP(&config.Wasp.FirstPeeringPort, "first-peering-port", "p", config.Wasp.FirstPeeringPort, "First wasp Peering port")
-	commonFlags.IntVarP(&config.Wasp.FirstNanomsgPort, "first-nanomsg-port", "u", config.Wasp.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
-	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
-	commonFlags.IntVarP(&config.Goshimmer.APIPort, "goshimmer-api-port", "i", config.Goshimmer.APIPort, "Goshimmer API port")
-	commonFlags.BoolVarP(&config.Goshimmer.UseProvidedNode, "goshimmer-use-provided-node", "g", config.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
-	commonFlags.IntVarP(&config.Goshimmer.TxStreamPort, "goshimmer-txport", "P", config.Goshimmer.TxStreamPort, "Goshimmer port")
-	commonFlags.StringVarP(&config.Goshimmer.Hostname, "goshimmer-hostname", "H", config.Goshimmer.Hostname, "Goshimmer hostname")
-	commonFlags.IntVarP(&config.Goshimmer.FaucetPoWTarget, "goshimmer-faucet-pow", "w", 0, "Faucet PoW target (default = -1 if -g is set, else 0)")
+	commonFlags.IntVarP(&waspConfig.NumNodes, "num-nodes", "n", waspConfig.NumNodes, "Amount of wasp nodes")
+	commonFlags.IntVarP(&waspConfig.FirstAPIPort, "first-api-port", "a", waspConfig.FirstAPIPort, "First wasp API port")
+	commonFlags.IntVarP(&waspConfig.FirstPeeringPort, "first-peering-port", "p", waspConfig.FirstPeeringPort, "First wasp Peering port")
+	commonFlags.IntVarP(&waspConfig.FirstNanomsgPort, "first-nanomsg-port", "u", waspConfig.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
+	commonFlags.IntVarP(&waspConfig.FirstDashboardPort, "first-dashboard-port", "h", waspConfig.FirstDashboardPort, "First wasp dashboard port")
+
+	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
+	l1 := l1starter.New(l1StarterFlags)
+	commonFlags.AddGoFlagSet(l1StarterFlags)
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
@@ -49,9 +56,10 @@ func main() {
 	parseFlags := func(flags *pflag.FlagSet) {
 		err := flags.Parse(os.Args[2:])
 		check(err)
-		if !flags.Changed("goshimmer-faucet-pow") && config.Goshimmer.UseProvidedNode {
-			config.Goshimmer.FaucetPoWTarget = -1
-		}
+	}
+
+	if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+		panic(err)
 	}
 
 	switch os.Args[1] {
@@ -67,8 +75,22 @@ func main() {
 			os.Exit(1)
 		}
 
+		if l1.PrivtangleEnabled() {
+			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
+			os.Exit(1)
+		}
+
+		l1.StartPrivtangleIfNecessary(log.Printf)
+		defer l1.Stop()
+
 		dataPath := flags.Arg(0)
-		err := cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
+		clusterConfig := cluster.NewConfig(
+			waspConfig,
+			l1.Config,
+		)
+		clusterLogger := logger.NewLogger(cmdName)
+		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		err := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger).InitDataPath(*templatesPath, *forceRemove)
 		check(err)
 
 	case "start":
@@ -80,10 +102,15 @@ func main() {
 		if flags.NArg() > 1 {
 			fmt.Printf("Usage: %s start [path] [options]\n", os.Args[0])
 			flags.PrintDefaults()
-			os.Exit(1)
+			os.Exit(1) // nolint:gocritic
 		}
 
 		var err error
+
+		if !*disposable && l1.PrivtangleEnabled() {
+			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
+			os.Exit(1)
+		}
 
 		dataPath := "."
 		if flags.NArg() == 1 {
@@ -92,10 +119,11 @@ func main() {
 			}
 			dataPath = flags.Arg(0)
 		} else if *disposable {
-			dataPath, err = ioutil.TempDir(os.TempDir(), "wasp-cluster-*")
+			dataPath, err = ioutil.TempDir(os.TempDir(), cmdName+"-*")
 			check(err)
 		}
 
+		var clusterConfig *cluster.ClusterConfig
 		if !*disposable {
 			exists, err := cluster.ConfigExists(dataPath)
 			check(err)
@@ -103,14 +131,23 @@ func main() {
 				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first", dataPath, os.Args[0]))
 			}
 
-			config, err = cluster.LoadConfig(dataPath)
+			clusterConfig, err = cluster.LoadConfig(dataPath)
 			check(err)
+		} else {
+			l1.StartPrivtangleIfNecessary(log.Printf)
+			defer l1.Stop()
+			clusterConfig = cluster.NewConfig(
+				waspConfig,
+				l1.Config,
+			)
 		}
 
-		clu := cluster.New("wasp-cluster", config)
+		clusterLogger := logger.NewLogger(cmdName)
+		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger)
 
 		if *disposable {
-			check(clu.InitDataPath(*templatesPath, dataPath, true, nil))
+			check(clu.InitDataPath(*templatesPath, true))
 			defer os.RemoveAll(dataPath)
 		}
 

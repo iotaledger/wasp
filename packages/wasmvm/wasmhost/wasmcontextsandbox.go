@@ -6,11 +6,14 @@ package wasmhost
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
@@ -19,6 +22,7 @@ import (
 var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	nil,
 	(*WasmContextSandbox).fnAccountID,
+	(*WasmContextSandbox).fnAllowance,
 	(*WasmContextSandbox).fnBalance,
 	(*WasmContextSandbox).fnBalances,
 	(*WasmContextSandbox).fnBlockContext,
@@ -27,11 +31,10 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnChainID,
 	(*WasmContextSandbox).fnChainOwnerID,
 	(*WasmContextSandbox).fnContract,
-	(*WasmContextSandbox).fnContractCreator,
 	(*WasmContextSandbox).fnDeployContract,
 	(*WasmContextSandbox).fnEntropy,
+	(*WasmContextSandbox).fnEstimateStorageDeposit,
 	(*WasmContextSandbox).fnEvent,
-	(*WasmContextSandbox).fnIncomingTransfer,
 	(*WasmContextSandbox).fnLog,
 	(*WasmContextSandbox).fnMinted,
 	(*WasmContextSandbox).fnPanic,
@@ -39,13 +42,15 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 	(*WasmContextSandbox).fnPost,
 	(*WasmContextSandbox).fnRequest,
 	(*WasmContextSandbox).fnRequestID,
+	(*WasmContextSandbox).fnRequestSender,
 	(*WasmContextSandbox).fnResults,
 	(*WasmContextSandbox).fnSend,
 	(*WasmContextSandbox).fnStateAnchor,
 	(*WasmContextSandbox).fnTimestamp,
 	(*WasmContextSandbox).fnTrace,
-	(*WasmContextSandbox).fnUtilsBase58Decode,
-	(*WasmContextSandbox).fnUtilsBase58Encode,
+	(*WasmContextSandbox).fnTransferAllowed,
+	(*WasmContextSandbox).fnUtilsBech32Decode,
+	(*WasmContextSandbox).fnUtilsBech32Encode,
 	(*WasmContextSandbox).fnUtilsBlsAddress,
 	(*WasmContextSandbox).fnUtilsBlsAggregate,
 	(*WasmContextSandbox).fnUtilsBlsValid,
@@ -57,12 +62,13 @@ var sandboxFunctions = []func(*WasmContextSandbox, []byte) []byte{
 }
 
 // '$' prefix indicates a string param
-// '$' prefix indicates a bytes param
+// '#' prefix indicates a bytes param
 // otherwise there is no param
 // NOTE: These strings correspond to the Sandbox fnXxx constants in WasmLib
 var sandboxFuncNames = []string{
 	"nil",
 	"FnAccountID",
+	"FnAllowance",
 	"#FnBalance",
 	"FnBalances",
 	"FnBlockContext",
@@ -71,11 +77,10 @@ var sandboxFuncNames = []string{
 	"FnChainID",
 	"FnChainOwnerID",
 	"FnContract",
-	"FnContractCreator",
 	"#FnDeployContract",
 	"FnEntropy",
+	"#FnEstimateStorageDeposit",
 	"$FnEvent",
-	"FnIncomingTransfer",
 	"$FnLog",
 	"FnMinted",
 	"$FnPanic",
@@ -83,13 +88,15 @@ var sandboxFuncNames = []string{
 	"#FnPost",
 	"FnRequest",
 	"FnRequestID",
+	"FnRequestSender",
 	"#FnResults",
 	"#FnSend",
 	"#FnStateAnchor",
 	"FnTimestamp",
 	"$FnTrace",
-	"$FnUtilsBase58Decode",
-	"#FnUtilsBase58Encode",
+	"#FnTransferAllowed",
+	"$FnUtilsBech32Decode",
+	"#FnUtilsBech32Encode",
 	"#FnUtilsBlsAddress",
 	"#FnUtilsBlsAggregate",
 	"#FnUtilsBlsValid",
@@ -101,29 +108,31 @@ var sandboxFuncNames = []string{
 }
 
 // WasmContextSandbox is the host side of the WasmLib Sandbox interface
-// It acts as a change-resistant layer to wrap changes to the ISCP sandbox,
+// It acts as a change-resistant layer to wrap changes to the ISC sandbox,
 // to limit bothering users of WasmLib as little as possible with those changes.
 type WasmContextSandbox struct {
-	common  iscp.SandboxBase
-	ctx     iscp.Sandbox
-	ctxView iscp.SandboxView
+	common  isc.SandboxBase
+	ctx     isc.Sandbox
+	ctxView isc.SandboxView
 	cvt     WasmConvertor
 	wc      *WasmContext
 }
 
 var _ ISandbox = new(WasmContextSandbox)
 
+var EventSubscribers []func(msg string)
+
 func NewWasmContextSandbox(wc *WasmContext, ctx interface{}) *WasmContextSandbox {
 	s := &WasmContextSandbox{wc: wc}
 	switch tctx := ctx.(type) {
-	case iscp.Sandbox:
+	case isc.Sandbox:
 		s.common = tctx
 		s.ctx = tctx
-	case iscp.SandboxView:
+	case isc.SandboxView:
 		s.common = tctx
 		s.ctxView = tctx
 	default:
-		panic(iscp.ErrWrongTypeEntryPoint)
+		panic(isc.ErrWrongTypeEntryPoint)
 	}
 	return s
 }
@@ -138,6 +147,47 @@ func (s *WasmContextSandbox) checkErr(err error) {
 	}
 }
 
+func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
+	req := wasmrequests.NewPostRequestFromBytes(args)
+	chainID := s.cvt.IscChainID(&req.ChainID)
+	contract := s.cvt.IscHname(req.Contract)
+	function := s.cvt.IscHname(req.Function)
+	params, err := dict.FromBytes(req.Params)
+	s.checkErr(err)
+
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
+	transfer := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Transfer))
+	if allowance.IsEmpty() {
+		allowance = transfer
+	}
+	// Force a minimum transfer of 1 million base tokens for storage deposit and some gas
+	// excess can always be reclaimed from the chain account by the user
+	if !transfer.IsEmpty() && transfer.Assets.BaseTokens < 1*isc.Million {
+		transfer = transfer.Clone()
+		transfer.Assets.BaseTokens = 1 * isc.Million
+	}
+
+	s.Tracef("POST %s.%s, chain %s", contract.String(), function.String(), chainID.String())
+	sendReq := isc.RequestParameters{
+		AdjustToMinimumStorageDeposit: true,
+		TargetAddress:                 chainID.AsAddress(),
+		FungibleTokens:                transfer.Assets,
+		Metadata: &isc.SendMetadata{
+			TargetContract: contract,
+			EntryPoint:     function,
+			Params:         params,
+			Allowance:      allowance,
+			GasBudget:      gas.MaxGasPerCall,
+		},
+	}
+	if req.Delay != 0 {
+		timeLock := s.ctx.Timestamp()
+		timeLock = timeLock.Add(time.Duration(req.Delay) * time.Second)
+		sendReq.Options.Timelock = timeLock
+	}
+	return sendReq
+}
+
 func (s *WasmContextSandbox) Panicf(format string, args ...interface{}) {
 	s.common.Log().Panicf(format, args...)
 }
@@ -148,66 +198,72 @@ func (s *WasmContextSandbox) Tracef(format string, args ...interface{}) {
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *WasmContextSandbox) fnAccountID(args []byte) []byte {
+func (s *WasmContextSandbox) fnAccountID(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.common.AccountID()).Bytes()
 }
 
+func (s *WasmContextSandbox) fnAllowance(_ []byte) []byte {
+	allowance := s.ctx.AllowanceAvailable()
+	return s.cvt.ScBalances(allowance).Bytes()
+}
+
 func (s *WasmContextSandbox) fnBalance(args []byte) []byte {
-	color, err := colored.ColorFromBytes(args)
-	s.checkErr(err)
-	return codec.EncodeUint64(s.ctx.Balance(color))
+	if len(args) == 0 {
+		return codec.EncodeUint64(s.common.BalanceBaseTokens())
+	}
+	tokenID := wasmtypes.TokenIDFromBytes(args)
+	token := s.cvt.IscTokenID(&tokenID)
+	return codec.EncodeUint64(s.common.BalanceNativeToken(token).Uint64())
 }
 
-func (s *WasmContextSandbox) fnBalances(args []byte) []byte {
-	return s.common.Balances().Bytes()
+func (s *WasmContextSandbox) fnBalances(_ []byte) []byte {
+	allowance := &isc.Allowance{}
+	allowance.Assets = s.common.BalanceFungibleTokens()
+	allowance.NFTs = s.common.OwnedNFTs()
+	return s.cvt.ScBalances(allowance).Bytes()
 }
 
-func (s *WasmContextSandbox) fnBlockContext(args []byte) []byte {
+func (s *WasmContextSandbox) fnBlockContext(_ []byte) []byte {
 	panic("implement me")
 }
 
 func (s *WasmContextSandbox) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
-	contract := s.cvt.IscpHname(req.Contract)
-	function := s.cvt.IscpHname(req.Function)
+	contract := s.cvt.IscHname(req.Contract)
+	function := s.cvt.IscHname(req.Function)
 	params, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
-	transfer, err := colored.BalancesFromBytes(req.Transfer)
-	s.checkErr(err)
-	s.Tracef("CALL hContract '%s, hFunction %s", contract.String(), function.String())
-	results, err := s.callUnlocked(contract, function, params, transfer)
-	s.checkErr(err)
+	allowance := s.cvt.IscAllowance(wasmlib.NewScAssets(req.Allowance))
+	s.Tracef("CALL %s.%s", contract.String(), function.String())
+	results := s.callUnlocked(contract, function, params, allowance)
 	return results.Bytes()
 }
 
-func (s *WasmContextSandbox) callUnlocked(contract, function iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
+func (s *WasmContextSandbox) callUnlocked(contract, function isc.Hname, params dict.Dict, transfer *isc.Allowance) dict.Dict {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
 	if s.ctx != nil {
 		return s.ctx.Call(contract, function, params, transfer)
 	}
-	return s.ctxView.Call(contract, function, params)
+	return s.ctxView.CallView(contract, function, params)
 }
 
-func (s *WasmContextSandbox) fnCaller(args []byte) []byte {
+func (s *WasmContextSandbox) fnCaller(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.ctx.Caller()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnChainID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainID(_ []byte) []byte {
 	return s.cvt.ScChainID(s.common.ChainID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnChainOwnerID(args []byte) []byte {
+func (s *WasmContextSandbox) fnChainOwnerID(_ []byte) []byte {
 	return s.cvt.ScAgentID(s.common.ChainOwnerID()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnContract(args []byte) []byte {
+func (s *WasmContextSandbox) fnContract(_ []byte) []byte {
 	return s.cvt.ScHname(s.common.Contract()).Bytes()
-}
-
-func (s *WasmContextSandbox) fnContractCreator(args []byte) []byte {
-	return s.cvt.ScAgentID(s.common.ContractCreator()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
@@ -217,29 +273,34 @@ func (s *WasmContextSandbox) fnDeployContract(args []byte) []byte {
 	initParams, err := dict.FromBytes(req.Params)
 	s.checkErr(err)
 	s.Tracef("DEPLOY %s: %s", req.Name, req.Description)
-	err = s.deployUnlocked(programHash, req.Name, req.Description, initParams)
-	s.checkErr(err)
+	s.deployUnlocked(programHash, req.Name, req.Description, initParams)
 	return nil
 }
 
-func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) error {
+func (s *WasmContextSandbox) deployUnlocked(programHash hashing.HashValue, name, description string, params dict.Dict) {
+	// TODO is this really necessary? We should not be able to call in parallel
 	s.wc.proc.instanceLock.Unlock()
 	defer s.wc.proc.instanceLock.Lock()
 
-	return s.ctx.DeployContract(programHash, name, description, params)
+	s.ctx.DeployContract(programHash, name, description, params)
 }
 
-func (s *WasmContextSandbox) fnEntropy(args []byte) []byte {
+func (s *WasmContextSandbox) fnEntropy(_ []byte) []byte {
 	return s.cvt.ScHash(s.ctx.GetEntropy()).Bytes()
 }
 
-func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
-	s.ctx.Event(string(args))
-	return nil
+func (s *WasmContextSandbox) fnEstimateStorageDeposit(args []byte) []byte {
+	storageDeposit := s.ctx.EstimateRequiredStorageDeposit(s.makeRequest(args))
+	return codec.EncodeUint64(storageDeposit)
 }
 
-func (s *WasmContextSandbox) fnIncomingTransfer(args []byte) []byte {
-	return s.ctx.IncomingTransfer().Bytes()
+func (s *WasmContextSandbox) fnEvent(args []byte) []byte {
+	msg := string(args)
+	s.ctx.Event(msg)
+	for _, eventSubscribers := range EventSubscribers {
+		eventSubscribers(msg)
+	}
+	return nil
 }
 
 func (s *WasmContextSandbox) fnLog(args []byte) []byte {
@@ -247,60 +308,36 @@ func (s *WasmContextSandbox) fnLog(args []byte) []byte {
 	return nil
 }
 
-func (s *WasmContextSandbox) fnMinted(args []byte) []byte {
-	return s.ctx.Minted().Bytes()
+func (s *WasmContextSandbox) fnMinted(_ []byte) []byte {
+	panic("fixme: wc.fnMinted")
+	// return s.ctx.Minted().Bytes()
 }
 
 func (s *WasmContextSandbox) fnPanic(args []byte) []byte {
-	s.common.Log().Panicf(string(args))
+	s.common.Log().Panicf("WASM: panic in VM: %s", string(args))
 	return nil
 }
 
-func (s *WasmContextSandbox) fnParams(args []byte) []byte {
-	return s.common.Params().Bytes()
+func (s *WasmContextSandbox) fnParams(_ []byte) []byte {
+	return s.common.Params().Dict.Bytes()
 }
 
 func (s *WasmContextSandbox) fnPost(args []byte) []byte {
-	req := wasmrequests.NewPostRequestFromBytes(args)
-	chainID := s.cvt.IscpChainID(&req.ChainID)
-	contract := s.cvt.IscpHname(req.Contract)
-	function := s.cvt.IscpHname(req.Function)
-	params, err := dict.FromBytes(req.Params)
-	s.checkErr(err)
-	transfer, err := colored.BalancesFromBytes(req.Transfer)
-	s.checkErr(err)
-	if len(transfer) == 0 {
-		transfer.Add(colored.Color{}, 1)
-	}
-
-	s.Tracef("POST hContract '%s, hFunction %s, chain %s", contract.String(), function.String(), chainID.String())
-	metadata := &iscp.SendMetadata{
-		TargetContract: contract,
-		EntryPoint:     function,
-		Args:           params,
-	}
-	if req.Delay != 0 {
-		if !s.ctx.Send(chainID.AsAddress(), transfer, metadata) {
-			s.Panicf("failed to send to %s", chainID.AsAddress().String())
-		}
-		return nil
-	}
-
-	options := iscp.SendOptions{
-		TimeLock: uint32(time.Duration(s.ctx.GetTimestamp())/time.Second) + req.Delay,
-	}
-	if !s.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
-		s.Panicf("failed to send to %s", chainID.AsAddress().String())
-	}
+	s.ctx.Send(s.makeRequest(args))
 	return nil
 }
 
-func (s *WasmContextSandbox) fnRequest(args []byte) []byte {
-	return s.ctx.Request().Bytes()
+func (s *WasmContextSandbox) fnRequest(_ []byte) []byte {
+	panic("fixme: wc.fnRequest")
+	// return s.ctx.Request().Bytes()
 }
 
-func (s *WasmContextSandbox) fnRequestID(args []byte) []byte {
+func (s *WasmContextSandbox) fnRequestID(_ []byte) []byte {
 	return s.cvt.ScRequestID(s.ctx.Request().ID()).Bytes()
+}
+
+func (s *WasmContextSandbox) fnRequestSender(_ []byte) []byte {
+	return s.cvt.ScAgentID(s.ctx.Request().SenderAccount()).Bytes()
 }
 
 func (s *WasmContextSandbox) fnResults(args []byte) []byte {
@@ -315,23 +352,30 @@ func (s *WasmContextSandbox) fnResults(args []byte) []byte {
 // transfer tokens to address
 func (s *WasmContextSandbox) fnSend(args []byte) []byte {
 	req := wasmrequests.NewSendRequestFromBytes(args)
-	address := s.cvt.IscpAddress(&req.Address)
-	transfer, err := colored.BalancesFromBytes(req.Transfer)
-	s.checkErr(err)
-	if len(transfer) != 0 {
-		if !s.ctx.Send(address, transfer, nil) {
-			s.Panicf("failed to send to %s", address.String())
+	address := s.cvt.IscAddress(&req.Address)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscAllowance(scAssets)
+		metadata := isc.RequestParameters{
+			AdjustToMinimumStorageDeposit: true,
+			TargetAddress:                 address,
+			FungibleTokens:                allowance.Assets,
 		}
+		if len(allowance.NFTs) == 0 {
+			s.ctx.Send(metadata)
+			return nil
+		}
+		s.ctx.SendAsNFT(metadata, allowance.NFTs[0])
 	}
 	return nil
 }
 
-func (s *WasmContextSandbox) fnStateAnchor(args []byte) []byte {
+func (s *WasmContextSandbox) fnStateAnchor(_ []byte) []byte {
 	panic("implement me")
 }
 
-func (s *WasmContextSandbox) fnTimestamp(args []byte) []byte {
-	return codec.EncodeInt64(s.common.GetTimestamp())
+func (s *WasmContextSandbox) fnTimestamp(_ []byte) []byte {
+	return codec.EncodeUint64(uint64(s.common.Timestamp().UnixNano()))
 }
 
 func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
@@ -339,14 +383,35 @@ func (s *WasmContextSandbox) fnTrace(args []byte) []byte {
 	return nil
 }
 
-func (s WasmContextSandbox) fnUtilsBase58Decode(args []byte) []byte {
-	bytes, err := s.common.Utils().Base58().Decode(string(args))
-	s.checkErr(err)
-	return bytes
+// transfer tokens to address
+func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
+	req := wasmrequests.NewTransferRequestFromBytes(args)
+	agentID := s.cvt.IscAgentID(&req.AgentID)
+	scAssets := wasmlib.NewScAssets(req.Transfer)
+	if !scAssets.IsEmpty() {
+		allowance := s.cvt.IscAllowance(scAssets)
+		if req.Create {
+			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, allowance)
+		} else {
+			s.ctx.TransferAllowedFunds(agentID, allowance)
+		}
+	}
+	return nil
 }
 
-func (s WasmContextSandbox) fnUtilsBase58Encode(args []byte) []byte {
-	return []byte(s.common.Utils().Base58().Encode(args))
+func (s WasmContextSandbox) fnUtilsBech32Decode(args []byte) []byte {
+	hrp, addr, err := iotago.ParseBech32(string(args))
+	s.checkErr(err)
+	if hrp != parameters.L1().Protocol.Bech32HRP {
+		s.Panicf("Invalid protocol prefix: %s", string(hrp))
+	}
+	return s.cvt.ScAddress(addr).Bytes()
+}
+
+func (s WasmContextSandbox) fnUtilsBech32Encode(args []byte) []byte {
+	scAddress := wasmtypes.AddressFromBytes(args)
+	addr := s.cvt.IscAddress(&scAddress)
+	return []byte(addr.Bech32(parameters.L1().Protocol.Bech32HRP))
 }
 
 func (s WasmContextSandbox) fnUtilsBlsAddress(args []byte) []byte {

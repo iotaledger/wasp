@@ -1,4 +1,7 @@
 {
+  "l1": {
+    "inxAddress": "localhost:9029"
+  },
   "database": {
     "directory": "waspdb"
   },
@@ -21,29 +24,64 @@
     "disablePlugins": [],
     "enablePlugins": []
   },
+  "users": {
+    "wasp": {
+      "password": "wasp",
+      "permissions": [
+        "dashboard",
+        "api",
+        "chain.read",
+        "chain.write"
+      ]
+    }
+  },
   "webapi": {
-    "bindAddress": "127.0.0.1:9090"
+    "auth": {
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      },
+      "scheme": "none"
+    },
+    "bindAddress": "0.0.0.0:9090"
   },
   "dashboard": {
     "auth": {
-      "scheme": "basic",
-      "username": "wasp",
-      "password": "wasp"
+      "jwt": {
+        "durationHours": 24
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      },
+      "scheme": "basic"
     },
-    "bindAddress": "127.0.0.1:7000"
+    "bindAddress": "0.0.0.0:7000"
   },
-  "peering":{
+  "peering": {
     "port": 4000,
     "netid": "127.0.0.1:4000"
   },
-  "nodeconn": {
-    "address": "127.0.0.1:5000"
-  },
-  "nanomsg":{
+  "nanomsg": {
     "port": 5550
   },
-  "metrics":{
+  "metrics": {
     "bindAddress": "127.0.0.1:2112",
+    "enabled": true
+  },
+  "wal": {
+    "directory": "wal",
     "enabled": true
   }
 }

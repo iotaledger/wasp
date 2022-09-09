@@ -1,11 +1,12 @@
 package profiling
 
 import (
+	"context"
 	"net/http"
-	"runtime"
 
 	// import required to profile
 	_ "net/http/pprof"
+	"runtime"
 
 	profile "github.com/bygui86/multi-profile/v2"
 	"github.com/iotaledger/hive.go/daemon"
@@ -20,7 +21,7 @@ var log *logger.Logger
 
 // Init gets the plugin instance.
 func Init() *node.Plugin {
-	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+	return node.NewPlugin(PluginName, nil, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
@@ -51,8 +52,8 @@ func run(_ *node.Plugin) {
 		profs[5] = profile.TraceProfile(profConfig).Start()
 		profs[6] = profile.ThreadCreationProfile(profConfig).Start()
 
-		err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-			<-shutdownSignal
+		err := daemon.BackgroundWorker(PluginName, func(ctx context.Context) {
+			<-ctx.Done()
 			for _, p := range profs {
 				p.Stop()
 			}
@@ -66,6 +67,7 @@ func run(_ *node.Plugin) {
 	go func() {
 		bindAddr := parameters.GetString(parameters.ProfilingBindAddress)
 		log.Infof("%s started, bind-address=%s", PluginName, bindAddr)
+		//nolint:gosec // false positive, we don't care about timeouts since this is just for testing purposes
 		err := http.ListenAndServe(bindAddr, nil)
 		if err != nil {
 			panic(err)

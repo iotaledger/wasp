@@ -3,6 +3,7 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -33,7 +34,7 @@ export function hashDecode(dec: wasmtypes.WasmDecoder): ScHash {
 }
 
 export function hashEncode(enc: wasmtypes.WasmEncoder, value: ScHash): void {
-    enc.fixedBytes(value.toBytes(), ScHashLength);
+    enc.fixedBytes(value.id, ScHashLength);
 }
 
 export function hashFromBytes(buf: u8[]): ScHash {
@@ -50,9 +51,12 @@ export function hashToBytes(value: ScHash): u8[] {
     return value.id;
 }
 
+export function hashFromString(value: string): ScHash {
+    return hashFromBytes(wasmtypes.hexDecode(value));
+}
+
 export function hashToString(value: ScHash): string {
-    // TODO standardize human readable string
-    return wasmtypes.base58Encode(value.id);
+    return wasmtypes.hexEncode(hashToBytes(value));
 }
 
 function hashFromBytesUnchecked(buf: u8[]): ScHash {

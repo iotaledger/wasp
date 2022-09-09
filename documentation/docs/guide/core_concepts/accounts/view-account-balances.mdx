@@ -1,13 +1,14 @@
 ---
-keywords:
-  - Smart Contracts
-  - view
-  - account
-  - balances
-  - Rust
-  - Solo
 description: The Accounts contract provides the balance, totalAssets and accounts views.
 image: /img/logo/WASP_logo_dark.png
+keywords:
+- smart contracts
+- view
+- account
+- balances
+- Rust
+- Solo
+- how to
 ---
 
 import Tabs from "@theme/Tabs"
@@ -17,7 +18,7 @@ import TabItem from "@theme/TabItem"
 
 The Accounts contract provides the following views:
 
-## balance
+## `balance`
 
 Get the account balance of a specific account.
 
@@ -27,7 +28,7 @@ Get the account balance of a specific account.
 
 ### Returns
 
-- A map of [token_color] -> [amount].
+A map of `token ID -> amount` (the base token is identified by an empty token ID).
 
 ### Examples
 
@@ -42,8 +43,7 @@ Get the account balance of a specific account.
 <TabItem value="solo">
 
 ```go
-balances := chain.GetAccountBalance(agentID)
-// require.NoError(t, ctx.Err) // happens in GetAccountBalance() wrapper function
+balances := chain.L2Assets(agentID)
 ```
 
 </TabItem>
@@ -82,9 +82,9 @@ balances := b.Results.Balances()
 
 ---
 
-## totalAssets
+## `totalAssets`
 
-Get the total colored balances controlled by the chain.
+Get the total funds controlled by the chain.
 
 ### Returns
 
@@ -101,7 +101,7 @@ Get the total colored balances controlled by the chain.
 <TabItem value="solo">
 
 ```go
-balances:= chain.GetTotalAssets()
+balances := chain.L2TotalAssets()
 ```
 
 </TabItem>
@@ -137,13 +137,13 @@ balances := b.Results.Balances()
 
 ---
 
-## accounts
+## `accounts`
 
-Get a list of all accounts existing on the chain.
+Get a list of all accounts that exist on the chain.
 
 ### Returns
 
-- A list of accounts (AgentIDs).
+A list of accounts (Agent IDs).
 
 <Tabs
     defaultValue="solo"
@@ -156,7 +156,7 @@ Get a list of all accounts existing on the chain.
 <TabItem value="solo">
 
 ```go
-accounts := chain.GetAccounts()
+accounts := chain.L2Accounts()
 ```
 
 </TabItem>
@@ -189,70 +189,3 @@ accounts := a.Results.Agents()
 
 </TabItem>
 </Tabs>
-
----
-
-## getAccountNonce
-
-Get the current nonce for a given account.
-
-### Parameters
-
-- `ParamAgentID`: Account's AgentID.
-
-#### Returns
-
-- The current nonce.
-
-<Tabs
-    defaultValue="solo"
-    values={[
-        {label: 'Solo', value: 'solo'},
-        {label: 'Solo (Schema)', value: 'soloctx'},
-        {label: 'Rust (Schema)', value: 'rust'},
-        {label: 'Go (Schema)', value: 'go'},
-    ]}>
-<TabItem value="solo">
-
-```go
-ret, err := chain.CallView(accounts.Contract.Name, accounts.FuncGetAccountNonce.Name,
-    accounts.ParamAgentID, iscp.NewAgentID(address, 0),
-)
-require.NoError(t, err)
-nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce)
-```
-
-</TabItem>
-<TabItem value="soloctx">
-
-```go
-n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-n.Params.AgentID().SetValue(agentID)
-n.Func.Call()
-require.NoError(t, ctx.Err)
-nonce := n.Results.AccountNonce().Value()
-```
-
-</TabItem>
-<TabItem value="rust">
-
-```rust
-let n = coreaccounts::ScFuncs::get_account_nonce(ctx);
-n.params.agent_id().set_value(&agentID);
-n.func.call();
-let nonce = n.results.account_nonce().value();
-```
-
-</TabItem>
-<TabItem value="go">
-
-```go
-n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-n.Params.AgentID().SetValue(agentID)
-n.Func.Call()
-nonce := n.Results.AccountNonce().Value()
-```
-
-</TabItem>
-</Tabs>
-

@@ -20,9 +20,19 @@ pub struct GrantDeployPermissionCall {
 	pub params: MutableGrantDeployPermissionParams,
 }
 
+pub struct RequireDeployPermissionsCall {
+	pub func: ScFunc,
+	pub params: MutableRequireDeployPermissionsParams,
+}
+
 pub struct RevokeDeployPermissionCall {
 	pub func: ScFunc,
 	pub params: MutableRevokeDeployPermissionParams,
+}
+
+pub struct SubscribeBlockContextCall {
+	pub func: ScFunc,
+	pub params: MutableSubscribeBlockContextParams,
 }
 
 pub struct FindContractCall {
@@ -58,10 +68,28 @@ impl ScFuncs {
         f
     }
 
+    pub fn require_deploy_permissions(_ctx: &dyn ScFuncCallContext) -> RequireDeployPermissionsCall {
+        let mut f = RequireDeployPermissionsCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_REQUIRE_DEPLOY_PERMISSIONS),
+            params: MutableRequireDeployPermissionsParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
     pub fn revoke_deploy_permission(_ctx: &dyn ScFuncCallContext) -> RevokeDeployPermissionCall {
         let mut f = RevokeDeployPermissionCall {
             func: ScFunc::new(HSC_NAME, HFUNC_REVOKE_DEPLOY_PERMISSION),
             params: MutableRevokeDeployPermissionParams { proxy: Proxy::nil() },
+        };
+        ScFunc::link_params(&mut f.params.proxy, &f.func);
+        f
+    }
+
+    pub fn subscribe_block_context(_ctx: &dyn ScFuncCallContext) -> SubscribeBlockContextCall {
+        let mut f = SubscribeBlockContextCall {
+            func: ScFunc::new(HSC_NAME, HFUNC_SUBSCRIBE_BLOCK_CONTEXT),
+            params: MutableSubscribeBlockContextParams { proxy: Proxy::nil() },
         };
         ScFunc::link_params(&mut f.params.proxy, &f.func);
         f

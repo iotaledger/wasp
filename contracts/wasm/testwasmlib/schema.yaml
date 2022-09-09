@@ -1,80 +1,188 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+#copyright: ""
+
 name: TestWasmLib
 description: Exercise several aspects of WasmLib
 
 # ##################################
+
 events:
-# ##################################
   test:
     name: String
     address: Address
 
 # ##################################
+
 structs:
-# ##################################
-# Location:
-#   x: Int32
-#   y: Int32
+  Location:
+    x: Int32
+    y: Int32
 
 # ##################################
+
 typedefs:
-# ##################################
+  ### Array
   StringArray: String[]
+  Int32Array: Int32[]
+  Int64Array: Int64[]
+  Uint64Array: Uint64[]
+  BytesArray: Bytes[]
+  AddressArray: Address[]
+  AgentIDArray: AgentID[]
+  ChainIDArray: ChainID[]
+  TokenIDArray: TokenID[]
+  HashArray: Hash[]
+  HnameArray: Hname[]
+  RequestIDArray: RequestID[]
+  ### Map
   StringMap: map[String]String
-# Longitude: map[Int32]Location
+  Int32Map: map[Int32]Int32
+  Int64Map: map[Int64]Int64
+  Uint64Map: map[Uint64]Uint64
+  BytesMap: map[Bytes]Bytes
+  AddressMap: map[Address]Address
+  AgentIDMap: map[AgentID]AgentID
+  ChainIDMap: map[ChainID]ChainID
+  TokenIDMap: map[TokenID]TokenID
+  HashMap: map[Hash]Hash
+  HnameMap: map[Hname]Hname
+  RequestIDMap: map[RequestID]RequestID
+  Longitude: map[Int32]Location
 
 # ##################################
+
 state:
-# ##################################
-  arrays: map[String]StringArray
-  maps: map[String]StringMap
+  # basic datatypes, using String
+  arrayOfStringArray: StringArray[]
+  arrayOfStringMap: StringMap[]
+  stringMapOfStringArray: map[String]StringArray
+  stringMapOfStringMap: map[String]StringMap
+  # ISC-specific datatypes, using Address
+  arrayOfAddressArray: AddressArray[]
+  arrayOfAddressMap: AddressMap[]
+  addressMapOfAddressArray: map[Address]AddressArray
+  addressMapOfAddressMap: map[Address]AddressMap
+  # Other
   random: Uint64
-# latLong: map[Int32]Longitude
+  latLong: map[Int32]Longitude
+  
 
 # ##################################
+
 funcs:
-# ##################################
-  arrayAppend:
+  stringMapOfStringArrayAppend:
     params:
       name: String
       value: String
 
-  arrayClear:
+  addressMapOfAddressArrayAppend:
+    params:
+      nameAddr: Address
+      valueAddr: Address
+
+  stringMapOfStringArrayClear:
     params:
       name: String
 
-  arraySet:
+  addressMapOfAddressArrayClear:
+    params:
+      nameAddr: Address
+
+  stringMapOfStringArraySet:
     params:
       index: Uint32
       name: String
       value: String
 
-  mapClear:
+  addressMapOfAddressArraySet:
+    params:
+      index: Uint32
+      nameAddr: Address
+      valueAddr: Address
+
+  stringMapOfStringMapClear:
     params:
       name: String
 
-  mapSet:
+  addressMapOfAddressMapClear:
+    params:
+      nameAddr: Address
+
+  stringMapOfStringMapSet:
     params:
       name: String
       key: String
       value: String
 
+  addressMapOfAddressMapSet:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+      valueAddr: Address
+
+  arrayOfStringArrayAppend:
+    params:
+      index: Uint32
+      value: String[]
+
+  arrayOfAddressArrayAppend:
+    params:
+      index: Uint32
+      valueAddr: Address[]
+
+  arrayOfStringArraySet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      value: String
+
+  arrayOfAddressArraySet:
+    params:
+      index0: Uint32
+      index1: Uint32
+      valueAddr: Address
+
+  # Clear all the arrays of the array
+  arrayOfStringArrayClear:
+  # Clear all the arrays of the array
+  arrayOfAddressArrayClear:
+
+  arrayOfStringMapClear:
+
+  arrayOfAddressMapClear:
+
+  arrayOfStringMapSet:
+    params:
+      index: Uint32
+      key: String
+      value: String
+
+  arrayOfAddressMapSet:
+    params:
+      index: Uint32
+      keyAddr: Address
+      valueAddr: Address
+
   paramTypes:
     params:
       address: Address?
       agentID: AgentID?
+      bigInt: BigInt?
       bool: Bool?
       bytes: Bytes?
       chainID: ChainID?
-      color: Color?
       hash: Hash?
       hname: Hname?
       int8: Int8?
       int16: Int16?
       int32: Int32?
       int64: Int64?
-      param=this: map[String]Bytes? // special hook to be able to pass key/values as raw bytes
+      nftID: NftID?
+      param=this: map[String]Bytes? # special hook to be able to pass key/values as raw bytes
       requestID: RequestID?
       string: String?
+      tokenID: TokenID?
       uint8: Uint8?
       uint16: Uint16?
       uint32: Uint32?
@@ -82,26 +190,152 @@ funcs:
 
   random:
 
+  takeAllowance:
+
+  takeBalance:
+    results:
+      tokens: Uint64
+
   triggerEvent:
     params:
       name: String
       address: Address
 
 # ##################################
+
 views:
-# ##################################
-  arrayLength:
+  stringMapOfStringArrayLength:
     params:
       name: String
     results:
       length: Uint32
 
-  arrayValue:
+  addressMapOfAddressArrayLength:
+    params:
+      nameAddr: Address
+    results:
+      length: Uint32
+
+  stringMapOfStringArrayValue:
     params:
       index: Uint32
       name: String
     results:
       value: String
+
+  addressMapOfAddressArrayValue:
+    params:
+      index: Uint32
+      nameAddr: Address
+    results:
+      valueAddr: Address
+
+  stringMapOfStringMapValue:
+    params:
+      name: String
+      key: String
+    results:
+      value: String
+  
+  addressMapOfAddressMapValue:
+    params:
+      nameAddr: Address
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
+  arrayOfStringArrayLength:
+    results:
+      length: Uint32
+
+  arrayOfStringArrayValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      value: String
+
+  arrayOfAddressArrayLength:
+    results:
+      length: Uint32
+
+  arrayOfAddressArrayValue:
+    params:
+      index0: Uint32
+      index1: Uint32
+    results:
+      valueAddr: Address
+
+  arrayOfStringMapValue:
+    params:
+      index: Uint32
+      key: String
+    results:
+      value: String
+
+  arrayOfAddressMapValue:
+    params:
+      index: Uint32
+      keyAddr: Address
+    results:
+      valueAddr: Address
+
+  bigIntAdd:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntDiv:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntMod:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntDivMod:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      quo: BigInt
+      remainder: BigInt
+
+  bigIntMul:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
+
+  bigIntShl:
+    params:
+      lhs: BigInt
+      shift: Uint32
+    results:
+      res: BigInt
+
+  bigIntShr:
+    params:
+      lhs: BigInt
+      shift: Uint32
+    results:
+      res: BigInt
+
+  bigIntSub:
+    params:
+      lhs: BigInt
+      rhs: BigInt
+    results:
+      res: BigInt
 
   blockRecord:
     params:
@@ -116,17 +350,70 @@ views:
     results:
       count: Uint32
 
-  iotaBalance:
+  tokenBalance:
     results:
-      iotas: Uint64
-
-  mapValue:
-    params:
-      name: String
-      key: String
-    results:
-      value: String
+      tokens: Uint64
 
   getRandom:
     results:
       random: Uint64
+
+  checkBigInt:
+    params:
+      scBigInt: BigInt
+      bigIntBytes: Bytes
+      bigIntString: String
+
+  checkAgentID:
+    params:
+      scAgentID: AgentID
+      agentBytes: Bytes
+      agentString: String
+
+  checkAddress:
+    params:
+      scAddress: Address
+      addressBytes: Bytes
+      addressString: String
+
+  checkEthAddressAndAgentID:
+    params:
+      ethAddress: String
+
+  checkHash:
+    params:
+      scHash: Hash
+      hashBytes: Bytes
+      hashString: String
+  
+  checkNftID:
+    params:
+      scNftID: NftID
+      nftIDBytes: Bytes
+      nftIDString: String
+
+  checkRequestID:
+    params:
+      scRequestID: RequestID
+      requestIDBytes: Bytes
+      requestIDString: String
+  
+  checkTokenID:
+    params:
+      scTokenID: TokenID
+      tokenIDBytes: Bytes
+      tokenIDString: String
+
+  checkIntAndUint:
+  checkBool:
+  checkBytes:
+    params:
+      bytes: Bytes
+  checkHname:
+    params:
+      scHname: Hname
+      hnameBytes: Bytes
+      hnameString: String
+  checkString:
+    params:
+      string: String

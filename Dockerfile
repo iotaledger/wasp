@@ -1,4 +1,4 @@
-ARG GOLANG_IMAGE_TAG=1.17-buster
+ARG GOLANG_IMAGE_TAG=1.18-bullseye
 
 # Build stage
 FROM golang:${GOLANG_IMAGE_TAG} AS build
@@ -26,9 +26,10 @@ ARG FINAL_BINARY="wasp"
 EXPOSE 7000/tcp
 EXPOSE 9090/tcp
 EXPOSE 5550/tcp
+EXPOSE 6060/tcp
 EXPOSE 4000/udp
 
 COPY --from=build /wasp/${FINAL_BINARY} /usr/bin/
 COPY docker_config.json /etc/wasp_config.json
 
-ENTRYPOINT ["wasp", "-c", "/etc/wasp_config.json"]
+CMD ["wasp", "-c", "/etc/wasp_config.json"]

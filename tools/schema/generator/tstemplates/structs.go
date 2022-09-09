@@ -12,6 +12,7 @@ $#each structs structType
 	// *******************************
 	"structType": `
 
+$#each structComment _structComment
 export class $StrName {
 $#each struct structField
 
@@ -36,7 +37,8 @@ $#emit structMethods
 `,
 	// *******************************
 	"structField": `
-	$fldName$fldPad : $fldLangType = $fldTypeInit; $fldComment
+$#each fldComment _structFieldComment
+	$fldName$fldPad : $fldLangType = $fldTypeInit;
 `,
 	// *******************************
 	"structDecode": `

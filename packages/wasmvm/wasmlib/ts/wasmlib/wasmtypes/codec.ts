@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {sandbox} from "../host";
-import {FnUtilsBase58Encode, panic} from "../sandbox";
+import {log, panic} from "../sandbox";
 import * as wasmtypes from "./index";
+import {uint64ToString} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -206,13 +206,107 @@ export class WasmEncoder {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// wrapper for simplified use by hashtypes
-export function base58Encode(buf: u8[]): string {
-    return wasmtypes.stringFromBytes(sandbox(FnUtilsBase58Encode, buf));
+function hexer(hexDigit: u8): u8 {
+    // '0' to '9'
+    if (hexDigit >= 0x30 && hexDigit <= 0x39) {
+        return hexDigit - 0x30;
+    }
+    // 'a' to 'f'
+    if (hexDigit >= 0x61 && hexDigit <= 0x66) {
+        return hexDigit - 0x61 + 10;
+    }
+    // 'A' to 'F'
+    if (hexDigit >= 0x41 && hexDigit <= 0x46) {
+        return hexDigit - 0x41 + 10;
+    }
+    panic("invalid hex digit");
+    return 0;
+}
+
+export function hexDecode(hex: string): u8[] {
+    const digits = hex.length;
+    if ((digits & 1) != 0) {
+        panic("odd hex string length");
+    }
+    const buf = new Array<u8>(digits / 2);
+    for (let i = 0; i < digits; i += 2) {
+        buf[i / 2] = (hexer(hex.charCodeAt(i) as u8) << 4) | hexer(hex.charCodeAt(i + 1) as u8)
+    }
+    return buf
+}
+
+export function hexEncode(buf: u8[]): string {
+    const bytes = buf.length;
+    const hex = new Array<u8>(bytes * 2);
+    const alpha = (0x61 - 10) as u8;
+    const digit = 0x30 as u8;
+
+    for (let i = 0; i < bytes; i++) {
+        const b: u8 = buf[i];
+        const b1: u8 = b >> 4;
+        hex[i * 2] = b1 + ((b1 > 9) ? alpha : digit);
+        const b2: u8 = b & 0x0f;
+        hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
+    }
+    return wasmtypes.stringFromBytes(hex);
+}
+
+export function intFromString(value: string, bits: u32): i64 {
+    if (value.length == 0) {
+        panic("intFromString: empty string");
+    }
+    let neg = false
+    switch (value.charCodeAt(0)) {
+        case 0x2b: // '+'
+            value = value.slice(1);
+            break;
+        case 0x2d: // '-'
+            neg = true;
+            value = value.slice(1);
+            break;
+    }
+    const uns = uintFromString(value, bits);
+    const cutoff = (1 as u64) << (bits - 1);
+    if (neg) {
+        if (neg && uns > cutoff) {
+            panic("intFromString: min overflow");
+        }
+        return -uns as i64;
+    }
+    if (uns >= cutoff) {
+        panic("intFromString: max overflow");
+    }
+    return uns as i64;
+}
+
+export function uintFromString(value: string, bits: u32): u64 {
+    if (value.length == 0) {
+        panic("uintFromString: empty string");
+    }
+    const cutoff = (-1 as u64) / 10 + 1;
+
+    const maxVal = (bits == 64) ? (-1 as u64) : (((1 as u64) << bits) - 1);
+
+    let n = 0 as u64;
+    for (let i = 0; i < value.length; i++) {
+        const c = value.charCodeAt(i) as u32;
+        if (c < 0x30 || c > 0x39) {
+            panic("uintFromString: invalid digit");
+        }
+        if (n >= cutoff) {
+            panic("uintFromString: cutoff overflow");
+        }
+        const n1 = n * 10;
+        n = n1 + c - 0x30;
+        if (n < n1 || n > maxVal) {
+            panic("uintFromString: range overflow");
+        }
+    }
+    return n;
 }
 
 export function zeroes(count: u32): u8[] {
-    let buf: u8[] = new Array(count);
+    const buf = new Array<u8>(count);
     buf.fill(0);
     return buf;
 }

@@ -14,8 +14,6 @@ var chainCmd = &cobra.Command{
 	},
 }
 
-var plugins []func(*cobra.Command)
-
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(chainCmd)
 
@@ -38,10 +36,10 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(requestCmd())
 	chainCmd.AddCommand(postRequestCmd())
 	chainCmd.AddCommand(callViewCmd)
-	chainCmd.AddCommand(activateCmd)
-	chainCmd.AddCommand(deactivateCmd)
-
-	for _, p := range plugins {
-		p(chainCmd)
-	}
+	chainCmd.AddCommand(activateCmd())
+	chainCmd.AddCommand(deactivateCmd())
+	chainCmd.AddCommand(runDKGCmd())
+	chainCmd.AddCommand(rotateCmd)
+	chainCmd.AddCommand(changeAccessNodesCmd())
+	chainCmd.AddCommand(addChainCmd)
 }
