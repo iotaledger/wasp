@@ -1,6 +1,8 @@
 package chainutil
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +33,7 @@ func SimulateCall(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 			AnchorOutput:       anchorOutput.GetAliasOutput(),
 			AnchorOutputID:     anchorOutput.OutputID(),
 			Requests:           []isc.Request{req},
-			TimeAssumption:     ch.GetTimeData(),
+			TimeAssumption:     time.Now(),
 			VirtualStateAccess: virtualStateAccess,
 			Entropy:            hashing.RandomHash(nil),
 			ValidatorFeeTarget: isc.NewContractAgentID(ch.ID(), 0),
