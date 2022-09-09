@@ -73,7 +73,7 @@ variable "wasp_config" {
 		"netid": "{{ env "NOMAD_ADDR_peering" }}"
 	},
   "profiling":{
-    "enabled": true,
+    "enabled": false,
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
   "l1": {
@@ -115,7 +115,7 @@ job "isc-${workspace}" {
       sticky  = true
     }
 
-    count = 0
+    count = 5
 
     network {
       mode = "host"
@@ -135,9 +135,8 @@ job "isc-${workspace}" {
       port "metrics" {
         host_network = "private"
       }
-      port "pprof" {
+      port "profiling" {
         host_network = "private"
-        to = 6060
       }
     }
 
@@ -154,7 +153,7 @@ job "isc-${workspace}" {
           "nanomsg",
           "peering",
           "metrics",
-          "pprof",
+          "profiling"
         ]
 
         labels = {
@@ -213,8 +212,8 @@ job "isc-${workspace}" {
       }
 
       resources {
-        memory = 3000
-        cpu    = 2000
+        memory = 4000
+        cpu    = 3000
       }
     }
   }
@@ -248,34 +247,26 @@ job "isc-${workspace}" {
       port "profiling" {
         host_network = "private"
       }
-      port "pprof" {
-        host_network = "private"
-        static = 6060
+      port "dlv" {
+        static = 40000
+        to = 40000
       }
     }
 
     task "wasp" {
       driver = "docker"
 
-      env {
-        PPROF_ADDR = "$${NOMAD_PORT_pprof}"
-      }
-
       config {
-        network_mode = "host"
+       network_mode = "host"
         image        = "${artifact.image}:${artifact.tag}"
-        command      = "wasp"
-        entrypoint   = [""]
-        args = [
-          "-c=/local/config.json",
-        ]
+        entrypoint   = ["wasp", "-c", "/local/config.json"]
         ports = [
           "dashboard",
           "api",
           "nanomsg",
           "peering",
           "metrics",
-          "pprof",
+          "profiling"
         ]
 
 
@@ -328,8 +319,12 @@ job "isc-${workspace}" {
         port = "metrics"
       }
       service {
-        tags = ["wasp", "pprof"]
-        port = "pprof"
+        tags = ["wasp", "profiling"]
+        port = "profiling"
+      }
+      service {
+        tags = ["wasp", "dlv"]
+        port = "dlv"
       }
 
       template {
@@ -339,8 +334,8 @@ job "isc-${workspace}" {
       }
 
       resources {
-        memory = 8000
-        cpu    = 6000
+        memory = 4000
+        cpu    = 3000
       }
     }
   }
