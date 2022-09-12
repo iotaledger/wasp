@@ -1,38 +1,75 @@
-name: Deploy IOTA Operator on DockerHub
+name: Docker Image CI
 
 on:
-  push:
+  release:
+    types: 
+      - published
+  pull_request:
+    types:
+      - closed
     branches:
-      - 'master'
-    tags:
-      - 'v*'
+      - develop
+      - master
 
   workflow_dispatch:
+    # inputs:
+    #   image_tag_suffix:
+    #     description: The text to append to the docker image tag (will begin with develop_)
+    #     required: true
+    #     type: string
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  docker:
+    if: (${{ github.event_name == 'pull_request' }} && ${{ github.event.pull_request.merged }} == true) || ${{ github.event_name == 'release' }}
+    name: Build and Push Docker image
     runs-on: ubuntu-latest
+    env:
+      image_name: iotaledger/wasp
+
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v2
-      
-      - name: Log in to Docker Hub
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ github.repository }}
+
+      - name: Set image tags for ${{ github.event_name == 'release' }}
+        run: |
+          case "${{ github.event_name }}" in
+            "release")
+              echo "tags=${{ github.repository }}:latest,${{ github.repository }}:${{ github.ref_name }}" >> $GITHUB_ENV
+            "pull_request")
+              echo "tags=${{ github.repository }}:${{ github.ref_name }}:${{ github.sha }}" >> $GITHUB_ENV
+          esac
+
+      - name: Login to DockerHub
+        if: ${{ github.event_name == 'release' }}
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
-      
+
       - name: Extract metadata (tags, labels) for Docker
+        if: ${{ github.event_name == 'release' }}
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4
         with:
           images: iotaledger/wasp
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+
+      - name: Build and push
+        if: ${{ github.event_name == 'release' }}
+        uses: docker/build-push-action@v3
         with:
+          context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ env.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BUILD_TAGS=rocksdb,builtin_static,BUILD_LD_FLAGS=-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ env. GITHUB_SHA }}
+          build-args: BUILD_TAGS="rocksdb,builtin_static",BUILD_LD_FLAGS="-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
+
+      # TODO: push changes to develop and master to GHCR for internal use
