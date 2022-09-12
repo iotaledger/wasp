@@ -1,5 +1,5 @@
 #!/bin/bash
-example_name=$1
+example_name=$1 # path relative to wasp/contracts/wasm
 flag=$2
 cd $example_name
 
@@ -17,4 +17,3 @@ if [ ! -d "./go/pkg" ]; then
   mkdir ./go/pkg
 fi
 tinygo build -o ./go/pkg/"$example_name"_go.wasm -target wasm -gc=leaking -opt 2 -no-debug go/main.go
-cd ..
