@@ -30,9 +30,7 @@ or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle
 
 ## Hornet Connection Settings
 
-`l1.apiAddress` specifies the Hornet API address (default port: `14265`)
-
-`li.faucetAddress` specifies the Hornet faucet address (default port: `8091`)
+`l1.inxAddress` specifies the Hornet INX address (default port: `9029`)
 
 ## Authentication
 

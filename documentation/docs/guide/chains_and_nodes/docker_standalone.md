@@ -63,8 +63,7 @@ editing the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop
 
 ```json
 "l1": {
-  "apiAddress": "http://hornet:14265",
-  "faucetAddress": "http://hornet:8091"
+  "inxAddress": "hornet:9029",
 },
 ```
 
@@ -88,7 +87,7 @@ docker run -v $(pwd)/alternative_docker_config.json:/etc/wasp_config.json wasp-n
 You can also add further configuration using arguments:
 
 ```shell
-docker run wasp-node --l1.apiAddress="alt_hornet:14265"
+docker run wasp-node --l1.inxAddress="alt_hornet:9029"
 ```
 
 To get a list of all available arguments, run the node with the argument '--help'
