@@ -516,8 +516,8 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	// validate ACS. Dismiss ACS if inconsistent. Should not happen
 	for _, prop := range acs {
 		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
-			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, generated stateOutputID: %v ",
-				isc.OID(c.stateOutput.ID()), isc.OID(prop.StateOutputID))
+			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, contributor %v stateOutputID: %v ",
+				isc.OID(c.stateOutput.ID()), prop.ValidatorIndex, isc.OID(prop.StateOutputID))
 			c.resetWorkflow()
 			return
 		}
@@ -725,8 +725,6 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		return false
 	}
 	c.stateTimestamp = msg.StateTimestamp
-	oid := c.stateOutput.OutputID()
-	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	if msg.IsGovernance && !sameIndex {
 		c.currentState = nil
 		c.log.Debugf("SET NEW STATE #%d (rotate) and pausing consensus to wait for adequate state, output: %s",
