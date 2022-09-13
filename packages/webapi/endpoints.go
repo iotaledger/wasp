@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -26,9 +26,10 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/state"
 )
 
-var log *logger.Logger
+var log *loggerpkg.Logger
 
 func Init(
+	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
@@ -43,7 +44,7 @@ func Init(
 	apiCacheTTL time.Duration,
 	publisherPort int,
 ) {
-	log = logger.NewLogger("WebAPI")
+	log = logger
 
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
@@ -69,6 +70,7 @@ func Init(
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
 
 	admapi.AddEndpoints(
+		logger.Named("webapi/adm"),
 		adm,
 		network,
 		tnm,

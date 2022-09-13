@@ -128,6 +128,7 @@ func initWebAPI() {
 		allMetrics = metrics.AllMetrics()
 	}
 	webapi.Init(
+		Plugin.App().NewLogger("WebAPI"),
 		Server,
 		network,
 		tnm,
