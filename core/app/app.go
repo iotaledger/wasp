@@ -77,8 +77,5 @@ func init() {
 			"peering",
 			"version",
 		},
-		AdditionalConfigs: []*app.ConfigurationSet{
-			app.NewConfigurationSet("peering", "peering", "peeringConfigFilePath", "peeringConfig", false, true, false, "peering.json", "n"),
-		},
 	}
 }
