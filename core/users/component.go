@@ -15,26 +15,16 @@ func init() {
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
-
-	userMap map[string]*users.UserData
-)
+var CoreComponent *app.CoreComponent
 
 func configure() error {
-	err := loadUsersFromConfiguration()
-	if err != nil {
-		CoreComponent.LogErrorf("Failed to pull users: %w", err)
-	}
-
-	users.InitUsers(userMap)
+	users.InitUsers(loadUsersFromConfiguration())
 
 	return nil
 }
 
-func loadUsersFromConfiguration() error {
-
-	userMap = make(map[string]*users.UserData)
+func loadUsersFromConfiguration() map[string]*users.UserData {
+	userMap := make(map[string]*users.UserData)
 	for name, user := range ParamsUsers.Users {
 		userMap[name] = &users.UserData{
 			Username:    name,
@@ -52,6 +42,5 @@ func loadUsersFromConfiguration() error {
 			Permissions: []string{"api", "dashboard"},
 		}
 	}
-
-	return nil
+	return userMap
 }

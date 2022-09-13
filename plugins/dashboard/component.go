@@ -197,14 +197,6 @@ func (w *waspServices) CallView(chainID *isc.ChainID, scName, funName string, pa
 	return ret, err
 }
 
-func exploreAddressURLFromL1URI(uri string) string {
-	url := strings.Split(uri, ":")[0] + ":8081/explorer/address"
-	if !strings.HasPrefix(url, "http") {
-		return "http://" + url
-	}
-	return url
-}
-
 func worker(ctx context.Context) {
 	stopped := make(chan struct{})
 	go func() {

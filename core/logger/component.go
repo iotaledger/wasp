@@ -13,9 +13,7 @@ func init() {
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
-)
+var CoreComponent *app.CoreComponent
 
 func configure() error {
 	initGoEthLogger(CoreComponent.App().NewLogger("go-ethereum"))

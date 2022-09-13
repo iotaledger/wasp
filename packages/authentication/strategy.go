@@ -63,7 +63,6 @@ func AddNoneAuth(webAPI WebAPI) {
 }
 
 func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, authConfig AuthConfiguration, claimValidator ClaimValidator) {
-
 	userMap := users.All()
 
 	addAuthContext(webAPI, authConfig)

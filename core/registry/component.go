@@ -29,7 +29,6 @@ var (
 )
 
 func provide(c *dig.Container) error {
-
 	if err := c.Provide(func() *registry.Config {
 		return &registry.Config{UseText: ParamsRegistry.UseText, Filename: ParamsRegistry.FileName}
 	}); err != nil {

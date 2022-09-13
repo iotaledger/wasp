@@ -60,9 +60,7 @@ func App() *app.App {
 	)
 }
 
-var (
-	InitComponent *app.InitComponent
-)
+var InitComponent *app.InitComponent
 
 func init() {
 	InitComponent = &app.InitComponent{

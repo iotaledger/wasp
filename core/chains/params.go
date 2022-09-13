@@ -18,8 +18,10 @@ type ParametersRawBlocks struct {
 	Directory string `default:"blocks" usage:"the raw blocks path"`
 }
 
-var ParamsChains = &ParametersChains{}
-var ParamsRawBlocks = &ParametersRawBlocks{}
+var (
+	ParamsChains    = &ParametersChains{}
+	ParamsRawBlocks = &ParametersRawBlocks{}
+)
 
 var params = &app.ComponentParams{
 	Params: map[string]any{

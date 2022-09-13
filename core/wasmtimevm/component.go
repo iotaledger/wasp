@@ -22,12 +22,9 @@ func init() {
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
-)
+var CoreComponent *app.CoreComponent
 
 func configure() error {
-
 	// register VM type(s)
 	err := processors.Config.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (isc.VMProcessor, error) {
 		// TODO (via config?) pass non-default timeout for WasmTime processor like this:
