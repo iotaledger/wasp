@@ -203,18 +203,6 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-//nolint:unparam
-func paramBlockNumberOrHashAsNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
-	if ctx.Params().MustHas(evm.FieldBlockHash) {
-		a := assert.NewAssert(ctx.Log())
-		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
-		header := emu.BlockchainDB().GetHeaderByHash(blockHash)
-		a.Requiref(header != nil, "block not found")
-		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
-	}
-	return paramBlockNumber(ctx, emu, allowPrevious)
-}
-
 func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
 	res := ctx.CallView(
 		governance.Contract.Hname(),
