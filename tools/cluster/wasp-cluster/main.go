@@ -8,12 +8,13 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/spf13/pflag"
+
+	"github.com/iotaledger/hive.go/core/configuration"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/l1connection"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/spf13/pflag"
 )
 
 const cmdName = "wasp-cluster"
@@ -58,7 +59,12 @@ func main() {
 		check(err)
 	}
 
-	if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+	cfg := configuration.New()
+	if err := cfg.Set("logger.disableStacktrace", true); err != nil {
+		panic(err)
+	}
+
+	if err := logger.InitGlobalLogger(cfg); err != nil {
 		panic(err)
 	}
 

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"

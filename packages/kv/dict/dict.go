@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/mr-tron/base58"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/mr-tron/base58"
 )
 
 // Dict is an implementation kv.KVStore interface backed by an in-memory map.

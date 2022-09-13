@@ -7,9 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/atomic"
+
+	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	dss_node_pkg "github.com/iotaledger/wasp/packages/chain/dss/node"
@@ -32,7 +34,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"go.uber.org/atomic"
 )
 
 const maxMsgBuffer = 1000
@@ -105,6 +106,8 @@ func NewChain(
 	chainMetrics metrics.ChainMetrics,
 	consensusJournalRegistry journal.Registry,
 	wal chain.WAL,
+	rawBlocksEnabled bool,
+	rawBlocksDir string,
 ) chain.Chain {
 	var err error
 	log.Debugf("creating chain object for %s", chainID.String())
@@ -168,11 +171,11 @@ func NewChain(
 		return nil
 	}
 
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal)
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal, rawBlocksEnabled, rawBlocksDir, false)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
-	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
+	ret.eventChainTransition.Hook(ret.eventChainTransitionClosure)
 	ret.nodeConn.AttachToOnLedgerRequest(ret.receiveOnLedgerRequest)
 	ret.nodeConn.AttachToAliasOutput(ret.EnqueueAliasOutput)
 	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)

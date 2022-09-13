@@ -8,12 +8,11 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/timeutil"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/timeutil"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/database/textdb"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
@@ -27,15 +26,17 @@ type DBManager struct {
 	stores        map[isc.ChainID]kvstore.KVStore
 	mutex         sync.RWMutex
 	inMemory      bool
+	databaseDir   string
 }
 
-func NewDBManager(log *logger.Logger, inMemory bool, registryConfig *registry.Config) *DBManager {
+func NewDBManager(log *logger.Logger, inMemory bool, databaseDir string, registryConfig *registry.Config) *DBManager {
 	dbm := DBManager{
-		log:       log,
-		databases: make(map[isc.ChainID]DB),
-		stores:    make(map[isc.ChainID]kvstore.KVStore),
-		mutex:     sync.RWMutex{},
-		inMemory:  inMemory,
+		log:         log,
+		databases:   make(map[isc.ChainID]DB),
+		stores:      make(map[isc.ChainID]kvstore.KVStore),
+		mutex:       sync.RWMutex{},
+		inMemory:    inMemory,
+		databaseDir: databaseDir,
 	}
 	// registry db is created with an empty chainID
 	dbm.registryDB = dbm.createDB(nil)
@@ -69,17 +70,16 @@ func (m *DBManager) createDB(chainID *isc.ChainID) DB {
 		return db
 	}
 
-	dbDir := parameters.GetString(parameters.DatabaseDir)
-	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+	if _, err := os.Stat(m.databaseDir); os.IsNotExist(err) {
 		// create a new database dir if none exists
-		err := os.Mkdir(dbDir, os.ModePerm)
+		err := os.Mkdir(m.databaseDir, os.ModePerm)
 		if err != nil {
 			m.log.Fatal(err)
 			return nil
 		}
 	}
 
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainIDStr)
+	instanceDir := fmt.Sprintf("%s/%s", m.databaseDir, chainIDStr)
 	if _, err := os.Stat(instanceDir); os.IsNotExist(err) {
 		m.log.Infof("creating new database for: %s.", chainIDStr)
 	} else {

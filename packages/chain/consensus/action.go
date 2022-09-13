@@ -10,7 +10,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
+	"go.uber.org/zap"
+
+	"github.com/iotaledger/hive.go/core/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
@@ -28,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"go.uber.org/zap"
 )
 
 // takeAction triggers actions whenever relevant

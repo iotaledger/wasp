@@ -3,7 +3,7 @@ package misc
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/bls"
+	"github.com/iotaledger/hive.go/core/crypto/bls"
 )
 
 func TestSizes(t *testing.T) {

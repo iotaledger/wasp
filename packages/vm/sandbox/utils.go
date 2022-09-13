@@ -1,16 +1,17 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/hive.go/crypto/bls"
+	"github.com/mr-tron/base58"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/sign/bdn"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/mr-tron/base58"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
-	"go.dedis.ch/kyber/v3/sign/bdn"
-	"golang.org/x/xerrors"
 )
 
 type utilImpl struct {
