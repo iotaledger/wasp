@@ -39,7 +39,7 @@ type dependencies struct {
 }
 
 func configure() error {
-	dbm = dbmanager.NewDBManager(CoreComponent.Logger().Named("dbmanager"), ParamsDatabase.InMemory, ParamsDatabase.Directory, deps.RegistryConfig)
+	dbm = dbmanager.NewDBManager(CoreComponent.App().NewLogger("dbmanager"), ParamsDatabase.InMemory, ParamsDatabase.Directory, deps.RegistryConfig)
 
 	// we open the database in the configure, so we must also make sure it's closed here
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {

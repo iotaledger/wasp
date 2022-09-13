@@ -7,8 +7,7 @@ import (
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name: "Logger",
-			//Params:    params,
+			Name:      "Logger",
 			Configure: configure,
 		},
 	}
@@ -19,7 +18,7 @@ var (
 )
 
 func configure() error {
-	initGoEthLogger(CoreComponent.Logger().Named("go-ethereum"))
+	initGoEthLogger(CoreComponent.App().NewLogger("go-ethereum"))
 
 	return nil
 }
