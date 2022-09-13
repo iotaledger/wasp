@@ -352,12 +352,12 @@ Example:
 
 ## <a id="dashboard"></a> 14. Dashboard
 
-| Name                    | Description                                                                                          | Type    | Default value    |
-| ----------------------- | ---------------------------------------------------------------------------------------------------- | ------- | ---------------- |
-| enabled                 | Whether the dashboard plugin is enabled                                                              | boolean | true             |
-| bindAddress             | The bind address for the node dashboard                                                              | string  | "127.0.0.1:7000" |
-| exploreAddressURL       | URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address] | string  | ""               |
-| [auth](#dashboard_auth) | Configuration for auth                                                                               | object  |                  |
+| Name                    | Description                                      | Type    | Default value    |
+| ----------------------- | ------------------------------------------------ | ------- | ---------------- |
+| enabled                 | Whether the dashboard plugin is enabled          | boolean | true             |
+| bindAddress             | The bind address for the node dashboard          | string  | "127.0.0.1:7000" |
+| exploreAddressURL       | URL to add as href to addresses in the dashboard | string  | ""               |
+| [auth](#dashboard_auth) | Configuration for auth                           | object  |                  |
 
 ### <a id="dashboard_auth"></a> Auth
 
