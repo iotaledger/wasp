@@ -74,6 +74,13 @@
 				<td>{{ (formatTimestampOrNever (($metrics.GetInOutput).GetLastEvent)) }}</td>
 				{{ template "longStringCell" (($metrics.GetInOutput).GetLastMessage)}}
 			</tr>
+			<tr>
+				<td>On ledger request</td>
+				<td>IN</td>
+				<td>{{ (($metrics.GetInOnLedgerRequest).GetMessageTotal) }}</td>
+				<td>{{ (formatTimestampOrNever (($metrics.GetInOnLedgerRequest).GetLastEvent)) }}</td>
+				{{ template "longStringCell" (($metrics.GetInOnLedgerRequest).GetLastMessage)}}
+			</tr>
 		</tbody>
 	</table>
 {{end}}
