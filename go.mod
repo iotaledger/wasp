@@ -15,7 +15,7 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-beta.11
 	github.com/iotaledger/inx/go v1.0.0-beta.7
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.9
-	github.com/iotaledger/trie.go v0.0.0-20220831125128-ee0850058e60
+	github.com/iotaledger/trie.go v0.0.0-20220913055112-2b1eae4ebed9
 	github.com/knadh/koanf v1.4.3
 	github.com/labstack/echo/v4 v4.9.0
 	github.com/libp2p/go-libp2p v0.22.0
@@ -36,7 +36,7 @@ require (
 	go.uber.org/dig v1.15.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
-	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
+	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gonum.org/v1/plot v0.11.0
 	gopkg.in/yaml.v3 v3.0.1

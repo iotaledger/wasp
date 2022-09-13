@@ -3,9 +3,9 @@ package dbmanager
 import (
 	"runtime"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/kvstore/rocksdb"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/core/kvstore/rocksdb"
 )
 
 // region Interface ////////////////////////////////////////////////////////////
