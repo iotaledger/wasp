@@ -3,12 +3,13 @@ contracts_path=$(git rev-parse --show-toplevel)/contracts/wasm
 cd $contracts_path
 for dir in ./*; do
   if [ -d "$dir" ]; then
-    bash scripts/ts_build.sh "$dir" $1
+    echo "$dir"
+    bash scripts/cleanup.sh "$dir"
   fi
 done
 cd $contracts_path/gascalibration
 for dir in ./*; do
   if [ -d "$dir" ]; then
-    bash ../scripts/ts_build.sh "$dir" $1
+    bash ../scripts/cleanup.sh "$dir"
   fi
 done

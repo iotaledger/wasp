@@ -1,8 +1,11 @@
 #!/bin/bash
-go install ../../../tools/schema
-cd ../../../packages/wasmvm/wasmlib
+root_path=$(git rev-parse --show-toplevel)
+cd $root_path/contracts/wasm
+npm install
+
+go install $root_path/tools/schema
+cd $root_path/packages/wasmvm/wasmlib
 schema -core -go -rust -ts -force
-cd ../../../contracts/wasm
+cd $root_path/contracts/wasm
 rm -rf ./node_modules/wasmlib/
-cp -R ../../packages/wasmvm/wasmlib/ts/wasmlib ./node_modules
-cd scripts
+cp -R $root_path/packages/wasmvm/wasmlib/ts/wasmlib ./node_modules

@@ -1,8 +1,8 @@
 #!/bin/bash
-cd ./contracts/wasm/scripts
-bash schema_all.sh
-cd ..
+root_path=$(git rev-parse --show-toplevel)
+contracts_path=$root_path/contracts/wasm
+cd $contracts_path
+bash scripts/schema_all.sh
 golangci-lint run --fix
-cd ../../packages/wasmvm
+cd $root_path/packages/wasmvm
 golangci-lint run --fix
-cd ../..
