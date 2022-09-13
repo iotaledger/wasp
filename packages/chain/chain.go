@@ -117,7 +117,6 @@ type NodeConnection interface {
 
 	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	Close()
 }
 
 type ChainNodeConnection interface {

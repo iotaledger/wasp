@@ -11,6 +11,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -97,21 +99,40 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
 	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
+	defer cancelContext()
 
-	// TODO: replace this with nodebridge.Client().ReadOutput if still needed
-	// MH: With this you would also apply spent outputs to the current state, is that intended?
-	res, err := ncc.nc.nodeClient.OutputByID(ctxWithTimeout, id)
-	cancelContext()
+	resp, err := ncc.nc.nodeBridge.Client().ReadOutput(ctxWithTimeout, inx.NewOutputId(id))
 	if err != nil {
 		ncc.log.Errorf("PullOutputByID: error querying API - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
 		return
 	}
-	out, err := res.Output()
-	if err != nil {
-		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+
+	var output iotago.Output
+	switch resp.GetPayload().(type) {
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Output:
+		out, err := resp.GetOutput().UnwrapOutput(serializer.DeSeriModePerformValidation, ncc.nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+			return
+		}
+		output = out
+
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Spent:
+		// MH: With this you would also apply spent outputs to the current state, is that intended?
+		out, err := resp.GetSpent().GetOutput().UnwrapOutput(serializer.DeSeriModePerformValidation, ncc.nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+			return
+		}
+		output = out
+
+	default:
+		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  invalid inx.OutputResponse payload type", ncc.chainID, id)
 		return
 	}
-	ncc.stateOutputHandler(id, out)
+	ncc.stateOutputHandler(id, output)
 }
 
 func shouldBeProcessed(out iotago.Output) bool {

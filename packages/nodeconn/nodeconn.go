@@ -32,17 +32,13 @@ import (
 )
 
 const (
-	inxTimeoutBlockMetadata      = 500 * time.Millisecond
-	inxTimeoutSubmitBlock        = 60 * time.Second
-	inxTimeoutPublishTransaction = 120 * time.Second
-	reattachWorkerPoolQueueSize  = 100
+	indexerPluginAvailableTimeout = 30 * time.Second
+	inxTimeoutInfo                = 500 * time.Millisecond
+	inxTimeoutBlockMetadata       = 500 * time.Millisecond
+	inxTimeoutSubmitBlock         = 60 * time.Second
+	inxTimeoutPublishTransaction  = 120 * time.Second
+	reattachWorkerPoolQueueSize   = 100
 )
-
-type ChainL1Config struct {
-	INXAddress            string
-	MaxConnectionAttempts uint
-	UseRemotePoW          bool
-}
 
 type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 
@@ -51,14 +47,12 @@ type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 // we expect to have a single instance of this structure.
 type nodeConn struct {
 	ctx           context.Context
-	ctxCancel     context.CancelFunc
 	chains        map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock    sync.RWMutex
 	indexerClient nodeclient.IndexerClient
 	milestones    *events.Event
 	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
-	config        ChainL1Config
 	nodeBridge    *nodebridge.NodeBridge
 	nodeClient    *nodeclient.Client
 
@@ -70,12 +64,12 @@ type nodeConn struct {
 
 var _ chain.NodeConnection = &nodeConn{}
 
-func setL1ProtocolParams(info *nodeclient.InfoResponse) {
+func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
 	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
 		MaxPayloadSize: parameters.MaxPayloadSize,
-		Protocol:       &info.Protocol,
-		BaseToken:      (*parameters.BaseToken)(info.BaseToken),
+		Protocol:       protocolParameters,
+		BaseToken:      (*parameters.BaseToken)(baseToken),
 	})
 }
 
@@ -89,35 +83,28 @@ func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.C
 	return context.WithTimeout(ctx, t)
 }
 
-func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) chain.NodeConnection {
-	ctx, ctxCancel := context.WithCancel(context.Background())
+func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) chain.NodeConnection {
+	inxNodeClient := nodeBridge.INXNodeClient()
 
-	ctxWithTimeout, cancelContext := newCtxWithTimeout(ctx, timeout...)
-	defer cancelContext()
+	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
+	defer cancelInfo()
 
-	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, config.MaxConnectionAttempts, log.Named("NodeBridge"))
-	if err != nil {
-		panic(err)
-	}
-
-	go nb.Run(context.Background())
-	inxNodeClient := nb.INXNodeClient()
-
-	nodeInfo, err := inxNodeClient.Info(ctxWithTimeout)
+	nodeInfo, err := inxNodeClient.Info(ctxInfo)
 	if err != nil {
 		panic(xerrors.Errorf("error getting node info: %w", err))
 	}
+	setL1ProtocolParams(nodeBridge.ProtocolParameters(), nodeInfo.BaseToken)
 
-	setL1ProtocolParams(nodeInfo)
+	ctxIndexer, cancelIndexer := context.WithTimeout(ctx, indexerPluginAvailableTimeout)
+	defer cancelIndexer()
 
-	indexerClient, err := inxNodeClient.Indexer(ctxWithTimeout)
+	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
 	if err != nil {
 		panic(xerrors.Errorf("failed to get nodeclient indexer: %v", err))
 	}
 
 	nc := nodeConn{
 		ctx:           ctx,
-		ctxCancel:     ctxCancel,
 		chains:        make(map[string]*ncChain),
 		chainsLock:    sync.RWMutex{},
 		indexerClient: indexerClient,
@@ -126,8 +113,7 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 		}),
 		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log:                     log.Named("nc"),
-		config:                  config,
-		nodeBridge:              nb,
+		nodeBridge:              nodeBridge,
 		nodeClient:              inxNodeClient,
 		pendingTransactionsMap:  make(map[iotago.TransactionID]*PendingTransaction),
 		pendingTransactionsLock: sync.Mutex{},
@@ -354,10 +340,6 @@ func (nc *nodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandl
 // DetachMilestones implements chain.NodeConnection.
 func (nc *nodeConn) DetachMilestones(attachID *events.Closure) {
 	nc.milestones.Detach(attachID)
-}
-
-func (nc *nodeConn) Close() {
-	nc.ctxCancel()
 }
 
 func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
