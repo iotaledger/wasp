@@ -20,8 +20,8 @@
     ],
     "disableEvents": true
   },
-  "nodeconn": {
-    "inxAddress": "localhost:9029",
+  "inx": {
+    "address": "localhost:9029",
     "maxConnectionAttempts": 30
   },
   "database": {
@@ -68,10 +68,10 @@
         "duration": "24h"
       },
       "basic": {
-        "userName": "wasp"
+        "username": "wasp"
       },
       "ip": {
-        "ipWhiteList": [
+        "whitelist": [
           "127.0.0.1"
         ]
       }
@@ -91,10 +91,10 @@
         "duration": "24h"
       },
       "basic": {
-        "userName": "wasp"
+        "username": "wasp"
       },
       "ip": {
-        "ipWhiteList": [
+        "whitelist": [
           "127.0.0.1"
         ]
       }

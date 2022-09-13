@@ -24,11 +24,11 @@ type JWTAuthConfiguration struct {
 }
 
 type BasicAuthConfiguration struct {
-	UserName string `default:"wasp" usage:"the username which grants access to the service"`
+	Username string `default:"wasp" usage:"the username which grants access to the service"`
 }
 
 type IPWhiteListAuthConfiguration struct {
-	IPWhiteList []string `default:"127.0.0.1" usage:"a list of ips that are allowed to access the service"`
+	Whitelist []string `default:"127.0.0.1" usage:"a list of ips that are allowed to access the service"`
 }
 
 type AuthConfiguration struct {

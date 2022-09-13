@@ -14,7 +14,7 @@ func AddIPWhiteListAuth(webAPI WebAPI, config IPWhiteListAuthConfiguration) {
 
 func createIPWhiteList(config IPWhiteListAuthConfiguration) []net.IP {
 	r := make([]net.IP, 0)
-	for _, ip := range config.IPWhiteList {
+	for _, ip := range config.Whitelist {
 		r = append(r, net.ParseIP(ip))
 	}
 	return r

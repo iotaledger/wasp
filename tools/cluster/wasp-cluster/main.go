@@ -47,8 +47,11 @@ func main() {
 	commonFlags.IntVarP(&waspConfig.FirstDashboardPort, "first-dashboard-port", "h", waspConfig.FirstDashboardPort, "First wasp dashboard port")
 
 	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
-	l1 := l1starter.New(l1StarterFlags)
+	inxStarterFlags := flag.NewFlagSet("inx", flag.ExitOnError)
+	l1 := l1starter.New(l1StarterFlags, inxStarterFlags)
+
 	commonFlags.AddGoFlagSet(l1StarterFlags)
+	commonFlags.AddGoFlagSet(inxStarterFlags)
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)

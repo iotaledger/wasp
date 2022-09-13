@@ -51,6 +51,17 @@ func main() {
 	ignoreFlags := make(map[string]struct{})
 
 	replaceTopicNames := make(map[string]string)
+	replaceTopicNames["app"] = "Application"
+	replaceTopicNames["inx"] = "INX"
+	replaceTopicNames["log"] = "Shutdown Log"
+	replaceTopicNames["db"] = "Database"
+	replaceTopicNames["jwt"] = "JWT Auth"
+	replaceTopicNames["ip"] = "IP-based Auth"
+	replaceTopicNames["basic"] = "Basic Auth"
+	replaceTopicNames["webapi"] = "Web API"
+	replaceTopicNames["wal"] = "Write-Ahead Logging"
+	replaceTopicNames["rawBlocks"] = "Raw Blocks"
+	replaceTopicNames["nanomsg"] = "nanomsg"
 
 	application := waspApp.App()
 

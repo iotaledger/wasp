@@ -36,7 +36,7 @@ You can always get the most up-to-date description of the config parameters by r
 wasp -h --full
 ```
 
-## <a id="app"></a> 1. App
+## <a id="app"></a> 1. Application
 
 | Name                      | Description                                            | Type    | Default value |
 | ------------------------- | ------------------------------------------------------ | ------- | ------------- |
@@ -48,9 +48,9 @@ wasp -h --full
 | Name                     | Description                                                                                            | Type   | Default value |
 | ------------------------ | ------------------------------------------------------------------------------------------------------ | ------ | ------------- |
 | stopGracePeriod          | The maximum time to wait for background processes to finish during shutdown before terminating the app | string | "5m"          |
-| [log](#app_shutdown_log) | Configuration for log                                                                                  | object |               |
+| [log](#app_shutdown_log) | Configuration for Shutdown Log                                                                         | object |               |
 
-### <a id="app_shutdown_log"></a> Log
+### <a id="app_shutdown_log"></a> Shutdown Log
 
 | Name     | Description                                         | Type    | Default value  |
 | -------- | --------------------------------------------------- | ------- | -------------- |
@@ -104,19 +104,19 @@ Example:
   }
 ```
 
-## <a id="nodeconn"></a> 3. Nodeconn
+## <a id="inx"></a> 3. INX
 
 | Name                  | Description                                                                                        | Type   | Default value    |
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ---------------- |
-| inxAddress            | The INX address to which to connect to                                                             | string | "localhost:9029" |
+| address               | The INX address to which to connect to                                                             | string | "localhost:9029" |
 | maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30               |
 
 Example:
 
 ```json
   {
-    "nodeconn": {
-      "inxAddress": "localhost:9029",
+    "inx": {
+      "address": "localhost:9029",
       "maxConnectionAttempts": 30
     }
   }
@@ -198,7 +198,7 @@ Example:
   }
 ```
 
-## <a id="rawblocks"></a> 8. RawBlocks
+## <a id="rawblocks"></a> 8. Raw Blocks
 
 | Name      | Description                              | Type    | Default value |
 | --------- | ---------------------------------------- | ------- | ------------- |
@@ -234,7 +234,7 @@ Example:
   }
 ```
 
-## <a id="wal"></a> 10. Wal
+## <a id="wal"></a> 10. Write-Ahead Logging
 
 | Name      | Description                       | Type    | Default value |
 | --------- | --------------------------------- | ------- | ------------- |
@@ -270,7 +270,7 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 12. Webapi
+## <a id="webapi"></a> 12. Web API
 
 | Name                 | Description                                     | Type    | Default value    |
 | -------------------- | ----------------------------------------------- | ------- | ---------------- |
@@ -284,27 +284,27 @@ Example:
 | Name                        | Description                            | Type   | Default value |
 | --------------------------- | -------------------------------------- | ------ | ------------- |
 | scheme                      | Selects which authentication to choose | string | "jwt"         |
-| [jwt](#webapi_auth_jwt)     | Configuration for jwt                  | object |               |
-| [basic](#webapi_auth_basic) | Configuration for basic                | object |               |
-| [ip](#webapi_auth_ip)       | Configuration for ip                   | object |               |
+| [jwt](#webapi_auth_jwt)     | Configuration for JWT Auth             | object |               |
+| [basic](#webapi_auth_basic) | Configuration for Basic Auth           | object |               |
+| [ip](#webapi_auth_ip)       | Configuration for IP-based Auth        | object |               |
 
-### <a id="webapi_auth_jwt"></a> Jwt
+### <a id="webapi_auth_jwt"></a> JWT Auth
 
 | Name     | Description        | Type   | Default value |
 | -------- | ------------------ | ------ | ------------- |
 | duration | Jwt token lifetime | string | "24h"         |
 
-### <a id="webapi_auth_basic"></a> Basic
+### <a id="webapi_auth_basic"></a> Basic Auth
 
 | Name     | Description                                     | Type   | Default value |
 | -------- | ----------------------------------------------- | ------ | ------------- |
-| userName | The username which grants access to the service | string | "wasp"        |
+| username | The username which grants access to the service | string | "wasp"        |
 
-### <a id="webapi_auth_ip"></a> Ip
+### <a id="webapi_auth_ip"></a> IP-based Auth
 
-| Name        | Description                                          | Type  | Default value |
-| ----------- | ---------------------------------------------------- | ----- | ------------- |
-| ipWhiteList | A list of ips that are allowed to access the service | array | 127.0.0.1     |
+| Name      | Description                                          | Type  | Default value |
+| --------- | ---------------------------------------------------- | ----- | ------------- |
+| whitelist | A list of ips that are allowed to access the service | array | 127.0.0.1     |
 
 Example:
 
@@ -320,10 +320,10 @@ Example:
           "duration": "24h"
         },
         "basic": {
-          "userName": "wasp"
+          "username": "wasp"
         },
         "ip": {
-          "ipWhiteList": [
+          "whitelist": [
             "127.0.0.1"
           ]
         }
@@ -332,7 +332,7 @@ Example:
   }
 ```
 
-## <a id="nanomsg"></a> 13. Nanomsg
+## <a id="nanomsg"></a> 13. nanomsg
 
 | Name    | Description                              | Type    | Default value |
 | ------- | ---------------------------------------- | ------- | ------------- |
@@ -364,27 +364,27 @@ Example:
 | Name                           | Description                            | Type   | Default value |
 | ------------------------------ | -------------------------------------- | ------ | ------------- |
 | scheme                         | Selects which authentication to choose | string | "basic"       |
-| [jwt](#dashboard_auth_jwt)     | Configuration for jwt                  | object |               |
-| [basic](#dashboard_auth_basic) | Configuration for basic                | object |               |
-| [ip](#dashboard_auth_ip)       | Configuration for ip                   | object |               |
+| [jwt](#dashboard_auth_jwt)     | Configuration for JWT Auth             | object |               |
+| [basic](#dashboard_auth_basic) | Configuration for Basic Auth           | object |               |
+| [ip](#dashboard_auth_ip)       | Configuration for IP-based Auth        | object |               |
 
-### <a id="dashboard_auth_jwt"></a> Jwt
+### <a id="dashboard_auth_jwt"></a> JWT Auth
 
 | Name     | Description        | Type   | Default value |
 | -------- | ------------------ | ------ | ------------- |
 | duration | Jwt token lifetime | string | "24h"         |
 
-### <a id="dashboard_auth_basic"></a> Basic
+### <a id="dashboard_auth_basic"></a> Basic Auth
 
 | Name     | Description                                     | Type   | Default value |
 | -------- | ----------------------------------------------- | ------ | ------------- |
-| userName | The username which grants access to the service | string | "wasp"        |
+| username | The username which grants access to the service | string | "wasp"        |
 
-### <a id="dashboard_auth_ip"></a> Ip
+### <a id="dashboard_auth_ip"></a> IP-based Auth
 
-| Name        | Description                                          | Type  | Default value |
-| ----------- | ---------------------------------------------------- | ----- | ------------- |
-| ipWhiteList | A list of ips that are allowed to access the service | array | 127.0.0.1     |
+| Name      | Description                                          | Type  | Default value |
+| --------- | ---------------------------------------------------- | ----- | ------------- |
+| whitelist | A list of ips that are allowed to access the service | array | 127.0.0.1     |
 
 Example:
 
@@ -400,10 +400,10 @@ Example:
           "duration": "24h"
         },
         "basic": {
-          "userName": "wasp"
+          "username": "wasp"
         },
         "ip": {
-          "ipWhiteList": [
+          "whitelist": [
             "127.0.0.1"
           ]
         }

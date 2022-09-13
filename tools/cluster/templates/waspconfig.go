@@ -59,8 +59,9 @@ const WaspConfig = `
     "port": {{.PeeringPort}},
     "netid": "127.0.0.1:{{.PeeringPort}}"
   },
-  "l1": {
-    "inxAddress": "{{.L1INXAddress}}"
+  "inx": {
+    "address": "{{.L1INXAddress}}",
+    "maxConnectionAttempts": 30
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}

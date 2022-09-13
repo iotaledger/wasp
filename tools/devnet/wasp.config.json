@@ -2,8 +2,9 @@
   "database": {
     "directory": "/wasp/waspdb"
   },
-  "l1": {
-    "inxAddress": "hornet-nest:9029"
+  "inx": {
+    "address": "hornet-nest:9029",
+    "maxConnectionAttempts": 30
   },
   "logger": {
     "level": "debug",

@@ -18,13 +18,13 @@ type L1Starter struct {
 }
 
 // New sets up the CLI flags relevant to L1/privtangle configuration in the given FlagSet.
-func New(flags *flag.FlagSet) *L1Starter {
+func New(l1flags, inxFlags *flag.FlagSet) *L1Starter {
 	s := &L1Starter{}
-	flags.StringVar(&s.Config.APIAddress, "layer1-api", "", "layer1 API address")
-	flags.StringVar(&s.Config.INXAddress, "layer1-inx", "", "layer1 INX address")
-	flags.StringVar(&s.Config.FaucetAddress, "layer1-faucet", "", "layer1 faucet port")
-	flags.BoolVar(&s.Config.UseRemotePoW, "layer1-remote-pow", false, "use remote PoW (must be enabled on the Hornet node)")
-	flags.IntVar(&s.privtangleNumNodes, "privtangle-num-nodes", 2, "number of hornet nodes to be spawned in the private tangle")
+	l1flags.StringVar(&s.Config.APIAddress, "layer1-api", "", "layer1 API address")
+	inxFlags.StringVar(&s.Config.INXAddress, "layer1-inx", "", "layer1 INX address")
+	l1flags.StringVar(&s.Config.FaucetAddress, "layer1-faucet", "", "layer1 faucet port")
+	l1flags.BoolVar(&s.Config.UseRemotePoW, "layer1-remote-pow", false, "use remote PoW (must be enabled on the Hornet node)")
+	l1flags.IntVar(&s.privtangleNumNodes, "privtangle-num-nodes", 2, "number of hornet nodes to be spawned in the private tangle")
 	return s
 }
 
