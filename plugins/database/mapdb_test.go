@@ -3,8 +3,8 @@ package database
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
