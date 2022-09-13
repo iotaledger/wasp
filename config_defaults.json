@@ -1,10 +1,28 @@
 {
   "app": {
     "checkForUpdates": true,
-    "stopGracePeriod": "5m"
+    "shutdown": {
+      "stopGracePeriod": "5m",
+      "log": {
+        "enabled": true,
+        "filePath": "shutdown.log"
+      }
+    }
+  },
+  "logger": {
+    "level": "info",
+    "disableCaller": true,
+    "disableStacktrace": false,
+    "stacktraceLevel": "panic",
+    "encoding": "console",
+    "outputPaths": [
+      "stdout"
+    ],
+    "disableEvents": true
   },
   "nodeconn": {
-    "inxAddress": "localhost:9029"
+    "inxAddress": "localhost:9029",
+    "maxConnectionAttempts": 30
   },
   "database": {
     "inMemory": false,
@@ -45,7 +63,7 @@
     "nodeOwnerAddresses": [],
     "bindAddress": "127.0.0.1:9090",
     "auth": {
-      "scheme": "ip",
+      "scheme": "jwt",
       "jwt": {
         "duration": "24h"
       },
@@ -68,7 +86,7 @@
     "bindAddress": "127.0.0.1:7000",
     "exploreAddressURL": "",
     "auth": {
-      "scheme": "ip",
+      "scheme": "basic",
       "jwt": {
         "duration": "24h"
       },

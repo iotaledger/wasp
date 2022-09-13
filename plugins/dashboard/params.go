@@ -12,7 +12,11 @@ type ParametersDashboard struct {
 	Auth              authentication.AuthConfiguration `usage:"configures the authentication for the dashboard service"`
 }
 
-var ParamsDashboard = &ParametersDashboard{}
+var ParamsDashboard = &ParametersDashboard{
+	Auth: authentication.AuthConfiguration{
+		Scheme: "basic",
+	},
+}
 
 var params = &app.ComponentParams{
 	Params: map[string]any{

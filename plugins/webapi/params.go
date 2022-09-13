@@ -12,7 +12,11 @@ type ParametersWebAPI struct {
 	Auth               authentication.AuthConfiguration `usage:"configures the authentication for the dashboard service"`
 }
 
-var ParamsWebAPI = &ParametersWebAPI{}
+var ParamsWebAPI = &ParametersWebAPI{
+	Auth: authentication.AuthConfiguration{
+		Scheme: "jwt",
+	},
+}
 
 var params = &app.ComponentParams{
 	Params: map[string]any{

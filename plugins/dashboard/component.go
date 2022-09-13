@@ -85,7 +85,7 @@ type waspServices struct{}
 var _ dashboard.WaspServices = &waspServices{}
 
 func (w *waspServices) ConfigDump() map[string]interface{} {
-	return Plugin.App.Config().Koanf().All()
+	return Plugin.App().Config().Koanf().All()
 }
 
 func (*waspServices) WebAPIPort() string {

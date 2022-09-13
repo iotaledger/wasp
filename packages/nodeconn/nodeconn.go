@@ -39,8 +39,9 @@ const (
 )
 
 type ChainL1Config struct {
-	INXAddress   string
-	UseRemotePoW bool
+	INXAddress            string
+	MaxConnectionAttempts uint
+	UseRemotePoW          bool
 }
 
 type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
@@ -94,7 +95,7 @@ func New(config ChainL1Config, log *logger.Logger, timeout ...time.Duration) cha
 	ctxWithTimeout, cancelContext := newCtxWithTimeout(ctx, timeout...)
 	defer cancelContext()
 
-	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, log.Named("NodeBridge"))
+	nb, err := nodebridge.NewNodeBridge(ctxWithTimeout, config.INXAddress, config.MaxConnectionAttempts, log.Named("NodeBridge"))
 	if err != nil {
 		panic(err)
 	}

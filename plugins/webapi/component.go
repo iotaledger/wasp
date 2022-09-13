@@ -12,7 +12,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/app/core/shutdown"
+	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/dkg"
 	"github.com/iotaledger/wasp/core/peering"

@@ -38,10 +38,24 @@ wasp -h --full
 
 ## <a id="app"></a> 1. App
 
-| Name            | Description                                                                                            | Type    | Default value |
-| --------------- | ------------------------------------------------------------------------------------------------------ | ------- | ------------- |
-| checkForUpdates | Whether to check for updates of the application or not                                                 | boolean | true          |
-| stopGracePeriod | The maximum time to wait for background processes to finish during shutdown before terminating the app | string  | "5m"          |
+| Name                      | Description                                            | Type    | Default value |
+| ------------------------- | ------------------------------------------------------ | ------- | ------------- |
+| checkForUpdates           | Whether to check for updates of the application or not | boolean | true          |
+| [shutdown](#app_shutdown) | Configuration for shutdown                             | object  |               |
+
+### <a id="app_shutdown"></a> Shutdown
+
+| Name                     | Description                                                                                            | Type   | Default value |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | ------ | ------------- |
+| stopGracePeriod          | The maximum time to wait for background processes to finish during shutdown before terminating the app | string | "5m"          |
+| [log](#app_shutdown_log) | Configuration for log                                                                                  | object |               |
+
+### <a id="app_shutdown_log"></a> Log
+
+| Name     | Description                                         | Type    | Default value  |
+| -------- | --------------------------------------------------- | ------- | -------------- |
+| enabled  | Whether to store self-shutdown events to a log file | boolean | true           |
+| filePath | The file path to the self-shutdown log              | string  | "shutdown.log" |
 
 Example:
 
@@ -49,28 +63,66 @@ Example:
   {
     "app": {
       "checkForUpdates": true,
-      "stopGracePeriod": "5m"
+      "shutdown": {
+        "stopGracePeriod": "5m",
+        "log": {
+          "enabled": true,
+          "filePath": "shutdown.log"
+        }
+      }
     }
   }
 ```
 
-## <a id="nodeconn"></a> 2. Nodeconn
+## <a id="logger"></a> 2. Logger
 
-| Name       | Description                            | Type   | Default value    |
-| ---------- | -------------------------------------- | ------ | ---------------- |
-| inxAddress | The INX address to which to connect to | string | "localhost:9029" |
+| Name              | Description                                                                 | Type    | Default value |
+| ----------------- | --------------------------------------------------------------------------- | ------- | ------------- |
+| level             | The minimum enabled logging level                                           | string  | "info"        |
+| disableCaller     | Stops annotating logs with the calling function's file name and line number | boolean | true          |
+| disableStacktrace | Disables automatic stacktrace capturing                                     | boolean | false         |
+| stacktraceLevel   | The level stacktraces are captured and above                                | string  | "panic"       |
+| encoding          | The logger's encoding (options: "json", "console")                          | string  | "console"     |
+| outputPaths       | A list of URLs, file paths or stdout/stderr to write logging output to      | array   | stdout        |
+| disableEvents     | Prevents log messages from being raced as events                            | boolean | true          |
+
+Example:
+
+```json
+  {
+    "logger": {
+      "level": "info",
+      "disableCaller": true,
+      "disableStacktrace": false,
+      "stacktraceLevel": "panic",
+      "encoding": "console",
+      "outputPaths": [
+        "stdout"
+      ],
+      "disableEvents": true
+    }
+  }
+```
+
+## <a id="nodeconn"></a> 3. Nodeconn
+
+| Name                  | Description                                                                                        | Type   | Default value    |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| inxAddress            | The INX address to which to connect to                                                             | string | "localhost:9029" |
+| maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30               |
 
 Example:
 
 ```json
   {
     "nodeconn": {
-      "inxAddress": "localhost:9029"
+      "inxAddress": "localhost:9029",
+      "maxConnectionAttempts": 30
     }
   }
 ```
 
-## <a id="database"></a> 3. Database
+## <a id="database"></a> 4. Database
 
 | Name      | Description                                                   | Type    | Default value |
 | --------- | ------------------------------------------------------------- | ------- | ------------- |
@@ -88,7 +140,7 @@ Example:
   }
 ```
 
-## <a id="registry"></a> 4. Registry
+## <a id="registry"></a> 5. Registry
 
 | Name     | Description                                              | Type    | Default value         |
 | -------- | -------------------------------------------------------- | ------- | --------------------- |
@@ -106,7 +158,7 @@ Example:
   }
 ```
 
-## <a id="peering"></a> 5. Peering
+## <a id="peering"></a> 6. Peering
 
 | Name  | Description                                          | Type   | Default value    |
 | ----- | ---------------------------------------------------- | ------ | ---------------- |
@@ -124,7 +176,7 @@ Example:
   }
 ```
 
-## <a id="chains"></a> 6. Chains
+## <a id="chains"></a> 7. Chains
 
 | Name                             | Description                                                          | Type    | Default value |
 | -------------------------------- | -------------------------------------------------------------------- | ------- | ------------- |
@@ -146,7 +198,7 @@ Example:
   }
 ```
 
-## <a id="rawblocks"></a> 7. RawBlocks
+## <a id="rawblocks"></a> 8. RawBlocks
 
 | Name      | Description                              | Type    | Default value |
 | --------- | ---------------------------------------- | ------- | ------------- |
@@ -164,7 +216,7 @@ Example:
   }
 ```
 
-## <a id="profiling"></a> 8. Profiling
+## <a id="profiling"></a> 9. Profiling
 
 | Name        | Description                                       | Type    | Default value    |
 | ----------- | ------------------------------------------------- | ------- | ---------------- |
@@ -182,7 +234,7 @@ Example:
   }
 ```
 
-## <a id="wal"></a> 9. Wal
+## <a id="wal"></a> 10. Wal
 
 | Name      | Description                       | Type    | Default value |
 | --------- | --------------------------------- | ------- | ------------- |
@@ -200,7 +252,7 @@ Example:
   }
 ```
 
-## <a id="metrics"></a> 10. Metrics
+## <a id="metrics"></a> 11. Metrics
 
 | Name        | Description                             | Type    | Default value    |
 | ----------- | --------------------------------------- | ------- | ---------------- |
@@ -218,7 +270,7 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 11. Webapi
+## <a id="webapi"></a> 12. Webapi
 
 | Name                 | Description                                     | Type    | Default value    |
 | -------------------- | ----------------------------------------------- | ------- | ---------------- |
@@ -231,7 +283,7 @@ Example:
 
 | Name                        | Description                            | Type   | Default value |
 | --------------------------- | -------------------------------------- | ------ | ------------- |
-| scheme                      | Selects which authentication to choose | string | "ip"          |
+| scheme                      | Selects which authentication to choose | string | "jwt"         |
 | [jwt](#webapi_auth_jwt)     | Configuration for jwt                  | object |               |
 | [basic](#webapi_auth_basic) | Configuration for basic                | object |               |
 | [ip](#webapi_auth_ip)       | Configuration for ip                   | object |               |
@@ -263,7 +315,7 @@ Example:
       "nodeOwnerAddresses": [],
       "bindAddress": "127.0.0.1:9090",
       "auth": {
-        "scheme": "ip",
+        "scheme": "jwt",
         "jwt": {
           "duration": "24h"
         },
@@ -280,7 +332,7 @@ Example:
   }
 ```
 
-## <a id="nanomsg"></a> 12. Nanomsg
+## <a id="nanomsg"></a> 13. Nanomsg
 
 | Name    | Description                              | Type    | Default value |
 | ------- | ---------------------------------------- | ------- | ------------- |
@@ -298,7 +350,7 @@ Example:
   }
 ```
 
-## <a id="dashboard"></a> 13. Dashboard
+## <a id="dashboard"></a> 14. Dashboard
 
 | Name                    | Description                                                                                          | Type    | Default value    |
 | ----------------------- | ---------------------------------------------------------------------------------------------------- | ------- | ---------------- |
@@ -311,7 +363,7 @@ Example:
 
 | Name                           | Description                            | Type   | Default value |
 | ------------------------------ | -------------------------------------- | ------ | ------------- |
-| scheme                         | Selects which authentication to choose | string | "ip"          |
+| scheme                         | Selects which authentication to choose | string | "basic"       |
 | [jwt](#dashboard_auth_jwt)     | Configuration for jwt                  | object |               |
 | [basic](#dashboard_auth_basic) | Configuration for basic                | object |               |
 | [ip](#dashboard_auth_ip)       | Configuration for ip                   | object |               |
@@ -343,7 +395,7 @@ Example:
       "bindAddress": "127.0.0.1:7000",
       "exploreAddressURL": "",
       "auth": {
-        "scheme": "ip",
+        "scheme": "basic",
         "jwt": {
           "duration": "24h"
         },
@@ -360,7 +412,7 @@ Example:
   }
 ```
 
-## <a id="users"></a> 14. Users
+## <a id="users"></a> 15. Users
 
 | Name  | Description                | Type   | Default value     |
 | ----- | -------------------------- | ------ | ----------------- |

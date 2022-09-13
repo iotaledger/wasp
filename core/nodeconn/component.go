@@ -43,7 +43,8 @@ type dependencies struct {
 func configure() error {
 	nc = nodeconn.New(
 		nodeconn.ChainL1Config{
-			INXAddress: ParamsNodeconn.INXAddress,
+			INXAddress:            ParamsNodeconn.INXAddress,
+			MaxConnectionAttempts: ParamsNodeconn.MaxConnectionAttempts,
 		},
 		CoreComponent.Logger(),
 	)
