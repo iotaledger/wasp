@@ -1,6 +1,6 @@
 package registrykvstore
 
-import "github.com/iotaledger/hive.go/kvstore"
+import "github.com/iotaledger/hive.go/core/kvstore"
 
 // registrykvstore is just a wrapper to any kv store that flushes the changes to disk immediately (Sets or Dels)
 // this is to prevent that the registry database is corrupted if the node is not shutdown gracefully

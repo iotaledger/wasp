@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/stretchr/testify/assert"
 )

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/wasp/packages/database/registrykvstore"
