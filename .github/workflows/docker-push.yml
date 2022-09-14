@@ -4,23 +4,9 @@ on:
   release:
     types: 
       - published
-  pull_request:
-    types:
-      - closed
-    branches:
-      - develop
-      - master
-
-  workflow_dispatch:
-    # inputs:
-    #   image_tag_suffix:
-    #     description: The text to append to the docker image tag (will begin with develop_)
-    #     required: true
-    #     type: string
 
 jobs:
   docker:
-    if: (${{ github.event_name == 'pull_request' }} && ${{ github.event.pull_request.merged }} == true) || ${{ github.event_name == 'release' }}
     name: Build and Push Docker image
     runs-on: ubuntu-latest
     env:
@@ -32,44 +18,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ github.repository }}
-
-      - name: Set image tags for ${{ github.event_name == 'release' }}
-        run: |
-          case "${{ github.event_name }}" in
-            "release")
-              echo "tags=${{ github.repository }}:latest,${{ github.repository }}:${{ github.ref_name }}" >> $GITHUB_ENV
-            "pull_request")
-              echo "tags=${{ github.repository }}:${{ github.ref_name }}:${{ github.sha }}" >> $GITHUB_ENV
-          esac
-
       - name: Login to DockerHub
-        if: ${{ github.event_name == 'release' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
 
       - name: Extract metadata (tags, labels) for Docker
-        if: ${{ github.event_name == 'release' }}
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: iotaledger/wasp
 
       - name: Build and push
-        if: ${{ github.event_name == 'release' }}
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.tags }}
+          tags: ${{ github.repository }}:latest,${{ github.repository }}:${{ github.ref_name }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: BUILD_TAGS="rocksdb,builtin_static",BUILD_LD_FLAGS="-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
-
-      # TODO: push changes to develop and master to GHCR for internal use
