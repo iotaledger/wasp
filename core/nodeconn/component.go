@@ -1,16 +1,12 @@
 package nodeconn
 
 import (
-	"context"
-	"time"
-
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/inx-app/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/metrics"
 )
 
@@ -19,7 +15,6 @@ func init() {
 		Component: &app.Component{
 			Name:      "NodeConn",
 			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-			Params:    params,
 			Configure: configure,
 			Run:       run,
 		},
@@ -30,49 +25,33 @@ var (
 	CoreComponent *app.CoreComponent
 	deps          dependencies
 
-	nc          chain.NodeConnection
-	initialized = ready.New("NodeConn")
+	nc chain.NodeConnection
 )
 
 type dependencies struct {
 	dig.In
-
+	NodeBridge     *nodebridge.NodeBridge
 	MetricsEnabled bool `name:"metricsEnabled"`
 }
 
 func configure() error {
 	nc = nodeconn.New(
-		nodeconn.ChainL1Config{
-			INXAddress:            ParamsINX.Address,
-			MaxConnectionAttempts: ParamsINX.MaxConnectionAttempts,
-		},
+		CoreComponent.Daemon().ContextStopped(),
 		CoreComponent.Logger(),
+		deps.NodeBridge,
 	)
 
 	return nil
 }
 
 func run() error {
-	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
-		if deps.MetricsEnabled {
-			nc.SetMetrics(metrics.AllMetrics().GetNodeConnectionMetrics())
-		}
-		defer nc.Close()
-
-		initialized.SetReady()
-
-		<-ctx.Done()
-
-		CoreComponent.LogInfo("Stopping node connection..")
-	}, parameters.PriorityNodeConnection)
-	if err != nil {
-		CoreComponent.LogErrorf("failed to start NodeConn worker")
+	if deps.MetricsEnabled {
+		nc.SetMetrics(metrics.AllMetrics().GetNodeConnectionMetrics())
 	}
 
-	return err
+	return nil
 }
 
 func NodeConnection() chain.NodeConnection {
-	initialized.MustWait(5 * time.Second)
 	return nc
 }
