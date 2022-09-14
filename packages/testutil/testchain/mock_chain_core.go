@@ -6,8 +6,8 @@ package testchain
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -86,10 +86,10 @@ func NewMockedChainCore(t *testing.T, chainID *isc.ChainID, log *logger.Logger) 
 	ret.onEventStateTransition = func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg.VirtualState.BlockIndex(), isc.OID(msg.ChainOutput.ID()), state.RootCommitment(msg.VirtualState.TrieNodeStore()), nil, log)
 	}
-	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.ChainTransitionEventData) {
+	ret.eventStateTransition.Hook(events.NewClosure(func(data *chain.ChainTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
-	ret.eventRequestProcessed.Attach(events.NewClosure(func(id isc.RequestID) {
+	ret.eventRequestProcessed.Hook(events.NewClosure(func(id isc.RequestID) {
 		ret.onEventRequestProcessed(id)
 	}))
 	return ret

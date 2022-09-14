@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBasic(t *testing.T) {

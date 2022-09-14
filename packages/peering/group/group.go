@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
-	"golang.org/x/xerrors"
 )
 
 const NotInGroup uint16 = 0xFFFF

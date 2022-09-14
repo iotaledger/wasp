@@ -25,12 +25,13 @@ package dss
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 )
 
 type DSS interface {

@@ -1,6 +1,7 @@
 {
-  "l1": {
-    "inxAddress": "hornet:9029"
+  "inx": {
+    "address": "localhost:9029",
+    "maxConnectionAttempts": 30
   },
   "database": {
     "directory": "waspdb"

@@ -1,9 +1,10 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.

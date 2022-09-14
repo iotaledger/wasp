@@ -12,15 +12,16 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/labstack/echo/v4"
+	"github.com/mr-tron/base58"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/labstack/echo/v4"
-	"github.com/mr-tron/base58"
 )
 
 //go:embed templates/base.tmpl

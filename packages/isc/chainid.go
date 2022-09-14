@@ -6,11 +6,12 @@ package isc
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 const ChainIDLength = iotago.AliasIDLength

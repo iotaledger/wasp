@@ -1,9 +1,10 @@
 package codec
 
 import (
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"golang.org/x/xerrors"
 )
 
 func DecodeAddress(b []byte, def ...iotago.Address) (iotago.Address, error) {

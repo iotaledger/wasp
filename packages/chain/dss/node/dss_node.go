@@ -22,13 +22,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 )
 
 type DSSNode interface {

@@ -1,9 +1,10 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 const Million = uint64(1_000_000)

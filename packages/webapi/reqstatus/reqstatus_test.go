@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iotaledger/hive.go/events"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -15,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 type mockChain struct{}

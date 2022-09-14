@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/stretchr/testify/require"
 )
 
 // L2Accounts returns all accounts on the chain with non-zero balances

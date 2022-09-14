@@ -2,7 +2,8 @@ package isc
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 // EthereumAddressAgentID is an AgentID formed by an Ethereum address

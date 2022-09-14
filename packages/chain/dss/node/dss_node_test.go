@@ -9,8 +9,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v3/sign/dss"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
+	"go.dedis.ch/kyber/v3/sign/tbls"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/crypto/bls"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -22,14 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
-	"go.dedis.ch/kyber/v3/sign/dss"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
-	"go.dedis.ch/kyber/v3/sign/tbls"
-	"golang.org/x/xerrors"
 )
 
 const ( // HT = High Threshold, LT = Low Threshold.

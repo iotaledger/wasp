@@ -7,14 +7,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"go.dedis.ch/kyber/v3/sign/tbls"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/identity"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3/sign/tbls"
-	"golang.org/x/xerrors"
 )
 
 type BatchProposal struct {

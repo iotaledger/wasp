@@ -1,13 +1,14 @@
 package errors
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"golang.org/x/xerrors"
 )
 
 func errorTemplateKey(contractID isc.Hname) string {
