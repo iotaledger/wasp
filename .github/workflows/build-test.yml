@@ -116,17 +116,17 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: Generate SC files
-        run: |
-          cd contracts/wasm/scripts
-          bash schema_all.sh
+      # - name: Generate SC files
+      #   run: |
+      #     cd contracts/wasm/scripts
+      #     bash schema_all.sh
 
-      - name: golangci-lint in SC
-        uses: golangci/golangci-lint-action@v3
-        with:
-          working-directory: contracts/wasm
-          args: --fix --timeout 5m0s --path-prefix=""
-          skip-pkg-cache: true
+      # - name: golangci-lint in SC
+      #   uses: golangci/golangci-lint-action@v3
+      #   with:
+      #     working-directory: contracts/wasm
+      #     args: --fix --timeout 5m0s --path-prefix=""
+      #     skip-pkg-cache: true
 
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v3
