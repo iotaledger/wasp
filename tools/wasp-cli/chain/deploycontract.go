@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/spf13/cobra"
 )
 
 var deployContractCmd = &cobra.Command{

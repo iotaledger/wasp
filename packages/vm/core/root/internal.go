@@ -3,11 +3,12 @@ package root
 import (
 	"sort"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"golang.org/x/xerrors"
 )
 
 func GetContractRegistry(state kv.KVStore) *collections.Map {

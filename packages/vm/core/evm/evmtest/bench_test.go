@@ -6,10 +6,11 @@ package evmtest
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
 )
 
 func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {

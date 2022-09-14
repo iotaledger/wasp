@@ -1,13 +1,14 @@
 package wallet
 
 import (
+	"github.com/mr-tron/base58"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/mr-tron/base58"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 type WalletConfig struct {

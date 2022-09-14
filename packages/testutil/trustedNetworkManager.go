@@ -4,9 +4,10 @@
 package testutil
 
 import (
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
-	"golang.org/x/xerrors"
 )
 
 type trustedNetworkManager struct {

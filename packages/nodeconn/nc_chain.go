@@ -5,6 +5,7 @@ package nodeconn
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -81,7 +82,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	// (e.g. another validator finished PoW and tx was confirmed)
 	// the given context will be canceled by the pending transaction checks.
 	blockID, err := ncc.nc.doPostTx(ctxPendingTransaction, tx)
-	if err != nil && !xerrors.Is(err, context.Canceled) {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
 

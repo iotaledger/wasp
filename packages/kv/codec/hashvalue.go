@@ -1,8 +1,9 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 func DecodeHashValue(b []byte, def ...hashing.HashValue) (hashing.HashValue, error) {

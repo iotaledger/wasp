@@ -1,10 +1,11 @@
 package decode
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/spf13/cobra"
 )
 
 func Init(rootCmd *cobra.Command) {

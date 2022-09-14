@@ -18,10 +18,11 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 type EthService struct {
@@ -158,7 +159,7 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 	if r == nil {
 		return nil, nil
 	}
-	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) // nolint:dogsled
+	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) //nolint:dogsled
 	if err != nil {
 		return nil, e.resolveError(err)
 	}

@@ -3,9 +3,10 @@ package nodeconnmetrics
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/atomic"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type nodeConnectionMessageSimpleMetrics struct {

@@ -3,9 +3,10 @@ package admapi
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type ShutdownFunc func()

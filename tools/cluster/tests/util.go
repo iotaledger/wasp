@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/stretchr/testify/require"
 )
 
 func (e *ChainEnv) checkCoreContracts() {
@@ -249,14 +250,6 @@ func (e *ChainEnv) contractIsDeployed() conditionFn {
 			return false
 		}
 		return ret.Name == nativeIncCounterSCName
-	}
-}
-
-func (e *ChainEnv) balanceOnChainBaseTokensEquals(agentID isc.AgentID, expected uint64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, isc.BaseTokenID, nodeIndex)
-		e.t.Logf("chainEnv::balanceOnChainBaseTokensEquals: node=%v, have=%v, expected=%v", nodeIndex, have, expected)
-		return expected == have
 	}
 }
 

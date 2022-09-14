@@ -92,7 +92,7 @@ func worker(ctx context.Context) {
 	defer Plugin.LogInfof("Stopping %s ... done", Plugin.Name)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil { //nolint:contextcheck // false positive
 		Plugin.LogErrorf("error stopping: %s", err)
 	}
 }

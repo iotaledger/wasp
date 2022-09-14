@@ -49,7 +49,6 @@ type consensus struct {
 	workflow                         *workflowStatus
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
-	delaySendingSignedResult         time.Time
 	resultTxEssence                  *iotago.TransactionEssence
 	resultState                      state.VirtualStateAccess
 	finalTx                          *iotago.Transaction
@@ -187,6 +186,7 @@ func (c *consensus) Close() {
 	c.eventTimerMsgPipe.Close()
 }
 
+//nolint:gocyclo
 func (c *consensus) recvLoop() {
 	eventStateTransitionMsgCh := c.eventStateTransitionMsgPipe.Out()
 	eventDssIndexProposalMsgCh := c.eventDssIndexProposalMsgPipe.Out()

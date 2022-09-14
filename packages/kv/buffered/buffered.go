@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/mr-tron/base58"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/mr-tron/base58"
 )
 
 // BufferedKVStoreAccess is a KVStore backed by a given KVStoreReader. Writes are cached in-memory;

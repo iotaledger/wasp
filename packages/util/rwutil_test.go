@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestReadIntsAsBits(t *testing.T) {

@@ -42,7 +42,7 @@ func (omi *outMessagesImpl) AddMany(msgs []Message) OutMessages {
 	if omi.done {
 		panic("out messages marked as done")
 	}
-	if msgs == nil || len(msgs) == 0 {
+	if len(msgs) == 0 {
 		return omi
 	}
 	omi.addElem(&outMessagesElem{msgs: msgs, next: nil})

@@ -51,6 +51,7 @@ func genericTest(
 	silentNodes int, // Number of actually faulty nodes (by not responding to anything).
 	faultyDeals int, // How many faulty deals the dealer produces?
 ) {
+	t.Parallel()
 	require.True(t, silentNodes+faultyDeals <= f) // Assert tests are within assumptions.
 	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
 	defer log.Sync()

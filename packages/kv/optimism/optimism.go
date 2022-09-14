@@ -5,9 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"golang.org/x/xerrors"
 )
 
 // OptimisticKVStoreReader implements KVReader interfaces. It wraps any kv.KVStoreReader together with the baseline

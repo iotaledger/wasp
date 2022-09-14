@@ -21,7 +21,7 @@ func CatchPanicReturnError(fun func(), catchErrors ...error) error {
 
 			if err1, ok := r.(error); ok {
 				for _, targetError := range catchErrors {
-					if xerrors.Is(err1, targetError) {
+					if errors.Is(err1, targetError) {
 						err = targetError
 						return
 					}

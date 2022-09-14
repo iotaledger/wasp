@@ -10,14 +10,15 @@ package dss_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/chain/dss"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	kyberDSS "go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
+
+	"github.com/iotaledger/wasp/packages/chain/dss"
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 // Just to debug DSS/DKG with a simple Shamir Secret Sharing.

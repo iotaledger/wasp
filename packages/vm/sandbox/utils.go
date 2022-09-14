@@ -38,7 +38,7 @@ func (u utilImpl) ED25519() isc.ED25519 {
 }
 
 func (u utilImpl) BLS() isc.BLS {
-	return utilImplBLS{u.gas}
+	return utilImplBLS(u)
 }
 
 // --- isc.Base58 interface

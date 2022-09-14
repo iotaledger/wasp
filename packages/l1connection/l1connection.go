@@ -155,6 +155,8 @@ func (c *l1client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) erro
 const pollConfirmedTxInterval = 200 * time.Millisecond
 
 // waitUntilConfirmed waits until a given tx Block is confirmed, it takes care of promotions/re-attachments for that Block
+//
+//nolint:gocyclo
 func (c *l1client) waitUntilConfirmed(ctx context.Context, block *iotago.Block) error {
 	// wait until tx is confirmed
 	blockID, err := block.ID()

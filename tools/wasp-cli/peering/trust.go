@@ -4,11 +4,12 @@
 package peering
 
 import (
+	"github.com/mr-tron/base58"
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/mr-tron/base58"
-	"github.com/spf13/cobra"
 )
 
 var trustCmd = &cobra.Command{

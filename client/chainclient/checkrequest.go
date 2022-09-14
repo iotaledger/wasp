@@ -1,11 +1,12 @@
 package chainclient
 
 import (
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"golang.org/x/xerrors"
 )
 
 // CheckRequestResult fetches the receipt for the given request ID, and returns

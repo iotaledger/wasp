@@ -15,7 +15,6 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"github.com/iotaledger/hive.go/core/app"
-
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/peering"
 	"github.com/iotaledger/wasp/core/registry"
@@ -222,7 +221,7 @@ func worker(ctx context.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	if err := Server.Shutdown(ctx); err != nil {
+	if err := Server.Shutdown(ctx); err != nil { //nolint:contextcheck // false positive
 		log.Errorf("error stopping: %s", err)
 	}
 }

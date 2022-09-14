@@ -2,6 +2,7 @@
 package kvtest
 
 import (
+	"errors"
 	"io"
 	"math"
 	"math/rand"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 const nilprefix = ""
@@ -79,7 +79,7 @@ func writeKV(w io.Writer, k, v []byte) (int, error) {
 
 func readKV(r io.Reader) ([]byte, []byte, bool) {
 	k, err := util.ReadBytes16(r)
-	if xerrors.Is(err, io.EOF) {
+	if errors.Is(err, io.EOF) {
 		return nil, nil, true
 	}
 	v, err := util.ReadBytes32(r)

@@ -8,8 +8,9 @@ package consensus_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/chain/consensus"
 )
 
 func TestMaxNodesFaulty(t *testing.T) {

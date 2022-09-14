@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +31,7 @@ func usage(flags *pflag.FlagSet) {
 	os.Exit(1)
 }
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
@@ -111,7 +110,7 @@ func main() {
 		if flags.NArg() > 1 {
 			fmt.Printf("Usage: %s start [path] [options]\n", os.Args[0])
 			flags.PrintDefaults()
-			os.Exit(1) // nolint:gocritic
+			os.Exit(1) //nolint:gocritic
 		}
 
 		var err error
@@ -128,7 +127,7 @@ func main() {
 			}
 			dataPath = flags.Arg(0)
 		} else if *disposable {
-			dataPath, err = ioutil.TempDir(os.TempDir(), cmdName+"-*")
+			dataPath, err = os.MkdirTemp(os.TempDir(), cmdName+"-*")
 			check(err)
 		}
 

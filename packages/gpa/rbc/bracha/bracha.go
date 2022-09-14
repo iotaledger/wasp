@@ -45,9 +45,10 @@ package bracha
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"golang.org/x/xerrors"
 )
 
 type rbc struct {

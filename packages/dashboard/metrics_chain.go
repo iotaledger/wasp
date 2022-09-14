@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 //go:embed templates/metrics_chain.tmpl

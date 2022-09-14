@@ -6,9 +6,10 @@ package chainimpl
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 // NOTE: this test tests verification of off ledger requests rather than chainimpl.

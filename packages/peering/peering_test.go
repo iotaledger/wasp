@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/peering"
 )
 
 func TestPeerMessageCodec(t *testing.T) {

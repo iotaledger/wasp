@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -302,7 +303,6 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 	return ret, remainingGas
 }
 
-//nolint:unparam
 func tryViewCall(ctx isc.SandboxBase, caller vm.ContractRef, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
 	remainingGas = gas
 	method, args := parseCall(input)

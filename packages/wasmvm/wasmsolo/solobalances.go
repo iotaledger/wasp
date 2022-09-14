@@ -8,8 +8,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type SoloBalances struct {

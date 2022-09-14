@@ -6,8 +6,9 @@ package gpa_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 func TestOutMessages(t *testing.T) {
