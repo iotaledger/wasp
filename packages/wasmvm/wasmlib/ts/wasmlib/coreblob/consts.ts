@@ -16,7 +16,7 @@ export const ParamDescription = "d";
 export const ParamField       = "field";
 export const ParamHash        = "hash";
 export const ParamProgBinary  = "p";
-export const ParamVmType      = "v";
+export const ParamVMType      = "v";
 
 export const ResultBlobSizes = "this";
 export const ResultBytes     = "bytes";
