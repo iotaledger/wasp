@@ -19,68 +19,99 @@ type WaspConfigParams struct {
 
 const WaspConfig = `
 {
-  "database": {
-    "inMemory": false,
-    "directory": "waspdb"
+  "app": {
+    "checkForUpdates": false,
+    "shutdown": {
+      "stopGracePeriod": "5m",
+      "log": {
+        "enabled": true,
+        "filePath": "shutdown.log"
+      }
+    }
   },
   "logger": {
     "level": "debug",
     "disableCaller": false,
-    "disableStacktrace": true,
+    "disableStacktrace": false,
     "encoding": "console",
     "outputPaths": [
-      "stdout",
       "wasp.log"
-    ],
-    "disableEvents": true
-  },
-  "network": {
-    "bindAddress": "0.0.0.0",
-    "externalAddress": "auto"
-  },
-  "node": {
-    "disablePlugins": [],
-    "enablePlugins": [],
-    "ownerAddresses": ["{{.OwnerAddress}}"]
-  },
-  "webapi": {
-    "auth": {
-      "scheme": "none"
-    },
-    "bindAddress": "0.0.0.0:{{.APIPort}}"
-  },
-  "dashboard": {
-    "auth": {
-      "scheme": "none"
-    },
-    "bindAddress": "0.0.0.0:{{.DashboardPort}}"
-  },
-  "peering":{
-    "port": {{.PeeringPort}},
-    "netid": "127.0.0.1:{{.PeeringPort}}"
+    ]
   },
   "inx": {
     "address": "{{.L1INXAddress}}",
     "maxConnectionAttempts": 30
   },
-  "nanomsg":{
-    "port": {{.NanomsgPort}}
+  "database": {
+    "inMemory": false,
+    "directory": "waspdb"
   },
-  "offledger":{
-    "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
+  "registry": {
+    "useText": false,
+    "fileName": "chain-registry.json"
   },
-  "profiling":{
+  "peering": {
+    "netID": "127.0.0.1:{{.PeeringPort}}",
+    "port": {{.PeeringPort}}
+  },
+  "chains": {
+    "broadcastUpToNPeers": 2,
+    "broadcastInterval": "5s",
+    "apiCacheTTL": "5m",
+    "pullMissingRequestsFromCommittee": true
+  },
+  "rawBlocks": {
+    "enabled": false,
+    "directory": "blocks"
+  },
+  "profiling": {
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
     "writeProfiles": true,
     "enabled": false
+  },
+  "wal": {
+    "enabled": true,
+    "directory": "wal"
   },
   "metrics": {
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",
     "enabled": false
   },
-  "wal": {
-    "directory": "wal",
-    "enabled": true
+  "webapi": {
+    "enabled": true,
+    "nodeOwnerAddresses": ["{{.OwnerAddress}}"],
+    "bindAddress": "0.0.0.0:{{.APIPort}}",
+    "auth": {
+      "scheme": "none"
+    }
+  },
+  "nanomsg": {
+    "enabled": true,
+    "port": {{.NanomsgPort}}
+  },
+  "dashboard": {
+    "enabled": true,
+    "bindAddress":  "0.0.0.0:{{.DashboardPort}}",
+    "exploreAddressURL": "",
+    "auth": {
+      "scheme": "none"
+    }
+  },
+  "users": {
+    "users": {
+      "wasp": {
+        "Password": "wasp",
+        "Permissions": [
+          "dashboard",
+          "api",
+          "chain.read",
+          "chain.write"
+        ]
+      }
+    }
+  },
+  "offledger":{
+    "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
   },
   "debug": {
     "rawblocksEnabled": false,

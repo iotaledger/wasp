@@ -30,10 +30,10 @@ import (
 )
 
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/iotaledger/hornet (v2.0.0-beta.7)
-// https://github.com/iotaledger/inx-indexer (v1.0.0-beta.6)
-// https://github.com/iotaledger/inx-coordinator (v1.0.0-beta.6)
-// https://github.com/iotaledger/inx-faucet (v1.0.0-beta.6) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (5b35e2a)
+// https://github.com/iotaledger/inx-indexer (7cdb3ed)
+// https://github.com/iotaledger/inx-coordinator (f84d8dd)
+// https://github.com/iotaledger/inx-faucet (c847f1c) (requires `git submodule update --init --recursive` before building )
 
 type LogFunc func(format string, args ...interface{})
 
@@ -216,7 +216,6 @@ func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 		),
 	}
 	args := []string{
-		"--app.stopGracePeriod=10s",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--faucet.bindAddress=localhost:%d", pt.NodePortFaucet(i)),
 	}
@@ -226,7 +225,7 @@ func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 func (pt *PrivTangle) startIndexer(i int) *exec.Cmd {
 	args := []string{
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
-		fmt.Sprintf("--indexer.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
+		fmt.Sprintf("--restAPI.bindAddress=0.0.0.0:%d", pt.NodePortIndexer(i)),
 	}
 	return pt.startINXPlugin(i, "inx-indexer", args, nil)
 }
