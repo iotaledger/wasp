@@ -467,8 +467,8 @@ func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 func (g *GenBase) setMultiKeyValues(key, value string) {
 	value = uncapitalize(value)
-	g.keys[key] = value
-	g.keys[capitalize(key)] = capitalize(value)
+	g.keys[key] = filterIDorVM(value)
+	g.keys[capitalize(key)] = filterIDorVM(capitalize(value))
 	g.keys[snake(key)] = snake(value)
 	g.keys[upper(snake(key))] = upper(snake(value))
 }

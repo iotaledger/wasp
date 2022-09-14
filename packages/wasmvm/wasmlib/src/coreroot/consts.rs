@@ -14,8 +14,8 @@ pub const SC_DESCRIPTION : &str = "Root Contract";
 pub const HSC_NAME       : ScHname = ScHname(0xcebf5908);
 
 pub(crate) const PARAM_CLOSE_FUNC                 : &str = "bcc";
-pub(crate) const PARAM_DEPLOY_PERMISSIONS_ENABLED : &str = "de";
 pub(crate) const PARAM_DEPLOYER                   : &str = "dp";
+pub(crate) const PARAM_DEPLOY_PERMISSIONS_ENABLED : &str = "de";
 pub(crate) const PARAM_DESCRIPTION                : &str = "ds";
 pub(crate) const PARAM_HNAME                      : &str = "hn";
 pub(crate) const PARAM_NAME                       : &str = "nm";

@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 var (
@@ -25,6 +26,24 @@ func capitalize(name string) string {
 		return ""
 	}
 	return upper(name[:1]) + name[1:]
+}
+
+func filterIDorVM(value string) string {
+	n := strings.Index(value, "Id")
+	for n >= 0 {
+		if n+2 == len(value) || unicode.IsUpper(rune(value[n+2])) {
+			value = value[:n] + "ID" + value[n+2:]
+		}
+		n = strings.Index(value, "Id")
+	}
+	n = strings.Index(value, "Vm")
+	for n >= 0 {
+		if n+2 == len(value) || unicode.IsUpper(rune(value[n+2])) {
+			value = value[:n] + "VM" + value[n+2:]
+		}
+		n = strings.Index(value, "Vm")
+	}
+	return value
 }
 
 func FindModulePath() error {

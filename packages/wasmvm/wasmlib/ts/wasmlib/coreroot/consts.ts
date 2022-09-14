@@ -12,8 +12,8 @@ export const ScDescription = "Root Contract";
 export const HScName       = new wasmtypes.ScHname(0xcebf5908);
 
 export const ParamCloseFunc                = "bcc";
-export const ParamDeployPermissionsEnabled = "de";
 export const ParamDeployer                 = "dp";
+export const ParamDeployPermissionsEnabled = "de";
 export const ParamDescription              = "ds";
 export const ParamHname                    = "hn";
 export const ParamName                     = "nm";
