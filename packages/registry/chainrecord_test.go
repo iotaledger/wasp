@@ -6,8 +6,9 @@ package registry
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func TestChainRecord(t *testing.T) {

@@ -4,8 +4,9 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
 //go:embed templates/metrics_nodeconn.tmpl

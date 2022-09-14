@@ -3,9 +3,10 @@ package authentication
 import (
 	"crypto/subtle"
 
-	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/iotaledger/wasp/packages/users"
 )
 
 func AddBasicAuth(webAPI WebAPI, userMap map[string]*users.UserData) {

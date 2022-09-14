@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 func checkProperConversionsToString(t *testing.T, html *goquery.Document) {

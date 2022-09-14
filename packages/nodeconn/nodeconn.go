@@ -9,6 +9,7 @@ package nodeconn
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -398,7 +399,7 @@ func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotag
 
 	blockID, err := nc.nodeBridge.SubmitBlock(ctx, block)
 	if err != nil {
-		if xerrors.Is(ctx.Err(), context.Canceled) {
+		if errors.Is(ctx.Err(), context.Canceled) {
 			// context was canceled
 			return iotago.EmptyBlockID(), ctx.Err()
 		}

@@ -4,8 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/stretchr/testify/require"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 func TestTokenSchemeDeSeri(t *testing.T) {

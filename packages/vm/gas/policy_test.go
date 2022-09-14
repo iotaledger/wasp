@@ -3,8 +3,9 @@ package gas
 import (
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
 )
 
 func TestFeePolicySerde(t *testing.T) {

@@ -4,8 +4,9 @@
 package nonce
 
 import (
-	"github.com/iotaledger/wasp/packages/gpa"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 // An event to self.

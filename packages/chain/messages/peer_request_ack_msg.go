@@ -7,9 +7,10 @@ import (
 	"bytes"
 	"io"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"golang.org/x/xerrors"
 )
 
 type RequestAckMsg struct {

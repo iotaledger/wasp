@@ -8,14 +8,16 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
-	"github.com/stretchr/testify/require"
 )
 
 // In this test all the nodes are actually fair.
 func TestBasic(t *testing.T) {
 	test := func(tt *testing.T, n, f int) {
+		tt.Parallel()
 		nodeIDs := gpa.MakeTestNodeIDs("node", n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
@@ -30,7 +32,6 @@ func TestBasic(t *testing.T) {
 			require.Equal(tt, o.([]byte), input)
 		}
 	}
-	t.Parallel()
 	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
 	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
 	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
@@ -42,6 +43,7 @@ func TestBasic(t *testing.T) {
 // Assume f nodes are actually faulty by dropping all the messages.
 func TestWithSilent(t *testing.T) {
 	test := func(tt *testing.T, n, f int) {
+		tt.Parallel()
 		nodeIDs := gpa.ShuffleNodeIDs(gpa.MakeTestNodeIDs("node", n))
 		faulty := nodeIDs[0:f]
 		fair := nodeIDs[f:]
@@ -63,7 +65,6 @@ func TestWithSilent(t *testing.T) {
 			require.Equal(tt, o.([]byte), input)
 		}
 	}
-	t.Parallel()
 	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
 	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
 	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
@@ -76,6 +77,7 @@ func TestWithSilent(t *testing.T) {
 func TestPredicate(t *testing.T) {
 	pFalse := func(b []byte) bool { return false }
 	test := func(tt *testing.T, n, f int) {
+		tt.Parallel()
 		nodeIDs := gpa.MakeTestNodeIDs("node", n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
@@ -91,7 +93,6 @@ func TestPredicate(t *testing.T) {
 			require.Nil(tt, nodes[nid].Output())
 		}
 	}
-	t.Parallel()
 	t.Run("n=1,f=0", func(tt *testing.T) { test(tt, 1, 0) })
 	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
 	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })

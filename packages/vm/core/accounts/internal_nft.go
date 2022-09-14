@@ -3,12 +3,13 @@ package accounts
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"golang.org/x/xerrors"
 )
 
 // CreditNFTToAccount credits an NFT to the on chain ledger

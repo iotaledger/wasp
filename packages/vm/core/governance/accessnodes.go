@@ -6,6 +6,8 @@ package governance
 import (
 	"bytes"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 // NodeOwnershipCertificate is a proof that a specified address is an owner of the specified node.

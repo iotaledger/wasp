@@ -101,7 +101,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
-func (c *consensus) runVMIfNeeded() { // nolint:funlen
+func (c *consensus) runVMIfNeeded() { //nolint:funlen
 	if !c.workflow.IsConsensusBatchKnown() {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
@@ -290,7 +290,7 @@ func (c *consensus) prepareVMTask(reqs []isc.Request) *vm.VMTask {
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensus) checkQuorum() { //nolint:funlen
+func (c *consensus) checkQuorum() {
 	if c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
@@ -477,7 +477,7 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexPropos
 
 // receiveACS processed new ACS received from ACS consensus
 //
-//nolint:funlen
+//nolint:funlen,gocyclo
 func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journal.LogIndex) {
 	if c.acsSessionID != sessionID {
 		c.log.Debugf("receiveACS: session id mismatch: expected %v, received %v", c.acsSessionID, sessionID)

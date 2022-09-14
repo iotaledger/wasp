@@ -4,9 +4,10 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 type PublicKey struct {

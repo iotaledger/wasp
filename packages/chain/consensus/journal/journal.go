@@ -103,7 +103,7 @@ type Registry interface {
 type consensusJournalImpl struct {
 	id             ID
 	chainID        isc.ChainID
-	committee      iotago.Address
+	committee      iotago.Address //nolint: unused // probably can be removed
 	committeeN     int
 	committeeF     int
 	registry       Registry

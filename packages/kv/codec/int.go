@@ -3,8 +3,9 @@ package codec
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func checkLength(d []byte, mustLen int, typeName string) error {

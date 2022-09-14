@@ -7,12 +7,13 @@ import (
 	"io"
 	"math"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
-	"golang.org/x/xerrors"
 )
 
 // SaveNextBlockInfo appends block info and returns its index

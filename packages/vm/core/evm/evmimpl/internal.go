@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -189,7 +190,7 @@ func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulato
 func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
 	current := emu.BlockchainDB().GetNumber()
 	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation")
+		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation, cannot query previous blocks")
 	}
 	return blockNumber
 }

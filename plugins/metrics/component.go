@@ -70,7 +70,8 @@ func run() error {
 		}
 		Plugin.LogInfof("Stopping %s ...", Plugin.Name)
 		defer Plugin.LogInfof("Stopping %s ... done", Plugin.Name)
-		if err := allMetrics.Stop(); err != nil {
+
+		if err := allMetrics.Stop(); err != nil { //nolint:contextcheck // false positive
 			Plugin.LogErrorf("error stopping: %s", err)
 		}
 	}, parameters.PriorityMetrics); err != nil {

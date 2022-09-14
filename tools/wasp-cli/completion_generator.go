@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func completionCmd(name string) *cobra.Command {

@@ -4,8 +4,9 @@
 package evmtypes
 
 import (
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func EncodeChainID(chainID uint16) []byte {

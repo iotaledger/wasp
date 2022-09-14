@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -67,14 +68,14 @@ func (s *StateDB) CreateAccount(addr common.Address) {
 func (s *StateDB) SubBalance(addr common.Address, amount *big.Int) {
 	_ = addr
 	if amount != nil && amount.Sign() != 0 {
-		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
+		panic("modifying an Ethereum account balance is not supported")
 	}
 }
 
 func (s *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	_ = addr
 	if amount != nil && amount.Sign() != 0 {
-		panic(fmt.Sprintf("modifying an Ethereum account balance is not supported"))
+		panic("modifying an Ethereum account balance is not supported")
 	}
 }
 

@@ -6,10 +6,11 @@ package journal_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestLocalView(t *testing.T) {

@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/anthdm/hbbft"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBLSCommonCoin(t *testing.T) {

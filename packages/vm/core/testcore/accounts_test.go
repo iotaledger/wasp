@@ -141,8 +141,7 @@ func TestFoundries(t *testing.T) {
 		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
 		defer func(log *logger.Logger) {
 			err := log.Sync()
-			if err != nil {
-			}
+			require.NoError(t, err)
 		}(ch.Log())
 
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))

@@ -34,6 +34,6 @@ func (h *BurnLog) String() string {
 		ret = append(ret, fmt.Sprintf("%10s: %d", h.records[i].Code.Name(), h.records[i].GasBurned))
 		total += h.records[i].GasBurned
 	}
-	ret = append(ret, fmt.Sprintf("---------------"), fmt.Sprintf("%10s: %d", "TOTAL", total))
+	ret = append(ret, "---------------", fmt.Sprintf("%10s: %d", "TOTAL", total))
 	return strings.Join(ret, "\n")
 }

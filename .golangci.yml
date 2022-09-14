@@ -174,7 +174,6 @@ linters:
         - gomodguard # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations. [fast: true, auto-fix: false]
         - grouper # An analyzer to analyze expression groups.
         - importas # Enforces consistent import aliases [fast: true, auto-fix: false]
-        - nlreturn # nlreturn checks for a new line before return and branch statements to increase code clarity [fast: true, auto-fix: false]
         - predeclared # find code that shadows one of Go's predeclared identifiers [fast: true, auto-fix: false]
         - rowserrcheck # checks whether Err of rows is checked successfully [fast: true, auto-fix: false]
         - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed. [fast: true, auto-fix: false]
@@ -184,6 +183,7 @@ linters:
         - wastedassign # wastedassign finds wasted assignment statements. [fast: true, auto-fix: false]
 
 
+    # nlreturn # nlreturn checks for a new line before return and branch statements to increase code clarity [fast: true, auto-fix: false]
     # don't enable:
     # gomnd: An analyzer to detect magic numbers.
     # cyclop: checks function and package cyclomatic complexity [fast: true, auto-fix: false]

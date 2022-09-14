@@ -3,9 +3,10 @@ package sbtests
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestInitSuccess(t *testing.T) {

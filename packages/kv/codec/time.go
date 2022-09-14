@@ -3,8 +3,9 @@ package codec
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 var zeroUnixNano = time.Time{}.UnixNano()

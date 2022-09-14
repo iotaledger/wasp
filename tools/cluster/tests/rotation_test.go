@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -17,8 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 func TestBasicRotation(t *testing.T) {
@@ -300,28 +301,6 @@ func TestRotationMany(t *testing.T) {
 		_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, waitTimeout)
 		require.NoError(t, err)
 	}
-}
-
-func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
-	return waitTrue(timeout, func() bool {
-		i, err := e.callGetBlockIndex(nodeIndex)
-		return err == nil && i >= blockIndex
-	})
-}
-
-func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID,
-		blocklog.Contract.Hname(),
-		blocklog.ViewGetBlockInfo.Name,
-		nil,
-	)
-	if err != nil {
-		return 0, err
-	}
-	v, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-	require.NoError(e.t, err)
-	return v, nil
 }
 
 func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Duration) error {

@@ -3,8 +3,9 @@ package collections
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 //nolint:dupl // TODO duplicated code, could be refactored

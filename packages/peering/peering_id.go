@@ -13,9 +13,10 @@ import (
 	"io"
 	"math/rand"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // PeeringID is relates peers in different nodes for a particular

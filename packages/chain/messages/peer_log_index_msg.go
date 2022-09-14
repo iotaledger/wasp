@@ -7,9 +7,10 @@ import (
 	"bytes"
 	"io"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 // Consensus -> Consensus

@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:revive
 package coreblob
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -60,7 +59,7 @@ type ImmutableGetBlobInfoResults struct {
 
 // size for each named blob
 func (s ImmutableGetBlobInfoResults) BlobSizes() MapStringToImmutableInt32 {
-	return MapStringToImmutableInt32{proxy: s.proxy}
+	return MapStringToImmutableInt32(s)
 }
 
 type MapStringToMutableInt32 struct {
@@ -81,7 +80,7 @@ type MutableGetBlobInfoResults struct {
 
 // size for each named blob
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
-	return MapStringToMutableInt32{proxy: s.proxy}
+	return MapStringToMutableInt32(s)
 }
 
 type MapHashToImmutableInt32 struct {
@@ -98,7 +97,7 @@ type ImmutableListBlobsResults struct {
 
 // total size for each blob set
 func (s ImmutableListBlobsResults) BlobSizes() MapHashToImmutableInt32 {
-	return MapHashToImmutableInt32{proxy: s.proxy}
+	return MapHashToImmutableInt32(s)
 }
 
 type MapHashToMutableInt32 struct {
@@ -119,5 +118,5 @@ type MutableListBlobsResults struct {
 
 // total size for each blob set
 func (s MutableListBlobsResults) BlobSizes() MapHashToMutableInt32 {
-	return MapHashToMutableInt32{proxy: s.proxy}
+	return MapHashToMutableInt32(s)
 }

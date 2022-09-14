@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCounter(t *testing.T) { run2(t, testCounter) }

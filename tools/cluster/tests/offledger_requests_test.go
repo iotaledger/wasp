@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/stretchr/testify/require"
 )
 
 func (e *ChainEnv) newWalletWithFunds(waspnode int, waitOnNodes ...int) *chainclient.Client {
@@ -197,7 +198,7 @@ func TestOffledgerNonce(t *testing.T) {
 	require.NoError(t, err)
 
 	// send off-ledger request with a much lower nonce
-	offledgerReq, err = chClient.PostOffLedgerRequest(
+	_, err = chClient.PostOffLedgerRequest(
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{
@@ -207,7 +208,7 @@ func TestOffledgerNonce(t *testing.T) {
 	require.Regexp(t, "invalid nonce", err.Error())
 
 	// try replaying the initial request
-	offledgerReq, err = chClient.PostOffLedgerRequest(
+	_, err = chClient.PostOffLedgerRequest(
 		nativeIncCounterSCHname,
 		inccounter.FuncIncCounter.Hname(),
 		chainclient.PostRequestParams{

@@ -17,11 +17,12 @@ package blssig
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type ccImpl struct {

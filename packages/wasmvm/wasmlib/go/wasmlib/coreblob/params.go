@@ -24,7 +24,7 @@ type ImmutableStoreBlobParams struct {
 
 // set of named blobs
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
-	return MapStringToImmutableBytes{proxy: s.proxy}
+	return MapStringToImmutableBytes(s)
 }
 
 // description of progBinary
@@ -60,7 +60,7 @@ type MutableStoreBlobParams struct {
 
 // set of named blobs
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
-	return MapStringToMutableBytes{proxy: s.proxy}
+	return MapStringToMutableBytes(s)
 }
 
 // description of progBinary

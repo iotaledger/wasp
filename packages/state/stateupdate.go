@@ -6,11 +6,12 @@ import (
 	"io"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"golang.org/x/xerrors"
 )
 
 // stateUpdateImpl implement Update interface

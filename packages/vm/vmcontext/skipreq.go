@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
 const (
@@ -145,7 +146,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
 
 	if expiry.After(windowFrom) && expiry.Before(windowTo) {
-		return xerrors.Errorf("can't be consumed in the expire safety window close to v", expiry)
+		return xerrors.Errorf("can't be consumed in the expire safety window close to %v", expiry)
 	}
 
 	// General unlock validation
@@ -156,7 +157,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	})
 
 	if !unlockable {
-		return xerrors.Errorf("can't be consumed", expiry)
+		return xerrors.Errorf("can't be consumed, expiry: %v", expiry)
 	}
 
 	return nil

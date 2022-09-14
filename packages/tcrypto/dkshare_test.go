@@ -6,12 +6,13 @@ package tcrypto
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 func TestMarshaling(t *testing.T) {

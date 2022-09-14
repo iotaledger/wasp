@@ -79,7 +79,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.generateSnapshot()
 
 	for i := range pt.NodeKeyPairs {
-		pt.startNode(i)
+		pt.startNode(i)                    //nolint:contextcheck // false-positive
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
 	pt.logf("Starting... all nodes started.")
@@ -371,7 +371,7 @@ type FaucetInfoResponse struct {
 
 func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
-	httpReq, err := http.NewRequestWithContext(pt.ctx, "GET", faucetURL, http.NoBody)
+	httpReq, err := http.NewRequestWithContext(pt.ctx, http.MethodGet, faucetURL, http.NoBody)
 	if err != nil {
 		return xerrors.Errorf("unable to create request: %w", err)
 	}
@@ -385,7 +385,7 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 		return err
 	}
 	res.Body.Close()
-	if res.StatusCode != 200 {
+	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("error querying faucet info endpoint: HTTP %d, %s", res.StatusCode, resBody)
 	}
 	var parsedResp FaucetInfoResponse

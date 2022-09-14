@@ -4,9 +4,10 @@
 package nonce
 
 import (
-	"github.com/iotaledger/wasp/packages/gpa"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 // An event to self.
