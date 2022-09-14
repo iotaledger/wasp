@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -139,11 +138,6 @@ func TestFoundries(t *testing.T) {
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
-		defer func(log *logger.Logger) {
-			err := log.Sync()
-			require.NoError(t, err)
-		}(ch.Log())
-
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = isc.NewAgentID(senderAddr)
 
