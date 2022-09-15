@@ -6,20 +6,23 @@
     chainId,
     chainData,
     defaultEvmStores,
-  } from "svelte-web3";
+  } from 'svelte-web3';
 
-  import { Bech32Helper } from "@iota/iota.js";
+  import { Bech32Helper } from '@iota/iota.js';
 
-  import iscAbiAsText from "../../../packages/vm/core/evm/iscmagic/ISC.abi?raw";
+  import iscAbiAsText from '../../../packages/vm/core/evm/iscmagic/ISC.abi?raw';
 
   const waspAddrBinaryFromBech32 = (bech32String: string) => {
-    // Depending on the network, the human readable part can change (tst, rms, ..). 
+    // Depending on the network, the human readable part can change (tst, rms, ..).
     // - We need some kind of API that is not the direct Hornet node to fetch it..
     // - Maybe over some EVM info route?
     // For this PoC it should be enough to substr the first three chars.
     let humanReadablePart = bech32String.substring(0, 3);
 
-    let receiverAddr = Bech32Helper.addressFromBech32(bech32String, humanReadablePart);
+    let receiverAddr = Bech32Helper.addressFromBech32(
+      bech32String,
+      humanReadablePart
+    );
     let receiverAddrBinary = $web3.utils.hexToBytes(receiverAddr.pubKeyHash);
     //  // AddressEd25519 denotes an Ed25519 address.
     // AddressEd25519 AddressType = 0
@@ -34,10 +37,34 @@
 
   const iscAbi = JSON.parse(iscAbiAsText);
   const iscContractAddress: string =
-    "0x0000000000000000000000000000000000001074";
+    '0x0000000000000000000000000000000000001074';
 
   let chainID;
   let contract;
+  let balance = 0;
+  let amountToSend = 0;
+
+  $: formattedBalance = (balance / 1e6).toFixed(2);
+  $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
+  $: canSendFunds = balance > 0 && amountToSend > 0;
+  $: canSetAmountToSend = balance > 0;
+
+  let addrInput =
+    'tst1qq4k0rnj225wd08ed4lxvkfn8ulmlpcudd2rhj63k728gudz9me4gsvns0x';
+
+  async function pollBalance() {
+    const addressBalance = await $web3.eth.getBalance(
+      defaultEvmStores.$selectedAccount
+    );
+    balance = Number(BigInt(addressBalance) / BigInt(1e12));
+  }
+
+  function subscribeBalance() {
+    setTimeout(async () => {
+      pollBalance();
+      subscribeBalance();
+    }, 2500);
+  }
 
   async function connectToWallet() {
     await defaultEvmStores.setProvider();
@@ -45,17 +72,19 @@
     contract = new $web3.eth.Contract(iscAbi, iscContractAddress, {
       from: defaultEvmStores.$selectedAccount,
     });
-  }
 
-  let addrInput = "";
+    await pollBalance();
+    subscribeBalance();
+  }
 
   async function onWithdrawClick() {
     if (!defaultEvmStores.$selectedAccount) {
-      console.log("no account selected");
+      console.log('no account selected');
       return;
     }
 
-    let amount = 1e6; //1 million
+    console.log(balance, amountToSend);
+
     let parameters = [
       {
         // Receiver
@@ -63,7 +92,7 @@
       },
       {
         // Fungible Tokens
-        baseTokens: amount,
+        baseTokens: balance,
         tokens: [],
       },
       false,
@@ -93,8 +122,6 @@
       },
     ];
 
-    console.log(...parameters);
-
     const result = await contract.methods.send(...parameters).send();
     console.log(result);
   }
@@ -106,17 +133,46 @@
   {#if !$connected}
     <button on:click={connectToWallet}>Connect to Wallet</button>
   {:else}
-    Connected to Chain {$chainId}<br /><br />
-    <input
-      placeholder="L1 address starting with (rms/tst/...)"
-      style="width: 500px;"
-      bind:value={addrInput}
-    /><br /><br />
-    <button on:click={onWithdrawClick}>Withdraw</button><br />
+    <div class="row">
+      Connected to Chain {$chainId}
+    </div>
+    <div class="row">
+      Balance {formattedBalance}Mi
+    </div>
+    <div class="row address">      
+      Receiver address <br />
+      <input
+        placeholder="L1 address starting with (rms/tst/...)"
+        style="width: 500px;"
+        bind:value={addrInput}
+      />
+    </div>
+    <div class="row">
+      Amount to send: {formattedAmountToSend}Mi
+    </div>
+    <div class="row">
+      <input type="range" disabled="{!canSetAmountToSend}" min="0" max={balance} bind:value={amountToSend} />
+    </div>
+    <div class="row">
+      <button disabled="{!canSendFunds}" on:click={onWithdrawClick}>Withdraw</button><br />
+    </div>
   {/if}
 </main>
 
 <style>
+  main {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row {
+    margin: 5px;
+  }
+
+  .address {
+    margin-top: 25px;
+  }
+
   .logo {
     height: 6em;
     padding: 1.5em;
