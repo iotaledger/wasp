@@ -7,6 +7,7 @@ ARG BUILD_LD_FLAGS=""
 ARG BUILD_TARGET="./..."
 
 WORKDIR /wasp
+RUN mkdir waspdb
 
 # Make sure that modules only get pulled when the module file has changed
 COPY go.mod go.sum ./
@@ -15,6 +16,7 @@ RUN go mod verify
 
 # Project build stage
 COPY . .
+
 
 RUN go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ${BUILD_TARGET}
 
@@ -35,6 +37,7 @@ EXPOSE 4000/udp
 
 # Copy the app dir into distroless image
 COPY --chown=nonroot:nonroot --from=build /wasp/${FINAL_BINARY} /usr/bin/
+COPY --chown=nonroot:nonroot --from=build /wasp/waspdb /waspdb
 
 WORKDIR /usr/bin/
 USER nonroot
