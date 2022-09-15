@@ -77,7 +77,7 @@ variable "wasp_config" {
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
   },
   "inx": {
-    "address": "{{ range service "inx.tangle-${workspace}-hornet" }}{{ .Address }}:{{ .Port }}{{ end }}",
+    "address": "{{ range service "inx.tangle-testnet-hornet" }}{{ .Address }}:{{ .Port }}{{ end }}",
     "maxConnectionAttempts": 30
   },
 	"nanomsg":{
@@ -116,7 +116,7 @@ job "isc-${workspace}" {
       sticky  = true
     }
 
-    count = 5
+    count = 0
 
     network {
       mode = "host"
@@ -225,7 +225,7 @@ job "isc-${workspace}" {
       sticky  = true
     }
 
-    count = 1
+    count = 4
 
     network {
       mode = "host"
