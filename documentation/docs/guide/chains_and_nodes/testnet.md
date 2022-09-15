@@ -33,7 +33,7 @@ You can access the testnet via the following endpoints:
             - Information about the Wasp access node
         - https://api.wasp.sc.iota.org/doc
             - API reference for the Wasp API
-    - https://evm.sc.testnet.shimmer.network
+    - https://api.sc.testnet.shimmer.network/chain/rms1pzmg4h3tj8n7mg46slgnsttf9pr4tsta73r5mvhq9gr02e6kj0dhkalc670/evm/jsonrpc
         - The URL to interact with the Ethereum Virtual Machine on our testnet
 - https://api.testnet.shimmer.network
     - The public API exposed by Hornet for the Shimmer Beta network (testnet)
@@ -78,14 +78,11 @@ wasp-cli request-funds
 We have deployed an experimental EVM chain that you can interact with. To begin, add a custom network to Metamask with
 the following configuration:
 
-| Key                | Value                                    |
-|--------------------|------------------------------------------|
-| RPC URL            | https://evm..sc.testnet.shimmer.network  |
-| Chain ID           | 1076                                     |
+| Key                | Value                                                                                                                     |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------|
+| RPC URL            | https://api.sc.testnet.shimmer.network/chain/rms1pzmg4h3tj8n7mg46slgnsttf9pr4tsta73r5mvhq9gr02e6kj0dhkalc670/evm/jsonrpc  |
+| Chain ID           | 1076                                                                                                                      |
 
-
-We have a faucet for you to use directly with your EVM address which can be found on ...
-We also have a withdrawal interface to get any native assets deposited to a EVM chain back into your L1 address: ....
 
 :::note
 
@@ -93,5 +90,7 @@ The other values (network name and currency symbol) can be whatever value you li
 
 :::
 
+We have a faucet for you to use directly with your EVM address which can be found on https://deposit.sc.testnet.shimmer.network/
+We also have a withdrawal interface to get any native assets deposited to a EVM chain back into your L1 address: https://withdraw.sc.testnet.shimmer.network/
 
 
