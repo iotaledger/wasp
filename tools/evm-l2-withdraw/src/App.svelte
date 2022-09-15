@@ -10,7 +10,7 @@
 
   import { Bech32Helper } from '@iota/iota.js';
 
-  import iscAbiAsText from '../../../packages/vm/core/evm/iscmagic/ISC.abi?raw';
+  import iscAbiAsText from './assets/ISC.abi?raw';
 
   const waspAddrBinaryFromBech32 = (bech32String: string) => {
     // Depending on the network, the human readable part can change (tst, rms, ..).
@@ -35,6 +35,7 @@
     return new Uint8Array([0, ...receiverAddrBinary]);
   };
 
+  const gasFee = 300;
   const iscAbi = JSON.parse(iscAbiAsText);
   const iscContractAddress: string =
     '0x0000000000000000000000000000000000001074';
@@ -47,16 +48,19 @@
   $: formattedBalance = (balance / 1e6).toFixed(2);
   $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
   $: canSendFunds = balance > 0 && amountToSend > 0;
-  $: canSetAmountToSend = balance > 0;
+  $: canSetAmountToSend = balance > gasFee+1;
 
-  let addrInput =
-    'tst1qq4k0rnj225wd08ed4lxvkfn8ulmlpcudd2rhj63k728gudz9me4gsvns0x';
+  let addrInput = '';
 
   async function pollBalance() {
     const addressBalance = await $web3.eth.getBalance(
       defaultEvmStores.$selectedAccount
     );
     balance = Number(BigInt(addressBalance) / BigInt(1e12));
+
+    if (amountToSend > balance) {
+      amountToSend = 0;
+    }
   }
 
   function subscribeBalance() {
@@ -92,7 +96,7 @@
       },
       {
         // Fungible Tokens
-        baseTokens: balance,
+        baseTokens: balance - gasFee,
         tokens: [],
       },
       false,
@@ -171,20 +175,5 @@
 
   .address {
     margin-top: 25px;
-  }
-
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
   }
 </style>
