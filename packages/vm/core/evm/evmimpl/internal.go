@@ -8,6 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -189,7 +190,7 @@ func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulato
 func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
 	current := emu.BlockchainDB().GetNumber()
 	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation")
+		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation, cannot query previous blocks")
 	}
 	return blockNumber
 }
@@ -201,18 +202,6 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 		return requireLatestBlock(ctx, emu, allowPrevious, blockNumber.Uint64())
 	}
 	return current
-}
-
-//nolint:unparam
-func paramBlockNumberOrHashAsNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
-	if ctx.Params().MustHas(evm.FieldBlockHash) {
-		a := assert.NewAssert(ctx.Log())
-		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
-		header := emu.BlockchainDB().GetHeaderByHash(blockHash)
-		a.Requiref(header != nil, "block not found")
-		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
-	}
-	return paramBlockNumber(ctx, emu, allowPrevious)
 }
 
 func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {

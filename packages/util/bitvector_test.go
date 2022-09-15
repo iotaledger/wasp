@@ -6,9 +6,10 @@ package util_test
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestFixedSizeBitVector(t *testing.T) {

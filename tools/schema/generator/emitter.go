@@ -116,6 +116,8 @@ func (g *GenBase) emit(template string) {
 // emitEach processes "$#each array template"
 // It processes the template for each item in the array
 // Produces an error if the array key is unknown
+//
+//nolint:gocyclo
 func (g *GenBase) emitEach(line string) {
 	g.log(line)
 	g.indent()
@@ -268,7 +270,7 @@ func (g *GenBase) emitFunc(line string) {
 // It processes the optional elseTemplate when the named condition is false
 // Produces an error if named condition is unknown
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func (g *GenBase) emitIf(line string) {
 	g.log(line)
 	g.indent()
@@ -465,8 +467,8 @@ func (g *GenBase) setFuncKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 func (g *GenBase) setMultiKeyValues(key, value string) {
 	value = uncapitalize(value)
-	g.keys[key] = value
-	g.keys[capitalize(key)] = capitalize(value)
+	g.keys[key] = filterIDorVM(value)
+	g.keys[capitalize(key)] = filterIDorVM(capitalize(value))
 	g.keys[snake(key)] = snake(value)
 	g.keys[upper(snake(key))] = upper(snake(value))
 }

@@ -32,7 +32,7 @@ func main() {
 	fmt.Printf("stateIndex: %v\n", stateOutput.StateIndex)
 	fmt.Printf("amount: %v\n", stateOutput.Deposit())
 	fmt.Printf("foundryCounter: %v\n", stateOutput.FoundryCounter)
-	l1Commitment, err := state.L1CommitmentFromBytes(*&stateOutput.StateMetadata)
+	l1Commitment, err := state.L1CommitmentFromBytes(stateOutput.StateMetadata)
 	mustNoErr(err)
 	fmt.Printf("L1Commitment:\n     state commitment: %s\n     block hash:       %s\n",
 		l1Commitment.StateCommitment, l1Commitment.BlockHash)

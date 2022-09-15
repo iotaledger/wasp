@@ -33,7 +33,7 @@ export class ImmutableStoreBlobParams extends wasmtypes.ScProxy {
 
 	// VM type that must be used to run progBinary
 	vmType(): wasmtypes.ScImmutableString {
-		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamVmType));
+		return new wasmtypes.ScImmutableString(this.proxy.root(sc.ParamVMType));
 	}
 }
 
@@ -66,7 +66,7 @@ export class MutableStoreBlobParams extends wasmtypes.ScProxy {
 
 	// VM type that must be used to run progBinary
 	vmType(): wasmtypes.ScMutableString {
-		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamVmType));
+		return new wasmtypes.ScMutableString(this.proxy.root(sc.ParamVMType));
 	}
 }
 

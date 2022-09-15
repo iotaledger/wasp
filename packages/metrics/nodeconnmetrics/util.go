@@ -1,8 +1,9 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 const (

@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -139,7 +140,6 @@ func getBalance(ctx isc.SandboxView) dict.Dict {
 	// TODO: balance might change between two eth blocks
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
-	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(emu.StateDB().GetBalance(addr).Bytes())
 }
 
@@ -189,14 +189,12 @@ func getReceipt(ctx isc.SandboxView) dict.Dict {
 func getNonce(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(codec.EncodeUint64(emu.StateDB().GetNonce(addr)))
 }
 
 func getCode(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
-	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	return result(emu.StateDB().GetCode(addr))
 }
 
@@ -204,7 +202,6 @@ func getStorage(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(evm.FieldKey))
-	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	data := emu.StateDB().GetState(addr, key)
 	return result(data[:])
 }
@@ -226,7 +223,6 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
-	_ = paramBlockNumberOrHashAsNumber(ctx, emu, false)
 	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
 	return result(res.Return())

@@ -34,7 +34,7 @@ func TestDeployContract(t *testing.T) {
 	wasm, err := os.ReadFile("./testdata/testdata.wasm")
 	require.NoError(t, err)
 	fblob.Params.ProgBinary().SetValue(wasm)
-	fblob.Params.VmType().SetValue("wasmtime")
+	fblob.Params.VMType().SetValue("wasmtime")
 	fblob.Func.Post()
 	require.NoError(t, ctxb.Err)
 

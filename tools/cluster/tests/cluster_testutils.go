@@ -3,11 +3,12 @@ package tests
 import (
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/stretchr/testify/require"
 )
 
 const nativeIncCounterSCName = "NativeIncCounter"

@@ -10,7 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+
+	"github.com/iotaledger/hive.go/core/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -20,8 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func (ch *Chain) RunOffLedgerRequest(r isc.Request) (dict.Dict, error) {

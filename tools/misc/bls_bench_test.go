@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/iotaledger/hive.go/crypto/bls"
+	"github.com/iotaledger/hive.go/core/crypto/bls"
 )
 
 var dataToSign = "Hello BLS Benchmark!"

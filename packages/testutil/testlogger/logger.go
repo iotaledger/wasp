@@ -6,9 +6,10 @@ package testlogger
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/hive.go/core/logger"
 )
 
 // NewLogger produces a logger adjusted for test cases.

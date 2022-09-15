@@ -4,14 +4,15 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/stretchr/testify/require"
 )
 
 func knownAgentID(b byte, h uint32) isc.AgentID {

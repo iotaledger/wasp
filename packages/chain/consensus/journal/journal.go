@@ -8,13 +8,14 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,7 +103,7 @@ type Registry interface {
 type consensusJournalImpl struct {
 	id             ID
 	chainID        isc.ChainID
-	committee      iotago.Address
+	committee      iotago.Address //nolint: unused // probably can be removed
 	committeeN     int
 	committeeF     int
 	registry       Registry

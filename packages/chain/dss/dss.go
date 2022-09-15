@@ -25,12 +25,13 @@ package dss
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 )
 
 type DSS interface {
@@ -152,6 +153,7 @@ func (d *dssImpl) Output() gpa.Output {
 	}
 }
 
+//nolint:gocyclo
 func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	dkgOut := d.dkg.Output()
 	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {

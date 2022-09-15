@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:revive
 package coreroot
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -18,8 +17,8 @@ const (
 
 const (
 	ParamCloseFunc                = "bcc"
-	ParamDeployPermissionsEnabled = "de"
 	ParamDeployer                 = "dp"
+	ParamDeployPermissionsEnabled = "de"
 	ParamDescription              = "ds"
 	ParamHname                    = "hn"
 	ParamName                     = "nm"

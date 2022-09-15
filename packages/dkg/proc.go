@@ -12,16 +12,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 const (
@@ -500,6 +501,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
+//nolint:gocyclo
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
 	step byte,
 	initRecv *peering.PeerMessageGroupIn,

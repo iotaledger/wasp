@@ -9,9 +9,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/iotaledger/wasp/tools/schema/model"
 	"github.com/iotaledger/wasp/tools/schema/model/yaml"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestConvert(t *testing.T) {

@@ -6,14 +6,15 @@ package node
 import (
 	"time"
 
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
-	"golang.org/x/xerrors"
 )
 
 const (

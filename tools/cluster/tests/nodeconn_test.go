@@ -7,9 +7,14 @@
 package tests
 
 import (
+	"context"
 	"testing"
+	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -20,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/stretchr/testify/require"
 )
 
 func createChain(t *testing.T) *isc.ChainID {
@@ -74,9 +78,13 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	nc := nodeconn.New(nodeconn.ChainL1Config{
-		INXAddress: l1.Config.INXAddress,
-	}, log)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	nodeBridge, err := nodebridge.NewNodeBridge(ctx, l1.Config.INXAddress, 10, log.Named("NodeBridge"))
+	require.NoError(t, err)
+
+	nc := nodeconn.New(ctx, log, nodeBridge)
 
 	//
 	// Check milestone attach/detach.
@@ -107,7 +115,7 @@ func TestNodeConn(t *testing.T) {
 
 	client := l1connection.NewClient(l1.Config, log)
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
-	err := client.RequestFunds(chainID.AsAddress())
+	err = client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
 	t.Logf("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh

@@ -7,7 +7,7 @@ import (
 	"hash/crc32"
 	"math"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 

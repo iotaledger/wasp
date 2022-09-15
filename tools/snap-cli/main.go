@@ -103,7 +103,7 @@ func scanFile(fname string) *snapshot.FileProperties {
 
 func restoreDb(prop *snapshot.FileProperties) {
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
-	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
+	kvstream, err := kv.OpenKVStreamFile(prop.FileName) //nolint:staticcheck // false-positive, kvstream IS used
 	mustNoErr(err)
 	if _, err := os.Stat(dbDir); !os.IsNotExist(err) {
 		fmt.Printf("directory %s already exists. Can't create new database\n", dbDir)
@@ -142,7 +142,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 }
 
 func verify(prop *snapshot.FileProperties) {
-	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
+	kvstream, err := kv.OpenKVStreamFile(prop.FileName) //nolint:staticcheck // false-positive, kvstream IS used
 	mustNoErr(err)
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {

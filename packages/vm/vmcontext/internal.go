@@ -54,14 +54,6 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.Agent
 	})
 }
 
-func (vmctx *VMContext) totalL2Assets() *isc.FungibleTokens {
-	var ret *isc.FungibleTokens
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetTotalL2Assets(s)
-	})
-	return ret
-}
-
 func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.ContractRecord) {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		ret = root.FindContract(s, contractHname)

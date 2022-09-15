@@ -5,7 +5,7 @@
 package chainimpl
 
 import (
-	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -42,7 +42,7 @@ func (c *chainObj) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) 
 
 func (c *chainObj) AttachToRequestProcessed(handler func(isc.RequestID)) *events.Closure {
 	closure := events.NewClosure(handler)
-	c.eventRequestProcessed.Attach(closure)
+	c.eventRequestProcessed.Hook(closure)
 	return closure
 }
 

@@ -3,6 +3,9 @@ package chainutil
 import (
 	"time"
 
+	"go.uber.org/zap"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -10,8 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
-	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 )
 
 // SimulateCall executes the given request and discards the resulting chain state. It is useful

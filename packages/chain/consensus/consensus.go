@@ -7,7 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"go.uber.org/atomic"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -24,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
-	"go.uber.org/atomic"
 )
 
 type consensus struct {
@@ -48,7 +49,6 @@ type consensus struct {
 	workflow                         *workflowStatus
 	delayBatchProposalUntil          time.Time
 	delayRunVMUntil                  time.Time
-	delaySendingSignedResult         time.Time
 	resultTxEssence                  *iotago.TransactionEssence
 	resultState                      state.VirtualStateAccess
 	finalTx                          *iotago.Transaction
@@ -186,6 +186,7 @@ func (c *consensus) Close() {
 	c.eventTimerMsgPipe.Close()
 }
 
+//nolint:gocyclo
 func (c *consensus) recvLoop() {
 	eventStateTransitionMsgCh := c.eventStateTransitionMsgPipe.Out()
 	eventDssIndexProposalMsgCh := c.eventDssIndexProposalMsgPipe.Out()

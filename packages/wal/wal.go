@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type WAL struct {

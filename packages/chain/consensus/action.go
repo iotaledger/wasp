@@ -10,7 +10,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
+	"go.uber.org/zap"
+
+	"github.com/iotaledger/hive.go/core/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
@@ -28,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"go.uber.org/zap"
 )
 
 // takeAction triggers actions whenever relevant
@@ -100,7 +101,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
-func (c *consensus) runVMIfNeeded() { // nolint:funlen
+func (c *consensus) runVMIfNeeded() { //nolint:funlen
 	if !c.workflow.IsConsensusBatchKnown() {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
@@ -289,7 +290,7 @@ func (c *consensus) prepareVMTask(reqs []isc.Request) *vm.VMTask {
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensus) checkQuorum() { //nolint:funlen
+func (c *consensus) checkQuorum() {
 	if c.workflow.IsTransactionFinalized() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
@@ -476,7 +477,7 @@ func (c *consensus) prepareBatchProposal(reqs []isc.Request, dssNonceIndexPropos
 
 // receiveACS processed new ACS received from ACS consensus
 //
-//nolint:funlen
+//nolint:funlen,gocyclo
 func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journal.LogIndex) {
 	if c.acsSessionID != sessionID {
 		c.log.Debugf("receiveACS: session id mismatch: expected %v, received %v", c.acsSessionID, sessionID)
@@ -516,8 +517,8 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	// validate ACS. Dismiss ACS if inconsistent. Should not happen
 	for _, prop := range acs {
 		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
-			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, generated stateOutputID: %v ",
-				isc.OID(c.stateOutput.ID()), isc.OID(prop.StateOutputID))
+			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, contributor %v stateOutputID: %v ",
+				isc.OID(c.stateOutput.ID()), prop.ValidatorIndex, isc.OID(prop.StateOutputID))
 			c.resetWorkflow()
 			return
 		}
@@ -725,8 +726,6 @@ func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
 		return false
 	}
 	c.stateTimestamp = msg.StateTimestamp
-	oid := c.stateOutput.OutputID()
-	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(oid[:]).Bytes()[:8])
 	if msg.IsGovernance && !sameIndex {
 		c.currentState = nil
 		c.log.Debugf("SET NEW STATE #%d (rotate) and pausing consensus to wait for adequate state, output: %s",

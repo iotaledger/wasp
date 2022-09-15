@@ -7,10 +7,11 @@ import (
 	"math"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/model"
-	"golang.org/x/xerrors"
 )
 
 // RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type StateManagerMetrics interface {

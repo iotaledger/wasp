@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/mr-tron/base58"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,10 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/mr-tron/base58"
 )
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "address":
@@ -109,7 +110,7 @@ func ValueFromString(vtype, s string) []byte {
 	return nil
 }
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
 	case "address":

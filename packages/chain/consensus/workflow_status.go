@@ -148,7 +148,7 @@ func (wsT *workflowStatus) IsInProgress() bool {
 	return wsT.flagInProgress
 }
 
-func (wsT *workflowStatus) GetIndexProposalReceived() time.Time {
+func (wsT *workflowStatus) GetIndexProposalReceivedTime() time.Time {
 	return wsT.timeIndexProposalReceived
 }
 

@@ -5,8 +5,9 @@
 package craig
 
 import (
-	"github.com/iotaledger/wasp/packages/gpa"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type abaImpl struct{}

@@ -6,8 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestEmptyMutations(t *testing.T) {

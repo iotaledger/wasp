@@ -4,11 +4,12 @@
 package chain
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 func changeAccessNodesCmd() *cobra.Command {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -258,7 +258,7 @@ func (mlT *MockedLedger) AttachTxInclusionStateEvents(nodeID string, handler cha
 		})
 		mlT.inclusionStateEvents[nodeID] = event
 	}
-	event.Attach(closure)
+	event.Hook(closure)
 	return closure, nil
 }
 

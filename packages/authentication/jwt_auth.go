@@ -10,9 +10,10 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"github.com/iotaledger/wasp/packages/users"
 )
 
 // Errors
@@ -22,18 +23,18 @@ var (
 )
 
 type JWTAuth struct {
-	durationHours time.Duration
-	nodeID        string
-	secret        []byte
+	duration time.Duration
+	nodeID   string
+	secret   []byte
 }
 
 type MiddlewareValidator = func(c echo.Context, authContext *AuthContext) bool
 
-func NewJWTAuth(durationHours time.Duration, nodeID string, secret []byte) (*JWTAuth, error) {
+func NewJWTAuth(duration time.Duration, nodeID string, secret []byte) (*JWTAuth, error) {
 	return &JWTAuth{
-		durationHours: durationHours,
-		nodeID:        nodeID,
-		secret:        secret,
+		duration: duration,
+		nodeID:   nodeID,
+		secret:   secret,
 	}, nil
 }
 
@@ -61,7 +62,7 @@ func (c *WaspClaims) VerifySubject(expected string) bool {
 	return c.compare(c.Subject, expected)
 }
 
-const defaultJwtDurationHours = 24
+const defaultJWTDuration = 24 * time.Hour
 
 func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidator) echo.MiddlewareFunc {
 	config := middleware.JWTConfig{
@@ -131,8 +132,8 @@ func (j *JWTAuth) IssueJWT(username string, authClaims *WaspClaims) (string, err
 		NotBefore: now.Unix(),
 	}
 
-	if j.durationHours > 0 {
-		stdClaims.ExpiresAt = now.Add(j.durationHours).Unix()
+	if j.duration > 0 {
+		stdClaims.ExpiresAt = now.Add(j.duration).Unix()
 	}
 
 	authClaims.StandardClaims = stdClaims
@@ -173,8 +174,8 @@ func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 	return true
 }
 
-func initJWT(durationHours int, nodeID string, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
-	jwtAuth, err := NewJWTAuth(time.Duration(durationHours)*time.Hour, nodeID, privateKey)
+func initJWT(duration time.Duration, nodeID string, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
+	jwtAuth, err := NewJWTAuth(duration, nodeID, privateKey)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -213,14 +214,14 @@ func initJWT(durationHours int, nodeID string, privateKey []byte, userMap map[st
 }
 
 func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) *JWTAuth {
-	durationHours := config.DurationHours
+	duration := config.Duration
 
-	// If durationHours is 0, we set 24h as the default durationHours.
-	if durationHours <= 0 {
-		durationHours = defaultJwtDurationHours
+	// If durationHours is 0, we set 24h as the default duration
+	if duration == 0 {
+		duration = defaultJWTDuration
 	}
 
-	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(durationHours, "wasp0", privateKey, userMap, claimValidator)
+	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, userMap, claimValidator)
 
 	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
 

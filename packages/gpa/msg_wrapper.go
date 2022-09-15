@@ -6,8 +6,9 @@ package gpa
 import (
 	"bytes"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // MsgWrapper can be used to compose an algorithm out of other abstractions.

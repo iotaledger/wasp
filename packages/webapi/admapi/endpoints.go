@@ -4,26 +4,23 @@
 package admapi
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/pangpanglabs/echoswagger/v2"
+
+	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wal"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-var log *logger.Logger
-
-func initLogger() {
-	log = logger.NewLogger("webapi/adm")
-}
+var log *loggerpkg.Logger
 
 func AddEndpoints(
+	logger *loggerpkg.Logger,
 	adm echoswagger.ApiGroup,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
@@ -33,17 +30,19 @@ func AddEndpoints(
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
 	w *wal.WAL,
+	authConfig authentication.AuthConfiguration,
+	nodeOwnerAddresses []string,
 ) {
-	initLogger()
+	log = logger
 
 	claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The API will be accessible if the token has an 'API' claim
 		return claims.HasPermission(permissions.API)
 	}
 
-	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, parameters.WebAPIAuth, claimValidator)
+	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, authConfig, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
-	addNodeOwnerEndpoints(adm, registryProvider)
+	addNodeOwnerEndpoints(adm, registryProvider, nodeOwnerAddresses)
 	addChainRecordEndpoints(adm, registryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{

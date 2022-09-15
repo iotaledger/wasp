@@ -62,8 +62,9 @@ Depending on the use case, you may need to change the default Hornet [configurat
 editing the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json) file:
 
 ```json
-"l1": {
-  "inxAddress": "hornet:9029",
+"inx": {
+  "address": "localhost:9029",
+  "maxConnectionAttempts": 30
 },
 ```
 

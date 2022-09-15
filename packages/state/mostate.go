@@ -96,7 +96,8 @@ func (s *mustOptimisticVirtualStateAccess) OptimisticStateReader(glb coreutil.Ch
 	s.baseline.MustValidate()
 	defer s.baseline.MustValidate()
 
-	return s.OptimisticStateReader(glb)
+	panic("FIXME, infinite loop")
+	// return s.OptimisticStateReader(glb)
 }
 
 func (s *mustOptimisticVirtualStateAccess) ApplyStateUpdate(upd Update) {

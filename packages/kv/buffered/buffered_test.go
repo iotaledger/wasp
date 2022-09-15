@@ -3,10 +3,11 @@ package buffered
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func TestBufferedKVStore(t *testing.T) {

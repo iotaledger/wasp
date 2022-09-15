@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/contextutils"
+	"github.com/iotaledger/hive.go/core/contextutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -66,6 +66,8 @@ type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 
 // DoPoW does the proof-of-work required to hit the given target score.
 // The given iota.Block's nonce is automatically updated.
+//
+//nolint:gocyclo
 func doPoW(ctx context.Context, block *iotago.Block, targetScore float64, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
 	if targetScore == 0 {
 		block.Nonce = 0

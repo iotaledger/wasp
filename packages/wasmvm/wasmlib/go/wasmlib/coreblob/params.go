@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:revive
 package coreblob
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -24,7 +23,7 @@ type ImmutableStoreBlobParams struct {
 
 // set of named blobs
 func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
-	return MapStringToImmutableBytes{proxy: s.proxy}
+	return MapStringToImmutableBytes(s)
 }
 
 // description of progBinary
@@ -38,8 +37,8 @@ func (s ImmutableStoreBlobParams) ProgBinary() wasmtypes.ScImmutableBytes {
 }
 
 // VM type that must be used to run progBinary
-func (s ImmutableStoreBlobParams) VmType() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamVmType))
+func (s ImmutableStoreBlobParams) VMType() wasmtypes.ScImmutableString {
+	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamVMType))
 }
 
 type MapStringToMutableBytes struct {
@@ -60,7 +59,7 @@ type MutableStoreBlobParams struct {
 
 // set of named blobs
 func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
-	return MapStringToMutableBytes{proxy: s.proxy}
+	return MapStringToMutableBytes(s)
 }
 
 // description of progBinary
@@ -74,8 +73,8 @@ func (s MutableStoreBlobParams) ProgBinary() wasmtypes.ScMutableBytes {
 }
 
 // VM type that must be used to run progBinary
-func (s MutableStoreBlobParams) VmType() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamVmType))
+func (s MutableStoreBlobParams) VMType() wasmtypes.ScMutableString {
+	return wasmtypes.NewScMutableString(s.proxy.Root(ParamVMType))
 }
 
 type ImmutableGetBlobFieldParams struct {

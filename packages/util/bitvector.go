@@ -4,7 +4,7 @@
 package util
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 type BitVector interface {

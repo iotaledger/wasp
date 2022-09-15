@@ -3,12 +3,13 @@ package blocklog
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"golang.org/x/xerrors"
 )
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block

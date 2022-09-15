@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
@@ -232,6 +233,8 @@ type SendTxArgs struct {
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
+//
+//nolint:gocyclo
 func (args *SendTxArgs) setDefaults(e *EthService) error {
 	if args.GasPrice == nil {
 		args.GasPrice = (*hexutil.Big)(evm.GasPrice)
@@ -305,6 +308,8 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 type RPCFilterQuery ethereum.FilterQuery
 
 // UnmarshalJSON sets *args fields with given data.
+//
+//nolint:gocyclo
 func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 	type input struct {
 		BlockHash *common.Hash     `json:"blockHash"`

@@ -7,14 +7,15 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
 )
 
 // In this test all the nodes are actually fair.
@@ -50,6 +51,7 @@ func genericTest(
 	silentNodes int, // Number of actually faulty nodes (by not responding to anything).
 	faultyDeals int, // How many faulty deals the dealer produces?
 ) {
+	t.Parallel()
 	require.True(t, silentNodes+faultyDeals <= f) // Assert tests are within assumptions.
 	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
 	defer log.Sync()

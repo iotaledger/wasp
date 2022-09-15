@@ -4,8 +4,9 @@
 package nonce
 
 import (
-	"github.com/iotaledger/wasp/packages/gpa"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 func (n *nonceDKGImpl) subsystemFunc(subsystem byte, index int) (gpa.GPA, error) {

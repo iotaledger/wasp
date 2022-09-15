@@ -6,9 +6,10 @@ package acss
 import (
 	"bytes"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 type msgImplicateKind byte
