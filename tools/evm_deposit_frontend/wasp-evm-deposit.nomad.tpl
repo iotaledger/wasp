@@ -20,6 +20,7 @@ job "isc-evm-deposit-${workspace}" {
 
 			config {
 				image = "${artifact.image}:${artifact.tag}"
+				entrypoint   = ["nginx", "-g", "daemon off;"]
 				ports = [
 					"http",
 				]
