@@ -2,7 +2,7 @@ export const networkOptions = [
   {
     id: 0,
     text: 'Shimmer Beta Network',
-    apiEndpoint: 'https://api.testnet.shimmer.network',
+    apiEndpoint: 'https://api.hornet.sc.testnet.shimmer.network',
     faucetEndpoint: 'https://faucet.testnet.shimmer.network',
     chainAddress: 'rms1pzc5j8hq7ahgw6h9mn3jaq9wuv3zp0e2lxydj9a5f6yuvqhsvleyyym9f4z',
   },

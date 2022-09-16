@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   hornet-nest:
-    image: iotaledger/hornet-nest:2.0.0-beta.7
+    image: iotaledger/hornet-nest:2.0.0-beta.8
     networks:
       - wasp-net
     ports:
@@ -14,6 +14,11 @@ services:
     build:
       context: ../../
       dockerfile: Dockerfile
+    command:
+      - "--dashboard.auth.scheme=none"
+      - "--webapi.auth.scheme=none"
+      - "--inx.address=hornet-nest:9029"
+      - "--database.directory=/waspdb"
     container_name: wasp
     depends_on:
       - hornet-nest
@@ -21,7 +26,7 @@ services:
     networks:
       - wasp-net
     volumes:
-      - wasp-db:/wasp/waspdb
+      - wasp-db:/waspdb
       - ./wasp.config.json:/etc/wasp_config.json
     expose:
       - "4000/udp" # Peering
