@@ -87,8 +87,6 @@
       return;
     }
 
-    console.log(balance, amountToSend);
-
     let parameters = [
       {
         // Receiver
@@ -96,7 +94,7 @@
       },
       {
         // Fungible Tokens
-        baseTokens: balance - gasFee,
+        baseTokens: amountToSend - gasFee,
         tokens: [],
       },
       false,
