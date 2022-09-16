@@ -141,6 +141,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"webapiPort":             d.wasp.WebAPIPort,
 		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
+		"href":                   func(s string) string { return s },
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {

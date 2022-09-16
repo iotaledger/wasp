@@ -48,7 +48,7 @@
 	{{ $href := index . 1 }}
 	{{ $active := index . 2 }}
 
-	<a href="{{$href}}" class="button"
+	<a href="{{ href $href}}" class="button"
 			{{- if $active -}}
 				style="background-color: var(--header-hover-back-color)"
 			{{- end -}}
