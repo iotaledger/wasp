@@ -33,7 +33,7 @@ You can access the testnet via the following endpoints:
             - Information about the Wasp access node
         - https://api.wasp.sc.iota.org/doc
             - API reference for the Wasp API
-    - https://api.sc.testnet.shimmer.network/chain/rms1pz4c9u3jsjjq6xcaav7h0zjut2f86d4kmqnwfcafpvqxnfc5qw775suv8j4/evm/jsonrpc
+    - https://api.sc.testnet.shimmer.network/chain/rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls/evm/jsonrpc
         - The URL to interact with the Ethereum Virtual Machine on our testnet
 - https://api.testnet.shimmer.network
     - The public API exposed by Hornet for the Shimmer Beta network (testnet)
@@ -59,7 +59,7 @@ Next, you should tell `wasp-cli` how to reach our test chain:
 ```shell
 wasp-cli set l1.apiaddress https://api.testnet.shimmer.network
 wasp-cli set l1.faucetaddress https://faucet.testnet.shimmer.network
-wasp-cli set chains.testchain rms1pz4c9u3jsjjq6xcaav7h0zjut2f86d4kmqnwfcafpvqxnfc5qw775suv8j4
+wasp-cli set chains.testchain rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls
 wasp-cli set chain testchain
 
 ```
@@ -80,7 +80,7 @@ the following configuration:
 
 | Key                | Value                                                                                                                     |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------|
-| RPC URL            | https://api.sc.testnet.shimmer.network/chain/rms1pz4c9u3jsjjq6xcaav7h0zjut2f86d4kmqnwfcafpvqxnfc5qw775suv8j4/evm/jsonrpc  |
+| RPC URL            | https://api.sc.testnet.shimmer.network/chain/rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls/evm/jsonrpc  |
 | Chain ID           | 1076                                                                                                                      |
 
 
