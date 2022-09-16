@@ -38,4 +38,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: BUILD_TAGS="rocksdb,builtin_static",BUILD_LD_FLAGS="-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
+          build-args: |
+            BUILD_TAGS="rocksdb,builtin_static"
+            BUILD_LD_FLAGS="-X github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
