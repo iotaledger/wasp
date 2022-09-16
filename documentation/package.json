@@ -1,5 +1,5 @@
 {
-  "name": "wasp-develop",
+  "name": "wasp",
   "version": "0.0.0",
   "scripts": {
     "start": "iota-wiki start",
