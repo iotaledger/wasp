@@ -17,7 +17,7 @@ variable "ghcr" {
 app "evm-deposit" {
     build {
         use "docker" {
-            disable_entrypoint = false
+            disable_entrypoint = true
             buildkit   = true
             dockerfile = "./Dockerfile"
         }
