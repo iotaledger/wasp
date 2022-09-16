@@ -137,23 +137,23 @@ func (nc *nodeConn) subscribeToLedgerUpdates() {
 }
 
 func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
-	// create maps for faster lookup.
-	// outputs that are created and consumed in the same milestone exist in both maps.
-	newSpentsMap := make(map[iotago.OutputID]struct{})
-	for _, spent := range update.Consumed {
-		newSpentsMap[spent.GetOutput().GetOutputId().Unwrap()] = struct{}{}
-	}
-
-	newOutputsMap := make(map[iotago.OutputID]struct{})
-	for _, output := range update.Created {
-		newOutputsMap[output.GetOutputId().Unwrap()] = struct{}{}
-	}
-
 	nc.chainsLock.RLock()
 	defer nc.chainsLock.RUnlock()
 
 	// inline function used to release the lock with defer
-	func() {
+	go func() {
+		// create maps for faster lookup.
+		// outputs that are created and consumed in the same milestone exist in both maps.
+		newSpentsMap := make(map[iotago.OutputID]struct{})
+		for _, spent := range update.Consumed {
+			newSpentsMap[spent.GetOutput().GetOutputId().Unwrap()] = struct{}{}
+		}
+
+		newOutputsMap := make(map[iotago.OutputID]struct{})
+		for _, output := range update.Created {
+			newOutputsMap[output.GetOutputId().Unwrap()] = struct{}{}
+		}
+
 		nc.pendingTransactionsLock.Lock()
 		defer nc.pendingTransactionsLock.Unlock()
 
@@ -209,7 +209,7 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 			chainID := isc.ChainIDFromAliasID(aliasID)
 			ncChain := nc.chains[chainID.Key()]
 			if ncChain != nil {
-				ncChain.HandleStateUpdate(outputID, aliasOutput)
+				go ncChain.HandleStateUpdate(outputID, aliasOutput)
 			}
 		}
 
@@ -222,7 +222,7 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 			chainID := isc.ChainIDFromAliasID(unlockAliasAddr.AliasID())
 			ncChain := nc.chains[chainID.Key()]
 			if ncChain != nil {
-				ncChain.HandleUnlockableOutput(ledgerOutput.GetOutputId().Unwrap(), output)
+				go ncChain.HandleUnlockableOutput(ledgerOutput.GetOutputId().Unwrap(), output)
 			}
 		}
 	}
