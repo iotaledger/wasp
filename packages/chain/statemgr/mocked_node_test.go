@@ -14,7 +14,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -25,13 +24,12 @@ import (
 )
 
 type MockedNode struct {
-	PubKey        *cryptolib.PublicKey
-	Env           *MockedEnv
-	NodeConn      *testchain.MockedNodeConn
-	ChainNodeConn chain.ChainNodeConnection
-	ChainCore     *testchain.MockedChainCore
-	StateManager  chain.StateManager
-	Log           *logger.Logger
+	PubKey       *cryptolib.PublicKey
+	Env          *MockedEnv
+	NodeConn     *testchain.MockedNodeConn
+	ChainCore    *testchain.MockedChainCore
+	StateManager chain.StateManager
+	Log          *logger.Logger
 }
 
 type MockedStateManagerMetrics struct{}

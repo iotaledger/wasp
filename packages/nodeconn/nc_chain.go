@@ -16,7 +16,6 @@ import (
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
@@ -27,7 +26,7 @@ type ncChain struct {
 	chainID            *isc.ChainID
 	outputHandler      func(iotago.OutputID, iotago.Output)
 	stateOutputHandler func(iotago.OutputID, iotago.Output)
-	inclusionStates    *events.Event
+	milestoneClosure   *events.Closure
 	log                *logger.Logger
 }
 
@@ -36,18 +35,15 @@ func newNCChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
+	milestoneHandler func(*nodeclient.MilestoneInfo),
 ) *ncChain {
-	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
-		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
-	})
-
 	ncc := ncChain{
 		nc:                 nc,
 		chainID:            chainID,
 		outputHandler:      outputHandler,
 		stateOutputHandler: stateOutputHandler,
-		inclusionStates:    inclusionStates,
 		log:                nc.log.Named(chainID.String()[:6]),
+		milestoneClosure:   nc.AttachMilestones(milestoneHandler),
 	}
 	ncc.run()
 	return &ncc
@@ -58,7 +54,7 @@ func (ncc *ncChain) Key() string {
 }
 
 func (ncc *ncChain) Close() {
-	// Nothing. The ncc.nc.ctx is used for that.
+	ncc.nc.DetachMilestones(ncc.milestoneClosure)
 }
 
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {

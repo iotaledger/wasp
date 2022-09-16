@@ -44,7 +44,7 @@ func (c *consensus) takeAction() {
 	c.runVMIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
-	c.pullInclusionStateIfNeeded()
+	// c.pullInclusionStateIfNeeded()
 }
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
@@ -388,7 +388,7 @@ func (c *consensus) postTransactionIfNeeded() {
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
 	if c.resultState == nil { // governance transaction
-		if err := c.nodeConn.PublishGovernanceTransaction(c.finalTx); err != nil {
+		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing gov transaction: %w", err)
 			return
 		}
@@ -396,7 +396,7 @@ func (c *consensus) postTransactionIfNeeded() {
 		logMsgStateIndexStr = ""
 	} else {
 		stateIndex := c.resultState.BlockIndex()
-		if err := c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx); err != nil {
+		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing state transaction: %v", err)
 			return
 		}
@@ -413,30 +413,6 @@ func (c *consensus) postTransactionIfNeeded() {
 	} else {
 		c.log.Warnf("%s %s", logMsgStart, logMsgEnd)
 	}
-}
-
-// pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
-// starts immediately after finalization of the transaction, not after posting it
-func (c *consensus) pullInclusionStateIfNeeded() {
-	if !c.workflow.IsTransactionFinalized() {
-		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
-		return
-	}
-	if c.workflow.IsTransactionSeen() {
-		c.log.Debugf("pullInclusionState not needed: transaction already seen")
-		return
-	}
-	if time.Now().Before(c.pullInclusionStateDeadline) {
-		c.log.Debugf("pullInclusionState not needed: delayed till %v", c.pullInclusionStateDeadline)
-		return
-	}
-	finalTxID, err := c.finalTx.ID()
-	if err != nil {
-		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
-	}
-	c.nodeConn.PullTxInclusionState(finalTxID)
-	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
-	c.log.Debugf("pullInclusionState: request for inclusion state sent")
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests

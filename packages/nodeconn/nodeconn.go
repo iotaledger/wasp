@@ -63,8 +63,6 @@ type nodeConn struct {
 	reattachWorkerPool      *workerpool.WorkerPool
 }
 
-var _ chain.NodeConnection = &nodeConn{}
-
 func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToken *nodeclient.InfoResBaseToken) {
 	parameters.InitL1(&parameters.L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Block fields without payload = max size of the payload
@@ -254,9 +252,10 @@ func (nc *nodeConn) RegisterChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
+	milestoneHandler func(*nodeclient.MilestoneInfo),
 ) {
 	nc.metrics.SetRegistered(chainID)
-	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler)
+	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler, milestoneHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
 	nc.chains[chainID.Key()] = ncc
@@ -290,45 +289,13 @@ func (nc *nodeConn) GetChain(chainID *isc.ChainID) (*ncChain, error) {
 }
 
 // PublishStateTransaction implements chain.NodeConnection.
-func (nc *nodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
+func (nc *nodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
 	ncc, err := nc.GetChain(chainID)
 	if err != nil {
 		return err
 	}
 
 	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
-}
-
-// PublishGovernanceTransaction implements chain.NodeConnection.
-// TODO: identical to PublishStateTransaction; needs to be reviewed
-func (nc *nodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	ncc, err := nc.GetChain(chainID)
-	if err != nil {
-		return err
-	}
-
-	return ncc.PublishTransaction(tx, inxTimeoutPublishTransaction)
-}
-
-func (nc *nodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	ncc, err := nc.GetChain(chainID)
-	if err != nil {
-		return nil, err
-	}
-
-	closure := events.NewClosure(handler)
-	ncc.inclusionStates.Hook(closure)
-	return closure, nil
-}
-
-func (nc *nodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
-	ncc, err := nc.GetChain(chainID)
-	if err != nil {
-		return err
-	}
-
-	ncc.inclusionStates.Detach(closure)
-	return nil
 }
 
 // AttachMilestones implements chain.NodeConnection.
@@ -352,10 +319,10 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	ncc.queryLatestChainStateUTXO()
 }
 
-func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-	// TODO - is this needed? - output should come from INX subscription
-	// we are also constantly polling for confirmation in the promotion/reattachment logic
-}
+// func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
+// 	// TODO - is this needed? - output should come from INX subscription
+// 	// we are also constantly polling for confirmation in the promotion/reattachment logic
+// }
 
 func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	ncc := nc.chains[chainID.Key()]

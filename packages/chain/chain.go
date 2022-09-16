@@ -96,47 +96,27 @@ type Committee interface {
 type (
 	NodeConnectionAliasOutputHandlerFun     func(*isc.AliasOutputWithID)
 	NodeConnectionOnLedgerRequestHandlerFun func(isc.OnLedgerRequest)
-	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
 	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
 )
 
 type NodeConnection interface {
-	RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	RegisterChain(
+		chainID *isc.ChainID,
+		stateOutputHandler,
+		outputHandler func(iotago.OutputID, iotago.Output),
+		milestoneHandler func(*nodeclient.MilestoneInfo),
+	)
 	UnregisterChain(chainID *isc.ChainID)
 
-	PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error
-	PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error
+	PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error
 	PullLatestOutput(chainID *isc.ChainID)
-	PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID)
 	PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput)
 
-	AttachTxInclusionStateEvents(chainID *isc.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error
 	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
 	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-}
-
-type ChainNodeConnection interface {
-	AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
-	DetachFromAliasOutput()
-	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
-	DetachFromOnLedgerRequest()
-	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
-	DetachFromTxInclusionState()
-	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
-	DetachFromMilestones()
-	Close()
-
-	PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error
-	PublishGovernanceTransaction(tx *iotago.Transaction) error
-	PullLatestOutput()
-	PullTxInclusionState(txid iotago.TransactionID)
-	PullStateOutputByID(*iotago.UTXOInput)
-
-	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type StateManager interface {
@@ -165,6 +145,7 @@ type Consensus interface {
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req isc.Request) bool
 	GetPipeMetrics() ConsensusPipeMetrics
+	SetTimeData(time.Time)
 }
 
 type AsynchronousCommonSubsetRunner interface {

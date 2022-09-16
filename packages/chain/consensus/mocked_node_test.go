@@ -15,7 +15,6 @@ import (
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -92,8 +91,6 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
-	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
-	require.NoError(env.T, err)
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:])
 	dss := dss_node.New(&peeringID, env.NetworkProviders[nodeIndex], ret.NodeKeyPair, log)
@@ -101,7 +98,9 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	cmtF := cmtN - int(cmt.Quorum())
 	registry, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), cmtN, cmtF, log)
 	require.NoError(env.T, err)
-	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), timers)
+
+	postTxFunc := func(chainID *isc.ChainID, tx *iotago.Transaction) error { return nil }
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), postTxFunc, timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 

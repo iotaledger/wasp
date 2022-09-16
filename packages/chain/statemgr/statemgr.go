@@ -30,7 +30,7 @@ type stateManager struct {
 	store                       kvstore.KVStore
 	chain                       chain.ChainCore
 	domain                      *DomainWithFallback
-	nodeConn                    chain.ChainNodeConnection
+	nodeConn                    chain.NodeConnection
 	pullStateRetryTime          time.Time
 	solidState                  state.VirtualStateAccess
 	stateOutput                 *isc.AliasOutputWithID
@@ -70,7 +70,7 @@ func New(
 	store kvstore.KVStore,
 	c chain.ChainCore,
 	domain *DomainWithFallback,
-	nodeconn chain.ChainNodeConnection,
+	nodeconn chain.NodeConnection,
 	stateManagerMetrics metrics.StateManagerMetrics,
 	wal chain.WAL,
 	rawBlocksEnabled bool,
