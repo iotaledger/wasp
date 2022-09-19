@@ -3,8 +3,10 @@ package testchain
 import (
 	"fmt"
 
+	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -44,7 +46,12 @@ func (mncT *MockedNodeConn) ID() string {
 	return mncT.id
 }
 
-func (mncT *MockedNodeConn) RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
+func (mncT *MockedNodeConn) RegisterChain(
+	chainID *isc.ChainID,
+	stateOutputHandler,
+	outputHandler func(iotago.OutputID, iotago.Output),
+	milestoneHandler func(*nodeclient.MilestoneInfo),
+) {
 	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
 }
 
@@ -53,17 +60,10 @@ func (mncT *MockedNodeConn) UnregisterChain(chainID *isc.ChainID) {
 }
 
 func (mncT *MockedNodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	if mncT.publishTransactionAllowedFun(chainID, stateIndex, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishStateTransaction(stateIndex, tx)
+	if mncT.publishTransactionAllowedFun(chainID, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishTransaction(tx)
 	}
-	return fmt.Errorf("Publishing state transaction for address %s of index %v is not allowed", chainID)
-}
-
-func (mncT *MockedNodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	if mncT.publishGovernanceTransactionAllowedFun(chainID, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishGovernanceTransaction(tx)
-	}
-	return fmt.Errorf("Publishing governance rotation transaction for address %s is not allowed", chainID)
+	return fmt.Errorf("Publishing state transaction for chain %s is not allowed", chainID)
 }
 
 func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
@@ -101,10 +101,10 @@ func (mncT *MockedNodeConn) Close() {
 }
 
 func (mncT *MockedNodeConn) SetPublishStateTransactionAllowed(flag bool) {
-	mncT.SetPublishStateTransactionAllowedFun(func(*isc.ChainID, uint32, *iotago.Transaction) bool { return flag })
+	mncT.SetPublishStateTransactionAllowedFun(func(*isc.ChainID, *iotago.Transaction) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *isc.ChainID, tx *iotago.Transaction) bool) {
 	mncT.publishTransactionAllowedFun = fun
 }
 
@@ -134,4 +134,12 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
+}
+
+func (mncT *MockedNodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
+	return mncT.ledgers.AttachMilestones(handler)
+}
+
+func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
+	mncT.ledgers.DetachMilestones(attachID)
 }

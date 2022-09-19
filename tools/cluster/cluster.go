@@ -522,6 +522,7 @@ func (clu *Cluster) startWaspNode(i int, initOk chan<- bool) error {
 
 func DoStartWaspNode(cwd string, nodeIndex int, nodeAPIURL string, initOk chan<- bool, t *testing.T) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
+	// cmd := exec.Command("heaptrack", "wasp", "-c", "config.json")
 	cmd := exec.Command("wasp", "-c", "config.json")
 
 	// force the wasp processes to close if the cluster tests time out

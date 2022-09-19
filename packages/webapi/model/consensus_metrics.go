@@ -57,7 +57,6 @@ func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *Consensus
 type ConsensusPipeMetrics struct {
 	EventStateTransitionMsgPipeSize int
 	EventPeerLogIndexMsgPipeSize    int
-	EventInclusionStateMsgPipeSize  int
 	EventACSMsgPipeSize             int
 	EventVMResultMsgPipeSize        int
 	EventTimerMsgPipeSize           int
@@ -67,7 +66,6 @@ func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusP
 	return &ConsensusPipeMetrics{
 		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
 		EventPeerLogIndexMsgPipeSize:    pipeMetrics.GetEventPeerLogIndexMsgPipeSize(),
-		EventInclusionStateMsgPipeSize:  pipeMetrics.GetEventInclusionStateMsgPipeSize(),
 		EventACSMsgPipeSize:             pipeMetrics.GetEventACSMsgPipeSize(),
 		EventVMResultMsgPipeSize:        pipeMetrics.GetEventVMResultMsgPipeSize(),
 		EventTimerMsgPipeSize:           pipeMetrics.GetEventTimerMsgPipeSize(),

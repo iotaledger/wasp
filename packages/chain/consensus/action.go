@@ -44,7 +44,6 @@ func (c *consensus) takeAction() {
 	c.runVMIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
-	// c.pullInclusionStateIfNeeded()
 }
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
@@ -387,6 +386,8 @@ func (c *consensus) postTransactionIfNeeded() {
 	}
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
+
+	// TODO `c.publishTx` already does the waiting. if we want logic in case the tx succeeds/fails, it can be implemented here
 	if c.resultState == nil { // governance transaction
 		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing gov transaction: %w", err)
@@ -583,38 +584,6 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	}
 
 	c.runVMIfNeeded()
-}
-
-func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
-	if !c.workflow.IsTransactionFinalized() {
-		c.log.Debugf("processTxInclusionState: transaction not finalized -> skipping.")
-		return
-	}
-	finalTxID, err := c.finalTx.ID()
-	finalTxIDStr := isc.TxID(finalTxID)
-	if err != nil {
-		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
-	}
-	if msg.TxID != finalTxID {
-		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-			finalTxIDStr, isc.TxID(msg.TxID))
-		return
-	}
-	switch msg.State {
-	case "noTransaction":
-		c.log.Debugf("processTxInclusionState: transaction id %v is not known.", finalTxIDStr)
-	case "included":
-		c.workflow.setTransactionSeen()
-		c.workflow.setCompleted()
-		c.refreshConsensusInfo()
-		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
-	case "conflicting":
-		c.workflow.setTransactionSeen()
-		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
-		c.resetWorkflow()
-	default:
-		c.log.Warnf("processTxInclusionState: unknown inclusion state %s for transaction id %s; ignoring", msg.State, finalTxIDStr)
-	}
 }
 
 func (c *consensus) finalizeTransaction() (*iotago.Transaction, *isc.AliasOutputWithID, error) {

@@ -9,21 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-type txInclusionStateMsg struct {
-	txID  iotago.TransactionID
-	state string
-}
-
-func (c *chainObj) handleStateInclusion(txID iotago.TransactionID, inclusionState string) {
-	if c.consensus != nil {
-		c.nodeConn.GetMetrics().GetInTxInclusionState().CountLastMessage(&txInclusionStateMsg{
-			txID:  txID,
-			state: inclusionState,
-		})
-		c.consensus.EnqueueTxInclusionsStateMsg(txID, inclusionState)
-	}
-}
-
 func (c *chainObj) handleMilestone(milestonePointer *nodeclient.MilestoneInfo) {
 	if c.consensus != nil {
 		c.consensus.SetTimeData(time.Unix(int64(milestonePointer.Timestamp), 0))
@@ -82,31 +67,10 @@ func (c *chainObj) outputHandler(outputID iotago.OutputID, output iotago.Output)
 	c.log.Debugf("handling output ID %v: on ledger request handled", outputIDstring)
 }
 
-func (c *chainObj) PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error {
-	c.nodeConn.GetMetrics().GetOutPublishStateTransaction().CountLastMessage(struct {
-		StateIndex  uint32
-		Transaction *iotago.Transaction
-	}{
-		StateIndex:  stateIndex,
-		Transaction: tx,
-	})
-	return c.nodeConn.PublishTransaction(c.chainID, tx)
-}
-
-func (c *chainObj) PublishGovernanceTransaction(tx *iotago.Transaction) error {
-	c.nodeConn.GetMetrics().GetOutPublishGovernanceTransaction().CountLastMessage(tx)
-	return c.nodeConn.PublishTransaction(c.chainID, tx)
-}
-
 func (c *chainObj) PullLatestOutput() {
 	c.nodeConn.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 	c.nodeConn.PullLatestOutput(c.chainID)
 }
-
-// func (c *chainObj) PullTxInclusionState(txID iotago.TransactionID) {
-// 	c.nodeConn.GetMetrics().GetOutPullTxInclusionState().CountLastMessage(txID)
-// 	c.nodeConn.PullTxInclusionState(c.chainID, txID)
-// }
 
 func (c *chainObj) PullStateOutputByID(outputID *iotago.UTXOInput) {
 	c.nodeConn.GetMetrics().GetOutPullOutputByID().CountLastMessage(outputID)
