@@ -20,11 +20,13 @@ func Init(logger *loggerpkg.Logger,
 	metrics *metrics.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
-	wal *wal.WAL) {
+	wal *wal.WAL,
+) {
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
-	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, wal)
+	vmService := services.NewVMService(logger, chainsProvider)
+	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, vmService, wal)
 	nodeService := services.NewNodeService(logger, networkProvider, registryProvider)
 	registryService := services.NewRegistryService(logger, chainsProvider, metrics, registryProvider, wal)
 
@@ -32,15 +34,14 @@ func Init(logger *loggerpkg.Logger,
 		controllers.NewChainController(logger, chainService, nodeService, registryService),
 	}
 
-	publicRouter := server.Group("public", "").
+	publicRouter := server.Group("public", "v2").
 		SetDescription("Public endpoints")
 
-	adminRouter := server.Group("admin", "").
+	adminRouter := server.Group("admin", "v2").
 		SetDescription("Admin endpoints")
 
 	for _, controller := range controllersToLoad {
 		controller.RegisterPublic(publicRouter)
 		controller.RegisterAdmin(adminRouter)
 	}
-
 }

@@ -13,18 +13,18 @@ import (
 type RegistryService struct {
 	logger *logger.Logger
 
-	chainsProvider chains.Provider
-	metrics *metrics.Metrics
+	chainsProvider   chains.Provider
+	metrics          *metrics.Metrics
 	registryProvider registry.Provider
-	wal *wal.WAL
+	wal              *wal.WAL
 }
 
 func NewRegistryService(logger *logger.Logger, chainsProvider chains.Provider, metrics *metrics.Metrics, registryProvider registry.Provider, wal *wal.WAL) interfaces.Registry {
 	return &RegistryService{
-		logger:           logger,
+		logger: logger,
 
 		chainsProvider:   chainsProvider,
-		metrics: metrics,
+		metrics:          metrics,
 		registryProvider: registryProvider,
 		wal:              wal,
 	}
@@ -35,4 +35,3 @@ func (c *RegistryService) GetChainRecordByChainID(chainID *isc.ChainID) (*regist
 
 	return chainInfo, err
 }
-

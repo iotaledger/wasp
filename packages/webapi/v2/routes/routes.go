@@ -47,6 +47,10 @@ func DeactivateChain(chainID string) string {
 	return "/adm/chain/" + chainID + "/deactivate"
 }
 
+func GetChainContracts(chainID string) string {
+	return "/adm/chain/" + chainID + "/contracts"
+}
+
 func GetChainInfo(chainID string) string {
 	return "/adm/chain/" + chainID + "/info"
 }

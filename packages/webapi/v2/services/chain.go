@@ -5,35 +5,39 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/wal"
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
 type ChainService struct {
 	logger *logger.Logger
 
-	chainsProvider chains.Provider
-	metrics *metrics.Metrics
+	chainsProvider   chains.Provider
+	metrics          *metrics.Metrics
 	registryProvider registry.Provider
-	wal *wal.WAL
+	vmService        interfaces.VM
+	wal              *wal.WAL
 }
 
-func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, metrics *metrics.Metrics, registryProvider registry.Provider, wal *wal.WAL) interfaces.Chain {
+func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, metrics *metrics.Metrics, registryProvider registry.Provider, vmService interfaces.VM, wal *wal.WAL) interfaces.Chain {
 	return &ChainService{
-		logger:           logger,
+		logger: logger,
 
 		chainsProvider:   chainsProvider,
-		metrics: metrics,
+		metrics:          metrics,
 		registryProvider: registryProvider,
+		vmService:        vmService,
 		wal:              wal,
 	}
 }
 
 func (c *ChainService) ActivateChain(chainID *isc.ChainID) error {
 	chainRecord, err := c.registryProvider().ActivateChainRecord(chainID)
-
 	if err != nil {
 		return err
 	}
@@ -48,7 +52,6 @@ func (c *ChainService) ActivateChain(chainID *isc.ChainID) error {
 
 func (c *ChainService) DeactivateChain(chainID *isc.ChainID) error {
 	chainRecord, err := c.registryProvider().DeactivateChainRecord(chainID)
-
 	if err != nil {
 		return err
 	}
@@ -60,9 +63,22 @@ func (c *ChainService) DeactivateChain(chainID *isc.ChainID) error {
 	return err
 }
 
-func (c*ChainService) GetChainByID(chainID *isc.ChainID) chain.Chain {
+func (c *ChainService) GetChainByID(chainID *isc.ChainID) chain.Chain {
 	chain := c.chainsProvider().Get(chainID, true)
 
 	return chain
 }
 
+func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error) {
+	recs, err := c.vmService.CallViewByChainID(chainID, root.Contract.Name, root.ViewGetContractRecords.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.StateVarContractRegistry))
+	if err != nil {
+		return nil, err
+	}
+
+	return contracts, nil
+}

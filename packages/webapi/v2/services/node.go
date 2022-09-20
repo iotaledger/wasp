@@ -32,7 +32,6 @@ func (c *NodeService) GetNodeInfo(chain chain.Chain) (*models2.ChainNodeInfo, er
 	committeeInfo := chain.GetCommitteeInfo()
 
 	dkShare, err := c.registryProvider().LoadDKShare(committeeInfo.Address)
-
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +67,6 @@ func (c *NodeService) GetNodeInfo(chain chain.Chain) (*models2.ChainNodeInfo, er
 	// Candidate nodes have supplied applications, but are not included
 	// in the committee and to the set of the access nodes.
 	filteredCandidateNodes, err := getCandidateNodes(peeringStatus, candidateNodes, inChainNodes)
-
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,6 @@ func getCandidateNodes(
 
 	for _, c := range candidateNodes {
 		pubKey, err := cryptolib.NewPublicKeyFromBytes(c.NodePubKey)
-
 		if err != nil {
 			return nil, err
 		}
