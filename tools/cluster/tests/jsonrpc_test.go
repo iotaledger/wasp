@@ -5,6 +5,7 @@ package tests
 
 import (
 	"crypto/ecdsa"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"math"
 	"testing"
 	"time"
@@ -25,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 

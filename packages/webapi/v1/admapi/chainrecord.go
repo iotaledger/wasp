@@ -2,6 +2,9 @@ package admapi
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -10,9 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, chainsProvider chains.Provider) {

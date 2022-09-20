@@ -3,6 +3,7 @@ package testutil
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -12,8 +13,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 )
 
 func buildRequest(t *testing.T, method string, body interface{}) *http.Request {

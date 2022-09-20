@@ -7,11 +7,11 @@ package client
 // The Golang API in this file tries to follow the REST conventions.
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 // DKSharesPost creates a new DKShare and returns its state.

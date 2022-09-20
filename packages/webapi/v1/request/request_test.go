@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/packages/webapi/testutil"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 )
 
 func getAccountBalanceMocked(_ chain.ChainCore, _ isc.AgentID) (*isc.FungibleTokens, error) {

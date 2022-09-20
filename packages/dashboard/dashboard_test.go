@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 	"strconv"
 	"strings"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/webapi/testutil"
 )
 
 func checkProperConversionsToString(t *testing.T, html *goquery.Document) {

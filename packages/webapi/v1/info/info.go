@@ -1,6 +1,8 @@
 package info
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -8,8 +10,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type infoService struct {

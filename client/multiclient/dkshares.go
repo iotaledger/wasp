@@ -3,7 +3,7 @@ package multiclient
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 )
 
 // DKSharesGet retrieves distributed key info with specific ChainID from multiple hosts.

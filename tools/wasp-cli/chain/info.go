@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"strconv"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -13,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )

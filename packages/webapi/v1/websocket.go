@@ -1,4 +1,4 @@
-package webapi
+package v1
 
 import (
 	_ "embed"

@@ -5,6 +5,9 @@ package admapi
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -14,9 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, nodeIdentityProvider registry.NodeIdentityProvider, nodeOwnerAddresses []string) {

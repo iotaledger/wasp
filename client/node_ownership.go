@@ -4,13 +4,13 @@
 package client
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 func (c *WaspClient) NodeOwnershipCertificate(nodePubKey *cryptolib.PublicKey, ownerAddress iotago.Address) (governance.NodeOwnershipCertificate, error) {
