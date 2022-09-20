@@ -20,13 +20,14 @@ func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocket
 		pws: publisherws.New(log, []string{"state", "contract"}),
 	}
 
-	e.GET("/chain/:chainid/ws", api.handleWebSocket)
+	e.GET("/chain/:chainID/ws", api.handleWebSocket).
+		AddParamPath("", "chainID", "ChainID (bech32-encoded)")
 
 	return api
 }
 
 func (w *webSocketAPI) handleWebSocket(c echo.Context) error {
-	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
+	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return err
 	}

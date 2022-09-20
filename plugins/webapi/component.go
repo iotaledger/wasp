@@ -109,6 +109,11 @@ func provide(c *dig.Container) error {
 
 		e.HidePort = true
 		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
+
+		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+		}))
+
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: []string{"*"},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
@@ -126,6 +131,11 @@ func provide(c *dig.Container) error {
 			Description: "REST API for the Wasp node",
 			Version:     wasp.Version,
 		})
+
+		echoSwagger.SetExternalDocs("Find out more about Swagger", "http://swagger.io").
+			SetResponseContentType("application/xml", "application/json").
+			SetUI(echoswagger.UISetting{DetachSpec: true, HideTop: true}).
+			SetScheme("https", "http")
 
 		v1.Init(
 			Plugin.App().NewLogger("WebAPI/v1"),

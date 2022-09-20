@@ -127,7 +127,8 @@ func (c *ChainController) RegisterPublic(publicAPI echoswagger.ApiGroup) {
 func (c *ChainController) RegisterAdmin(adminAPI echoswagger.ApiGroup) {
 	adminAPI.POST(routes.ActivateChain(":chainID"), c.activateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
-		SetSummary("Activate a chain")
+		SetSummary("Activate a chain").
+		SetOperationId("activateChain")
 
 	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (string)").

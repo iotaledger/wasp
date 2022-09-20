@@ -40,19 +40,19 @@ func EVMJSONRPC(chainID string) string {
 }
 
 func ActivateChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/activate"
+	return "/adm/chains/" + chainID + "/activate"
 }
 
 func DeactivateChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/deactivate"
+	return "/adm/chains/" + chainID + "/deactivate"
 }
 
 func GetChainContracts(chainID string) string {
-	return "/adm/chain/" + chainID + "/contracts"
+	return "/adm/chains/" + chainID + "/contracts"
 }
 
 func GetChainInfo(chainID string) string {
-	return "/adm/chain/" + chainID + "/info"
+	return "/adm/chains/" + chainID + "/info"
 }
 
 func ListChainRecords() string {
@@ -68,19 +68,19 @@ func GetChainRecord(chainID string) string {
 }
 
 func GetChainsNodeConnectionMetrics() string {
-	return "/adm/chain/nodeconn/metrics"
+	return "/adm/chains/nodeconn/metrics"
 }
 
 func GetChainNodeConnectionMetrics(chainID string) string {
-	return "/adm/chain/" + chainID + "/nodeconn/metrics"
+	return "/adm/chains/" + chainID + "/nodeconn/metrics"
 }
 
 func GetChainConsensusWorkflowStatus(chainID string) string {
-	return "/adm/chain/" + chainID + "/consensus/status"
+	return "/adm/chains/" + chainID + "/consensus/status"
 }
 
 func GetChainConsensusPipeMetrics(chainID string) string {
-	return "/adm/chain/" + chainID + "/consensus/metrics/pipe"
+	return "/adm/chains/" + chainID + "/consensus/metrics/pipe"
 }
 
 func DKSharesPost() string {
