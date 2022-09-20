@@ -83,9 +83,9 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 	}
 
 	chainInfo := models.ChainInfo{
-		ChainID:        chainID,
+		ChainID:        chainID.String(),
 		Active:         chainRecord.Active,
-		StateAddress:   committeeInfo.Address,
+		StateAddress:   committeeInfo.Address.String(),
 		CommitteeNodes: chainNodeInfo.CommitteeNodes,
 		AccessNodes:    chainNodeInfo.AccessNodes,
 		CandidateNodes: chainNodeInfo.CandidateNodes,
