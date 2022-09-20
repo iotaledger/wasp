@@ -98,20 +98,20 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 	return e.JSON(http.StatusOK, chainInfo)
 }
 
-func (c *ChainController) RegisterPublic(server echoswagger.ApiRoot) {
+func (c *ChainController) RegisterPublic(publicAPI echoswagger.ApiGroup) {
 
 }
 
-func (c *ChainController) RegisterAdmin(server echoswagger.ApiRoot) {
-	server.POST(routes.ActivateChain(":chainID"), c.activateChain).
+func (c *ChainController) RegisterAdmin(adminAPI echoswagger.ApiGroup) {
+	adminAPI.POST(routes.ActivateChain(":chainID"), c.activateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Activate a chain")
 
-	server.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
+	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Deactivate a chain")
 
-	server.GET(routes.GetChainInfo(":chainID"), c.getChainInfo).
+	adminAPI.GET(routes.GetChainInfo(":chainID"), c.getChainInfo).
 		AddParamPath("", "chainID", "ChainID (string)").
 		SetSummary("Get basic chain info.")
 }

@@ -9,8 +9,8 @@ import (
 )
 
 type APIController interface {
-	RegisterPublic(server echoswagger.ApiRoot)
-	RegisterAdmin(server echoswagger.ApiRoot)
+	RegisterPublic(publicAPI echoswagger.ApiGroup)
+	RegisterAdmin(adminAPI echoswagger.ApiGroup)
 }
 
 type Chain interface {
