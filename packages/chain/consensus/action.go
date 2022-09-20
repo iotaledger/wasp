@@ -387,7 +387,8 @@ func (c *consensus) postTransactionIfNeeded() {
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
 
-	// TODO `c.publishTx` already does the waiting. if we want logic in case the tx succeeds/fails, it can be implemented here
+	// `c.publishTx` takes care of waiting for the tx to confirm, and handled re-attchment/promotions
+	c.workflow.setTransactionPosted()
 	if c.resultState == nil { // governance transaction
 		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing gov transaction: %w", err)
@@ -404,8 +405,10 @@ func (c *consensus) postTransactionIfNeeded() {
 		logMsgTypeStr = "STATE"
 		logMsgStateIndexStr = fmt.Sprintf(" for state %v", stateIndex)
 	}
+	c.workflow.setTransactionSeen()
+	c.workflow.setCompleted()
+	c.refreshConsensusInfo()
 
-	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	logMsgStart := fmt.Sprintf("postTransaction: POSTED %s TRANSACTION%s:", logMsgTypeStr, logMsgStateIndexStr)
 	logMsgEnd := fmt.Sprintf("number of inputs: %d, outputs: %d", len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
 	txID, err := c.finalTx.ID()
