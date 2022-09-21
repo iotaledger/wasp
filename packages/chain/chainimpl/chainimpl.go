@@ -59,8 +59,6 @@ type chainObj struct {
 	eventRequestProcessed              *events.Event
 	eventChainTransition               *events.Event
 	eventChainTransitionClosure        *events.Closure
-	txInclusingClosure                 *events.Closure
-	milestonesClosure                  *events.Closure
 	receiveChainPeerMessagesAttachID   interface{}
 	detachFromCommitteePeerMessagesFun func()
 	chainPeers                         peering.PeerDomainProvider
