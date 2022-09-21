@@ -31,6 +31,10 @@ func NewChainController(log *loggerpkg.Logger, chainService interfaces.Chain, no
 	}
 }
 
+func (c *ChainController) Name() string {
+	return "chains"
+}
+
 func (c *ChainController) activateChain(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
@@ -170,18 +174,24 @@ func (c *ChainController) RegisterExampleData(mock interfaces.Mocker) {
 }
 
 func (c *ChainController) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+	publicAPI.POST(routes.ActivateChain(":chainID")+"/test", c.activateChain).
+		AddParamPath("", "chainID", "ChainID (string)").
+		SetOperationId("activateChainTest").
+		SetSummary("Activate a chain")
 }
 
 func (c *ChainController) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.POST(routes.ActivateChain(":chainID"), c.activateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
+		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
+		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
 	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
-		AddResponse(http.StatusOK, "OK when the chain was successfully deactivated", nil, nil).
-		AddResponse(http.StatusNotModified, "NotModified when the chain was not deactivated", nil, nil).
+		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
+		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 

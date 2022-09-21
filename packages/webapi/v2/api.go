@@ -38,15 +38,16 @@ func Init(logger *loggerpkg.Logger,
 		controllers.NewChainController(logger, chainService, nodeService, registryService),
 	}
 
-	publicRouter := server.Group("public", "v2").
-		SetDescription("Public endpoints")
-
-	adminRouter := server.Group("admin", "v2").
-		SetDescription("Admin endpoints")
-
 	for _, controller := range controllersToLoad {
 		controller.RegisterExampleData(mocker)
-		controller.RegisterPublic(publicRouter, mocker)
-		controller.RegisterAdmin(adminRouter, mocker)
+
+		publicGroup := server.Group(controller.Name(), "v2")
+
+		controller.RegisterPublic(publicGroup, mocker)
+
+		adminGroup := server.Group(controller.Name(), "v2").
+			SetSecurity("Authorization")
+
+		controller.RegisterAdmin(adminGroup, mocker)
 	}
 }

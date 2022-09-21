@@ -1,0 +1,20 @@
+{
+  "AccessNodes": [],
+  "Active": true,
+  "CandidateNodes": [],
+  "ChainID": "tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v",
+  "CommitteeNodes": [
+    {
+      "AccessAPI": "",
+      "ForAccess": false,
+      "ForCommittee": false,
+      "Node": {
+        "IsAlive": false,
+        "NetID": "",
+        "NumUsers": 0,
+        "PubKey": "9e686a37da3bea3f747c4a8e24b7370375af29966cccfc623e02d833eef4f4a6"
+      }
+    }
+  ],
+  "StateAddress": "0xf9b59be5c10076a6845aab037e11f8fd2f3ec08b89f66aa7ba483b4b4369ea09"
+}

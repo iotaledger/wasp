@@ -40,27 +40,27 @@ func EVMJSONRPC(chainID string) string {
 }
 
 func ActivateChain(chainID string) string {
-	return "/adm/chains/" + chainID + "/activate"
+	return "/chains/" + chainID + "/activate"
 }
 
 func DeactivateChain(chainID string) string {
-	return "/adm/chains/" + chainID + "/deactivate"
+	return "/chains/" + chainID + "/deactivate"
 }
 
 func GetChainContracts(chainID string) string {
-	return "/adm/chains/" + chainID + "/contracts"
+	return "/chains/" + chainID + "/contracts"
 }
 
 func GetChainCommitteeInfo(chainID string) string {
-	return "/adm/chains/" + chainID + "/committee"
+	return "/chains/" + chainID + "/committee"
 }
 
 func GetChainInfo(chainID string) string {
-	return "/adm/chains/" + chainID + "/info"
+	return "/chains/" + chainID + "/info"
 }
 
 func GetChainList() string {
-	return "/adm/chains"
+	return "/chains"
 }
 
 func ListChainRecords() string {

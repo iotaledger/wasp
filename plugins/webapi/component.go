@@ -7,10 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
-	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -136,10 +132,11 @@ func provide(c *dig.Container) error {
 			Version:     wasp.Version,
 		})
 
-		echoSwagger.SetExternalDocs("Find out more about Swagger", "http://swagger.io").
+		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
+			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
 			SetResponseContentType("application/xml", "application/json").
-			SetUI(echoswagger.UISetting{DetachSpec: true, HideTop: true}).
-			SetScheme("https", "http")
+			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
+			SetScheme("http", "https")
 
 		v1.Init(
 			Plugin.App().NewLogger("WebAPI/v1"),

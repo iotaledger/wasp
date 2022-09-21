@@ -11,6 +11,7 @@ import (
 )
 
 type APIController interface {
+	Name() string
 	RegisterExampleData(mocker Mocker)
 	RegisterPublic(publicAPI echoswagger.ApiGroup, mocker Mocker)
 	RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker Mocker)

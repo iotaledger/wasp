@@ -35,16 +35,7 @@ func getStructName(i interface{}) string {
 
 func (m *Mocker) AddModel(i interface{}) {
 	name := getStructName(i)
-	/*	modelType := reflect.TypeOf(i)
 
-		if modelType.Kind() == reflect.Ptr {
-			modelType = modelType.Elem()
-		}
-
-		modelInstance := reflect.New(modelType).
-			Elem().
-			Interface()
-	*/
 	if jsonMockData, ok := m.mockData[name]; ok {
 		err := json.Unmarshal(jsonMockData, &i)
 		if err != nil {
