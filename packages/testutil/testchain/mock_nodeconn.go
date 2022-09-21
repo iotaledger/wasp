@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,22 +16,24 @@ type MockedNodeConn struct {
 	log                                    *logger.Logger
 	ledgers                                *MockedLedgers
 	id                                     string
-	publishStateTransactionAllowedFun      func(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) bool
+	publishTransactionAllowedFun           func(chainID *isc.ChainID, tx *iotago.Transaction) bool
 	publishGovernanceTransactionAllowedFun func(chainID *isc.ChainID, tx *iotago.Transaction) bool
 	pullLatestOutputAllowed                bool
 	pullTxInclusionStateAllowedFun         func(chainID *isc.ChainID, txID iotago.TransactionID) bool
 	pullOutputByIDAllowedFun               func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool
 	stopChannel                            chan bool
+	attachMilestonesClosures               map[isc.ChainID]*events.Closure
 }
 
 var _ chain.NodeConnection = &MockedNodeConn{}
 
 func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logger) *MockedNodeConn {
 	result := &MockedNodeConn{
-		log:         log.Named("mnc"),
-		id:          id,
-		ledgers:     ledgers,
-		stopChannel: make(chan bool),
+		log:                      log.Named("mnc"),
+		id:                       id,
+		ledgers:                  ledgers,
+		stopChannel:              make(chan bool),
+		attachMilestonesClosures: make(map[isc.ChainID]*events.Closure),
 	}
 	result.SetPublishStateTransactionAllowed(true)
 	result.SetPublishGovernanceTransactionAllowed(true)
@@ -45,26 +48,26 @@ func (mncT *MockedNodeConn) ID() string {
 	return mncT.id
 }
 
-func (mncT *MockedNodeConn) RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output)) {
+func (mncT *MockedNodeConn) RegisterChain(
+	chainID *isc.ChainID,
+	stateOutputHandler,
+	outputHandler func(iotago.OutputID, iotago.Output),
+	milestoneHandler func(*nodebridge.Milestone),
+) {
 	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
+	mncT.attachMilestonesClosures[*chainID] = mncT.AttachMilestones(milestoneHandler)
 }
 
 func (mncT *MockedNodeConn) UnregisterChain(chainID *isc.ChainID) {
 	mncT.ledgers.GetLedger(chainID).Unregister(mncT.id)
+	mncT.DetachMilestones(mncT.attachMilestonesClosures[*chainID])
 }
 
-func (mncT *MockedNodeConn) PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error {
-	if mncT.publishStateTransactionAllowedFun(chainID, stateIndex, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishStateTransaction(stateIndex, tx)
+func (mncT *MockedNodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
+	if mncT.publishTransactionAllowedFun(chainID, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishTransaction(tx)
 	}
-	return fmt.Errorf("Publishing state transaction for address %s of index %v is not allowed", chainID, stateIndex)
-}
-
-func (mncT *MockedNodeConn) PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	if mncT.publishGovernanceTransactionAllowedFun(chainID, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishGovernanceTransaction(tx)
-	}
-	return fmt.Errorf("Publishing governance rotation transaction for address %s is not allowed", chainID)
+	return fmt.Errorf("Publishing state transaction for chain %s is not allowed", chainID)
 }
 
 func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
@@ -75,36 +78,12 @@ func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	}
 }
 
-func (mncT *MockedNodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
-		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
-	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, isc.TxID(txid))
-	}
-}
-
 func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	if mncT.pullOutputByIDAllowedFun(chainID, id) {
 		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
 	} else {
 		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, isc.OID(id))
 	}
-}
-
-func (mncT *MockedNodeConn) AttachTxInclusionStateEvents(chainID *isc.ChainID, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	return mncT.ledgers.GetLedger(chainID).AttachTxInclusionStateEvents(mncT.id, handler)
-}
-
-func (mncT *MockedNodeConn) DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error {
-	return mncT.ledgers.GetLedger(chainID).DetachTxInclusionStateEvents(mncT.id, closure)
-}
-
-func (mncT *MockedNodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
-	return mncT.ledgers.AttachMilestones(handler)
-}
-
-func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
-	mncT.ledgers.DetachMilestones(attachID)
 }
 
 func (mncT *MockedNodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
@@ -118,11 +97,11 @@ func (mncT *MockedNodeConn) Close() {
 }
 
 func (mncT *MockedNodeConn) SetPublishStateTransactionAllowed(flag bool) {
-	mncT.SetPublishStateTransactionAllowedFun(func(*isc.ChainID, uint32, *iotago.Transaction) bool { return flag })
+	mncT.SetPublishStateTransactionAllowedFun(func(*isc.ChainID, *iotago.Transaction) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) bool) {
-	mncT.publishStateTransactionAllowedFun = fun
+func (mncT *MockedNodeConn) SetPublishStateTransactionAllowedFun(fun func(chainID *isc.ChainID, tx *iotago.Transaction) bool) {
+	mncT.publishTransactionAllowedFun = fun
 }
 
 func (mncT *MockedNodeConn) SetPublishGovernanceTransactionAllowed(flag bool) {
@@ -153,142 +132,10 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.Ch
 	mncT.pullOutputByIDAllowedFun = fun
 }
 
-/*func (m *MockedNodeConn) PullLatestOutput() {
-	m.log.Debugf("Pull latest state output")
-	if m.pullLatestStateOutputAllowed {
-		m.log.Debugf("Pull latest state output allowed")
-		output := m.ledger.PullState()
-		if output != nil {
-			m.log.Debugf("Pull latest state output successful")
-			go m.handleUnspentAliasOutputFun(output, time.Now())
-		}
-	}
+func (mncT *MockedNodeConn) AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure {
+	return mncT.ledgers.AttachMilestones(handler)
 }
 
-func (m *MockedNodeConn) PullTxInclusionState(txid iotago.TransactionID) {
-	panic("TODO implement")
+func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
+	mncT.ledgers.DetachMilestones(attachID)
 }
-
-func (m *MockedNodeConn) PullOutputByID(outputID *iotago.UTXOInput) {
-	m.log.Debugf("Pull output by id %v", isc.OID(outputID))
-	if m.pullOutputByIDAllowedFun(outputID) {
-		m.log.Debugf("Pull output by id %v allowed", isc.OID(outputID))
-		output := m.ledger.PullConfirmedOutput(outputID)
-		if output != nil {
-			m.log.Debugf("Pull confirmed output %v successful", isc.OID(outputID))
-			go m.handleOutputFun(output, outputID)
-		}
-	}
-}
-
-func (m *MockedNodeConn) PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error {
-	m.log.Debugf("Publishing transaction for state %v", stateIndex)
-	if m.receiveTxAllowedFun(stateIndex, tx) {
-		m.log.Debugf("Publishing transaction for state %v allowed", stateIndex)
-		m.ledger.receiveTx(tx)
-		return nil
-	}
-	return fmt.Errorf("Publishing transaction for state %v not allowed", stateIndex)
-}
-
-func (m *MockedNodeConn) SetPullLatestStateOutputAllowed(flag bool) {
-	m.pullLatestStateOutputAllowed = flag
-}
-
-func (m *MockedNodeConn) SetPullConfirmedOutputAllowed(flag bool) {
-	m.SetPullConfirmedOutputAllowedFun(func(*iotago.UTXOInput) bool { return flag })
-}
-
-func (m *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(*iotago.UTXOInput) bool) {
-	m.pullOutputByIDAllowedFun = fun
-}
-
-func (m *MockedNodeConn) SetReceiveTxAllowed(flag bool) {
-	m.SetReceiveTxAllowedFun(func(uint32, *iotago.Transaction) bool { return flag })
-}
-
-func (m *MockedNodeConn) SetReceiveTxAllowedFun(fun func(stateIndex uint32, tx *iotago.Transaction) bool) {
-	m.receiveTxAllowedFun = fun
-}
-
-func (m *MockedNodeConn) defaultHandleTimeDataFun(*isc.TimeData) {}
-
-func (m *MockedNodeConn) AttachToTimeData(fun chain.NodeConnectionHandleTimeDataFun) {
-	m.handleTimeDataFun = fun
-}
-
-func (m *MockedNodeConn) DetachFromTimeData() {
-	m.handleTimeDataFun = m.defaultHandleTimeDataFun
-}
-
-func (m *MockedNodeConn) defaultHandleTransactionFun(*iotago.Transaction) {}
-
-func (m *MockedNodeConn) AttachToTransactionReceived(fun chain.NodeConnectionHandleTransactionFun) {
-	m.handleTransactionFun = fun
-}
-
-func (m *MockedNodeConn) DetachFromTransactionReceived() {
-	m.handleTransactionFun = m.defaultHandleTransactionFun
-}*/
-
-// func (m *MockedNodeConn) DetachFromInclusionStateReceived() { /* TODO */ }
-
-/*func (m *MockedNodeConn) defaultHandleOutputFun(iotago.Output, *iotago.UTXOInput) {}
-
-func (m *MockedNodeConn) AttachToOutputReceived(fun chain.NodeConnectionHandleOutputFun) {
-	m.handleOutputFun = fun
-}
-
-func (m *MockedNodeConn) DetachFromOutputReceived() {
-	m.handleOutputFun = m.defaultHandleOutputFun
-}
-
-func (m *MockedNodeConn) defaultHandleUnspentAliasOutputFun(*isc.AliasOutputWithID, time.Time) {}
-
-func (m *MockedNodeConn) AttachToUnspentAliasOutputReceived(fun chain.NodeConnectionHandleUnspentAliasOutputFun) {
-	m.handleUnspentAliasOutputFun = fun
-}
-
-func (m *MockedNodeConn) DetachFromUnspentAliasOutputReceived() {
-	m.handleUnspentAliasOutputFun = m.defaultHandleUnspentAliasOutputFun
-}
-
-func (m *MockedNodeConn) Close() {
-	close(m.stopChannel)
-}
-
-func (m *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
-	return nodeconnmetrics.NewEmptyNodeConnectionMessagesMetrics()
-}
-
-func (m *MockedNodeConn) pushMilestonesLoop() {
-	milestone := uint32(0)
-	for {
-		select {
-		case <-time.After(100 * time.Millisecond):
-			m.handleTimeDataFun(&isc.TimeData{
-				MilestoneIndex: milestone,
-				Time:           time.Now(),
-			})
-			milestone++
-		case <-m.stopChannel:
-			return
-		}
-	}
-}*/
-
-/*AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
-DetachFromAliasOutput()
-AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
-DetachFromOnLedgerRequest()
-AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
-DetachFromTxInclusionState()
-AttachToMilestones(NodeConnectionMilestonesHandlerFun)
-DetachFromMilestones()
-Close()
-
-+PublishTransaction(stateIndex uint32, tx *iotago.Transaction) error
-+PullLatestOutput()
-+PullTxInclusionState(txid iotago.TransactionID)
-PullOutputByID(*iotago.UTXOInput)
-*/

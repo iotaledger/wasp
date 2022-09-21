@@ -11,10 +11,10 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -25,13 +25,12 @@ import (
 )
 
 type MockedNode struct {
-	PubKey        *cryptolib.PublicKey
-	Env           *MockedEnv
-	NodeConn      *testchain.MockedNodeConn
-	ChainNodeConn chain.ChainNodeConnection
-	ChainCore     *testchain.MockedChainCore
-	StateManager  chain.StateManager
-	Log           *logger.Logger
+	PubKey       *cryptolib.PublicKey
+	Env          *MockedEnv
+	NodeConn     *testchain.MockedNodeConn
+	ChainCore    *testchain.MockedChainCore
+	StateManager chain.StateManager
+	Log          *logger.Logger
 }
 
 type MockedStateManagerMetrics struct{}
@@ -64,15 +63,23 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(store, stateSync)
 	})
-	ret.ChainNodeConn, err = nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
-	require.NoError(env.T, err)
-	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.ChainNodeConn, stateMgrMetrics, wal.NewDefault(), false, "", true, timers)
+	ret.StateManager = New(store, ret.ChainCore, stateMgrDomain, ret.NodeConn, stateMgrMetrics, wal.NewDefault(), false, "", true, timers)
 	ret.Log.Debugf("Mocked node %v created: id %v public key %v", nodeIndex, nodeID, ret.PubKey.String())
+
+	ret.NodeConn.RegisterChain(
+		env.ChainID,
+		func(oid iotago.OutputID, o iotago.Output) {
+			ret.StateManager.EnqueueAliasOutput(isc.NewAliasOutputWithID(o.(*iotago.AliasOutput), oid.UTXOInput()))
+		},
+		func(iotago.OutputID, iotago.Output) {},
+		func(*nodebridge.Milestone) {},
+	)
+
 	return ret
 }
 
 func (node *MockedNode) Start() {
-	node.ChainNodeConn.AttachToAliasOutput(node.StateManager.EnqueueAliasOutput)
+	// node.ChainNodeConn.AttachToAliasOutput(node.StateManager.EnqueueAliasOutput)
 	node.startTimer()
 	node.Log.Debugf("Mocked node %v started", node.PubKey.String())
 }
@@ -124,7 +131,8 @@ func (node *MockedNode) MakeNewStateTransition() {
 func (node *MockedNode) NextState(vstate state.VirtualStateAccess, chainOutput *isc.AliasOutputWithID) {
 	node.Log.Debugf("NextState: from state %d, output ID %v", vstate.BlockIndex(), isc.OID(chainOutput.ID()))
 	nextState, tx, aliasOutputID := testchain.NextState(node.Env.T, node.Env.StateKeyPair, vstate, chainOutput, time.Now())
-	go node.ChainNodeConn.PublishStateTransaction(vstate.BlockIndex(), tx)
+	cid := isc.ChainIDFromAliasID(chainOutput.GetAliasID())
+	go node.NodeConn.PublishTransaction(&cid, tx)
 	go node.StateManager.EnqueueStateCandidateMsg(nextState, aliasOutputID)
 	node.Log.Debugf("NextState: result state %d, output ID %v", nextState.BlockIndex(), isc.OID(aliasOutputID))
 }

@@ -25,6 +25,7 @@ func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
+	// env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// send requests from many different wallets to speed things up

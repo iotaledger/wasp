@@ -11,7 +11,7 @@ TEST_ARG=
 
 BUILD_PKGS=./ ./tools/wasp-cli/ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
-INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) 
+INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
 all: build-lint
 
@@ -64,5 +64,9 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build
+deps-versions:
+	@grep -n "====" packages/testutil/privtangle/privtangle.go | \
+		awk -F ":" '{ print $$1 }' | \
+		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
+.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build deps-versions

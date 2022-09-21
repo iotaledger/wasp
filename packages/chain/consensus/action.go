@@ -44,7 +44,6 @@ func (c *consensus) takeAction() {
 	c.runVMIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
-	c.pullInclusionStateIfNeeded()
 }
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
@@ -387,8 +386,11 @@ func (c *consensus) postTransactionIfNeeded() {
 	}
 	var logMsgTypeStr string
 	var logMsgStateIndexStr string
+
+	// `c.publishTx` takes care of waiting for the tx to confirm, and handled re-attchment/promotions
+	c.workflow.setTransactionPosted()
 	if c.resultState == nil { // governance transaction
-		if err := c.nodeConn.PublishGovernanceTransaction(c.finalTx); err != nil {
+		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing gov transaction: %w", err)
 			return
 		}
@@ -396,15 +398,17 @@ func (c *consensus) postTransactionIfNeeded() {
 		logMsgStateIndexStr = ""
 	} else {
 		stateIndex := c.resultState.BlockIndex()
-		if err := c.nodeConn.PublishStateTransaction(stateIndex, c.finalTx); err != nil {
+		if err := c.publishTx(c.chain.ID(), c.finalTx); err != nil {
 			c.log.Errorf("postTransaction: error publishing state transaction: %v", err)
 			return
 		}
 		logMsgTypeStr = "STATE"
 		logMsgStateIndexStr = fmt.Sprintf(" for state %v", stateIndex)
 	}
+	c.workflow.setTransactionSeen()
+	c.workflow.setCompleted()
+	c.refreshConsensusInfo()
 
-	c.workflow.setTransactionPosted() // TODO: Fix it, retries should be in place for robustness.
 	logMsgStart := fmt.Sprintf("postTransaction: POSTED %s TRANSACTION%s:", logMsgTypeStr, logMsgStateIndexStr)
 	logMsgEnd := fmt.Sprintf("number of inputs: %d, outputs: %d", len(c.finalTx.Essence.Inputs), len(c.finalTx.Essence.Outputs))
 	txID, err := c.finalTx.ID()
@@ -413,30 +417,6 @@ func (c *consensus) postTransactionIfNeeded() {
 	} else {
 		c.log.Warnf("%s %s", logMsgStart, logMsgEnd)
 	}
-}
-
-// pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
-// starts immediately after finalization of the transaction, not after posting it
-func (c *consensus) pullInclusionStateIfNeeded() {
-	if !c.workflow.IsTransactionFinalized() {
-		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
-		return
-	}
-	if c.workflow.IsTransactionSeen() {
-		c.log.Debugf("pullInclusionState not needed: transaction already seen")
-		return
-	}
-	if time.Now().Before(c.pullInclusionStateDeadline) {
-		c.log.Debugf("pullInclusionState not needed: delayed till %v", c.pullInclusionStateDeadline)
-		return
-	}
-	finalTxID, err := c.finalTx.ID()
-	if err != nil {
-		c.log.Panicf("pullInclusionState: cannot calculate final transaction id: %v", err)
-	}
-	c.nodeConn.PullTxInclusionState(finalTxID)
-	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
-	c.log.Debugf("pullInclusionState: request for inclusion state sent")
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
@@ -507,7 +487,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		proposal, err := BatchProposalFromBytes(data)
 		if err != nil {
 			c.log.Errorf("receiveACS: wrong data received. Whole ACS ignored: %v", err)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		acs[i] = proposal
@@ -519,19 +499,19 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, contributor %v stateOutputID: %v ",
 				isc.OID(c.stateOutput.ID()), prop.ValidatorIndex, isc.OID(prop.StateOutputID))
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		if prop.ValidatorIndex >= c.committee.Size() {
 			c.log.Warnf("receiveACS: wrong validator index in ACS: committee size is %v, validator index is %v",
 				c.committee.Size(), prop.ValidatorIndex)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		contributors = append(contributors, prop.ValidatorIndex)
 		if _, already := contributorSet[prop.ValidatorIndex]; already {
 			c.log.Errorf("receiveACS: duplicate contributor %v in ACS", prop.ValidatorIndex)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		c.log.Debugf("receiveACS: contributor %v of ACS included", prop.ValidatorIndex)
@@ -558,7 +538,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		// reached nodes and we have give it a time. Should not happen often
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
 			c.stateOutput.GetStateIndex(), sessionID)
-		c.resetWorkflow()
+		c.resetWorkflowNoCheck()
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 		return
 	}
@@ -576,7 +556,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		// should not happen, unless insider attack
 		c.log.Errorf("receiveACS: inconsistent ACS. Reset workflow. State index: %d, ACS sessionID %d, reason: %v",
 			c.stateOutput.GetStateIndex(), sessionID, err)
-		c.resetWorkflow()
+		c.resetWorkflowNoCheck()
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 	}
 	c.consensusBatch = &BatchProposal{
@@ -607,38 +587,6 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 	}
 
 	c.runVMIfNeeded()
-}
-
-func (c *consensus) processTxInclusionState(msg *messages.TxInclusionStateMsg) {
-	if !c.workflow.IsTransactionFinalized() {
-		c.log.Debugf("processTxInclusionState: transaction not finalized -> skipping.")
-		return
-	}
-	finalTxID, err := c.finalTx.ID()
-	finalTxIDStr := isc.TxID(finalTxID)
-	if err != nil {
-		c.log.Panicf("processTxInclusionState: cannot calculate final transaction id: %v", err)
-	}
-	if msg.TxID != finalTxID {
-		c.log.Debugf("processTxInclusionState: current transaction id %v does not match the received one %v -> skipping.",
-			finalTxIDStr, isc.TxID(msg.TxID))
-		return
-	}
-	switch msg.State {
-	case "noTransaction":
-		c.log.Debugf("processTxInclusionState: transaction id %v is not known.", finalTxIDStr)
-	case "included":
-		c.workflow.setTransactionSeen()
-		c.workflow.setCompleted()
-		c.refreshConsensusInfo()
-		c.log.Debugf("processTxInclusionState: transaction id %s is included; workflow finished", finalTxIDStr)
-	case "conflicting":
-		c.workflow.setTransactionSeen()
-		c.log.Infof("processTxInclusionState: transaction id %s is conflicting; restarting consensus.", finalTxIDStr)
-		c.resetWorkflow()
-	default:
-		c.log.Warnf("processTxInclusionState: unknown inclusion state %s for transaction id %s; ignoring", msg.State, finalTxIDStr)
-	}
 }
 
 func (c *consensus) finalizeTransaction() (*iotago.Transaction, *isc.AliasOutputWithID, error) {
