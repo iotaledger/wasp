@@ -3,10 +3,10 @@ package v2
 import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/metrics"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/wal"
+	walpkg "github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
@@ -17,10 +17,10 @@ import (
 func Init(logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
 	chainsProvider chains.Provider,
-	metrics *metrics.Metrics,
+	metrics *metricspkg.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
-	wal *wal.WAL,
+	wal *walpkg.WAL,
 ) {
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
@@ -28,7 +28,7 @@ func Init(logger *loggerpkg.Logger,
 	vmService := services.NewVMService(logger, chainsProvider)
 	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, vmService, wal)
 	nodeService := services.NewNodeService(logger, networkProvider, registryProvider)
-	registryService := services.NewRegistryService(logger, chainsProvider, metrics, registryProvider, wal)
+	registryService := services.NewRegistryService(logger, chainsProvider, registryProvider)
 
 	controllersToLoad := []interfaces.APIController{
 		controllers.NewChainController(logger, chainService, nodeService, registryService),

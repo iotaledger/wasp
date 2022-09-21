@@ -3,26 +3,28 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
+	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/models"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 type ChainController struct {
-	logger          *logger.Logger
+	log *loggerpkg.Logger
+
 	chainService    interfaces.Chain
 	nodeService     interfaces.Node
 	registryService interfaces.Registry
 }
 
-func NewChainController(logger *logger.Logger, chainService interfaces.Chain, nodeService interfaces.Node, registryService interfaces.Registry) interfaces.APIController {
+func NewChainController(log *loggerpkg.Logger, chainService interfaces.Chain, nodeService interfaces.Node, registryService interfaces.Registry) interfaces.APIController {
 	return &ChainController{
-		logger:          logger,
+		log:             log,
 		chainService:    chainService,
 		nodeService:     nodeService,
 		registryService: registryService,
@@ -55,7 +57,7 @@ func (c *ChainController) deactivateChain(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-func (c *ChainController) getChainInfo(e echo.Context) error {
+func (c *ChainController) getCommitteeInfo(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
 		return err
@@ -82,7 +84,7 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfo := models.ChainInfo{
+	chainInfo := models.NodeInfoResponse{
 		ChainID:        chainID.String(),
 		Active:         chainRecord.Active,
 		StateAddress:   committeeInfo.Address.String(),
@@ -105,12 +107,12 @@ func (c *ChainController) getContracts(e echo.Context) error {
 		return err
 	}
 
-	contractList := make([]models.ContractInfo, 0, len(contracts))
+	contractList := make([]models.ContractInfoResponse, 0, len(contracts))
 
-	for hname, contract := range contracts {
-		contractInfo := models.ContractInfo{
+	for hName, contract := range contracts {
+		contractInfo := models.ContractInfoResponse{
 			Description: contract.Description,
-			HName:       hname,
+			HName:       hName,
 			Name:        contract.Name,
 			ProgramHash: contract.ProgramHash,
 		}
@@ -121,24 +123,90 @@ func (c *ChainController) getContracts(e echo.Context) error {
 	return e.JSON(http.StatusOK, contractList)
 }
 
+func (c *ChainController) getChainInfo(e echo.Context) error {
+	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	if err != nil {
+		return err
+	}
+
+	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
+	if err != nil {
+		return err
+	}
+
+	chainInfoResponse := models.ChainInfoResponse{
+		ChainID:         chainInfo.ChainID.String(),
+		ChainOwnerID:    chainInfo.ChainOwnerID,
+		Description:     chainInfo.Description,
+		GasFeePolicy:    chainInfo.GasFeePolicy,
+		MaxBlobSize:     chainInfo.MaxBlobSize,
+		MaxEventSize:    chainInfo.MaxEventSize,
+		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+	}
+
+	return e.JSON(http.StatusOK, chainInfoResponse)
+}
+
+func (c *ChainController) getChainList(e echo.Context) error {
+	chainIDs, err := c.chainService.GetAllChainIDs()
+	if err != nil {
+		return err
+	}
+
+	chainList := models.ChainListResponse{}
+
+	for _, chainID := range chainIDs {
+		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
+		if err != nil {
+			return err
+		}
+
+		chainInfoResponse := models.ChainInfoResponse{
+			ChainID:         chainInfo.ChainID.String(),
+			ChainOwnerID:    chainInfo.ChainOwnerID,
+			Description:     chainInfo.Description,
+			GasFeePolicy:    chainInfo.GasFeePolicy,
+			MaxBlobSize:     chainInfo.MaxBlobSize,
+			MaxEventSize:    chainInfo.MaxEventSize,
+			MaxEventsPerReq: chainInfo.MaxEventsPerReq,
+		}
+
+		chainList = append(chainList, &chainInfoResponse)
+	}
+
+	return e.JSON(http.StatusOK, chainList)
+}
+
 func (c *ChainController) RegisterPublic(publicAPI echoswagger.ApiGroup) {
 }
 
 func (c *ChainController) RegisterAdmin(adminAPI echoswagger.ApiGroup) {
 	adminAPI.POST(routes.ActivateChain(":chainID"), c.activateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
-		SetSummary("Activate a chain").
-		SetOperationId("activateChain")
+		SetOperationId("activateChain").
+		SetSummary("Activate a chain")
 
 	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (string)").
+		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
-	adminAPI.GET(routes.GetChainInfo(":chainID"), c.getChainInfo).
+	adminAPI.GET(routes.GetChainCommitteeInfo(":chainID"), c.getCommitteeInfo).
 		AddParamPath("", "chainID", "ChainID (string)").
+		SetOperationId("getChainCommitteeInfo").
 		SetSummary("Get basic chain info.")
 
 	adminAPI.GET(routes.GetChainContracts(":chainID"), c.getContracts).
 		AddParamPath("", "chainID", "ChainID (string)").
+		SetOperationId("getChainContracts").
 		SetSummary("Get all available chain contracts.")
+
+	adminAPI.GET(routes.GetChainList(), c.getChainList).
+		SetOperationId("getChainList").
+		SetSummary("Get a list of all chains.")
+
+	adminAPI.GET(routes.GetChainInfo(":chainID"), c.getChainInfo).
+		AddParamPath("", "chainID", "ChainID (string)").
+		SetOperationId("getChainInfo").
+		SetSummary("Get information about a specific chain.")
 }

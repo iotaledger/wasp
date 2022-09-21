@@ -2,31 +2,32 @@ package services
 
 import (
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/chain"
+	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/metrics"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/wal"
+	walpkg "github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
 type ChainService struct {
-	logger *logger.Logger
+	log *logger.Logger
 
 	chainsProvider   chains.Provider
-	metrics          *metrics.Metrics
+	metrics          *metricspkg.Metrics
 	registryProvider registry.Provider
 	vmService        interfaces.VM
-	wal              *wal.WAL
+	wal              *walpkg.WAL
 }
 
-func NewChainService(logger *logger.Logger, chainsProvider chains.Provider, metrics *metrics.Metrics, registryProvider registry.Provider, vmService interfaces.VM, wal *wal.WAL) interfaces.Chain {
+func NewChainService(log *logger.Logger, chainsProvider chains.Provider, metrics *metricspkg.Metrics, registryProvider registry.Provider, vmService interfaces.VM, wal *walpkg.WAL) interfaces.Chain {
 	return &ChainService{
-		logger: logger,
+		log: log,
 
 		chainsProvider:   chainsProvider,
 		metrics:          metrics,
@@ -42,7 +43,7 @@ func (c *ChainService) ActivateChain(chainID *isc.ChainID) error {
 		return err
 	}
 
-	c.logger.Debugw("calling Chains.Activate", "chainID", chainID.String())
+	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
 
 	err = c.chainsProvider().
 		Activate(chainRecord, c.registryProvider, c.metrics, c.wal)
@@ -56,17 +57,43 @@ func (c *ChainService) DeactivateChain(chainID *isc.ChainID) error {
 		return err
 	}
 
-	c.logger.Debugw("calling Chains.Activate", "chainID", chainID.String())
+	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
 
 	err = c.chainsProvider().Deactivate(chainRecord)
 
 	return err
 }
 
-func (c *ChainService) GetChainByID(chainID *isc.ChainID) chain.Chain {
+func (c *ChainService) GetChainByID(chainID *isc.ChainID) chainpkg.Chain {
 	chain := c.chainsProvider().Get(chainID, true)
 
 	return chain
+}
+
+func (c *ChainService) GetAllChainIDs() ([]*isc.ChainID, error) {
+	records, err := c.registryProvider().GetChainRecords()
+	if err != nil {
+		return nil, err
+	}
+
+	chainIDs := make([]*isc.ChainID, 0, len(records))
+
+	for _, chainRecord := range records {
+		chainIDs = append(chainIDs, &chainRecord.ChainID)
+	}
+
+	return chainIDs, nil
+}
+
+func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (dto.ChainInfo, error) {
+	info, err := c.vmService.CallViewByChainID(chainID, governance.Contract.Name, governance.ViewGetChainInfo.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	chainInfo, err := governance.GetChainInfo(info)
+
+	return chainInfo, err
 }
 
 func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error) {

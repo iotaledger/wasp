@@ -1,10 +1,10 @@
 package services
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/chain"
+	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -19,9 +19,9 @@ type VMService struct {
 	chainsProvider chains.Provider
 }
 
-func NewVMService(logger *logger.Logger, chainsProvider chains.Provider) interfaces.VM {
+func NewVMService(log *logger.Logger, chainsProvider chains.Provider) interfaces.VM {
 	return &VMService{
-		logger: logger,
+		logger: log,
 
 		chainsProvider: chainsProvider,
 	}
@@ -31,13 +31,13 @@ func (v *VMService) CallViewByChainID(chainID *isc.ChainID, scName, funName stri
 	chain := v.chainsProvider().Get(chainID)
 
 	if chain == nil {
-		return nil, fmt.Errorf("Chain not found")
+		return nil, errors.New("chain not found")
 	}
 
 	return v.CallView(chain, scName, funName, params)
 }
 
-func (v *VMService) CallView(chain chain.Chain, scName, funName string, params dict.Dict) (dict.Dict, error) {
+func (v *VMService) CallView(chain chainpkg.Chain, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	context := viewcontext.New(chain)
 
 	var ret dict.Dict

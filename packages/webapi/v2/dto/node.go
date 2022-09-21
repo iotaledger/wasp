@@ -1,14 +1,14 @@
 package dto
 
 type ChainNodeStatus struct {
-	Node         PeeringNodeStatus
-	ForCommittee bool
-	ForAccess    bool
 	AccessAPI    string
+	ForAccess    bool
+	ForCommittee bool
+	Node         PeeringNodeStatus
 }
 
 type ChainNodeInfo struct {
-	CommitteeNodes []*ChainNodeStatus
 	AccessNodes    []*ChainNodeStatus
 	CandidateNodes []*ChainNodeStatus
+	CommitteeNodes []*ChainNodeStatus
 }

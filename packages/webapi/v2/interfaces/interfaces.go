@@ -1,12 +1,13 @@
 package interfaces
 
 import (
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 type APIController interface {
@@ -17,7 +18,9 @@ type APIController interface {
 type Chain interface {
 	ActivateChain(chainID *isc.ChainID) error
 	DeactivateChain(chainID *isc.ChainID) error
+	GetAllChainIDs() ([]*isc.ChainID, error)
 	GetChainByID(chainID *isc.ChainID) chain.Chain
+	GetChainInfoByChainID(chainID *isc.ChainID) (dto.ChainInfo, error)
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
 }
 

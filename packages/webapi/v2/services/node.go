@@ -2,33 +2,33 @@ package services
 
 import (
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/chain"
+	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	models2 "github.com/iotaledger/wasp/packages/webapi/v2/dto"
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
 type NodeService struct {
-	logger *logger.Logger
+	log *logger.Logger
 
 	networkProvider  peering.NetworkProvider
 	registryProvider registry.Provider
 }
 
-func NewNodeService(logger *logger.Logger, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.Node {
+func NewNodeService(log *logger.Logger, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.Node {
 	return &NodeService{
-		logger: logger,
+		log: log,
 
 		networkProvider:  networkProvider,
 		registryProvider: registryProvider,
 	}
 }
 
-func (c *NodeService) GetNodeInfo(chain chain.Chain) (*models2.ChainNodeInfo, error) {
+func (c *NodeService) GetNodeInfo(chain chainpkg.Chain) (*dto.ChainNodeInfo, error) {
 	committeeInfo := chain.GetCommitteeInfo()
 
 	dkShare, err := c.registryProvider().LoadDKShare(committeeInfo.Address)
@@ -71,7 +71,7 @@ func (c *NodeService) GetNodeInfo(chain chain.Chain) (*models2.ChainNodeInfo, er
 		return nil, err
 	}
 
-	chainNodeInfo := models2.ChainNodeInfo{
+	chainNodeInfo := dto.ChainNodeInfo{
 		AccessNodes:    accessNodes,
 		CandidateNodes: filteredCandidateNodes,
 		CommitteeNodes: committeeNodes,
@@ -85,8 +85,8 @@ func getCommitteeNodes(
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
-) []*models2.ChainNodeStatus {
-	nodes := make([]*models2.ChainNodeStatus, 0)
+) []*dto.ChainNodeStatus {
+	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
 		nodes = append(nodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
@@ -102,8 +102,8 @@ func getAccessNodes(
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
-) []*models2.ChainNodeStatus {
-	nodes := make([]*models2.ChainNodeStatus, 0)
+) []*dto.ChainNodeStatus {
+	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
@@ -128,8 +128,8 @@ func getCandidateNodes(
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
-) ([]*models2.ChainNodeStatus, error) {
-	nodes := make([]*models2.ChainNodeStatus, 0)
+) ([]*dto.ChainNodeStatus, error) {
+	nodes := make([]*dto.ChainNodeStatus, 0)
 
 	for _, c := range candidateNodes {
 		pubKey, err := cryptolib.NewPublicKeyFromBytes(c.NodePubKey)
@@ -151,9 +151,9 @@ func makeChainNodeStatus(
 	pubKey *cryptolib.PublicKey,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
 	candidateNodes map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo,
-) *models2.ChainNodeStatus {
-	cns := models2.ChainNodeStatus{
-		Node: models2.PeeringNodeStatus{
+) *dto.ChainNodeStatus {
+	cns := dto.ChainNodeStatus{
+		Node: dto.PeeringNodeStatus{
 			PubKey: pubKey.String(),
 		},
 	}

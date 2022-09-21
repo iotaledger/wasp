@@ -4,9 +4,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
@@ -14,19 +12,15 @@ type RegistryService struct {
 	logger *logger.Logger
 
 	chainsProvider   chains.Provider
-	metrics          *metrics.Metrics
 	registryProvider registry.Provider
-	wal              *wal.WAL
 }
 
-func NewRegistryService(logger *logger.Logger, chainsProvider chains.Provider, metrics *metrics.Metrics, registryProvider registry.Provider, wal *wal.WAL) interfaces.Registry {
+func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, registryProvider registry.Provider) interfaces.Registry {
 	return &RegistryService{
-		logger: logger,
+		logger: log,
 
 		chainsProvider:   chainsProvider,
-		metrics:          metrics,
 		registryProvider: registryProvider,
-		wal:              wal,
 	}
 }
 

@@ -51,8 +51,16 @@ func GetChainContracts(chainID string) string {
 	return "/adm/chains/" + chainID + "/contracts"
 }
 
+func GetChainCommitteeInfo(chainID string) string {
+	return "/adm/chains/" + chainID + "/committee"
+}
+
 func GetChainInfo(chainID string) string {
 	return "/adm/chains/" + chainID + "/info"
+}
+
+func GetChainList() string {
+	return "/adm/chains"
 }
 
 func ListChainRecords() string {
