@@ -319,11 +319,6 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	ncc.queryLatestChainStateUTXO()
 }
 
-// func (nc *nodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-// 	// TODO - is this needed? - output should come from INX subscription
-// 	// we are also constantly polling for confirmation in the promotion/reattachment logic
-// }
-
 func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	ncc := nc.chains[chainID.Key()]
 	if ncc == nil {

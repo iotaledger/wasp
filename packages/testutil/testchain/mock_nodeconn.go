@@ -78,14 +78,6 @@ func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	}
 }
 
-func (mncT *MockedNodeConn) PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID) {
-	if mncT.pullTxInclusionStateAllowedFun(chainID, txid) {
-		mncT.ledgers.GetLedger(chainID).PullTxInclusionState(mncT.id, txid)
-	} else {
-		mncT.log.Errorf("Pull transaction inclusion state for address %s txID %v is not allowed", chainID, isc.TxID(txid))
-	}
-}
-
 func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
 	if mncT.pullOutputByIDAllowedFun(chainID, id) {
 		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
