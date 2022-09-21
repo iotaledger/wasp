@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"

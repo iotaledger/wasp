@@ -11,8 +11,9 @@ import (
 )
 
 type APIController interface {
-	RegisterPublic(publicAPI echoswagger.ApiGroup)
-	RegisterAdmin(adminAPI echoswagger.ApiGroup)
+	RegisterExampleData(mocker Mocker)
+	RegisterPublic(publicAPI echoswagger.ApiGroup, mocker Mocker)
+	RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker Mocker)
 }
 
 type Chain interface {
@@ -35,4 +36,9 @@ type Node interface {
 type VM interface {
 	CallView(chain chain.Chain, scName, funName string, params dict.Dict) (dict.Dict, error)
 	CallViewByChainID(chainID *isc.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error)
+}
+
+type Mocker interface {
+	AddModel(i interface{})
+	GetMockedStruct(i interface{}) interface{}
 }

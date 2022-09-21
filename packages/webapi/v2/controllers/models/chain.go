@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
-type NodeInfoResponse struct {
+type CommitteeInfoResponse struct {
 	AccessNodes    []*dto.ChainNodeStatus `swagger:"desc(A list of all access nodes and their peering info.)"`
 	Active         bool                   `swagger:"desc(Whether or not the chain is active.)"`
 	CandidateNodes []*dto.ChainNodeStatus `swagger:"desc(A list of all candidate nodes and their peering info.)"`

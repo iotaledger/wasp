@@ -1,6 +1,9 @@
 package v2
 
 import (
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -10,8 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func Init(logger *loggerpkg.Logger,
@@ -24,6 +25,9 @@ func Init(logger *loggerpkg.Logger,
 ) {
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
+
+	mocker := NewMocker()
+	mocker.LoadMockFiles()
 
 	vmService := services.NewVMService(logger, chainsProvider)
 	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, vmService, wal)
@@ -41,7 +45,8 @@ func Init(logger *loggerpkg.Logger,
 		SetDescription("Admin endpoints")
 
 	for _, controller := range controllersToLoad {
-		controller.RegisterPublic(publicRouter)
-		controller.RegisterAdmin(adminRouter)
+		controller.RegisterExampleData(mocker)
+		controller.RegisterPublic(publicRouter, mocker)
+		controller.RegisterAdmin(adminRouter, mocker)
 	}
 }
