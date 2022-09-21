@@ -66,7 +66,7 @@ const WaspConfig = `
   },
   "profiling": {
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "writeProfiles": false,
+    "writeProfiles": true,
     "enabled": false
   },
   "wal": {

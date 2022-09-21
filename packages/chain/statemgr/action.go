@@ -65,7 +65,7 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	currentTime := time.Now()
 	if currentTime.After(sm.pullStateRetryTime) {
-		sm.nodeConn.PullLatestOutput(sm.chain.ID())
+		sm.nodeConn.PullLatestOutput()
 		sm.pullStateRetryTime = currentTime.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %s. Next pull in: %v",
 			sm.chain.ID().AsAddress(), sm.pullStateRetryTime.Sub(currentTime))
@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if !sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
 		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(block.ApprovingOutputID()))
-		sm.nodeConn.PullStateOutputByID(sm.chain.ID(), block.ApprovingOutputID())
+		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
 	}
 	return true
 }
