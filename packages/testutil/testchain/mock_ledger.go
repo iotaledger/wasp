@@ -8,26 +8,24 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type MockedLedger struct {
-	latestOutputID                         *iotago.UTXOInput
-	outputs                                map[iotago.UTXOInput]*iotago.AliasOutput
-	txIDs                                  map[iotago.TransactionID]bool
-	publishStateTransactionAllowedFun      func(stateIndex uint32, tx *iotago.Transaction) bool
-	publishGovernanceTransactionAllowedFun func(tx *iotago.Transaction) bool
-	pullLatestOutputAllowed                bool
-	pullTxInclusionStateAllowedFun         func(iotago.TransactionID) bool
-	pullOutputByIDAllowedFun               func(*iotago.UTXOInput) bool
-	pushOutputToNodesNeededFun             func(uint32, *iotago.Transaction, *iotago.UTXOInput, iotago.Output) bool
-	stateOutputHandlerFuns                 map[string]func(iotago.OutputID, iotago.Output)
-	outputHandlerFuns                      map[string]func(iotago.OutputID, iotago.Output)
-	inclusionStateEvents                   map[string]*events.Event
-	mutex                                  sync.RWMutex
-	log                                    *logger.Logger
+	latestOutputID                 *iotago.UTXOInput
+	outputs                        map[iotago.UTXOInput]*iotago.AliasOutput
+	txIDs                          map[iotago.TransactionID]bool
+	publishTransactionAllowedFun   func(tx *iotago.Transaction) bool
+	pullLatestOutputAllowed        bool
+	pullTxInclusionStateAllowedFun func(iotago.TransactionID) bool
+	pullOutputByIDAllowedFun       func(*iotago.UTXOInput) bool
+	pushOutputToNodesNeededFun     func(*iotago.Transaction, *iotago.UTXOInput, iotago.Output) bool
+	stateOutputHandlerFuns         map[string]func(iotago.OutputID, iotago.Output)
+	outputHandlerFuns              map[string]func(iotago.OutputID, iotago.Output)
+	inclusionStateEvents           map[string]*events.Event
+	mutex                          sync.RWMutex
+	log                            *logger.Logger
 }
 
 func NewMockedLedger(stateAddress iotago.Address, log *logger.Logger) (*MockedLedger, *isc.ChainID) {
@@ -87,62 +85,46 @@ func (mlT *MockedLedger) Unregister(nodeID string) {
 	delete(mlT.outputHandlerFuns, nodeID)
 }
 
-func (mlT *MockedLedger) PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error {
+func (mlT *MockedLedger) PublishTransaction(tx *iotago.Transaction) error {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
-	mlT.log.Debugf("Publishing state transaction for state %v", stateIndex)
-	if mlT.publishStateTransactionAllowedFun(stateIndex, tx) {
-		mlT.log.Debugf("Publishing state transaction for state %v allowed, transaction has %v inputs, %v outputs, %v unlock blocks",
-			stateIndex, len(tx.Essence.Inputs), len(tx.Essence.Outputs), len(tx.Unlocks))
+	if mlT.publishTransactionAllowedFun(tx) {
+		mlT.log.Debugf("Publishing transaction allowed, transaction has %v inputs, %v outputs, %v unlock blocks",
+			len(tx.Essence.Inputs), len(tx.Essence.Outputs), len(tx.Unlocks))
 		txID, err := tx.ID()
 		if err != nil {
-			mlT.log.Panicf("Publishing state transaction for state %v: cannot calculate transaction id: %v", stateIndex, err)
+			mlT.log.Panicf("Publishing transaction: cannot calculate transaction id: %v", err)
 		}
-		mlT.log.Debugf("Publishing state transaction for state %v: transaction id is %s", stateIndex, isc.TxID(txID))
+		mlT.log.Debugf("Publishing transaction: transaction id is %s", isc.TxID(txID))
 		mlT.txIDs[txID] = true
 		for index, output := range tx.Essence.Outputs {
 			aliasOutput, ok := output.(*iotago.AliasOutput)
 			outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index)).UTXOInput()
-			mlT.log.Debugf("Publishing state transaction for state %v: outputs[%v] has id %v", stateIndex, index, isc.OID(outputID))
+			mlT.log.Debugf("Publishing transaction: outputs[%v] has id %v", index, isc.OID(outputID))
 			if ok {
-				mlT.log.Debugf("Publishing state transaction for state %v: outputs[%v] is alias output", stateIndex, index)
+				mlT.log.Debugf("Publishing transaction: outputs[%v] is alias output", index)
 				mlT.outputs[*outputID] = aliasOutput
 				currentLatestOutput := mlT.getOutput(mlT.latestOutputID)
 				if currentLatestOutput == nil || currentLatestOutput.StateIndex < aliasOutput.StateIndex {
-					mlT.log.Debugf("Publishing state transaction for state %v: outputs[%v] is newer than current newest output (%v -> %v)",
-						stateIndex, index, currentLatestOutput.StateIndex, aliasOutput.StateIndex)
+					mlT.log.Debugf("Publishing transaction: outputs[%v] is newer than current newest output (%v -> %v)",
+						index, currentLatestOutput.StateIndex, aliasOutput.StateIndex)
 					mlT.latestOutputID = outputID
 				}
 			}
-			if mlT.pushOutputToNodesNeededFun(stateIndex, tx, outputID, output) {
-				mlT.log.Debugf("Publishing state transaction for state %v: pushing it to nodes", stateIndex)
+			if mlT.pushOutputToNodesNeededFun(tx, outputID, output) {
+				mlT.log.Debugf("Publishing transaction: pushing it to nodes")
 				for nodeID, handler := range mlT.stateOutputHandlerFuns {
-					mlT.log.Debugf("Publishing state transaction for state %v: pushing it to node %v", stateIndex, nodeID)
+					mlT.log.Debugf("Publishing transaction: pushing it to node %v", nodeID)
 					go handler(outputID.ID(), output)
 				}
 			} else {
-				mlT.log.Debugf("Publishing state transaction for state %v: pushing it to nodes not needed", stateIndex)
+				mlT.log.Debugf("Publishing transaction: pushing it to nodes not needed")
 			}
 		}
 		return nil
 	}
-	return fmt.Errorf("Publishing state transaction for state %v not allowed", stateIndex)
-}
-
-func (mlT *MockedLedger) PublishGovernanceTransaction(tx *iotago.Transaction) error {
-	mlT.log.Debugf("Publishing governance rotation transaction")
-	if mlT.publishGovernanceTransactionAllowedFun(tx) {
-		mlT.log.Debugf("Publishing governance rotation transaction allowed, transaction has %v inputs, %v outputs, %v unlock blocks",
-			len(tx.Essence.Inputs), len(tx.Essence.Outputs), len(tx.Unlocks))
-		txID, err := tx.ID()
-		if err != nil {
-			mlT.log.Panicf("Publishing governance rotation transaction: cannot calculate transaction id: %v", err)
-		}
-		mlT.log.Debugf("Publishing governance rotation transaction %s", isc.TxID(txID))
-		return nil
-	}
-	return fmt.Errorf("Publishing governance rotation transaction not allowed")
+	return fmt.Errorf("Publishing transaction not allowed")
 }
 
 func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
@@ -246,43 +228,15 @@ func (mlT *MockedLedger) getOutput(id *iotago.UTXOInput) *iotago.AliasOutput {
 	return nil
 }
 
-func (mlT *MockedLedger) AttachTxInclusionStateEvents(nodeID string, handler chain.NodeConnectionInclusionStateHandlerFun) (*events.Closure, error) {
-	mlT.mutex.Lock()
-	defer mlT.mutex.Unlock()
-
-	closure := events.NewClosure(handler)
-	event, ok := mlT.inclusionStateEvents[nodeID]
-	if !ok {
-		event = events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
-		})
-		mlT.inclusionStateEvents[nodeID] = event
-	}
-	event.Hook(closure)
-	return closure, nil
-}
-
-func (mlT *MockedLedger) DetachTxInclusionStateEvents(nodeID string, closure *events.Closure) error {
-	mlT.mutex.Lock()
-	defer mlT.mutex.Unlock()
-
-	event, ok := mlT.inclusionStateEvents[nodeID]
-	if !ok {
-		mlT.log.Panicf("Cannot dettach from event of node %v: no such event", nodeID)
-	}
-	event.Detach(closure)
-	return nil
-}
-
 func (mlT *MockedLedger) SetPublishStateTransactionAllowed(flag bool) {
-	mlT.SetPublishStateTransactionAllowedFun(func(uint32, *iotago.Transaction) bool { return flag })
+	mlT.SetPublishStateTransactionAllowedFun(func(*iotago.Transaction) bool { return flag })
 }
 
-func (mlT *MockedLedger) SetPublishStateTransactionAllowedFun(fun func(stateIndex uint32, tx *iotago.Transaction) bool) {
+func (mlT *MockedLedger) SetPublishStateTransactionAllowedFun(fun func(tx *iotago.Transaction) bool) {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
-	mlT.publishStateTransactionAllowedFun = fun
+	mlT.publishTransactionAllowedFun = fun
 }
 
 func (mlT *MockedLedger) SetPublishGovernanceTransactionAllowed(flag bool) {
@@ -293,7 +247,7 @@ func (mlT *MockedLedger) SetPublishGovernanceTransactionAllowedFun(fun func(tx *
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
-	mlT.publishGovernanceTransactionAllowedFun = fun
+	mlT.publishTransactionAllowedFun = fun
 }
 
 func (mlT *MockedLedger) SetPullLatestOutputAllowed(flag bool) {
@@ -326,10 +280,10 @@ func (mlT *MockedLedger) SetPullOutputByIDAllowedFun(fun func(outputID *iotago.U
 }
 
 func (mlT *MockedLedger) SetPushOutputToNodesNeeded(flag bool) {
-	mlT.SetPushOutputToNodesNeededFun(func(uint32, *iotago.Transaction, *iotago.UTXOInput, iotago.Output) bool { return flag })
+	mlT.SetPushOutputToNodesNeededFun(func(*iotago.Transaction, *iotago.UTXOInput, iotago.Output) bool { return flag })
 }
 
-func (mlT *MockedLedger) SetPushOutputToNodesNeededFun(fun func(state uint32, tx *iotago.Transaction, outputID *iotago.UTXOInput, output iotago.Output) bool) {
+func (mlT *MockedLedger) SetPushOutputToNodesNeededFun(fun func(tx *iotago.Transaction, outputID *iotago.UTXOInput, output iotago.Output) bool) {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
