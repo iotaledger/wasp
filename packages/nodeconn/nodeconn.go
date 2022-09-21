@@ -16,7 +16,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/events"
-	hivecore "github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/workerpool"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -51,7 +50,6 @@ type nodeConn struct {
 	chains        map[string]*ncChain // key = iotago.Address.Key()
 	chainsLock    sync.RWMutex
 	indexerClient nodeclient.IndexerClient
-	milestones    *events.Event
 	metrics       nodeconnmetrics.NodeConnectionMetrics
 	log           *logger.Logger
 	nodeBridge    *nodebridge.NodeBridge
@@ -103,13 +101,10 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 	}
 
 	nc := nodeConn{
-		ctx:           ctx,
-		chains:        make(map[string]*ncChain),
-		chainsLock:    sync.RWMutex{},
-		indexerClient: indexerClient,
-		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
-		}),
+		ctx:                     ctx,
+		chains:                  make(map[string]*ncChain),
+		chainsLock:              sync.RWMutex{},
+		indexerClient:           indexerClient,
 		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
 		log:                     log.Named("nc"),
 		nodeBridge:              nodeBridge,
@@ -122,7 +117,6 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 	nc.reattachWorkerPool.Start()
 
 	go nc.subscribeToLedgerUpdates()
-	nc.enableMilestoneTrigger()
 
 	return &nc
 }
@@ -228,21 +222,6 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	return nil
 }
 
-func (nc *nodeConn) enableMilestoneTrigger() {
-	nc.nodeBridge.Events.LatestMilestoneChanged.Hook(hivecore.NewClosure(func(metadata *nodebridge.Milestone) {
-		milestone := nodeclient.MilestoneInfo{
-			MilestoneID: metadata.MilestoneID.String(),
-			Index:       metadata.Milestone.Index,
-			Timestamp:   metadata.Milestone.Timestamp,
-		}
-
-		nc.log.Debugf("Milestone received, index=%v, timestamp=%v", milestone.Index, milestone.Timestamp)
-
-		nc.metrics.GetInMilestone().CountLastMessage(milestone)
-		nc.milestones.Trigger(&milestone)
-	}))
-}
-
 func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
 	nc.metrics = metrics
 }
@@ -252,7 +231,7 @@ func (nc *nodeConn) RegisterChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
-	milestoneHandler func(*nodeclient.MilestoneInfo),
+	milestoneHandler func(*nodebridge.Milestone),
 ) {
 	nc.metrics.SetRegistered(chainID)
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler, milestoneHandler)
@@ -299,15 +278,15 @@ func (nc *nodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transact
 }
 
 // AttachMilestones implements chain.NodeConnection.
-func (nc *nodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
+func (nc *nodeConn) AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure {
 	closure := events.NewClosure(handler)
-	nc.milestones.Hook(closure)
+	nc.nodeBridge.Events.LatestMilestoneChanged.Hook(closure)
 	return closure
 }
 
 // DetachMilestones implements chain.NodeConnection.
 func (nc *nodeConn) DetachMilestones(attachID *events.Closure) {
-	nc.milestones.Detach(attachID)
+	nc.nodeBridge.Events.LatestMilestoneChanged.Detach(attachID)
 }
 
 func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {

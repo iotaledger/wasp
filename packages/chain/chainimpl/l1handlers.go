@@ -3,15 +3,16 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (c *chainObj) handleMilestone(milestonePointer *nodeclient.MilestoneInfo) {
+func (c *chainObj) handleMilestone(metadata *nodebridge.Milestone) {
+	c.log.Debugf("received milestone index : %d", metadata.Milestone.Index)
 	if c.consensus != nil {
-		c.consensus.SetTimeData(time.Unix(int64(milestonePointer.Timestamp), 0))
+		c.consensus.SetTimeData(time.Unix(int64(metadata.Milestone.Timestamp), 0))
 	}
 }
 

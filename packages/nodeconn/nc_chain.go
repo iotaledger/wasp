@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/inx-app/nodebridge"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -35,7 +36,7 @@ func newNCChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
-	milestoneHandler func(*nodeclient.MilestoneInfo),
+	milestoneHandler func(*nodebridge.Milestone),
 ) *ncChain {
 	ncc := ncChain{
 		nc:                 nc,

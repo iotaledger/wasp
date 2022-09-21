@@ -11,8 +11,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -72,7 +72,7 @@ func NewMockedNode(env *MockedEnv, nodeIndex int, timers StateManagerTimers) *Mo
 			ret.StateManager.EnqueueAliasOutput(isc.NewAliasOutputWithID(o.(*iotago.AliasOutput), oid.UTXOInput()))
 		},
 		func(iotago.OutputID, iotago.Output) {},
-		func(*nodeclient.MilestoneInfo) {},
+		func(*nodebridge.Milestone) {},
 	)
 
 	return ret

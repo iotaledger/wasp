@@ -9,8 +9,8 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -93,18 +93,12 @@ type Committee interface {
 	GetRandomValidators(upToN int) []*cryptolib.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
-type (
-	NodeConnectionAliasOutputHandlerFun     func(*isc.AliasOutputWithID)
-	NodeConnectionOnLedgerRequestHandlerFun func(isc.OnLedgerRequest)
-	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
-)
-
 type NodeConnection interface {
 	RegisterChain(
 		chainID *isc.ChainID,
 		stateOutputHandler,
 		outputHandler func(iotago.OutputID, iotago.Output),
-		milestoneHandler func(*nodeclient.MilestoneInfo),
+		milestoneHandler func(*nodebridge.Milestone),
 	)
 	UnregisterChain(chainID *isc.ChainID)
 
@@ -112,7 +106,7 @@ type NodeConnection interface {
 	PullLatestOutput(chainID *isc.ChainID)
 	PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput)
 
-	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
+	AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
 	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)

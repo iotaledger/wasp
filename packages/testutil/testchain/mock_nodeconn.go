@@ -5,8 +5,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -52,7 +52,7 @@ func (mncT *MockedNodeConn) RegisterChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
-	milestoneHandler func(*nodeclient.MilestoneInfo),
+	milestoneHandler func(*nodebridge.Milestone),
 ) {
 	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
 	mncT.attachMilestonesClosures[*chainID] = mncT.AttachMilestones(milestoneHandler)
@@ -132,7 +132,7 @@ func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.Ch
 	mncT.pullOutputByIDAllowedFun = fun
 }
 
-func (mncT *MockedNodeConn) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
+func (mncT *MockedNodeConn) AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure {
 	return mncT.ledgers.AttachMilestones(handler)
 }
 

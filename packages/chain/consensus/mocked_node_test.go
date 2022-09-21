@@ -7,8 +7,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
@@ -111,8 +111,8 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			ret.receiveStateOutput(isc.NewAliasOutputWithID(o.(*iotago.AliasOutput), oid.UTXOInput()))
 		},
 		func(iotago.OutputID, iotago.Output) {},
-		func(milestonePointer *nodeclient.MilestoneInfo) {
-			ret.Consensus.SetTimeData(time.Unix(int64(milestonePointer.Timestamp), 0))
+		func(metadata *nodebridge.Milestone) {
+			ret.Consensus.SetTimeData(time.Unix(int64(metadata.Milestone.Timestamp), 0))
 		},
 	)
 
