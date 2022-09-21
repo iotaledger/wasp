@@ -507,7 +507,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		proposal, err := BatchProposalFromBytes(data)
 		if err != nil {
 			c.log.Errorf("receiveACS: wrong data received. Whole ACS ignored: %v", err)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		acs[i] = proposal
@@ -519,19 +519,19 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		if !prop.StateOutputID.Equals(c.stateOutput.ID()) {
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, contributor %v stateOutputID: %v ",
 				isc.OID(c.stateOutput.ID()), prop.ValidatorIndex, isc.OID(prop.StateOutputID))
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		if prop.ValidatorIndex >= c.committee.Size() {
 			c.log.Warnf("receiveACS: wrong validator index in ACS: committee size is %v, validator index is %v",
 				c.committee.Size(), prop.ValidatorIndex)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		contributors = append(contributors, prop.ValidatorIndex)
 		if _, already := contributorSet[prop.ValidatorIndex]; already {
 			c.log.Errorf("receiveACS: duplicate contributor %v in ACS", prop.ValidatorIndex)
-			c.resetWorkflow()
+			c.resetWorkflowNoCheck()
 			return
 		}
 		c.log.Debugf("receiveACS: contributor %v of ACS included", prop.ValidatorIndex)
@@ -558,7 +558,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		// reached nodes and we have give it a time. Should not happen often
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
 			c.stateOutput.GetStateIndex(), sessionID)
-		c.resetWorkflow()
+		c.resetWorkflowNoCheck()
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 		return
 	}
@@ -576,7 +576,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64, logIndex journ
 		// should not happen, unless insider attack
 		c.log.Errorf("receiveACS: inconsistent ACS. Reset workflow. State index: %d, ACS sessionID %d, reason: %v",
 			c.stateOutput.GetStateIndex(), sessionID, err)
-		c.resetWorkflow()
+		c.resetWorkflowNoCheck()
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 	}
 	c.consensusBatch = &BatchProposal{
