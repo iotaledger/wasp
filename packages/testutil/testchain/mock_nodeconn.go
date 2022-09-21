@@ -22,16 +22,18 @@ type MockedNodeConn struct {
 	pullTxInclusionStateAllowedFun         func(chainID *isc.ChainID, txID iotago.TransactionID) bool
 	pullOutputByIDAllowedFun               func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool
 	stopChannel                            chan bool
+	attachMilestonesClosures               map[isc.ChainID]*events.Closure
 }
 
 var _ chain.NodeConnection = &MockedNodeConn{}
 
 func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logger) *MockedNodeConn {
 	result := &MockedNodeConn{
-		log:         log.Named("mnc"),
-		id:          id,
-		ledgers:     ledgers,
-		stopChannel: make(chan bool),
+		log:                      log.Named("mnc"),
+		id:                       id,
+		ledgers:                  ledgers,
+		stopChannel:              make(chan bool),
+		attachMilestonesClosures: make(map[isc.ChainID]*events.Closure),
 	}
 	result.SetPublishStateTransactionAllowed(true)
 	result.SetPublishGovernanceTransactionAllowed(true)
@@ -53,10 +55,12 @@ func (mncT *MockedNodeConn) RegisterChain(
 	milestoneHandler func(*nodeclient.MilestoneInfo),
 ) {
 	mncT.ledgers.GetLedger(chainID).Register(mncT.id, stateOutputHandler, outputHandler)
+	mncT.attachMilestonesClosures[*chainID] = mncT.AttachMilestones(milestoneHandler)
 }
 
 func (mncT *MockedNodeConn) UnregisterChain(chainID *isc.ChainID) {
 	mncT.ledgers.GetLedger(chainID).Unregister(mncT.id)
+	mncT.DetachMilestones(mncT.attachMilestonesClosures[*chainID])
 }
 
 func (mncT *MockedNodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
