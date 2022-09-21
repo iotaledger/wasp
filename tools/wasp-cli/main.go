@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -32,7 +33,7 @@ NOTE: this is alpha software, only suitable for testing purposes.`,
 }
 
 func init() {
-	rootCmd.AddCommand(completionCmd(rootCmd.Root().Name()))
+	rootCmd.AddCommand(completion.Command(rootCmd.Root().Name()))
 
 	authentication.Init(rootCmd)
 	log.Init(rootCmd)

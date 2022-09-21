@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -72,20 +71,6 @@ func (c *consensus) handlePeerLogIndexMsg(msg *messages.PeerLogIndexMsgIn) {
 			c.resetWorkflowNoCheck()
 		}
 	}
-}
-
-func (c *consensus) EnqueueTxInclusionsStateMsg(txID iotago.TransactionID, inclusionState string) {
-	c.eventInclusionStateMsgPipe.In() <- &messages.TxInclusionStateMsg{
-		TxID:  txID,
-		State: inclusionState,
-	}
-}
-
-func (c *consensus) handleTxInclusionState(msg *messages.TxInclusionStateMsg) {
-	c.log.Debugf("TxInclusionStateMsg received:  %s: '%s'", isc.TxID(msg.TxID), msg.State)
-	c.processTxInclusionState(msg)
-
-	c.takeAction()
 }
 
 func (c *consensus) EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
