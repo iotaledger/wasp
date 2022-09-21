@@ -8,11 +8,11 @@ import (
 )
 
 type NodeInfoResponse struct {
-	AccessNodes    []*dto.ChainNodeStatus `swagger:"desc(Access nodes and their peering info.)"`
+	AccessNodes    []*dto.ChainNodeStatus `swagger:"desc(A list of all access nodes and their peering info.)"`
 	Active         bool                   `swagger:"desc(Whether or not the chain is active)"`
-	CandidateNodes []*dto.ChainNodeStatus `swagger:"desc(Candidate nodes and their peering info.)"`
+	CandidateNodes []*dto.ChainNodeStatus `swagger:"desc(A list of all candidate nodes and their peering info.)"`
 	ChainID        string                 `swagger:"desc(ChainID (bech32-encoded))"`
-	CommitteeNodes []*dto.ChainNodeStatus `swagger:"desc(Committee nodes and their peering info.)"`
+	CommitteeNodes []*dto.ChainNodeStatus `swagger:"desc(A list of all committee nodes and their peering info.)"`
 	StateAddress   string                 `swagger:"desc(State address, if we are part of it.)"`
 }
 
@@ -23,16 +23,16 @@ type ContractInfoResponse struct {
 	ProgramHash hashing.HashValue `swagger:"desc(The hash of the contract)"`
 }
 
-type ContractsResponse []*ContractInfoResponse
+type ContractListResponse []*ContractInfoResponse
 
 type ChainInfoResponse struct {
-	ChainID         string
-	ChainOwnerID    isc.AgentID
-	Description     string
+	ChainID         string `swagger:"desc(ChainID (bech32-encoded))"`
+	ChainOwnerID    string `swagger:"desc(The chain owner address (bech32-encoded))"`
+	Description     string `swagger:"desc(The description of the chain)"`
 	GasFeePolicy    *gas.GasFeePolicy
-	MaxBlobSize     uint32
-	MaxEventSize    uint16
-	MaxEventsPerReq uint16
+	MaxBlobSize     uint32 `swagger:"desc(The maximum contract blob size)"`
+	MaxEventSize    uint16 `swagger:"desc(The maximum event size)"`                   // TODO: Clarify
+	MaxEventsPerReq uint16 `swagger:"desc(The maximum amount of events per request)"` // TODO: Clarify
 }
 
 type ChainListResponse []*ChainInfoResponse

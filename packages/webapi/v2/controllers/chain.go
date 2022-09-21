@@ -136,7 +136,7 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 
 	chainInfoResponse := models.ChainInfoResponse{
 		ChainID:         chainInfo.ChainID.String(),
-		ChainOwnerID:    chainInfo.ChainOwnerID,
+		ChainOwnerID:    chainInfo.ChainOwnerID.String(),
 		Description:     chainInfo.Description,
 		GasFeePolicy:    chainInfo.GasFeePolicy,
 		MaxBlobSize:     chainInfo.MaxBlobSize,
