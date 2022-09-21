@@ -25,7 +25,7 @@ func init() {
 var (
 	CoreComponent *app.CoreComponent
 
-	defaultRegistry *registry.Impl
+	defaultRegistry registry.Registry
 )
 
 func provide(c *dig.Container) error {
@@ -39,15 +39,18 @@ func provide(c *dig.Container) error {
 }
 
 func configure() error {
-	defaultRegistry = registry.NewRegistry(
-		CoreComponent.Logger(),
-		database.GetRegistryKVStore(),
-	)
+	logger := CoreComponent.Logger()
+
+	if ParamsRegistry.UseText {
+		defaultRegistry = registry.NewTextRegistry(logger, ParamsRegistry.FileName)
+	} else {
+		defaultRegistry = registry.NewRegistry(logger, database.GetRegistryKVStore())
+	}
 
 	return nil
 }
 
 // DefaultRegistry returns an initialized default registry.
-func DefaultRegistry() *registry.Impl {
+func DefaultRegistry() registry.Registry {
 	return defaultRegistry
 }
