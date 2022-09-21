@@ -137,6 +137,7 @@ func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainM
 	example := &model.ConsensusPipeMetrics{
 		EventStateTransitionMsgPipeSize: 0,
 		EventPeerLogIndexMsgPipeSize:    0,
+		EventInclusionStateMsgPipeSize:  0,
 		EventACSMsgPipeSize:             0,
 		EventVMResultMsgPipeSize:        0,
 		EventTimerMsgPipeSize:           0,

@@ -11,8 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -22,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/stretchr/testify/require"
 )
 
 var (

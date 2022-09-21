@@ -247,18 +247,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 	if err != nil {
 		return xerrors.Errorf("cannot load consensus journal: %w", err)
 	}
-	c.consensus = consensus.New(
-		c,
-		c.mempool,
-		cmt,
-		cmtPeerGroup,
-		c.pullMissingRequestsFromCommittee,
-		c.chainMetrics,
-		c.dssNode,
-		consensusJournal,
-		c.wal,
-		c.nodeConn.PublishTransaction,
-	)
+	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.dssNode, consensusJournal, c.wal)
 	c.setCommittee(cmt)
 	return nil
 }

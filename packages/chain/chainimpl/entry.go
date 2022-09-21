@@ -14,9 +14,9 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 		c.chainPeers.Detach(c.receiveChainPeerMessagesAttachID)
+		c.nodeConn.DetachFromOnLedgerRequest()
+		c.nodeConn.DetachFromAliasOutput()
 		c.eventChainTransition.Detach(c.eventChainTransitionClosure)
-
-		c.nodeConn.UnregisterChain(c.chainID)
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -32,6 +32,7 @@ func (c *chainObj) Dismiss(reason string) {
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
 		c.chainPeers.Close()
+		c.nodeConn.Close()
 
 		c.dismissChainMsgPipe.Close()
 		c.aliasOutputPipe.Close()

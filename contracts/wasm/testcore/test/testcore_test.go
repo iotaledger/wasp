@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
@@ -15,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/stretchr/testify/require"
 )
 
 func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.SoloContext {

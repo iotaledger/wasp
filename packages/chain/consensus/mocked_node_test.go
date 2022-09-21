@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -16,6 +15,7 @@ import (
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -57,7 +57,6 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 		SolidStates: make(map[uint32]state.VirtualStateAccess),
 		Log:         log,
 	}
-
 	ret.stateSync = coreutil.NewChainStateSync()
 	store := mapdb.NewMapDB()
 	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
@@ -93,6 +92,8 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	require.Equal(env.T, uint32(0), originState.BlockIndex())
 	require.True(env.T, ret.addNewState(originState))
 
+	chainNodeConn, err := nodeconnchain.NewChainNodeConnection(env.ChainID, ret.NodeConn, log)
+	require.NoError(env.T, err)
 	var peeringID peering.PeeringID
 	copy(peeringID[:], env.ChainID[:])
 	dss := dss_node.New(&peeringID, env.NetworkProviders[nodeIndex], ret.NodeKeyPair, log)
@@ -100,21 +101,9 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	cmtF := cmtN - int(cmt.Quorum())
 	registry, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), cmtN, cmtF, log)
 	require.NoError(env.T, err)
-
-	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), ret.NodeConn.PublishTransaction, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, chainNodeConn, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
-
-	ret.NodeConn.RegisterChain(
-		env.ChainID,
-		func(oid iotago.OutputID, o iotago.Output) {
-			ret.receiveStateOutput(isc.NewAliasOutputWithID(o.(*iotago.AliasOutput), oid.UTXOInput()))
-		},
-		func(iotago.OutputID, iotago.Output) {},
-		func(metadata *nodebridge.Milestone) {
-			ret.Consensus.SetTimeData(time.Unix(int64(metadata.Milestone.Timestamp), 0))
-		},
-	)
 
 	ret.doStateApproved(originState, env.InitStateOutput)
 
@@ -156,6 +145,7 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 			ret.doStateApproved(newState, isc.NewAliasOutputWithID(output, approvingOutputID))
 		}()
 	})
+	go ret.pullStateLoop()
 	ret.Log.Debugf("Mocked node %v started: id %v public key %v", ret.NodeIndex, ret.NodeID, ret.NodeKeyPair.GetPublicKey().String())
 	return ret
 }
@@ -181,24 +171,22 @@ func (n *mockedNode) addNewState(newState state.VirtualStateAccess) bool {
 		return false
 	}
 
-	if newStateIndex > 0 {
-		calcState := n.getState(newStateIndex - 1)
-		if calcState != nil {
-			block, err := newState.ExtractBlock()
-			if err != nil {
-				n.Log.Panicf("State manager mock: error extracting block: %v", err)
-			}
-			calcState = calcState.Copy()
-			err = calcState.ApplyBlock(block)
-			if err != nil {
-				n.Log.Panicf("State manager mock: error applying to previous state: %v", err)
-			}
-			calcState.Commit()
-			csCommitment := trie.RootCommitment(calcState.TrieNodeStore())
-			if !state.EqualCommitments(nsCommitment, csCommitment) {
-				n.Log.Panicf("State manager mock: calculated state commitment %s differs from new state commitment %s",
-					csCommitment, nsCommitment)
-			}
+	calcState := n.getState(newStateIndex - 1)
+	if calcState != nil {
+		block, err := newState.ExtractBlock()
+		if err != nil {
+			n.Log.Panicf("State manager mock: error extracting block: %v", err)
+		}
+		calcState = calcState.Copy()
+		err = calcState.ApplyBlock(block)
+		if err != nil {
+			n.Log.Panicf("State manager mock: error applying to previous state: %v", err)
+		}
+		calcState.Commit()
+		csCommitment := trie.RootCommitment(calcState.TrieNodeStore())
+		if !state.EqualCommitments(nsCommitment, csCommitment) {
+			n.Log.Panicf("State manager mock: calculated state commitment %s differs from new state commitment %s",
+				csCommitment, nsCommitment)
 		}
 	}
 
@@ -266,19 +254,23 @@ func (n *mockedNode) doStateApproved(newState state.VirtualStateAccess, newState
 		n.StateOutput.GetStateIndex(), trie.RootCommitment(newState.TrieNodeStore()), isc.OID(n.StateOutput.ID()))
 }
 
-func (n *mockedNode) receiveStateOutput(stateOutput *isc.AliasOutputWithID) { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
-	stateIndex := stateOutput.GetStateIndex()
-	if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
-		n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",
-			stateIndex, isc.OID(stateOutput.ID()))
-		vstate := n.getState(stateIndex)
-		if vstate == nil {
-			vstate = n.getStateFromNodes(stateIndex)
+func (n *mockedNode) pullStateLoop() { // State manager mock: when node is behind and tries to catchup using state output from L1 and blocks (virtual states in mocke environment) from other nodes
+	for {
+		time.Sleep(200 * time.Millisecond)
+		stateOutput := n.Env.Ledgers.GetLedger(n.Env.ChainID).GetLatestOutput()
+		stateIndex := stateOutput.GetStateIndex()
+		if stateOutput != nil && (stateIndex > n.StateOutput.GetStateIndex()) {
+			n.Log.Debugf("State manager mock (pullStateLoop): new state output received: index %v, id %v",
+				stateIndex, isc.OID(stateOutput.ID()))
+			vstate := n.getState(stateIndex)
 			if vstate == nil {
-				n.Log.Panicf("State manager mock (pullStateLoop): state obtained from nodes is nil")
+				vstate = n.getStateFromNodes(stateIndex)
+				if vstate == nil {
+					n.Log.Panicf("State manager mock (pullStateLoop): state obtained from nodes is nil")
+				}
 			}
+			n.doStateApproved(vstate, stateOutput)
 		}
-		n.doStateApproved(vstate, stateOutput)
 	}
 }
 

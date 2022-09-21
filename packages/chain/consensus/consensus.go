@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
@@ -33,6 +34,7 @@ type consensus struct {
 	committee                        chain.Committee
 	committeePeerGroup               peering.GroupProvider
 	mempool                          mempool_pkg.Mempool
+	nodeConn                         chain.ChainNodeConnection
 	vmRunner                         vm.VMRunner
 	currentState                     state.VirtualStateAccess
 	stateOutput                      *isc.AliasOutputWithID
@@ -60,6 +62,7 @@ type consensus struct {
 	eventDssIndexProposalMsgPipe     pipe.Pipe
 	eventDssSignatureMsgPipe         pipe.Pipe
 	eventPeerLogIndexMsgPipe         pipe.Pipe
+	eventInclusionStateMsgPipe       pipe.Pipe
 	eventACSMsgPipe                  pipe.Pipe
 	eventVMResultMsgPipe             pipe.Pipe
 	eventTimerMsgPipe                pipe.Pipe
@@ -77,7 +80,6 @@ type consensus struct {
 	consensusJournal                 journal.ConsensusJournal
 	consensusJournalLogIndex         journal.LogIndex // Index of the currently running log index.
 	wal                              chain.WAL
-	publishTx                        func(chainID *isc.ChainID, tx *iotago.Transaction) error
 }
 
 var _ chain.Consensus = &consensus{}
@@ -93,12 +95,12 @@ func New(
 	mempool mempool_pkg.Mempool,
 	committee chain.Committee,
 	peerGroup peering.GroupProvider,
+	nodeConn chain.ChainNodeConnection,
 	pullMissingRequestsFromCommittee bool,
 	consensusMetrics metrics.ConsensusMetrics,
 	dssNode dss_node.DSSNode,
 	consensusJournal journal.ConsensusJournal,
 	wal chain.WAL,
-	publishTx func(chainID *isc.ChainID, tx *iotago.Transaction) error,
 	timersOpt ...ConsensusTimers,
 ) chain.Consensus {
 	var timers ConsensusTimers
@@ -113,6 +115,7 @@ func New(
 		committee:                        committee,
 		committeePeerGroup:               peerGroup,
 		mempool:                          mempool,
+		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
 		workflow:                         newWorkflowStatus(false),
 		timers:                           timers,
@@ -121,6 +124,7 @@ func New(
 		eventDssIndexProposalMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventDssSignatureMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventPeerLogIndexMsgPipe:         pipe.NewLimitInfinitePipe(maxMsgBuffer),
+		eventInclusionStateMsgPipe:       pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventACSMsgPipe:                  pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventVMResultMsgPipe:             pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		eventTimerMsgPipe:                pipe.NewLimitInfinitePipe(1),
@@ -130,9 +134,14 @@ func New(
 		dssNode:                          dssNode,
 		consensusJournal:                 consensusJournal,
 		wal:                              wal,
-		publishTx:                        publishTx,
 	}
 	ret.receivePeerMessagesAttachID = ret.committeePeerGroup.Attach(peering.PeerMessageReceiverConsensus, ret.receiveCommitteePeerMessages) // TODO: Don't need to attach here at all.
+	ret.nodeConn.AttachToMilestones(func(milestonePointer *nodeclient.MilestoneInfo) {
+		ret.timeData = time.Unix(int64(milestonePointer.Timestamp), 0)
+	})
+	ret.nodeConn.AttachToTxInclusionState(func(txID iotago.TransactionID, inclusionState string) {
+		ret.EnqueueTxInclusionsStateMsg(txID, inclusionState)
+	})
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
@@ -160,6 +169,7 @@ func (c *consensus) IsReady() bool {
 }
 
 func (c *consensus) Close() {
+	c.nodeConn.DetachFromTxInclusionState()
 	c.committeePeerGroup.Detach(c.receivePeerMessagesAttachID)
 
 	c.eventStateTransitionMsgPipe.Close()
@@ -170,6 +180,7 @@ func (c *consensus) Close() {
 
 	c.eventDssSignatureMsgPipe.Close()
 	c.eventPeerLogIndexMsgPipe.Close()
+	c.eventInclusionStateMsgPipe.Close()
 	c.eventACSMsgPipe.Close()
 	c.eventVMResultMsgPipe.Close()
 	c.eventTimerMsgPipe.Close()
@@ -181,6 +192,7 @@ func (c *consensus) recvLoop() {
 	eventDssIndexProposalMsgCh := c.eventDssIndexProposalMsgPipe.Out()
 	eventDssSignatureMsgCh := c.eventDssSignatureMsgPipe.Out()
 	eventPeerLogIndexMsgCh := c.eventPeerLogIndexMsgPipe.Out()
+	eventInclusionStateMsgCh := c.eventInclusionStateMsgPipe.Out()
 	eventACSMsgCh := c.eventACSMsgPipe.Out()
 	eventVMResultMsgCh := c.eventVMResultMsgPipe.Out()
 	eventTimerMsgCh := c.eventTimerMsgPipe.Out()
@@ -189,7 +201,7 @@ func (c *consensus) recvLoop() {
 			eventDssIndexProposalMsgCh == nil &&
 			eventDssSignatureMsgCh == nil &&
 			eventPeerLogIndexMsgCh == nil &&
-			// eventInclusionStateMsgCh == nil &&
+			eventInclusionStateMsgCh == nil &&
 			eventACSMsgCh == nil &&
 			eventVMResultMsgCh == nil &&
 			eventTimerMsgCh == nil
@@ -238,6 +250,14 @@ func (c *consensus) recvLoop() {
 			} else {
 				eventPeerLogIndexMsgCh = nil
 			}
+		case msg, ok := <-eventInclusionStateMsgCh:
+			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState...")
+				c.handleTxInclusionState(msg.(*messages.TxInclusionStateMsg))
+				c.log.Debugf("Consensus::recvLoop, eventTxInclusionState... Done")
+			} else {
+				eventInclusionStateMsgCh = nil
+			}
 		case msg, ok := <-eventACSMsgCh:
 			if ok {
 				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")
@@ -267,10 +287,6 @@ func (c *consensus) recvLoop() {
 			return
 		}
 	}
-}
-
-func (c *consensus) SetTimeData(t time.Time) {
-	c.timeData = t
 }
 
 func (c *consensus) refreshConsensusInfo() {
@@ -317,6 +333,7 @@ func (c *consensus) GetPipeMetrics() chain.ConsensusPipeMetrics {
 	return &pipeMetrics{
 		eventStateTransitionMsgPipeSize: c.eventStateTransitionMsgPipe.Len(),
 		eventPeerLogIndexMsgPipeSize:    c.eventPeerLogIndexMsgPipe.Len(),
+		eventInclusionStateMsgPipeSize:  c.eventInclusionStateMsgPipe.Len(),
 		eventTimerMsgPipeSize:           c.eventTimerMsgPipe.Len(),
 		eventVMResultMsgPipeSize:        c.eventVMResultMsgPipe.Len(),
 		eventACSMsgPipeSize:             c.eventACSMsgPipe.Len(),

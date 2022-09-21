@@ -6,10 +6,9 @@ package test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacomment"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {

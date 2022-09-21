@@ -3,10 +3,9 @@ package test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSpawn(t *testing.T) {

@@ -40,6 +40,7 @@ var consensusMetricsCmd = &cobra.Command{
 		table[8] = makeWorkflowTableRow("Consensus is completed", !(workflowStatus.FlagInProgress), workflowStatus.TimeCompleted)
 		table[9] = makeWorkflowTableRow("Current state index", workflowStatus.CurrentStateIndex, time.Time{})
 		table[10] = makeWorkflowTableRow("Event state transition message pipe size", pipeMetrics.EventStateTransitionMsgPipeSize, time.Time{})
+		table[11] = makeWorkflowTableRow("Event inclusion state message pipe size", pipeMetrics.EventInclusionStateMsgPipeSize, time.Time{})
 		table[12] = makeWorkflowTableRow("Event ACS message pipe size", pipeMetrics.EventACSMsgPipeSize, time.Time{})
 		table[13] = makeWorkflowTableRow("Event VM result message pipe size", pipeMetrics.EventVMResultMsgPipeSize, time.Time{})
 		table[14] = makeWorkflowTableRow("Event timer message pipe size", pipeMetrics.EventTimerMsgPipeSize, time.Time{})
