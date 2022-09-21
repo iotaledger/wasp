@@ -134,15 +134,7 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfoResponse := models.ChainInfoResponse{
-		ChainID:         chainInfo.ChainID.String(),
-		ChainOwnerID:    chainInfo.ChainOwnerID.String(),
-		Description:     chainInfo.Description,
-		GasFeePolicy:    chainInfo.GasFeePolicy,
-		MaxBlobSize:     chainInfo.MaxBlobSize,
-		MaxEventSize:    chainInfo.MaxEventSize,
-		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
-	}
+	chainInfoResponse := models.MapChainInfoResponse(chainInfo)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
@@ -161,17 +153,9 @@ func (c *ChainController) getChainList(e echo.Context) error {
 			return err
 		}
 
-		chainInfoResponse := models.ChainInfoResponse{
-			ChainID:         chainInfo.ChainID.String(),
-			ChainOwnerID:    chainInfo.ChainOwnerID.String(),
-			Description:     chainInfo.Description,
-			GasFeePolicy:    chainInfo.GasFeePolicy,
-			MaxBlobSize:     chainInfo.MaxBlobSize,
-			MaxEventSize:    chainInfo.MaxEventSize,
-			MaxEventsPerReq: chainInfo.MaxEventsPerReq,
-		}
+		chainInfoResponse := models.MapChainInfoResponse(chainInfo)
 
-		chainList = append(chainList, &chainInfoResponse)
+		chainList = append(chainList, chainInfoResponse)
 	}
 
 	return e.JSON(http.StatusOK, chainList)
