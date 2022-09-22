@@ -386,3 +386,10 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 
 	return ret
 }
+
+type ISCTokenProperties struct {
+	Name         string
+	TickerSymbol string
+	Decimals     uint8
+	TotalSupply  *big.Int
+}

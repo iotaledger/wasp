@@ -216,6 +216,19 @@ func (e *soloChainEnv) MagicContract(defaultSender *ecdsa.PrivateKey) *iscContra
 	}
 }
 
+func (e *soloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20BaseTokensABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       iscmagic.ERC20BaseTokensAddress,
+			abi:           erc20BaseABI,
+		},
+	}
+}
+
 func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
