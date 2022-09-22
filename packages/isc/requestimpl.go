@@ -112,7 +112,7 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		params:     params,
 		nonce:      nonce,
 		allowance:  NewEmptyAllowance(),
-		gasBudget:  gas.MaxGasPerCall,
+		gasBudget:  gas.MaxGasPerRequest,
 	}
 }
 

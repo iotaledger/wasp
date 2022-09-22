@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -152,10 +151,7 @@ func TestBigBlob(t *testing.T) {
 
 	_, err := ch.UploadWasm(ch.OriginatorPrivateKey, blobBin)
 
-	unresolvedError := err.(*isc.UnresolvedVMError)
-	resolvedError := ch.ResolveVMError(unresolvedError)
-
-	testmisc.RequireErrorToBe(t, resolvedError, "blob too big")
+	testmisc.RequireErrorToBe(t, err, "blob too big")
 
 	ch.MustDepositBaseTokensToL2(100_000, nil)
 	req := solo.NewCallParams(

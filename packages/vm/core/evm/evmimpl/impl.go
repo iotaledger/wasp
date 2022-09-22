@@ -244,10 +244,10 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
 
-	// TODO: this assumes that the initial budget was gas.MaxGasPerCall
+	// TODO: this assumes that the initial budget was gas.MaxGasPerRequest
 	// see evmOffLedgerEstimateGasRequest::GasBudget()
 	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
-	iscGasBurned := gas.MaxGasPerCall - ctx.Gas().Budget()
+	iscGasBurned := gas.MaxGasPerRequest - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))

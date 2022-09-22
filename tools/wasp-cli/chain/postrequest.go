@@ -36,7 +36,7 @@ func postRequest(hname, fname string, params chainclient.PostRequestParams, offL
 				EntryPoint:     isc.Hn(fname),
 				Params:         params.Args,
 				Allowance:      params.Allowance,
-				GasBudget:      gas.MaxGasPerCall,
+				GasBudget:      gas.MaxGasPerRequest,
 			},
 			isc.SendOptions{},
 			true,
