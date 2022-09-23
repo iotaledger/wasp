@@ -29,6 +29,12 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: iotaledger/wasp
+          flavor: |
+            latest=true
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
 
       - name: Build and push
         uses: docker/build-push-action@v3
