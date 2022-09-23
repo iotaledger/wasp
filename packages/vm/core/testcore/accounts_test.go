@@ -1189,3 +1189,24 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 		require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
 	}
 }
+
+func TestDepositWithNoGasBudget(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	senderWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	ch := env.NewChain()
+
+	// try to deposit with 0 gas budget
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithFungibleTokens(isc.NewFungibleBaseTokens(2*isc.Million)).
+			WithGasBudget(0),
+		senderWallet,
+	)
+	require.NoError(t, err)
+
+	rec := ch.LastReceipt()
+	// request should succeed, while using gas > 0, the gasBudget should be correct in the receipt
+	require.Nil(t, rec.Error)
+	require.NotZero(t, rec.GasBurned)
+	require.EqualValues(t, gas.MinGasPerRequest, rec.GasBudget)
+}

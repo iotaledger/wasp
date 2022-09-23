@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -63,6 +64,14 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	// add the standard ISC contract at arbitrary address 0x1074
 	deployMagicContractOnGenesis(genesisAlloc)
 
+	// add the standard ERC20 provider at address 0x1075
+	genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
+		Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
+		Storage: map[common.Hash]common.Hash{},
+		Balance: &big.Int{},
+	}
+	addToPrivileged(ctx, iscmagic.ERC20BaseTokensAddress)
+
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	emulator.Init(
 		evmStateSubrealm(ctx.State()),
@@ -76,6 +85,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evmtypes.DefaultGasRatio)
 	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
+
 	// storing hname as a terminal value of the contract's state nil key.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -225,6 +235,7 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
+	ctx.RequireNoError(res.Err)
 	return result(res.Return())
 }
 
@@ -243,11 +254,12 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
+	ctx.RequireNoError(res.Err)
 
-	// TODO: this assumes that the initial budget was gas.MaxGasPerCall
+	// TODO: this assumes that the initial budget was gas.MaxGasPerRequest
 	// see evmOffLedgerEstimateGasRequest::GasBudget()
 	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
-	iscGasBurned := gas.MaxGasPerCall - ctx.Gas().Budget()
+	iscGasBurned := gas.MaxGasPerRequest - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))

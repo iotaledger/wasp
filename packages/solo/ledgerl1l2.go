@@ -321,17 +321,27 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.FungibleTokens, user *cryptolib.K
 }
 
 // TransferAllowanceTo sends an on-ledger request to transfer funds to target account (sends extra base tokens to the sender account to cover gas)
-func (ch *Chain) TransferAllowanceTo(allowance *isc.FungibleTokens, targetAccount isc.AgentID, forceOpenAccount bool, wallet *cryptolib.KeyPair) error {
-	_, err := ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
+func (ch *Chain) TransferAllowanceTo(
+	allowance *isc.Allowance,
+	targetAccount isc.AgentID,
+	forceOpenAccount bool,
+	wallet *cryptolib.KeyPair,
+	nft ...*isc.NFT,
+) error {
+	callParams := NewCallParams(
+		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+		dict.Dict{
 			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
 			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
 		}).
-			WithAllowance(isc.NewAllowanceFungibleTokens(allowance)).
-			WithFungibleTokens(allowance.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
-			WithGasBudget(math.MaxUint64),
-		wallet,
-	)
+		WithAllowance(allowance).
+		WithFungibleTokens(allowance.Assets.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
+		WithGasBudget(math.MaxUint64)
+
+	if len(nft) > 0 {
+		callParams.WithNFT(nft[0])
+	}
+	_, err := ch.PostRequestSync(callParams, wallet)
 	return err
 }
 

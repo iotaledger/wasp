@@ -30,6 +30,9 @@ interface ISC {
     // Get the amount of funds currently allowed by the caller to the given address
     function getAllowanceTo(address target) external view returns (ISCAllowance memory);
 
+    // Get the amount of funds currently allowed between the given addresses
+    function getAllowance(address from, address to) external view returns (ISCAllowance memory);
+
     // Send an on-ledger request (or a regular transaction to any L1 address).
     // The specified `fungibleTokens` are transferred from the caller's
     // L2 account to the `evm` core contract's account.
@@ -75,12 +78,19 @@ interface ISC {
     // Get the timestamp of the ISC block (seconds since UNIX epoch)
     function getTimestampUnixSeconds() external view returns (int64);
 
-        // Get an ISC contract's hname given its instance name
+    // Get an ISC contract's hname given its instance name
     function hn(string memory s) external view returns (ISCHname);
+
+    // Get the properties of the ISC base token
+    function getBaseTokenProperties() external view returns (ISCTokenProperties memory);
+
+    // Print something to the console (will only work when debugging contracts with Solo)
+    function print(string memory s) external pure;
 }
 
 // Every ISC chain is initialized with an instance of the Magic contract at address 0x1074
-ISC constant isc = ISC(0x0000000000000000000000000000000000001074);
+uint256 constant ISC_ADDRESS = 0x1074;
+ISC constant isc = ISC(address(uint160(ISC_ADDRESS)));
 
 // An L1 IOTA address
 struct L1Address {
@@ -182,3 +192,11 @@ type ISCError is uint16;
 // When reverting with VMError, the ISC receipt will include the given ISC error code.
 // See [registerError].
 error VMError(ISCError);
+
+// Properties of an ISC base/native token
+struct ISCTokenProperties {
+    string name;
+    string tickerSymbol;
+    uint8 decimals;
+    uint256 totalSupply;
+}
