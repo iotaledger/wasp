@@ -47,7 +47,7 @@ func (m *Mocker) AddModel(i interface{}) {
 }
 
 func (m *Mocker) LoadMockFiles() {
-	files, err := mockDir.ReadDir("controllers/models/mock")
+	files, err := mockDir.ReadDir("models/mock")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func (m *Mocker) LoadMockFiles() {
 			continue
 		}
 
-		mockData, err := mockDir.ReadFile("controllers/models/mock/" + file.Name())
+		mockData, err := mockDir.ReadFile("models/mock/" + file.Name())
 		if err != nil {
 			panic(err.Error())
 		}
