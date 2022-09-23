@@ -215,8 +215,7 @@ func (vmctx *VMContext) callFromRequest() dict.Dict {
 		// if sender unknown, follow panic path
 		panic(vm.ErrSenderUnknown)
 	}
-	// TODO check if the comment below holds true
-	// calling only non view entry points. Calling the view will trigger error and fallback
+
 	contract := vmctx.req.CallTarget().Contract
 	entryPoint := vmctx.req.CallTarget().EntryPoint
 
