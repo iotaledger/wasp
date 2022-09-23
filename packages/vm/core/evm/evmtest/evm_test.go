@@ -12,6 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -22,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -177,12 +179,16 @@ func TestNotEnoughISCGas(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newGasRatio, env.getGasRatio())
 
+	senderAddress := crypto.PubkeyToAddress(storage.defaultSender.PublicKey)
+	nonce := env.getNonce(senderAddress)
+
 	// try to issue a call to store(something) in EVM
 	res, err := storage.store(44)
 
 	// the call must fail with "not enough gas"
 	require.Error(t, err)
 	require.Regexp(t, "gas budget exceeded", err)
+	require.Equal(t, nonce+1, env.getNonce(senderAddress))
 
 	// there must be an EVM receipt
 	require.NotNil(t, res.evmReceipt)
@@ -608,4 +614,102 @@ func TestSendWithArgs(t *testing.T) {
 
 	// assert inc counter was incremented
 	checkCounter(1)
+}
+
+func TestERC20BaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	erc20 := env.ERC20BaseTokens(ethKey)
+
+	{
+		var name string
+		erc20.callView("name", nil, &name)
+		require.Equal(t, parameters.L1().BaseToken.Name, name)
+	}
+	{
+		var sym string
+		erc20.callView("symbol", nil, &sym)
+		require.Equal(t, parameters.L1().BaseToken.TickerSymbol, sym)
+	}
+	{
+		var dec uint8
+		erc20.callView("decimals", nil, &dec)
+		require.EqualValues(t, parameters.L1().BaseToken.Decimals, dec)
+	}
+	{
+		var supply *big.Int
+		erc20.callView("totalSupply", nil, &supply)
+		require.Equal(t, parameters.L1().Protocol.TokenSupply, supply.Uint64())
+	}
+	{
+		var balance *big.Int
+		erc20.callView("balanceOf", []interface{}{ethAddr}, &balance)
+		require.EqualValues(t,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			balance.Uint64(),
+		)
+	}
+	{
+		initialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+		_, ethAddr2 := solo.NewEthereumAccount()
+		_, err := erc20.callFn(nil, "transfer", ethAddr2, big.NewInt(int64(1*isc.Million)))
+		require.NoError(t, err)
+		require.LessOrEqual(t,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			initialBalance-1*isc.Million,
+		)
+		require.EqualValues(t,
+			1*isc.Million,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
+		)
+	}
+	{
+		initialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds()
+		initialBalance2 := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2))
+		{
+			_, err := erc20.callFn(nil, "approve", ethAddr2, big.NewInt(int64(1*isc.Million)))
+			require.NoError(t, err)
+			require.Greater(t,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+				initialBalance-1*isc.Million,
+			)
+			require.EqualValues(t,
+				initialBalance2,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
+			)
+		}
+
+		{
+			var allowance *big.Int
+			erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+			require.EqualValues(t,
+				1*isc.Million,
+				allowance.Uint64(),
+			)
+		}
+		{
+			const amount = 100_000
+			_, ethAddr3 := solo.NewEthereumAccount()
+			_, err := erc20.callFn([]ethCallOptions{{sender: ethKey2}}, "transferFrom", ethAddr, ethAddr3, big.NewInt(int64(amount)))
+			require.NoError(t, err)
+			require.Less(t,
+				initialBalance-1*isc.Million,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			)
+			require.EqualValues(t,
+				amount,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr3)),
+			)
+			{
+				var allowance *big.Int
+				erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+				require.EqualValues(t,
+					1*isc.Million-amount,
+					allowance.Uint64(),
+				)
+			}
+		}
+	}
 }
