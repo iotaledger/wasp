@@ -55,15 +55,14 @@ or [create a private tangle](https://wiki.iota.org/hornet/how_tos/private_tangle
 
 ## Running the Node
 
-After you have tweaked `config.json` to your liking, you can start a Wasp node by executing `wasp` in the same directory
-as shown in the following snippet.
+After you have tweaked `config.json` to your liking, you can start a Wasp node by executing `wasp` and providing the path to your `config.json` file with `-c`. Not providing this flag will cause your `config.json` file to be ignored and wasp will be started with default configurations.
 
 ```shell
 mkdir wasp-node
 cp config.json wasp-node
 cd wasp-node
 #<edit config.json as desired>
-wasp
+wasp -c config.json 
 ```
 
 You can verify that your node is running by opening the dashboard with a web browser
