@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//go:embed controllers/models/mock
+//go:embed models/mock
 var mockDir embed.FS
 
 type Mocker struct {

@@ -28,6 +28,10 @@ func NewNodeService(log *logger.Logger, networkProvider peering.NetworkProvider,
 	}
 }
 
+func (c *NodeService) GetPublicKey() *cryptolib.PublicKey {
+	return c.networkProvider.Self().PubKey()
+}
+
 func (c *NodeService) GetNodeInfo(chain chainpkg.Chain) (*dto.ChainNodeInfo, error) {
 	committeeInfo := chain.GetCommitteeInfo()
 

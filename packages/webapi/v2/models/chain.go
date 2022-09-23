@@ -32,6 +32,7 @@ type gasFeePolicy struct {
 
 type ChainInfoResponse struct {
 	ChainID         string `swagger:"desc(ChainID (bech32-encoded).)"`
+	EVMChainID      uint16 `swagger:"desc(The EVM chain ID)"`
 	ChainOwnerID    string `swagger:"desc(The chain owner address (bech32-encoded).)"`
 	Description     string `swagger:"desc(The description of the chain.)"`
 	GasFeePolicy    *gasFeePolicy
@@ -40,9 +41,13 @@ type ChainInfoResponse struct {
 	MaxEventsPerReq uint16 `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
+type OffLedgerRequestBody struct {
+	Request string `swagger:"desc(Offledger Request (base64))"`
+}
+
 type ChainListResponse []*ChainInfoResponse
 
-func MapChainInfoResponse(chainInfo dto.ChainInfo) *ChainInfoResponse {
+func MapChainInfoResponse(chainInfo dto.ChainInfo, evmChainID uint16) *ChainInfoResponse {
 	gasFeeTokenID := ""
 
 	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
@@ -51,6 +56,7 @@ func MapChainInfoResponse(chainInfo dto.ChainInfo) *ChainInfoResponse {
 
 	chainInfoResponse := ChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
+		EVMChainID:   evmChainID,
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
 		Description:  chainInfo.Description,
 		GasFeePolicy: &gasFeePolicy{

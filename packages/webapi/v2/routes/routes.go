@@ -7,6 +7,10 @@ func Info() string {
 	return "/info"
 }
 
+func Configuration() string {
+	return "/info/configuration"
+}
+
 func NewRequest(chainID string) string {
 	return "/chain/" + chainID + "/request"
 }

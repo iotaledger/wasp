@@ -2,6 +2,7 @@
   {
     "ChainID": "tst1prcw42l5u4g24tqg628d7qzh7n6m4k4ktvgayh44dyt68y930qzy2lr054v",
     "ChainOwnerID": "tst1qzjsxstc0k850jevpqu08tj0suql9u7hvh3vq3eaaem3gkx7r646zqpdn6e",
+    "EVMChainID": 1074,
     "Description": "",
     "GasFeePolicy": {
       "GasFeeTokenID": "",

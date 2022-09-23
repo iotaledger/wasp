@@ -3,6 +3,8 @@ package interfaces
 import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -23,6 +25,7 @@ type Chain interface {
 	GetAllChainIDs() ([]*isc.ChainID, error)
 	GetChainByID(chainID *isc.ChainID) chain.Chain
 	GetChainInfoByChainID(chainID *isc.ChainID) (dto.ChainInfo, error)
+	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
 }
 
@@ -32,11 +35,16 @@ type Registry interface {
 
 type Node interface {
 	GetNodeInfo(chain chain.Chain) (*dto.ChainNodeInfo, error)
+	GetPublicKey() *cryptolib.PublicKey
+}
+
+type OffLedger interface {
+	EnqueueOffLedgerRequest(chainID *isc.ChainID, request isc.OffLedgerRequest) error
 }
 
 type VM interface {
-	CallView(chain chain.Chain, scName, funName string, params dict.Dict) (dict.Dict, error)
-	CallViewByChainID(chainID *isc.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error)
+	CallView(chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
+	CallViewByChainID(chainID *isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 }
 
 type Mocker interface {

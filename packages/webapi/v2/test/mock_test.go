@@ -2,11 +2,10 @@ package test
 
 import (
 	"encoding/json"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/models"
 
 	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
 )
