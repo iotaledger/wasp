@@ -115,7 +115,7 @@ func (c *Client) post1RequestWithOutputs(
 	par := defaultParams(params...)
 	var gasBudget uint64
 	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerCall
+		gasBudget = gas.MaxGasPerRequest
 	} else {
 		gasBudget = *par.GasBudget
 	}
@@ -160,7 +160,7 @@ func (c *Client) PostOffLedgerRequest(
 	}
 	var gasBudget uint64
 	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerCall
+		gasBudget = gas.MaxGasPerRequest
 	} else {
 		gasBudget = *par.GasBudget
 	}

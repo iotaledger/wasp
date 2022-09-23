@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
@@ -82,16 +81,12 @@ func setupErrorsTestWithoutFunds(t *testing.T) (*solo.Solo, *solo.Chain) {
 func TestErrorWithCustomError(t *testing.T) {
 	_, chain := setupErrorsTestWithoutFunds(t)
 
-	req := solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name).
-		WithGasBudget(1)
-
-	_, _, err := chain.PostRequestSyncTx(req, nil)
+	_, _, err := chain.PostRequestSyncTx(
+		solo.NewCallParams(errors.Contract.Name, errors.FuncRegisterError.Name),
+		nil)
 
 	testError := &isc.VMError{}
 	require.ErrorAs(t, err, &testError)
-
-	typedError := err.(*isc.VMError)
-	require.Equal(t, typedError.AsTemplate(), vm.ErrGasBudgetDetail)
 }
 
 // This test does not supply the required kv pair 'ParamErrorMessageFormat' which makes the kvdecoder fail with an xerror

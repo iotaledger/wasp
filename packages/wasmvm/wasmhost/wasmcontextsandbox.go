@@ -177,7 +177,7 @@ func (s *WasmContextSandbox) makeRequest(args []byte) isc.RequestParameters {
 			EntryPoint:     function,
 			Params:         params,
 			Allowance:      allowance,
-			GasBudget:      gas.MaxGasPerCall,
+			GasBudget:      gas.MaxGasPerRequest,
 		},
 	}
 	if req.Delay != 0 {
