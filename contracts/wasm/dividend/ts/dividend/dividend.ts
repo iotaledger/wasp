@@ -3,7 +3,7 @@
 
 // This example implements 'dividend', a simple smart contract that will
 // automatically disperse iota tokens which are sent to the contract to a group
-// of member addresses according to predefined division factors. The intent is
+// of member accounts according to predefined division factors. The intent is
 // to showcase basic functionality of WasmLib through a minimal implementation
 // and not to come up with a complete robust real-world solution.
 // Note that we have drawn sometimes out constructs that could have been done
@@ -38,14 +38,14 @@ export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
 
     // Now that we have sorted out which agent will be the owner of this contract
     // we will save this value in the 'owner' variable in state storage on the host.
-    // Read the documentation on schema.json to understand why this state variable is
-    // supported at compile-time by code generated from schema.json by the schema tool.
+    // Read the documentation on schema.yaml to understand why this state variable is
+    // supported at compile-time by code generated from schema.yaml by the schema tool.
     f.state.owner().setValue(owner);
 }
 
 // 'member' is a function that can only be used by the entity that owns the
 // 'dividend' smart contract. It can be used to define the group of member
-// addresses and dispersal factors one by one prior to sending tokens to the
+// accounts and dispersal factors one by one prior to sending tokens to the
 // smart contract's 'divide' function. The 'member' function takes 2 parameters,
 // which are both required:
 // - 'address', which is an Address to use as member in the group, and
@@ -70,7 +70,7 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
 
     // We will store the address/factor combinations in a key/value sub-map of the
     // state storage named 'members'. The schema tool has generated an appropriately
-    // type-checked proxy map for us from the schema.json state storage definition.
+    // type-checked proxy map for us from the schema.yaml state storage definition.
     // If there is no 'members' map present yet in state storage an empty map will
     // automatically be created on the host.
     let members: sc.MapAddressToMutableUint64 = f.state.members();
@@ -122,10 +122,10 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
     currentFactor.setValue(factor);
 }
 
-// 'divide' is a function that will take any tokens it receives and properly
-// disperse them to the addresses in the member list according to the dispersion
-// factors associated with these addresses.
-// Anyone can send iota tokens to this function and they will automatically be
+// 'divide' is a function that will take any iotas it receives and properly
+// disperse them to the accounts in the member list according to the dispersion
+// factors associated with these accounts.
+// Anyone can send iotas to this function and they will automatically be
 // divided over the member list. Note that this function does not deal with
 // fractions. It simply truncates the calculated amount to the nearest lower
 // integer and keeps any remaining tokens in its own account. They will be added
@@ -133,12 +133,11 @@ export function funcMember(ctx: wasmlib.ScFuncContext, f: sc.MemberContext): voi
 // dividend amounts.
 export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): void {
 
-    // Create an ScBalances map proxy to the account balances for this
-    // smart contract. Note that ScBalances wraps an ScImmutableMap of
-    // token color/amount combinations in a simpler to use interface.
+    // Create an ScBalances proxy to the allowance balances for this
+    // smart contract.
     let allowance: wasmlib.ScBalances = ctx.allowance();
 
-    // Retrieve the amount of plain iota tokens from the account balance.
+    // Retrieve the allowed amount of plain iota tokens from the account balance.
     let amount: u64 = allowance.baseTokens();
 
     // Retrieve the pre-calculated totalFactor value from the state storage.
@@ -167,18 +166,12 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 
         // Is there anything to disperse to this member?
         if (share > 0) {
-            // Yes, so let's set up an ScTransfers map proxy that transfers the
-            // calculated amount of tokens. Note that ScTransfers wraps an
-            // ScMutableMap of token color/amount combinations in a simpler to use
-            // interface. The constructor we use here creates and initializes a
-            // single token color transfer in a single statement. The actual color
-            // and amount values passed in will be stored in a new map on the host.
+            // Yes, so let's set up an ScTransfer proxy that transfers the
+            // calculated amount of tokens.
             let transfers: wasmlib.ScTransfer = wasmlib.ScTransfer.baseTokens(share);
 
-            // Perform the actual transfer of tokens from the smart contract to the
-            // member address. The transferToAddress() method receives the address
-            // value and the proxy to the new transfers map on the host, and will
-            // call the corresponding host sandbox function with these values.
+            // Perform the actual transfer of tokens from the caller allowance
+            // to the member account.
             ctx.transferAllowed(address.asAgentID(), transfers, true);
         }
     }

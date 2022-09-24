@@ -429,6 +429,7 @@ func TestAccountNFTs(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
@@ -452,6 +453,7 @@ func TestNFTData(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	iscNFTID := ctx.Cvt.IscNFTID(&nftID)

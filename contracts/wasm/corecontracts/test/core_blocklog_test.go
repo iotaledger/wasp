@@ -22,6 +22,11 @@ func setupBlockLog(t *testing.T) *wasmsolo.SoloContext {
 	return ctx
 }
 
+func TestBlockLogXxx(t *testing.T) {
+	ctx := setupBlockLog(t)
+	require.NoError(t, ctx.Err)
+}
+
 func TestControlAddresses(t *testing.T) {
 	ctx := setupBlockLog(t)
 	require.NoError(t, ctx.Err)

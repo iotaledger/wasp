@@ -6,7 +6,9 @@ keywords:
 - smart contract chain
 - views
 - funcs
+
 description:  Synchronous calls can only be made between contracts that are running on the same contract chain. When calling a smart contract function you can only access the memory assigned to that specific smart contract, the only way to share data between smart contracts that call each other is through function parameters and return values.
+
 image: /img/logo/WASP_logo_dark.png
 ---
 import Tabs from "@theme/Tabs"
@@ -23,22 +25,22 @@ sandbox environment. Therefore, the only way to share data between smart contrac
 call each other is through function parameters and return values.
 
 Synchronous calls can only be made between contracts that are running on the same contract
-chain. The IOTA Smart Contracts host knows about all the contracts it is running on a chain, and therefore
+chain. The ISC host knows about all the contracts it is running on a chain, and therefore
 is able to dispatch the call to the correct contract function. The function descriptor is
-used to specify the call parameters (if any) through its `params` proxy, and to invoke the
-function through its `func` interface.
+used to specify the call parameters (if any) through its [`params` proxy](params.mdx), and
+to invoke the function through its `func` interface.
 
 In addition, when the function that is called is not a [View](views.mdx), it is possible
 to pass tokens to the function call through this interface. Note that the only way to call
 a function and properly pass tokens to it _within the same chain_ is through the function
-descriptor. Otherwise, the incoming() function will not register any incoming tokens.
+descriptor. Otherwise, the `allowance()` function will not register any incoming tokens.
 
 When the call is made, the calling function will be paused and wait for the called
 function to complete. After completion, it may access the returned values (if any) through
 the [`results` proxy](results.mdx) of the function descriptor.
 
 When calling a function from a View function, it is only possible to call other View
-functions. The ScFuncs interface enforces this at compile-time through the IOTA Smart Contracts function
+functions. The ScFuncs interface enforces this at compile-time through the ISC function
 context that needs to be passed to the function that creates the function descriptor.
 
 Here's how a smart contract would tell a `dividend` contract on the same chain to divide
@@ -170,5 +172,5 @@ f.func.ofContract(altContract).transferBaseTokens(1000).call();
 </TabItem>
 </Tabs>
 
-In the [next section](post.mdx) we will look at how we can request smart contract functions in a
-different chain to be executed in a similar way.
+In the next section we will look at how to use function descriptors to
+[asynchronously call](post.mdx) smart contract functions on any chain.

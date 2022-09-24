@@ -4,6 +4,7 @@
 package wasmsolo
 
 import (
+	"errors"
 	"flag"
 	"testing"
 	"time"
@@ -398,11 +399,13 @@ func (ctx *SoloContext) OffLedger(agent *SoloAgent) wasmlib.ScFuncCallContext {
 func (ctx *SoloContext) MintNFT(agent *SoloAgent, metadata []byte) wasmtypes.ScNftID {
 	addr, ok := isc.AddressFromAgentID(agent.AgentID())
 	if !ok {
-		panic("agent should be an address")
+		ctx.Err = errors.New("agent should be an address")
+		return wasmtypes.NftIDFromBytes(nil)
 	}
 	nft, _, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, metadata)
 	if err != nil {
-		panic(err)
+		ctx.Err = err
+		return wasmtypes.NftIDFromBytes(nil)
 	}
 	if ctx.nfts == nil {
 		ctx.nfts = make(map[iotago.NFTID]*isc.NFT)

@@ -25,6 +25,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
 	auctioneer := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(auctioneer, []byte("NFT metadata"))
+	require.NoError(t, ctx.Err)
 
 	// start the auction
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))
