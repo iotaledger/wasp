@@ -8,7 +8,9 @@ keywords:
 - mandatory parameter
 - immutable state
 - definition
+
 description: The optional `results` subsection contains field definitions for each of the results a function produces. The layout of the field definitions is identical to that of the state field definitions
+
 image: /img/logo/WASP_logo_dark.png
 ---
 import Tabs from "@theme/Tabs"
@@ -17,11 +19,11 @@ import TabItem from "@theme/TabItem"
 # Function Results
 
 The optional `results` subsection contains field definitions for each of the results a
-function produces. The layout of the field definitions is identical to that of
-the [state](state.mdx) field definitions.
+function produces. The layout of the field definitions is identical to that of the
+[params](params.mdx) field definitions.
 
 The schema tool will automatically generate a mutable structure with member variables for
-proxies to each result variable in the results map. The user will be able to set the
+proxies to each result variable in the `results` map. The user will be able to set the
 result variables through this structure, which is passed to the function.
 
 When this subsection is empty, or completely omitted, no structure will be generated or
@@ -42,11 +44,12 @@ function:
 
 ```go
 type MutableGetFactorResults struct {
-    id int32
+	proxy wasmtypes.Proxy
 }
 
-func (s MutableGetFactorResults) Factor() wasmlib.ScMutableInt64 {
-    return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultFactor])
+// relative division factor
+func (s MutableGetFactorResults) Factor() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultFactor))
 }
 ```
 
@@ -54,15 +57,16 @@ func (s MutableGetFactorResults) Factor() wasmlib.ScMutableInt64 {
 <TabItem value="rust">
 
 ```rust
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct MutableGetFactorResults {
-    pub(crate) id: i32,
+	pub(crate) proxy: Proxy,
 }
 
 impl MutableGetFactorResults {
-    pub fn factor(&self) -> ScMutableInt64 {
-        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_FACTOR))
-    }
+    // relative division factor
+    pub fn factor(&self) -> ScMutableUint64 {
+		ScMutableUint64::new(self.proxy.root(RESULT_FACTOR))
+	}
 }
 ```
 
@@ -70,14 +74,11 @@ impl MutableGetFactorResults {
 <TabItem value="ts">
 
 ```ts
-export class ImmutableMemberParams extends wasmlib.ScMapID {
-    address(): wasmlib.ScImmutableAddress {
-        return new wasmlib.ScImmutableAddress(this.mapID, sc.idxMap[sc.IdxParamAddress]);
-    }
-
-    factor(): wasmlib.ScImmutableInt64 {
-        return new wasmlib.ScImmutableInt64(this.mapID, sc.idxMap[sc.IdxParamFactor]);
-    }
+export class MutableGetFactorResults extends wasmtypes.ScProxy {
+	// relative division factor
+	factor(): wasmtypes.ScMutableUint64 {
+		return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultFactor));
+	}
 }
 ```
 
@@ -85,7 +86,7 @@ export class ImmutableMemberParams extends wasmlib.ScMapID {
 </Tabs>
 
 Note that the schema tool will also generate an immutable version of the structure,
-suitable for accessing the results after calling this smart contract function.
+suitable for accessing the results after by the caller of this smart contract function.
 
 In the next section we will look at how so-called [thunk functions](thunks.mdx)
 encapsulate access and parameter checking and set up the type-safe function-specific

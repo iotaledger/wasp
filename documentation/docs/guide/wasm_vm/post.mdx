@@ -7,6 +7,7 @@ keywords:
 - smart contract chain
 - Asynchronous function
 description: Asynchronous function calls between smart contracts are posted as requests on the Tangle. They allow you to invoke any smart contract function that is not a View on any smart contract chain.
+
 image: /img/logo/WASP_logo_dark.png
 ---
 import Tabs from "@theme/Tabs"
@@ -16,17 +17,17 @@ import TabItem from "@theme/TabItem"
 
 Asynchronous function calls between smart contracts are posted as requests on the Tangle.
 They allow you to invoke any smart contract function that is not a View on any smart
-contract chain. You will notice that the behavior is very similar to a normal function
-call, but instead of using the `call()` method of the `func` member in the function
-descriptor, you will now use the `post()` or `postToChain()` methods. `post()` posts the
-request within the current chain, while `postToChain()` takes the chain ID of the
-desired chain as parameter.
+contract chain. You will notice that the behavior is very similar to a synchronous
+function call, but instead of using the `call()` method of the `func` member in the
+function descriptor, you will now use the `post()` or `postToChain()` methods. The
+`post()` method posts the request to the current chain, while `postToChain()` takes the
+chain ID of the desired chain as parameter.
 
 In addition to the previously discussed [transferBaseTokens()](call.mdx) and
 [ofContract()](call.mdx) methods, you can modify the behavior further by providing a
-delay() in seconds, which enables delayed execution of the request. This is of particular
-interest to smart contracts that need a delayed action like betting contracts with a timed
-betting round, or to create time-lock functionality in a smart contract.
+`delay()` in seconds, which enables delayed execution of the request. This is of
+particular interest to smart contracts that need a delayed action like betting contracts
+with a timed betting round, or to create time-lock functionality in a smart contract.
 Here's how that works:
 
 <Tabs defaultValue="go"
@@ -41,7 +42,7 @@ Here's how that works:
 
 ```go
 eor := ScFuncs.EndOfRound(ctx)
-eor.Func.Delay(3600).TransferBaseTokens(1).Post()
+eor.Func.Delay(3600).Post()
 ```
 
 </TabItem>
@@ -49,7 +50,7 @@ eor.Func.Delay(3600).TransferBaseTokens(1).Post()
 
 ```rust
 let eor = ScFuncs::end_of_round(ctx);
-eor.func.delay(3600).transfer_base_tokens(1).post();
+eor.func.delay(3600).post();
 ```
 
 </TabItem>
@@ -57,22 +58,28 @@ eor.func.delay(3600).transfer_base_tokens(1).post();
 
 ```ts
 let eor = sc.ScFuncs.endOfRound(ctx);
-eor.func.delay(3600).transferBaseTokens(1).post();
+eor.func.delay(3600).post();
 ```
 
 </TabItem>
 </Tabs>
 
 Because it is posted as a request on the Tangle, and it is not possible to have a request
-without a transfer, _an asynchronous request always needs to send at least 1 token_. So,
-if you post to a function that expects tokens you just specify the amount of tokens
-required, but if you post to a function that does not expect any tokens then you still
-have to provide 1 iota.
+without a transfer, _an asynchronous request always needs to send at least some tokens_.
+In fact, there is a minimum amount of tokens to send, because you need to cover the gas
+that is necessary to run the function call. You can specify the tokens explicitly, in the
+same way we did previously with [syncronous calls](call.mdx), or you can have WasmLib
+specify a minimum amount of tokens automatically. Any tokens that are not used will end up
+in the caller's account on the chain.
 
-**Providing a delay() before a call() will result in a run-time error**. We do not know
-the intention of the user until the actual call() or post() is encountered, so we cannot
-check for this at compile-time unless we are willing to accept a lot of extra overhead.
-It should not really be a problem because using delay() is rare and using it with call()
+So, if you post to a function that expects tokens you just specify the amount of tokens
+required, but if you post to a function that does not expect any tokens then you can
+have WasmLib send the minimum amount for you.
+
+**Providing a `delay()` before a `call()` will result in a panic**. We do not know the
+intention of the user until the actual call() or post() is encountered, so we cannot check
+for this at compile-time unless we are willing to accept a lot of extra overhead. It
+should not really be a problem because using `delay()` is rare and using it with `call()`
 cannot have been the intention.
 
 The function that posts the request through the function descriptor will immediately
