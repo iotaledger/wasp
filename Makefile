@@ -1,5 +1,5 @@
 GIT_COMMIT_SHA := $(shell git rev-list -1 HEAD)
-BUILD_TAGS = rocksdb,builtin_static
+BUILD_TAGS = rocksdb
 BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)"
 
 #

@@ -1,3 +1,3 @@
 #! /bin/bash
 
-go install -tags rocksdb,builtin_static
+go install -tags rocksdb

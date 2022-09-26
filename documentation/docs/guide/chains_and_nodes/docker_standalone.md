@@ -55,7 +55,7 @@ docker build -t wasp-node .
 The build process will copy the [docker_config.json](https://github.com/iotaledger/wasp/blob/develop/docker_config.json)
 file into the image, which will be used when the node gets started.
 
-By default, the build process will use `-tags rocksdb,builtin_static` as a build argument.You can modify this argument  
+By default, the build process will use `-tags rocksdb` as a build argument.You can modify this argument  
 with `--build-arg BUILD_TAGS=<tags>`.
 
 Depending on the use case, you may need to change the default Hornet [configuration](node-config.md). You can do so by

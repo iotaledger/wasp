@@ -9,7 +9,7 @@ builds:
     main: ./main.go
     binary: wasp
     flags:
-      - -tags=builtin_static,rocksdb
+      - -tags=rocksdb
     goos:
       - linux
       # Disabled until the grocksdb supports darwin and windows:
