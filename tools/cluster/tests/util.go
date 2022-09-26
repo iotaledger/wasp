@@ -161,7 +161,7 @@ func (e *ChainEnv) printAccounts(title string) {
 
 func (e *ChainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := isc.NewEmptyAssets()
+	sum := isc.NewEmptyFungibleTokens()
 	for _, bal := range balances {
 		sum.Add(bal)
 	}

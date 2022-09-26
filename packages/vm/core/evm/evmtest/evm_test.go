@@ -451,7 +451,7 @@ func TestSendBaseTokens(t *testing.T) {
 	const allAllowed = uint64(0)
 	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), allAllowed)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
+	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer-500) // 500 is the amount of tokens the contract will reserve to pay for the gas fees
 	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
 
 	// allowance should be empty now
@@ -712,4 +712,56 @@ func TestERC20BaseTokens(t *testing.T) {
 			}
 		}
 	}
+}
+
+// test withdrawing ALL EVM balance to a L1 address via the magic contract
+func TestEVMWithdrawAll(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	_, receiver := env.solo.NewKeyPair()
+
+	tokensToWithdraw := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
+
+	// try withdrawing all base tokens
+	metadata := iscmagic.WrapISCSendMetadata(
+		isc.SendMetadata{
+			TargetContract: inccounter.Contract.Hname(),
+			EntryPoint:     inccounter.FuncIncCounter.Hname(),
+			Params:         dict.Dict{},
+			Allowance:      isc.NewEmptyAllowance(),
+			GasBudget:      math.MaxUint64,
+		},
+	)
+	_, err := env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"send",
+		iscmagic.WrapL1Address(receiver),
+		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		false,
+		metadata,
+		iscmagic.ISCSendOptions{},
+	)
+	// request must fail with an error, and receiver should not receive any funds
+	require.Error(t, err)
+	require.Regexp(t, "execution reverted", err.Error())
+	iscReceipt := env.soloChain.LastReceipt()
+	require.Error(t, iscReceipt.Error.AsGoError())
+	require.EqualValues(t, 0, env.solo.L1BaseTokens(receiver))
+
+	// retry the request above, but now leave some tokens to pay for the gas fees
+	tokensToWithdraw -= 2*iscReceipt.GasFeeCharged + 1 // +1 is needed because of the way gas budget calc works
+	metadata.GasBudget = iscReceipt.GasBudget
+	_, err = env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"send",
+		iscmagic.WrapL1Address(receiver),
+		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		false,
+		metadata,
+		iscmagic.ISCSendOptions{},
+	)
+	require.NoError(t, err)
+	iscReceipt = env.soloChain.LastReceipt()
+	require.NoError(t, iscReceipt.Error.AsGoError())
+	require.EqualValues(t, tokensToWithdraw, env.solo.L1BaseTokens(receiver))
 }

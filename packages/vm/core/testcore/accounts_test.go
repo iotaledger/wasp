@@ -712,7 +712,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)
@@ -736,7 +736,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 1), v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DEPOSIT 1")
 
@@ -777,7 +777,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)

@@ -669,7 +669,7 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := isc.NewEmptyAssets()
+	balance := isc.NewEmptyFungibleTokens()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}

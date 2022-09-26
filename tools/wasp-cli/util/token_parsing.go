@@ -18,7 +18,7 @@ func TokenIDFromString(s string) []byte {
 }
 
 func ParseFungibleTokens(args []string) *isc.FungibleTokens {
-	tokens := isc.NewEmptyAssets()
+	tokens := isc.NewEmptyFungibleTokens()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {

@@ -259,7 +259,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	// accrue change on the caller's account
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var storageDepositAdjustment int64
-	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
+	if deltaAssets := isc.NewEmptyFungibleTokens().AddNativeTokens(tokenID, delta); destroy {
 		// take tokens to destroy from allowance
 		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{

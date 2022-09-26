@@ -85,7 +85,7 @@ func (r *evmOffLedgerRequest) Params() dict.Dict {
 }
 
 func (r *evmOffLedgerRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyAssets()
+	return NewEmptyFungibleTokens()
 }
 
 func (r *evmOffLedgerRequest) GasBudget() (gas uint64, isEVM bool) {
@@ -202,7 +202,7 @@ func (r *evmOffLedgerEstimateGasRequest) Params() dict.Dict {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyAssets()
+	return NewEmptyFungibleTokens()
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {

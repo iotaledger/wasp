@@ -15,7 +15,7 @@ type Allowance struct {
 
 func NewEmptyAllowance() *Allowance {
 	return &Allowance{
-		Assets: NewEmptyAssets(),
+		Assets: NewEmptyFungibleTokens(),
 		NFTs:   make([]iotago.NFTID, 0),
 	}
 }

@@ -37,7 +37,7 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetNFTInfo returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
+	GetNFTData(nftID iotago.NFTID) NFT
 	// CallView calls another contract. Only calls view entry points
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -69,6 +69,8 @@ type Balance interface {
 	BalanceFungibleTokens() *FungibleTokens
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
 	OwnedNFTs() []iotago.NFTID
+	// returns whether a given user owns a given amount of tokens
+	HasInAccount(AgentID, *FungibleTokens) bool
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -135,6 +137,8 @@ type Privileged interface {
 	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
+	// the amount of tokens available to pay for the gas of the current request
+	TotalGasTokens() *FungibleTokens
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters

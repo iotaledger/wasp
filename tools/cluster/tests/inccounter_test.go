@@ -78,7 +78,7 @@ func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contrac
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
 	transfer := isc.NewFungibleTokens(uint64(tokens), nil)
-	b := isc.NewEmptyAssets()
+	b := isc.NewEmptyFungibleTokens()
 	if transfer != nil {
 		b = transfer
 	}

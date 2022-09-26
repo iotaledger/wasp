@@ -7,6 +7,7 @@ import "@iscmagic/ISC.sol";
 
 contract ISCTest {
     ISCError TestError = isc.registerError("TestError");
+    uint64 public constant TokensForGas = 500;
 
     function getChainID() public view returns (ISCChainID) {
         return isc.getChainID();
@@ -42,7 +43,9 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens) public {
+    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
+        public
+    {
         ISCAllowance memory allowance;
         if (baseTokens == 0) {
             allowance = isc.getAllowanceFrom(msg.sender);
@@ -53,7 +56,8 @@ contract ISCTest {
         isc.takeAllowedFunds(msg.sender, allowance);
 
         ISCFungibleTokens memory fungibleTokens;
-        fungibleTokens.baseTokens = allowance.baseTokens;
+        require(allowance.baseTokens > TokensForGas);
+        fungibleTokens.baseTokens = allowance.baseTokens - TokensForGas;
 
         ISCDict memory params;
 

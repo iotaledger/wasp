@@ -24,7 +24,7 @@ type FungibleTokens struct {
 
 var BaseTokenID = []byte{}
 
-func NewEmptyAssets() *FungibleTokens {
+func NewEmptyFungibleTokens() *FungibleTokens {
 	return &FungibleTokens{
 		Tokens: make([]*iotago.NativeToken, 0),
 	}
@@ -45,11 +45,11 @@ func NewFungibleTokensForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *Fungible
 	if p.GasFeeTokenID == nil {
 		return NewFungibleBaseTokens(feeAmount)
 	}
-	return NewEmptyAssets().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
+	return NewEmptyFungibleTokens().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
 }
 
 func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
-	ret := NewEmptyAssets()
+	ret := NewEmptyFungibleTokens()
 	for key, val := range d {
 		if IsBaseToken([]byte(key)) {
 			ret.BaseTokens = new(big.Int).SetBytes(d.MustGet(kv.Key(BaseTokenID))).Uint64()
@@ -69,7 +69,7 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 }
 
 func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTokenSum) *FungibleTokens {
-	ret := NewEmptyAssets()
+	ret := NewEmptyFungibleTokens()
 	ret.BaseTokens = baseTokens
 	for id, val := range tokens {
 		ret.Tokens = append(ret.Tokens, &iotago.NativeToken{
@@ -81,7 +81,7 @@ func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTok
 }
 
 func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *FungibleTokens {
-	ret := NewEmptyAssets()
+	ret := NewEmptyFungibleTokens()
 	for _, out := range outs {
 		ret.Add(FungibleTokensFromOutput(out))
 	}

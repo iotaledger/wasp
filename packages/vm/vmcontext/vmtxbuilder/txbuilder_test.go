@@ -632,7 +632,7 @@ func TestStorageDeposit(t *testing.T) {
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
 	})
 	t.Run("adjusts the output amount to the correct storage deposit when needed", func(t *testing.T) {
-		assets := isc.NewEmptyAssets()
+		assets := isc.NewEmptyFungibleTokens()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
@@ -750,7 +750,7 @@ func TestSerDe(t *testing.T) {
 			Allowance:      isc.NewEmptyAllowance(),
 			GasBudget:      0,
 		}
-		assets := isc.NewEmptyAssets()
+		assets := isc.NewEmptyFungibleTokens()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
