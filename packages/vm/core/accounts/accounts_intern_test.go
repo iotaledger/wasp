@@ -45,7 +45,7 @@ func TestCreditDebit1(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := knownAgentID(1, 2)
 	transfer := isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -70,14 +70,14 @@ func TestCreditDebit1(t *testing.T) {
 
 	DebitFromAccount(state, agentID1, expected)
 	total = checkLedgerT(t, state, "cp3")
-	expected = isc.NewEmptyAssets()
+	expected = isc.NewEmptyFungibleTokens()
 	require.True(t, expected.Equals(total))
 }
 
 func TestCreditDebit2(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	transfer := isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -88,7 +88,7 @@ func TestCreditDebit2(t *testing.T) {
 	require.EqualValues(t, 1, len(total.Tokens))
 	require.True(t, expected.Equals(total))
 
-	transfer = isc.NewEmptyAssets().AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer = isc.NewEmptyFungibleTokens().AddNativeTokens(dummyAssetID, big.NewInt(2))
 	DebitFromAccount(state, agentID1, transfer)
 	total = checkLedgerT(t, state, "cp2")
 	require.EqualValues(t, 0, len(total.Tokens))
@@ -104,7 +104,7 @@ func TestCreditDebit2(t *testing.T) {
 func TestCreditDebit3(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	transfer := isc.NewFungibleTokens(42, nil).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -115,7 +115,7 @@ func TestCreditDebit3(t *testing.T) {
 	require.EqualValues(t, 1, len(total.Tokens))
 	require.True(t, expected.Equals(total))
 
-	transfer = isc.NewEmptyAssets().AddNativeTokens(dummyAssetID, big.NewInt(100))
+	transfer = isc.NewEmptyFungibleTokens().AddNativeTokens(dummyAssetID, big.NewInt(100))
 	require.Panics(t,
 		func() {
 			DebitFromAccount(state, agentID1, transfer)
@@ -131,7 +131,7 @@ func TestCreditDebit3(t *testing.T) {
 func TestCreditDebit4(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	transfer := isc.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -173,7 +173,7 @@ func TestCreditDebit4(t *testing.T) {
 func TestCreditDebit5(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	transfer := isc.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -212,7 +212,7 @@ func TestCreditDebit5(t *testing.T) {
 func TestCreditDebit6(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	transfer := isc.NewFungibleBaseTokens(42).AddNativeTokens(dummyAssetID, big.NewInt(2))
@@ -240,10 +240,10 @@ func TestCreditDebit6(t *testing.T) {
 func TestCreditDebit7(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
-	transfer := isc.NewEmptyAssets().AddNativeTokens(dummyAssetID, big.NewInt(2))
+	transfer := isc.NewEmptyFungibleTokens().AddNativeTokens(dummyAssetID, big.NewInt(2))
 	CreditToAccount(state, agentID1, transfer)
 	checkLedgerT(t, state, "cp1")
 
@@ -307,7 +307,7 @@ func TestTransferNFTs(t *testing.T) {
 	state := dict.New()
 	total := checkLedgerT(t, state, "cp0")
 
-	require.True(t, total.Equals(isc.NewEmptyAssets()))
+	require.True(t, total.Equals(isc.NewEmptyFungibleTokens()))
 
 	agentID1 := isc.NewRandomAgentID()
 	NFT1 := &isc.NFT{

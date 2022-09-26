@@ -284,14 +284,17 @@ func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []
 		}
 		adjustStorageDeposit(ctx, req)
 
-		// make sure that allowance <= sent tokens, so that the target contract does not
-		// spend from the common account
+		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, nil)
+
+		// assert that remaining tokens in the account are enough to pay for the gas budget
 		ctx.Requiref(
-			isc.NewAllowanceFungibleTokens(req.FungibleTokens).SpendFromBudget(req.Metadata.Allowance),
-			"allowance must not be greater than sent tokens",
+			ctx.HasInAccount(
+				isc.NewEthereumAddressAgentID(caller.Address()),
+				ctx.Privileged().TotalGasTokens(),
+			),
+			"not enough tokens remaining to pay for gas budget",
 		)
 
-		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, nil)
 		ctx.Send(req)
 		return nil, true
 
@@ -324,6 +327,16 @@ func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []
 		)
 
 		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
+
+		// assert that remaining tokens in the account are enough to pay for the gas budget
+		ctx.Requiref(
+			ctx.HasInAccount(
+				isc.NewEthereumAddressAgentID(caller.Address()),
+				ctx.Privileged().TotalGasTokens(),
+			),
+			"not enough tokens remaining to pay for gas budget",
+		)
+
 		ctx.SendAsNFT(req, nftID)
 		return nil, true
 

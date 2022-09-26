@@ -37,7 +37,7 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *isc.FungibleTokens {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return isc.NewEmptyAssets()
+		return isc.NewEmptyFungibleTokens()
 	}
 	ret, err := isc.FungibleTokensFromDict(d)
 	require.NoError(ch.Env.T, err)
