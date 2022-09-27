@@ -167,6 +167,14 @@ func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.Age
 	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, fungibleTokens, nfts)
 }
 
+func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+	s.Ctx.(*VMContext).debitFromAccount(agentID, tokens)
+}
+
+func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
+}
+
 func (s *contractSandbox) TotalGasTokens() *isc.FungibleTokens {
 	if s.Ctx.(*VMContext).task.EstimateGasMode {
 		return isc.NewEmptyFungibleTokens()

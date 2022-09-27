@@ -81,6 +81,8 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		timestamp(ctx),
 		genesisAlloc,
 		getBalanceFunc(ctx),
+		getSubBalanceFunc(ctx),
+		getAddBalanceFunc(ctx),
 	)
 
 	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evmtypes.DefaultGasRatio)
