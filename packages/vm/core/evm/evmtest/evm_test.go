@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -769,7 +770,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 
 func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethKey, senderAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	// deploy solidity `storage` contract
 	storage := env.deployStorageContract(ethKey)
@@ -782,7 +783,6 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	gasPrice := big.NewInt(1234) // non 0
 	callArguments, err := storage.abi.Pack("store", valueToStore)
 	require.NoError(t, err)
-	senderAddress := crypto.PubkeyToAddress(ethKey.PublicKey)
 	nonce := storage.chain.getNonce(senderAddress)
 	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, gas.MaxGasPerRequest, gasPrice, callArguments)
 
@@ -802,4 +802,27 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 	require.EqualValues(t, 999, storage.retrieve())
 	require.Equal(t, res.iscReceipt.GasBurned, rec.GasBurned)
 	require.Equal(t, res.iscReceipt.GasFeeCharged, rec.GasFeeCharged)
+}
+
+func TestEVMTransferBaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	_, someEthereumAddr := solo.NewEthereumAccount()
+
+	// try to transfer base tokens between 2 ethereum addresses
+
+	// issue a tx with non-0 amount (try to send ETH)
+	value := new(big.Int).SetUint64(1 * isc.Million)
+
+	// nonce := storage.chain.getNonce(senderAddress)
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, value, gas.MaxGasPerRequest, util.Big0, []byte{})
+
+	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
+	require.NoError(t, err)
+
+	err = env.evmChain.SendTransaction(tx)
+	require.NoError(t, err)
+
+	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 1*isc.Million)
 }
