@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestStorageContract(t *testing.T) {
@@ -764,4 +765,41 @@ func TestEVMWithdrawAll(t *testing.T) {
 	iscReceipt = env.soloChain.LastReceipt()
 	require.NoError(t, iscReceipt.Error.AsGoError())
 	require.EqualValues(t, tokensToWithdraw, env.solo.L1BaseTokens(receiver))
+}
+
+func TestEVMNonZeroGasPriceRequest(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	// deploy solidity `storage` contract
+	storage := env.deployStorageContract(ethKey)
+
+	// call FuncCallView to call EVM contract's `retrieve` view, get 42
+	require.EqualValues(t, 42, storage.retrieve())
+
+	// issue a tx with non-0 gas price
+	valueToStore := uint32(888)
+	gasPrice := big.NewInt(1234) // non 0
+	callArguments, err := storage.abi.Pack("store", valueToStore)
+	require.NoError(t, err)
+	senderAddress := crypto.PubkeyToAddress(ethKey.PublicKey)
+	nonce := storage.chain.getNonce(senderAddress)
+	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, gas.MaxGasPerRequest, gasPrice, callArguments)
+
+	tx, err := types.SignTx(unsignedTx, storage.chain.signer(), ethKey)
+	require.NoError(t, err)
+
+	err = storage.chain.evmChain.SendTransaction(tx)
+	require.NoError(t, err)
+
+	rec := env.soloChain.LastReceipt()
+
+	require.EqualValues(t, valueToStore, storage.retrieve())
+
+	// assert the gas fee is the same as a normal request (with 0 gas price)
+	res, err := storage.store(999)
+	require.NoError(t, err)
+	require.EqualValues(t, 999, storage.retrieve())
+	require.Equal(t, res.iscReceipt.GasBurned, rec.GasBurned)
+	require.Equal(t, res.iscReceipt.GasFeeCharged, rec.GasFeeCharged)
 }

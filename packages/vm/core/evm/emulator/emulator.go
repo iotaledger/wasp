@@ -200,7 +200,21 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 		return nil, nil, err
 	}
 
-	result, err := e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
+	msgWithZeroGasPrice := callMsg{
+		CallMsg: ethereum.CallMsg{
+			From:       msg.From(),
+			To:         msg.To(),
+			Gas:        msg.Gas(),
+			GasPrice:   big.NewInt(0),
+			GasFeeCap:  big.NewInt(0),
+			GasTipCap:  big.NewInt(0),
+			Value:      msg.Value(),
+			Data:       msg.Data(),
+			AccessList: msg.AccessList(),
+		},
+	}
+
+	result, err := e.applyMessage(msgWithZeroGasPrice, statedb, pendingHeader, gasBurnEnable)
 	if err != nil {
 		return nil, result, err
 	}
