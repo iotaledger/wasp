@@ -17,9 +17,13 @@ keywords:
 
 This page describes the usage of the preconfigured developer Docker setup.
 
+:::note
+This setup is intended for **local** development only (you will have your own private network/tangle).
+:::
+
 ## Introduction
 
-To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp node with a Hornet based private tangle, ready to run out of the box. 
+To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp node with a Hornet based private tangle, ready to run out of the box.
 
 ## Running the setup
 
