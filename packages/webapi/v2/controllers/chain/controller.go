@@ -88,7 +88,6 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
 		SetOperationId("activateChain").
-		SetResponseContentType("application/json").
 		SetSummary("Activate a chain")
 
 	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
@@ -96,7 +95,13 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
-		SetResponseContentType("application/json").
+		SetSummary("Deactivate a chain")
+
+	adminAPI.PUT(routes.PutChainRecord(), c.saveChain).
+		AddParamBody(&SaveChainRecordRequest{}, "body", "The save chain request", true).
+		AddResponse(http.StatusNotModified, "Chain was not saved", nil, nil).
+		AddResponse(http.StatusOK, "Chain was saved", nil, nil).
+		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
 	adminAPI.GET(routes.GetChainCommitteeInfo(":chainID"), c.getCommitteeInfo).

@@ -47,7 +47,7 @@ type OffLedgerRequestBody struct {
 
 type ChainListResponse []*ChainInfoResponse
 
-func MapChainInfoResponse(chainInfo dto.ChainInfo, evmChainID uint16) *ChainInfoResponse {
+func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) *ChainInfoResponse {
 	gasFeeTokenID := ""
 
 	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {

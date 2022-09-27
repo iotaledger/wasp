@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -96,15 +98,25 @@ func (c *ChainService) GetAllChainIDs() ([]*isc.ChainID, error) {
 	return chainIDs, nil
 }
 
-func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (dto.ChainInfo, error) {
+func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error) {
 	info, err := c.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	chainInfo, err := governance.GetChainInfo(info)
+	governanceChainInfo, err := governance.GetChainInfo(info)
+	if err != nil {
+		return nil, err
+	}
 
-	return chainInfo, err
+	chainRecord, err := c.registryProvider().GetChainRecordByChainID(chainID)
+	if err != nil {
+		return nil, err
+	}
+
+	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord.Active)
+
+	return chainInfo, nil
 }
 
 func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error) {
@@ -119,4 +131,24 @@ func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, err
 	}
 
 	return contracts, nil
+}
+
+func (c *ChainService) SaveChainRecord(chainID *isc.ChainID, active bool) error {
+	registryProvider := c.registryProvider()
+
+	chainRecord, err := registryProvider.GetChainRecordByChainID(chainID)
+	if err != nil {
+		return err
+	}
+
+	if chainRecord != nil {
+		return errors.New("chain already exists")
+	}
+
+	err = registryProvider.SaveChainRecord(&registry.ChainRecord{
+		Active:  active,
+		ChainID: *chainID,
+	})
+
+	return err
 }

@@ -72,7 +72,7 @@ func ListChainRecords() string {
 }
 
 func PutChainRecord() string {
-	return "/adm/chainrecord"
+	return "/chains"
 }
 
 func GetChainRecord(chainID string) string {
