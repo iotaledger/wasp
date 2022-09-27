@@ -1,7 +1,10 @@
 package services
 
 import (
+	"errors"
 	"fmt"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 
@@ -30,7 +33,26 @@ func NewOffLedgerService(log *logger.Logger, chainService interfaces.Chain, node
 	}
 }
 
-func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID *isc.ChainID, request isc.OffLedgerRequest) error {
+func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequest, error) {
+	request, err := isc.NewRequestFromMarshalUtil(marshalutil.New(binaryRequest))
+	if err != nil {
+		return nil, errors.New("error parsing request from payload")
+	}
+
+	req, ok := request.(isc.OffLedgerRequest)
+	if !ok {
+		return nil, errors.New("error parsing request: off-ledger request expected")
+	}
+
+	return req, nil
+}
+
+func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID *isc.ChainID, binaryRequest []byte) error {
+	request, err := c.ParseRequest(binaryRequest)
+	if err != nil {
+		return err
+	}
+
 	reqID := request.ID()
 
 	if c.requestCache.Get(reqID) != nil {

@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/routes"
 )
 
-type ChainController struct {
+type Controller struct {
 	log *loggerpkg.Logger
 
 	chainService     interfaces.Chain
@@ -25,7 +25,7 @@ type ChainController struct {
 }
 
 func NewChainController(log *loggerpkg.Logger, chainService interfaces.Chain, nodeService interfaces.Node, offLedgerService interfaces.OffLedger, registryService interfaces.Registry, vmService interfaces.VM) interfaces.APIController {
-	return &ChainController{
+	return &Controller{
 		log:              log,
 		chainService:     chainService,
 		nodeService:      nodeService,
@@ -35,11 +35,11 @@ func NewChainController(log *loggerpkg.Logger, chainService interfaces.Chain, no
 	}
 }
 
-func (c *ChainController) Name() string {
+func (c *Controller) Name() string {
 	return "chains"
 }
 
-func (c *ChainController) RegisterExampleData(mock interfaces.Mocker) {
+func (c *Controller) RegisterExampleData(mock interfaces.Mocker) {
 	mock.AddModel(&models.ChainInfoResponse{})
 	mock.AddModel(&models.ContractListResponse{})
 	mock.AddModel(&models.CommitteeInfoResponse{})
@@ -47,73 +47,82 @@ func (c *ChainController) RegisterExampleData(mock interfaces.Mocker) {
 	mock.AddModel(&models.ContractInfoResponse{})
 }
 
-func (c *ChainController) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	dictExample := dict.Dict{
 		"key1": []byte("value1"),
 	}.JSONDict()
 
 	publicAPI.POST(routes.CallViewByName(":chainID", ":contractName", ":functionName"), c.callViewByContractName).
-		SetSummary("Call a view function on a contract by name").
+		AddParamBody(dictExample, "body", "Parameters", false).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "contractName", "Contract Name").
 		AddParamPath("", "functionName", "Function name").
-		AddParamBody(dictExample, "params", "Parameters", false).
-		AddResponse(http.StatusOK, "Result", dictExample, nil)
+		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		SetResponseContentType("application/json").
+		SetSummary("Call a view function on a contract by name")
 
 	publicAPI.POST(routes.CallViewByHname(":chainID", ":contractHName", ":functionHName"), c.callViewByHName).
-		SetSummary("Call a view function on a contract by Hname").
+		AddParamBody(dictExample, "body", "Parameters", false).
 		AddParamPath("", "chainID", "ChainID (Bech32").
 		AddParamPath("", "contractHName", "Contract Hname").
-		AddParamPath("getInfo", "functionHName", "Function Hname").
-		AddParamBody(dictExample, "params", "Parameters", false).
-		AddResponse(http.StatusOK, "Result", dictExample, nil)
+		AddParamPath("", "functionHName", "Function Hname").
+		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		SetResponseContentType("application/json").
+		SetSummary("Call a view function on a contract by Hname")
 
 	publicAPI.POST(routes.NewRequest(":chainID"), c.handleNewRequest).
-		SetSummary("Post an off-ledger request").
-		AddParamPath("", "chainID", "chainID represented in base58").
 		AddParamBody(
 			models.OffLedgerRequestBody{Request: "base64 string"},
-			"Request",
-			"Offledger Request encoded in base64. Optionally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"",
+			"body",
+			"Offledger request as JSON. Request encoded in base64.",
 			false).
-		AddResponse(http.StatusAccepted, "Request submitted", nil, nil)
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
+		SetResponseContentType("application/json").
+		SetSummary("Post an off-ledger request")
 }
 
-func (c *ChainController) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.POST(routes.ActivateChain(":chainID"), c.activateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
 		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
+		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
 		SetOperationId("activateChain").
+		SetResponseContentType("application/json").
 		SetSummary("Activate a chain")
 
 	adminAPI.POST(routes.DeactivateChain(":chainID"), c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
+		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
+		SetResponseContentType("application/json").
 		SetSummary("Deactivate a chain")
 
 	adminAPI.GET(routes.GetChainCommitteeInfo(":chainID"), c.getCommitteeInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all nodes tied to the chain.", mocker.GetMockedStruct(models.CommitteeInfoResponse{}), nil).
 		SetOperationId("getChainCommitteeInfo").
+		SetResponseContentType("application/json").
 		SetSummary("Get basic chain info.")
 
 	adminAPI.GET(routes.GetChainList(), c.getChainList).
 		AddResponse(http.StatusOK, "A list of all available chains.", mocker.GetMockedStruct(models.ChainListResponse{}), nil).
 		SetOperationId("getChainList").
+		SetResponseContentType("application/json").
 		SetSummary("Get a list of all chains.")
 
 	adminAPI.GET(routes.GetChainInfo(":chainID"), c.getChainInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "Information about a specific chain.", mocker.GetMockedStruct(models.ChainInfoResponse{}), nil).
 		SetOperationId("getChainInfo").
+		SetResponseContentType("application/json").
 		SetSummary("Get information about a specific chain.")
 
 	adminAPI.GET(routes.GetChainContracts(":chainID"), c.getContracts).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available contracts.", mocker.GetMockedStruct(models.ContractListResponse{}), nil).
 		SetOperationId("getChainContracts").
+		SetResponseContentType("application/json").
 		SetSummary("Get all available chain contracts.")
 }

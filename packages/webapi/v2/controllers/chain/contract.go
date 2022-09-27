@@ -2,58 +2,58 @@ package chain
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 
 	"github.com/labstack/echo/v4"
 )
 
-func (c *ChainController) handleCallView(e echo.Context, chainID *isc.ChainID, contractHName, functionHName isc.Hname, payload io.ReadCloser) error {
+func (c *Controller) handleCallView(e echo.Context, chainID *isc.ChainID, contractHName, functionHName isc.Hname, payload io.ReadCloser) error {
 	var params dict.Dict
 	if payload != http.NoBody {
 		if err := json.NewDecoder(payload).Decode(&params); err != nil {
-			return httperrors.BadRequest("Invalid request body")
+			return apierrors.InvalidPropertyError("body", err)
 		}
 	}
 
 	result, err := c.vmService.CallViewByChainID(chainID, contractHName, functionHName, params)
 	if err != nil {
-		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
+		return apierrors.ContractExecutionError(err)
 	}
 
 	return e.JSON(http.StatusOK, result)
 }
 
-func (c *ChainController) callViewByContractName(e echo.Context) error {
+func (c *Controller) callViewByContractName(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", e.Param("chainID")))
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
-	contractHName, err := isc.HnameFromString(e.Param("contractName"))
+	contractName, err := isc.HnameFromString(e.Param("contractName"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", e.Param("contractName")))
+		return apierrors.InvalidPropertyError("contractName", err)
 	}
 
-	functionHName, err := isc.HnameFromString(e.Param("functionName"))
+	functionName, err := isc.HnameFromString(e.Param("functionName"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid hname ID: %+v", e.Param("functionName")))
+		return apierrors.InvalidPropertyError("functionName", err)
 	}
 
-	return c.handleCallView(e, chainID, contractHName, functionHName, e.Request().Body)
+	return c.handleCallView(e, chainID, contractName, functionName, e.Request().Body)
 }
 
-func (c *ChainController) callViewByHName(e echo.Context) error {
+func (c *Controller) callViewByHName(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", e.Param("chainID")))
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	contractHName := isc.Hn(e.Param("contractHName"))
@@ -62,10 +62,10 @@ func (c *ChainController) callViewByHName(e echo.Context) error {
 	return c.handleCallView(e, chainID, contractHName, functionHName, e.Request().Body)
 }
 
-func (c *ChainController) getContracts(e echo.Context) error {
+func (c *Controller) getContracts(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	contracts, err := c.chainService.GetContracts(chainID)

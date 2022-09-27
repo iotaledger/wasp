@@ -10,3 +10,7 @@ type (
 	ChainInfo    *governance.ChainInfo
 	ContractsMap map[isc.Hname]*root.ContractRecord
 )
+
+type OffLedgerRequestBody struct {
+	Request string `swagger:"desc(Offledger Request (base64))"`
+}

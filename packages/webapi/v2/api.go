@@ -5,6 +5,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/configuration"
+	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/chain"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
@@ -29,10 +30,12 @@ func Init(logger *loggerpkg.Logger,
 ) {
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
+	server.Echo().HTTPErrorHandler = apierrors.HTTPErrorHandler
 
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
+	// Add dependency injection here
 	vmService := services.NewVMService(logger, chainsProvider)
 	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, vmService, wal)
 	nodeService := services.NewNodeService(logger, networkProvider, registryProvider)

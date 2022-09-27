@@ -1,83 +1,64 @@
 package chain
 
 import (
-	"fmt"
+	"encoding/base64"
 	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
-func (c *ChainController) handleNewRequest(e echo.Context) error {
+func (c *Controller) handleNewRequest(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", e.Param("chainID"), err.Error()))
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
-	offLedgerReq, err := parseOffLedgerRequest(e)
+	offLedgerReq, err := readRequest(e)
 	if err != nil {
-		return err
+		return apierrors.InvalidOffLedgerRequestError(err)
 	}
 
 	err = c.offLedgerService.EnqueueOffLedgerRequest(chainID, offLedgerReq)
 	if err != nil {
-		return err
+		return apierrors.ContractExecutionError(err)
 	}
 
 	return e.NoContent(http.StatusAccepted)
 }
 
-func parseBinaryRequest(c echo.Context) (reg isc.OffLedgerRequest, err error) {
-	reqBytes, err := io.ReadAll(c.Request().Body)
+func readBinaryRequest(c echo.Context) ([]byte, error) {
+	request, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return nil, httperrors.BadRequest("error parsing request from payload")
+		return nil, err
 	}
 
-	rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(reqBytes))
-	if err != nil {
-		return nil, httperrors.BadRequest("error parsing request from payload")
-	}
-
-	req, ok := rGeneric.(isc.OffLedgerRequest)
-	if !ok {
-		return nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
-	}
-
-	return req, err
+	return request, err
 }
 
-func parseJSONRequest(c echo.Context) (req isc.OffLedgerRequest, err error) {
-	r := new(model.OffLedgerRequestBody)
-	if err = c.Bind(r); err != nil {
-		return nil, httperrors.BadRequest("error parsing request from payload")
+func readJSONRequest(c echo.Context) ([]byte, error) {
+	request := new(dto.OffLedgerRequestBody)
+	if err := c.Bind(request); err != nil {
+		return nil, err
 	}
 
-	rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
-	if err != nil {
-		return nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
-	}
+	requestDecoded, err := base64.StdEncoding.DecodeString(request.Request)
 
-	var ok bool
-	if req, ok = rGeneric.(isc.OffLedgerRequest); !ok {
-		return nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
-	}
-
-	return req, err
+	return requestDecoded, err
 }
 
-func parseOffLedgerRequest(c echo.Context) (req isc.OffLedgerRequest, err error) {
+func readRequest(c echo.Context) ([]byte, error) {
 	contentType := c.Request().
 		Header.
 		Get("Content-Type")
 
 	if contentType == echo.MIMEApplicationJavaScript {
-		return parseJSONRequest(c)
+		return readJSONRequest(c)
 	}
 
-	return parseBinaryRequest(c)
+	return readBinaryRequest(c)
 }

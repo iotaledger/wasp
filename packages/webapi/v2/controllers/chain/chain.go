@@ -3,18 +3,18 @@ package chain
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 )
 
-func (c *ChainController) activateChain(e echo.Context) error {
+func (c *Controller) activateChain(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	if err := c.chainService.ActivateChain(chainID); err != nil {
@@ -24,10 +24,10 @@ func (c *ChainController) activateChain(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-func (c *ChainController) deactivateChain(e echo.Context) error {
+func (c *Controller) deactivateChain(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	if err := c.chainService.DeactivateChain(chainID); err != nil {
@@ -37,25 +37,25 @@ func (c *ChainController) deactivateChain(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-func (c *ChainController) getCommitteeInfo(e echo.Context) error {
+func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	chainRecord, err := c.registryService.GetChainRecordByChainID(chainID)
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	if chainRecord == nil {
-		return httperrors.NotFound("")
+		return apierrors.ChainNotFoundError(e.Param("chainID"))
 	}
 
 	chain := c.chainService.GetChainByID(chainID)
 
 	if chain == nil {
-		return httperrors.NotFound("")
+		return apierrors.ChainNotFoundError(e.Param("chainID"))
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()
@@ -76,10 +76,10 @@ func (c *ChainController) getCommitteeInfo(e echo.Context) error {
 	return e.JSON(http.StatusOK, chainInfo)
 }
 
-func (c *ChainController) getChainInfo(e echo.Context) error {
+func (c *Controller) getChainInfo(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -97,7 +97,7 @@ func (c *ChainController) getChainInfo(e echo.Context) error {
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
 
-func (c *ChainController) getChainList(e echo.Context) error {
+func (c *Controller) getChainList(e echo.Context) error {
 	chainIDs, err := c.chainService.GetAllChainIDs()
 	if err != nil {
 		return err

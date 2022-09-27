@@ -60,7 +60,7 @@ func GetChainCommitteeInfo(chainID string) string {
 }
 
 func GetChainInfo(chainID string) string {
-	return "/chains/" + chainID + "/info"
+	return "/chains/" + chainID
 }
 
 func GetChainList() string {

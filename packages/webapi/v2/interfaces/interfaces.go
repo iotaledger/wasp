@@ -39,7 +39,8 @@ type Node interface {
 }
 
 type OffLedger interface {
-	EnqueueOffLedgerRequest(chainID *isc.ChainID, request isc.OffLedgerRequest) error
+	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
+	EnqueueOffLedgerRequest(chainID *isc.ChainID, request []byte) error
 }
 
 type VM interface {
