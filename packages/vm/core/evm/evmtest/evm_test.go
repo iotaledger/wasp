@@ -815,7 +815,6 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 	// issue a tx with non-0 amount (try to send ETH)
 	value := new(big.Int).SetUint64(1 * isc.Million)
 
-	// nonce := storage.chain.getNonce(senderAddress)
 	unsignedTx := types.NewTransaction(0, someEthereumAddr, value, gas.MaxGasPerRequest, util.Big0, []byte{})
 
 	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
