@@ -153,9 +153,9 @@ func TestGasLimit(t *testing.T) {
 	// estimate gas by sending a valid tx
 	result, err := storage.store(123)
 	require.NoError(t, err)
-	gas := result.iscReceipt.GasBurned
+	gasBurned := result.iscReceipt.GasBurned
 	fee := result.iscReceipt.GasFeeCharged
-	t.Logf("gas: %d, fee: %d", gas, fee)
+	t.Logf("gas: %d, fee: %d", gasBurned, fee)
 
 	// send again with same gas limit but not enough base tokens
 	notEnoughBaseTokensForGas := fee * 9 / 10
