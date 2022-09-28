@@ -57,7 +57,7 @@
   },
   "metrics": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:2112"
+    "bindAddress": "0.0.0.0:2112"
   },
   "webapi": {
     "enabled": true,

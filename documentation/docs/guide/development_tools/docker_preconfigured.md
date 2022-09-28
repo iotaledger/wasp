@@ -27,11 +27,11 @@ To diminish the time spent on configuration and research, we have created a dock
 
 ## Running the setup
 
-Checkout the project and move to the `devnet` folder
+Checkout the project and move to the `local-setup` folder
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
-cd wasp/tools/devnet
+cd wasp/tools/local-setup
 ```
 
 :::note
