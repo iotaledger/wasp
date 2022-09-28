@@ -262,7 +262,7 @@ Example:
   {
     "metrics": {
       "enabled": true,
-      "bindAddress": "127.0.0.1:2112"
+      "bindAddress": "0.0.0.0:2112"
     }
   }
 ```
@@ -310,7 +310,7 @@ Example:
     "webapi": {
       "enabled": true,
       "nodeOwnerAddresses": [],
-      "bindAddress": "127.0.0.1:9090",
+      "bindAddress": "0.0.0.0:9090",
       "auth": {
         "scheme": "jwt",
         "jwt": {
@@ -389,7 +389,7 @@ Example:
   {
     "dashboard": {
       "enabled": true,
-      "bindAddress": "127.0.0.1:7000",
+      "bindAddress": "0.0.0.0:7000",
       "exploreAddressURL": "",
       "auth": {
         "scheme": "basic",
