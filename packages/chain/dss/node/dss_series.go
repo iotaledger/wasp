@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/chain/dss"
@@ -123,14 +122,14 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 	me := pubKeyAsNodeID(myPK)
 	//
 	// CryptoLib -> Kyber.
-	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(mySK.AsBytes()); err != nil {
+	kyberMySK, err := mySK.AsKyberKeyPair()
+	if err != nil {
 		return nil, nil, err
 	}
 	kyberNodePKs := make(map[gpa.NodeID]kyber.Point, len(nodePKs))
 	for i, nid := range nodeIDs {
-		kyberNodePKs[nid] = s.node.suite.Point()
-		if err := kyberNodePKs[nid].UnmarshalBinary(nodePKs[i].AsBytes()); err != nil {
+		kyberNodePKs[nid], err = nodePKs[i].AsKyberPoint()
+		if err != nil {
 			return nil, nil, err
 		}
 	}
@@ -145,7 +144,7 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 		kyberNodePKs,                  // nodePKs
 		f,                             // f
 		me,                            // me
-		kyberEdDSSA.Secret,            // mySK
+		kyberMySK.Private,             // mySK
 		s.dkShare.DSSSecretShare(),    // longTermSecretShare
 		s.node.log,
 	)
