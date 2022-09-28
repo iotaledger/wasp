@@ -14,7 +14,6 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/dss"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"go.dedis.ch/kyber/v3/suites"
@@ -70,7 +69,8 @@ type dkShareImpl struct {
 	edPrivateShare  kyber.Scalar
 	//
 	// Shares for the randomness in the consensus et al.
-	blsSuite         Suite // Used for unmarshaling, signing and verification
+	blsSuite         Suite  // Used for unmarshaling, signing and verification
+	blsThreshold     uint16 // BLS Threshold has to be low (F+1)
 	blsSharedPublic  kyber.Point
 	blsPublicCommits []kyber.Point
 	blsPublicShares  []kyber.Point
@@ -92,6 +92,7 @@ func NewDKShare(
 	edPublicShares []kyber.Point,
 	edPrivateShare kyber.Scalar,
 	blsSuite Suite,
+	blsThreshold uint16,
 	blsSharedPublic kyber.Point,
 	blsPublicCommits []kyber.Point,
 	blsPublicShares []kyber.Point,
@@ -119,6 +120,7 @@ func NewDKShare(
 		edPublicShares:   edPublicShares,
 		edPrivateShare:   edPrivateShare,
 		blsSuite:         blsSuite,
+		blsThreshold:     blsThreshold,
 		blsSharedPublic:  blsSharedPublic,
 		blsPublicCommits: blsPublicCommits,
 		blsPublicShares:  blsPublicShares,
@@ -577,21 +579,25 @@ func (s *dkShareImpl) DSSSecretShare() SecretShare {
 
 func (s *dkShareImpl) makeSigner(data []byte, nonce SecretShare) (*dss.DSS, error) {
 	priKeyDKS := s.DSSSecretShare()
-	nodePrivKey := eddsa.EdDSA{}
-	if err := nodePrivKey.UnmarshalBinary(s.nodePrivKey.AsBytes()); err != nil {
+	nodeKyberKeyPair, err := s.nodePrivKey.AsKyberKeyPair()
+	if err != nil {
 		return nil, xerrors.Errorf("cannot convert node priv key to kyber scalar: %w", err)
 	}
 	participants := make([]kyber.Point, len(s.nodePubKeys))
 	for i := range s.nodePubKeys {
-		participants[i] = s.edSuite.Point()
-		if err := participants[i].UnmarshalBinary(s.nodePubKeys[i].AsBytes()); err != nil {
+		participants[i], err = s.nodePubKeys[i].AsKyberPoint()
+		if err != nil {
 			return nil, xerrors.Errorf("cannot convert node public key to kyber point: %w", err)
 		}
 	}
-	return dss.NewDSS(s.edSuite, nodePrivKey.Secret, participants, priKeyDKS, nonce, data, int(s.t))
+	return dss.NewDSS(s.edSuite, nodeKyberKeyPair.Private, participants, priKeyDKS, nonce, data, int(s.t))
 }
 
 ///////////////////////// BLS based signatures.
+
+func (s *dkShareImpl) BLSThreshold() uint16 {
+	return s.blsThreshold
+}
 
 func (s *dkShareImpl) BLSSharedPublic() kyber.Point {
 	return s.blsSharedPublic

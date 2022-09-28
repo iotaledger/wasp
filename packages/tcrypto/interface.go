@@ -49,6 +49,7 @@ type DKShare interface {
 	DSSSecretShare() SecretShare
 	//
 	// BLS based crypto (for randomness only.)
+	BLSThreshold() uint16
 	BLSSharedPublic() kyber.Point
 	BLSPublicShares() []kyber.Point
 	BLSSignShare(data []byte) (tbls.SigShare, error)

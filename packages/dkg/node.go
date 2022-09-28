@@ -11,7 +11,6 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
 
@@ -50,14 +49,14 @@ func NewNode(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
-	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.GetPrivateKey().AsBytes()); err != nil {
+	kyberKeyPair, err := identity.GetPrivateKey().AsKyberKeyPair()
+	if err != nil {
 		return nil, err
 	}
 	n := Node{
 		identity:                identity,
-		secKey:                  kyberEdDSSA.Secret,
-		pubKey:                  kyberEdDSSA.Public,
+		secKey:                  kyberKeyPair.Private,
+		pubKey:                  kyberKeyPair.Public,
 		blsSuite:                tcrypto.DefaultBLSSuite(),
 		edSuite:                 edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider:             netProvider,
