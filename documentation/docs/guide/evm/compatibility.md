@@ -39,7 +39,7 @@ Here are some of the most important properties and limitations of EVM support in
 
 - Any Ethereum address is accepted as a valid `AgentID`, and thus can own L2 tokens on an IOTA Smart Contract chain, just like IOTA addresses.
 
-- The Ethereum balance of an account is tied to its L2 ISC balance in the token used to pay for gas (e.g. by default `eth_getBalance` will return the L2 base token balance of the given Ethereum account). Any attempt to directly modify an Ethereum account balance will fail (e.g. attaching value to a transaction, calling `<address>.transfer(...)`, etc).
+- The Ethereum balance of an account is tied to its L2 ISC balance in the token used to pay for gas (e.g. by default `eth_getBalance` will return the L2 base token balance of the given Ethereum account). 
 
 - In order to manipulate the owned ISC tokens (and in general, to access ISC functionality), there is a [special Ethereum contract](magic.md) that provides bindings to the ISC sandbox (e.g. call `isc.send(...)` to send tokens).
 

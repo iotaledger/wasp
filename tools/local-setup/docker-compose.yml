@@ -18,16 +18,14 @@ services:
       - "--dashboard.auth.scheme=none"
       - "--webapi.auth.scheme=none"
       - "--inx.address=hornet-nest:9029"
-      - "--database.directory=/waspdb"
+      - "--database.directory=/app/waspdb"
+      - "--logger.level=debug"
     container_name: wasp
     depends_on:
       - hornet-nest
     restart: on-failure:10
     networks:
       - wasp-net
-    volumes:
-      - wasp-db:/waspdb
-      - ./wasp.config.json:/etc/wasp_config.json
     expose:
       - "4000/udp" # Peering
       - "5550/tcp" # Nano MSG

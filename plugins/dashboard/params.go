@@ -7,7 +7,7 @@ import (
 
 type ParametersDashboard struct {
 	Enabled           bool                             `default:"true" usage:"whether the dashboard plugin is enabled"`
-	BindAddress       string                           `default:"127.0.0.1:7000" usage:"the bind address for the node dashboard"`
+	BindAddress       string                           `default:"0.0.0.0:7000" usage:"the bind address for the node dashboard"`
 	ExploreAddressURL string                           `default:"" usage:"URL to add as href to addresses in the dashboard"`
 	Auth              authentication.AuthConfiguration `usage:"configures the authentication for the dashboard service"`
 }
