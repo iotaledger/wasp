@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -77,6 +80,24 @@ func SetupDkg(
 	require.NotNil(t, dkShare.GetSharedPublic())
 	require.NoError(t, networkCloser.Close())
 	return dkShare.GetAddress(), dkShareRegistryProviders
+}
+
+func SetupDkgTrivial(
+	t *testing.T,
+	threshold uint16,
+	identities []*cryptolib.KeyPair,
+	dkShareRegistries []registry.DKShareRegistryProvider, // Will be used if not nil.
+) (iotago.Address, []registry.DKShareRegistryProvider) {
+	return nil, nil // TODO: ...
+}
+
+func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly, []*share.PriShare) {
+	priPoly := share.NewPriPoly(suite, t, nil, suite.RandomStream())
+	priShares := priPoly.Shares(n)
+	pubPoly := priPoly.Commit(suite.Point().Base())
+	_, commits := pubPoly.Info()
+	pubKey := commits[0]
+	return pubKey, pubPoly, priShares
 }
 
 func SetupDkgPregenerated(
