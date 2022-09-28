@@ -130,3 +130,9 @@ func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []Messa
 	}
 	return msgArray
 }
+
+func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
+	for n, g := range tc.nodes {
+		logFunc("%v [node=%v]: %v", prefix, n, g.StatusString())
+	}
+}
