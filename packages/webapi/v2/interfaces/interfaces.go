@@ -25,8 +25,8 @@ type Chain interface {
 	GetAllChainIDs() ([]*isc.ChainID, error)
 	GetChainByID(chainID *isc.ChainID) chain.Chain
 	GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error)
-	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
+	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
 	SaveChainRecord(chainID *isc.ChainID, active bool) error
 }
 

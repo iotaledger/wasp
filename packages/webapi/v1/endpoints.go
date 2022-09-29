@@ -6,7 +6,6 @@ package v1
 import (
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
@@ -47,9 +46,6 @@ func Init(
 	publisherPort int,
 ) {
 	log = logger
-
-	server.SetRequestContentType(echo.MIMEApplicationJSON)
-	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	pub := server.Group("public", "v1").SetDescription("Public endpoints")
 	addWebSocketEndpoint(pub, log)

@@ -7,6 +7,9 @@ const (
 
 // Example permissions to be used later on
 const (
-	ChainRead  = "chain.read"
-	ChainWrite = "chain.write"
+	ChainRead    = "chain.read"
+	ChainWrite   = "chain.write"
+	PeeringRead  = "peering.read"
+	PeeringWrite = "peering.write"
+	NodeRead     = "node.read"
 )

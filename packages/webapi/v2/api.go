@@ -1,11 +1,9 @@
 package v2
 
 import (
-	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/configuration"
-	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/chain"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
@@ -19,6 +17,33 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, registryProvider registry.Provider, controllersToLoad []interfaces.APIController) {
+	/*claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The API will be accessible if the token has an 'API' claim
+		return claims.HasPermission(permissions.API)
+	}*/
+
+	for _, controller := range controllersToLoad {
+		controller.RegisterExampleData(mocker)
+
+		publicGroup := server.Group(controller.Name(), "v2")
+
+		controller.RegisterPublic(publicGroup, mocker)
+
+		adminGroup := server.Group(controller.Name(), "v2").
+			SetSecurity("Authorization")
+
+		/*authentication.AddAuthentication(adminGroup.EchoGroup(), registryProvider, authentication.AuthConfiguration{
+			Scheme: authentication.AuthJWT,
+			JWTConfig: authentication.JWTAuthConfiguration{
+				Duration: 24 * time.Hour,
+			},
+		}, claimValidator)
+		*/
+		controller.RegisterAdmin(adminGroup, mocker)
+	}
+}
+
 func Init(logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
 	config *configuration.Configuration,
@@ -28,10 +53,6 @@ func Init(logger *loggerpkg.Logger,
 	registryProvider registry.Provider,
 	wal *walpkg.WAL,
 ) {
-	server.SetRequestContentType(echo.MIMEApplicationJSON)
-	server.SetResponseContentType(echo.MIMEApplicationJSON)
-	server.Echo().HTTPErrorHandler = apierrors.HTTPErrorHandler
-
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
@@ -47,16 +68,5 @@ func Init(logger *loggerpkg.Logger,
 		controllers.NewInfoController(logger, config),
 	}
 
-	for _, controller := range controllersToLoad {
-		controller.RegisterExampleData(mocker)
-
-		publicGroup := server.Group(controller.Name(), "v2")
-
-		controller.RegisterPublic(publicGroup, mocker)
-
-		adminGroup := server.Group(controller.Name(), "v2").
-			SetSecurity("Authorization")
-
-		controller.RegisterAdmin(adminGroup, mocker)
-	}
+	loadControllers(server, mocker, registryProvider, controllersToLoad)
 }

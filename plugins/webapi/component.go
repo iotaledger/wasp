@@ -23,8 +23,8 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/packages/webapi"
 	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
 )
 
@@ -108,7 +108,7 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
+		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler
 
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
@@ -131,6 +131,9 @@ func provide(c *dig.Container) error {
 			Description: "REST API for the Wasp node",
 			Version:     wasp.Version,
 		})
+
+		echoSwagger.SetRequestContentType(echo.MIMEApplicationJSON)
+		echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
 
 		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
 			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
