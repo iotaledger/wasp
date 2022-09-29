@@ -228,5 +228,5 @@ func OnLoad(index int32) {
 		panic("Calling core contract?")
 	}
 
-	wasmlib.ScExportsExport(&exportMap)
+	exportMap.Export()
 }
