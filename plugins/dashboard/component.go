@@ -28,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
 func init() {
@@ -89,7 +90,7 @@ func (w *waspServices) ConfigDump() map[string]interface{} {
 
 func (*waspServices) WebAPIPort() string {
 	port := "80"
-	parts := strings.Split(ParamsDashboard.BindAddress, ":")
+	parts := strings.Split(webapi.ParamsWebAPI.BindAddress, ":")
 	if len(parts) == 2 {
 		port = parts[1]
 	}
