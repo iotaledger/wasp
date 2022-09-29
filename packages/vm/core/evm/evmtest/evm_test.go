@@ -806,22 +806,36 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 
 func TestEVMTransferBaseTokens(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
+
+	sendTx := func(amount *big.Int) {
+		nonce := env.getNonce(ethAddr)
+		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, gas.MaxGasPerRequest, util.Big0, []byte{})
+		tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
+		require.NoError(t, err)
+		err = env.evmChain.SendTransaction(tx)
+		require.NoError(t, err)
+	}
 
 	// try to transfer base tokens between 2 ethereum addresses
 
-	// issue a tx with non-0 amount (try to send ETH)
-	value := new(big.Int).SetUint64(1 * isc.Million)
-
-	unsignedTx := types.NewTransaction(0, someEthereumAddr, value, gas.MaxGasPerRequest, util.Big0, []byte{})
-
-	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
-	require.NoError(t, err)
-
-	err = env.evmChain.SendTransaction(tx)
-	require.NoError(t, err)
-
+	// issue a tx with non-0 amount (try to send ETH/basetoken)
+	// try sending 1 million base tokens (expressed in ethereum decimals)
+	value := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(1*isc.Million),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+	sendTx(value)
 	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 1*isc.Million)
+
+	// by default iota/shimmer base token has 6 decimal cases, so anything past the 6th decimal case should be ignored
+	valueWithExtraDecimals := big.NewInt(1_000_000_999_999_999_999) // all these 9's will be ignored and only 1 million tokens should be transferred
+	sendTx(valueWithExtraDecimals)
+	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 2*isc.Million)
+
+	// issue a tx with a too low amount
+	lowValue := big.NewInt(999_999_999_999) // all these 9's will be ignored and only 1 million tokens should be transferred
+	sendTx(lowValue)
+	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 2*isc.Million)
 }

@@ -22,6 +22,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
@@ -131,14 +132,7 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	{
 		// FIXME: https://github.com/iotaledger/wasp/issues/1120
 		// adjusting the decimals so that Metamask shows the correct value
-		const metamaskDecimals = 18
-		decimals := int64(e.evmChain.BaseToken().Decimals)
-		if decimals > metamaskDecimals {
-			panic("base token decimals is too large")
-		}
-		exp := big.NewInt(10)
-		exp.Exp(exp, big.NewInt(metamaskDecimals-decimals), nil)
-		bal = bal.Mul(bal, exp)
+		bal = util.BaseTokensDecimalsToEthereumDecimals(bal, int64(e.evmChain.BaseToken().Decimals))
 	}
 	return (*hexutil.Big)(bal), nil
 }

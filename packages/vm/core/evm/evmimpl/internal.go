@@ -17,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -209,6 +211,7 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
+// TODO dropping "customtokens gas fee" mgith be the way to go
 func getFeePolicy(ctx isc.SandboxBase) *gas.GasFeePolicy {
 	res := ctx.CallView(
 		governance.Contract.Hname(),
@@ -241,7 +244,10 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
 			accounts.ViewBalanceBaseToken.Hname(),
 			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 		)
-		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+		// TODO this won't work for custom native tokens for now
+		decimals := parameters.L1().BaseToken.Decimals
+		ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+		return util.BaseTokensDecimalsToEthereumDecimals(ret, int64(decimals))
 	}
 }
 
@@ -258,14 +264,20 @@ func fungibleTokensForFee(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTok
 
 func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
 	return func(addr common.Address, amount *big.Int) {
-		tokens := fungibleTokensForFee(ctx, amount)
+		// TODO this will only work for L1 base tokens, we don't have a way to know about decimals for custom tokens
+		decimals := parameters.L1().BaseToken.Decimals
+		amt := util.EthereumDecimalsToBaseTokenDecimals(amount, int64(decimals))
+		tokens := fungibleTokensForFee(ctx, amt)
 		ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 	}
 }
 
 func getAddBalanceFunc(ctx isc.Sandbox) emulator.AddBalanceFunc {
 	return func(addr common.Address, amount *big.Int) {
-		tokens := fungibleTokensForFee(ctx, amount)
+		// TODO this will only work for L1 base tokens, we don't have a way to know about decimals for custom tokens
+		decimals := parameters.L1().BaseToken.Decimals
+		amt := util.EthereumDecimalsToBaseTokenDecimals(amount, int64(decimals))
+		tokens := fungibleTokensForFee(ctx, amt)
 		ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 	}
 }
