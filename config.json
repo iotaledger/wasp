@@ -10,7 +10,7 @@
     }
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": true,
     "stacktraceLevel": "panic",
@@ -22,7 +22,7 @@
     "disableEvents": true
   },
   "inx": {
-    "address": "localhost:9011",
+    "address": "localhost:9029",
     "maxConnectionAttempts": 30
   },
   "database": {
