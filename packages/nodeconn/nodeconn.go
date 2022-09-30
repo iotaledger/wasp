@@ -222,6 +222,21 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	return nil
 }
 
+func (nc *nodeConn) enableMilestoneTrigger() {
+	nc.nodeBridge.Events.LatestMilestoneChanged.Hook(hivecore.NewClosure(func(metadata *nodebridge.Milestone) {
+		milestone := nodeclient.MilestoneInfo{
+			MilestoneID: metadata.MilestoneID.String(),
+			Index:       metadata.Milestone.Index,
+			Timestamp:   metadata.Milestone.Timestamp,
+		}
+
+		nc.log.Debugf("Milestone received, index=%v, timestamp=%v", milestone.Index, milestone.Timestamp)
+
+		nc.metrics.GetInMilestone().CountLastMessage(&milestone)
+		nc.milestones.Trigger(&milestone)
+	}))
+}
+
 func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
 	nc.metrics = metrics
 }
