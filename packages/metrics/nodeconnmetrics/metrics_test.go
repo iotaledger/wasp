@@ -114,9 +114,9 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, outputID3, ncm.GetInStateOutput())
 
 	// IN Alias output
-	aliasOutput1 := isc.NewAliasOutputWithID(nil, &iotago.UTXOInput{TransactionOutputIndex: 1})
-	aliasOutput2 := isc.NewAliasOutputWithID(nil, &iotago.UTXOInput{TransactionOutputIndex: 2})
-	aliasOutput3 := isc.NewAliasOutputWithID(nil, &iotago.UTXOInput{TransactionOutputIndex: 3})
+	aliasOutput1 := &iotago.AliasOutput{StateIndex: 1}
+	aliasOutput2 := &iotago.AliasOutput{StateIndex: 2}
+	aliasOutput3 := &iotago.AliasOutput{StateIndex: 3}
 
 	ncm.GetInAliasOutput().CountLastMessage(aliasOutput1)
 	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput2)

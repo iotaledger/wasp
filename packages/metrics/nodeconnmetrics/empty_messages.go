@@ -39,8 +39,8 @@ func (encmmT *emptyNodeConnectionMessagesMetrics) GetInStateOutput() NodeConnect
 	return newEmptyNodeConnectionMessageMetrics[*InStateOutput]()
 }
 
-func (encmmT *emptyNodeConnectionMessagesMetrics) GetInAliasOutput() NodeConnectionMessageMetrics[*isc.AliasOutputWithID] {
-	return newEmptyNodeConnectionMessageMetrics[*isc.AliasOutputWithID]()
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetInAliasOutput() NodeConnectionMessageMetrics[*iotago.AliasOutput] {
+	return newEmptyNodeConnectionMessageMetrics[*iotago.AliasOutput]()
 }
 
 func (encmmT *emptyNodeConnectionMessagesMetrics) GetInOutput() NodeConnectionMessageMetrics[*InOutput] {

@@ -13,7 +13,7 @@ type nodeConnectionMessagesMetricsImpl struct {
 	outPullOutputByIDMetrics               NodeConnectionMessageMetrics[*iotago.UTXOInput]
 
 	inStateOutputMetrics      NodeConnectionMessageMetrics[*InStateOutput]
-	inAliasOutputMetrics      NodeConnectionMessageMetrics[*isc.AliasOutputWithID]
+	inAliasOutputMetrics      NodeConnectionMessageMetrics[*iotago.AliasOutput]
 	inOutputMetrics           NodeConnectionMessageMetrics[*InOutput]
 	inOnLedgerRequestMetrics  NodeConnectionMessageMetrics[isc.OnLedgerRequest]
 	inTxInclusionStateMetrics NodeConnectionMessageMetrics[*TxInclusionStateMsg]
@@ -32,7 +32,6 @@ func createMetricsMessage[T any](ncmi *nodeConnectionMetricsImpl, chainID *isc.C
 
 func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID) NodeConnectionMessagesMetrics {
 	return &nodeConnectionMessagesMetricsImpl{
-
 		outPublishStateTransactionMetrics: createMetricsMessage(ncmi, chainID, "out_publish_state_transaction", func() NodeConnectionMessageMetrics[*StateTransaction] {
 			return ncmi.GetOutPublishStateTransaction()
 		}),
@@ -51,7 +50,7 @@ func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *
 		inStateOutputMetrics: createMetricsMessage(ncmi, chainID, "in_state_output", func() NodeConnectionMessageMetrics[*InStateOutput] {
 			return ncmi.GetInStateOutput()
 		}),
-		inAliasOutputMetrics: createMetricsMessage(ncmi, chainID, "in_alias_output", func() NodeConnectionMessageMetrics[*isc.AliasOutputWithID] {
+		inAliasOutputMetrics: createMetricsMessage(ncmi, chainID, "in_alias_output", func() NodeConnectionMessageMetrics[*iotago.AliasOutput] {
 			return ncmi.GetInAliasOutput()
 		}),
 		inOutputMetrics: createMetricsMessage(ncmi, chainID, "in_output", func() NodeConnectionMessageMetrics[*InOutput] {
@@ -90,7 +89,7 @@ func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInStateOutput() NodeConnecti
 	return ncmmiT.inStateOutputMetrics
 }
 
-func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInAliasOutput() NodeConnectionMessageMetrics[*isc.AliasOutputWithID] {
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetInAliasOutput() NodeConnectionMessageMetrics[*iotago.AliasOutput] {
 	return ncmmiT.inAliasOutputMetrics
 }
 

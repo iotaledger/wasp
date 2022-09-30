@@ -43,7 +43,7 @@ type NodeConnectionMessagesMetrics interface {
 	GetOutPullTxInclusionState() NodeConnectionMessageMetrics[iotago.TransactionID]
 	GetOutPullOutputByID() NodeConnectionMessageMetrics[*iotago.UTXOInput]
 	GetInStateOutput() NodeConnectionMessageMetrics[*InStateOutput]
-	GetInAliasOutput() NodeConnectionMessageMetrics[*isc.AliasOutputWithID]
+	GetInAliasOutput() NodeConnectionMessageMetrics[*iotago.AliasOutput]
 	GetInOutput() NodeConnectionMessageMetrics[*InOutput]
 	GetInOnLedgerRequest() NodeConnectionMessageMetrics[isc.OnLedgerRequest]
 	GetInTxInclusionState() NodeConnectionMessageMetrics[*TxInclusionStateMsg]
