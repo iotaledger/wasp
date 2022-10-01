@@ -37,6 +37,22 @@ func (w *MsgWrapper) WrapMessages(subsystem byte, index int, msgs OutMessages) O
 	return wrapped
 }
 
+func (w *MsgWrapper) DelegateInput(subsystem byte, index int, input Input) (GPA, OutMessages, error) {
+	sub, err := w.subsystemFunc(subsystem, index)
+	if err != nil {
+		return nil, nil, err
+	}
+	return sub, w.WrapMessages(subsystem, index, sub.Input(input)), nil
+}
+
+func (w *MsgWrapper) DelegateMessage(msg WrappingMsg) (GPA, OutMessages, error) {
+	sub, err := w.subsystemFunc(msg.Subsystem(), msg.Index())
+	if err != nil {
+		return nil, nil, err
+	}
+	return sub, w.WrapMessages(msg.Subsystem(), msg.Index(), sub.Message(msg.Wrapped())), nil
+}
+
 func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	r := bytes.NewReader(data)
 	msgType, err := util.ReadByte(r)

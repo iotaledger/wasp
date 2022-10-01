@@ -200,9 +200,12 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 	msgs.AddAll(a.varBinVals.startRound(a.round, est))
 	//
 	// Start the CC.
-	ccInst := a.ccInst(a.round)
-	msgs.AddAll(a.msgWrapper.WrapMessages(subsystemCC, round, ccInst.Input(nil)))
-	if out := ccInst.Output(); out != nil {
+	subGPA, subMsgs, err := a.msgWrapper.DelegateInput(subsystemCC, round, nil)
+	if err != nil {
+		panic(err)
+	}
+	msgs.AddAll(subMsgs)
+	if out := subGPA.Output(); out != nil {
 		msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*out.(*bool)))
 	}
 	//
@@ -246,16 +249,15 @@ func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 		}
 		return a.varDone.msgDoneReceived(msgT)
 	case *gpa.WrappingMsg: // The CC messages.
-		sub, err := a.selectSubsystem(msgT.Subsystem(), msgT.Index())
+		msgs := gpa.NoMessages()
+		subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(*msgT)
 		if err != nil {
 			a.log.Warnf("cannot select subsystem: %v", err)
 			return nil
 		}
-		msgs := gpa.NoMessages()
-		msgs.AddAll(a.msgWrapper.WrapMessages(msgT.Subsystem(), msgT.Index(), sub.Message(msgT.Wrapped())))
+		msgs.AddAll(subMsgs)
 		if msgT.Subsystem() == subsystemCC && msgT.Index() == a.round && !a.uponDecisionInputs.haveCC() {
-			ccInst := a.ccInst(msgT.Index())
-			ccOut := ccInst.Output()
+			ccOut := subGPA.Output()
 			if ccOut != nil {
 				msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))
 			}
