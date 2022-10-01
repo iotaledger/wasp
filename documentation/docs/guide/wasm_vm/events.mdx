@@ -26,7 +26,7 @@ unnecessarily. A better way is to have the smart contracts trigger events that t
 can subscribe to and that convey changes to its state.
 
 To support events the ISC sandbox provides only a very rudimentary interface. The
-[function call context](context.mdx) exposes this interface through its `event()`
+`ScFuncContext` [Call Context](context.mdx) exposes this interface through its `event()`
 function, which takes a completely arbitrary text string as parameter. It is up to the
 smart contract creator to format this text string in a meaningful way, and it's up to the
 user to interpret this text string correctly. This is error-prone, inconsistent, and means
@@ -34,11 +34,11 @@ that a lot of code needs to be written both on the smart contract side that gene
 these events, and on the client side that handles these events. And with any change to the
 formatting of these events both ends need to be modified to stay in sync.
 
-This is why the [schema tool](usage.mdx) allows you to define your own structured events.
-The schema tool will generate a structure that will become part of all Func call contexts.
-Events can only be triggered from within a func. They will become part of the state of the
-smart contract because every event is logged in the core `blocklog` contract. Therefore,
-events cannot be triggered from within a View.
+This is why the [Schema Tool](usage.mdx) allows you to define your own structured events.
+The schema tool will generate a structure that will become part of all Func function
+contexts. Events can only be triggered from within a Func. They will become part of the
+state of the smart contract because every event is logged in the core `blocklog` contract.
+Therefore, events cannot be triggered from within a View.
 
 For each event defined in the `events` section of the schema definition file, this events
 structure will contain a member function that takes the defined types of parameters and

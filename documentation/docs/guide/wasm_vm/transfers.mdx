@@ -9,7 +9,7 @@ keywords:
 - tokens
 - incoming
 
-description: There are two methods in the ISC function context that deal with token balances. The balances() method can be used to determine the current total balance per token color. The incoming() method can be used to determine the amounts of incoming tokens per token color that were sent with the request to call the smart contract function.
+description: There are two methods in the call context that deal with token balances. The balances() method can be used to determine the current asset balances. The allowance() method can be used to determine the caller assets that the function is allowed to use.
 
 image: /img/logo/WASP_logo_dark.png
 ---
@@ -18,21 +18,21 @@ import TabItem from "@theme/TabItem"
 
 # Token Transfers
 
-There are two methods in the ISC function context that deal with token balances. The first
-one is the `balances()` method, which can be used to determine the current asset balances
-that are governed by the smart contract. The second one is the `allowance()` method, which
-can be used to determine the caller assets that can be use by the current call to the
-smart contract function.
+There are two methods in the [Call Context](context.mdx) that deal with token balances.
+The first one is the `balances()` method, which can be used to determine the current asset
+balances that are governed by this smart contract. The second one is the `allowance()`
+method, which can be used to determine the caller assets that the current call to the
+smart contract function is allowed to use.
 
 Both methods provide access to zero or more balances of assets, through a special
 `ScBalances` proxy. Note that the `allowance()` balances are not automatically transferred
-to the smart contract but instead will need to explicitly transferred by the function.
+to the smart contract but instead will need to explicitly be transferred by the function.
 That way, if a function cannot handle the transfer the tokens will stay safely in the
 caller's on-chain account. The function explicitly transfers only assets it understands,
 and only in the amount that its algorithm defines, and never more than the allowed amount.
 
-There is also a `transfer_allowed()` method in the ISC function context that can transfer
-assets from the caller's on-chain account to any other on-chain account. The assets to be
+There is also a `transfer_allowed()` method in the call context that can transfer assets
+from the caller's on-chain account to any other on-chain account. The assets to be
 transferred are provided to the method through a special `ScTransfer` proxy, which is
 essentially a mutable version of `ScBalances`. We will be using the `transfer_allowed()`
 method in the `dividend` example to disperse the incoming iotas to the member accounts.
@@ -236,5 +236,5 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 </TabItem>
 </Tabs>
 
-In the next section we will introduce [function descriptors](funcdesc.mdx) that can be
+In the next section we will introduce [Function Descriptors](funcdesc.mdx) that can be
 used to initiate smart contract functions.

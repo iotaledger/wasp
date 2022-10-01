@@ -11,7 +11,7 @@ description: The call context is a predefined parameter to each smart contract f
 image: /img/logo/WASP_logo_dark.png
 ---
 
-# Function Call Context
+# Call Context
 
 Due to the sandboxed nature of Wasm code, it needs a host which runs the Wasm Virtual
 Machine (VM) that is able to load and execute the Wasm code. The host also provides the
@@ -53,9 +53,9 @@ types will need to be serialized and deserialized correctly and consistently. Wa
 provides a rich set of (de)serialization functions specifically for this purpose
 
 Even though it is definitely possible for a contract creator to directly use WasmLib to
-achieve his goals, we decided to provide a _Schema_ tool, which can be used to
+achieve his goals, we decided to provide a _Schema Tool_, which can be used to
 automatically generate and update the entire smart contract framework code in the desired
 language in a consistent and type-safe way.
 
 
-In the next section we will introduce this [`Smart Contract Schema Tool`](schema.mdx).
+In the next section we will introduce this smart contract [`Schema Tool`](schema.mdx).
