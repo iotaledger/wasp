@@ -41,14 +41,20 @@ func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
 		cc.output = &coin
 		return nil
 	}
-	return cc.target.Input(input)
+	return cc.checkOutput(cc.target.Input(input))
 }
 
 func (cc *ccSemi) Message(msg gpa.Message) gpa.OutMessages {
 	if cc.output != nil {
 		return nil
 	}
-	msgs := cc.target.Message(msg)
+	return cc.checkOutput(cc.target.Message(msg))
+}
+
+func (cc *ccSemi) checkOutput(msgs gpa.OutMessages) gpa.OutMessages {
+	if cc.output != nil {
+		return msgs
+	}
 	out := cc.target.Output()
 	if out != nil {
 		cc.output = out.(*bool)
