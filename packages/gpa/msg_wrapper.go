@@ -45,7 +45,7 @@ func (w *MsgWrapper) DelegateInput(subsystem byte, index int, input Input) (GPA,
 	return sub, w.WrapMessages(subsystem, index, sub.Input(input)), nil
 }
 
-func (w *MsgWrapper) DelegateMessage(msg WrappingMsg) (GPA, OutMessages, error) {
+func (w *MsgWrapper) DelegateMessage(msg *WrappingMsg) (GPA, OutMessages, error) {
 	sub, err := w.subsystemFunc(msg.Subsystem(), msg.Index())
 	if err != nil {
 		return nil, nil, err

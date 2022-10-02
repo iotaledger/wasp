@@ -47,7 +47,7 @@ func (v *varDone) startRound(round int) {
 }
 
 func (v *varDone) outputProduced() gpa.OutMessages {
-	if _, ok := v.recv[v.me]; ok {
+	if firstDoneRound, ok := v.recv[v.me]; ok && firstDoneRound < v.round {
 		// We have decided for the second time. That's enough.
 		if !v.done {
 			v.done = true
@@ -101,5 +101,5 @@ func (v *varDone) tryComplete() gpa.OutMessages {
 }
 
 func (v *varDone) statusString() string {
-	return fmt.Sprintf("|done|=%v/%v=%v", len(v.nodeIDs), len(v.recv), v.done)
+	return fmt.Sprintf("|done|=%v/%v=%v", len(v.recv), len(v.nodeIDs), v.done)
 }

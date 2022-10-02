@@ -180,6 +180,12 @@ func (a *abaImpl) AsGPA() gpa.GPA {
 // > • upon receiving input b_input, set est_0 := b_input and proceed as
 // >   follows in consecutive epochs, with increasing labels r:
 func (a *abaImpl) Input(input gpa.Input) gpa.OutMessages {
+	if a.round != -1 {
+		panic(xerrors.Errorf("duplicate input to BBA: %v", input))
+	}
+	if _, ok := input.(bool); !ok {
+		panic(xerrors.Errorf("input for BBA has to be bool, received %T=%+v", input, input))
+	}
 	return a.startRound(0, input.(bool))
 }
 
@@ -191,6 +197,9 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 	if a.output != nil && a.output.Terminated {
 		// Don't start the next round if the algorithm is already terminated.
 		return nil
+	}
+	if round != a.round+1 {
+		panic(fmt.Errorf("non-sequential rounds %v->%v", a.round, round))
 	}
 	msgs := gpa.NoMessages()
 	a.round = round
@@ -214,7 +223,7 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 		oldPostponedMsgs := a.postponedMsgs
 		a.postponedMsgs = []*msgVote{}
 		for _, m := range oldPostponedMsgs {
-			msgs.AddAll(a.Message(m))
+			msgs.AddAll(a.handleMsgVote(m))
 		}
 	}
 	return msgs
@@ -225,47 +234,60 @@ func (a *abaImpl) startRound(round int, est bool) gpa.OutMessages {
 func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgVote: // The BVAL and AUX messages.
-		if _, ok := a.nodeIdx[msgT.sender]; !ok {
-			return nil // Unknown sender.
-		}
-		if msgT.round < a.round {
-			return nil // Outdated message.
-		}
-		if msgT.round > a.round {
-			a.postponedMsgs = append(a.postponedMsgs, msgT)
-			return nil // Will be processed later.
-		}
-		switch msgT.voteType {
-		case BVAL:
-			return a.varBinVals.msgVoteBVALReceived(msgT)
-		case AUX:
-			return a.varAuxVals.msgVoteAUXReceived(msgT)
-		}
-		a.log.Warnf("unexpected msgVote message: %+v", msgT)
-		return nil
+		return a.handleMsgVote(msgT)
 	case *msgDone: // The DONE messages for the termination.
-		if _, ok := a.nodeIdx[msgT.sender]; !ok {
-			return nil // Unknown sender.
-		}
-		return a.varDone.msgDoneReceived(msgT)
+		return a.handleMsgDone(msgT)
 	case *gpa.WrappingMsg: // The CC messages.
-		msgs := gpa.NoMessages()
-		subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(*msgT)
-		if err != nil {
-			a.log.Warnf("cannot select subsystem: %v", err)
-			return nil
-		}
-		msgs.AddAll(subMsgs)
-		if msgT.Subsystem() == subsystemCC && msgT.Index() == a.round && !a.uponDecisionInputs.haveCC() {
-			ccOut := subGPA.Output()
-			if ccOut != nil {
-				msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))
-			}
-		}
-		return msgs
+		return a.handleMsgWrapped(msgT)
 	}
 	a.log.Warnf("unexpected message of type %T: %+v", msg, msg)
 	return nil
+}
+
+func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
+	if _, ok := a.nodeIdx[msgT.sender]; !ok {
+		a.log.Warnf("unknown sender: %+v", msgT)
+		return nil // Unknown sender.
+	}
+	if msgT.round < a.round || (a.output != nil && a.output.Terminated) {
+		return nil // Outdated message.
+	}
+	if msgT.round > a.round {
+		a.postponedMsgs = append(a.postponedMsgs, msgT)
+		return nil // Will be processed later.
+	}
+	switch msgT.voteType {
+	case BVAL:
+		return a.varBinVals.msgVoteBVALReceived(msgT)
+	case AUX:
+		return a.varAuxVals.msgVoteAUXReceived(msgT)
+	}
+	a.log.Warnf("unexpected msgVote message: %+v", msgT)
+	return nil
+}
+
+func (a *abaImpl) handleMsgDone(msgT *msgDone) gpa.OutMessages {
+	if _, ok := a.nodeIdx[msgT.sender]; !ok {
+		return nil // Unknown sender.
+	}
+	return a.varDone.msgDoneReceived(msgT)
+}
+
+func (a *abaImpl) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
+	msgs := gpa.NoMessages()
+	subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
+	if err != nil {
+		a.log.Warnf("cannot select subsystem: %v", err)
+		return nil
+	}
+	msgs.AddAll(subMsgs)
+	if msgT.Subsystem() == subsystemCC && msgT.Index() == a.round && !a.uponDecisionInputs.haveCC() {
+		ccOut := subGPA.Output()
+		if ccOut != nil {
+			msgs.AddAll(a.uponDecisionInputs.ccOutputReceived(*ccOut.(*bool)))
+		}
+	}
+	return msgs
 }
 
 // >     – wait until bin_values_r != {}, then

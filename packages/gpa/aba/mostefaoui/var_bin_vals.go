@@ -50,8 +50,8 @@ func (v *varBinVals) startRound(round int, est bool) gpa.OutMessages {
 	v.est = est
 	v.recvT = map[gpa.NodeID]bool{}
 	v.recvF = map[gpa.NodeID]bool{}
-	v.sentF = false
 	v.sentT = false
+	v.sentF = false
 	v.binValues = []bool{}
 	return v.multicast(v.est)
 }
@@ -64,7 +64,7 @@ func (v *varBinVals) startRound(round int, est bool) gpa.OutMessages {
 func (v *varBinVals) msgVoteBVALReceived(msg *msgVote) gpa.OutMessages {
 	recv := v.recv(msg.value) // NOTE: A reference to a field.
 
-	if recv[msg.sender] {
+	if ok := recv[msg.sender]; ok {
 		return nil // Duplicate.
 	}
 	recv[msg.sender] = true

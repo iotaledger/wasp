@@ -161,7 +161,7 @@ func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 		return nil
 	}
 	msgs := gpa.NoMessages()
-	sub, subMsgs, err := a.msgWrapper.DelegateMessage(*msgT)
+	sub, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
 	if err != nil {
 		a.log.Warn("cannot delegate a message: %v", err)
 		return nil
@@ -224,7 +224,8 @@ func (a *acsImpl) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.Out
 	}
 	a.abaOutputs[nodeID] = abaOut.Value
 	a.tryOutput()
-
+	//
+	// Provide false as inputs to all the remaining ABAs, if we have N-F ABA outputs.
 	if len(a.abaOutputs) < a.n-a.f || len(a.abaInputs) == a.n {
 		return msgs
 	}
@@ -236,7 +237,7 @@ func (a *acsImpl) tryHandleABAOutput(nodeID gpa.NodeID, abaInst gpa.GPA) gpa.Out
 	}
 	if count >= a.n-a.f {
 		for _, nid := range a.nodeIDs {
-			if ok := a.abaInputs[nid]; ok {
+			if _, ok := a.abaInputs[nid]; ok {
 				continue // Input was already provided.
 			}
 			a.abaInputs[nid] = false

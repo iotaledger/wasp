@@ -36,8 +36,8 @@ var (
 
 func multicastMsgVote(recipients []gpa.NodeID, round int, voteType msgVoteType, value bool) gpa.OutMessages {
 	msgs := gpa.NoMessages()
-	for _, n := range recipients {
-		msgs.Add(&msgVote{recipient: n, round: round, voteType: voteType, value: value})
+	for _, nid := range recipients {
+		msgs.Add(&msgVote{recipient: nid, round: round, voteType: voteType, value: value})
 	}
 	return msgs
 }

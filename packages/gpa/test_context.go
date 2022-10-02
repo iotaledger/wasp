@@ -5,6 +5,7 @@ package gpa
 
 import (
 	"math/rand"
+	"sort"
 )
 
 // Imitates a cluster of nodes and the medium performing the message exchange.
@@ -14,6 +15,8 @@ type TestContext struct {
 	inputProb       float64          // A probability to process input, instead of a message (if any).
 	msgDeliveryProb float64          // A probability to deliver a message (to not discard/loose it).
 	msgs            []Message        // Not yet delivered messages.
+	msgsSent        int
+	msgsRecv        int
 }
 
 func NewTestContext(nodes map[NodeID]GPA) *TestContext {
@@ -25,6 +28,10 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 		msgs:            []Message{},
 	}
 	return &tc
+}
+
+func (tc *TestContext) MsgCounts() (int, int) {
+	return tc.msgsSent, tc.msgsRecv
 }
 
 // Will add new inputs to the existing set.
@@ -51,6 +58,7 @@ func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *
 }
 
 func (tc *TestContext) WithMessages(msgs []Message) *TestContext {
+	tc.msgsSent += len(msgs)
 	tc.msgs = append(tc.msgs, msgs...)
 	return tc
 }
@@ -72,6 +80,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 			nid := nids[rand.Intn(len(nids))]
 			newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]))
 			if newMsgs != nil {
+				tc.msgsSent += len(newMsgs)
 				tc.msgs = append(tc.msgs, newMsgs...)
 			}
 			delete(tc.inputs, nid)
@@ -83,9 +92,11 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 			msg := tc.msgs[msgIdx]
 			nid := msg.Recipient()
 			tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
+			tc.msgsRecv++
 			if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
 				newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(msg))
 				if newMsgs != nil {
+					tc.msgsSent += len(newMsgs)
 					tc.msgs = append(tc.msgs, newMsgs...)
 				}
 			}
@@ -132,7 +143,12 @@ func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []Messa
 }
 
 func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
-	for n, g := range tc.nodes {
-		logFunc("%v [node=%v]: %v", prefix, n, g.StatusString())
+	keys := []string{}
+	for nid := range tc.nodes {
+		keys = append(keys, string(nid))
+	}
+	sort.Strings(keys) // Print them sorted.
+	for _, nidStr := range keys {
+		logFunc("%v [node=%v]: %v", prefix, nidStr, tc.nodes[NodeID(nidStr)].StatusString())
 	}
 }
