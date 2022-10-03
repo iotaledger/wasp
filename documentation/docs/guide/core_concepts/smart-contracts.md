@@ -44,7 +44,7 @@ smart contract application will be there as long as that blockchain exists. Smar
 another, and you can invoke programmed public functions on a smart contract to trigger actions on a smart contract, or
 address the state of a smart contract.
 
-Because smart contracts do not run on a single computer but on many validators, a network of smart contracts can only
+Because smart contracts do not run on a single computer but on many validators, a network of validators can only
 process so many smart contracts at once, even if the software has been written optimally. This means smart contracts are
 expensive to execute, and do not scale well on a single blockchain, often resulting in congested networks and costly
 fees for executing functions on smart contracts. **By allowing many blockchains executing smart contracts to run in

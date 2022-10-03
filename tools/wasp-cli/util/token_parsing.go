@@ -13,7 +13,9 @@ const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
 	ret, err := hex.DecodeString(s)
-	log.Check(err)
+	if err != nil {
+		log.Fatalf("Invalid token id: %s", s)
+	}
 	return ret
 }
 
