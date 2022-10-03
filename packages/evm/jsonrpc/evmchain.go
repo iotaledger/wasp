@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -89,7 +90,31 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 		return fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), expectedNonce)
 	}
 
+	if err := e.checkEnoughL2FundsForGasBudget(sender, tx.Gas()); err != nil {
+		return err
+	}
 	return e.backend.EVMSendTransaction(tx)
+}
+
+func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, evmGas uint64) error {
+	gasRatio, err := e.GasRatio()
+	if err != nil {
+		return fmt.Errorf("could not fetch gas ratio: %w", err)
+	}
+	balance, err := e.Balance(sender, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber))
+	if err != nil {
+		return fmt.Errorf("could not fetch sender balance: %w", err)
+	}
+	gasFeePolicy, err := e.GasFeePolicy()
+	if err != nil {
+		return fmt.Errorf("could not fetch the gas fee policy: %w", err)
+	}
+	iscGasBudgetAffordable := gasFeePolicy.AffordableGasBudgetFromAvailableTokens(balance.Uint64())
+	iscGasBudgetTx := evmtypes.EVMGasToISC(evmGas, &gasRatio)
+	if iscGasBudgetAffordable < iscGasBudgetTx {
+		return fmt.Errorf("sender has not enough L2 funds to cover tx gas budget")
+	}
+	return nil
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {

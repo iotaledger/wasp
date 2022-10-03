@@ -8,7 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 func DecodeGenesisAlloc(b []byte) (core.GenesisAlloc, error) {

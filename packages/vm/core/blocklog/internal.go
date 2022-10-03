@@ -7,12 +7,13 @@ import (
 	"io"
 	"math"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
-	"golang.org/x/xerrors"
 )
 
 // SaveNextBlockInfo appends block info and returns its index
@@ -345,6 +346,6 @@ func getBlockIndexParams(ctx isc.SandboxView) uint32 {
 	if ret != math.MaxUint32 {
 		return ret
 	}
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixBlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixBlockRegistry)
 	return registry.MustLen() - 1
 }

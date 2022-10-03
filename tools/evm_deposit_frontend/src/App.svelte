@@ -5,7 +5,7 @@
   import { SvelteToast, toast } from '@zerodevx/svelte-toast'
   import { networkOptions } from '../networks';
 
-  const ChainIdLength: number = 63;
+  const ChainAddressLength: number = 63;
   const EVMAddressLength: number = 42;
 
   let selectedNetworkOption = networkOptions[0];
@@ -13,13 +13,12 @@
   let errorMessage: string;
 
   let balance: bigint = BigInt(0);
-  let chainId: string = '';
   let evmAddress: string = '';
 
   $: enableSendFunds =
-    chainId.length == ChainIdLength &&
     evmAddress.length == EVMAddressLength &&
     selectedNetworkOption != null &&
+    selectedNetworkOption.chainAddress.length == ChainAddressLength &&
     !isSendingFunds;
 
   async function sendFunds() {
@@ -52,7 +51,7 @@
       const transaction = new SendFundsTransaction(wallet);
       await transaction.sendFundsToEVMAddress(
         evmAddress,
-        chainId,
+        selectedNetworkOption.chainAddress,
         balance,
         BigInt(500000)
       );
@@ -96,8 +95,8 @@
   {/if}
 
   <div class="input_container">
-    <span class="header">Chain ID</span>
-    <input type="text" bind:value={chainId} />
+    <span class="header">Chain Address</span>
+    <input type="text" bind:value={selectedNetworkOption.chainAddress} />
   </div>
 
   <div class="input_container">

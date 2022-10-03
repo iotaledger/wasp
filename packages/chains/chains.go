@@ -7,7 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
@@ -18,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/wal"
-	"golang.org/x/xerrors"
 )
 
 type Provider func() *Chains
@@ -42,6 +43,8 @@ type Chains struct {
 	pullMissingRequestsFromCommittee bool
 	networkProvider                  peering.NetworkProvider
 	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
+	rawBlocksEnabled                 bool
+	rawBlocksDir                     string
 }
 
 func New(
@@ -52,6 +55,8 @@ func New(
 	pullMissingRequestsFromCommittee bool,
 	networkProvider peering.NetworkProvider,
 	getOrCreateKVStore dbmanager.ChainKVStoreProvider,
+	rawBlocksEnabled bool,
+	rawBlocksDir string,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -62,6 +67,8 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		networkProvider:                  networkProvider,
 		getOrCreateKVStore:               getOrCreateKVStore,
+		rawBlocksEnabled:                 rawBlocksEnabled,
+		rawBlocksDir:                     rawBlocksDir,
 	}
 	return ret
 }
@@ -137,12 +144,16 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		chainKVStore,
 		c.networkProvider,
 		defaultRegistry,
+		defaultRegistry,
 		c.processorConfig,
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
 		chainMetrics,
+		defaultRegistry,
 		chainWAL,
+		c.rawBlocksEnabled,
+		c.rawBlocksDir,
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")

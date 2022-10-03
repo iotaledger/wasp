@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/stretchr/testify/require"
 )
 
 func setupBlobTest(t *testing.T) *ChainEnv {

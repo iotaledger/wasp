@@ -9,21 +9,22 @@ import (
 	"math/rand"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"golang.org/x/xerrors"
 )
 
 // TODO DeployChain on peering domain, not on committee
 
 type CreateChainParams struct {
-	Layer1Client         nodeconn.L1Client
+	Layer1Client         l1connection.Client
 	CommitteeAPIHosts    []string
 	CommitteePubKeys     []string
 	N                    uint16
@@ -125,7 +126,7 @@ func utxoIDsFromUtxoMap(utxoMap iotago.OutputSet) iotago.OutputIDs {
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
 func CreateChainOrigin(
-	layer1Client nodeconn.L1Client,
+	layer1Client l1connection.Client,
 	originator *cryptolib.KeyPair,
 	stateController iotago.Address,
 	governanceController iotago.Address,

@@ -3,7 +3,7 @@ package vm
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,7 +15,7 @@ import (
 )
 
 type VMRunner interface {
-	Run(task *VMTask)
+	Run(task *VMTask) error
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
@@ -55,8 +55,6 @@ type VMTask struct {
 	ResultInputsCommitment []byte
 	// Results contains one result for each non-skipped request
 	Results []*RequestResult
-	// If not nil, VMError is a fatal error that prevented the execution of the task
-	VMError error
 	// If maintenance mode is enabled, only requests to the governance contract will be executed
 	MaintenanceModeEnabled bool
 }

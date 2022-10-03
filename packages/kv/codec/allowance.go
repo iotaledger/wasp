@@ -1,8 +1,9 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func DecodeAllowance(b []byte, def ...*isc.Allowance) (*isc.Allowance, error) {

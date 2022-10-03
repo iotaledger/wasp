@@ -15,8 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 	PeerMessageReceiverConsensus
 	PeerMessageReceiverCommonSubset
 	PeerMessageReceiverChain
+	PeerMessageReceiverChainDSS
 	PeerMessageReceiverDkg
 	PeerMessageReceiverDkgInit
 )

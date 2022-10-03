@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/fairauction/go/fairauction"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -24,6 +25,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
 	auctioneer := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(auctioneer, []byte("NFT metadata"))
+	require.NoError(t, ctx.Err)
 
 	// start the auction
 	sa := fairauction.ScFuncs.StartAuction(ctx.Sign(auctioneer))

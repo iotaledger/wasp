@@ -28,7 +28,7 @@ Before creating a pull request ensure that all tests pass locally, and that the 
 To run tests locally, execute one of the following commands:
 
 ```shell
-go test -short -tags rocksdb,builtin_static ./...
+go test -short -tags rocksdb ./...
 ```
 
 or, as an alternative:

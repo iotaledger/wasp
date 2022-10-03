@@ -7,11 +7,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblob"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func setupRoot(t *testing.T) *wasmsolo.SoloContext {
@@ -34,7 +35,7 @@ func TestDeployContract(t *testing.T) {
 	wasm, err := os.ReadFile("./testdata/testdata.wasm")
 	require.NoError(t, err)
 	fblob.Params.ProgBinary().SetValue(wasm)
-	fblob.Params.VmType().SetValue("wasmtime")
+	fblob.Params.VMType().SetValue("wasmtime")
 	fblob.Func.Post()
 	require.NoError(t, ctxb.Err)
 

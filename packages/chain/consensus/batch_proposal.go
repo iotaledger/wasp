@@ -7,14 +7,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"go.dedis.ch/kyber/v3/sign/tbls"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/identity"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3/sign/tbls"
-	"golang.org/x/xerrors"
 )
 
 type BatchProposal struct {
@@ -27,6 +28,7 @@ type BatchProposal struct {
 	AccessManaPledge        identity.ID
 	FeeDestination          isc.AgentID
 	SigShareOfStateOutputID tbls.SigShare
+	DSSNonceIndexProposal   util.BitVector
 }
 
 type consensusBatchParams struct {
@@ -81,6 +83,10 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if ret.SigShareOfStateOutputID, err = mu.ReadBytes(int(sigShareSize)); err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
+	if ret.DSSNonceIndexProposal, err = util.NewFixedSizeBitVectorFromMarshalUtil(mu); err != nil {
+		return nil, xerrors.Errorf(errFmt, err)
+	}
+	//
 	ret.RequestIDs = make([]isc.RequestID, size)
 	ret.RequestHashes = make([][32]byte, size)
 	for i := range ret.RequestIDs {
@@ -109,7 +115,8 @@ func (b *BatchProposal) Bytes() []byte {
 		WriteTime(b.TimeData).
 		WriteUint16(uint16(len(b.RequestIDs))).
 		WriteByte(byte(len(b.SigShareOfStateOutputID))).
-		WriteBytes(b.SigShareOfStateOutputID)
+		WriteBytes(b.SigShareOfStateOutputID).
+		Write(b.DSSNonceIndexProposal)
 	for i := range b.RequestIDs {
 		mu.Write(b.RequestIDs[i])
 		mu.WriteBytes(b.RequestHashes[i][:])

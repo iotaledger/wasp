@@ -1,11 +1,12 @@
 package chain
 
 import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var chainAlias string

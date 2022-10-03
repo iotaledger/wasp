@@ -10,9 +10,10 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 )
 
 func buildRequest(t *testing.T, method string, body interface{}) *http.Request {

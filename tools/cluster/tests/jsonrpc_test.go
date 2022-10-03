@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
@@ -25,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/require"
 )
 
 type clusterTestEnv struct {
@@ -34,23 +35,27 @@ type clusterTestEnv struct {
 	chain   *cluster.Chain
 }
 
-func newClusterTestEnv(t *testing.T, opt ...waspClusterOpts) *clusterTestEnv {
+func newClusterTestEnv(t *testing.T, committee []int, nodeIndex int, opt ...waspClusterOpts) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
 	clu := newCluster(t, opt...)
 
-	chain, err := clu.DeployDefaultChain()
+	quorum := uint16((2*len(committee))/3 + 1)
+	addr, err := clu.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	jsonRPCEndpoint := "http://" + clu.Config.APIHost(0) + routes.EVMJSONRPC(chain.ChainID.String())
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+	t.Logf("deployed chainID: %s", chain.ChainID)
 
+	jsonRPCEndpoint := "http://" + clu.Config.APIHost(nodeIndex) + routes.EVMJSONRPC(chain.ChainID.String())
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
 	t.Cleanup(client.Close)
 
 	waitTxConfirmed := func(txHash common.Hash) error {
-		c := chain.Client(nil)
+		c := chain.Client(nil, nodeIndex)
 		reqID, err := c.RequestIDByEVMTransactionHash(txHash)
 		if err != nil {
 			return err
@@ -106,7 +111,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 		amount = e.cluster.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
 	gasBudget := uint64(math.MaxUint64)
-	_, err = e.chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+	tx, err := e.chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewFungibleTokens(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID:          codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
@@ -116,16 +121,31 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 		GasBudget: &gasBudget,
 	})
 	require.NoError(e.T, err)
+
+	_, err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.T, err)
+
 	return ethKey, ethAddr
 }
 
 func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
-	e := newClusterTestEnv(t)
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 0, waspClusterOpts{
+		nNodes: 4,
+	})
 	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }
 
 func TestEVMJsonRPCClusterInvalidTx(t *testing.T) {
-	e := newClusterTestEnv(t)
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 0, waspClusterOpts{
+		nNodes: 4,
+	})
 	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
 	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
+}
+
+func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
+	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 4, waspClusterOpts{
+		nNodes: 5, // node #4 is an access node
+	})
+	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
 }

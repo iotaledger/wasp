@@ -3,9 +3,10 @@ package chain
 import (
 	"regexp"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var HTTP404ErrRegexp = regexp.MustCompile(`"Code":404`)

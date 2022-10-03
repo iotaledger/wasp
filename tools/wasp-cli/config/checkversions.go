@@ -1,10 +1,11 @@
 package config
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var checkVersionsCmd = &cobra.Command{

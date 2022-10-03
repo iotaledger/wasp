@@ -8,7 +8,6 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(addressCmd)
 	rootCmd.AddCommand(balanceCmd)
-	rootCmd.AddCommand(mintCmd)
 	rootCmd.AddCommand(sendFundsCmd())
 	rootCmd.AddCommand(requestFundsCmd)
 

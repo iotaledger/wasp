@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+ARG GOLANG_IMAGE_TAG=1.18-bullseye
+
+# Build stage
+FROM golang:${GOLANG_IMAGE_TAG} AS build
+ARG BUILD_TAGS="rocksdb"
+ARG BUILD_LD_FLAGS=""
+ARG BUILD_TARGET="./..."
+
+WORKDIR /wasp
+
+
+# Make sure that modules only get pulled when the module file has changed
+COPY go.mod go.sum ./
+
+# Create or reuse cache folders to make reoccouring builds faster
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/root/go/pkg/mod \
+  go mod download
+
+RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Project build stage
+COPY . .
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,target=/root/go/pkg/mod \
+  go build -o . -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" ${BUILD_TARGET}
+
+# Wasp build
+FROM gcr.io/distroless/cc
+
+ARG FINAL_BINARY="wasp"
+
+EXPOSE 7000/tcp
+EXPOSE 9090/tcp
+EXPOSE 5550/tcp
+EXPOSE 6060/tcp
+EXPOSE 4000/udp
+EXPOSE 40000/tcp
+
+COPY --from=build /go/bin/dlv /usr/bin/dlv
+COPY --from=build /wasp/${FINAL_BINARY} /usr/bin/
+COPY docker_config.json /etc/wasp_config.json
+
+CMD ["/usr/bin/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/usr/bin/wasp", "--", "-c", "/etc/wasp_config.json"]
+

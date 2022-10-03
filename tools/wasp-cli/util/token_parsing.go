@@ -13,12 +13,14 @@ const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
 	ret, err := hex.DecodeString(s)
-	log.Check(err)
+	if err != nil {
+		log.Fatalf("Invalid token id: %s", s)
+	}
 	return ret
 }
 
 func ParseFungibleTokens(args []string) *isc.FungibleTokens {
-	tokens := isc.NewEmptyAssets()
+	tokens := isc.NewEmptyFungibleTokens()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {

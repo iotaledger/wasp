@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
@@ -93,51 +93,24 @@ type Committee interface {
 	GetRandomValidators(upToN int) []*cryptolib.PublicKey // TODO: Remove after OffLedgerRequest dissemination is changed.
 }
 
-type (
-	NodeConnectionAliasOutputHandlerFun     func(*isc.AliasOutputWithID)
-	NodeConnectionOnLedgerRequestHandlerFun func(isc.OnLedgerRequest)
-	NodeConnectionInclusionStateHandlerFun  func(iotago.TransactionID, string)
-	NodeConnectionMilestonesHandlerFun      func(*nodeclient.MilestoneInfo)
-)
-
 type NodeConnection interface {
-	RegisterChain(chainID *isc.ChainID, stateOutputHandler, outputHandler func(iotago.OutputID, iotago.Output))
+	RegisterChain(
+		chainID *isc.ChainID,
+		stateOutputHandler,
+		outputHandler func(iotago.OutputID, iotago.Output),
+		milestoneHandler func(*nodebridge.Milestone),
+	)
 	UnregisterChain(chainID *isc.ChainID)
 
-	PublishStateTransaction(chainID *isc.ChainID, stateIndex uint32, tx *iotago.Transaction) error
-	PublishGovernanceTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error
+	PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error
 	PullLatestOutput(chainID *isc.ChainID)
-	PullTxInclusionState(chainID *isc.ChainID, txid iotago.TransactionID)
 	PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput)
 
-	AttachTxInclusionStateEvents(chainID *isc.ChainID, handler NodeConnectionInclusionStateHandlerFun) (*events.Closure, error)
-	DetachTxInclusionStateEvents(chainID *isc.ChainID, closure *events.Closure) error
-	AttachMilestones(handler NodeConnectionMilestonesHandlerFun) *events.Closure
+	AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure
 	DetachMilestones(attachID *events.Closure)
 
 	SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics)
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
-	Close()
-}
-
-type ChainNodeConnection interface {
-	AttachToAliasOutput(NodeConnectionAliasOutputHandlerFun)
-	DetachFromAliasOutput()
-	AttachToOnLedgerRequest(NodeConnectionOnLedgerRequestHandlerFun)
-	DetachFromOnLedgerRequest()
-	AttachToTxInclusionState(NodeConnectionInclusionStateHandlerFun)
-	DetachFromTxInclusionState()
-	AttachToMilestones(NodeConnectionMilestonesHandlerFun)
-	DetachFromMilestones()
-	Close()
-
-	PublishStateTransaction(stateIndex uint32, tx *iotago.Transaction) error
-	PublishGovernanceTransaction(tx *iotago.Transaction) error
-	PullLatestOutput()
-	PullTxInclusionState(txid iotago.TransactionID)
-	PullStateOutputByID(*iotago.UTXOInput)
-
-	GetMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics
 }
 
 type StateManager interface {
@@ -154,9 +127,8 @@ type StateManager interface {
 
 type Consensus interface {
 	EnqueueStateTransitionMsg(bool, state.VirtualStateAccess, *isc.AliasOutputWithID, time.Time)
-	EnqueueSignedResultMsg(*messages.SignedResultMsgIn)
-	EnqueueSignedResultAckMsg(*messages.SignedResultAckMsgIn)
-	EnqueueTxInclusionsStateMsg(iotago.TransactionID, string)
+	EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg)
+	EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EnqueueVMResultMsg(msg *messages.VMResultMsg)
 	EnqueueTimerMsg(messages.TimerTick)
@@ -166,6 +138,7 @@ type Consensus interface {
 	GetWorkflowStatus() ConsensusWorkflowStatus
 	ShouldReceiveMissingRequest(req isc.Request) bool
 	GetPipeMetrics() ConsensusPipeMetrics
+	SetTimeData(time.Time)
 }
 
 type AsynchronousCommonSubsetRunner interface {
@@ -219,9 +192,7 @@ type ConsensusWorkflowStatus interface {
 
 type ConsensusPipeMetrics interface {
 	GetEventStateTransitionMsgPipeSize() int
-	GetEventSignedResultMsgPipeSize() int
-	GetEventSignedResultAckMsgPipeSize() int
-	GetEventInclusionStateMsgPipeSize() int
+	GetEventPeerLogIndexMsgPipeSize() int
 	GetEventACSMsgPipeSize() int
 	GetEventVMResultMsgPipeSize() int
 	GetEventTimerMsgPipeSize() int

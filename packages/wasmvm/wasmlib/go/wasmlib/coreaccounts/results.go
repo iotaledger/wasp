@@ -5,7 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the json schema instead
 
-//nolint:revive
 package coreaccounts
 
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -87,7 +86,7 @@ type ImmutableAccountsResults struct {
 }
 
 func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBool {
-	return MapAgentIDToImmutableBool{proxy: s.proxy}
+	return MapAgentIDToImmutableBool(s)
 }
 
 type MapAgentIDToMutableBool struct {
@@ -107,7 +106,7 @@ type MutableAccountsResults struct {
 }
 
 func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
-	return MapAgentIDToMutableBool{proxy: s.proxy}
+	return MapAgentIDToMutableBool(s)
 }
 
 type MapTokenIDToImmutableBigInt struct {
@@ -123,7 +122,7 @@ type ImmutableBalanceResults struct {
 }
 
 func (s ImmutableBalanceResults) Balances() MapTokenIDToImmutableBigInt {
-	return MapTokenIDToImmutableBigInt{proxy: s.proxy}
+	return MapTokenIDToImmutableBigInt(s)
 }
 
 type MapTokenIDToMutableBigInt struct {
@@ -143,7 +142,7 @@ type MutableBalanceResults struct {
 }
 
 func (s MutableBalanceResults) Balances() MapTokenIDToMutableBigInt {
-	return MapTokenIDToMutableBigInt{proxy: s.proxy}
+	return MapTokenIDToMutableBigInt(s)
 }
 
 type ImmutableFoundryOutputResults struct {
@@ -191,7 +190,7 @@ type ImmutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
-	return MapTokenIDToImmutableBool{proxy: s.proxy}
+	return MapTokenIDToImmutableBool(s)
 }
 
 type MapTokenIDToMutableBool struct {
@@ -211,7 +210,7 @@ type MutableGetNativeTokenIDRegistryResults struct {
 }
 
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
-	return MapTokenIDToMutableBool{proxy: s.proxy}
+	return MapTokenIDToMutableBool(s)
 }
 
 type ImmutableNftDataResults struct {
@@ -235,7 +234,7 @@ type ImmutableTotalAssetsResults struct {
 }
 
 func (s ImmutableTotalAssetsResults) Assets() MapTokenIDToImmutableBigInt {
-	return MapTokenIDToImmutableBigInt{proxy: s.proxy}
+	return MapTokenIDToImmutableBigInt(s)
 }
 
 type MutableTotalAssetsResults struct {
@@ -243,5 +242,5 @@ type MutableTotalAssetsResults struct {
 }
 
 func (s MutableTotalAssetsResults) Assets() MapTokenIDToMutableBigInt {
-	return MapTokenIDToMutableBigInt{proxy: s.proxy}
+	return MapTokenIDToMutableBigInt(s)
 }

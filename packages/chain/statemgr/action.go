@@ -65,7 +65,7 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	currentTime := time.Now()
 	if currentTime.After(sm.pullStateRetryTime) {
-		sm.nodeConn.PullLatestOutput()
+		sm.nodeConn.PullLatestOutput(sm.chain.ID())
 		sm.pullStateRetryTime = currentTime.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %s. Next pull in: %v",
 			sm.chain.ID().AsAddress(), sm.pullStateRetryTime.Sub(currentTime))
@@ -103,7 +103,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	}
 	block.SetApprovingOutputID(approvingOutputID)
 	sm.syncingBlocks.startSyncingIfNeeded(nextState.BlockIndex())
-	sm.syncingBlocks.addBlockCandidate(block, nextState)
+	sm.syncingBlocks.addBlockCandidate(block, nextState) // TODO: is it needed? State candidate should have already been put in wal by consensus and retrieved by startSyncingIfNeeded
 	sm.delayRequestBlockRetry(block.BlockIndex())
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < nextState.BlockIndex() {
@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if !sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
 		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(block.ApprovingOutputID()))
-		sm.nodeConn.PullStateOutputByID(block.ApprovingOutputID())
+		sm.nodeConn.PullStateOutputByID(sm.chain.ID(), block.ApprovingOutputID())
 	}
 	return true
 }

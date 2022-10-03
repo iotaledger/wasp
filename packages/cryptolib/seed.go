@@ -4,9 +4,10 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 
-	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 	"golang.org/x/crypto/blake2b"
+
+	hivecrypto "github.com/iotaledger/hive.go/core/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 )
 
 const (

@@ -3,10 +3,11 @@ package multiclient
 import (
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/isc"
-	"golang.org/x/xerrors"
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes

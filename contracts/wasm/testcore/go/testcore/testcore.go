@@ -136,8 +136,8 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, _ *SendNFTsBackContext) {
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
 	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
-	for _, nftID := range allowance.NftIDs() {
-		transfer = wasmlib.NewScTransferNFT(nftID)
+	for nftID := range allowance.NftIDs() {
+		transfer = wasmlib.NewScTransferNFT(&nftID)
 		ctx.Send(address, transfer)
 	}
 }

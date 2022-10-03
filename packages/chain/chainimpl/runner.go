@@ -3,7 +3,7 @@ package chainimpl
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 

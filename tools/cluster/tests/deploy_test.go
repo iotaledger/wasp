@@ -4,13 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDeployChain(t *testing.T) {

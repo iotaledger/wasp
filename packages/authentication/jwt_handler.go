@@ -10,9 +10,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
-	"github.com/iotaledger/wasp/packages/users"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/users"
 )
+
+const headerXForwardedPrefix = "X-Forwarded-Prefix"
 
 type AuthHandler struct {
 	Jwt   *JWTAuth
@@ -70,24 +73,28 @@ func (a *AuthHandler) handleJSONAuthRequest(c echo.Context, token string, errorR
 	return c.JSON(http.StatusOK, shared.LoginResponse{JWT: token})
 }
 
+func (a *AuthHandler) redirect(c echo.Context, uri string) error {
+	return c.Redirect(http.StatusFound, c.Request().Header.Get(headerXForwardedPrefix)+uri)
+}
+
 func (a *AuthHandler) handleFormAuthRequest(c echo.Context, token string, errorResult error) error {
 	if errorResult != nil {
 		// TODO: Add sessions to get rid of the query parameter?
-		return c.Redirect(http.StatusFound, fmt.Sprintf("%s?error=%s", shared.AuthRoute(), errorResult))
+		return a.redirect(c, fmt.Sprintf("%s?error=%s", shared.AuthRoute(), errorResult))
 	}
 
 	cookie := http.Cookie{
 		Name:     "jwt",
 		Value:    token,
 		HttpOnly: true, // JWT Token will be stored in a http only cookie, this is important to mitigate XSS/XSRF attacks
-		Expires:  time.Now().Add(a.Jwt.durationHours * time.Hour),
+		Expires:  time.Now().Add(a.Jwt.duration),
 		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 	}
 
 	c.SetCookie(&cookie)
 
-	return c.Redirect(http.StatusFound, shared.AuthRouteSuccess())
+	return a.redirect(c, shared.AuthRouteSuccess())
 }
 
 func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {

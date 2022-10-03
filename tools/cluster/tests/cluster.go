@@ -6,10 +6,11 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
-	"github.com/stretchr/testify/require"
 )
 
 type waspClusterOpts struct {
@@ -22,7 +23,7 @@ type waspClusterOpts struct {
 // however its possible to run the tests on any compatible network, by providing the L1 node configuration:
 // example:
 // go test -timeout 30m github.com/iotaledger/wasp/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
-var l1 = l1starter.New(flag.CommandLine)
+var l1 = l1starter.New(flag.CommandLine, flag.CommandLine)
 
 // newCluster starts a new cluster environment for tests.
 // It is a private function because cluster tests cannot be run in parallel,

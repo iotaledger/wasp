@@ -4,7 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/trie.go/trie"
@@ -17,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/stretchr/testify/require"
 )
 
 type MockedVMRunner struct {
@@ -36,7 +37,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 	return ret
 }
 
-func (r *MockedVMRunner) Run(task *vm.VMTask) {
+func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
 		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), isc.OID(task.AnchorOutputID.UTXOInput()))
 	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests...)
@@ -55,8 +56,8 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 			},
 		}
 	}
-	task.VMError = nil
 	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieNodeStore()))
+	return nil
 }
 
 func nextState(
@@ -64,7 +65,7 @@ func nextState(
 	vs state.VirtualStateAccess,
 	consumedOutput *iotago.AliasOutput,
 	consumedOutputID iotago.OutputID,
-	_ time.Time,
+	timeAssumption time.Time,
 	reqs ...isc.Request,
 ) (state.VirtualStateAccess, *iotago.TransactionEssence, []byte) {
 	nextvs := vs.Copy()
@@ -79,7 +80,7 @@ func nextState(
 
 	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
 	require.NoError(t, err)
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, time.Time{}, &prev)
+	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, timeAssumption.Add(time.Duration(len(reqs))*time.Nanosecond), &prev)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)

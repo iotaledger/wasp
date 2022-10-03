@@ -12,15 +12,16 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/labstack/echo/v4"
+	"github.com/mr-tron/base58"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/labstack/echo/v4"
-	"github.com/mr-tron/base58"
 )
 
 //go:embed templates/base.tmpl
@@ -85,8 +86,6 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 		d.metricsInit(server, r),
 	}
 
-	d.webSocketInit(server)
-
 	return d
 }
 
@@ -142,6 +141,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"webapiPort":             d.wasp.WebAPIPort,
 		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,
 		"uri":                    func(s string, p ...interface{}) string { return e.Reverse(s, p...) },
+		"href":                   func(s string) string { return s },
 	})
 	t = template.Must(t.Parse(tplBase))
 	for _, part := range parts {

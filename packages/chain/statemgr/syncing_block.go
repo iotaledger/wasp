@@ -6,7 +6,7 @@ package statemgr
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"

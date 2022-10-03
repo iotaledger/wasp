@@ -4,10 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBlockBasic(t *testing.T) {

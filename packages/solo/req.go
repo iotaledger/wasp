@@ -8,6 +8,9 @@ import (
 	"math"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/models/trie_blake2b"
 	"github.com/iotaledger/trie.go/trie"
@@ -23,8 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 type CallParams struct {
@@ -364,41 +365,6 @@ func (ch *Chain) LastReceipt() *isc.Receipt {
 	return blocklogReceipt.ToISCReceipt(ch.ResolveVMError(blocklogReceipt.Error))
 }
 
-func (ch *Chain) checkCanAffordFee(fee uint64, req *CallParams, keyPair *cryptolib.KeyPair) error {
-	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
-	}
-	agentID := isc.NewAgentID(keyPair.GetPublicKey().AsEd25519Address())
-	policy := ch.GetGasFeePolicy()
-	available := uint64(0)
-	if policy.GasFeeTokenID == nil {
-		available = ch.L2BaseTokens(agentID)
-		if req.ftokens != nil {
-			available += req.ftokens.BaseTokens
-		}
-		if req.allowance != nil {
-			available -= req.allowance.Assets.BaseTokens
-		}
-	} else {
-		n := ch.L2NativeTokens(agentID, policy.GasFeeTokenID)
-		if req.ftokens != nil {
-			n.Add(n, req.ftokens.AmountNativeToken(policy.GasFeeTokenID))
-		}
-		if req.allowance != nil {
-			n.Sub(n, req.allowance.Assets.AmountNativeToken(policy.GasFeeTokenID))
-		}
-		if n.IsUint64() {
-			available = n.Uint64()
-		} else {
-			available = math.MaxUint64
-		}
-	}
-	if available < fee {
-		return fmt.Errorf("sender's available tokens on L2 (%d) is less than the %d required", available, fee)
-	}
-	return nil
-}
-
 func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair) (*iotago.Transaction, *blocklog.RequestReceipt, dict.Dict, error) {
 	defer ch.logRequestLastBlock()
 
@@ -429,7 +395,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 
 	res := ch.estimateGas(r)
 
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 // EstimateGasOffLedger executes the given on-ledger request without committing
@@ -446,7 +412,7 @@ func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPai
 	r := req.NewRequestOffLedger(ch.ChainID, keyPair)
 	res := ch.estimateGas(r)
 
-	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, res.Receipt.Error.AsGoError()
+	return res.Receipt.GasBurned, res.Receipt.GasFeeCharged, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
 // EstimateNeededStorageDeposit estimates the amount of base tokens that will be

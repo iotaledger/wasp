@@ -1,5 +1,5 @@
 GIT_COMMIT_SHA := $(shell git rev-list -1 HEAD)
-BUILD_TAGS = rocksdb,builtin_static
+BUILD_TAGS = rocksdb
 BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)"
 
 #
@@ -9,9 +9,9 @@ BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS=./ ./tools/wasp-cli/ ./tools/cluster/wasp-cluster/
+BUILD_PKGS=./ ./tools/wasp-cli/ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
-INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) 
+INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
 all: build-lint
 
@@ -20,7 +20,9 @@ wasm:
 	bash contracts/wasm/scripts/generate_wasm.sh
 
 compile-solidity:
-ifeq (, $(shell which solc))
+ifdef SKIP_SOLIDITY
+	@echo "skipping compile-solidity rule"
+else ifeq (, $(shell which solc))
 	@echo "no solc found in PATH, evm contracts won't be compiled"
 else
 	cd packages/vm/core/evm/iscmagic && go generate
@@ -39,10 +41,10 @@ test-full: install
 	go test -tags $(BUILD_TAGS),runheavy ./... --timeout 60m --count 1 -failfast
 
 test: install
-	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 40m --count 1 -failfast $(TEST_ARG)
+	go test -tags $(BUILD_TAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm | grep -v github.com/iotaledger/wasp/packages/vm/)
+	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install-full: compile-solidity
 	$(INSTALL_CMD) ./...
@@ -62,5 +64,9 @@ docker-build:
 		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
 		.
 
-.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build
+deps-versions:
+	@grep -n "====" packages/testutil/privtangle/privtangle.go | \
+		awk -F ":" '{ print $$1 }' | \
+		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
+.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build deps-versions

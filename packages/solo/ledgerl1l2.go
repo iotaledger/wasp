@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"sort"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/stretchr/testify/require"
 )
 
 // L2Accounts returns all accounts on the chain with non-zero balances
@@ -36,7 +37,7 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *isc.FungibleTokens {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return isc.NewEmptyAssets()
+		return isc.NewEmptyFungibleTokens()
 	}
 	ret, err := isc.FungibleTokensFromDict(d)
 	require.NoError(ch.Env.T, err)
@@ -175,7 +176,7 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { // nolint:revive
+func (ch *Chain) NewFoundryParams(maxSupply interface{}) *foundryParams { //nolint:revive
 	ret := &foundryParams{
 		ch: ch,
 		sch: &iotago.SimpleTokenScheme{
@@ -320,17 +321,27 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.FungibleTokens, user *cryptolib.K
 }
 
 // TransferAllowanceTo sends an on-ledger request to transfer funds to target account (sends extra base tokens to the sender account to cover gas)
-func (ch *Chain) TransferAllowanceTo(allowance *isc.FungibleTokens, targetAccount isc.AgentID, forceOpenAccount bool, wallet *cryptolib.KeyPair) error {
-	_, err := ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
+func (ch *Chain) TransferAllowanceTo(
+	allowance *isc.Allowance,
+	targetAccount isc.AgentID,
+	forceOpenAccount bool,
+	wallet *cryptolib.KeyPair,
+	nft ...*isc.NFT,
+) error {
+	callParams := NewCallParams(
+		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+		dict.Dict{
 			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
 			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
 		}).
-			WithAllowance(isc.NewAllowanceFungibleTokens(allowance)).
-			WithFungibleTokens(allowance.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
-			WithGasBudget(math.MaxUint64),
-		wallet,
-	)
+		WithAllowance(allowance).
+		WithFungibleTokens(allowance.Assets.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
+		WithGasBudget(math.MaxUint64)
+
+	if len(nft) > 0 {
+		callParams.WithNFT(nft[0])
+	}
+	_, err := ch.PostRequestSync(callParams, wallet)
 	return err
 }
 

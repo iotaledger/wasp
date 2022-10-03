@@ -1,13 +1,14 @@
 package state
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
 	"path"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -173,4 +174,23 @@ func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
 			log.Infof("saved raw block #%d to dir %s as '%s'", block.BlockIndex(), dir, fname)
 		}
 	}
+}
+
+// ForEachBlockIndex iterates over all indices of block saved in the DB
+// Order non-deterministic
+func ForEachBlockIndex(store kvstore.KVStore, fun func(blockIndex uint32) bool) error {
+	var err error
+	err1 := store.IterateKeys([]byte{dbkeys.ObjectTypeBlock}, func(key kvstore.Key) bool {
+		var index uint32
+		index, err = util.Uint32From4Bytes(key[1:])
+		if err != nil {
+			err = fmt.Errorf("Uint32From4Bytes: %v, data: %s", err, hex.EncodeToString(key[1:]))
+			return false
+		}
+		return fun(index)
+	})
+	if err1 != nil {
+		return err1
+	}
+	return err
 }

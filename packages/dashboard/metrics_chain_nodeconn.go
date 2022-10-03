@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/metrics_chain_nodeconn.tmpl

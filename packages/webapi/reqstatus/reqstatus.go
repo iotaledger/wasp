@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,9 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
-	"golang.org/x/xerrors"
 )
 
 type reqstatusWebAPI struct {

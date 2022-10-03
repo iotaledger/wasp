@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
+//nolint:gocyclo
 func (c *chainObj) recvLoop() {
 	dismissChainMsgChannel := c.dismissChainMsgPipe.Out()
 	aliasOutputChannel := c.aliasOutputPipe.Out()
@@ -34,37 +36,49 @@ func (c *chainObj) recvLoop() {
 		select {
 		case msg, ok := <-dismissChainMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleDismissChain...")
 				c.handleDismissChain(msg.(DismissChainMsg))
+				c.log.Debugf("Chainimpl::recvLoop, handleDismissChain... Done")
 			} else {
 				dismissChainMsgChannel = nil
 			}
 		case msg, ok := <-aliasOutputChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleAliasOutput...")
 				c.handleAliasOutput(msg.(*isc.AliasOutputWithID))
+				c.log.Debugf("Chainimpl::recvLoop, handleAliasOutput... Done")
 			} else {
 				aliasOutputChannel = nil
 			}
 		case msg, ok := <-offLedgerRequestMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleOffLedgerRequestMsg...")
 				c.handleOffLedgerRequestMsg(msg.(*messages.OffLedgerRequestMsgIn))
+				c.log.Debugf("Chainimpl::recvLoop, handleOffLedgerRequestMsg... Done")
 			} else {
 				offLedgerRequestMsgChannel = nil
 			}
 		case msg, ok := <-missingRequestIDsMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestIDsMsg...")
 				c.handleMissingRequestIDsMsg(msg.(*messages.MissingRequestIDsMsgIn))
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestIDsMsg... Done")
 			} else {
 				missingRequestIDsMsgChannel = nil
 			}
 		case msg, ok := <-missingRequestMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestMsg...")
 				c.handleMissingRequestMsg(msg.(*messages.MissingRequestMsg))
+				c.log.Debugf("Chainimpl::recvLoop, handleMissingRequestMsg... Done")
 			} else {
 				missingRequestMsgChannel = nil
 			}
 		case msg, ok := <-timerTickMsgChannel:
 			if ok {
+				c.log.Debugf("Chainimpl::recvLoop, handleTimerTick...")
 				c.handleTimerTick(msg.(messages.TimerTick))
+				c.log.Debugf("Chainimpl::recvLoop, handleTimerTick... Done")
 			} else {
 				timerTickMsgChannel = nil
 			}
@@ -226,8 +240,25 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 	c.detachFromCommitteePeerMessagesFun = func() {
 		cmtPeerGroup.Detach(attachID)
 	}
-	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, cmt, cmtPeerGroup, c.nodeConn, c.pullMissingRequestsFromCommittee, c.chainMetrics, c.wal)
+	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object for chainID=%+v, committee=%+v", c.chainID, cmt)
+	cmtN := int(cmt.Size())
+	cmtF := cmtN - int(dkShare.GetT())
+	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, cmt.Address(), c.consensusJournalRegistry, cmtN, cmtF, c.log)
+	if err != nil {
+		return xerrors.Errorf("cannot load consensus journal: %w", err)
+	}
+	c.consensus = consensus.New(
+		c,
+		c.mempool,
+		cmt,
+		cmtPeerGroup,
+		c.pullMissingRequestsFromCommittee,
+		c.chainMetrics,
+		c.dssNode,
+		consensusJournal,
+		c.wal,
+		c.nodeConn.PublishTransaction,
+	)
 	c.setCommittee(cmt)
 	return nil
 }
@@ -254,17 +285,19 @@ func (c *chainObj) handleOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn
 		c.log.Errorf("handleOffLedgerRequestMsg message ignored: %v", err)
 		return
 	}
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s has been validated", msg.Req.ID())
 
 	c.offLedgerPeersHaveReqMutex.Lock()
 	c.addToPeersHaveReq(msg.Req.ID(), msg.SenderPubKey)
 	c.offLedgerPeersHaveReqMutex.Unlock()
 
 	if !c.mempool.ReceiveRequest(msg.Req) {
-		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted it")
+		c.log.Errorf("handleOffLedgerRequestMsg message ignored: mempool hasn't accepted request %s", msg.Req.ID())
 		return
 	}
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s added to mempool", msg.Req.ID())
 	c.broadcastOffLedgerRequest(msg.Req)
-	c.log.Debugf("handleOffLedgerRequestMsg message added to mempool and broadcasted: reqID: %s", msg.Req.ID().String())
+	c.log.Debugf("handleOffLedgerRequestMsg: request %s broadcasted", msg.Req.ID())
 }
 
 func (c *chainObj) validateRequest(req isc.OffLedgerRequest) error {

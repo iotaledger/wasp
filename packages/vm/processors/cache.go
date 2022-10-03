@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"sync"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"golang.org/x/xerrors"
 )
 
 // Cache stores all initialized VMProcessor instances used by a single chain

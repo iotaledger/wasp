@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -17,13 +19,13 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSpamOnledger(t *testing.T) {
 	testutil.RunHeavy(t)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
+	// env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
 	// send requests from many different wallets to speed things up

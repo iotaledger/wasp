@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"golang.org/x/xerrors"
 )
 
 // region VirtualStateAccess /////////////////////////////////////////////////

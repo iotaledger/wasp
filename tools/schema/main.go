@@ -14,13 +14,15 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -130,8 +132,8 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	// XXX: Preserve line number until here
-	// XXX: comments are still preserved during generation
+	// Preserve line number until here
+	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
 		err = g.Generate()
@@ -159,7 +161,10 @@ func generateSchema(file *os.File) error {
 }
 
 func generateSchemaNew() error {
-	// TODO make sure name is valid: no path characters
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
+	if !r.MatchString(*flagInit) {
+		return fmt.Errorf("name contains path characters")
+	}
 	name := *flagInit
 	fmt.Println("initializing " + name)
 

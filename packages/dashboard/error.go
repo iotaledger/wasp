@@ -56,7 +56,7 @@ func (d *Dashboard) handleError(err error, c echo.Context) {
 			authContext, ok := c.Get("auth").(*authentication.AuthContext)
 
 			if ok && authContext.Scheme() == authentication.AuthJWT && he.Code == http.StatusUnauthorized {
-				err = c.Redirect(http.StatusFound, shared.AuthRoute())
+				err = d.redirect(c, shared.AuthRoute())
 			} else {
 				err = c.Render(he.Code, errorTplName, &ErrorTemplateParams{
 					BaseTemplateParams: d.BaseParams(c),

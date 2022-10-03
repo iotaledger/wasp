@@ -5,17 +5,20 @@ package nodeconn
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	"github.com/iotaledger/inx-app/nodebridge"
+	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 // nodeconn_chain is responsible for maintaining the information related to a single chain.
@@ -24,7 +27,7 @@ type ncChain struct {
 	chainID            *isc.ChainID
 	outputHandler      func(iotago.OutputID, iotago.Output)
 	stateOutputHandler func(iotago.OutputID, iotago.Output)
-	inclusionStates    *events.Event
+	milestoneClosure   *events.Closure
 	log                *logger.Logger
 }
 
@@ -33,17 +36,15 @@ func newNCChain(
 	chainID *isc.ChainID,
 	stateOutputHandler,
 	outputHandler func(iotago.OutputID, iotago.Output),
+	milestoneHandler func(*nodebridge.Milestone),
 ) *ncChain {
-	inclusionStates := events.NewEvent(func(handler interface{}, params ...interface{}) {
-		handler.(chain.NodeConnectionInclusionStateHandlerFun)(params[0].(iotago.TransactionID), params[1].(string))
-	})
 	ncc := ncChain{
 		nc:                 nc,
 		chainID:            chainID,
 		outputHandler:      outputHandler,
 		stateOutputHandler: stateOutputHandler,
-		inclusionStates:    inclusionStates,
 		log:                nc.log.Named(chainID.String()[:6]),
+		milestoneClosure:   nc.AttachMilestones(milestoneHandler),
 	}
 	ncc.run()
 	return &ncc
@@ -54,66 +55,87 @@ func (ncc *ncChain) Key() string {
 }
 
 func (ncc *ncChain) Close() {
-	// Nothing. The ncc.nc.ctx is used for that.
+	ncc.nc.DetachMilestones(ncc.milestoneClosure)
 }
 
 func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.Duration) error {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx, timeout...)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx, timeout...)
 	defer cancelContext()
 
-	txID, err := tx.ID()
+	ctxPendingTransaction, cancelPendingTransaction := context.WithCancel(ctxWithTimeout)
+
+	pendingTx, err := NewPendingTransaction(ctxPendingTransaction, cancelPendingTransaction, tx)
 	if err != nil {
-		return xerrors.Errorf("publishing transaction: failed to get a tx ID: %w", err)
+		return xerrors.Errorf("publishing transaction: %w", err)
 	}
-	ncc.log.Debugf("publishing transaction %v...", isc.TxID(txID))
-	txMsg, err := ncc.nc.doPostTx(ctxWithTimeout, tx)
-	if err != nil {
+
+	// track pending tx before publishing the transaction
+	ncc.nc.addPendingTransaction(pendingTx)
+
+	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
+
+	// we use the context of the pending transaction to post the transaction. this way
+	// the proof of work will be canceled if the transaction already got confirmed in L1.
+	// (e.g. another validator finished PoW and tx was confirmed)
+	// the given context will be canceled by the pending transaction checks.
+	blockID, err := ncc.nc.doPostTx(ctxPendingTransaction, tx)
+	if err != nil && !errors.Is(err, context.Canceled) {
 		return err
 	}
-	ncc.log.Debugf("publishing transaction %v: posted", isc.TxID(txID))
 
-	txMsgID, err := txMsg.ID()
-	if err != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to extract a tx Block ID: %w", isc.TxID(txID), err)
+	// check if the transaction was already included (race condition with other validators)
+	if _, err := ncc.nc.nodeClient.TransactionIncludedBlock(ctxPendingTransaction, pendingTx.ID(), parameters.L1().Protocol); err == nil {
+		// transaction was already included
+		pendingTx.SetConfirmed()
+	} else {
+		// set the current blockID for promote/reattach checks
+		pendingTx.SetBlockID(blockID)
 	}
-	msgMetaChanges, subInfo := ncc.nc.mqttClient.BlockMetadataChange(txMsgID)
-	if subInfo.Error() != nil {
-		return xerrors.Errorf("publishing transaction %v: failed to subscribe: %w", isc.TxID(txID), subInfo.Error())
-	}
-	go func() {
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states...", isc.TxID(txID))
-		for msgMetaChange := range msgMetaChanges {
-			if msgMetaChange.LedgerInclusionState != "" {
-				str, err := json.Marshal(msgMetaChange)
-				if err != nil {
-					ncc.log.Errorf("publishing transaction %v: unexpected error trying to marshal msgMetadataChange: %s", isc.TxID(txID), err)
-				} else {
-					ncc.log.Debugf("publishing transaction %v: msgMetadataChange: %s", isc.TxID(txID), str)
-				}
-				ncc.inclusionStates.Trigger(txID, msgMetaChange.LedgerInclusionState)
-			}
-		}
-		ncc.log.Debugf("publishing transaction %v: listening to inclusion states completed", isc.TxID(txID))
-	}()
 
-	// TODO should promote/re-attach logic not be blocking?
-	return ncc.nc.waitUntilConfirmed(ctxWithTimeout, txMsg)
+	return pendingTx.WaitUntilConfirmed()
 }
 
 func (ncc *ncChain) PullStateOutputByID(id iotago.OutputID) {
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
-	res, err := ncc.nc.nodeAPIClient.OutputByID(ctxWithTimeout, id)
-	cancelContext()
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
+	defer cancelContext()
+
+	resp, err := ncc.nc.nodeBridge.Client().ReadOutput(ctxWithTimeout, inx.NewOutputId(id))
 	if err != nil {
 		ncc.log.Errorf("PullOutputByID: error querying API - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
 		return
 	}
-	out, err := res.Output()
-	if err != nil {
-		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+
+	var output iotago.Output
+	switch resp.GetPayload().(type) {
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Output:
+		out, err := resp.GetOutput().UnwrapOutput(serializer.DeSeriModePerformValidation, ncc.nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+			return
+		}
+		output = out
+
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Spent:
+		// MH: With this you would also apply spent outputs to the current state, is that intended?
+		out, err := resp.GetSpent().GetOutput().UnwrapOutput(serializer.DeSeriModePerformValidation, ncc.nc.nodeBridge.ProtocolParameters())
+		if err != nil {
+			ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  %s", ncc.chainID, id, err)
+			return
+		}
+		output = out
+
+	default:
+		ncc.log.Errorf("PullOutputByID: error getting output from response - chainID %s OutputID %s:  invalid inx.OutputResponse payload type", ncc.chainID, id)
 		return
 	}
-	ncc.stateOutputHandler(id, out)
+	ncc.stateOutputHandler(id, output)
+}
+
+func shouldBeProcessed(out iotago.Output) bool {
+	// only outputs without SDRC should be processed.
+	return !out.UnlockConditionSet().HasStorageDepositReturnCondition()
 }
 
 func (ncc *ncChain) queryChainUTXOs() {
@@ -133,7 +155,8 @@ func (ncc *ncChain) queryChainUTXOs() {
 			cancelContext()
 		}
 		// TODO what should be an adequate timeout for each of these queries?
-		ctxWithTimeout, cancelContext = newCtx(ncc.nc.ctx)
+		ctxWithTimeout, cancelContext = newCtxWithTimeout(ncc.nc.ctx)
+
 		res, err := ncc.nc.indexerClient.Outputs(ctxWithTimeout, query)
 		if err != nil {
 			ncc.log.Warnf("failed to query address outputs: %v", err)
@@ -164,119 +187,33 @@ func (ncc *ncChain) queryChainUTXOs() {
 	cancelContext()
 }
 
-func shouldBeProcessed(out iotago.Output) bool {
-	// only outputs without SDRC should be processed.
-	return !out.UnlockConditionSet().HasStorageDepositReturnCondition()
-}
-
-func (ncc *ncChain) subscribeToChainOwnedUTXOs() {
-	init := true
-	for {
-		if init {
-			init = false
-		} else {
-			ncc.log.Infof("Retrying output subscription for chainAddr=%v", ncc.chainID.String())
-			time.Sleep(500 * time.Millisecond) // Delay between retries.
-		}
-
-		//
-		// Subscribe to the new outputs first.
-		eventsCh, subInfo := ncc.nc.mqttClient.OutputsByUnlockConditionAndAddress(
-			ncc.chainID.AsAddress(),
-			parameters.L1().Protocol.Bech32HRP,
-			nodeclient.UnlockConditionAny,
-		)
-		if subInfo.Error() != nil {
-			ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
-		}
-		//
-		// Then fetch all the existing unspent outputs owned by the chain.
-		ncc.queryChainUTXOs()
-
-		//
-		// Then receive all the subscribed new outputs.
-		for {
-			select {
-			case outResponse := <-eventsCh:
-				out, err := outResponse.Output()
-				if err != nil {
-					ncc.log.Warnf("error while receiving unspent output: %v", err)
-					continue
-				}
-				if outResponse.Metadata == nil {
-					ncc.log.Warnf("error while receiving unspent output, metadata is nil")
-					continue
-				}
-				tid, err := outResponse.Metadata.TxID()
-				if err != nil {
-					ncc.log.Warnf("error while receiving unspent output tx id: %v", err)
-					continue
-				}
-				outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
-				ncc.log.Debugf("received UTXO, outputID: %s", outID.ToHex())
-				if shouldBeProcessed(out) {
-					ncc.outputHandler(outID, out)
-				}
-			case <-ncc.nc.ctx.Done():
-				return
-			}
-		}
-	}
-}
-
 func (ncc *ncChain) queryLatestChainStateUTXO() {
 	// TODO what should be an adequate timeout for this query?
-	ctxWithTimeout, cancelContext := newCtx(ncc.nc.ctx)
+	ctxWithTimeout, cancelContext := newCtxWithTimeout(ncc.nc.ctx)
 	stateOutputID, stateOutput, err := ncc.nc.indexerClient.Alias(ctxWithTimeout, *ncc.chainID.AsAliasID())
 	cancelContext()
+
 	if err != nil {
 		ncc.log.Panicf("error while fetching chain state output: %v", err)
 	}
+
 	ncc.log.Debugf("received chain state update, outputID: %s", stateOutputID.ToHex())
 	ncc.stateOutputHandler(*stateOutputID, stateOutput)
 }
 
-func (ncc *ncChain) subscribeToChainStateUpdates() {
-	//
-	// Subscribe to the new outputs first.
-	eventsCh, subInfo := ncc.nc.mqttClient.AliasOutputsByID(*ncc.chainID.AsAliasID())
-	if subInfo.Error() != nil {
-		ncc.log.Panicf("failed to subscribe: %v", subInfo.Error())
-	}
-
-	//
-	// Then fetch the latest chain state UTXO.
-	ncc.queryLatestChainStateUTXO()
-
-	//
-	// Then receive all the subscribed state outputs.
-	for {
-		select {
-		case outResponse := <-eventsCh:
-			out, err := outResponse.Output()
-			if err != nil {
-				ncc.log.Warnf("error while receiving chain state unspent output: %v", err)
-				continue
-			}
-			if outResponse.Metadata == nil {
-				ncc.log.Warnf("error while receiving chain state unspent output, metadata is nil")
-				continue
-			}
-			tid, err := outResponse.Metadata.TxID()
-			if err != nil {
-				ncc.log.Warnf("error while receiving chain state unspent output tx id: %v", err)
-				continue
-			}
-			outID := iotago.OutputIDFromTransactionIDAndIndex(*tid, outResponse.Metadata.OutputIndex)
-			ncc.log.Debugf("received chain state update, outputID: %s", outID.ToHex())
-			ncc.stateOutputHandler(outID, out)
-		case <-ncc.nc.ctx.Done():
-			return
-		}
+func (ncc *ncChain) HandleUnlockableOutput(outputID iotago.OutputID, output iotago.Output) {
+	if shouldBeProcessed(output) {
+		ncc.outputHandler(outputID, output)
 	}
 }
 
+func (ncc *ncChain) HandleStateUpdate(outputID iotago.OutputID, output iotago.Output) {
+	ncc.stateOutputHandler(outputID, output)
+}
+
 func (ncc *ncChain) run() {
-	go ncc.subscribeToChainStateUpdates()
-	go ncc.subscribeToChainOwnedUTXOs()
+	ncc.log.Infof("Subscribing to ledger updates")
+
+	go ncc.queryLatestChainStateUTXO()
+	go ncc.queryChainUTXOs()
 }

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -20,5 +20,5 @@ func TestBasic(t *testing.T) {
 		return mapdb.NewMapDB()
 	}
 
-	_ = New(logger, coreprocessors.Config(), 10, time.Second, false, nil, getOrCreateKVStore)
+	_ = New(logger, coreprocessors.Config(), 10, time.Second, false, nil, getOrCreateKVStore, false, "")
 }

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/require"
 )
 
 type env struct {

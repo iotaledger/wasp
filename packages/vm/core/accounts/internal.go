@@ -5,7 +5,9 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"golang.org/x/xerrors"
 )
 
 var (
@@ -370,7 +371,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 }
 
 func getAccountAssets(account *collections.ImmutableMap) *isc.FungibleTokens {
-	ret := isc.NewEmptyAssets()
+	ret := isc.NewEmptyFungibleTokens()
 	account.MustIterate(func(idBytes []byte, val []byte) bool {
 		if len(idBytes) == 0 {
 			ret.BaseTokens = util.MustUint64From8Bytes(val)
@@ -393,7 +394,7 @@ func getAccountAssets(account *collections.ImmutableMap) *isc.FungibleTokens {
 func GetAccountAssets(state kv.KVStoreReader, agentID isc.AgentID) *isc.FungibleTokens {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
-		return isc.NewEmptyAssets()
+		return isc.NewEmptyFungibleTokens()
 	}
 	return getAccountAssets(account)
 }
@@ -404,7 +405,7 @@ func GetTotalL2Assets(state kv.KVStoreReader) *isc.FungibleTokens {
 
 // calcL2TotalAssets traverses the ledger and sums up all assets
 func calcL2TotalAssets(state kv.KVStoreReader) *isc.FungibleTokens {
-	ret := isc.NewEmptyAssets()
+	ret := isc.NewEmptyFungibleTokens()
 
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := isc.AgentIDFromBytes(key)

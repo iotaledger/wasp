@@ -4,13 +4,14 @@ import (
 	"math/big"
 	"sort"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
 func (txb *AnchorTransactionBuilder) CreateNewFoundry(

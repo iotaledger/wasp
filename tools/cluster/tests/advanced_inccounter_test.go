@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/stretchr/testify/require"
 )
 
 func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
@@ -95,7 +96,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
-	cmt := util.MakeRange(0, numValidatorNodes)
+	cmt := util.MakeRange(0, numValidatorNodes-1)
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
 	for i := 0; i < numRequests; i++ {
@@ -110,7 +111,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
@@ -182,7 +183,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	if len(timeout) > 0 {
 		to = timeout[0]
 	}
-	cmt := util.MakeRange(0, numValidatorNodes)
+	cmt := util.MakeRange(0, numValidatorNodes-1)
 
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
@@ -205,7 +206,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
 
 	e.printBlocks(
 		numRequests + // The actual IncCounter requests.
@@ -224,7 +225,7 @@ func TestAccessNodesMany(t *testing.T) {
 	const requestsCountProgression = 2
 	const iterationCount = 8
 
-	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
+	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes-1))
 
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

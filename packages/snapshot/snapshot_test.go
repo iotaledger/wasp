@@ -5,14 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvtest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/stretchr/testify/require"
 )
 
 func Test1(t *testing.T) {

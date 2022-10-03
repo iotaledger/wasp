@@ -6,10 +6,11 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
@@ -186,26 +187,26 @@ func TestGetFactor(t *testing.T) {
 	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
 
 	member1 := ctx.NewSoloAgent()
-	dividendMember(ctx, member1, 25)
+	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
 
 	member2 := ctx.NewSoloAgent()
-	dividendMember(ctx, member2, 50)
+	dividendMember(ctx, member2, 500)
 	require.NoError(t, ctx.Err)
 
 	member3 := ctx.NewSoloAgent()
-	dividendMember(ctx, member3, 75)
+	dividendMember(ctx, member3, 750)
 	require.NoError(t, ctx.Err)
 
 	value := dividendGetFactor(ctx, member3)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 75, value)
+	require.EqualValues(t, 750, value)
 
 	value = dividendGetFactor(ctx, member2)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 50, value)
+	require.EqualValues(t, 500, value)
 
 	value = dividendGetFactor(ctx, member1)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 25, value)
+	require.EqualValues(t, 250, value)
 }

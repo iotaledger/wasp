@@ -1,6 +1,11 @@
 package chainutil
 
 import (
+	"time"
+
+	"go.uber.org/zap"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -8,8 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
-	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 )
 
 // SimulateCall executes the given request and discards the resulting chain state. It is useful
@@ -31,7 +34,7 @@ func SimulateCall(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 			AnchorOutput:       anchorOutput.GetAliasOutput(),
 			AnchorOutputID:     anchorOutput.OutputID(),
 			Requests:           []isc.Request{req},
-			TimeAssumption:     ch.GetTimeData(),
+			TimeAssumption:     time.Now(),
 			VirtualStateAccess: virtualStateAccess,
 			Entropy:            hashing.RandomHash(nil),
 			ValidatorFeeTarget: isc.NewContractAgentID(ch.ID(), 0),
@@ -41,12 +44,15 @@ func SimulateCall(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 			EnableGasBurnLogging: true,
 			EstimateGasMode:      true,
 		}
-		vmRunner.Run(task)
+		err = vmRunner.Run(task)
+		if err != nil {
+			return err
+		}
 		if len(task.Results) == 0 {
 			return xerrors.Errorf("request was skipped")
 		}
 		ret = task.Results[0]
-		return task.VMError
+		return nil
 	})
 	return ret, err
 }

@@ -3,6 +3,8 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTutorialFirst(t *testing.T) {

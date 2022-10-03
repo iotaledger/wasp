@@ -3,8 +3,9 @@ package evmtest
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 )
 
 const factor = 10

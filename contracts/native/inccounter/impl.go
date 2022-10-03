@@ -159,7 +159,7 @@ func spawn(ctx isc.Sandbox) dict.Dict {
 }
 
 func getCounter(ctx isc.SandboxView) dict.Dict {
-	state := ctx.State()
+	state := ctx.StateR()
 	val := codec.MustDecodeInt64(state.MustGet(VarCounter), 0)
 	return dict.Dict{VarCounter: codec.EncodeInt64(val)}
 }

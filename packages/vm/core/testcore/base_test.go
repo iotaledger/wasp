@@ -1,14 +1,14 @@
 package testcore
 
 import (
-	"math"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/stretchr/testify/require"
 )
 
 func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
@@ -296,18 +295,15 @@ func TestEstimateGas(t *testing.T) {
 	require.NoError(t, err)
 
 	callParams := func() *solo.CallParams {
-		return solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncSetInt.Name,
-			sbtestsc.ParamIntParamName, "v",
-			sbtestsc.ParamIntParamValue, 42,
+		return solo.NewCallParams(sbtestsc.Contract.Name, sbtestsc.FuncCalcFibonacciIndirectStoreValue.Name,
+			sbtestsc.ParamN, uint64(10),
 		)
 	}
 
-	getInt := func() int64 {
-		v, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncGetInt.Name,
-			sbtestsc.ParamIntParamName, "v",
-		)
+	getResult := func() int64 {
+		res, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
 		require.NoError(t, err)
-		n, err := codec.DecodeInt64(v.MustGet("v"), 0)
+		n, err := codec.DecodeInt64(res.MustGet(sbtestsc.ParamN), 0)
 		require.NoError(t, err)
 		return n
 	}
@@ -324,7 +320,7 @@ func TestEstimateGas(t *testing.T) {
 		t.Logf("estimatedGas: %d, estimatedGasFee: %d", estimatedGas, estimatedGasFee)
 
 		// test that EstimateGas did not actually commit changes in the state
-		require.EqualValues(t, 0, getInt())
+		require.EqualValues(t, 0, getResult())
 	}
 
 	for _, testCase := range []struct {
@@ -364,18 +360,12 @@ func TestEstimateGas(t *testing.T) {
 			if testCase.L2Balance > 0 {
 				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
-				req := solo.NewCallParams(
-					accounts.Contract.Name,
-					accounts.FuncTransferAllowanceTo.Name,
-					dict.Dict{
-						accounts.ParamAgentID:          codec.EncodeAgentID(isc.NewAgentID(addr)),
-						accounts.ParamForceOpenAccount: codec.EncodeBool(true),
-					},
-				).AddAllowance(isc.NewAllowanceBaseTokens(testCase.L2Balance)).
-					AddBaseTokens(10 * isc.Million).
-					WithGasBudget(math.MaxUint64)
-
-				_, err = ch.PostRequestSync(req, anotherKeyPair)
+				err = ch.TransferAllowanceTo(
+					isc.NewAllowanceBaseTokens(testCase.L2Balance),
+					isc.NewAgentID(addr),
+					true,
+					anotherKeyPair,
+				)
 				require.NoError(t, err)
 				balance := ch.L2BaseTokens(agentID)
 				require.Equal(t, testCase.L2Balance, balance)
@@ -393,7 +383,7 @@ func TestEstimateGas(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				// changes committed to the state
-				require.EqualValues(t, 42, getInt())
+				require.NotZero(t, getResult())
 			}
 		})
 	}
@@ -534,7 +524,7 @@ func TestMessageSize(t *testing.T) {
 	reqSize := 5_000 // bytes
 	storageDeposit := 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1().MaxTransactionSize / reqSize
+	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {

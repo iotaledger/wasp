@@ -7,11 +7,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGroupProvider(t *testing.T) {

@@ -7,13 +7,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/logger"
+	"go.uber.org/atomic"
+
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	dss_node_pkg "github.com/iotaledger/wasp/packages/chain/dss/node"
 	mempool_pkg "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnchain"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -30,15 +33,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
-	"go.uber.org/atomic"
 )
 
 const maxMsgBuffer = 1000
-
-var (
-	_ chain.Chain                     = &chainObj{}
-	_ map[cryptolib.PublicKeyKey]bool // We rely on value comparison on the pubkeys, just assert that here.
-)
 
 type chainObj struct {
 	committee                          atomic.Value
@@ -53,8 +50,9 @@ type chainObj struct {
 	lastSeenOutputStateIndex           *uint32
 	stateMgr                           chain.StateManager
 	consensus                          chain.Consensus
+	dssNode                            dss_node_pkg.DSSNode
 	log                                *logger.Logger
-	nodeConn                           chain.ChainNodeConnection
+	nodeConn                           chain.NodeConnection
 	db                                 kvstore.KVStore
 	netProvider                        peering.NetworkProvider
 	dksProvider                        registry.DKShareRegistryProvider
@@ -78,6 +76,7 @@ type chainObj struct {
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
+	consensusJournalRegistry           journal.Registry
 	wal                                chain.WAL
 }
 
@@ -93,15 +92,24 @@ func NewChain(
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
+	nidProvider registry.NodeIdentityProvider,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
+	consensusJournalRegistry journal.Registry,
 	wal chain.WAL,
+	rawBlocksEnabled bool,
+	rawBlocksDir string,
 ) chain.Chain {
 	var err error
 	log.Debugf("creating chain object for %s", chainID.String())
+
+	nodeIdentity := nidProvider.GetNodeIdentity()
+
+	var peeringID peering.PeeringID
+	copy(peeringID[:], chainID.Bytes())
 
 	chainLog := log.Named("c-" + chainID.AsAddress().String()[2:8])
 	chainStateSync := coreutil.NewChainStateSync()
@@ -133,18 +141,13 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
+		consensusJournalRegistry:         consensusJournalRegistry,
 		wal:                              wal,
-	}
-	ret.nodeConn, err = nodeconnchain.NewChainNodeConnection(chainID, nc, chainLog)
-	if err != nil {
-		ret.log.Errorf("NewChain: unable to create chain node connection: %v", err)
-		return nil
+		dssNode:                          dss_node_pkg.New(&peeringID, netProvider, nodeIdentity, log),
+		nodeConn:                         nc,
 	}
 
 	ret.committee.Store(&committeeStruct{})
-
-	var peeringID peering.PeeringID
-	copy(peeringID[:], chainID.Bytes())
 
 	chainPeerNodes := []*cryptolib.PublicKey{netProvider.Self().PubKey()}
 	ret.chainPeers, err = netProvider.PeerDomain(peeringID, chainPeerNodes)
@@ -158,13 +161,19 @@ func NewChain(
 		return nil
 	}
 
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal)
+	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal, rawBlocksEnabled, rawBlocksDir, false)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)
-	ret.eventChainTransition.Attach(ret.eventChainTransitionClosure)
-	ret.nodeConn.AttachToOnLedgerRequest(ret.receiveOnLedgerRequest)
-	ret.nodeConn.AttachToAliasOutput(ret.EnqueueAliasOutput)
+	ret.eventChainTransition.Hook(ret.eventChainTransitionClosure)
+
+	nc.RegisterChain(
+		chainID,
+		ret.stateOutputHandler,
+		ret.outputHandler,
+		ret.handleMilestone,
+	)
+
 	ret.receiveChainPeerMessagesAttachID = ret.chainPeers.Attach(peering.PeerMessageReceiverChain, ret.receiveChainPeerMessages)
 	go ret.recvLoop()
 	ret.startTimer()
@@ -181,11 +190,6 @@ func (c *chainObj) startTimer() {
 			time.Sleep(chain.TimerTickPeriod)
 		}
 	}()
-}
-
-func (c *chainObj) receiveOnLedgerRequest(request isc.OnLedgerRequest) {
-	c.log.Debugf("receiveOnLedgerRequest: %s", request.ID())
-	c.mempool.ReceiveRequest(request)
 }
 
 func (c *chainObj) receiveCommitteePeerMessages(peerMsg *peering.PeerMessageGroupIn) {

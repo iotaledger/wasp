@@ -1,7 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// nolint:typecheck
 package vmcontext
 
 import (
@@ -166,4 +165,27 @@ func (s *contractSandbox) GasBurnEnable(enable bool) {
 
 func (s *contractSandbox) MustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
 	s.Ctx.(*VMContext).mustMoveBetweenAccounts(fromAgentID, toAgentID, fungibleTokens, nfts)
+}
+
+func (s *contractSandbox) DebitFromAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+	s.Ctx.(*VMContext).debitFromAccount(agentID, tokens)
+}
+
+func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) {
+	s.Ctx.(*VMContext).creditToAccount(agentID, tokens)
+}
+
+func (s *contractSandbox) TotalGasTokens() *isc.FungibleTokens {
+	if s.Ctx.(*VMContext).task.EstimateGasMode {
+		return isc.NewEmptyFungibleTokens()
+	}
+	amount := s.Ctx.(*VMContext).gasMaxTokensToSpendForGasFee
+	tokenID := s.Ctx.(*VMContext).chainInfo.GasFeePolicy.GasFeeTokenID
+	if tokenID == nil {
+		return isc.NewFungibleBaseTokens(amount)
+	}
+	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+		ID:     *tokenID,
+		Amount: new(big.Int).SetUint64(amount),
+	}})
 }

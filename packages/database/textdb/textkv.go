@@ -1,16 +1,15 @@
 package textdb
 
 import (
+	"encoding/json"
 	"os"
-	"path/filepath"
 	"sync"
 
-	"github.com/iotaledger/hive.go/byteutils"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/types"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/hive.go/core/byteutils"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/types"
 )
 
 const storePerm = 0o664
@@ -18,23 +17,10 @@ const storePerm = 0o664
 // a key/value store implementation that uses text files
 type textKV struct {
 	sync.RWMutex
-	marshaller
 	filename      string
 	log           *logger.Logger
 	realm         []byte
 	inMemoryStore kvstore.KVStore
-}
-
-type marshaller interface {
-	marshal(val interface{}) ([]byte, error)
-	unmarshal(buf []byte, v interface{}) error
-}
-
-func getMarshaller(filename string) marshaller {
-	if filepath.Ext(filename) == "yaml" {
-		return &yamlMarshaller{}
-	}
-	return &jsonMarshaller{}
 }
 
 // a key/value store for text storage. Works with both yaml and json.
@@ -57,7 +43,6 @@ func NewTextKV(log *logger.Logger, filename string) kvstore.KVStore {
 	tKV := &textKV{
 		filename:      f.Name(),
 		log:           log,
-		marshaller:    getMarshaller(filename),
 		inMemoryStore: mapdb.NewMapDB(),
 	}
 	data, err := tKV.load()
@@ -66,11 +51,11 @@ func NewTextKV(log *logger.Logger, filename string) kvstore.KVStore {
 	}
 	// load data into inMemoryStore
 	for key, value := range data {
-		keyB, err := base58.Decode(key)
+		keyB, err := json.Marshal(key)
 		if err != nil {
 			panic(err)
 		}
-		valB, err := tKV.marshal(value)
+		valB, err := json.Marshal(value)
 		if err != nil {
 			panic(err)
 		}
@@ -107,7 +92,7 @@ func (s *textKV) load() (map[string]interface{}, error) {
 		return nil, err
 	}
 	ret := map[string]interface{}{}
-	err = s.unmarshal(data, &ret)
+	err = json.Unmarshal(data, &ret)
 	if err != nil {
 		return nil, err
 	}
@@ -197,17 +182,22 @@ func (s *textKV) flush() error {
 	rec := make(map[string]interface{})
 	err = s.inMemoryStore.Iterate(s.realm, func(key, value kvstore.Value) bool {
 		var val interface{}
-		err = s.unmarshal(value, &val)
+		err = json.Unmarshal(value, &val)
 		if err != nil {
 			return false
 		}
-		rec[base58.Encode(key)] = val
+		var keyStr string
+		err = json.Unmarshal(key, &keyStr)
+		if err != nil {
+			return false
+		}
+		rec[keyStr] = val
 		return true
 	})
 	if err != nil {
 		return err
 	}
-	data, err := s.marshal(rec)
+	data, err := json.MarshalIndent(rec, "", " ")
 	if err != nil {
 		return err
 	}

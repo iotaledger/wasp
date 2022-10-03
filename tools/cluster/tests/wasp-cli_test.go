@@ -8,9 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/stretchr/testify/require"
 )
 
 const file = "inccounter_bg.wasm"
@@ -67,7 +68,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	// test chain balance command
 	out = w.Run("chain", "balance", agentID)
 	// check that the chain balance of owner is > 0
-	r := regexp.MustCompile(`(?m)base tokens\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
+	r := regexp.MustCompile(`(?m)base\s+(\d+)$`).FindStringSubmatch(out[len(out)-1])
 	require.Len(t, r, 2)
 	bal, err := strconv.ParseInt(r[1], 10, 64)
 	require.NoError(t, err)
@@ -90,10 +91,10 @@ func TestWaspCLI1Chain(t *testing.T) {
 func checkBalance(t *testing.T, out []string, expected int) {
 	amount := 0
 	for _, line := range out {
-		r := regexp.MustCompile(`(?m)base tokens\s+(\d+)`).FindStringSubmatch(line)
+		r := regexp.MustCompile(`(?m)base( tokens)?\s+(\d+)`).FindStringSubmatch(line)
 		if r != nil {
 			var err error
-			amount, err = strconv.Atoi(r[1])
+			amount, err = strconv.Atoi(r[2])
 			require.NoError(t, err)
 			break
 		}
@@ -311,38 +312,15 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	require.Contains(t, out[0], description)
 }
 
-func TestWaspCLIBalance(t *testing.T) {
-	newWaspCLITest(t)
-	// TODO: Implement!
-	// w.Run("mint", "1000")
-
-	// out := w.Run("balance")
-
-	// bals := map[string]uint64{}
-	// var mintedColor string
-	// for _, line := range out {
-	// 	m := regexp.MustCompile(`(?m)(\w+):\s+(\d+)$`).FindStringSubmatch(line)
-	// 	if len(m) == 0 {
-	// 		continue
-	// 	}
-	// 	if m[1] == "Total" {
-	// 		continue
-	// 	}
-	// 	v, err := strconv.Atoi(m[2])
-	// 	require.NoError(t, err)
-	// 	bals[m[1]] = uint64(v)
-	// 	if m[1] != "IOTA" {
-	// 		mintedColor = m[1]
-	// 	}
-	// }
-	// t.Logf("%+v", bals)
-	// require.Equal(t, 2, len(bals))
-	// require.EqualValues(t, utxodb.RequestFundsAmount-1000, bals["IOTA"])
-	// require.EqualValues(t, 1000, bals[mintedColor])
-}
-
 func TestWaspCLIRejoinChain(t *testing.T) {
 	w := newWaspCLITest(t)
+
+	// make sure deploying with a bad quorum breaks
+	require.Panics(
+		t,
+		func() {
+			w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3,4,5", "--quorum=4")
+		})
 
 	alias := "chain1"
 

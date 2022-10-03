@@ -3,7 +3,7 @@ package rotate
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/identity"
+	"github.com/iotaledger/hive.go/core/identity"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -43,6 +43,16 @@ func MakeRotateStateControllerTransaction(
 			output.Conditions[i] = &iotago.GovernorAddressUnlockCondition{Address: nextAddr}
 		}
 	}
+
+	// remove any "sender feature"
+	var newFeatures iotago.Features
+	for t, feature := range chainInput.GetAliasOutput().FeatureSet() {
+		if t != iotago.FeatureSender {
+			newFeatures = append(newFeatures, feature)
+		}
+	}
+	output.Features = newFeatures
+
 	result := &iotago.TransactionEssence{
 		NetworkID: parameters.L1().Protocol.NetworkID(),
 		Inputs:    iotago.Inputs{chainInput.ID()},

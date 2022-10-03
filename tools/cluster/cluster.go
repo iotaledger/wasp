@@ -17,7 +17,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -25,7 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -35,7 +37,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
-	"golang.org/x/xerrors"
 )
 
 type Cluster struct {
@@ -44,7 +45,7 @@ type Cluster struct {
 	Started          bool
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
-	l1               nodeconn.L1Client
+	l1               l1connection.Client
 	waspCmds         []*exec.Cmd
 	t                *testing.T
 }
@@ -66,7 +67,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		ValidatorKeyPair: validatorKp,
 		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
 		t:                t,
-		l1:               nodeconn.NewL1Client(config.L1, log),
+		l1:               l1connection.NewClient(config.L1, log),
 		DataPath:         dataPath,
 	}
 }
@@ -85,7 +86,7 @@ func (clu *Cluster) RequestFunds(addr iotago.Address) error {
 	return clu.l1.RequestFunds(addr)
 }
 
-func (clu *Cluster) L1Client() nodeconn.L1Client {
+func (clu *Cluster) L1Client() l1connection.Client {
 	return clu.l1
 }
 
@@ -127,7 +128,8 @@ func (clu *Cluster) TrustAll() error {
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	committee := clu.Config.AllNodes()
-	minQuorum := len(committee)/2 + 1
+	maxFaulty := (len(committee) - 1) / 3
+	minQuorum := len(committee) - maxFaulty
 	quorum := len(committee) * 3 / 4
 	if quorum < minQuorum {
 		quorum = minQuorum
@@ -136,7 +138,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, iotago.Address, error) {
-	cmt := util.MakeRange(0, committeeNodeCount)
+	cmt := util.MakeRange(0, committeeNodeCount-1) // End is inclusive for some reason.
 	quorum := uint16((2*len(cmt))/3 + 1)
 
 	address, err := clu.RunDKG(cmt, quorum)
@@ -520,7 +522,7 @@ func (clu *Cluster) startWaspNode(i int, initOk chan<- bool) error {
 
 func DoStartWaspNode(cwd string, nodeIndex int, nodeAPIURL string, initOk chan<- bool, t *testing.T) (*exec.Cmd, error) {
 	name := fmt.Sprintf("wasp %d", nodeIndex)
-	cmd := exec.Command("wasp")
+	cmd := exec.Command("wasp", "-c", "config.json")
 
 	// force the wasp processes to close if the cluster tests time out
 	if t != nil {
@@ -667,7 +669,7 @@ func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return nil
 	}
-	balance := isc.NewEmptyAssets()
+	balance := isc.NewEmptyFungibleTokens()
 	for _, out := range outputMap {
 		balance.Add(transaction.AssetsFromOutput(out))
 	}

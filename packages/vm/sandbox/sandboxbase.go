@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -52,6 +53,12 @@ func (s *SandboxBase) BalanceFungibleTokens() *isc.FungibleTokens {
 func (s *SandboxBase) OwnedNFTs() []iotago.NFTID {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountNFTs(s.AccountID())
+}
+
+func (s *SandboxBase) HasInAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) bool {
+	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
+	accountAssets := s.Ctx.GetAssets(agentID)
+	return accountAssets.SpendFromFungibleTokenBudget(tokens)
 }
 
 func (s *SandboxBase) GetNFTData(nftID iotago.NFTID) isc.NFT {
@@ -120,4 +127,8 @@ func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.
 		params = make(dict.Dict)
 	}
 	return s.Ctx.Call(contractHname, entryPoint, params, nil)
+}
+
+func (s *SandboxBase) StateR() kv.KVStoreReader {
+	return s.Ctx.StateReader()
 }

@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -17,8 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 func TestBasicRotation(t *testing.T) {
@@ -142,9 +143,9 @@ func TestRotation(t *testing.T) {
 // requests are being posted. Test is designed in a way that some inccounter requests
 // are approved by the one node committee and others by rotated four node committee.
 // NOTE: the timeouts of the test are large, because all the nodes are checked. For
-// a request to be marked proccessed, the node's state manager must be synchronized
+// a request to be marked processed, the node's state manager must be synchronized
 // to any index after the transaction, which included the request. It might happen
-// that some request is approved by committee for state index 8 and some (most likelly
+// that some request is approved by committee for state index 8 and some (most likely
 // access) node is constantly behind and catches up only when the test stops producing
 // requests in state index 18. In that node, request index 8 is marked as processed
 // only after state manager reaches state index 18 and publishes the transaction.
@@ -302,28 +303,6 @@ func TestRotationMany(t *testing.T) {
 	}
 }
 
-func (e *ChainEnv) waitBlockIndex(nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
-	return waitTrue(timeout, func() bool {
-		i, err := e.callGetBlockIndex(nodeIndex)
-		return err == nil && i >= blockIndex
-	})
-}
-
-func (e *ChainEnv) callGetBlockIndex(nodeIndex int) (uint32, error) {
-	ret, err := e.Chain.Cluster.WaspClient(nodeIndex).CallView(
-		e.Chain.ChainID,
-		blocklog.Contract.Hname(),
-		blocklog.ViewGetBlockInfo.Name,
-		nil,
-	)
-	if err != nil {
-		return 0, err
-	}
-	v, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-	require.NoError(e.t, err)
-	return v, nil
-}
-
 func (e *ChainEnv) waitStateControllers(addr iotago.Address, timeout time.Duration) error {
 	for _, nodeIndex := range e.Clu.AllNodes() {
 		if err := e.waitStateController(nodeIndex, addr, timeout); err != nil {
@@ -339,6 +318,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		var a iotago.Address
 		a, err = e.callGetStateController(nodeIndex)
 		if err != nil {
+			e.t.Logf("Error received while waiting state controller change to %s in node %v", addr, nodeIndex)
 			return false
 		}
 		return a.Equal(addr)
@@ -347,7 +327,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		return err
 	}
 	if !result {
-		return xerrors.New(fmt.Sprintf("Timeout waiting state controler change to %s in node %v", addr, nodeIndex))
+		return xerrors.New(fmt.Sprintf("Timeout waiting state controller change to %s in node %v", addr, nodeIndex))
 	}
 	return nil
 }

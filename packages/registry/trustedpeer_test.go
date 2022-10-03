@@ -3,10 +3,11 @@ package registry
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTrustedPeer(t *testing.T) {

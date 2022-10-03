@@ -7,10 +7,11 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"golang.org/x/xerrors"
 )
 
 const (

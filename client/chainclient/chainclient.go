@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -15,7 +15,7 @@ import (
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Layer1Client nodeconn.L1Client
+	Layer1Client l1connection.Client
 	WaspClient   *client.WaspClient
 	ChainID      *isc.ChainID
 	KeyPair      *cryptolib.KeyPair
@@ -24,7 +24,7 @@ type Client struct {
 
 // New creates a new chainclient.Client
 func New(
-	layer1Client nodeconn.L1Client,
+	layer1Client l1connection.Client,
 	waspClient *client.WaspClient,
 	chainID *isc.ChainID,
 	keyPair *cryptolib.KeyPair,
@@ -115,7 +115,7 @@ func (c *Client) post1RequestWithOutputs(
 	par := defaultParams(params...)
 	var gasBudget uint64
 	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerCall
+		gasBudget = gas.MaxGasPerRequest
 	} else {
 		gasBudget = *par.GasBudget
 	}
@@ -160,7 +160,7 @@ func (c *Client) PostOffLedgerRequest(
 	}
 	var gasBudget uint64
 	if par.GasBudget == nil {
-		gasBudget = gas.MaxGasPerCall
+		gasBudget = gas.MaxGasPerRequest
 	} else {
 		gasBudget = *par.GasBudget
 	}

@@ -13,17 +13,74 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
+const (
+	prefixPrivileged = "p"
+	prefixAllowance  = "a"
+)
+
+// directory of EVM contracts that have access to the privileged methods of ISC magic
+func keyPrivileged(addr common.Address) kv.Key {
+	return kv.Key(prefixPrivileged) + kv.Key(addr.Bytes())
+}
+
+func isPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
+	state := iscMagicSubrealmR(ctx.StateR())
+	return state.MustHas(keyPrivileged(addr))
+}
+
+func addToPrivileged(ctx isc.Sandbox, addr common.Address) {
+	state := iscMagicSubrealm(ctx.State())
+	state.Set(keyPrivileged(addr), []byte{1})
+}
+
+// allowance between two EVM accounts
 func keyAllowance(from, to common.Address) kv.Key {
-	return kv.Key("a") + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
+	return kv.Key(prefixAllowance) + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
+}
+
+func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Allowance {
+	state := iscMagicSubrealmR(ctx.StateR())
+	key := keyAllowance(from, to)
+	return codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+}
+
+func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Allowance) {
+	state := iscMagicSubrealm(ctx.State())
+	key := keyAllowance(from, to)
+	allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+	allowance.Add(add)
+	state.Set(key, allowance.Bytes())
+}
+
+func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Allowance) *isc.Allowance {
+	state := iscMagicSubrealm(ctx.State())
+	key := keyAllowance(from, to)
+
+	remaining := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
+	if taken.IsEmpty() {
+		taken = remaining.Clone()
+	}
+
+	ok := remaining.SpendFromBudget(taken)
+	ctx.Requiref(ok, "takeAllowedFunds: not previously allowed")
+	if remaining.IsEmpty() {
+		state.Del(key)
+	} else {
+		state.Set(key, remaining.Bytes())
+	}
+
+	return taken
 }
 
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
@@ -38,7 +95,10 @@ func deployMagicContractOnGenesis(genesisAlloc core.GenesisAlloc) {
 	}
 }
 
-var iscABI abi.ABI
+var (
+	iscABI           abi.ABI
+	iscPrivilegedABI abi.ABI
+)
 
 func init() {
 	var err error
@@ -46,15 +106,23 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func parseCall(input []byte) (*abi.Method, []interface{}) {
-	method, err := iscABI.MethodById(input[:4])
+	iscPrivilegedABI, err = abi.JSON(strings.NewReader(iscmagic.PrivilegedABI))
 	if err != nil {
 		panic(err)
 	}
+}
+
+func parseCall(input []byte, privileged bool) (*abi.Method, []interface{}) {
+	var method *abi.Method
+	if privileged {
+		method, _ = iscPrivilegedABI.MethodById(input[:4])
+	}
 	if method == nil {
-		panic(fmt.Sprintf("iscmagic: method not found: %x", input[:4]))
+		var err error
+		method, err = iscABI.MethodById(input[:4])
+		if err != nil {
+			panic(err)
+		}
 	}
 	args, err := method.Inputs.Unpack(input[4:])
 	if err != nil {
@@ -96,60 +164,79 @@ func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleT
 	)
 }
 
-type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64)
+type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte
 
 // catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
 func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, err error) {
 	err = panicutil.CatchAllExcept(
 		func() {
-			ret, remainingGas = run(evm, caller, input, gas, readOnly)
+			ret = run(evm, caller, input, gas, readOnly)
 		},
 		vmexceptions.AllProtocolLimits...,
 	)
 	if err != nil {
-		remainingGas = gas
 		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), err)
 		// the ISC error is lost inside the EVM, a possible solution would be to wrap the ErrExecutionReverted error, but the ISC information still gets deleted at some point
 		// err = errors.Wrap(vm.ErrExecutionReverted, err.Error())
 		err = vm.ErrExecutionReverted
 	}
-	return ret, remainingGas, err
+	return ret, gas, err
 }
 
 func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
 	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
 }
 
-//nolint:funlen
-func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	c.ctx.Privileged().GasBurnEnable(true)
-	defer c.ctx.Privileged().GasBurnEnable(false)
+func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
+	privileged := isPrivileged(c.ctx, caller.Address())
+	method, args := parseCall(input, privileged)
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
-	if ok {
-		return ret, remainingGas
+	var outs []interface{}
+	var ok bool
+	if privileged {
+		outs, ok = tryPrivilegedCall(c.ctx, caller, method, args)
+	}
+	if !ok {
+		outs, ok = tryUnprivilegedCall(c.ctx, caller, method, args)
+	}
+	if !ok {
+		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
 
-	remainingGas = gas
-	method, args := parseCall(input)
-	var outs []interface{}
+	ret, err := method.Outputs.Pack(outs...)
+	c.ctx.RequireNoError(err)
+	return ret
+}
 
+func tryUnprivilegedCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []interface{}) ([]interface{}, bool) {
+	if outs, ok := tryViewCall(ctx, caller, method, args); ok {
+		return outs, ok
+	}
+	if outs, ok := tryCall(ctx, caller, method, args); ok {
+		return outs, ok
+	}
+	return nil, false
+}
+
+//nolint:funlen
+func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []interface{}) ([]interface{}, bool) {
 	switch method.Name {
 	case "getEntropy":
-		outs = []interface{}{c.ctx.GetEntropy()}
+		return []interface{}{ctx.GetEntropy()}, true
 
 	case "triggerEvent":
-		c.ctx.Event(args[0].(string))
+		ctx.Event(args[0].(string))
+		return nil, true
 
 	case "getRequestID":
-		outs = []interface{}{c.ctx.Request().ID()}
+		return []interface{}{ctx.Request().ID()}, true
 
 	case "getSenderAccount":
-		outs = []interface{}{iscmagic.WrapISCAgentID(c.ctx.Request().SenderAccount())}
+		return []interface{}{iscmagic.WrapISCAgentID(ctx.Request().SenderAccount())}, true
 
 	case "registerError":
 		errorMessage := args[0].(string)
-		outs = []interface{}{c.ctx.RegisterError(errorMessage).Create().Code().ID}
+		return []interface{}{ctx.RegisterError(errorMessage).Create().Code().ID}, true
 
 	case "allow":
 		params := struct {
@@ -157,13 +244,9 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			Allowance iscmagic.ISCAllowance
 		}{}
 		err := method.Inputs.Copy(&params, args)
-		c.ctx.RequireNoError(err)
-
-		state := iscMagicSubrealm(c.ctx.State())
-		key := keyAllowance(caller.Address(), params.Target)
-		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
-		allowance.Add(params.Allowance.Unwrap())
-		state.Set(key, allowance.Bytes())
+		ctx.RequireNoError(err)
+		addToAllowance(ctx, caller.Address(), params.Target, params.Allowance.Unwrap())
+		return nil, true
 
 	case "takeAllowedFunds":
 		params := struct {
@@ -171,26 +254,16 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			Allowance iscmagic.ISCAllowance
 		}{}
 		err := method.Inputs.Copy(&params, args)
-		c.ctx.RequireNoError(err)
+		ctx.RequireNoError(err)
 
-		state := iscMagicSubrealm(c.ctx.State())
-		key := keyAllowance(params.Addr, caller.Address())
-		taken := params.Allowance.Unwrap()
-		allowance := codec.MustDecodeAllowance(state.MustGet(key), isc.NewEmptyAllowance())
-		ok := allowance.SpendFromBudget(taken)
-		c.ctx.Requiref(ok, "takeAllowedFunds: not previously allowed")
-		if allowance.IsEmpty() {
-			state.Del(key)
-		} else {
-			state.Set(key, allowance.Bytes())
-		}
-
-		c.ctx.Privileged().MustMoveBetweenAccounts(
+		taken := subtractFromAllowance(ctx, params.Addr, caller.Address(), params.Allowance.Unwrap())
+		ctx.Privileged().MustMoveBetweenAccounts(
 			isc.NewEthereumAddressAgentID(params.Addr),
 			isc.NewEthereumAddressAgentID(caller.Address()),
 			taken.Assets,
 			taken.NFTs,
 		)
+		return nil, true
 
 	case "send":
 		params := struct {
@@ -201,7 +274,7 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			SendOptions                 iscmagic.ISCSendOptions
 		}{}
 		err := method.Inputs.Copy(&params, args)
-		c.ctx.RequireNoError(err)
+		ctx.RequireNoError(err)
 		req := isc.RequestParameters{
 			TargetAddress:                 params.TargetAddress.MustUnwrap(),
 			FungibleTokens:                params.FungibleTokens.Unwrap(),
@@ -209,17 +282,21 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			Metadata:                      params.Metadata.Unwrap(),
 			Options:                       params.SendOptions.Unwrap(),
 		}
-		adjustStorageDeposit(c.ctx, req)
+		adjustStorageDeposit(ctx, req)
 
-		// make sure that allowance <= sent tokens, so that the target contract does not
-		// spend from the common account
-		c.ctx.Requiref(
-			isc.NewAllowanceFungibleTokens(req.FungibleTokens).SpendFromBudget(req.Metadata.Allowance),
-			"allowance must not be greater than sent tokens",
+		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, nil)
+
+		// assert that remaining tokens in the account are enough to pay for the gas budget
+		ctx.Requiref(
+			ctx.HasInAccount(
+				isc.NewEthereumAddressAgentID(caller.Address()),
+				ctx.Privileged().TotalGasTokens(),
+			),
+			"not enough tokens remaining to pay for gas budget",
 		)
 
-		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, nil)
-		c.ctx.Send(req)
+		ctx.Send(req)
+		return nil, true
 
 	case "sendAsNFT":
 		params := struct {
@@ -231,7 +308,7 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			SendOptions                 iscmagic.ISCSendOptions
 		}{}
 		err := method.Inputs.Copy(&params, args)
-		c.ctx.RequireNoError(err)
+		ctx.RequireNoError(err)
 		req := isc.RequestParameters{
 			TargetAddress:                 params.TargetAddress.MustUnwrap(),
 			FungibleTokens:                params.FungibleTokens.Unwrap(),
@@ -240,17 +317,28 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			Options:                       params.SendOptions.Unwrap(),
 		}
 		nftID := params.NFTID.Unwrap()
-		adjustStorageDeposit(c.ctx, req)
+		adjustStorageDeposit(ctx, req)
 
 		// make sure that allowance <= sent tokens, so that the target contract does not
 		// spend from the common account
-		c.ctx.Requiref(
+		ctx.Requiref(
 			isc.NewAllowanceFungibleTokens(req.FungibleTokens).AddNFTs(nftID).SpendFromBudget(req.Metadata.Allowance),
 			"allowance must not be greater than sent tokens",
 		)
 
-		moveAssetsToCommonAccount(c.ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
-		c.ctx.SendAsNFT(req, nftID)
+		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
+
+		// assert that remaining tokens in the account are enough to pay for the gas budget
+		ctx.Requiref(
+			ctx.HasInAccount(
+				isc.NewEthereumAddressAgentID(caller.Address()),
+				ctx.Privileged().TotalGasTokens(),
+			),
+			"not enough tokens remaining to pay for gas budget",
+		)
+
+		ctx.SendAsNFT(req, nftID)
+		return nil, true
 
 	case "call":
 		var callArgs struct {
@@ -260,24 +348,72 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 			Allowance     iscmagic.ISCAllowance
 		}
 		err := method.Inputs.Copy(&callArgs, args)
-		c.ctx.RequireNoError(err)
+		ctx.RequireNoError(err)
 		allowance := callArgs.Allowance.Unwrap()
-		moveAssetsToCommonAccount(c.ctx, caller, allowance.Assets, allowance.NFTs)
-		callRet := c.ctx.Call(
+		moveAssetsToCommonAccount(ctx, caller, allowance.Assets, allowance.NFTs)
+		callRet := ctx.Call(
 			isc.Hname(callArgs.ContractHname),
 			isc.Hname(callArgs.EntryPoint),
 			callArgs.Params.Unwrap(),
 			allowance,
 		)
-		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
-
-	default:
-		panic(fmt.Sprintf("no handler for method %s", method.Name))
+		return []interface{}{iscmagic.WrapISCDict(callRet)}, true
 	}
+	return nil, false
+}
 
-	ret, err := method.Outputs.Pack(outs...)
-	c.ctx.RequireNoError(err)
-	return ret, remainingGas
+//nolint:unparam
+func tryPrivilegedCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []interface{}) ([]interface{}, bool) {
+	if !isPrivileged(ctx, caller.Address()) {
+		return nil, false
+	}
+	switch method.Name {
+	case "moveBetweenAccounts":
+		var params struct {
+			Sender    common.Address
+			Receiver  common.Address
+			Allowance iscmagic.ISCAllowance
+		}
+		err := method.Inputs.Copy(&params, args)
+		ctx.RequireNoError(err)
+		allowance := params.Allowance.Unwrap()
+		ctx.Privileged().MustMoveBetweenAccounts(
+			isc.NewEthereumAddressAgentID(params.Sender),
+			isc.NewEthereumAddressAgentID(params.Receiver),
+			allowance.Assets,
+			allowance.NFTs,
+		)
+		return nil, true
+
+	case "addToAllowance":
+		var params struct {
+			From      common.Address
+			To        common.Address
+			Allowance iscmagic.ISCAllowance
+		}
+		err := method.Inputs.Copy(&params, args)
+		ctx.RequireNoError(err)
+		addToAllowance(ctx, params.From, params.To, params.Allowance.Unwrap())
+		return nil, true
+
+	case "moveAllowedFunds":
+		var params struct {
+			From      common.Address
+			To        common.Address
+			Allowance iscmagic.ISCAllowance
+		}
+		err := method.Inputs.Copy(&params, args)
+		ctx.RequireNoError(err)
+		taken := subtractFromAllowance(ctx, params.From, params.To, params.Allowance.Unwrap())
+		ctx.Privileged().MustMoveBetweenAccounts(
+			isc.NewEthereumAddressAgentID(params.From),
+			isc.NewEthereumAddressAgentID(params.To),
+			taken.Assets,
+			taken.NFTs,
+		)
+		return nil, true
+	}
+	return nil, false
 }
 
 type magicContractView struct {
@@ -292,20 +428,40 @@ func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte
 	return catchISCPanics(c.doRun, evm, caller, input, gas, readOnly, c.ctx.Log())
 }
 
-func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64) {
-	c.ctx.Privileged().GasBurnEnable(true)
-	defer c.ctx.Privileged().GasBurnEnable(false)
+func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte {
+	method, args := parseCall(input, isPrivileged(c.ctx, caller.Address()))
 
-	ret, remainingGas, _, ok := tryBaseCall(c.ctx, input, gas)
-	if ok {
-		return ret, remainingGas
+	outs, ok := tryViewCall(c.ctx, caller, method, args)
+	if !ok {
+		panic(fmt.Sprintf("no handler for method %s", method.Name))
 	}
 
-	remainingGas = gas
-	method, args := parseCall(input)
-	var outs []interface{}
+	ret, err := method.Outputs.Pack(outs...)
+	c.ctx.RequireNoError(err)
+	return ret
+}
 
+func tryViewCall(ctx isc.SandboxBase, caller vm.ContractRef, method *abi.Method, args []interface{}) (outs []interface{}, ok bool) {
 	switch method.Name {
+	case "hn":
+		return []interface{}{isc.Hn(args[0].(string))}, true
+
+	case "getChainID":
+		return []interface{}{iscmagic.WrapISCChainID(ctx.ChainID())}, true
+
+	case "getChainOwnerID":
+		return []interface{}{iscmagic.WrapISCAgentID(ctx.ChainOwnerID())}, true
+
+	case "getNFTData":
+		var nftID iscmagic.NFTID
+		err := method.Inputs.Copy(&nftID, args)
+		ctx.RequireNoError(err)
+		nft := ctx.GetNFTData(nftID.Unwrap())
+		return []interface{}{iscmagic.WrapISCNFT(&nft)}, true
+
+	case "getTimestampUnixSeconds":
+		return []interface{}{ctx.Timestamp().Unix()}, true
+
 	case "callView":
 		var callViewArgs struct {
 			ContractHname uint32
@@ -313,55 +469,50 @@ func (c *magicContractView) doRun(evm *vm.EVM, caller vm.ContractRef, input []by
 			Params        iscmagic.ISCDict
 		}
 		err := method.Inputs.Copy(&callViewArgs, args)
-		c.ctx.RequireNoError(err)
-		callRet := c.ctx.CallView(
+		ctx.RequireNoError(err)
+		callRet := ctx.CallView(
 			isc.Hname(callViewArgs.ContractHname),
 			isc.Hname(callViewArgs.EntryPoint),
 			callViewArgs.Params.Unwrap(),
 		)
-		outs = []interface{}{iscmagic.WrapISCDict(callRet)}
+		return []interface{}{iscmagic.WrapISCDict(callRet)}, true
 
-	default:
-		panic(fmt.Sprintf("no handler for method %s", method.Name))
-	}
-
-	ret, err := method.Outputs.Pack(outs...)
-	c.ctx.RequireNoError(err)
-	return ret, remainingGas
-}
-
-//nolint:unparam
-func tryBaseCall(ctx isc.SandboxBase, input []byte, gas uint64) (ret []byte, remainingGas uint64, method *abi.Method, ok bool) {
-	remainingGas = gas
-	method, args := parseCall(input)
-	var outs []interface{}
-
-	switch method.Name {
-	case "hn":
-		outs = []interface{}{isc.Hn(args[0].(string))}
-
-	case "getChainID":
-		outs = []interface{}{iscmagic.WrapISCChainID(ctx.ChainID())}
-
-	case "getChainOwnerID":
-		outs = []interface{}{iscmagic.WrapISCAgentID(ctx.ChainOwnerID())}
-
-	case "getNFTData":
-		var nftID iscmagic.NFTID
-		err := method.Inputs.Copy(&nftID, args)
+	case "getAllowanceFrom":
+		var addr common.Address
+		err := method.Inputs.Copy(&addr, args)
 		ctx.RequireNoError(err)
-		nft := ctx.GetNFTData(nftID.Unwrap())
-		outs = []interface{}{iscmagic.WrapISCNFT(&nft)}
+		return []interface{}{iscmagic.WrapISCAllowance(getAllowance(ctx, addr, caller.Address()))}, true
 
-	case "getTimestampUnixSeconds":
-		outs = []interface{}{ctx.Timestamp().Unix()}
+	case "getAllowanceTo":
+		var target common.Address
+		err := method.Inputs.Copy(&target, args)
+		ctx.RequireNoError(err)
+		return []interface{}{iscmagic.WrapISCAllowance(getAllowance(ctx, caller.Address(), target))}, true
 
-	default:
-		return
+	case "getAllowance":
+		var params struct {
+			From common.Address
+			To   common.Address
+		}
+		err := method.Inputs.Copy(&params, args)
+		ctx.RequireNoError(err)
+		return []interface{}{iscmagic.WrapISCAllowance(getAllowance(ctx, params.From, params.To))}, true
+
+	case "getBaseTokenProperties":
+		l1 := parameters.L1()
+		return []interface{}{iscmagic.ISCTokenProperties{
+			Name:         l1.BaseToken.Name,
+			TickerSymbol: l1.BaseToken.TickerSymbol,
+			Decimals:     uint8(l1.BaseToken.Decimals),
+			TotalSupply:  big.NewInt(int64(l1.Protocol.TokenSupply)),
+		}}, true
+
+	case "print":
+		var s string
+		err := method.Inputs.Copy(&s, args)
+		ctx.RequireNoError(err)
+		ctx.Log().Debugf("isc.print() -> %q", s)
+		return nil, true
 	}
-
-	ok = true
-	ret, err := method.Outputs.Pack(outs...)
-	ctx.RequireNoError(err)
-	return ret, remainingGas, method, ok
+	return nil, false
 }

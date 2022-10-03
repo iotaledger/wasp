@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
@@ -135,9 +136,7 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
 	example := &model.ConsensusPipeMetrics{
 		EventStateTransitionMsgPipeSize: 0,
-		EventSignedResultMsgPipeSize:    0,
-		EventSignedResultAckMsgPipeSize: 0,
-		EventInclusionStateMsgPipeSize:  0,
+		EventPeerLogIndexMsgPipeSize:    0,
 		EventACSMsgPipeSize:             0,
 		EventVMResultMsgPipeSize:        0,
 		EventTimerMsgPipeSize:           0,

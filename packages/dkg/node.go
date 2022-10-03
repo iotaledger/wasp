@@ -9,16 +9,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 type NodeProvider func() *Node
@@ -98,7 +99,7 @@ func (n *Node) Close() {
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //
-//nolint:funlen,gocritic
+//nolint:funlen,gocritic,gocyclo
 func (n *Node) GenerateDistributedKey(
 	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,
@@ -110,7 +111,7 @@ func (n *Node) GenerateDistributedKey(
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
-	// Some validationfor the parameters.
+	// Some validation for the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}

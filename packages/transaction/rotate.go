@@ -28,22 +28,31 @@ func NewRotateChainStateControllerTx(
 	newChainOutput := chainOutput.Clone().(*iotago.AliasOutput)
 	oldUnlockConditions := newChainOutput.UnlockConditionSet()
 	newChainOutput.Conditions = make(iotago.UnlockConditions, len(oldUnlockConditions))
+
+	// update the unlock conditions to the new state controller
 	i := 0
 	for t, condition := range oldUnlockConditions {
 		newChainOutput.Conditions[i] = condition.Clone()
-		if t != iotago.UnlockConditionStateControllerAddress {
-			i++
-			continue
+		if t == iotago.UnlockConditionStateControllerAddress {
+			// found the condition to alter
+			c, ok := newChainOutput.Conditions[i].(*iotago.StateControllerAddressUnlockCondition)
+			if !ok {
+				return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
+			}
+			c.Address = newStateController
+			newChainOutput.Conditions[i] = c.Clone()
 		}
-		// found the condition to alter
-		c, ok := newChainOutput.Conditions[i].(*iotago.StateControllerAddressUnlockCondition)
-		if !ok {
-			return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
-		}
-		c.Address = newStateController
-		newChainOutput.Conditions[i] = c.Clone()
 		i++
 	}
+
+	// remove any "sender feature"
+	var newFeatures iotago.Features
+	for t, feature := range chainOutput.FeatureSet() {
+		if t != iotago.FeatureSender {
+			newFeatures = append(newFeatures, feature)
+		}
+	}
+	newChainOutput.Features = newFeatures
 
 	outputs := iotago.Outputs{newChainOutput}
 	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, kp, parameters.L1().Protocol.NetworkID())

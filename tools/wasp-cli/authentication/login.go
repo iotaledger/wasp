@@ -5,10 +5,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var (
@@ -29,7 +30,7 @@ var loginCmd = &cobra.Command{
 			username = scanner.Text()
 
 			log.Printf("Password: ")
-			passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:unconvert // int cast is needed for windows
+			passwordBytes, err := term.ReadPassword(int(syscall.Stdin)) //nolint:nolintlint,unconvert // int cast is needed for windows
 			if err != nil {
 				panic(err)
 			}
@@ -51,6 +52,6 @@ var loginCmd = &cobra.Command{
 
 		config.SetToken(token)
 
-		log.Printf("\nSuccessfully authorized\n")
+		log.Printf("\nSuccessfully authenticated\n")
 	},
 }

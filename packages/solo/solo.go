@@ -10,8 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -38,8 +41,6 @@ import (
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -160,7 +161,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
-		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, registry.DefaultConfig()),
+		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, "", registry.DefaultConfig()),
 		utxoDB:                          utxodb.New(utxoDBinitParams),
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.Config(),
@@ -176,7 +177,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	})
 	require.NoError(t, err)
 
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+	publisher.Event.Hook(events.NewClosure(func(msgType string, parts []string) {
 		ret.logger.Infof("solo publisher: %s %v", msgType, parts)
 	}))
 

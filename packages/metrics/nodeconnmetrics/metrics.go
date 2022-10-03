@@ -1,9 +1,10 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type nodeConnectionMetricsImpl struct {

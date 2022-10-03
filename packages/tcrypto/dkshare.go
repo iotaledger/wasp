@@ -1,17 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// TODO: BDN is actually not used (only functions used, that delegate to the tbls directly). Update to use it!
+
 package tcrypto
 
 import (
 	"bytes"
 	"io"
 
-	"github.com/iotaledger/hive.go/crypto/bls"
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -21,7 +18,27 @@ import (
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"go.dedis.ch/kyber/v3/suites"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/crypto/bls"
+	"github.com/iotaledger/hive.go/serializer/v2"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util"
 )
+
+// secretShare is an implementation for dss.DistKeyShare.
+type secretShare struct {
+	priShare    *share.PriShare
+	commitments []kyber.Point
+}
+
+func (d *secretShare) PriShare() *share.PriShare {
+	return d.priShare
+}
+
+func (d *secretShare) Commitments() []kyber.Point {
+	return d.commitments
+}
 
 // dkShareImpl stands for the information stored on
 // a node as a result of the DKG procedure.
@@ -153,6 +170,8 @@ func (s *dkShareImpl) Bytes() []byte {
 }
 
 // Write returns byte representation of this struct.
+//
+//nolint:gocyclo
 func (s *dkShareImpl) Write(w io.Writer) error {
 	var err error
 	//
@@ -426,7 +445,7 @@ func (s *dkShareImpl) DSSPublicShares() []kyber.Point {
 
 // SignShare signs the data with the own key share.
 // returns SigShare, which contains signature and the index
-func (s *dkShareImpl) DSSSignShare(data []byte) (*dss.PartialSig, error) {
+func (s *dkShareImpl) DSSSignShare(data []byte, nonce SecretShare) (*dss.PartialSig, error) {
 	if s.n == 1 {
 		// Do not use the DSS in the case of a single node.
 		sig, err := schnorr.Sign(s.edSuite, s.edPrivateShare, data)
@@ -443,7 +462,7 @@ func (s *dkShareImpl) DSSSignShare(data []byte) (*dss.PartialSig, error) {
 		}
 		return &partSig, nil
 	}
-	signer, err := s.makeSigner(data)
+	signer, err := s.makeSigner(data, nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -463,13 +482,13 @@ func (s *dkShareImpl) DSSVerifySigShare(data []byte, sigshare *dss.PartialSig) e
 
 // RecoverMasterSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
-func (s *dkShareImpl) DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte) ([]byte, error) {
+func (s *dkShareImpl) DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte, nonce SecretShare) ([]byte, error) {
 	if s.n == 1 {
 		// Use a regular signature in the case of single node.
 		// The signature is stored in the share.
 		return sigShares[0].Signature, nil
 	}
-	signer, err := s.makeSigner(data)
+	signer, err := s.makeSigner(data, nonce)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create DSS object: %w", err)
 	}
@@ -495,19 +514,18 @@ func (s *dkShareImpl) DSSVerifyMasterSignature(data, signature []byte) error {
 	return dss.Verify(s.edSharedPublic, data, signature)
 }
 
-func (s *dkShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
-	//
-	// TODO: XXX: We are using Private Key as a random nonce.
-	// TODO: XXX: THAT IS TOTALLY INSECURE.
-	// TODO: XXX: ONLY A TEMPORARY SOLUTION!!!
-	//
-	priKeyDKS := &DSSDistKeyShare{
+func (s *dkShareImpl) DSSSecretShare() SecretShare {
+	return &secretShare{
 		priShare: &share.PriShare{
 			I: int(*s.index),
 			V: s.edPrivateShare,
 		},
 		commitments: s.edPublicCommits,
 	}
+}
+
+func (s *dkShareImpl) makeSigner(data []byte, nonce SecretShare) (*dss.DSS, error) {
+	priKeyDKS := s.DSSSecretShare()
 	nodePrivKey := eddsa.EdDSA{}
 	if err := nodePrivKey.UnmarshalBinary(s.nodePrivKey.AsBytes()); err != nil {
 		return nil, xerrors.Errorf("cannot convert node priv key to kyber scalar: %w", err)
@@ -519,21 +537,7 @@ func (s *dkShareImpl) makeSigner(data []byte) (*dss.DSS, error) {
 			return nil, xerrors.Errorf("cannot convert node public key to kyber point: %w", err)
 		}
 	}
-	return dss.NewDSS(s.edSuite, nodePrivKey.Secret, participants, priKeyDKS, priKeyDKS, data, int(s.t))
-}
-
-// DSSDistKeyShare is an implementation for dss.DistKeyShare.
-type DSSDistKeyShare struct {
-	priShare    *share.PriShare
-	commitments []kyber.Point
-}
-
-func (d *DSSDistKeyShare) PriShare() *share.PriShare {
-	return d.priShare
-}
-
-func (d *DSSDistKeyShare) Commitments() []kyber.Point {
-	return d.commitments
+	return dss.NewDSS(s.edSuite, nodePrivKey.Secret, participants, priKeyDKS, nonce, data, int(s.t))
 }
 
 ///////////////////////// BLS based signatures.

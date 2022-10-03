@@ -3,8 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 )
 
 // ensures a nodes resumes normal operation after rebooting

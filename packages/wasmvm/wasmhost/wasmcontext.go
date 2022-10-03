@@ -210,7 +210,7 @@ func (wc *WasmContext) state() kv.KVStoreReader {
 	}
 	ctxView := wc.wcSandbox.ctxView
 	if ctxView != nil {
-		return ctxView.State()
+		return ctxView.StateR()
 	}
 	panic("cannot access state")
 }

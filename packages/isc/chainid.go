@@ -6,11 +6,12 @@ package isc
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 const ChainIDLength = iotago.AliasIDLength
@@ -35,12 +36,9 @@ func ChainIDFromBytes(data []byte) (*ChainID, error) {
 }
 
 func ChainIDFromString(s string) (*ChainID, error) {
-	prefix, addr, err := iotago.ParseBech32(s)
+	_, addr, err := iotago.ParseBech32(s)
 	if err != nil {
 		return nil, err
-	}
-	if prefix != parameters.L1().Protocol.Bech32HRP {
-		return nil, fmt.Errorf("prefix doesn't match expected protocol prefix")
 	}
 	aliasAddr, ok := addr.(*iotago.AliasAddress)
 	if !ok {

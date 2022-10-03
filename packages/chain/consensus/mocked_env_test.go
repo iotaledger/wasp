@@ -9,7 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -22,8 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 )
 
 type MockedEnv struct {
@@ -34,7 +35,7 @@ type MockedEnv struct {
 	StateAddress     iotago.Address
 	Nodes            []*mockedNode
 	NodeIDs          []string
-	NodePubKeys      []*cryptolib.PublicKey
+	NodeKeyPairs     []*cryptolib.KeyPair
 	NetworkProviders []peering.NetworkProvider
 	NetworkBehaviour *testutil.PeeringNetDynamic
 	DKShares         []tcrypto.DKShare
@@ -77,21 +78,16 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	log.Infof("running DKG and setting up mocked network..")
-	nodeIDs, nodeIdentities := testpeers.SetupKeys(n)
-	ret.NodeIDs = nodeIDs
-	ret.NodePubKeys = make([]*cryptolib.PublicKey, len(nodeIdentities))
-	for i := range nodeIdentities {
-		ret.NodePubKeys[i] = nodeIdentities[i].GetPublicKey()
-	}
+	ret.NodeIDs, ret.NodeKeyPairs = testpeers.SetupKeys(n)
 	var err error
 	var dksRegistries []registry.DKShareRegistryProvider
-	ret.StateAddress, dksRegistries = testpeers.SetupDkgPregenerated(t, quorum, nodeIdentities)
+	ret.StateAddress, dksRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeKeyPairs)
 	ret.DKShares = make([]tcrypto.DKShare, len(dksRegistries))
 	for i := range dksRegistries {
 		ret.DKShares[i], err = dksRegistries[i].LoadDKShare(ret.StateAddress)
 		require.NoError(t, err)
 	}
-	ret.NetworkProviders, _ = testpeers.SetupNet(nodeIDs, nodeIdentities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, _ = testpeers.SetupNet(ret.NodeIDs, ret.NodeKeyPairs, ret.NetworkBehaviour, log)
 
 	ret.Ledgers = testchain.NewMockedLedgers(log)
 	ret.ChainID = ret.Ledgers.InitLedger(ret.StateAddress)

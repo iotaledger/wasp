@@ -5,12 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCounter(t *testing.T) {

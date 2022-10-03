@@ -17,6 +17,8 @@ import (
 //go:embed templates/auth.tmpl
 var tplLogin string
 
+const headerXForwardedPrefix = "X-Forwarded-Prefix"
+
 func (d *Dashboard) authInit(e *echo.Echo, r renderer) Tab {
 	e.GET(shared.AuthRouteSuccess(), d.handleAuthCheck)
 	e.GET("/", d.handleAuthCheck)
@@ -37,7 +39,7 @@ func (d *Dashboard) RenderAuthView(c echo.Context) error {
 	auth, ok := c.Get("auth").(*authentication.AuthContext)
 
 	if ok && auth.IsAuthenticated() {
-		return c.Redirect(http.StatusFound, "/config")
+		return d.redirect(c, "/config")
 	}
 
 	// TODO: Add sessions?
@@ -54,14 +56,18 @@ func (d *Dashboard) handleAuthCheck(c echo.Context) error {
 	auth, ok := c.Get("auth").(*authentication.AuthContext)
 
 	if !ok {
-		return c.Redirect(http.StatusFound, shared.AuthRoute())
+		return d.redirect(c, shared.AuthRoute())
 	}
 
 	if auth.IsAuthenticated() {
-		return c.Redirect(http.StatusFound, "/config")
+		return d.redirect(c, "/config")
 	}
 
-	return c.Redirect(http.StatusFound, shared.AuthRoute())
+	return d.redirect(c, shared.AuthRoute())
+}
+
+func (d *Dashboard) redirect(c echo.Context, uri string) error {
+	return c.Redirect(http.StatusFound, c.Request().Header.Get(headerXForwardedPrefix)+uri)
 }
 
 type AuthTemplateParams struct {

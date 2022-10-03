@@ -3,11 +3,12 @@ package webapi
 import (
 	_ "embed"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 )
 
 type webSocketAPI struct {

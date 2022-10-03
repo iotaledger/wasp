@@ -3,10 +3,11 @@ package panicutil
 import (
 	"runtime/debug"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func CatchPanicReturnError(fun func(), catchErrors ...error) error {
@@ -20,7 +21,7 @@ func CatchPanicReturnError(fun func(), catchErrors ...error) error {
 
 			if err1, ok := r.(error); ok {
 				for _, targetError := range catchErrors {
-					if xerrors.Is(err1, targetError) {
+					if errors.Is(err1, targetError) {
 						err = targetError
 						return
 					}
@@ -67,7 +68,10 @@ func CatchPanic(f func()) (err error) {
 			if r == nil {
 				return
 			}
-			err = xerrors.Errorf("%v", r)
+			var ok bool
+			if err, ok = r.(error); !ok {
+				err = xerrors.Errorf("%v", r)
+			}
 		}()
 		f()
 	}()

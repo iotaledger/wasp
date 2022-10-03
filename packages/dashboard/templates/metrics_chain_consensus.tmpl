@@ -19,6 +19,11 @@
 					<td></td>
 				</tr>
 				<tr>
+					<td>Index proposal received</td>
+					<td>{{ template "booleanValue" (.Status.IsIndexProposalReceived) }}</td>
+					<td>{{ (formatTimestampOrNever (.Status.GetIndexProposalReceivedTime)) }}</td>
+				</tr>
+				<tr>
 					<td>Batch proposal sent</td>
 					<td>{{ template "booleanValue" (.Status.IsBatchProposalSent) }}</td>
 					<td>{{ (formatTimestampOrNever (.Status.GetBatchProposalSentTime)) }}</td>
@@ -32,6 +37,11 @@
 					<td>Virtual machine started</td>
 					<td>{{ template "booleanValue" (.Status.IsVMStarted) }}</td>
 					<td>{{ (formatTimestampOrNever (.Status.GetVMStartedTime)) }}</td>
+				</tr>
+				<tr>
+					<td>DSS signing started</td>
+					<td>{{ template "booleanValue" (.Status.IsDssSigningStarted) }}</td>
+					<td>{{ (formatTimestampOrNever (.Status.GetDssSigningStartedTime)) }}</td>
 				</tr>
 				<tr>
 					<td>Virtual machine result signed</td>
@@ -69,18 +79,13 @@
                     <td></td>
                 </tr>
                 <tr>
-                    <td>Event signed result msg pipe size</td>
-                    <td>{{ .PipeMetrics.GetEventSignedResultMsgPipeSize }}</td>
+                    <td>Event peer log index message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventPeerLogIndexMsgPipeSize }}</td>
                     <td></td>
                 </tr>
-                <tr>
-                    <td>Event signed result ack message pipe size</td>
-                    <td>{{ .PipeMetrics.GetEventSignedResultAckMsgPipeSize }}</td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td>Event inclusion state message pipe size</td>
-                    <td>{{ .PipeMetrics.GetEventInclusionStateMsgPipeSize }}</td>
+		<tr>
+                    <td>Event ACS message pipe size</td>
+                    <td>{{ .PipeMetrics.GetEventACSMsgPipeSize }}</td>
                     <td></td>
                 </tr>
                 <tr>

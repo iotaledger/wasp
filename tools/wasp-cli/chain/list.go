@@ -3,10 +3,11 @@ package chain
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var listCmd = &cobra.Command{

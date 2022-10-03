@@ -3,7 +3,7 @@ package isc
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -15,7 +15,7 @@ type Allowance struct {
 
 func NewEmptyAllowance() *Allowance {
 	return &Allowance{
-		Assets: NewEmptyAssets(),
+		Assets: NewEmptyFungibleTokens(),
 		NFTs:   make([]iotago.NFTID, 0),
 	}
 }

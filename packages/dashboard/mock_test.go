@@ -9,6 +9,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
+	"github.com/labstack/echo/v4"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,8 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/labstack/echo/v4"
-	"golang.org/x/xerrors"
 )
 
 // waspServicesMock is a mock implementation of the WaspServices interface

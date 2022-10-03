@@ -9,8 +9,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/iotaledger/wasp/tools/schema/model/yaml"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/tools/schema/model/yaml"
 )
 
 func TestParse(t *testing.T) {

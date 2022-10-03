@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/chaincontract.tmpl
@@ -19,7 +20,7 @@ var tplChainContract string
 func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/contract/:hname", d.handleChainContract)
 	route.Name = "chainContract"
-	r[route.Path] = d.makeTemplate(e, tplChainContract, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainContract)
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {

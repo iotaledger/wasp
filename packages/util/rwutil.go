@@ -8,10 +8,11 @@ import (
 	"math"
 	"time"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/pkg/errors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/pkg/errors"
 )
 
 //////////////////// byte \\\\\\\\\\\\\\\\\\\\
@@ -342,6 +343,44 @@ func WriteBoolByte(w io.Writer, cond bool) error {
 	}
 	_, err := w.Write(b[:])
 	return err
+}
+
+///////////// []int as a bit vector \\\\\\\\\\\\\
+
+func WriteIntsAsBits(w io.Writer, ints []int) error {
+	max := 0
+	for _, b := range ints {
+		if max < b {
+			max = b
+		}
+	}
+	size := max/8 + 1
+	data := make([]byte, size)
+	for _, b := range ints {
+		var bitMask byte = 1
+		bitMask <<= b % 8
+		bytePos := b / 8
+		data[bytePos] |= bitMask
+	}
+	return WriteBytes16(w, data)
+}
+
+func ReadIntsAsBits(r io.Reader) ([]int, error) {
+	data, err := ReadBytes16(r)
+	if err != nil {
+		return nil, err
+	}
+	ints := []int{}
+	for bytePos := range data {
+		var bitMask byte = 1
+		for i := 0; i < 8; i++ {
+			if data[bytePos]&bitMask != 0 {
+				ints = append(ints, bytePos*8+i)
+			}
+			bitMask <<= 1
+		}
+	}
+	return ints, nil
 }
 
 //////////////////// time \\\\\\\\\\\\\\\\\\\\

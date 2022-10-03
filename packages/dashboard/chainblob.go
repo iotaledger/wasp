@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/mr-tron/base58"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/labstack/echo/v4"
-	"github.com/mr-tron/base58"
 )
 
 //go:embed templates/chainblob.tmpl
@@ -21,7 +22,7 @@ var tplChainBlob string
 func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/blob/:hash", d.handleChainBlob)
 	route.Name = "chainBlob"
-	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainBlob)
 
 	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"

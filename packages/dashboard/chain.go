@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/chain.tmpl
@@ -31,7 +32,7 @@ func chainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
 func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid", d.handleChain)
 	route.Name = "chain"
-	r[route.Path] = d.makeTemplate(e, tplChain, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChain)
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {

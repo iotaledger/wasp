@@ -3,9 +3,10 @@ package isc
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSerialize(t *testing.T) {

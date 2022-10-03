@@ -17,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -24,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/stretchr/testify/require"
 )
 
 type soloTestEnv struct {
@@ -356,4 +357,29 @@ func TestRPCEthChainID(t *testing.T) {
 	err := env.RawClient.Call(&chainID, "eth_chainId")
 	require.NoError(t, err)
 	require.EqualValues(t, evm.DefaultChainID, chainID)
+}
+
+func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
+	creator, creatorAddress := solo.NewEthereumAccount()
+
+	env := newSoloTestEnv(t)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	nonce := env.NonceAt(creatorAddress)
+	constructorArguments, err := contractABI.Pack("", uint32(42))
+	require.NoError(t, err)
+	data := concatenate(evmtest.StorageContractBytecode, constructorArguments)
+	value := big.NewInt(0)
+	gasLimit := uint64(10_000)
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		env.Signer(),
+		creator,
+	)
+	require.NoError(t, err)
+
+	// the tx is rejected before posting to the wasp node
+	err = env.Client.SendTransaction(context.Background(), tx)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "sender has not enough L2 funds to cover tx gas budget")
 }

@@ -4,12 +4,17 @@
 package chain
 
 import (
+	"math"
 	"os"
 	"strconv"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/chain/dss/node"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -19,8 +24,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func getAllWaspNodes() []int {
@@ -34,7 +37,7 @@ func getAllWaspNodes() []int {
 }
 
 func defaultQuorum(n int) int {
-	quorum := 3 * n / 4
+	quorum := int(math.Ceil(3 * float64(n) / 4))
 	if quorum < 1 {
 		quorum = 1
 	}
@@ -63,6 +66,10 @@ func deployCmd() *cobra.Command {
 			}
 			if quorum == 0 {
 				quorum = defaultQuorum(len(committee))
+			}
+
+			if ok, _ := node.IsEnoughQuorum(len(committee), quorum); !ok {
+				log.Fatalf("quorum needs to be bigger than 1/3 of committee size")
 			}
 
 			committeePubKeys := make([]string, 0)

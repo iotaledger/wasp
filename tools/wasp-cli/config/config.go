@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -113,6 +114,18 @@ func L1APIAddress() string {
 	)
 }
 
+func L1INXAddress() string {
+	host := viper.GetString("l1.inxAddress")
+	if host != "" {
+		return host
+	}
+	return fmt.Sprintf(
+		"%s:%d",
+		privtangledefaults.INXHost,
+		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetINX,
+	)
+}
+
 func L1FaucetAddress() string {
 	address := viper.GetString("l1.faucetAddress")
 	if address != "" {
@@ -125,11 +138,11 @@ func L1FaucetAddress() string {
 	)
 }
 
-func L1Client() nodeconn.L1Client {
+func L1Client() l1connection.Client {
 	log.Verbosef("using L1 API %s\n", L1APIAddress())
 
-	return nodeconn.NewL1Client(
-		nodeconn.L1Config{
+	return l1connection.NewClient(
+		l1connection.Config{
 			APIAddress:    L1APIAddress(),
 			FaucetAddress: L1FaucetAddress(),
 		},

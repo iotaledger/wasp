@@ -20,12 +20,13 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/stretchr/testify/require"
 )
 
 type Env struct {
@@ -299,6 +300,7 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 
 	_, recipientAddress := newAccountWithL2Funds()
 	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
+	require.NoError(e.T, err)
 	value := big.NewInt(0)
 	gas := e.estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
@@ -306,7 +308,6 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 		Value: value,
 		Data:  callArguments,
 	})
-	require.NoError(e.T, err)
 	transferTx, err := types.SignTx(
 		types.NewTransaction(e.NonceAt(creatorAddress), contractAddress, value, gas, evm.GasPrice, callArguments),
 		e.Signer(),

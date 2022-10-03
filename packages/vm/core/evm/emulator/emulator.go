@@ -15,10 +15,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"golang.org/x/xerrors"
 )
 
 type EVMEmulator struct {
@@ -26,7 +27,9 @@ type EVMEmulator struct {
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
 	vmConfig    vm.Config
-	getBalance  BalanceFunc
+	getBalance  GetBalanceFunc
+	subBalance  SubBalanceFunc
+	addBalance  AddBalanceFunc
 }
 
 func makeConfig(chainID int) *params.ChainConfig {
@@ -52,8 +55,13 @@ const (
 	keyBlockchainDB = "b"
 )
 
-func newStateDB(store kv.KVStore, getBalance BalanceFunc) *StateDB {
-	return NewStateDB(subrealm.New(store, keyStateDB), getBalance)
+func newStateDB(
+	store kv.KVStore,
+	getBalance GetBalanceFunc,
+	addBalance SubBalanceFunc,
+	subBalance AddBalanceFunc,
+) *StateDB {
+	return NewStateDB(subrealm.New(store, keyStateDB), getBalance, addBalance, subBalance)
 }
 
 func newBlockchainDB(store kv.KVStore) *BlockchainDB {
@@ -61,14 +69,24 @@ func newBlockchainDB(store kv.KVStore) *BlockchainDB {
 }
 
 // Init initializes the EVM state with the provided genesis allocation parameters
-func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, timestamp uint64, alloc core.GenesisAlloc, getBalance BalanceFunc) {
+func Init(
+	store kv.KVStore,
+	chainID uint16,
+	blockKeepAmount int32,
+	gasLimit,
+	timestamp uint64,
+	alloc core.GenesisAlloc,
+	getBalance GetBalanceFunc,
+	debitFromAccount SubBalanceFunc,
+	creditToAccount AddBalanceFunc,
+) {
 	bdb := newBlockchainDB(store)
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
 	bdb.Init(chainID, blockKeepAmount, gasLimit, timestamp)
 
-	statedb := newStateDB(store, getBalance)
+	statedb := newStateDB(store, getBalance, debitFromAccount, creditToAccount)
 	for addr, account := range alloc {
 		statedb.CreateAccount(addr)
 		if account.Balance != nil {
@@ -84,7 +102,14 @@ func Init(store kv.KVStore, chainID uint16, blockKeepAmount int32, gasLimit, tim
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64, magicContract vm.ISCContract, getBalance BalanceFunc) *EVMEmulator {
+func NewEVMEmulator(
+	store kv.KVStore,
+	timestamp uint64,
+	magicContract vm.ISCContract,
+	getBalance GetBalanceFunc,
+	subBalance SubBalanceFunc,
+	addBalance AddBalanceFunc,
+) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
@@ -96,11 +121,13 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64, magicContract vm.ISCCont
 		kv:          store,
 		vmConfig:    vm.Config{ISCContract: magicContract},
 		getBalance:  getBalance,
+		subBalance:  subBalance,
+		addBalance:  addBalance,
 	}
 }
 
 func (e *EVMEmulator) StateDB() *StateDB {
-	return newStateDB(e.kv, e.getBalance)
+	return newStateDB(e.kv, e.getBalance, e.subBalance, e.addBalance)
 }
 
 func (e *EVMEmulator) BlockchainDB() *BlockchainDB {
@@ -199,7 +226,21 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 		return nil, nil, err
 	}
 
-	result, err := e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
+	msgWithZeroGasPrice := callMsg{
+		CallMsg: ethereum.CallMsg{
+			From:       msg.From(),
+			To:         msg.To(),
+			Gas:        msg.Gas(),
+			GasPrice:   big.NewInt(0),
+			GasFeeCap:  big.NewInt(0),
+			GasTipCap:  big.NewInt(0),
+			Value:      msg.Value(),
+			Data:       msg.Data(),
+			AccessList: msg.AccessList(),
+		},
+	}
+
+	result, err := e.applyMessage(msgWithZeroGasPrice, statedb, pendingHeader, gasBurnEnable)
 	if err != nil {
 		return nil, result, err
 	}

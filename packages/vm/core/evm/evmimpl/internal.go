@@ -8,6 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -83,15 +85,19 @@ func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 		timestamp(ctx),
 		newMagicContract(ctx),
 		getBalanceFunc(ctx),
+		getSubBalanceFunc(ctx),
+		getAddBalanceFunc(ctx),
 	)
 }
 
 func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
-		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
+		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.StateR())),
 		timestamp(ctx),
 		newMagicContractView(ctx),
 		getBalanceFunc(ctx),
+		nil,
+		nil,
 	)
 }
 
@@ -189,7 +195,7 @@ func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulato
 func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
 	current := emu.BlockchainDB().GetNumber()
 	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation")
+		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation, cannot query previous blocks")
 	}
 	return blockNumber
 }
@@ -203,19 +209,7 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-//nolint:unparam
-func paramBlockNumberOrHashAsNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
-	if ctx.Params().MustHas(evm.FieldBlockHash) {
-		a := assert.NewAssert(ctx.Log())
-		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
-		header := emu.BlockchainDB().GetHeaderByHash(blockHash)
-		a.Requiref(header != nil, "block not found")
-		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
-	}
-	return paramBlockNumber(ctx, emu, allowPrevious)
-}
-
-func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
+func getFeePolicy(ctx isc.SandboxBase) *gas.GasFeePolicy {
 	res := ctx.CallView(
 		governance.Contract.Hname(),
 		governance.ViewGetFeePolicy.Hname(),
@@ -223,8 +217,14 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
 	)
 	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
 	ctx.RequireNoError(err)
-	if feePolicy.GasFeeTokenID != nil {
-		return func(addr common.Address) *big.Int {
+	return feePolicy
+}
+
+func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
+	return func(addr common.Address) *big.Int {
+		feePolicy := getFeePolicy(ctx)
+
+		if feePolicy.GasFeeTokenID != nil {
 			res := ctx.CallView(
 				accounts.Contract.Hname(),
 				accounts.ViewBalanceNativeToken.Hname(),
@@ -235,13 +235,37 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
 			)
 			return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
 		}
-	}
-	return func(addr common.Address) *big.Int {
+
 		res := ctx.CallView(
 			accounts.Contract.Hname(),
 			accounts.ViewBalanceBaseToken.Hname(),
 			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 		)
 		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+	}
+}
+
+func fungibleTokensForFee(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTokens {
+	feePolicy := getFeePolicy(ctx)
+	if feePolicy.GasFeeTokenID == nil {
+		return isc.NewFungibleBaseTokens(amount.Uint64())
+	}
+	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+		ID:     *feePolicy.GasFeeTokenID,
+		Amount: amount,
+	}})
+}
+
+func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
+	return func(addr common.Address, amount *big.Int) {
+		tokens := fungibleTokensForFee(ctx, amount)
+		ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
+	}
+}
+
+func getAddBalanceFunc(ctx isc.Sandbox) emulator.AddBalanceFunc {
+	return func(addr common.Address, amount *big.Int) {
+		tokens := fungibleTokensForFee(ctx, amount)
+		ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 	}
 }

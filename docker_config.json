@@ -1,6 +1,7 @@
 {
-  "l1": {
-    "apiAddress": "http://hornet:14265"
+  "inx": {
+    "address": "localhost:9029",
+    "maxConnectionAttempts": 30
   },
   "database": {
     "directory": "waspdb"
@@ -78,6 +79,10 @@
   },
   "metrics": {
     "bindAddress": "0.0.0.0:2112",
+    "enabled": true
+  },
+  "wal": {
+    "directory": "wal",
     "enabled": true
   }
 }

@@ -1,8 +1,9 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func EncodeRatio32(r util.Ratio32) []byte {

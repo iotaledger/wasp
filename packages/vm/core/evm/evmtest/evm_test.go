@@ -10,21 +10,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestStorageContract(t *testing.T) {
@@ -148,9 +154,9 @@ func TestGasLimit(t *testing.T) {
 	// estimate gas by sending a valid tx
 	result, err := storage.store(123)
 	require.NoError(t, err)
-	gas := result.iscReceipt.GasBurned
+	gasBurned := result.iscReceipt.GasBurned
 	fee := result.iscReceipt.GasFeeCharged
-	t.Logf("gas: %d, fee: %d", gas, fee)
+	t.Logf("gas: %d, fee: %d", gasBurned, fee)
 
 	// send again with same gas limit but not enough base tokens
 	notEnoughBaseTokensForGas := fee * 9 / 10
@@ -175,23 +181,22 @@ func TestNotEnoughISCGas(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newGasRatio, env.getGasRatio())
 
+	senderAddress := crypto.PubkeyToAddress(storage.defaultSender.PublicKey)
+	nonce := env.getNonce(senderAddress)
+
 	// try to issue a call to store(something) in EVM
 	res, err := storage.store(44)
 
 	// the call must fail with "not enough gas"
 	require.Error(t, err)
 	require.Regexp(t, "gas budget exceeded", err)
+	require.Equal(t, nonce+1, env.getNonce(senderAddress))
 
 	// there must be an EVM receipt
 	require.NotNil(t, res.evmReceipt)
 	require.Equal(t, res.evmReceipt.Status, types.ReceiptStatusFailed)
 
 	// no changes should persist
-
-	// restore default gas price, so the view call doesn't fail
-	err = env.setGasRatio(evmtypes.DefaultGasRatio, iscCallOptions{wallet: env.soloChain.OriginatorPrivateKey})
-	require.NoError(t, err)
-	require.Equal(t, evmtypes.DefaultGasRatio, env.getGasRatio())
 	require.EqualValues(t, 43, storage.retrieve())
 }
 
@@ -435,11 +440,24 @@ func TestSendBaseTokens(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	getAllowanceTo := func(target common.Address) *isc.Allowance {
+		var ret struct{ Allowance iscmagic.ISCAllowance }
+		env.MagicContract(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
+		return ret.Allowance.Unwrap()
+	}
+
+	// stored allowance should be == transfer
+	require.Equal(t, transfer, getAllowanceTo(iscTest.address).Assets.BaseTokens)
+
 	// attempt again
-	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
+	const allAllowed = uint64(0)
+	_, err = iscTest.callFn(nil, "sendBaseTokens", iscmagic.WrapL1Address(receiver), allAllowed)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer)
+	require.GreaterOrEqual(t, env.solo.L1BaseTokens(receiver), transfer-500) // 500 is the amount of tokens the contract will reserve to pay for the gas fees
 	require.LessOrEqual(t, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress)), senderInitialBalance-transfer)
+
+	// allowance should be empty now
+	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
 
 // this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
@@ -598,4 +616,212 @@ func TestSendWithArgs(t *testing.T) {
 
 	// assert inc counter was incremented
 	checkCounter(1)
+}
+
+func TestERC20BaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	erc20 := env.ERC20BaseTokens(ethKey)
+
+	{
+		var name string
+		erc20.callView("name", nil, &name)
+		require.Equal(t, parameters.L1().BaseToken.Name, name)
+	}
+	{
+		var sym string
+		erc20.callView("symbol", nil, &sym)
+		require.Equal(t, parameters.L1().BaseToken.TickerSymbol, sym)
+	}
+	{
+		var dec uint8
+		erc20.callView("decimals", nil, &dec)
+		require.EqualValues(t, parameters.L1().BaseToken.Decimals, dec)
+	}
+	{
+		var supply *big.Int
+		erc20.callView("totalSupply", nil, &supply)
+		require.Equal(t, parameters.L1().Protocol.TokenSupply, supply.Uint64())
+	}
+	{
+		var balance *big.Int
+		erc20.callView("balanceOf", []interface{}{ethAddr}, &balance)
+		require.EqualValues(t,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			balance.Uint64(),
+		)
+	}
+	{
+		initialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+		_, ethAddr2 := solo.NewEthereumAccount()
+		_, err := erc20.callFn(nil, "transfer", ethAddr2, big.NewInt(int64(1*isc.Million)))
+		require.NoError(t, err)
+		require.LessOrEqual(t,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			initialBalance-1*isc.Million,
+		)
+		require.EqualValues(t,
+			1*isc.Million,
+			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
+		)
+	}
+	{
+		initialBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds()
+		initialBalance2 := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2))
+		{
+			_, err := erc20.callFn(nil, "approve", ethAddr2, big.NewInt(int64(1*isc.Million)))
+			require.NoError(t, err)
+			require.Greater(t,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+				initialBalance-1*isc.Million,
+			)
+			require.EqualValues(t,
+				initialBalance2,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr2)),
+			)
+		}
+
+		{
+			var allowance *big.Int
+			erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+			require.EqualValues(t,
+				1*isc.Million,
+				allowance.Uint64(),
+			)
+		}
+		{
+			const amount = 100_000
+			_, ethAddr3 := solo.NewEthereumAccount()
+			_, err := erc20.callFn([]ethCallOptions{{sender: ethKey2}}, "transferFrom", ethAddr, ethAddr3, big.NewInt(int64(amount)))
+			require.NoError(t, err)
+			require.Less(t,
+				initialBalance-1*isc.Million,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
+			)
+			require.EqualValues(t,
+				amount,
+				env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr3)),
+			)
+			{
+				var allowance *big.Int
+				erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+				require.EqualValues(t,
+					1*isc.Million-amount,
+					allowance.Uint64(),
+				)
+			}
+		}
+	}
+}
+
+// test withdrawing ALL EVM balance to a L1 address via the magic contract
+func TestEVMWithdrawAll(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	_, receiver := env.solo.NewKeyPair()
+
+	tokensToWithdraw := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddress))
+
+	// try withdrawing all base tokens
+	metadata := iscmagic.WrapISCSendMetadata(
+		isc.SendMetadata{
+			TargetContract: inccounter.Contract.Hname(),
+			EntryPoint:     inccounter.FuncIncCounter.Hname(),
+			Params:         dict.Dict{},
+			Allowance:      isc.NewEmptyAllowance(),
+			GasBudget:      math.MaxUint64,
+		},
+	)
+	_, err := env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"send",
+		iscmagic.WrapL1Address(receiver),
+		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		false,
+		metadata,
+		iscmagic.ISCSendOptions{},
+	)
+	// request must fail with an error, and receiver should not receive any funds
+	require.Error(t, err)
+	require.Regexp(t, "execution reverted", err.Error())
+	iscReceipt := env.soloChain.LastReceipt()
+	require.Error(t, iscReceipt.Error.AsGoError())
+	require.EqualValues(t, 0, env.solo.L1BaseTokens(receiver))
+
+	// retry the request above, but now leave some tokens to pay for the gas fees
+	tokensToWithdraw -= 2*iscReceipt.GasFeeCharged + 1 // +1 is needed because of the way gas budget calc works
+	metadata.GasBudget = iscReceipt.GasBudget
+	_, err = env.MagicContract(ethKey).callFn(
+		[]ethCallOptions{{sender: ethKey}},
+		"send",
+		iscmagic.WrapL1Address(receiver),
+		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),
+		false,
+		metadata,
+		iscmagic.ISCSendOptions{},
+	)
+	require.NoError(t, err)
+	iscReceipt = env.soloChain.LastReceipt()
+	require.NoError(t, iscReceipt.Error.AsGoError())
+	require.EqualValues(t, tokensToWithdraw, env.solo.L1BaseTokens(receiver))
+}
+
+func TestEVMNonZeroGasPriceRequest(t *testing.T) {
+	env := initEVM(t)
+	ethKey, senderAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	// deploy solidity `storage` contract
+	storage := env.deployStorageContract(ethKey)
+
+	// call FuncCallView to call EVM contract's `retrieve` view, get 42
+	require.EqualValues(t, 42, storage.retrieve())
+
+	// issue a tx with non-0 gas price
+	valueToStore := uint32(888)
+	gasPrice := big.NewInt(1234) // non 0
+	callArguments, err := storage.abi.Pack("store", valueToStore)
+	require.NoError(t, err)
+	nonce := storage.chain.getNonce(senderAddress)
+	unsignedTx := types.NewTransaction(nonce, storage.address, util.Big0, gas.MaxGasPerRequest, gasPrice, callArguments)
+
+	tx, err := types.SignTx(unsignedTx, storage.chain.signer(), ethKey)
+	require.NoError(t, err)
+
+	err = storage.chain.evmChain.SendTransaction(tx)
+	require.NoError(t, err)
+
+	rec := env.soloChain.LastReceipt()
+
+	require.EqualValues(t, valueToStore, storage.retrieve())
+
+	// assert the gas fee is the same as a normal request (with 0 gas price)
+	res, err := storage.store(999)
+	require.NoError(t, err)
+	require.EqualValues(t, 999, storage.retrieve())
+	require.Equal(t, res.iscReceipt.GasBurned, rec.GasBurned)
+	require.Equal(t, res.iscReceipt.GasFeeCharged, rec.GasFeeCharged)
+}
+
+func TestEVMTransferBaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	_, someEthereumAddr := solo.NewEthereumAccount()
+
+	// try to transfer base tokens between 2 ethereum addresses
+
+	// issue a tx with non-0 amount (try to send ETH)
+	value := new(big.Int).SetUint64(1 * isc.Million)
+
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, value, gas.MaxGasPerRequest, util.Big0, []byte{})
+
+	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
+	require.NoError(t, err)
+
+	err = env.evmChain.SendTransaction(tx)
+	require.NoError(t, err)
+
+	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 1*isc.Million)
 }
