@@ -31,11 +31,12 @@ That way, if a function cannot handle the transfer the tokens will stay safely i
 caller's on-chain account. The function explicitly transfers only assets it understands,
 and only in the amount that its algorithm defines, and never more than the allowed amount.
 
-There is also a `transfer_allowed()` method in the call context that can transfer assets
-from the caller's on-chain account to any other on-chain account. The assets to be
-transferred are provided to the method through a special `ScTransfer` proxy, which is
-essentially a mutable version of `ScBalances`. We will be using the `transfer_allowed()`
-method in the `dividend` example to disperse the incoming iotas to the member accounts.
+There is also a `transfer_allowed()` method in the [Call Context](context.mdx) that can
+transfer assets from the caller's on-chain account to any other on-chain account. The
+assets to be transferred are provided to the method through a special `ScTransfer` proxy,
+which is essentially a mutable version of `ScBalances`. We will be using the
+`transfer_allowed()` method in the `dividend` example to disperse the incoming iotas to
+the member accounts.
 
 The idea behind the dividend smart contract is that once we have set up the list of
 members, consisting of address/factor pairs, and knowing the total sum of the factors, we
@@ -235,6 +236,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 
 </TabItem>
 </Tabs>
+
 
 In the next section we will introduce [Function Descriptors](funcdesc.mdx) that can be
 used to initiate smart contract functions.
