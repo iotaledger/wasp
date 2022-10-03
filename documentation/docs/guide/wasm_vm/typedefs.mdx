@@ -17,13 +17,14 @@ import TabItem from "@theme/TabItem"
 # Type Definitions
 
 We allow nesting of [container types](../wasm_vm/proxies.mdx#container-proxies), but it
-is not possible to specify these types directly because the type name syntax only
-allows you to specify a single container type.
+is not possible to specify these types directly because the type name syntax only allows
+you to specify a single container type.
 
-There is a simple solution to this problem. You can add a `typedefs` section to the
-schema definition file, where you can define a single type name for a container type. That
-way you can easily create containers that contain such container types. The schema tool
-will automatically generate the in-between proxy types necessary to make this work.
+There is a simple solution to this problem. You can add a `typedefs` section to the schema
+definition file, where you can define a single type name for a container type. That way
+you can easily create containers that contain such container types. The
+[Schema Tool](usage.mdx) will automatically generate the in-between proxy types necessary
+to make this work.
 
 To keep it at the `betting` smart contract from [the previous section](structs.mdx),
 imagine you want to keep track of all betting rounds. Since a betting round contains an
@@ -47,8 +48,8 @@ state:
 </TabItem>
 </Tabs>
 
-The schema tool will generate the following code in `typedefs.xx` for the BettingRound
-type:
+The [Schema Tool](usage.mdx) will generate the following code in `typedefs.xx` for the
+`BettingRound` type:
 
 <Tabs defaultValue="go"
 	values={[
@@ -198,9 +199,9 @@ export class MutableBettingRound extends ArrayOfMutableBet {
 </TabItem>
 </Tabs>
 
-Note how ImmutableBettingRound and MutableBettingRound type aliases are created for the
-types ArrayOfImmutableBet and ArrayOfMutableBet. These are subsequently used in the state
-definition that is generated in `state.xx`:
+Note how `ImmutableBettingRound` and `MutableBettingRound` type aliases are created
+for the types `ArrayOfImmutableBet` and `ArrayOfMutableBet`. These are subsequently used
+in the state definition that is generated in `state.xx`:
 
 <Tabs defaultValue="go"
       groupId="language"
@@ -462,10 +463,11 @@ export class MutableBettingState extends wasmtypes.ScProxy {
 </TabItem>
 </Tabs>
 
-Notice how the rounds() member function returns a proxy to an array of BettingRound.
-Which in turn is an array of Bet. So, the desired result has been achieved. And every
+Notice how the `rounds()` member function returns a proxy to an array of `BettingRound`.
+Which in turn is an array of `Bet`. So, the desired result has been achieved. And every
 access step along the way only allows you to take the path laid out which is checked at
 compile-time.
 
-In the next section we will explore how the schema tool generates a proxy interface for
-mutable [states](state.mdx).
+
+In the next section we will explore how the [Schema Tool](usage.mdx) generates a proxy
+interface to mutable [State](state.mdx).

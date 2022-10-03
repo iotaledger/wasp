@@ -43,8 +43,8 @@ outside that memory by design, Wasm code is ideally suited for secure smart cont
 The Wasm VM runtime system will only provide access to external functionality that is
 necessary for the smart contracts to be able to do their thing, but nothing more. In our
 case, we only provide access to the ISC host's sandboxed API environment. The way we do
-that is by providing a small, self-contained library that can be linked to the Wasm
-code. This library is called `WasmLib`.
+that is by providing a small, self-contained library that can be linked to the Wasm code.
+This library is called `WasmLib`.
 
 ![Wasm VM](/img/wasm_vm/WasmVM.png)
 
@@ -53,9 +53,9 @@ smart contract is a separately compiled Wasm code unit that contains its own cop
 WasmLib embedded into it. Each WasmLib provides the ISC sandbox functionality to its
 corresponding smart contract and knows how to use it to access the underlying smart
 contract state storage through the VM runtime system. This makes the ISC sandbox API
-access seamless to the smart contract by hiding the details of bridging the gap
-between the smart contract's memory space, and the otherwise inaccessible memory space
-of the ISC host.
+access seamless to the smart contract by hiding the details of bridging the gap between
+the smart contract's memory space, and the otherwise inaccessible memory space of the ISC
+host.
 
 The ISC sandbox environment enables the following functionality:
 
@@ -88,6 +88,7 @@ this is that we wanted to make it as easy as possible for anyone to start workin
 smart contract system. If you have previous experience in any C-style language you should
 quickly feel comfortable writing smart contracts in any of the supported languages,
 without having to dive too deeply into the more esoteric aspects of the chosen language.
+
 
 We will next discuss some [`concepts`](concepts.mdx) that are central to (ISC) smart
 contract programming.

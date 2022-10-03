@@ -251,7 +251,7 @@ module.exports = {
                 },
                  {
                     type: 'doc',
-                    label: 'Function Call Context',
+                    label: 'Call Context',
                     id: 'guide/wasm_vm/context',
                 },
                 {

@@ -18,15 +18,15 @@ import TabItem from "@theme/TabItem"
 
 # Using the Schema Tool
 
-We tried to make the creation of smart contracts as simple as possible. The `schema`
-tool will assist you along the way as unobtrusively as possible. This section will walk you
+We tried to make the creation of smart contracts as simple as possible. The *Schema Tool*
+will assist you along the way as unobtrusively as possible. This section will walk you
 through the steps to create a new smart contract from scratch.
 
 First, you need to decide on a central folder where you want to keep all your smart
 contracts. Each smart contract you create will be maintained in a separate subfolder of
 this folder. We will use certain naming conventions that the schema tool expects
-throughout this section. First we will select a _camel case_ name for our smart contract.
-For our example, `MySmartContract`.
+throughout this section. First we will select a _capitalized camel case_ name for our
+smart contract. For our example, `MySmartContract`.
 
 Once you know what your smart contract will be named, it is time to set up your subfolder.
 Simply navigate to the central smart contract folder, and run the schema tool's
@@ -98,8 +98,8 @@ tool there to generate the initial code for the desired language:
 
 <TabItem value="go">
 
-If you want to generate Go code, you should run the schema tool with the
-`-go` option like this:
+If you want to generate Go code, you should run the schema tool with the `-go` option like
+this:
 
 ```shell
 schema -go
@@ -108,8 +108,8 @@ schema -go
 </TabItem>
 <TabItem value="rust">
 
-If you want to generate Rust code, you should run the schema tool with the
-`-rust` option like this:
+If you want to generate Rust code, you should run the schema tool with the `-rust` option
+like this:
 
 ```shell
 schema -rust
@@ -118,8 +118,8 @@ schema -rust
 </TabItem>
 <TabItem value="ts">
 
-If you want to generate TypeScript code, you should run the schema tool with the
-`-ts` option like this:
+If you want to generate TypeScript code, you should run the schema tool with the `-ts`
+option like this:
 
 ```shell
 schema -ts
@@ -298,7 +298,8 @@ definition file has been modified since the last time it generated the code. You
 the schema tool to regenerate all code by adding the `-force` flag to its command line
 parameter.
 
-In the next section we will look at how a smart contract can access their state
+
+In the next section we will look at how a smart contract can access its associated
 storage by using [Data Access Proxies](proxies.mdx).
 
 ## Video Tutorial

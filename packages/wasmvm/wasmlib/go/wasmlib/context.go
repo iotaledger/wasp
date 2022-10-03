@@ -36,7 +36,10 @@ type ScViewContext struct {
 	ScSandboxView
 }
 
-var _ ScViewCallContext = &ScViewContext{}
+var (
+	_ ScViewCallContext = &ScFuncContext{}
+	_ ScViewCallContext = &ScViewContext{}
+)
 
 func (ctx ScViewContext) InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname {
 	return hContract

@@ -127,12 +127,12 @@ need to remove the pending `finalizeAuction` request from the backlog.
 
 First we move the logical clock forward to a point in time when that request is supposed
 to have been triggered. Then we wait for this request to actually be processed. Note that
-this will happen in a separate goroutine in the background, so we explicitly wait for
-the request counters to catch up with the one request that is pending.
+this will happen in a separate goroutine in the background, so we explicitly wait for the
+request counters to catch up with the one request that is pending.
 
 The `WaitForPendingRequests()` method can also be used whenever a smart contract function
-is known to Post() a request to itself. Such requests are not immediately executed, but
-added to the backlog, so you need to wait for these pending requests to actually be
-processed. The advantage of having to explicitly wait for those requests is that you can
-inspect the in-between state, which means that you can test even a function that posts a
-request in isolation.
+is known to [`post()`](post.mdx) a request to itself. Such requests are not immediately
+executed, but added to the backlog, so you need to wait for these pending requests to
+actually be processed. The advantage of having to explicitly wait for those requests is
+that you can inspect the in-between state, which means that you can test even a function
+that posts a request in isolation.

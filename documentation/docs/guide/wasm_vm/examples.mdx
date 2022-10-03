@@ -19,10 +19,10 @@ import TabItem from "@theme/TabItem"
 
 # Example Tests
 
-In the previous sections we showed how you can [call()](call.mdx) or [post()](post.mdx)
-smart contract function requests. We also created a few wrapper functions to simplify
-calling these functions even further. Now we will look at how to use the SoloContext to
-create full-blown tests for the `dividend` example smart contract.
+In the previous sections we showed how you can [`call()`](call.mdx) or
+[`post()`](post.mdx) smart contract function requests. We also created a few wrapper
+functions to simplify calling these functions even further. Now we will look at how to use
+the SoloContext to create full-blown tests for the `dividend` example smart contract.
 
 Let's start with a simple test. We are going to use the `member` function to add a valid
 new member/factor combination to the member group.
@@ -50,17 +50,17 @@ func TestAddMemberOk(t *testing.T) {
 The above test first deploys the `dividend` smart contract to a new chain, and returns a
 SoloContext `ctx`. Then it uses `ctx` to create a new SoloAgent `member1`. When creating a
 SoloAgent a new Tangle address is created for that agent and int on-chain account is
-pre-seeded with 10M base tokens so that it is ready to be used in tests. The SoloAgent
-can be used whenever an address or agent ID needs to be provided, it can be used to sign a
-request to identify it as the sender, and it can be used to inspect the asset balances
-on its Tangle address and its on-chain account.
+pre-seeded with 10M base tokens so that it is ready to be used in tests. The SoloAgent can
+be used whenever an address or agent ID needs to be provided, it can be used to sign a
+request to identify it as the sender, and it can be used to inspect the asset balances on
+its Tangle address and its on-chain account.
 
 In this case, we simply create `member1`, and pass it to the dividend contract's `member`
 function, which will receive the address of `member1` and a dispersal factor of 100.
 Finally, we check if ctx has received an error during the execution of the call. Remember
-that the only way to pass an error from a WasmLib function call is through a panic() call.
-The code that handles the actual call will intercept any panic() that was raised, and
-return an error. The SoloContext saves this error for later inspection, because the
+that the only way to pass an error from a WasmLib function call is through a `panic()`
+call. The code that handles the actual call will intercept any `panic()` that was raised,
+and return an error. The SoloContext saves this error for later inspection, because the
 function descriptor used in the call itself has no way of passing back this error.
 
 The next two example tests each call the contract's `member` function in the exact same
@@ -106,7 +106,7 @@ specific setupTest() function to do all setup work that is shared by many tests.
 
 We cannot use the `dividendMember` wrapper function in these two tests because of the
 missing required function parameters. So we have simply copy/pasted the code, and removed
-the Params initialization we wanted to be missing.
+the `Params` proxy initialization lines that we wanted to be detected as missing.
 
 Now let's see a more complex example:
 
@@ -150,14 +150,14 @@ test, create an agent, set the factor for that agent to 100, and verify that no 
 occurred. Notice how we additionally call `ctx.Balances()` to make a snapshot of all the
 original asset balances including those of the agent.
 
-Then in the next lines we update the asset balances with the changes we expect to
-happen because of the call to the `member` function. And then we verify these changes
-against the actual asset balances by calling `bal.VerifyBalances(t)`.
+Then in the next lines we update the asset balances with the changes we expect to happen
+because of the call to the `member` function. And then we verify these changes against the
+actual asset balances by calling `bal.VerifyBalances(t)`.
 
 Next we transfer 1M + 1 tokens as part of the post request to the `divide` function. We
-subsequently check that no error has occurred. Finally, we again modify the asset
-balances to reflect the expected changes and verify these changes against the actual
-asset balances.
+subsequently check that no error has occurred. Finally, we again modify the asset balances
+to reflect the expected changes and verify these changes against the actual asset
+balances.
 
 Now let's skip to the most complex test of all:
 
@@ -244,11 +244,11 @@ Finally, we call `divide` again with 2M+234 tokens and again verify the asset ba
 afterwards.
 
 Next we will show how to test [Views](views.mdx) and/or [Funcs](funcs.mdx) that return
-a result. Note that even though Funcs are usually invoked through a [post()](post.mdx)
+a result. Note that even though Funcs are usually invoked through a [`post()`](post.mdx)
 request,  in which case any return values are inaccessible, they still can be invoked
 through a [call()](call.mdx)  from within another Func, in which these return values can
-be used normally. Since solo executes `post()` requests synchronously, it is possible to
-have a Func return a result and test for certain result values.
+be used normally. Since solo executes [`post()`](post.mdx) requests synchronously, it is
+possible to have a Func return a result and test for certain result values.
 
 <Tabs defaultValue="go"
       values={[
@@ -292,6 +292,7 @@ func TestGetFactor(t *testing.T) {
 
 Here we first set up the same 3 dispersion factors, and then we retrieve the dispersion
 factors for each member in reverse order and verify their values.
+
 
 In the [next section](timelock.mdx) we will describe a few more helper member functions
 of the SoloContext.
