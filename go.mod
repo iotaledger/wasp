@@ -11,7 +11,7 @@ replace (
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
-	github.com/bytecodealliance/wasmtime-go v0.40.0
+	github.com/bytecodealliance/wasmtime-go v1.0.0
 	github.com/ethereum/go-ethereum v1.10.23
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go/core v1.0.0-beta.6
