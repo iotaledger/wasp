@@ -312,7 +312,7 @@ func (e *evmContractInstance) callMsg(callMsg ethereum.CallMsg) ethereum.CallMsg
 	return callMsg
 }
 
-func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callData []byte) ethCallOptions {
+func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callData []byte) (ethCallOptions, error) {
 	var opt ethCallOptions
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -333,15 +333,20 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			Value:    opt.value,
 			Data:     callData,
 		})
-		require.NoError(e.chain.t, e.chain.resolveError(err))
+		if err != nil {
+			return opt, fmt.Errorf("error estimating gas limit %v", e.chain.resolveError(err).Error())
+		}
 	}
-	return opt
+	return opt, nil
 }
 
-func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) *types.Transaction {
+func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, error) {
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
-	opt := e.parseEthCallOptions(opts, callArguments)
+	opt, err := e.parseEthCallOptions(opts, callArguments)
+	if err != nil {
+		return nil, err
+	}
 
 	senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
 
@@ -349,9 +354,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
 
-	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
-	require.NoError(e.chain.t, err)
-	return tx
+	return types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 }
 
 type callFnResult struct {
@@ -363,13 +366,16 @@ type callFnResult struct {
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (callFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
-	res := callFnResult{tx: e.buildEthTx(opts, fnName, args...)}
+	tx, err := e.buildEthTx(opts, fnName, args...)
+	if err != nil {
+		return callFnResult{}, err
+	}
+	res := callFnResult{tx: tx}
 
 	sendTxErr := e.chain.evmChain.SendTransaction(res.tx)
 
 	res.iscReceipt = e.chain.soloChain.LastReceipt()
 
-	var err error
 	res.evmReceipt, err = e.chain.evmChain.TransactionReceipt(res.tx.Hash())
 	require.NoError(e.chain.t, err)
 

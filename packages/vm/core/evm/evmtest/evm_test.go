@@ -187,7 +187,9 @@ func TestNotEnoughISCGas(t *testing.T) {
 	nonce := env.getNonce(senderAddress)
 
 	// try to issue a call to store(something) in EVM
-	res, err := storage.store(44)
+	res, err := storage.store(44, ethCallOptions{
+		gasLimit: 21204, // provide a gas limit because the estimation will fail
+	})
 
 	// the call must fail with "not enough gas"
 	require.Error(t, err)
@@ -960,7 +962,9 @@ func TestSendEntireBalance(t *testing.T) {
 	currentBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 
 	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
-		new(big.Int).SetUint64(currentBalance),
+		// -1 because removing the entire balance would produce a different gas output
+		// TODO should "spending tokens" have a predictable gas cost?
+		new(big.Int).SetUint64(currentBalance-1),
 		int64(parameters.L1ForTesting.BaseToken.Decimals),
 	)
 
@@ -975,7 +979,6 @@ func TestSendEntireBalance(t *testing.T) {
 
 	gasPerToken := env.soloChain.GetGasFeePolicy().GasPerToken
 	tokensForGasBudget := uint64(math.Ceil(float64(estimatedGas) / float64(gasPerToken)))
-	tokensForGasBudget += 1 // TODO Why is the gas estimation off in this case? :/
 
 	gasLimit := env.soloChain.GetGasFeePolicy().GasPerToken * tokensForGasBudget
 
@@ -989,6 +992,7 @@ func TestSendEntireBalance(t *testing.T) {
 	err = env.evmChain.SendTransaction(tx)
 	require.NoError(t, err)
 	rec = env.soloChain.LastReceipt()
+	require.EqualValues(t, rec.GasBurned, estimatedGas)
 	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
 }

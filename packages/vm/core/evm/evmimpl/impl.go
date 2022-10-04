@@ -241,9 +241,6 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	return result(res.Return())
 }
 
-// TODO: For some reason, when EstimateGasMode == true the gas burned is less. How to automatically calculate this?
-var additionalGasBurned = gas.BurnCodeReadFromState1P.Cost(2)
-
 func estimateGas(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
@@ -253,11 +250,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
-	// bctx := getBlockContext(ctx)
-
 	emu := createEmulator(ctx)
-
-	// ctx.Requiref(tx.ChainId().Uint64() == uint64(bctx.emu.BlockchainDB().GetChainID()), "chainId mismatch")
 
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
@@ -281,6 +274,6 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 		ctx.RequireNoError(gasErr)
 	}
 
-	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
+	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio)
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))
 }
