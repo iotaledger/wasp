@@ -140,7 +140,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		// Failed txs will be stored when closing the block context.
 		bctx.txs = append(bctx.txs, tx)
 		bctx.receipts = append(bctx.receipts, receipt)
-	} else {
 	}
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(gasErr)
@@ -254,7 +253,12 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
+	// bctx := getBlockContext(ctx)
+
 	emu := createEmulator(ctx)
+
+	// ctx.Requiref(tx.ChainId().Uint64() == uint64(bctx.emu.BlockchainDB().GetChainID()), "chainId mismatch")
+
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(res.Err)
@@ -264,6 +268,19 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
 	iscGasBurned := gas.MaxGasPerRequest - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+
+	{
+		// burn the used EVM gas so this appears in the "gas burn log" as it would for a normal TX
+		ctx.Privileged().GasBurnEnable(true)
+		gasErr := panicutil.CatchPanic(
+			func() {
+				ctx.Gas().Burn(gas.BurnCodeEVM1P, evmtypes.EVMGasToISC(res.UsedGas, &gasRatio))
+			},
+		)
+		ctx.Privileged().GasBurnEnable(false)
+		ctx.RequireNoError(gasErr)
+	}
+
 	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))
 }
