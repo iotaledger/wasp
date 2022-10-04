@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -269,6 +270,14 @@ func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
 		amt := util.EthereumDecimalsToBaseTokenDecimals(amount, int64(decimals))
 		tokens := fungibleTokensForFee(ctx, amt)
 		ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
+
+		// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+		if !ctx.HasInAccount(
+			ctx.Request().SenderAccount(),
+			ctx.Privileged().TotalGasTokens(),
+		) {
+			panic(vm.ErrNotEnoughTokensLeftForGas)
+		}
 	}
 }
 

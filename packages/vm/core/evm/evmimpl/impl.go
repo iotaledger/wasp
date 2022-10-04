@@ -135,11 +135,12 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		}
 	}
 
-	if receipt != nil { // receipt can be nil when "intrinsic gas too low"
+	if receipt != nil { // receipt can be nil when "intrinsic gas too low" or not enough funds
 		// If EVM execution was reverted we must revert the ISC request as well.
 		// Failed txs will be stored when closing the block context.
 		bctx.txs = append(bctx.txs, tx)
 		bctx.receipts = append(bctx.receipts, receipt)
+	} else {
 	}
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(gasErr)

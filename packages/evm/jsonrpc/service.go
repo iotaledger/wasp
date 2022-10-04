@@ -22,7 +22,6 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
@@ -128,11 +127,6 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	bal, err := e.evmChain.Balance(address, blockNumberOrHash)
 	if err != nil {
 		return nil, e.resolveError(err)
-	}
-	{
-		// FIXME: https://github.com/iotaledger/wasp/issues/1120
-		// adjusting the decimals so that Metamask shows the correct value
-		bal = util.BaseTokensDecimalsToEthereumDecimals(bal, int64(e.evmChain.BaseToken().Decimals))
 	}
 	return (*hexutil.Big)(bal), nil
 }

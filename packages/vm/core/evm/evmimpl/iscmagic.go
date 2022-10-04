@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	iscvm "github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
@@ -286,15 +287,13 @@ func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []
 
 		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, nil)
 
-		// assert that remaining tokens in the account are enough to pay for the gas budget
-		ctx.Requiref(
-			ctx.HasInAccount(
-				isc.NewEthereumAddressAgentID(caller.Address()),
-				ctx.Privileged().TotalGasTokens(),
-			),
-			"not enough tokens remaining to pay for gas budget",
-		)
-
+		// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+		if !ctx.HasInAccount(
+			ctx.Request().SenderAccount(),
+			ctx.Privileged().TotalGasTokens(),
+		) {
+			panic(iscvm.ErrNotEnoughTokensLeftForGas)
+		}
 		ctx.Send(req)
 		return nil, true
 
@@ -328,15 +327,13 @@ func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []
 
 		moveAssetsToCommonAccount(ctx, caller, req.FungibleTokens, []iotago.NFTID{nftID})
 
-		// assert that remaining tokens in the account are enough to pay for the gas budget
-		ctx.Requiref(
-			ctx.HasInAccount(
-				isc.NewEthereumAddressAgentID(caller.Address()),
-				ctx.Privileged().TotalGasTokens(),
-			),
-			"not enough tokens remaining to pay for gas budget",
-		)
-
+		// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+		if !ctx.HasInAccount(
+			ctx.Request().SenderAccount(),
+			ctx.Privileged().TotalGasTokens(),
+		) {
+			panic(iscvm.ErrNotEnoughTokensLeftForGas)
+		}
 		ctx.SendAsNFT(req, nftID)
 		return nil, true
 
