@@ -860,8 +860,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	)
 
 	_, err := iscTest.callFn([]ethCallOptions{{
-		sender: ethKey,
-		value:  oneMillionInEthDecimals,
+		gasLimit: 100_000, // TODO why is this value different than the estimation?
+		sender:   ethKey,
+		value:    oneMillionInEthDecimals,
 	}}, "sendTo", someEthereumAddr, oneMillionInEthDecimals)
 	require.NoError(t, err)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
@@ -893,8 +894,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		// this will fail if the (ignored) decimals are above the contract balance,
 		// but if we provide enough funds, the call should succeed and the extra decimals should be correctly ignored
 		_, err = iscTest.callFn([]ethCallOptions{{
-			sender: ethKey,
-			value:  twoMillionInEthDecimals,
+			gasLimit: 100_000, // TODO why is this value different than the estimation?
+			sender:   ethKey,
+			value:    twoMillionInEthDecimals,
 			// wei is expressed with 18 decimal precision, iota/smr is 6, so anything in the 12 last decimal cases will be ignored
 		}}, "sendTo", someEthereumAddr, big.NewInt(1_000_000_999_999_999_999))
 		require.NoError(t, err)
@@ -916,7 +918,8 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	)
 
 	_, err = iscTest.callFn([]ethCallOptions{{
-		sender: ethKey,
+		gasLimit: 100_000, // TODO why is this value different than the estimation?
+		sender:   ethKey,
 	}}, "sendTo", someEthereumAddr, tenMillionInEthDecimals)
 	require.NoError(t, err)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
