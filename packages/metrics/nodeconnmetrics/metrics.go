@@ -1,8 +1,9 @@
 package nodeconnmetrics
 
 import (
-	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"

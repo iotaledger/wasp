@@ -6,13 +6,10 @@ import (
 )
 
 type emptyNodeConnectionMessagesMetrics struct {
-	//	emptyMessageMetrics NodeConnectionMessageMetrics
 }
 
 func newEmptyNodeConnectionMessagesMetrics() *emptyNodeConnectionMessagesMetrics {
-	return &emptyNodeConnectionMessagesMetrics{
-		//	emptyMessageMetrics: newEmptyNodeConnectionMessageMetrics[T](),
-	}
+	return &emptyNodeConnectionMessagesMetrics{}
 }
 
 func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPublishStateTransaction() NodeConnectionMessageMetrics[*StateTransaction] {

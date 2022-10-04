@@ -65,11 +65,9 @@ func (c *chainObj) outputHandler(outputID iotago.OutputID, output iotago.Output)
 }
 
 func (c *chainObj) PullLatestOutput() {
-	c.nodeConn.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 	c.nodeConn.PullLatestOutput(c.chainID)
 }
 
 func (c *chainObj) PullStateOutputByID(outputID *iotago.UTXOInput) {
-	c.nodeConn.GetMetrics().GetOutPullOutputByID().CountLastMessage(outputID)
 	c.nodeConn.PullStateOutputByID(c.chainID, outputID)
 }
