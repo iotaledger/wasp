@@ -5,20 +5,19 @@ keywords:
 - Funcs
 - ScFuncContext
 - ScViewContext
-- ScExports
 
-description: The function call context is a predefined parameter to each smart contract function, which allows you to access the functionality that the host sandbox interface provides.
+description: The call context is a predefined parameter to each smart contract function, which allows you to access the functionality that the call environment provides.
 
 image: /img/logo/WASP_logo_dark.png
 ---
 
-# Function Call Context
+# Call Context
 
 Due to the sandboxed nature of Wasm code, it needs a host which runs the Wasm Virtual
 Machine (VM) that is able to load and execute the Wasm code. The host also provides the
 Wasm code with restricted access to the host environment. These restrictions make the host
-interface itself sandboxed as well. Smart contracts will only be able to call certain host
-functionality, depending on the _function call context_.
+environment itself sandboxed as well. Smart contracts will only be able to call certain
+environment functionality, depending on the _call context_.
 
 We distinguish between two types of smart contract function calls:
 
@@ -32,11 +31,11 @@ We distinguish between two types of smart contract function calls:
   can be used to efficiently query the current state of the smart contract.
 
 To support this function call type distinction, Func and View functions each receive a
-separate, different function call context through WasmLib. Only the functionality that is
-necessary for their implementation can be accessed through their respective WasmLib
-contexts, `ScFuncContext` and `ScViewContext`. ScViewContext provides a limited, immutable
-subset of the full functionality provided by ScFuncContext. By having separate context
-types, compile-time type-checking can easily be used to enforce these usage constraints.
+separate, different call context through WasmLib. Only the functionality that is necessary
+for their implementation can be accessed through their respective WasmLib contexts,
+`ScFuncContext` and `ScViewContext`. ScViewContext provides a limited, immutable subset of
+the full functionality provided by ScFuncContext. By having separate context types,
+compile-time type-checking can easily be used to enforce these usage constraints.
 
 # Smart Contract Setup
 
@@ -54,9 +53,9 @@ types will need to be serialized and deserialized correctly and consistently. Wa
 provides a rich set of (de)serialization functions specifically for this purpose
 
 Even though it is definitely possible for a contract creator to directly use WasmLib to
-achieve his goals, we decided to provide a _Schema_ tool, which can be used to
+achieve his goals, we decided to provide a _Schema Tool_, which can be used to
 automatically generate and update the entire smart contract framework code in the desired
 language in a consistent and type-safe way.
 
 
-In the next section we will introduce this [`Smart Contract Schema Tool`](schema.mdx).
+In the next section we will introduce this smart contract [`Schema Tool`](schema.mdx).

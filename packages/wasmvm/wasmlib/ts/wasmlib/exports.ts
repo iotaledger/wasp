@@ -18,44 +18,40 @@ import {exportName} from "./host";
 export type ScFuncContextFunc = (f: ScFuncContext) => void;
 export type ScViewContextFunc = (v: ScViewContext) => void;
 
+// context for onLoad function to be able to tell host which
+// funcs and views are available as entry points to the SC
 export class ScExportMap {
     names: string[];
     funcs: ScFuncContextFunc[];
     views: ScViewContextFunc[];
-}
-
-// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
-
-// context for onLoad function to be able to tell host which
-// funcs and views are available as entry points to the SC
-export class ScExports {
-    // constructs the symbol export context for the onLoad function
-    static export(exportMap: ScExportMap): void {
-        exportName(-1, "WASM::TYPESCRIPT");
-
-        for (let i = 0; i < exportMap.funcs.length; i++) {
-            exportName(i as i32, exportMap.names[i]);
-        }
-
-        let offset = exportMap.funcs.length;
-        for (let i = 0; i < exportMap.views.length; i++) {
-            exportName((i as i32) | 0x8000, exportMap.names[offset + i]);
-        }
-    }
 
     // general entrypoint for the host to call any SC function
     // the host will pass the index of one of the entry points
     // that was provided by onLoad during SC initialization
-    static call(index: i32, exportMap: ScExportMap): void {
+    call(index: i32): void {
         if ((index & 0x8000) == 0) {
-            // mutable full function, invoke with a func context
-            let func = exportMap.funcs[index];
+            // mutable full function, invoke with a WasmLib func call context
+            let func = this.funcs[index];
             func(new ScFuncContext());
             return;
         }
-        // immutable view function, invoke with a view context
-        let view = exportMap.views[index & 0x7fff];
+        // immutable view function, invoke with a WasmLib view call context
+        let view = this.views[index & 0x7fff];
         view(new ScViewContext());
+    }
+
+    // constructs the symbol export context for the onLoad function
+    export(): void {
+        exportName(-1, "WASM::TYPESCRIPT");
+
+        for (let i = 0; i < this.funcs.length; i++) {
+            exportName(i as i32, this.names[i]);
+        }
+
+        let offset = this.funcs.length;
+        for (let i = 0; i < this.views.length; i++) {
+            exportName((i as i32) | 0x8000, this.names[offset + i]);
+        }
     }
 }
 

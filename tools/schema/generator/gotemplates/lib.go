@@ -23,11 +23,11 @@ $#each func libExportView
 
 func OnLoad(index int32) {
 	if index >= 0 {
-		wasmlib.ScExportsCall(index, &exportMap)
+		exportMap.Call(index)
 		return
 	}
 
-	wasmlib.ScExportsExport(&exportMap)
+	exportMap.Export()
 }
 $#each func libThunk
 `,

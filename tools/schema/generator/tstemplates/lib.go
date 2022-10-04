@@ -23,12 +23,12 @@ $#each func libExportView
 
 export function on_call(index: i32): void {
 	wasmlib.WasmVMHost.connect();
-	wasmlib.ScExports.call(index, exportMap);
+	exportMap.call(index);
 }
 
 export function on_load(): void {
 	wasmlib.WasmVMHost.connect();
-	wasmlib.ScExports.export(exportMap);
+	exportMap.export();
 }
 $#each func libThunk
 `,
