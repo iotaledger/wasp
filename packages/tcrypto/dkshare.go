@@ -665,6 +665,16 @@ func (s *dkShareImpl) BLSVerify(signer kyber.Point, data, signature []byte) erro
 	return bdn.Verify(s.blsSuite, signer, data, signature)
 }
 
+// Needed for signatures outside of this object.
+func (s *dkShareImpl) BLSCommits() *share.PubPoly {
+	return share.NewPubPoly(s.blsSuite, nil, s.blsPublicCommits)
+}
+
+// Needed for signatures outside of this object.
+func (s *dkShareImpl) BLSPriShare() *share.PriShare {
+	return &share.PriShare{I: int(*s.index), V: s.blsPrivateShare}
+}
+
 ///////////////////////// Test support functions.
 
 func (s *dkShareImpl) AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey) {

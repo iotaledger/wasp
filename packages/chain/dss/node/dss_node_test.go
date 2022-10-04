@@ -336,6 +336,14 @@ func (f *fakeDKShare) BLSVerify(signer kyber.Point, data, signature []byte) erro
 	panic(xerrors.New("not important"))
 }
 
+func (f *fakeDKShare) BLSCommits() *share.PubPoly {
+	panic(xerrors.New("not important"))
+}
+
+func (f *fakeDKShare) BLSPriShare() *share.PriShare {
+	panic(xerrors.New("not important"))
+}
+
 func (f *fakeDKShare) AssignNodePubKeys(nodePubKeys []*cryptolib.PublicKey) {
 	panic(xerrors.New("not important"))
 }

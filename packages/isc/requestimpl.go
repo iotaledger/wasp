@@ -610,6 +610,21 @@ const RequestIDDigestLen = 6
 
 const RequestIDSeparator = "-"
 
+type RequestRef struct {
+	ID   RequestID
+	Hash [32]byte // TODO: Why the constant is left as number?
+}
+
+const RequestRefKeyLen = iotago.OutputIDLength + 32
+
+type RequestRefKey [RequestRefKeyLen]byte
+
+func (rr *RequestRef) AsKey() RequestRefKey {
+	var key RequestRefKey
+	copy(key[:], append(rr.ID.Bytes(), rr.Hash[:]...))
+	return key
+}
+
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
 // within one block, however it may collide globally. Used for quick checking for most requests
 // if it was never seen

@@ -636,7 +636,7 @@ func (c *consensus) finalizeTransaction() (*iotago.Transaction, *isc.AliasOutput
 }
 
 func (c *consensus) setNewState(msg *messages.StateTransitionMsg) bool {
-	c.consensusJournal.GetLocalView().AliasOutputReceived(msg.StateOutput)
+	c.consensusJournal.GetLocalView().AliasOutputConfirmed(msg.StateOutput)
 	sameIndex := msg.State.BlockIndex() == msg.StateOutput.GetStateIndex()
 	if !msg.IsGovernance && !sameIndex {
 		// NOTE: should be a panic. However this situation may occur (and occurs) in normal circumstations:

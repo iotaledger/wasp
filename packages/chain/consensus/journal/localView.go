@@ -4,6 +4,18 @@
 // Here we implement the local view of a chain, maintained by a committee to decide which
 // alias output to propose to the ACS. The alias output decided by the ACS will be used
 // as an input for TX we build.
+//
+// The LocalView maintains a list of Alias Outputs (AOs). The are chained based on consumed/produced
+// AOs in a transaction we publish. The goal here is to tract the unconfirmed alias outputs, update
+// the list based on confirmations/rejections from the L1.
+//
+// The AO chain maintained by the LocalView is somewhat orthogonal to the journal LogIndexes.
+// While the new entries are added by publishing AOs, the chain matches the LogIndexes, but
+// if a the local view is reset based on a rejection or externally made AO transition, then
+// the direct mapping with the log indexes is lost. New AO will be considered on the next LogIndex.
+
+// TODO: Keep some history of published alias outputs just to handle out-of-order delivery
+// of messages on AO confirmation/rejection.
 
 package journal
 
@@ -23,13 +35,13 @@ type LocalView interface {
 	GetBaseAliasOutputID() *iotago.OutputID
 	//
 	// Corresponds to the `ao_received` event in the specification.
-	AliasOutputReceived(confirmed *isc.AliasOutputWithID)
+	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID)
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
 	AliasOutputRejected(rejected *isc.AliasOutputWithID)
 	//
 	// Corresponds to the `tx_posted` event in the specification.
-	AliasOutputPublished(consumed, published *isc.AliasOutputWithID)
+	AliasOutputPublished(consumed iotago.OutputID, published *isc.AliasOutputWithID)
 	//
 	// For serialization.
 	AsBytes() ([]byte, error)
@@ -119,6 +131,8 @@ func (lvi *localViewImpl) AsBytes() ([]byte, error) {
 	return w.Bytes(), nil
 }
 
+// Return latest AO to be used as an input for the following TX.
+// nil means we have to wait: either we have no AO, or we have some rejections and waiting until a re-sync.
 func (lvi *localViewImpl) GetBaseAliasOutputID() *iotago.OutputID {
 	if len(lvi.entries) == 0 {
 		return nil
@@ -131,9 +145,10 @@ func (lvi *localViewImpl) GetBaseAliasOutputID() *iotago.OutputID {
 	return &lvi.entries[len(lvi.entries)-1].outputID
 }
 
-// Return latest AO to be used as an input for the following TX.
-// nil means we have to wait: either we have no AO, or we have some rejections.
-func (lvi *localViewImpl) AliasOutputReceived(confirmed *isc.AliasOutputWithID) {
+// A confirmed AO is received from L1. Base on that, we either truncate our local
+// history until the received AO (if we know it was posted before), or we replace
+// the entire history with an unseen AO (probably produced not by this chain×cmt).
+func (lvi *localViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) {
 	foundIdx := -1
 	for i := range lvi.entries {
 		if lvi.entries[i].outputID == confirmed.OutputID() {
@@ -177,13 +192,13 @@ func (lvi *localViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) {
 	}
 }
 
-func (lvi *localViewImpl) AliasOutputPublished(consumed, published *isc.AliasOutputWithID) {
+func (lvi *localViewImpl) AliasOutputPublished(consumed iotago.OutputID, published *isc.AliasOutputWithID) {
 	if len(lvi.entries) == 0 {
 		// Have we done reset recently?
 		// Just ignore this call, it is outdated.
 		return
 	}
-	if lvi.entries[len(lvi.entries)-1].outputID != consumed.OutputID() {
+	if lvi.entries[len(lvi.entries)-1].outputID != consumed {
 		// Some other output was published in parallel?
 		// Just ignore this call, it is outdated.
 		return

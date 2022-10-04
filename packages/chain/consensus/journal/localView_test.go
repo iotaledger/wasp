@@ -16,7 +16,7 @@ import (
 func TestLocalView(t *testing.T) {
 	j := journal.NewLocalView()
 	require.Nil(t, j.GetBaseAliasOutputID())
-	j.AliasOutputReceived(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, &iotago.UTXOInput{}))
+	j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, &iotago.UTXOInput{}))
 	require.NotNil(t, j.GetBaseAliasOutputID())
 	jBin, err := j.AsBytes()
 	require.NoError(t, err)

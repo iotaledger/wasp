@@ -98,6 +98,10 @@ type WrappingMsg struct {
 
 var _ Message = &WrappingMsg{}
 
+func NewWrappingMsg(msgType, subsystem byte, index int, wrapped Message) *WrappingMsg {
+	return &WrappingMsg{msgType: msgType, subsystem: subsystem, index: index, wrapped: wrapped}
+}
+
 func (m *WrappingMsg) Subsystem() byte {
 	return m.subsystem
 }
