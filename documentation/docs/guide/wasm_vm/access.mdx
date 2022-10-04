@@ -27,8 +27,8 @@ following:
   provide functionality that can initialize and/or modify this variable. As long as this
   state variable has not been set, nobody will be allowed to call this function.
 
-The schema tool will automatically generate code to properly check the access rights of
-the agent that called the function before the actual function is called.
+The [Schema Tool](usage.mdx) will automatically generate code to properly check the access
+rights of the agent that called the function before the actual function is called.
 
 You can see usage examples of the access identifier in the schema definition file, where
 the state variable `owner` is used as an access identifier. The `init` function
@@ -39,4 +39,5 @@ by the current owner.
 Note that there can be different access identifiers for different functions as needed. You
 can set up as many access identifiers as you like.
 
-In the next section we will look at [`params`](params.mdx) subsection.
+
+In the next section we will look at the [`params`](params.mdx) subsection.

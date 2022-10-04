@@ -2,15 +2,19 @@
 description: Solidity smart contract example.
 image: /img/logo/WASP_logo_dark.png
 keywords:
+
 - smart contracts
 - EVM
 - Solidity
 - how to
+
 ---
+
 # Solidity Smart Contract Example
 
-Solidity smart contracts on IOTA Smart Contracts are compatible with Solidity smart contracts on any other network, so most smart contracts will work directly without any modification. To get a rough indication of how a simple Solidity smart contract looks like, see the example below:
-
+[Solidity](https://docs.soliditylang.org/en/v0.8.16/) smart contracts on IOTA Smart Contracts are compatible with
+Solidity smart contracts on any other network. Most smart contracts will work directly without any modification. To get
+a rough indication of what a simple Solidity smart contract looks like, see the example below:
 
 ```solidity
 pragma solidity ^0.8.6;
@@ -35,3 +39,4 @@ contract Counter {
 ```
 
 For more information, please visit the [official Solidity documentation](https://docs.soliditylang.org/).
+

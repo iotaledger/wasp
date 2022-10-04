@@ -40,20 +40,21 @@ examples of repetition were:
 * Checking function access rights
 * Verifying function parameter types
 * Verifying the presence of mandatory function parameters
-* Setting up access to state, params, and results maps
+* Setting up access to [State](state.mdx), [Params](params.mdx), and [Results](results.mdx) maps
 * Defining common strings as constants
 
 To facilitate the code generation, it was decided to use a _schema definition file_ for
 smart contracts. The aspects of a smart contract that should be known by someone who wants
 to use the contract are all clearly defined in a schema definition file. This schema
 definition file then becomes the single source of truth for the interface to the smart
-contract. This schema definition file is then used by our `Schema tool` to automatically
-generate a complete smart contract skeleton that reflects the schema definition and only
-needs to be augmented by providing the actual function implementations.
+contract. This schema definition file is then used by our [Schema Tool](usage.mdx) to
+automatically generate a complete smart contract skeleton that reflects the schema
+definition and only needs to be augmented by providing the actual function
+implementations.
 
-The schema definition file defines things like the [state](state.mdx) variables that the
-smart contract uses, the [Funcs](funcs.mdx) and [Views](views.mdx) that the contract
-implements, the [access rights](access.mdx) for each function, the
+The schema definition file defines things like the [state storage](state.mdx) variables
+that the smart contract uses, the [Funcs](funcs.mdx) and [Views](views.mdx) that the
+contract implements, the [access rights](access.mdx) for each function, the
 [input parameters](params.mdx) and [output results](results.mdx) for each function, and
 additional data structures that the contract uses.
 
@@ -61,8 +62,8 @@ With detailed schema information readily available in a single location, it beco
 possible to do a lot more than just generating repetitive code fragments. You can use the
 schema information to generate the interfaces to functions, and have parameters, results,
 and state variables that use strict compile-time type-checking. That removes a common
-source of accidental errors. The generated interface can also be used by client side
-code so that there is a single, consistent way of calling smart contract functions.
+source of accidental errors. The generated interface can also be used by client side code
+so that there is a single, consistent way of calling smart contract functions.
 
 Another advantage of knowing everything about important smart contract aspects is that it
 is possible to generate constants to prevent repeating of typo-prone key strings, and
@@ -80,4 +81,5 @@ being generated.
 The schema definition file can also provide a starting point for other tooling, for
 example a tool that automatically audits a smart contract.
 
-In the next section we will look at [how the schema tool works](usage.mdx).
+
+In the next section we will look at how the [Schema Tool](usage.mdx) works.
