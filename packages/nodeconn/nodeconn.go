@@ -305,8 +305,8 @@ func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInp
 		nc.log.Errorf("PullOutputByID: NCChain not  found for chainID %s", chainID)
 		return
 	}
-	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(id)
 	ncc.PullStateOutputByID(id.ID())
+	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(id)
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
