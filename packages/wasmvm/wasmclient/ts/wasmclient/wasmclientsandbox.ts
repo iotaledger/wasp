@@ -1,17 +1,38 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as wasmhost from "./wasmhost";
 import * as wasmlib from "wasmlib"
 import { panic } from "wasmlib"
 import * as wc from "./index";
+import * as cryptolib from "./cryptolib";
+import { error } from "./wasmhost"
 
 export class WasmClientSandbox implements wasmlib.ScHost {
+	chainID       : wasmlib.ScChainID;
+	Err           : error = null;
+	eventDone     : bool = false;
+	eventHandlers : wc.IEventHandler[] = [];
+	keyPair       : cryptolib.KeyPair|null = null;
+	ReqID         : wasmlib.ScRequestID = wasmlib.requestIDFromBytes([]);
+	scName        : string;
+	scHname       : wasmlib.ScHname;
+	svcClient     : wc.IClientService;
+
+	public constructor(svcClient: wc.IClientService, chainID: wasmlib.ScChainID, scName: string) {
+		super();
+		this.svcClient = svcClient;
+		this.scName = scName;
+		this.scHname = wasmlib.ScHname.fromName(scName);
+		this.chainID = chainID;
+	}
+
 	public exportName(index: i32, name: string) {
 		panic("WasmClientContext.ExportName")
 	}
 
 	public sandbox(funcNr: i32, args: u8[]): u8[] {
-		this.Err = nil;
+		this.Err = null;
 		switch (funcNr) {
 		case wasmlib.FnCall:
 			return this.fnCall(args);
@@ -25,6 +46,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 			return this.fnUtilsHashName(args);
 		}
 		panic("implement WasmClientContext.Sandbox");
+		return [];
 	}
 
 	public stateDelete(key: u8[]) {
@@ -33,70 +55,73 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
 	public stateExists(key: u8[]): bool {
 		panic("WasmClientContext.StateExists");
+		return false;
 	}
 
 	public stateGet(key: u8[]): u8[] {
 		panic("WasmClientContext.StateGet");
+		return [];
 	}
 
-	public stateSet(key, value: u8[]) {
+	public stateSet(key: u8[], value: u8[]) {
 		panic("WasmClientContext.StateSet");
 	}
 
 	/////////////////////////////////////////////////////////////////
 
 	public fnCall(args: u8[]): u8[] {
-		let req = wasmrequests.NewCallRequestFromBytes(args);
-		if (req.Contract != this.scHname) {
-			this.Err = errors.Errorf("unknown contract: %this", req.Contract.String());
-			return nil;
+		let req = wasmlib.CallRequest.fromBytes(args);
+		if (req.contract != this.scHname) {
+			this.Err = "unknown contract: " + req.contract.toString();
+			return [];
 		}
-		let res,  err = this.svcClient.CallViewByHname(this.chainID, req.Contract, req.Function, req.Params);
-		if (err != nil) {
+		let res,  err = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
+		if (err != null) {
 			this.Err = err;
-			return nil;
+			return [];
 		}
 		return res;
 	}
 
 	public fnPost(args: u8[]): u8[] {
-		let req = wasmrequests.NewPostRequestFromBytes(args);
-		if (req.ChainID != this.chainID) {
-			this.Err = errors.Errorf("unknown chain id: %this", req.ChainID.String());
-			return nil;
+		let req = wasmlib.PostRequest.fromBytes(args);
+		if (req.chainID != this.chainID) {
+			this.Err = "unknown chain id: " + req.chainID.toString();
+			return [];
 		}
-		if (req.Contract != this.scHname) {
-			this.Err = errors.Errorf("unknown contract: %this", req.Contract.String());
-			return nil;
+		if (req.contract != this.scHname) {
+			this.Err = "unknown contract:" + req.contract.toString();
+			return [];
 		}
-		let scAssets = wasmlib.NewScAssets(req.Transfer);
-		this.ReqID, this.Err = this.svcClient.PostRequest(this.chainID, req.Contract, req.Function, req.Params, scAssets, this.keyPair);
-		return nil;
+		let scAssets = new wasmlib.ScAssets(req.transfer);
+		this.ReqID = this.svcClient.postRequest(this.chainID, req.contract, req.function, req.params, scAssets, this.keyPair);
+		this.Err = this.svcClient.Err;
+		return [];
 	}
 
 	public fnUtilsBech32Decode(args: u8[]): u8[] {
 		let hrp,  addr,  err = iotago.ParseBech32(string(args));
-		if (err != nil) {
+		if (err != null) {
 			this.Err = err;
-			return nil;
+			return null;
 		}
 		if (hrp != parameters.L1.Protocol.Bech32HRP) {
 			this.Err = errors.Errorf("Invalid protocol prefix: %this", string(hrp));
-			return nil;
+			return null;
 		}
 		let  cvt = new wasmhost.WasmConvertor();
-		return cvt.ScAddress(addr).Bytes();
+		return cvt.scAddress(addr).Bytes();
 	}
 
 	public fnUtilsBech32Encode(args: u8[]): u8[] {
 		let  cvt = new wasmhost.WasmConvertor();
-		let scAddress = wasmlib.AddressFromBytes(args);
-		let addr = cvt.IscpAddress(&scAddress);
+		let scAddress = wasmlib.addressFromBytes(args);
+		let addr = cvt.iscAddress(scAddress);
 		return u8[](addr.Bech32(parameters.L1.Protocol.Bech32HRP));
 	}
 
 	public fnUtilsHashName(args: u8[]): u8[] {
-		let utils = new iscp.Utils();
+		let utils = new isc.Utils();
 		return codec.EncodeHname(utils.Hashing().Hname(string(args)));
 	}
 }

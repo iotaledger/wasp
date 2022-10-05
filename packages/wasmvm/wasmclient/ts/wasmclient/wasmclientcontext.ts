@@ -1,61 +1,46 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as cryptolib from "./cryptolib"
 import * as wasmlib from "wasmlib"
 import * as wc from "./index";
+import { error } from "./wasmhost"
 
 export interface IEventHandler {
 	CallHandler(topic: string, params: string[]): void;
 }
 
 export class WasmClientContext extends wc.WasmClientSandbox  {
-	chainID       : wasmlib.ScChainID;
-	Err           : error;
-	eventDone     : bool;
-	eventHandlers : IEventHandler[];
-	keyPair       : cryptolib.KeyPair;
-	ReqID         : wasmlib.ScRequestID;
-	scName        : string;
-	scHname       : wasmlib.ScHname;
-	svcClient     : wc.IClientService;
-
-	public constructor(svcClient: wc.IClientService, chainID: wasmlib.ScChainID, scName: string) {
-		super();
-		this.svcClient = svcClient;
-		this.scName = scName;
-		this.scHname = wasmlib.ScHname.fromName(scName);
-		this.chainID = chainID;
-	}
 
 	public CurrentChainID(): wasmlib.ScChainID {
 		return this.chainID;
 	}
 
 	public InitFuncCallContext(): void {
-		wasmhost.Connect(this);
+		wasmlib.connectHost(this);
 	}
 
 	public InitViewCallContext(hContract: wasmlib.ScHname): wasmlib.ScHname {
-		wasmhost.Connect(this);
+		wasmlib.connectHost(this);
 		return this.scHname;
 	}
 
 	public Register(handler: IEventHandler): error {
 		for (let i = 0; i < this.eventHandlers.length; i++) {
 			if (this.eventHandlers[i] == handler) {
-				return nil;
+				return null;
 			}
 		}
 		this.eventHandlers.push(handler);
 		if (this.eventHandlers.length > 1) {
-			return nil;
+			return null;
 		}
 		return this.startEventHandlers();
 	}
 
 	// overrides default contract name
 	public ServiceContractName(contractName: string) {
-		this.scHname = new wasmlib.ScHname(contractName);
+		this.scHname = wasmlib.ScHname.fromName(contractName);
 	}
 
 	public SignRequests(keyPair: cryptolib.KeyPair) {
@@ -75,19 +60,19 @@ export class WasmClientContext extends wc.WasmClientSandbox  {
 		}
 	}
 
-	public WaitRequest(reqID: ...wasmlib.ScRequestID): error {
-		let requestID = this.ReqID;
-		if (len(reqID) == 1) {
-			requestID = reqID[0];
+	public WaitRequest(reqID: wasmlib.ScRequestID|undefined): error {
+		let rID = this.ReqID;
+		if (reqID !== undefined) {
+			rID = reqID;
 		}
-		return this.svcClient.WaitUntilRequestProcessed(this.chainID, requestID, 1*time.Minute);
+		return this.svcClient.WaitUntilRequestProcessed(this.chainID, rID, 60);
 	}
 
 	public startEventHandlers(): error {
 		let chMsg = make(chan []string, 20);
 		this.eventDone = make(chan: bool);
 		let err = this.svcClient.SubscribeEvents(chMsg, this.eventDone);
-		if (err != nil) {
+		if (err != null) {
 			return err;
 		}
 		go public(): void {
@@ -106,7 +91,7 @@ export class WasmClientContext extends wc.WasmClientSandbox  {
 				}
 			}
 		}()
-		return nil;
+		return null;
 	}
 
 	public stopEventHandlers(): void {
