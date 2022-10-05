@@ -14,7 +14,7 @@ variable "ghcr" {
     })
 }
 
-app "evm-deposit" {
+app "evm-toolkit" {
     build {
         use "docker" {
             disable_entrypoint = true
@@ -24,7 +24,7 @@ app "evm-deposit" {
 
         registry {
             use "docker" {
-                image = "ghcr.io/luke-thorne/evm_deposit_frontend"
+                image = "ghcr.io/luke-thorne/evm_toolkit_frontend"
                 tag = gitrefpretty()
                 encoded_auth = base64encode(jsonencode(var.ghcr))
             }
@@ -35,7 +35,7 @@ app "evm-deposit" {
         use "nomad-jobspec" {
             // Templated to perhaps bring in the artifact from a previous
             // build/registry, entrypoint env vars, etc.
-            jobspec = templatefile("${path.app}/wasp-evm-deposit.nomad.tpl", { 
+            jobspec = templatefile("${path.app}/wasp-evm-toolkit.nomad.tpl", { 
                 artifact = artifact
                 auth = var.ghcr
                 workspace = workspace.name

@@ -1,4 +1,4 @@
-job "isc-evm-deposit-${workspace}" {
+job "isc-evm-toolkit-${workspace}" {
 	datacenters = ["hcloud"]
 
 	group "web" {

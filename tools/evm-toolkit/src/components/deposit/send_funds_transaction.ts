@@ -78,7 +78,7 @@ export class SendFundsTransaction {
 
     const chainAddress = Bech32Helper.addressFromBech32(chainId, this.wallet.nodeInfo.protocol.bech32Hrp);
 
-    const outputs = await this.wallet.indexer.outputs({
+    const outputs = await this.wallet.indexer.basicOutputs({
       addressBech32: addressBech32
     });
 
