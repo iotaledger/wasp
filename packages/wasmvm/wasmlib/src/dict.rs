@@ -4,8 +4,8 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use crate::*;
 use crate::host::*;
+use crate::*;
 
 pub struct ScImmutableDict {
     dict: ScDict,
@@ -33,13 +33,19 @@ pub struct ScDict {
 
 impl ScDict {
     pub fn new(buf: &[u8]) -> ScDict {
-        let dict = ScDict { dict: RefCell::new(BTreeMap::new()), state: false };
+        let dict = ScDict {
+            dict: RefCell::new(BTreeMap::new()),
+            state: false,
+        };
         dict.read_bytes(buf);
         dict
     }
 
     pub fn state() -> ScDict {
-        ScDict { dict: RefCell::new(BTreeMap::new()), state: true }
+        ScDict {
+            dict: RefCell::new(BTreeMap::new()),
+            state: true,
+        }
     }
 
     pub fn copy(&self, buf: &[u8]) {
@@ -95,6 +101,10 @@ impl ScDict {
                 self.set(&key, &val);
             }
         }
+    }
+
+    pub fn from_bytes(input: &[u8]) -> Result<ScDict, String> {
+        return Err("not impl".to_string());
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
