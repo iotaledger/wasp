@@ -1,5 +1,5 @@
 <script>
-	import Deposit from './components/deposit/Deposit.svelte';
+  import Deposit from './components/deposit/Deposit.svelte';
   import Withdraw from './components/withdraw/Withdraw.svelte';
   import { SvelteToast } from '@zerodevx/svelte-toast'
 </script>
