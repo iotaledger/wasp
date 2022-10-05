@@ -15,6 +15,10 @@ type msgVMResult struct {
 
 var _ gpa.Message = &msgVMResult{}
 
+func NewMsgVMResult(node gpa.NodeID, task *vm.VMTask) gpa.Message {
+	return &msgVMResult{node: node, task: task}
+}
+
 func (m *msgVMResult) Recipient() gpa.NodeID {
 	return m.node
 }

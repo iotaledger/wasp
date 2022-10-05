@@ -14,7 +14,11 @@ type msgTimeData struct {
 	timeData time.Time
 }
 
-var _ gpa.Message = &msgBLSPartialSig{}
+var _ gpa.Message = &msgTimeData{}
+
+func NewMsgTimeData(node gpa.NodeID, timeData time.Time) gpa.Message {
+	return &msgTimeData{node: node, timeData: timeData}
+}
 
 func (m *msgTimeData) Recipient() gpa.NodeID {
 	return m.node

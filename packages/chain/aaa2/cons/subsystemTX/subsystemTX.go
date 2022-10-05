@@ -4,6 +4,9 @@
 package subsystemTX
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -42,4 +45,22 @@ func (sub *SubsystemTX) tryCompleteInputs() gpa.OutMessages {
 	}
 	sub.inputsReady = true
 	return sub.inputsReadyCB(sub)
+}
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemTX) String() string {
+	str := "TX"
+	if sub.inputsReady {
+		str += "/OK"
+	} else {
+		wait := []string{}
+		if sub.VMResult == nil {
+			wait = append(wait, "VMResult")
+		}
+		if sub.Signature == nil {
+			wait = append(wait, "Signature")
+		}
+		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
+	}
+	return str
 }

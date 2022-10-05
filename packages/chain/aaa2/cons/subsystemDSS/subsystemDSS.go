@@ -4,6 +4,9 @@
 package subsystemDSS
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -53,7 +56,7 @@ func (sub *SubsystemDSS) DSSOutputReceived(output gpa.Output) gpa.OutMessages {
 		sub.indexProposalReady = true
 		msgs.AddAll(sub.indexProposalReadyCB(dssOutput.ProposedIndexes))
 	}
-	if !sub.outputReady || dssOutput.Signature != nil {
+	if !sub.outputReady && dssOutput.Signature != nil {
 		sub.outputReady = true
 		msgs.AddAll(sub.outputReadyCB(dssOutput.Signature))
 	}
@@ -82,4 +85,27 @@ func (sub *SubsystemDSS) tryCompleteSigning() gpa.OutMessages {
 	}
 	sub.signingInputsReady = true
 	return sub.signingInputsReadyCB(sub)
+}
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemDSS) String() string {
+	str := "DSS"
+	if sub.indexProposalReady {
+		str += "/idx=OK"
+	} else {
+		str += fmt.Sprintf("/idx[initialInputsReady=%v]", sub.initialInputsReady)
+	}
+	if sub.outputReady {
+		str += "/sig=OK"
+	} else {
+		wait := []string{}
+		if sub.MessageToSign == nil {
+			wait = append(wait, "MessageToSign")
+		}
+		if sub.DecidedIndexProposals == nil {
+			wait = append(wait, "DecidedIndexProposals")
+		}
+		str += fmt.Sprintf("/sig=WAIT[%v]", strings.Join(wait, ","))
+	}
+	return str
 }

@@ -3,7 +3,9 @@
 
 package subsystemRND
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import (
+	"github.com/iotaledger/wasp/packages/gpa"
+)
 
 type SubsystemRND struct {
 	blsThreshold     int

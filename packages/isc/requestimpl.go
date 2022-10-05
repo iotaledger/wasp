@@ -619,6 +619,10 @@ const RequestRefKeyLen = iotago.OutputIDLength + 32
 
 type RequestRefKey [RequestRefKeyLen]byte
 
+func RequestRefFromRequest(req Request) *RequestRef {
+	return &RequestRef{ID: req.ID(), Hash: hashing.HashDataBlake2b(req.Bytes())}
+}
+
 func (rr *RequestRef) AsKey() RequestRefKey {
 	var key RequestRefKey
 	copy(key[:], append(rr.ID.Bytes(), rr.Hash[:]...))

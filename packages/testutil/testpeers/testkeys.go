@@ -84,11 +84,65 @@ func SetupDkg(
 
 func SetupDkgTrivial(
 	t *testing.T,
-	threshold uint16,
-	identities []*cryptolib.KeyPair,
+	n, f int,
+	peerIdentities []*cryptolib.KeyPair,
 	dkShareRegistries []registry.DKShareRegistryProvider, // Will be used if not nil.
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
-	return nil, nil // TODO: ...
+	nodePubKeys := PublicKeys(peerIdentities)
+	dssSuite := tcrypto.DefaultEd25519Suite()
+	blsSuite := tcrypto.DefaultBLSSuite()
+	dssThreshold := n - f
+	blsThreshold := f + 1
+	dssPubKey, dssPubPoly, dssPriShares := MakeSharedSecret(dssSuite, n, dssThreshold)
+	blsPubKey, blsPubPoly, blsPriShares := MakeSharedSecret(blsSuite, n, blsThreshold)
+	_, dssCommits := dssPubPoly.Info()
+	_, blsCommits := blsPubPoly.Info()
+	//
+	// Make public shares (do they differ from the commits?)
+	dssPublicShares := make([]kyber.Point, n)
+	for i := range dssPublicShares {
+		dssPublicShares[i] = dssSuite.Point().Mul(dssPriShares[i].V, nil)
+	}
+	blsPublicShares := make([]kyber.Point, n)
+	for i := range blsPublicShares {
+		blsPublicShares[i] = blsSuite.Point().Mul(blsPriShares[i].V, nil)
+	}
+	//
+	// Create the DKShare objects.
+	if dkShareRegistries == nil {
+		dkShareRegistries = make([]registry.DKShareRegistryProvider, len(peerIdentities))
+	}
+	require.Equal(t, n, len(dkShareRegistries))
+	var address iotago.Address
+	for i, identity := range peerIdentities {
+		nodeDKS, err := tcrypto.NewDKShare(
+			uint16(i),                // index
+			uint16(n),                // n
+			uint16(dssThreshold),     // t
+			identity.GetPrivateKey(), // nodePrivKey
+			nodePubKeys,              // nodePubKeys
+			dssSuite,                 // edSuite
+			dssPubKey,                // edSharedPublic
+			dssCommits,               // edPublicCommits
+			dssPublicShares,          // edPublicShares
+			dssPriShares[i].V,        // edPrivateShare
+			blsSuite,                 // blsSuite
+			uint16(blsThreshold),     // blsThreshold
+			blsPubKey,                // blsSharedPublic
+			blsCommits,               // blsPublicCommits
+			blsPublicShares,          // blsPublicShares
+			blsPriShares[i].V,        // blsPrivateShare
+		)
+		require.NoError(t, err)
+		if address == nil {
+			address = nodeDKS.GetAddress()
+		}
+		if dkShareRegistries[i] == nil {
+			dkShareRegistries[i] = testutil.NewDkgRegistryProvider(identity.GetPrivateKey())
+		}
+		require.NoError(t, dkShareRegistries[i].SaveDKShare(nodeDKS))
+	}
+	return address, dkShareRegistries
 }
 
 func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly, []*share.PriShare) {
@@ -100,7 +154,7 @@ func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly
 	return pubKey, pubPoly, priShares
 }
 
-func SetupDkgPregenerated(
+func SetupDkgPregenerated( // TODO: Remove.
 	t *testing.T,
 	threshold uint16,
 	identities []*cryptolib.KeyPair,

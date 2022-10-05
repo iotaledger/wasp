@@ -65,3 +65,26 @@ func (sub *SubsystemMP) RequestsReceived(requests []isc.Request) gpa.OutMessages
 	sub.requestsReceived = true
 	return sub.requestsReceivedCB(requests)
 }
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemMP) String() string {
+	str := "MP"
+	if sub.proposalReceived && sub.requestsReceived {
+		return str + "/OK"
+	}
+	if sub.proposalReceived {
+		str += "/proposal=OK"
+	} else if sub.BaseAliasOutput == nil {
+		str += "/proposal=WAIT[params: baseAliasOutput]"
+	} else {
+		str += "/proposal=WAIT[RespFromMemPool]"
+	}
+	if sub.requestsReceived {
+		str += "/requests=OK"
+	} else if !sub.requestsNeeded {
+		str += "/requests=WAIT[acs decision]"
+	} else {
+		str += "/requests=WAIT[RespFromMemPool]"
+	}
+	return str
+}

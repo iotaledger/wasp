@@ -75,3 +75,26 @@ func (sub *SubsystemSM) DecidedVirtualStateReceived(
 	sub.decidedBaseAliasOutput = aliasOutput
 	return sub.decidedStateReceivedCB(aliasOutput, stateBaseline, virtualStateAccess)
 }
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemSM) String() string {
+	str := "SM"
+	if sub.stateProposalReceived && sub.decidedBaseAliasOutput != nil {
+		return str + "/OK"
+	}
+	if sub.stateProposalReceived {
+		str += "/proposal=OK"
+	} else if sub.ProposedBaseAliasOutput == nil {
+		str += "/proposal=WAIT[params: baseAliasOutput]"
+	} else {
+		str += "/proposal=WAIT[RespFromStateMgr]"
+	}
+	if sub.decidedBaseAliasOutput != nil {
+		str += "/state=OK"
+	} else if sub.decidedBaseAliasOutputID == nil {
+		str += "/state=WAIT[acs decision]"
+	} else {
+		str += "/state=WAIT[RespFromStateMgr]"
+	}
+	return str
+}

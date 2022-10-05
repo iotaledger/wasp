@@ -15,6 +15,10 @@ type msgStateMgrProposalConfirmed struct {
 
 var _ gpa.Message = &msgStateMgrProposalConfirmed{}
 
+func NewMsgStateMgrProposalConfirmed(node gpa.NodeID, baseAliasOutput *isc.AliasOutputWithID) gpa.Message {
+	return &msgStateMgrProposalConfirmed{node: node, baseAliasOutput: baseAliasOutput}
+}
+
 func (m *msgStateMgrProposalConfirmed) Recipient() gpa.NodeID {
 	return m.node
 }

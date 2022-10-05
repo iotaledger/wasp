@@ -19,6 +19,15 @@ type msgStateMgrDecidedVirtualState struct {
 
 var _ gpa.Message = &msgStateMgrDecidedVirtualState{}
 
+func NewMsgStateMgrDecidedVirtualState(
+	node gpa.NodeID,
+	aliasOutput *isc.AliasOutputWithID,
+	stateBaseline coreutil.StateBaseline,
+	virtualStateAccess state.VirtualStateAccess,
+) gpa.Message {
+	return &msgStateMgrDecidedVirtualState{node, aliasOutput, stateBaseline, virtualStateAccess}
+}
+
 func (m *msgStateMgrDecidedVirtualState) Recipient() gpa.NodeID {
 	return m.node
 }

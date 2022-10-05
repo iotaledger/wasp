@@ -63,6 +63,12 @@ func (tc *TestContext) WithMessages(msgs []Message) *TestContext {
 	return tc
 }
 
+func (tc *TestContext) WithMessage(msg Message) *TestContext {
+	tc.msgsSent++
+	tc.msgs = append(tc.msgs, msg)
+	return tc
+}
+
 func (tc *TestContext) WithCall(call func() []Message) *TestContext {
 	msgs := call()
 	return tc.WithMessages(msgs)

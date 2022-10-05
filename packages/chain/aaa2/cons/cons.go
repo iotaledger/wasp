@@ -92,9 +92,9 @@ type Cons interface {
 type OutputState byte
 
 const (
-	Pending   OutputState = iota // Instance is still running.
-	Skipped                      // Consensus reached, no TX should be posted for this LogIndex.
+	Running   OutputState = iota // Instance is still running.
 	Completed                    // Consensus reached, TX is prepared for publication.
+	Skipped                      // Consensus reached, no TX should be posted for this LogIndex.
 )
 
 type Output struct {
@@ -199,7 +199,7 @@ func New(
 		f:              f,
 		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log),
 		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, log),
-		output:         &Output{State: Pending},
+		output:         &Output{State: Running},
 		log:            log,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
@@ -318,7 +318,15 @@ func (c *consImpl) Output() gpa.Output {
 }
 
 func (c *consImpl) StatusString() string {
-	return fmt.Sprintf("{consImpl, me=%v}", c.me)
+	// We con't include RND here, maybe that's less important, and visible from the VM status.
+	return fmt.Sprintf("{consImpl,%v,%v,%v,%v,%v,%v}",
+		c.subSM.String(),
+		c.subMP.String(),
+		c.subDSS.String(),
+		c.subACS.String(),
+		c.subVM.String(),
+		c.subTX.String(),
+	)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -371,7 +379,13 @@ func (c *consImpl) uponSMDecidedStateReceived(aliasOutput *isc.AliasOutputWithID
 // DSS
 
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
-	return c.dss.AsGPA().Input(nil)
+	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, nil)
+	if err != nil {
+		panic(xerrors.Errorf("cannot provide input to DSS: %w", err))
+	}
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
 }
 
 func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
@@ -407,7 +421,9 @@ func (c *consImpl) uponACSInputsReceived(sub *subsystemACS.SubsystemACS) gpa.Out
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide input to the ACS: %w", err))
 	}
-	return gpa.NoMessages().AddAll(subMsgs).AddAll(c.subACS.ACSOutputReceived(subACS.Output()))
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subACS.ACSOutputReceived(subACS.Output()))
 }
 
 func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte, sub *subsystemACS.SubsystemACS) gpa.OutMessages {
@@ -442,7 +458,7 @@ func (c *consImpl) uponRNDInputsReady(dataToSign []byte) gpa.OutMessages {
 	}
 	msgs := gpa.NoMessages()
 	for _, nid := range c.nodeIDs {
-		msgs.Add(newMsgBLSPartialSig(c.blsSuite, nid, sigShare.Value()))
+		msgs.Add(newMsgBLSPartialSig(c.blsSuite, nid, sigShare))
 	}
 	return msgs
 }

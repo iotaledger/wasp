@@ -4,6 +4,8 @@
 package subsystemACS
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -98,4 +100,30 @@ func (sub *SubsystemACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 	}
 	sub.outputReady = true
 	return sub.outputReadyCB(acsOutput.Values, sub)
+}
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemACS) String() string {
+	str := "ACS"
+	if sub.outputReady {
+		str += "/OK"
+	} else if sub.inputsReady {
+		str += "/WAIT[ACS to complete]"
+	} else {
+		wait := []string{}
+		if sub.BaseAliasOutput == nil {
+			wait = append(wait, "BaseAliasOutput")
+		}
+		if sub.RequestRefs == nil {
+			wait = append(wait, "RequestRefs")
+		}
+		if sub.DSSIndexProposal == nil {
+			wait = append(wait, "DSSIndexProposal")
+		}
+		if sub.TimeData.IsZero() {
+			wait = append(wait, "TimeData")
+		}
+		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
+	}
+	return str
 }

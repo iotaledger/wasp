@@ -15,6 +15,10 @@ type msgMempoolRequests struct {
 
 var _ gpa.Message = &msgMempoolRequests{}
 
+func NewMsgMempoolRequests(node gpa.NodeID, requests []isc.Request) gpa.Message {
+	return &msgMempoolRequests{node: node, requests: requests}
+}
+
 func (m *msgMempoolRequests) Recipient() gpa.NodeID {
 	return m.node
 }

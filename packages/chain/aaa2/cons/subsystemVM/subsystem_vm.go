@@ -4,6 +4,9 @@
 package subsystemVM
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/bp"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -70,7 +73,7 @@ func (sub *SubsystemVM) RequestsReceived(requests []isc.Request) gpa.OutMessages
 }
 
 func (sub *SubsystemVM) tryCompleteInputs() gpa.OutMessages {
-	if sub.inputsReady || sub.AggregatedProposals == nil || sub.stateReceived || sub.Randomness == nil || sub.Requests == nil {
+	if sub.inputsReady || sub.AggregatedProposals == nil || !sub.stateReceived || sub.Randomness == nil || sub.Requests == nil {
 		return nil
 	}
 	sub.inputsReady = true
@@ -86,4 +89,30 @@ func (sub *SubsystemVM) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	}
 	sub.outputReady = true
 	return sub.outputReadyCB(vmResult)
+}
+
+// Try to provide useful human-readable compact status.
+func (sub *SubsystemVM) String() string {
+	str := "VM"
+	if sub.outputReady {
+		str += "/OK"
+	} else if sub.inputsReady {
+		str += "/WAIT[VM to complete]"
+	} else {
+		wait := []string{}
+		if sub.AggregatedProposals == nil {
+			wait = append(wait, "AggrProposals")
+		}
+		if !sub.stateReceived {
+			wait = append(wait, "StateFromSM")
+		}
+		if sub.Randomness == nil {
+			wait = append(wait, "Randomness")
+		}
+		if sub.Requests == nil {
+			wait = append(wait, "RequestsFromMP")
+		}
+		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
+	}
+	return str
 }

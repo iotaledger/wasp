@@ -28,6 +28,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -136,9 +137,9 @@ func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
 			return d.tryHandleDkgOutput(msgs)
 		}
-		panic("unknown message")
+		panic(xerrors.Errorf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped()))
 	default:
-		panic("unknown message")
+		panic(xerrors.Errorf("unknown message %T: %v", msg, msg))
 	}
 }
 

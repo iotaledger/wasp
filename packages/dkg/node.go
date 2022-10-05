@@ -250,6 +250,7 @@ func (n *Node) GenerateDistributedKey(
 		edSharedPublic,
 		edPublicShares,
 		n.blsSuite,
+		uint16(deriveBlsThreshold(&initiatorInitMsg{peerPubs: peerPubs})), // TODO: Fix it.
 		blsSharedPublic,
 		blsPublicShares,
 	)

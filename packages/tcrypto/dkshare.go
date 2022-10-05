@@ -148,6 +148,7 @@ func NewDKSharePublic(
 	edSharedPublic kyber.Point,
 	edPublicShares []kyber.Point,
 	blsSuite Suite,
+	blsThreshold uint16,
 	blsSharedPublic kyber.Point,
 	blsPublicShares []kyber.Point,
 ) DKShare {
@@ -164,6 +165,7 @@ func NewDKSharePublic(
 		edPublicShares:   edPublicShares,
 		edPrivateShare:   nil, // Not meaningful in this case.
 		blsSuite:         blsSuite,
+		blsThreshold:     blsThreshold,
 		blsSharedPublic:  blsSharedPublic,
 		blsPublicCommits: nil, // Not meaningful in this case.
 		blsPublicShares:  blsPublicShares,
@@ -280,6 +282,9 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	}
 	//
 	// BLS part of the key shares.
+	if err := util.WriteUint16(w, s.blsThreshold); err != nil {
+		return err
+	}
 	if err := util.WriteMarshaled(w, s.blsSharedPublic); err != nil {
 		return err
 	}
@@ -412,6 +417,9 @@ func (s *dkShareImpl) readDSSAttrs(r io.Reader) error {
 // Read function was split just to make the linter happy.
 func (s *dkShareImpl) readBLSAttrs(r io.Reader) error {
 	var arrLen uint16
+	if err := util.ReadUint16(r, &s.blsThreshold); err != nil {
+		return err
+	}
 	s.blsSharedPublic = s.blsSuite.G2().Point()
 	if err := util.ReadMarshaled(r, s.blsSharedPublic); err != nil {
 		return err
@@ -633,7 +641,7 @@ func (s *dkShareImpl) BLSRecoverMasterSignature(sigShares [][]byte, data []byte)
 	var recoveredSignatureBin []byte
 	if s.n > 1 {
 		pubPoly := share.NewPubPoly(s.blsSuite, nil, s.blsPublicCommits)
-		recoveredSignatureBin, err = tbls.Recover(s.blsSuite, pubPoly, data, sigShares, int(s.t), int(s.n))
+		recoveredSignatureBin, err = tbls.Recover(s.blsSuite, pubPoly, data, sigShares, int(s.blsThreshold), int(s.n))
 		if err != nil {
 			return nil, err
 		}

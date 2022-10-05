@@ -15,6 +15,10 @@ type msgMempoolProposal struct {
 
 var _ gpa.Message = &msgMempoolProposal{}
 
+func NewMsgMempoolProposal(node gpa.NodeID, requestRefs []*isc.RequestRef) gpa.Message {
+	return &msgMempoolProposal{node: node, requestRefs: requestRefs}
+}
+
 func (m *msgMempoolProposal) Recipient() gpa.NodeID {
 	return m.node
 }
