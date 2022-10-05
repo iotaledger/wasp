@@ -5,8 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type emptyNodeConnectionMessagesMetrics struct {
-}
+type emptyNodeConnectionMessagesMetrics struct{}
 
 func newEmptyNodeConnectionMessagesMetrics() *emptyNodeConnectionMessagesMetrics {
 	return &emptyNodeConnectionMessagesMetrics{}
