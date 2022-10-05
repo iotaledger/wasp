@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { IotaWallet } from './lib/iota_wallet';
-  import { SendFundsTransaction } from './lib/send_funds_transaction';
+  import { IotaWallet } from './iota_wallet';
+  import { SendFundsTransaction } from './send_funds_transaction';
 
-  import { SvelteToast, toast } from '@zerodevx/svelte-toast'
-  import { networkOptions } from '../networks';
+  import { toast } from '@zerodevx/svelte-toast'
+  import { networkOptions } from '../../../networks';
 
   const ChainAddressLength: number = 63;
   const EVMAddressLength: number = 42;
@@ -70,7 +70,7 @@
   }
 </script>
 
-<main>
+<component>
   <div class="input_container">
     <span class="header">Network</span>
     <select bind:value={selectedNetworkOption}>
@@ -124,8 +124,7 @@
       {/if}
     </button>
   </div>
-</main>
-<SvelteToast/>
+</component>
 <style>
   .error {
     background-color: #9e534a47;
@@ -140,57 +139,9 @@
     margin-bottom: 15px;
   }
 
-  button {
-    background: rgba(16, 140, 255, 0.12);
-    border: 1px solid #57aeff;
-    border-radius: 10px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.87);
-    font-size: 1em;
-    font-weight: 500;
-    padding: 0.6em 1.2em;
-    transition: border-color 0.25s;
-    width: 100%;
-  }
-
-  button:hover {
-    border-color: #646cff;
-  }
-
-  button:focus,
-  button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
-  }
-
-  button:disabled {
-    background-color: #192742;
-    border: 1px solid #405985;
-    border-radius: 10px;
-    color: #9aadce;
-  }
-
-  .input_container {
-    margin: 15px;
-  }
-
-  input,
-  select {
-    background: #1b2d4b;
-    box-sizing: border-box;
-    border: 1px solid #ffffff;
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.87);
-    padding: 10px;
-    width: 100%;
-  }
-
-  main {
-    border: 1px solid gray;
-    border-radius: 25px;
+  component {
     color: rgba(255, 255, 255, 0.87);
     display: flex;
     flex-direction: column;
-    padding: 15px;
-    min-width: 450px;
   }
 </style>

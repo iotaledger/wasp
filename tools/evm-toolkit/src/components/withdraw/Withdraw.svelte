@@ -8,9 +8,9 @@
     defaultEvmStores,
   } from 'svelte-web3';
 
-  import { Bech32Helper } from '@iota/iota.js';
+  import { Bech32Helper, type IEd25519Address } from '@iota/iota.js';
 
-  import iscAbiAsText from './assets/ISC.abi?raw';
+  import iscAbiAsText from '../../assets/ISC.abi?raw';
 
   const waspAddrBinaryFromBech32 = (bech32String: string) => {
     // Depending on the network, the human readable part can change (tst, rms, ..).
@@ -23,7 +23,10 @@
       bech32String,
       humanReadablePart
     );
-    let receiverAddrBinary = $web3.utils.hexToBytes(receiverAddr.pubKeyHash);
+    
+    const address: IEd25519Address = receiverAddr as IEd25519Address;
+
+    let receiverAddrBinary = $web3.utils.hexToBytes(address.pubKeyHash);
     //  // AddressEd25519 denotes an Ed25519 address.
     // AddressEd25519 AddressType = 0
     // // AddressAlias denotes an Alias address.
@@ -128,50 +131,74 @@
     console.log(result);
   }
 
-  connectToWallet();
 </script>
-
-<main>
+<component>
   {#if !$connected}
+  <div class="input_container">
     <button on:click={connectToWallet}>Connect to Wallet</button>
+  </div>
   {:else}
-    <div class="row">
-      Connected to Chain {$chainId}
+    <div class="account_container">
+      <div class="chain_container">
+        <div>Chain ID</div>
+        <div class="chainid">{$chainId}</div>
+      </div>
+      <div class="balance_container">
+        <div>Balance</div>
+        <div class="balance">{formattedBalance}Mi</div>
+      </div>
+
     </div>
-    <div class="row">
-      Balance {formattedBalance}Mi
-    </div>
-    <div class="row address">      
-      Receiver address <br />
+
+    <div class="input_container">
+      <span class="header">Receiver address </span>
       <input
+        type="text"
         placeholder="L1 address starting with (rms/tst/...)"
-        style="width: 500px;"
         bind:value={addrInput}
       />
     </div>
-    <div class="row">
-      Amount to send: {formattedAmountToSend}Mi
-    </div>
-    <div class="row">
+
+    <div class="input_container">
+      <div class="header">
+        Amount to send: {formattedAmountToSend}Mi  
+      </div>
       <input type="range" disabled="{!canSetAmountToSend}" min="0" max={balance} bind:value={amountToSend} />
     </div>
-    <div class="row">
+
+    <div class="input_container">
       <button disabled="{!canSendFunds}" on:click={onWithdrawClick}>Withdraw</button><br />
     </div>
   {/if}
-</main>
+</component>
 
 <style>
-  main {
+  component {
+    color: rgba(255, 255, 255, 0.87);
     display: flex;
     flex-direction: column;
   }
 
-  .row {
-    margin: 5px;
+  input[type=range] {
+    width: 100%;
+    padding: 10px 0 0 0;
+    margin: 0;
   }
 
-  .address {
-    margin-top: 25px;
+  .account_container {
+    height: 64px;
+    margin: 15px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .balance_container {
+    text-align: right;
+  }
+
+  .balance, .chainid {
+    padding-top: 5px;
+    font-weight: 800;
+    font-size: 32px;
   }
 </style>

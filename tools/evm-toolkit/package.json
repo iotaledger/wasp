@@ -1,7 +1,7 @@
 {
-  "name": "evm-deposit",
+  "name": "evm-toolkit",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -22,7 +22,15 @@
   },
   "dependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.1.1",
-    "@iota/iota.js": "^1.9.0-stardust.24",
-    "buffer": "^6.0.3"
+    "@iota/iota.js": "^2.0.0-rc.1",
+    "buffer": "^6.0.3",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
+    "svelte-web3": "^3.5.1",
+    "util": "^0.12.4",
+    "web3": "^1.7.4",
+    "browserify-zlib": "^0.2.0",
+    "events": "^3.3.0",
+    "install": "^0.13.0"
   }
 }

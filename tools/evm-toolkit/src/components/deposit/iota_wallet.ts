@@ -81,11 +81,11 @@ export class IotaWallet {
     const maxRetries: number = 20;
 
     for (let i = 0; i < maxRetries; i++) {
-      let output = await this.indexer.outputs({
+      let output = await this.indexer.basicOutputs({
         addressBech32: addressBech32,
-        hasStorageReturnCondition: false,
-        hasExpirationCondition: false,
-        hasTimelockCondition: false,
+        hasExpiration: false,
+        hasStorageDepositReturn: false,
+        hasTimelock: false,
         hasNativeTokens: false,
       });
 
