@@ -19,7 +19,7 @@ type VMService struct {
 	chainsProvider chains.Provider
 }
 
-func NewVMService(log *logger.Logger, chainsProvider chains.Provider) interfaces.VM {
+func NewVMService(log *logger.Logger, chainsProvider chains.Provider) interfaces.VMService {
 	return &VMService{
 		logger: log,
 

@@ -20,3 +20,7 @@ func ContractExecutionError(err error) *HTTPError {
 func InvalidOffLedgerRequestError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Supplied offledger request is invalid", err)
 }
+
+func InternalServerError(err error) *HTTPError {
+	return NewHTTPError(http.StatusInternalServerError, "Unknown error has occoured", err)
+}

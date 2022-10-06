@@ -3,26 +3,6 @@
 
 package routes
 
-func Info() string {
-	return "/info"
-}
-
-func Configuration() string {
-	return "/info/configuration"
-}
-
-func NewRequest(chainID string) string {
-	return "/chain/" + chainID + "/request"
-}
-
-func CallViewByName(chainID, contractHname, functionName string) string {
-	return "/chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
-}
-
-func CallViewByHname(chainID, contractHname, functionHname string) string {
-	return "/chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
-}
-
 func RequestReceipt(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/receipt"
 }
@@ -41,42 +21,6 @@ func RequestIDByEVMTransactionHash(chainID, txHash string) string {
 
 func EVMJSONRPC(chainID string) string {
 	return "/chain/" + chainID + "/evm/jsonrpc"
-}
-
-func ActivateChain(chainID string) string {
-	return "/chains/" + chainID + "/activate"
-}
-
-func DeactivateChain(chainID string) string {
-	return "/chains/" + chainID + "/deactivate"
-}
-
-func GetChainContracts(chainID string) string {
-	return "/chains/" + chainID + "/contracts"
-}
-
-func GetChainCommitteeInfo(chainID string) string {
-	return "/chains/" + chainID + "/committee"
-}
-
-func GetChainInfo(chainID string) string {
-	return "/chains/" + chainID
-}
-
-func GetChainList() string {
-	return "/chains"
-}
-
-func ListChainRecords() string {
-	return "/adm/chainrecords"
-}
-
-func PutChainRecord() string {
-	return "/chains"
-}
-
-func GetChainRecord(chainID string) string {
-	return "/adm/chainrecord/" + chainID
 }
 
 func GetChainsNodeConnectionMetrics() string {
@@ -101,34 +45,6 @@ func DKSharesPost() string {
 
 func DKSharesGet(sharedAddress string) string {
 	return "/adm/dks/" + sharedAddress
-}
-
-func PeeringSelfGet() string {
-	return "/adm/peering/self"
-}
-
-func PeeringTrustedList() string {
-	return "/adm/peering/trusted"
-}
-
-func PeeringGetStatus() string {
-	return "/adm/peering/established"
-}
-
-func PeeringTrustedGet(pubKey string) string {
-	return "/adm/peering/trusted/" + pubKey
-}
-
-func PeeringTrustedPost() string {
-	return PeeringTrustedList()
-}
-
-func PeeringTrustedPut(pubKey string) string {
-	return PeeringTrustedGet(pubKey)
-}
-
-func PeeringTrustedDelete(pubKey string) string {
-	return PeeringTrustedGet(pubKey)
 }
 
 func AdmNodeOwnerCertificate() string {

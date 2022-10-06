@@ -25,11 +25,11 @@ type ChainService struct {
 	chainsProvider   chains.Provider
 	metrics          *metricspkg.Metrics
 	registryProvider registry.Provider
-	vmService        interfaces.VM
+	vmService        interfaces.VMService
 	wal              *walpkg.WAL
 }
 
-func NewChainService(log *logger.Logger, chainsProvider chains.Provider, metrics *metricspkg.Metrics, registryProvider registry.Provider, vmService interfaces.VM, wal *walpkg.WAL) interfaces.Chain {
+func NewChainService(log *logger.Logger, chainsProvider chains.Provider, metrics *metricspkg.Metrics, registryProvider registry.Provider, vmService interfaces.VMService, wal *walpkg.WAL) interfaces.ChainService {
 	return &ChainService{
 		log: log,
 

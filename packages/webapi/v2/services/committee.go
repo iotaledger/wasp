@@ -12,15 +12,15 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
-type NodeService struct {
+type CommitteeService struct {
 	log *logger.Logger
 
 	networkProvider  peering.NetworkProvider
 	registryProvider registry.Provider
 }
 
-func NewNodeService(log *logger.Logger, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.Node {
-	return &NodeService{
+func NewCommitteeService(log *logger.Logger, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.CommitteeService {
+	return &CommitteeService{
 		log: log,
 
 		networkProvider:  networkProvider,
@@ -28,11 +28,11 @@ func NewNodeService(log *logger.Logger, networkProvider peering.NetworkProvider,
 	}
 }
 
-func (c *NodeService) GetPublicKey() *cryptolib.PublicKey {
+func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 	return c.networkProvider.Self().PubKey()
 }
 
-func (c *NodeService) GetNodeInfo(chain chainpkg.Chain) (*dto.ChainNodeInfo, error) {
+func (c *CommitteeService) GetCommitteeInfo(chain chainpkg.Chain) (*dto.ChainNodeInfo, error) {
 	committeeInfo := chain.GetCommitteeInfo()
 
 	dkShare, err := c.registryProvider().LoadDKShare(committeeInfo.Address)
@@ -158,7 +158,7 @@ func makeChainNodeStatus(
 ) *dto.ChainNodeStatus {
 	cns := dto.ChainNodeStatus{
 		Node: dto.PeeringNodeStatus{
-			PubKey: pubKey.String(),
+			PublicKey: pubKey,
 		},
 	}
 

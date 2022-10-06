@@ -15,7 +15,7 @@ type RegistryService struct {
 	registryProvider registry.Provider
 }
 
-func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, registryProvider registry.Provider) interfaces.Registry {
+func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, registryProvider registry.Provider) interfaces.RegistryService {
 	return &RegistryService{
 		logger: log,
 

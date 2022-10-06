@@ -1,4 +1,4 @@
-package chain
+package metrics
 
 import (
 	"net/http"
@@ -9,27 +9,18 @@ import (
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/v2/routes"
 )
 
 type Controller struct {
 	log *loggerpkg.Logger
 
-	chainService     interfaces.Chain
-	nodeService      interfaces.Node
-	offLedgerService interfaces.OffLedger
-	registryService  interfaces.Registry
-	vmService        interfaces.VM
+	metricsService interfaces.MetricsService
 }
 
-func NewMetricsController(log *loggerpkg.Logger, chainService interfaces.Chain, nodeService interfaces.Node, offLedgerService interfaces.OffLedger, registryService interfaces.Registry, vmService interfaces.VM) interfaces.APIController {
+func NewMetricsController(log *loggerpkg.Logger, metricsService interfaces.MetricsService) interfaces.APIController {
 	return &Controller{
-		log:              log,
-		chainService:     chainService,
-		nodeService:      nodeService,
-		offLedgerService: offLedgerService,
-		registryService:  registryService,
-		vmService:        vmService,
+		log:            log,
+		metricsService: metricsService,
 	}
 }
 
@@ -44,7 +35,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET(routes.GetChainContracts(":chainID"), c.getChainMetrics).
+	adminAPI.GET("chain/:chainID", c.getChainMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available contracts.", mocker.GetMockedStruct(models.ContractListResponse{}), nil).
 		SetOperationId("getChainContracts").

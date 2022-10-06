@@ -33,7 +33,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()
-	chainNodeInfo, err := c.nodeService.GetNodeInfo(chain)
+	chainNodeInfo, err := c.nodeService.GetCommitteeInfo(chain)
 	if err != nil {
 		return err
 	}

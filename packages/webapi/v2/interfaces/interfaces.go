@@ -19,7 +19,7 @@ type APIController interface {
 	RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker Mocker)
 }
 
-type Chain interface {
+type ChainService interface {
 	ActivateChain(chainID *isc.ChainID) error
 	DeactivateChain(chainID *isc.ChainID) error
 	GetAllChainIDs() ([]*isc.ChainID, error)
@@ -30,21 +30,34 @@ type Chain interface {
 	SaveChainRecord(chainID *isc.ChainID, active bool) error
 }
 
-type Registry interface {
+type MetricsService interface {
+	GetConnectionMetrics(chainID *isc.ChainID) *dto.MetricsReport
+}
+
+type RegistryService interface {
 	GetChainRecordByChainID(chainID *isc.ChainID) (*registry.ChainRecord, error)
 }
 
-type Node interface {
-	GetNodeInfo(chain chain.Chain) (*dto.ChainNodeInfo, error)
+type CommitteeService interface {
+	GetCommitteeInfo(chain chain.Chain) (*dto.ChainNodeInfo, error)
 	GetPublicKey() *cryptolib.PublicKey
 }
 
-type OffLedger interface {
-	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
-	EnqueueOffLedgerRequest(chainID *isc.ChainID, request []byte) error
+type PeeringService interface {
+	DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error)
+	GetIdentity() *dto.PeeringNodeIdentity
+	GetRegisteredPeers() *[]dto.PeeringNodeStatus
+	GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error)
+	IsPeerTrusted(publicKey *cryptolib.PublicKey) error
+	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error)
 }
 
-type VM interface {
+type OffLedgerService interface {
+	EnqueueOffLedgerRequest(chainID *isc.ChainID, request []byte) error
+	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
+}
+
+type VMService interface {
 	CallView(chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 	CallViewByChainID(chainID *isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 }

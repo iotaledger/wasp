@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/peering"
+
 	"github.com/iotaledger/hive.go/core/marshalutil"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -18,18 +20,18 @@ import (
 type OffLedgerService struct {
 	logger *logger.Logger
 
-	chainService interfaces.Chain
-	nodeService  interfaces.Node
-	requestCache *expiringcache.ExpiringCache
+	chainService    interfaces.ChainService
+	networkProvider peering.NetworkProvider
+	requestCache    *expiringcache.ExpiringCache
 }
 
-func NewOffLedgerService(log *logger.Logger, chainService interfaces.Chain, nodeService interfaces.Node) interfaces.OffLedger {
+func NewOffLedgerService(log *logger.Logger, chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.OffLedgerService {
 	return &OffLedgerService{
 		logger: log,
 
-		chainService: chainService,
-		nodeService:  nodeService,
-		requestCache: expiringcache.New(1337),
+		chainService:    chainService,
+		networkProvider: networkProvider,
+		requestCache:    expiringcache.New(1337),
 	}
 }
 
@@ -107,7 +109,7 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID *isc.ChainID, binaryR
 			ChainID: chain.ID(),
 			Req:     request,
 		},
-		SenderPubKey: c.nodeService.GetPublicKey(),
+		SenderPubKey: c.networkProvider.Self().PubKey(),
 	})
 
 	return nil

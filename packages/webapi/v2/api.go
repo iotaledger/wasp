@@ -3,12 +3,14 @@ package v2
 import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/metrics"
+
 	"github.com/iotaledger/hive.go/core/configuration"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/chain"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	walpkg "github.com/iotaledger/wasp/packages/wal"
@@ -17,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, registryProvider registry.Provider, controllersToLoad []interfaces.APIController) {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, _ registry.Provider, controllersToLoad []interfaces.APIController) {
 	/*claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The API will be accessible if the token has an 'API' claim
 		return claims.HasPermission(permissions.API)
@@ -48,7 +50,7 @@ func Init(logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
 	config *configuration.Configuration,
 	chainsProvider chains.Provider,
-	metrics *metricspkg.Metrics,
+	metricsProvider *metricspkg.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
 	wal *walpkg.WAL,
@@ -58,13 +60,15 @@ func Init(logger *loggerpkg.Logger,
 
 	// Add dependency injection here
 	vmService := services.NewVMService(logger, chainsProvider)
-	chainService := services.NewChainService(logger, chainsProvider, metrics, registryProvider, vmService, wal)
-	nodeService := services.NewNodeService(logger, networkProvider, registryProvider)
+	chainService := services.NewChainService(logger, chainsProvider, metricsProvider, registryProvider, vmService, wal)
+	committeeService := services.NewCommitteeService(logger, networkProvider, registryProvider)
 	registryService := services.NewRegistryService(logger, chainsProvider, registryProvider)
-	offLedgerService := services.NewOffLedgerService(logger, chainService, nodeService)
+	offLedgerService := services.NewOffLedgerService(logger, chainService, networkProvider)
+	metricsService := services.NewMetricsService(logger, chainsProvider)
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, nodeService, offLedgerService, registryService, vmService),
+		chain.NewChainController(logger, chainService, committeeService, offLedgerService, registryService, vmService),
+		metrics.NewMetricsController(logger, metricsService),
 		controllers.NewInfoController(logger, config),
 	}
 
