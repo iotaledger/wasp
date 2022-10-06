@@ -3,6 +3,8 @@ package v2
 import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/node"
+
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/metrics"
 
@@ -53,6 +55,7 @@ func Init(logger *loggerpkg.Logger,
 	metricsProvider *metricspkg.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
+	trustedNetworkManager peering.TrustedNetworkManager,
 	wal *walpkg.WAL,
 ) {
 	mocker := NewMocker()
@@ -65,10 +68,12 @@ func Init(logger *loggerpkg.Logger,
 	registryService := services.NewRegistryService(logger, chainsProvider, registryProvider)
 	offLedgerService := services.NewOffLedgerService(logger, chainService, networkProvider)
 	metricsService := services.NewMetricsService(logger, chainsProvider)
+	peeringService := services.NewPeeringService(logger, chainsProvider, networkProvider, trustedNetworkManager)
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(logger, metricsService),
+		node.NewNodeController(logger, peeringService),
 		controllers.NewInfoController(logger, config),
 	}
 
