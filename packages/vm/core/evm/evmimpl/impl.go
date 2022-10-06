@@ -135,7 +135,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 		}
 	}
 
-	if receipt != nil { // receipt can be nil when "intrinsic gas too low"
+	if receipt != nil { // receipt can be nil when "intrinsic gas too low" or not enough funds
 		// If EVM execution was reverted we must revert the ISC request as well.
 		// Failed txs will be stored when closing the block context.
 		bctx.txs = append(bctx.txs, tx)
@@ -241,9 +241,6 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	return result(res.Return())
 }
 
-// TODO: For some reason, when EstimateGasMode == true the gas burned is less. How to automatically calculate this?
-var additionalGasBurned = gas.BurnCodeReadFromState1P.Cost(2)
-
 func estimateGas(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
@@ -254,6 +251,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
 	emu := createEmulator(ctx)
+
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(res.Err)
@@ -263,6 +261,19 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
 	iscGasBurned := gas.MaxGasPerRequest - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
-	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio) + additionalGasBurned
+
+	{
+		// burn the used EVM gas so this appears in the "gas burn log" as it would for a normal TX
+		ctx.Privileged().GasBurnEnable(true)
+		gasErr := panicutil.CatchPanic(
+			func() {
+				ctx.Gas().Burn(gas.BurnCodeEVM1P, evmtypes.EVMGasToISC(res.UsedGas, &gasRatio))
+			},
+		)
+		ctx.Privileged().GasBurnEnable(false)
+		ctx.RequireNoError(gasErr)
+	}
+
+	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio)
 	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))
 }

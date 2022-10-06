@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -29,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -185,7 +187,9 @@ func TestNotEnoughISCGas(t *testing.T) {
 	nonce := env.getNonce(senderAddress)
 
 	// try to issue a call to store(something) in EVM
-	res, err := storage.store(44)
+	res, err := storage.store(44, ethCallOptions{
+		gasLimit: 21204, // provide a gas limit because the estimation will fail
+	})
 
 	// the call must fail with "not enough gas"
 	require.Error(t, err)
@@ -806,22 +810,192 @@ func TestEVMNonZeroGasPriceRequest(t *testing.T) {
 
 func TestEVMTransferBaseTokens(t *testing.T) {
 	env := initEVM(t)
-	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	_, someEthereumAddr := solo.NewEthereumAccount()
+	someAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+	sendTx := func(amount *big.Int) {
+		nonce := env.getNonce(ethAddr)
+		unsignedTx := types.NewTransaction(nonce, someEthereumAddr, amount, gas.MaxGasPerRequest, util.Big0, []byte{})
+		tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
+		require.NoError(t, err)
+		err = env.evmChain.SendTransaction(tx)
+		require.NoError(t, err)
+	}
 
 	// try to transfer base tokens between 2 ethereum addresses
 
-	// issue a tx with non-0 amount (try to send ETH)
-	value := new(big.Int).SetUint64(1 * isc.Million)
+	// issue a tx with non-0 amount (try to send ETH/basetoken)
+	// try sending 1 million base tokens (expressed in ethereum decimals)
+	value := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(1*isc.Million),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+	sendTx(value)
+	env.soloChain.AssertL2BaseTokens(someAgentID, 1*isc.Million)
 
-	unsignedTx := types.NewTransaction(0, someEthereumAddr, value, gas.MaxGasPerRequest, util.Big0, []byte{})
+	// by default iota/shimmer base token has 6 decimal cases, so anything past the 6th decimal case should be ignored
+	valueWithExtraDecimals := big.NewInt(1_000_000_999_999_999_999) // all these 9's will be ignored and only 1 million tokens should be transferred
+	sendTx(valueWithExtraDecimals)
+	env.soloChain.AssertL2BaseTokens(someAgentID, 2*isc.Million)
 
+	// issue a tx with a too low amount
+	lowValue := big.NewInt(999_999_999_999) // all these 9's will be ignored and nothing should be transferred
+	sendTx(lowValue)
+	env.soloChain.AssertL2BaseTokens(someAgentID, 2*isc.Million)
+}
+
+func TestSolidityTransferBaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	_, someEthereumAddr := solo.NewEthereumAccount()
+	someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
+	oneMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(1*isc.Million),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+
+	_, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // TODO why is this value different than the estimation?
+		sender:   ethKey,
+		value:    oneMillionInEthDecimals,
+	}}, "sendTo", someEthereumAddr, oneMillionInEthDecimals)
+	require.NoError(t, err)
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
+
+	// attempt to send more than the contract will have available
+	twoMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(2*isc.Million),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+
+	_, err = iscTest.callFn([]ethCallOptions{{
+		sender:   ethKey,
+		gasLimit: 100_000, // provide a gas limit value as the estimation will fail
+		value:    oneMillionInEthDecimals,
+	}}, "sendTo", someEthereumAddr, twoMillionInEthDecimals)
+	require.Error(t, err)
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
+
+	{
+		// try sending a value to too high precision (anything over the 6 decimals will be ignored)
+		_, err = iscTest.callFn([]ethCallOptions{{
+			sender:   ethKey,
+			gasLimit: 100_000, // provide a gas limit value as the estimation will fail
+			value:    oneMillionInEthDecimals,
+			// wei is expressed with 18 decimal precision, iota/smr is 6, so anything in the 12 last decimal cases will be ignored
+		}}, "sendTo", someEthereumAddr, big.NewInt(1_000_000_999_999_999_999))
+		require.Error(t, err)
+		env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
+		// this will fail if the (ignored) decimals are above the contract balance,
+		// but if we provide enough funds, the call should succeed and the extra decimals should be correctly ignored
+		_, err = iscTest.callFn([]ethCallOptions{{
+			gasLimit: 100_000, // TODO why is this value different than the estimation?
+			sender:   ethKey,
+			value:    twoMillionInEthDecimals,
+			// wei is expressed with 18 decimal precision, iota/smr is 6, so anything in the 12 last decimal cases will be ignored
+		}}, "sendTo", someEthereumAddr, big.NewInt(1_000_000_999_999_999_999))
+		require.NoError(t, err)
+		env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 2*isc.Million)
+	}
+
+	// fund the contract via a L1 wallet ISC transfer, then call `sendTo` to use those funds
+	l1Wallet, _ := env.soloChain.Env.NewKeyPairWithFunds()
+	env.soloChain.TransferAllowanceTo(
+		isc.NewAllowanceBaseTokens(10*isc.Million),
+		isc.NewEthereumAddressAgentID(iscTest.address),
+		true,
+		l1Wallet,
+	)
+
+	tenMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(10*isc.Million),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+
+	_, err = iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // TODO why is this value different than the estimation?
+		sender:   ethKey,
+	}}, "sendTo", someEthereumAddr, tenMillionInEthDecimals)
+	require.NoError(t, err)
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
+
+	// send more than the balance
+	_, err = iscTest.callFn([]ethCallOptions{{
+		sender:   ethKey,
+		value:    tenMillionInEthDecimals.Mul(tenMillionInEthDecimals, big.NewInt(10000)),
+		gasLimit: 100_000, // provide a gas limit value as the estimation will fail
+	}}, "sendTo", someEthereumAddr, big.NewInt(0))
+	require.Error(t, err)
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
+}
+
+func TestSendEntireBalance(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	_, someEthereumAddr := solo.NewEthereumAccount()
+	someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+	// send all initial
+	initial := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+	// try sending funds to `someEthereumAddr` by sending a "value tx"
+	initialBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(initial),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+
+	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, gas.MaxGasPerRequest, util.Big0, []byte{})
 	tx, err := types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
 	require.NoError(t, err)
-
 	err = env.evmChain.SendTransaction(tx)
+	// this will produce an error because there won't be tokens left in the account to pay for gas
+	require.Error(t, err)
+	evmReceipt, err := env.evmChain.TransactionReceipt(tx.Hash())
+	require.NoError(t, err)
+	require.Equal(t, evmReceipt.Status, types.ReceiptStatusFailed)
+	rec := env.soloChain.LastReceipt()
+	require.EqualValues(t, rec.ResolvedError, vm.ErrNotEnoughTokensLeftForGas.Error())
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 0)
+
+	// now try sending all balance, minus the funds needed for gas
+	currentBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
+
+	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		// -1 because removing the entire balance would produce a different gas output
+		// TODO should "spending tokens" have a predictable gas cost?
+		new(big.Int).SetUint64(currentBalance-1),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+
+	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
+		From:     ethAddr,
+		To:       &someEthereumAddr,
+		GasPrice: evm.GasPrice,
+		Value:    currentBalanceInEthDecimals,
+		Data:     []byte{},
+	})
 	require.NoError(t, err)
 
-	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(someEthereumAddr), 1*isc.Million)
+	gasPerToken := env.soloChain.GetGasFeePolicy().GasPerToken
+	tokensForGasBudget := uint64(math.Ceil(float64(estimatedGas) / float64(gasPerToken)))
+
+	gasLimit := env.soloChain.GetGasFeePolicy().GasPerToken * tokensForGasBudget
+
+	valueToSendInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(currentBalance-tokensForGasBudget),
+		int64(parameters.L1ForTesting.BaseToken.Decimals),
+	)
+	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, util.Big0, []byte{})
+	tx, err = types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
+	require.NoError(t, err)
+	err = env.evmChain.SendTransaction(tx)
+	require.NoError(t, err)
+	rec = env.soloChain.LastReceipt()
+	require.EqualValues(t, rec.GasBurned, estimatedGas)
+	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
+	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
 }

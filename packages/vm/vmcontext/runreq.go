@@ -163,6 +163,8 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 		callRet = vmctx.callFromRequest()
 		// ensure at least the minimum amount of gas is charged
 		if vmctx.GasBurned() < gas.BurnCodeMinimumGasPerRequest1P.Cost() {
+			vmctx.gasBurnedTotal -= vmctx.gasBurned
+			vmctx.gasBurned = 0
 			vmctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, vmctx.GasBurned())
 		}
 	}()
