@@ -28,7 +28,11 @@ the [`evm`](../core_concepts/core_contracts/evm.md) [core contract](../core_conc
 i.e. it is not a pure-Solidity contract.
 
 You can access the Magic contract from any Solidity contract by importing
-its [interface](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ISC.sol). For example:
+its [interface](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ISC.sol).
+
+## Examples
+
+### Calling getEntropy()
 
 ```solidity
 pragma solidity >=0.8.5;
@@ -50,6 +54,29 @@ After `import "@iscmagic/ISC.sol"`, the global variable `isc` points to the Magi
 called like a regular EVM contract.
 For example, if you call `isc.getEntropy()` you are calling the `getEntropy` function which, in turn,
 calls [ISC Sandbox's](../core_concepts/sandbox.md) `GetEntropy`.
+
+
+### Calling a native contract
+You can call native contracts using `isc.call`
+
+```solidity
+pragma solidity >=0.8.5;
+
+import "@iscmagic/ISC.sol";
+
+contract MyEVMContract {
+    event EntropyEvent(bytes32 entropy);
+
+    function callInccounter() public {
+        ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        bytes memory int64Encoded42 = hex"2A00000000000000";
+        params.items[0] = ISCDictItem("counter", int64Encoded42);
+        ISCAllowance memory allowance;
+        isc.call(isc.hn("inccounter"), isc.hn("incCounter"), params, allowance);
+    }
+}
+```
+`isc.hn` is used to get the `hname` of the incounter countract and the `incCounter` entry point. You can call view entry points using [isc.callView](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ISC.sol#L67).
 
 The Magic Contract's [interface](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ISC.sol)
 is well documented, so it doubles as an API reference.
