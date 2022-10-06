@@ -229,23 +229,23 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
 		feePolicy := getFeePolicy(ctx)
 
 		if feePolicy.GasFeeTokenID != nil {
-			res := ctx.CallView(
-				accounts.Contract.Hname(),
-				accounts.ViewBalanceNativeToken.Hname(),
-				dict.Dict{
-					accounts.ParamAgentID:       isc.NewEthereumAddressAgentID(addr).Bytes(),
-					accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
-				},
-			)
-			return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
+			// TODO this won't work with custom native tokens for now
+			panic("custom native tokens as EVM base currency not supported")
+			// res := ctx.CallView(
+			// 	accounts.Contract.Hname(),
+			// 	accounts.ViewBalanceNativeToken.Hname(),
+			// 	dict.Dict{
+			// 		accounts.ParamAgentID:       isc.NewEthereumAddressAgentID(addr).Bytes(),
+			// 		accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
+			// 	},
+			// )
+			// return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
 		}
-
 		res := ctx.CallView(
 			accounts.Contract.Hname(),
 			accounts.ViewBalanceBaseToken.Hname(),
 			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 		)
-		// TODO this won't work for custom native tokens for now
 		decimals := parameters.L1().BaseToken.Decimals
 		ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
 		return util.BaseTokensDecimalsToEthereumDecimals(ret, int64(decimals))
@@ -265,7 +265,10 @@ func fungibleTokensForFee(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTok
 
 func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
 	return func(addr common.Address, amount *big.Int) {
-		// TODO this will only work for L1 base tokens, we don't have a way to know about decimals for custom tokens
+		if getFeePolicy(ctx).GasFeeTokenID != nil {
+			// TODO this won't work with custom native tokens for now
+			panic("custom native tokens as EVM base currency not supported")
+		}
 		decimals := parameters.L1().BaseToken.Decimals
 		amt := util.EthereumDecimalsToBaseTokenDecimals(amount, int64(decimals))
 		tokens := fungibleTokensForFee(ctx, amt)
@@ -283,7 +286,10 @@ func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
 
 func getAddBalanceFunc(ctx isc.Sandbox) emulator.AddBalanceFunc {
 	return func(addr common.Address, amount *big.Int) {
-		// TODO this will only work for L1 base tokens, we don't have a way to know about decimals for custom tokens
+		if getFeePolicy(ctx).GasFeeTokenID != nil {
+			// TODO this won't work with custom native tokens for now
+			panic("custom native tokens as EVM base currency not supported")
+		}
 		decimals := parameters.L1().BaseToken.Decimals
 		amt := util.EthereumDecimalsToBaseTokenDecimals(amount, int64(decimals))
 		tokens := fungibleTokensForFee(ctx, amt)

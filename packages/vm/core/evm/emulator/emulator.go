@@ -207,15 +207,15 @@ func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header 
 		defer gasBurnEnable(false)
 	}
 
-	catchedErr := panicutil.CatchAllExcept(
+	caughtErr := panicutil.CatchAllExcept(
 		func() {
 			// catch any exceptions during the execution, so that an EVM receipt is produced
 			res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
 		},
 		vmexceptions.AllProtocolLimits...,
 	)
-	if catchedErr != nil {
-		return nil, catchedErr
+	if caughtErr != nil {
+		return nil, caughtErr
 	}
 	return res, err
 }
