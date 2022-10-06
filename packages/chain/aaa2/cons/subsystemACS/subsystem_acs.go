@@ -26,14 +26,14 @@ type SubsystemACS struct {
 	inputsReady      bool
 	inputsReadyCB    func(sub *SubsystemACS) gpa.OutMessages
 	outputReady      bool
-	outputReadyCB    func(output map[gpa.NodeID][]byte, sub *SubsystemACS) gpa.OutMessages
+	outputReadyCB    func(output map[gpa.NodeID][]byte) gpa.OutMessages
 	terminated       bool
 	terminatedCB     func()
 }
 
 func New(
 	inputsReadyCB func(sub *SubsystemACS) gpa.OutMessages,
-	outputReadyCB func(output map[gpa.NodeID][]byte, sub *SubsystemACS) gpa.OutMessages,
+	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
 	terminatedCB func(),
 ) *SubsystemACS {
 	return &SubsystemACS{
@@ -99,7 +99,7 @@ func (sub *SubsystemACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 		return nil
 	}
 	sub.outputReady = true
-	return sub.outputReadyCB(acsOutput.Values, sub)
+	return sub.outputReadyCB(acsOutput.Values)
 }
 
 // Try to provide useful human-readable compact status.

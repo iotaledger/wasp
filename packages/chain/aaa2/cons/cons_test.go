@@ -29,9 +29,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
+// TODO: BLS sometimes fails to aggregate signature from 2/4 shares.
+// TODO: Implement a randomized test for a chain of consensus instances.
+
 func TestBasic(t *testing.T) {
 	t.Parallel()
+	t.Run("N=1,F=0", func(tt *testing.T) { testBasic(tt, 1, 0) })
+	t.Run("N=2,F=0", func(tt *testing.T) { testBasic(tt, 2, 0) })
+	t.Run("N=3,F=0", func(tt *testing.T) { testBasic(tt, 3, 0) })
 	t.Run("N=4,F=1", func(tt *testing.T) { testBasic(tt, 4, 1) })
+	t.Run("N=10,F=3", func(tt *testing.T) { testBasic(tt, 10, 3) })
 }
 
 func testBasic(t *testing.T, n, f int) {
