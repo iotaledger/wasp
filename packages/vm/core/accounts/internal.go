@@ -161,9 +161,6 @@ func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungible
 	}
 	account := getAccount(state, agentID)
 
-	checkLedger(state, "CreditToAccount IN")
-	defer checkLedger(state, "CreditToAccount OUT")
-
 	creditToAccount(account, assets)
 	creditToAccount(getTotalL2AssetsAccount(state), assets)
 	touchAccount(state, account)
@@ -197,9 +194,6 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungibl
 		return
 	}
 	account := getAccount(state, agentID)
-
-	checkLedger(state, "DebitFromAccount IN")
-	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
 		panic(xerrors.Errorf("debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
@@ -287,9 +281,6 @@ func hasEnoughForAllowance(account *collections.ImmutableMap, allowance *isc.All
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) bool {
-	checkLedger(state, "MoveBetweenAccounts.IN")
-	defer checkLedger(state, "MoveBetweenAccounts.OUT")
-
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
@@ -485,7 +476,7 @@ func NFTMapEqual(a, b map[iotago.NFTID]bool) bool {
 	return true
 }
 
-func checkLedger(state kv.KVStore, checkpoint string) {
+func CheckLedger(state kv.KVStore, checkpoint string) {
 	a := GetTotalL2Assets(state)
 	c := calcL2TotalAssets(state)
 	if !a.Equals(c) {

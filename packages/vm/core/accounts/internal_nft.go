@@ -19,9 +19,6 @@ func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
 	}
 	account := getAccount(state, agentID)
 
-	checkLedger(state, "CreditNFTToAccount IN")
-	defer checkLedger(state, "CreditNFTToAccount OUT")
-
 	saveNFTData(state, nft)
 	creditNFTToAccount(state, account, nft.ID, agentID)
 	touchAccount(state, account)
@@ -79,9 +76,6 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID)
 		return
 	}
 	account := getAccount(state, agentID)
-
-	checkLedger(state, "DebitNFTFromAccount IN")
-	defer checkLedger(state, "DebitNFTFromAccount OUT")
 
 	if !debitNFTFromAccount(account, id) {
 		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
