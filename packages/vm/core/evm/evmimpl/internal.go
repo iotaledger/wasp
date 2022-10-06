@@ -212,7 +212,7 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-// TODO dropping "customtokens gas fee" mgith be the way to go
+// TODO dropping "customtokens gas fee" might be the way to go
 func getFeePolicy(ctx isc.SandboxBase) *gas.GasFeePolicy {
 	res := ctx.CallView(
 		governance.Contract.Hname(),
