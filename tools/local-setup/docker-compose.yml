@@ -26,11 +26,6 @@ services:
     restart: on-failure:10
     networks:
       - wasp-net
-    expose:
-      - "4000/udp" # Peering
-      - "5550/tcp" # Nano MSG
-      - "7000/tcp" # Wasp Dashboard
-      - "9090/tcp" # Wasp WebAPI
     ports:
       - "${HOST:-127.0.0.1}:4000:4000/tcp" # Peering
       - "${HOST:-127.0.0.1}:5550:5550/tcp" # Nano MSG
