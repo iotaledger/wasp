@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -89,8 +90,18 @@ func testBasic(t *testing.T, n, f int) {
 	initReqRefs := []*isc.RequestRef{}
 	outs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
 	for outID, out := range outs {
-		if out.FeatureSet().MetadataFeature() == nil {
-			continue // TODO: Better way to filter non-requests.
+		if out.Type() == iotago.OutputAlias {
+			zeroAliasID := iotago.AliasID{}
+			outAsAlias := out.(*iotago.AliasOutput)
+			if outAsAlias.AliasID == *chainID.AsAliasID() {
+				continue // That's our alias output, not the request, skip it here.
+			}
+			if outAsAlias.AliasID == zeroAliasID {
+				implicitAliasID := iotago.AliasIDFromOutputID(outID)
+				if implicitAliasID == *chainID.AsAliasID() {
+					continue // That's our origin alias output, not the request, skip it here.
+				}
+			}
 		}
 		req, err := isc.OnLedgerFromUTXO(out, outID.UTXOInput())
 		if err != nil {
