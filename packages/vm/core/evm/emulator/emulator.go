@@ -20,6 +20,8 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
 type EVMEmulator struct {
@@ -194,7 +196,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	return e.applyMessage(msg, statedb, pendingHeader, gasBurnEnable)
 }
 
-func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header *types.Header, gasBurnEnable func(bool)) (res *core.ExecutionResult, err error) {
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	txContext := core.NewEVMTxContext(msg)
 	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig)
@@ -204,7 +206,18 @@ func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB, header 
 		gasBurnEnable(true)
 		defer gasBurnEnable(false)
 	}
-	return core.ApplyMessage(vmEnv, msg, &gasPool)
+
+	caughtErr := panicutil.CatchAllExcept(
+		func() {
+			// catch any exceptions during the execution, so that an EVM receipt is produced
+			res, err = core.ApplyMessage(vmEnv, msg, &gasPool)
+		},
+		vmexceptions.AllProtocolLimits...,
+	)
+	if caughtErr != nil {
+		return nil, caughtErr
+	}
+	return res, err
 }
 
 func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(bool)) (*types.Receipt, *core.ExecutionResult, error) {
@@ -241,11 +254,13 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 	}
 
 	result, err := e.applyMessage(msgWithZeroGasPrice, statedb, pendingHeader, gasBurnEnable)
-	if err != nil {
-		return nil, result, err
+
+	gasUsed := uint64(0)
+	if result != nil {
+		gasUsed = result.UsedGas
 	}
 
-	cumulativeGasUsed := result.UsedGas
+	cumulativeGasUsed := gasUsed
 	index := uint(0)
 	latest := e.BlockchainDB().GetLatestPendingReceipt()
 	if latest != nil {
@@ -257,14 +272,14 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
 		TxHash:            tx.Hash(),
-		GasUsed:           result.UsedGas,
+		GasUsed:           gasUsed,
 		Logs:              statedb.GetLogs(tx.Hash()),
 		BlockNumber:       pendingHeader.Number,
 		TransactionIndex:  index,
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
-	if result.Failed() {
+	if result == nil || result.Failed() {
 		receipt.Status = types.ReceiptStatusFailed
 	} else {
 		receipt.Status = types.ReceiptStatusSuccessful
@@ -277,7 +292,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 	buf.Commit()
 	e.BlockchainDB().AddTransaction(tx, receipt)
 
-	return receipt, result, nil
+	return receipt, result, err
 }
 
 func (e *EVMEmulator) MintBlock() {

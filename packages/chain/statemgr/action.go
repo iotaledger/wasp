@@ -134,8 +134,9 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.syncingBlocks.addBlockCandidate(block, nil)
 	if !sm.syncingBlocks.hasApprovedBlockCandidate(block.BlockIndex()) { // TODO: make the timer to not spam L1
 		// ask for approving output
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(block.ApprovingOutputID()))
-		sm.nodeConn.PullStateOutputByID(sm.chain.ID(), block.ApprovingOutputID())
+		outputID := block.ApprovingOutputID()
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v", isc.OID(outputID))
+		sm.nodeConn.PullStateOutputByID(sm.chain.ID(), outputID)
 	}
 	return true
 }

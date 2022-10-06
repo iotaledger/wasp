@@ -3,8 +3,11 @@ package runvm
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
@@ -58,6 +61,11 @@ func runTask(task *vm.VMTask) {
 			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
 		}
 		vmctx.AssertConsistentGasTotals()
+	}
+
+	{
+		accountsState := subrealm.New(task.VirtualStateAccess.KVStore(), kv.Key(accounts.Contract.Hname().Bytes()))
+		accounts.CheckLedger(accountsState, "runTask")
 	}
 
 	numProcessed := uint16(len(task.Results))

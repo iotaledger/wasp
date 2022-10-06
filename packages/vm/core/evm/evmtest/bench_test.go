@@ -29,11 +29,11 @@ func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {
 	reqs := make([]isc.Request, b.N)
 	for i := 0; i < b.N; i++ {
 		ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-		tx := storage.buildEthTx([]ethCallOptions{{
+		tx, err := storage.buildEthTx([]ethCallOptions{{
 			sender:   ethKey,
 			gasLimit: gasLimit,
 		}}, "store", uint32(i))
-		var err error
+		require.NoError(b, err)
 		reqs[i], err = isc.NewEVMOffLedgerRequest(env.soloChain.ChainID, tx)
 		require.NoError(b, err)
 	}

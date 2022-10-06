@@ -63,7 +63,7 @@ func NewNodeConnectionMessagesMetrics(metrics nodeconnmetrics.NodeConnectionMess
 	}
 }
 
-func NewNodeConnectionMessageMetrics(metrics nodeconnmetrics.NodeConnectionMessageMetrics) *NodeConnectionMessageMetrics {
+func NewNodeConnectionMessageMetrics[T any](metrics nodeconnmetrics.NodeConnectionMessageMetrics[T]) *NodeConnectionMessageMetrics {
 	return &NodeConnectionMessageMetrics{
 		Total:       metrics.GetMessageTotal(),
 		LastEvent:   metrics.GetLastEvent(),

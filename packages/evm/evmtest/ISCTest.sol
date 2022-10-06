@@ -108,7 +108,7 @@ contract ISCTest {
         ISCAllowance memory allowance;
         isc.call(
             isc.hn("governance"),
-            isc.hn("claimChainOwnershi"),
+            isc.hn("claimChainOwnership"),
             params,
             allowance
         );
@@ -129,5 +129,9 @@ contract ISCTest {
             params,
             allowance
         );
+    }
+
+    function sendTo(address payable to, uint256 amount) public payable {
+        to.transfer(amount);
     }
 }
