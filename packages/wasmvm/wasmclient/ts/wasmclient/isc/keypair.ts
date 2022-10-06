@@ -1,8 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmlib from "wasmlib"
-
+//TODO
 export class KeyPair {
 
+    public ID(): u8[] {
+        return [];
+    }
 }
