@@ -90,6 +90,9 @@ func (sub *SubsystemDSS) tryCompleteSigning() gpa.OutMessages {
 // Try to provide useful human-readable compact status.
 func (sub *SubsystemDSS) String() string {
 	str := "DSS"
+	if sub.indexProposalReady && sub.outputReady {
+		return str + "/OK"
+	}
 	if sub.indexProposalReady {
 		str += "/idx=OK"
 	} else {

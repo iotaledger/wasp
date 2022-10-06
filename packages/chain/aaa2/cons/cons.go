@@ -398,7 +398,7 @@ func (c *consImpl) uponDSSSigningInputsReceived(sub *subsystemDSS.SubsystemDSS) 
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide inputs for signing: %w", err))
 	}
-	return gpa.NoMessages().AddAll(subMsgs).AddAll(c.subDSS.DSSOutputReceived(subDSS.Output))
+	return gpa.NoMessages().AddAll(subMsgs).AddAll(c.subDSS.DSSOutputReceived(subDSS.Output()))
 }
 
 func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
@@ -496,7 +496,7 @@ func (c *consImpl) uponVMInputsReceived(sub *subsystemVM.SubsystemVM) gpa.OutMes
 		EnableGasBurnLogging:   false,
 		VirtualStateAccess:     sub.VirtualStateAccess.Copy(),
 		MaintenanceModeEnabled: governance.NewStateAccess(sub.VirtualStateAccess.KVStore()).GetMaintenanceStatus(),
-		Log:                    c.log,
+		Log:                    c.log.Named("VM"),
 	}
 	return nil
 }
