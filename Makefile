@@ -53,7 +53,7 @@ install: compile-solidity
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint:
-	golangci-lint run
+	golangci-lint run --timeout 5m
 
 gofumpt-list:
 	gofumpt -l ./
