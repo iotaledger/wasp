@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   hornet-nest:
-    image: iotaledger/hornet-nest:2.0.0-beta.8
+    image: iotaledger/hornet-nest:2.0-rc
     networks:
       - wasp-net
     ports:
@@ -36,6 +36,8 @@ services:
       - "${HOST:-127.0.0.1}:5550:5550/tcp" # Nano MSG
       - "${HOST:-127.0.0.1}:7000:7000/tcp" # Wasp Dashboard
       - "${HOST:-127.0.0.1}:9090:9090/tcp" # Wasp WebAPI
+    volumes:
+      - wasp-db:/waspdb
 
 networks:
   wasp-net: {}
