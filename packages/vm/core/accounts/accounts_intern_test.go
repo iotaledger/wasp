@@ -36,7 +36,7 @@ func checkLedgerT(t *testing.T, state dict.Dict, cp string) *isc.FungibleTokens 
 	total := GetTotalL2Assets(state)
 	// t.Logf("checkpoint '%s.%s':\n%s", curTest, cp, total.String())
 	require.NotPanics(t, func() {
-		checkLedger(state, cp)
+		CheckLedger(state, cp)
 	})
 	return total
 }
