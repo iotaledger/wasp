@@ -4,7 +4,14 @@
 package nodeconnmetrics
 
 import (
+	"math/big"
 	"testing"
+
+	"github.com/iotaledger/iota.go/v3/nodeclient"
+
+	"github.com/iotaledger/iota.go/v3/tpkg"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/stretchr/testify/require"
 
@@ -56,6 +63,36 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID3)
 }
 
+func createOnLedgerRequest() isc.OnLedgerRequest {
+	requestMetadata := &isc.RequestMetadata{
+		SenderContract: isc.Hn("sender_contract"),
+		TargetContract: isc.Hn("target_contract"),
+		EntryPoint:     isc.Hn("entrypoint"),
+		Allowance:      isc.NewAllowanceBaseTokens(1),
+		GasBudget:      1000,
+	}
+
+	outputOn := &iotago.BasicOutput{
+		Amount: 123,
+		NativeTokens: iotago.NativeTokens{
+			&iotago.NativeToken{
+				ID:     [iotago.NativeTokenIDLength]byte{1},
+				Amount: big.NewInt(100),
+			},
+		},
+		Features: iotago.Features{
+			&iotago.MetadataFeature{Data: requestMetadata.Bytes()},
+			&iotago.SenderFeature{Address: tpkg.RandAliasAddress()},
+		},
+		Conditions: iotago.UnlockConditions{
+			&iotago.AddressUnlockCondition{Address: tpkg.RandAliasAddress()},
+		},
+	}
+
+	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+	return onLedgerRequest1
+}
+
 func TestMessageMetrics(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	ncm := New(log)
@@ -64,67 +101,105 @@ func TestMessageMetrics(t *testing.T) {
 	ncm.RegisterMetrics()
 
 	// IN State output
-	cncm1.GetInStateOutput().CountLastMessage("InStateOutput1")
-	cncm1.GetInStateOutput().CountLastMessage("InStateOutput2")
-	cncm1.GetInStateOutput().CountLastMessage("InStateOutput3")
+	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
+	outputID2 := &InStateOutput{OutputID: iotago.OutputID{2}}
+	outputID3 := &InStateOutput{OutputID: iotago.OutputID{3}}
 
-	checkMetricsValues(t, 3, "InStateOutput3", cncm1.GetInStateOutput())
-	checkMetricsValues(t, 0, "NIL", cncm2.GetInStateOutput())
-	checkMetricsValues(t, 3, "InStateOutput3", ncm.GetInStateOutput())
+	cncm1.GetInStateOutput().CountLastMessage(outputID1)
+	cncm1.GetInStateOutput().CountLastMessage(outputID2)
+	cncm1.GetInStateOutput().CountLastMessage(outputID3)
+
+	checkMetricsValues(t, 3, outputID3, cncm1.GetInStateOutput())
+	checkMetricsValues(t, 0, nil, cncm2.GetInStateOutput())
+	checkMetricsValues(t, 3, outputID3, ncm.GetInStateOutput())
 
 	// IN Alias output
-	ncm.GetInAliasOutput().CountLastMessage("InAliasOutput1")
-	cncm1.GetInAliasOutput().CountLastMessage("InAliasOutput2")
-	cncm1.GetInAliasOutput().CountLastMessage("InAliasOutput3")
+	aliasOutput1 := &iotago.AliasOutput{StateIndex: 1}
+	aliasOutput2 := &iotago.AliasOutput{StateIndex: 2}
+	aliasOutput3 := &iotago.AliasOutput{StateIndex: 3}
 
-	checkMetricsValues(t, 2, "InAliasOutput3", cncm1.GetInAliasOutput())
-	checkMetricsValues(t, 0, "NIL", cncm2.GetInAliasOutput())
-	checkMetricsValues(t, 3, "InAliasOutput3", ncm.GetInAliasOutput())
+	ncm.GetInAliasOutput().CountLastMessage(aliasOutput1)
+	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput2)
+	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput3)
+
+	checkMetricsValues(t, 2, aliasOutput3, cncm1.GetInAliasOutput())
+	checkMetricsValues(t, 0, nil, cncm2.GetInAliasOutput())
+	checkMetricsValues(t, 3, aliasOutput3, ncm.GetInAliasOutput())
 
 	// IN Output
-	cncm1.GetInOutput().CountLastMessage("InOutput1")
-	cncm2.GetInOutput().CountLastMessage("InOutput2")
-	ncm.GetInOutput().CountLastMessage("InOutput3")
+	inOutput1 := &InOutput{OutputID: iotago.OutputID{1}}
+	inOutput2 := &InOutput{OutputID: iotago.OutputID{2}}
+	inOutput3 := &InOutput{OutputID: iotago.OutputID{3}}
 
-	checkMetricsValues(t, 1, "InOutput1", cncm1.GetInOutput())
-	checkMetricsValues(t, 1, "InOutput2", cncm2.GetInOutput())
-	checkMetricsValues(t, 3, "InOutput3", ncm.GetInOutput())
+	cncm1.GetInOutput().CountLastMessage(inOutput1)
+	cncm2.GetInOutput().CountLastMessage(inOutput2)
+	ncm.GetInOutput().CountLastMessage(inOutput3)
+
+	checkMetricsValues(t, 1, inOutput1, cncm1.GetInOutput())
+	checkMetricsValues(t, 1, inOutput2, cncm2.GetInOutput())
+	checkMetricsValues(t, 3, inOutput3, ncm.GetInOutput())
 
 	// IN Transaction inclusion state
-	cncm1.GetInTxInclusionState().CountLastMessage("InTxInclusionState1")
-	cncm1.GetInTxInclusionState().CountLastMessage("InTxInclusionState2")
-	cncm2.GetInTxInclusionState().CountLastMessage("InTxInclusionState3")
+	txInclusionState1 := &TxInclusionStateMsg{TxID: iotago.TransactionID{1}}
+	txInclusionState2 := &TxInclusionStateMsg{TxID: iotago.TransactionID{2}}
+	txInclusionState3 := &TxInclusionStateMsg{TxID: iotago.TransactionID{3}}
 
-	checkMetricsValues(t, 2, "InTxInclusionState2", cncm1.GetInTxInclusionState())
-	checkMetricsValues(t, 1, "InTxInclusionState3", cncm2.GetInTxInclusionState())
-	checkMetricsValues(t, 3, "InTxInclusionState3", ncm.GetInTxInclusionState())
+	cncm1.GetInTxInclusionState().CountLastMessage(txInclusionState1)
+	cncm1.GetInTxInclusionState().CountLastMessage(txInclusionState2)
+	cncm2.GetInTxInclusionState().CountLastMessage(txInclusionState3)
+
+	checkMetricsValues(t, 2, txInclusionState2, cncm1.GetInTxInclusionState())
+	checkMetricsValues(t, 1, txInclusionState3, cncm2.GetInTxInclusionState())
+	checkMetricsValues(t, 3, txInclusionState3, ncm.GetInTxInclusionState())
 
 	// IN On ledger request
-	cncm1.GetInOnLedgerRequest().CountLastMessage("InOnLedgerRequest1")
-	cncm2.GetInOnLedgerRequest().CountLastMessage("InOnLedgerRequest2")
-	cncm1.GetInOnLedgerRequest().CountLastMessage("InOnLedgerRequest3")
 
-	checkMetricsValues(t, 2, "InOnLedgerRequest3", cncm1.GetInOnLedgerRequest())
-	checkMetricsValues(t, 1, "InOnLedgerRequest2", cncm2.GetInOnLedgerRequest())
-	checkMetricsValues(t, 3, "InOnLedgerRequest3", ncm.GetInOnLedgerRequest())
+	onLedgerRequest1 := createOnLedgerRequest()
+	onLedgerRequest2 := createOnLedgerRequest()
+	onLedgerRequest3 := createOnLedgerRequest()
+
+	cncm1.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest1)
+	cncm2.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest2)
+	cncm1.GetInOnLedgerRequest().CountLastMessage(onLedgerRequest3)
+
+	checkMetricsValues(t, 2, onLedgerRequest3, cncm1.GetInOnLedgerRequest())
+	checkMetricsValues(t, 1, onLedgerRequest2, cncm2.GetInOnLedgerRequest())
+	checkMetricsValues(t, 3, onLedgerRequest3, ncm.GetInOnLedgerRequest())
 
 	// OUT Publish state transaction
-	cncm1.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction1")
-	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction2")
-	cncm2.GetOutPublishStateTransaction().CountLastMessage("OutPublishStateTransaction3")
+	stateTransaction1 := &StateTransaction{StateIndex: 1}
+	stateTransaction2 := &StateTransaction{StateIndex: 1}
+	stateTransaction3 := &StateTransaction{StateIndex: 1}
 
-	checkMetricsValues(t, 1, "OutPublishStateTransaction1", cncm1.GetOutPublishStateTransaction())
-	checkMetricsValues(t, 2, "OutPublishStateTransaction3", cncm2.GetOutPublishStateTransaction())
-	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishStateTransaction())
+	cncm1.GetOutPublishStateTransaction().CountLastMessage(stateTransaction1)
+	cncm2.GetOutPublishStateTransaction().CountLastMessage(stateTransaction2)
+	cncm2.GetOutPublishStateTransaction().CountLastMessage(stateTransaction3)
+
+	checkMetricsValues(t, 1, stateTransaction1, cncm1.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 2, stateTransaction3, cncm2.GetOutPublishStateTransaction())
+	checkMetricsValues(t, 3, stateTransaction3, ncm.GetOutPublishStateTransaction())
 
 	// OUT Publish governance transaction
-	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction1")
-	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction2")
-	cncm1.GetOutPublishGovernanceTransaction().CountLastMessage("OutPublishStateTransaction3")
+	publishStateTransaction1 := &iotago.Transaction{
+		Essence: nil,
+		Unlocks: nil,
+	}
+	publishStateTransaction2 := &iotago.Transaction{
+		Essence: nil,
+		Unlocks: nil,
+	}
+	publishStateTransaction3 := &iotago.Transaction{
+		Essence: nil,
+		Unlocks: nil,
+	}
 
-	checkMetricsValues(t, 1, "OutPublishStateTransaction3", cncm1.GetOutPublishGovernanceTransaction())
-	checkMetricsValues(t, 2, "OutPublishStateTransaction2", cncm2.GetOutPublishGovernanceTransaction())
-	checkMetricsValues(t, 3, "OutPublishStateTransaction3", ncm.GetOutPublishGovernanceTransaction())
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction1)
+	cncm2.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction2)
+	cncm1.GetOutPublishGovernanceTransaction().CountLastMessage(publishStateTransaction3)
+
+	checkMetricsValues(t, 1, publishStateTransaction3, cncm1.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 2, publishStateTransaction2, cncm2.GetOutPublishGovernanceTransaction())
+	checkMetricsValues(t, 3, publishStateTransaction3, ncm.GetOutPublishGovernanceTransaction())
 
 	// OUT Pull latest output
 	ncm.GetOutPullLatestOutput().CountLastMessage("OutPullLatestOutput1")
@@ -136,35 +211,46 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, "OutPullLatestOutput3", ncm.GetOutPullLatestOutput())
 
 	// OUT Pull transaction inclusion state
-	cncm1.GetOutPullTxInclusionState().CountLastMessage("OutPullTxInclusionState1")
-	ncm.GetOutPullTxInclusionState().CountLastMessage("OutPullTxInclusionState2")
-	cncm2.GetOutPullTxInclusionState().CountLastMessage("OutPullTxInclusionState3")
+	transactionID1 := iotago.TransactionID{1}
+	transactionID2 := iotago.TransactionID{2}
+	transactionID3 := iotago.TransactionID{3}
 
-	checkMetricsValues(t, 1, "OutPullTxInclusionState1", cncm1.GetOutPullTxInclusionState())
-	checkMetricsValues(t, 1, "OutPullTxInclusionState3", cncm2.GetOutPullTxInclusionState())
-	checkMetricsValues(t, 3, "OutPullTxInclusionState3", ncm.GetOutPullTxInclusionState())
+	cncm1.GetOutPullTxInclusionState().CountLastMessage(transactionID1)
+	ncm.GetOutPullTxInclusionState().CountLastMessage(transactionID2)
+	cncm2.GetOutPullTxInclusionState().CountLastMessage(transactionID3)
+
+	checkMetricsValues(t, 1, transactionID1, cncm1.GetOutPullTxInclusionState())
+	checkMetricsValues(t, 1, transactionID3, cncm2.GetOutPullTxInclusionState())
+	checkMetricsValues(t, 3, transactionID3, ncm.GetOutPullTxInclusionState())
 
 	// OUT Pull output by ID
-	cncm1.GetOutPullOutputByID().CountLastMessage("OutPullOutputByID1")
-	cncm1.GetOutPullOutputByID().CountLastMessage("OutPullOutputByID2")
-	cncm1.GetOutPullOutputByID().CountLastMessage("OutPullOutputByID3")
+	utxoInput1 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
+	utxoInput2 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
+	utxoInput3 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 
-	checkMetricsValues(t, 3, "OutPullOutputByID3", cncm1.GetOutPullOutputByID())
-	checkMetricsValues(t, 0, "NIL", cncm2.GetOutPullOutputByID())
-	checkMetricsValues(t, 3, "OutPullOutputByID3", ncm.GetOutPullOutputByID())
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1)
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2)
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3)
+
+	checkMetricsValues(t, 3, utxoInput3, cncm1.GetOutPullOutputByID())
+	checkMetricsValues(t, 0, nil, cncm2.GetOutPullOutputByID())
+	checkMetricsValues(t, 3, utxoInput3, ncm.GetOutPullOutputByID())
 
 	// IN Milestone
-	ncm.GetInMilestone().CountLastMessage("InMilestone1")
-	ncm.GetInMilestone().CountLastMessage("InMilestone2")
+	milestoneInfo1 := &nodeclient.MilestoneInfo{Index: 0}
+	milestoneInfo2 := &nodeclient.MilestoneInfo{Index: 0}
 
-	checkMetricsValues(t, 2, "InMilestone2", ncm.GetInMilestone())
+	ncm.GetInMilestone().CountLastMessage(milestoneInfo1)
+	ncm.GetInMilestone().CountLastMessage(milestoneInfo2)
+
+	checkMetricsValues(t, 2, milestoneInfo2, ncm.GetInMilestone())
 }
 
-func checkMetricsValues(t *testing.T, expectedTotal uint32, expectedLastMessage string, metrics NodeConnectionMessageMetrics) {
+func checkMetricsValues[T any](t *testing.T, expectedTotal uint32, expectedLastMessage interface{}, metrics NodeConnectionMessageMetrics[T]) {
 	require.Equal(t, expectedTotal, metrics.GetMessageTotal())
 	if expectedTotal == 0 {
 		require.Nil(t, metrics.GetLastMessage())
 	} else {
-		require.Equal(t, expectedLastMessage, metrics.GetLastMessage().(string))
+		require.Equal(t, expectedLastMessage, metrics.GetLastMessage())
 	}
 }

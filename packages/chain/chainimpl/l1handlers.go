@@ -3,6 +3,8 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+
 	"github.com/iotaledger/inx-app/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,10 +19,7 @@ func (c *chainObj) handleMilestone(metadata *nodebridge.Milestone) {
 }
 
 func (c *chainObj) stateOutputHandler(outputID iotago.OutputID, output iotago.Output) {
-	c.nodeConn.GetMetrics().GetInStateOutput().CountLastMessage(struct {
-		OutputID iotago.OutputID
-		Output   iotago.Output
-	}{
+	c.nodeConn.GetMetrics().GetInStateOutput().CountLastMessage(&nodeconnmetrics.InStateOutput{
 		OutputID: outputID,
 		Output:   output,
 	})
@@ -47,10 +46,7 @@ func (c *chainObj) stateOutputHandler(outputID iotago.OutputID, output iotago.Ou
 }
 
 func (c *chainObj) outputHandler(outputID iotago.OutputID, output iotago.Output) {
-	c.nodeConn.GetMetrics().GetInOutput().CountLastMessage(struct {
-		OutputID iotago.OutputID
-		Output   iotago.Output
-	}{
+	c.nodeConn.GetMetrics().GetInOutput().CountLastMessage(&nodeconnmetrics.InOutput{
 		OutputID: outputID,
 		Output:   output,
 	})
@@ -69,11 +65,9 @@ func (c *chainObj) outputHandler(outputID iotago.OutputID, output iotago.Output)
 }
 
 func (c *chainObj) PullLatestOutput() {
-	c.nodeConn.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 	c.nodeConn.PullLatestOutput(c.chainID)
 }
 
 func (c *chainObj) PullStateOutputByID(outputID *iotago.UTXOInput) {
-	c.nodeConn.GetMetrics().GetOutPullOutputByID().CountLastMessage(outputID)
 	c.nodeConn.PullStateOutputByID(c.chainID, outputID)
 }

@@ -3,6 +3,8 @@ package nodeconnmetrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/iotaledger/iota.go/v3/nodeclient"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -13,7 +15,7 @@ type nodeConnectionMetricsImpl struct {
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
 	registered          []*isc.ChainID
-	inMilestoneMetrics  NodeConnectionMessageMetrics
+	inMilestoneMetrics  NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]
 }
 
 var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
@@ -24,7 +26,7 @@ func New(log *logger.Logger) NodeConnectionMetrics {
 		registered: make([]*isc.ChainID, 0),
 	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
-	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics(ret, nil, "in_milestone")
+	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics[*nodeclient.MilestoneInfo](ret, nil, "in_milestone")
 	return ret
 }
 
@@ -67,7 +69,7 @@ func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*isc.ChainID {
 	return ncmiT.registered
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) GetInMilestone() NodeConnectionMessageMetrics {
+func (ncmiT *nodeConnectionMetricsImpl) GetInMilestone() NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo] {
 	return ncmiT.inMilestoneMetrics
 }
 

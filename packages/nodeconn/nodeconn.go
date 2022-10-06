@@ -267,7 +267,7 @@ func (nc *nodeConn) GetChain(chainID *isc.ChainID) (*ncChain, error) {
 	return ncc, nil
 }
 
-// PublishStateTransaction implements chain.NodeConnection.
+// PublishTransaction implements chain.NodeConnection.
 func (nc *nodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
 	ncc, err := nc.GetChain(chainID)
 	if err != nil {
@@ -296,6 +296,7 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 		return
 	}
 	ncc.queryLatestChainStateUTXO()
+	nc.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 }
 
 func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
@@ -305,6 +306,7 @@ func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInp
 		return
 	}
 	ncc.PullStateOutputByID(id.ID())
+	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(id)
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
