@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
@@ -41,9 +42,9 @@ var (
 func NewWasmClientContext(svcClient IClientService, chainID wasmtypes.ScChainID, scName string) *WasmClientContext {
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
-	s.scName = scName
-	s.scHname = wasmtypes.NewScHname(scName)
 	s.chainID = chainID
+	s.scName = scName
+	s.scHname = wasmtypes.HnameFromBytes(isc.Hn(scName).Bytes())
 	return s
 }
 

@@ -51,7 +51,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	require.NoError(t, err)
 
 	// deploy the contract
-	wasm, err := os.ReadFile("./testwasmlib_bg.wasm")
+	wasm, err := os.ReadFile("../pkg/testwasmlib_bg.wasm")
 	require.NoError(t, err)
 
 	_, err = e.Chain.DeployWasmContract("testwasmlib", "contract to test wasmlib", wasm, nil)

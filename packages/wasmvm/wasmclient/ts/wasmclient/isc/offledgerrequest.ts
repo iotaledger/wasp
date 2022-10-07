@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import * as wasmlib from "wasmlib"
 import * as isc from "./index";
 
 export class OffLedgerSignatureScheme {
@@ -17,9 +18,9 @@ export class OffLedgerRequest {
     contract: isc.Hname;
     entryPoint: isc.Hname;
     params: isc.Dict;
-    signatureScheme: isc.OffLedgerSignatureScheme | null = null; // null if unsigned
+    signatureScheme: isc.OffLedgerSignatureScheme = new isc.OffLedgerSignatureScheme(new isc.KeyPair([]));
     nonce: u64;
-    allowance: isc.Allowance | null = null;
+    allowance: isc.Allowance = [ 1 ]; // empty allowance
     gasBudget: u64 = 0;
 
     public constructor(chainID: isc.ChainID, contract: isc.Hname, entryPoint: isc.Hname, params: u8[], nonce: u64) {
@@ -30,9 +31,21 @@ export class OffLedgerRequest {
         this.nonce = nonce;
     }
 
+    public bytes(): u8[] {
+        return this.essence().concat(this.signatureScheme.signature);
+    }
     public essence(): u8[] {
-        //TODO
-        return [];
+        let data: u8[] = [ 1 ]; // requestKindTagOffLedgerISC
+        data = data.concat(this.chainID);
+        data = data.concat(wasmlib.uint32ToBytes(this.contract));
+        data = data.concat(wasmlib.uint32ToBytes(this.entryPoint));
+        data = data.concat(this.params);
+        data = data.concat(wasmlib.uint64ToBytes(this.nonce));
+        data = data.concat(wasmlib.uint64ToBytes(this.gasBudget));
+        data = data.concat([this.signatureScheme.keyPair.publicKey.length]);
+        data = data.concat(this.signatureScheme.keyPair.publicKey);
+        data = data.concat(this.allowance);
+        return data;
     }
 
     public ID(): isc.RequestID {
@@ -41,7 +54,7 @@ export class OffLedgerRequest {
     }
 
     public sign(keyPair: isc.KeyPair): OffLedgerRequest {
-         const req =  new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
+        const req =  new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
         req.signatureScheme = new isc.OffLedgerSignatureScheme(keyPair);
         req.signatureScheme.signature = keyPair.sign(this.essence());
         return req;
