@@ -471,14 +471,7 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 	sig, err := c.dkShare.BLSRecoverMasterSignature(partialSigArray, dataToSign)
 	if err != nil {
 		c.log.Warnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.dkShare.GetN(), err)
-		for nid, sigShare := range partialSigs {
-			c.log.Debugf("Failed with sigShare: %v => %v", nid, sigShare) // TODO: Remove this.
-		}
 		return false, nil // Continue to wait for other sig shares.
-	}
-	c.log.Debugf("Signed with %v/%v sigShares", len(partialSigs), c.dkShare.GetN()) // TODO: Remove this.
-	for nid, sigShare := range partialSigs {
-		c.log.Debugf("Signed with sigShare: %v => %v", nid, sigShare) // TODO: Remove this.
 	}
 	return true, c.subVM.RandomnessReceived(hashing.HashDataBlake2b(sig.Signature.Bytes()))
 }

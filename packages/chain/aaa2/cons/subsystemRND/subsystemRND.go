@@ -34,7 +34,9 @@ func (sub *SubsystemRND) CanProceed(dataToSign []byte) gpa.OutMessages {
 		return nil
 	}
 	sub.dataToSign = dataToSign
-	return sub.inputsReadyCB(sub.dataToSign)
+	return gpa.NoMessages().
+		AddAll(sub.inputsReadyCB(sub.dataToSign)).
+		AddAll(sub.tryComplete())
 }
 
 func (sub *SubsystemRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []byte) gpa.OutMessages {
@@ -46,7 +48,7 @@ func (sub *SubsystemRND) BLSPartialSigReceived(sender gpa.NodeID, partialSig []b
 }
 
 func (sub *SubsystemRND) tryComplete() gpa.OutMessages {
-	if sub.sigSharesReady || len(sub.blsPartialSigs) < sub.blsThreshold {
+	if sub.sigSharesReady || sub.dataToSign == nil || len(sub.blsPartialSigs) < sub.blsThreshold {
 		return nil
 	}
 	done, msgs := sub.sigSharesReadyCB(sub.dataToSign, sub.blsPartialSigs)
