@@ -4,7 +4,12 @@
 import * as isc from "./index";
 
 export class OffLedgerSignatureScheme {
-    //TODO
+    keyPair: isc.KeyPair;
+    signature: u8[] = [];
+
+    public constructor(keyPair: isc.KeyPair) {
+        this.keyPair = keyPair;
+    }
 }
 
 export class OffLedgerRequest {
@@ -25,14 +30,21 @@ export class OffLedgerRequest {
         this.nonce = nonce;
     }
 
+    public essence(): u8[] {
+        //TODO
+        return [];
+    }
+
     public ID(): isc.RequestID {
         //TODO
         return [];
     }
 
     public sign(keyPair: isc.KeyPair): OffLedgerRequest {
-        //TODO
-        return new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
+         const req =  new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
+        req.signatureScheme = new isc.OffLedgerSignatureScheme(keyPair);
+        req.signatureScheme.signature = keyPair.sign(this.essence());
+        return req;
     }
 
     public withAllowance(allowance: isc.Allowance): void {
