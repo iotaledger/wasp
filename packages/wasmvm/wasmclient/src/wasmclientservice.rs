@@ -1,75 +1,126 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
+// // Copyright 2020 IOTA Stiftung
+// // SPDX-License-Identifier: Apache-2.0
 
-use wasmlib::*;
 use crate::*;
+use crypto::ciphers::traits::consts::NonZero;
+use hyper::{
+    client::HttpConnector,
+    {Body, Client},
+};
+use keypair::*;
+use std::{borrow::Borrow, time::Duration};
+use wasmlib::*;
+use wasp_client::*;
 
 pub trait IClientService {
-	fn callViewByHname(&self, chainID: ScChainID, hContract: ScHname, hFunction: ScHname, args: &[u8]) -> ([u8], error);
-	fn postRequest(&self, chainID: ScChainID, hContract: ScHname, hFunction: ScHname, args: &[u8], allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) -> (ScRequestID, error);
-	fn subscribeEvents(&self, msg: chan []string, done: chan bool) -> error;
-	fn waitUntilRequestProcessed(&self, chainID: ScChainID, reqID: ScRequestID, timeout: time.Duration) -> error;
+    fn call_view_by_hname(
+        &self,
+        chain_id: ScChainID,
+        contract_hname: ScHname,
+        function_hname: ScHname,
+        args: &[u8],
+    ) -> Result<Vec<u8>, String>;
+    fn post_request(
+        &self,
+        chain_id: ScChainID,
+        contract_hname: ScHname,
+        function_hname: ScHname,
+        args: &[u8],
+        allowance: ScAssets,
+        key_pair: KeyPair,
+    ) -> Result<(), String>;
+    fn subscribe_events(&self, msg: [&str]) -> Result<(), String>;
+    fn wait_until_request_processed(
+        &self,
+        chain_id: ScChainID,
+        req_id: ScRequestID,
+        timeout: Duration,
+    ) -> Result<(), String>;
 }
 
 pub struct WasmClientService {
-	cvt        : wasmhost.WasmConvertor,
-	waspClient : *client.WaspClient,
-	eventPort  : String,
-	nonce      : u64,
+    // cvt        : wasmhost.WasmConvertor,
+    client: wasp_client::WaspClient,
+    event_port: String,
+    nonce: u64,
 }
 
 impl WasmClientService {
-	pub fn new(waspAPI: &str, eventPort: &str) -> *WasmClientService {
-		return &WasmClientService{waspClient: client.NewWaspClient(waspAPI), eventPort: eventPort};
-	}
+    pub fn new(wasp_api: &str, event_port: &str) -> *mut WasmClientService {
+        return &mut WasmClientService {
+            client: WaspClient::new(wasp_api, None),
+            event_port: event_port.to_string(),
+            nonce: 0,
+        };
+    }
 
-	pub fn defaultWasmClientService() -> *WasmClientService {
-		return NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550");
-	}
+    pub fn default_wasm_client_service() -> *mut WasmClientService {
+        return &mut WasmClientService {
+            client: WaspClient::new("127.0.0.1:9090", None),
+            event_port: "127.0.0.1:5550".to_string(),
+            nonce: 0,
+        };
+    }
 
-	pub fn callViewByHname(&self, chainID: ScChainID, hContract: ScHname, hFunction: ScHname, args: &[u8]) -> ([u8], error) {
-		let iscpChainID = self.cvt.IscpChainID(&chainID);
-		let iscpContract = self.cvt.IscpHname(hContract);
-		let iscpFunction = self.cvt.IscpHname(hFunction);
-		let params,  err = dict.FromBytes(args);
-		if err != nil {
-			return nil, err;
-		}
-		let res,  err = self.waspClient.CallViewByHname(iscpChainID, iscpContract, iscpFunction, params);
-		if err != nil {
-			return nil, err;
-		}
-		return res.Bytes(), nil;
-	}
+    pub fn call_view_by_hname(
+        &self,
+        chain_id: ScChainID,
+        contract_hname: ScHname,
+        function_hname: ScHname,
+        args: &[u8],
+    ) -> Result<Vec<u8>, String> {
+        let params = ScDict::from_bytes(args)?;
 
-	pub fn postRequest(&self, chainID: ScChainID, hContract: ScHname, hFunction: ScHname, args: &[u8], allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) -> (reqID: ScRequestID, err: error) {
-		let iscpChainID = self.cvt.IscpChainID(&chainID);
-		let iscpContract = self.cvt.IscpHname(hContract);
-		let iscpFunction = self.cvt.IscpHname(hFunction);
-		let params,  err = dict.FromBytes(args);
-		if err != nil {
-			return reqID, err;
-		}
-		self.nonce++;
-		let req = iscp.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, self.nonce);
-		let iscpAllowance = self.cvt.IscpAllowance(allowance);
-		req.WithAllowance(iscpAllowance);
-		let signed = req.Sign(keyPair);
-		err = self.waspClient.PostOffLedgerRequest(iscpChainID, signed);
-		if err == nil {
-			reqID = self.cvt.ScRequestID(signed.ID());
-		}
-		return reqID, err;
-	}
+        let dict_res =
+            self.client
+                .CallViewByHname(&chain_id, contract_hname, function_hname, params, None)?;
 
-	pub fn subscribeEvents(&self, msg: &Vec<String>, done: chan bool) -> error {
-		return subscribe.Subscribe(self.eventPort, msg, done, false, "");
-	}
+        return Ok(dict_res.to_bytes());
+    }
 
-	pub fn waitUntilRequestProcessed(&self, chainID: ScChainID, reqID: ScRequestID, timeout: time.Duration) -> error {
-		let iscpChainID = self.cvt.IscpChainID(&chainID);
-		let iscpReqID = self.cvt.IscpRequestID(&reqID);
-		let _,  err = self.waspClient.WaitUntilRequestProcessed(iscpChainID, *iscpReqID, timeout);
-		return err;
-	}
+    pub fn post_request(
+        &mut self,
+        chain_id: ScChainID,
+        contract_hname: ScHname,
+        function_hname: ScHname,
+        args: &[u8],
+        allowance: ScAssets,
+        key_pair: KeyPair,
+    ) -> Result<(), String> {
+        // let iscpChainID = self.cvt.IscpChainID(&chainID);
+        // let iscpContract = self.cvt.IscpHname(contract_hname);
+        // let iscpFunction = self.cvt.IscpHname(function_hname);
+        let params = ScDict::from_bytes(args)?;
+        self.nonce = self.nonce + 1;
+        // let req = iscp.NewOffLedgerRequest(iscpChainID, iscpContract, iscpFunction, params, self.nonce);
+        let req: wasp_client::OffLedgerRequestData = wasp_client::OffLedgerRequest::new(
+            chain_id,
+            contract_hname,
+            function_hname,
+            params,
+            None,
+            self.nonce,
+        );
+        req.with_allowance(&allowance);
+        req.sign(key_pair);
+        return self.client.PostOffLedgerRequest(&chain_id, req);
+    }
+
+    // FIXME the following implementation is a blocked version. It should be multithread
+    pub fn subscribe_events(&self, msg: &Vec<String>) -> Result<(), String> {
+        return Err("not impl".to_string());
+    }
+
+    pub fn wait_until_request_processed(
+        &self,
+        chain_id: ScChainID,
+        req_id: ScRequestID,
+        timeout: Duration,
+    ) -> Result<(), String> {
+        let _ = self
+            .client
+            .WaitUntilRequestProcessed(&chain_id, req_id, timeout)?;
+
+        return Ok(());
+    }
 }
