@@ -4,11 +4,14 @@
 package bp
 
 import (
+	"bytes"
+	"sort"
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -94,4 +97,39 @@ func (abp *AggregatedBatchProposals) DecidedRequestRefs() []*isc.RequestRef {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
 	return abp.decidedRequestRefs
+}
+
+func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, randomness hashing.HashValue) []isc.Request {
+	type sortStruct struct {
+		key hashing.HashValue
+		ref *isc.RequestRef
+		req isc.Request
+	}
+	sortBuf := make([]*sortStruct, len(abp.decidedRequestRefs))
+	for i := range abp.decidedRequestRefs {
+		ref := abp.decidedRequestRefs[i]
+		var found isc.Request
+		for j := range requests {
+			if ref.IsFor(requests[j]) {
+				found = requests[j]
+				break
+			}
+		}
+		if found == nil {
+			panic("request was not provided by mempool")
+		}
+		sortBuf[i] = &sortStruct{
+			key: hashing.HashDataBlake2b(ref.ID.Bytes(), ref.Hash[:], randomness[:]),
+			ref: ref,
+			req: found,
+		}
+	}
+	sort.Slice(sortBuf, func(i, j int) bool {
+		return bytes.Compare(sortBuf[i].key[:], sortBuf[j].key[:]) < 0
+	})
+	sorted := make([]isc.Request, len(abp.decidedRequestRefs))
+	for i := range sortBuf {
+		sorted[i] = sortBuf[i].req
+	}
+	return sorted
 }

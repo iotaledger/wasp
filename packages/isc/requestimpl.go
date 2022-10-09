@@ -629,6 +629,13 @@ func (rr *RequestRef) AsKey() RequestRefKey {
 	return key
 }
 
+func (rr *RequestRef) IsFor(req Request) bool {
+	if rr.ID != req.ID() {
+		return false
+	}
+	return rr.Hash == hashing.HashDataBlake2b(req.Bytes())
+}
+
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
 // within one block, however it may collide globally. Used for quick checking for most requests
 // if it was never seen

@@ -44,6 +44,8 @@
 // once. This way we hope to solve a lot of race conditions gracefully. The `upon`
 // predicates and the corresponding done functions should not depend on each other.
 // If some data is needed at several places, it should be passed to several predicates.
+//
+// TODO: Handle the requests gracefully before getting the initTX in the VM.
 package cons
 
 import (
@@ -268,11 +270,10 @@ func (c *consImpl) AsGPA() gpa.GPA {
 
 func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	if baseAliasOutput, ok := input.(*isc.AliasOutputWithID); ok {
-		msgs := gpa.NoMessages()
-		msgs.AddAll(c.subMP.BaseAliasOutputReceived(baseAliasOutput))
-		msgs.AddAll(c.subSM.ProposedBaseAliasOutputReceived(baseAliasOutput))
-		msgs.AddAll(c.subDSS.InitialInputReceived())
-		return msgs
+		return gpa.NoMessages().
+			AddAll(c.subMP.BaseAliasOutputReceived(baseAliasOutput)).
+			AddAll(c.subSM.ProposedBaseAliasOutputReceived(baseAliasOutput)).
+			AddAll(c.subDSS.InitialInputReceived())
 	}
 	panic(xerrors.Errorf("unexpected input: %v", input))
 }
@@ -398,7 +399,9 @@ func (c *consImpl) uponDSSSigningInputsReceived(sub *subsystemDSS.SubsystemDSS) 
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide inputs for signing: %w", err))
 	}
-	return gpa.NoMessages().AddAll(subMsgs).AddAll(c.subDSS.DSSOutputReceived(subDSS.Output()))
+	return gpa.NoMessages().
+		AddAll(subMsgs).
+		AddAll(c.subDSS.DSSOutputReceived(subDSS.Output()))
 }
 
 func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
@@ -488,7 +491,7 @@ func (c *consImpl) uponVMInputsReceived(sub *subsystemVM.SubsystemVM) gpa.OutMes
 		AnchorOutput:           sub.BaseAliasOutput.GetAliasOutput(),
 		AnchorOutputID:         *decidedBaseAliasOutputID,
 		SolidStateBaseline:     sub.StateBaseline,
-		Requests:               sub.Requests,
+		Requests:               sub.AggregatedProposals.OrderedRequests(sub.Requests, *sub.Randomness),
 		TimeAssumption:         sub.AggregatedProposals.AggregatedTime(),
 		Entropy:                *sub.Randomness,
 		ValidatorFeeTarget:     sub.AggregatedProposals.ValidatorFeeTarget(),
@@ -514,10 +517,9 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if err != nil {
 		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
 	}
-	msgs := gpa.NoMessages()
-	msgs.AddAll(c.subTX.VMResultReceived(vmResult))
-	msgs.AddAll(c.subDSS.MessageToSignReceived(signingMsg))
-	return msgs
+	return gpa.NoMessages().
+		AddAll(c.subTX.VMResultReceived(vmResult)).
+		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

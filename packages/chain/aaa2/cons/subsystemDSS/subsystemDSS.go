@@ -100,6 +100,8 @@ func (sub *SubsystemDSS) String() string {
 	}
 	if sub.outputReady {
 		str += "/sig=OK"
+	} else if sub.signingInputsReady {
+		str += "/sig[WaitingForDSS]"
 	} else {
 		wait := []string{}
 		if sub.MessageToSign == nil {
