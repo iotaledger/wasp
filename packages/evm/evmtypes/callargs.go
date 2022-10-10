@@ -20,10 +20,10 @@ func EncodeCallMsg(c ethereum.CallMsg) []byte {
 		m.WriteBytes(c.To.Bytes())
 	}
 	m.WriteUint64(c.Gas)
-	m.WriteBool(c.GasPrice != nil)
-	if c.GasPrice != nil {
-		writeBytes(m, c.GasPrice.Bytes())
-	}
+	// m.WriteBool(c.GasPrice != nil)
+	// if c.GasPrice != nil {
+	// 	writeBytes(m, c.GasPrice.Bytes())
+	// }
 	m.WriteBool(c.Value != nil)
 	if c.Value != nil {
 		writeBytes(m, c.Value.Bytes())
@@ -57,16 +57,16 @@ func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
 		return
 	}
 
-	if exists, err = m.ReadBool(); err != nil {
-		return
-	}
-	if exists {
-		if b, err = readBytes(m); err != nil {
-			return
-		}
-		ret.GasPrice = new(big.Int)
-		ret.GasPrice.SetBytes(b)
-	}
+	// if exists, err = m.ReadBool(); err != nil {
+	// 	return
+	// }
+	// if exists {
+	// 	if b, err = readBytes(m); err != nil {
+	// 		return
+	// 	}
+	// 	ret.GasPrice = new(big.Int)
+	// 	ret.GasPrice.SetBytes(b)
+	// }
 
 	if exists, err = m.ReadBool(); err != nil {
 		return
@@ -77,6 +77,8 @@ func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
 		}
 		ret.Value = new(big.Int)
 		ret.Value.SetBytes(b)
+	} else {
+		ret.Value = big.NewInt(0)
 	}
 
 	if ret.Data, err = readBytes(m); err != nil {

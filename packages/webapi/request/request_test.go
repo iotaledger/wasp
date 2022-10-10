@@ -81,7 +81,7 @@ func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 
 // chain.ChainRunner implementation
 
-func (*mockedChain) GetDB() kvstore.KVStore {
+func (*mockedChain) GetVirtualState() kvstore.KVStore {
 	panic("unimplemented")
 }
 

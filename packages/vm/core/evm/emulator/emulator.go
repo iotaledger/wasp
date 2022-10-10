@@ -146,34 +146,6 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 	}
 }
 
-func (e *EVMEmulator) estimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	lo := params.TxGas
-	hi := e.GasLimit()
-	lastOk := uint64(0)
-	var lastErr error
-	for hi >= lo {
-		callMsg.Gas = (lo + hi) / 2
-		res, err := e.CallContract(callMsg, nil)
-		if err != nil {
-			return 0, err
-		}
-		if res.Err != nil {
-			lastErr = res.Err
-			lo = callMsg.Gas + 1
-		} else {
-			lastOk = callMsg.Gas
-			hi = callMsg.Gas - 1
-		}
-	}
-	if lastOk == 0 {
-		if lastErr != nil {
-			return 0, xerrors.Errorf("estimateGas failed: %s", lastErr.Error())
-		}
-		return 0, xerrors.Errorf("estimateGas failed")
-	}
-	return lastOk, nil
-}
-
 // CallContract executes a contract call, without committing changes to the state
 func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(bool)) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
@@ -184,7 +156,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 		call.Gas = e.GasLimit()
 	}
 	if call.Value == nil {
-		call.Value = new(big.Int)
+		call.Value = big.NewInt(0)
 	}
 
 	msg := callMsg{call}

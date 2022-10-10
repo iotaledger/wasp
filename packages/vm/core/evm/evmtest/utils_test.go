@@ -341,9 +341,9 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 }
 
 func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, error) {
-	callArguments, err := e.abi.Pack(fnName, args...)
+	callData, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
-	opt, err := e.parseEthCallOptions(opts, callArguments)
+	opt, err := e.parseEthCallOptions(opts, callData)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +352,7 @@ func (e *evmContractInstance) buildEthTx(opts []ethCallOptions, fnName string, a
 
 	nonce := e.chain.getNonce(senderAddress)
 
-	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
+	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callData)
 
 	return types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 }
