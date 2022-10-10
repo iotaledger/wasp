@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -59,6 +60,22 @@ func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
 		return L1Commitment{}, err
 	}
 	return ret, nil
+}
+
+func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
+	byteCount, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	data, err := mu.ReadBytes(int(byteCount))
+	if err != nil {
+		return nil, err
+	}
+	l1c, err := L1CommitmentFromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	return &l1c, nil
 }
 
 func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, error) {

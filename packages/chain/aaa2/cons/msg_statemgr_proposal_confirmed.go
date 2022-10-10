@@ -5,18 +5,16 @@ package cons
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type msgStateMgrProposalConfirmed struct {
-	node            gpa.NodeID
-	baseAliasOutput *isc.AliasOutputWithID
+	node gpa.NodeID
 }
 
 var _ gpa.Message = &msgStateMgrProposalConfirmed{}
 
-func NewMsgStateMgrProposalConfirmed(node gpa.NodeID, baseAliasOutput *isc.AliasOutputWithID) gpa.Message {
-	return &msgStateMgrProposalConfirmed{node: node, baseAliasOutput: baseAliasOutput}
+func NewMsgStateMgrProposalConfirmed(node gpa.NodeID) gpa.Message {
+	return &msgStateMgrProposalConfirmed{node: node}
 }
 
 func (m *msgStateMgrProposalConfirmed) Recipient() gpa.NodeID {

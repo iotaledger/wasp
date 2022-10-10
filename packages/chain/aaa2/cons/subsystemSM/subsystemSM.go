@@ -21,7 +21,8 @@ type SubsystemSM struct {
 	//
 	// Query for a decided Virtual State.
 	decidedBaseAliasOutputID       *iotago.OutputID
-	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID) gpa.OutMessages
+	decidedBaseStateCommitment     *state.L1Commitment
+	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages
 	decidedBaseAliasOutput         *isc.AliasOutputWithID
 	decidedStateReceivedCB         func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
 }
@@ -29,7 +30,7 @@ type SubsystemSM struct {
 func New(
 	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	stateProposalReceivedCB func(proposedAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
-	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID) gpa.OutMessages,
+	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages,
 	decidedStateReceivedCB func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages,
 ) *SubsystemSM {
 	return &SubsystemSM{
@@ -48,20 +49,21 @@ func (sub *SubsystemSM) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.Ali
 	return sub.stateProposalQueryInputsReadyCB(sub.ProposedBaseAliasOutput)
 }
 
-func (sub *SubsystemSM) StateProposalConfirmedByStateMgr(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+func (sub *SubsystemSM) StateProposalConfirmedByStateMgr() gpa.OutMessages {
 	if sub.stateProposalReceived {
 		return nil
 	}
 	sub.stateProposalReceived = true
-	return sub.stateProposalReceivedCB(baseAliasOutput)
+	return sub.stateProposalReceivedCB(sub.ProposedBaseAliasOutput)
 }
 
-func (sub *SubsystemSM) DecidedVirtualStateNeeded(decidedAliasOutputID *iotago.OutputID) gpa.OutMessages {
+func (sub *SubsystemSM) DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages {
 	if sub.decidedBaseAliasOutputID != nil {
 		return nil
 	}
-	sub.decidedBaseAliasOutputID = decidedAliasOutputID
-	return sub.decidedStateQueryInputsReadyCB(decidedAliasOutputID)
+	sub.decidedBaseAliasOutputID = decidedBaseAliasOutputID
+	sub.decidedBaseStateCommitment = decidedBaseStateCommitment
+	return sub.decidedStateQueryInputsReadyCB(decidedBaseAliasOutputID, decidedBaseStateCommitment)
 }
 
 func (sub *SubsystemSM) DecidedVirtualStateReceived(

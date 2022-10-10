@@ -176,7 +176,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.NeedMempoolProposal)
 		require.NotNil(t, out.NeedStateMgrStateProposal)
 		tc.WithMessage(cons.NewMsgMempoolProposal(nid, initReqRefs))
-		tc.WithMessage(cons.NewMsgStateMgrProposalConfirmed(nid, ao0))
+		tc.WithMessage(cons.NewMsgStateMgrProposalConfirmed(nid))
 		tc.WithMessage(cons.NewMsgTimeData(nid, now))
 	}
 	tc.RunAll()
@@ -797,7 +797,7 @@ func (tci *testConsInst) tryHandledNeedMempoolProposal(nodeID gpa.NodeID, out *c
 func (tci *testConsInst) tryHandledNeedStateMgrStateProposal(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrStateProposal != nil && !tci.handledNeedStateMgrStateProposal[nodeID] {
 		require.Equal(tci.t, out.NeedStateMgrStateProposal, inp.baseAliasOutput)
-		tci.messagePipe <- cons.NewMsgStateMgrProposalConfirmed(nodeID, inp.baseAliasOutput)
+		tci.messagePipe <- cons.NewMsgStateMgrProposalConfirmed(nodeID)
 		tci.handledNeedStateMgrStateProposal[nodeID] = true
 	}
 }
@@ -824,7 +824,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 
 func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrDecidedState != nil && !tci.handledNeedStateMgrDecidedState[nodeID] {
-		if *out.NeedStateMgrDecidedState == inp.baseAliasOutput.OutputID() {
+		if *out.NeedStateMgrDecidedState.AliasOutputID == inp.baseAliasOutput.OutputID() {
 			tci.messagePipe <- cons.NewMsgStateMgrDecidedVirtualState(nodeID, inp.baseAliasOutput, inp.stateBaseline, inp.virtualStateAccess)
 		} else {
 			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")

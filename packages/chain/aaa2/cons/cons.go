@@ -99,6 +99,11 @@ const (
 	Skipped                      // Consensus reached, no TX should be posted for this LogIndex.
 )
 
+type StateRef struct {
+	AliasOutputID   *iotago.OutputID
+	StateCommitment *state.L1Commitment
+}
+
 type Output struct {
 	State      OutputState
 	Terminated bool
@@ -107,7 +112,7 @@ type Output struct {
 	NeedMempoolProposal       *isc.AliasOutputWithID // Requests for the mempool are needed for this Base Alias Output.
 	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
 	NeedStateMgrStateProposal *isc.AliasOutputWithID // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *iotago.OutputID       // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrDecidedState  *StateRef              // Query for a decided Virtual State to be used by VM.
 	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
@@ -287,7 +292,7 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case *msgMempoolRequests:
 		return c.subMP.RequestsReceived(msgT.requests)
 	case *msgStateMgrProposalConfirmed:
-		return c.subSM.StateProposalConfirmedByStateMgr(msgT.baseAliasOutput)
+		return c.subSM.StateProposalConfirmedByStateMgr()
 	case *msgStateMgrDecidedVirtualState:
 		return c.subSM.DecidedVirtualStateReceived(msgT.aliasOutput, msgT.stateBaseline, msgT.virtualStateAccess)
 	case *msgTimeData:
@@ -366,8 +371,8 @@ func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *isc.AliasOut
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutputID *iotago.OutputID) gpa.OutMessages {
-	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutputID
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages {
+	c.output.NeedStateMgrDecidedState = &StateRef{decidedBaseAliasOutputID, decidedBaseStateCommitment}
 	return nil
 }
 
@@ -414,7 +419,7 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 func (c *consImpl) uponACSInputsReceived(sub *subsystemACS.SubsystemACS) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
-		sub.BaseAliasOutput.ID(),
+		sub.BaseAliasOutput,
 		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(sub.DSSIndexProposal),
 		sub.TimeData,
 		isc.NewContractAgentID(&c.chainID, 0),
@@ -439,9 +444,10 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return nil
 	}
 	baoID := *aggr.DecidedBaseAliasOutputID()
+	bSCmt := aggr.DecidedBaseStateCommitment()
 	return gpa.NoMessages().
 		AddAll(c.subMP.RequestsNeeded(aggr.DecidedRequestRefs())).
-		AddAll(c.subSM.DecidedVirtualStateNeeded(&baoID)).
+		AddAll(c.subSM.DecidedVirtualStateNeeded(&baoID, bSCmt)).
 		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
 		AddAll(c.subRND.CanProceed(baoID[:])).
 		AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))

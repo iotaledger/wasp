@@ -48,9 +48,22 @@ type StateMgrDecidedState struct {
 	StateBaseline      coreutil.StateBaseline
 	VirtualStateAccess state.VirtualStateAccess
 }
+
 type StateMgr interface {
-	ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan *isc.AliasOutputWithID
-	ConsensusDecidedState(ctx context.Context, aliasOutputID *iotago.OutputID) <-chan *StateMgrDecidedState
+	// State manager has to implement this function. It has to return a signal via
+	// the return channel when it ensures all the needed blocks for the specified
+	// AliasOutput is present in the database. Context is used to cancel a request.
+	ConsensusStateProposal(
+		ctx context.Context,
+		aliasOutput *isc.AliasOutputWithID,
+	) <-chan interface{}
+	// State manager has to ensure all the data needed for the specified alias
+	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
+	ConsensusDecidedState(
+		ctx context.Context,
+		aliasOutputID *iotago.OutputID,
+		stateCommitment *state.L1Commitment,
+	) <-chan *StateMgrDecidedState
 }
 
 type VM interface {
@@ -87,7 +100,7 @@ type ConsGr struct {
 	mempoolRequestsRespCh       <-chan []isc.Request
 	mempoolRequestsAsked        bool
 	stateMgr                    StateMgr
-	stateMgrStateProposalRespCh <-chan *isc.AliasOutputWithID
+	stateMgrStateProposalRespCh <-chan interface{}
 	stateMgrStateProposalAsked  bool
 	stateMgrDecidedStateRespCh  <-chan *StateMgrDecidedState
 	stateMgrDecidedStateAsked   bool
@@ -204,12 +217,12 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				continue
 			}
 			cgr.handleMessage(cons.NewMsgMempoolRequests(cgr.me, resp))
-		case resp, ok := <-cgr.stateMgrStateProposalRespCh:
+		case _, ok := <-cgr.stateMgrStateProposalRespCh:
 			if !ok {
 				cgr.stateMgrStateProposalRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgStateMgrProposalConfirmed(cgr.me, resp))
+			cgr.handleMessage(cons.NewMsgStateMgrProposalConfirmed(cgr.me))
 		case resp, ok := <-cgr.stateMgrDecidedStateRespCh:
 			if !ok {
 				cgr.stateMgrDecidedStateRespCh = nil
@@ -275,7 +288,7 @@ func (cgr *ConsGr) tryHandleOutput() {
 		cgr.stateMgrStateProposalAsked = true
 	}
 	if output.NeedStateMgrDecidedState != nil && !cgr.stateMgrDecidedStateAsked {
-		cgr.stateMgrDecidedStateRespCh = cgr.stateMgr.ConsensusDecidedState(cgr.ctx, output.NeedStateMgrDecidedState)
+		cgr.stateMgrDecidedStateRespCh = cgr.stateMgr.ConsensusDecidedState(cgr.ctx, output.NeedStateMgrDecidedState.AliasOutputID, output.NeedStateMgrDecidedState.StateCommitment)
 		cgr.stateMgrDecidedStateAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
