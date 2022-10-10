@@ -306,7 +306,7 @@ func testChained(t *testing.T, n, f, b int) {
 	allRequests := map[int][]isc.Request{}
 	allRequests[0] = tcl.txChainInit()
 	if b > 1 {
-		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 5_000_000)
+		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
 		require.NoError(t, err)
 		allRequests[1] = append(tcl.txAccountsDeposit(scClient), tcl.txDeployIncCounterContract()...)
 	}
@@ -320,7 +320,7 @@ func testChained(t *testing.T, n, f, b int) {
 				inccounter.Contract.Hname(),
 				inccounter.FuncIncCounter.Hname(),
 				dict.New(), uint64(i*reqPerBlock+ii),
-			).WithGasBudget(15000).Sign(scClient)
+			).WithGasBudget(20000).Sign(scClient)
 			reqs = append(reqs, scRequest)
 			incTotal++
 		}
@@ -446,16 +446,14 @@ func (tcl *testChainLedger) txAccountsDeposit(account *cryptolib.KeyPair) []isc.
 			UnspentOutputIDs: outIDs,
 			Request: &isc.RequestParameters{
 				TargetAddress:                 tcl.chainID.AsAddress(),
-				FungibleTokens:                isc.NewFungibleBaseTokens(2_000_000),
+				FungibleTokens:                isc.NewFungibleBaseTokens(100_000_000),
 				AdjustToMinimumStorageDeposit: false,
 				Metadata: &isc.SendMetadata{
 					TargetContract: accounts.Contract.Hname(),
 					EntryPoint:     accounts.FuncDeposit.Hname(),
-					Allowance:      isc.NewEmptyAllowance().AddBaseTokens(10000), // TODO: ...
 					GasBudget:      10_000,
 				},
 			},
-			// NFT: par.NFT,
 		},
 	)
 	require.NoError(tcl.t, err)
@@ -485,7 +483,6 @@ func (tcl *testChainLedger) txDeployIncCounterContract() []isc.Request {
 						root.ParamName:        inccounter.Contract.Name,
 						inccounter.VarCounter: 0,
 					}),
-					Allowance: isc.NewEmptyAllowance().AddBaseTokens(10000),
 					GasBudget: 10_000,
 				},
 			},
