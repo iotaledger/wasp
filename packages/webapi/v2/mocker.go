@@ -26,6 +26,10 @@ func NewMocker() *Mocker {
 func getStructName(i interface{}) string {
 	t := reflect.TypeOf(i)
 
+	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
+		return t.Elem().Name() + "[]"
+	}
+
 	if t.Kind() == reflect.Ptr {
 		return t.Elem().Name()
 	}
@@ -33,17 +37,19 @@ func getStructName(i interface{}) string {
 	return t.Name()
 }
 
-func (m *Mocker) AddModel(i interface{}) {
-	name := getStructName(i)
+func createNewInstance(i interface{}) reflect.Value {
+	t := reflect.TypeOf(i)
 
-	if jsonMockData, ok := m.mockData[name]; ok {
-		err := json.Unmarshal(jsonMockData, &i)
-		if err != nil {
-			log.Fatal(err)
-		}
+	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
+		newSlice := reflect.MakeSlice(t, 0, 0)
+		return reflect.New(newSlice.Type())
 	}
 
-	m.mockedModels[name] = i
+	if t.Kind() == reflect.Ptr {
+		return reflect.New(t.Elem())
+	}
+
+	return reflect.New(t)
 }
 
 func (m *Mocker) LoadMockFiles() {
@@ -67,12 +73,17 @@ func (m *Mocker) LoadMockFiles() {
 	}
 }
 
-func (m *Mocker) GetMockedStruct(i interface{}) interface{} {
+func (m *Mocker) Get(i interface{}) interface{} {
 	name := getStructName(i)
+	model := createNewInstance(i)
+	instance := model.Interface()
 
-	if mockedStruct, ok := m.mockedModels[name]; ok {
-		return mockedStruct
+	if jsonMockData, ok := m.mockData[name]; ok {
+		err := json.Unmarshal(jsonMockData, instance)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	return nil
+	return instance
 }

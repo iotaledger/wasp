@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package evm
+package jsonrpc
 
 import (
 	"fmt"
@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -27,24 +26,24 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-type jsonRPCWaspBackend struct {
+type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	requestIDs sync.Map
 	baseToken  *parameters.BaseToken
 }
 
-var _ jsonrpc.ChainBackend = &jsonRPCWaspBackend{}
+var _ ChainBackend = &WaspEVMBackend{}
 
-func newWaspBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *jsonRPCWaspBackend {
-	return &jsonRPCWaspBackend{
+func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *WaspEVMBackend {
+	return &WaspEVMBackend{
 		chain:      ch,
 		nodePubKey: nodePubKey,
 		baseToken:  baseToken,
 	}
 }
 
-func (b *jsonRPCWaspBackend) RequestIDByTransactionHash(txHash common.Hash) (isc.RequestID, bool) {
+func (b *WaspEVMBackend) RequestIDByTransactionHash(txHash common.Hash) (isc.RequestID, bool) {
 	// TODO: should this be stored in the chain state instead of a volatile cache?
 	r, ok := b.requestIDs.Load(txHash)
 	if !ok {
@@ -53,7 +52,7 @@ func (b *jsonRPCWaspBackend) RequestIDByTransactionHash(txHash common.Hash) (isc
 	return r.(isc.RequestID), true
 }
 
-func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
+func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
 	// TODO: Cache the gas ratio?
 	currentBlockIndex := b.ISCLatestBlockIndex()
 	ret, err := b.ISCCallView(currentBlockIndex, governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
@@ -63,7 +62,7 @@ func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
-func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
+func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	// Ensure the transaction has more gas than the basic Ethereum tx fee.
 	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true)
 	if err != nil {
@@ -88,16 +87,16 @@ func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
+func (b *WaspEVMBackend) evictWhenExpired(txHash common.Hash) {
 	time.Sleep(1 * time.Hour)
 	b.requestIDs.Delete(txHash)
 }
 
-func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
+func (b *WaspEVMBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return chainutil.EstimateGas(b.chain, callMsg)
 }
 
-func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
+func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	currentBlockIndex := b.ISCLatestBlockIndex()
 	res, err := chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
 	if err != nil {
@@ -125,16 +124,16 @@ func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
 	return price
 }
 
-func (b *jsonRPCWaspBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
+func (b *WaspEVMBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
 	return chainutil.CallView(iscBlockIndex, b.chain, isc.Hn(scName), isc.Hn(funName), args)
 }
 
-func (b *jsonRPCWaspBackend) BaseToken() *parameters.BaseToken {
+func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
 // ISCLatestBlockIndex implements jsonrpc.ChainBackend
-func (b *jsonRPCWaspBackend) ISCLatestBlockIndex() uint32 {
+func (b *WaspEVMBackend) ISCLatestBlockIndex() uint32 {
 	currentBlockIndex, err := b.chain.GetStateReader().LatestBlockIndex()
 	if err != nil {
 		panic(fmt.Sprintf("couldn't get latest block index: %s ", err.Error()))

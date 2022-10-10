@@ -1,12 +1,17 @@
 package apierrors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
 
 func ChainNotFoundError(chainID string) *HTTPError {
 	return NewHTTPError(http.StatusNotFound, fmt.Sprintf("Chain ID: %v not found", chainID), nil)
+}
+
+func BodyIsEmptyError() *HTTPError {
+	return InvalidPropertyError("body", errors.New("A valid body is required"))
 }
 
 func InvalidPropertyError(propertyName string, err error) *HTTPError {

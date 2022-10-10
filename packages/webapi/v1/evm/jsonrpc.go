@@ -2,11 +2,12 @@ package evm
 
 import (
 	"fmt"
+	"net/http"
+	"sync"
+
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-	"net/http"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -31,7 +32,7 @@ type jsonRPCService struct {
 }
 
 type chainServer struct {
-	backend *jsonRPCWaspBackend
+	backend *jsonrpc.WaspEVMBackend
 	rpc     *rpc.Server
 }
 
@@ -72,7 +73,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 			return nil, fmt.Errorf("node is not authenticated")
 		}
 
-		backend := newWaspBackend(chain, nodePubKey, parameters.L1().BaseToken)
+		backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 		var evmChainID uint16
 		{

@@ -34,17 +34,18 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 
 	committeeInfo := chain.GetCommitteeInfo()
 	chainNodeInfo, err := c.nodeService.GetCommitteeInfo(chain)
+
 	if err != nil {
 		return err
 	}
 
-	chainInfo := models.CommitteeInfoResponse{
+	chainInfo := models.CommitteeInfo{
 		ChainID:        chainID.String(),
 		Active:         chainRecord.Active,
 		StateAddress:   committeeInfo.Address.String(),
-		CommitteeNodes: chainNodeInfo.CommitteeNodes,
-		AccessNodes:    chainNodeInfo.AccessNodes,
-		CandidateNodes: chainNodeInfo.CandidateNodes,
+		CommitteeNodes: models.MapCommitteeNodes(chainNodeInfo.CommitteeNodes),
+		AccessNodes:    models.MapCommitteeNodes(chainNodeInfo.AccessNodes),
+		CandidateNodes: models.MapCommitteeNodes(chainNodeInfo.CandidateNodes),
 	}
 
 	return e.JSON(http.StatusOK, chainInfo)
@@ -66,7 +67,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
+	chainInfoResponse := models.MapChainInfo(chainInfo, evmChainID)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
@@ -77,7 +78,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		return err
 	}
 
-	chainList := models.ChainListResponse{}
+	chainList := make([]models.ChainInfo, 0)
 
 	for _, chainID := range chainIDs {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -90,7 +91,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 			return err
 		}
 
-		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
+		chainInfoResponse := models.MapChainInfo(chainInfo, evmChainID)
 
 		chainList = append(chainList, chainInfoResponse)
 	}

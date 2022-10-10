@@ -45,7 +45,7 @@ func (c *InfoController) RegisterExampleData(mock interfaces.Mocker) {
 func (c *InfoController) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	publicAPI.GET("", c.getInfo).
 		AddResponse(http.StatusOK, "Dumps configuration", nil, nil).
-		SetOperationId("getConfiguration").
+		SetOperationId("getInfo").
 		SetSummary("Returns the Wasp configuration")
 }
 

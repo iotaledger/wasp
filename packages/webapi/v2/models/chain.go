@@ -3,26 +3,53 @@ package models
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
-type CommitteeInfoResponse struct {
-	AccessNodes    []*dto.ChainNodeStatus `swagger:"desc(A list of all access nodes and their peering info.)"`
-	Active         bool                   `swagger:"desc(Whether or not the chain is active.)"`
-	CandidateNodes []*dto.ChainNodeStatus `swagger:"desc(A list of all candidate nodes and their peering info.)"`
-	ChainID        string                 `swagger:"desc(ChainID (bech32-encoded).)"`
-	CommitteeNodes []*dto.ChainNodeStatus `swagger:"desc(A list of all committee nodes and their peering info.)"`
-	StateAddress   string                 `swagger:"desc(State address, if we are part of it.)"`
+type CommitteeNode struct {
+	AccessAPI string
+	Node      PeeringNodeStatus
 }
 
-type ContractInfoResponse struct {
+func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {
+	return CommitteeNode{
+		AccessAPI: status.AccessAPI,
+		Node: PeeringNodeStatus{
+			IsAlive:   status.Node.IsAlive,
+			NetID:     status.Node.NetID,
+			NumUsers:  status.Node.NumUsers,
+			PublicKey: status.Node.PublicKey.String(),
+			IsTrusted: status.Node.IsTrusted,
+		},
+	}
+}
+
+func MapCommitteeNodes(status []*dto.ChainNodeStatus) []CommitteeNode {
+	nodes := make([]CommitteeNode, 0)
+
+	for _, node := range status {
+		nodes = append(nodes, MapCommitteeNode(node))
+	}
+
+	return nodes
+}
+
+type CommitteeInfo struct {
+	AccessNodes    []CommitteeNode `swagger:"desc(A list of all access nodes and their peering info.)"`
+	Active         bool            `swagger:"desc(Whether or not the chain is active.)"`
+	CandidateNodes []CommitteeNode `swagger:"desc(A list of all candidate nodes and their peering info.)"`
+	ChainID        string          `swagger:"desc(ChainID (bech32-encoded).)"`
+	CommitteeNodes []CommitteeNode `swagger:"desc(A list of all committee nodes and their peering info.)"`
+	StateAddress   string          `swagger:"desc(State address, if we are part of it.)"`
+}
+
+type ContractInfo struct {
 	Description string            `swagger:"desc(The description of the contract.)"`
 	HName       isc.Hname         `swagger:"desc(The id (HName(name)) of the contract.)"`
 	Name        string            `swagger:"desc(The name of the contract.)"`
 	ProgramHash hashing.HashValue `swagger:"desc(The hash of the contract.)"`
 }
-
-type ContractListResponse []*ContractInfoResponse
 
 type gasFeePolicy struct {
 	GasFeeTokenID     string `swagger:"desc(The gas fee token id. Empty if base token.)"`
@@ -30,36 +57,30 @@ type gasFeePolicy struct {
 	ValidatorFeeShare uint8  `swagger:"desc(The validator fee share.)"`
 }
 
-type ChainInfoResponse struct {
-	ChainID         string `swagger:"desc(ChainID (bech32-encoded).)"`
-	EVMChainID      uint16 `swagger:"desc(The EVM chain ID)"`
-	ChainOwnerID    string `swagger:"desc(The chain owner address (bech32-encoded).)"`
-	Description     string `swagger:"desc(The description of the chain.)"`
-	GasFeePolicy    *gasFeePolicy
-	MaxBlobSize     uint32 `swagger:"desc(The maximum contract blob size.)"`
-	MaxEventSize    uint16 `swagger:"desc(The maximum event size.)"`                   // TODO: Clarify
-	MaxEventsPerReq uint16 `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
+type ChainInfo struct {
+	ChainID         string       `swagger:"desc(ChainID (bech32-encoded).)"`
+	EVMChainID      uint16       `swagger:"desc(The EVM chain ID)"`
+	ChainOwnerID    string       `swagger:"desc(The chain owner address (bech32-encoded).)"`
+	Description     string       `swagger:"desc(The description of the chain.)"`
+	GasFeePolicy    gasFeePolicy `json:"GasFeePolicy"`
+	MaxBlobSize     uint32       `swagger:"desc(The maximum contract blob size.)"`
+	MaxEventSize    uint16       `swagger:"desc(The maximum event size.)"`                   // TODO: Clarify
+	MaxEventsPerReq uint16       `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
-type OffLedgerRequestBody struct {
-	Request string `swagger:"desc(Offledger Request (base64))"`
-}
-
-type ChainListResponse []*ChainInfoResponse
-
-func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) *ChainInfoResponse {
+func MapChainInfo(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo {
 	gasFeeTokenID := ""
 
 	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 
-	chainInfoResponse := ChainInfoResponse{
+	chainInfoResponse := ChainInfo{
 		ChainID:      chainInfo.ChainID.String(),
 		EVMChainID:   evmChainID,
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
 		Description:  chainInfo.Description,
-		GasFeePolicy: &gasFeePolicy{
+		GasFeePolicy: gasFeePolicy{
 			GasFeeTokenID:     gasFeeTokenID,
 			GasPerToken:       chainInfo.GasFeePolicy.GasPerToken,
 			ValidatorFeeShare: chainInfo.GasFeePolicy.ValidatorFeeShare,
@@ -69,5 +90,24 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) *ChainInf
 		MaxEventsPerReq: chainInfo.MaxEventsPerReq,
 	}
 
-	return &chainInfoResponse
+	return chainInfoResponse
+}
+
+type OffLedgerRequestBody struct {
+	Request string `swagger:"desc(Offledger Request (base64))"`
+}
+
+type SaveChainRecordRequest struct {
+	ChainID string `json:"ChainID" swagger:"desc(The chain id)"`
+	Active  bool   `json:"Active" swagger:"desc(Decides if the chain is active or not)"`
+}
+
+type ContractCallViewRequest struct {
+	ContractName  string
+	ContractHName isc.Hname
+
+	FunctionName  string
+	FunctionHName isc.Hname
+
+	Arguments dict.Dict
 }

@@ -14,6 +14,11 @@ type PeeringNodeIdentity struct {
 	IsTrusted bool   `swagger:"Desc(Whether or not the peer is trusted)"`
 }
 
-type PeeringNodePublicKey struct {
+type PeeringNodePublicKeyRequest struct {
 	PublicKey string `swagger:"desc(The peers public key encoded in hex)"`
+}
+
+type PeeringTrustRequest struct {
+	PublicKey string `swagger:"desc(The peers public key encoded in hex)"`
+	NetID     string `swagger:"desc(The NetID of the peer)"`
 }

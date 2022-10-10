@@ -59,7 +59,7 @@ func (c *Controller) GetIdentity(e echo.Context) error {
 }
 
 func (c *Controller) TrustPeer(e echo.Context) error {
-	var trustedPeer models.PeeringNodeIdentity
+	var trustedPeer models.PeeringTrustRequest
 
 	if err := e.Bind(&trustedPeer); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
@@ -79,7 +79,7 @@ func (c *Controller) TrustPeer(e echo.Context) error {
 }
 
 func (c *Controller) DistrustPeer(e echo.Context) error {
-	var trustedPeer models.PeeringNodePublicKey
+	var trustedPeer models.PeeringTrustRequest
 
 	if err := e.Bind(&trustedPeer); err != nil {
 		return apierrors.InvalidPropertyError("body", err)

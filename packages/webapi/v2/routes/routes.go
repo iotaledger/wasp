@@ -27,18 +27,6 @@ func GetChainsNodeConnectionMetrics() string {
 	return "/adm/chains/nodeconn/metrics"
 }
 
-func GetChainNodeConnectionMetrics(chainID string) string {
-	return "/adm/chains/" + chainID + "/nodeconn/metrics"
-}
-
-func GetChainConsensusWorkflowStatus(chainID string) string {
-	return "/adm/chains/" + chainID + "/consensus/status"
-}
-
-func GetChainConsensusPipeMetrics(chainID string) string {
-	return "/adm/chains/" + chainID + "/consensus/metrics/pipe"
-}
-
 func DKSharesPost() string {
 	return "/adm/dks"
 }

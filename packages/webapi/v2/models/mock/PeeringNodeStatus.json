@@ -1,0 +1,7 @@
+{
+  "IsAlive":  true,
+  "NetID":    "localhost:4000",
+  "NumUsers":  1,
+  "PublicKey": "0x0000",
+  "IsTrusted": true
+}

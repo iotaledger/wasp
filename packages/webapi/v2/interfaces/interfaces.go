@@ -14,7 +14,6 @@ import (
 
 type APIController interface {
 	Name() string
-	RegisterExampleData(mocker Mocker)
 	RegisterPublic(publicAPI echoswagger.ApiGroup, mocker Mocker)
 	RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker Mocker)
 }
@@ -31,7 +30,10 @@ type ChainService interface {
 }
 
 type MetricsService interface {
-	GetConnectionMetrics(chainID *isc.ChainID) *dto.MetricsReport
+	GetAllChainsMetrics() *dto.ChainMetricsReport
+	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics
+	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *dto.ConsensusWorkflowMetrics
+	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetricsReport
 }
 
 type RegistryService interface {
@@ -63,6 +65,5 @@ type VMService interface {
 }
 
 type Mocker interface {
-	AddModel(i interface{})
-	GetMockedStruct(i interface{}) interface{}
+	Get(i interface{}) interface{}
 }

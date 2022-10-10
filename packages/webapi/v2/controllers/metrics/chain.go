@@ -15,7 +15,29 @@ func (c *Controller) getChainMetrics(e echo.Context) error {
 		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
-	metricsReport := c.metricsService.GetConnectionMetrics(chainID)
+	metricsReport := c.metricsService.GetChainMetrics(chainID)
+
+	return e.JSON(http.StatusOK, metricsReport)
+}
+
+func (c *Controller) getChainWorkflowMetrics(e echo.Context) error {
+	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	if err != nil {
+		return apierrors.InvalidPropertyError("chainID", err)
+	}
+
+	metricsReport := c.metricsService.GetChainConsensusWorkflowMetrics(chainID)
+
+	return e.JSON(http.StatusOK, metricsReport)
+}
+
+func (c *Controller) getChainPipeMetrics(e echo.Context) error {
+	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	if err != nil {
+		return apierrors.InvalidPropertyError("chainID", err)
+	}
+
+	metricsReport := c.metricsService.GetChainConsensusPipeMetrics(chainID)
 
 	return e.JSON(http.StatusOK, metricsReport)
 }

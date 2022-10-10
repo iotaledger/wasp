@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
-func (c *Controller) handleNewRequest(e echo.Context) error {
+func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
 		return apierrors.InvalidPropertyError("chainID", err)

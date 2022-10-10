@@ -28,13 +28,11 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, _ registry.Prov
 	}*/
 
 	for _, controller := range controllersToLoad {
-		controller.RegisterExampleData(mocker)
-
-		publicGroup := server.Group(controller.Name(), "v2")
+		publicGroup := server.Group(controller.Name(), "v2/")
 
 		controller.RegisterPublic(publicGroup, mocker)
 
-		adminGroup := server.Group(controller.Name(), "v2").
+		adminGroup := server.Group(controller.Name(), "v2/").
 			SetSecurity("Authorization")
 
 		/*authentication.AddAuthentication(adminGroup.EchoGroup(), registryProvider, authentication.AuthConfiguration{

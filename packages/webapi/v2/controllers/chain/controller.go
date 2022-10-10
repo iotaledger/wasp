@@ -38,20 +38,12 @@ func (c *Controller) Name() string {
 	return "chains"
 }
 
-func (c *Controller) RegisterExampleData(mock interfaces.Mocker) {
-	mock.AddModel(&models.ChainInfoResponse{})
-	mock.AddModel(&models.ContractListResponse{})
-	mock.AddModel(&models.CommitteeInfoResponse{})
-	mock.AddModel(&models.ChainListResponse{})
-	mock.AddModel(&models.ContractInfoResponse{})
-}
-
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	dictExample := dict.Dict{
 		"key1": []byte("value1"),
 	}.JSONDict()
 
-	publicAPI.POST(":chainID/contract/:contractName/:functionName", c.callViewByContractName).
+	publicAPI.POST("chains/:chainID/contracts/:contractName/:functionName", c.callViewByContractName).
 		AddParamBody(dictExample, "body", "Parameters", false).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "contractName", "Contract Name").
@@ -60,7 +52,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetResponseContentType("application/json").
 		SetSummary("Call a view function on a contract by name")
 
-	publicAPI.POST(":chainID/contract/:contractHName/:functionHName", c.callViewByHName).
+	publicAPI.POST("chains/:chainID/contracts/:contractHName/:functionHName", c.callViewByHName).
 		AddParamBody(dictExample, "body", "Parameters", false).
 		AddParamPath("", "chainID", "ChainID (Bech32").
 		AddParamPath("", "contractHName", "Contract Hname").
@@ -69,7 +61,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetResponseContentType("application/json").
 		SetSummary("Call a view function on a contract by Hname")
 
-	publicAPI.POST(":chainID/request", c.handleNewRequest).
+	publicAPI.POST("chains/:chainID/contract/callview", c.executeCallView).
+		AddParamBody(dictExample, "body", "Parameters", false).
+		AddParamPath("", "chainID", "ChainID (Bech32").
+		AddResponse(http.StatusOK, "Result", dictExample, nil).
+		SetResponseContentType("application/json").
+		SetSummary("Call a view function on a contract by Hname")
+
+	publicAPI.POST("chains/:chainID/request", c.handleOffLedgerRequest).
 		AddParamBody(
 			models.OffLedgerRequestBody{Request: "base64 string"},
 			"body",
@@ -82,50 +81,50 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET("", c.getChainList).
-		AddResponse(http.StatusOK, "A list of all available chains.", mocker.GetMockedStruct(models.ChainListResponse{}), nil).
+	adminAPI.GET("chains", c.getChainList).
+		AddResponse(http.StatusOK, "A list of all available chains.", mocker.Get([]models.ChainInfo{}), nil).
 		SetOperationId("getChainList").
 		SetResponseContentType("application/json").
 		SetSummary("Get a list of all chains.")
 
-	adminAPI.PUT("", c.saveChain).
-		AddParamBody(&SaveChainRecordRequest{}, "body", "The save chain request", true).
+	adminAPI.PUT("chains", c.saveChain).
+		AddParamBody(&models.SaveChainRecordRequest{}, "body", "The save chain request", true).
 		AddResponse(http.StatusNotModified, "ChainService was not saved", nil, nil).
 		AddResponse(http.StatusOK, "ChainService was saved", nil, nil).
-		SetOperationId("deactivateChain").
-		SetSummary("Deactivate a chain")
+		SetOperationId("saveChain").
+		SetSummary("Saves a chain")
 
-	adminAPI.POST(":chainID/activate", c.activateChain).
+	adminAPI.POST("chains/:chainID/activate", c.activateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusNotModified, "ChainService was not activated", nil, nil).
 		AddResponse(http.StatusOK, "ChainService was successfully activated", nil, nil).
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
-	adminAPI.POST(":chainID/deactivate", c.deactivateChain).
+	adminAPI.POST("chains/:chainID/deactivate", c.deactivateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusNotModified, "ChainService was not deactivated", nil, nil).
 		AddResponse(http.StatusOK, "ChainService was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
-	adminAPI.GET(":chainID", c.getChainInfo).
+	adminAPI.GET("chains/:chainID", c.getChainInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "Information about a specific chain.", mocker.GetMockedStruct(models.ChainInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "Information about a specific chain.", mocker.Get(models.ChainInfo{}), nil).
 		SetOperationId("getChainInfo").
 		SetResponseContentType("application/json").
 		SetSummary("Get information about a specific chain.")
 
-	adminAPI.GET(":chainID/committee", c.getCommitteeInfo).
+	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all nodes tied to the chain.", mocker.GetMockedStruct(models.CommitteeInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all nodes tied to the chain.", mocker.Get(models.CommitteeInfo{}), nil).
 		SetOperationId("getChainCommitteeInfo").
 		SetResponseContentType("application/json").
 		SetSummary("Get basic chain info.")
 
-	adminAPI.GET(":chainID/contracts", c.getContracts).
+	adminAPI.GET("chains/:chainID/contracts", c.getContracts).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all available contracts.", mocker.GetMockedStruct(models.ContractListResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all available contracts.", mocker.Get([]models.ContractInfo{}), nil).
 		SetOperationId("getChainContracts").
 		SetResponseContentType("application/json").
 		SetSummary("Get all available chain contracts.")
