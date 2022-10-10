@@ -30,6 +30,7 @@ const (
 	PeerMessageReceiverCommonSubset
 	PeerMessageReceiverChain
 	PeerMessageReceiverChainDSS
+	PeerMessageReceiverChainCons
 	PeerMessageReceiverDkg
 	PeerMessageReceiverDkgInit
 )
