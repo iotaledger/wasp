@@ -1,29 +1,34 @@
-// // Copyright 2020 IOTA Stiftung
-// // SPDX-License-Identifier: Apache-2.0
+// // // Copyright 2020 IOTA Stiftung
+// // // SPDX-License-Identifier: Apache-2.0
 
-use crate::wasp_client;
+// use crate::wasp_client;
 
-// use wasmlib::*;
-// use keypair::*;
+use crate::*;
+use keypair::*;
+use wasmlib::*;
 
-// use crate::*;
+pub trait IEventHandler {
+    fn call_handler(&self, topic: &str, params: &[&str]);
+}
 
-// pub trait IEventHandler {
-// 	fn call_handler(&self, topic: &str, params: &Vec<String>);
-// }
+pub struct WasmClientContext {
+    pub chain_id: ScChainID,
+    pub err: String,
+    pub event_done: bool,
+    // pub event_handlers: Vec<IEventHandler>,
+    pub key_pair: KeyPair,
+    pub req_id: ScRequestID,
+    pub sc_name: String,
+    pub sc_hname: ScHname,
+    pub svc_client: WasmClientService, //TODO Maybe use trait instead of struct
+}
 
-// pub struct WasmClientContext {
-// 	chain_id: ScChainID,
-// 	err: Result<(), &'static str>,
-// 	event_done: bool,
-// 	event_handlers: Vec<dyn IEventHandler>,
-// 	key_pair: KeyPair,
-// 	req_id: ScRequestID,
-// 	sc_name: String,
-// 	sc_hname: ScHname,
-// 	svc_client: dyn IClientService,
-// }
-
+impl WasmClientContext {
+    pub fn new() -> Self {
+        // FIXME impl later
+        todo!()
+    }
+}
 // impl WasmClientContext {
 // 	pub fn new(svc_client: dyn IClientService, chain_id: ScChainID, sc_name: &str) -> WasmClientContext {
 // 		WasmClientContext{

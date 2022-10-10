@@ -1,18 +1,14 @@
-// WaspClient allows to make requests to the Wasp web API.
+// pub use crate::gas::*;
+pub use crate::offledger::*;
+pub use crate::receipt::*;
 use hyper::{
     client::HttpConnector,
     {Body, Client},
 };
-pub mod gas;
-pub mod offledger;
-pub mod receipt;
-
-pub use gas::*;
-pub use offledger::*;
-pub use receipt::*;
 pub use std::time::*;
 pub use wasmlib::*;
-const default_optimistic_read_timeout: Duration = Duration::from_millis(1100);
+
+const DEFAULT_OPTIMISTIC_READ_TIMEOUT: Duration = Duration::from_millis(1100);
 
 pub struct WaspClient {
     http_client: Client<HttpConnector, Body>,
@@ -40,18 +36,18 @@ impl WaspClient {
             }
         }
     }
-    pub fn CallViewByHname(
+    pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
         contract_hname: ScHname,
         function_hname: ScHname,
         args: ScDict,
         optimistic_read_timeout: Option<Duration>,
-    ) -> (Result<ScDict, String>) {
+    ) -> Result<ScDict, String> {
         let now = SystemTime::now();
-        let mut deadline = match optimistic_read_timeout {
+        let deadline = match optimistic_read_timeout {
             Some(duration) => now.checked_add(duration).unwrap(),
-            None => now.checked_add(default_optimistic_read_timeout).unwrap(),
+            None => now.checked_add(DEFAULT_OPTIMISTIC_READ_TIMEOUT).unwrap(),
         };
 
         // let dict = ScDict::new(&vec![0]);
@@ -59,15 +55,15 @@ impl WaspClient {
 
         return Ok(ScDict::new(&vec![1, 2]));
     }
-    pub fn PostOffLedgerRequest(
+    pub fn post_offledger_request(
         &self,
         chain_id: &ScChainID,
-        req: OffLedgerRequestData,
+        req: &OffLedgerRequestData,
     ) -> Result<(), String> {
         // TODO err return with request ID
         Err("not impl".to_string())
     }
-    pub fn WaitUntilRequestProcessed(
+    pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
         req_id: ScRequestID,

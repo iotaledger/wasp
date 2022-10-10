@@ -3,15 +3,15 @@
 
 #![allow(dead_code)]
 
+pub use isc::*;
 pub use wasmclientcontext::*;
 pub use wasmclientsandbox::*;
 pub use wasmclientservice::*;
 
-pub mod keypair;
+pub mod isc;
 pub mod wasmclientcontext;
 pub mod wasmclientsandbox;
 pub mod wasmclientservice;
-pub mod wasp_client;
 
 // When the `wee_alloc` feature is enabled,
 // use `wee_alloc` as the global allocator.

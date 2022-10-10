@@ -5,14 +5,12 @@
 // 	return c.do(http.MethodPost, routes.NewRequest(chainID.String()), data, nil)
 // }
 
-use std::borrow::Borrow;
-
 use crate::keypair::*;
 use crypto::signatures::ed25519;
 use wasmlib::*;
 
 //TODO generalize this trait
-pub trait OffLedgerRequest<'a> {
+pub trait OffLedgerRequest {
     fn new(
         chain_id: ScChainID,
         contract: ScHname,
@@ -43,7 +41,7 @@ pub struct OffLedgerSignatureScheme {
     signature: Vec<u8>,
 }
 
-impl OffLedgerRequest<'_> for OffLedgerRequestData {
+impl OffLedgerRequest for OffLedgerRequestData {
     fn new(
         chain_id: ScChainID,
         contract: ScHname,
@@ -68,5 +66,11 @@ impl OffLedgerRequest<'_> for OffLedgerRequestData {
     }
     fn sign(&self, key: KeyPair) -> &Self {
         return self;
+    }
+}
+
+impl OffLedgerRequestData {
+    pub fn id(self) -> ScRequestID {
+        todo!()
     }
 }
