@@ -6,6 +6,7 @@
 package consGR
 
 // TODO: Disconnect.
+// TODO: ... func AddProducedBlock(aliasOutput *isc.AliasOutputWithID, block state.Block)
 
 import (
 	"context"
@@ -49,10 +50,11 @@ type StateMgrDecidedState struct {
 	VirtualStateAccess state.VirtualStateAccess
 }
 
+// State manager has to implement this interface.
 type StateMgr interface {
-	// State manager has to implement this function. It has to return a signal via
-	// the return channel when it ensures all the needed blocks for the specified
-	// AliasOutput is present in the database. Context is used to cancel a request.
+	// State manager has to return a signal via the return channel when it
+	// ensures all the needed blocks for the specified AliasOutput is present
+	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
 		aliasOutput *isc.AliasOutputWithID,
@@ -87,13 +89,16 @@ type input struct {
 
 type ConsGr struct {
 	me                          gpa.NodeID
-	consInst                    gpa.GPA
+	consInst                    gpa.AckHandler
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
+	inputTimeCh                 chan time.Time
 	outputCh                    chan<- *Output   // For sending output to the user.
 	outputReady                 bool             // Set to true, if we provided output already.
 	recoverCh                   chan<- time.Time // For sending recovery hint to the user.
 	recoveryTimeout             time.Duration
+	redeliveryPeriod            time.Duration
+	printStatusPeriod           time.Duration
 	mempool                     Mempool
 	mempoolProposalsRespCh      <-chan []*isc.RequestRef
 	mempoolProposalsAsked       bool
@@ -128,6 +133,8 @@ func New(
 	stateMgr StateMgr,
 	net peering.NetworkProvider,
 	recoveryTimeout time.Duration,
+	redeliveryPeriod time.Duration,
+	printStatusPeriod time.Duration,
 	log *logger.Logger,
 ) *ConsGr {
 	consInstID := hashing.HashDataBlake2b(chainID.Bytes(), []byte(logIndex.AsStringKey(*journalID)))
@@ -138,22 +145,28 @@ func New(
 	}
 	me := pubKeyAsNodeID(myNodeIdentity.GetPublicKey())
 	cgr := &ConsGr{
-		me:              me,
-		consInst:        nil, // Set bellow.
-		inputReceived:   atomic.NewBool(false),
-		recoveryTimeout: recoveryTimeout,
-		mempool:         mempool,
-		stateMgr:        stateMgr,
-		vm:              NewVMAsync(),
-		netRecvPipe:     pipe.NewDefaultInfinitePipe(),
-		netPeeringID:    netPeeringID,
-		netPeerPubs:     netPeerPubs,
-		netAttach:       nil, // Set bellow.
-		net:             net,
-		ctx:             ctx,
-		log:             log,
+		me:                me,
+		consInst:          nil, // Set bellow.
+		inputCh:           make(chan *input, 1),
+		inputReceived:     atomic.NewBool(false),
+		inputTimeCh:       make(chan time.Time, 1),
+		recoveryTimeout:   recoveryTimeout,
+		redeliveryPeriod:  redeliveryPeriod,
+		printStatusPeriod: printStatusPeriod,
+		mempool:           mempool,
+		stateMgr:          stateMgr,
+		vm:                NewVMAsync(),
+		netRecvPipe:       pipe.NewDefaultInfinitePipe(),
+		netPeeringID:      netPeeringID,
+		netPeerPubs:       netPeerPubs,
+		netAttach:         nil, // Set bellow.
+		net:               net,
+		ctx:               ctx,
+		log:               log,
 	}
-	cgr.consInst = cons.New(*chainID, me, myNodeIdentity.GetPrivateKey(), myDKShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(*chainID, me, myNodeIdentity.GetPrivateKey(), myDKShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
+
 	netRecvPipeInCh := cgr.netRecvPipe.In()
 	cgr.netAttach = net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
@@ -184,10 +197,16 @@ func (cgr *ConsGr) Input(baseAliasOutput *isc.AliasOutputWithID) (<-chan *Output
 	return outputCh, recoverCh
 }
 
+func (cgr *ConsGr) Time(t time.Time) {
+	cgr.inputTimeCh <- t
+}
+
 func (cgr *ConsGr) run() { //nolint:gocyclo
 	ctxClose := cgr.ctx.Done()
 	netRecvPipeOutCh := cgr.netRecvPipe.Out()
+	redeliveryTickCh := time.After(cgr.redeliveryPeriod)
 	var recoveryTimeoutCh <-chan time.Time
+	var printStatusCh <-chan time.Time
 	for {
 		select {
 		case recv, ok := <-netRecvPipeOutCh:
@@ -202,39 +221,53 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				continue
 			}
 			recoveryTimeoutCh = time.After(cgr.recoveryTimeout)
+			printStatusCh = time.After(cgr.printStatusPeriod)
 			cgr.outputCh = inp.outputCh
 			cgr.recoverCh = inp.recoverCh
 			cgr.handleInput(inp.baseAliasOutput)
+		case t, ok := <-cgr.inputTimeCh:
+			if !ok {
+				cgr.inputTimeCh = nil
+				continue
+			}
+			cgr.handleConsMessage(cons.NewMsgTimeData(cgr.me, t))
 		case resp, ok := <-cgr.mempoolProposalsRespCh:
 			if !ok {
 				cgr.mempoolProposalsRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgMempoolProposal(cgr.me, resp))
+			cgr.handleConsMessage(cons.NewMsgMempoolProposal(cgr.me, resp))
 		case resp, ok := <-cgr.mempoolRequestsRespCh:
 			if !ok {
 				cgr.mempoolRequestsRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgMempoolRequests(cgr.me, resp))
+			cgr.handleConsMessage(cons.NewMsgMempoolRequests(cgr.me, resp))
 		case _, ok := <-cgr.stateMgrStateProposalRespCh:
 			if !ok {
 				cgr.stateMgrStateProposalRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgStateMgrProposalConfirmed(cgr.me))
+			cgr.handleConsMessage(cons.NewMsgStateMgrProposalConfirmed(cgr.me))
 		case resp, ok := <-cgr.stateMgrDecidedStateRespCh:
 			if !ok {
 				cgr.stateMgrDecidedStateRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.AliasOutput, resp.StateBaseline, resp.VirtualStateAccess))
+			cgr.handleConsMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.AliasOutput, resp.StateBaseline, resp.VirtualStateAccess))
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil
 				continue
 			}
-			cgr.handleMessage(cons.NewMsgVMResult(cgr.me, resp))
+			cgr.handleConsMessage(cons.NewMsgVMResult(cgr.me, resp))
+		case t, ok := <-redeliveryTickCh:
+			if !ok {
+				redeliveryTickCh = nil
+				continue
+			}
+			redeliveryTickCh = time.After(cgr.redeliveryPeriod)
+			cgr.handleRedeliveryTick(t)
 		case t, ok := <-recoveryTimeoutCh:
 			if !ok || cgr.recoverCh == nil {
 				recoveryTimeoutCh = nil
@@ -245,6 +278,9 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			cgr.recoverCh = nil
 			cgr.log.Warnf("Recovery timeout reached.")
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
+		case <-printStatusCh:
+			printStatusCh = time.After(cgr.printStatusPeriod)
+			cgr.log.Debugf("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
 			cgr.log.Debugf("Closing ConsGr because context closed.")
 			return
@@ -258,8 +294,14 @@ func (cgr *ConsGr) handleInput(inp gpa.Input) {
 	cgr.tryHandleOutput()
 }
 
-func (cgr *ConsGr) handleMessage(msg gpa.Message) {
-	outMsgs := cgr.consInst.Message(msg)
+func (cgr *ConsGr) handleConsMessage(msg gpa.Message) {
+	outMsgs := cgr.consInst.NestedMessage(msg)
+	cgr.sendMessages(outMsgs)
+	cgr.tryHandleOutput()
+}
+
+func (cgr *ConsGr) handleRedeliveryTick(t time.Time) {
+	outMsgs := cgr.consInst.Message(cgr.consInst.MakeTickMsg(t))
 	cgr.sendMessages(outMsgs)
 	cgr.tryHandleOutput()
 }
@@ -270,7 +312,9 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 		cgr.log.Warnf("cannot parse message: %v", err)
 	}
 	msg.SetSender(pubKeyAsNodeID(recv.SenderPubKey))
-	cgr.handleMessage(msg)
+	outMsgs := cgr.consInst.Message(msg)
+	cgr.sendMessages(outMsgs)
+	cgr.tryHandleOutput()
 }
 
 func (cgr *ConsGr) tryHandleOutput() {

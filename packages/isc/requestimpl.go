@@ -623,6 +623,14 @@ func RequestRefFromRequest(req Request) *RequestRef {
 	return &RequestRef{ID: req.ID(), Hash: hashing.HashDataBlake2b(req.Bytes())}
 }
 
+func RequestRefsFromRequests(reqs []Request) []*RequestRef {
+	rr := make([]*RequestRef, len(reqs))
+	for i := range rr {
+		rr[i] = RequestRefFromRequest(reqs[i])
+	}
+	return rr
+}
+
 func (rr *RequestRef) AsKey() RequestRefKey {
 	var key RequestRefKey
 	copy(key[:], append(rr.ID.Bytes(), rr.Hash[:]...))

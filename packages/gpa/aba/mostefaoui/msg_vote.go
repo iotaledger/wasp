@@ -4,15 +4,14 @@
 package mostefaoui
 
 import (
+	"bytes"
 	"encoding"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-)
+	"golang.org/x/xerrors"
 
-// type BBAMsg interface {
-// 	gpa.Message
-// 	SetRecipient(gpa.NodeID)
-// }
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
+)
 
 type msgVoteType byte
 
@@ -51,9 +50,43 @@ func (m *msgVote) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgVote) MarshalBinary() ([]byte, error) {
-	panic("to be implemented") // TODO: Impl MarshalBinary
+	w := bytes.NewBuffer([]byte{})
+	if err := util.WriteByte(w, msgTypeVote); err != nil {
+		return nil, err
+	}
+	if err := util.WriteUint16(w, uint16(m.round)); err != nil {
+		return nil, err
+	}
+	if err := util.WriteByte(w, byte(m.voteType)); err != nil {
+		return nil, err
+	}
+	if err := util.WriteBoolByte(w, m.value); err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
 }
 
 func (m *msgVote) UnmarshalBinary(data []byte) error {
-	panic("to be implemented") // TODO: Impl UnmarshalBinary
+	r := bytes.NewReader(data)
+	msgType, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	if msgType != msgTypeVote {
+		return xerrors.Errorf("expected msgTypeVote, got %v", msgType)
+	}
+	var round uint16
+	if err := util.ReadUint16(r, &round); err != nil {
+		return err
+	}
+	m.round = int(round)
+	voteType, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	m.voteType = msgVoteType(voteType)
+	if err := util.ReadBoolByte(r, &m.value); err != nil {
+		return err
+	}
+	return nil
 }

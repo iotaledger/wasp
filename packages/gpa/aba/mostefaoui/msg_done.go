@@ -4,9 +4,13 @@
 package mostefaoui
 
 import (
+	"bytes"
 	"encoding"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type msgDone struct {
@@ -39,9 +43,29 @@ func (m *msgDone) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgDone) MarshalBinary() ([]byte, error) {
-	panic("to be implemented") // TODO: Impl MarshalBinary
+	w := bytes.NewBuffer([]byte{})
+	if err := util.WriteByte(w, msgTypeDone); err != nil {
+		return nil, err
+	}
+	if err := util.WriteUint16(w, uint16(m.round)); err != nil {
+		return nil, err
+	}
+	return w.Bytes(), nil
 }
 
 func (m *msgDone) UnmarshalBinary(data []byte) error {
-	panic("to be implemented") // TODO: Impl UnmarshalBinary
+	r := bytes.NewReader(data)
+	msgType, err := util.ReadByte(r)
+	if err != nil {
+		return err
+	}
+	if msgType != msgTypeDone {
+		return xerrors.Errorf("expected msgTypeDone, got %v", msgType)
+	}
+	var round uint16
+	if err := util.ReadUint16(r, &round); err != nil {
+		return err
+	}
+	m.round = int(round)
+	return nil
 }

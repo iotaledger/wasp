@@ -24,17 +24,15 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
@@ -301,14 +299,14 @@ func testChained(t *testing.T, n, f, b int) {
 	require.NoError(t, err)
 	//
 	// Construct the chain on L1 and prepare requests.
-	tcl := newTestChainLedger(t, utxoDB, governor, originator)
-	originAO := tcl.txChainOrigin(committeeAddress)
+	tcl := testchain.NewTestChainLedger(t, utxoDB, governor, originator)
+	originAO, chainID := tcl.MakeTxChainOrigin(committeeAddress)
 	allRequests := map[int][]isc.Request{}
-	allRequests[0] = tcl.txChainInit()
+	allRequests[0] = tcl.MakeTxChainInit()
 	if b > 1 {
 		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
 		require.NoError(t, err)
-		allRequests[1] = append(tcl.txAccountsDeposit(scClient), tcl.txDeployIncCounterContract()...)
+		allRequests[1] = append(tcl.MakeTxAccountsDeposit(scClient), tcl.MakeTxDeployIncCounterContract()...)
 	}
 	incTotal := 0
 	for i := 2; i < b; i++ {
@@ -316,7 +314,7 @@ func testChained(t *testing.T, n, f, b int) {
 		reqPerBlock := 3
 		for ii := 0; ii < reqPerBlock; ii++ {
 			scRequest := isc.NewOffLedgerRequest(
-				tcl.chainID,
+				chainID,
 				inccounter.Contract.Hname(),
 				inccounter.FuncIncCounter.Hname(),
 				dict.New(), uint64(i*reqPerBlock+ii),
@@ -336,7 +334,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	testNodeStates := map[gpa.NodeID]*testNodeState{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = newTestNodeState(t, tcl.chainID)
+		testNodeStates[nid] = newTestNodeState(t, chainID)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {
@@ -349,7 +347,7 @@ func testChained(t *testing.T, n, f, b int) {
 			testChainInsts[ii+1].input(nextInput)
 		}
 		testChainInsts[i] = *newTestConsInst(
-			t, tcl.chainID, committeeAddress, i, procCache, nodeIDs,
+			t, chainID, committeeAddress, i, procCache, nodeIDs,
 			testNodeStates, peerIdentities, dkShareProviders,
 			allRequests[i], doneCB, log,
 		)
@@ -382,152 +380,6 @@ func testChained(t *testing.T, n, f, b int) {
 	for _, doneVal := range doneVals {
 		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.virtualStateAccess.KVStore()).GetMaintenanceStatus())
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// testChainLedger
-
-type testChainLedger struct {
-	t           *testing.T
-	utxoDB      *utxodb.UtxoDB
-	governor    *cryptolib.KeyPair
-	originator  *cryptolib.KeyPair
-	chainID     *isc.ChainID
-	fetchedReqs map[iotago.Address]map[iotago.OutputID]bool
-}
-
-func newTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, governor, originator *cryptolib.KeyPair) *testChainLedger {
-	return &testChainLedger{
-		t:           t,
-		utxoDB:      utxoDB,
-		governor:    governor,
-		originator:  originator,
-		fetchedReqs: map[iotago.Address]map[iotago.OutputID]bool{},
-	}
-}
-
-func (tcl *testChainLedger) txChainOrigin(committeeAddress iotago.Address) *isc.AliasOutputWithID {
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.originator.Address())
-	originTX, chainID, err := transaction.NewChainOriginTransaction(
-		tcl.originator,
-		committeeAddress,
-		tcl.governor.Address(),
-		1_000_000,
-		outs,
-		outIDs,
-	)
-	require.NoError(tcl.t, err)
-	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
-	require.NoError(tcl.t, err)
-	require.NotNil(tcl.t, stateAnchor)
-	require.NotNil(tcl.t, aliasOutput)
-	originAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID.UTXOInput())
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(originTX))
-	tcl.chainID = chainID
-	return originAO
-}
-
-func (tcl *testChainLedger) txChainInit() []isc.Request {
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.originator.Address())
-	initTX, err := transaction.NewRootInitRequestTransaction(tcl.originator, tcl.chainID, "my test chain", outs, outIDs)
-	require.NoError(tcl.t, err)
-	require.NotNil(tcl.t, initTX)
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(initTX))
-	return tcl.findChainRequests(initTX)
-}
-
-func (tcl *testChainLedger) txAccountsDeposit(account *cryptolib.KeyPair) []isc.Request {
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(account.Address())
-	tx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    account,
-			SenderAddress:    account.Address(),
-			UnspentOutputs:   outs,
-			UnspentOutputIDs: outIDs,
-			Request: &isc.RequestParameters{
-				TargetAddress:                 tcl.chainID.AsAddress(),
-				FungibleTokens:                isc.NewFungibleBaseTokens(100_000_000),
-				AdjustToMinimumStorageDeposit: false,
-				Metadata: &isc.SendMetadata{
-					TargetContract: accounts.Contract.Hname(),
-					EntryPoint:     accounts.FuncDeposit.Hname(),
-					GasBudget:      10_000,
-				},
-			},
-		},
-	)
-	require.NoError(tcl.t, err)
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(tx))
-	return tcl.findChainRequests(tx)
-}
-
-func (tcl *testChainLedger) txDeployIncCounterContract() []isc.Request {
-	sender := tcl.originator
-	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(sender.Address())
-	tx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    sender,
-			SenderAddress:    sender.Address(),
-			UnspentOutputs:   outs,
-			UnspentOutputIDs: outIDs,
-			Request: &isc.RequestParameters{
-				TargetAddress:                 tcl.chainID.AsAddress(),
-				FungibleTokens:                isc.NewFungibleBaseTokens(2_000_000),
-				AdjustToMinimumStorageDeposit: false,
-				Metadata: &isc.SendMetadata{
-					TargetContract: root.Contract.Hname(),
-					EntryPoint:     root.FuncDeployContract.Hname(),
-					Params: codec.MakeDict(map[string]interface{}{
-						root.ParamProgramHash: inccounter.Contract.ProgramHash,
-						root.ParamDescription: "inccounter",
-						root.ParamName:        inccounter.Contract.Name,
-						inccounter.VarCounter: 0,
-					}),
-					GasBudget: 10_000,
-				},
-			},
-		},
-	)
-	require.NoError(tcl.t, err)
-	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(tx))
-	return tcl.findChainRequests(tx)
-}
-
-func (tcl *testChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Request {
-	reqs := []isc.Request{}
-	outs, err := tx.OutputsSet()
-	require.NoError(tcl.t, err)
-	for outID, out := range outs {
-		// If that's alias output of the chain, then it is not a request.
-		if out.Type() == iotago.OutputAlias {
-			zeroAliasID := iotago.AliasID{}
-			outAsAlias := out.(*iotago.AliasOutput)
-			if outAsAlias.AliasID == *tcl.chainID.AsAliasID() {
-				continue // That's our alias output, not the request, skip it here.
-			}
-			if outAsAlias.AliasID == zeroAliasID {
-				implicitAliasID := iotago.AliasIDFromOutputID(outID)
-				if implicitAliasID == *tcl.chainID.AsAliasID() {
-					continue // That's our origin alias output, not the request, skip it here.
-				}
-			}
-		}
-		//
-		// Otherwise check the receiving address.
-		outAddr := out.UnlockConditionSet().Address()
-		if outAddr == nil {
-			continue
-		}
-		if !outAddr.Address.Equal(tcl.chainID.AsAddress()) {
-			continue
-		}
-		req, err := isc.OnLedgerFromUTXO(out, outID.UTXOInput())
-		if err != nil {
-			continue
-		}
-		reqs = append(reqs, req)
-	}
-	return reqs
 }
 
 ////////////////////////////////////////////////////////////////////////////////

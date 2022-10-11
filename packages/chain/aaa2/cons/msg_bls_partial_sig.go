@@ -31,9 +31,10 @@ func (m *msgBLSPartialSig) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgBLSPartialSig) MarshalBinary() ([]byte, error) {
-	panic("to be implemented")
+	return m.partialSig, nil
 }
 
 func (m *msgBLSPartialSig) UnmarshalBinary(data []byte) error {
-	panic("to be implemented")
+	m.partialSig = data
+	return nil
 }

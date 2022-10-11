@@ -17,5 +17,23 @@ const (
 
 // Implements the gpa.GPA interface.
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return nil, xerrors.Errorf("not implemented") // TODO: Impl. UnmarshalMessage
+	if len(data) < 1 {
+		return nil, xerrors.Errorf("data to short")
+	}
+	msgType := data[0]
+	switch msgType {
+	case msgTypeVote:
+		m := &msgVote{}
+		if err := m.UnmarshalBinary(data); err != nil {
+			return nil, err
+		}
+		return m, nil
+	case msgTypeDone:
+		m := &msgDone{}
+		if err := m.UnmarshalBinary(data); err != nil {
+			return nil, err
+		}
+		return m, nil
+	}
+	return nil, xerrors.Errorf("unexpected msgType: %v", msgType)
 }
