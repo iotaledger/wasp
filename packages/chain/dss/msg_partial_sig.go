@@ -59,7 +59,7 @@ func (m *msgPartialSig) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if msgType != msgTypePartialSig {
-		return xerrors.Errorf("unexpected msgType=%v", msgType)
+		return xerrors.Errorf("unexpected msgType=%v in dss.msgPartialSig", msgType)
 	}
 	var partialI uint16
 	if err := util.ReadUint16(r, &partialI); err != nil {

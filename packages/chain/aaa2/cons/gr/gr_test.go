@@ -41,13 +41,18 @@ func TestBasic(t *testing.T) {
 		reliable bool
 	}
 	tests := []test{
-		{n: 1, f: 0, reliable: true},   // Low N
-		{n: 2, f: 0, reliable: true},   // Low N
-		{n: 3, f: 0, reliable: true},   // Low N
-		{n: 4, f: 1, reliable: true},   // Minimal robust config.
-		{n: 4, f: 1, reliable: false},  // Minimal robust config.
-		{n: 10, f: 3, reliable: false}, // Typical config.
-		{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
+		{n: 1, f: 0, reliable: true},  // Low N
+		{n: 2, f: 0, reliable: true},  // Low N
+		{n: 3, f: 0, reliable: true},  // Low N
+		{n: 4, f: 1, reliable: true},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true}, // Typical config.
+	}
+	if !testing.Short() {
+		tests = append(tests,
+			test{n: 4, f: 1, reliable: false},  // Minimal robust config.
+			test{n: 10, f: 3, reliable: false}, // Typical config.
+			test{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
+		)
 	}
 	for _, tst := range tests {
 		t.Run(
@@ -81,7 +86,8 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(log)
 	} else {
-		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, log)
+		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
+		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,

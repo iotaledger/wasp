@@ -5,7 +5,6 @@
 // as a goroutine and communicate with all the related components.
 package consGR
 
-// TODO: Disconnect.
 // TODO: ... func AddProducedBlock(aliasOutput *isc.AliasOutputWithID, block state.Block)
 
 import (
@@ -115,7 +114,7 @@ type ConsGr struct {
 	netRecvPipe                 pipe.Pipe
 	netPeeringID                peering.PeeringID
 	netPeerPubs                 map[gpa.NodeID]*cryptolib.PublicKey
-	netAttach                   interface{}
+	netDisconnect               func()
 	net                         peering.NetworkProvider
 	ctx                         context.Context
 	log                         *logger.Logger
@@ -159,7 +158,7 @@ func New(
 		netRecvPipe:       pipe.NewDefaultInfinitePipe(),
 		netPeeringID:      netPeeringID,
 		netPeerPubs:       netPeerPubs,
-		netAttach:         nil, // Set bellow.
+		netDisconnect:     nil, // Set bellow.
 		net:               net,
 		ctx:               ctx,
 		log:               log,
@@ -168,13 +167,16 @@ func New(
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()
-	cgr.netAttach = net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
+	attachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
 			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		netRecvPipeInCh <- recv
 	})
+	cgr.netDisconnect = func() {
+		net.Detach(attachID)
+	}
 
 	go cgr.run()
 	return cgr
@@ -202,6 +204,7 @@ func (cgr *ConsGr) Time(t time.Time) {
 }
 
 func (cgr *ConsGr) run() { //nolint:gocyclo
+	defer cgr.netDisconnect()
 	ctxClose := cgr.ctx.Done()
 	netRecvPipeOutCh := cgr.netRecvPipe.Out()
 	redeliveryTickCh := time.After(cgr.redeliveryPeriod)
@@ -310,6 +313,7 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := cgr.consInst.UnmarshalMessage(recv.MsgData)
 	if err != nil {
 		cgr.log.Warnf("cannot parse message: %v", err)
+		return
 	}
 	msg.SetSender(pubKeyAsNodeID(recv.SenderPubKey))
 	outMsgs := cgr.consInst.Message(msg)
@@ -318,7 +322,11 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 }
 
 func (cgr *ConsGr) tryHandleOutput() {
-	output := cgr.consInst.Output().(*cons.Output)
+	outputUntyped := cgr.consInst.Output()
+	if outputUntyped == nil {
+		return
+	}
+	output := outputUntyped.(*cons.Output)
 	if output.NeedMempoolProposal != nil && !cgr.mempoolProposalsAsked {
 		cgr.mempoolProposalsRespCh = cgr.mempool.ConsensusProposalsAsync(cgr.ctx, output.NeedMempoolProposal)
 		cgr.mempoolProposalsAsked = true

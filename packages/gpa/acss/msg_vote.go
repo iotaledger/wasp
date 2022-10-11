@@ -54,7 +54,7 @@ func (m *msgVote) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if t != msgTypeVote {
-		return xerrors.Errorf("unexpected msgType: %v", t)
+		return xerrors.Errorf("unexpected msgType: %v in acss.msgVote", t)
 	}
 	k, err := util.ReadByte(r)
 	if err != nil {
