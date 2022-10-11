@@ -41,6 +41,10 @@ func (s *SoloSandbox) Budget() uint64 {
 	panic("implement Budget")
 }
 
+func (s *SoloSandbox) Burned() uint64 {
+	panic("implement Burned")
+}
+
 var (
 	_ wasmhost.ISandbox = new(SoloSandbox)
 	_ isc.Gas           = new(SoloSandbox)

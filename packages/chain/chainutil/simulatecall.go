@@ -2,7 +2,7 @@ package chainutil
 
 import (
 	"fmt"
-	"strings"
+	"regexp"
 	"time"
 
 	"go.uber.org/zap"
@@ -60,6 +60,8 @@ func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 	return ret, err
 }
 
+var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|execution reverted")
+
 // SimulateCall executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
 func SimulateCall(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
@@ -100,32 +102,18 @@ func SimulateCall(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 			if resolvingErr != nil {
 				panic(fmt.Errorf("error resolving vmerror %v", resolvingErr))
 			}
-			if strings.Contains(vmerr.Error(), "out of gas") {
-				// evm ran out of gas
+			if evmErrorsRegex.Match([]byte(vmerr.Error())) {
+				// increase gas
 				return true, nil
 			}
 			return true, vmerr
 		}
 		return false, nil
-		// snapshot := b.pendingState.Snapshot()
-		// res, err := b.callContract(ctx, call, b.pendingBlock, b.pendingState)
-		// b.pendingState.RevertToSnapshot(snapshot)
-
-		// if err != nil {
-		// 	if errors.Is(err, core.ErrIntrinsicGas) {
-		// 		return true, nil, nil // Special case, raise gas limit
-		// 	}
-		// 	return true, nil, err // Bail out
-		// }
-		// return res.Failed(), res, nil
 	}
 	// Execute the binary search and hone in on an executable gas limit
 	for lo+1 < hi {
 		mid := (hi + lo) / 2
 		failed, err := executable(mid)
-		// If the error is not nil, it means the provided message
-		// call or transaction will never be accepted no matter how much gas it is
-		// assigned. Return the error directly, don't struggle any more
 		if err != nil {
 			return 0, err
 		}

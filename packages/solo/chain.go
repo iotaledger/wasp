@@ -411,6 +411,9 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceip
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
+	if ret == nil {
+		return nil, nil
+	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
