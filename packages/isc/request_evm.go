@@ -208,7 +208,6 @@ func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
-	// TODO could this be a problem?
 	if r.callMsg.Gas > 0 {
 		return r.callMsg.Gas, true
 	}
