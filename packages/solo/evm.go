@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/chain/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -70,11 +71,7 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 }
 
 func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
-	res := ch.estimateGas(isc.NewEVMOffLedgerEstimateGasRequest(ch.ChainID, callMsg))
-	if res.Receipt.Error != nil {
-		return 0, res.Receipt.Error
-	}
-	return codec.DecodeUint64(res.Return.MustGet(evm.FieldResult))
+	return chainutil.EstimateGas(ch, callMsg)
 }
 
 func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {

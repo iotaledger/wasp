@@ -8,11 +8,15 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -22,6 +26,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -31,6 +37,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
+
+// solo chain implements Chain interface
+var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 //
@@ -398,14 +407,17 @@ func (ch *Chain) IsRequestProcessed(reqID isc.RequestID) bool {
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, bool) {
+func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
+	if ret == nil {
+		return nil, nil
+	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
-		return nil, false
+		return nil, err
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 
@@ -413,7 +425,7 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceip
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
 
-	return ret1, true
+	return ret1, nil
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
@@ -595,4 +607,59 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
+}
+
+// AttachToRequestProcessed implements chain.Chain
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
+	panic("unimplemented")
+}
+
+// DetachFromRequestProcessed implements chain.Chain
+func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+	panic("unimplemented")
+}
+
+// EnqueueOffLedgerRequestMsg implements chain.Chain
+func (*Chain) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
+	panic("unimplemented")
+}
+
+// ResolveError implements chain.Chain
+func (ch *Chain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
+	return ch.ResolveVMError(e), nil
+}
+
+// Dismiss implements chain.Chain
+func (*Chain) Dismiss(reason string) {
+	panic("unimplemented")
+}
+
+// IsDismissed implements chain.Chain
+func (*Chain) IsDismissed() bool {
+	panic("unimplemented")
+}
+
+// GetConsensusPipeMetrics implements chain.Chain
+func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	panic("unimplemented")
+}
+
+// GetConsensusWorkflowStatus implements chain.Chain
+func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("unimplemented")
+}
+
+// GetNodeConnectionMetrics implements chain.Chain
+func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+	panic("unimplemented")
+}
+
+// GetDB implements chain.Chain
+func (ch *Chain) GetVirtualState() (state.VirtualStateAccess, bool, error) {
+	return ch.State.Copy(), true, nil
+}
+
+// GetTimeData implements chain.Chain
+func (*Chain) GetTimeData() time.Time {
+	panic("unimplemented")
 }

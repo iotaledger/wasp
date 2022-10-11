@@ -256,14 +256,9 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(res.Err)
 
-	// TODO: this assumes that the initial budget was gas.MaxGasPerRequest
-	// see evmOffLedgerEstimateGasRequest::GasBudget()
-	// and VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
-	iscGasBurned := gas.MaxGasPerRequest - ctx.Gas().Budget()
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
-
 	{
-		// burn the used EVM gas so this appears in the "gas burn log" as it would for a normal TX
+		// burn the used EVM gas as it would be done for a normal request call
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr := panicutil.CatchPanic(
 			func() {
@@ -274,6 +269,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 		ctx.RequireNoError(gasErr)
 	}
 
-	evmGasBurnedInISCCalls := evmtypes.ISCGasBurnedToEVM(iscGasBurned, &gasRatio)
-	return result(codec.EncodeUint64(res.UsedGas + evmGasBurnedInISCCalls))
+	finalEvmGasUsed := evmtypes.ISCGasBurnedToEVM(ctx.Gas().Burned(), &gasRatio)
+
+	return result(codec.EncodeUint64(finalEvmGasUsed))
 }
