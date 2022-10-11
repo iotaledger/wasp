@@ -12,10 +12,13 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
@@ -72,15 +75,16 @@ func SimulateCall(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		gasCap uint64
 	)
 
-	// TODO get the actual gas ratio
-	// gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+	ret, err := CallView(ch, evm.Contract.Hname(), evm.FuncGetGasRatio.Hname(), nil)
+	if err != nil {
+		return 0, err
+	}
+	gasRatio := codec.MustDecodeRatio32(ret.MustGet(evm.FieldResult))
 	maximumPossibleGas := gas.MaxGasPerRequest
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
 	} else {
-		// TODO get gas ratio
-		// hi = evmtypes.ISCGasBudgetToEVM(gas.MaxGasPerRequest, &gasRatio)
-		hi = maximumPossibleGas
+		hi = evmtypes.ISCGasBudgetToEVM(maximumPossibleGas, &gasRatio)
 	}
 
 	gasCap = hi
@@ -131,7 +135,7 @@ func SimulateCall(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		}
 		if failed {
 			if hi == maximumPossibleGas {
-				return 0, fmt.Errorf("requests requires more gas than it is allowed by the VM (%d)", gasCap)
+				return 0, fmt.Errorf("request might require more gas than it is allowed by the VM (%d)", gasCap)
 			}
 			// the specified gas cap is too low
 			return 0, fmt.Errorf("gas required exceeds allowance (%d)", gasCap)
