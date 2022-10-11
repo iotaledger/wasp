@@ -71,7 +71,7 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, erro
 }
 
 func (ch *Chain) EstimateGasEthereum(callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.SimulateCall(ch, callMsg)
+	return chainutil.EstimateGas(ch, callMsg)
 }
 
 func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {

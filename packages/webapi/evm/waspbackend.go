@@ -97,7 +97,7 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 }
 
 func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.SimulateCall(b.chain, callMsg)
+	return chainutil.EstimateGas(b.chain, callMsg)
 }
 
 func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {

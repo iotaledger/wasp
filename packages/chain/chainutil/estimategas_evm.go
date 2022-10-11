@@ -65,9 +65,9 @@ func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 
 var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|execution reverted")
 
-// SimulateCall executes the given request and discards the resulting chain state. It is useful
+// EstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func SimulateCall(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
+func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 	// Determine the lowest and highest possible gas limits to binary search in between
 	var (
 		lo     uint64 = params.TxGas - 1

@@ -913,10 +913,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		int64(parameters.L1ForTesting.BaseToken.Decimals),
 	)
 
-	res, err := iscTest.callFn([]ethCallOptions{{
+	_, err = iscTest.callFn([]ethCallOptions{{
 		sender: ethKey,
 	}}, "sendTo", someEthereumAddr, tenMillionInEthDecimals)
-	println(res.tx)
 	require.NoError(t, err)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 12*isc.Million)
 
