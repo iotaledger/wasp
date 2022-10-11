@@ -3,7 +3,7 @@
 
 import * as wasmlib from "wasmlib"
 import * as isc from "./index";
-import { Bech32,Blake2b } from "@iota/crypto.js"
+import {Bech32, Blake2b} from "@iota/crypto.js"
 
 // Thank you, @iota/crypto.js, for making my life easy
 export class Codec {
@@ -22,26 +22,14 @@ export class Codec {
     }
 
     public static hNameEncode(name: string): isc.Hname {
-        const len = name.length;
-        const data = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            data[i] = name.charCodeAt(i);
-        }
+        const data = Uint8Array.wrap(String.UTF8.encode(name));
         let hash = Blake2b.sum256(data)
 
-        // dumb Uint8Array cannot convert easily to u8[]
-        // so do it the hard way
-        let slice : u8[] = [0, 0, 0, 0];
-        for (let i = 0; i < 4; i++) {
-            slice[i] = hash[i];
-        }
-
         // follow exact algorithm from packages/isc/hname.go
+        let slice = wasmlib.bytesFromUint8Array(hash.slice(0, 4));
         let hName = wasmlib.uint32FromBytes(slice);
         if (hName == 0 || hName == 0xffff) {
-            for (let i = 0; i < 4; i++) {
-                slice[i] = hash[i + 4];
-            }
+            slice = wasmlib.bytesFromUint8Array(hash.slice(4, 8));
             hName = wasmlib.uint32FromBytes(slice);
          }
         return hName;

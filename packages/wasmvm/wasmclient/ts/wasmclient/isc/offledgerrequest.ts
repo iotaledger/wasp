@@ -34,23 +34,25 @@ export class OffLedgerRequest {
     public bytes(): u8[] {
         return this.essence().concat(this.signatureScheme.signature);
     }
+
     public essence(): u8[] {
         let data: u8[] = [ 1 ]; // requestKindTagOffLedgerISC
-        data = data.concat(this.chainID);
+        data = data.concat(wasmlib.bytesFromUint8Array(this.chainID));
         data = data.concat(wasmlib.uint32ToBytes(this.contract));
         data = data.concat(wasmlib.uint32ToBytes(this.entryPoint));
         data = data.concat(this.params);
         data = data.concat(wasmlib.uint64ToBytes(this.nonce));
         data = data.concat(wasmlib.uint64ToBytes(this.gasBudget));
-        data = data.concat([this.signatureScheme.keyPair.publicKey.length]);
-        data = data.concat(this.signatureScheme.keyPair.publicKey);
+        const pubKey = wasmlib.bytesFromUint8Array(this.signatureScheme.keyPair.publicKey);
+        data = data.concat([pubKey.length as u8]);
+        data = data.concat(pubKey);
         data = data.concat(this.allowance);
         return data;
     }
 
     public ID(): isc.RequestID {
         //TODO
-        return [];
+        return wasmlib.bytesToUint8Array([]);
     }
 
     public sign(keyPair: isc.KeyPair): OffLedgerRequest {

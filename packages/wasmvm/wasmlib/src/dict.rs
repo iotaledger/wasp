@@ -103,7 +103,7 @@ impl ScDict {
         }
     }
 
-    pub fn from_bytes(input: &[u8]) -> Result<ScDict, String> {
+    pub fn from_bytes(_input: &[u8]) -> Result<ScDict, String> {
         return Err("not impl".to_string());
     }
 

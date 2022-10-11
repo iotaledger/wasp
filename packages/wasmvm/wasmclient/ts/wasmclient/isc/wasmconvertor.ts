@@ -9,7 +9,7 @@ export class WasmConvertor {
     }
 
     public iscAddress(addr: wasmlib.ScAddress): isc.Address {
-        return [];
+        return wasmlib.bytesToUint8Array(wasmlib.addressToBytes(addr));
     }
 
     public iscAllowance(addr: wasmlib.ScAssets): isc.Allowance {
@@ -17,7 +17,7 @@ export class WasmConvertor {
     }
 
     public iscChainID(chainID: wasmlib.ScChainID): isc.ChainID {
-        return [];
+        return wasmlib.bytesToUint8Array(wasmlib.chainIDToBytes(chainID));
     }
 
     public iscHname(hName: wasmlib.ScHname): isc.Hname {
@@ -25,15 +25,15 @@ export class WasmConvertor {
     }
 
     public iscRequestID(chainID: wasmlib.ScRequestID): isc.RequestID {
-        return [];
+        return wasmlib.bytesToUint8Array(wasmlib.requestIDToBytes(chainID));
     }
 
     public scAddress(addr: isc.Address): wasmlib.ScAddress {
-        return wasmlib.addressFromBytes(addr)
+        return wasmlib.addressFromBytes(wasmlib.bytesFromUint8Array(addr));
     }
 
     public scChainID(chainID: isc.ChainID): wasmlib.ScChainID {
-        return wasmlib.chainIDFromBytes(chainID)
+        return wasmlib.chainIDFromBytes(wasmlib.bytesFromUint8Array(chainID))
     }
 
     public scHname(hName: isc.Hname): wasmlib.ScHname {
@@ -41,6 +41,6 @@ export class WasmConvertor {
     }
 
     public scRequestID(requestID: isc.RequestID): wasmlib.ScRequestID {
-        return wasmlib.requestIDFromBytes(requestID)
+        return wasmlib.requestIDFromBytes(wasmlib.bytesFromUint8Array(requestID))
     }
 }
