@@ -3,6 +3,10 @@ package services
 import (
 	"errors"
 
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/iotaledger/wasp/packages/util/panicutil"
+
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -25,6 +29,40 @@ func NewVMService(log *logger.Logger, chainsProvider chains.Provider) interfaces
 
 		chainsProvider: chainsProvider,
 	}
+}
+
+func (v *VMService) getReceipt(chainID *isc.ChainID, requestID isc.RequestID) (*isc.Receipt, *isc.VMError, error) {
+	chain := v.chainsProvider().Get(chainID)
+	if chain == nil {
+		return nil, nil, errors.New("chain does not exist")
+	}
+
+	receipt, err := chain.GetRequestReceipt(requestID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	resolvedError, err := chain.ResolveError(receipt.Error)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	receiptData := receipt.ToISCReceipt(resolvedError)
+
+	return receiptData, resolvedError, nil
+}
+
+func (v *VMService) GetReceipt(chainID *isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error) {
+	err = optimism.RetryOnStateInvalidated(func() (err error) {
+		panicCatchErr := panicutil.CatchPanicReturnError(func() {
+			ret, vmError, err = v.getReceipt(chainID, requestID)
+		}, coreutil.ErrorStateInvalidated)
+		if err != nil {
+			return err
+		}
+		return panicCatchErr
+	})
+	return ret, vmError, err
 }
 
 func (v *VMService) CallViewByChainID(chainID *isc.ChainID, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {

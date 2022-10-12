@@ -1,6 +1,9 @@
 package interfaces
 
 import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -26,7 +29,13 @@ type ChainService interface {
 	GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error)
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
+	GetState(chainID *isc.ChainID, stateKey []byte) (state []byte, err error)
 	SaveChainRecord(chainID *isc.ChainID, active bool) error
+}
+
+type EVMService interface {
+	HandleJSONRPC(chainID *isc.ChainID, request *http.Request, response *echo.Response) error
+	GetRequestID(chainID *isc.ChainID, hash string) (*isc.RequestID, error)
 }
 
 type MetricsService interface {
@@ -34,6 +43,10 @@ type MetricsService interface {
 	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics
 	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *dto.ConsensusWorkflowMetrics
 	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetricsReport
+}
+
+type NodeService interface {
+	ShutdownNode()
 }
 
 type RegistryService interface {
@@ -62,6 +75,7 @@ type OffLedgerService interface {
 type VMService interface {
 	CallView(chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 	CallViewByChainID(chainID *isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
+	GetReceipt(chainID *isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
 }
 
 type Mocker interface {

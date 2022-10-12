@@ -26,6 +26,10 @@ func InvalidOffLedgerRequestError(err error) *HTTPError {
 	return NewHTTPError(http.StatusBadRequest, "Supplied offledger request is invalid", err)
 }
 
+func ReceiptError(err error) *HTTPError {
+	return NewHTTPError(http.StatusBadRequest, "Failed to get receipt", err)
+}
+
 func InternalServerError(err error) *HTTPError {
 	return NewHTTPError(http.StatusInternalServerError, "Unknown error has occoured", err)
 }

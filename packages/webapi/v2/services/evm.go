@@ -35,7 +35,7 @@ type EVMService struct {
 	networkProvider peering.NetworkProvider
 }
 
-func NewEVMService(log *logger.Logger, chainService interfaces.ChainService, networkProvider peering.NetworkProvider) *EVMService {
+func NewEVMService(log *logger.Logger, chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.EVMService {
 	return &EVMService{
 		log: log,
 

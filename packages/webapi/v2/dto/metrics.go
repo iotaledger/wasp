@@ -58,7 +58,7 @@ type ConsensusWorkflowMetrics struct {
 	CurrentStateIndex uint32 `swagger:"desc(Shows current state index of the consensus)"`
 }
 
-func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowMetrics {
+func MapConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowMetrics {
 	return &ConsensusWorkflowMetrics{
 		FlagStateReceived:        status.IsStateReceived(),
 		FlagBatchProposalSent:    status.IsBatchProposalSent(),
@@ -91,7 +91,7 @@ type ConsensusPipeMetrics struct {
 	EventTimerMsgPipeSize           int
 }
 
-func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {
+func MapConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {
 	return &ConsensusPipeMetrics{
 		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
 		EventPeerLogIndexMsgPipeSize:    pipeMetrics.GetEventPeerLogIndexMsgPipeSize(),

@@ -28,7 +28,7 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	// Get contract and function hName. HNames are preferred.
+	// Get contract and function. The request model supports HName and common string names. HNames are preferred.
 	var contractHName = callViewRequest.ContractHName
 	var functionHName = callViewRequest.FunctionHName
 

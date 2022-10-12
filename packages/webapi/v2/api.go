@@ -1,6 +1,8 @@
 package v2
 
 import (
+	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/node"
@@ -53,13 +55,14 @@ func Init(logger *loggerpkg.Logger,
 	metricsProvider *metricspkg.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
+	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	wal *walpkg.WAL,
 ) {
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	// Add dependency injection here
+	// -- Add dependency injection here
 	vmService := services.NewVMService(logger, chainsProvider)
 	chainService := services.NewChainService(logger, chainsProvider, metricsProvider, registryProvider, vmService, wal)
 	committeeService := services.NewCommitteeService(logger, networkProvider, registryProvider)
@@ -67,12 +70,16 @@ func Init(logger *loggerpkg.Logger,
 	offLedgerService := services.NewOffLedgerService(logger, chainService, networkProvider)
 	metricsService := services.NewMetricsService(logger, chainsProvider)
 	peeringService := services.NewPeeringService(logger, chainsProvider, networkProvider, trustedNetworkManager)
+	evmService := services.NewEVMService(logger, chainService, networkProvider)
+	nodeService := services.NewNodeService(logger, shutdownHandler)
+	// --
 
 	controllersToLoad := []interfaces.APIController{
-		chain.NewChainController(logger, chainService, committeeService, offLedgerService, registryService, vmService),
+		chain.NewChainController(logger, chainService, committeeService, evmService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(logger, metricsService),
-		node.NewNodeController(logger, peeringService),
+		node.NewNodeController(logger, peeringService, nodeService),
 		controllers.NewInfoController(logger, config),
+		requests.NewRequestsController(logger, offLedgerService, peeringService, vmService),
 	}
 
 	loadControllers(server, mocker, registryProvider, controllersToLoad)

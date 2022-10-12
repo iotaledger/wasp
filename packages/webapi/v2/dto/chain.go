@@ -34,7 +34,3 @@ func MapChainInfo(info *governance.ChainInfo, isActive bool) *ChainInfo {
 		MaxEventsPerReq: info.MaxEventsPerReq,
 	}
 }
-
-type OffLedgerRequestBody struct {
-	Request string `swagger:"desc(Offledger Request (base64))"`
-}

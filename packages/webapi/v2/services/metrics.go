@@ -79,7 +79,7 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) 
 		return nil
 	}
 
-	return dto.NewConsensusWorkflowStatus(metrics)
+	return dto.MapConsensusWorkflowStatus(metrics)
 }
 
 func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics {
@@ -95,5 +95,5 @@ func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto
 		return nil
 	}
 
-	return dto.NewConsensusPipeMetrics(metrics)
+	return dto.MapConsensusPipeMetrics(metrics)
 }

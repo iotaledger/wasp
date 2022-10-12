@@ -7,8 +7,10 @@ import (
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -131,6 +133,18 @@ func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, err
 	}
 
 	return contracts, nil
+}
+
+func (c *ChainService) GetState(chainID *isc.ChainID, stateKey []byte) (state []byte, err error) {
+	chain := c.chainsProvider().Get(chainID)
+
+	err = optimism.RetryOnStateInvalidated(func() error {
+		var err error
+		state, err = chain.GetStateReader().KVStoreReader().Get(kv.Key(stateKey))
+		return err
+	})
+
+	return state, err
 }
 
 func (c *ChainService) SaveChainRecord(chainID *isc.ChainID, active bool) error {

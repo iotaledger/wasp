@@ -34,20 +34,17 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
 		SetOperationId("getChainMetrics").
-		SetResponseContentType("application/json").
 		SetSummary("Get all available chain contracts.")
 
 	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
 		SetOperationId("getChainWorkflowMetrics").
-		SetResponseContentType("application/json").
 		SetSummary("Get all available chain contracts.")
 
 	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
 		SetOperationId("getChainPipeMetrics").
-		SetResponseContentType("application/json").
 		SetSummary("Get all available chain contracts.")
 }

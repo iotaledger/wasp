@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"encoding/hex"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
@@ -33,7 +34,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()
-	chainNodeInfo, err := c.nodeService.GetCommitteeInfo(chain)
+	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chain)
 
 	if err != nil {
 		return err
@@ -97,4 +98,24 @@ func (c *Controller) getChainList(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, chainList)
+}
+
+func (c *Controller) getState(e echo.Context) error {
+	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	if err != nil {
+		return apierrors.InvalidPropertyError("chainID", err)
+	}
+
+	stateKey, err := hex.DecodeString(e.Param("stateKey"))
+	if err != nil {
+		return apierrors.InvalidPropertyError("stateKey", err)
+	}
+
+	state, err := c.chainService.GetState(chainID, stateKey)
+
+	if err != nil {
+		return apierrors.InternalServerError(err)
+	}
+
+	return e.JSON(http.StatusOK, state)
 }

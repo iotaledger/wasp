@@ -5,8 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
-
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
@@ -17,17 +15,19 @@ type Controller struct {
 	log *loggerpkg.Logger
 
 	chainService     interfaces.ChainService
-	nodeService      interfaces.CommitteeService
+	evmService       interfaces.EVMService
+	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
 	vmService        interfaces.VMService
 }
 
-func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, nodeService interfaces.CommitteeService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
+func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, committeeService interfaces.CommitteeService, evmService interfaces.EVMService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
 		log:              log,
 		chainService:     chainService,
-		nodeService:      nodeService,
+		evmService:       evmService,
+		committeeService: committeeService,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
@@ -39,45 +39,19 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	dictExample := dict.Dict{
-		"key1": []byte("value1"),
-	}.JSONDict()
+	publicAPI.EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
+	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
+		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
+		AddParamPath("", "chainID", "ChainID (bech32-encoded)").
+		AddParamPath("", "txHash", "Transaction hash (hex-encoded)").
+		AddResponse(http.StatusOK, "Request ID", "", nil).
+		AddResponse(http.StatusNotFound, "Request ID not found", "", nil)
 
-	publicAPI.POST("chains/:chainID/contracts/:contractName/:functionName", c.callViewByContractName).
-		AddParamBody(dictExample, "body", "Parameters", false).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "contractName", "Contract Name").
-		AddParamPath("", "functionName", "Function name").
-		AddResponse(http.StatusOK, "Result", dictExample, nil).
-		SetResponseContentType("application/json").
-		SetSummary("Call a view function on a contract by name")
-
-	publicAPI.POST("chains/:chainID/contracts/:contractHName/:functionHName", c.callViewByHName).
-		AddParamBody(dictExample, "body", "Parameters", false).
-		AddParamPath("", "chainID", "ChainID (Bech32").
-		AddParamPath("", "contractHName", "Contract Hname").
-		AddParamPath("", "functionHName", "Function Hname").
-		AddResponse(http.StatusOK, "Result", dictExample, nil).
-		SetResponseContentType("application/json").
-		SetSummary("Call a view function on a contract by Hname")
-
-	publicAPI.POST("chains/:chainID/contract/callview", c.executeCallView).
-		AddParamBody(dictExample, "body", "Parameters", false).
-		AddParamPath("", "chainID", "ChainID (Bech32").
-		AddResponse(http.StatusOK, "Result", dictExample, nil).
-		SetResponseContentType("application/json").
-		SetSummary("Call a view function on a contract by Hname")
-
-	publicAPI.POST("chains/:chainID/request", c.handleOffLedgerRequest).
-		AddParamBody(
-			models.OffLedgerRequestBody{Request: "base64 string"},
-			"body",
-			"Offledger request as JSON. Request encoded in base64.",
-			false).
-		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
-		SetResponseContentType("application/json").
-		SetSummary("Post an off-ledger request")
+	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).
+		SetSummary("Fetch the raw value associated with the given key in the chain state").
+		AddParamPath("", "chainID", "ChainID (bech32-encoded)").
+		AddParamPath("", "stateKey", "Key (hex-encoded)").
+		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

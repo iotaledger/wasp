@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
@@ -93,21 +92,7 @@ func MapChainInfo(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo {
 	return chainInfoResponse
 }
 
-type OffLedgerRequestBody struct {
-	Request string `swagger:"desc(Offledger Request (base64))"`
-}
-
 type SaveChainRecordRequest struct {
 	ChainID string `json:"ChainID" swagger:"desc(The chain id)"`
 	Active  bool   `json:"Active" swagger:"desc(Decides if the chain is active or not)"`
-}
-
-type ContractCallViewRequest struct {
-	ContractName  string
-	ContractHName isc.Hname
-
-	FunctionName  string
-	FunctionHName isc.Hname
-
-	Arguments dict.Dict
 }
