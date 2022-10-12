@@ -3,7 +3,6 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
-import {addressToBytes} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

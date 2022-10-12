@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import { panic } from "../sandbox";
+import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -136,17 +136,17 @@ export class ScBigInt {
         // ultimately converge the quotient to the actual value of lhs / rhs
 
         // determine the initial guess for the quotient
-        let bufLen = lhsLen-rhsLen;
+        let bufLen = lhsLen - rhsLen;
         const buf = new Array<u8>(bufLen);
-        const lhs16 = wasmtypes.uint16FromBytes(this.bytes.slice(lhsLen-2));
-        const rhs16 = rhs.bytes[rhsLen-1] as u16;
+        const lhs16 = wasmtypes.uint16FromBytes(this.bytes.slice(lhsLen - 2));
+        const rhs16 = rhs.bytes[rhsLen - 1] as u16;
         let res16 = lhs16 / rhs16;
         if (res16 > 0xff) {
             // res16 can be up to 0x0101, reduce guess to the nearest byte value
             // the estimate correction algorithm will take care of fixing this
             res16 = 0xff;
         }
-        buf[bufLen-1] = res16 as u8;
+        buf[bufLen - 1] = res16 as u8;
         const guess = ScBigInt.normalize(buf);
 
         // now see where this guess gets us when multiplying back
@@ -187,7 +187,7 @@ export class ScBigInt {
         // normalize first, shift divisor MSB until the high order bit is set
         // so that we get the best guess possible when dividing by MSB
 
-        let msb = rhs.bytes[rhs.bytes.length-1];
+        let msb = rhs.bytes[rhs.bytes.length - 1];
         if ((msb & 0x80) != 0) {
             // already normalized, no shifts necessary
             return this.divModEstimate(rhs);

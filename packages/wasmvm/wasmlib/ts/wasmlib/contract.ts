@@ -12,6 +12,7 @@ import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
 
 export interface ScViewCallContext {
     chainID(): wasmtypes.ScChainID;
+
     initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname;
 }
 

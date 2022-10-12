@@ -18,7 +18,7 @@ import (
 
 type IClientService interface {
 	CallViewByHname(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte) ([]byte, error)
-	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (wasmtypes.ScRequestID, error)
+	PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (wasmtypes.ScRequestID, error)
 	SubscribeEvents(msg chan []string, done chan bool) error
 	WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error
 }
@@ -27,7 +27,6 @@ type WasmClientService struct {
 	cvt        wasmhost.WasmConvertor
 	waspClient *client.WaspClient
 	eventPort  string
-	nonce      uint64
 }
 
 var _ IClientService = new(WasmClientService)
@@ -55,7 +54,7 @@ func (sc *WasmClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContr
 	return res.Bytes(), nil
 }
 
-func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := sc.cvt.IscChainID(&chainID)
 	iscContract := sc.cvt.IscHname(hContract)
 	iscFunction := sc.cvt.IscHname(hFunction)
@@ -63,8 +62,7 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	if err != nil {
 		return reqID, err
 	}
-	sc.nonce++
-	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, sc.nonce)
+	req := isc.NewOffLedgerRequest(iscChainID, iscContract, iscFunction, params, nonce)
 	iscAllowance := sc.cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)

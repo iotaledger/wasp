@@ -25,6 +25,9 @@ const (
 	useSoloClient = true
 )
 
+// to run with docker, set useDisposable to true and run with the following parameters:
+// -layer1-api="http://localhost:14265" -layer1-faucet="http://localhost:8091"
+
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useDisposable {
 		return setupClientDisposable(t)

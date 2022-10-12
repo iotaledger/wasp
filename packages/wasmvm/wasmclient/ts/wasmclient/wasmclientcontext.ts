@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+import {Ed25519Address} from "@iota/iota.js"
+import * as coreaccounts from "wasmlib/coreaccounts"
 import * as isc from "./isc"
 import * as wasmlib from "wasmlib"
 import * as wc from "./index";
@@ -11,20 +13,20 @@ export interface IEventHandler {
 
 export class WasmClientContext extends wc.WasmClientSandbox {
 
-    public CurrentChainID(): wasmlib.ScChainID {
-        return this.chainID;
+    public chainID(): wasmlib.ScChainID {
+        return this.chID;
     }
 
-    public InitFuncCallContext(): void {
+    public initFuncCallContext(): void {
         wasmlib.connectHost(this);
     }
 
-    public InitViewCallContext(hContract: wasmlib.ScHname): wasmlib.ScHname {
+    public initViewCallContext(hContract: wasmlib.ScHname): wasmlib.ScHname {
         wasmlib.connectHost(this);
         return this.scHname;
     }
 
-    public Register(handler: IEventHandler): isc.Error {
+    public register(handler: IEventHandler): isc.Error {
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] == handler) {
                 return null;
@@ -38,18 +40,27 @@ export class WasmClientContext extends wc.WasmClientSandbox {
     }
 
     // overrides default contract name
-    public ServiceContractName(contractName: string) {
-        this.scHname = wasmlib.ScHname.fromName(contractName);
+    public serviceContractName(contractName: string) {
+        this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(contractName));
     }
 
-    public SignRequests(keyPair: isc.KeyPair) {
+    public signRequests(keyPair: isc.KeyPair) {
         this.keyPair = keyPair;
+
+        // get last used nonce from accounts core contract
+        const addr = new Ed25519Address(keyPair.publicKey).toAddress()
+        const agent = isc.NewAgentID(addr)
+        const ctx = new WasmClientContext(this.svcClient, this.chID, coreaccounts.ScName)
+        const n = coreaccounts.ScFuncs.getAccountNonce(ctx)
+        n.params.agentID().setValue(wasmlib.agentIDFromBytes(agent.toBytes()))
+        n.func.call()
+        this.nonce = n.results.accountNonce().value()
     }
 
-    public Unregister(handler: IEventHandler): void {
+    public unregister(handler: IEventHandler): void {
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] == handler) {
-                let handlers = this.eventHandlers;
+                const handlers = this.eventHandlers;
                 this.eventHandlers = handlers.slice(0, i).concat(handlers.slice(i + 1));
                 if (this.eventHandlers.length == 0) {
                     this.stopEventHandlers();
@@ -59,12 +70,12 @@ export class WasmClientContext extends wc.WasmClientSandbox {
         }
     }
 
-    public WaitRequest(reqID: wasmlib.ScRequestID | undefined): isc.Error {
+    public waitRequest(reqID: wasmlib.ScRequestID | undefined): isc.Error {
         let rID = this.ReqID;
         if (reqID !== undefined) {
             rID = reqID;
         }
-        return this.svcClient.waitUntilRequestProcessed(this.chainID, rID, 60);
+        return this.svcClient.waitUntilRequestProcessed(this.chID, rID, 60);
     }
 
     public startEventHandlers(): isc.Error {

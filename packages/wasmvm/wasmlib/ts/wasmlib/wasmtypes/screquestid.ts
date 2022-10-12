@@ -64,8 +64,8 @@ export function requestIDFromString(value: string): ScRequestID {
 
 export function requestIDToString(value: ScRequestID): string {
     let reqID = requestIDToBytes(value)
-    let txID = wasmtypes.hexEncode(reqID.slice(0, ScRequestIDLength-2))
-    let index = wasmtypes.uint16FromBytes(reqID.slice(ScRequestIDLength-2))
+    let txID = wasmtypes.hexEncode(reqID.slice(0, ScRequestIDLength - 2))
+    let index = wasmtypes.uint16FromBytes(reqID.slice(ScRequestIDLength - 2))
     return wasmtypes.uint16ToString(index) + RequestIDSeparator + txID;
 }
 

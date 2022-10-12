@@ -7,11 +7,13 @@ import {panic} from "wasmlib"
 import * as wc from "./index";
 
 export class WasmClientSandbox implements wasmlib.ScHost {
-    chainID: wasmlib.ScChainID;
+    chID: wasmlib.ScChainID;
     Err: isc.Error = null;
     eventDone: bool = false;
     eventHandlers: wc.IEventHandler[] = [];
+    eventReceived: bool = false;
     keyPair: isc.KeyPair | null = null;
+    nonce: u64 = 0;
     ReqID: wasmlib.ScRequestID = wasmlib.requestIDFromBytes([]);
     scName: string;
     scHname: wasmlib.ScHname;
@@ -19,9 +21,9 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     public constructor(svcClient: wc.IClientService, chainID: wasmlib.ScChainID, scName: string) {
         this.svcClient = svcClient;
+        this.chID = chainID;
         this.scName = scName;
-        this.scHname = wasmlib.ScHname.fromName(scName);
-        this.chainID = chainID;
+        this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
     }
 
     public exportName(index: i32, name: string) {
@@ -72,7 +74,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             this.Err = "unknown contract: " + req.contract.toString();
             return [];
         }
-        let res = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
+        let res = this.svcClient.callViewByHname(this.chID, req.contract, req.function, req.params);
         this.Err = this.svcClient.Err()
         if (this.Err != null) {
             return [];
@@ -86,7 +88,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return [];
         }
         let req = wasmlib.PostRequest.fromBytes(args);
-        if (req.chainID != this.chainID) {
+        if (req.chainID != this.chID) {
             this.Err = "unknown chain id: " + req.chainID.toString();
             return [];
         }
@@ -95,7 +97,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return [];
         }
         let scAssets = new wasmlib.ScAssets(req.transfer);
-        this.ReqID = this.svcClient.postRequest(this.chainID, req.contract, req.function, req.params, scAssets, this.keyPair);
+        this.nonce++;
+        this.ReqID = this.svcClient.postRequest(this.chID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
         this.Err = this.svcClient.Err()
         return [];
     }
@@ -112,8 +115,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
     }
 
     public fnUtilsBech32Encode(args: u8[]): u8[] {
-        let scAddress = wasmlib.addressFromBytes(args);
         let cvt = new isc.WasmConvertor();
+        let scAddress = wasmlib.addressFromBytes(args);
         let addr = cvt.iscAddress(scAddress);
         let bech32 = isc.Codec.bech32Encode(addr);
         return wasmlib.stringToBytes(bech32);
@@ -121,9 +124,6 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     public fnUtilsHashName(args: u8[]): u8[] {
         let name = wasmlib.stringFromBytes(args);
-        let iscHname = isc.Codec.hNameEncode(name);
-        let cvt = new isc.WasmConvertor();
-        let hName = cvt.scHname(iscHname);
-        return wasmlib.hnameToBytes(hName);
+        return isc.Codec.hNameBytes(name);
     }
 }

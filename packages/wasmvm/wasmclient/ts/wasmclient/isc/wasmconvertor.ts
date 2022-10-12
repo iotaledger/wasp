@@ -13,6 +13,7 @@ export class WasmConvertor {
     }
 
     public iscAllowance(addr: wasmlib.ScAssets): isc.Allowance {
+        // TODO
         return [];
     }
 

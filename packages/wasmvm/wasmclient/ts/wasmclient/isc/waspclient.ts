@@ -3,7 +3,7 @@
 
 import * as isc from "./index"
 
-//TODO
+// TODO
 export class WaspClient {
     Err: isc.Error = null;
 

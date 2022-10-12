@@ -3,7 +3,6 @@
 
 import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
-import {hashToBytes, ScHash} from "./index";
 
 export const ScInt8Length = 1;
 

@@ -4,13 +4,12 @@
 import * as isc from "./isc"
 import * as wasmlib from "wasmlib"
 
-
 export interface IClientService {
     callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[]): u8[];
 
     Err(): isc.Error;
 
-    postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[], allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): wasmlib.ScRequestID;
+    postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[], allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): wasmlib.ScRequestID;
 
     subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error;
 
@@ -22,13 +21,11 @@ export class WasmClientService implements IClientService {
     waspClient: isc.WaspClient;
     lastError: isc.Error = null;
     eventPort: string;
-    nonce: u64;
 
     public constructor(waspAPI: string, eventPort: string) {
         this.cvt = new isc.WasmConvertor();
         this.waspClient = new isc.WaspClient(waspAPI);
         this.eventPort = eventPort;
-        this.nonce = 0;
     }
 
     public static DefaultWasmClientService(): WasmClientService {
@@ -51,12 +48,11 @@ export class WasmClientService implements IClientService {
         return this.lastError;
     }
 
-    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[], allowance: wasmlib.ScAssets, keyPair: isc.KeyPair): wasmlib.ScRequestID {
+    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[], allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): wasmlib.ScRequestID {
         let iscChainID = this.cvt.iscChainID(chainID);
         let iscContract = this.cvt.iscHname(hContract);
         let iscFunction = this.cvt.iscHname(hFunction);
-        this.nonce++;
-        let req = new isc.OffLedgerRequest(iscChainID, iscContract, iscFunction, args, this.nonce);
+        let req = new isc.OffLedgerRequest(iscChainID, iscContract, iscFunction, args, nonce);
         let iscAllowance = this.cvt.iscAllowance(allowance);
         req.withAllowance(iscAllowance);
         let signed = req.sign(keyPair);
