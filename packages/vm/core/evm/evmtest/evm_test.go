@@ -994,6 +994,3 @@ func TestSendEntireBalance(t *testing.T) {
 	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
 }
-
-func TestEVMLogs(t *testing.T) {
-}
