@@ -56,6 +56,9 @@ type StateDB struct {
 	getBalance GetBalanceFunc
 	subBalance SubBalanceFunc
 	addBalance AddBalanceFunc
+
+	thash   common.Hash
+	txIndex uint
 }
 
 var _ vm.StateDB = &StateDB{}
@@ -236,8 +239,7 @@ func (s *StateDB) AddLog(log *types.Log) {
 	s.logs = append(s.logs, log)
 }
 
-func (s *StateDB) GetLogs(hash common.Hash) []*types.Log {
-	_ = hash
+func (s *StateDB) GetLogs(_ common.Hash) []*types.Log {
 	return s.logs
 }
 
