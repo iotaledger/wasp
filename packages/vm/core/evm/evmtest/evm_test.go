@@ -371,7 +371,11 @@ func TestISCGetRequestID(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	reqID := new(isc.RequestID)
-	iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+
+	// check evm log is as expected
+	require.NotEqualValues(t, res.evmReceipt.Logs[0].TxHash, common.Hash{})
+	require.NotEqualValues(t, res.evmReceipt.Logs[0].BlockHash, common.Hash{})
 
 	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), *reqID)
 }

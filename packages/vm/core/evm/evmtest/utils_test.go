@@ -382,7 +382,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	return res, sendTxErr
 }
 
-func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) {
+func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName string, v interface{}, fnName string, args ...interface{}) callFnResult {
 	res, err := e.callFn(opts, fnName, args...)
 	require.NoError(e.chain.t, err)
 	require.Equal(e.chain.t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
@@ -391,6 +391,7 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 		err = e.abi.UnpackIntoInterface(v, eventName, res.evmReceipt.Logs[0].Data)
 	}
 	require.NoError(e.chain.t, err)
+	return res
 }
 
 func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) {
