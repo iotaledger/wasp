@@ -56,9 +56,6 @@ type StateDB struct {
 	getBalance GetBalanceFunc
 	subBalance SubBalanceFunc
 	addBalance AddBalanceFunc
-
-	thash   common.Hash
-	txIndex uint
 }
 
 var _ vm.StateDB = &StateDB{}
