@@ -51,7 +51,7 @@ type VMContext struct {
 	entropy            hashing.HashValue
 	callStack          []*callContext
 	// --- gas related
-	// max tokens cane be charged for gas fee
+	// max tokens that can be charged for gas fee
 	gasMaxTokensToSpendForGasFee uint64
 	// final gas budget set for the run
 	gasBudgetAdjusted uint64

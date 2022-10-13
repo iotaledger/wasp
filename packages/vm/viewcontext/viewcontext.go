@@ -154,6 +154,11 @@ func (ctx *ViewContext) GasBudgetLeft() uint64 {
 	return ctx.gasBudget
 }
 
+func (ctx *ViewContext) GasBurned() uint64 {
+	// view calls start with max gas
+	return gas.MaxGasExternalViewCall - ctx.gasBudget
+}
+
 func (ctx *ViewContext) Infof(format string, params ...interface{}) {
 	ctx.log.Infof(format, params...)
 }

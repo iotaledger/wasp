@@ -162,6 +162,7 @@ type RequestParameters struct {
 type Gas interface {
 	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
+	Burned() uint64
 }
 
 // StateAnchor contains properties of the anchor output/transaction in the current context

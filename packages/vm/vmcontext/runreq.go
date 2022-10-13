@@ -251,7 +251,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 
 	// make sure the gasBuget is at least >= than the allowed minimum
 	if gasBudget < gas.MinGasPerRequest {
-		gasBudget = gas.MinGasPerRequest // TODO ponder about this
+		gasBudget = gas.MinGasPerRequest
 	}
 
 	// when estimating gas, if a value bigger than max is provided, use the maximum gas budget possible

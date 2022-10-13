@@ -79,5 +79,12 @@ func DecodeReceiptFull(receiptBytes []byte) (*types.Receipt, error) {
 		return nil, err
 	}
 
+	for _, log := range r.Logs {
+		log.TxHash = r.TxHash
+		log.TxIndex = r.TransactionIndex
+		log.BlockHash = r.BlockHash
+		log.BlockNumber = r.BlockNumber.Uint64()
+	}
+
 	return r, nil
 }

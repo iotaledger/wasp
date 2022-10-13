@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -23,17 +25,45 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
+func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
+	lo := params.TxGas
+	hi := e.GasLimit()
+	lastOk := uint64(0)
+	var lastErr error
+	for hi >= lo {
+		callMsg.Gas = (lo + hi) / 2
+		res, err := e.CallContract(callMsg, nil)
+		if err != nil {
+			return 0, err
+		}
+		if res.Err != nil {
+			lastErr = res.Err
+			lo = callMsg.Gas + 1
+		} else {
+			lastOk = callMsg.Gas
+			hi = callMsg.Gas - 1
+		}
+	}
+	if lastOk == 0 {
+		if lastErr != nil {
+			return 0, fmt.Errorf("estimateGas failed: %s", lastErr.Error())
+		}
+		return 0, fmt.Errorf("estimateGas failed")
+	}
+	return lastOk, nil
+}
+
 func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte, gasLimit uint64) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	if gasLimit == 0 {
 		var err error
-		gasLimit, err = emu.estimateGas(ethereum.CallMsg{
+		gasLimit, err = estimateGas(ethereum.CallMsg{
 			From:  senderAddress,
 			To:    &receiverAddress,
 			Value: amount,
 			Data:  data,
-		})
+		}, emu)
 		require.NoError(t, err)
 	}
 
@@ -193,11 +223,11 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	data = append(data, contractBytecode...)
 	data = append(data, constructorArguments...)
 
-	gasLimit, err := emu.estimateGas(ethereum.CallMsg{
+	gasLimit, err := estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
 		Value: txValue,
 		Data:  data,
-	})
+	}, emu)
 	require.NoError(t, err)
 
 	require.NoError(t, err)

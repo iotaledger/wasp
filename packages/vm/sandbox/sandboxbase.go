@@ -104,6 +104,10 @@ func (s *SandboxBase) Gas() isc.Gas {
 	return s
 }
 
+func (s *SandboxBase) Burned() uint64 {
+	return s.Ctx.GasBurned()
+}
+
 func (s *SandboxBase) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.Ctx.GasBurn(burnCode, par...)
 }

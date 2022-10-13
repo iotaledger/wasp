@@ -549,8 +549,8 @@ func TestMessageSize(t *testing.T) {
 	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
 
 	for _, req := range reqs {
-		receipt, ok := ch.GetRequestReceipt(req.ID())
-		require.True(t, ok)
+		receipt, err := ch.GetRequestReceipt(req.ID())
+		require.Nil(t, err)
 		require.Nil(t, receipt.Error)
 	}
 }

@@ -144,6 +144,8 @@ func (r *evmOffLedgerRequest) VerifySignature() error {
 	return nil
 }
 
+// ----------------------------------------------------------------
+
 type evmOffLedgerEstimateGasRequest struct {
 	chainID *ChainID
 	callMsg ethereum.CallMsg
@@ -206,6 +208,9 @@ func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
+	if r.callMsg.Gas > 0 {
+		return r.callMsg.Gas, true
+	}
 	// see VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
 	return math.MaxUint64, false
 }

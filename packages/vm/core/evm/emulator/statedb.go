@@ -46,9 +46,7 @@ type (
 )
 
 // StateDB implements vm.StateDB with a kv.KVStore as backend.
-// The Ethereum account balance is tied to the L1 balance, and immutable
-// from EVM. (Instead, funds are supposed to be manipulated via the ISC
-// sandbox).
+// The Ethereum account balance is tied to the L1 balance.
 type StateDB struct {
 	kv         kv.KVStore
 	logs       []*types.Log
@@ -236,8 +234,7 @@ func (s *StateDB) AddLog(log *types.Log) {
 	s.logs = append(s.logs, log)
 }
 
-func (s *StateDB) GetLogs(hash common.Hash) []*types.Log {
-	_ = hash
+func (s *StateDB) GetLogs(_ common.Hash) []*types.Log {
 	return s.logs
 }
 
