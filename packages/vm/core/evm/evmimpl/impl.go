@@ -4,8 +4,10 @@
 package evmimpl
 
 import (
+	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -237,7 +239,17 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
-	ctx.RequireNoError(res.Err)
+
+	// try to include the revert reason in the error
+	if res.Err != nil {
+		if len(res.Revert()) > 0 {
+			reason, errUnpack := abi.UnpackRevert(res.Revert())
+			if errUnpack == nil {
+				panic(fmt.Errorf("%s: %v", res.Err.Error(), reason))
+			}
+		}
+		panic(res.Err)
+	}
 	return result(res.Return())
 }
 

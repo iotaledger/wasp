@@ -582,7 +582,7 @@ func TestISCPanic(t *testing.T) {
 	require.Contains(t, err.Error(), "execution reverted")
 }
 
-func TestSendWithArgs(t *testing.T) {
+func TestISCSendWithArgs(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
@@ -993,4 +993,24 @@ func TestSendEntireBalance(t *testing.T) {
 	require.NoError(t, err)
 	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
+}
+
+func TestSolidityRevertMessage(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	callData, err := iscTest.abi.Pack("testRevertReason")
+	require.NoError(t, err)
+	res, err := env.soloChain.CallView(evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
+		evm.FieldCallMsg: evmtypes.EncodeCallMsg(ethereum.CallMsg{
+			From: ethAddr,
+			To:   &iscTest.address,
+			Gas:  100_000,
+			Data: callData,
+		}),
+	})
+	require.Error(t, err)
+	require.EqualValues(t, "execution reverted: foobar", err.Error())
+	require.Nil(t, res)
 }

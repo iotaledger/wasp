@@ -6,6 +6,10 @@ Funds will be requested from a faucet and be sent to the selected address.
 
 > Note: Currently only nodes with an active Proof of Work component are supported. Once iota.js contains a faster Pow function, all nodes are supported.
 
+## Setup
+
+To configure the endpoints to be used, you need to edit the `network.ts` file in this directory.
+
 ## Installation
 ```
 npm install

@@ -134,4 +134,8 @@ contract ISCTest {
     function sendTo(address payable to, uint256 amount) public payable {
         to.transfer(amount);
     }
+
+    function testRevertReason() public pure {
+        revert("foobar");
+    }
 }
