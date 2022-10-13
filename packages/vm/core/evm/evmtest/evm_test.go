@@ -1000,9 +1000,10 @@ func TestSolidityRevertMessage(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
+	// test the revert reason is shown when invoking eth_call
 	callData, err := iscTest.abi.Pack("testRevertReason")
 	require.NoError(t, err)
-	res, err := env.soloChain.CallView(evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
+	viewRes, err := env.soloChain.CallView(evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
 		evm.FieldCallMsg: evmtypes.EncodeCallMsg(ethereum.CallMsg{
 			From: ethAddr,
 			To:   &iscTest.address,
@@ -1012,5 +1013,11 @@ func TestSolidityRevertMessage(t *testing.T) {
 	})
 	require.Error(t, err)
 	require.EqualValues(t, "execution reverted: foobar", err.Error())
-	require.Nil(t, res)
+	require.Nil(t, viewRes)
+
+	res, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // needed because gas estimation would fail
+	}}, "testRevertReason")
+	require.Error(t, err)
+	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
 }
