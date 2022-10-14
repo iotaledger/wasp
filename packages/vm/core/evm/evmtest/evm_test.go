@@ -391,32 +391,6 @@ func TestISCGetSenderAccount(t *testing.T) {
 	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().DeserializedRequest().SenderAccount()), *sender)
 }
 
-func TestRevert(t *testing.T) {
-	env := initEVM(t)
-	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	nonce := env.getNonce(ethAddress)
-
-	res, err := iscTest.callFn([]ethCallOptions{{
-		sender:   ethKey,
-		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "revertWithVMError")
-	require.Error(t, err)
-
-	t.Log(err.Error())
-	require.Error(t, err)
-
-	// this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
-	// require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
-	require.Regexp(t, `execution reverted`, err.Error())
-
-	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
-
-	// the nonce must increase even after failed txs
-	require.Equal(t, nonce+1, env.getNonce(ethAddress))
-}
-
 func TestSendBaseTokens(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 
@@ -436,8 +410,7 @@ func TestSendBaseTokens(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 	require.Error(t, err)
-	// this would be the ideal check, but it won't work because we're losing ISC errors by catching them in EVM
-	// require.Contains(t, err.Error(), "not previously allowed")
+	require.Contains(t, err.Error(), "not previously allowed")
 
 	// allow ISCTest to take the tokens
 	_, err = env.MagicContract(ethKey).callFn(
@@ -467,8 +440,6 @@ func TestSendBaseTokens(t *testing.T) {
 	// allowance should be empty now
 	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
-
-// this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
 
 func TestSendAsNFT(t *testing.T) {
 	// TODO: how to send an NFT to an ethereum address on L2?
@@ -582,7 +553,7 @@ func TestISCPanic(t *testing.T) {
 	require.Contains(t, err.Error(), "execution reverted")
 }
 
-func TestSendWithArgs(t *testing.T) {
+func TestISCSendWithArgs(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 	err := env.soloChain.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash)
 	require.NoError(t, err)
@@ -993,4 +964,31 @@ func TestSendEntireBalance(t *testing.T) {
 	require.NoError(t, err)
 	env.soloChain.AssertL2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr), 0)
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, currentBalance-tokensForGasBudget)
+}
+
+func TestSolidityRevertMessage(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// test the revert reason is shown when invoking eth_call
+	callData, err := iscTest.abi.Pack("testRevertReason")
+	require.NoError(t, err)
+	viewRes, err := env.soloChain.CallView(evm.Contract.Name, evm.FuncCallContract.Name, dict.Dict{
+		evm.FieldCallMsg: evmtypes.EncodeCallMsg(ethereum.CallMsg{
+			From: ethAddr,
+			To:   &iscTest.address,
+			Gas:  100_000,
+			Data: callData,
+		}),
+	})
+	require.Error(t, err)
+	require.EqualValues(t, "execution reverted: foobar", err.Error())
+	require.Nil(t, viewRes)
+
+	res, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // needed because gas estimation would fail
+	}}, "testRevertReason")
+	require.Error(t, err)
+	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
 }

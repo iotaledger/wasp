@@ -6,7 +6,6 @@ pragma solidity >=0.8.5;
 import "@iscmagic/ISC.sol";
 
 contract ISCTest {
-    ISCError TestError = isc.registerError("TestError");
     uint64 public constant TokensForGas = 500;
 
     function getChainID() public view returns (ISCChainID) {
@@ -71,10 +70,6 @@ contract ISCTest {
         isc.send(receiver, fungibleTokens, true, metadata, options);
     }
 
-    function revertWithVMError() public view {
-        revert VMError(TestError);
-    }
-
     function callInccounter() public {
         ISCDict memory params = ISCDict(new ISCDictItem[](1));
         bytes memory int64Encoded42 = hex"2A00000000000000";
@@ -133,5 +128,9 @@ contract ISCTest {
 
     function sendTo(address payable to, uint256 amount) public payable {
         to.transfer(amount);
+    }
+
+    function testRevertReason() public pure {
+        revert("foobar");
     }
 }
