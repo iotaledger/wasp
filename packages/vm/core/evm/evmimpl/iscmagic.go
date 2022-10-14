@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -167,21 +168,36 @@ func moveAssetsToCommonAccount(ctx isc.Sandbox, caller vm.ContractRef, fungibleT
 
 type RunFunc func(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) []byte
 
+// see UnpackRevert in go-ethereum/accounts/abi/abi.go
+var revertSelector = crypto.Keccak256([]byte("Error(string)"))[:4]
+
 // catchISCPanics executes a `Run` function (either from a call or view), and catches ISC exceptions, if any ISC exception happens, ErrExecutionReverted is issued
-func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, err error) {
-	err = panicutil.CatchAllExcept(
+func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool, log isc.LogInterface) (ret []byte, remainingGas uint64, executionErr error) {
+	executionErr = panicutil.CatchAllExcept(
 		func() {
 			ret = run(evm, caller, input, gas, readOnly)
 		},
 		vmexceptions.AllProtocolLimits...,
 	)
-	if err != nil {
-		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), err)
-		// the ISC error is lost inside the EVM, a possible solution would be to wrap the ErrExecutionReverted error, but the ISC information still gets deleted at some point
-		// err = errors.Wrap(vm.ErrExecutionReverted, err.Error())
-		err = vm.ErrExecutionReverted
+	if executionErr != nil {
+		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), executionErr)
+		// TODO this works, but is there a better way to encode the error in the required abi format?
+
+		// include the ISC error as the revert reason by encoding it into the returnData
+		ret = revertSelector
+		abiString, err := abi.NewType("string", "", nil)
+		if err != nil {
+			panic(err)
+		}
+		encodedErr, err := abi.Arguments{{Type: abiString}}.Pack(executionErr.Error())
+		if err != nil {
+			panic(err)
+		}
+		ret = append(ret, encodedErr...)
+		// override the error to be returned (must be "execution reverted")
+		executionErr = vm.ErrExecutionReverted
 	}
-	return ret, gas, err
+	return ret, gas, executionErr
 }
 
 func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {

@@ -436,8 +436,7 @@ func TestSendBaseTokens(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "sendBaseTokens", iscmagic.WrapL1Address(receiver), transfer)
 	require.Error(t, err)
-	// this would be the ideal check, but it won't work because we're losing ISC errors by catching them in EVM
-	// require.Contains(t, err.Error(), "not previously allowed")
+	require.Contains(t, err.Error(), "not previously allowed")
 
 	// allow ISCTest to take the tokens
 	_, err = env.MagicContract(ethKey).callFn(
@@ -467,8 +466,6 @@ func TestSendBaseTokens(t *testing.T) {
 	// allowance should be empty now
 	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
-
-// this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
 
 func TestSendAsNFT(t *testing.T) {
 	// TODO: how to send an NFT to an ethereum address on L2?
