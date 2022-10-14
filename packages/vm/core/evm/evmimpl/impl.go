@@ -4,8 +4,10 @@
 package evmimpl
 
 import (
+	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -143,7 +145,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	}
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(gasErr)
-	ctx.RequireNoError(result.Err) // panic so that the error is handled by ISC VM logic
+	ctx.RequireNoError(tryGetRevertError(result))
 
 	return nil
 }
@@ -237,8 +239,22 @@ func callContract(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	res, err := emu.CallContract(callMsg, nil)
 	ctx.RequireNoError(err)
-	ctx.RequireNoError(res.Err)
+	ctx.RequireNoError(tryGetRevertError(res))
 	return result(res.Return())
+}
+
+func tryGetRevertError(res *core.ExecutionResult) error {
+	// try to include the revert reason in the error
+	if res.Err == nil {
+		return nil
+	}
+	if len(res.Revert()) > 0 {
+		reason, errUnpack := abi.UnpackRevert(res.Revert())
+		if errUnpack == nil {
+			return fmt.Errorf("%s: %v", res.Err.Error(), reason)
+		}
+	}
+	return res.Err
 }
 
 func estimateGas(ctx isc.Sandbox) dict.Dict {

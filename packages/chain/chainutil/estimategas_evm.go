@@ -63,7 +63,7 @@ func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 	return ret, err
 }
 
-var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|execution reverted")
+var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|(execution reverted$)")
 
 // EstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
