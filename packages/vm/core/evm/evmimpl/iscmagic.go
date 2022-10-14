@@ -251,10 +251,6 @@ func tryCall(ctx isc.Sandbox, caller vm.ContractRef, method *abi.Method, args []
 	case "getSenderAccount":
 		return []interface{}{iscmagic.WrapISCAgentID(ctx.Request().SenderAccount())}, true
 
-	case "registerError":
-		errorMessage := args[0].(string)
-		return []interface{}{ctx.RegisterError(errorMessage).Create().Code().ID}, true
-
 	case "allow":
 		params := struct {
 			Target    common.Address

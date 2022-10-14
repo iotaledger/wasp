@@ -391,32 +391,6 @@ func TestISCGetSenderAccount(t *testing.T) {
 	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().DeserializedRequest().SenderAccount()), *sender)
 }
 
-func TestRevert(t *testing.T) {
-	env := initEVM(t)
-	ethKey, ethAddress := env.soloChain.NewEthereumAccountWithL2Funds()
-	iscTest := env.deployISCTestContract(ethKey)
-
-	nonce := env.getNonce(ethAddress)
-
-	res, err := iscTest.callFn([]ethCallOptions{{
-		sender:   ethKey,
-		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "revertWithVMError")
-	require.Error(t, err)
-
-	t.Log(err.Error())
-	require.Error(t, err)
-
-	// this would be the ideal check, but it worn't work because we're losing ISC errors by catching them in EVM
-	// require.Regexp(t, `execution reverted: contractId: \w+, errorId: \d+`, err.Error())
-	require.Regexp(t, `execution reverted`, err.Error())
-
-	require.Equal(t, types.ReceiptStatusFailed, res.evmReceipt.Status)
-
-	// the nonce must increase even after failed txs
-	require.Equal(t, nonce+1, env.getNonce(ethAddress))
-}
-
 func TestSendBaseTokens(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)
 

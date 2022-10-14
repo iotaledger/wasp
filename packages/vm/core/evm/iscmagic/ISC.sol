@@ -49,16 +49,6 @@ interface ISC {
     // The specified `allowance` must not be greater than `fungibleTokens`.
     function sendAsNFT(L1Address memory targetAddress, ISCFungibleTokens memory fungibleTokens, NFTID id, bool adjustMinimumStorageDeposit, ISCSendMetadata memory metadata, ISCSendOptions memory sendOptions) external;
 
-    // Register a custom ISC error message
-    //
-    // Usage example:
-    //
-    //   ISCError TestError = isc.registerError("TestError");
-    //   function revertWithVMError() public view {
-    //       revert VMError(TestError);
-    //   }
-    function registerError(string memory s) external returns (ISCError);
-
     // Call the entry point of an ISC contract on the same chain.
     // The specified funds in the allowance are taken from the caller's L2 account.
     function call(ISCHname contractHname, ISCHname entryPoint, ISCDict memory params, ISCAllowance memory allowance) external returns (ISCDict memory);
@@ -184,14 +174,6 @@ struct ISCExpiration {
     int64 time;
     L1Address returnAddress;
 }
-
-// An ISC error code.
-// See [registerError].
-type ISCError is uint16;
-
-// When reverting with VMError, the ISC receipt will include the given ISC error code.
-// See [registerError].
-error VMError(ISCError);
 
 // Properties of an ISC base/native token
 struct ISCTokenProperties {
