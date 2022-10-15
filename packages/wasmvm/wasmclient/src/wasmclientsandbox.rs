@@ -50,8 +50,9 @@ impl ScHost for WasmClientSandbox {
 
 impl WasmClientSandbox {
     pub fn new() -> Self {
-        return WasmClientSandbox(WasmClientContext::new());
+        return WasmClientSandbox(WasmClientContext::default());
     }
+
     pub fn fn_call(mut self, args: &[u8]) -> Result<Vec<u8>, String> {
         let req = wasmrequests::PostRequest::from_bytes(args);
         if req.contract == self.0.sc_hname {
@@ -100,7 +101,7 @@ impl WasmClientSandbox {
         let cvt = wasmconvertor::WasmConvertor::new();
         let sc_address = wasmtypes::address_from_bytes(args);
         let addr = cvt.isc_address(&sc_address);
-        let bech32 = codec::bech32_encode(addr);
+        let bech32 = codec::bech32_encode(&addr);
         return Ok(bech32.into_bytes());
     }
 

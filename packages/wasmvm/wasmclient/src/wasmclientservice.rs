@@ -40,16 +40,16 @@ pub struct WasmClientService {
 }
 
 impl WasmClientService {
-    pub fn new(wasp_api: &str, event_port: &str) -> *mut WasmClientService {
-        return &mut WasmClientService {
+    pub fn new(wasp_api: &str, event_port: &str) -> Self {
+        return WasmClientService {
             client: waspclient::WaspClient::new(wasp_api, None),
             event_port: event_port.to_string(),
             nonce: 0,
         };
     }
 
-    pub fn default_wasm_client_service() -> *mut WasmClientService {
-        return &mut WasmClientService {
+    pub fn default() -> Self {
+        return WasmClientService {
             client: waspclient::WaspClient::new("127.0.0.1:9090", None),
             event_port: "127.0.0.1:5550".to_string(),
             nonce: 0,

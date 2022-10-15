@@ -15,6 +15,12 @@ pub struct ScChainID {
 }
 
 impl ScChainID {
+    pub fn default() -> Self {
+        return ScChainID {
+            id: [0; SC_CHAIN_ID_LENGTH],
+        };
+    }
+
     pub fn address(&self) -> ScAddress {
         let buf = [SC_ADDRESS_ALIAS];
         address_from_bytes(&[&buf[..], &self.id[..]].concat())

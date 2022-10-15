@@ -7,3 +7,9 @@ pub struct KeyPair {
     private_key: ed25519::SecretKey,
     public_key: ed25519::PublicKey,
 }
+
+impl KeyPair {
+    pub fn default() -> Self {
+        todo!()
+    }
+}

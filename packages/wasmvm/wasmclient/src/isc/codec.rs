@@ -11,7 +11,7 @@ pub fn bech32_decode(bech32: &str) -> Result<Address, String> {
     // return dec.data;
 }
 
-pub fn bech32_encode(addr: Address) -> String {
+pub fn bech32_encode(addr: &Address) -> String {
     todo!()
     // return Bech32.encode(Codec.bech32Prefix, addr);
 }

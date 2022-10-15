@@ -17,6 +17,10 @@ impl ScHname {
         hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 
+    pub fn default() -> Self {
+        return ScHname(0);
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         hname_to_bytes(self)
     }

@@ -68,15 +68,15 @@ impl OffLedgerRequest for OffLedgerRequestData {
         todo!()
     }
     fn with_allowance(&self, allowance: &ScAssets) -> &Self {
-        return self;
+        todo!()
     }
     fn sign(&self, key: KeyPair) -> &Self {
-        return self;
+        todo!()
     }
 }
 
 impl OffLedgerRequestData {
-    pub fn id(self) -> ScRequestID {
+    pub fn id(&self) -> ScRequestID {
         todo!()
     }
 }
