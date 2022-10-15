@@ -8,8 +8,8 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::*;
 use crate::coreroot::*;
+use crate::*;
 
 #[derive(Clone)]
 pub struct ImmutableFindContractResults {
@@ -52,7 +52,7 @@ pub struct MapHnameToImmutableBytes {
 
 impl MapHnameToImmutableBytes {
     pub fn get_bytes(&self, key: ScHname) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.key(&hname_to_bytes(key)))
+        ScImmutableBytes::new(self.proxy.key(&hname_to_bytes(&key)))
     }
 }
 
@@ -64,7 +64,9 @@ pub struct ImmutableGetContractRecordsResults {
 impl ImmutableGetContractRecordsResults {
     // contract records
     pub fn contract_registry(&self) -> MapHnameToImmutableBytes {
-        MapHnameToImmutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
+        MapHnameToImmutableBytes {
+            proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY),
+        }
     }
 }
 
@@ -79,7 +81,7 @@ impl MapHnameToMutableBytes {
     }
 
     pub fn get_bytes(&self, key: ScHname) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.key(&hname_to_bytes(key)))
+        ScMutableBytes::new(self.proxy.key(&hname_to_bytes(&key)))
     }
 }
 
@@ -91,6 +93,8 @@ pub struct MutableGetContractRecordsResults {
 impl MutableGetContractRecordsResults {
     // contract records
     pub fn contract_registry(&self) -> MapHnameToMutableBytes {
-        MapHnameToMutableBytes { proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY) }
+        MapHnameToMutableBytes {
+            proxy: self.proxy.root(RESULT_CONTRACT_REGISTRY),
+        }
     }
 }

@@ -93,7 +93,7 @@ impl WasmClientSandbox {
         let bech32 = wasmlib::string_from_bytes(args);
         let addr = codec::bech32_decode(&bech32)?;
         let cvt = wasmconvertor::WasmConvertor::new();
-        return Ok(cvt.sc_address(addr).to_bytes());
+        return Ok(cvt.sc_address(&addr).to_bytes());
     }
 
     pub fn fn_utils_bech32_encode(&self, args: &[u8]) -> Result<Vec<u8>, String> {

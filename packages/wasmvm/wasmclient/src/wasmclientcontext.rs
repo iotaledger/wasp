@@ -25,7 +25,6 @@ pub struct WasmClientContext {
 
 impl WasmClientContext {
     pub fn new() -> Self {
-        // FIXME impl later
         todo!()
     }
 }

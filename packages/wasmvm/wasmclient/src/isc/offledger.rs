@@ -19,8 +19,8 @@ pub trait OffLedgerRequest {
         signature_scheme: Option<OffLedgerSignatureScheme>,
         nonce: u64,
     ) -> Self;
-    // fn WithNonce(nonce: u64) -> Self;
-    // fn WithGasBudget(gasBudget: u64) -> Self;
+    fn with_nonce(&self, nonce: u64) -> &Self;
+    fn with_gas_budget(&self, gas_budget: u64) -> &Self;
     fn with_allowance(&self, allowance: &ScAssets) -> &Self;
     fn sign(&self, key: KeyPair) -> &Self;
 }
@@ -60,6 +60,12 @@ impl OffLedgerRequest for OffLedgerRequestData {
             allowance: ScAssets::new(&Vec::new()),
             gas_budget: super::gas::MAX_GAS_PER_REQUEST,
         };
+    }
+    fn with_nonce(&self, nonce: u64) -> &Self {
+        todo!()
+    }
+    fn with_gas_budget(&self, gas_budget: u64) -> &Self {
+        todo!()
     }
     fn with_allowance(&self, allowance: &ScAssets) -> &Self {
         return self;
