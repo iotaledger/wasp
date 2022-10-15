@@ -78,20 +78,20 @@ impl WasmClientService {
 
     pub fn post_request(
         &mut self,
-        chain_id: ScChainID,
-        contract_hname: ScHname,
-        function_hname: ScHname,
+        chain_id: &ScChainID,
+        contract_hname: &ScHname,
+        function_hname: &ScHname,
         args: &[u8],
-        allowance: ScAssets,
-        key_pair: KeyPair,
+        allowance: &ScAssets,
+        key_pair: &KeyPair,
     ) -> Result<ScRequestID, String> {
         let params = ScDict::from_bytes(args)?;
         self.nonce += 1;
-        let req: offledger::OffLedgerRequestData = offledger::OffLedgerRequest::new(
+        let mut req: offledger::OffLedgerRequestData = offledger::OffLedgerRequest::new(
             chain_id,
             contract_hname,
             function_hname,
-            params,
+            &params,
             None,
             self.nonce,
         );
@@ -105,7 +105,7 @@ impl WasmClientService {
     // FIXME the following implementation is a blocked version. It should be multithread
     // To impl channels, see https://doc.rust-lang.org/rust-by-example/std_misc/channels.html
     pub fn subscribe_events(&self, msg: &Vec<String>) -> Result<(), String> {
-        return Err("not impl".to_string());
+        todo!()
     }
 
     pub fn wait_until_request_processed(
