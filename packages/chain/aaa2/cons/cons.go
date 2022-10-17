@@ -37,6 +37,7 @@
 // >     IF rotation THEN
 // >        OUTPUT Signed Governance TX.
 // >     ELSE
+// >        Save the block to the StateMgr.
 // >        OUTPUT Signed State Transition TX
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
@@ -45,7 +46,9 @@
 // predicates and the corresponding done functions should not depend on each other.
 // If some data is needed at several places, it should be passed to several predicates.
 //
-// TODO: Handle the requests gracefully before getting the initTX in the VM.
+// TODO: Handle the requests gracefully in the VM before getting the initTX.
+// TODO: Reconsider the termination. Do we need to wait for DSS, RND?
+// TODO: Add block write to the StateMgr.
 package cons
 
 import (

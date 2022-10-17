@@ -79,7 +79,7 @@ func (a *ackHandler) Output() Output {
 }
 
 func (a *ackHandler) StatusString() string {
-	return fmt.Sprintf("{AckHandler, nested=%s}", a.nested.StatusString())
+	return fmt.Sprintf("{ACK:%s}", a.nested.StatusString())
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {

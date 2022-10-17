@@ -123,10 +123,9 @@ type ConsGr struct {
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
-	journalID *journal.ID,
+	dkShare tcrypto.DKShare,
 	logIndex *journal.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
-	myDKShare tcrypto.DKShare,
 	procCache *processors.Cache,
 	mempool Mempool,
 	stateMgr StateMgr,
@@ -136,10 +135,11 @@ func New(
 	printStatusPeriod time.Duration,
 	log *logger.Logger,
 ) *ConsGr {
-	consInstID := hashing.HashDataBlake2b(chainID.Bytes(), []byte(logIndex.AsStringKey(*journalID)))
+	cmtPubKey := dkShare.GetSharedPublic()
+	consInstID := hashing.HashDataBlake2b(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // Chain × Committee × LogIndex
 	netPeeringID := peering.PeeringIDFromBytes(consInstID.Bytes())
 	netPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
-	for _, peerPubKey := range myDKShare.GetNodePubKeys() {
+	for _, peerPubKey := range dkShare.GetNodePubKeys() {
 		netPeerPubs[pubKeyAsNodeID(peerPubKey)] = peerPubKey
 	}
 	me := pubKeyAsNodeID(myNodeIdentity.GetPublicKey())
@@ -163,7 +163,7 @@ func New(
 		ctx:               ctx,
 		log:               log,
 	}
-	constInstRaw := cons.New(*chainID, me, myNodeIdentity.GetPrivateKey(), myDKShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(*chainID, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()

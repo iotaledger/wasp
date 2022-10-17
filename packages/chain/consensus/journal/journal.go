@@ -22,7 +22,7 @@ import (
 
 // ConsensusJournal instances are per ChainID ⨉ CommitteeAddress.
 // This ID represents that.
-type ID [iotago.Ed25519AddressBytesLength]byte
+type ID [iotago.Ed25519AddressBytesLength]byte // TODO: Remove it.
 
 func MakeID(chainID isc.ChainID, committeeAddress iotago.Address) (*ID, error) {
 	var id ID
@@ -54,9 +54,13 @@ func (li LogIndex) AsUint64Key(id ID) uint64 {
 
 // For the Nonce Instance mostly. Can be removed after moving stuff to GPA.
 func (li LogIndex) AsStringKey(id ID) string {
-	liByes := make([]byte, 4)
-	binary.BigEndian.PutUint32(liByes, li.AsUint32())
-	return hashing.HashData(id[:], liByes).String()
+	return hashing.HashData(id[:], li.Bytes()).String()
+}
+
+func (li LogIndex) Bytes() []byte {
+	liBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(liBytes, li.AsUint32())
+	return liBytes
 }
 
 func (li LogIndex) IsNil() bool {

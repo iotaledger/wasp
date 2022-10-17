@@ -106,8 +106,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	tcl := testchain.NewTestChainLedger(t, utxoDB, governor, originator)
 	originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
 	chainInitReqs := tcl.MakeTxChainInit()
-	ctx := context.Background()
-	journalID, err := journal.MakeID(*chainID, cmtAddress)
+	ctx, ctxCancel := context.WithCancel(context.Background())
 	require.NoError(t, err)
 	logIndex := journal.LogIndex(0)
 	for i := range peerIdentities {
@@ -117,8 +116,8 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t)
 		nodes[i] = consGR.New(
-			ctx, chainID, journalID, &logIndex, peerIdentities[i],
-			dkShare, procCache, mempools[i], stateMgrs[i],
+			ctx, chainID, dkShare, &logIndex, peerIdentities[i],
+			procCache, mempools[i], stateMgrs[i],
 			networkProviders[i],
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
@@ -151,6 +150,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		}
 		require.Equal(t, firstOutput.TX, output.TX)
 	}
+	ctxCancel()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
