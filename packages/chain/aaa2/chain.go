@@ -18,7 +18,11 @@ type ChainInfo struct { // TODO: ...
 }
 
 type Chain interface { // TODO: ...
-	// Info() *ChainInfo
+	node.ChainNode
+	// TODO: Info() *ChainInfo
+	// TODO: OffLedgerRequest(req ...)
+	// TODO: GetCurrentCommittee.
+	// TODO: GetCurrentAccessNodes.
 }
 
 func New(
