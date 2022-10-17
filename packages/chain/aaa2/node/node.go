@@ -44,19 +44,35 @@ const (
 
 type ChainNode interface {
 	// TODO: All the public administrative functions.
+	// GetCurrentCommittee.
+	// GetCurrentAccessNodes.
 }
 
 type ChainMempool interface {
 	consGR.Mempool
+	// Invoked by the chain when a new off-ledger request is received from a node user.
+	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
+	// Invoked by the chain when a set of access nodes has changed.
+	// These nodes should be used to disseminate the off-ledger requests.
+	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
 }
 
 type ChainStateMgr interface {
 	consGR.StateMgr
+	// Invoked by the chain when new confirmed alias output is received.
+	// This event should be used to mark blocks as confirmed.
 	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID)
+	// Invoked by the chain when a set of access nodes has changed.
+	// These nodes should be used to perform block replication.
+	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
 }
 
-type OutputHandler = func(outputID iotago.OutputID, output iotago.Output)
+type RequestOutputHandler = func(outputID iotago.OutputID, output iotago.Output)
+
+// The Alias Outputs must be passed here in-order. The last alias output in the list
+// is the unspent one (if there is a chain of outputs confirmed in a milestone).
+type AliasOutputHandler = func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput)
 
 type TxPostHandler = func(tx *iotago.Transaction, confirmed bool)
 
@@ -82,8 +98,8 @@ type ChainNodeConn interface {
 	AttachChain(
 		ctx context.Context,
 		chainID *isc.ChainID,
-		recvRequestCB,
-		recvAliasOutput OutputHandler,
+		recvRequestCB RequestOutputHandler,
+		recvAliasOutput AliasOutputHandler,
 		recvMilestone MilestoneHandler,
 	)
 }
@@ -148,10 +164,17 @@ func New(
 		log:                 log,
 	}
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
-	recvAliasOutputCB := func(outputID iotago.OutputID, output iotago.Output) {
-		aliasOutput := isc.NewAliasOutputWithID(output.(*iotago.AliasOutput), outputID.UTXOInput())
-		cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
-		recvAliasOutputPipeInCh <- aliasOutput
+	recvAliasOutputCB := func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput) {
+		if len(outputIDs) == 0 {
+			return
+		}
+		for i := range outputIDs {
+			aliasOutput := isc.NewAliasOutputWithID(outputs[i], outputIDs[i].UTXOInput())
+			cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
+		}
+		last := len(outputIDs) - 1
+		lastAliasOutput := isc.NewAliasOutputWithID(outputs[last], outputIDs[last].UTXOInput())
+		recvAliasOutputPipeInCh <- lastAliasOutput
 	}
 	recvRequestCB := func(outputID iotago.OutputID, output iotago.Output) {
 		req, err := isc.OnLedgerFromUTXO(output, outputID.UTXOInput())
