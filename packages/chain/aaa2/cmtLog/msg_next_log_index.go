@@ -8,19 +8,18 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type msgNextLogIndex struct {
 	gpa.BasicMessage
-	nextLogIndex journal.LogIndex // Proposal is to go to this LI without waiting for a consensus.
+	nextLogIndex LogIndex // Proposal is to go to this LI without waiting for a consensus.
 }
 
 var _ gpa.Message = &msgNextLogIndex{}
 
-func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex journal.LogIndex) *msgNextLogIndex {
+func newMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex) *msgNextLogIndex {
 	return &msgNextLogIndex{
 		BasicMessage: gpa.NewBasicMessage(recipient),
 		nextLogIndex: nextLogIndex,
@@ -51,6 +50,6 @@ func (m *msgNextLogIndex) UnmarshalBinary(data []byte) error {
 	if err := util.ReadUint32(r, &nextLogIndex); err != nil {
 		return xerrors.Errorf("cannot unmarshal msgNextLogIndex.nextLogIndex: %w", err)
 	}
-	m.nextLogIndex = journal.LogIndex(nextLogIndex)
+	m.nextLogIndex = LogIndex(nextLogIndex)
 	return nil
 }

@@ -86,7 +86,7 @@ func SetupDkgTrivial(
 	t *testing.T,
 	n, f int,
 	peerIdentities []*cryptolib.KeyPair,
-	dkShareRegistries []registry.DKShareRegistryProvider, // Will be used if not nil.
+	dkShareRegistryProviders []registry.DKShareRegistryProvider, // Will be used if not nil.
 ) (iotago.Address, []registry.DKShareRegistryProvider) {
 	nodePubKeys := PublicKeys(peerIdentities)
 	dssSuite := tcrypto.DefaultEd25519Suite()
@@ -109,10 +109,10 @@ func SetupDkgTrivial(
 	}
 	//
 	// Create the DKShare objects.
-	if dkShareRegistries == nil {
-		dkShareRegistries = make([]registry.DKShareRegistryProvider, len(peerIdentities))
+	if dkShareRegistryProviders == nil {
+		dkShareRegistryProviders = make([]registry.DKShareRegistryProvider, len(peerIdentities))
 	}
-	require.Equal(t, n, len(dkShareRegistries))
+	require.Equal(t, n, len(dkShareRegistryProviders))
 	var address iotago.Address
 	for i, identity := range peerIdentities {
 		nodeDKS, err := tcrypto.NewDKShare(
@@ -137,12 +137,12 @@ func SetupDkgTrivial(
 		if address == nil {
 			address = nodeDKS.GetAddress()
 		}
-		if dkShareRegistries[i] == nil {
-			dkShareRegistries[i] = testutil.NewDkgRegistryProvider(identity.GetPrivateKey())
+		if dkShareRegistryProviders[i] == nil {
+			dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(identity.GetPrivateKey())
 		}
-		require.NoError(t, dkShareRegistries[i].SaveDKShare(nodeDKS))
+		require.NoError(t, dkShareRegistryProviders[i].SaveDKShare(nodeDKS))
 	}
-	return address, dkShareRegistries
+	return address, dkShareRegistryProviders
 }
 
 func MakeSharedSecret(suite suites.Suite, n, t int) (kyber.Point, *share.PubPoly, []*share.PriShare) {

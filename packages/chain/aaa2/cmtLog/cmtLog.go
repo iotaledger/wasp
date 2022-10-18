@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package cmtLog is responsible for producing a log (a journal) of a chain for a particular committee.
+// package cmtLog is responsible for producing a committee log of a chain for a particular committee.
 // The main tasks for this module are:
 //   - Initiate and manage the consensus instances.
 //   - Handle startup and recovery scenarios.
@@ -75,7 +75,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -88,7 +87,7 @@ type CmtLog interface {
 }
 
 type State struct {
-	LogIndex journal.LogIndex
+	LogIndex LogIndex
 }
 
 // Interface used to store and recover the existing persistent state.
@@ -102,41 +101,41 @@ var ErrCmtLogStateNotFound = errors.New("errErrCmtLogStateNotFound")
 
 // Output for this protocol indicates, which
 type Output struct {
-	logIndex          journal.LogIndex
-	baseAliasOutputID iotago.OutputID
+	logIndex        LogIndex
+	baseAliasOutput *isc.AliasOutputWithID
 }
 
-func makeOutput(logIndex journal.LogIndex, baseAliasOutputID iotago.OutputID) *Output {
-	return &Output{logIndex: logIndex, baseAliasOutputID: baseAliasOutputID}
+func makeOutput(logIndex LogIndex, baseAliasOutput *isc.AliasOutputWithID) *Output {
+	return &Output{logIndex: logIndex, baseAliasOutput: baseAliasOutput}
 }
 
-func (o *Output) GetLogIndex() journal.LogIndex {
+func (o *Output) GetLogIndex() LogIndex {
 	return o.logIndex
 }
 
-func (o *Output) GetBaseAliasOutputID() iotago.OutputID {
-	return o.baseAliasOutputID
+func (o *Output) GetBaseAliasOutput() *isc.AliasOutputWithID {
+	return o.baseAliasOutput
 }
 
 // Protocol implementation.
 type cmtLogImpl struct {
-	chainID     isc.ChainID                     // Chain, for which this log is maintained by this committee.
-	cmtAddr     iotago.Address                  // Address of the committee running this chain.
-	dkShare     tcrypto.DKShare                 // Committee that runs the chain ans maintains the log. // TODO: Should be not used here.
-	nodeIDs     []gpa.NodeID                    // All the peers in this committee.
-	me          gpa.NodeID                      // ID of this node.
-	n           int                             // TODO: Get it somehow.
-	f           int                             // TODO: Get it somehow.
-	store       Store                           // Persistent storage.
-	minLogIndex journal.LogIndex                // Lowest log index this instance is allowed to participate.
-	logIndex    journal.LogIndex                // Latest log index we are working on. // TODO: remove and use LocalView instead?
-	localView   journal.LocalView               // TODO: Consider...
-	sentNextLI  journal.LogIndex                // LogIndex for which the MsgNextLogIndex was sent.
-	consensusLI journal.LogIndex                // Latest LogIndex for which consensus was been started.
-	output      *Output                         // The current request for a consensus.
-	suspended   bool                            // Is this committee suspended?
-	maxPeerLIs  map[gpa.NodeID]journal.LogIndex // Latest peer indexes received from peers.
-	asGPA       gpa.GPA                         // This object, just with all the needed wrappers.
+	chainID     isc.ChainID             // Chain, for which this log is maintained by this committee.
+	cmtAddr     iotago.Address          // Address of the committee running this chain.
+	dkShare     tcrypto.DKShare         // Committee that runs the chain ans maintains the log. // TODO: Should be not used here.
+	nodeIDs     []gpa.NodeID            // All the peers in this committee.
+	me          gpa.NodeID              // ID of this node.
+	n           int                     // TODO: Get it somehow.
+	f           int                     // TODO: Get it somehow.
+	store       Store                   // Persistent storage.
+	minLogIndex LogIndex                // Lowest log index this instance is allowed to participate.
+	logIndex    LogIndex                // Latest log index we are working on. // TODO: remove and use LocalView instead?
+	localView   LocalView               // TODO: Consider...
+	sentNextLI  LogIndex                // LogIndex for which the MsgNextLogIndex was sent.
+	consensusLI LogIndex                // Latest LogIndex for which consensus was been started.
+	output      *Output                 // The current request for a consensus.
+	suspended   bool                    // Is this committee suspended?
+	maxPeerLIs  map[gpa.NodeID]LogIndex // Latest peer indexes received from peers.
+	asGPA       gpa.GPA                 // This object, just with all the needed wrappers.
 	log         *logger.Logger
 }
 
@@ -159,14 +158,14 @@ func New(
 	cmtAddr := dkShare.GetSharedPublic().AsEd25519Address()
 	//
 	// Load the last LogIndex we were working on.
-	var logIndex journal.LogIndex
+	var logIndex LogIndex
 	state, err := store.LoadCmtLogState(cmtAddr)
 	if err == nil {
 		// Don't participate in the last stored LI, because maybe we have already sent some messages.
 		logIndex = state.LogIndex
 	}
 	if errors.Is(err, ErrCmtLogStateNotFound) {
-		logIndex = journal.NilLogIndex()
+		logIndex = NilLogIndex()
 	} else if err != nil {
 		return nil, xerrors.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
 	}
@@ -192,11 +191,11 @@ func New(
 		store:       store,
 		minLogIndex: logIndex.Next(),
 		logIndex:    logIndex,
-		localView:   journal.NewLocalView(),
-		sentNextLI:  journal.NilLogIndex(),
-		consensusLI: journal.NilLogIndex(),
+		localView:   NewLocalView(),
+		sentNextLI:  NilLogIndex(),
+		consensusLI: NilLogIndex(),
 		suspended:   false,
-		maxPeerLIs:  map[gpa.NodeID]journal.LogIndex{},
+		maxPeerLIs:  map[gpa.NodeID]LogIndex{},
 		log:         log,
 	}
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -338,10 +337,10 @@ func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessage
 		cl.log.Warnf("MsgNextLogIndex from unknown sender: %+v", msg)
 		return nil
 	}
-	var prevPeerLogIndex journal.LogIndex
+	var prevPeerLogIndex LogIndex
 	var found bool
 	if prevPeerLogIndex, found = cl.maxPeerLIs[sender]; !found {
-		prevPeerLogIndex = journal.NilLogIndex()
+		prevPeerLogIndex = NilLogIndex()
 	}
 	if prevPeerLogIndex.AsUint32() >= msg.nextLogIndex.AsUint32() {
 		return nil
@@ -385,7 +384,7 @@ func (cl *cmtLogImpl) knownNodeID(nodeID gpa.NodeID) bool {
 	return false
 }
 
-func (cl *cmtLogImpl) maybeSendNextLogIndex(logIndex journal.LogIndex) gpa.OutMessages {
+func (cl *cmtLogImpl) maybeSendNextLogIndex(logIndex LogIndex) gpa.OutMessages {
 	if logIndex < cl.logIndex {
 		return nil
 	}
@@ -422,7 +421,7 @@ func (cl *cmtLogImpl) maybeStartConsensus() {
 	if cl.suspended {
 		return
 	}
-	baseOut := cl.localView.GetBaseAliasOutputID()
+	baseOut := cl.localView.GetBaseAliasOutput()
 	if baseOut == nil {
 		return // Have no AO to use.
 	}
@@ -436,17 +435,17 @@ func (cl *cmtLogImpl) maybeStartConsensus() {
 	//
 	// Start the consensus (ask the upper layer to start it).
 	cl.consensusLI = cl.logIndex
-	cl.output = makeOutput(cl.consensusLI, *baseOut)
+	cl.output = makeOutput(cl.consensusLI, baseOut)
 }
 
 // Find highest LogIndex for which N-F nodes have voted.
 // Returns 0, if not found.
-func (cl *cmtLogImpl) votedFor(quorum int) journal.LogIndex {
-	counts := map[journal.LogIndex]int{}
+func (cl *cmtLogImpl) votedFor(quorum int) LogIndex {
+	counts := map[LogIndex]int{}
 	for _, li := range cl.maxPeerLIs {
 		counts[li]++
 	}
-	max := journal.NilLogIndex()
+	max := NilLogIndex()
 	for li, c := range counts {
 		if c >= quorum && li.AsUint32() > max.AsUint32() {
 			max = li

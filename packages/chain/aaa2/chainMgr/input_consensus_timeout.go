@@ -4,16 +4,16 @@
 package chainMgr
 
 import (
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusTimeout struct {
 	committeeID CommitteeID
-	logIndex    journal.LogIndex
+	logIndex    cmtLog.LogIndex
 }
 
-func NewInputConsensusTimeout(committeeID CommitteeID, logIndex journal.LogIndex) gpa.Input { // TODO: Call it.
+func NewInputConsensusTimeout(committeeID CommitteeID, logIndex cmtLog.LogIndex) gpa.Input { // TODO: Call it.
 	return &inputConsensusTimeout{
 		committeeID: committeeID,
 		logIndex:    logIndex,

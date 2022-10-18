@@ -4,13 +4,12 @@
 package cmtLog
 
 import (
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type msgConsensusTimeout struct {
 	gpa.BasicMessage
-	logIndex journal.LogIndex
+	logIndex LogIndex
 }
 
 var _ gpa.Message = &msgConsensusTimeout{}
@@ -18,7 +17,7 @@ var _ gpa.Message = &msgConsensusTimeout{}
 // This message is internal one, but should be sent by other components (e.g. consensus or the chain).
 func NewMsgConsensusTimeout(
 	recipient gpa.NodeID,
-	logIndex journal.LogIndex,
+	logIndex LogIndex,
 ) gpa.Message {
 	return &msgConsensusTimeout{
 		BasicMessage: gpa.NewBasicMessage(recipient),

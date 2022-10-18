@@ -143,7 +143,7 @@ func testBasic(t *testing.T, n, f int) {
 	//
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
-	procConfig := coreprocessors.Config().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
 	procCache := processors.MustNew(procConfig)
 	nodeIDs := nodeIDsFromPubKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -326,7 +326,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	//
 	// Construct the nodes for each instance.
-	procConfig := coreprocessors.Config().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
 	procCache := processors.MustNew(procConfig)
 	doneCHs := map[gpa.NodeID]chan *testInstInput{}
 	for _, nid := range nodeIDs {
@@ -464,7 +464,7 @@ func newTestConsInst(
 	nodeIDs []gpa.NodeID,
 	nodeStates map[gpa.NodeID]*testNodeState,
 	peerIdentities []*cryptolib.KeyPair,
-	dkShareProviders []registry.DKShareRegistryProvider,
+	dkShareRegistryProviders []registry.DKShareRegistryProvider,
 	requests []isc.Request,
 	doneCB func(nextInput *testInstInput),
 	log *logger.Logger,
@@ -474,7 +474,7 @@ func newTestConsInst(
 	for i, nid := range nodeIDs {
 		nodeLog := log.Named(string(nid))
 		nodeSK := peerIdentities[i].GetPrivateKey()
-		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(*chainID, nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
 	}

@@ -5,6 +5,7 @@ package tcrypto
 
 import (
 	"encoding/json"
+	"errors"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -66,3 +67,5 @@ type DKShare interface {
 	AssignCommonData(dks DKShare)
 	ClearCommonData()
 }
+
+var ErrDKShareNotFound = errors.New("dkShare not found")

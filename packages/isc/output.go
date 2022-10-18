@@ -52,6 +52,10 @@ func (a *AliasOutputWithID) GetAliasID() iotago.AliasID {
 	return util.AliasIDFromAliasOutput(a.output, a.id.ID())
 }
 
+func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
+	return a.id.Equals(other.id)
+}
+
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 	if ao1 == nil {
 		return ao2 == nil

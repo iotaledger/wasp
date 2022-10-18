@@ -16,8 +16,8 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -124,7 +124,7 @@ func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
 	dkShare tcrypto.DKShare,
-	logIndex *journal.LogIndex,
+	logIndex *cmtLog.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
 	procCache *processors.Cache,
 	mempool Mempool,

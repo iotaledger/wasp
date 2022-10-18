@@ -25,8 +25,8 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/chainMgr"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -122,9 +122,9 @@ type chainNodeImpl struct {
 	recvAliasOutputPipe pipe.Pipe
 	recvTxPublishedPipe pipe.Pipe
 	recvMilestonePipe   pipe.Pipe
-	consensusInsts      map[chainMgr.CommitteeID]map[journal.LogIndex]*consensusInst // Running consensus instances.
-	publishingTXes      map[iotago.TransactionID]context.CancelFunc                  // TX'es now being published.
-	procCache           *processors.Cache                                            // TODO: ...
+	consensusInsts      map[chainMgr.CommitteeID]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
+	publishingTXes      map[iotago.TransactionID]context.CancelFunc                 // TX'es now being published.
+	procCache           *processors.Cache                                           // TODO: ...
 	net                 peering.NetworkProvider
 	log                 *logger.Logger
 }
@@ -139,9 +139,10 @@ type consensusInst struct {
 
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
-	committeeID chainMgr.CommitteeID
-	txID        iotago.TransactionID
-	confirmed   bool
+	committeeID     chainMgr.CommitteeID
+	txID            iotago.TransactionID
+	nextAliasOutput *isc.AliasOutputWithID
+	confirmed       bool
 }
 
 var _ ChainNode = &chainNodeImpl{}
@@ -165,7 +166,7 @@ func New(
 		recvAliasOutputPipe: pipe.NewDefaultInfinitePipe(),
 		recvTxPublishedPipe: pipe.NewDefaultInfinitePipe(),
 		recvMilestonePipe:   pipe.NewDefaultInfinitePipe(),
-		consensusInsts:      map[chainMgr.CommitteeID]map[journal.LogIndex]*consensusInst{},
+		consensusInsts:      map[chainMgr.CommitteeID]map[cmtLog.LogIndex]*consensusInst{},
 		publishingTXes:      map[iotago.TransactionID]context.CancelFunc{},
 		net:                 net,
 		log:                 log,
@@ -236,7 +237,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	}
 	delete(cni.publishingTXes, txPubResult.txID)
 	outMsgs := cni.chainMgr.AsGPA().Input(
-		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeID, txPubResult.txID, txPubResult.confirmed),
+		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeID, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
 		panic("unexpected messages from the chainMgr")
@@ -268,7 +269,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	if outputUntyped == nil {
 		cni.cleanupConsensusInsts(nil, nil)
-		cni.cleanupPublishingTXes([]chainMgr.NeedPostedTX{})
+		cni.cleanupPublishingTXes(map[iotago.TransactionID]*chainMgr.NeedPublishTX{})
 		return
 	}
 	output := outputUntyped.(*chainMgr.Output)
@@ -286,7 +287,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	}
 	//
 	// Start publishing TX'es, if there not being posted already.
-	outputNeedPostTXes := output.NeedPostTXes()
+	outputNeedPostTXes := output.NeedPublishTX()
 	for i := range outputNeedPostTXes {
 		txToPost := outputNeedPostTXes[i] // Have to take a copy to be used in callback.
 		if _, ok := cni.publishingTXes[txToPost.TxID]; !ok {
@@ -294,9 +295,10 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			cni.publishingTXes[txToPost.TxID] = subCancel
 			cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(tx *iotago.Transaction, confirmed bool) {
 				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeID: txToPost.CommitteeID, // TODO: Was journalID: txToPost.JournalID,
-					txID:        txToPost.TxID,
-					confirmed:   confirmed,
+					committeeID:     txToPost.CommitteeID,
+					txID:            txToPost.TxID,
+					nextAliasOutput: txToPost.NextAliasOutput,
+					confirmed:       confirmed,
 				}
 			})
 		}
@@ -309,7 +311,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
 	if _, ok := cni.consensusInsts[committeeID]; !ok {
-		cni.consensusInsts[committeeID] = map[journal.LogIndex]*consensusInst{}
+		cni.consensusInsts[committeeID] = map[cmtLog.LogIndex]*consensusInst{}
 	}
 	addLogIndex := logIndex
 	added := false
@@ -336,7 +338,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	return cni.consensusInsts[committeeID][logIndex]
 }
 
-func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeID *chainMgr.CommitteeID, keepLogIndex *journal.LogIndex) {
+func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeID *chainMgr.CommitteeID, keepLogIndex *cmtLog.LogIndex) {
 	for cmtID := range cni.consensusInsts {
 		for li := range cni.consensusInsts[cmtID] {
 			if keepCommitteeID != nil && keepLogIndex != nil && cmtID == *keepCommitteeID && li >= *keepLogIndex {
@@ -353,7 +355,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeID *chainMgr.Commit
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
-func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes []chainMgr.NeedPostedTX) {
+func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.TransactionID]*chainMgr.NeedPublishTX) {
 	for txID, cancelFunc := range cni.publishingTXes {
 		found := false
 		for _, npt := range neededPostTXes {

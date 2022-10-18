@@ -88,7 +88,7 @@ func testBasic(t *testing.T, n, f int) {
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
 	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(*cmtLog.Output)
 	require.Equal(t, cons2.GetLogIndex(), cons1.GetLogIndex().Next())
-	require.Equal(t, cons2.GetBaseAliasOutputID(), ao2.OutputID())
+	require.Equal(t, cons2.GetBaseAliasOutput(), ao2)
 	for _, n := range gpaNodes {
 		require.NotNil(t, n.Output())
 		require.Equal(t, cons2, n.Output())
@@ -119,7 +119,7 @@ func sendMsgAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.AliasO
 func sendMsgConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmtLog.Output, nextAO *isc.AliasOutputWithID) []gpa.Message {
 	msgs := []gpa.Message{}
 	for n := range gpaNodes {
-		msgs = append(msgs, cmtLog.NewMsgConsensusOutput(n, consReq.GetLogIndex(), consReq.GetBaseAliasOutputID(), nextAO))
+		msgs = append(msgs, cmtLog.NewMsgConsensusOutput(n, consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), nextAO))
 	}
 	return msgs
 }

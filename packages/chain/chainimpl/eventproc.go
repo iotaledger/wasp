@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
@@ -190,7 +189,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *isc.AliasOutputWithID) 
 	stateControllerAddress := anchorOutput.GetStateAddress()
 	dkShare, err := c.getChainDKShare(stateControllerAddress)
 	if err != nil {
-		if errors.Is(err, registry.ErrDKShareNotFound) {
+		if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 			c.log.Warnf("createCommitteeIfNeeded: DKShare not found, committee not created, node will not participate in consensus. Address: %s", stateControllerAddress)
 			return false, nil
 		}
