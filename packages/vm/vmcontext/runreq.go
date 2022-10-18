@@ -273,8 +273,9 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 	return util.MinUint64(affordable, gas.MaxGasPerRequest)
 }
 
-// calcGuaranteedFeeTokens return hiw maximum tokens (base tokens or native) can be guaranteed for the fee,
+// calcGuaranteedFeeTokens return the maximum tokens (base tokens or native) can be guaranteed for the fee,
 // taking into account allowance (which must be 'reserved')
+// TODO this could be potentially problematic when using custom tokens that are expressed in "big.int"
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	var tokensGuaranteed uint64
 

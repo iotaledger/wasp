@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -25,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
@@ -32,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -802,9 +805,9 @@ func TestEVMTransferBaseTokens(t *testing.T) {
 
 	// issue a tx with non-0 amount (try to send ETH/basetoken)
 	// try sending 1 million base tokens (expressed in ethereum decimals)
-	value := util.BaseTokensDecimalsToEthereumDecimals(
+	value := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(1*isc.Million),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 	sendTx(value)
 	env.soloChain.AssertL2BaseTokens(someAgentID, 1*isc.Million)
@@ -829,9 +832,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
-	oneMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	oneMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(1*isc.Million),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 
 	_, err := iscTest.callFn([]ethCallOptions{{
@@ -842,9 +845,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	env.soloChain.AssertL2BaseTokens(someEthereumAgentID, 1*isc.Million)
 
 	// attempt to send more than the contract will have available
-	twoMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	twoMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(2*isc.Million),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 
 	_, err = iscTest.callFn([]ethCallOptions{{
@@ -883,9 +886,9 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 		l1Wallet,
 	)
 
-	tenMillionInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	tenMillionInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(10*isc.Million),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 
 	_, err = iscTest.callFn([]ethCallOptions{{
@@ -913,9 +916,9 @@ func TestSendEntireBalance(t *testing.T) {
 	// send all initial
 	initial := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 	// try sending funds to `someEthereumAddr` by sending a "value tx"
-	initialBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	initialBalanceInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(initial),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 
 	unsignedTx := types.NewTransaction(0, someEthereumAddr, initialBalanceInEthDecimals, gas.MaxGasPerRequest, util.Big0, []byte{})
@@ -934,9 +937,9 @@ func TestSendEntireBalance(t *testing.T) {
 	// now try sending all balance, minus the funds needed for gas
 	currentBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 
-	currentBalanceInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	currentBalanceInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(currentBalance),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 
 	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
@@ -953,9 +956,9 @@ func TestSendEntireBalance(t *testing.T) {
 
 	gasLimit := env.soloChain.GetGasFeePolicy().GasPerToken * tokensForGasBudget
 
-	valueToSendInEthDecimals := util.BaseTokensDecimalsToEthereumDecimals(
+	valueToSendInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
 		new(big.Int).SetUint64(currentBalance-tokensForGasBudget),
-		int64(parameters.L1ForTesting.BaseToken.Decimals),
+		parameters.L1ForTesting.BaseToken.Decimals,
 	)
 	unsignedTx = types.NewTransaction(1, someEthereumAddr, valueToSendInEthDecimals, gasLimit, util.Big0, []byte{})
 	tx, err = types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(env.evmChainID))), ethKey)
@@ -991,4 +994,89 @@ func TestSolidityRevertMessage(t *testing.T) {
 	}}, "testRevertReason")
 	require.Error(t, err)
 	require.EqualValues(t, "execution reverted: foobar", res.iscReceipt.ResolvedError)
+}
+
+func TestSolidityTransferCustomBaseTokens(t *testing.T) {
+	env := initEVM(t)
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// create some custom token, and set it as the chain gas token
+	customTokenDecimals := uint32(20) // 2 more decimal cases than ethereum
+
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+		accounts.ParamTokenScheme, codec.EncodeTokenScheme(
+			&iotago.SimpleTokenScheme{
+				MaximumSupply: big.NewInt(999999999),
+				MintedTokens:  util.Big0,
+				MeltedTokens:  util.Big0,
+			},
+		),
+	).
+		AddBaseTokens(2 * isc.Million).
+		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
+		WithGasBudget(math.MaxUint64)
+	res, err := env.soloChain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
+	customTokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+	require.NoError(t, err)
+
+	err = env.soloChain.MintTokens(foundrySN, big.NewInt(1_000_000), env.soloChain.OriginatorPrivateKey)
+	require.NoError(t, err)
+	env.soloChain.AssertL2NativeTokens(env.soloChain.OriginatorAgentID, &customTokenID, big.NewInt(1_000_000))
+
+	gasFeePolicy := gas.GasFeePolicy{
+		GasFeeTokenID:       &customTokenID,
+		GasFeeTokenDecimals: customTokenDecimals,
+		GasPerToken:         100,
+		ValidatorFeeShare:   0,
+	}
+	// set the custom token as the gas fee token
+	env.soloChain.PostRequestSync(
+		solo.NewCallParams(
+			governance.Contract.Name, governance.FuncSetFeePolicy.Name,
+			governance.ParamFeePolicyBytes,
+			gasFeePolicy.Bytes(),
+		),
+		env.soloChain.OriginatorPrivateKey,
+	)
+
+	// move some of these custom tokens into an ethereum account
+	tokensToMoveToEvmAccount := int64(500_000)
+	err = env.soloChain.SendFromL2ToL2Account(
+		isc.NewAllowanceFungibleTokens(
+			isc.NewFungibleTokens(0, iotago.NativeTokens{{
+				ID:     customTokenID,
+				Amount: big.NewInt(tokensToMoveToEvmAccount),
+			}}),
+		),
+		ethAgentID,
+		env.soloChain.OriginatorPrivateKey,
+	)
+	require.NoError(t, err)
+	env.soloChain.AssertL2NativeTokens(ethAgentID, &customTokenID, big.NewInt(tokensToMoveToEvmAccount))
+
+	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
+	_, someEthereumAddr := solo.NewEthereumAccount()
+	someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+	amountOfTokensToMoveInEVMRequest := uint64(123456)
+	amountInEthDecimals := util.CustomTokensDecimalsToEthereumDecimals(
+		new(big.Int).SetUint64(amountOfTokensToMoveInEVMRequest),
+		customTokenDecimals,
+	)
+	result, err := iscTest.callFn([]ethCallOptions{{
+		sender: ethKey,
+		value:  amountInEthDecimals,
+	}}, "sendTo", someEthereumAddr, amountInEthDecimals)
+	require.NoError(t, err)
+	actualTokensMovedInEVMRequest := uint64(123400) // the last 2 decimal cases will be ignored
+	env.soloChain.AssertL2NativeTokens(someEthereumAgentID, &customTokenID, actualTokensMovedInEVMRequest)
+	// ensure the gas fees and the tokens moved are the correct ones
+	require.EqualValues(t,
+		uint64(tokensToMoveToEvmAccount)-result.iscReceipt.GasFeeCharged-actualTokensMovedInEVMRequest,
+		env.soloChain.L2Assets(ethAgentID).Tokens[0].Amount.Uint64(),
+	)
 }
