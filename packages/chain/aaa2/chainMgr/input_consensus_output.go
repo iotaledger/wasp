@@ -10,32 +10,23 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type msgConsensusOutput struct {
-	gpa.BasicMessage
+type inputConsensusOutput struct {
 	committeeID       CommitteeID
 	logIndex          journal.LogIndex
 	baseAliasOutputID iotago.OutputID
 	nextAliasOutput   *isc.AliasOutputWithID
 }
 
-var _ gpa.Message = &msgConsensusOutput{}
-
-func NewMsgConsensusOutput(
-	recipient gpa.NodeID,
+func NewInputConsensusOutput(
 	committeeID CommitteeID,
 	logIndex journal.LogIndex,
 	baseAliasOutputID iotago.OutputID,
 	nextAliasOutput *isc.AliasOutputWithID,
-) gpa.Message {
-	return &msgConsensusOutput{
-		BasicMessage:      gpa.NewBasicMessage(recipient),
+) gpa.Input {
+	return &inputConsensusOutput{
 		committeeID:       committeeID,
 		logIndex:          logIndex,
 		baseAliasOutputID: baseAliasOutputID,
 		nextAliasOutput:   nextAliasOutput,
 	}
-}
-
-func (m *msgConsensusOutput) MarshalBinary() ([]byte, error) {
-	panic("that's local message")
 }

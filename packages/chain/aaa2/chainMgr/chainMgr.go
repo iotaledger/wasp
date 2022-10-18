@@ -160,39 +160,40 @@ func (cmi *chainMgrImpl) AsGPA() gpa.GPA {
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
-	panic(xerrors.Errorf("should not be used"))
+	switch input := input.(type) {
+	case *inputAliasOutputConfirmed:
+		return cmi.handleInputAliasOutputConfirmed(input)
+	case *inputChainTxPublishResult:
+		return cmi.handleInputChainTxPublishResult(input)
+	case *inputConsensusOutput:
+		return cmi.handleInputConsensusOutput(input)
+	case *inputConsensusTimeout:
+		return cmi.handleInputConsensusTimeout(input)
+	}
+	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
 }
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
-	switch msg := msg.(type) {
-	case *msgAliasOutputConfirmed:
-		return cmi.handleMsgAliasOutputConfirmed(msg)
-	case *msgChainTxPublishResult:
-		return cmi.handleMsgChainTxPublishResult(msg)
-	case *msgConsensusOutput:
-		return cmi.handleMsgConsensusOutput(msg)
-	case *msgConsensusTimeout:
-		return cmi.handleMsgConsensusTimeout(msg)
-	case *msgCmtLog:
-		return cmi.handleMsgCmtLog(msg)
+	msgCL, ok := msg.(*msgCmtLog)
+	if !ok {
+		panic(xerrors.Errorf("unexpected message %T: %+v", msg, msg))
 	}
-	cmi.log.Warnf("dropping unexpected message: %+v", msg)
-	return nil
+	return cmi.handleMsgCmtLog(msgCL)
 }
 
 // > UPON Reception of Confirmed AO:
 // >     Pass it to the corresponding CmtLog.
 // >     Send Suspend to all the other CmtLogs.
-func (cmi *chainMgrImpl) handleMsgAliasOutputConfirmed(msg *msgAliasOutputConfirmed) gpa.OutMessages {
-	cmi.log.Debugf("handleMsgAliasOutputConfirmed: %v", msg.aliasOutput)
-	cmi.latestConfirmedAO = msg.aliasOutput // The latest AO is always the most correct.
+func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
+	cmi.log.Debugf("handleInputAliasOutputConfirmed: %v", input.aliasOutput)
+	cmi.latestConfirmedAO = input.aliasOutput // The latest AO is always the most correct.
 	msgs := gpa.NoMessages()
-	committeeAddress := msg.aliasOutput.GetAliasOutput().StateController()
+	committeeAddress := input.aliasOutput.GetAliasOutput().StateController()
 	committeeLog, committeeID, cmtMsgs, err := cmi.ensureCmtLog(committeeAddress)
 	msgs.AddAll(cmtMsgs)
 	if errors.Is(err, ErrNotInCommittee) {
-		cmi.log.Debugf("This node is not in the committee for aliasOutput: %v", msg.aliasOutput)
+		cmi.log.Debugf("This node is not in the committee for aliasOutput: %v", input.aliasOutput)
 		return nil
 	}
 	if err != nil {
@@ -201,7 +202,7 @@ func (cmi *chainMgrImpl) handleMsgAliasOutputConfirmed(msg *msgAliasOutputConfir
 	}
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog, committeeID,
-		committeeLog.Message(cmtLog.NewMsgAliasOutputConfirmed(cmi.me, msg.aliasOutput)),
+		committeeLog.Message(cmtLog.NewMsgAliasOutputConfirmed(cmi.me, input.aliasOutput)),
 	))
 	for cid, cl := range cmi.cmtLogs {
 		if cid == committeeID {
@@ -217,8 +218,8 @@ func (cmi *chainMgrImpl) handleMsgAliasOutputConfirmed(msg *msgAliasOutputConfir
 
 // > UPON Reception of PublishResult:
 // >     // TODO: ...
-func (cmi *chainMgrImpl) handleMsgChainTxPublishResult(msg *msgChainTxPublishResult) gpa.OutMessages {
-	if msg.confirmed {
+func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
+	if input.confirmed {
 		// TODO: Delete it from the needed tx pubs
 		// TODO: Call the handleMsgAliasOutputConfirmed???
 		return nil
@@ -233,29 +234,29 @@ func (cmi *chainMgrImpl) handleMsgChainTxPublishResult(msg *msgChainTxPublishRes
 // >     Forward the message to the corresponding CmtLog.
 // >     // TODO: Add to TX'es to publish?
 // >     // TODO: Clear the request for consensus?
-func (cmi *chainMgrImpl) handleMsgConsensusOutput(msg *msgConsensusOutput) gpa.OutMessages {
-	committeeLog, ok := cmi.cmtLogs[msg.committeeID]
+func (cmi *chainMgrImpl) handleInputConsensusOutput(input *inputConsensusOutput) gpa.OutMessages {
+	committeeLog, ok := cmi.cmtLogs[input.committeeID]
 	if !ok {
-		cmi.log.Warnf("Discarding consensus output for unknown committeeID: %+v", msg)
+		cmi.log.Warnf("Discarding consensus output for unknown committeeID: %+v", input)
 		return nil
 	}
 	return cmi.handleCmtLogOutput( // TODO: Cleanup request for a consensus? Thats in the handler probably?
-		committeeLog, msg.committeeID,
-		committeeLog.Message(cmtLog.NewMsgConsensusOutput(cmi.me, msg.logIndex, msg.baseAliasOutputID, msg.nextAliasOutput)),
+		committeeLog, input.committeeID,
+		committeeLog.Message(cmtLog.NewMsgConsensusOutput(cmi.me, input.logIndex, input.baseAliasOutputID, input.nextAliasOutput)),
 	)
 }
 
 // > UPON Reception of Consensus Timeout:
 // >     Forward the message to the corresponding CmtLog.
-func (cmi *chainMgrImpl) handleMsgConsensusTimeout(msg *msgConsensusTimeout) gpa.OutMessages {
-	committeeLog, ok := cmi.cmtLogs[msg.committeeID]
+func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
+	committeeLog, ok := cmi.cmtLogs[input.committeeID]
 	if !ok {
-		cmi.log.Warnf("Dropping msgConsensusTimeout for unknown committeeID: %+v", msg)
+		cmi.log.Warnf("Dropping msgConsensusTimeout for unknown committeeID: %+v", input)
 		return nil
 	}
 	return cmi.handleCmtLogOutput(
-		committeeLog, msg.committeeID,
-		committeeLog.Message(cmtLog.NewMsgConsensusTimeout(cmi.me, msg.logIndex)),
+		committeeLog, input.committeeID,
+		committeeLog.Message(cmtLog.NewMsgConsensusTimeout(cmi.me, input.logIndex)),
 	)
 }
 

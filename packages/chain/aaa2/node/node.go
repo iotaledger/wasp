@@ -235,8 +235,9 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 		return
 	}
 	delete(cni.publishingTXes, txPubResult.txID)
-	msg := chainMgr.NewMsgChainTxPublishResult(cni.me, txPubResult.committeeID, txPubResult.txID, txPubResult.confirmed)
-	outMsgs := cni.chainMgr.AsGPA().Message(msg)
+	outMsgs := cni.chainMgr.AsGPA().Input(
+		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeID, txPubResult.txID, txPubResult.confirmed),
+	)
 	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
 		panic("unexpected messages from the chainMgr")
 	}
@@ -244,8 +245,9 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
-	msg := chainMgr.NewMsgAliasOutputConfirmed(cni.me, aliasOutput)
-	outMsgs := cni.chainMgr.AsGPA().Message(msg)
+	outMsgs := cni.chainMgr.AsGPA().Input(
+		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
+	)
 	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
 		panic(xerrors.Errorf("unexpected messaged from chainMgr: %+v", outMsgs))
 	}
