@@ -45,6 +45,7 @@ const (
 
 type ChainNode interface {
 	// TODO: All the public administrative functions.
+	// HeadStateAnchor (confirmed + unconfirmed).
 	// GetCurrentCommittee.
 	// GetCurrentAccessNodes.
 }
@@ -271,19 +272,21 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	output := outputUntyped.(*chainMgr.Output)
 	//
 	// Start new consensus instances, if needed.
-	if output.NeedConsensus != nil {
-		ci := cni.ensureConsensusInst(ctx, output.NeedConsensus)
+	outputNeedConsensus := output.NeedConsensus()
+	if outputNeedConsensus != nil {
+		ci := cni.ensureConsensusInst(ctx, outputNeedConsensus)
 		if ci.aliasOutput == nil {
-			outputCh, recoverCh := ci.consensus.Input(output.NeedConsensus.BaseAliasOutput)
-			ci.aliasOutput = output.NeedConsensus.BaseAliasOutput
+			outputCh, recoverCh := ci.consensus.Input(outputNeedConsensus.BaseAliasOutput)
+			ci.aliasOutput = outputNeedConsensus.BaseAliasOutput
 			ci.outputCh = outputCh   // TODO: Read from these.
 			ci.recoverCh = recoverCh // TODO: Read from these.
 		}
 	}
 	//
 	// Start publishing TX'es, if there not being posted already.
-	for i := range output.NeedPostTXes {
-		txToPost := output.NeedPostTXes[i] // Have to take a copy to be used in callback.
+	outputNeedPostTXes := output.NeedPostTXes()
+	for i := range outputNeedPostTXes {
+		txToPost := outputNeedPostTXes[i] // Have to take a copy to be used in callback.
 		if _, ok := cni.publishingTXes[txToPost.TxID]; !ok {
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes[txToPost.TxID] = subCancel
@@ -296,7 +299,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			})
 		}
 	}
-	cni.cleanupPublishingTXes(output.NeedPostTXes)
+	cni.cleanupPublishingTXes(outputNeedPostTXes)
 }
 
 func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainMgr.NeedConsensus) *consensusInst {

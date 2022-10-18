@@ -3,45 +3,62 @@
 
 // TODO: Cleanup the committees not used for a long time.
 
-// This package implements a protocol for running a chain in a node. Its main responsibilities:
-//   - Decide, which branch is the correct one.
+// This package implements a protocol for running a chain in a node.
+// Its main responsibilities:
+//   - Track, which branch is the latest/correct one.
 //   - Maintain a set of committee logs (1 for each committee this node participates in).
 //   - Maintain a set of consensus instances (one of them is the current one).
 //   - Supervise the Mempool and StateMgr.
 //   - Handle messages from the NodeConn (AO confirmed / rejected, Request received).
 //   - Posting StateTX to NodeConn.
-//   - ...
 //
-// TODO: Manage the access nodes (per node and from the governance contract).
-// TODO: Output contains consensus needed to run,
-// TODO: Pass AO to the cmtLog, update the consensus accordingly.
-// TODO: NodeConn has to return AO chains (all in the milestone at once).
-// TODO: Don't persist TX'es to post. In-memory is enough.
-// TODO: Save Block to StateMgr from the Consensus.
-// TODO: Where the OriginState should be created?
-// TODO: We have to track the main "branch" here, and provide access to the HEAD.
-//
-// TODO: Pass MSG to CmtLog: AO Confirmed
-// TODO: Pass MSG to CmtLog: AO Rejected
-// TODO: Pass MSG to CmtLog: AO Consensus Done
-// TODO: Pass MSG to CmtLog: AO Consensus Timeout
-// TODO: Pass MSG to CmtLog: AO Suspend
-// TODO: Pass MSG to CmtLog: AO TimerTick
-// TODO: Wrap CmtLog out messages (NextLI).
-//
+// > VARIABLES:
+// >     LatestActiveAO -- The current head we are working on.
+// >        The latest received confirmed AO,
+// >        OR the output of the main CmtLog.
+// >        // Differs from NeedConsensus on access nodes.
+// >     LatestConfirmedAO -- The latest confirmed AO from L1.
+// >        This one usually follows the LatestAliasOutput,
+// >        but can be published from outside and override the LatestAliasOutput.
+// >     AccessNodes -- The set of access nodes for the current head.
+// >        Union of On-Chain access nodes and the nodes permitted by this node.
+// >     NeedConsensus -- A request to run consensus.
+// >        Always set based on output of the main CmtLog.
+// >     NeedToPublishTX -- Requests to publish TX'es.
+// >        - Added upon reception of the Consensus Output,
+// >          if it is still in NeedConsensus at the time.
+// >        - Removed on PublishResult from the NodeConn.
+// >
 // > UPON Reception of Confirmed AO:
-// >     Pass it to the corresponding CmtLog.
+// >     Set the LatestConfirmedAO variable to the received AO.
+// >     IF this node is in the committee THEN
+// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
+// >     ELSE
+// >         Set LatestActiveAO <- Confirmed AO
+// >         Set NeedConsensus <- NIL
 // >     Send Suspend to all the other CmtLogs.
 // > UPON Reception of PublishResult:
-// >     // TODO: ...
+// >     Clear the TX from the NeedToPublishTX variable.
+// >     If result.confirmed = false THEN
+// >         Forward it to ChainMgr; HandleCmtLogOutput.
+// >     ELSE
+// >         NOP // AO has to be received as Confirmed AO.
 // > UPON Reception of Consensus Output:
-// >     Forward the message to the corresponding CmtLog.
-// >     // TODO: Add to TX'es to publish?
-// >     // TODO: Clear the request for consensus?
+// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
+// >         Add ConsensusOutput.TX to NeedToPublishTX
+// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
+// >     Update AccessNodes.
 // > UPON Reception of Consensus Timeout:
-// >     Forward the message to the corresponding CmtLog.
+// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 // > UPON Reception of CmtLog.NextLI message:
-// >     Forward it to the corresponding CmtLog.
+// >     Forward it to the corresponding CmtLog; HandleCmtLogOutput.
+// >
+// > PROCEDURE HandleCmtLogOutput:
+// >     IF the committee don't match the LatestActiveAO THEN
+// >         RETURN
+// >     IF output.NeedConsensus != NeedConsensus THEN
+// >         Set NeedConsensus <- output.NeedConsensus
+// >         Set LatestActiveAO <- output.NeedConsensus
 package chainMgr
 
 import (
@@ -69,9 +86,15 @@ func CommitteeIDFromAddress(committeeAddress iotago.Address) CommitteeID {
 }
 
 type Output struct {
-	NeedConsensus *NeedConsensus
-	NeedPostTXes  []NeedPostedTX
+	cmi *chainMgrImpl
 }
+
+func (o *Output) LatestActiveAliasOutput() *isc.AliasOutputWithID    { return o.cmi.latestActiveAO }
+func (o *Output) LatestConfirmedAliasOutput() *isc.AliasOutputWithID { return o.cmi.latestConfirmedAO }
+func (o *Output) ActiveAccessNodes() []*cryptolib.PublicKey          { return o.cmi.activeAccessNodes }
+func (o *Output) NeedConsensus() *NeedConsensus                      { return o.cmi.needConsensus }
+func (o *Output) NeedPostTXes() []NeedPostedTX                       { return o.cmi.needPostTXes }
+
 type NeedConsensus struct {
 	CommitteeID     CommitteeID
 	LogIndex        journal.LogIndex
@@ -90,14 +113,19 @@ type ChainMgr interface {
 }
 
 type chainMgrImpl struct {
-	chainID          isc.ChainID                      // This instance is responsible for this chain.
-	cmtLogs          map[CommitteeID]gpa.GPA          // TODO: ...
-	dkReg            registry.DKShareRegistryProvider // TODO: What ir DKShare is stored after some AO is received?
-	output           *Output
-	asGPA            gpa.GPA
-	me               gpa.NodeID
-	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID
-	log              *logger.Logger
+	chainID           isc.ChainID                      // This instance is responsible for this chain.
+	cmtLogs           map[CommitteeID]gpa.GPA          // TODO: ...
+	latestActiveAO    *isc.AliasOutputWithID           // The latest AO we are building upon.
+	latestConfirmedAO *isc.AliasOutputWithID           // The latest confirmed AO (follows Active AO).
+	activeAccessNodes []*cryptolib.PublicKey           // All the nodes authorized for being access nodes (for the ActiveAO).
+	needConsensus     *NeedConsensus                   // Query for a consensus.
+	needPostTXes      []NeedPostedTX                   // Query to post TXes.
+	dkReg             registry.DKShareRegistryProvider // TODO: What ir DKShare is stored after some AO is received?
+	output            *Output
+	asGPA             gpa.GPA
+	me                gpa.NodeID
+	nodeIDFromPubKey  func(pubKey *cryptolib.PublicKey) gpa.NodeID
+	log               *logger.Logger
 }
 
 var (
@@ -116,11 +144,11 @@ func New(
 		chainID:          chainID,
 		cmtLogs:          map[CommitteeID]gpa.GPA{},
 		dkReg:            dkReg,
-		output:           &Output{NeedConsensus: nil, NeedPostTXes: nil},
 		me:               me,
 		nodeIDFromPubKey: nodeIDFromPubKey,
 		log:              log,
 	}
+	cmi.output = &Output{cmi: cmi}
 	cmi.asGPA = gpa.NewOwnHandler(me, cmi)
 	return cmi, nil
 }
@@ -158,6 +186,7 @@ func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >     Send Suspend to all the other CmtLogs.
 func (cmi *chainMgrImpl) handleMsgAliasOutputConfirmed(msg *msgAliasOutputConfirmed) gpa.OutMessages {
 	cmi.log.Debugf("handleMsgAliasOutputConfirmed: %v", msg.aliasOutput)
+	cmi.latestConfirmedAO = msg.aliasOutput // The latest AO is always the most correct.
 	msgs := gpa.NoMessages()
 	committeeAddress := msg.aliasOutput.GetAliasOutput().StateController()
 	committeeLog, committeeID, cmtMsgs, err := cmi.ensureCmtLog(committeeAddress)
