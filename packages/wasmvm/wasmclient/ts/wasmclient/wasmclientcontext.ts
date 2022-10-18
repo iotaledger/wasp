@@ -48,11 +48,13 @@ export class WasmClientContext extends wc.WasmClientSandbox {
         this.keyPair = keyPair;
 
         // get last used nonce from accounts core contract
-        const addr = new Ed25519Address(keyPair.publicKey).toAddress()
-        const agent = isc.NewAgentID(addr)
+        const iscAddr = new Ed25519Address(keyPair.publicKey).toAddress()
+        //TODO iscAddr convert to ScAddress
+        const addr = wasmlib.addressFromBytes(wasmlib.bytesFromUint8Array(iscAddr));
+        const agent = wasmlib.ScAgentID.fromAddress(addr);
         const ctx = new WasmClientContext(this.svcClient, this.chID, coreaccounts.ScName)
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx)
-        n.params.agentID().setValue(wasmlib.agentIDFromBytes(agent.toBytes()))
+        n.params.agentID().setValue(agent)
         n.func.call()
         this.nonce = n.results.accountNonce().value()
     }

@@ -14,16 +14,16 @@ export class OffLedgerSignatureScheme {
 }
 
 export class OffLedgerRequest {
-    chainID: isc.ChainID;
-    contract: isc.Hname;
-    entryPoint: isc.Hname;
-    params: isc.Dict;
+    chainID: wasmlib.ScChainID;
+    contract: wasmlib.ScHname;
+    entryPoint: wasmlib.ScHname;
+    params: u8[];
     signatureScheme: isc.OffLedgerSignatureScheme = new isc.OffLedgerSignatureScheme(new isc.KeyPair([]));
     nonce: u64;
-    allowance: isc.Allowance = [1]; // empty allowance
+    allowance: wasmlib.ScAssets = new wasmlib.ScAssets([]);
     gasBudget: u64 = 0;
 
-    public constructor(chainID: isc.ChainID, contract: isc.Hname, entryPoint: isc.Hname, params: u8[], nonce: u64) {
+    public constructor(chainID: wasmlib.ScChainID, contract: wasmlib.ScHname, entryPoint: wasmlib.ScHname, params: u8[], nonce: u64) {
         this.chainID = chainID;
         this.contract = contract;
         this.entryPoint = entryPoint;
@@ -37,22 +37,23 @@ export class OffLedgerRequest {
 
     public essence(): u8[] {
         let data: u8[] = [1]; // requestKindTagOffLedgerISC
-        data = data.concat(wasmlib.bytesFromUint8Array(this.chainID));
-        data = data.concat(wasmlib.uint32ToBytes(this.contract));
-        data = data.concat(wasmlib.uint32ToBytes(this.entryPoint));
+        data = data.concat(this.chainID.toBytes());
+        data = data.concat(this.contract.toBytes());
+        data = data.concat(this.entryPoint.toBytes());
         data = data.concat(this.params);
         data = data.concat(wasmlib.uint64ToBytes(this.nonce));
         data = data.concat(wasmlib.uint64ToBytes(this.gasBudget));
         const pubKey = wasmlib.bytesFromUint8Array(this.signatureScheme.keyPair.publicKey);
         data = data.concat([pubKey.length as u8]);
         data = data.concat(pubKey);
-        data = data.concat(this.allowance);
+        //TODO convert to bytes according to isc.Allowance?
+        data = data.concat(this.allowance.toBytes());
         return data;
     }
 
-    public ID(): isc.RequestID {
+    public ID(): wasmlib.ScRequestID {
         //TODO
-        return wasmlib.bytesToUint8Array([]);
+        return wasmlib.requestIDFromBytes([]);
     }
 
     public sign(keyPair: isc.KeyPair): OffLedgerRequest {
@@ -62,8 +63,7 @@ export class OffLedgerRequest {
         return req;
     }
 
-    public withAllowance(allowance: isc.Allowance): void {
-        //TODO
-        this.allowance = allowance;
+    public withAllowance(allowance: wasmlib.ScAssets): void {
+        this.allowance = allowance
     }
 }

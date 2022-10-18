@@ -110,14 +110,11 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             this.Err = "Invalid bech32 address encoding";
             return [];
         }
-        let cvt = new isc.WasmConvertor();
-        return cvt.scAddress(addr).toBytes();
+        return addr.toBytes();
     }
 
     public fnUtilsBech32Encode(args: u8[]): u8[] {
-        let cvt = new isc.WasmConvertor();
-        let scAddress = wasmlib.addressFromBytes(args);
-        let addr = cvt.iscAddress(scAddress);
+        let addr = wasmlib.addressFromBytes(args);
         let bech32 = isc.Codec.bech32Encode(addr);
         return wasmlib.stringToBytes(bech32);
     }

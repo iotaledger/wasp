@@ -17,13 +17,11 @@ export interface IClientService {
 }
 
 export class WasmClientService implements IClientService {
-    cvt: isc.WasmConvertor;
     waspClient: isc.WaspClient;
     lastError: isc.Error = null;
     eventPort: string;
 
     public constructor(waspAPI: string, eventPort: string) {
-        this.cvt = new isc.WasmConvertor();
         this.waspClient = new isc.WaspClient(waspAPI);
         this.eventPort = eventPort;
     }
@@ -33,10 +31,7 @@ export class WasmClientService implements IClientService {
     }
 
     public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[]): u8[] {
-        let iscChainID = this.cvt.iscChainID(chainID);
-        let iscContract = this.cvt.iscHname(hContract);
-        let iscFunction = this.cvt.iscHname(hFunction);
-        let res = this.waspClient.callViewByHname(iscChainID, iscContract, iscFunction, args);
+        let res = this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
         this.lastError = this.waspClient.Err;
         if (this.lastError != null) {
             return [];
@@ -49,18 +44,14 @@ export class WasmClientService implements IClientService {
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[], allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): wasmlib.ScRequestID {
-        let iscChainID = this.cvt.iscChainID(chainID);
-        let iscContract = this.cvt.iscHname(hContract);
-        let iscFunction = this.cvt.iscHname(hFunction);
-        let req = new isc.OffLedgerRequest(iscChainID, iscContract, iscFunction, args, nonce);
-        let iscAllowance = this.cvt.iscAllowance(allowance);
-        req.withAllowance(iscAllowance);
+        let req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
+        req.withAllowance(allowance);
         let signed = req.sign(keyPair);
-        this.lastError = this.waspClient.postOffLedgerRequest(iscChainID, signed);
+        this.lastError = this.waspClient.postOffLedgerRequest(chainID, signed);
         if (this.lastError != null) {
             return wasmlib.requestIDFromBytes([]);
         }
-        return this.cvt.scRequestID(signed.ID());
+        return signed.ID();
     }
 
     public subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error {
@@ -70,8 +61,6 @@ export class WasmClientService implements IClientService {
     }
 
     public waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {
-        let iscChainID = this.cvt.iscChainID(chainID);
-        let iscReqID = this.cvt.iscRequestID(reqID);
-        return this.waspClient.waitUntilRequestProcessed(iscChainID, iscReqID, timeout);
+        return this.waspClient.waitUntilRequestProcessed(chainID, reqID, timeout);
     }
 }
