@@ -381,5 +381,5 @@ func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
 	// the tx is rejected before posting to the wasp node
 	err = env.Client.SendTransaction(context.Background(), tx)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "sender has not enough L2 funds to cover tx gas budget")
+	require.Contains(t, err.Error(), "sender doesn't have enough L2 funds to cover tx gas budget")
 }
