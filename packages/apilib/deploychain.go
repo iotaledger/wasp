@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
@@ -111,7 +112,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
-		chainID.String(), stateControllerAddr, par.N, par.T)
+		chainID.String(), stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP), par.N, par.T)
 
 	return chainID, err
 }
