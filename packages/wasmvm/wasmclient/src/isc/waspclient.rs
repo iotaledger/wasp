@@ -1,5 +1,5 @@
 // pub use crate::gas::*;
-pub use crate::offledger::*;
+pub use crate::offledgerrequest::*;
 pub use crate::receipt::*;
 use hyper::{
     client::HttpConnector,

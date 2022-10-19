@@ -2,7 +2,7 @@
 // // SPDX-License-Identifier: Apache-2.0
 
 use crate::*;
-use isc::{offledger::*, waspclient};
+use isc::{offledgerrequest::*, waspclient};
 use keypair::*;
 use std::time::Duration;
 use wasmlib::*;
@@ -87,14 +87,15 @@ impl WasmClientService {
     ) -> Result<ScRequestID, String> {
         let params = ScDict::from_bytes(args)?;
         self.nonce += 1;
-        let mut req: offledger::OffLedgerRequestData = offledger::OffLedgerRequest::new(
-            chain_id,
-            contract_hname,
-            function_hname,
-            &params,
-            None,
-            self.nonce,
-        );
+        let mut req: offledgerrequest::OffLedgerRequestData =
+            offledgerrequest::OffLedgerRequest::new(
+                chain_id,
+                contract_hname,
+                function_hname,
+                &params,
+                None,
+                self.nonce,
+            );
         req.with_allowance(&allowance);
         req.sign(key_pair);
 
@@ -104,7 +105,7 @@ impl WasmClientService {
 
     // FIXME the following implementation is a blocked version. It should be multithread
     // To impl channels, see https://doc.rust-lang.org/rust-by-example/std_misc/channels.html
-    pub fn subscribe_events(&self, msg: &Vec<String>) -> Result<(), String> {
+    pub fn subscribe_events(&self, _msg: &Vec<String>) -> Result<(), String> {
         todo!()
     }
 

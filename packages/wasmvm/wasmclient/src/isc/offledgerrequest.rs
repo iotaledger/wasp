@@ -77,7 +77,7 @@ impl OffLedgerRequest for OffLedgerRequestData {
         self.allowance = allowance.clone();
         return self;
     }
-    fn sign(&mut self, key: &KeyPair) -> &Self {
+    fn sign(&mut self, _key: &KeyPair) -> &Self {
         todo!()
     }
 }
