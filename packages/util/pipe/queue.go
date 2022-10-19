@@ -127,7 +127,7 @@ func (q *LimitedPriorityHashQueue) resize() {
 // If the add was successful, returns `true`.
 //
 
-//nolint: gocyclo
+//nolint:gocyclo
 func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {
 	var elemHashable Hashable
 	var elemHash hashing.HashValue

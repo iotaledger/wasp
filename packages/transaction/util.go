@@ -164,7 +164,7 @@ func computeInputsAndRemainder(
 // If return (nil, nil) it means remainder is a perfect match between inputs and outputs, remainder not needed
 //
 
-//nolint: gocyclo
+//nolint:gocyclo
 func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseTokens uint64, inTokens, outTokens map[iotago.NativeTokenID]*big.Int) (*iotago.BasicOutput, error) {
 	if inBaseTokens < outBaseTokens {
 		return nil, ErrNotEnoughBaseTokens

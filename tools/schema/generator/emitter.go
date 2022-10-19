@@ -118,7 +118,7 @@ func (g *GenBase) emit(template string) {
 // Produces an error if the array key is unknown
 //
 
-//nolint: gocyclo
+//nolint:gocyclo
 func (g *GenBase) emitEach(line string) {
 	g.log(line)
 	g.indent()

@@ -107,7 +107,7 @@ func (g *groupImpl) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, 
 // Resends the messages if acks are not received for some time.
 //
 
-//nolint: gocyclo
+//nolint:gocyclo
 func (g *groupImpl) ExchangeRound(
 	peers map[uint16]peering.PeerSender,
 	recvCh chan *peering.PeerMessageIn,

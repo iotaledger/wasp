@@ -202,7 +202,7 @@ func (sm *stateManager) GetStatusSnapshot() *chain.SyncInfo {
 	return v.(*chain.SyncInfo)
 }
 
-//nolint: gocyclo
+//nolint:gocyclo
 func (sm *stateManager) recvLoop() {
 	sm.ready.SetReady()
 	eventGetBlockMsgCh := sm.eventGetBlockMsgPipe.Out()

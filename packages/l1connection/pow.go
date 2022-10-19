@@ -68,7 +68,7 @@ type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 // The given iota.Block's nonce is automatically updated.
 //
 
-// nolint: gocyclo
+//nolint:gocyclo
 func doPoW(ctx context.Context, block *iotago.Block, targetScore float64, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
 	if targetScore == 0 {
 		block.Nonce = 0
