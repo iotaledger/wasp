@@ -39,8 +39,8 @@ impl WaspClient {
     pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
-        contract_hname: ScHname,
-        function_hname: ScHname,
+        contract_hname: &ScHname,
+        function_hname: &ScHname,
         args: ScDict,
         optimistic_read_timeout: Option<Duration>,
     ) -> Result<ScDict, String> {
@@ -69,6 +69,6 @@ impl WaspClient {
     }
 }
 
-fn send_request(method: &str, route: &str) -> Result<Vec<u8>, String> {
-    todo!()
-}
+// fn send_request(method: &str, route: &str) -> Result<Vec<u8>, String> {
+//     todo!()
+// }

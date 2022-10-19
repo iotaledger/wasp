@@ -4,14 +4,14 @@
 use crate::*;
 use wasmlib::*;
 
-pub trait ScHost {
-    fn export_name(&self, index: i32, name: &str);
-    fn sandbox(&mut self, func_num: i32, params: &[u8]) -> Vec<u8>;
-    fn state_delete(&self, key: &[u8]);
-    fn state_exists(&self, key: &[u8]) -> bool;
-    fn state_get(&self, key: &[u8]) -> Vec<u8>;
-    fn state_set(&self, key: &[u8], value: &[u8]);
-}
+// pub trait ScHost {
+//     fn export_name(&self, index: i32, name: &str);
+//     fn sandbox(&mut self, func_num: i32, params: &[u8]) -> Vec<u8>;
+//     fn state_delete(&self, key: &[u8]);
+//     fn state_exists(&self, key: &[u8]) -> bool;
+//     fn state_get(&self, key: &[u8]) -> Vec<u8>;
+//     fn state_set(&self, key: &[u8], value: &[u8]);
+// }
 
 pub trait WasmClientSandbox {
     fn fn_call(&mut self, args: &[u8]) -> Result<Vec<u8>, String>;
@@ -21,12 +21,12 @@ pub trait WasmClientSandbox {
     fn fn_utils_hash_name(&self, args: &[u8]) -> Result<Vec<u8>, String>;
 }
 
-impl ScHost for WasmClientContext {
+impl wasmlib::host::ScHost for WasmClientContext {
     fn export_name(&self, _index: i32, _name: &str) {
         panic!("WasmClientContext.ExportName")
     }
 
-    fn sandbox(&mut self, func_num: i32, args: &[u8]) -> Vec<u8> {
+    fn sandbox(&self, func_num: i32, args: &[u8]) -> Vec<u8> {
         match func_num {
             wasmlib::FN_CALL => return self.fn_call(args).unwrap(),
             wasmlib::FN_POST => return self.fn_post(args).unwrap(),

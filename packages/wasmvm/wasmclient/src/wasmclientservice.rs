@@ -67,8 +67,8 @@ impl WasmClientService {
 
         let dict_res = self.client.call_view_by_hname(
             &chain_id,
-            contract_hname,
-            function_hname,
+            &contract_hname,
+            &function_hname,
             params,
             None,
         )?;

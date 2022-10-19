@@ -60,16 +60,13 @@ impl WasmClientContext {
         return self.chain_id;
     }
 
-    pub fn init_func_call_context(&self) {
-        // wasmlib::host::connect_host(&self);
-        todo!()
-        // connect_host(self);
+    pub fn init_func_call_context(&'static self) {
+        wasmlib::host::connect_host(self);
     }
 
     pub fn init_view_call_context(&self, contract_hname: ScHname) -> ScHname {
-        todo!()
-        // connect_host(self);
-        // return self.scHname;
+        wasmlib::host::connect_host(self);
+        return self.sc_hname;
     }
 
     pub fn register(&self, handler: &dyn IEventHandler) -> Result<(), String> {
