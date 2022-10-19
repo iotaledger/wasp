@@ -5,5 +5,4 @@ pub mod gas;
 pub mod keypair;
 pub mod offledger;
 pub mod receipt;
-pub mod types;
 pub mod waspclient;
