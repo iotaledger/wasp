@@ -1,15 +1,17 @@
-pub use crate::types::*;
+// pub use crate::types::*;
 use bech32::*;
-use iota_client;
+use wasmlib::*;
+// use iota_client;
 pub const BECH32_PREFIX: &'static str = "smr";
 
-pub fn bech32_decode(input: &str) -> Result<Address, String> {
+pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
     let (_hrp, data, _v) = bech32::decode(&input).unwrap();
-    return Ok(data.iter().map(|&e| e.to_u8()).collect());
+    let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
+    return Ok(address_from_bytes(&buf));
 }
 
-pub fn bech32_encode(addr: &Address) -> String {
-    return bech32::encode(BECH32_PREFIX, addr.to_base32(), Variant::Bech32).unwrap();
+pub fn bech32_encode(addr: &ScAddress) -> String {
+    return bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32).unwrap();
 }
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};

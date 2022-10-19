@@ -95,14 +95,11 @@ impl WasmClientSandbox for WasmClientContext {
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Result<Vec<u8>, String> {
         let bech32 = wasmlib::string_from_bytes(args);
         let addr = codec::bech32_decode(&bech32)?;
-        let cvt = wasmconvertor::WasmConvertor::new();
-        return Ok(cvt.sc_address(&addr).to_bytes());
+        return Ok(addr.to_bytes());
     }
 
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Result<Vec<u8>, String> {
-        let cvt = wasmconvertor::WasmConvertor::new();
-        let sc_address = wasmtypes::address_from_bytes(args);
-        let addr = cvt.isc_address(&sc_address);
+        let addr = wasmtypes::address_from_bytes(args);
         let bech32 = codec::bech32_encode(&addr);
         return Ok(bech32.into_bytes());
     }

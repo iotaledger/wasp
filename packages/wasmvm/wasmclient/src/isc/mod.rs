@@ -6,5 +6,4 @@ pub mod keypair;
 pub mod offledger;
 pub mod receipt;
 pub mod types;
-pub mod wasmconvertor;
 pub mod waspclient;
