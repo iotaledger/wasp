@@ -27,7 +27,7 @@
 					<td><code>{{ trim 30 (bytesToString $field.Key) }}</code></td>
 					<td style="flex: 2"><pre style="white-space: pre-wrap">{{ trim 100 (bytesToString $field.Value) }}</pre></td>
 					<td class="align-right" style="flex: 0.5">{{ len $field.Value }}</td>
-					<td style="flex: 0.5"><a href="{{ uri "chainBlobDownload" $chainid (hashref $hash) (base58 $field.Key) }}">Download</a></td>
+					<td style="flex: 0.5"><a href="{{ uri "chainBlobDownload" $chainid (hashref $hash) (hex $field.Key) }}">Download</a></td>
 				</tr>
 			{{end}}
 			</tbody>

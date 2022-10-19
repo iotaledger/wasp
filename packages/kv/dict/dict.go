@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -81,10 +81,10 @@ func (d Dict) String() string {
 			val = val[:80]
 		}
 		ret += fmt.Sprintf(
-			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
+			"           0x%s: 0x%s (hex: %s) ('%s': '%s')\n",
 			slice(hex.EncodeToString([]byte(key))),
 			slice(hex.EncodeToString(val)),
-			slice(base58.Encode(val)),
+			slice(hexutil.Encode(val)),
 			printable([]byte(key)),
 			printable(val),
 		)

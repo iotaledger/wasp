@@ -12,12 +12,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 	"golang.org/x/xerrors"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -253,7 +254,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 			return nil, err
 		}
 		p.dkgLock.Unlock()
-		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, base58.Encode(r.Response.SessionID))
+		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
 		ourResponses = append(ourResponses, r)
 	}
 	//
@@ -295,10 +296,10 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 		for _, r := range recvResponses[i].responses {
 			p.dkgLock.Lock()
 			var j *rabin_dkg.Justification
-			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, base58.Encode(r.Response.SessionID))
+			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
 			if j, err = p.dkgImpl[kst].ProcessResponse(r); err != nil {
 				p.dkgLock.Unlock()
-				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, base58.Encode(r.Response.SessionID))
+				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, hexutil.Encode(r.Response.SessionID))
 				return nil, err
 			}
 			p.dkgLock.Unlock()

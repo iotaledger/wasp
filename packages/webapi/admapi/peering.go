@@ -6,8 +6,7 @@ package admapi
 import (
 	"net/http"
 
-	"github.com/mr-tron/base58"
-
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -45,12 +44,12 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		SetSummary("Get a list of trusted peers.")
 
 	adm.GET(routes.PeeringTrustedGet(":pubKey"), handlePeeringTrustedGet, addCtx).
-		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
+		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Get details on a particular trusted peer.")
 
 	adm.PUT(routes.PeeringTrustedPut(":pubKey"), handlePeeringTrustedPut, addCtx).
-		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
+		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
@@ -65,14 +64,14 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		SetSummary("Trust the specified peer.")
 
 	adm.DELETE(routes.PeeringTrustedDelete(":pubKey"), handlePeeringTrustedDelete, addCtx).
-		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
+		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		SetSummary("Distrust the specified peer.")
 }
 
 func handlePeeringSelfGet(c echo.Context) error {
 	network := c.Get("net").(peering.NetworkProvider)
 	resp := model.PeeringTrustedNode{
-		PubKey: base58.Encode(network.Self().PubKey().AsBytes()),
+		PubKey: hexutil.Encode(network.Self().PubKey().AsBytes()),
 		NetID:  network.Self().NetID(),
 	}
 	return c.JSON(http.StatusOK, resp)
@@ -86,7 +85,7 @@ func handlePeeringGetStatus(c echo.Context) error {
 
 	for k, v := range peeringStatus {
 		peers[k] = model.PeeringNodeStatus{
-			PubKey:   base58.Encode(v.PubKey().AsBytes()),
+			PubKey:   hexutil.Encode(v.PubKey().AsBytes()),
 			NetID:    v.NetID(),
 			IsAlive:  v.IsAlive(),
 			NumUsers: v.NumUsers(),
@@ -123,7 +122,7 @@ func handlePeeringTrustedPut(c echo.Context) error {
 	if req.PubKey != pubKeyStr {
 		return httperrors.BadRequest("Pub keys do not match.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromHexString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -141,7 +140,7 @@ func handlePeeringTrustedPost(c echo.Context) error {
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromHexString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -156,7 +155,7 @@ func handlePeeringTrustedGet(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromBase58String(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromHexString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -176,7 +175,7 @@ func handlePeeringTrustedDelete(c echo.Context) error {
 	var err error
 	tnm := c.Get("tnm").(peering.TrustedNetworkManager)
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromBase58String(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromHexString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

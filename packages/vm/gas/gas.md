@@ -23,8 +23,8 @@ Current gas costs are still experimental and will change.
 | UtilsHashingBlake2b                | 5*B       | blake2b hash function (B = number of bytes)                          |
 | UtilsHashingSha3                   | 8*B       | sha3 hash function (B = number of bytes)                             |
 | UtilsHashingHname                  | 5*B       | get hname from string (hash function, B = number of bytes)           |
-| UtilsBase58Encode                  | 50*B      | encode data into base58 (B = number of bytes)                        |
-| UtilsBase58Decode                  | 5*B       | decode data from base58 (B = number of bytes)                        |
+| UtilsHexEncode                     | 50*B      | encode data into hex (B = number of bytes)                           |
+| UtilsHexDecode                     | 5*B       | decode data from hex (B = number of bytes)                           |
 | UtilsED25519ValidSig               | 200       | validates a ed25517 signature                                        |
 | UtilsED25519AddrFromPubKey         | 50        | get ed25517 address from public key                                  |
 | UtilsBLSValidSignature             | 2000      | validates a bls signature valid (to be deprecated)                   |

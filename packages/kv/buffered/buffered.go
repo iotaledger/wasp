@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -59,11 +59,11 @@ func (b *BufferedKVStoreAccess) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStoreAccess:\n"
 	for k, v := range b.DangerouslyDumpToDict() {
 		ret += fmt.Sprintf(
-			"           [%s] 0x%s: 0x%s (base58: %s)\n",
+			"           [%s] 0x%s: 0x%s (hex: %s)\n",
 			b.flag(k),
 			slice(hex.EncodeToString([]byte(k))),
 			slice(hex.EncodeToString(v)),
-			slice(base58.Encode(v)),
+			slice(hexutil.Encode(v)),
 		)
 	}
 	return ret

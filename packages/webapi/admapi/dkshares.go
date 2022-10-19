@@ -53,7 +53,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 		SetSummary("Generate a new distributed key")
 
 	adm.GET(routes.DKSharesGet(":sharedAddress"), s.handleDKSharesGet).
-		AddParamPath("", "sharedAddress", "Address of the DK share (base58)").
+		AddParamPath("", "sharedAddress", "Address of the DK share (hex)").
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Get distributed key properties")
 }
@@ -79,7 +79,7 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]*cryptolib.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			peerPubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PeerPubKeys[i])
+			peerPubKey, err := cryptolib.NewPublicKeyFromHexString(req.PeerPubKeys[i])
 			if err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
