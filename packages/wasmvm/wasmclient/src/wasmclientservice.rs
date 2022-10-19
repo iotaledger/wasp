@@ -110,8 +110,8 @@ impl WasmClientService {
 
     pub fn wait_until_request_processed(
         &self,
-        chain_id: ScChainID,
-        req_id: ScRequestID,
+        chain_id: &ScChainID,
+        req_id: &ScRequestID,
         timeout: Duration,
     ) -> Result<(), String> {
         let _ = self

@@ -6,7 +6,6 @@
 use crate::*;
 use keypair::*;
 use wasmlib::*;
-
 pub trait IEventHandler {
     fn call_handler(&self, topic: &str, params: &[&str]);
 }
@@ -62,6 +61,7 @@ impl WasmClientContext {
     }
 
     pub fn init_func_call_context(&self) {
+        // wasmlib::host::connect_host(&self);
         todo!()
         // connect_host(self);
     }
@@ -72,7 +72,12 @@ impl WasmClientContext {
         // return self.scHname;
     }
 
-    pub fn register(&self, handler: &dyn IEventHandler) -> Result<(), &'static str> {
+    pub fn register(&self, handler: &dyn IEventHandler) -> Result<(), String> {
+        // self.event_handlers.iter().for_each(|h| {
+        //     if h. == handler {
+        //         return Ok(());
+        //     }
+        // });
         todo!()
         // for h in self.eventHandlers {
         // 	if h == handler {
@@ -87,14 +92,12 @@ impl WasmClientContext {
     }
 
     // overrides default contract name
-    pub fn service_contract_name(&self, contract_name: &str) {
-        todo!()
-        // self.scHname = NewScHname(contractName);
+    pub fn service_contract_name(&mut self, contract_name: &str) {
+        self.sc_hname = wasmlib::ScHname::new(contract_name);
     }
 
-    pub fn sign_requests(&self, key_pair: &keypair::KeyPair) {
-        todo!()
-        // self.keyPair = keyPair;
+    pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
+        self.key_pair = key_pair.clone();
     }
 
     pub fn unregister(&self, handler: &dyn IEventHandler) {
@@ -110,13 +113,17 @@ impl WasmClientContext {
         // }
     }
 
-    pub fn wait_request(&self, req_ids: &[&ScRequestID]) -> Result<(), String> {
-        todo!()
-        // let requestID = self.ReqID;
-        // if len(reqID) == 1 {
-        // 	requestID = reqID[0];
-        // }
-        // return self.svcClient.WaitUntilRequestProcessed(self.chainID, requestID, 1*time.Minute);
+    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) -> Result<(), String> {
+        let r_id;
+        match req_id {
+            Some(id) => r_id = id,
+            None => r_id = &self.req_id,
+        }
+        return self.svc_client.wait_until_request_processed(
+            &self.chain_id,
+            &r_id,
+            std::time::Duration::new(60, 0),
+        );
     }
 
     pub fn start_event_handlers(&self) -> Result<(), String> {

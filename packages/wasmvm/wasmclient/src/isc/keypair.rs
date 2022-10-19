@@ -12,4 +12,7 @@ impl KeyPair {
     pub fn default() -> Self {
         todo!()
     }
+    pub fn clone(&self) -> Self {
+        todo!()
+    }
 }

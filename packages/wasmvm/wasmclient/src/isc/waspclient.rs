@@ -62,7 +62,7 @@ impl WaspClient {
     pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
-        req_id: ScRequestID,
+        req_id: &ScRequestID,
         timeout: Duration,
     ) -> Result<Receipt, String> {
         todo!()
