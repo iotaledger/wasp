@@ -1,7 +1,6 @@
 package buffered
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sort"
 
@@ -61,8 +60,8 @@ func (b *BufferedKVStoreAccess) DangerouslyDumpToString() string {
 		ret += fmt.Sprintf(
 			"           [%s] 0x%s: 0x%s (hex: %s)\n",
 			b.flag(k),
-			slice(hex.EncodeToString([]byte(k))),
-			slice(hex.EncodeToString(v)),
+			slice(hexutil.Encode([]byte(k))),
+			slice(hexutil.Encode(v)),
 			slice(hexutil.Encode(v)),
 		)
 	}

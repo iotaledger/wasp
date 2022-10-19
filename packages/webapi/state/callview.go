@@ -1,12 +1,12 @@
 package state
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -118,7 +118,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
 
-	key, err := hex.DecodeString(c.Param("key"))
+	key, err := hexutil.Decode(c.Param("key"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("cannot parse hex-encoded key: %+v", c.Param("key")))
 	}

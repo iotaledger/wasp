@@ -96,10 +96,10 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.AsAddress(), err)
+		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.AsAddress())
+	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.String())
 
 	// ---------- wait until the request is processed at least in all committee nodes
 	_, err = multiclient.New(par.CommitteeAPIHosts).

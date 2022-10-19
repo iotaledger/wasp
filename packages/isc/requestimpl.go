@@ -2,11 +2,12 @@ package isc
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -636,7 +637,7 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 		return ret, err
 	}
 	ret.TransactionOutputIndex = uint16(txOutputIndex)
-	txID, err := hex.DecodeString(split[1])
+	txID, err := hexutil.Decode(split[1])
 	if err != nil {
 		return ret, err
 	}
@@ -690,7 +691,7 @@ func OID(o *iotago.UTXOInput) string {
 }
 
 func TxID(txID iotago.TransactionID) string {
-	return hex.EncodeToString(txID[:])
+	return hexutil.Encode(txID[:])
 }
 
 func ShortRequestIDs(ids []RequestID) []string {

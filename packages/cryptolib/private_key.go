@@ -2,8 +2,9 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
-	"encoding/hex"
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -39,7 +40,7 @@ func (pkT *PrivateKey) AsBytes() []byte {
 }
 
 func (pkT *PrivateKey) String() string {
-	return hex.EncodeToString(pkT.key)
+	return hexutil.Encode(pkT.key)
 }
 
 func (pkT *PrivateKey) AsStdKey() ed25519.PrivateKey {

@@ -2,7 +2,6 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
-	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/xerrors"
@@ -38,7 +37,7 @@ func NewPublicKeyFromHexString(s string) (publicKey *PublicKey, err error) {
 }
 
 func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
-	b, err := hex.DecodeString(s)
+	b, err := hexutil.Decode(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
@@ -85,5 +84,5 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 }
 
 func (pkT *PublicKey) String() string {
-	return hex.EncodeToString(pkT.key)
+	return hexutil.Encode(pkT.key)
 }

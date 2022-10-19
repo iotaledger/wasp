@@ -1,11 +1,12 @@
 package state
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
 	"path"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -184,7 +185,7 @@ func ForEachBlockIndex(store kvstore.KVStore, fun func(blockIndex uint32) bool) 
 		var index uint32
 		index, err = util.Uint32From4Bytes(key[1:])
 		if err != nil {
-			err = fmt.Errorf("Uint32From4Bytes: %v, data: %s", err, hex.EncodeToString(key[1:]))
+			err = fmt.Errorf("Uint32From4Bytes: %v, data: %s", err, hexutil.Encode(key[1:]))
 			return false
 		}
 		return fun(index)
