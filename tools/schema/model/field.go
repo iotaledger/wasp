@@ -51,7 +51,7 @@ type Field struct {
 	Line       int // the line number originally in yaml/json file
 }
 
-//nolint:gocyclo
+//nolint: gocyclo
 func (f *Field) Compile(s *Schema, fldNameDef, fldTypeDef *DefElt) error {
 	fldName := strings.TrimSpace(fldNameDef.Val)
 	f.Name = fldName

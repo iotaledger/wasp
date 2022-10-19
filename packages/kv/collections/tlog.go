@@ -350,7 +350,7 @@ func (l *ImmutableTimestampedLog) MustTakeTimeSlice(fromTs, toTs int64) *TimeSli
 	return tsl
 }
 
-//nolint:gocyclo
+// nolint: gocyclo
 func (l *ImmutableTimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
 		return 0, false, nil
@@ -407,7 +407,7 @@ func (l *ImmutableTimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) 
 	return l.findLowerIdx(ts, middleIdx, toIdx)
 }
 
-//nolint:gocyclo
+// nolint: gocyclo
 func (l *ImmutableTimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) (uint32, bool, error) {
 	if fromIdx > toIdx {
 		return 0, false, nil

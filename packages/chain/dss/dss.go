@@ -153,7 +153,7 @@ func (d *dssImpl) Output() gpa.Output {
 	}
 }
 
-//nolint:gocyclo
+// nolint: gocyclo
 func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 	dkgOut := d.dkg.Output()
 	if d.dkgOutIndexes == nil && dkgOut != nil && dkgOut.(*nonce.Output).Indexes != nil {

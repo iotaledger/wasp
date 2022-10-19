@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
-//nolint:gocyclo
+//nolint: gocyclo
 func (c *chainObj) recvLoop() {
 	dismissChainMsgChannel := c.dismissChainMsgPipe.Out()
 	aliasOutputChannel := c.aliasOutputPipe.Out()

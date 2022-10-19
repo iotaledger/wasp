@@ -175,7 +175,7 @@ func (c *consensus) Close() {
 	c.eventTimerMsgPipe.Close()
 }
 
-//nolint:gocyclo
+// nolint: gocyclo
 func (c *consensus) recvLoop() {
 	eventStateTransitionMsgCh := c.eventStateTransitionMsgPipe.Out()
 	eventDssIndexProposalMsgCh := c.eventDssIndexProposalMsgPipe.Out()

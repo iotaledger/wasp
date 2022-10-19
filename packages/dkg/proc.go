@@ -502,8 +502,8 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
-//nolint:gocyclo
-func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
+// nolint: gocyclo,funlen
+func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	step byte,
 	initRecv *peering.PeerMessageGroupIn,
 	recvMsgs multiKeySetMsgs,
