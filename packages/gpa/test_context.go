@@ -9,11 +9,13 @@ import (
 )
 
 // Imitates a cluster of nodes and the medium performing the message exchange.
+// Inputs are processes in-order for each node individually.
 type TestContext struct {
 	nodes           map[NodeID]GPA                     // Nodes to test.
-	inputs          map[NodeID]Input                   // Not yet provided inputs.
+	inputs          map[NodeID][]Input                 // Not yet provided inputs.
 	inputCh         <-chan map[NodeID]Input            // A way to provide additional inputs w/o synchronizing other parts.
 	inputProb       float64                            // A probability to process input, instead of a message (if any).
+	inputCount      int                                // Number if inputs still not delivered.
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
 	msgCh           <-chan Message                     // A way to provide additional messages w/o synchronizing other parts.
@@ -23,10 +25,15 @@ type TestContext struct {
 }
 
 func NewTestContext(nodes map[NodeID]GPA) *TestContext {
+	inputs := map[NodeID][]Input{}
+	for n := range nodes {
+		inputs[n] = []Input{}
+	}
 	tc := TestContext{
 		nodes:           nodes,
-		inputs:          map[NodeID]Input{},
+		inputs:          inputs,
 		inputProb:       1.0,
+		inputCount:      0,
 		msgDeliveryProb: 1.0,
 		msgs:            []Message{},
 	}
@@ -41,8 +48,9 @@ func (tc *TestContext) MsgCounts() (int, int) {
 // The inputs will be overridden, if exist for the same nodes.
 func (tc *TestContext) AddInputs(inputs map[NodeID]Input) {
 	for nid := range inputs {
-		tc.inputs[nid] = inputs[nid]
+		tc.inputs[nid] = append(tc.inputs[nid], inputs[nid])
 	}
+	tc.inputCount += len(inputs)
 }
 
 func (tc *TestContext) WithInputs(inputs map[NodeID]Input) *TestContext {
@@ -112,8 +120,9 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 				continue
 			}
 			for nid, input := range inputs {
-				tc.inputs[nid] = input
+				tc.inputs[nid] = append(tc.inputs[nid], input)
 			}
+			tc.inputCount += len(inputs)
 		case msg, ok := <-tc.msgCh:
 			keepLooping()
 			if !ok {
@@ -127,7 +136,7 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 			}
 			tc.tryProcessInput()   // Try provide an input, if any and we are lucky.
 			tc.tryProcessMessage() // Otherwise just process the messages.
-			if len(tc.msgs) > 0 || len(tc.inputs) > 0 {
+			if len(tc.msgs) > 0 || tc.inputCount > 0 {
 				// We can proceed with looping.
 				loop <- true
 				continue
@@ -142,19 +151,28 @@ func (tc *TestContext) RunUntil(predicate func() bool) {
 }
 
 func (tc *TestContext) tryProcessInput() {
-	if len(tc.inputs) > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
-		nids := []NodeID{}
-		for nid := range tc.inputs {
-			nids = append(nids, nid)
+	if tc.inputCount > 0 && (rand.Float64() <= tc.inputProb || len(tc.msgs) == 0) {
+		rnd := rand.Intn(tc.inputCount)
+		var rndNID NodeID
+		var rndInp Input
+		for nodeID, nodeInputs := range tc.inputs {
+			if rnd >= len(nodeInputs) {
+				rnd -= len(nodeInputs)
+				continue
+			}
+			rndNID = nodeID
+			rndInp = nodeInputs[0]
+			tc.inputs[nodeID] = nodeInputs[1:] // Take them in order.
+			break
 		}
-		nid := nids[rand.Intn(len(nids))]
-		newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Input(tc.inputs[nid]))
+		tc.inputCount--
+
+		newMsgs := tc.setMessageSender(rndNID, tc.nodes[rndNID].Input(rndInp))
 		if newMsgs != nil {
 			tc.msgsSent += len(newMsgs)
 			tc.msgs = append(tc.msgs, newMsgs...)
 		}
-		delete(tc.inputs, nid)
-		tc.tryCallOutputHandler(nid)
+		tc.tryCallOutputHandler(rndNID)
 	}
 }
 
@@ -223,7 +241,7 @@ func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []Messa
 }
 
 func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
-	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v, msgsCh=%v", tc, len(tc.inputs), tc.inputCh != nil, len(tc.msgs), tc.msgCh != nil)
+	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v, msgsCh=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs), tc.msgCh != nil)
 	keys := []string{}
 	for nid := range tc.nodes {
 		keys = append(keys, string(nid))

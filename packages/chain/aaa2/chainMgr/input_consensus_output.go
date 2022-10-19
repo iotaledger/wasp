@@ -11,7 +11,7 @@ import (
 )
 
 type inputConsensusOutput struct {
-	committeeID       CommitteeID
+	committeeAddr     iotago.Ed25519Address
 	logIndex          cmtLog.LogIndex
 	baseAliasOutputID iotago.OutputID
 	nextAliasOutput   *isc.AliasOutputWithID
@@ -19,14 +19,14 @@ type inputConsensusOutput struct {
 }
 
 func NewInputConsensusOutput(
-	committeeID CommitteeID,
+	committeeAddr iotago.Ed25519Address,
 	logIndex cmtLog.LogIndex,
 	baseAliasOutputID iotago.OutputID,
 	nextAliasOutput *isc.AliasOutputWithID,
 	transaction *iotago.Transaction,
 ) gpa.Input {
 	return &inputConsensusOutput{
-		committeeID:       committeeID,
+		committeeAddr:     committeeAddr,
 		logIndex:          logIndex,
 		baseAliasOutputID: baseAliasOutputID,
 		nextAliasOutput:   nextAliasOutput,

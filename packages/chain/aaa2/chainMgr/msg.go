@@ -9,7 +9,7 @@ import (
 
 func (cl *chainMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	msg := &msgCmtLog{} // Only the CmtLog messages can be exchanged here, hence no msgType is needed.
-	if err := msg.UnmarshalBinary(data, cl.cmtLogs); err != nil {
+	if err := msg.UnmarshalBinary(data); err != nil {
 		return nil, err
 	}
 	return msg, nil

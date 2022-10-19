@@ -4,18 +4,19 @@
 package chainMgr
 
 import (
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusTimeout struct {
-	committeeID CommitteeID
-	logIndex    cmtLog.LogIndex
+	committeeAddr iotago.Ed25519Address
+	logIndex      cmtLog.LogIndex
 }
 
-func NewInputConsensusTimeout(committeeID CommitteeID, logIndex cmtLog.LogIndex) gpa.Input { // TODO: Call it.
+func NewInputConsensusTimeout(committeeAddr iotago.Ed25519Address, logIndex cmtLog.LogIndex) gpa.Input {
 	return &inputConsensusTimeout{
-		committeeID: committeeID,
-		logIndex:    logIndex,
+		committeeAddr: committeeAddr,
+		logIndex:      logIndex,
 	}
 }

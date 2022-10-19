@@ -14,6 +14,10 @@ const (
 )
 
 func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+	return UnmarshalMessage(data)
+}
+
+func UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
 		return nil, xerrors.Errorf("cmtLogImpl::UnmarshalMessage: data to short")
 	}

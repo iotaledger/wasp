@@ -107,7 +107,6 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
 	chainInitReqs := tcl.MakeTxChainInit()
 	ctx, ctxCancel := context.WithCancel(context.Background())
-	require.NoError(t, err)
 	logIndex := cmtLog.LogIndex(0)
 	for i := range peerIdentities {
 		procCache := processors.MustNew(procConfig)

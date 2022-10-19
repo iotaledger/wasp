@@ -208,36 +208,39 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 }
 
 // Implements the gpa.GPA interface.
-//
-// > ON Startup:
-// >     ...
-// >     send NextLI with the MinLI as a proposed log index.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
-	cl.log.Debugf("Input: %v", input)
-	if input != nil {
-		panic(xerrors.Errorf("cmtLogImpl: expecting nil input, got: %v", input))
+	switch input := input.(type) {
+	case *inputStart:
+		return cl.handleInputStart()
+	case *inputAliasOutputConfirmed:
+		return cl.handleInputAliasOutputConfirmed(input)
+	case *inputAliasOutputRejected:
+		return cl.handleInputAliasOutputRejected(input)
+	case *inputConsensusOutput:
+		return cl.handleInputConsensusOutput(input)
+	case *inputConsensusTimeout:
+		return cl.handleInputConsensusTimeout(input)
+	case *inputSuspend:
+		return cl.handleInputSuspend()
 	}
-	return cl.maybeSendNextLogIndex(cl.minLogIndex)
+	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
 }
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
-	switch msgT := msg.(type) {
-	case *msgAliasOutputConfirmed:
-		return cl.handleMsgAliasOutputConfirmed(msgT)
-	case *msgAliasOutputRejected:
-		return cl.handleMsgAliasOutputRejected(msgT)
-	case *msgConsensusOutput:
-		return cl.handleMsgConsensusOutput(msgT)
-	case *msgConsensusTimeout:
-		return cl.handleMsgConsensusTimeout(msgT)
-	case *msgSuspend:
-		return cl.handleMsgSuspend()
-	case *msgNextLogIndex:
-		return cl.handleMsgNextLogIndex(msgT)
+	msgNLI, ok := msg.(*msgNextLogIndex)
+	if !ok {
+		cl.log.Warnf("dropping unexpected message %T: %+v", msg, msg)
+		return nil
 	}
-	cl.log.Warnf("dropping unexpected message: %+v", msg)
-	return nil
+	return cl.handleMsgNextLogIndex(msgNLI)
+}
+
+// > ON Startup:
+// >     ...
+// >     send NextLI with the MinLI as a proposed log index.
+func (cl *cmtLogImpl) handleInputStart() gpa.OutMessages {
+	return cl.maybeSendNextLogIndex(cl.minLogIndex)
 }
 
 // > UPON Reception of AOConfirmed:
@@ -246,16 +249,14 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >         mark instance as not suspended
 // >         Increase OutLI.          // TODO: Do we need this???
 // >         Start next consensus round.
-func (cl *cmtLogImpl) handleMsgAliasOutputConfirmed(msg *msgAliasOutputConfirmed) gpa.OutMessages {
-	cl.log.Debugf("handleMsgAliasOutputConfirmed, msg=%+v", msg)
-	cl.localView.AliasOutputConfirmed(msg.aliasOutput)
+func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
+	cl.localView.AliasOutputConfirmed(input.aliasOutput)
 	cl.maybeStartConsensus() // TODO: Not always.
 	return nil
 }
 
-func (cl *cmtLogImpl) handleMsgAliasOutputRejected(msg *msgAliasOutputRejected) gpa.OutMessages {
-	cl.log.Debugf("handleMsgAliasOutputRejected, msg=%+v", msg)
-	cl.localView.AliasOutputRejected(msg.aliasOutput)
+func (cl *cmtLogImpl) handleInputAliasOutputRejected(input *inputAliasOutputRejected) gpa.OutMessages {
+	cl.localView.AliasOutputRejected(input.aliasOutput)
 	cl.maybeStartConsensus() // TODO: Not always.
 	return nil
 }
@@ -266,26 +267,26 @@ func (cl *cmtLogImpl) handleMsgAliasOutputRejected(msg *msgAliasOutputRejected) 
 // >     publish to node conn. 		// TODO: What component does that? The upper layer probably.
 // >     Increase OurLI
 // >     IF not suspended THEN Start next Consensus round.
-func (cl *cmtLogImpl) handleMsgConsensusOutput(msg *msgConsensusOutput) gpa.OutMessages {
-	if msg.logIndex < cl.consensusLI {
-		cl.log.Warnf("Dropping outdated consensus response: %+v", msg)
+func (cl *cmtLogImpl) handleInputConsensusOutput(input *inputConsensusOutput) gpa.OutMessages {
+	if input.logIndex < cl.consensusLI {
+		cl.log.Warnf("Dropping outdated consensus response: %+v", input)
 		return nil
 	}
 	//
 	// If we receive a consensus from the future LogIndex, maybe other nodes have already
 	// agreed on it and we have to catch up. Doing this by adjusting our current LogIndex.
-	if msg.logIndex > cl.consensusLI {
-		cl.log.Warnf("received consensus for log index we haven't asked yet: %+v", msg)
-		cl.consensusLI = msg.logIndex
-		if cl.logIndex < msg.logIndex {
-			cl.logIndex = msg.logIndex
+	if input.logIndex > cl.consensusLI {
+		cl.log.Warnf("received consensus for log index we haven't asked yet: %+v", input)
+		cl.consensusLI = input.logIndex
+		if cl.logIndex < input.logIndex {
+			cl.logIndex = input.logIndex
 		}
 	}
 	//
 	// Now start a consensus for the next entry.
 	// This should succeed, unless the instance is suspended
 	// or we don't have baseOA (e.g. there was a reject and we are re-syncing).
-	cl.localView.AliasOutputPublished(msg.baseAliasOutputID, msg.nextAliasOutput)
+	cl.localView.AliasOutputPublished(input.baseAliasOutputID, input.nextAliasOutput)
 	cl.logIndex = cl.logIndex.Next()
 	cl.maybeStartConsensus()
 	return nil
@@ -296,16 +297,16 @@ func (cl *cmtLogImpl) handleMsgConsensusOutput(msg *msgConsensusOutput) gpa.OutM
 //
 // NOTE: Consensus has not finished in long time, try recover by voting
 // for the next LogIndex. This actually breaks the asynchronous assumption.
-func (cl *cmtLogImpl) handleMsgConsensusTimeout(msg *msgConsensusTimeout) gpa.OutMessages {
-	if msg.logIndex < cl.consensusLI {
-		cl.log.Warnf("Dropping outdated consensus timeout: %+v", msg)
+func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
+	if input.logIndex < cl.consensusLI {
+		cl.log.Warnf("Dropping outdated consensus timeout: %+v", input)
 		return nil
 	}
-	if msg.logIndex > cl.consensusLI {
-		cl.log.Warnf("received consensus timeout for log index we haven't asked yet: %+v", msg)
-		cl.consensusLI = msg.logIndex
-		if cl.logIndex < msg.logIndex {
-			cl.logIndex = msg.logIndex
+	if input.logIndex > cl.consensusLI {
+		cl.log.Warnf("received consensus timeout for log index we haven't asked yet: %+v", input)
+		cl.consensusLI = input.logIndex
+		if cl.logIndex < input.logIndex {
+			cl.logIndex = input.logIndex
 		}
 	}
 	return cl.maybeSendNextLogIndex(cl.logIndex.Next())
@@ -318,8 +319,7 @@ func (cl *cmtLogImpl) handleMsgConsensusTimeout(msg *msgConsensusTimeout) gpa.Ou
 // after the current consensus will complete. Suspend will be sent
 // by the chain, if an alias output with different state controller
 // is received.
-func (cl *cmtLogImpl) handleMsgSuspend() gpa.OutMessages {
-	cl.log.Debugf("handleMsgSuspend")
+func (cl *cmtLogImpl) handleInputSuspend() gpa.OutMessages {
 	cl.suspended = true
 	return nil
 }
@@ -328,7 +328,6 @@ func (cl *cmtLogImpl) handleMsgSuspend() gpa.OutMessages {
 // >	 OurLI <- LI + 1
 // >     IF not suspended THEN Start consensus for LI+1 with the same AliasOutput.
 func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *msgNextLogIndex) gpa.OutMessages {
-	cl.log.Debugf("handleMsgNextLogIndex, msg=%+v", msg)
 	msgs := gpa.NoMessages()
 	sender := msg.Sender()
 	//

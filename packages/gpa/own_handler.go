@@ -43,7 +43,7 @@ func (o *OwnHandler) Output() Output {
 }
 
 func (o *OwnHandler) StatusString() string {
-	return fmt.Sprintf("{OWN/%v/%s}", o.me, o.target.StatusString())
+	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
 func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
