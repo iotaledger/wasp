@@ -106,6 +106,7 @@ func (g *groupImpl) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, 
 // ExchangeRound sends a message to the specified set of peers and waits for acks.
 // Resends the messages if acks are not received for some time.
 //
+
 //nolint:gocyclo
 func (g *groupImpl) ExchangeRound(
 	peers map[uint16]peering.PeerSender,

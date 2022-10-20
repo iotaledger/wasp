@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-//nolint:gocyclo
-func Encode(v interface{}) []byte { //nolint:funlen
+//nolint:gocyclo,funlen
+func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
 	case bool:
 		return EncodeBool(vt)

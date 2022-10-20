@@ -3,12 +3,11 @@ package dict
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -81,10 +80,10 @@ func (d Dict) String() string {
 			val = val[:80]
 		}
 		ret += fmt.Sprintf(
-			"           0x%s: 0x%s (base58: %s) ('%s': '%s')\n",
-			slice(hex.EncodeToString([]byte(key))),
-			slice(hex.EncodeToString(val)),
-			slice(base58.Encode(val)),
+			"           0x%s: 0x%s (hex: %s) ('%s': '%s')\n",
+			slice(hexutil.Encode([]byte(key))),
+			slice(hexutil.Encode(val)),
+			slice(hexutil.Encode(val)),
 			printable([]byte(key)),
 			printable(val),
 		)

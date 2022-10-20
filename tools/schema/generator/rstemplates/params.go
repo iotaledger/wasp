@@ -8,9 +8,9 @@ var paramsRs = map[string]string{
 	"params.rs": `
 #![allow(dead_code)]
 #![allow(unused_imports)]
-
-$#if core useCoreContract useWasmLib
-use crate::*;
+$#if core else useWasmLib
+$#emit useCrate
+$#if core useCoreContract
 $#each func paramsFunc
 `,
 	// *******************************
@@ -32,7 +32,7 @@ $#each param proxyContainers
 
 #[derive(Clone)]
 pub struct $TypeName {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl $TypeName {

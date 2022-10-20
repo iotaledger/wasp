@@ -4,7 +4,7 @@
 package peering
 
 import (
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/peering"
@@ -19,7 +19,7 @@ var trustCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pubKey := args[0]
 		netID := args[1]
-		_, err := base58.Decode(pubKey) // Assert it can be decoded.
+		_, err := hexutil.Decode(pubKey) // Assert it can be decoded.
 		log.Check(err)
 		log.Check(peering.CheckNetID(netID))
 		_, err = config.WaspClient().PostPeeringTrusted(pubKey, netID)

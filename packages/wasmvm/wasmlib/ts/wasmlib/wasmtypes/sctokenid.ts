@@ -51,11 +51,11 @@ export function tokenIDToBytes(value: ScTokenID): u8[] {
 }
 
 export function tokenIDFromString(value: string): ScTokenID {
-    return tokenIDFromBytes(wasmtypes.hexDecode(value.slice(2)));
+    return tokenIDFromBytes(wasmtypes.hexDecode(value));
 }
 
 export function tokenIDToString(value: ScTokenID): string {
-    return "0x" + wasmtypes.hexEncode(tokenIDToBytes(value));
+    return wasmtypes.hexEncode(tokenIDToBytes(value));
 }
 
 function tokenIDFromBytesUnchecked(buf: u8[]): ScTokenID {

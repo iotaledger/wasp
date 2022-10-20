@@ -20,22 +20,22 @@ $#set endFunc ): void {
 $#if event eventSetEndFunc
 
 $#each eventComment _eventComment
-	$evtName($endFunc
+    $evtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-		const evt = new wasmlib.EventEncoder("$package.$evtName");
+        const evt = new wasmlib.EventEncoder("$package.$evtName");
 $#each event eventEmit
-		evt.emit();
-	}
+        evt.emit();
+    }
 `,
 	// *******************************
 	"eventParam": `
 $#each fldComment _eventParamComment
-		$fldName: $fldLangType,
+        $fldName: $fldLangType,
 `,
 	// *******************************
 	"eventEmit": `
-		evt.encode(wasmtypes.$fldType$+ToString($fldName));
+        evt.encode(wasmtypes.$fldType$+ToString($fldName));
 `,
 	// *******************************
 	"eventSetEndFunc": `
@@ -43,6 +43,6 @@ $#set endFunc $nil
 `,
 	// *******************************
 	"eventEndFunc2": `
-	): void {
+    ): void {
 `,
 }

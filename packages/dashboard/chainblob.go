@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
-	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -92,7 +92,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	field, err := base58.Decode(c.Param("field"))
+	field, err := hexutil.Decode(c.Param("field"))
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,8 @@ import (
 type GasFeePolicy struct {
 	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if base token are used for gas fee
 	GasFeeTokenID *iotago.NativeTokenID
+	// GasFeeTokenDecimals the number of decimals in the native token used to pay for gas fees. Only considered if GasFeeTokenID != nil
+	GasFeeTokenDecimals uint32
 	// GasPerToken specifies how many gas units are paid for each token ( 100 means 1 tokens pays for 100 gas)
 	GasPerToken uint64
 	// ValidatorFeeShare Validator/Governor fee split: percentage of fees which goes to Validator
@@ -87,6 +89,9 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		}
 		ret.GasFeeTokenID = &iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
+		if ret.GasFeeTokenDecimals, err = mu.ReadUint32(); err != nil {
+			return nil, err
+		}
 	}
 	if ret.GasPerToken, err = mu.ReadUint64(); err != nil {
 		return nil, err
@@ -102,6 +107,7 @@ func (p *GasFeePolicy) Bytes() []byte {
 	mu.WriteBool(p.GasFeeTokenID != nil)
 	if p.GasFeeTokenID != nil {
 		mu.WriteBytes(p.GasFeeTokenID[:])
+		mu.WriteUint32(p.GasFeeTokenDecimals)
 	}
 	mu.WriteUint64(p.GasPerToken)
 	mu.WriteUint8(p.ValidatorFeeShare)

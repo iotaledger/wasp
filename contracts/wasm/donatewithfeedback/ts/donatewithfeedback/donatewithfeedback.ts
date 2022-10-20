@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as wasmlib from "wasmlib"
-import * as wasmtypes from "wasmlib/wasmtypes"
 import * as sc from "./index";
 
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
@@ -61,9 +60,9 @@ export function viewDonationInfo(ctx: wasmlib.ScViewContext, f: sc.DonationInfoC
 }
 
 export function funcInit(ctx: wasmlib.ScFuncContext, f: sc.InitContext): void {
-	if (f.params.owner().exists()) {
-		f.state.owner().setValue(f.params.owner().value());
-		return;
-	}
-	f.state.owner().setValue(ctx.requestSender());
+    if (f.params.owner().exists()) {
+        f.state.owner().setValue(f.params.owner().value());
+        return;
+    }
+    f.state.owner().setValue(ctx.requestSender());
 }

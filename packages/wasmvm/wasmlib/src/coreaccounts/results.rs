@@ -8,34 +8,34 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::coreaccounts::*;
 use crate::*;
+use crate::coreaccounts::*;
 
 #[derive(Clone)]
 pub struct ImmutableFoundryCreateNewResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFoundryCreateNewResults {
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
-		ScImmutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
-	}
+        ScImmutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableFoundryCreateNewResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableFoundryCreateNewResults {
     pub fn foundry_sn(&self) -> ScMutableUint32 {
-		ScMutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
-	}
+        ScMutableUint32::new(self.proxy.root(RESULT_FOUNDRY_SN))
+    }
 }
 
 #[derive(Clone)]
 pub struct ArrayOfImmutableNftID {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfImmutableNftID {
@@ -50,26 +50,26 @@ impl ArrayOfImmutableNftID {
 
 #[derive(Clone)]
 pub struct ImmutableAccountNFTsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAccountNFTsResults {
     pub fn nft_i_ds(&self) -> ArrayOfImmutableNftID {
-		ArrayOfImmutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
-	}
+        ArrayOfImmutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
+    }
 }
 
 #[derive(Clone)]
 pub struct ArrayOfMutableNftID {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ArrayOfMutableNftID {
-	pub fn append_nft_id(&self) -> ScMutableNftID {
-		ScMutableNftID::new(self.proxy.append())
-	}
+    pub fn append_nft_id(&self) -> ScMutableNftID {
+        ScMutableNftID::new(self.proxy.append())
+    }
 
-	pub fn clear(&self) {
+    pub fn clear(&self) {
         self.proxy.clear_array();
     }
 
@@ -84,18 +84,18 @@ impl ArrayOfMutableNftID {
 
 #[derive(Clone)]
 pub struct MutableAccountNFTsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableAccountNFTsResults {
     pub fn nft_i_ds(&self) -> ArrayOfMutableNftID {
-		ArrayOfMutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
-	}
+        ArrayOfMutableNftID { proxy: self.proxy.root(RESULT_NFT_I_DS) }
+    }
 }
 
 #[derive(Clone)]
 pub struct MapAgentIDToImmutableBool {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToImmutableBool {
@@ -106,18 +106,18 @@ impl MapAgentIDToImmutableBool {
 
 #[derive(Clone)]
 pub struct ImmutableAccountsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableAccountsResults {
     pub fn all_accounts(&self) -> MapAgentIDToImmutableBool {
-		MapAgentIDToImmutableBool { proxy: self.proxy.clone() }
-	}
+        MapAgentIDToImmutableBool { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct MapAgentIDToMutableBool {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapAgentIDToMutableBool {
@@ -132,18 +132,18 @@ impl MapAgentIDToMutableBool {
 
 #[derive(Clone)]
 pub struct MutableAccountsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableAccountsResults {
     pub fn all_accounts(&self) -> MapAgentIDToMutableBool {
-		MapAgentIDToMutableBool { proxy: self.proxy.clone() }
-	}
+        MapAgentIDToMutableBool { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct MapTokenIDToImmutableBigInt {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapTokenIDToImmutableBigInt {
@@ -154,18 +154,18 @@ impl MapTokenIDToImmutableBigInt {
 
 #[derive(Clone)]
 pub struct ImmutableBalanceResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableBalanceResults {
     pub fn balances(&self) -> MapTokenIDToImmutableBigInt {
-		MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct MapTokenIDToMutableBigInt {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapTokenIDToMutableBigInt {
@@ -180,62 +180,62 @@ impl MapTokenIDToMutableBigInt {
 
 #[derive(Clone)]
 pub struct MutableBalanceResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableBalanceResults {
     pub fn balances(&self) -> MapTokenIDToMutableBigInt {
-		MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableFoundryOutputResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableFoundryOutputResults {
     pub fn foundry_output_bin(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
-	}
+        ScImmutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableFoundryOutputResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableFoundryOutputResults {
     pub fn foundry_output_bin(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
-	}
+        ScMutableBytes::new(self.proxy.root(RESULT_FOUNDRY_OUTPUT_BIN))
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableGetAccountNonceResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetAccountNonceResults {
     pub fn account_nonce(&self) -> ScImmutableUint64 {
-		ScImmutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
-	}
+        ScImmutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableGetAccountNonceResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableGetAccountNonceResults {
     pub fn account_nonce(&self) -> ScMutableUint64 {
-		ScMutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
-	}
+        ScMutableUint64::new(self.proxy.root(RESULT_ACCOUNT_NONCE))
+    }
 }
 
 #[derive(Clone)]
 pub struct MapTokenIDToImmutableBool {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapTokenIDToImmutableBool {
@@ -246,18 +246,18 @@ impl MapTokenIDToImmutableBool {
 
 #[derive(Clone)]
 pub struct ImmutableGetNativeTokenIDRegistryResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetNativeTokenIDRegistryResults {
     pub fn mapping(&self) -> MapTokenIDToImmutableBool {
-		MapTokenIDToImmutableBool { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToImmutableBool { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct MapTokenIDToMutableBool {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapTokenIDToMutableBool {
@@ -272,55 +272,55 @@ impl MapTokenIDToMutableBool {
 
 #[derive(Clone)]
 pub struct MutableGetNativeTokenIDRegistryResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableGetNativeTokenIDRegistryResults {
     pub fn mapping(&self) -> MapTokenIDToMutableBool {
-		MapTokenIDToMutableBool { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToMutableBool { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableNftDataResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableNftDataResults {
     pub fn nft_data(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
-	}
+        ScImmutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableNftDataResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableNftDataResults {
     pub fn nft_data(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
-	}
+        ScMutableBytes::new(self.proxy.root(RESULT_NFT_DATA))
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableTotalAssetsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableTotalAssetsResults {
     pub fn assets(&self) -> MapTokenIDToImmutableBigInt {
-		MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToImmutableBigInt { proxy: self.proxy.clone() }
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableTotalAssetsResults {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableTotalAssetsResults {
     pub fn assets(&self) -> MapTokenIDToMutableBigInt {
-		MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
-	}
+        MapTokenIDToMutableBigInt { proxy: self.proxy.clone() }
+    }
 }

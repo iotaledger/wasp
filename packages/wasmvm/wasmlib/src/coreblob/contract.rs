@@ -7,30 +7,30 @@
 
 #![allow(dead_code)]
 
-use crate::coreblob::*;
 use crate::*;
+use crate::coreblob::*;
 
 pub struct StoreBlobCall {
-	pub func: ScFunc,
-	pub params: MutableStoreBlobParams,
-	pub results: ImmutableStoreBlobResults,
+    pub func: ScFunc,
+    pub params: MutableStoreBlobParams,
+    pub results: ImmutableStoreBlobResults,
 }
 
 pub struct GetBlobFieldCall {
-	pub func: ScView,
-	pub params: MutableGetBlobFieldParams,
-	pub results: ImmutableGetBlobFieldResults,
+    pub func: ScView,
+    pub params: MutableGetBlobFieldParams,
+    pub results: ImmutableGetBlobFieldResults,
 }
 
 pub struct GetBlobInfoCall {
-	pub func: ScView,
-	pub params: MutableGetBlobInfoParams,
-	pub results: ImmutableGetBlobInfoResults,
+    pub func: ScView,
+    pub params: MutableGetBlobInfoParams,
+    pub results: ImmutableGetBlobInfoResults,
 }
 
 pub struct ListBlobsCall {
-	pub func: ScView,
-	pub results: ImmutableListBlobsResults,
+    pub func: ScView,
+    pub results: ImmutableListBlobsResults,
 }
 
 pub struct ScFuncs {

@@ -12,10 +12,10 @@ pub trait ScHost {
     fn state_set(&self, key: &[u8], value: &[u8]);
 }
 
-static WASM_VM_HOST:WasmVmHost = WasmVmHost{};
+static WASM_VM_HOST: WasmVmHost = WasmVmHost {};
 static mut HOST: &dyn ScHost = &WASM_VM_HOST;
 
-pub fn connect_host(h:  &'static dyn ScHost) -> &dyn ScHost {
+pub fn connect_host(h: &'static dyn ScHost) -> &dyn ScHost {
     unsafe {
         let old_host = HOST;
         HOST = h;

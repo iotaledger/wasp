@@ -13,10 +13,9 @@ extern {
     pub fn hostStateSet(key_ref: *const u8, key_len: i32, val_ref: *const u8, val_len: i32);
 }
 
-pub struct WasmVmHost {
-}
+pub struct WasmVmHost {}
 
-static WASM_VM_HOST:WasmVmHost = WasmVmHost{};
+static WASM_VM_HOST: WasmVmHost = WasmVmHost {};
 
 impl WasmVmHost {
     pub fn connect() {

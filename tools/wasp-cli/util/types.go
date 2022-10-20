@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -38,8 +38,8 @@ func ValueFromString(vtype, s string) []byte {
 		b, err := strconv.ParseBool(s)
 		log.Check(err)
 		return codec.EncodeBool(b)
-	case "bytes", "base58":
-		b, err := base58.Decode(s)
+	case "bytes", "hex":
+		b, err := hexutil.Decode(s)
 		log.Check(err)
 		return b
 	case "chainid":
@@ -128,8 +128,8 @@ func ValueToString(vtype string, v []byte) string {
 			return "true"
 		}
 		return "false"
-	case "bytes", "base58":
-		return base58.Encode(v)
+	case "bytes", "hex":
+		return hexutil.Encode(v)
 	case "chainid":
 		cid, err := codec.DecodeChainID(v)
 		log.Check(err)

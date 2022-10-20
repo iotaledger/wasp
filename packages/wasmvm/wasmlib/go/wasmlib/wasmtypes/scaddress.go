@@ -95,7 +95,7 @@ func AddressToBytes(value ScAddress) []byte {
 func AddressFromString(value string) ScAddress {
 	if value[:2] == "0x" {
 		b := []byte{ScAddressEth}
-		b = append(b, HexDecode(value[2:])...)
+		b = append(b, HexDecode(value)...)
 		return AddressFromBytes(b)
 	}
 	return Bech32Decode(value)
@@ -103,7 +103,7 @@ func AddressFromString(value string) ScAddress {
 
 func AddressToString(value ScAddress) string {
 	if value.id[0] == ScAddressEth {
-		return "0x" + HexEncode(value.id[1:ScAddressEthLength])
+		return HexEncode(value.id[1:ScAddressEthLength])
 	}
 	return Bech32Encode(value)
 }

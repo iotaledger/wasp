@@ -56,11 +56,11 @@ pub fn token_id_to_bytes(value: &ScTokenID) -> Vec<u8> {
 }
 
 pub fn token_id_from_string(value: &str) -> ScTokenID {
-    token_id_from_bytes(&hex_decode(&value[2..]))
+    token_id_from_bytes(&hex_decode(&value))
 }
 
 pub fn token_id_to_string(value: &ScTokenID) -> String {
-    String::from("0x") + &hex_encode(&value.id)
+    hex_encode(&value.id)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -46,18 +46,18 @@ mod $package;
 const EXPORT_MAP: ScExportMap = ScExportMap {
     names: &[
 $#each func libExportName
-	],
+    ],
     funcs: &[
 $#each func libExportFunc
-	],
+    ],
     views: &[
 $#each func libExportView
-	],
+    ],
 };
 
 #[no_mangle]
 fn on_call(index: i32) {
-	EXPORT_MAP.call(index);
+    EXPORT_MAP.call(index);
 }
 
 #[no_mangle]
@@ -76,7 +76,7 @@ mod $moduleName;
 `,
 	// *******************************
 	"libExportName": `
-    	$KIND$+_$FUNC_NAME,
+        $KIND$+_$FUNC_NAME,
 `,
 	// *******************************
 	"libExportFunc": `
@@ -84,7 +84,7 @@ $#if func libExportFuncThunk
 `,
 	// *******************************
 	"libExportFuncThunk": `
-    	$kind$+_$func_name$+_thunk,
+        $kind$+_$func_name$+_thunk,
 `,
 	// *******************************
 	"libExportView": `
@@ -92,7 +92,7 @@ $#if view libExportViewThunk
 `,
 	// *******************************
 	"libExportViewThunk": `
-    	$kind$+_$func_name$+_thunk,
+        $kind$+_$func_name$+_thunk,
 `,
 	// *******************************
 	"libThunk": `
@@ -105,18 +105,18 @@ $#if state PackageState
 }
 
 fn $kind$+_$func_name$+_thunk(ctx: &Sc$Kind$+Context) {
-	ctx.log("$package.$kind$FuncName");
-	let f = $FuncName$+Context {
+    ctx.log("$package.$kind$FuncName");
+    let f = $FuncName$+Context {
 $#if func PackageEventsInit
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
 $#if state PackageStateInit
-	};
+    };
 $#emit accessCheck
 $#each mandatory requireMandatory
-	$kind$+_$func_name(ctx, &f);
+    $kind$+_$func_name(ctx, &f);
 $#if result returnResultDict
-	ctx.log("$package.$kind$FuncName ok");
+    ctx.log("$package.$kind$FuncName ok");
 }
 `,
 	// *******************************
@@ -125,7 +125,7 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"PackageEventsExist": `
-	events:  $Package$+Events,
+    events:  $Package$+Events,
 `,
 	// *******************************
 	"PackageEventsInit": `
@@ -133,23 +133,23 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"PackageEventsInitExist": `
-		events:  $Package$+Events {},
+        events:  $Package$+Events {},
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `
-	params: Immutable$FuncName$+Params,
+    params: Immutable$FuncName$+Params,
 `,
 	// *******************************
 	"ImmutableFuncNameParamsInit": `
-		params: Immutable$FuncName$+Params { proxy: params_proxy() },
+        params: Immutable$FuncName$+Params { proxy: params_proxy() },
 `,
 	// *******************************
 	"MutableFuncNameResults": `
-	results: Mutable$FuncName$+Results,
+    results: Mutable$FuncName$+Results,
 `,
 	// *******************************
 	"MutableFuncNameResultsInit": `
-		results: Mutable$FuncName$+Results { proxy: results_proxy() },
+        results: Mutable$FuncName$+Results { proxy: results_proxy() },
 `,
 	// *******************************
 	"PackageState": `
@@ -158,11 +158,11 @@ $#if view ImmutablePackageState
 `,
 	// *******************************
 	"MutablePackageState": `
-	state: Mutable$Package$+State,
+    state: Mutable$Package$+State,
 `,
 	// *******************************
 	"ImmutablePackageState": `
-	state: Immutable$Package$+State,
+    state: Immutable$Package$+State,
 `,
 	// *******************************
 	"PackageStateInit": `
@@ -171,19 +171,19 @@ $#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"MutablePackageStateInit": `
-		state: Mutable$Package$+State { proxy: state_proxy() },
+        state: Mutable$Package$+State { proxy: state_proxy() },
 `,
 	// *******************************
 	"ImmutablePackageStateInit": `
-		state: Immutable$Package$+State { proxy: state_proxy() },
+        state: Immutable$Package$+State { proxy: state_proxy() },
 `,
 	// *******************************
 	"returnResultDict": `
-	ctx.results(&f.results.proxy.kv_store);
+    ctx.results(&f.results.proxy.kv_store);
 `,
 	// *******************************
 	"requireMandatory": `
-	ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
+    ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
 `,
 	// *******************************
 	"accessCheck": `
@@ -199,7 +199,7 @@ $#set accessFinalize accessDone
 	"caseAccessself": `
 
 $#each funcAccessComment _funcAccessComment
-	ctx.require(ctx.caller() == ctx.account_id(), "no permission");
+    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
@@ -207,7 +207,7 @@ $#set accessFinalize accessDone
 	"caseAccesschain": `
 
 $#each funcAccessComment _funcAccessComment
-	ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
+    ctx.require(ctx.caller() == ctx.chain_owner_id(), "no permission");
 
 $#set accessFinalize accessDone
 `,
@@ -215,9 +215,9 @@ $#set accessFinalize accessDone
 	"accessOther": `
 
 $#each funcAccessComment _funcAccessComment
-	let access = f.state.$func_access();
-	ctx.require(access.exists(), "access not set: $funcAccess");
-	ctx.require(ctx.caller() == access.value(), "no permission");
+    let access = f.state.$func_access();
+    ctx.require(access.exists(), "access not set: $funcAccess");
+    ctx.require(ctx.caller() == access.value(), "no permission");
 
 `,
 	// *******************************

@@ -99,23 +99,23 @@ import * as sc from "./index";
 `,
 	// *******************************
 	"_eventComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_eventParamComment": `
-		$nextLine
+        $nextLine
 `,
 	// *******************************
 	"_fldComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_funcComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_funcAccessComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_structComment": `
@@ -123,7 +123,7 @@ $nextLine
 `,
 	// *******************************
 	"_structFieldComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_typedefComment": `

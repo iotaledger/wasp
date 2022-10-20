@@ -7,43 +7,43 @@
 
 #![allow(dead_code)]
 
-use crate::coreroot::*;
 use crate::*;
+use crate::coreroot::*;
 
 pub struct DeployContractCall {
-	pub func: ScFunc,
-	pub params: MutableDeployContractParams,
+    pub func: ScFunc,
+    pub params: MutableDeployContractParams,
 }
 
 pub struct GrantDeployPermissionCall {
-	pub func: ScFunc,
-	pub params: MutableGrantDeployPermissionParams,
+    pub func: ScFunc,
+    pub params: MutableGrantDeployPermissionParams,
 }
 
 pub struct RequireDeployPermissionsCall {
-	pub func: ScFunc,
-	pub params: MutableRequireDeployPermissionsParams,
+    pub func: ScFunc,
+    pub params: MutableRequireDeployPermissionsParams,
 }
 
 pub struct RevokeDeployPermissionCall {
-	pub func: ScFunc,
-	pub params: MutableRevokeDeployPermissionParams,
+    pub func: ScFunc,
+    pub params: MutableRevokeDeployPermissionParams,
 }
 
 pub struct SubscribeBlockContextCall {
-	pub func: ScFunc,
-	pub params: MutableSubscribeBlockContextParams,
+    pub func: ScFunc,
+    pub params: MutableSubscribeBlockContextParams,
 }
 
 pub struct FindContractCall {
-	pub func: ScView,
-	pub params: MutableFindContractParams,
-	pub results: ImmutableFindContractResults,
+    pub func: ScView,
+    pub params: MutableFindContractParams,
+    pub results: ImmutableFindContractResults,
 }
 
 pub struct GetContractRecordsCall {
-	pub func: ScView,
-	pub results: ImmutableGetContractRecordsResults,
+    pub func: ScView,
+    pub results: ImmutableGetContractRecordsResults,
 }
 
 pub struct ScFuncs {

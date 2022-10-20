@@ -27,8 +27,8 @@ $#if basetype proxyBaseType proxyOtherType
 	// *******************************
 	"proxyArray": `
     pub fn $fld_name(&self) -> ArrayOf$mut$FldType {
-		ArrayOf$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
-	}
+        ArrayOf$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
+    }
 `,
 	// *******************************
 	"proxyMap": `
@@ -37,25 +37,25 @@ $#if this proxyMapThis proxyMapOther
 	// *******************************
 	"proxyMapThis": `
     pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
-		Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.clone() }
-	}
+        Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.clone() }
+    }
 `,
 	// *******************************
 	"proxyMapOther": `
     pub fn $fld_name(&self) -> Map$FldMapKey$+To$mut$FldType {
-		Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
-	}
+        Map$FldMapKey$+To$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
+    }
 `,
 	// *******************************
 	"proxyBaseType": `
     pub fn $fld_name(&self) -> Sc$mut$FldType {
-		Sc$mut$FldType::new(self.proxy.root($Kind$FLD_NAME))
-	}
+        Sc$mut$FldType::new(self.proxy.root($Kind$FLD_NAME))
+    }
 `,
 	// *******************************
 	"proxyOtherType": `
     pub fn $fld_name(&self) -> $mut$FldType {
-		$mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
-	}
+        $mut$FldType { proxy: self.proxy.root($Kind$FLD_NAME) }
+    }
 `,
 }

@@ -234,6 +234,7 @@ type SendTxArgs struct {
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
 //
+
 //nolint:gocyclo
 func (args *SendTxArgs) setDefaults(e *EthService) error {
 	if args.GasPrice == nil {
@@ -309,6 +310,7 @@ type RPCFilterQuery ethereum.FilterQuery
 
 // UnmarshalJSON sets *args fields with given data.
 //
+
 //nolint:gocyclo
 func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 	type input struct {

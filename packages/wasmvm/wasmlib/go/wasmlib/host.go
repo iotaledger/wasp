@@ -3,7 +3,9 @@
 
 package wasmlib
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type (
 	ScFuncContextFunction func(ScFuncContext)
@@ -33,13 +35,16 @@ func init() {
 	wasmtypes.NewScHname = utils.Hname
 
 	wasmtypes.HexDecode = func(hex string) []byte {
-		digits := len(hex)
+		if !has0xPrefix(hex) {
+			panic("hex string missing 0x prefix")
+		}
+		digits := len(hex) - 2
 		if (digits & 1) != 0 {
 			panic("odd hex string length")
 		}
 		buf := make([]byte, digits/2)
 		for i := 0; i < digits; i += 2 {
-			buf[i/2] = (hexer(hex[i]) << 4) | hexer(hex[i+1])
+			buf[i/2] = (hexer(hex[i+2]) << 4) | hexer(hex[i+3])
 		}
 		return buf
 	}
@@ -51,8 +56,12 @@ func init() {
 			hex[i*2] = hexDigits[b>>4]
 			hex[i*2+1] = hexDigits[b&0x0f]
 		}
-		return string(hex)
+		return "0x" + string(hex)
 	}
+}
+
+func has0xPrefix(s string) bool {
+	return len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')
 }
 
 func hexer(hexDigit byte) byte {

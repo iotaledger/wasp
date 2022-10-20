@@ -7,7 +7,6 @@ var constsRs = map[string]string{
 	// *******************************
 	"consts.rs": `
 #![allow(dead_code)]
-
 $#if core useCrate useWasmLib
 
 pub const SC_NAME        : &str = "$scName";

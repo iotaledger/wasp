@@ -1,12 +1,12 @@
 package log
 
 import (
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -129,7 +129,7 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		for k, v := range node {
 			tree = append(tree, TreeItem{
 				K: fmt.Sprintf("%q", string(k)),
-				V: fmt.Sprintf("0x%s", hex.EncodeToString(v)),
+				V: fmt.Sprintf("0x%s", hexutil.Encode(v)),
 			})
 		}
 		PrintTree(tree, tab, tabwidth)

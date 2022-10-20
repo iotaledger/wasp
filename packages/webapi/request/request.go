@@ -50,7 +50,7 @@ func AddEndpoints(
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("Post an off-ledger request").
-		AddParamPath("", "chainID", "chainID represented in base58").
+		AddParamPath("", "chainID", "chainID").
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
 			"Request",

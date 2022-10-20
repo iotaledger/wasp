@@ -1,12 +1,12 @@
 package state
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -34,7 +34,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.POST(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
 		SetSummary("Call a view function on a contract by name").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -42,7 +42,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
 		SetSummary("Call a view function on a contract by name").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -50,7 +50,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.POST(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
 		SetSummary("Call a view function on a contract by Hname").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "functionHname", "Function Hname").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -58,7 +58,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
 		SetSummary("Call a view function on a contract by Hname").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "functionHname", "Function Hname").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -66,7 +66,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.StateGet(":chainID", ":key"), s.handleStateGet).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "key", "Key (hex-encoded)").
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
@@ -118,7 +118,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
 
-	key, err := hex.DecodeString(c.Param("key"))
+	key, err := hexutil.Decode(c.Param("key"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("cannot parse hex-encoded key: %+v", c.Param("key")))
 	}

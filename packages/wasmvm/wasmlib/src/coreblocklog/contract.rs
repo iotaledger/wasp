@@ -7,60 +7,60 @@
 
 #![allow(dead_code)]
 
-use crate::coreblocklog::*;
 use crate::*;
+use crate::coreblocklog::*;
 
 pub struct ControlAddressesCall {
-	pub func: ScView,
-	pub results: ImmutableControlAddressesResults,
+    pub func: ScView,
+    pub results: ImmutableControlAddressesResults,
 }
 
 pub struct GetBlockInfoCall {
-	pub func: ScView,
-	pub params: MutableGetBlockInfoParams,
-	pub results: ImmutableGetBlockInfoResults,
+    pub func: ScView,
+    pub params: MutableGetBlockInfoParams,
+    pub results: ImmutableGetBlockInfoResults,
 }
 
 pub struct GetEventsForBlockCall {
-	pub func: ScView,
-	pub params: MutableGetEventsForBlockParams,
-	pub results: ImmutableGetEventsForBlockResults,
+    pub func: ScView,
+    pub params: MutableGetEventsForBlockParams,
+    pub results: ImmutableGetEventsForBlockResults,
 }
 
 pub struct GetEventsForContractCall {
-	pub func: ScView,
-	pub params: MutableGetEventsForContractParams,
-	pub results: ImmutableGetEventsForContractResults,
+    pub func: ScView,
+    pub params: MutableGetEventsForContractParams,
+    pub results: ImmutableGetEventsForContractResults,
 }
 
 pub struct GetEventsForRequestCall {
-	pub func: ScView,
-	pub params: MutableGetEventsForRequestParams,
-	pub results: ImmutableGetEventsForRequestResults,
+    pub func: ScView,
+    pub params: MutableGetEventsForRequestParams,
+    pub results: ImmutableGetEventsForRequestResults,
 }
 
 pub struct GetRequestIDsForBlockCall {
-	pub func: ScView,
-	pub params: MutableGetRequestIDsForBlockParams,
-	pub results: ImmutableGetRequestIDsForBlockResults,
+    pub func: ScView,
+    pub params: MutableGetRequestIDsForBlockParams,
+    pub results: ImmutableGetRequestIDsForBlockResults,
 }
 
 pub struct GetRequestReceiptCall {
-	pub func: ScView,
-	pub params: MutableGetRequestReceiptParams,
-	pub results: ImmutableGetRequestReceiptResults,
+    pub func: ScView,
+    pub params: MutableGetRequestReceiptParams,
+    pub results: ImmutableGetRequestReceiptResults,
 }
 
 pub struct GetRequestReceiptsForBlockCall {
-	pub func: ScView,
-	pub params: MutableGetRequestReceiptsForBlockParams,
-	pub results: ImmutableGetRequestReceiptsForBlockResults,
+    pub func: ScView,
+    pub params: MutableGetRequestReceiptsForBlockParams,
+    pub results: ImmutableGetRequestReceiptsForBlockResults,
 }
 
 pub struct IsRequestProcessedCall {
-	pub func: ScView,
-	pub params: MutableIsRequestProcessedParams,
-	pub results: ImmutableIsRequestProcessedResults,
+    pub func: ScView,
+    pub params: MutableIsRequestProcessedParams,
+    pub results: ImmutableIsRequestProcessedResults,
 }
 
 pub struct ScFuncs {

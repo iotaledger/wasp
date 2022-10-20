@@ -8,12 +8,12 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use crate::coreblob::*;
 use crate::*;
+use crate::coreblob::*;
 
 #[derive(Clone)]
 pub struct MapStringToImmutableBytes {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapStringToImmutableBytes {
@@ -24,34 +24,34 @@ impl MapStringToImmutableBytes {
 
 #[derive(Clone)]
 pub struct ImmutableStoreBlobParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableStoreBlobParams {
     // set of named blobs
     pub fn blobs(&self) -> MapStringToImmutableBytes {
-		MapStringToImmutableBytes { proxy: self.proxy.clone() }
-	}
+        MapStringToImmutableBytes { proxy: self.proxy.clone() }
+    }
 
     // description of progBinary
     pub fn description(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
-	}
+        ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+    }
 
     // smart contract program binary code
     pub fn prog_binary(&self) -> ScImmutableBytes {
-		ScImmutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
-	}
+        ScImmutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+    }
 
     // VM type that must be used to run progBinary
     pub fn vm_type(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(PARAM_VM_TYPE))
-	}
+        ScImmutableString::new(self.proxy.root(PARAM_VM_TYPE))
+    }
 }
 
 #[derive(Clone)]
 pub struct MapStringToMutableBytes {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MapStringToMutableBytes {
@@ -66,85 +66,85 @@ impl MapStringToMutableBytes {
 
 #[derive(Clone)]
 pub struct MutableStoreBlobParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableStoreBlobParams {
     // set of named blobs
     pub fn blobs(&self) -> MapStringToMutableBytes {
-		MapStringToMutableBytes { proxy: self.proxy.clone() }
-	}
+        MapStringToMutableBytes { proxy: self.proxy.clone() }
+    }
 
     // description of progBinary
     pub fn description(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
-	}
+        ScMutableString::new(self.proxy.root(PARAM_DESCRIPTION))
+    }
 
     // smart contract program binary code
     pub fn prog_binary(&self) -> ScMutableBytes {
-		ScMutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
-	}
+        ScMutableBytes::new(self.proxy.root(PARAM_PROG_BINARY))
+    }
 
     // VM type that must be used to run progBinary
     pub fn vm_type(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(PARAM_VM_TYPE))
-	}
+        ScMutableString::new(self.proxy.root(PARAM_VM_TYPE))
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableGetBlobFieldParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobFieldParams {
     // blob name
     pub fn field(&self) -> ScImmutableString {
-		ScImmutableString::new(self.proxy.root(PARAM_FIELD))
-	}
+        ScImmutableString::new(self.proxy.root(PARAM_FIELD))
+    }
 
     // blob set
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
-	}
+        ScImmutableHash::new(self.proxy.root(PARAM_HASH))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableGetBlobFieldParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobFieldParams {
     // blob name
     pub fn field(&self) -> ScMutableString {
-		ScMutableString::new(self.proxy.root(PARAM_FIELD))
-	}
+        ScMutableString::new(self.proxy.root(PARAM_FIELD))
+    }
 
     // blob set
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.proxy.root(PARAM_HASH))
-	}
+        ScMutableHash::new(self.proxy.root(PARAM_HASH))
+    }
 }
 
 #[derive(Clone)]
 pub struct ImmutableGetBlobInfoParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl ImmutableGetBlobInfoParams {
     // blob set
     pub fn hash(&self) -> ScImmutableHash {
-		ScImmutableHash::new(self.proxy.root(PARAM_HASH))
-	}
+        ScImmutableHash::new(self.proxy.root(PARAM_HASH))
+    }
 }
 
 #[derive(Clone)]
 pub struct MutableGetBlobInfoParams {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl MutableGetBlobInfoParams {
     // blob set
     pub fn hash(&self) -> ScMutableHash {
-		ScMutableHash::new(self.proxy.root(PARAM_HASH))
-	}
+        ScMutableHash::new(self.proxy.root(PARAM_HASH))
+    }
 }
