@@ -4,13 +4,13 @@
 package evmimpl
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -180,7 +180,7 @@ func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byt
 		vmexceptions.AllProtocolLimits...,
 	)
 	if executionErr != nil {
-		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hex.EncodeToString(input), executionErr)
+		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), hexutil.Encode(input), executionErr)
 		// TODO this works, but is there a better way to encode the error in the required abi format?
 
 		// include the ISC error as the revert reason by encoding it into the returnData

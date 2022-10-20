@@ -111,7 +111,7 @@ pub fn address_to_bytes(value: &ScAddress) -> Vec<u8> {
 pub fn address_from_string(value: &str) -> ScAddress {
     if value.find("0x") == Some(0) {
         let mut b = vec![SC_ADDRESS_ETH];
-        b.append(&mut hex_decode(&value[2..]));
+        b.append(&mut hex_decode(&value));
         return address_from_bytes(&b);
     }
     let utils = ScSandboxUtils {};
@@ -120,7 +120,7 @@ pub fn address_from_string(value: &str) -> ScAddress {
 
 pub fn address_to_string(value: &ScAddress) -> String {
     if value.id[0] == SC_ADDRESS_ETH {
-        return String::from("0x") + &hex_encode(&value.id[1..SC_ADDRESS_ETH_LENGTH]);
+        return hex_encode(&value.id[1..SC_ADDRESS_ETH_LENGTH]);
     }
     let utils = ScSandboxUtils {};
     utils.bech32_encode(value)

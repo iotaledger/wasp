@@ -126,6 +126,7 @@ func (q *LimitedPriorityHashQueue) resize() {
 // If it is a hash queue, the element is not added, if it is already in the queue.
 // If the add was successful, returns `true`.
 //
+
 //nolint:gocyclo
 func (q *LimitedPriorityHashQueue) Add(elem interface{}) bool {
 	var elemHashable Hashable

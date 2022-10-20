@@ -56,11 +56,11 @@ pub fn nft_id_to_bytes(value: &ScNftID) -> Vec<u8> {
 }
 
 pub fn nft_id_from_string(value: &str) -> ScNftID {
-    nft_id_from_bytes(&hex_decode(&value[2..]))
+    nft_id_from_bytes(&hex_decode(&value))
 }
 
 pub fn nft_id_to_string(value: &ScNftID) -> String {
-    String::from("0x") + &hex_encode(&value.id)
+    hex_encode(&value.id)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

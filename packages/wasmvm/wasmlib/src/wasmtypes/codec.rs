@@ -220,15 +220,22 @@ fn hexer(hex_digit: u8) -> u8 {
     0
 }
 
+fn has_0x_prefix(s: &str) -> bool {
+	return s.len() >= 2 && s.chars().nth(0) == Some('0') && (s.chars().nth(1) == Some('x') || s.chars().nth(1) == Some('X'))
+}
+
 pub fn hex_decode(value: &str) -> Vec<u8> {
+    if !has_0x_prefix(value){
+        panic("hex string missing 0x prefix")
+    }
     let hex = value.as_bytes();
-    let digits = hex.len();
+    let digits = hex.len()-2;
     if (digits & 1) != 0 {
         panic("odd hex string length");
     }
     let mut buf: Vec<u8> = vec![0; digits / 2];
     for i in 0..buf.len() {
-        buf[i] = (hexer(hex[i * 2]) << 4) | hexer(hex[i * 2 + 1]);
+        buf[i] = (hexer(hex[i * 2 +2]) << 4) | hexer(hex[i * 2 + 3]);
     }
     buf
 }
@@ -244,6 +251,6 @@ pub fn hex_encode(buf: &[u8]) -> String {
 
     unsafe {
         // hex digit chars are always safe
-        String::from_utf8_unchecked(hex)
+        String::from("0x") + &String::from_utf8_unchecked(hex)
     }
 }

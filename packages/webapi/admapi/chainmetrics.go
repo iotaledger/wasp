@@ -144,7 +144,7 @@ func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainM
 
 	adm.GET(routes.GetChainConsensusPipeMetrics(":chainID"), cms.handleGetChainConsensusPipeMetrics).
 		SetSummary("Get consensus pipe metrics").
-		AddParamPath("", "chainID", "CHAINid (base58)").
+		AddParamPath("", "chainID", "chainID").
 		AddResponse(http.StatusOK, "Chain consensus pipe metrics", example, nil).
 		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }

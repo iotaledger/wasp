@@ -7,7 +7,6 @@ package privtangle
 import (
 	"bufio"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"golang.org/x/xerrors"
@@ -175,7 +175,7 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
-		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
+		fmt.Sprintf("--p2p.identityPrivateKey=%s", hexutil.Encode(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
 
@@ -198,8 +198,8 @@ func (pt *PrivTangle) startNode(i int) {
 func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 	env := []string{
 		fmt.Sprintf("COO_PRV_KEYS=%s,%s",
-			hex.EncodeToString(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
-			hex.EncodeToString(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
+			hexutil.Encode(pt.CooKeyPair1.GetPrivateKey().AsBytes()),
+			hexutil.Encode(pt.CooKeyPair2.GetPrivateKey().AsBytes()),
 		),
 	}
 	args := []string{
@@ -214,7 +214,7 @@ func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 func (pt *PrivTangle) startFaucet(i int) *exec.Cmd {
 	env := []string{
 		fmt.Sprintf("FAUCET_PRV_KEY=%s",
-			hex.EncodeToString(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
+			hexutil.Encode(pt.FaucetKeyPair.GetPrivateKey().AsBytes()),
 		),
 	}
 	args := []string{

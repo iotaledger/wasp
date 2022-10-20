@@ -1,13 +1,13 @@
 package hashing
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hash"
 	"io"
 	"math/rand"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
@@ -28,7 +28,7 @@ func (h HashValue) String() string {
 }
 
 func (h HashValue) Hex() string {
-	return hex.EncodeToString(h[:])
+	return hexutil.Encode(h[:])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {
@@ -59,7 +59,7 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 }
 
 func HashValueFromHex(s string) (HashValue, error) {
-	b, err := hex.DecodeString(s)
+	b, err := hexutil.Decode(s)
 	if err != nil {
 		return NilHash, err
 	}

@@ -171,6 +171,7 @@ func (s *dkShareImpl) Bytes() []byte {
 
 // Write returns byte representation of this struct.
 //
+
 //nolint:gocyclo
 func (s *dkShareImpl) Write(w io.Writer) error {
 	var err error

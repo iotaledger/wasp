@@ -117,6 +117,7 @@ func (g *GenBase) emit(template string) {
 // It processes the template for each item in the array
 // Produces an error if the array key is unknown
 //
+
 //nolint:gocyclo
 func (g *GenBase) emitEach(line string) {
 	g.log(line)

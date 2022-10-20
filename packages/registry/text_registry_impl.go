@@ -2,10 +2,11 @@ package registry
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -70,7 +71,7 @@ func NewTextRegistry(log *logger.Logger, filename string) Registry {
 }
 
 func hexEncode(data []byte) ([]byte, error) {
-	return json.Marshal(hex.EncodeToString(data))
+	return json.Marshal(hexutil.Encode(data))
 }
 
 func hexDecode(data []byte) ([]byte, error) {
@@ -79,7 +80,7 @@ func hexDecode(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return hex.DecodeString(v)
+	return hexutil.Decode(v)
 }
 
 // NodeIdentityProvider implementation

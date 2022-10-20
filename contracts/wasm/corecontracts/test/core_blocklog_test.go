@@ -177,7 +177,7 @@ func TestIsRequestProcessed(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
 
-	notExistReqID := wasmtypes.RequestIDFromString("0-cc025a91fe7f071a7a53a1db5257d161d666d4aa1606422a3b3553c2b8b904e7")
+	notExistReqID := wasmtypes.RequestIDFromString("0-0xcc025a91fe7f071a7a53a1db5257d161d666d4aa1606422a3b3553c2b8b904e7")
 	f.Params.RequestID().SetValue(notExistReqID)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)

@@ -1,7 +1,7 @@
 package wallet
 
 import (
-	"github.com/mr-tron/base58"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -25,7 +25,7 @@ var initCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		seed := cryptolib.NewSeed()
-		seedString := base58.Encode(seed[:])
+		seedString := hexutil.Encode(seed[:])
 		viper.Set("wallet.seed", seedString)
 		log.Check(viper.WriteConfig())
 
@@ -42,7 +42,7 @@ func Load() *Wallet {
 	if seedb58 == "" {
 		log.Fatalf("call `init` first")
 	}
-	seedBytes, err := base58.Decode(seedb58)
+	seedBytes, err := hexutil.Decode(seedb58)
 	log.Check(err)
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))

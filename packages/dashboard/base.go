@@ -5,15 +5,15 @@ package dashboard
 
 import (
 	_ "embed"
-	"encoding/hex"
 	"html/template"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 
 	"github.com/labstack/echo/v4"
-	"github.com/mr-tron/base58"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -135,8 +135,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"isValidAddress":         d.isValidAddress,
 		"keyToString":            keyToString,
 		"anythingToString":       anythingToString,
-		"base58":                 base58.Encode,
-		"hex":                    hex.EncodeToString,
+		"hex":                    hexutil.Encode,
 		"replace":                strings.Replace,
 		"webapiPort":             d.wasp.WebAPIPort,
 		"evmJSONRPCEndpoint":     routes.EVMJSONRPC,

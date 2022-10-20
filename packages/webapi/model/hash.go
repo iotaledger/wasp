@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-// HashValue is the base58 representation of a hashing.HashValue
+// HashValue is the hex representation of a hashing.HashValue
 type HashValue string
 
 func NewHashValue(h hashing.HashValue) HashValue {

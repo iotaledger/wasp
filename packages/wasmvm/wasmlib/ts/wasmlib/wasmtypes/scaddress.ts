@@ -109,7 +109,7 @@ export function addressToBytes(value: ScAddress): u8[] {
 export function addressFromString(value: string): ScAddress {
     if (value.indexOf("0x") == 0) {
         let b: u8[] = [ScAddressEth];
-        b = b.concat(wasmtypes.hexDecode(value.slice(2)));
+        b = b.concat(wasmtypes.hexDecode(value));
         return addressFromBytes(b);
     }
     const utils = new ScSandboxUtils();
@@ -118,7 +118,7 @@ export function addressFromString(value: string): ScAddress {
 
 export function addressToString(value: ScAddress): string {
     if (value.id[0] == ScAddressEth) {
-        return "0x" + wasmtypes.hexEncode(value.id.slice(1, ScAddressEthLength));
+        return wasmtypes.hexEncode(value.id.slice(1, ScAddressEthLength));
     }
     const utils = new ScSandboxUtils();
     return utils.bech32Encode(value);
