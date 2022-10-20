@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//nolint:dupl
+//nolint:dupl // TODO this seems to be duplicated on: schash.go, sctokenid.go, scnftid.go, maybe it can be simplified?
 package wasmtypes
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -45,11 +45,11 @@ func TokenIDToBytes(value ScTokenID) []byte {
 }
 
 func TokenIDFromString(value string) ScTokenID {
-	return TokenIDFromBytes(HexDecode(value[2:]))
+	return TokenIDFromBytes(HexDecode(value))
 }
 
 func TokenIDToString(value ScTokenID) string {
-	return "0x" + HexEncode(TokenIDToBytes(value))
+	return HexEncode(TokenIDToBytes(value))
 }
 
 func tokenIDFromBytesUnchecked(buf []byte) ScTokenID {
