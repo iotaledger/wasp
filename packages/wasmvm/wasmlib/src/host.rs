@@ -5,7 +5,7 @@ use crate::wasmvmhost::*;
 
 pub trait ScHost {
     fn export_name(&self, index: i32, name: &str);
-    fn sandbox(&mut self, func_nr: i32, params: &[u8]) -> Vec<u8>;
+    fn sandbox(&self, func_nr: i32, params: &[u8]) -> Vec<u8>;
     fn state_delete(&self, key: &[u8]);
     fn state_exists(&self, key: &[u8]) -> bool;
     fn state_get(&self, key: &[u8]) -> Vec<u8>;
