@@ -7,7 +7,7 @@ use crate::host::*;
 // These 2 external functions are funneling the entire
 // WasmLib functionality to their counterparts on the host.
 #[link(wasm_import_module = "WasmLib")]
-extern {
+extern "C" {
     pub fn hostStateGet(key_ref: *const u8, key_len: i32, val_ref: *const u8, val_len: i32) -> i32;
 
     pub fn hostStateSet(key_ref: *const u8, key_len: i32, val_ref: *const u8, val_len: i32);
@@ -36,7 +36,12 @@ impl ScHost for WasmVmHost {
             // call sandbox function, result value will be cached by host
             // always negative funcNr as keyLen indicates sandbox call
             // this removes the need for a separate hostSandbox function
-            let size = hostStateGet(std::ptr::null(), func_nr, params.as_ptr(), params.len() as i32);
+            let size = hostStateGet(
+                std::ptr::null(),
+                func_nr,
+                params.as_ptr(),
+                params.len() as i32,
+            );
 
             // zero length, no need to retrieve cached value
             if size == 0 {
@@ -57,9 +62,7 @@ impl ScHost for WasmVmHost {
     }
 
     fn state_exists(&self, key: &[u8]) -> bool {
-        unsafe {
-            hostStateGet(key.as_ptr(), key.len() as i32, std::ptr::null(), -1) >= 0
-        }
+        unsafe { hostStateGet(key.as_ptr(), key.len() as i32, std::ptr::null(), -1) >= 0 }
     }
 
     fn state_get(&self, key: &[u8]) -> Vec<u8> {
@@ -84,7 +87,12 @@ impl ScHost for WasmVmHost {
 
     fn state_set(&self, key: &[u8], value: &[u8]) {
         unsafe {
-            hostStateSet(key.as_ptr(), key.len() as i32, value.as_ptr(), value.len() as i32);
+            hostStateSet(
+                key.as_ptr(),
+                key.len() as i32,
+                value.as_ptr(),
+                value.len() as i32,
+            );
         }
     }
 }

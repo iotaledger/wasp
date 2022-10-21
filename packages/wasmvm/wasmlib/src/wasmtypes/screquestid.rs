@@ -16,6 +16,12 @@ pub struct ScRequestID {
 }
 
 impl ScRequestID {
+    pub fn default() -> Self {
+        ScRequestID {
+            id: [0; SC_REQUEST_ID_LENGTH],
+        }
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         request_id_to_bytes(self)
     }

@@ -1,5 +1,5 @@
 // pub use crate::gas::*;
-pub use crate::offledger::*;
+pub use crate::offledgerrequest::*;
 pub use crate::receipt::*;
 use hyper::{
     client::HttpConnector,
@@ -39,8 +39,8 @@ impl WaspClient {
     pub fn call_view_by_hname(
         &self,
         chain_id: &ScChainID,
-        contract_hname: ScHname,
-        function_hname: ScHname,
+        contract_hname: &ScHname,
+        function_hname: &ScHname,
         args: ScDict,
         optimistic_read_timeout: Option<Duration>,
     ) -> Result<ScDict, String> {
@@ -50,29 +50,25 @@ impl WaspClient {
             None => now.checked_add(DEFAULT_OPTIMISTIC_READ_TIMEOUT).unwrap(),
         };
 
-        // let dict = ScDict::new(&vec![0]);
-        // ScDict::read_bytes()
-
-        return Ok(ScDict::new(&vec![1, 2]));
+        todo!()
     }
     pub fn post_offledger_request(
         &self,
         chain_id: &ScChainID,
         req: &OffLedgerRequestData,
     ) -> Result<(), String> {
-        // TODO err return with request ID
-        Err("not impl".to_string())
+        todo!()
     }
     pub fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
-        req_id: ScRequestID,
+        req_id: &ScRequestID,
         timeout: Duration,
     ) -> Result<Receipt, String> {
-        Err("not impl".to_string())
+        todo!()
     }
 }
 
-fn send_request(method: &str, route: &str) -> Result<Vec<u8>, String> {
-    Err("not impl".to_string())
-}
+// fn send_request(method: &str, route: &str) -> Result<Vec<u8>, String> {
+//     todo!()
+// }

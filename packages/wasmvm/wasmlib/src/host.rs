@@ -30,9 +30,7 @@ pub fn export_name(index: i32, name: &str) {
 }
 
 pub fn sandbox(func_nr: i32, params: &[u8]) -> Vec<u8> {
-    unsafe {
-        HOST.sandbox(func_nr, params)
-    }
+    unsafe { HOST.sandbox(func_nr, params) }
 }
 
 pub fn state_delete(key: &[u8]) {
@@ -42,15 +40,11 @@ pub fn state_delete(key: &[u8]) {
 }
 
 pub fn state_exists(key: &[u8]) -> bool {
-    unsafe {
-        HOST.state_exists(key)
-    }
+    unsafe { HOST.state_exists(key) }
 }
 
 pub fn state_get(key: &[u8]) -> Vec<u8> {
-    unsafe {
-        HOST.state_get(key)
-    }
+    unsafe { HOST.state_get(key) }
 }
 
 pub fn state_set(key: &[u8], value: &[u8]) {

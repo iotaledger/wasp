@@ -10,8 +10,6 @@
 use crate::*;
 use crate::wasmrequests::*;
 
-pub struct ScFuncs {
-}
+pub struct ScFuncs {}
 
-impl ScFuncs {
-}
+impl ScFuncs {}

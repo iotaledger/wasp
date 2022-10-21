@@ -1,31 +1,25 @@
-pub use crate::types::*;
+use bech32::*;
+use wasmlib::*;
+const BECH32_PREFIX: &'static str = "smr";
 
-pub const bech32_prefix: &'static str = "smr";
-
-pub fn bech32_decode(bech32: &str) -> Result<Address, String> {
-    todo!()
-    // let dec = Bech32.decode(bech32);
-    // if (dec == undefined) {
-    //     return null;
-    // }
-    // return dec.data;
+pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
+    let (_hrp, data, _v) = bech32::decode(&input).unwrap();
+    let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
+    return Ok(address_from_bytes(&buf));
 }
 
-pub fn bech32_encode(addr: Address) -> String {
-    todo!()
-    // return Bech32.encode(Codec.bech32Prefix, addr);
+pub fn bech32_encode(addr: &ScAddress) -> String {
+    return bech32::encode(BECH32_PREFIX, addr.to_bytes().to_base32(), Variant::Bech32).unwrap();
 }
+
+use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 pub fn hname_bytes(name: &str) -> Vec<u8> {
-    todo!()
-    // const data = Uint8Array.wrap(String.UTF8.encode(name));
-    // let hash = Blake2b.sum256(data)
-
-    // // follow exact algorithm from packages/isc/hname.go
-    // let slice = wasmlib.bytesFromUint8Array(hash.slice(0, 4));
-    // let hName = wasmlib.uint32FromBytes(slice);
-    // if (hName == 0 || hName == 0xffff) {
-    //     slice = wasmlib.bytesFromUint8Array(hash.slice(4, 8));
-    // }
-    // return slice;
+    let hash = Blake2b256::digest(name.as_bytes());
+    let mut slice = &hash[0..4];
+    let hname = wasmlib::uint32_from_bytes(slice);
+    if hname == 0 || hname == 0xffff {
+        slice = &hash[4..8];
+    }
+    return slice.to_vec();
 }
