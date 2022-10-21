@@ -14,8 +14,8 @@ use wasmlib::*;
 // }
 
 pub trait WasmClientSandbox {
-    fn fn_call(&mut self, args: &[u8]) -> Result<Vec<u8>, String>;
-    fn fn_post(&mut self, args: &[u8]) -> Result<Vec<u8>, String>;
+    fn fn_call(&self, args: &[u8]) -> Result<Vec<u8>, String>;
+    fn fn_post(&self, args: &[u8]) -> Result<Vec<u8>, String>;
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Result<Vec<u8>, String>;
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Result<Vec<u8>, String>;
     fn fn_utils_hash_name(&self, args: &[u8]) -> Result<Vec<u8>, String>;
@@ -55,11 +55,13 @@ impl wasmlib::host::ScHost for WasmClientContext {
 }
 
 impl WasmClientSandbox for WasmClientContext {
-    fn fn_call(&mut self, args: &[u8]) -> Result<Vec<u8>, String> {
+    fn fn_call(&self, args: &[u8]) -> Result<Vec<u8>, String> {
         let req = wasmrequests::PostRequest::from_bytes(args);
         if req.contract == self.sc_hname {
-            self.err = String::from(format!("unknown contract: {}", req.contract.to_string()));
-            return Err(self.err.clone());
+            return Err(String::from(format!(
+                "unknown contract: {}",
+                req.contract.to_string()
+            )));
         }
 
         return self.svc_client.call_view_by_hname(
@@ -70,15 +72,22 @@ impl WasmClientSandbox for WasmClientContext {
         );
     }
 
-    fn fn_post(&mut self, args: &[u8]) -> Result<Vec<u8>, String> {
+    fn fn_post(&self, args: &[u8]) -> Result<Vec<u8>, String> {
         let req = wasmrequests::PostRequest::from_bytes(args);
+        if self.key_pair.is_none() {
+            return Err(String::from("missing key pair"));
+        }
         if req.chain_id == self.chain_id {
-            self.err = String::from(format!("unknown contract: {}", req.contract.to_string()));
-            return Err(self.err.clone());
+            return Err(String::from(format!(
+                "unknown chain id: {}",
+                req.chain_id.to_string()
+            )));
         }
         if req.contract == self.sc_hname {
-            self.err = String::from(format!("unknown contract: {}", req.contract.to_string()));
-            return Err(self.err.clone());
+            return Err(String::from(format!(
+                "unknown contract: {}",
+                req.contract.to_string()
+            )));
         }
         let sc_assets = wasmlib::ScAssets::new(&req.transfer);
         self.svc_client.post_request(
@@ -87,7 +96,7 @@ impl WasmClientSandbox for WasmClientContext {
             &req.function,
             &req.params,
             &sc_assets,
-            &self.key_pair,
+            self.key_pair.as_ref().unwrap(),
         )?;
         return Ok(Vec::new());
     }

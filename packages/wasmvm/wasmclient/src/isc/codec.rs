@@ -1,8 +1,6 @@
-// pub use crate::types::*;
 use bech32::*;
 use wasmlib::*;
-// use iota_client;
-pub const BECH32_PREFIX: &'static str = "smr";
+const BECH32_PREFIX: &'static str = "smr";
 
 pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
     let (_hrp, data, _v) = bech32::decode(&input).unwrap();

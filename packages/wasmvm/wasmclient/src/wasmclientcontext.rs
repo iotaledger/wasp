@@ -12,10 +12,10 @@ pub trait IEventHandler {
 
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
-    pub err: String,
+    // pub err: String, // FIXME return error in client context
     pub event_done: bool, // FIXME this should be channel
     pub event_handlers: Vec<Box<dyn IEventHandler>>,
-    pub key_pair: KeyPair,
+    pub key_pair: Option<KeyPair>,
     pub req_id: ScRequestID,
     pub sc_name: String,
     pub sc_hname: ScHname,
@@ -34,10 +34,10 @@ impl WasmClientContext {
             sc_name: sc_name.to_string(),
             sc_hname: ScHname::new(sc_name),
             chain_id: chain_id.clone(),
-            err: String::new(),
+            // err: String::new(),
             event_done: false,
             event_handlers: Vec::new(),
-            key_pair: KeyPair::default(),
+            key_pair: None,
             req_id: ScRequestID::default(),
         }
     }
@@ -48,10 +48,10 @@ impl WasmClientContext {
             sc_name: String::new(),
             sc_hname: ScHname::default(),
             chain_id: ScChainID::default(),
-            err: String::new(),
+            // err: String::new(),
             event_done: false,
             event_handlers: Vec::new(),
-            key_pair: KeyPair::default(),
+            key_pair: None,
             req_id: ScRequestID::default(),
         }
     }
@@ -64,14 +64,14 @@ impl WasmClientContext {
         wasmlib::host::connect_host(self);
     }
 
-    pub fn init_view_call_context(&self, contract_hname: ScHname) -> ScHname {
+    pub fn init_view_call_context(&'static self, contract_hname: ScHname) -> ScHname {
         wasmlib::host::connect_host(self);
         return self.sc_hname;
     }
 
     pub fn register(&self, handler: &dyn IEventHandler) -> Result<(), String> {
         // self.event_handlers.iter().for_each(|h| {
-        //     if h. == handler {
+        //     if h == handler {
         //         return Ok(());
         //     }
         // });
@@ -94,7 +94,7 @@ impl WasmClientContext {
     }
 
     pub fn sign_requests(&mut self, key_pair: &keypair::KeyPair) {
-        self.key_pair = key_pair.clone();
+        self.key_pair = Some(key_pair.clone());
     }
 
     pub fn unregister(&self, handler: &dyn IEventHandler) {

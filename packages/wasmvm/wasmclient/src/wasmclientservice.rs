@@ -16,7 +16,7 @@ pub trait IClientService {
         args: &[u8],
     ) -> Result<Vec<u8>, String>;
     fn post_request(
-        &self,
+        &mut self,
         chain_id: ScChainID,
         contract_hname: ScHname,
         function_hname: ScHname,
@@ -77,7 +77,7 @@ impl WasmClientService {
     }
 
     pub fn post_request(
-        &mut self,
+        &self,
         chain_id: &ScChainID,
         contract_hname: &ScHname,
         function_hname: &ScHname,
@@ -86,7 +86,8 @@ impl WasmClientService {
         key_pair: &KeyPair,
     ) -> Result<ScRequestID, String> {
         let params = ScDict::from_bytes(args)?;
-        self.nonce += 1;
+        // FIXME increment client nonce
+        // self.nonce += 1;
         let mut req: offledgerrequest::OffLedgerRequestData =
             offledgerrequest::OffLedgerRequest::new(
                 chain_id,
