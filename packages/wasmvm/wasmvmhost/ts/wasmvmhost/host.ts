@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmtypes from "./wasmtypes"
-import {connectHost, ScHost} from "./host"
+import * as wasmtypes from "wasmlib/wasmtypes"
+import {connectHost, ScHost} from "wasmlib/host"
 
 // interface WasmLib to the VM host
 

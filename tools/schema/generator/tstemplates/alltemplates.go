@@ -22,6 +22,7 @@ var Templates = []map[string]string{
 	funcsTs,
 	indexTs,
 	libTs,
+	mainTs,
 	paramsTs,
 	proxyTs,
 	resultsTs,
@@ -85,6 +86,10 @@ import * as wasmlib from "wasmlib";
 	// *******************************
 	"importWasmTypes": `
 import * as wasmtypes from "wasmlib/wasmtypes";
+`,
+	// *******************************
+	"importWasmVMHost": `
+import * as wasmvmhost from "wasmvmhost";
 `,
 	// *******************************
 	"importSc": `

@@ -7,6 +7,7 @@ var libTs = map[string]string{
 	// *******************************
 	"lib.ts": `
 $#emit importWasmLib
+$#emit importWasmVMHost
 $#emit importSc
 
 const exportMap: wasmlib.ScExportMap = {
@@ -21,13 +22,14 @@ $#each func libExportView
     ],
 };
 
-export function on_call(index: i32): void {
-    wasmlib.WasmVMHost.connect();
-    exportMap.call(index);
-}
+export function onLoad(index: i32): void {
+	if (index >= 0) {
+        wasmvmhost.WasmVMHost.connect();
+        exportMap.call(index);
+		return
+	}
 
-export function on_load(): void {
-    wasmlib.WasmVMHost.connect();
+    wasmvmhost.WasmVMHost.connect();
     exportMap.export();
 }
 $#each func libThunk

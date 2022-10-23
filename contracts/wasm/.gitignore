@@ -34,4 +34,7 @@
 **/ts/*/tsconfig.json
 **/ts/*/typedefs.ts
 
+**/ts/main.js
+**/ts/*/*.js
+
 *.wasm

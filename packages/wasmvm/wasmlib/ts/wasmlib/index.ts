@@ -14,5 +14,3 @@ export * from "./state"
 
 export * from "./wasmrequests"
 export * from "./wasmtypes"
-
-export * from "./wasmvmhost"
