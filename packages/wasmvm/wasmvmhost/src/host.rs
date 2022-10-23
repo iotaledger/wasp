@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // interface WasmLib to the VM host
-use crate::host::*;
+use wasmlib::host::*;
 
 // These 2 external functions are funneling the entire
 // WasmLib functionality to their counterparts on the host.

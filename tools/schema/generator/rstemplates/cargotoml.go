@@ -26,6 +26,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
+wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 

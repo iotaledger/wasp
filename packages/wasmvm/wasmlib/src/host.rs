@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::wasmvmhost::*;
+use crate::*;
 
 pub trait ScHost {
     fn export_name(&self, index: i32, name: &str);
@@ -12,8 +12,8 @@ pub trait ScHost {
     fn state_set(&self, key: &[u8], value: &[u8]);
 }
 
-static WASM_VM_HOST: WasmVmHost = WasmVmHost {};
-static mut HOST: &dyn ScHost = &WASM_VM_HOST;
+static NULL_VM_HOST: NullVmHost = NullVmHost {};
+static mut HOST: &dyn ScHost = &NULL_VM_HOST;
 
 pub fn connect_host(h: &'static dyn ScHost) -> &dyn ScHost {
     unsafe {
@@ -50,5 +50,38 @@ pub fn state_get(key: &[u8]) -> Vec<u8> {
 pub fn state_set(key: &[u8], value: &[u8]) {
     unsafe {
         HOST.state_set(key, value);
+    }
+}
+
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
+pub struct NullVmHost {}
+
+impl ScHost for NullVmHost {
+    fn export_name(&self, _index: i32, _name: &str) {
+        panic("NullVmHost::export_name");
+    }
+
+    fn sandbox(&self, _func_nr: i32, _params: &[u8]) -> Vec<u8> {
+        panic("NullVmHost::sandbox");
+        Vec::new()
+    }
+
+    fn state_delete(&self, _key: &[u8]) {
+        panic("NullVmHost::state_delete");
+    }
+
+    fn state_exists(&self, _key: &[u8]) -> bool {
+        panic("NullVmHost::state_exists");
+        false
+    }
+
+    fn state_get(&self, _key: &[u8]) -> Vec<u8> {
+        panic("NullVmHost::state_get");
+        Vec::new()
+    }
+
+    fn state_set(&self, _key: &[u8], _value: &[u8]) {
+        panic("NullVmHost::state_set");
     }
 }

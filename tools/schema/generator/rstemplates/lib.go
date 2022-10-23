@@ -11,6 +11,7 @@ var libRs = map[string]string{
 
 use $package::*;
 use wasmlib::*;
+use wasmvmhost::*;
 
 use crate::consts::*;
 $#set moduleName events
@@ -57,11 +58,13 @@ $#each func libExportView
 
 #[no_mangle]
 fn on_call(index: i32) {
+    WasmVmHost::connect();
     EXPORT_MAP.call(index);
 }
 
 #[no_mangle]
 fn on_load() {
+    WasmVmHost::connect();
     EXPORT_MAP.export();
 }
 $#each func libThunk
