@@ -21,11 +21,11 @@ pub struct ScAgentID {
 }
 
 impl ScAgentID {
-    pub fn new(address: &ScAddress, hname: &ScHname) -> ScAgentID {
+    pub fn new(address: &ScAddress, hname: ScHname) -> ScAgentID {
         ScAgentID {
             kind: SC_AGENT_ID_CONTRACT,
             address: address.clone(),
-            hname: hname.clone(),
+            hname: hname,
         }
     }
 
@@ -108,7 +108,7 @@ pub fn agent_id_from_bytes(buf: &[u8]) -> ScAgentID {
             }
             let chain_id = chain_id_from_bytes(&buf[..SC_CHAIN_ID_LENGTH]);
             let hname = hname_from_bytes(&buf[SC_CHAIN_ID_LENGTH..]);
-            return ScAgentID::new(&chain_id.address(), &hname);
+            return ScAgentID::new(&chain_id.address(), hname);
         }
         SC_AGENT_ID_ETHEREUM => {
             let buf: &[u8] = &buf[1..];
@@ -136,7 +136,7 @@ pub fn agent_id_to_bytes(value: &ScAgentID) -> Vec<u8> {
         }
         SC_AGENT_ID_CONTRACT => {
             buf.extend_from_slice(&address_to_bytes(&value.address)[1..]);
-            buf.extend_from_slice(&hname_to_bytes(&value.hname));
+            buf.extend_from_slice(&hname_to_bytes(value.hname));
         }
         SC_AGENT_ID_ETHEREUM => {
             buf.extend_from_slice(&address_to_bytes(&value.address));
@@ -158,8 +158,8 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
         2 => {
             return ScAgentID::new(
                 &address_from_string(&parts[1]),
-                &hname_from_string(&parts[0]),
-            )
+                hname_from_string(&parts[0]),
+            );
         }
         _ => {
             panic("invalid AgentID string");

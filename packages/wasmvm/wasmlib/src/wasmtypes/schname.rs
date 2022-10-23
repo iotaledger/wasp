@@ -17,12 +17,8 @@ impl ScHname {
         hname_from_bytes(&host::sandbox(FN_UTILS_HASH_NAME, &string_to_bytes(name)))
     }
 
-    pub fn default() -> Self {
-        return ScHname(0);
-    }
-
     pub fn to_bytes(&self) -> Vec<u8> {
-        hname_to_bytes(self)
+        hname_to_bytes(*self)
     }
 
     pub fn to_string(&self) -> String {
@@ -37,7 +33,7 @@ pub fn hname_decode(dec: &mut WasmDecoder) -> ScHname {
 }
 
 pub fn hname_encode(enc: &mut WasmEncoder, value: ScHname) {
-    enc.fixed_bytes(&hname_to_bytes(&value), SC_HNAME_LENGTH);
+    enc.fixed_bytes(&hname_to_bytes(value), SC_HNAME_LENGTH);
 }
 
 pub fn hname_from_bytes(buf: &[u8]) -> ScHname {
@@ -50,7 +46,7 @@ pub fn hname_from_bytes(buf: &[u8]) -> ScHname {
     ScHname(u32::from_le_bytes(buf.try_into().expect("WTF?")))
 }
 
-pub fn hname_to_bytes(value: &ScHname) -> Vec<u8> {
+pub fn hname_to_bytes(value: ScHname) -> Vec<u8> {
     value.0.to_le_bytes().to_vec()
 }
 
@@ -117,7 +113,7 @@ impl ScMutableHname {
     }
 
     pub fn set_value(&self, value: ScHname) {
-        self.proxy.set(&hname_to_bytes(&value));
+        self.proxy.set(&hname_to_bytes(value));
     }
 
     pub fn to_string(&self) -> String {
