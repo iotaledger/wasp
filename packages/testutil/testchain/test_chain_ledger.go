@@ -133,6 +133,29 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 	return tcl.findChainRequests(tx)
 }
 
+func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr iotago.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
+	tx, err := transaction.NewRotateChainStateControllerTx(
+		*tcl.chainID.AsAliasID(),
+		nextCommitteeAddr,
+		baseAO.OutputID(),
+		baseAO.GetAliasOutput(),
+		tcl.governor,
+	)
+	if err != nil {
+		panic(err)
+	}
+	outputs, err := tx.OutputsSet()
+	if err != nil {
+		panic(err)
+	}
+	for oid, out := range outputs {
+		if out.Type() == iotago.OutputAlias {
+			return isc.NewAliasOutputWithID(out.(*iotago.AliasOutput), oid.UTXOInput()), tx
+		}
+	}
+	panic("alias output not found")
+}
+
 func (tcl *TestChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Request {
 	reqs := []isc.Request{}
 	outs, err := tx.OutputsSet()

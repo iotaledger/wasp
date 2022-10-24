@@ -53,6 +53,11 @@ func (tc *TestContext) AddInputs(inputs map[NodeID]Input) {
 	tc.inputCount += len(inputs)
 }
 
+func (tc *TestContext) WithInput(nodeID NodeID, input Input) *TestContext {
+	tc.AddInputs(map[NodeID]Input{nodeID: input})
+	return tc
+}
+
 func (tc *TestContext) WithInputs(inputs map[NodeID]Input) *TestContext {
 	tc.AddInputs(inputs)
 	return tc

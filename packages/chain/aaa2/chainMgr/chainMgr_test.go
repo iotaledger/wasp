@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/chainMgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -84,7 +85,86 @@ func testBasic(t *testing.T, n, f int) {
 	tc.WithInputs(initAOInputs)
 	tc.RunAll()
 	tc.PrintAllStatusStrings("Initial AO received", t.Logf)
-	// TODO: ...
+	for _, n := range nodes {
+		out := n.Output().(*chainMgr.Output)
+		require.Len(t, out.NeedPublishTX(), 0)
+		require.NotNil(t, out.NeedConsensus())
+		require.Equal(t, originAO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
+		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
+	}
+	//
+	// Provide consensus output.
+	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
+	for nid := range nodes {
+		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
+		tc.WithInput(nid, chainMgr.NewInputConsensusOutput(
+			*cmtAddrA.(*iotago.Ed25519Address),
+			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
+			step2AO,
+			step2TX,
+		))
+	}
+	tc.RunAll()
+	tc.PrintAllStatusStrings("Consensus done", t.Logf)
+	for _, n := range nodes {
+		out := n.Output().(*chainMgr.Output)
+		require.Len(t, out.NeedPublishTX(), 1)
+		require.Equal(t, step2TX, out.NeedPublishTX()[step2AO.ID().TransactionID].Tx)
+		require.Equal(t, originAO.OutputID(), out.NeedPublishTX()[step2AO.ID().TransactionID].BaseAliasOutputID)
+		require.Equal(t, cmtAddrA, &out.NeedPublishTX()[step2AO.ID().TransactionID].CommitteeAddr)
+		require.NotNil(t, out.NeedConsensus())
+		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
+		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
+	}
+	//
+	// Say TX is published
+	for nid := range nodes {
+		consReq := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX()[step2AO.ID().TransactionID]
+		tc.WithInput(nid, chainMgr.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.TxID, consReq.NextAliasOutput, true))
+	}
+	tc.RunAll()
+	tc.PrintAllStatusStrings("TX Published", t.Logf)
+	for _, n := range nodes {
+		out := n.Output().(*chainMgr.Output)
+		require.Len(t, out.NeedPublishTX(), 0)
+		require.NotNil(t, out.NeedConsensus())
+		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
+		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
+	}
+	//
+	// Say TX is confirmed.
+	for nid := range nodes {
+		tc.WithInput(nid, chainMgr.NewInputAliasOutputConfirmed(step2AO))
+	}
+	tc.RunAll()
+	tc.PrintAllStatusStrings("TX Published and Confirmed", t.Logf)
+	for _, n := range nodes {
+		out := n.Output().(*chainMgr.Output)
+		require.Len(t, out.NeedPublishTX(), 0)
+		require.NotNil(t, out.NeedConsensus())
+		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
+		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
+	}
+	//
+	// Make external committee rotation.
+	rotateAO, _ := tcl.FakeTX(step2AO, cmtAddrB)
+	for nid := range nodes {
+		tc.WithInput(nid, chainMgr.NewInputAliasOutputConfirmed(rotateAO))
+	}
+	tc.RunAll()
+	tc.PrintAllStatusStrings("After external rotation", t.Logf)
+	for _, n := range nodes {
+		out := n.Output().(*chainMgr.Output)
+		require.Len(t, out.NeedPublishTX(), 0)
+		require.NotNil(t, out.NeedConsensus())
+		require.Equal(t, rotateAO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
+		require.Equal(t, cmtAddrB, &out.NeedConsensus().CommitteeAddr)
+	}
 }
 
 func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {

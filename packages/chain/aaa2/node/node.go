@@ -122,9 +122,9 @@ type chainNodeImpl struct {
 	recvAliasOutputPipe pipe.Pipe
 	recvTxPublishedPipe pipe.Pipe
 	recvMilestonePipe   pipe.Pipe
-	consensusInsts      map[chainMgr.CommitteeID]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	publishingTXes      map[iotago.TransactionID]context.CancelFunc                 // TX'es now being published.
-	procCache           *processors.Cache                                           // TODO: ...
+	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
+	publishingTXes      map[iotago.TransactionID]context.CancelFunc                  // TX'es now being published.
+	procCache           *processors.Cache                                            // TODO: ...
 	net                 peering.NetworkProvider
 	log                 *logger.Logger
 }
@@ -139,7 +139,7 @@ type consensusInst struct {
 
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
-	committeeID     chainMgr.CommitteeID
+	committeeAddr   iotago.Ed25519Address
 	txID            iotago.TransactionID
 	nextAliasOutput *isc.AliasOutputWithID
 	confirmed       bool
@@ -166,7 +166,7 @@ func New(
 		recvAliasOutputPipe: pipe.NewDefaultInfinitePipe(),
 		recvTxPublishedPipe: pipe.NewDefaultInfinitePipe(),
 		recvMilestonePipe:   pipe.NewDefaultInfinitePipe(),
-		consensusInsts:      map[chainMgr.CommitteeID]map[cmtLog.LogIndex]*consensusInst{},
+		consensusInsts:      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
 		publishingTXes:      map[iotago.TransactionID]context.CancelFunc{},
 		net:                 net,
 		log:                 log,
@@ -237,7 +237,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	}
 	delete(cni.publishingTXes, txPubResult.txID)
 	outMsgs := cni.chainMgr.AsGPA().Input(
-		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeID, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
 		panic("unexpected messages from the chainMgr")
@@ -295,7 +295,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			cni.publishingTXes[txToPost.TxID] = subCancel
 			cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(tx *iotago.Transaction, confirmed bool) {
 				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeID:     txToPost.CommitteeID,
+					committeeAddr:   txToPost.CommitteeAddr,
 					txID:            txToPost.TxID,
 					nextAliasOutput: txToPost.NextAliasOutput,
 					confirmed:       confirmed,
@@ -307,16 +307,16 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 }
 
 func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainMgr.NeedConsensus) *consensusInst {
-	committeeID := needConsensus.CommitteeID
+	committeeAddr := needConsensus.CommitteeAddr
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
-	if _, ok := cni.consensusInsts[committeeID]; !ok {
-		cni.consensusInsts[committeeID] = map[cmtLog.LogIndex]*consensusInst{}
+	if _, ok := cni.consensusInsts[committeeAddr]; !ok {
+		cni.consensusInsts[committeeAddr] = map[cmtLog.LogIndex]*consensusInst{}
 	}
 	addLogIndex := logIndex
 	added := false
 	for i := 0; i < consensusInstsInAdvance; i++ {
-		if _, ok := cni.consensusInsts[committeeID][addLogIndex]; !ok {
+		if _, ok := cni.consensusInsts[committeeAddr][addLogIndex]; !ok {
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
 			cgr := consGR.New(
@@ -324,7 +324,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod, cni.log,
 			)
-			cni.consensusInsts[committeeID][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
+			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
 			}
@@ -333,18 +333,18 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 		addLogIndex = addLogIndex.Next()
 	}
 	if added {
-		cni.cleanupConsensusInsts(&committeeID, &logIndex)
+		cni.cleanupConsensusInsts(&committeeAddr, &logIndex)
 	}
-	return cni.consensusInsts[committeeID][logIndex]
+	return cni.consensusInsts[committeeAddr][logIndex]
 }
 
-func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeID *chainMgr.CommitteeID, keepLogIndex *cmtLog.LogIndex) {
-	for cmtID := range cni.consensusInsts {
-		for li := range cni.consensusInsts[cmtID] {
-			if keepCommitteeID != nil && keepLogIndex != nil && cmtID == *keepCommitteeID && li >= *keepLogIndex {
+func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeAddr *iotago.Ed25519Address, keepLogIndex *cmtLog.LogIndex) {
+	for cmtAddr := range cni.consensusInsts {
+		for li := range cni.consensusInsts[cmtAddr] {
+			if keepCommitteeAddr != nil && keepLogIndex != nil && cmtAddr.Equal(keepCommitteeAddr) && li >= *keepLogIndex {
 				continue
 			}
-			ci := cni.consensusInsts[cmtID][li]
+			ci := cni.consensusInsts[cmtAddr][li]
 			if ci.aliasOutput == nil && ci.cancelFunc != nil {
 				// We can cancel an instance, if input was not yet provided.
 				ci.cancelFunc() // TODO: Somehow cancel hanging instances, maybe with old LogIndex, etc.
