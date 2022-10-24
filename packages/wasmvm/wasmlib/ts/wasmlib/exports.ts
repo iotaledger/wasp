@@ -28,7 +28,13 @@ export class ScExportMap {
     // general entrypoint for the host to call any SC function
     // the host will pass the index of one of the entry points
     // that was provided by onLoad during SC initialization
-    call(index: i32): void {
+    dispatch(index: i32): void {
+        if (index == -1) {
+            // special dispatch for exporting entry points to host
+            this.export();
+            return;
+        }
+
         if ((index & 0x8000) == 0) {
             // mutable full function, invoke with a WasmLib func call context
             let func = this.funcs[index];

@@ -18,7 +18,7 @@ const expectedBlobHash = "0x5fec3bfc701d80bdf75e337cb3dcb401c2423d15fc17a74d5b64
 
 func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }

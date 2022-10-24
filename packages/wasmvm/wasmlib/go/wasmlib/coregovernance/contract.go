@@ -237,10 +237,11 @@ var exportMap = wasmlib.ScExportMap{
 	},
 }
 
-func OnLoad(index int32) {
-	if index >= 0 {
-		panic("Calling core contract?")
+func OnDispatch(index int32) {
+	if index == -1 {
+		exportMap.Export()
+		return
 	}
 
-	exportMap.Export()
+	panic("Calling core contract?")
 }

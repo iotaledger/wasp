@@ -33,10 +33,10 @@ func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.So
 
 func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
 	if runWasm {
-		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnLoad, init...)
+		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnDispatch, init...)
 	}
 
-	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
+	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnDispatch, sbtestsc.Processor, init...)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool)) {
@@ -132,7 +132,7 @@ func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64)
 }
 
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
-	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
+	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnDispatch)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.Post()
@@ -141,7 +141,7 @@ func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.Sol
 
 //nolint:deadcode
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
+	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnDispatch)
 	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
 	f.Func.Post()
 	require.NoError(t, ctxAcc.Err)

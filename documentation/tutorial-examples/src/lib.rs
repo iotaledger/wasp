@@ -39,12 +39,12 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
 
 #[no_mangle]
 fn on_call(index: i32) {
-	EXPORT_MAP.call(index);
+	EXPORT_MAP.dispatch(index);
 }
 
 #[no_mangle]
 fn on_load() {
-	EXPORT_MAP.export();
+	EXPORT_MAP.dispatch(-1);
 }
 
 pub struct StoreStringContext {

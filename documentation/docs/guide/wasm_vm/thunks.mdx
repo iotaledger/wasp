@@ -64,13 +64,8 @@ var exportMap = wasmlib.ScExportMap{
 	},
 }
 
-func OnLoad(index int32) {
-	if index >= 0 {
-    exportMap.Call(index)
-		return
-	}
-
-    exportMapExport()
+func OnDispatch(index int32) {
+    exportMap.Dispatch(index)
 }
 
 func funcDivideThunk(ctx wasmlib.ScFuncContext) {}

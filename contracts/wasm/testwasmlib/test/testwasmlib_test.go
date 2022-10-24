@@ -88,7 +88,7 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
+	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {
@@ -444,7 +444,7 @@ func TestWasmTypes(t *testing.T) {
 	checkNftID(t, ctx, scNftID, nftID)
 
 	blockNum := uint32(3)
-	ctxBlocklog := ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnLoad)
+	ctxBlocklog := ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnDispatch)
 	require.NoError(t, ctxBlocklog.Err)
 	fblocklog := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctxBlocklog)
 	fblocklog.Params.BlockIndex().SetValue(blockNum)

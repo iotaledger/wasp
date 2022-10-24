@@ -19,7 +19,7 @@ func TestSpawn(t *testing.T) {
 		require.NoError(t, ctx.Err)
 
 		spawnedName := testcore.ScName + "_spawned"
-		ctxSpawn := ctx.SoloContextForCore(t, spawnedName, testcore.OnLoad)
+		ctxSpawn := ctx.SoloContextForCore(t, spawnedName, testcore.OnDispatch)
 		require.NoError(t, ctxSpawn.Err)
 		v := testcore.ScFuncs.GetCounter(ctxSpawn)
 		v.Func.Call()

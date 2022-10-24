@@ -13,6 +13,6 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, schemacomment.ScName, schemacomment.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, schemacomment.ScName, schemacomment.OnDispatch)
 	require.NoError(t, ctx.ContractExists(schemacomment.ScName))
 }

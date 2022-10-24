@@ -18,7 +18,7 @@ import (
 var force = flag.Bool("force", false, "")
 
 func deployContract(t *testing.T) *wasmsolo.SoloContext {
-	ctx := wasmsolo.NewSoloContext(t, memory.ScName, memory.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, memory.ScName, memory.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }

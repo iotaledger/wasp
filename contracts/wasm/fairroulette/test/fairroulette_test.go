@@ -14,7 +14,7 @@ import (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, fairroulette.ScName, fairroulette.OnLoad)
+	return wasmsolo.NewSoloContext(t, fairroulette.ScName, fairroulette.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

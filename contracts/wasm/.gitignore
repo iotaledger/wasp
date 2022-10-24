@@ -33,8 +33,9 @@
 **/ts/*/structs.ts
 **/ts/*/tsconfig.json
 **/ts/*/typedefs.ts
-
-**/ts/main.js
 **/ts/*/*.js
+
+**/ts/main.ts
+**/ts/main.js
 
 *.wasm

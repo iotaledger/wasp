@@ -19,7 +19,7 @@ type Funcs struct{}
 
 var ScFuncs Funcs
 $#each func FuncNameForCall
-$#if core coreOnload
+$#if core coreOnDispatch
 `,
 	// *******************************
 	"FuncNameCall": `
@@ -62,7 +62,7 @@ $#set thisView &f.Func.ScView
 $#set complex $true
 `,
 	// *******************************
-	"coreOnload": `
+	"coreOnDispatch": `
 
 var exportMap = wasmlib.ScExportMap{
 	Names: []string{
@@ -76,12 +76,13 @@ $#each func coreExportView
 	},
 }
 
-func OnLoad(index int32) {
-	if index >= 0 {
-		panic("Calling core contract?")
+func OnDispatch(index int32) {
+	if index == -1 {
+		exportMap.Export()
+		return
 	}
 
-	exportMap.Export()
+	panic("Calling core contract?")
 }
 `,
 	// *******************************

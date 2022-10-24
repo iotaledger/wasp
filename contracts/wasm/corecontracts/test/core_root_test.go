@@ -17,7 +17,7 @@ import (
 
 func setupRoot(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -29,7 +29,7 @@ func TestDeployContract(t *testing.T) {
 	}
 	ctxr := setupRoot(t)
 
-	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
+	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctxb.Err)
 	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.NewSoloAgent()))
 	wasm, err := os.ReadFile("./testdata/testdata.wasm")

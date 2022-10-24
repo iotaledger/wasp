@@ -6,14 +6,17 @@ package tstemplates
 var mainTs = map[string]string{
 	// *******************************
 	"../main.ts": `
+$#emit importWasmVMHost
 import * as sc from "./$package";
 
 export function on_call(index: i32): void {
-    sc.onLoad(index);
+    wasmvmhost.WasmVMHost.connect();
+    sc.onDispatch(index);
 }
 
 export function on_load(): void {
-    sc.onLoad(-1);
+    wasmvmhost.WasmVMHost.connect();
+    sc.onDispatch(-1);
 }
 `,
 }

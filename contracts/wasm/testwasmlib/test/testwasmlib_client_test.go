@@ -88,7 +88,7 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {
-	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnDispatch)
 	chainID := ctx.CurrentChainID()
 	wallet := ctx.Chain.OriginatorPrivateKey
 

@@ -34,12 +34,12 @@ func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) ui
 }
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 	require.NoError(t, ctx.ContractExists(dividend.ScName))
 }
 
 func TestAddMemberOk(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	dividendMember(ctx, member1, 100)
@@ -47,7 +47,7 @@ func TestAddMemberOk(t *testing.T) {
 }
 
 func TestAddMemberFailMissingAddress(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Factor().SetValue(100)
@@ -57,7 +57,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
@@ -68,7 +68,7 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 }
 
 func TestDivide1Member(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -91,7 +91,7 @@ func TestDivide1Member(t *testing.T) {
 }
 
 func TestDivide2Members(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -126,7 +126,7 @@ func TestDivide2Members(t *testing.T) {
 }
 
 func TestDivide3Members(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -184,7 +184,7 @@ func TestDivide3Members(t *testing.T) {
 }
 
 func TestGetFactor(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	dividendMember(ctx, member1, 250)

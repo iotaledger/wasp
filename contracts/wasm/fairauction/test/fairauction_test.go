@@ -22,7 +22,7 @@ const (
 )
 
 func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, wasmtypes.ScNftID) {
-	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnDispatch)
 	auctioneer := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(auctioneer, []byte("NFT metadata"))
 	require.NoError(t, ctx.Err)
@@ -40,7 +40,7 @@ func startAuction(t *testing.T) (*wasmsolo.SoloContext, *wasmsolo.SoloAgent, was
 }
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, fairauction.ScName, fairauction.OnDispatch)
 	require.NoError(t, ctx.ContractExists(fairauction.ScName))
 }
 

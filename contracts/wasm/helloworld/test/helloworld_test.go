@@ -13,7 +13,7 @@ import (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, helloworld.ScName, helloworld.OnLoad)
+	return wasmsolo.NewSoloContext(t, helloworld.ScName, helloworld.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {
