@@ -11,7 +11,6 @@ var libRs = map[string]string{
 
 use $package::*;
 use wasmlib::*;
-use wasmvmhost::*;
 
 use crate::consts::*;
 $#set moduleName events
@@ -27,6 +26,7 @@ $#if structs useModule
 $#set moduleName typedefs
 $#if typedefs useModule
 
+mod main;
 mod consts;
 mod contract;
 $#set moduleName events
@@ -58,18 +58,6 @@ $#each func libExportView
 
 pub fn on_dispatch(index: i32) {
     EXPORT_MAP.dispatch(index);
-}
-
-#[no_mangle]
-fn on_call(index: i32) {
-    WasmVmHost::connect();
-    on_dispatch(index);
-}
-
-#[no_mangle]
-fn on_load() {
-    WasmVmHost::connect();
-    on_dispatch(-1);
 }
 $#each func libThunk
 `,

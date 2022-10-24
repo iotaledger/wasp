@@ -101,14 +101,8 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
 	],
 };
 
-#[no_mangle]
-fn on_call(index: i32) {
-    EXPORT_MAP.call(index);
-}
-
-#[no_mangle]
-fn on_load() {
-    EXPORT_MAP.export();
+pub fn on_dispatch(index: i32) {
+    EXPORT_MAP.dispatch(index);
 }
 
 fn func_divide_thunk(ctx: &ScFuncContext) {}

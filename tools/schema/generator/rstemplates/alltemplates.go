@@ -21,6 +21,7 @@ var Templates = []map[string]string{
 	eventsRs,
 	funcsRs,
 	libRs,
+	mainRs,
 	modRs,
 	paramsRs,
 	proxyRs,

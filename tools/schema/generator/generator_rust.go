@@ -25,6 +25,10 @@ func (g *RustGenerator) Generate() error {
 	}
 
 	// now generate language-specific files
+	err = g.createSourceFile("main", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
 
 	if g.s.CoreContracts {
 		return g.createSourceFile("mod", true)

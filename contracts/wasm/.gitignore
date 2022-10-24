@@ -10,6 +10,7 @@
 **/go/*/structs.go
 **/go/*/typedefs.go
 
+**/src/main.rs
 **/src/consts.rs
 **/src/contract.rs
 **/src/eventhandlers.rs
@@ -21,6 +22,8 @@
 **/src/structs.rs
 **/src/typedefs.rs
 
+**/ts/main.ts
+**/ts/main.js
 **/ts/*/consts.ts
 **/ts/*/contract.ts
 **/ts/*/eventhandlers.ts
@@ -34,8 +37,5 @@
 **/ts/*/tsconfig.json
 **/ts/*/typedefs.ts
 **/ts/*/*.js
-
-**/ts/main.ts
-**/ts/main.js
 
 *.wasm
