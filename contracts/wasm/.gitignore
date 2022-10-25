@@ -10,16 +10,16 @@
 **/go/*/structs.go
 **/go/*/typedefs.go
 
-**/rs/*/consts.rs
-**/rs/*/contract.rs
-**/rs/*/eventhandlers.rs
-**/rs/*/events.rs
-**/rs/*/lib.rs
-**/rs/*/params.rs
-**/rs/*/results.rs
-**/rs/*/state.rs
-**/rs/*/structs.rs
-**/rs/*/typedefs.rs
+**/rs/*/src/consts.rs
+**/rs/*/src/contract.rs
+**/rs/*/src/eventhandlers.rs
+**/rs/*/src/events.rs
+**/rs/*/src/lib.rs
+**/rs/*/src/params.rs
+**/rs/*/src/results.rs
+**/rs/*/src/state.rs
+**/rs/*/src/structs.rs
+**/rs/*/src/typedefs.rs
 **/rs/main
 
 **/ts/*/consts.ts
