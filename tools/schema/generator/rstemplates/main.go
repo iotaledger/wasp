@@ -5,8 +5,8 @@ package rstemplates
 
 var mainRs = map[string]string{
 	// *******************************
-	"main.rs": `
-use crate::*;
+	"../../main/src/lib.rs": `
+use $package::*;
 use wasmvmhost::*;
 
 #[no_mangle]

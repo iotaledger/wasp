@@ -12,10 +12,18 @@ type GoGenerator struct {
 	GenBase
 }
 
+var _ IGenerator = new(GoGenerator)
+
 func NewGoGenerator(s *model.Schema) *GoGenerator {
 	g := &GoGenerator{}
 	g.init(s, gotemplates.TypeDependent, gotemplates.Templates)
 	return g
+}
+
+func (g *GoGenerator) Cleanup() {
+	g.cleanCommonFiles()
+
+	// now clean up language-specific files
 }
 
 func (g *GoGenerator) Generate() error {

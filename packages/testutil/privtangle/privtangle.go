@@ -81,7 +81,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.generateSnapshot()
 
 	for i := range pt.NodeKeyPairs {
-		pt.startNode(i)                    //nolint:contextcheck // false-positive
+		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
 	pt.logf("Starting... all nodes started.")

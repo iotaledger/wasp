@@ -8,7 +8,7 @@ import "github.com/iotaledger/wasp/tools/schema/model"
 var config = map[string]string{
 	"language":   "Rust",
 	"extension":  ".rs",
-	"rootFolder": "src",
+	"rootFolder": "rs",
 	"funcRegexp": `^pub fn (\w+).+$`,
 }
 

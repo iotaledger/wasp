@@ -16,6 +16,11 @@ import (
 // TODO nested structs
 // TODO handle case where owner is type AgentID[]
 
+type IGenerator interface {
+	Cleanup()
+	Generate() error
+}
+
 type GenBase struct {
 	currentEvent  *model.Struct
 	currentField  *model.Field
@@ -67,6 +72,32 @@ func (g *GenBase) addTemplates(t model.StringMap) {
 	}
 }
 
+func (g *GenBase) cleanCommonFiles() {
+	g.generateCommonFolder()
+	g.cleanSourceFile("consts")
+	g.cleanSourceFile("events")
+	g.cleanSourceFile("eventhandlers")
+	g.cleanSourceFile("structs")
+	g.cleanSourceFile("typedefs")
+	g.cleanSourceFile("params")
+	g.cleanSourceFile("results")
+	g.cleanSourceFile("state")
+	g.cleanSourceFile("contract")
+	g.cleanSourceFile("lib")
+	g.cleanSourceFile("../main")
+	g.cleanFolder(g.folder + "../pkg")
+}
+
+func (g *GenBase) cleanFolder(folder string) {
+	_ = os.RemoveAll(folder)
+	_ = os.Remove(folder)
+}
+
+func (g *GenBase) cleanSourceFile(name string) {
+	path := g.folder + name + g.extension
+	_ = os.Remove(path)
+}
+
 func (g *GenBase) close() {
 	_ = g.file.Close()
 }
@@ -115,15 +146,7 @@ func (g *GenBase) funcName(f *model.Func) string {
 }
 
 func (g *GenBase) generateCommonFiles() error {
-	g.folder = g.rootFolder + "/"
-	if g.rootFolder != "src" {
-		module := strings.ReplaceAll(moduleCwd, "\\", "/")
-		module = module[strings.LastIndex(module, "/")+1:]
-		g.folder += module + "/"
-	}
-	if g.s.CoreContracts {
-		g.folder += g.s.PackageName + "/"
-	}
+	g.generateCommonFolder()
 
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
@@ -147,6 +170,18 @@ func (g *GenBase) generateCommonFiles() error {
 		}
 	}
 	return nil
+}
+
+func (g *GenBase) generateCommonFolder() {
+	module := strings.ReplaceAll(moduleCwd, "\\", "/")
+	module = module[strings.LastIndex(module, "/")+1:]
+	g.folder = g.rootFolder + "/" + module + "/"
+	if g.rootFolder == "rs" {
+		g.folder += "src/"
+	}
+	if g.s.CoreContracts {
+		g.folder += g.s.PackageName + "/"
+	}
 }
 
 func (g *GenBase) generateCode() error {

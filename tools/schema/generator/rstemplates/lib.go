@@ -26,7 +26,6 @@ $#if structs useModule
 $#set moduleName typedefs
 $#if typedefs useModule
 
-mod main;
 mod consts;
 mod contract;
 $#set moduleName events
