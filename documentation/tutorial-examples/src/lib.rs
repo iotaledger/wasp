@@ -10,6 +10,7 @@
 
 use solotutorial::*;
 use wasmlib::*;
+use wasmvmhost::*;
 
 use crate::consts::*;
 use crate::params::*;
@@ -39,11 +40,13 @@ const EXPORT_MAP: ScExportMap = ScExportMap {
 
 #[no_mangle]
 fn on_call(index: i32) {
+	WasmVmHost::connect();
 	EXPORT_MAP.dispatch(index);
 }
 
 #[no_mangle]
 fn on_load() {
+	WasmVmHost::connect();
 	EXPORT_MAP.dispatch(-1);
 }
 
