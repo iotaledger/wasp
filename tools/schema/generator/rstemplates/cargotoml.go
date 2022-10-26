@@ -38,7 +38,7 @@ description = "Wasm VM host stub for $scDesc"
 	// *******************************
 	"dependenciesSc": `
 [dependencies]
-wasmlib = { git = "https://github.com/iotaledger/wasp/packages/wasmvm/wasmlib", branch = "wasmclient" }
+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
 `,
 	// *******************************
 	"dependenciesMain": `
@@ -47,7 +47,7 @@ default = ["console_error_panic_hook"]
 
 [dependencies]
 $package = { path = "../$package" }
-wasmvmhost = { git = "https://github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost", branch = "wasmclient" }
+wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 `,
