@@ -10,6 +10,7 @@ done
 cd $contracts_path/gascalibration
 for dir in ./*; do
   if [ -d "$dir" ]; then
+    echo "$dir"
     bash ../scripts/cleanup.sh "$dir"
   fi
 done

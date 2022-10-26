@@ -11,4 +11,7 @@ fi
 echo "Building $example_name"
 schema -rust $flag
 echo "Compiling "$example_name"_bg.wasm"
+cd rs/main
 wasm-pack build
+cd ../..
+
