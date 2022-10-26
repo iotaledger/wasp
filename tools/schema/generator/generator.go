@@ -176,11 +176,14 @@ func (g *GenBase) generateCommonFolder() {
 	module := strings.ReplaceAll(moduleCwd, "\\", "/")
 	module = module[strings.LastIndex(module, "/")+1:]
 	g.folder = g.rootFolder + "/" + module + "/"
-	if g.rootFolder == "rs" {
-		g.folder += "src/"
-	}
 	if g.s.CoreContracts {
 		g.folder += g.s.PackageName + "/"
+	}
+	if g.rootFolder == "rs" {
+		g.folder += "src/"
+		if g.s.CoreContracts {
+			g.folder = "src/" + g.s.PackageName + "/"
+		}
 	}
 }
 
