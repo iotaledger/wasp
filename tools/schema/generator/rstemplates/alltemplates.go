@@ -115,6 +115,10 @@ use crate::*;
 use wasmlib::*;
 `,
 	// *******************************
+	"../LICENSE": `
+https://www.apache.org/licenses/LICENSE-2.0
+`,
+	// *******************************
 	"_eventComment": `
     $nextLine
 `,

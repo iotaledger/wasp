@@ -11,6 +11,7 @@ var cargoToml = map[string]string{
 
 [package]
 $#emit package$cargoMain
+license = "Apache-2.0"
 version = "0.1.0"
 authors = ["Eric Hop <eric@iota.org>"]
 edition = "2021"
@@ -31,7 +32,7 @@ description = "$scDesc"
 `,
 	// *******************************
 	"packageMain": `
-name = "main"
+name = "$package$+_main"
 description = "Wasm VM host stub for: $scDesc"
 `,
 	// *******************************

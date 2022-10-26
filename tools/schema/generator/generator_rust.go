@@ -26,7 +26,7 @@ func (g *RustGenerator) Cleanup() {
 	g.cleanCommonFiles()
 
 	// now clean up language-specific files
-	g.cleanFolder(g.folder + "../../main")
+	g.cleanFolder(g.folder + "../../" + g.s.PackageName + "_main")
 }
 
 func (g *RustGenerator) Generate() error {
@@ -40,30 +40,40 @@ func (g *RustGenerator) Generate() error {
 		return g.createSourceFile("mod", true)
 	}
 
-	g.keys["cargoMain"] = "Sc"
-	cargoToml := "../Cargo.toml"
-	err = g.createFile(g.folder+cargoToml, false, func() {
+	err = g.GenerateCargoToml("Sc")
+	if err != nil {
+		return err
+	}
+
+	g.folder += "../../" + g.s.PackageName + "_main/src/"
+	err = os.MkdirAll(g.folder, 0o755)
+	if err != nil {
+		return err
+	}
+
+	// would have preferred to use main.rs, but don't want to generate both a lib.rs
+	// AND a main.rs so the mainRs template is tricked into generating a different
+	// lib.rs than the actual lib.rs by using a relative path
+	err = g.createSourceFile("../src/lib", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+
+	return g.GenerateCargoToml("Main")
+}
+
+func (g *RustGenerator) GenerateCargoToml(cargoMain string) error {
+	const cargoToml = "../Cargo.toml"
+	g.keys["cargoMain"] = cargoMain
+	err := g.createFile(g.folder+cargoToml, false, func() {
 		g.emit(cargoToml)
 	})
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(g.folder+"../../main/src", 0o755)
-	if err != nil {
-		return err
-	}
-
-	err = g.createSourceFile("../../main/src/lib", !g.s.CoreContracts)
-	if err != nil {
-		return err
-	}
-
-	g.keys["cargoMain"] = "Main"
-	g.folder += "../../main/src/"
-	err = g.createFile(g.folder+cargoToml, false, func() {
-		g.emit(cargoToml)
+	const license = "../LICENSE"
+	return g.createFile(g.folder+license, false, func() {
+		g.emit(license)
 	})
-
-	return err
 }
