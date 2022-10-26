@@ -1,0 +1,44 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+
+[workspace]
+members = [
+    "corecontracts/rs/corecontracts",
+    "corecontracts/rs/corecontracts_main",
+    "dividend/rs/dividend",
+    "dividend/rs/dividend_main",
+    "donatewithfeedback/rs/donatewithfeedback",
+    "donatewithfeedback/rs/donatewithfeedback_main",
+    "erc20/rs/erc20",
+    "erc20/rs/erc20_main",
+    "erc721/rs/erc721",
+    "erc721/rs/erc721_main",
+    "fairauction/rs/fairauction",
+    "fairauction/rs/fairauction_main",
+    "fairroulette/rs/fairroulette",
+    "fairroulette/rs/fairroulette_main",
+    "gascalibration/executiontime/rs/executiontime",
+    "gascalibration/executiontime/rs/executiontime_main",
+    "gascalibration/memory/rs/memory",
+    "gascalibration/memory/rs/memory_main",
+    "gascalibration/storage/rs/storage",
+    "gascalibration/storage/rs/storage_main",
+    "helloworld/rs/helloworld",
+    "helloworld/rs/helloworld_main",
+    "inccounter/rs/inccounter",
+    "inccounter/rs/inccounter_main",
+    "schemacomment/rs/schemacomment",
+    "schemacomment/rs/schemacomment_main",
+    "testcore/rs/testcore",
+    "testcore/rs/testcore_main",
+    "testwasmlib/rs/testwasmlib",
+    "testwasmlib/rs/testwasmlib_main",
+    "timestamp/rs/timestamp",
+    "timestamp/rs/timestamp_main",
+    "tokenregistry/rs/tokenregistry",
+    "tokenregistry/rs/tokenregistry_main",
+]
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
