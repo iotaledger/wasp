@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 
 	"github.com/spf13/cobra"
 	"gonum.org/v1/plot"

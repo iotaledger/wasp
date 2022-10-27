@@ -5,9 +5,9 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var addressCmd = &cobra.Command{

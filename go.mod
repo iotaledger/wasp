@@ -40,7 +40,6 @@ require (
 	go.uber.org/dig v1.15.0
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.1.0
-	golang.org/x/term v0.1.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gonum.org/v1/plot v0.12.0
 	gopkg.in/yaml.v3 v3.0.1

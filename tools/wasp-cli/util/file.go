@@ -3,7 +3,7 @@ package util
 import (
 	"os"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/packages/log"
 )
 
 func ReadFile(fname string) []byte {

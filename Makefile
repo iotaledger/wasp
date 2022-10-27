@@ -9,7 +9,7 @@ BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS=./ ./tools/wasp-cli/ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
+BUILD_PKGS=./ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
@@ -29,10 +29,13 @@ else
 	cd packages/evm/evmtest && go generate
 endif
 
-build-full: compile-solidity
+build-cli:
+	cd tools/wasp-cli && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+
+build-full: compile-solidity build-cli
 	$(BUILD_CMD) ./...
 
-build: compile-solidity
+build: compile-solidity	build-cli
 	$(BUILD_CMD) $(BUILD_PKGS)
 
 build-lint: build lint
@@ -46,10 +49,13 @@ test: install
 test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
-install-full: compile-solidity
+install-cli:
+	cd tools/wasp-cli && go install -ldflags $(BUILD_LD_FLAGS)
+
+install-full: compile-solidity install-cli
 	$(INSTALL_CMD) ./...
 
-install: compile-solidity
+install: compile-solidity install-cli
 	$(INSTALL_CMD) $(BUILD_PKGS)
 
 lint:
@@ -69,4 +75,4 @@ deps-versions:
 		awk -F ":" '{ print $$1 }' | \
 		{ read from ; read to; awk -v s="$$from" -v e="$$to" 'NR>1*s&&NR<1*e' packages/testutil/privtangle/privtangle.go; }
 
-.PHONY: all build build-lint test test-short test-full install lint gofumpt-list docker-build deps-versions
+.PHONY: all wasm compile-solidity build-cli build-full build build-lint test-full test test-short install-cli install-full install lint gofumpt-list docker-build deps-versions

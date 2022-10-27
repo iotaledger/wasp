@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func SDAdjustmentPrompt(output iotago.Output) {

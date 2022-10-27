@@ -3,9 +3,9 @@ package wallet
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var requestFundsCmd = &cobra.Command{

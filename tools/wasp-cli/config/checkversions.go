@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var checkVersionsCmd = &cobra.Command{
