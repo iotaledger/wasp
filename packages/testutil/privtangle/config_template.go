@@ -4,9 +4,8 @@
 package privtangle
 
 import (
+	"encoding/hex"
 	"fmt"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 var configFileContentTemplate = `
@@ -201,7 +200,7 @@ const protocolParameters = `
 
 func (pt *PrivTangle) configFileContent() string {
 	return fmt.Sprintf(configFileContentTemplate,
-		hexutil.Encode(pt.CooKeyPair1.GetPublicKey().AsBytes()),
-		hexutil.Encode(pt.CooKeyPair2.GetPublicKey().AsBytes()),
+		hex.EncodeToString(pt.CooKeyPair1.GetPublicKey().AsBytes()),
+		hex.EncodeToString(pt.CooKeyPair2.GetPublicKey().AsBytes()),
 	)
 }
