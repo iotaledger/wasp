@@ -7,9 +7,8 @@ var typedefsRs = map[string]string{
 	// *******************************
 	"typedefs.rs": `
 #![allow(dead_code)]
-
 $#if core else useWasmLib
-use crate::*;
+$#emit useCrate
 $#each typedef typedefProxy
 `,
 	// *******************************
@@ -41,7 +40,7 @@ $#if exist else typedefProxyArrayNew
 
 #[derive(Clone)]
 pub struct $proxy {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl $proxy {
@@ -57,24 +56,24 @@ $#set exist $proxy
 	// *******************************
 	"typedefProxyArrayMut": `
 $#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
-	pub fn clear(&self) {
+    pub fn clear(&self) {
         self.proxy.clear_array();
     }
 
 `,
 	// *******************************
 	"typedefProxyArrayAppendBaseType": `
-	pub fn append_$fld_type(&self) -> Sc$mut$FldType {
-		Sc$mut$FldType::new(self.proxy.append())
-	}
+    pub fn append_$fld_type(&self) -> Sc$mut$FldType {
+        Sc$mut$FldType::new(self.proxy.append())
+    }
 
 `,
 	// *******************************
 	"typedefProxyArrayAppendOtherType": `
 
-	pub fn append_$fld_type(&self) -> $mut$FldType {
-		$mut$FldType { proxy: self.proxy.append() }
-	}
+    pub fn append_$fld_type(&self) -> $mut$FldType {
+        $mut$FldType { proxy: self.proxy.append() }
+    }
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
@@ -85,9 +84,9 @@ $#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
 
-	pub fn get_$fld_type(&self, index: u32) -> $mut$FldType {
-		$mut$FldType { proxy: self.proxy.index(index) }
-	}
+    pub fn get_$fld_type(&self, index: u32) -> $mut$FldType {
+        $mut$FldType { proxy: self.proxy.index(index) }
+    }
 `,
 	// *******************************
 	"typedefProxyMap": `
@@ -99,7 +98,7 @@ $#if exist else typedefProxyMapNew
 
 #[derive(Clone)]
 pub struct $proxy {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl $proxy {

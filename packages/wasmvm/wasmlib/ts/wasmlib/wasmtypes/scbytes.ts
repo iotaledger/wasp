@@ -27,8 +27,24 @@ export function bytesFromBytes(buf: u8[]): u8[] {
     return buf;
 }
 
+export function bytesFromUint8Array(arr: Uint8Array): u8[] {
+    let buf = new Array<u8>(arr.length);
+    for (let i = 0; i < arr.length; i++) {
+        buf[i] = arr[i];
+    }
+    return buf;
+}
+
 export function bytesToBytes(buf: u8[]): u8[] {
     return buf;
+}
+
+export function bytesToUint8Array(buf: u8[]): Uint8Array {
+    let arr = new Uint8Array(buf.length);
+    for (let i = 0; i < buf.length; i++) {
+        arr[i] = buf[i];
+    }
+    return arr;
 }
 
 export function bytesFromString(value: string): u8[] {

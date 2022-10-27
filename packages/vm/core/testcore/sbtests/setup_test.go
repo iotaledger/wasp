@@ -81,7 +81,7 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) er
 	//if forceGoNoWasm {
 	//	// run non-Wasm go version of testcore
 	//	wasmhost.GoWasmVM = func() wasmhost.WasmVM {
-	//		return wasmhost.NewWasmGoVM(ScName, testcore.OnLoad)
+	//		return wasmhost.NewWasmGoVM(ScName, testcore.OnDispatch)
 	//	}
 	//	hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
 	//	if err != nil {

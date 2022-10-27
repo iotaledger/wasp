@@ -23,7 +23,7 @@ func TestCallF(t *testing.T) {
 		t.SkipNow()
 	}
 	wasmlib.ConnectHost(nil)
-	ctx := wasmsolo.NewSoloContext(t, executiontime.ScName, executiontime.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, executiontime.ScName, executiontime.OnDispatch)
 	require.NoError(t, ctx.Err)
 
 	f := executiontime.ScFuncs.F(ctx)

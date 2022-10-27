@@ -10,6 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "assemblyscript": "^0.20.13"
+    "assemblyscript": "^0.21.5"
   }
 }

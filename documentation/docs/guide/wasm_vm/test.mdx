@@ -65,7 +65,7 @@ Let's look at the simplest way of initializing a smart contract by using the new
 
 ```go
 func TestDeploy(t *testing.T) {
-    ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+    ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnDispatch)
     require.NoError(t, ctx.ContractExists(dividend.ScName))
 }
 ```

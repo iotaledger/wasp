@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
@@ -26,6 +28,7 @@ type WasmClientContext struct {
 	eventHandlers []IEventHandler
 	eventReceived bool
 	keyPair       *cryptolib.KeyPair
+	nonce         uint64
 	ReqID         wasmtypes.ScRequestID
 	scName        string
 	scHname       wasmtypes.ScHname
@@ -41,9 +44,9 @@ var (
 func NewWasmClientContext(svcClient IClientService, chainID wasmtypes.ScChainID, scName string) *WasmClientContext {
 	s := &WasmClientContext{}
 	s.svcClient = svcClient
-	s.scName = scName
-	s.scHname = wasmtypes.NewScHname(scName)
 	s.chainID = chainID
+	s.scName = scName
+	s.ServiceContractName(scName)
 	return s
 }
 
@@ -76,11 +79,19 @@ func (s *WasmClientContext) Register(handler IEventHandler) error {
 
 // overrides default contract name
 func (s *WasmClientContext) ServiceContractName(contractName string) {
-	s.scHname = wasmtypes.NewScHname(contractName)
+	s.scHname = wasmtypes.HnameFromBytes(isc.Hn(contractName).Bytes())
 }
 
 func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
+
+	// get last used nonce from accounts core contract
+	agent := isc.NewAgentID(keyPair.Address())
+	ctx := NewWasmClientContext(s.svcClient, s.chainID, coreaccounts.ScName)
+	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
+	n.Params.AgentID().SetValue(wasmtypes.AgentIDFromBytes(agent.Bytes()))
+	n.Func.Call()
+	s.nonce = n.Results.AccountNonce().Value()
 }
 
 func (s *WasmClientContext) Unregister(handler IEventHandler) {

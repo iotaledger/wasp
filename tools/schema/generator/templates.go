@@ -49,7 +49,7 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, $package.ScName, $package.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, $package.ScName, $package.OnDispatch)
 	require.NoError(t, ctx.ContractExists($package.ScName))
 }
 `,

@@ -21,13 +21,8 @@ $#each func libExportView
 	},
 }
 
-func OnLoad(index int32) {
-	if index >= 0 {
-		exportMap.Call(index)
-		return
-	}
-
-	exportMap.Export()
+func OnDispatch(index int32) {
+	exportMap.Dispatch(index)
 }
 $#each func libThunk
 `,

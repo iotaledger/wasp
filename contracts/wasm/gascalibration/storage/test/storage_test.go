@@ -23,7 +23,7 @@ func TestCallF(t *testing.T) {
 	}
 
 	wasmlib.ConnectHost(nil)
-	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storage.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storage.OnDispatch)
 	require.NoError(t, ctx.Err)
 
 	results := make(map[uint32]uint64)

@@ -208,34 +208,26 @@ impl WasmEncoder {
     }
 }
 
+// \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
+
 static HEX_DIGITS: &'static [u8] = b"0123456789abcdef";
 
-fn hexer(hex_digit: u8) -> u8 {
-    match hex_digit {
-        b'0'..=b'9' => return hex_digit - b'0',
-        b'a'..=b'f' => return hex_digit - b'a' + 10,
-        b'A'..=b'F' => return hex_digit - b'A' + 10,
-        _ => panic("invalid hex digit"),
-    }
-    0
-}
-
-fn has_0x_prefix(s: &str) -> bool {
-	return s.len() >= 2 && s.chars().nth(0) == Some('0') && (s.chars().nth(1) == Some('x') || s.chars().nth(1) == Some('X'))
+fn has_0x_prefix(buf: &[u8]) -> bool {
+    return buf.len() >= 2 && buf[0] == b'0' && (buf[1] == b'x' || buf[1] == b'X');
 }
 
 pub fn hex_decode(value: &str) -> Vec<u8> {
-    if !has_0x_prefix(value){
+    let hex = value.as_bytes();
+    if !has_0x_prefix(&hex) {
         panic("hex string missing 0x prefix")
     }
-    let hex = value.as_bytes();
-    let digits = hex.len()-2;
+    let digits = hex.len() - 2;
     if (digits & 1) != 0 {
         panic("odd hex string length");
     }
     let mut buf: Vec<u8> = vec![0; digits / 2];
     for i in 0..buf.len() {
-        buf[i] = (hexer(hex[i * 2 +2]) << 4) | hexer(hex[i * 2 + 3]);
+        buf[i] = (hexer(hex[i * 2 + 2]) << 4) | hexer(hex[i * 2 + 3]);
     }
     buf
 }
@@ -253,4 +245,14 @@ pub fn hex_encode(buf: &[u8]) -> String {
         // hex digit chars are always safe
         String::from("0x") + &String::from_utf8_unchecked(hex)
     }
+}
+
+fn hexer(hex_digit: u8) -> u8 {
+    match hex_digit {
+        b'0'..=b'9' => return hex_digit - b'0',
+        b'a'..=b'f' => return hex_digit - b'a' + 10,
+        b'A'..=b'F' => return hex_digit - b'A' + 10,
+        _ => panic("invalid hex digit"),
+    }
+    0
 }

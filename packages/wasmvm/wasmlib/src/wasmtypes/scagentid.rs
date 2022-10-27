@@ -159,7 +159,7 @@ pub fn agent_id_from_string(value: &str) -> ScAgentID {
             return ScAgentID::new(
                 &address_from_string(&parts[1]),
                 hname_from_string(&parts[0]),
-            )
+            );
         }
         _ => {
             panic("invalid AgentID string");

@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	flagClean = flag.Bool("clean", false, "clean up (re-)generted files")
 	flagCore  = flag.Bool("core", false, "generate core contract interface")
 	flagForce = flag.Bool("force", false, "force code generation")
 	flagGo    = flag.Bool("go", false, "generate Go code")
@@ -79,6 +80,15 @@ func main() {
 	}
 
 	flag.Usage()
+}
+
+func generate(g generator.IGenerator) error {
+	if *flagClean {
+		g.Cleanup()
+		return nil
+	}
+
+	return g.Generate()
 }
 
 func generateCoreInterfaces() {
@@ -135,28 +145,26 @@ func generateSchema(file *os.File) error {
 	// Preserve line number until here
 	// comments are still preserved during generation
 	if *flagGo {
-		g := generator.NewGoGenerator(s)
-		err = g.Generate()
+		err = generate(generator.NewGoGenerator(s))
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagRust {
-		g := generator.NewRustGenerator(s)
-		err = g.Generate()
+		err = generate(generator.NewRustGenerator(s))
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagTs {
-		g := generator.NewTypeScriptGenerator(s)
-		err = g.Generate()
+		err = generate(generator.NewTypeScriptGenerator(s))
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

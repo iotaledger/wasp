@@ -1,18 +1,21 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmtypes from "./wasmtypes"
-
 export interface ScHost {
     exportName(index: i32, name: string): void;
+
     sandbox(funcNr: i32, params: u8[] | null): u8[];
+
     stateDelete(key: u8[]): void;
+
     stateExists(key: u8[]): bool;
+
     stateGet(key: u8[]): u8[] | null;
+
     stateSet(key: u8[], value: u8[]): void;
 }
 
-let host:ScHost;
+let host: ScHost;
 
 export function connectHost(h: ScHost): ScHost {
     const oldHost = host;

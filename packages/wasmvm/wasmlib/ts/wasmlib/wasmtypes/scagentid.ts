@@ -25,7 +25,7 @@ export class ScAgentID {
 
     public static fromAddress(address: wasmtypes.ScAddress): ScAgentID {
         const agentID = new ScAgentID(address, new wasmtypes.ScHname(0));
-        switch(address.id[0]) {
+        switch (address.id[0]) {
             case wasmtypes.ScAddressAlias: {
                 break;
             }

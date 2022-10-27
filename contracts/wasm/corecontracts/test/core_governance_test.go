@@ -19,7 +19,7 @@ import (
 
 func setupGovernance(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coregovernance.ScName, coregovernance.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }

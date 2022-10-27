@@ -14,7 +14,7 @@ import (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, donatewithfeedback.ScName, donatewithfeedback.OnLoad)
+	return wasmsolo.NewSoloContext(t, donatewithfeedback.ScName, donatewithfeedback.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

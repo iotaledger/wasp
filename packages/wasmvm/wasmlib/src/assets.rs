@@ -41,6 +41,14 @@ impl ScAssets {
         assets
     }
 
+    pub fn new_base_tokens(base_token_num: u64) -> ScAssets {
+        return ScAssets {
+            base_tokens: base_token_num,
+            nft_ids: HashSet::new(),
+            tokens: BTreeMap::new(),
+        };
+    }
+
     pub fn balances(&self) -> ScBalances {
         ScBalances {
             assets: self.clone(),

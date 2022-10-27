@@ -1,0 +1,12 @@
+{
+  "name": "wasmvmhost",
+  "description": "Wasm host interface for WasmLib",
+  "version": "1.0.0",
+  "author": "Eric Hop",
+  "dependencies": {
+    "@assemblyscript/loader": "^0.21.5"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.21.5"
+  }
+}

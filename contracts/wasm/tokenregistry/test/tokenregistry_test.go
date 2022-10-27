@@ -13,7 +13,7 @@ import (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, tokenregistry.ScName, tokenregistry.OnLoad)
+	return wasmsolo.NewSoloContext(t, tokenregistry.ScName, tokenregistry.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

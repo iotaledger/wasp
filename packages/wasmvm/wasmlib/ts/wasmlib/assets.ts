@@ -46,7 +46,7 @@ export class ScAssets {
         }
         return this.nftIDs.size == 0;
     }
-    
+
     public toBytes(): u8[] {
         const enc = new wasmtypes.WasmEncoder();
         wasmtypes.uint64Encode(enc, this.baseTokens);
@@ -69,7 +69,7 @@ export class ScAssets {
         }
         return enc.buf()
     }
-    
+
     public tokenIDs(): wasmtypes.ScTokenID[] {
         let tokenIDs: wasmtypes.ScTokenID[] = [];
         const keys = this.tokens.keys().sort();
@@ -118,7 +118,7 @@ export class ScBalances {
     }
 }
 
-export class ScTransfer extends ScBalances{
+export class ScTransfer extends ScBalances {
     public constructor() {
         super(new ScAssets([]));
     }

@@ -9,3 +9,5 @@ schema -core -go -rust -ts -force
 cd $root_path/contracts/wasm
 rm -rf ./node_modules/wasmlib/
 cp -R $root_path/packages/wasmvm/wasmlib/ts/wasmlib ./node_modules
+rm -rf ./node_modules/wasmvmhost/
+cp -R $root_path/packages/wasmvm/wasmvmhost/ts/wasmvmhost ./node_modules

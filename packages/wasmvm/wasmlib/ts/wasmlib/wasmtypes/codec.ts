@@ -1,9 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {log, panic} from "../sandbox";
+import {panic} from "../sandbox";
 import * as wasmtypes from "./index";
-import {uint64ToString} from "./index";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -206,39 +205,21 @@ export class WasmEncoder {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-function hexer(hexDigit: u8): u8 {
-    // '0' to '9'
-    if (hexDigit >= 0x30 && hexDigit <= 0x39) {
-        return hexDigit - 0x30;
-    }
-    // 'a' to 'f'
-    if (hexDigit >= 0x61 && hexDigit <= 0x66) {
-        return hexDigit - 0x61 + 10;
-    }
-    // 'A' to 'F'
-    if (hexDigit >= 0x41 && hexDigit <= 0x46) {
-        return hexDigit - 0x41 + 10;
-    }
-    panic("invalid hex digit");
-    return 0;
-}
-
 function has0xPrefix(s: string): boolean {
-	return s.length >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')
-
+    return s.length >= 2 && s.charAt(0) == '0' && (s.charAt(1) == 'x' || s.charAt(1) == 'X')
 }
 
 export function hexDecode(hex: string): u8[] {
     if (!has0xPrefix(hex)) {
         panic("hex string missing 0x prefix")
     }
-    const digits = hex.length-2;
+    const digits = hex.length - 2;
     if ((digits & 1) != 0) {
         panic("odd hex string length");
     }
     const buf = new Array<u8>(digits / 2);
     for (let i = 0; i < digits; i += 2) {
-        buf[i / 2] = (hexer(hex.charCodeAt(i+2) as u8) << 4) | hexer(hex.charCodeAt(i + 3) as u8)
+        buf[i / 2] = (hexer(hex.charCodeAt(i + 2) as u8) << 4) | hexer(hex.charCodeAt(i + 3) as u8)
     }
     return buf
 }
@@ -257,6 +238,23 @@ export function hexEncode(buf: u8[]): string {
         hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
     }
     return "0x" + wasmtypes.stringFromBytes(hex);
+}
+
+function hexer(hexDigit: u8): u8 {
+    // '0' to '9'
+    if (hexDigit >= 0x30 && hexDigit <= 0x39) {
+        return hexDigit - 0x30;
+    }
+    // 'a' to 'f'
+    if (hexDigit >= 0x61 && hexDigit <= 0x66) {
+        return hexDigit - 0x61 + 10;
+    }
+    // 'A' to 'F'
+    if (hexDigit >= 0x41 && hexDigit <= 0x46) {
+        return hexDigit - 0x41 + 10;
+    }
+    panic("invalid hex digit");
+    return 0;
 }
 
 export function intFromString(value: string, bits: u32): i64 {

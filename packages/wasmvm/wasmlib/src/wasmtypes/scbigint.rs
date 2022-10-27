@@ -15,14 +15,14 @@ pub struct ScBigInt {
 }
 
 impl ScBigInt {
-    pub fn zero() ->ScBigInt {
+    pub fn zero() -> ScBigInt {
         ScBigInt::new()
     }
-    
-    pub fn one() ->ScBigInt {
+
+    pub fn one() -> ScBigInt {
         ScBigInt::from_uint64(1)
     }
-    
+
     pub fn new() -> ScBigInt {
         ScBigInt { bytes: Vec::new() }
     }

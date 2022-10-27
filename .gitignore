@@ -23,6 +23,7 @@ packages/gpa/**/*.aux
 packages/gpa/**/states/
 packages/gpa/**/*.toolbox/
 wasp-cli.json
+wasp-config-template.json
 **/pkg/
 **/target/
 .DS_Store

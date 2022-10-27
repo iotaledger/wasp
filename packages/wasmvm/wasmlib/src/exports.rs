@@ -27,7 +27,13 @@ impl ScExportMap {
     // general entrypoint for the host to call any SC function
     // the host will pass the index of one of the entry points
     // that was provided by on_load during SC initialization
-    pub fn call(&self, index: i32) {
+    pub fn dispatch(&self, index: i32) {
+        if index == -1 {
+            // special dispatch for exporting entry points to host
+            self.export();
+            return;
+        }
+
         if (index & 0x8000) == 0 {
             // mutable full function, invoke with a WasmLib func call context
             let func = self.funcs[index as usize];

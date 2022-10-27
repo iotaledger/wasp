@@ -35,6 +35,7 @@ export class ScViewContext extends ScSandboxView implements ScViewCallContext {
     chainID(): wasmtypes.ScChainID {
         return super.currentChainID();
     }
+
     initViewCallContext(hContract: wasmtypes.ScHname): wasmtypes.ScHname {
         return hContract;
     }

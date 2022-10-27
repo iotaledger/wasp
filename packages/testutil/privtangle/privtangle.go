@@ -81,7 +81,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.generateSnapshot()
 
 	for i := range pt.NodeKeyPairs {
-		pt.startNode(i)                    //nolint:contextcheck // false-positive
+		pt.startNode(i)
 		time.Sleep(500 * time.Millisecond) // TODO: Remove?
 	}
 	pt.logf("Starting... all nodes started.")
@@ -290,7 +290,7 @@ func (pt *PrivTangle) waitAllReturnTips() {
 		if allOK {
 			break
 		}
-		pt.logf("Waiting to all nodes to startup.")
+		pt.logf("Waiting for all nodes to start.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -310,7 +310,7 @@ func (pt *PrivTangle) waitAllReady() {
 		if allOK {
 			break
 		}
-		pt.logf("Waiting to all nodes to startup.")
+		pt.logf("Waiting for all nodes to start.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -330,7 +330,7 @@ func (pt *PrivTangle) waitAllHealthy() {
 		if allOK {
 			break
 		}
-		pt.logf("Waiting to all nodes to startup.")
+		pt.logf("Waiting for all nodes to start.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -349,7 +349,7 @@ func (pt *PrivTangle) waitInxPluginsIndexer() {
 		if allOK {
 			return
 		}
-		pt.logf("Waiting to all nodes INX Indexer plugins to startup.")
+		pt.logf("Waiting for all nodes INX Indexer plugins to start.")
 		time.Sleep(100 * time.Millisecond)
 	}
 }

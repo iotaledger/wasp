@@ -7,9 +7,9 @@ var contractRs = map[string]string{
 	// *******************************
 	"contract.rs": `
 #![allow(dead_code)]
-
-$#if core useCoreContract useWasmLib
-use crate::*;
+$#if core else useWasmLib
+$#emit useCrate
+$#if core useCoreContract
 $#each func FuncNameCall
 
 pub struct ScFuncs {
@@ -25,18 +25,18 @@ $#each func FuncNameForCall
 $#emit setupInitFunc
 
 pub struct $FuncName$+Call {
-	pub func: Sc$initFunc$Kind,
+    pub func: Sc$initFunc$Kind,
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-	pub params: Mutable$FuncName$+Params,
+    pub params: Mutable$FuncName$+Params,
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
-	pub results: Immutable$FuncName$+Results,
+    pub results: Immutable$FuncName$+Results,
 `,
 	// *******************************
 	"FuncNameForCall": `

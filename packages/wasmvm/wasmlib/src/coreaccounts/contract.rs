@@ -7,86 +7,86 @@
 
 #![allow(dead_code)]
 
-use crate::coreaccounts::*;
 use crate::*;
+use crate::coreaccounts::*;
 
 pub struct DepositCall {
-	pub func: ScFunc,
+    pub func: ScFunc,
 }
 
 pub struct FoundryCreateNewCall {
-	pub func: ScFunc,
-	pub params: MutableFoundryCreateNewParams,
-	pub results: ImmutableFoundryCreateNewResults,
+    pub func: ScFunc,
+    pub params: MutableFoundryCreateNewParams,
+    pub results: ImmutableFoundryCreateNewResults,
 }
 
 pub struct FoundryDestroyCall {
-	pub func: ScFunc,
-	pub params: MutableFoundryDestroyParams,
+    pub func: ScFunc,
+    pub params: MutableFoundryDestroyParams,
 }
 
 pub struct FoundryModifySupplyCall {
-	pub func: ScFunc,
-	pub params: MutableFoundryModifySupplyParams,
+    pub func: ScFunc,
+    pub params: MutableFoundryModifySupplyParams,
 }
 
 pub struct HarvestCall {
-	pub func: ScFunc,
-	pub params: MutableHarvestParams,
+    pub func: ScFunc,
+    pub params: MutableHarvestParams,
 }
 
 pub struct TransferAllowanceToCall {
-	pub func: ScFunc,
-	pub params: MutableTransferAllowanceToParams,
+    pub func: ScFunc,
+    pub params: MutableTransferAllowanceToParams,
 }
 
 pub struct WithdrawCall {
-	pub func: ScFunc,
+    pub func: ScFunc,
 }
 
 pub struct AccountNFTsCall {
-	pub func: ScView,
-	pub params: MutableAccountNFTsParams,
-	pub results: ImmutableAccountNFTsResults,
+    pub func: ScView,
+    pub params: MutableAccountNFTsParams,
+    pub results: ImmutableAccountNFTsResults,
 }
 
 pub struct AccountsCall {
-	pub func: ScView,
-	pub results: ImmutableAccountsResults,
+    pub func: ScView,
+    pub results: ImmutableAccountsResults,
 }
 
 pub struct BalanceCall {
-	pub func: ScView,
-	pub params: MutableBalanceParams,
-	pub results: ImmutableBalanceResults,
+    pub func: ScView,
+    pub params: MutableBalanceParams,
+    pub results: ImmutableBalanceResults,
 }
 
 pub struct FoundryOutputCall {
-	pub func: ScView,
-	pub params: MutableFoundryOutputParams,
-	pub results: ImmutableFoundryOutputResults,
+    pub func: ScView,
+    pub params: MutableFoundryOutputParams,
+    pub results: ImmutableFoundryOutputResults,
 }
 
 pub struct GetAccountNonceCall {
-	pub func: ScView,
-	pub params: MutableGetAccountNonceParams,
-	pub results: ImmutableGetAccountNonceResults,
+    pub func: ScView,
+    pub params: MutableGetAccountNonceParams,
+    pub results: ImmutableGetAccountNonceResults,
 }
 
 pub struct GetNativeTokenIDRegistryCall {
-	pub func: ScView,
-	pub results: ImmutableGetNativeTokenIDRegistryResults,
+    pub func: ScView,
+    pub results: ImmutableGetNativeTokenIDRegistryResults,
 }
 
 pub struct NftDataCall {
-	pub func: ScView,
-	pub params: MutableNftDataParams,
-	pub results: ImmutableNftDataResults,
+    pub func: ScView,
+    pub params: MutableNftDataParams,
+    pub results: ImmutableNftDataResults,
 }
 
 pub struct TotalAssetsCall {
-	pub func: ScView,
-	pub results: ImmutableTotalAssetsResults,
+    pub func: ScView,
+    pub results: ImmutableTotalAssetsResults,
 }
 
 pub struct ScFuncs {

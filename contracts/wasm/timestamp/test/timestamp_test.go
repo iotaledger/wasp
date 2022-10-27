@@ -10,12 +10,12 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnDispatch)
 	require.NoError(t, ctx.ContractExists(timestamp.ScName))
 }
 
 func TestStamp(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnDispatch)
 
 	v := timestamp.ScFuncs.GetTimestamp(ctx)
 	v.Func.Call()

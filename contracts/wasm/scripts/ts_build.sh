@@ -15,4 +15,4 @@ echo "Compiling "$example_name"_ts.wasm"
 if [ ! -d "./ts/pkg" ]; then
   mkdir ./ts/pkg
 fi
-npx asc ts/"$example_name"/lib.ts --lib "$node_modules_path" -O --outFile ts/pkg/"$example_name"_ts.wasm
+npx asc ts/main.ts --lib "$node_modules_path" -O --outFile ts/pkg/"$example_name"_ts.wasm

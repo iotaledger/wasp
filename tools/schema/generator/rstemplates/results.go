@@ -8,9 +8,9 @@ var resultsRs = map[string]string{
 	"results.rs": `
 #![allow(dead_code)]
 #![allow(unused_imports)]
-
-$#if core useCoreContract useWasmLib
-use crate::*;
+$#if core else useWasmLib
+$#emit useCrate
+$#if core useCoreContract
 $#each func resultsFunc
 `,
 	// *******************************
@@ -32,7 +32,7 @@ $#each result proxyContainers
 
 #[derive(Clone)]
 pub struct $TypeName {
-	pub(crate) proxy: Proxy,
+    pub(crate) proxy: Proxy,
 }
 
 impl $TypeName {

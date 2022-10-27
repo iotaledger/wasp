@@ -29,10 +29,6 @@ var (
 
 const hexDigits = "0123456789abcdef"
 
-func has0xPrefix(s string) bool {
-	return len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')
-}
-
 func init() {
 	wasmtypes.Bech32Decode = utils.Bech32Decode
 	wasmtypes.Bech32Encode = utils.Bech32Encode
@@ -62,6 +58,10 @@ func init() {
 		}
 		return "0x" + string(hex)
 	}
+}
+
+func has0xPrefix(s string) bool {
+	return len(s) >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')
 }
 
 func hexer(hexDigit byte) byte {

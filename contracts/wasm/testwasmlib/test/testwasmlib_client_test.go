@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/mr-tron/base58"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -18,30 +21,33 @@ import (
 )
 
 const (
+	useDisposable = false
 	useSoloClient = true
 )
 
-func setupClient(t *testing.T) *wasmclient.WasmClientContext {
-	if useSoloClient {
-		ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
-		svcClient := wasmsolo.NewSoloClientService(ctx)
-		chainID := ctx.CurrentChainID()
-		svc := wasmclient.NewWasmClientContext(svcClient, chainID, testwasmlib.ScName)
-		require.NoError(t, svc.Err)
+// to run with docker, set useDisposable to true and run with the following parameters:
+// -layer1-api="http://localhost:14265" -layer1-faucet="http://localhost:8091"
 
-		// we'll use the first address in the seed to sign requests
-		svc.SignRequests(ctx.Chain.OriginatorPrivateKey)
-		return svc
+func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	if useDisposable {
+		return setupClientDisposable(t)
 	}
 
-	// use cluster tool
-	e := cluster_tests.SetupWithChain(t)
+	if useSoloClient {
+		return setupClientSolo(t)
+	}
 
+	return setupClientCluster(t)
+}
+
+func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
+	e := cluster_tests.SetupWithChain(t)
 	chainID := wasmtypes.ChainIDFromBytes(e.Chain.ChainID.Bytes())
+	wallet := cryptolib.NewKeyPair()
 
 	// request funds to the wallet that the wasmclient will use
-	wallet := cryptolib.NewKeyPair()
-	e.Clu.RequestFunds(wallet.Address())
+	err := e.Clu.RequestFunds(wallet.Address())
+	require.NoError(t, err)
 
 	// deposit funds to the on-chain account
 	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
@@ -51,20 +57,48 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	require.NoError(t, err)
 
 	// deploy the contract
-	wasm, err := os.ReadFile("./testwasmlib_bg.wasm")
+	wasm, err := os.ReadFile("../pkg/testwasmlib_bg.wasm")
 	require.NoError(t, err)
 
-	_, err = e.Chain.DeployWasmContract("testwasmlib", "contract to test wasmlib", wasm, nil)
+	_, err = e.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
 	require.NoError(t, err)
 
 	// we're testing against wasp-cluster, so defaults will do
-	svcClient := wasmclient.DefaultWasmClientService()
+	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
+}
 
-	// create the service for the testwasmlib smart contract
+func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
+	viper.SetConfigFile("wasp-cli.json")
+	err := viper.ReadInConfig()
+	require.NoError(t, err)
+
+	chain := viper.GetString("chains." + viper.GetString("chain"))
+	chID, err := isc.ChainIDFromString(chain)
+	require.NoError(t, err)
+	chainID := wasmtypes.ChainIDFromBytes(chID.Bytes())
+
+	// we'll use the seed keypair to sign requests
+	seedBytes, err := base58.Decode(viper.GetString("wallet.seed"))
+	require.NoError(t, err)
+	seed := cryptolib.NewSeedFromBytes(seedBytes)
+	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
+
+	// we're testing against disposable wasp-cluster, so defaults will do
+	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
+}
+
+func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {
+	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnDispatch)
+	chainID := ctx.CurrentChainID()
+	wallet := ctx.Chain.OriginatorPrivateKey
+
+	// use Solo as fake Wasp cluster
+	return newClient(t, wasmsolo.NewSoloClientService(ctx), chainID, wallet)
+}
+
+func newClient(t *testing.T, svcClient wasmclient.IClientService, chainID wasmtypes.ScChainID, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientContext(svcClient, chainID, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
-
-	// we'll use the first address in the seed to sign requests
 	svc.SignRequests(wallet)
 	return svc
 }

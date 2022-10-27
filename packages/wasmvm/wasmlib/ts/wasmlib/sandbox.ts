@@ -119,12 +119,12 @@ export class ScSandbox {
 
     // logs informational text message
     public log(text: string): void {
-        sandbox(FnLog, wasmtypes.stringToBytes(text));
+        log(text);
     }
 
     // logs error text message and then panics
     public panic(text: string): void {
-        sandbox(FnPanic, wasmtypes.stringToBytes(text));
+        panic(text);
     }
 
     // retrieve parameters passed to the smart contract function that was called
@@ -150,7 +150,7 @@ export class ScSandbox {
 
     // logs debugging trace text message
     public trace(text: string): void {
-        sandbox(FnTrace, wasmtypes.stringToBytes(text));
+        trace(text);
     }
 
     // access diverse utility functions
