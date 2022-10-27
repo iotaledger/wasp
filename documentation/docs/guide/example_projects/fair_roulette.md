@@ -293,7 +293,7 @@ wasp-cli chain list
 
 `seed` can be either `undefined` or a predefined 44 length seed. If `seed` is set to `undefined` a new seed will be generated as soon a user opens the page. A predefined seed will be set for all users. This can be useful for development purposes. 
 
-#### Building The Fronted
+#### Building The Frontend
 
 You can build the frontend by running the following commands:
 
