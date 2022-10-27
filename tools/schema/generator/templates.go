@@ -36,6 +36,18 @@ $copyrightMessage
 
 `,
 	// *******************************
+	"../README.md Sc": `
+## $package
+
+$scDesc
+`,
+	// *******************************
+	"../README.md Main": `
+## $package$+_main
+
+Wasm VM host stub for: $scDesc
+`,
+	// *******************************
 	"test.go": `
 $#emit copyright
 package test
