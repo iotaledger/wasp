@@ -1,1 +1,1 @@
-## Example IOTA smart contract for tutorial
+## Example ISC smart contract for the Solo tutorial

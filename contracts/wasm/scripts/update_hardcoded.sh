@@ -9,5 +9,5 @@ if [ -f "$contracts_path/inccounter/rs/inccounter_main/pkg/inccounter_main_bg.wa
 fi
 
 cd $root_path/documentation/tutorial-examples
-wasm-pack build
-cp pkg/solotutorial_bg.wasm test/
+wasm-pack build rs/solotutorial_main
+cp rs/solotutorial_main/pkg/solotutorial_main_bg.wasm test/solotutorial_bg.wasm

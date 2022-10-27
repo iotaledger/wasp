@@ -173,11 +173,9 @@ func (g *GenBase) generateCommonFiles() error {
 }
 
 func (g *GenBase) generateCommonFolder() {
-	module := strings.ReplaceAll(moduleCwd, "\\", "/")
-	module = module[strings.LastIndex(module, "/")+1:]
-	g.folder = g.rootFolder + "/" + module + "/"
+	g.folder = g.rootFolder + "/" + g.s.PackageName + "/"
 	if g.s.CoreContracts {
-		g.folder += g.s.PackageName + "/"
+		g.folder = g.rootFolder + "/wasmlib/" + g.s.PackageName + "/"
 	}
 	if g.rootFolder == "rs" {
 		g.folder += "src/"
