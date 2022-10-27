@@ -40,7 +40,7 @@
 **/ts/main.js
 **/ts/tsconfig.json
 
-**/cargo.*
-**/license
+**/Cargo.*
+**/LICENSE
 
 *.wasm

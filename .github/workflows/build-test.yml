@@ -131,5 +131,6 @@ jobs:
       - name: Run global scope golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
+          version: v1.50.1
           args: --timeout 10m0s
           skip-pkg-cache: true
