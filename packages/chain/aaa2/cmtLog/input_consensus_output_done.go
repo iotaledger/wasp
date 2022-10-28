@@ -1,35 +1,29 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package chainMgr
+package cmtLog
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type inputConsensusOutput struct {
-	committeeAddr     iotago.Ed25519Address
-	logIndex          cmtLog.LogIndex
+type inputConsensusOutputDone struct {
+	logIndex          LogIndex
 	baseAliasOutputID iotago.OutputID
 	nextAliasOutput   *isc.AliasOutputWithID
-	transaction       *iotago.Transaction
 }
 
-func NewInputConsensusOutput(
-	committeeAddr iotago.Ed25519Address,
-	logIndex cmtLog.LogIndex,
+// This message is internal one, but should be sent by other components (e.g. consensus or the chain).
+func NewInputConsensusOutputDone(
+	logIndex LogIndex,
 	baseAliasOutputID iotago.OutputID,
 	nextAliasOutput *isc.AliasOutputWithID,
-	transaction *iotago.Transaction,
 ) gpa.Input {
-	return &inputConsensusOutput{
-		committeeAddr:     committeeAddr,
+	return &inputConsensusOutputDone{
 		logIndex:          logIndex,
 		baseAliasOutputID: baseAliasOutputID,
 		nextAliasOutput:   nextAliasOutput,
-		transaction:       transaction,
 	}
 }

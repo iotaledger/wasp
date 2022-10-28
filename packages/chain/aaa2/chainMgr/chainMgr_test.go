@@ -26,7 +26,12 @@ func TestBasic(t *testing.T) {
 		f int
 	}
 	tests := []test{
-		{n: 4, f: 1}, // TODO: Other combinations.
+		{n: 1, f: 0},   // Low N.
+		{n: 2, f: 0},   // Low N.
+		{n: 3, f: 0},   // Low N.
+		{n: 4, f: 1},   // Smallest robust cluster.
+		{n: 10, f: 3},  // Typical config.
+		{n: 31, f: 10}, // Large cluster.
 	}
 	for i := range tests {
 		tst := tests[i]
@@ -98,7 +103,7 @@ func testBasic(t *testing.T, n, f int) {
 	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
-		tc.WithInput(nid, chainMgr.NewInputConsensusOutput(
+		tc.WithInput(nid, chainMgr.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA.(*iotago.Ed25519Address),
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
 			step2AO,

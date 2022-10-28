@@ -45,11 +45,13 @@
 // >         Forward it to ChainMgr; HandleCmtLogOutput.
 // >     ELSE
 // >         NOP // AO has to be received as ConfirmedAO.
-// > UPON Reception of Consensus Output:
+// > UPON Reception of Consensus Output/DONE:
 // >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 // >         Add ConsensusOutput.TX to NeedPublishTX
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 // >     Update AccessNodes.
+// > UPON Reception of Consensus Output/SKIP:
+// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 // > UPON Reception of Consensus Timeout:
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 // > UPON Reception of CmtLog.NextLI message:
@@ -189,8 +191,10 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cmi.handleInputAliasOutputConfirmed(input)
 	case *inputChainTxPublishResult:
 		return cmi.handleInputChainTxPublishResult(input)
-	case *inputConsensusOutput:
-		return cmi.handleInputConsensusOutput(input)
+	case *inputConsensusOutputDone:
+		return cmi.handleInputConsensusOutputDone(input)
+	case *inputConsensusOutputSkip:
+		return cmi.handleInputConsensusOutputSkip(input)
 	case *inputConsensusTimeout:
 		return cmi.handleInputConsensusTimeout(input)
 	}
@@ -273,13 +277,13 @@ func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPubl
 	})
 }
 
-// > UPON Reception of Consensus Output:
+// > UPON Reception of Consensus Output/DONE:
 // >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 // >         Add ConsensusOutput.TX to NeedPublishTX
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 // >     Update AccessNodes.
-func (cmi *chainMgrImpl) handleInputConsensusOutput(input *inputConsensusOutput) gpa.OutMessages {
-	cmi.log.Debugf("handleInputConsensusOutput: %+v", input)
+func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
+	cmi.log.Debugf("handleInputConsensusOutputDone: %+v", input)
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
 	if cmi.needConsensus.BaseAliasOutput.ID().Equals(input.baseAliasOutputID.UTXOInput()) {
@@ -295,11 +299,19 @@ func (cmi *chainMgrImpl) handleInputConsensusOutput(input *inputConsensusOutput)
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmtLog.NewInputConsensusOutput(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput))
+		return cl.Input(cmtLog.NewInputConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput))
 	})
 
 	// TODO:
 	// >     Update AccessNodes.
+}
+
+// > UPON Reception of Consensus Output/SKIP:
+// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
+func (cmi *chainMgrImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
+	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+		return cl.Input(cmtLog.NewInputConsensusOutputSkip(input.logIndex, input.baseAliasOutputID))
+	})
 }
 
 // > UPON Reception of Consensus Timeout:

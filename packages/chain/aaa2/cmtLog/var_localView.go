@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type LocalView interface {
+type VarLocalView interface {
 	//
 	// Returns alias output to produce next transaction on, or nil if we should wait.
 	// In the case of nil, we either wait for the first AO to receive, or we are
@@ -32,34 +32,37 @@ type LocalView interface {
 	GetBaseAliasOutput() *isc.AliasOutputWithID
 	//
 	// Corresponds to the `ao_received` event in the specification.
-	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID)
+	// Returns true, if the proposed BaseAliasOutput has changed.
+	AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) bool
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
-	AliasOutputRejected(rejected *isc.AliasOutputWithID)
+	// Returns true, if the proposed BaseAliasOutput has changed.
+	AliasOutputRejected(rejected *isc.AliasOutputWithID) bool
 	//
 	// Corresponds to the `tx_posted` event in the specification.
-	AliasOutputPublished(consumed iotago.OutputID, published *isc.AliasOutputWithID)
+	// Returns true, if the proposed BaseAliasOutput has changed.
+	ConsensusOutputDone(consumed iotago.OutputID, published *isc.AliasOutputWithID) bool
 }
 
-type localViewEntry struct {
+type varLocalViewEntry struct {
 	output     *isc.AliasOutputWithID
 	stateIndex uint32
 	rejected   bool
 }
 
-type localViewImpl struct {
-	entries []*localViewEntry
+type varLocalViewImpl struct {
+	entries []*varLocalViewEntry
 }
 
-func NewLocalView() LocalView {
-	return &localViewImpl{
-		entries: []*localViewEntry{},
+func NewVarLocalView() VarLocalView {
+	return &varLocalViewImpl{
+		entries: []*varLocalViewEntry{},
 	}
 }
 
 // Return latest AO to be used as an input for the following TX.
 // nil means we have to wait: either we have no AO, or we have some rejections and waiting until a re-sync.
-func (lvi *localViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
+func (lvi *varLocalViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
 	if len(lvi.entries) == 0 {
 		return nil
 	}
@@ -74,7 +77,7 @@ func (lvi *localViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
 // A confirmed AO is received from L1. Base on that, we either truncate our local
 // history until the received AO (if we know it was posted before), or we replace
 // the entire history with an unseen AO (probably produced not by this chain×cmt).
-func (lvi *localViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) {
+func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) bool {
 	foundIdx := -1
 	for i := range lvi.entries {
 		if lvi.entries[i].output.Equals(confirmed) {
@@ -83,21 +86,22 @@ func (lvi *localViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID)
 		}
 	}
 	if foundIdx == -1 {
-		lvi.entries = []*localViewEntry{
+		lvi.entries = []*varLocalViewEntry{
 			{
 				output:     confirmed,
 				stateIndex: confirmed.GetStateIndex(),
 				rejected:   false,
 			},
 		}
-		return
+		return true
 	}
 	lvi.entries = lvi.entries[foundIdx:]
+	return false
 }
 
 // Mark the specified AO as rejected.
 // Trim the suffix of rejected AOs.
-func (lvi *localViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) {
+func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) bool {
 	rejectedIdx := -1
 	remainingRejected := true
 	for i := range lvi.entries {
@@ -111,27 +115,29 @@ func (lvi *localViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) {
 	}
 	if rejectedIdx == -1 {
 		// Not found, maybe outdated info.
-		return
+		return false
 	}
 	if remainingRejected {
 		lvi.entries = lvi.entries[0:rejectedIdx]
 	}
+	return lvi.GetBaseAliasOutput() != nil
 }
 
-func (lvi *localViewImpl) AliasOutputPublished(consumed iotago.OutputID, published *isc.AliasOutputWithID) {
+func (lvi *varLocalViewImpl) ConsensusOutputDone(consumed iotago.OutputID, published *isc.AliasOutputWithID) bool {
 	if len(lvi.entries) == 0 {
 		// Have we done reset recently?
 		// Just ignore this call, it is outdated.
-		return
+		return false
 	}
 	if !lvi.entries[len(lvi.entries)-1].output.OutputID().UTXOInput().Equals(consumed.UTXOInput()) {
 		// Some other output was published in parallel?
 		// Just ignore this call, it is outdated.
-		return
+		return false
 	}
-	lvi.entries = append(lvi.entries, &localViewEntry{
+	lvi.entries = append(lvi.entries, &varLocalViewEntry{
 		output:     published,
 		stateIndex: published.GetStateIndex(),
 		rejected:   false,
 	})
+	return true
 }

@@ -20,6 +20,8 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
+// TODO: Test should involve suspend/resume.
+
 func TestBasic(t *testing.T) {
 	type test struct {
 		n int
@@ -120,7 +122,7 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.AliasOut
 func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmtLog.Output, nextAO *isc.AliasOutputWithID) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmtLog.NewInputConsensusOutput(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
+		inputs[n] = cmtLog.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().OutputID(), nextAO)
 	}
 	return inputs
 }

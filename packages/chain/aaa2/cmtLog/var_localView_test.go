@@ -14,8 +14,17 @@ import (
 )
 
 func TestLocalView(t *testing.T) {
-	j := cmtLog.NewLocalView()
+	j := cmtLog.NewVarLocalView()
 	require.Nil(t, j.GetBaseAliasOutput())
-	j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, &iotago.UTXOInput{}))
+	require.True(t, j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, &iotago.UTXOInput{})))
 	require.NotNil(t, j.GetBaseAliasOutput())
 }
+
+// TODO: https://pkg.go.dev/testing/quick
+// TODO: https://github.com/leanovate/gopter
+// func TestProps(t *testing.T) {
+// 	prop := func() {
+// 		return
+// 	}
+// 	require.NoError(t, quick.Check(prop, nil)) // TODO: ...
+// }

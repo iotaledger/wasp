@@ -49,6 +49,7 @@
 // TODO: Handle the requests gracefully in the VM before getting the initTX.
 // TODO: Reconsider the termination. Do we need to wait for DSS, RND?
 // TODO: Add block write to the StateMgr.
+// TODO: Add BaseAliasOutput to the BatchProposal to avoid having it in the StateMgr.
 package cons
 
 import (
