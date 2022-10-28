@@ -20,6 +20,9 @@
 **/rs/*/src/state.rs
 **/rs/*/src/structs.rs
 **/rs/*/src/typedefs.rs
+**/rs/*/Cargo.*
+**/rs/*/LICENSE
+**/rs/*/README.md
 **/rs/main
 
 **/ts/*/consts.ts
@@ -39,8 +42,5 @@
 **/ts/main.ts
 **/ts/main.js
 **/ts/tsconfig.json
-
-**/Cargo.*
-**/LICENSE
 
 *.wasm
