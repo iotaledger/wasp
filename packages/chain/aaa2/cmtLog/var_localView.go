@@ -45,9 +45,8 @@ type VarLocalView interface {
 }
 
 type varLocalViewEntry struct {
-	output     *isc.AliasOutputWithID
-	stateIndex uint32
-	rejected   bool
+	output   *isc.AliasOutputWithID
+	rejected bool
 }
 
 type varLocalViewImpl struct {
@@ -88,9 +87,8 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 	if foundIdx == -1 {
 		lvi.entries = []*varLocalViewEntry{
 			{
-				output:     confirmed,
-				stateIndex: confirmed.GetStateIndex(),
-				rejected:   false,
+				output:   confirmed,
+				rejected: false,
 			},
 		}
 		return true
@@ -135,9 +133,8 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(consumed iotago.OutputID, publi
 		return false
 	}
 	lvi.entries = append(lvi.entries, &varLocalViewEntry{
-		output:     published,
-		stateIndex: published.GetStateIndex(),
-		rejected:   false,
+		output:   published,
+		rejected: false,
 	})
 	return true
 }
