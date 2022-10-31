@@ -44,7 +44,6 @@ type Mempool interface {
 }
 
 type StateMgrDecidedState struct {
-	AliasOutput        *isc.AliasOutputWithID
 	StateBaseline      coreutil.StateBaseline
 	VirtualStateAccess state.VirtualStateAccess
 }
@@ -56,18 +55,17 @@ type StateMgr interface {
 	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
-		aliasOutput *isc.AliasOutputWithID,
+		aliasOutput *isc.AliasOutputWithID, // TODO: Can be replaced by state.L1Commitment after the "read only state" changes.
 	) <-chan interface{}
 	// State manager has to ensure all the data needed for the specified alias
 	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
 	ConsensusDecidedState(
 		ctx context.Context,
-		aliasOutputID *iotago.OutputID,
-		stateCommitment *state.L1Commitment,
+		aliasOutput *isc.AliasOutputWithID, // TODO: Can be replaced by state.L1Commitment after the "read only state" changes.
 	) <-chan *StateMgrDecidedState
 	// State manager has to persistently store the block and respond only after
 	// the block was flushed to the disk. A WAL can be used for that as well.
-	SaveBlock(
+	ConsensusProducedBlock(
 		ctx context.Context,
 		block state.Block,
 	) <-chan interface{}
@@ -265,7 +263,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				cgr.stateMgrDecidedStateRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.AliasOutput, resp.StateBaseline, resp.VirtualStateAccess))
+			cgr.handleConsMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.StateBaseline, resp.VirtualStateAccess))
 		case _, ok := <-cgr.stateMgrSaveBlockRespCh:
 			if !ok {
 				cgr.stateMgrSaveBlockRespCh = nil
@@ -354,11 +352,11 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.stateMgrStateProposalAsked = true
 	}
 	if output.NeedStateMgrDecidedState != nil && !cgr.stateMgrDecidedStateAsked {
-		cgr.stateMgrDecidedStateRespCh = cgr.stateMgr.ConsensusDecidedState(cgr.ctx, output.NeedStateMgrDecidedState.AliasOutputID, output.NeedStateMgrDecidedState.StateCommitment)
+		cgr.stateMgrDecidedStateRespCh = cgr.stateMgr.ConsensusDecidedState(cgr.ctx, output.NeedStateMgrDecidedState)
 		cgr.stateMgrDecidedStateAsked = true
 	}
 	if output.NeedStateMgrSaveBlock != nil && !cgr.stateMgrSaveBlockAsked {
-		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.SaveBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
+		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.ConsensusProducedBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
 		cgr.stateMgrSaveBlockAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {

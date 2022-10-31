@@ -9,39 +9,30 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type BatchProposal struct {
-	nodeIndex        uint16              // Just for a double-check.
-	stateOutputID    *iotago.UTXOInput   // Proposed Base AliasOutput to use.
-	stateCommitment  *state.L1Commitment // State commitment of the proposed base AliasOutput.
-	dssIndexProposal util.BitVector      // DSS Index proposal.
-	timeData         time.Time           // Our view of time.
-	feeDestination   isc.AgentID         // Proposed destination for fees.
-	requestRefs      []*isc.RequestRef   // Requests we propose to include into the execution.
+	nodeIndex        uint16                 // Just for a double-check.
+	baseAliasOutput  *isc.AliasOutputWithID // Proposed Base AliasOutput to use.
+	dssIndexProposal util.BitVector         // DSS Index proposal.
+	timeData         time.Time              // Our view of time.
+	feeDestination   isc.AgentID            // Proposed destination for fees.
+	requestRefs      []*isc.RequestRef      // Requests we propose to include into the execution.
 }
 
 func NewBatchProposal(
 	nodeIndex uint16,
-	stateOutput *isc.AliasOutputWithID,
+	baseAliasOutput *isc.AliasOutputWithID,
 	dssIndexProposal util.BitVector,
 	timeData time.Time,
 	feeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
 ) *BatchProposal {
-	stateCommitment, err := state.L1CommitmentFromAliasOutput(stateOutput.GetAliasOutput())
-	if err != nil {
-		panic(xerrors.Errorf("cannot get L1Commitment from AliasOutput: %w", err))
-	}
-	stateOutput.GetStateMetadata()
 	return &BatchProposal{
 		nodeIndex:        nodeIndex,
-		stateOutputID:    stateOutput.ID(),
-		stateCommitment:  stateCommitment,
+		baseAliasOutput:  baseAliasOutput,
 		dssIndexProposal: dssIndexProposal,
 		timeData:         timeData,
 		feeDestination:   feeDestination,
@@ -61,12 +52,7 @@ func batchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.stateOutputID, err = isc.UTXOInputFromMarshalUtil(mu)
-	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
-	}
-	ret.stateCommitment, err = state.L1CommitmentFromMarshalUtil(mu)
-	if err != nil {
+	if ret.baseAliasOutput, err = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
 	if ret.dssIndexProposal, err = util.NewFixedSizeBitVectorFromMarshalUtil(mu); err != nil {
@@ -102,12 +88,8 @@ func batchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 
 func (b *BatchProposal) Bytes() []byte {
 	mu := marshalutil.New()
-	stateOutputID := b.stateOutputID.ID()
-	stateCommitmentBytes := b.stateCommitment.Bytes()
 	mu.WriteUint16(b.nodeIndex).
-		WriteBytes(stateOutputID[:]).
-		WriteUint16(uint16(len(stateCommitmentBytes))).
-		WriteBytes(stateCommitmentBytes).
+		Write(b.baseAliasOutput).
 		Write(b.dssIndexProposal).
 		WriteTime(b.timeData).
 		Write(b.feeDestination).

@@ -18,7 +18,7 @@ import (
 
 type SyncVM interface {
 	DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages
-	DecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	DecidedStateReceived(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
 	RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages
 	RequestsReceived(requests []isc.Request) gpa.OutMessages
 	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
@@ -28,19 +28,18 @@ type SyncVM interface {
 type syncVMImpl struct {
 	AggregatedProposals *bp.AggregatedBatchProposals
 	stateReceived       bool
-	BaseAliasOutput     *isc.AliasOutputWithID
 	StateBaseline       coreutil.StateBaseline
 	VirtualStateAccess  state.VirtualStateAccess
 	Randomness          *hashing.HashValue
 	Requests            []isc.Request
 	inputsReady         bool
-	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
+	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
 	outputReadyCB       func(output *vm.VMTask) gpa.OutMessages
 }
 
 func NewSyncVM(
-	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
+	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
 	outputReadyCB func(output *vm.VMTask) gpa.OutMessages,
 ) SyncVM {
 	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
@@ -54,12 +53,11 @@ func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *bp.Agg
 	return sub.tryCompleteInputs()
 }
 
-func (sub *syncVMImpl) DecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
+func (sub *syncVMImpl) DecidedStateReceived(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
 	if sub.stateReceived {
 		return nil
 	}
 	sub.stateReceived = true
-	sub.BaseAliasOutput = aliasOutput
 	sub.StateBaseline = stateBaseline
 	sub.VirtualStateAccess = virtualStateAccess
 	return sub.tryCompleteInputs()
@@ -86,7 +84,7 @@ func (sub *syncVMImpl) tryCompleteInputs() gpa.OutMessages {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.AggregatedProposals, sub.BaseAliasOutput, sub.StateBaseline, sub.VirtualStateAccess, sub.Randomness, sub.Requests)
+	return sub.inputsReadyCB(sub.AggregatedProposals, sub.StateBaseline, sub.VirtualStateAccess, sub.Randomness, sub.Requests)
 }
 
 func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {

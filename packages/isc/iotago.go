@@ -38,6 +38,6 @@ func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, e
 	return id.UTXOInput(), nil
 }
 
-func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(EncodeOutputID(id.ID()))
+func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) *marshalutil.MarshalUtil {
+	return mu.WriteBytes(EncodeOutputID(id.ID()))
 }

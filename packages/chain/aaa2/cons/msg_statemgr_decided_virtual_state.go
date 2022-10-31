@@ -5,14 +5,12 @@ package cons
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type msgStateMgrDecidedVirtualState struct {
 	node               gpa.NodeID
-	aliasOutput        *isc.AliasOutputWithID
 	stateBaseline      coreutil.StateBaseline
 	virtualStateAccess state.VirtualStateAccess
 }
@@ -21,11 +19,10 @@ var _ gpa.Message = &msgStateMgrDecidedVirtualState{}
 
 func NewMsgStateMgrDecidedVirtualState(
 	node gpa.NodeID,
-	aliasOutput *isc.AliasOutputWithID,
 	stateBaseline coreutil.StateBaseline,
 	virtualStateAccess state.VirtualStateAccess,
 ) gpa.Message {
-	return &msgStateMgrDecidedVirtualState{node, aliasOutput, stateBaseline, virtualStateAccess}
+	return &msgStateMgrDecidedVirtualState{node, stateBaseline, virtualStateAccess}
 }
 
 func (m *msgStateMgrDecidedVirtualState) Recipient() gpa.NodeID {

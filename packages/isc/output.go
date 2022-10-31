@@ -8,7 +8,9 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -22,6 +24,44 @@ func NewAliasOutputWithID(output *iotago.AliasOutput, id *iotago.UTXOInput) *Ali
 		output: output,
 		id:     id,
 	}
+}
+
+func NewAliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
+	return NewAliasOutputWithIDFromMarshalUtil(marshalutil.New(data))
+}
+
+func NewAliasOutputWithIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AliasOutputWithID, error) {
+	id, err := UTXOInputFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	outLen, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	outBytes, err := mu.ReadBytes(int(outLen))
+	if err != nil {
+		return nil, err
+	}
+	out := &iotago.AliasOutput{}
+	if _, err := out.Deserialize(outBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
+		return nil, err
+	}
+	a := &AliasOutputWithID{
+		id:     id,
+		output: out,
+	}
+	return a, nil
+}
+
+func (a *AliasOutputWithID) Bytes() []byte {
+	mu := marshalutil.New()
+	mu = UTXOInputToMarshalUtil(a.id, mu)
+	outBytes, err := a.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic(err)
+	}
+	return mu.WriteUint16(uint16(len(outBytes))).WriteBytes(outBytes).Bytes()
 }
 
 func (a *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {
@@ -53,7 +93,19 @@ func (a *AliasOutputWithID) GetAliasID() iotago.AliasID {
 }
 
 func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
-	return a.id.Equals(other.id)
+	out1, err := a.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic(err)
+	}
+	out2, err := other.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		panic(err)
+	}
+	return a.id.Equals(other.id) && bytes.Equal(out1, out2)
+}
+
+func (a *AliasOutputWithID) Hash() hashing.HashValue {
+	return hashing.HashDataBlake2b(a.Bytes())
 }
 
 func (a *AliasOutputWithID) String() string {

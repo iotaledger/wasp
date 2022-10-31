@@ -8,11 +8,9 @@ import (
 	"sort"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -27,34 +25,28 @@ func (bps batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 
 // Decided Base Alias Output is the one, that was proposed by F+1 nodes or more.
 // If there is more that 1 such ID, we refuse to use all of them.
-func (bps batchProposalSet) decidedBaseAliasOutput(f int) (*iotago.OutputID, *state.L1Commitment) {
-	aos := map[iotago.OutputID]map[hashing.HashValue]int{}
-	scs := map[hashing.HashValue]*state.L1Commitment{}
+func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.AliasOutputWithID {
+	counts := map[hashing.HashValue]int{}
+	values := map[hashing.HashValue]*isc.AliasOutputWithID{}
 	for _, bp := range bps {
-		scHash := hashing.HashDataBlake2b(bp.stateCommitment.Bytes())
-		if _, ok := aos[bp.stateOutputID.ID()]; !ok {
-			aos[bp.stateOutputID.ID()] = map[hashing.HashValue]int{}
+		h := bp.baseAliasOutput.Hash()
+		counts[h]++
+		if _, ok := values[h]; !ok {
+			values[h] = bp.baseAliasOutput
 		}
-		aos[bp.stateOutputID.ID()][scHash]++
-		scs[scHash] = bp.stateCommitment
 	}
-	var foundOutputID *iotago.OutputID
-	var foundCommitment *state.L1Commitment
 
-	for aoID := range aos {
-		for scHash, count := range aos[aoID] {
-			if count > f {
-				if foundOutputID != nil {
-					// Found more that 1 AliasOutputID proposed by F+1 or more nodes.
-					return nil, nil
-				}
-				aoIDCopy := aoID
-				foundOutputID = &aoIDCopy
-				foundCommitment = scs[scHash]
+	var found *isc.AliasOutputWithID
+	for h, count := range counts {
+		if count > f {
+			if found != nil {
+				// Found more that 1 AliasOutput proposed by F+1 or more nodes.
+				return nil
 			}
+			found = values[h]
 		}
 	}
-	return foundOutputID, foundCommitment
+	return found
 }
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.

@@ -275,7 +275,6 @@ func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, stateBasel
 	defer tsm.lock.Unlock()
 	hash := commitmentHashFromAO(aliasOutput)
 	tsm.states[hash] = &consGR.StateMgrDecidedState{
-		AliasOutput:        aliasOutput,
 		StateBaseline:      stateBaseline,
 		VirtualStateAccess: virtualStateAccess,
 	}
@@ -294,17 +293,21 @@ func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput
 
 // State manager has to ensure all the data needed for the specified alias
 // output (presented as aliasOutputID+stateCommitment) is present in the DB.
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutputID *iotago.OutputID, stateCommitment *state.L1Commitment) <-chan *consGR.StateMgrDecidedState {
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan *consGR.StateMgrDecidedState {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan *consGR.StateMgrDecidedState, 1)
+	stateCommitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
 	hash := commitmentHash(stateCommitment)
 	tsm.qDecided[hash] = resp
 	tsm.tryRespond(hash)
 	return resp
 }
 
-func (tsm *testStateMgr) SaveBlock(ctx context.Context, block state.Block) <-chan interface{} {
+func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.Block) <-chan interface{} {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan interface{}, 1)

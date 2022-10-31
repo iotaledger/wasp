@@ -196,7 +196,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
 		tc.WithMessage(cons.NewMsgMempoolRequests(nid, initReqs))
-		tc.WithMessage(cons.NewMsgStateMgrDecidedVirtualState(nid, ao0, stateBaseline, virtualStateAccess))
+		tc.WithMessage(cons.NewMsgStateMgrDecidedVirtualState(nid, stateBaseline, virtualStateAccess))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM data", t.Logf)
@@ -697,8 +697,8 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 
 func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrDecidedState != nil && !tci.handledNeedStateMgrDecidedState[nodeID] {
-		if *out.NeedStateMgrDecidedState.AliasOutputID == inp.baseAliasOutput.OutputID() {
-			tci.messagePipe <- cons.NewMsgStateMgrDecidedVirtualState(nodeID, inp.baseAliasOutput, inp.stateBaseline, inp.virtualStateAccess)
+		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
+			tci.messagePipe <- cons.NewMsgStateMgrDecidedVirtualState(nodeID, inp.stateBaseline, inp.virtualStateAccess)
 		} else {
 			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")
 		}

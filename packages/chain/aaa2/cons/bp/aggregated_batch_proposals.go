@@ -9,22 +9,19 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 // Here we store just an aggregated info.
 type AggregatedBatchProposals struct {
-	shouldBeSkipped            bool
-	decidedIndexProposals      map[gpa.NodeID][]int
-	decidedBaseAliasOutputID   *iotago.OutputID
-	decidedBaseStateCommitment *state.L1Commitment
-	decidedRequestRefs         []*isc.RequestRef
-	aggregatedTime             time.Time
-	validatorFeeTarget         isc.AgentID
+	shouldBeSkipped        bool
+	decidedIndexProposals  map[gpa.NodeID][]int
+	decidedBaseAliasOutput *isc.AliasOutputWithID
+	decidedRequestRefs     []*isc.RequestRef
+	aggregatedTime         time.Time
+	validatorFeeTarget     isc.AgentID
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
@@ -49,16 +46,15 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)
-	decidedBaseAliasOutputID, decidedBaseStateCommitment := bps.decidedBaseAliasOutput(f)
+	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
 	abp := &AggregatedBatchProposals{
-		decidedIndexProposals:      bps.decidedDSSIndexProposals(),
-		decidedBaseAliasOutputID:   decidedBaseAliasOutputID,
-		decidedBaseStateCommitment: decidedBaseStateCommitment,
-		decidedRequestRefs:         bps.decidedRequestRefs(f),
-		aggregatedTime:             aggregatedTime,
-		validatorFeeTarget:         bps.selectedFeeDestination(aggregatedTime),
+		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
+		decidedBaseAliasOutput: decidedBaseAliasOutput,
+		decidedRequestRefs:     bps.decidedRequestRefs(f),
+		aggregatedTime:         aggregatedTime,
+		validatorFeeTarget:     bps.selectedFeeDestination(aggregatedTime),
 	}
-	if abp.decidedBaseAliasOutputID == nil || abp.decidedBaseStateCommitment == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
+	if abp.decidedBaseAliasOutput == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
 		abp.shouldBeSkipped = true
 	}
 	return abp
@@ -75,18 +71,11 @@ func (abp *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][
 	return abp.decidedIndexProposals
 }
 
-func (abp *AggregatedBatchProposals) DecidedBaseAliasOutputID() *iotago.OutputID {
+func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.AliasOutputWithID {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.decidedBaseAliasOutputID
-}
-
-func (abp *AggregatedBatchProposals) DecidedBaseStateCommitment() *state.L1Commitment {
-	if abp.shouldBeSkipped {
-		panic("trying to use aggregated proposal marked to be skipped")
-	}
-	return abp.decidedBaseStateCommitment
+	return abp.decidedBaseAliasOutput
 }
 
 func (abp *AggregatedBatchProposals) AggregatedTime() time.Time {

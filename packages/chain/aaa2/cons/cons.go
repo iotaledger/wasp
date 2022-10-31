@@ -97,11 +97,6 @@ const (
 	Skipped                      // Consensus reached, no TX should be posted for this LogIndex.
 )
 
-type StateRef struct {
-	AliasOutputID   *iotago.OutputID
-	StateCommitment *state.L1Commitment
-}
-
 type Output struct {
 	State      OutputState
 	Terminated bool
@@ -110,7 +105,7 @@ type Output struct {
 	NeedMempoolProposal       *isc.AliasOutputWithID // Requests for the mempool are needed for this Base Alias Output.
 	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
 	NeedStateMgrStateProposal *isc.AliasOutputWithID // Query for a proposal for Virtual State (it will go to the batch proposal).
-	NeedStateMgrDecidedState  *StateRef              // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrDecidedState  *isc.AliasOutputWithID // Query for a decided Virtual State to be used by VM.
 	NeedStateMgrSaveBlock     state.Block            // Ask StateMgr to save the produced block.
 	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
 	//
@@ -295,7 +290,7 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case *msgStateMgrProposalConfirmed:
 		return c.subSM.StateProposalConfirmedByStateMgr()
 	case *msgStateMgrDecidedVirtualState:
-		return c.subSM.DecidedVirtualStateReceived(msgT.aliasOutput, msgT.stateBaseline, msgT.virtualStateAccess)
+		return c.subSM.DecidedVirtualStateReceived(msgT.stateBaseline, msgT.virtualStateAccess)
 	case *msgStateMgrBlockSaved:
 		return c.subSM.BlockSaved()
 	case *msgTimeData:
@@ -374,14 +369,14 @@ func (c *consImpl) uponSMStateProposalReceived(proposedAliasOutput *isc.AliasOut
 	return c.subACS.StateProposalReceived(proposedAliasOutput)
 }
 
-func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages {
-	c.output.NeedStateMgrDecidedState = &StateRef{decidedBaseAliasOutputID, decidedBaseStateCommitment}
+func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+	c.output.NeedStateMgrDecidedState = decidedBaseAliasOutput
 	return nil
 }
 
-func (c *consImpl) uponSMDecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateReceived(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = nil
-	return c.subVM.DecidedStateReceived(aliasOutput, stateBaseline, virtualStateAccess)
+	return c.subVM.DecidedStateReceived(stateBaseline, virtualStateAccess)
 }
 
 func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.Block) gpa.OutMessages {
@@ -456,11 +451,11 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		c.term.haveOutputProduced()
 		return nil
 	}
-	baoID := *aggr.DecidedBaseAliasOutputID()
-	bSCmt := aggr.DecidedBaseStateCommitment()
+	bao := aggr.DecidedBaseAliasOutput()
+	baoID := bao.OutputID()
 	return gpa.NoMessages().
 		AddAll(c.subMP.RequestsNeeded(aggr.DecidedRequestRefs())).
-		AddAll(c.subSM.DecidedVirtualStateNeeded(&baoID, bSCmt)).
+		AddAll(c.subSM.DecidedVirtualStateNeeded(bao)).
 		AddAll(c.subVM.DecidedBatchProposalsReceived(aggr)).
 		AddAll(c.subRND.CanProceed(baoID[:])).
 		AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
@@ -501,14 +496,14 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 ////////////////////////////////////////////////////////////////////////////////
 // VM
 
-func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// The decided base alias output can be different from that we have proposed!
-	decidedBaseAliasOutputID := aggregatedProposals.DecidedBaseAliasOutputID()
+	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
 		ACSSessionID:           0, // TODO: Remove the ACSSessionID when old consensus Impl is removed.
 		Processors:             c.processorCache,
-		AnchorOutput:           baseAliasOutput.GetAliasOutput(),
-		AnchorOutputID:         *decidedBaseAliasOutputID,
+		AnchorOutput:           decidedBaseAliasOutput.GetAliasOutput(),
+		AnchorOutputID:         decidedBaseAliasOutput.OutputID(),
 		SolidStateBaseline:     stateBaseline,
 		Requests:               aggregatedProposals.OrderedRequests(requests, *randomness),
 		TimeAssumption:         aggregatedProposals.AggregatedTime(),

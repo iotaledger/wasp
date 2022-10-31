@@ -420,7 +420,7 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	if err != nil {
 		return
 	}
-	UTXOInputToMarshalUtil(&r.inputID, mu)
+	mu = UTXOInputToMarshalUtil(&r.inputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
 	mu.WriteByte(byte(r.output.Type()))
