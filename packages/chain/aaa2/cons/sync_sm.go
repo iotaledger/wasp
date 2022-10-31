@@ -90,7 +90,7 @@ func (sub *syncSMImpl) DecidedVirtualStateReceived(
 func (sub *syncSMImpl) String() string {
 	str := "SM"
 	if sub.stateProposalReceived && sub.decidedBaseAliasOutput != nil {
-		return str + "/OK"
+		return str + statusStrOK
 	}
 	if sub.stateProposalReceived {
 		str += "/proposal=OK"

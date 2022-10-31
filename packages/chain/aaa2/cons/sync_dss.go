@@ -99,7 +99,7 @@ func (sub *syncDSSImpl) tryCompleteSigning() gpa.OutMessages {
 func (sub *syncDSSImpl) String() string {
 	str := "DSS"
 	if sub.indexProposalReady && sub.outputReady {
-		return str + "/OK"
+		return str + statusStrOK
 	}
 	if sub.indexProposalReady {
 		str += "/idx=OK"

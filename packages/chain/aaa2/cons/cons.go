@@ -30,6 +30,7 @@
 // >     Start VM.
 // > UPON Reception of VM Result:
 // >     IF result is non-empty THEN
+// >         Save the produced block to SM.
 // >         Submit the result hash to the DSS.
 // >     ELSE
 // >         OUTPUT SKIP

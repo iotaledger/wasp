@@ -104,7 +104,7 @@ func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 func (sub *syncVMImpl) String() string {
 	str := "VM"
 	if sub.outputReady {
-		str += "/OK"
+		str += statusStrOK
 	} else if sub.inputsReady {
 		str += "/WAIT[VM to complete]"
 	} else {

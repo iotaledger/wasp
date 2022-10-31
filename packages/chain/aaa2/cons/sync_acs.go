@@ -115,7 +115,7 @@ func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 func (sub *syncACSImpl) String() string {
 	str := "ACS"
 	if sub.outputReady {
-		str += "/OK"
+		str += statusStrOK
 	} else if sub.inputsReady {
 		str += "/WAIT[ACS to complete]"
 	} else {

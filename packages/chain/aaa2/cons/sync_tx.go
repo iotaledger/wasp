@@ -57,7 +57,7 @@ func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
 func (sub *syncTXImpl) String() string {
 	str := "TX"
 	if sub.inputsReady {
-		str += "/OK"
+		str += statusStrOK
 	} else {
 		wait := []string{}
 		if sub.VMResult == nil {

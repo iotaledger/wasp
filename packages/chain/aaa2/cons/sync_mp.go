@@ -78,7 +78,7 @@ func (sub *syncMPImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages 
 func (sub *syncMPImpl) String() string {
 	str := "MP"
 	if sub.proposalReceived && sub.requestsReceived {
-		return str + "/OK"
+		return str + statusStrOK
 	}
 	if sub.proposalReceived {
 		str += "/proposal=OK"
