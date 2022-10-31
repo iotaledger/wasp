@@ -33,6 +33,6 @@ func init() {
 	}
 }
 
-func Config() *processors.Config {
+func NewConfigWithCoreContracts() *processors.Config {
 	return processors.NewConfig().WithCoreContracts(All)
 }

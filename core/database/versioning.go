@@ -24,8 +24,8 @@ var ErrDBVersionIncompatible = errors.New("database version is not compatible. p
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error { //nolint:deadcode,unused
-	db := GetRegistryKVStore()
-	ver, err := db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion))
+	dbRegistry := deps.DatabaseManager.GetRegistryKVStore()
+	ver, err := dbRegistry.Get(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte
 	versiondata[0] = DBVersion
@@ -34,7 +34,7 @@ func checkDatabaseVersion() error { //nolint:deadcode,unused
 
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		// set the version in an empty DB
-		return db.Set(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion), versiondata[:])
+		return dbRegistry.Set(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion), versiondata[:])
 	}
 	if err != nil {
 		return err

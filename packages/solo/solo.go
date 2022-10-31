@@ -164,7 +164,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, "", registry.DefaultConfig()),
 		utxoDB:                          utxodb.New(utxoDBinitParams),
 		chains:                          make(map[isc.ChainID]*Chain),
-		processorConfig:                 coreprocessors.Config(),
+		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
 		disableAutoAdjustStorageDeposit: !opt.AutoAdjustStorageDeposit,
 		seed:                            opt.Seed,
 	}

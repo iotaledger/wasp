@@ -1,6 +1,8 @@
 package processors
 
 import (
+	"go.uber.org/dig"
+
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -11,30 +13,41 @@ import (
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name:      "Processors",
-			Configure: configure,
+			Name:    "Processors",
+			Provide: provide,
 		},
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
+var CoreComponent *app.CoreComponent
 
-	Config          *processors.Config
-	nativeContracts = []*coreutil.ContractProcessor{
-		inccounter.Processor,
-	}
-)
+func provide(c *dig.Container) error {
+	type processorsConfigResult struct {
+		dig.Out
 
-func configure() error {
-	CoreComponent.LogInfo("Registering native contracts...")
-	for _, c := range nativeContracts {
-		CoreComponent.LogDebugf(
-			"Registering native contract: name: '%s', program hash: %s, description: '%s'\n",
-			c.Contract.Name, c.Contract.ProgramHash.String(), c.Contract.Description,
-		)
+		ProcessorsConfig *processors.Config
 	}
-	Config = coreprocessors.Config().WithNativeContracts(nativeContracts...)
+
+	if err := c.Provide(func() processorsConfigResult {
+		CoreComponent.LogInfo("Registering native contracts...")
+
+		nativeContracts := []*coreutil.ContractProcessor{
+			inccounter.Processor,
+		}
+
+		for _, c := range nativeContracts {
+			CoreComponent.LogDebugf(
+				"Registering native contract: name: '%s', program hash: %s, description: '%s'\n",
+				c.Contract.Name, c.Contract.ProgramHash.String(), c.Contract.Description,
+			)
+		}
+
+		return processorsConfigResult{
+			ProcessorsConfig: coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(nativeContracts...),
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
 
 	return nil
 }

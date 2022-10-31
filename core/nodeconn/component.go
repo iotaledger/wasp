@@ -6,17 +6,17 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/inx-app/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/plugins/metrics"
 )
 
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name:      "NodeConn",
-			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-			Configure: configure,
-			Run:       run,
+			Name:     "NodeConn",
+			DepsFunc: func(cDeps dependencies) { deps = cDeps },
+			Provide:  provide,
+			Run:      run,
 		},
 	}
 }
@@ -24,34 +24,48 @@ func init() {
 var (
 	CoreComponent *app.CoreComponent
 	deps          dependencies
-
-	nc chain.NodeConnection
 )
 
 type dependencies struct {
 	dig.In
-	NodeBridge     *nodebridge.NodeBridge
-	MetricsEnabled bool `name:"metricsEnabled"`
+
+	MetricsEnabled bool             `name:"metricsEnabled"`
+	Metrics        *metrics.Metrics `optional:"true"`
+	NodeConnection chain.NodeConnection
 }
 
-func configure() error {
-	nc = nodeconn.New(
-		CoreComponent.Daemon().ContextStopped(),
-		CoreComponent.Logger(),
-		deps.NodeBridge,
-	)
+func provide(c *dig.Container) error {
+	type nodeConnectionDeps struct {
+		dig.In
+
+		NodeBridge *nodebridge.NodeBridge
+	}
+
+	type nodeConnectionResult struct {
+		dig.Out
+
+		NodeConnection chain.NodeConnection
+	}
+
+	if err := c.Provide(func(deps nodeConnectionDeps) nodeConnectionResult {
+		return nodeConnectionResult{
+			NodeConnection: nodeconn.New(
+				CoreComponent.Daemon().ContextStopped(),
+				CoreComponent.Logger(),
+				deps.NodeBridge,
+			),
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
 
 	return nil
 }
 
 func run() error {
 	if deps.MetricsEnabled {
-		nc.SetMetrics(metrics.AllMetrics().GetNodeConnectionMetrics())
+		deps.NodeConnection.SetMetrics(deps.Metrics.GetNodeConnectionMetrics())
 	}
 
 	return nil
-}
-
-func NodeConnection() chain.NodeConnection {
-	return nc
 }

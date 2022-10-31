@@ -4,22 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/labstack/gommon/log"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/wasp/core/database"
-	"github.com/iotaledger/wasp/core/nodeconn"
-	"github.com/iotaledger/wasp/core/peering"
-	"github.com/iotaledger/wasp/core/processors"
-	"github.com/iotaledger/wasp/core/registry"
-	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/wal"
-	"github.com/iotaledger/wasp/plugins/metrics"
 )
 
 func init() {
@@ -29,7 +25,7 @@ func init() {
 			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
 			Params:         params,
 			InitConfigPars: initConfigPars,
-			Configure:      configure,
+			Provide:        provide,
 			Run:            run,
 		},
 	}
@@ -38,17 +34,15 @@ func init() {
 var (
 	CoreComponent *app.CoreComponent
 	deps          dependencies
-
-	initialized *ready.Ready
-	allChains   *chains.Chains
-	allMetrics  *metricspkg.Metrics
 )
 
 type dependencies struct {
 	dig.In
 
-	MetricsEnabled bool `name:"metricsEnabled"`
-	WAL            *wal.WAL
+	WAL             *wal.WAL
+	Chains          *chains.Chains
+	Metrics         *metrics.Metrics `optional:"true"`
+	DefaultRegistry registry.Registry
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -68,54 +62,69 @@ func initConfigPars(c *dig.Container) error {
 	return nil
 }
 
-func configure() error {
-	initialized = ready.New(CoreComponent.Name)
-	return nil
-}
+func provide(c *dig.Container) error {
+	type chainsDeps struct {
+		dig.In
 
-func run() error {
-	allChains = chains.New(
-		CoreComponent.Logger(),
-		processors.Config,
-		ParamsChains.BroadcastUpToNPeers,
-		ParamsChains.BroadcastInterval,
-		ParamsChains.PullMissingRequestsFromCommittee,
-		peering.DefaultNetworkProvider(),
-		database.GetOrCreateKVStore,
-		ParamsRawBlocks.Enabled,
-		ParamsRawBlocks.Directory,
-	)
+		ProcessorsConfig       *processors.Config
+		DatabaseManager        *dbmanager.DBManager
+		DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
+		NodeConnection         chain.NodeConnection
+	}
 
-	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
-		if deps.MetricsEnabled {
-			allMetrics = metrics.AllMetrics()
+	type chainsResult struct {
+		dig.Out
+
+		Chains *chains.Chains
+	}
+
+	if err := c.Provide(func(deps chainsDeps) chainsResult {
+		return chainsResult{
+			Chains: chains.New(
+				CoreComponent.Logger(),
+				deps.NodeConnection,
+				deps.ProcessorsConfig,
+				ParamsChains.BroadcastUpToNPeers,
+				ParamsChains.BroadcastInterval,
+				ParamsChains.PullMissingRequestsFromCommittee,
+				deps.DefaultNetworkProvider,
+				deps.DatabaseManager.GetOrCreateKVStore,
+				ParamsRawBlocks.Enabled,
+				ParamsRawBlocks.Directory,
+			),
 		}
-
-		allChains.SetNodeConn(nodeconn.NodeConnection())
-		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics, deps.WAL); err != nil {
-			log.Errorf("failed to read chain activation records from registry: %v", err)
-			return
-		}
-
-		initialized.SetReady()
-
-		<-ctx.Done()
-
-		log.Info("dismissing chains...")
-		go func() {
-			allChains.Dismiss()
-			log.Info("dismissing chains... Done")
-		}()
-	}, parameters.PriorityChains)
-	if err != nil {
-		log.Error(err)
-		return err
+	}); err != nil {
+		CoreComponent.LogPanic(err)
 	}
 
 	return nil
 }
 
-func AllChains() *chains.Chains {
-	initialized.MustWait(5 * time.Second)
-	return allChains
+func run() error {
+	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
+		if err := deps.Chains.ActivateAllFromRegistry(
+			func() registry.Registry {
+				return deps.DefaultRegistry
+			},
+			deps.Metrics,
+			deps.WAL,
+		); err != nil {
+			CoreComponent.LogErrorf("failed to read chain activation records from registry: %v", err)
+			return
+		}
+
+		<-ctx.Done()
+
+		CoreComponent.LogInfo("dismissing chains...")
+		go func() {
+			deps.Chains.Dismiss()
+			CoreComponent.LogInfo("dismissing chains... Done")
+		}()
+	}, parameters.PriorityChains)
+	if err != nil {
+		CoreComponent.LogError(err)
+		return err
+	}
+
+	return nil
 }

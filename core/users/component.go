@@ -25,11 +25,18 @@ var CoreComponent *app.CoreComponent
 func provide(c *dig.Container) error {
 	type userManagerDeps struct {
 		dig.In
+
 		UsersConfig         *configuration.Configuration `name:"usersConfig"`
 		UsersConfigFilePath *string                      `name:"usersConfigFilePath"`
 	}
 
-	if err := c.Provide(func(deps userManagerDeps) *users.UserManager {
+	type userManagerResult struct {
+		dig.Out
+
+		UserManager *users.UserManager
+	}
+
+	if err := c.Provide(func(deps userManagerDeps) userManagerResult {
 		userManager := users.NewUserManager((func(users []*users.User) error {
 			// store users from user manager to the config file
 			cfgUsers := make(map[string]*User)
@@ -63,7 +70,9 @@ func provide(c *dig.Container) error {
 
 		userManager.StoreOnChange(true)
 
-		return userManager
+		return userManagerResult{
+			UserManager: userManager,
+		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
 	}

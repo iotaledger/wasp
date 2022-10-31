@@ -4,7 +4,6 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-
 	"github.com/iotaledger/wasp/packages/wal"
 )
 
@@ -24,8 +23,16 @@ func init() {
 var Plugin *app.Plugin
 
 func provide(c *dig.Container) error {
-	if err := c.Provide(func() *wal.WAL {
-		return wal.New(Plugin.Logger(), ParamsWAL.Directory)
+	type walResult struct {
+		dig.Out
+
+		WAL *wal.WAL
+	}
+
+	if err := c.Provide(func() walResult {
+		return walResult{
+			WAL: wal.New(Plugin.Logger(), ParamsWAL.Directory),
+		}
 	}); err != nil {
 		Plugin.LogPanic(err)
 	}

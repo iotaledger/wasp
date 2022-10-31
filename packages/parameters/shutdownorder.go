@@ -9,4 +9,6 @@ const (
 	PriorityWebAPI
 	PriorityDBGarbageCollection
 	PriorityMetrics
+	PriorityNanoMsg
+	PriorityDashboard
 )

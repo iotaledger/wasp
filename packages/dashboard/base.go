@@ -43,7 +43,7 @@ type BaseTemplateParams struct {
 	Version         string
 }
 
-type WaspServices interface {
+type WaspServicesInterface interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	WebAPIPort() string
@@ -60,20 +60,18 @@ type WaspServices interface {
 }
 
 type Dashboard struct {
-	navPages []Tab
-	stop     chan bool
-	wasp     WaspServices
 	log      *logger.Logger
+	wasp     WaspServicesInterface
+	navPages []Tab
 }
 
-func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Dashboard {
+func New(log *logger.Logger, server *echo.Echo, waspServices WaspServicesInterface) *Dashboard {
 	r := renderer{}
 	server.Renderer = r
 
 	d := &Dashboard{
-		stop: make(chan bool),
-		wasp: waspServices,
 		log:  log.Named("dashboard"),
+		wasp: waspServices,
 	}
 
 	d.errorInit(server, r)
@@ -87,10 +85,6 @@ func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Das
 	}
 
 	return d
-}
-
-func (d *Dashboard) Stop() {
-	close(d.stop)
 }
 
 func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {

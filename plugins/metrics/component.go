@@ -14,9 +14,10 @@ func init() {
 	Plugin = &app.Plugin{
 		Component: &app.Component{
 			Name:           "Metrics",
+			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
 			Params:         params,
 			InitConfigPars: initConfigPars,
-			Configure:      configure,
+			Provide:        provide,
 			Run:            run,
 		},
 		IsEnabled: func() bool {
@@ -26,9 +27,15 @@ func init() {
 }
 
 var (
-	Plugin     *app.Plugin
-	allMetrics *metrics.Metrics
+	Plugin *app.Plugin
+	deps   dependencies
 )
+
+type dependencies struct {
+	dig.In
+
+	Metrics *metrics.Metrics `optional:"true"`
+}
 
 func initConfigPars(c *dig.Container) error {
 	type cfgResult struct {
@@ -47,13 +54,33 @@ func initConfigPars(c *dig.Container) error {
 	return nil
 }
 
-func configure() error {
-	allMetrics = metrics.New(Plugin.Logger())
+func provide(c *dig.Container) error {
+	if !ParamsMetrics.Enabled {
+		return nil
+	}
+
+	type metricsResult struct {
+		dig.Out
+
+		Metrics *metrics.Metrics
+	}
+
+	if err := c.Provide(func() metricsResult {
+		return metricsResult{
+			Metrics: metrics.New(Plugin.Logger()),
+		}
+	}); err != nil {
+		Plugin.LogPanic(err)
+	}
 
 	return nil
 }
 
 func run() error {
+	if !ParamsMetrics.Enabled {
+		return nil
+	}
+
 	Plugin.LogInfof("Starting %s ...", Plugin.Name)
 	if err := Plugin.Daemon().BackgroundWorker("Prometheus exporter", func(ctx context.Context) {
 		Plugin.LogInfo("Starting Prometheus exporter ... done")
@@ -61,7 +88,7 @@ func run() error {
 		stopped := make(chan struct{})
 		go func() {
 			defer close(stopped)
-			allMetrics.Start(ParamsMetrics.BindAddress)
+			deps.Metrics.Start(ParamsMetrics.BindAddress)
 		}()
 
 		select {
@@ -71,7 +98,7 @@ func run() error {
 		Plugin.LogInfof("Stopping %s ...", Plugin.Name)
 		defer Plugin.LogInfof("Stopping %s ... done", Plugin.Name)
 
-		if err := allMetrics.Stop(); err != nil { //nolint:contextcheck // false positive
+		if err := deps.Metrics.Stop(); err != nil { //nolint:contextcheck // false positive
 			Plugin.LogErrorf("error stopping: %s", err)
 		}
 	}, parameters.PriorityMetrics); err != nil {
@@ -79,8 +106,4 @@ func run() error {
 	}
 
 	return nil
-}
-
-func AllMetrics() *metrics.Metrics {
-	return allMetrics
 }

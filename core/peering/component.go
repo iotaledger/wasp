@@ -4,46 +4,72 @@
 package peering
 
 import (
+	"go.uber.org/dig"
+
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/wasp/core/registry"
 	"github.com/iotaledger/wasp/packages/parameters"
-	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	peering_lpp "github.com/iotaledger/wasp/packages/peering/lpp"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/lpp"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name:      "Peering",
-			Params:    params,
-			Configure: configure,
-			Run:       run,
+			Name:     "Peering",
+			DepsFunc: func(cDeps dependencies) { deps = cDeps },
+			Params:   params,
+			Provide:  provide,
+			Run:      run,
 		},
 	}
 }
 
 var (
 	CoreComponent *app.CoreComponent
-
-	defaultNetworkProvider       peering_pkg.NetworkProvider
-	defaultTrustedNetworkManager peering_pkg.TrustedNetworkManager
+	deps          dependencies
 )
 
-func configure() error {
-	netID := ParamsPeering.NetID
-	netImpl, tnmImpl, err := peering_lpp.NewNetworkProvider(
-		netID,
-		ParamsPeering.Port,
-		registry.DefaultRegistry().GetNodeIdentity(),
-		registry.DefaultRegistry(),
-		CoreComponent.Logger(),
-	)
-	if err != nil {
-		CoreComponent.LogPanicf("Init.peering: %v", err)
+type dependencies struct {
+	dig.In
+
+	DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
+}
+
+func provide(c *dig.Container) error {
+	type networkDeps struct {
+		dig.In
+
+		DefaultRegistry registry.Registry
 	}
-	defaultNetworkProvider = netImpl
-	defaultTrustedNetworkManager = tnmImpl
-	CoreComponent.LogInfof("------------- NetID is %s ------------------", netID)
+
+	type networkResult struct {
+		dig.Out
+
+		DefaultNetworkProvider       peering.NetworkProvider       `name:"defaultNetworkProvider"`
+		DefaultTrustedNetworkManager peering.TrustedNetworkManager `name:"defaultTrustedNetworkManager"`
+	}
+
+	if err := c.Provide(func(deps networkDeps) networkResult {
+		netImpl, tnmImpl, err := lpp.NewNetworkProvider(
+			ParamsPeering.NetID,
+			ParamsPeering.Port,
+			deps.DefaultRegistry.GetNodeIdentity(),
+			deps.DefaultRegistry,
+			CoreComponent.Logger(),
+		)
+		if err != nil {
+			CoreComponent.LogPanicf("Init.peering: %v", err)
+		}
+		CoreComponent.LogInfof("------------- NetID is %s ------------------", ParamsPeering.NetID)
+
+		return networkResult{
+			DefaultNetworkProvider:       netImpl,
+			DefaultTrustedNetworkManager: tnmImpl,
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
 
 	return nil
 }
@@ -51,7 +77,7 @@ func configure() error {
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(
 		"WaspPeering",
-		defaultNetworkProvider.Run,
+		deps.DefaultNetworkProvider.Run,
 		parameters.PriorityPeering,
 	)
 	if err != nil {
@@ -59,13 +85,4 @@ func run() error {
 	}
 
 	return nil
-}
-
-// DefaultNetworkProvider returns the default network provider implementation.
-func DefaultNetworkProvider() peering_pkg.NetworkProvider {
-	return defaultNetworkProvider
-}
-
-func DefaultTrustedNetworkManager() peering_pkg.TrustedNetworkManager {
-	return defaultTrustedNetworkManager
 }

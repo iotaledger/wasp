@@ -33,10 +33,8 @@ func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
 type ChainProvider func(chainID *isc.ChainID) chain.Chain
 
 type Chains struct {
-	mutex                            sync.RWMutex
 	log                              *logger.Logger
-	allChains                        map[isc.ChainID]chain.Chain
-	nodeConn                         chain.NodeConnection
+	nodeConnection                   chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
@@ -45,10 +43,14 @@ type Chains struct {
 	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
+
+	mutex     sync.RWMutex
+	allChains map[isc.ChainID]chain.Chain
 }
 
 func New(
 	log *logger.Logger,
+	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
@@ -61,6 +63,7 @@ func New(
 	ret := &Chains{
 		log:                              log,
 		allChains:                        make(map[isc.ChainID]chain.Chain),
+		nodeConnection:                   nodeConnection,
 		processorConfig:                  processorConfig,
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
@@ -81,13 +84,6 @@ func (c *Chains) Dismiss() {
 		ch.Dismiss("shutdown")
 	}
 	c.allChains = make(map[isc.ChainID]chain.Chain)
-}
-
-func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
-	if c.nodeConn != nil {
-		c.log.Panicf("Chains: node conn already set")
-	}
-	c.nodeConn = nodeConn
 }
 
 func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
@@ -140,7 +136,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 	newChain := chainimpl.NewChain(
 		&chr.ChainID,
 		c.log,
-		c.nodeConn,
+		c.nodeConnection,
 		chainKVStore,
 		c.networkProvider,
 		defaultRegistry,
@@ -174,7 +170,7 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 		return nil
 	}
 	ch.Dismiss("deactivate")
-	c.nodeConn.UnregisterChain(&chr.ChainID)
+	c.nodeConnection.UnregisterChain(&chr.ChainID)
 	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }
@@ -197,5 +193,5 @@ func (c *Chains) Get(chainID *isc.ChainID, includeDeactivated ...bool) chain.Cha
 }
 
 func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return c.nodeConn.GetMetrics()
+	return c.nodeConnection.GetMetrics()
 }

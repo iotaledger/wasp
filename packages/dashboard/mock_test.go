@@ -28,7 +28,7 @@ type waspServicesMock struct {
 	chains map[[iotago.AliasIDLength]byte]*solo.Chain
 }
 
-var _ WaspServices = &waspServicesMock{}
+var _ WaspServicesInterface = &waspServicesMock{}
 
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
@@ -174,7 +174,7 @@ func initDashboardTest(t *testing.T) *dashboardTestEnv {
 		solo:   s,
 		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
 	}
-	d := Init(e, w, testlogger.NewLogger(t))
+	d := New(testlogger.NewLogger(t), e, w)
 	return &dashboardTestEnv{
 		wasp:      w,
 		echo:      e,

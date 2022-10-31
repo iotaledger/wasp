@@ -4,49 +4,59 @@
 package dkg
 
 import (
+	"go.uber.org/dig"
 	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/core/peering"
-	"github.com/iotaledger/wasp/core/registry"
-	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name:      "DKG",
-			Configure: configure,
+			Name:    "DKG",
+			Provide: provide,
 		},
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
-	defaultNode   *dkg_pkg.Node
-)
+var CoreComponent *app.CoreComponent
 
-func configure() error {
-	reg := registry.DefaultRegistry()
-	peeringProvider := peering.DefaultNetworkProvider()
-	var err error
-	defaultNode, err = dkg_pkg.NewNode(
-		reg.GetNodeIdentity(),
-		peeringProvider,
-		reg,
-		CoreComponent.Logger().Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
-	)
-	if err != nil {
-		panic(xerrors.Errorf("failed to initialize the DKG node: %w", err))
+func provide(c *dig.Container) error {
+	type nodeDeps struct {
+		dig.In
+
+		DefaultRegistry        registry.Registry
+		DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
 	}
 
-	return err
-}
+	type nodeResult struct {
+		dig.Out
 
-// DefaultNode returns the default instance of the DKG Node Provider.
-// It should be used to access all the DKG Node functions (not the DKG Initiator's).
-func DefaultNode() *dkg_pkg.Node {
-	return defaultNode
+		DefaultNode *dkg.Node `name:"defaultNode"`
+	}
+
+	if err := c.Provide(func(deps nodeDeps) nodeResult {
+		defaultNode, err := dkg.NewNode(
+			deps.DefaultRegistry.GetNodeIdentity(),
+			deps.DefaultNetworkProvider,
+			deps.DefaultRegistry,
+			CoreComponent.Logger().Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
+		)
+		if err != nil {
+			CoreComponent.LogPanic(xerrors.Errorf("failed to initialize the DKG node: %w", err))
+		}
+
+		return nodeResult{
+			DefaultNode: defaultNode,
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
+
+	return nil
 }
