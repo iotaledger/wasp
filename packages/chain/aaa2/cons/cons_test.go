@@ -161,7 +161,7 @@ func testBasic(t *testing.T, n, f int) {
 	now := time.Now()
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for _, nid := range nodeIDs {
-		inputs[nid] = ao0
+		inputs[nid] = cons.NewInputProposal(ao0)
 	}
 	tc.WithInputs(inputs).RunAll()
 	tc.PrintAllStatusStrings("After Inputs", t.Logf)
@@ -173,9 +173,9 @@ func testBasic(t *testing.T, n, f int) {
 		require.Equal(t, cons.Running, out.State)
 		require.NotNil(t, out.NeedMempoolProposal)
 		require.NotNil(t, out.NeedStateMgrStateProposal)
-		tc.WithMessage(cons.NewMsgMempoolProposal(nid, initReqRefs))
-		tc.WithMessage(cons.NewMsgStateMgrProposalConfirmed(nid))
-		tc.WithMessage(cons.NewMsgTimeData(nid, now))
+		tc.WithInput(nid, cons.NewInputMempoolProposal(initReqRefs))
+		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
+		tc.WithInput(nid, cons.NewInputTimeData(now))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)
@@ -195,8 +195,8 @@ func testBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
-		tc.WithMessage(cons.NewMsgMempoolRequests(nid, initReqs))
-		tc.WithMessage(cons.NewMsgStateMgrDecidedVirtualState(nid, stateBaseline, virtualStateAccess))
+		tc.WithInput(nid, cons.NewInputMempoolRequests(initReqs))
+		tc.WithInput(nid, cons.NewInputStateMgrDecidedVirtualState(stateBaseline, virtualStateAccess))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM data", t.Logf)
@@ -213,7 +213,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.NeedVMResult)
 		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
 		require.NoError(t, runvm.NewVMRunner().Run(out.NeedVMResult))
-		tc.WithMessage(cons.NewMsgVMResult(nid, out.NeedVMResult))
+		tc.WithInput(nid, cons.NewInputVMResult(out.NeedVMResult))
 	}
 	tc.RunAll()
 	//
@@ -229,7 +229,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.NeedStateMgrSaveBlock)
-		tc.WithMessage(cons.NewMsgStateMgrBlockSaved(nid))
+		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved())
 	}
 	tc.RunAll()
 	t.Logf("############ All should be done now.")
@@ -447,15 +447,14 @@ type testConsInst struct {
 	requests     []isc.Request
 	tc           *gpa.TestContext
 	tcInputCh    chan map[gpa.NodeID]gpa.Input // These channels are for sending data to TC.
-	tcMessageCh  chan gpa.Message              // These channels are for sending data to TC.
 	tcTerminated chan interface{}
 	//
 	// Inputs received from the previous instance.
-	lock              *sync.RWMutex                 // inputs value is checked in the TC thread and written in TCI.
-	messagePipe       chan gpa.Message              // This queue is used to send message from TCI/TC to TCI.
-	messagePipeClosed *atomic.Bool                  // Can be closed from TC or TCI.
-	inputCh           chan *testInstInput           // These channels are to send data to TCI.
-	inputs            map[gpa.NodeID]*testInstInput // Inputs received to this TCI.
+	lock            *sync.RWMutex                 // inputs value is checked in the TC thread and written in TCI.
+	compInputPipe   chan map[gpa.NodeID]gpa.Input // Local component inputs. This queue is used to send message from TCI/TC to TCI.
+	compInputClosed *atomic.Bool                  // Can be closed from TC or TCI.
+	inputCh         chan *testInstInput           // These channels are to send data to TCI.
+	inputs          map[gpa.NodeID]*testInstInput // Inputs received to this TCI.
 	//
 	// The latest output of the consensus instances.
 	outLatest map[gpa.NodeID]*cons.Output
@@ -503,11 +502,10 @@ func newTestConsInst(
 		stateIndex:                       stateIndex,
 		requests:                         requests,
 		tcInputCh:                        make(chan map[gpa.NodeID]gpa.Input, len(nodeIDs)),
-		tcMessageCh:                      make(chan gpa.Message, len(nodeIDs)),
 		tcTerminated:                     make(chan interface{}),
 		lock:                             &sync.RWMutex{},
-		messagePipe:                      make(chan gpa.Message, len(nodeIDs)*10),
-		messagePipeClosed:                &atomic.Bool{},
+		compInputPipe:                    make(chan map[gpa.NodeID]gpa.Input, len(nodeIDs)*10),
+		compInputClosed:                  &atomic.Bool{},
 		inputCh:                          make(chan *testInstInput, len(nodeIDs)),
 		inputs:                           map[gpa.NodeID]*testInstInput{},
 		outLatest:                        map[gpa.NodeID]*cons.Output{},
@@ -522,8 +520,7 @@ func newTestConsInst(
 	}
 	tci.tc = gpa.NewTestContext(nodes).
 		WithOutputHandler(tci.outputHandler).
-		WithInputChannel(tci.tcInputCh).
-		WithMessageChannel(tci.tcMessageCh)
+		WithInputChannel(tci.tcInputCh)
 	return tci
 }
 
@@ -547,24 +544,20 @@ func (tci *testConsInst) run() {
 				panic("duplicate input")
 			}
 			tci.inputs[inp.nodeID] = inp
-			inputsLen := len(tci.inputs)
 			tci.lock.Unlock()
-			tci.tcInputCh <- map[gpa.NodeID]gpa.Input{inp.nodeID: inp.baseAliasOutput}
+			tci.tcInputCh <- map[gpa.NodeID]gpa.Input{inp.nodeID: cons.NewInputProposal(inp.baseAliasOutput)}
 			timeForStatus = time.After(3 * time.Second)
-			if inputsLen == len(tci.nodes) {
-				close(tci.tcInputCh)
-			}
 			tci.tryHandleOutput(inp.nodeID)
-		case msg, ok := <-tci.messagePipe:
+		case compInp, ok := <-tci.compInputPipe:
 			if !ok {
 				tickClose = true
 				if tickSent > 0 {
-					close(tci.tcMessageCh)
+					close(tci.tcInputCh)
 				}
-				tci.messagePipe = nil
+				tci.compInputPipe = nil
 				continue
 			}
-			tci.tcMessageCh <- msg
+			tci.tcInputCh <- compInp
 		case <-ctx.Done():
 			return
 		case <-ticks:
@@ -573,10 +566,10 @@ func (tci *testConsInst) run() {
 			}
 			tickSent++
 			for nodeID := range tci.nodes {
-				tci.tcMessageCh <- cons.NewMsgTimeData(nodeID, time.Now())
+				tci.tcInputCh <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputTimeData(time.Now())}
 			}
 			if tickClose {
-				close(tci.tcMessageCh)
+				close(tci.tcInputCh)
 				continue
 			}
 			ticks = time.After(20 * time.Millisecond)
@@ -600,7 +593,7 @@ func (tci *testConsInst) outputHandler(nodeID gpa.NodeID, out gpa.Output) {
 
 // Here we respond to the node requests to other components (provided via the output).
 // This can be executed in the TCI (on input) and TC (on output) threads.
-func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) {
+func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint: gocyclo
 	tci.lock.Lock()
 	defer tci.lock.Unlock()
 	out, ok := tci.outLatest[nodeID]
@@ -639,6 +632,9 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) {
 	tci.tryHandledNeedVMResult(nodeID, out)
 	tci.tryHandledNeedStateMgrSaveBlock(nodeID, out)
 	allClosed := true
+	if len(tci.inputs) < len(tci.nodes) {
+		allClosed = false
+	}
 	for nid := range tci.nodes {
 		if tci.handledNeedMempoolProposal[nid] &&
 			tci.handledNeedStateMgrStateProposal[nid] &&
@@ -651,7 +647,7 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) {
 		allClosed = false
 	}
 	if allClosed {
-		tci.tryCloseMessagePipe()
+		tci.tryCloseCompInputPipe()
 	}
 }
 
@@ -662,7 +658,7 @@ func (tci *testConsInst) tryHandledNeedMempoolProposal(nodeID gpa.NodeID, out *c
 		for _, r := range tci.requests {
 			reqRefs = append(reqRefs, isc.RequestRefFromRequest(r))
 		}
-		tci.messagePipe <- cons.NewMsgMempoolProposal(nodeID, reqRefs)
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputMempoolProposal(reqRefs)}
 		tci.handledNeedMempoolProposal[nodeID] = true
 	}
 }
@@ -670,7 +666,7 @@ func (tci *testConsInst) tryHandledNeedMempoolProposal(nodeID gpa.NodeID, out *c
 func (tci *testConsInst) tryHandledNeedStateMgrStateProposal(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrStateProposal != nil && !tci.handledNeedStateMgrStateProposal[nodeID] {
 		require.Equal(tci.t, out.NeedStateMgrStateProposal, inp.baseAliasOutput)
-		tci.messagePipe <- cons.NewMsgStateMgrProposalConfirmed(nodeID)
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrProposalConfirmed()}
 		tci.handledNeedStateMgrStateProposal[nodeID] = true
 	}
 }
@@ -687,7 +683,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 			}
 		}
 		if len(requests) == len(out.NeedMempoolRequests) {
-			tci.messagePipe <- cons.NewMsgMempoolRequests(nodeID, requests)
+			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputMempoolRequests(requests)}
 		} else {
 			tci.t.Errorf("We have to sync between mempools, should not happen in this test.")
 		}
@@ -698,7 +694,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrDecidedState != nil && !tci.handledNeedStateMgrDecidedState[nodeID] {
 		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
-			tci.messagePipe <- cons.NewMsgStateMgrDecidedVirtualState(nodeID, inp.stateBaseline, inp.virtualStateAccess)
+			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.stateBaseline, inp.virtualStateAccess)}
 		} else {
 			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")
 		}
@@ -710,21 +706,21 @@ func (tci *testConsInst) tryHandledNeedVMResult(nodeID gpa.NodeID, out *cons.Out
 	if out.NeedVMResult != nil && !tci.handledNeedVMResult[nodeID] {
 		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
 		require.NoError(tci.t, runvm.NewVMRunner().Run(out.NeedVMResult))
-		tci.messagePipe <- cons.NewMsgVMResult(nodeID, out.NeedVMResult)
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputVMResult(out.NeedVMResult)}
 		tci.handledNeedVMResult[nodeID] = true
 	}
 }
 
 func (tci *testConsInst) tryHandledNeedStateMgrSaveBlock(nodeID gpa.NodeID, out *cons.Output) {
 	if out.NeedStateMgrSaveBlock != nil && !tci.handledNeedStateMgrSaveBlock[nodeID] {
-		tci.messagePipe <- cons.NewMsgStateMgrBlockSaved(nodeID)
+		tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrBlockSaved()}
 		tci.handledNeedStateMgrSaveBlock[nodeID] = true
 	}
 }
 
-func (tci *testConsInst) tryCloseMessagePipe() {
-	if !tci.messagePipeClosed.Swap(true) {
-		close(tci.messagePipe)
+func (tci *testConsInst) tryCloseCompInputPipe() {
+	if !tci.compInputClosed.Swap(true) {
+		close(tci.compInputPipe)
 	}
 }
 

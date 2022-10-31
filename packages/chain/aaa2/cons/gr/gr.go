@@ -5,8 +5,6 @@
 // as a goroutine and communicate with all the related components.
 package consGR
 
-// TODO: ... func AddProducedBlock(aliasOutput *isc.AliasOutputWithID, block state.Block)
-
 import (
 	"context"
 	"time"
@@ -68,7 +66,7 @@ type StateMgr interface {
 	ConsensusProducedBlock(
 		ctx context.Context,
 		block state.Block,
-	) <-chan interface{}
+	) <-chan error
 }
 
 type VM interface {
@@ -112,7 +110,7 @@ type ConsGr struct {
 	stateMgrStateProposalAsked  bool
 	stateMgrDecidedStateRespCh  <-chan *StateMgrDecidedState
 	stateMgrDecidedStateAsked   bool
-	stateMgrSaveBlockRespCh     <-chan interface{}
+	stateMgrSaveBlockRespCh     <-chan error
 	stateMgrSaveBlockAsked      bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTask
@@ -233,49 +231,52 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			printStatusCh = time.After(cgr.printStatusPeriod)
 			cgr.outputCh = inp.outputCh
 			cgr.recoverCh = inp.recoverCh
-			cgr.handleInput(inp.baseAliasOutput)
+			cgr.handleConsInput(cons.NewInputProposal(inp.baseAliasOutput))
 		case t, ok := <-cgr.inputTimeCh:
 			if !ok {
 				cgr.inputTimeCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgTimeData(cgr.me, t))
+			cgr.handleConsInput(cons.NewInputTimeData(t))
 		case resp, ok := <-cgr.mempoolProposalsRespCh:
 			if !ok {
 				cgr.mempoolProposalsRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgMempoolProposal(cgr.me, resp))
+			cgr.handleConsInput(cons.NewInputMempoolProposal(resp))
 		case resp, ok := <-cgr.mempoolRequestsRespCh:
 			if !ok {
 				cgr.mempoolRequestsRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgMempoolRequests(cgr.me, resp))
+			cgr.handleConsInput(cons.NewInputMempoolRequests(resp))
 		case _, ok := <-cgr.stateMgrStateProposalRespCh:
 			if !ok {
 				cgr.stateMgrStateProposalRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgStateMgrProposalConfirmed(cgr.me))
+			cgr.handleConsInput(cons.NewInputStateMgrProposalConfirmed())
 		case resp, ok := <-cgr.stateMgrDecidedStateRespCh:
 			if !ok {
 				cgr.stateMgrDecidedStateRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.StateBaseline, resp.VirtualStateAccess))
-		case _, ok := <-cgr.stateMgrSaveBlockRespCh:
+			cgr.handleConsInput(cons.NewInputStateMgrDecidedVirtualState(resp.StateBaseline, resp.VirtualStateAccess))
+		case err, ok := <-cgr.stateMgrSaveBlockRespCh:
 			if !ok {
 				cgr.stateMgrSaveBlockRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgStateMgrBlockSaved(cgr.me))
+			if err != nil {
+				panic(xerrors.Errorf("cannot save produced block: %w", err))
+			}
+			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved())
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil
 				continue
 			}
-			cgr.handleConsMessage(cons.NewMsgVMResult(cgr.me, resp))
+			cgr.handleConsInput(cons.NewInputVMResult(resp))
 		case t, ok := <-redeliveryTickCh:
 			if !ok {
 				redeliveryTickCh = nil
@@ -303,14 +304,8 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 	}
 }
 
-func (cgr *ConsGr) handleInput(inp gpa.Input) {
+func (cgr *ConsGr) handleConsInput(inp gpa.Input) {
 	outMsgs := cgr.consInst.Input(inp)
-	cgr.sendMessages(outMsgs)
-	cgr.tryHandleOutput()
-}
-
-func (cgr *ConsGr) handleConsMessage(msg gpa.Message) {
-	outMsgs := cgr.consInst.NestedMessage(msg)
 	cgr.sendMessages(outMsgs)
 	cgr.tryHandleOutput()
 }
