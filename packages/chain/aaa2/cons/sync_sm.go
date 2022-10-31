@@ -12,10 +12,20 @@ import (
 )
 
 type SyncSM interface {
+	//
+	// State proposal.
 	ProposedBaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
 	StateProposalConfirmedByStateMgr() gpa.OutMessages
+	//
+	// Decided state.
 	DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages
 	DecidedVirtualStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	//
+	// Save the block.
+	BlockProduced(block state.Block) gpa.OutMessages
+	BlockSaved() gpa.OutMessages
+	//
+	// Supporting stuff.
 	String() string
 }
 
@@ -33,6 +43,12 @@ type syncSMImpl struct {
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages
 	decidedBaseAliasOutput         *isc.AliasOutputWithID
 	decidedStateReceivedCB         func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	//
+	// Save the produced block.
+	producedBlock                  state.Block
+	saveProducedBlockInputsReadyCB func(producedBlock state.Block) gpa.OutMessages
+	saveProducedBlockDone          bool
+	saveProducedBlockDoneCB        func() gpa.OutMessages
 }
 
 func NewSyncSM(
@@ -40,12 +56,16 @@ func NewSyncSM(
 	stateProposalReceivedCB func(proposedAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages,
 	decidedStateReceivedCB func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages,
+	saveProducedBlockInputsReadyCB func(producedBlock state.Block) gpa.OutMessages,
+	saveProducedBlockDoneCB func() gpa.OutMessages,
 ) SyncSM {
 	return &syncSMImpl{
 		stateProposalQueryInputsReadyCB: stateProposalQueryInputsReadyCB,
 		stateProposalReceivedCB:         stateProposalReceivedCB,
 		decidedStateQueryInputsReadyCB:  decidedStateQueryInputsReadyCB,
 		decidedStateReceivedCB:          decidedStateReceivedCB,
+		saveProducedBlockInputsReadyCB:  saveProducedBlockInputsReadyCB,
+		saveProducedBlockDoneCB:         saveProducedBlockDoneCB,
 	}
 }
 
@@ -86,6 +106,22 @@ func (sub *syncSMImpl) DecidedVirtualStateReceived(
 	return sub.decidedStateReceivedCB(aliasOutput, stateBaseline, virtualStateAccess)
 }
 
+func (sub *syncSMImpl) BlockProduced(block state.Block) gpa.OutMessages {
+	if sub.producedBlock != nil {
+		return nil
+	}
+	sub.producedBlock = block
+	return sub.saveProducedBlockInputsReadyCB(sub.producedBlock)
+}
+
+func (sub *syncSMImpl) BlockSaved() gpa.OutMessages {
+	if sub.saveProducedBlockDone {
+		return nil
+	}
+	sub.saveProducedBlockDone = true
+	return sub.saveProducedBlockDoneCB()
+}
+
 // Try to provide useful human-readable compact status.
 func (sub *syncSMImpl) String() string {
 	str := "SM"
@@ -103,6 +139,13 @@ func (sub *syncSMImpl) String() string {
 		str += "/state=OK"
 	} else if sub.decidedBaseAliasOutputID == nil {
 		str += "/state=WAIT[acs decision]"
+	} else {
+		str += "/state=WAIT[RespFromStateMgr]"
+	}
+	if sub.saveProducedBlockDone {
+		str += "/state=OK"
+	} else if sub.producedBlock == nil {
+		str += "/state=WAIT[BlockFromVM]"
 	} else {
 		str += "/state=WAIT[RespFromStateMgr]"
 	}

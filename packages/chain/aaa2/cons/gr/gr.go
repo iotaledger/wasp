@@ -65,6 +65,12 @@ type StateMgr interface {
 		aliasOutputID *iotago.OutputID,
 		stateCommitment *state.L1Commitment,
 	) <-chan *StateMgrDecidedState
+	// State manager has to persistently store the block and respond only after
+	// the block was flushed to the disk. A WAL can be used for that as well.
+	SaveBlock(
+		ctx context.Context,
+		block state.Block,
+	) <-chan interface{}
 }
 
 type VM interface {
@@ -108,6 +114,8 @@ type ConsGr struct {
 	stateMgrStateProposalAsked  bool
 	stateMgrDecidedStateRespCh  <-chan *StateMgrDecidedState
 	stateMgrDecidedStateAsked   bool
+	stateMgrSaveBlockRespCh     <-chan interface{}
+	stateMgrSaveBlockAsked      bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTask
 	vmAsked                     bool
@@ -258,6 +266,12 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				continue
 			}
 			cgr.handleConsMessage(cons.NewMsgStateMgrDecidedVirtualState(cgr.me, resp.AliasOutput, resp.StateBaseline, resp.VirtualStateAccess))
+		case _, ok := <-cgr.stateMgrSaveBlockRespCh:
+			if !ok {
+				cgr.stateMgrSaveBlockRespCh = nil
+				continue
+			}
+			cgr.handleConsMessage(cons.NewMsgStateMgrBlockSaved(cgr.me))
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil
@@ -321,7 +335,7 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 	cgr.tryHandleOutput()
 }
 
-func (cgr *ConsGr) tryHandleOutput() {
+func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	outputUntyped := cgr.consInst.Output()
 	if outputUntyped == nil {
 		return
@@ -342,6 +356,10 @@ func (cgr *ConsGr) tryHandleOutput() {
 	if output.NeedStateMgrDecidedState != nil && !cgr.stateMgrDecidedStateAsked {
 		cgr.stateMgrDecidedStateRespCh = cgr.stateMgr.ConsensusDecidedState(cgr.ctx, output.NeedStateMgrDecidedState.AliasOutputID, output.NeedStateMgrDecidedState.StateCommitment)
 		cgr.stateMgrDecidedStateAsked = true
+	}
+	if output.NeedStateMgrSaveBlock != nil && !cgr.stateMgrSaveBlockAsked {
+		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.SaveBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
+		cgr.stateMgrSaveBlockAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)

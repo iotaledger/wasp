@@ -14,12 +14,14 @@ import (
 type SyncTX interface {
 	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
 	SignatureReceived(signature []byte) gpa.OutMessages
+	BlockSaved() gpa.OutMessages
 	String() string
 }
 
 type syncTXImpl struct {
-	VMResult  *vm.VMTask
-	Signature []byte
+	vmResult   *vm.VMTask
+	signature  []byte
+	blockSaved bool
 
 	inputsReady   bool
 	inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.OutMessages
@@ -30,27 +32,35 @@ func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.Out
 }
 
 func (sub *syncTXImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
-	if sub.VMResult != nil || vmResult == nil {
+	if sub.vmResult != nil || vmResult == nil {
 		return nil
 	}
-	sub.VMResult = vmResult
+	sub.vmResult = vmResult
 	return sub.tryCompleteInputs()
 }
 
 func (sub *syncTXImpl) SignatureReceived(signature []byte) gpa.OutMessages {
-	if sub.Signature != nil || signature == nil {
+	if sub.signature != nil || signature == nil {
 		return nil
 	}
-	sub.Signature = signature
+	sub.signature = signature
+	return sub.tryCompleteInputs()
+}
+
+func (sub *syncTXImpl) BlockSaved() gpa.OutMessages {
+	if sub.blockSaved {
+		return nil
+	}
+	sub.blockSaved = true
 	return sub.tryCompleteInputs()
 }
 
 func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
-	if sub.inputsReady || sub.VMResult == nil || sub.Signature == nil {
+	if sub.inputsReady || sub.vmResult == nil || sub.signature == nil || !sub.blockSaved {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.VMResult, sub.Signature)
+	return sub.inputsReadyCB(sub.vmResult, sub.signature)
 }
 
 // Try to provide useful human-readable compact status.
@@ -60,11 +70,14 @@ func (sub *syncTXImpl) String() string {
 		str += statusStrOK
 	} else {
 		wait := []string{}
-		if sub.VMResult == nil {
+		if sub.vmResult == nil {
 			wait = append(wait, "VMResult")
 		}
-		if sub.Signature == nil {
+		if sub.signature == nil {
 			wait = append(wait, "Signature")
+		}
+		if !sub.blockSaved {
+			wait = append(wait, "SavedBlock")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
 	}

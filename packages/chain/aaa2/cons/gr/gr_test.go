@@ -304,6 +304,15 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutputI
 	return resp
 }
 
+func (tsm *testStateMgr) SaveBlock(ctx context.Context, block state.Block) <-chan interface{} {
+	tsm.lock.Lock()
+	defer tsm.lock.Unlock()
+	resp := make(chan interface{}, 1)
+	resp <- nil // We don't save it in the test for now, just respond it is already saved.
+	close(resp)
+	return resp
+}
+
 func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 	s, ok := tsm.states[hash]
 	if !ok {

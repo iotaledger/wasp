@@ -49,7 +49,6 @@
 //
 // TODO: Handle the requests gracefully in the VM before getting the initTX.
 // TODO: Reconsider the termination. Do we need to wait for DSS, RND?
-// TODO: Add block write to the StateMgr.
 // TODO: Add BaseAliasOutput to the BatchProposal to avoid having it in the StateMgr.
 package cons
 
@@ -112,6 +111,7 @@ type Output struct {
 	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
 	NeedStateMgrStateProposal *isc.AliasOutputWithID // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *StateRef              // Query for a decided Virtual State to be used by VM.
+	NeedStateMgrSaveBlock     state.Block            // Ask StateMgr to save the produced block.
 	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
@@ -221,6 +221,8 @@ func New(
 		c.uponSMStateProposalReceived,
 		c.uponSMDecidedStateQueryInputsReady,
 		c.uponSMDecidedStateReceived,
+		c.uponSMSaveProducedBlockInputsReady,
+		c.uponSMSaveProducedBlockDone,
 	)
 	c.subDSS = NewSyncDSS(
 		c.uponDSSInitialInputsReady,
@@ -294,6 +296,8 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 		return c.subSM.StateProposalConfirmedByStateMgr()
 	case *msgStateMgrDecidedVirtualState:
 		return c.subSM.DecidedVirtualStateReceived(msgT.aliasOutput, msgT.stateBaseline, msgT.virtualStateAccess)
+	case *msgStateMgrBlockSaved:
+		return c.subSM.BlockSaved()
 	case *msgTimeData:
 		return c.subACS.TimeDataReceived(msgT.timeData)
 	case *msgBLSPartialSig:
@@ -378,6 +382,16 @@ func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutputID *
 func (c *consImpl) uponSMDecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = nil
 	return c.subVM.DecidedStateReceived(aliasOutput, stateBaseline, virtualStateAccess)
+}
+
+func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.Block) gpa.OutMessages {
+	c.output.NeedStateMgrSaveBlock = producedBlock
+	return nil
+}
+
+func (c *consImpl) uponSMSaveProducedBlockDone() gpa.OutMessages {
+	c.output.NeedStateMgrSaveBlock = nil
+	return c.subTX.BlockSaved()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -522,7 +536,12 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if err != nil {
 		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
 	}
+	producedBlock, err := vmResult.VirtualStateAccess.ExtractBlock()
+	if err != nil {
+		panic(xerrors.Errorf("uponVMOutputReceived: cannot extract produced block: %v", err))
+	}
 	return gpa.NoMessages().
+		AddAll(c.subSM.BlockProduced(producedBlock)).
 		AddAll(c.subTX.VMResultReceived(vmResult)).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }

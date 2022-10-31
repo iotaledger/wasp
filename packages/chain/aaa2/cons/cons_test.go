@@ -216,6 +216,23 @@ func testBasic(t *testing.T, n, f int) {
 		tc.WithMessage(cons.NewMsgVMResult(nid, out.NeedVMResult))
 	}
 	tc.RunAll()
+	//
+	// Provide Decided data from SM and MP.
+	t.Logf("############ After VM the VM Run.")
+	tc.PrintAllStatusStrings("After VM the VM Run", t.Logf)
+	for nid, node := range nodes {
+		out := node.Output().(*cons.Output)
+		require.Equal(t, cons.Running, out.State)
+		require.Nil(t, out.NeedMempoolProposal)
+		require.Nil(t, out.NeedStateMgrStateProposal)
+		require.Nil(t, out.NeedMempoolRequests)
+		require.Nil(t, out.NeedStateMgrDecidedState)
+		require.Nil(t, out.NeedVMResult)
+		require.NotNil(t, out.NeedStateMgrSaveBlock)
+		tc.WithMessage(cons.NewMsgStateMgrBlockSaved(nid))
+	}
+	tc.RunAll()
+	t.Logf("############ All should be done now.")
 	tc.PrintAllStatusStrings("All done.", t.Logf)
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
@@ -449,6 +466,7 @@ type testConsInst struct {
 	handledNeedMempoolRequests       map[gpa.NodeID]bool
 	handledNeedStateMgrDecidedState  map[gpa.NodeID]bool
 	handledNeedVMResult              map[gpa.NodeID]bool
+	handledNeedStateMgrSaveBlock     map[gpa.NodeID]bool
 	//
 	// Result of this instance provided to the next instance.
 	done   map[gpa.NodeID]bool
@@ -498,6 +516,7 @@ func newTestConsInst(
 		handledNeedMempoolRequests:       map[gpa.NodeID]bool{},
 		handledNeedStateMgrDecidedState:  map[gpa.NodeID]bool{},
 		handledNeedVMResult:              map[gpa.NodeID]bool{},
+		handledNeedStateMgrSaveBlock:     map[gpa.NodeID]bool{},
 		done:                             map[gpa.NodeID]bool{},
 		doneCB:                           doneCB,
 	}
@@ -618,13 +637,15 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) {
 	tci.tryHandledNeedMempoolRequests(nodeID, out)
 	tci.tryHandledNeedStateMgrDecidedState(nodeID, out, inp)
 	tci.tryHandledNeedVMResult(nodeID, out)
+	tci.tryHandledNeedStateMgrSaveBlock(nodeID, out)
 	allClosed := true
 	for nid := range tci.nodes {
 		if tci.handledNeedMempoolProposal[nid] &&
 			tci.handledNeedStateMgrStateProposal[nid] &&
 			tci.handledNeedMempoolRequests[nid] &&
 			tci.handledNeedStateMgrDecidedState[nid] &&
-			tci.handledNeedVMResult[nid] {
+			tci.handledNeedVMResult[nid] &&
+			tci.handledNeedStateMgrSaveBlock[nid] {
 			continue
 		}
 		allClosed = false
@@ -691,6 +712,13 @@ func (tci *testConsInst) tryHandledNeedVMResult(nodeID gpa.NodeID, out *cons.Out
 		require.NoError(tci.t, runvm.NewVMRunner().Run(out.NeedVMResult))
 		tci.messagePipe <- cons.NewMsgVMResult(nodeID, out.NeedVMResult)
 		tci.handledNeedVMResult[nodeID] = true
+	}
+}
+
+func (tci *testConsInst) tryHandledNeedStateMgrSaveBlock(nodeID gpa.NodeID, out *cons.Output) {
+	if out.NeedStateMgrSaveBlock != nil && !tci.handledNeedStateMgrSaveBlock[nodeID] {
+		tci.messagePipe <- cons.NewMsgStateMgrBlockSaved(nodeID)
+		tci.handledNeedStateMgrSaveBlock[nodeID] = true
 	}
 }
 

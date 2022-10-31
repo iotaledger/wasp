@@ -31,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -60,7 +59,7 @@ type ChainMempool interface {
 	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
 }
 
-type ChainStateMgr interface {
+type ChainStateMgr interface { // TODO: Call the SaveBlock, and handle the result.
 	consGR.StateMgr
 	// Invoked by the chain when new confirmed alias output is received.
 	// This event should be used to mark blocks as confirmed.
@@ -68,11 +67,6 @@ type ChainStateMgr interface {
 	// Invoked by the chain when a set of access nodes has changed.
 	// These nodes should be used to perform block replication.
 	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
-	// Invoked by the chain when new block is produces, but it is not yet
-	// confirmed or published. This functions returns a channel which sends
-	// an error (or nil if no error) after the block is persisted and flushed.
-	// The call can be canceled using a context.
-	BlockProduced(ctx context.Context, aliasOutput *isc.AliasOutputWithID, block state.Block) <-chan error
 }
 
 type RequestOutputHandler = func(outputID iotago.OutputID, output iotago.Output)
