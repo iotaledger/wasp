@@ -70,5 +70,8 @@ func init() {
 			"peering",
 			"version",
 		},
+		AdditionalConfigs: []*app.ConfigurationSet{
+			app.NewConfigurationSet("users", "users", "usersConfigFilePath", "usersConfig", false, true, false, "users.json", "u"),
+		},
 	}
 }

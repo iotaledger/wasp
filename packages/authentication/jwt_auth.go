@@ -40,11 +40,12 @@ func NewJWTAuth(duration time.Duration, nodeID string, secret []byte) (*JWTAuth,
 
 type WaspClaims struct {
 	jwt.StandardClaims
-	Permissions map[string]bool `json:"permissions"`
+	Permissions map[string]struct{} `json:"permissions"`
 }
 
 func (c *WaspClaims) HasPermission(permission string) bool {
-	return c.Permissions[permission]
+	_, exists := c.Permissions[permission]
+	return exists
 }
 
 func (c *WaspClaims) compare(field, expected string) bool {
@@ -174,7 +175,7 @@ func (j *JWTAuth) VerifyJWT(token string, allow ClaimValidator) bool {
 	return true
 }
 
-func initJWT(duration time.Duration, nodeID string, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
+func initJWT(duration time.Duration, nodeID string, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) (*JWTAuth, func(context echo.Context) bool, MiddlewareValidator, error) {
 	jwtAuth, err := NewJWTAuth(duration, nodeID, privateKey)
 	if err != nil {
 		return nil, nil, nil, err
@@ -193,6 +194,7 @@ func initJWT(duration time.Duration, nodeID string, privateKey []byte, userMap m
 	jwtAuthAllow := func(e echo.Context, authContext *AuthContext) bool {
 		isValidSubject := false
 
+		userMap := userManager.Users()
 		for username := range userMap {
 			if authContext.claims.VerifySubject(username) {
 				isValidSubject = true
@@ -213,7 +215,7 @@ func initJWT(duration time.Duration, nodeID string, privateKey []byte, userMap m
 	return jwtAuth, jwtAuthSkipper, jwtAuthAllow, nil
 }
 
-func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, userMap map[string]*users.UserData, claimValidator ClaimValidator) *JWTAuth {
+func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, userManager *users.UserManager, claimValidator ClaimValidator) *JWTAuth {
 	duration := config.Duration
 
 	// If durationHours is 0, we set 24h as the default duration
@@ -221,7 +223,7 @@ func AddJWTAuth(webAPI WebAPI, config JWTAuthConfiguration, privateKey []byte, u
 		duration = defaultJWTDuration
 	}
 
-	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, userMap, claimValidator)
+	jwtAuth, jwtSkipper, jwtAuthAllow, _ := initJWT(duration, "wasp0", privateKey, userManager, claimValidator)
 
 	webAPI.Use(jwtAuth.Middleware(jwtSkipper, jwtAuthAllow))
 

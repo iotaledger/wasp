@@ -1,29 +1,34 @@
 package authentication
 
 import (
-	"crypto/subtle"
+	"fmt"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/wasp/packages/users"
 )
 
-func AddBasicAuth(webAPI WebAPI, userMap map[string]*users.UserData) {
+func AddBasicAuth(webAPI WebAPI, userManager *users.UserManager) {
 	webAPI.Use(middleware.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
 		authContext := c.Get("auth").(*AuthContext)
 
-		userDetail := userMap[username]
+		user, err := userManager.User(username)
+		if err != nil {
+			return false, err
+		}
 
-		if userDetail == nil {
+		valid, err := basicauth.VerifyPassword([]byte(password), user.PasswordSalt, user.PasswordHash)
+		if err != nil {
+			return false, fmt.Errorf("failed to verify password: %w", err)
+		}
+
+		if !valid {
 			return false, nil
 		}
 
-		if subtle.ConstantTimeCompare([]byte(userDetail.Password), []byte(password)) != 0 {
-			authContext.isAuthenticated = true
-			return true, nil
-		}
-
-		return false, nil
+		authContext.isAuthenticated = true
+		return true, nil
 	}))
 }

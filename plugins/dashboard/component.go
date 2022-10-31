@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/core/chains"
@@ -27,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
@@ -35,6 +37,7 @@ func init() {
 	Plugin = &app.Plugin{
 		Component: &app.Component{
 			Name:      "Dashboard",
+			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
 			Params:    params,
 			Configure: configure,
 			Run:       run,
@@ -47,9 +50,17 @@ func init() {
 
 var (
 	Plugin *app.Plugin
+	deps   dependencies
+
 	Server = echo.New()
 	d      *dashboard.Dashboard
 )
+
+type dependencies struct {
+	dig.In
+
+	UserManager *users.UserManager
+}
 
 func configure() error {
 	Server.HideBanner = true
@@ -64,7 +75,7 @@ func configure() error {
 		return claims.HasPermission(permissions.Dashboard)
 	}
 
-	authentication.AddAuthentication(Server, registry.DefaultRegistry, ParamsDashboard.Auth, claimValidator)
+	authentication.AddAuthentication(Server, deps.UserManager, registry.DefaultRegistry, ParamsDashboard.Auth, claimValidator)
 
 	d = dashboard.Init(Server, &waspServices{}, Plugin.Logger())
 

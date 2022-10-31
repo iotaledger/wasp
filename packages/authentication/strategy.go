@@ -62,23 +62,21 @@ func AddNoneAuth(webAPI WebAPI) {
 	webAPI.Use(noneFunc)
 }
 
-func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, authConfig AuthConfiguration, claimValidator ClaimValidator) {
-	userMap := users.All()
-
+func AddAuthentication(webAPI WebAPI, userManager *users.UserManager, registryProvider registry.Provider, authConfig AuthConfiguration, claimValidator ClaimValidator) {
 	addAuthContext(webAPI, authConfig)
 
 	switch authConfig.Scheme {
 	case AuthBasic:
-		AddBasicAuth(webAPI, userMap)
+		AddBasicAuth(webAPI, userManager)
 	case AuthJWT:
 		nodeIdentity := registryProvider().GetNodeIdentity()
 
 		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, authConfig.JWTConfig, privateKey, userMap, claimValidator)
+		jwtAuth := AddJWTAuth(webAPI, authConfig.JWTConfig, privateKey, userManager, claimValidator)
 
-		authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
+		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
 		webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
 
 	case AuthIPWhitelist:

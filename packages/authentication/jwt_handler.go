@@ -1,13 +1,13 @@
 package authentication
 
 import (
-	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"time"
 
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/wasp/packages/authentication/shared"
 
 	"github.com/labstack/echo/v4"
@@ -18,22 +18,17 @@ import (
 const headerXForwardedPrefix = "X-Forwarded-Prefix"
 
 type AuthHandler struct {
-	Jwt   *JWTAuth
-	Users map[string]*users.UserData
+	Jwt         *JWTAuth
+	UserManager *users.UserManager
 }
 
-func (a *AuthHandler) validateLogin(username, password string) bool {
-	userDetail := a.Users[username]
-
-	if userDetail == nil {
+func (a *AuthHandler) validateLogin(user *users.User, password string) bool {
+	valid, err := basicauth.VerifyPassword([]byte(password), user.PasswordSalt, user.PasswordHash)
+	if err != nil {
 		return false
 	}
 
-	if subtle.ConstantTimeCompare([]byte(userDetail.Password), []byte(password)) != 0 {
-		return true
-	}
-
-	return false
+	return valid
 }
 
 func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
@@ -43,18 +38,17 @@ func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 		return "", xerrors.Errorf("Invalid form data")
 	}
 
-	if !a.validateLogin(request.Username, request.Password) {
+	user, err := a.UserManager.User(request.Username)
+	if err != nil {
 		return "", xerrors.Errorf("Invalid credentials")
 	}
 
-	user := users.GetUserByName(request.Username)
-
-	if user == nil {
+	if !a.validateLogin(user, request.Password) {
 		return "", xerrors.Errorf("Invalid credentials")
 	}
 
 	claims := &WaspClaims{
-		Permissions: users.GetPermissionMap(request.Username),
+		Permissions: user.Permissions,
 	}
 
 	token, err := a.Jwt.IssueJWT(request.Username, claims)

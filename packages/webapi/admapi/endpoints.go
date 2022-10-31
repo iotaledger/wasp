@@ -14,6 +14,7 @@ import (
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/wal"
 )
 
@@ -24,6 +25,7 @@ func AddEndpoints(
 	adm echoswagger.ApiGroup,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
+	userManager *users.UserManager,
 	registryProvider registry.Provider,
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
@@ -40,7 +42,7 @@ func AddEndpoints(
 		return claims.HasPermission(permissions.API)
 	}
 
-	authentication.AddAuthentication(adm.EchoGroup(), registryProvider, authConfig, claimValidator)
+	authentication.AddAuthentication(adm.EchoGroup(), userManager, registryProvider, authConfig, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, registryProvider, nodeOwnerAddresses)
 	addChainRecordEndpoints(adm, registryProvider)
