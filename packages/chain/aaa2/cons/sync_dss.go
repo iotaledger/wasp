@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemDSS
+package cons
 
 import (
 	"fmt"
@@ -11,7 +11,15 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
-type SubsystemDSS struct {
+type SyncDSS interface {
+	InitialInputReceived() gpa.OutMessages
+	DSSOutputReceived(output gpa.Output) gpa.OutMessages
+	DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages
+	MessageToSignReceived(messageToSign []byte) gpa.OutMessages
+	String() string
+}
+
+type syncDSSImpl struct {
 	DecidedIndexProposals map[gpa.NodeID][]int
 	MessageToSign         []byte
 	initialInputsReady    bool
@@ -19,18 +27,18 @@ type SubsystemDSS struct {
 	indexProposalReady    bool
 	indexProposalReadyCB  func(indexProposal []int) gpa.OutMessages
 	signingInputsReady    bool
-	signingInputsReadyCB  func(sub *SubsystemDSS) gpa.OutMessages
+	signingInputsReadyCB  func(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages
 	outputReady           bool
 	outputReadyCB         func(signature []byte) gpa.OutMessages
 }
 
-func New(
+func NewSyncDSS(
 	initialInputsReadyCB func() gpa.OutMessages,
 	indexProposalReadyCB func(indexProposals []int) gpa.OutMessages,
-	signingInputsReadyCB func(sub *SubsystemDSS) gpa.OutMessages,
+	signingInputsReadyCB func(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages,
 	outputReadyCB func(signature []byte) gpa.OutMessages,
-) *SubsystemDSS {
-	return &SubsystemDSS{
+) SyncDSS {
+	return &syncDSSImpl{
 		initialInputsReadyCB: initialInputsReadyCB,
 		signingInputsReadyCB: signingInputsReadyCB,
 		indexProposalReadyCB: indexProposalReadyCB,
@@ -38,7 +46,7 @@ func New(
 	}
 }
 
-func (sub *SubsystemDSS) InitialInputReceived() gpa.OutMessages {
+func (sub *syncDSSImpl) InitialInputReceived() gpa.OutMessages {
 	if sub.initialInputsReady {
 		return nil
 	}
@@ -46,7 +54,7 @@ func (sub *SubsystemDSS) InitialInputReceived() gpa.OutMessages {
 	return sub.initialInputsReadyCB()
 }
 
-func (sub *SubsystemDSS) DSSOutputReceived(output gpa.Output) gpa.OutMessages {
+func (sub *syncDSSImpl) DSSOutputReceived(output gpa.Output) gpa.OutMessages {
 	if output == nil || (sub.indexProposalReady && sub.outputReady) {
 		return nil
 	}
@@ -63,7 +71,7 @@ func (sub *SubsystemDSS) DSSOutputReceived(output gpa.Output) gpa.OutMessages {
 	return msgs
 }
 
-func (sub *SubsystemDSS) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
+func (sub *syncDSSImpl) DecidedIndexProposalsReceived(decidedIndexProposals map[gpa.NodeID][]int) gpa.OutMessages {
 	if sub.DecidedIndexProposals != nil || decidedIndexProposals == nil {
 		return nil
 	}
@@ -71,7 +79,7 @@ func (sub *SubsystemDSS) DecidedIndexProposalsReceived(decidedIndexProposals map
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SubsystemDSS) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
+func (sub *syncDSSImpl) MessageToSignReceived(messageToSign []byte) gpa.OutMessages {
 	if sub.MessageToSign != nil || messageToSign == nil {
 		return nil
 	}
@@ -79,16 +87,16 @@ func (sub *SubsystemDSS) MessageToSignReceived(messageToSign []byte) gpa.OutMess
 	return sub.tryCompleteSigning()
 }
 
-func (sub *SubsystemDSS) tryCompleteSigning() gpa.OutMessages {
+func (sub *syncDSSImpl) tryCompleteSigning() gpa.OutMessages {
 	if sub.signingInputsReady || sub.MessageToSign == nil || sub.DecidedIndexProposals == nil {
 		return nil
 	}
 	sub.signingInputsReady = true
-	return sub.signingInputsReadyCB(sub)
+	return sub.signingInputsReadyCB(sub.DecidedIndexProposals, sub.MessageToSign)
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemDSS) String() string {
+func (sub *syncDSSImpl) String() string {
 	str := "DSS"
 	if sub.indexProposalReady && sub.outputReady {
 		return str + "/OK"

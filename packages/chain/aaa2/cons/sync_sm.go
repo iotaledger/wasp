@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemSM
+package cons
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -11,7 +11,15 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type SubsystemSM struct {
+type SyncSM interface {
+	ProposedBaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
+	StateProposalConfirmedByStateMgr() gpa.OutMessages
+	DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages
+	DecidedVirtualStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	String() string
+}
+
+type syncSMImpl struct {
 	//
 	// Query for a proposal.
 	ProposedBaseAliasOutput         *isc.AliasOutputWithID
@@ -27,13 +35,13 @@ type SubsystemSM struct {
 	decidedStateReceivedCB         func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
 }
 
-func New(
+func NewSyncSM(
 	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	stateProposalReceivedCB func(proposedAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages,
 	decidedStateReceivedCB func(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages,
-) *SubsystemSM {
-	return &SubsystemSM{
+) SyncSM {
+	return &syncSMImpl{
 		stateProposalQueryInputsReadyCB: stateProposalQueryInputsReadyCB,
 		stateProposalReceivedCB:         stateProposalReceivedCB,
 		decidedStateQueryInputsReadyCB:  decidedStateQueryInputsReadyCB,
@@ -41,7 +49,7 @@ func New(
 	}
 }
 
-func (sub *SubsystemSM) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+func (sub *syncSMImpl) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
 	if sub.ProposedBaseAliasOutput != nil {
 		return nil
 	}
@@ -49,7 +57,7 @@ func (sub *SubsystemSM) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.Ali
 	return sub.stateProposalQueryInputsReadyCB(sub.ProposedBaseAliasOutput)
 }
 
-func (sub *SubsystemSM) StateProposalConfirmedByStateMgr() gpa.OutMessages {
+func (sub *syncSMImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
 	if sub.stateProposalReceived {
 		return nil
 	}
@@ -57,7 +65,7 @@ func (sub *SubsystemSM) StateProposalConfirmedByStateMgr() gpa.OutMessages {
 	return sub.stateProposalReceivedCB(sub.ProposedBaseAliasOutput)
 }
 
-func (sub *SubsystemSM) DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages {
+func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iotago.OutputID, decidedBaseStateCommitment *state.L1Commitment) gpa.OutMessages {
 	if sub.decidedBaseAliasOutputID != nil {
 		return nil
 	}
@@ -66,7 +74,7 @@ func (sub *SubsystemSM) DecidedVirtualStateNeeded(decidedBaseAliasOutputID *iota
 	return sub.decidedStateQueryInputsReadyCB(decidedBaseAliasOutputID, decidedBaseStateCommitment)
 }
 
-func (sub *SubsystemSM) DecidedVirtualStateReceived(
+func (sub *syncSMImpl) DecidedVirtualStateReceived(
 	aliasOutput *isc.AliasOutputWithID,
 	stateBaseline coreutil.StateBaseline,
 	virtualStateAccess state.VirtualStateAccess,
@@ -79,7 +87,7 @@ func (sub *SubsystemSM) DecidedVirtualStateReceived(
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemSM) String() string {
+func (sub *syncSMImpl) String() string {
 	str := "SM"
 	if sub.stateProposalReceived && sub.decidedBaseAliasOutput != nil {
 		return str + "/OK"

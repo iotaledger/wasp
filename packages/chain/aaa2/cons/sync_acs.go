@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemACS
+package cons
 
 import (
 	"fmt"
@@ -15,35 +15,44 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+type SyncACS interface {
+	StateProposalReceived(proposedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
+	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
+	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
+	TimeDataReceived(timeData time.Time) gpa.OutMessages
+	ACSOutputReceived(output gpa.Output) gpa.OutMessages
+	String() string
+}
+
 // > UPON Reception of responses from Mempool, StateMgr and DSS NonceIndexes:
 // >     Produce a batch proposal.
 // >     Start the ACS.
-type SubsystemACS struct {
+type syncACSImpl struct {
 	BaseAliasOutput  *isc.AliasOutputWithID
 	RequestRefs      []*isc.RequestRef
 	DSSIndexProposal []int
 	TimeData         time.Time
 	inputsReady      bool
-	inputsReadyCB    func(sub *SubsystemACS) gpa.OutMessages
+	inputsReadyCB    func(baseAliasOutput *isc.AliasOutputWithID, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages
 	outputReady      bool
 	outputReadyCB    func(output map[gpa.NodeID][]byte) gpa.OutMessages
 	terminated       bool
 	terminatedCB     func()
 }
 
-func New(
-	inputsReadyCB func(sub *SubsystemACS) gpa.OutMessages,
+func NewSyncACS(
+	inputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages,
 	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
 	terminatedCB func(),
-) *SubsystemACS {
-	return &SubsystemACS{
+) SyncACS {
+	return &syncACSImpl{
 		inputsReadyCB: inputsReadyCB,
 		outputReadyCB: outputReadyCB,
 		terminatedCB:  terminatedCB,
 	}
 }
 
-func (sub *SubsystemACS) StateProposalReceived(proposedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
 	if sub.BaseAliasOutput != nil {
 		return nil
 	}
@@ -51,7 +60,7 @@ func (sub *SubsystemACS) StateProposalReceived(proposedBaseAliasOutput *isc.Alia
 	return sub.tryCompleteInput()
 }
 
-func (sub *SubsystemACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (sub *syncACSImpl) MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	if sub.RequestRefs != nil {
 		return nil
 	}
@@ -59,7 +68,7 @@ func (sub *SubsystemACS) MempoolRequestsReceived(requestRefs []*isc.RequestRef) 
 	return sub.tryCompleteInput()
 }
 
-func (sub *SubsystemACS) DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
+func (sub *syncACSImpl) DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages {
 	if sub.DSSIndexProposal != nil {
 		return nil
 	}
@@ -67,7 +76,7 @@ func (sub *SubsystemACS) DSSIndexProposalReceived(dssIndexProposal []int) gpa.Ou
 	return sub.tryCompleteInput()
 }
 
-func (sub *SubsystemACS) TimeDataReceived(timeData time.Time) gpa.OutMessages {
+func (sub *syncACSImpl) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	if timeData.After(sub.TimeData) {
 		sub.TimeData = timeData
 		return sub.tryCompleteInput()
@@ -75,15 +84,15 @@ func (sub *SubsystemACS) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	return nil
 }
 
-func (sub *SubsystemACS) tryCompleteInput() gpa.OutMessages {
+func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
 	if sub.inputsReady || sub.BaseAliasOutput == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub)
+	return sub.inputsReadyCB(sub.BaseAliasOutput, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData)
 }
 
-func (sub *SubsystemACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
+func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 	if output == nil {
 		return nil
 	}
@@ -103,7 +112,7 @@ func (sub *SubsystemACS) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemACS) String() string {
+func (sub *syncACSImpl) String() string {
 	str := "ACS"
 	if sub.outputReady {
 		str += "/OK"

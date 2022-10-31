@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemVM
+package cons
 
 import (
 	"fmt"
@@ -16,7 +16,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type SubsystemVM struct {
+type SyncVM interface {
+	DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages
+	DecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages
+	RequestsReceived(requests []isc.Request) gpa.OutMessages
+	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
+	String() string
+}
+
+type syncVMImpl struct {
 	AggregatedProposals *bp.AggregatedBatchProposals
 	stateReceived       bool
 	BaseAliasOutput     *isc.AliasOutputWithID
@@ -25,19 +34,19 @@ type SubsystemVM struct {
 	Randomness          *hashing.HashValue
 	Requests            []isc.Request
 	inputsReady         bool
-	inputsReadyCB       func(sub *SubsystemVM) gpa.OutMessages
+	inputsReadyCB       func(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages
 	outputReady         bool
 	outputReadyCB       func(output *vm.VMTask) gpa.OutMessages
 }
 
-func New(
-	inputsReadyCB func(sub *SubsystemVM) gpa.OutMessages,
+func NewSyncVM(
+	inputsReadyCB func(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages,
 	outputReadyCB func(output *vm.VMTask) gpa.OutMessages,
-) *SubsystemVM {
-	return &SubsystemVM{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
+) SyncVM {
+	return &syncVMImpl{inputsReadyCB: inputsReadyCB, outputReadyCB: outputReadyCB}
 }
 
-func (sub *SubsystemVM) DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
+func (sub *syncVMImpl) DecidedBatchProposalsReceived(aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
 	if sub.AggregatedProposals != nil || aggregatedProposals == nil {
 		return nil
 	}
@@ -45,7 +54,7 @@ func (sub *SubsystemVM) DecidedBatchProposalsReceived(aggregatedProposals *bp.Ag
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemVM) DecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
+func (sub *syncVMImpl) DecidedStateReceived(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
 	if sub.stateReceived {
 		return nil
 	}
@@ -56,7 +65,7 @@ func (sub *SubsystemVM) DecidedStateReceived(aliasOutput *isc.AliasOutputWithID,
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemVM) RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages {
+func (sub *syncVMImpl) RandomnessReceived(randomness hashing.HashValue) gpa.OutMessages {
 	if sub.Randomness != nil {
 		return nil
 	}
@@ -64,7 +73,7 @@ func (sub *SubsystemVM) RandomnessReceived(randomness hashing.HashValue) gpa.Out
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemVM) RequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (sub *syncVMImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages {
 	if sub.Requests != nil || requests == nil {
 		return nil
 	}
@@ -72,15 +81,15 @@ func (sub *SubsystemVM) RequestsReceived(requests []isc.Request) gpa.OutMessages
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemVM) tryCompleteInputs() gpa.OutMessages {
+func (sub *syncVMImpl) tryCompleteInputs() gpa.OutMessages {
 	if sub.inputsReady || sub.AggregatedProposals == nil || !sub.stateReceived || sub.Randomness == nil || sub.Requests == nil {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub)
+	return sub.inputsReadyCB(sub.AggregatedProposals, sub.BaseAliasOutput, sub.StateBaseline, sub.VirtualStateAccess, sub.Randomness, sub.Requests)
 }
 
-func (sub *SubsystemVM) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (sub *syncVMImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if vmResult == nil {
 		return nil
 	}
@@ -92,7 +101,7 @@ func (sub *SubsystemVM) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemVM) String() string {
+func (sub *syncVMImpl) String() string {
 	str := "VM"
 	if sub.outputReady {
 		str += "/OK"

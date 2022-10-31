@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemTX
+package cons
 
 import (
 	"fmt"
@@ -11,19 +11,25 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type SubsystemTX struct {
+type SyncTX interface {
+	VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages
+	SignatureReceived(signature []byte) gpa.OutMessages
+	String() string
+}
+
+type syncTXImpl struct {
 	VMResult  *vm.VMTask
 	Signature []byte
 
 	inputsReady   bool
-	inputsReadyCB func(sub *SubsystemTX) gpa.OutMessages
+	inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.OutMessages
 }
 
-func New(inputsReadyCB func(sub *SubsystemTX) gpa.OutMessages) *SubsystemTX {
-	return &SubsystemTX{inputsReadyCB: inputsReadyCB}
+func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTask, signature []byte) gpa.OutMessages) SyncTX {
+	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
-func (sub *SubsystemTX) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
+func (sub *syncTXImpl) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if sub.VMResult != nil || vmResult == nil {
 		return nil
 	}
@@ -31,7 +37,7 @@ func (sub *SubsystemTX) VMResultReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemTX) SignatureReceived(signature []byte) gpa.OutMessages {
+func (sub *syncTXImpl) SignatureReceived(signature []byte) gpa.OutMessages {
 	if sub.Signature != nil || signature == nil {
 		return nil
 	}
@@ -39,16 +45,16 @@ func (sub *SubsystemTX) SignatureReceived(signature []byte) gpa.OutMessages {
 	return sub.tryCompleteInputs()
 }
 
-func (sub *SubsystemTX) tryCompleteInputs() gpa.OutMessages {
+func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
 	if sub.inputsReady || sub.VMResult == nil || sub.Signature == nil {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub)
+	return sub.inputsReadyCB(sub.VMResult, sub.Signature)
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemTX) String() string {
+func (sub *syncTXImpl) String() string {
 	str := "TX"
 	if sub.inputsReady {
 		str += "/OK"

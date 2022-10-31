@@ -56,6 +56,7 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 	"fmt"
+	"time"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
@@ -65,13 +66,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/bp"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemACS"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemDSS"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemMP"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemRND"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemSM"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemTX"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/subsystemVM"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -138,14 +132,14 @@ type consImpl struct {
 	asGPA          gpa.GPA
 	dss            dss.DSS
 	acs            acs.ACS
-	subMP          *subsystemMP.SubsystemMP   // Mempool.
-	subSM          *subsystemSM.SubsystemSM   // StateMgr.
-	subDSS         *subsystemDSS.SubsystemDSS // Distributed Schnorr Signature.
-	subACS         *subsystemACS.SubsystemACS // Asynchronous Common Subset.
-	subRND         *subsystemRND.SubsystemRND // Randomness.
-	subVM          *subsystemVM.SubsystemVM   // Virtual Machine.
-	subTX          *subsystemTX.SubsystemTX   // Building final TX.
-	term           *termCondition             // To detect, when this instance can be terminated.
+	subMP          SyncMP         // Mempool.
+	subSM          SyncSM         // StateMgr.
+	subDSS         SyncDSS        // Distributed Schnorr Signature.
+	subACS         SyncACS        // Asynchronous Common Subset.
+	subRND         SyncRND        // Randomness.
+	subVM          SyncVM         // Virtual Machine.
+	subTX          SyncTX         // Building final TX.
+	term           *termCondition // To detect, when this instance can be terminated.
 	msgWrapper     *gpa.MsgWrapper
 	output         *Output
 	log            *logger.Logger
@@ -215,39 +209,39 @@ func New(
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
 	c.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, c.msgWrapperFunc)
-	c.subMP = subsystemMP.New(
+	c.subMP = NewSyncMP(
 		c.uponMPProposalInputsReady,
 		c.uponMPProposalReceived,
 		c.uponMPRequestsNeeded,
 		c.uponMPRequestsReceived,
 	)
-	c.subSM = subsystemSM.New(
+	c.subSM = NewSyncSM(
 		c.uponSMStateProposalQueryInputsReady,
 		c.uponSMStateProposalReceived,
 		c.uponSMDecidedStateQueryInputsReady,
 		c.uponSMDecidedStateReceived,
 	)
-	c.subDSS = subsystemDSS.New(
+	c.subDSS = NewSyncDSS(
 		c.uponDSSInitialInputsReady,
 		c.uponDSSIndexProposalReady,
 		c.uponDSSSigningInputsReceived,
 		c.uponDSSOutputReady,
 	)
-	c.subACS = subsystemACS.New(
+	c.subACS = NewSyncACS(
 		c.uponACSInputsReceived,
 		c.uponACSOutputReceived,
 		c.uponACSTerminated,
 	)
-	c.subRND = subsystemRND.New(
+	c.subRND = NewSyncRND(
 		int(dkShare.BLSThreshold()),
 		c.uponRNDInputsReady,
 		c.uponRNDSigSharesReady,
 	)
-	c.subVM = subsystemVM.New(
+	c.subVM = NewSyncVM(
 		c.uponVMInputsReceived,
 		c.uponVMOutputReceived,
 	)
-	c.subTX = subsystemTX.New(
+	c.subTX = NewSyncTX(
 		c.uponTXInputsReady,
 	)
 	c.term = newTermCondition(
@@ -402,8 +396,8 @@ func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessage
 	return c.subACS.DSSIndexProposalReceived(indexProposal)
 }
 
-func (c *consImpl) uponDSSSigningInputsReceived(sub *subsystemDSS.SubsystemDSS) gpa.OutMessages {
-	dssMsg := c.dss.NewMsgDecided(sub.DecidedIndexProposals, sub.MessageToSign)
+func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
+	dssMsg := c.dss.NewMsgDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateMessage(gpa.NewWrappingMsg(msgTypeWrapped, subsystemTypeDSS, 0, dssMsg))
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide inputs for signing: %w", err))
@@ -420,14 +414,14 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 ////////////////////////////////////////////////////////////////////////////////
 // ACS
 
-func (c *consImpl) uponACSInputsReceived(sub *subsystemACS.SubsystemACS) gpa.OutMessages {
+func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID, requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
-		sub.BaseAliasOutput,
-		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(sub.DSSIndexProposal),
-		sub.TimeData,
+		baseAliasOutput,
+		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(dssIndexProposal),
+		timeData,
 		isc.NewContractAgentID(&c.chainID, 0),
-		sub.RequestRefs,
+		requestRefs,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
 	if err != nil {
@@ -492,23 +486,23 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 ////////////////////////////////////////////////////////////////////////////////
 // VM
 
-func (c *consImpl) uponVMInputsReceived(sub *subsystemVM.SubsystemVM) gpa.OutMessages {
+func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, baseAliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// The decided base alias output can be different from that we have proposed!
-	decidedBaseAliasOutputID := sub.AggregatedProposals.DecidedBaseAliasOutputID()
+	decidedBaseAliasOutputID := aggregatedProposals.DecidedBaseAliasOutputID()
 	c.output.NeedVMResult = &vm.VMTask{
 		ACSSessionID:           0, // TODO: Remove the ACSSessionID when old consensus Impl is removed.
 		Processors:             c.processorCache,
-		AnchorOutput:           sub.BaseAliasOutput.GetAliasOutput(),
+		AnchorOutput:           baseAliasOutput.GetAliasOutput(),
 		AnchorOutputID:         *decidedBaseAliasOutputID,
-		SolidStateBaseline:     sub.StateBaseline,
-		Requests:               sub.AggregatedProposals.OrderedRequests(sub.Requests, *sub.Randomness),
-		TimeAssumption:         sub.AggregatedProposals.AggregatedTime(),
-		Entropy:                *sub.Randomness,
-		ValidatorFeeTarget:     sub.AggregatedProposals.ValidatorFeeTarget(),
+		SolidStateBaseline:     stateBaseline,
+		Requests:               aggregatedProposals.OrderedRequests(requests, *randomness),
+		TimeAssumption:         aggregatedProposals.AggregatedTime(),
+		Entropy:                *randomness,
+		ValidatorFeeTarget:     aggregatedProposals.ValidatorFeeTarget(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
-		VirtualStateAccess:     sub.VirtualStateAccess.Copy(),
-		MaintenanceModeEnabled: governance.NewStateAccess(sub.VirtualStateAccess.KVStore()).GetMaintenanceStatus(),
+		VirtualStateAccess:     virtualStateAccess.Copy(),
+		MaintenanceModeEnabled: governance.NewStateAccess(virtualStateAccess.KVStore()).GetMaintenanceStatus(),
 		Log:                    c.log.Named("VM"),
 	}
 	return nil
@@ -536,8 +530,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 // TX
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(sub *subsystemTX.SubsystemTX) gpa.OutMessages {
-	vmResult := sub.VMResult
+func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.OutMessages {
 	var resultTxEssence *iotago.TransactionEssence
 	var resultState state.VirtualStateAccess
 	if vmResult.RotationAddress != nil {
@@ -566,7 +559,7 @@ func (c *consImpl) uponTXInputsReady(sub *subsystemTX.SubsystemTX) gpa.OutMessag
 	}
 	publicKey := c.dkShare.GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
-	copy(signatureArray[:], sub.Signature)
+	copy(signatureArray[:], signature)
 	signatureForUnlock := &iotago.Ed25519Signature{
 		PublicKey: publicKey.AsKey(),
 		Signature: signatureArray,

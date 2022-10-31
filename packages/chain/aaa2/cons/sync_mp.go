@@ -1,14 +1,22 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package subsystemMP
+package cons
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type SubsystemMP struct {
+type SyncMP interface {
+	BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
+	ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
+	RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages
+	RequestsReceived(requests []isc.Request) gpa.OutMessages
+	String() string
+}
+
+type syncMPImpl struct {
 	BaseAliasOutput       *isc.AliasOutputWithID
 	DecidedRequestIDs     []isc.RequestID
 	proposalInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
@@ -20,13 +28,13 @@ type SubsystemMP struct {
 	requestsReceivedCB    func(requests []isc.Request) gpa.OutMessages
 }
 
-func New(
+func NewSyncMP(
 	proposalInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	proposalReceivedCB func(requestRefs []*isc.RequestRef) gpa.OutMessages,
 	requestsNeededCB func(requestIDs []*isc.RequestRef) gpa.OutMessages,
 	requestsReceivedCB func(requests []isc.Request) gpa.OutMessages,
-) *SubsystemMP {
-	return &SubsystemMP{
+) SyncMP {
+	return &syncMPImpl{
 		proposalInputsReadyCB: proposalInputsReadyCB,
 		proposalReceivedCB:    proposalReceivedCB,
 		requestsNeededCB:      requestsNeededCB,
@@ -34,7 +42,7 @@ func New(
 	}
 }
 
-func (sub *SubsystemMP) BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
+func (sub *syncMPImpl) BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
 	if sub.BaseAliasOutput != nil {
 		return nil
 	}
@@ -42,7 +50,7 @@ func (sub *SubsystemMP) BaseAliasOutputReceived(baseAliasOutput *isc.AliasOutput
 	return sub.proposalInputsReadyCB(sub.BaseAliasOutput)
 }
 
-func (sub *SubsystemMP) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (sub *syncMPImpl) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	if sub.proposalReceived {
 		return nil
 	}
@@ -50,7 +58,7 @@ func (sub *SubsystemMP) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutM
 	return sub.proposalReceivedCB(requestRefs)
 }
 
-func (sub *SubsystemMP) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
+func (sub *syncMPImpl) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMessages {
 	if sub.requestsNeeded {
 		return nil
 	}
@@ -58,7 +66,7 @@ func (sub *SubsystemMP) RequestsNeeded(requestRefs []*isc.RequestRef) gpa.OutMes
 	return sub.requestsNeededCB(requestRefs)
 }
 
-func (sub *SubsystemMP) RequestsReceived(requests []isc.Request) gpa.OutMessages {
+func (sub *syncMPImpl) RequestsReceived(requests []isc.Request) gpa.OutMessages {
 	if sub.requestsReceived {
 		return nil
 	}
@@ -67,7 +75,7 @@ func (sub *SubsystemMP) RequestsReceived(requests []isc.Request) gpa.OutMessages
 }
 
 // Try to provide useful human-readable compact status.
-func (sub *SubsystemMP) String() string {
+func (sub *syncMPImpl) String() string {
 	str := "MP"
 	if sub.proposalReceived && sub.requestsReceived {
 		return str + "/OK"
