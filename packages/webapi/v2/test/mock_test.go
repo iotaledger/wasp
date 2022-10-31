@@ -15,7 +15,7 @@ import (
 func TestMockingOfPtrStructure(t *testing.T) {
 	mock := v2.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(&models.PeeringNodeStatus{})
+	mockedChainInfoResponse := mock.Get(&models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
@@ -24,7 +24,7 @@ func TestMockingOfPtrStructure(t *testing.T) {
 func TestMockingOfStructure(t *testing.T) {
 	mock := v2.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(models.PeeringNodeStatus{})
+	mockedChainInfoResponse := mock.Get(models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
@@ -33,7 +33,7 @@ func TestMockingOfStructure(t *testing.T) {
 func TestMockingOfStructureArray(t *testing.T) {
 	mock := v2.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get([]models.PeeringNodeStatus{})
+	mockedChainInfoResponse := mock.Get([]models.PeeringNodeStatusResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestMockingOfStructureArray(t *testing.T) {
 func TestMockingOfChainInfo(t *testing.T) {
 	mock := v2.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get([]models.ChainInfo{})
+	mockedChainInfoResponse := mock.Get([]models.ChainInfoResponse{})
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestMockingOfChainInfo(t *testing.T) {
 func TestMockingOfCommitteeInfo(t *testing.T) {
 	mock := v2.NewMocker()
 	mock.LoadMockFiles()
-	mockedChainInfoResponse := mock.Get(models.CommitteeInfo{})
+	mockedChainInfoResponse := mock.Get(models.CommitteeInfoResponse{})
 
 	result, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)

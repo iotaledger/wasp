@@ -25,7 +25,7 @@ func (c *Controller) getReceipt(e echo.Context) error {
 		return apierrors.ReceiptError(err)
 	}
 
-	mappedReceipt := models.MapReceipt(receipt, vmError)
+	mappedReceipt := models.MapReceiptResponse(receipt, vmError)
 
 	return e.JSON(http.StatusOK, mappedReceipt)
 }

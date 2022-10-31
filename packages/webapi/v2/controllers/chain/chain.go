@@ -40,7 +40,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfo := models.CommitteeInfo{
+	chainInfo := models.CommitteeInfoResponse{
 		ChainID:        chainID.String(),
 		Active:         chainRecord.Active,
 		StateAddress:   committeeInfo.Address.String(),
@@ -68,7 +68,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return err
 	}
 
-	chainInfoResponse := models.MapChainInfo(chainInfo, evmChainID)
+	chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
@@ -79,7 +79,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		return err
 	}
 
-	chainList := make([]models.ChainInfo, 0)
+	chainList := make([]models.ChainInfoResponse, 0)
 
 	for _, chainID := range chainIDs {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -92,7 +92,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 			return err
 		}
 
-		chainInfoResponse := models.MapChainInfo(chainInfo, evmChainID)
+		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
 
 		chainList = append(chainList, chainInfoResponse)
 	}

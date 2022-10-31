@@ -2,6 +2,7 @@ package v2
 
 import (
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	walpkg "github.com/iotaledger/wasp/packages/wal"
-	"github.com/iotaledger/wasp/packages/webapi/v2/controllers"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
@@ -52,6 +52,7 @@ func Init(logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
 	config *configuration.Configuration,
 	chainsProvider chains.Provider,
+	dkgNodeProvider dkg.NodeProvider,
 	metricsProvider *metricspkg.Metrics,
 	networkProvider peering.NetworkProvider,
 	registryProvider registry.Provider,
@@ -72,13 +73,13 @@ func Init(logger *loggerpkg.Logger,
 	peeringService := services.NewPeeringService(logger, chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(logger, chainService, networkProvider)
 	nodeService := services.NewNodeService(logger, shutdownHandler)
+	dkgService := services.NewDKGService(logger, registryProvider, dkgNodeProvider)
 	// --
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(logger, metricsService),
-		node.NewNodeController(logger, peeringService, nodeService),
-		controllers.NewInfoController(logger, config),
+		node.NewNodeController(logger, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(logger, offLedgerService, peeringService, vmService),
 	}
 

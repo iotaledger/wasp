@@ -13,10 +13,10 @@ import (
 
 func (c *Controller) GetRegisteredPeers(e echo.Context) error {
 	peers := c.peeringService.GetRegisteredPeers()
-	peerModels := make([]models.PeeringNodeStatus, len(*peers))
+	peerModels := make([]models.PeeringNodeStatusResponse, len(*peers))
 
 	for k, v := range *peers {
-		peerModels[k] = models.PeeringNodeStatus{
+		peerModels[k] = models.PeeringNodeStatusResponse{
 			IsAlive:   v.IsAlive,
 			NetID:     v.NetID,
 			NumUsers:  v.NumUsers,
@@ -34,9 +34,9 @@ func (c *Controller) GetTrustedPeers(e echo.Context) error {
 		return apierrors.InternalServerError(err)
 	}
 
-	peerModels := make([]models.PeeringNodeIdentity, len(*peers))
+	peerModels := make([]models.PeeringNodeIdentityResponse, len(*peers))
 	for k, v := range *peers {
-		peerModels[k] = models.PeeringNodeIdentity{
+		peerModels[k] = models.PeeringNodeIdentityResponse{
 			NetID:     v.NetID,
 			PublicKey: v.PublicKey.String(),
 			IsTrusted: v.IsTrusted,
@@ -49,7 +49,7 @@ func (c *Controller) GetTrustedPeers(e echo.Context) error {
 func (c *Controller) GetIdentity(e echo.Context) error {
 	self := c.peeringService.GetIdentity()
 
-	peerModel := models.PeeringNodeIdentity{
+	peerModel := models.PeeringNodeIdentityResponse{
 		NetID:     self.NetID,
 		PublicKey: self.PublicKey.String(),
 		IsTrusted: self.IsTrusted,

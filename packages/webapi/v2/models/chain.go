@@ -8,13 +8,13 @@ import (
 
 type CommitteeNode struct {
 	AccessAPI string
-	Node      PeeringNodeStatus
+	Node      PeeringNodeStatusResponse
 }
 
 func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {
 	return CommitteeNode{
 		AccessAPI: status.AccessAPI,
-		Node: PeeringNodeStatus{
+		Node: PeeringNodeStatusResponse{
 			IsAlive:   status.Node.IsAlive,
 			NetID:     status.Node.NetID,
 			NumUsers:  status.Node.NumUsers,
@@ -34,7 +34,7 @@ func MapCommitteeNodes(status []*dto.ChainNodeStatus) []CommitteeNode {
 	return nodes
 }
 
-type CommitteeInfo struct {
+type CommitteeInfoResponse struct {
 	AccessNodes    []CommitteeNode `swagger:"desc(A list of all access nodes and their peering info.)"`
 	Active         bool            `swagger:"desc(Whether or not the chain is active.)"`
 	CandidateNodes []CommitteeNode `swagger:"desc(A list of all candidate nodes and their peering info.)"`
@@ -43,7 +43,7 @@ type CommitteeInfo struct {
 	StateAddress   string          `swagger:"desc(State address, if we are part of it.)"`
 }
 
-type ContractInfo struct {
+type ContractInfoResponse struct {
 	Description string            `swagger:"desc(The description of the contract.)"`
 	HName       isc.Hname         `swagger:"desc(The id (HName(name)) of the contract.)"`
 	Name        string            `swagger:"desc(The name of the contract.)"`
@@ -56,7 +56,7 @@ type gasFeePolicy struct {
 	ValidatorFeeShare uint8  `swagger:"desc(The validator fee share.)"`
 }
 
-type ChainInfo struct {
+type ChainInfoResponse struct {
 	ChainID         string       `swagger:"desc(ChainID (bech32-encoded).)"`
 	EVMChainID      uint16       `swagger:"desc(The EVM chain ID)"`
 	ChainOwnerID    string       `swagger:"desc(The chain owner address (bech32-encoded).)"`
@@ -67,14 +67,14 @@ type ChainInfo struct {
 	MaxEventsPerReq uint16       `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
-func MapChainInfo(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo {
+func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	gasFeeTokenID := ""
 
 	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 
-	chainInfoResponse := ChainInfo{
+	chainInfoResponse := ChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
 		EVMChainID:   evmChainID,
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
@@ -90,6 +90,10 @@ func MapChainInfo(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo {
 	}
 
 	return chainInfoResponse
+}
+
+type RequestIDResponse struct {
+	RequestID string `swagger:"desc(The request ID of the given transaction ID)"`
 }
 
 type SaveChainRecordRequest struct {

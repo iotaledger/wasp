@@ -7,6 +7,6 @@ import (
 )
 
 func (c *Controller) ShutdownNode(e echo.Context) error {
-
+	c.nodeService.ShutdownNode()
 	return e.NoContent(http.StatusOK)
 }

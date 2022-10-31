@@ -38,7 +38,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	}.JSONDict()
 
 	publicAPI.GET("requests/:chainID/receipt/:requestID", c.getReceipt).
-		AddResponse(http.StatusOK, "Receipt", mocker.Get(models.Receipt{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
@@ -50,7 +50,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.POST("request/offledger", c.handleOffLedgerRequest).
 		AddParamBody(
-			models.OffLedgerRequestBody{Request: "base64 string"},
+			models.OffLedgerRequest{Request: "base64 string"},
 			"body",
 			"Offledger request as JSON. Request encoded in base64.",
 			false).

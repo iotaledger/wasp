@@ -27,7 +27,7 @@ func MapReceiptError(err *isc.VMError) *ReceiptError {
 	}
 }
 
-type Receipt struct {
+type ReceiptResponse struct {
 	Request       []byte           `json:"request"`
 	Error         *ReceiptError    `json:"error"`
 	GasBudget     uint64           `json:"gasBudget"`
@@ -38,8 +38,8 @@ type Receipt struct {
 	GasBurnLog    []gas.BurnRecord `json:"gasBurnLog"`
 }
 
-func MapReceipt(receipt *isc.Receipt, resolvedError *isc.VMError) *Receipt {
-	return &Receipt{
+func MapReceiptResponse(receipt *isc.Receipt, resolvedError *isc.VMError) *ReceiptResponse {
+	return &ReceiptResponse{
 		Request:       receipt.Request,
 		Error:         MapReceiptError(resolvedError),
 		BlockIndex:    receipt.BlockIndex,

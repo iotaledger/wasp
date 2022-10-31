@@ -3,6 +3,10 @@ package node
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/services"
+
+	"github.com/iotaledger/hive.go/core/configuration"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -14,13 +18,18 @@ import (
 type Controller struct {
 	log *loggerpkg.Logger
 
+	config *configuration.Configuration
+
+	dkgService     *services.DKGService
 	nodeService    interfaces.NodeService
 	peeringService interfaces.PeeringService
 }
 
-func NewNodeController(log *loggerpkg.Logger, peeringService interfaces.PeeringService, nodeService interfaces.NodeService) interfaces.APIController {
+func NewNodeController(log *loggerpkg.Logger, config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
 		log:            log,
+		config:         config,
+		dkgService:     dkgService,
 		nodeService:    nodeService,
 		peeringService: peeringService,
 	}
@@ -31,11 +40,15 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+	publicAPI.GET("node/info", c.getInfo).
+		AddResponse(http.StatusOK, "Returns public information about this node.", nil, nil).
+		SetOperationId("getInfo").
+		SetSummary("Returns public information about this node.")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("node/peers/trusted", c.GetTrustedPeers).
-		AddResponse(http.StatusOK, "A list of trusted peers.", mocker.Get([]models.PeeringNodeIdentity{}), nil).
+		AddResponse(http.StatusOK, "A list of trusted peers.", mocker.Get([]models.PeeringNodeIdentityResponse{}), nil).
 		SetOperationId("getTrustedPeers")
 
 	adminAPI.DELETE("node/peers/trusted", c.DistrustPeer).
@@ -51,12 +64,12 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("trustPeer")
 
 	adminAPI.GET("node/peers/identity", c.GetIdentity).
-		AddResponse(http.StatusOK, "This node as a peer.", mocker.Get(models.PeeringNodeIdentity{}), nil).
+		AddResponse(http.StatusOK, "This node as a peer.", mocker.Get(models.PeeringNodeIdentityResponse{}), nil).
 		SetSummary("Basic peer info of the current node.").
 		SetOperationId("getPeeringIdentity")
 
 	adminAPI.GET("node/peers", c.GetRegisteredPeers).
-		AddResponse(http.StatusOK, "A list of all peers.", mocker.Get([]models.PeeringNodeStatus{}), nil).
+		AddResponse(http.StatusOK, "A list of all peers.", mocker.Get([]models.PeeringNodeStatusResponse{}), nil).
 		SetSummary("Basic information about all configured peers.").
 		SetOperationId("getAllPeers")
 
@@ -65,4 +78,8 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetSummary("Shuts down the node").
 		SetOperationId("shutdownNode")
 
+	adminAPI.GET("node/config", c.getConfiguration).
+		AddResponse(http.StatusOK, "Dumped configuration", nil, nil).
+		SetOperationId("getConfiguration").
+		SetSummary("Returns the Wasp configuration")
 }

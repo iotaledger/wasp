@@ -13,7 +13,7 @@ import (
 )
 
 func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
-	request := new(models.OffLedgerRequestBody)
+	request := new(models.OffLedgerRequest)
 	if err := e.Bind(request); err != nil {
 		return apierrors.InvalidOffLedgerRequestError(err)
 	}

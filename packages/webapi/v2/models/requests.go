@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-type OffLedgerRequestBody struct {
+type OffLedgerRequest struct {
 	ChainID string `swagger:"desc(The chain id)"`
 
 	Request string `swagger:"desc(Offledger Request (base64))"`
