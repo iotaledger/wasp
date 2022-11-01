@@ -37,17 +37,14 @@ import (
 )
 
 const ( // HT = High Threshold, LT = Low Threshold.
-	dkgTypePregeneratedHT byte = iota
-	dkgTypeRobustLT
+	dkgTypeRobustLT byte = iota
 	dkgTypeTrivialHT
 )
 
 func TestBasic(t *testing.T) {
-	t.Run("n=4,f=1,reliable,dkgTypePregeneratedHT", func(tt *testing.T) { testGeneric(tt, 4, 1, true, dkgTypePregeneratedHT) })
 	t.Run("n=4,f=1,reliable,dkgTypeRobustLT", func(tt *testing.T) { testGeneric(tt, 4, 1, true, dkgTypeRobustLT) })
-	t.Run("n=4,f=1,reliable,dkgTypeTrivialHT", func(tt *testing.T) { testGeneric(tt, 4, 1, true, dkgTypeTrivialHT) })
-	t.Run("n=4,f=1,unreliable,dkgTypePregeneratedHT", func(tt *testing.T) { testGeneric(tt, 4, 1, false, dkgTypePregeneratedHT) })
-	t.Run("n=10,f=3,unreliable,dkgTypePregeneratedHT", func(tt *testing.T) { testGeneric(tt, 10, 3, false, dkgTypePregeneratedHT) })
+	t.Run("n=4,f=1,unreliable,dkgTypeTrivialHT", func(tt *testing.T) { testGeneric(tt, 4, 1, false, dkgTypeTrivialHT) })
+	t.Run("n=10,f=3,unreliable,dkgTypeTrivialHT", func(tt *testing.T) { testGeneric(tt, 10, 3, false, dkgTypeTrivialHT) })
 }
 
 func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
@@ -128,26 +125,12 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 
 func longTermDKG(t *testing.T, dkgType byte, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
 	switch dkgType {
-	case dkgTypePregeneratedHT:
-		return longTermDKGPregeneratedHT(t, peerIdentities, f)
 	case dkgTypeRobustLT:
 		return longTermDKGRobustLT(t, peerIdentities, f, log)
 	case dkgTypeTrivialHT:
 		return longTermDKGTrivialHT(t, peerIdentities, f)
 	}
 	panic("unknown dkg type")
-}
-
-func longTermDKGPregeneratedHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
-	n := len(peerIdentities)
-	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
-	address, dkSharesRegProviders := testpeers.SetupDkgPregenerated(t, uint16(n-f), peerIdentities)
-	for i := range peerIdentities {
-		dkShare, err := dkSharesRegProviders[i].LoadDKShare(address)
-		require.NoError(t, err)
-		dkShares[i] = dkShare
-	}
-	return dkShares
 }
 
 func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
@@ -188,33 +171,12 @@ func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f in
 }
 
 func longTermDKGTrivialHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
-	n := len(peerIdentities)
+	sharedAddress, dkShareRegistryProviders := testpeers.SetupDkgTrivial(t, len(peerIdentities), f, peerIdentities, nil)
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
-
-	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
-	for i := range peerPubKeys {
-		peerPubKeys[i] = peerIdentities[i].GetPublicKey()
-	}
-
-	suite := tcrypto.DefaultEd25519Suite()
-	priPoly := share.NewPriPoly(suite, n-f, nil, suite.RandomStream())
-	priShares := priPoly.Shares(len(peerIdentities))
-	_, commits := priPoly.Commit(suite.Point().Base()).Info()
-	pubKey := commits[0]
-
-	publicKey, _, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-	sharedAddress := iotago.Ed25519AddressFromPubKey(publicKey)
-
-	for i := range dkShares {
-		secretShare := &fakeSecretShare{priShares[i], commits}
-		dkShares[i] = &fakeDKShare{
-			id:              util.NewComparableAddress(&sharedAddress),
-			nodePubKeys:     peerPubKeys,
-			index:           uint16(i),
-			dssSecretShare:  secretShare,
-			dssSharedPublic: pubKey,
-		}
+	for i := range dkShareRegistryProviders {
+		dkShare, err := dkShareRegistryProviders[i].LoadDKShare(sharedAddress)
+		require.NoError(t, err)
+		dkShares[i] = dkShare
 	}
 	return dkShares
 }

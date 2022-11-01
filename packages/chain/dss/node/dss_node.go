@@ -15,7 +15,7 @@
 //  2. Wait for DSS input to the ACS, provide the ACS output to the DSS.
 //  3. Provide the data to sign.
 //  4. Wait for a signature.
-package node
+package node // TODO: Remove it.
 
 import (
 	"context"

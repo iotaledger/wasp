@@ -37,7 +37,6 @@ import (
 
 type DSS interface {
 	AsGPA() gpa.GPA
-	NewMsgDecided(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.Message
 }
 
 type Output struct {
@@ -110,19 +109,16 @@ func (d *dssImpl) AsGPA() gpa.GPA {
 	return d.withWrappers
 }
 
-// DSS Specific Interface: Create a message for submitting the decided (via ACS) indexes for the pri-share aggregation.
-// The message is then should be passed via all the wrappers.
-func (d *dssImpl) NewMsgDecided(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.Message {
-	return NewMsgDecided(d.me, decidedIndexProposals, messageToSign)
-}
-
 // Handle the input to the protocol.
 func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
-	if input != nil {
-		panic("nil input is expected")
+	switch input := input.(type) {
+	case *inputStart:
+		msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nonce.NewInputStart()))
+		return d.tryHandleDkgOutput(msgs)
+	case *inputDecided:
+		return d.handleDecided(input)
 	}
-	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nil))
-	return d.tryHandleDkgOutput(msgs)
+	panic(xerrors.Errorf("unexpected input: %T: %+v", input, input))
 }
 
 // Handle the messages.
@@ -130,8 +126,6 @@ func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
 		return d.handlePartialSig(msgT)
-	case *msgDecided:
-		return d.handleDecided(msgT)
 	case *gpa.WrappingMsg:
 		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
 			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
@@ -248,16 +242,16 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	return nil
 }
 
-func (d *dssImpl) handleDecided(msg *msgDecided) gpa.OutMessages {
+func (d *dssImpl) handleDecided(input *inputDecided) gpa.OutMessages {
 	if d.dkgDecidedIndexProposals != nil {
-		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", msg.decidedIndexProposals)
+		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
 	}
-	d.dkgDecidedIndexProposals = msg.decidedIndexProposals
-	d.messageToSign = msg.messageToSign
+	d.dkgDecidedIndexProposals = input.decidedIndexProposals
+	d.messageToSign = input.messageToSign
 
-	decisionMsg := nonce.NewMsgAgreementResult(d.me, msg.decidedIndexProposals)
-	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(decisionMsg))
+	decisionInput := nonce.NewInputAgreementResult(input.decidedIndexProposals)
+	msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(decisionInput))
 	return d.tryHandleDkgOutput(msgs)
 }
 
