@@ -393,7 +393,7 @@ func (c *consImpl) uponSMSaveProducedBlockDone() gpa.OutMessages {
 // DSS
 
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
-	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, nil)
+	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide input to DSS: %w", err))
 	}
@@ -407,8 +407,8 @@ func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessage
 }
 
 func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
-	dssMsg := c.dss.NewMsgDecided(decidedIndexProposals, messageToSign)
-	subDSS, subMsgs, err := c.msgWrapper.DelegateMessage(gpa.NewWrappingMsg(msgTypeWrapped, subsystemTypeDSS, 0, dssMsg))
+	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
+	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
 		panic(xerrors.Errorf("cannot provide inputs for signing: %w", err))
 	}

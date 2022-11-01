@@ -214,8 +214,6 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		default:
 			panic(xerrors.Errorf("unexpected wrapped message: %+v", m))
 		}
-	case *msgRBCCEOutput:
-		return a.handleRBCOutput(m)
 	case *msgVote:
 		switch m.kind {
 		case msgVoteOK:
@@ -276,7 +274,7 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gp
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
 			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
-		msgs.Add(&msgRBCCEOutput{me: a.me, payload: outParsed})
+		msgs.AddAll(a.handleRBCOutput(outParsed))
 	}
 	return msgs
 }
@@ -288,14 +286,14 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gp
 // >   send <IMPLICATE, i, skᵢ> to all parties
 // > else:
 // >   send <OK>
-func (a *acssImpl) handleRBCOutput(m *msgRBCCEOutput) gpa.OutMessages {
+func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) gpa.OutMessages {
 	if a.outS != nil || a.rbcOut != nil {
 		// Take the first RBC output only.
 		return nil
 	}
 	//
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
-	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, m.payload.data)
+	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, rbcOutput.data)
 	if err != nil {
 		panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload.data"))
 	}
