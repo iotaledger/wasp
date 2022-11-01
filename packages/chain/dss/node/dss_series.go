@@ -70,7 +70,7 @@ func newSeries(node *dssNodeImpl, key string, dkShare tcrypto.DKShare) *dssSerie
 
 func (s *dssSeriesImpl) tick(now time.Time) {
 	for i := range s.dssInsts {
-		s.sendMessages(s.dssInsts[i].asGPA.Message(s.dssInsts[i].asGPA.MakeTickMsg(now)), i)
+		s.sendMessages(s.dssInsts[i].asGPA.Input(s.dssInsts[i].asGPA.MakeTickInput(now)), i)
 		s.tryReportOutput(s.dssInsts[i])
 	}
 }

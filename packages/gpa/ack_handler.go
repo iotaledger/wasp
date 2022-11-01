@@ -29,7 +29,7 @@ type ackHandler struct {
 
 type AckHandler interface {
 	GPA
-	MakeTickMsg(time.Time) Message
+	MakeTickInput(time.Time) Input
 	NestedMessage(msg Message) OutMessages
 	NestedCall(c func(GPA) OutMessages) OutMessages
 }
@@ -47,18 +47,21 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 	}
 }
 
-func (a *ackHandler) MakeTickMsg(timestamp time.Time) Message {
-	return &ackHandlerTick{recipient: a.me, timestamp: timestamp}
+func (a *ackHandler) MakeTickInput(timestamp time.Time) Input {
+	return &ackHandlerTick{timestamp: timestamp}
 }
 
 func (a *ackHandler) Input(input Input) OutMessages {
-	return a.makeBatches(a.nested.Input(input))
+	switch input := input.(type) {
+	case *ackHandlerTick:
+		return a.handleTickMsg(input)
+	default:
+		return a.makeBatches(a.nested.Input(input))
+	}
 }
 
 func (a *ackHandler) Message(msg Message) OutMessages {
 	switch msgT := msg.(type) {
-	case *ackHandlerTick:
-		return a.handleTickMsg(msgT)
 	case *ackHandlerBatch:
 		return a.handleBatchMsg(msgT)
 	default:
@@ -349,20 +352,5 @@ func (m *ackHandlerBatch) UnmarshalBinary(data []byte) error {
 
 // Event representing a timer tick.
 type ackHandlerTick struct {
-	recipient NodeID
 	timestamp time.Time
-}
-
-var _ Message = &ackHandlerTick{}
-
-func (m *ackHandlerTick) Recipient() NodeID {
-	return m.recipient
-}
-
-func (m *ackHandlerTick) SetSender(sender NodeID) {
-	// Don't care the sender, that's local event.
-}
-
-func (m *ackHandlerTick) MarshalBinary() ([]byte, error) {
-	panic(xerrors.Errorf("local event shouldn't be marshaled."))
 }

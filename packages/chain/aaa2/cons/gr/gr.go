@@ -311,7 +311,7 @@ func (cgr *ConsGr) handleConsInput(inp gpa.Input) {
 }
 
 func (cgr *ConsGr) handleRedeliveryTick(t time.Time) {
-	outMsgs := cgr.consInst.Message(cgr.consInst.MakeTickMsg(t))
+	outMsgs := cgr.consInst.Input(cgr.consInst.MakeTickInput(t))
 	cgr.sendMessages(outMsgs)
 	cgr.tryHandleOutput()
 }
