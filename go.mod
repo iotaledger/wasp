@@ -31,7 +31,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.1
 	github.com/wasmerio/wasmer-go v1.0.4
-	github.com/leanovate/gopter v0.2.9
 	go.dedis.ch/kyber/v3 v3.0.14
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/atomic v1.10.0
@@ -41,6 +40,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2
 	gopkg.in/yaml.v3 v3.0.1
 	nhooyr.io/websocket v1.8.7
+	pgregory.net/rapid v0.5.3
 )
 
 require (

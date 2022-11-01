@@ -14,12 +14,11 @@
 // if a the local view is reset based on a rejection or externally made AO transition, then
 // the direct mapping with the log indexes is lost. New AO will be considered on the next LogIndex.
 
-// TODO: Keep some history of published alias outputs just to handle out-of-order delivery
-// of messages on AO confirmation/rejection.
-
 package cmtLog
 
 import (
+	"fmt"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -42,6 +41,9 @@ type VarLocalView interface {
 	// Corresponds to the `tx_posted` event in the specification.
 	// Returns true, if the proposed BaseAliasOutput has changed.
 	ConsensusOutputDone(consumed iotago.OutputID, published *isc.AliasOutputWithID) bool
+	//
+	// Support functions.
+	StatusString() string
 }
 
 type varLocalViewEntry struct {
@@ -50,12 +52,18 @@ type varLocalViewEntry struct {
 }
 
 type varLocalViewImpl struct {
+	// The first element in the entries list is the latest confirmed output.
+	// All the remaining are either pending or rejected.
 	entries []*varLocalViewEntry
+	// Resync is true, if we got a rejection and now we are waiting for all the
+	// pending outputs to be either confirmed or rejected.
+	resync bool
 }
 
 func NewVarLocalView() VarLocalView {
 	return &varLocalViewImpl{
 		entries: []*varLocalViewEntry{},
+		resync:  true,
 	}
 }
 
@@ -65,10 +73,8 @@ func (lvi *varLocalViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
 	if len(lvi.entries) == 0 {
 		return nil
 	}
-	for _, e := range lvi.entries {
-		if e.rejected {
-			return nil
-		}
+	if lvi.resync {
+		return nil
 	}
 	return lvi.entries[len(lvi.entries)-1].output
 }
@@ -79,7 +85,7 @@ func (lvi *varLocalViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
 func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) bool {
 	foundIdx := -1
 	for i := range lvi.entries {
-		if lvi.entries[i].output.Equals(confirmed) {
+		if lvi.entries[i].output.ID().Equals(confirmed.ID()) {
 			foundIdx = i
 			break
 		}
@@ -91,38 +97,33 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 				rejected: false,
 			},
 		}
+		lvi.resync = false
 		return true
 	}
 	lvi.entries = lvi.entries[foundIdx:]
+	if lvi.resync && len(lvi.entries) == 1 {
+		lvi.resync = false
+		return true
+	}
 	return false
 }
 
 // Mark the specified AO as rejected.
 // Trim the suffix of rejected AOs.
 func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) bool {
-	rejectedIdx := -1
-	remainingRejected := true
 	for i := range lvi.entries {
-		if lvi.entries[i].output.Equals(rejected) {
-			lvi.entries[i].rejected = true
-			rejectedIdx = i
-		}
-		if rejectedIdx != -1 && i > rejectedIdx {
-			remainingRejected = remainingRejected && lvi.entries[i].rejected
+		if lvi.entries[i].output.ID().Equals(rejected.ID()) {
+			lvi.entries = lvi.entries[0:i]
+			lvi.resync = i > 1
+			return !lvi.resync
 		}
 	}
-	if rejectedIdx == -1 {
-		// Not found, maybe outdated info.
-		return false
-	}
-	if remainingRejected {
-		lvi.entries = lvi.entries[0:rejectedIdx]
-	}
-	return lvi.GetBaseAliasOutput() != nil
+	// That was an outdated rejection.
+	return false
 }
 
 func (lvi *varLocalViewImpl) ConsensusOutputDone(consumed iotago.OutputID, published *isc.AliasOutputWithID) bool {
-	if len(lvi.entries) == 0 {
+	if len(lvi.entries) == 0 || lvi.resync {
 		// Have we done reset recently?
 		// Just ignore this call, it is outdated.
 		return false
@@ -137,4 +138,13 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(consumed iotago.OutputID, publi
 		rejected: false,
 	})
 	return true
+}
+
+func (lvi *varLocalViewImpl) StatusString() string {
+	str := fmt.Sprintf("varLocalView[resync=%v, entries=%v]:", lvi.resync, len(lvi.entries))
+	for _, e := range lvi.entries {
+		oid := e.output.OutputID()
+		str += fmt.Sprintf(" %v/%v", oid[0:4], e.rejected)
+	}
+	return str
 }
