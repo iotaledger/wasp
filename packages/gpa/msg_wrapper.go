@@ -142,3 +142,7 @@ func (m *WrappingMsg) MarshalBinary() ([]byte, error) {
 	}
 	return w.Bytes(), nil
 }
+
+func (m *WrappingMsg) UnmarshalBinary(data []byte) error {
+	panic("this message is un-marshaled by the gpa.MsgWrapper")
+}
