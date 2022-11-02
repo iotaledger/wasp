@@ -16,7 +16,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go/core v1.0.0-rc.1
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1
-	github.com/iotaledger/inx-app v1.0.0-rc.1
+	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221102091857-058227e94374
 	github.com/iotaledger/inx/go v1.0.0-rc.1
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1
 	github.com/iotaledger/trie.go v0.0.0-20220913055112-2b1eae4ebed9

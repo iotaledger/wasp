@@ -107,6 +107,7 @@ Example:
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ---------------- |
 | address               | The INX address to which to connect to                                                             | string | "localhost:9029" |
 | maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30               |
+| targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""               |
 
 Example:
 
@@ -114,7 +115,8 @@ Example:
   {
     "inx": {
       "address": "localhost:9029",
-      "maxConnectionAttempts": 30
+      "maxConnectionAttempts": 30,
+      "targetNetworkName": ""
     }
   }
 ```
@@ -269,12 +271,13 @@ Example:
 
 ## <a id="webapi"></a> 12. Web API
 
-| Name                 | Description                                     | Type    | Default value    |
-| -------------------- | ----------------------------------------------- | ------- | ---------------- |
-| enabled              | Whether the web api plugin is enabled           | boolean | true             |
-| nodeOwnerAddresses   | Defines a list of node owner addresses (bech32) | array   |                  |
-| bindAddress          | The bind address for the node web api           | string  | "127.0.0.1:9090" |
-| [auth](#webapi_auth) | Configuration for auth                          | object  |                  |
+| Name                      | Description                                              | Type    | Default value    |
+| ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
+| enabled                   | Whether the web api plugin is enabled                    | boolean | true             |
+| nodeOwnerAddresses        | Defines a list of node owner addresses (bech32)          | array   |                  |
+| bindAddress               | The bind address for the node web api                    | string  | "127.0.0.1:9090" |
+| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false            |
+| [auth](#webapi_auth)      | Configuration for auth                                   | object  |                  |
 
 ### <a id="webapi_auth"></a> Auth
 
@@ -311,6 +314,7 @@ Example:
       "enabled": true,
       "nodeOwnerAddresses": [],
       "bindAddress": "0.0.0.0:9090",
+      "debugRequestLoggerEnabled": false,
       "auth": {
         "scheme": "jwt",
         "jwt": {
@@ -349,12 +353,13 @@ Example:
 
 ## <a id="dashboard"></a> 14. Dashboard
 
-| Name                    | Description                                      | Type    | Default value    |
-| ----------------------- | ------------------------------------------------ | ------- | ---------------- |
-| enabled                 | Whether the dashboard plugin is enabled          | boolean | true             |
-| bindAddress             | The bind address for the node dashboard          | string  | "127.0.0.1:7000" |
-| exploreAddressURL       | URL to add as href to addresses in the dashboard | string  | ""               |
-| [auth](#dashboard_auth) | Configuration for auth                           | object  |                  |
+| Name                      | Description                                              | Type    | Default value    |
+| ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
+| enabled                   | Whether the dashboard plugin is enabled                  | boolean | true             |
+| bindAddress               | The bind address for the node dashboard                  | string  | "127.0.0.1:7000" |
+| exploreAddressURL         | URL to add as href to addresses in the dashboard         | string  | ""               |
+| debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled | boolean | false            |
+| [auth](#dashboard_auth)   | Configuration for auth                                   | object  |                  |
 
 ### <a id="dashboard_auth"></a> Auth
 
@@ -391,6 +396,7 @@ Example:
       "enabled": true,
       "bindAddress": "0.0.0.0:7000",
       "exploreAddressURL": "",
+      "debugRequestLoggerEnabled": false,
       "auth": {
         "scheme": "basic",
         "jwt": {
@@ -408,30 +414,3 @@ Example:
     }
   }
 ```
-
-## <a id="users"></a> 15. Users
-
-| Name  | Description                | Type   | Default value     |
-| ----- | -------------------------- | ------ | ----------------- |
-| users | The list of accepted users | object | see example below |
-
-Example:
-
-```json
-  {
-    "users": {
-      "users": {
-        "wasp": {
-          "Password": "wasp",
-          "Permissions": [
-            "dashboard",
-            "api",
-            "chain.read",
-            "chain.write"
-          ]
-        }
-      }
-    }
-  }
-```
-

@@ -22,7 +22,8 @@
   },
   "inx": {
     "address": "localhost:9029",
-    "maxConnectionAttempts": 30
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
   "database": {
     "inMemory": false,
@@ -62,6 +63,7 @@
     "enabled": true,
     "nodeOwnerAddresses": [],
     "bindAddress": "0.0.0.0:9090",
+    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "jwt",
       "jwt": {
@@ -85,6 +87,7 @@
     "enabled": true,
     "bindAddress": "0.0.0.0:7000",
     "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "basic",
       "jwt": {
@@ -96,19 +99,6 @@
       "ip": {
         "whitelist": [
           "127.0.0.1"
-        ]
-      }
-    }
-  },
-  "users": {
-    "users": {
-      "wasp": {
-        "Password": "wasp",
-        "Permissions": [
-          "dashboard",
-          "api",
-          "chain.read",
-          "chain.write"
         ]
       }
     }

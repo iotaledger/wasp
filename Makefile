@@ -30,7 +30,7 @@ else
 endif
 
 build-cli:
-	cd tools/wasp-cli && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
+	cd tools/wasp-cli && go mod tidy && go build -ldflags $(BUILD_LD_FLAGS) -o ../../
 
 build-full: compile-solidity build-cli
 	$(BUILD_CMD) ./...
@@ -50,7 +50,7 @@ test-short:
 	go test -tags $(BUILD_TAGS) --short --count 1 -failfast $(shell go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 
 install-cli:
-	cd tools/wasp-cli && go install -ldflags $(BUILD_LD_FLAGS)
+	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)
 
 install-full: compile-solidity install-cli
 	$(INSTALL_CMD) ./...

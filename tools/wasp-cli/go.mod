@@ -57,7 +57,7 @@ require (
 	github.com/iotaledger/grocksdb v1.7.5-0.20220808142449-1dc0b8ac4d7d // indirect
 	github.com/iotaledger/hive.go/core v1.0.0-rc.1 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
-	github.com/iotaledger/inx-app v1.0.0-rc.1 // indirect
+	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221102091857-058227e94374 // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/trie.go v0.0.0-20220913055112-2b1eae4ebed9 // indirect
