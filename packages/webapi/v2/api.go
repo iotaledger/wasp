@@ -3,6 +3,7 @@ package v2
 import (
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -58,6 +59,7 @@ func Init(logger *loggerpkg.Logger,
 	registryProvider registry.Provider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
+	userManager *users.UserManager,
 	wal *walpkg.WAL,
 ) {
 	mocker := NewMocker()
@@ -74,6 +76,7 @@ func Init(logger *loggerpkg.Logger,
 	evmService := services.NewEVMService(logger, chainService, networkProvider)
 	nodeService := services.NewNodeService(logger, shutdownHandler)
 	dkgService := services.NewDKGService(logger, registryProvider, dkgNodeProvider)
+	userManager := services.NewUserService(logger, userManager)
 	// --
 
 	controllersToLoad := []interfaces.APIController{
