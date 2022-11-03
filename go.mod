@@ -4,7 +4,7 @@ go 1.18
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef
-	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.10.25
+	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d
 	go.dedis.ch/kyber/v3 v3.0.14 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
 )
 

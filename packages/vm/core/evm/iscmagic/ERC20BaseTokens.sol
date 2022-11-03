@@ -71,5 +71,5 @@ contract ERC20BaseTokens {
     }
 }
 
-// Every ISC chain is initialized with an instance of the ERC20BaseTokens contract at address 0x1075
-ERC20BaseTokens constant erc20BaseTokens = ERC20BaseTokens(address(uint160(ISC_ADDRESS + 1)));
+// Every ISC chain is initialized with an instance of the ERC20BaseTokens contract at this address
+ERC20BaseTokens constant erc20BaseTokens = ERC20BaseTokens(0x1074010000000000000000000000000000000000);

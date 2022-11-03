@@ -107,7 +107,7 @@ func Init(
 func NewEVMEmulator(
 	store kv.KVStore,
 	timestamp uint64,
-	magicContract vm.ISCContract,
+	magicContracts map[common.Address]vm.ISCMagicContract,
 	getBalance GetBalanceFunc,
 	subBalance SubBalanceFunc,
 	addBalance AddBalanceFunc,
@@ -121,7 +121,7 @@ func NewEVMEmulator(
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
-		vmConfig:    vm.Config{ISCContract: magicContract},
+		vmConfig:    vm.Config{MagicContracts: magicContracts},
 		getBalance:  getBalance,
 		subBalance:  subBalance,
 		addBalance:  addBalance,

@@ -63,7 +63,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	blockKeepAmount, err := codec.DecodeInt32(ctx.Params().MustGet(evm.FieldBlockKeepAmount), evm.BlockKeepAmountDefault)
 	ctx.RequireNoError(err)
 
-	// add the standard ISC contract at arbitrary address 0x1074
+	// add the standard ISC contract at arbitrary address 0x1074...
 	deployMagicContractOnGenesis(genesisAlloc)
 
 	// add the standard ERC20 provider at address 0x1075

@@ -78,9 +78,8 @@ interface ISC {
     function print(string memory s) external pure;
 }
 
-// Every ISC chain is initialized with an instance of the Magic contract at address 0x1074
-uint256 constant ISC_ADDRESS = 0x1074;
-ISC constant isc = ISC(address(uint160(ISC_ADDRESS)));
+// Every ISC chain is initialized with an instance of the Magic contract at this address
+ISC constant isc = ISC(0x1074000000000000000000000000000000000000);
 
 // An L1 IOTA address
 struct L1Address {

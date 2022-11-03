@@ -88,7 +88,7 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 // deployMagicContractOnGenesis sets up the initial state of the ISC EVM contract
 // which will go into the EVM genesis block
 func deployMagicContractOnGenesis(genesisAlloc core.GenesisAlloc) {
-	genesisAlloc[vm.ISCAddress] = core.GenesisAccount{
+	genesisAlloc[iscmagic.Address] = core.GenesisAccount{
 		// dummy code, because some contracts check the code size before calling
 		// the contract; the code itself will never get executed
 		Code:    common.Hex2Bytes("600180808053f3"),
@@ -137,8 +137,10 @@ type magicContract struct {
 	ctx isc.Sandbox
 }
 
-func newMagicContract(ctx isc.Sandbox) vm.ISCContract {
-	return &magicContract{ctx}
+func newMagicContract(ctx isc.Sandbox) map[common.Address]vm.ISCMagicContract {
+	return map[common.Address]vm.ISCMagicContract{
+		iscmagic.Address: &magicContract{ctx},
+	}
 }
 
 func adjustStorageDeposit(ctx isc.Sandbox, req isc.RequestParameters) {
@@ -429,8 +431,10 @@ type magicContractView struct {
 	ctx isc.SandboxView
 }
 
-func newMagicContractView(ctx isc.SandboxView) vm.ISCContract {
-	return &magicContractView{ctx}
+func newMagicContractView(ctx isc.SandboxView) map[common.Address]vm.ISCMagicContract {
+	return map[common.Address]vm.ISCMagicContract{
+		iscmagic.Address: &magicContractView{ctx},
+	}
 }
 
 func (c *magicContractView) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {

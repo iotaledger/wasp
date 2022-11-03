@@ -5,21 +5,27 @@ package iscmagic
 
 import (
 	_ "embed"
-	"encoding/binary"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
 )
 
 // If you change any of the .sol files, you must recompile.  You will need
 // the `solc` binary installed in your system. Then, simply run `go generate`
 // in this directory.
 
+const (
+	addressTypeISCMagic = iota
+	addressTypeERC20BaseTokens
+)
+
 //go:generate sh -c "solc --abi --overwrite ISC.sol -o ."
 var (
 	//go:embed ISC.abi
 	ABI string
+
+	AddressPrefix = []byte{0x10, 0x74}
+	Address       = makeMagicAddress(addressTypeISCMagic, nil)
 )
 
 //go:generate sh -c "solc --abi --overwrite @iscmagic=`realpath .` ISCPrivileged.sol -o ."
@@ -37,11 +43,15 @@ var (
 	ERC20BaseTokensRuntimeBytecode = common.FromHex(strings.TrimSpace(erc20BaseRuntimeBytecodeHex))
 )
 
-var ERC20BaseTokensAddress = iscAddressPlusOne()
+var ERC20BaseTokensAddress = makeMagicAddress(addressTypeERC20BaseTokens, nil)
 
-func iscAddressPlusOne() common.Address {
-	n := binary.BigEndian.Uint64(vm.ISCAddress.Bytes()[common.AddressLength-8:]) + 1
+func makeMagicAddress(kind byte, data []byte) common.Address {
 	var ret common.Address
-	binary.BigEndian.PutUint64(ret[common.AddressLength-8:], n)
+	if len(data) > len(ret)-3 {
+		panic("makeMagicAddress: invalid data length")
+	}
+	copy(ret[0:2], AddressPrefix)
+	ret[2] = kind
+	copy(ret[3:], data)
 	return ret
 }

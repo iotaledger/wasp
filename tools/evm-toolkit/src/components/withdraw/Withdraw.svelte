@@ -41,7 +41,7 @@
   const gasFee = 300;
   const iscAbi = JSON.parse(iscAbiAsText);
   const iscContractAddress: string =
-    '0x0000000000000000000000000000000000001074';
+    '0x1074000000000000000000000000000000000000';
 
   let chainID;
   let contract;

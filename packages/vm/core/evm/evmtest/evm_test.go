@@ -236,7 +236,7 @@ func TestLoop(t *testing.T) {
 
 func TestMagicContract(t *testing.T) {
 	// deploy the evm contract, which starts an EVM chain and automatically
-	// deploys the isc.sol EVM contract at address 0x1074
+	// deploys the isc.sol EVM contract at address 0x10740000...
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
@@ -244,7 +244,7 @@ func TestMagicContract(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call the ISCTest.getChainId() view function of isc-test.sol which in turn:
-	//  calls the ISC.getChainId() view function of isc.sol at 0x1074, which:
+	//  calls the ISC.getChainId() view function of isc.sol at 0x1074..., which:
 	//   returns the ChainID of the underlying ISC chain
 	chainID := iscTest.getChainID()
 
@@ -327,7 +327,7 @@ func TestISCTriggerEvent(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call ISCTest.triggerEvent(string) function of isc-test.sol which in turn:
-	//  calls the ISC.iscTriggerEvent(string) function of isc.sol at 0x1074, which:
+	//  calls the ISC.iscTriggerEvent(string) function of isc.sol at 0x1074..., which:
 	//   triggers an ISC event with the given string parameter
 	res, err := iscTest.triggerEvent("Hi from EVM!")
 	require.NoError(t, err)
@@ -359,7 +359,7 @@ func TestISCEntropy(t *testing.T) {
 	iscTest := env.deployISCTestContract(ethKey)
 
 	// call the ISCTest.emitEntropy() function of isc-test.sol which in turn:
-	//  calls ISC.iscEntropy() function of isc.sol at 0x1074, which:
+	//  calls ISC.iscEntropy() function of isc.sol at 0x1074..., which:
 	//   returns the entropy value from the sandbox
 	//  emits an EVM event (aka log) with the entropy value
 	var entropy hashing.HashValue
@@ -717,7 +717,10 @@ func TestEVMWithdrawAll(t *testing.T) {
 		},
 	)
 	_, err := env.MagicContract(ethKey).callFn(
-		[]ethCallOptions{{sender: ethKey}},
+		[]ethCallOptions{{
+			sender:   ethKey,
+			gasLimit: 100_000, // provide a gas limit value as the estimation will fail
+		}},
 		"send",
 		iscmagic.WrapL1Address(receiver),
 		iscmagic.WrapISCFungibleTokens(*isc.NewFungibleBaseTokens(tokensToWithdraw)),

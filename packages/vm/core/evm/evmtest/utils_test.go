@@ -14,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
@@ -210,7 +209,7 @@ func (e *soloChainEnv) MagicContract(defaultSender *ecdsa.PrivateKey) *iscContra
 		evmContractInstance: &evmContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
-			address:       vm.ISCAddress,
+			address:       iscmagic.Address,
 			abi:           iscABI,
 		},
 	}
