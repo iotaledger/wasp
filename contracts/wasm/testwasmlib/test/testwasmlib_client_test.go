@@ -1,13 +1,13 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/mr-tron/base58"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -68,18 +68,29 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
-	viper.SetConfigFile("wasp-cli.json")
-	err := viper.ReadInConfig()
+	// load config file
+	configBytes, err := os.ReadFile("wasp-cli.json")
 	require.NoError(t, err)
 
-	chain := viper.GetString("chains." + viper.GetString("chain"))
-	chID, err := isc.ChainIDFromString(chain)
+	var config map[string]interface{}
+	err = json.Unmarshal(configBytes, &config)
+	require.NoError(t, err)
+
+	cfgChain := config["chain"].(string)
+	cfgChains := config["chains"].(map[string]interface{})
+	cfgChainID := cfgChains[cfgChain].(string)
+
+	cfgWallet := config["wallet"].(map[string]interface{})
+	cfgSeed := cfgWallet["seed"].(string)
+
+	chID, err := isc.ChainIDFromString(cfgChainID)
 	require.NoError(t, err)
 	chainID := wasmtypes.ChainIDFromBytes(chID.Bytes())
 
 	// we'll use the seed keypair to sign requests
-	seedBytes, err := base58.Decode(viper.GetString("wallet.seed"))
+	seedBytes, err := base58.Decode(cfgSeed)
 	require.NoError(t, err)
+
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
