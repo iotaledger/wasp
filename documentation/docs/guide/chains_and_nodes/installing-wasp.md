@@ -21,7 +21,7 @@ import TabItem from "@theme/TabItem"
 You can install and run your Wasp node by cloning the repository and building the application. The instructions below
 will build both the Wasp node and the Wasp CLI to interact with the node from the command line.
 
-Alternatively, you can run a Wasp node using one of the provided docker setups:
+Alternatively, you can run a prebuilt Wasp node using one of the provided docker setups:
 
 - [Wasp standalone Docker image](docker_standalone.md)
 - pre-configured local [Wasp and Hornet node setup using Docker Compose](../development_tools/docker_preconfigured.md).

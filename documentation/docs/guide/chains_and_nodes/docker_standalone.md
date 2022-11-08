@@ -44,10 +44,18 @@ cd wasp
 git checkout develop
 ```
 
+:::note
+
+We use the Docker Buildkit features to build images, as makes it possible to cache dependencies which improves build times. 
+
+You can enable this with `DOCKER_BUILDKIT=1`
+
+:::
+
 3. Build the main image:
 
 ```shell
-docker build -t wasp-node .
+DOCKER_BUILDKIT=1 docker build -t wasp-node .
 ````
 
 ### Default Configuration
