@@ -74,6 +74,18 @@ func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
+// viewAccountFoundries returns the foundries owned by the given agentID
+func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
+	foundries := getAccountFoundriesR(ctx.StateR(), account)
+	ret := dict.New()
+	foundries.MustIterate(func(k []byte, v []byte) bool {
+		ret.Set(kv.Key(k), v)
+		return true
+	})
+	return ret
+}
+
 // viewFoundryOutput takes serial number and returns corresponding foundry output in serialized form
 func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")

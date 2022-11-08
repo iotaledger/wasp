@@ -1,0 +1,1 @@
+[{"inputs":[{"internalType":"string","name":"s","type":"string"}],"name":"hn","outputs":[{"internalType":"ISCHname","name":"","type":"uint32"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"string","name":"s","type":"string"}],"name":"print","outputs":[],"stateMutability":"pure","type":"function"}]

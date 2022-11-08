@@ -155,7 +155,9 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 			}
 			callErr = panicErr
 			vmctx.Debugf("recovered panic from contract call: %v", panicErr)
-			vmctx.Debugf(string(debug.Stack()))
+			if !vmctx.task.EstimateGasMode {
+				vmctx.Debugf(string(debug.Stack()))
+			}
 		}()
 		// ensure there are enough funds to cover the specified allowance
 		vmctx.checkAllowance()

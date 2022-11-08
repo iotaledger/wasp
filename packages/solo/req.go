@@ -120,9 +120,6 @@ func (r *CallParams) AddAllowanceNFTs(nfts ...iotago.NFTID) *CallParams {
 }
 
 func (r *CallParams) WithFungibleTokens(assets *isc.FungibleTokens) *CallParams {
-	if r.allowance == nil {
-		r.allowance = isc.NewEmptyAllowance()
-	}
 	r.ftokens = assets.Clone()
 	return r
 }

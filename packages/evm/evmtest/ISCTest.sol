@@ -9,36 +9,36 @@ contract ISCTest {
     uint64 public constant TokensForGas = 500;
 
     function getChainID() public view returns (ISCChainID) {
-        return isc.getChainID();
+        return ISC.sandbox.getChainID();
     }
 
     function triggerEvent(string memory s) public {
-        isc.triggerEvent(s);
+        ISC.sandbox.triggerEvent(s);
     }
 
     function triggerEventFail(string memory s) public {
-        isc.triggerEvent(s);
+        ISC.sandbox.triggerEvent(s);
         revert();
     }
 
     event EntropyEvent(bytes32 entropy);
 
     function emitEntropy() public {
-        bytes32 e = isc.getEntropy();
+        bytes32 e = ISC.sandbox.getEntropy();
         emit EntropyEvent(e);
     }
 
     event RequestIDEvent(ISCRequestID reqID);
 
     function emitRequestID() public {
-        ISCRequestID memory reqID = isc.getRequestID();
+        ISCRequestID memory reqID = ISC.sandbox.getRequestID();
         emit RequestIDEvent(reqID);
     }
 
     event SenderAccountEvent(ISCAgentID sender);
 
     function emitSenderAccount() public {
-        ISCAgentID memory sender = isc.getSenderAccount();
+        ISCAgentID memory sender = ISC.sandbox.getSenderAccount();
         emit SenderAccountEvent(sender);
     }
 
@@ -47,12 +47,12 @@ contract ISCTest {
     {
         ISCAllowance memory allowance;
         if (baseTokens == 0) {
-            allowance = isc.getAllowanceFrom(msg.sender);
+            allowance = ISC.sandbox.getAllowanceFrom(msg.sender);
         } else {
             allowance.baseTokens = baseTokens;
         }
 
-        isc.takeAllowedFunds(msg.sender, allowance);
+        ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
         ISCFungibleTokens memory fungibleTokens;
         require(allowance.baseTokens > TokensForGas);
@@ -61,13 +61,13 @@ contract ISCTest {
         ISCDict memory params;
 
         ISCSendMetadata memory metadata;
-        metadata.targetContract = isc.hn("accounts");
-        metadata.entrypoint = isc.hn("deposit");
+        metadata.targetContract = ISC.util.hn("accounts");
+        metadata.entrypoint = ISC.util.hn("deposit");
         metadata.params = params;
 
         ISCSendOptions memory options;
 
-        isc.send(receiver, fungibleTokens, true, metadata, options);
+        ISC.sandbox.send(receiver, fungibleTokens, true, metadata, options);
     }
 
     function callInccounter() public {
@@ -75,7 +75,7 @@ contract ISCTest {
         bytes memory int64Encoded42 = hex"2A00000000000000";
         params.items[0] = ISCDictItem("counter", int64Encoded42);
         ISCAllowance memory allowance;
-        isc.call(isc.hn("inccounter"), isc.hn("incCounter"), params, allowance);
+        ISC.sandbox.call(ISC.util.hn("inccounter"), ISC.util.hn("incCounter"), params, allowance);
     }
 
     function callSendAsNFT(L1Address memory receiver, NFTID id) public {
@@ -94,16 +94,16 @@ contract ISCTest {
 
         ISCSendOptions memory options;
 
-        isc.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
+        ISC.sandbox.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
     }
 
     function makeISCPanic() public {
         // will produce a panic in ISC
         ISCDict memory params;
         ISCAllowance memory allowance;
-        isc.call(
-            isc.hn("governance"),
-            isc.hn("claimChainOwnership"),
+        ISC.sandbox.call(
+            ISC.util.hn("governance"),
+            ISC.util.hn("claimChainOwnership"),
             params,
             allowance
         );
@@ -118,9 +118,9 @@ contract ISCTest {
         params.items[0] = ISCDictItem("a", targetAgentID.data);
         bytes memory forceOpenAccount = "\xFF";
         params.items[1] = ISCDictItem("c", forceOpenAccount);
-        isc.call(
-            isc.hn("accounts"),
-            isc.hn("transferAllowanceTo"),
+        ISC.sandbox.call(
+            ISC.util.hn("accounts"),
+            ISC.util.hn("transferAllowanceTo"),
             params,
             allowance
         );

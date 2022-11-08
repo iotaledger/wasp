@@ -15,9 +15,11 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
@@ -47,6 +49,7 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncGetChainID.WithHandler(getChainID),
 	evm.FuncOpenBlockContext.WithHandler(openBlockContext),
 	evm.FuncCloseBlockContext.WithHandler(closeBlockContext),
+	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
@@ -146,6 +149,47 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(gasErr)
 	ctx.RequireNoError(tryGetRevertError(result))
+
+	return nil
+}
+
+func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
+	foundrySN := codec.MustDecodeUint32(ctx.Params().MustGet(evm.FieldFoundrySN))
+	name := codec.MustDecodeString(ctx.Params().MustGet(evm.FieldTokenName))
+	tickerSymbol := codec.MustDecodeString(ctx.Params().MustGet(evm.FieldTokenTickerSymbol))
+	decimals := codec.MustDecodeUint8(ctx.Params().MustGet(evm.FieldTokenDecimals))
+
+	{
+		res := ctx.CallView(accounts.Contract.Hname(), accounts.ViewAccountFoundries.Hname(), dict.Dict{
+			accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller()),
+		})
+		ctx.Requiref(res[kv.Key(codec.EncodeUint32(foundrySN))] != nil, "foundry sn %s not owned by caller", foundrySN)
+	}
+
+	// deploy the contract to the EVM state
+	encodeUint8 := func(n uint8) (ret common.Hash) {
+		ret[len(ret)-1] = n
+		return
+	}
+	slot := encodeUint8
+	encodeShortString := func(s string) (ret common.Hash) {
+		ctx.Requiref(len(s) <= 31, "string is too long: %q", s)
+		ret[len(ret)-1] = uint8(len(s) * 2)
+		copy(ret[:], s)
+		return
+	}
+	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
+	emu := createEmulator(ctx)
+	evmState := emu.StateDB()
+	evmState.CreateAccount(addr)
+	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
+	// see ERC20NativeTokens_storage.json
+	// and https://docs.soliditylang.org/en/v0.8.16/internals/layout_in_storage.html
+	evmState.SetState(addr, slot(0), encodeShortString(name))
+	evmState.SetState(addr, slot(1), encodeShortString(tickerSymbol))
+	evmState.SetState(addr, slot(2), encodeUint8(decimals))
+
+	addToPrivileged(ctx, addr)
 
 	return nil
 }

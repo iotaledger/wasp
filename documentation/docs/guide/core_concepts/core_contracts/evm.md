@@ -65,6 +65,21 @@ Changes the ISC : EVM gas ratio.
 
 - `w` ([`GasRatio`](#gasratio)): The ISC : EVM gas ratio.
 
+### `registerERC20NativeToken`
+
+Registers an ERC20 contract to act as a proxy for the native tokens, at address
+`0x107402xxxxxxxx00000000000000000000000000`, where `xxxxxxxx` is the
+little-endian encoding of the foundry serial number.
+
+Only the foundry owner can call this endpoint.
+
+#### Parameters
+
+- `fs` (`uint32`): The foundry serial number
+- `n` (`string`): The token name
+- `t` (`string`): The ticker symbol
+- `d` (`uint8`): The token decimals
+
 ---
 
 ## Views

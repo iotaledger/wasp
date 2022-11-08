@@ -1,6 +1,6 @@
 // package evmnames provides the names of EVM core contract functions and fields.
 // It is separated from the evm interface to avoid import loops (the names are used
-// by package isc (EVMOffLedgerRequestData)).
+// by isc.evmOffLedgerRequest).
 package evmnames
 
 const (
@@ -30,6 +30,8 @@ const (
 	FuncSetGasRatio = "setGasRatio"
 	FuncGetGasRatio = "getGasRatio"
 
+	FuncRegisterERC20NativeToken = "registerERC20NativeToken"
+
 	// block context
 	FuncOpenBlockContext  = "openBlockContext"
 	FuncCloseBlockContext = "closeBlockContext"
@@ -49,5 +51,10 @@ const (
 	FieldGasRatio         = "w"
 	FieldBlockGasLimit    = "gl"
 	FieldFilterQuery      = "fq"
-	FieldBlockKeepAmount  = "bk" // int32
+	FieldBlockKeepAmount  = "bk"
+
+	FieldFoundrySN         = "fs"
+	FieldTokenName         = "n"
+	FieldTokenTickerSymbol = "t"
+	FieldTokenDecimals     = "d"
 )

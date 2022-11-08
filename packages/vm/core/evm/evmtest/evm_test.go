@@ -255,8 +255,10 @@ func TestISCChainOwnerID(t *testing.T) {
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
-	ret := new(iscmagic.ISCAgentID)
-	env.MagicContract(ethKey).callView("getChainOwnerID", nil, &ret)
+	var ret struct {
+		iscmagic.ISCAgentID
+	}
+	env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
 
 	chainOwnerID := env.soloChain.OriginatorAgentID
 	require.True(t, chainOwnerID.Equals(ret.MustUnwrap()))
@@ -267,7 +269,7 @@ func TestISCTimestamp(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	var ret int64
-	env.MagicContract(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
+	env.ISCMagicSandbox(ethKey).callView("getTimestampUnixSeconds", nil, &ret)
 
 	require.EqualValues(t, env.soloChain.GetLatestBlockInfo().Timestamp.Unix(), ret)
 }
@@ -277,7 +279,7 @@ func TestISCCallView(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 
 	ret := new(iscmagic.ISCDict)
-	env.MagicContract(ethKey).callView("callView", []interface{}{
+	env.ISCMagicSandbox(ethKey).callView("callView", []interface{}{
 		accounts.Contract.Hname(),
 		accounts.ViewBalance.Hname(),
 		&iscmagic.ISCDict{Items: []iscmagic.ISCDictItem{{
@@ -310,7 +312,7 @@ func TestISCNFTData(t *testing.T) {
 
 	// call getNFTData from EVM
 	ret := new(iscmagic.ISCNFT)
-	env.MagicContract(ethKey).callView(
+	env.ISCMagicSandbox(ethKey).callView(
 		"getNFTData",
 		[]interface{}{iscmagic.WrapNFTID(nft.ID)},
 		&ret,
@@ -388,10 +390,12 @@ func TestISCGetSenderAccount(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	sender := new(iscmagic.ISCAgentID)
+	var sender struct {
+		iscmagic.ISCAgentID
+	}
 	iscTest.callFnExpectEvent(nil, "SenderAccountEvent", &sender, "emitSenderAccount")
 
-	require.EqualValues(t, iscmagic.WrapISCAgentID(env.soloChain.LastReceipt().DeserializedRequest().SenderAccount()), *sender)
+	require.True(t, env.soloChain.LastReceipt().DeserializedRequest().SenderAccount().Equals(sender.MustUnwrap()))
 }
 
 func TestSendBaseTokens(t *testing.T) {
@@ -416,7 +420,7 @@ func TestSendBaseTokens(t *testing.T) {
 	require.Contains(t, err.Error(), "not previously allowed")
 
 	// allow ISCTest to take the tokens
-	_, err = env.MagicContract(ethKey).callFn(
+	_, err = env.ISCMagicSandbox(ethKey).callFn(
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
@@ -426,7 +430,7 @@ func TestSendBaseTokens(t *testing.T) {
 
 	getAllowanceTo := func(target common.Address) *isc.Allowance {
 		var ret struct{ Allowance iscmagic.ISCAllowance }
-		env.MagicContract(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
+		env.ISCMagicSandbox(ethKey).callView("getAllowanceTo", []interface{}{target}, &ret)
 		return ret.Allowance.Unwrap()
 	}
 
@@ -574,7 +578,7 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
-	ret, err := env.MagicContract(ethKey).callFn(
+	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
 		"send",
 		iscmagic.WrapL1Address(env.soloChain.ChainID.AsAddress()),
@@ -698,6 +702,184 @@ func TestERC20BaseTokens(t *testing.T) {
 	}
 }
 
+func TestERC20NativeTokens(t *testing.T) {
+	env := initEVM(t)
+
+	const (
+		tokenName         = "ERC20 Native Token Test"
+		tokenTickerSymbol = "ERC20NT"
+		tokenDecimals     = 8
+	)
+
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
+	require.NoError(t, err)
+
+	supply := big.NewInt(int64(10 * isc.Million))
+	foundrySN, tokenID := func() (uint32, *iotago.FoundryID) {
+		res, err := env.soloChain.PostRequestSync(
+			solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+				accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+					MaximumSupply: supply,
+					MintedTokens:  util.Big0,
+					MeltedTokens:  util.Big0,
+				}),
+			).
+				WithMaxAffordableGasBudget().
+				WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
+			foundryOwner,
+		)
+		require.NoError(t, err)
+		foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
+		tokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+		require.NoError(t, err)
+
+		err = env.soloChain.MintTokens(foundrySN, supply, foundryOwner)
+		require.NoError(t, err)
+
+		_, err = env.soloChain.PostRequestSync(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name,
+			evm.FieldFoundrySN, codec.EncodeUint32(foundrySN),
+			evm.FieldTokenName, codec.EncodeString(tokenName),
+			evm.FieldTokenTickerSymbol, codec.EncodeString(tokenTickerSymbol),
+			evm.FieldTokenDecimals, codec.EncodeUint8(tokenDecimals),
+		).WithMaxAffordableGasBudget(), foundryOwner)
+		require.NoError(t, err)
+
+		return foundrySN, &tokenID
+	}()
+	l2Balance := func(agentID isc.AgentID) uint64 {
+		return env.soloChain.L2NativeTokens(agentID, tokenID).Uint64()
+	}
+
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+
+	_, err = env.soloChain.PostRequestSync(
+		solo.NewCallParams(
+			accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+			dict.Dict{
+				accounts.ParamAgentID:          codec.EncodeAgentID(ethAgentID),
+				accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+			},
+		).
+			WithAllowance(isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{
+				&iotago.NativeToken{
+					ID:     *tokenID,
+					Amount: supply,
+				},
+			}))).
+			WithMaxAffordableGasBudget(),
+		foundryOwner,
+	)
+	require.NoError(t, err)
+
+	erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
+
+	{
+		var sn uint32
+		erc20.callView("foundrySerialNumber", nil, &sn)
+		require.Equal(t, foundrySN, sn)
+	}
+	{
+		var id struct{ iscmagic.NativeTokenID }
+		erc20.callView("nativeTokenID", nil, &id)
+		require.EqualValues(t, tokenID[:], id.NativeTokenID.Data)
+	}
+	{
+		var name string
+		erc20.callView("name", nil, &name)
+		require.Equal(t, tokenName, name)
+	}
+	{
+		var sym string
+		erc20.callView("symbol", nil, &sym)
+		require.Equal(t, tokenTickerSymbol, sym)
+	}
+	{
+		var dec uint8
+		erc20.callView("decimals", nil, &dec)
+		require.EqualValues(t, tokenDecimals, dec)
+	}
+	{
+		var sup *big.Int
+		erc20.callView("totalSupply", nil, &sup)
+		require.Equal(t, supply.Uint64(), sup.Uint64())
+	}
+	{
+		var balance *big.Int
+		erc20.callView("balanceOf", []interface{}{ethAddr}, &balance)
+		require.EqualValues(t,
+			l2Balance(ethAgentID),
+			balance.Uint64(),
+		)
+	}
+	{
+		initialBalance := l2Balance(ethAgentID)
+		_, ethAddr2 := solo.NewEthereumAccount()
+		eth2AgentID := isc.NewEthereumAddressAgentID(ethAddr2)
+		_, err := erc20.callFn(nil, "transfer", ethAddr2, big.NewInt(int64(1*isc.Million)))
+		require.NoError(t, err)
+		require.EqualValues(t,
+			l2Balance(ethAgentID),
+			initialBalance-1*isc.Million,
+		)
+		require.EqualValues(t,
+			1*isc.Million,
+			l2Balance(eth2AgentID),
+		)
+	}
+	{
+		initialBalance := l2Balance(ethAgentID)
+		ethKey2, ethAddr2 := env.soloChain.NewEthereumAccountWithL2Funds()
+		eth2AgentID := isc.NewEthereumAddressAgentID(ethAddr2)
+		initialBalance2 := l2Balance(eth2AgentID)
+		{
+			_, err := erc20.callFn(nil, "approve", ethAddr2, big.NewInt(int64(1*isc.Million)))
+			require.NoError(t, err)
+			require.Greater(t,
+				l2Balance(ethAgentID),
+				initialBalance-1*isc.Million,
+			)
+			require.EqualValues(t,
+				initialBalance2,
+				l2Balance(eth2AgentID),
+			)
+		}
+
+		{
+			var allowance *big.Int
+			erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+			require.EqualValues(t,
+				1*isc.Million,
+				allowance.Uint64(),
+			)
+		}
+		{
+			const amount = 100_000
+			_, ethAddr3 := solo.NewEthereumAccount()
+			eth3AgentID := isc.NewEthereumAddressAgentID(ethAddr3)
+			_, err := erc20.callFn([]ethCallOptions{{sender: ethKey2}}, "transferFrom", ethAddr, ethAddr3, big.NewInt(int64(amount)))
+			require.NoError(t, err)
+			require.Less(t,
+				initialBalance-1*isc.Million,
+				l2Balance(ethAgentID),
+			)
+			require.EqualValues(t,
+				amount,
+				l2Balance(eth3AgentID),
+			)
+			{
+				var allowance *big.Int
+				erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+				require.EqualValues(t,
+					1*isc.Million-amount,
+					allowance.Uint64(),
+				)
+			}
+		}
+	}
+}
+
 // test withdrawing ALL EVM balance to a L1 address via the magic contract
 func TestEVMWithdrawAll(t *testing.T) {
 	env := initEVM(t)
@@ -716,7 +898,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 			GasBudget:      math.MaxUint64,
 		},
 	)
-	_, err := env.MagicContract(ethKey).callFn(
+	_, err := env.ISCMagicSandbox(ethKey).callFn(
 		[]ethCallOptions{{
 			sender:   ethKey,
 			gasLimit: 100_000, // provide a gas limit value as the estimation will fail
@@ -738,7 +920,7 @@ func TestEVMWithdrawAll(t *testing.T) {
 	// retry the request above, but now leave some tokens to pay for the gas fees
 	tokensToWithdraw -= 2*iscReceipt.GasFeeCharged + 1 // +1 is needed because of the way gas budget calc works
 	metadata.GasBudget = iscReceipt.GasBudget
-	_, err = env.MagicContract(ethKey).callFn(
+	_, err = env.ISCMagicSandbox(ethKey).callFn(
 		[]ethCallOptions{{sender: ethKey}},
 		"send",
 		iscmagic.WrapL1Address(receiver),

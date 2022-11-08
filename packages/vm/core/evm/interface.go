@@ -37,6 +37,8 @@ var (
 	FuncSetGasRatio = coreutil.Func(evmnames.FuncSetGasRatio)
 	FuncGetGasRatio = coreutil.ViewFunc(evmnames.FuncGetGasRatio)
 
+	FuncRegisterERC20NativeToken = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
+
 	// block context
 	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
 	FuncCloseBlockContext = coreutil.Func(evmnames.FuncCloseBlockContext)
@@ -58,7 +60,12 @@ const (
 	FieldGasRatio         = evmnames.FieldGasRatio
 	FieldBlockGasLimit    = evmnames.FieldBlockGasLimit
 	FieldFilterQuery      = evmnames.FieldFilterQuery
-	FieldBlockKeepAmount  = evmnames.FieldBlockKeepAmount
+	FieldBlockKeepAmount  = evmnames.FieldBlockKeepAmount // int32
+
+	FieldFoundrySN         = evmnames.FieldFoundrySN         // uint32
+	FieldTokenName         = evmnames.FieldTokenName         // string
+	FieldTokenTickerSymbol = evmnames.FieldTokenTickerSymbol // string
+	FieldTokenDecimals     = evmnames.FieldTokenDecimals     // uint8
 )
 
 const (

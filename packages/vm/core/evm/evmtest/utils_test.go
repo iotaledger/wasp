@@ -202,17 +202,33 @@ func (e *soloChainEnv) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *soloChainEnv) MagicContract(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
-	iscABI, err := abi.JSON(strings.NewReader(iscmagic.ABI))
+func (e *soloChainEnv) contractFromABI(address common.Address, abiJSON string, defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	parsedABI, err := abi.JSON(strings.NewReader(abiJSON))
 	require.NoError(e.t, err)
 	return &iscContractInstance{
 		evmContractInstance: &evmContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
-			address:       iscmagic.Address,
-			abi:           iscABI,
+			address:       address,
+			abi:           parsedABI,
 		},
 	}
+}
+
+func (e *soloChainEnv) ISCMagicSandbox(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	return e.contractFromABI(iscmagic.Address, iscmagic.SandboxABI, defaultSender)
+}
+
+func (e *soloChainEnv) ISCMagicUtil(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	return e.contractFromABI(iscmagic.Address, iscmagic.UtilABI, defaultSender)
+}
+
+func (e *soloChainEnv) ISCMagicAccounts(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	return e.contractFromABI(iscmagic.Address, iscmagic.AccountsABI, defaultSender)
+}
+
+func (e *soloChainEnv) ISCMagicPrivileged(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
+	return e.contractFromABI(iscmagic.Address, iscmagic.PrivilegedABI, defaultSender)
 }
 
 func (e *soloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *iscContractInstance {
@@ -223,6 +239,19 @@ func (e *soloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *iscCont
 			chain:         e,
 			defaultSender: defaultSender,
 			address:       iscmagic.ERC20BaseTokensAddress,
+			abi:           erc20BaseABI,
+		},
+	}
+}
+
+func (e *soloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundrySN uint32) *iscContractInstance {
+	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       iscmagic.ERC20NativeTokensAddress(foundrySN),
 			abi:           erc20BaseABI,
 		},
 	}

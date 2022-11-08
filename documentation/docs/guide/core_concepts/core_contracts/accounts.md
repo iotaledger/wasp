@@ -181,7 +181,9 @@ A map of [`TokenID`](#tokenid) => `0xff`
 
 ### `foundryOutput(s FoundrySerialNumber)`
 
-Returns the output corresponding to the foundry with Serial Number `s`.
+#### Parameters
+
+- `s` ([`FoundrySerialNumber`](#foundryserialnumber)): The Foundry serial number.
 
 #### Returns
 
@@ -200,6 +202,18 @@ Returns the NFT IDs for all NFTs owned by the given account.
 - `i` ([`Array16`](https://github.com/dessaya/wasp/blob/develop/packages/kv/collections/array16.go)
   of [`iotago::NFTID`](https://github.com/iotaledger/iota.go/blob/develop/output_nft.go)): The NFT IDs owned by the
   account
+
+### `accountFoundries(a AgentID)`
+
+Returns all foundries owned by the given account.
+
+#### Parameters
+
+- `a` (`AgentID`): The account Agent ID
+
+#### Returns
+
+A map of [`FoundrySerialNumber`](#foundryserialnumber) => `0xff`
 
 ### `nftData(z NFTID)`
 
@@ -223,6 +237,12 @@ The account nonce is used to issue off-ledger requests.
 - `n` (`uint64`): The account nonce.
 
 ## Schemas
+
+### `FoundrySerialNumber`
+
+```
+FoundrySerialNumber = uint32
+```
 
 ### `TokenID`
 
