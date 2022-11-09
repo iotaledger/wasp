@@ -12,6 +12,7 @@ replace (
 
 require (
 	github.com/ethereum/go-ethereum v1.10.25
+	github.com/iotaledger/hive.go/core v1.0.0-rc.1
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.6.1
@@ -55,7 +56,6 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20220808142449-1dc0b8ac4d7d // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.1 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
 	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221102091857-058227e94374 // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.1 // indirect

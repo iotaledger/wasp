@@ -6,8 +6,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/log"
 	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 
 	"github.com/spf13/cobra"
 	"gonum.org/v1/plot"
@@ -28,12 +28,12 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			storageFiles := []string{"storage_sol.json", "storage_rs.json", "storage_ts.json", "storage_go.json"}
 			memoryFiles := []string{"memory_sol.json", "memory_rs.json", "memory_ts.json", "memory_go.json"}
-			exetionTimeFiles := []string{"executiontime_sol.json", "executiontime_rs.json", "executiontime_ts.json", "executiontime_go.json"}
+			executionTimeFiles := []string{"executiontime_sol.json", "executiontime_rs.json", "executiontime_ts.json", "executiontime_go.json"}
 
 			drawGraph := graphDrawer(dir)
 			drawGraph("Storage contract gas usage", "storage", storageFiles)
 			drawGraph("Memory contract gas usage", "memory", memoryFiles)
-			drawGraph("Execution time contract gas usage", "executiontime", exetionTimeFiles)
+			drawGraph("Execution time contract gas usage", "executiontime", executionTimeFiles)
 		},
 	}
 )
