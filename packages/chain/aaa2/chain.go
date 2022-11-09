@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/node"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -37,7 +38,8 @@ func New(
 ) (Chain, error) {
 	var dkRegistry tcrypto.DKShareRegistryProvider // TODO: Get it somehow.
 	var cmtLogStore cmtLog.Store                   // TODO: Get it somehow.
-	return node.New(ctx, chainID, nodeConn, nodeIdentity, dkRegistry, cmtLogStore, net, log)
+	var smBlockWAL smGPAUtils.BlockWAL             // TODO: Get it somehow.
+	return node.New(ctx, chainID, nodeConn, nodeIdentity, dkRegistry, cmtLogStore, smBlockWAL, net, log)
 }
 
 func ChainList() map[isc.ChainID]Chain {

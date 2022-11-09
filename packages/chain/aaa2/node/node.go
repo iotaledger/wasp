@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons"
 	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -159,6 +160,7 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	dkRegistry tcrypto.DKShareRegistryProvider,
 	cmtLogStore cmtLog.Store,
+	blockWAL smGPAUtils.BlockWAL,
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (ChainNode, error) {
@@ -193,7 +195,7 @@ func New(
 		nodeIdentity.GetPublicKey(),
 		[]*cryptolib.PublicKey{nodeIdentity.GetPublicKey()},
 		net,
-		"",  // TODO: walFolder,
+		blockWAL,
 		nil, // TODO: store,
 		log,
 	)
