@@ -74,6 +74,9 @@ func CatchPanic(f func()) (err error) {
 			if err, ok = r.(error); !ok {
 				err = xerrors.Errorf("%v", r)
 			}
+			if os.Getenv("DEBUG") != "" {
+				fmt.Println(string(debug.Stack()))
+			}
 		}()
 		f()
 	}()

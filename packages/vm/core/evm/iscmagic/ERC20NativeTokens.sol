@@ -74,14 +74,18 @@ contract ERC20NativeTokens {
         ISCAllowance memory assets = __iscSandbox.getAllowance(owner, delegate);
         NativeTokenID memory myID = nativeTokenID();
         for (uint i = 0; i < assets.tokens.length; i++) {
-            if (memcmp(assets.tokens[i].ID.data, myID.data))
+            if (bytesEqual(assets.tokens[i].ID.data, myID.data))
                 return assets.tokens[i].amount;
         }
         return 0;
     }
 
-    function memcmp(bytes memory a, bytes memory b) internal pure returns (bool) {
-        return (a.length == b.length) && (keccak256(a) == keccak256(b));
+    function bytesEqual(bytes memory a, bytes memory b) internal pure returns (bool) {
+        if (a.length != b.length) return false;
+        for (uint256 i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
     }
 
     function transferFrom(address owner, address buyer, uint256 numTokens) public returns (bool) {

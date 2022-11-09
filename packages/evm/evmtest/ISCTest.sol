@@ -58,16 +58,23 @@ contract ISCTest {
         require(allowance.baseTokens > TokensForGas);
         fungibleTokens.baseTokens = allowance.baseTokens - TokensForGas;
 
-        ISCDict memory params;
-
         ISCSendMetadata memory metadata;
-        metadata.targetContract = ISC.util.hn("accounts");
-        metadata.entrypoint = ISC.util.hn("deposit");
-        metadata.params = params;
-
         ISCSendOptions memory options;
-
         ISC.sandbox.send(receiver, fungibleTokens, true, metadata, options);
+    }
+
+    function sendAsNFT(L1Address memory receiver, NFTID id, uint64 storageDeposit) public {
+        ISCAllowance memory allowance;
+        allowance.baseTokens = storageDeposit;
+        allowance.nfts = new NFTID[](1);
+        allowance.nfts[0] = id;
+
+        ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
+
+        ISCFungibleTokens memory fungibleTokens;
+        ISCSendMetadata memory metadata;
+        ISCSendOptions memory options;
+        ISC.sandbox.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
     }
 
     function callInccounter() public {
@@ -76,25 +83,6 @@ contract ISCTest {
         params.items[0] = ISCDictItem("counter", int64Encoded42);
         ISCAllowance memory allowance;
         ISC.sandbox.call(ISC.util.hn("inccounter"), ISC.util.hn("incCounter"), params, allowance);
-    }
-
-    function callSendAsNFT(L1Address memory receiver, NFTID id) public {
-        ISCFungibleTokens memory fungibleTokens;
-        fungibleTokens.baseTokens = 1074;
-        fungibleTokens.tokens = new NativeToken[](0);
-
-        ISCSendMetadata memory metadata;
-        metadata.entrypoint = ISCHname.wrap(0x1337);
-        metadata.targetContract = ISCHname.wrap(0xd34db33f);
-
-        ISCDict memory optParams = ISCDict(new ISCDictItem[](1));
-        bytes memory int64Encoded42 = hex"2A00000000000000";
-        optParams.items[0] = ISCDictItem("x", int64Encoded42);
-        metadata.params = optParams;
-
-        ISCSendOptions memory options;
-
-        ISC.sandbox.sendAsNFT(receiver, fungibleTokens, id, true, metadata, options);
     }
 
     function makeISCPanic() public {
