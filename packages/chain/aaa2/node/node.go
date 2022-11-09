@@ -37,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -64,7 +65,7 @@ type ChainMempool interface {
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
 	// Invoked by the chain when a set of access nodes has changed.
 	// These nodes should be used to disseminate the off-ledger requests.
-	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
+	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 }
 
 type RequestOutputHandler = func(outputID iotago.OutputID, output iotago.Output)
@@ -104,32 +105,35 @@ type ChainNodeConn interface {
 }
 
 type chainNodeImpl struct {
-	me                  gpa.NodeID
-	nodeIdentity        *cryptolib.KeyPair
-	chainID             *isc.ChainID
-	chainMgr            chainMgr.ChainMgr
-	nodeConn            ChainNodeConn
-	mempool             ChainMempool
-	stateMgr            statemanager.StateMgr
-	recvAliasOutputPipe pipe.Pipe
-	recvTxPublishedPipe pipe.Pipe
-	recvMilestonePipe   pipe.Pipe
-	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	consOutputPipe      pipe.Pipe
-	consRecoverPipe     pipe.Pipe
-	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
-	procCache           *processors.Cache                           // TODO: ...
-	netRecvPipe         pipe.Pipe
-	netPeeringID        peering.PeeringID
-	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey // TODO: Maintain this.
-	net                 peering.NetworkProvider
-	log                 *logger.Logger
+	me                   gpa.NodeID
+	nodeIdentity         *cryptolib.KeyPair
+	chainID              *isc.ChainID
+	chainMgr             chainMgr.ChainMgr
+	nodeConn             ChainNodeConn
+	mempool              ChainMempool
+	stateMgr             statemanager.StateMgr
+	recvAliasOutputPipe  pipe.Pipe
+	recvTxPublishedPipe  pipe.Pipe
+	recvMilestonePipe    pipe.Pipe
+	consensusInsts       map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
+	consOutputPipe       pipe.Pipe
+	consRecoverPipe      pipe.Pipe
+	publishingTXes       map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
+	procCache            *processors.Cache                           // TODO: ...
+	activeCommitteeNodes []*cryptolib.PublicKey                      // The nodes acting as a committee for the latest consensus.
+	activeAccessNodes    []*cryptolib.PublicKey                      // All the nodes authorized for being access nodes (for the ActiveAO).
+	netRecvPipe          pipe.Pipe
+	netPeeringID         peering.PeeringID
+	netPeerPubs          map[gpa.NodeID]*cryptolib.PublicKey // TODO: Maintain this.
+	net                  peering.NetworkProvider
+	log                  *logger.Logger
 }
 
 type consensusInst struct {
 	request    *chainMgr.NeedConsensus
 	cancelFunc context.CancelFunc
 	consensus  *consGR.ConsGr
+	committee  []*cryptolib.PublicKey
 }
 
 // Used to correlate consensus request with its output.
@@ -166,26 +170,28 @@ func New(
 ) (ChainNode, error) {
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
-		me:                  pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
-		nodeIdentity:        nodeIdentity,
-		chainID:             chainID,
-		nodeConn:            nodeConn,
-		mempool:             nil, // TODO: ...
-		recvAliasOutputPipe: pipe.NewDefaultInfinitePipe(),
-		recvTxPublishedPipe: pipe.NewDefaultInfinitePipe(),
-		recvMilestonePipe:   pipe.NewDefaultInfinitePipe(),
-		consensusInsts:      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
-		consOutputPipe:      pipe.NewDefaultInfinitePipe(),
-		consRecoverPipe:     pipe.NewDefaultInfinitePipe(),
-		publishingTXes:      map[iotago.TransactionID]context.CancelFunc{},
-		netRecvPipe:         pipe.NewDefaultInfinitePipe(),
-		netPeeringID:        netPeeringID,
-		netPeerPubs:         map[gpa.NodeID]*cryptolib.PublicKey{},
-		net:                 net,
-		log:                 log,
+		me:                   pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
+		nodeIdentity:         nodeIdentity,
+		chainID:              chainID,
+		nodeConn:             nodeConn,
+		mempool:              nil, // TODO: ...
+		recvAliasOutputPipe:  pipe.NewDefaultInfinitePipe(),
+		recvTxPublishedPipe:  pipe.NewDefaultInfinitePipe(),
+		recvMilestonePipe:    pipe.NewDefaultInfinitePipe(),
+		consensusInsts:       map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
+		consOutputPipe:       pipe.NewDefaultInfinitePipe(),
+		consRecoverPipe:      pipe.NewDefaultInfinitePipe(),
+		publishingTXes:       map[iotago.TransactionID]context.CancelFunc{},
+		activeCommitteeNodes: []*cryptolib.PublicKey{},
+		activeAccessNodes:    []*cryptolib.PublicKey{},
+		netRecvPipe:          pipe.NewDefaultInfinitePipe(),
+		netPeeringID:         netPeeringID,
+		netPeerPubs:          map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                  net,
+		log:                  log,
 	}
 	// Create sub-components.
-	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkRegistry, pubKeyAsNodeID, cni.log)
+	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkRegistry, pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
 	}
@@ -298,6 +304,14 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 			return
 		}
 	}
+}
+
+// This will always run in the main thread, because that's a callback for the chainMgr.
+func (cni *chainNodeImpl) handleAccessNodesCB(accessNodes []*cryptolib.PublicKey) {
+	cni.activeAccessNodes = accessNodes
+	cni.log.Infof("Access nodes updated: %+v", cni.activeAccessNodes)
+	cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, accessNodes)
+	cni.stateMgr.AccessNodesUpdated(accessNodes)
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
@@ -427,6 +441,13 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		}
 		ci.request = needConsensus
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
+		//
+		// Update committee nodes, if changed.
+		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
+			cni.activeCommitteeNodes = ci.committee
+			cni.log.Infof("Committee nodes updated: %+v", cni.activeCommitteeNodes)
+			cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, cni.activeAccessNodes)
+		}
 	}
 }
 
@@ -451,6 +472,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
+				committee:  dkShare.GetNodePubKeys(),
 			}
 			added = true
 		}

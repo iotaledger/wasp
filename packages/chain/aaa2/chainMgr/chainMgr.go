@@ -85,6 +85,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -141,6 +142,7 @@ type chainMgrImpl struct {
 	latestActiveCmt         *iotago.Ed25519Address                  // The latest active committee.
 	latestConfirmedAO       *isc.AliasOutputWithID                  // The latest confirmed AO (follows Active AO).
 	activeAccessNodes       []*cryptolib.PublicKey                  // All the nodes authorized for being access nodes (for the ActiveAO).
+	activeAccessNodesCB     func([]*cryptolib.PublicKey)            // Called, when a list of access nodes has changed.
 	needConsensus           *NeedConsensus                          // Query for a consensus.
 	needPublishTX           map[iotago.TransactionID]*NeedPublishTX // Query to post TXes.
 	dkShareRegistryProvider registry.DKShareRegistryProvider        // Source for DKShares.
@@ -162,6 +164,7 @@ func New(
 	cmtLogStore cmtLog.Store,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	activeAccessNodesCB func([]*cryptolib.PublicKey),
 	log *logger.Logger,
 ) (ChainMgr, error) {
 	cmi := &chainMgrImpl{
@@ -169,6 +172,7 @@ func New(
 		cmtLogs:                 map[iotago.Ed25519Address]*cmtLogInst{},
 		cmtLogStore:             cmtLogStore,
 		activeAccessNodes:       []*cryptolib.PublicKey{},
+		activeAccessNodesCB:     activeAccessNodesCB,
 		needConsensus:           nil,
 		needPublishTX:           map[iotago.TransactionID]*NeedPublishTX{},
 		dkShareRegistryProvider: dkShareRegistryProvider,
@@ -305,7 +309,12 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	})
 	//
 	// >     Update AccessNodes.
-	cmi.activeAccessNodes = governance.NewStateAccess(input.nextVirtualState.KVStore()).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(input.nextVirtualState.KVStore()).GetAccessNodes()
+	if !util.Same(newAccessNodes, cmi.activeAccessNodes) {
+		cmi.activeAccessNodesCB(newAccessNodes)
+		cmi.activeAccessNodes = newAccessNodes
+	}
+	//
 	return msgs
 }
 
