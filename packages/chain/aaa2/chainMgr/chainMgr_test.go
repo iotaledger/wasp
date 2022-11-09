@@ -9,10 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/chainMgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -103,10 +105,13 @@ func testBasic(t *testing.T, n, f int) {
 	step2AO, step2TX := tcl.FakeTX(originAO, cmtAddrA)
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainMgr.Output).NeedConsensus()
+		fakeVSA, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+		require.NoError(t, err)
 		tc.WithInput(nid, chainMgr.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA.(*iotago.Ed25519Address),
 			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
 			step2AO,
+			fakeVSA,
 			step2TX,
 		))
 	}

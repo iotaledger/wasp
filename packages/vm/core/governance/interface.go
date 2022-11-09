@@ -7,9 +7,6 @@ package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
 // constants
@@ -119,20 +116,3 @@ const (
 	// access nodes: changeAccessNodes
 	ParamChangeAccessNodesActions = "n"
 )
-
-type StateAccess struct {
-	state kv.KVStore
-}
-
-func NewStateAccess(store kv.KVStore) *StateAccess {
-	state := subrealm.New(store, kv.Key(Contract.Hname().Bytes()))
-	return &StateAccess{state: state}
-}
-
-func (sa *StateAccess) GetMaintenanceStatus() bool {
-	r := sa.state.MustGet(VarMaintenanceStatus)
-	if r == nil {
-		return false // chain is being initialized, governance has not been initialized yet
-	}
-	return codec.MustDecodeBool(r)
-}

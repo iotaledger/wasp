@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type inputConsensusOutputDone struct {
@@ -15,6 +16,7 @@ type inputConsensusOutputDone struct {
 	logIndex          cmtLog.LogIndex
 	baseAliasOutputID iotago.OutputID
 	nextAliasOutput   *isc.AliasOutputWithID
+	nextVirtualState  state.VirtualStateAccess
 	transaction       *iotago.Transaction
 }
 
@@ -23,6 +25,7 @@ func NewInputConsensusOutputDone(
 	logIndex cmtLog.LogIndex,
 	baseAliasOutputID iotago.OutputID,
 	nextAliasOutput *isc.AliasOutputWithID,
+	nextVirtualState state.VirtualStateAccess,
 	transaction *iotago.Transaction,
 ) gpa.Input {
 	return &inputConsensusOutputDone{
@@ -30,6 +33,7 @@ func NewInputConsensusOutputDone(
 		logIndex:          logIndex,
 		baseAliasOutputID: baseAliasOutputID,
 		nextAliasOutput:   nextAliasOutput,
+		nextVirtualState:  nextVirtualState,
 		transaction:       transaction,
 	}
 }

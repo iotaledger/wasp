@@ -7,10 +7,12 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/node"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 type ChainInfo struct { // TODO: ...
@@ -32,8 +34,10 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-) Chain {
-	return node.New(ctx, chainID, nodeConn, nodeIdentity, net, log)
+) (Chain, error) {
+	var dkRegistry tcrypto.DKShareRegistryProvider // TODO: Get it somehow.
+	var cmtLogStore cmtLog.Store                   // TODO: Get it somehow.
+	return node.New(ctx, chainID, nodeConn, nodeIdentity, dkRegistry, cmtLogStore, net, log)
 }
 
 func ChainList() map[isc.ChainID]Chain {

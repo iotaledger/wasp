@@ -85,6 +85,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 var ErrNotInCommittee = errors.New("ErrNotInCommittee")
@@ -167,6 +168,7 @@ func New(
 		chainID:                 chainID,
 		cmtLogs:                 map[iotago.Ed25519Address]*cmtLogInst{},
 		cmtLogStore:             cmtLogStore,
+		activeAccessNodes:       []*cryptolib.PublicKey{},
 		needConsensus:           nil,
 		needPublishTX:           map[iotago.TransactionID]*NeedPublishTX{},
 		dkShareRegistryProvider: dkShareRegistryProvider,
@@ -298,12 +300,13 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	}
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
-	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+	msgs := cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
 		return cl.Input(cmtLog.NewInputConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput))
 	})
-
-	// TODO:
+	//
 	// >     Update AccessNodes.
+	cmi.activeAccessNodes = governance.NewStateAccess(input.nextVirtualState.KVStore()).GetAccessNodes()
+	return msgs
 }
 
 // > UPON Reception of Consensus Output/SKIP:

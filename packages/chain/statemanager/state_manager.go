@@ -6,8 +6,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/node"
+	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
@@ -20,6 +19,16 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 )
+
+type StateMgr interface {
+	consGR.StateMgr
+	// Invoked by the chain when new confirmed alias output is received.
+	// This event should be used to mark blocks as confirmed.
+	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID)
+	// Invoked by the chain when a set of access nodes has changed.
+	// These nodes should be used to perform block replication.
+	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
+}
 
 type stateManager struct {
 	log             *logger.Logger
@@ -36,10 +45,7 @@ type stateManager struct {
 	cleanupFun      func()
 }
 
-var (
-	_ consGR.StateMgr    = &stateManager{}
-	_ node.ChainStateMgr = &stateManager{}
-)
+var _ StateMgr = &stateManager{}
 
 const (
 	constMsgTypeStm    byte = iota
@@ -55,7 +61,7 @@ func New(
 	wal smGPAUtils.BlockWAL,
 	store kvstore.KVStore,
 	log *logger.Logger,
-) (node.ChainStateMgr, error) {
+) (StateMgr, error) {
 	smLog := log.Named("sm")
 	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), smLog)
 

@@ -126,10 +126,11 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Start the consensus in all nodes.
-	outputChs := make([]<-chan *consGR.Output, len(nodes))
+	outputChs := make([]chan *consGR.Output, len(nodes))
 	for i, n := range nodes {
-		outputCh, _ := n.Input(originAO)
+		outputCh := make(chan *consGR.Output, 1)
 		outputChs[i] = outputCh
+		n.Input(originAO, func(o *consGR.Output) { outputCh <- o }, func() {})
 	}
 	//
 	// Provide data from Mempool and StateMgr.

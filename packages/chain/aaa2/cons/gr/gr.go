@@ -77,15 +77,16 @@ type VM interface {
 // Implementation.
 
 type Output struct {
-	State cons.OutputState // Can only be Completed | Skipped.
-	TX    *iotago.Transaction
-	Block state.Block
+	State     cons.OutputState         // Can only be Completed | Skipped.
+	TX        *iotago.Transaction      // The produced TX.
+	Block     state.Block              // The produced block.
+	NextState state.VirtualStateAccess // Virtual state at the end of transition.
 }
 
 type input struct {
 	baseAliasOutput *isc.AliasOutputWithID
-	outputCh        chan<- *Output
-	recoverCh       chan<- time.Time
+	outputCB        func(*Output)
+	recoverCB       func()
 }
 
 type ConsGr struct {
@@ -94,9 +95,9 @@ type ConsGr struct {
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
 	inputTimeCh                 chan time.Time
-	outputCh                    chan<- *Output   // For sending output to the user.
-	outputReady                 bool             // Set to true, if we provided output already.
-	recoverCh                   chan<- time.Time // For sending recovery hint to the user.
+	outputCB                    func(*Output) // For sending output to the user.
+	outputReady                 bool          // Set to true, if we provided output already.
+	recoverCB                   func()        // For sending recovery hint to the user.
 	recoveryTimeout             time.Duration
 	redeliveryPeriod            time.Duration
 	printStatusPeriod           time.Duration
@@ -186,21 +187,18 @@ func New(
 	return cgr
 }
 
-func (cgr *ConsGr) Input(baseAliasOutput *isc.AliasOutputWithID) (<-chan *Output, <-chan time.Time) {
+func (cgr *ConsGr) Input(baseAliasOutput *isc.AliasOutputWithID, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := cgr.inputReceived.Swap(true)
 	if wasReceivedBefore {
 		panic(xerrors.Errorf("duplicate input: %v", baseAliasOutput))
 	}
-	outputCh := make(chan *Output, 1)
-	recoverCh := make(chan time.Time)
 	inp := &input{
 		baseAliasOutput: baseAliasOutput,
-		outputCh:        outputCh,
-		recoverCh:       recoverCh,
+		outputCB:        outputCB,
+		recoverCB:       recoverCB,
 	}
 	cgr.inputCh <- inp
 	close(cgr.inputCh)
-	return outputCh, recoverCh
 }
 
 func (cgr *ConsGr) Time(t time.Time) {
@@ -229,8 +227,8 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			}
 			recoveryTimeoutCh = time.After(cgr.recoveryTimeout)
 			printStatusCh = time.After(cgr.printStatusPeriod)
-			cgr.outputCh = inp.outputCh
-			cgr.recoverCh = inp.recoverCh
+			cgr.outputCB = inp.outputCB
+			cgr.recoverCB = inp.recoverCB
 			cgr.handleConsInput(cons.NewInputProposal(inp.baseAliasOutput))
 		case t, ok := <-cgr.inputTimeCh:
 			if !ok {
@@ -284,14 +282,13 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			}
 			redeliveryTickCh = time.After(cgr.redeliveryPeriod)
 			cgr.handleRedeliveryTick(t)
-		case t, ok := <-recoveryTimeoutCh:
-			if !ok || cgr.recoverCh == nil {
+		case _, ok := <-recoveryTimeoutCh:
+			if !ok || cgr.recoverCB == nil {
 				recoveryTimeoutCh = nil
 				continue
 			}
-			cgr.recoverCh <- t
-			close(cgr.recoverCh)
-			cgr.recoverCh = nil
+			cgr.recoverCB()
+			cgr.recoverCB = nil
 			cgr.log.Warnf("Recovery timeout reached.")
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
@@ -367,13 +364,13 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 func (cgr *ConsGr) provideOutput(output *cons.Output) {
 	switch output.State {
 	case cons.Skipped:
-		cgr.outputCh <- &Output{State: output.State}
+		cgr.outputCB(&Output{State: output.State})
 	case cons.Completed:
 		block, err := output.ResultState.ExtractBlock()
 		if err != nil {
 			panic(xerrors.Errorf("cannot extract block from virtual state: %w", err))
 		}
-		cgr.outputCh <- &Output{State: output.State, TX: output.ResultTransaction, Block: block}
+		cgr.outputCB(&Output{State: output.State, TX: output.ResultTransaction, Block: block, NextState: output.ResultState})
 	default:
 		panic(xerrors.Errorf("unexpected cons.Output.State=%v", output.State))
 	}

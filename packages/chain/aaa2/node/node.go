@@ -18,6 +18,7 @@ package node
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"golang.org/x/xerrors"
@@ -26,11 +27,15 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/chainMgr"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/cons"
 	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
+	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -40,6 +45,8 @@ const (
 	redeliveryPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
 	printStatusPeriod       time.Duration = 10 * time.Second // TODO: Make it configurable?
 	consensusInstsInAdvance int           = 3                // TODO: Make it configurable?
+
+	msgTypeChainMgr byte = iota
 )
 
 type ChainNode interface {
@@ -56,16 +63,6 @@ type ChainMempool interface {
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
 	// Invoked by the chain when a set of access nodes has changed.
 	// These nodes should be used to disseminate the off-ledger requests.
-	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
-}
-
-type ChainStateMgr interface { // TODO: Call the SaveBlock, and handle the result.
-	consGR.StateMgr
-	// Invoked by the chain when new confirmed alias output is received.
-	// This event should be used to mark blocks as confirmed.
-	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID)
-	// Invoked by the chain when a set of access nodes has changed.
-	// These nodes should be used to perform block replication.
 	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
 }
 
@@ -111,24 +108,38 @@ type chainNodeImpl struct {
 	chainID             *isc.ChainID
 	chainMgr            chainMgr.ChainMgr
 	nodeConn            ChainNodeConn
-	mempool             ChainMempool  // TODO: ...
-	stateMgr            ChainStateMgr // TODO: ...
+	mempool             ChainMempool
+	stateMgr            statemanager.StateMgr
 	recvAliasOutputPipe pipe.Pipe
 	recvTxPublishedPipe pipe.Pipe
 	recvMilestonePipe   pipe.Pipe
 	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	publishingTXes      map[iotago.TransactionID]context.CancelFunc                  // TX'es now being published.
-	procCache           *processors.Cache                                            // TODO: ...
+	consOutputPipe      pipe.Pipe
+	consRecoverPipe     pipe.Pipe
+	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
+	procCache           *processors.Cache                           // TODO: ...
+	netRecvPipe         pipe.Pipe
+	netPeeringID        peering.PeeringID
+	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey // TODO: Maintain this.
 	net                 peering.NetworkProvider
 	log                 *logger.Logger
 }
 
 type consensusInst struct {
-	aliasOutput *isc.AliasOutputWithID
-	cancelFunc  context.CancelFunc
-	consensus   *consGR.ConsGr
-	outputCh    <-chan *consGR.Output
-	recoverCh   <-chan time.Time
+	request    *chainMgr.NeedConsensus
+	cancelFunc context.CancelFunc
+	consensus  *consGR.ConsGr
+}
+
+// Used to correlate consensus request with its output.
+type consOutput struct {
+	request *chainMgr.NeedConsensus
+	output  *consGR.Output
+}
+
+// Used to correlate consensus request with its output.
+type consRecover struct {
+	request *chainMgr.NeedConsensus
 }
 
 // This is event received from the NodeConn as response to PublishTX
@@ -146,25 +157,63 @@ func New(
 	chainID *isc.ChainID,
 	nodeConn ChainNodeConn,
 	nodeIdentity *cryptolib.KeyPair,
+	dkRegistry tcrypto.DKShareRegistryProvider,
+	cmtLogStore cmtLog.Store,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-) ChainNode {
+) (ChainNode, error) {
+	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
 		me:                  pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
 		nodeIdentity:        nodeIdentity,
 		chainID:             chainID,
-		chainMgr:            nil, // TODO: chainMgr.New(), // TODO: AckHandler and ticks.
 		nodeConn:            nodeConn,
 		mempool:             nil, // TODO: ...
-		stateMgr:            nil, // TODO: ...
 		recvAliasOutputPipe: pipe.NewDefaultInfinitePipe(),
 		recvTxPublishedPipe: pipe.NewDefaultInfinitePipe(),
 		recvMilestonePipe:   pipe.NewDefaultInfinitePipe(),
 		consensusInsts:      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
+		consOutputPipe:      pipe.NewDefaultInfinitePipe(),
+		consRecoverPipe:     pipe.NewDefaultInfinitePipe(),
 		publishingTXes:      map[iotago.TransactionID]context.CancelFunc{},
+		netRecvPipe:         pipe.NewDefaultInfinitePipe(),
+		netPeeringID:        netPeeringID,
+		netPeerPubs:         map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                 net,
 		log:                 log,
 	}
+	// Create sub-components.
+	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkRegistry, pubKeyAsNodeID, cni.log)
+	if err != nil {
+		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
+	}
+	stateMgr, err := statemanager.New(
+		ctx,
+		cni.chainID,
+		nodeIdentity.GetPublicKey(),
+		[]*cryptolib.PublicKey{nodeIdentity.GetPublicKey()},
+		net,
+		"",  // TODO: walFolder,
+		nil, // TODO: store,
+		log,
+	)
+	if err != nil {
+		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
+	}
+	cni.chainMgr = chainMgr
+	cni.stateMgr = stateMgr
+	//
+	// Connect to the peering network.
+	netRecvPipeInCh := cni.netRecvPipe.In()
+	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverChain, func(recv *peering.PeerMessageIn) {
+		if recv.MsgType != msgTypeChainMgr {
+			cni.log.Warnf("Unexpected message, type=%v", recv.MsgType)
+			return
+		}
+		netRecvPipeInCh <- recv
+	})
+	//
+	// Attach to the L1.
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput) {
 		if len(outputIDs) == 0 {
@@ -191,15 +240,20 @@ func New(
 		recvMilestonePipeInCh <- timestamp
 	}
 	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
-	go cni.run(ctx)
-	return cni
+	//
+	// Run the main thread.
+	go cni.run(ctx, netAttachID)
+	return cni, nil
 }
 
-func (cni *chainNodeImpl) run(ctx context.Context) {
+func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 	ctxDone := ctx.Done()
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
+	netRecvPipeOutCh := cni.netRecvPipe.Out()
+	consOutputPipeOutCh := cni.consOutputPipe.Out()
+	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	for {
 		select {
 		case txPublishResult, ok := <-recvTxPublishedPipeOutCh:
@@ -219,7 +273,26 @@ func (cni *chainNodeImpl) run(ctx context.Context) {
 				recvMilestonePipeOutCh = nil
 			}
 			cni.handleMilestoneTimestamp(timestamp.(time.Time))
+		case recv, ok := <-netRecvPipeOutCh:
+			if !ok {
+				netRecvPipeOutCh = nil
+				continue
+			}
+			cni.handleNetMessage(ctx, recv.(*peering.PeerMessageIn))
+		case recv, ok := <-consOutputPipeOutCh:
+			if !ok {
+				consOutputPipeOutCh = nil
+				continue
+			}
+			cni.handleConsensusOutput(ctx, recv.(*consOutput))
+		case recv, ok := <-consRecoverPipeOutCh:
+			if !ok {
+				consRecoverPipeOutCh = nil
+				continue
+			}
+			cni.handleConsensusRecover(ctx, recv.(*consRecover))
 		case <-ctxDone:
+			cni.net.Detach(netAttachID)
 			return
 		}
 	}
@@ -233,9 +306,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	outMsgs := cni.chainMgr.AsGPA().Input(
 		chainMgr.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
-	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
-		panic("unexpected messages from the chainMgr")
-	}
+	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
 }
 
@@ -243,9 +314,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 	outMsgs := cni.chainMgr.AsGPA().Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
 	)
-	if outMsgs.Count() != 0 { // TODO: Wrong, NextLI will be exchanged.
-		panic(xerrors.Errorf("unexpected messaged from chainMgr: %+v", outMsgs))
-	}
+	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
 }
 
@@ -260,6 +329,18 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	}
 }
 
+func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.PeerMessageIn) {
+	msg, err := cni.chainMgr.AsGPA().UnmarshalMessage(recv.MsgData)
+	if err != nil {
+		cni.log.Warnf("cannot parse message: %v", err)
+		return
+	}
+	msg.SetSender(pubKeyAsNodeID(recv.SenderPubKey))
+	outMsgs := cni.chainMgr.AsGPA().Message(msg)
+	cni.sendMessages(outMsgs)
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+}
+
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	if outputUntyped == nil {
 		cni.cleanupConsensusInsts(nil, nil)
@@ -271,13 +352,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	// Start new consensus instances, if needed.
 	outputNeedConsensus := output.NeedConsensus()
 	if outputNeedConsensus != nil {
-		ci := cni.ensureConsensusInst(ctx, outputNeedConsensus)
-		if ci.aliasOutput == nil {
-			outputCh, recoverCh := ci.consensus.Input(outputNeedConsensus.BaseAliasOutput)
-			ci.aliasOutput = outputNeedConsensus.BaseAliasOutput
-			ci.outputCh = outputCh   // TODO: Read from these.
-			ci.recoverCh = recoverCh // TODO: Read from these.
-		}
+		cni.ensureConsensusInput(ctx, outputNeedConsensus)
 	}
 	//
 	// Start publishing TX'es, if there not being posted already.
@@ -298,6 +373,59 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		}
 	}
 	cni.cleanupPublishingTXes(outputNeedPostTXes)
+}
+
+func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
+	var chainMgrInput gpa.Input
+	switch out.output.State {
+	case cons.Completed:
+		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
+		if err != nil {
+			panic(xerrors.Errorf("cannot extract next AliasOutput from TX: %w", err))
+		}
+		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID.UTXOInput())
+		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
+			out.request.CommitteeAddr,
+			out.request.LogIndex,
+			out.request.BaseAliasOutput.OutputID(),
+			nextAO,
+			out.output.NextState,
+			out.output.TX,
+		)
+	case cons.Skipped:
+		chainMgrInput = chainMgr.NewInputConsensusOutputSkip(
+			out.request.CommitteeAddr,
+			out.request.LogIndex,
+			out.request.BaseAliasOutput.OutputID(),
+		)
+	default:
+		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
+	}
+	cni.sendMessages(cni.chainMgr.AsGPA().Input(chainMgrInput))
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+}
+
+func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
+	chainMgrInput := chainMgr.NewInputConsensusTimeout(
+		out.request.CommitteeAddr,
+		out.request.LogIndex,
+	)
+	cni.sendMessages(cni.chainMgr.AsGPA().Input(chainMgrInput))
+	cni.handleChainMgrOutput(ctx, cni.chainMgr.AsGPA().Output())
+}
+
+func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainMgr.NeedConsensus) {
+	ci := cni.ensureConsensusInst(ctx, needConsensus)
+	if ci.request == nil {
+		outputCB := func(o *consGR.Output) {
+			cni.consOutputPipe.In() <- &consOutput{request: needConsensus, output: o}
+		}
+		recoverCB := func() {
+			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
+		}
+		ci.request = needConsensus
+		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
+	}
 }
 
 func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus *chainMgr.NeedConsensus) *consensusInst {
@@ -339,7 +467,7 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(keepCommitteeAddr *iotago.Ed2551
 				continue
 			}
 			ci := cni.consensusInsts[cmtAddr][li]
-			if ci.aliasOutput == nil && ci.cancelFunc != nil {
+			if ci.request == nil && ci.cancelFunc != nil {
 				// We can cancel an instance, if input was not yet provided.
 				ci.cancelFunc() // TODO: Somehow cancel hanging instances, maybe with old LogIndex, etc.
 				ci.cancelFunc = nil
@@ -363,6 +491,23 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.Transa
 			delete(cni.publishingTXes, txID)
 		}
 	}
+}
+
+func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
+	outMsgs.MustIterate(func(m gpa.Message) {
+		msgData, err := m.MarshalBinary()
+		if err != nil {
+			cni.log.Warnf("Failed to send a message: %v", err)
+			return
+		}
+		pm := &peering.PeerMessageData{
+			PeeringID:   cni.netPeeringID,
+			MsgReceiver: peering.PeerMessageReceiverChain,
+			MsgType:     msgTypeChainMgr,
+			MsgData:     msgData,
+		}
+		cni.net.SendMsgByPubKey(cni.netPeerPubs[m.Recipient()], pm)
+	})
 }
 
 func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
