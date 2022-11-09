@@ -46,7 +46,7 @@ const (
 	numberOfNodesToRequestBlockFromConst = 5
 )
 
-func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, walFolder string, store kvstore.KVStore, log *logger.Logger, timersOpt ...StateManagerTimers) (gpa.GPA, error) {
+func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store kvstore.KVStore, log *logger.Logger, timersOpt ...StateManagerTimers) (gpa.GPA, error) {
 	var err error
 	var timers StateManagerTimers
 	smLog := log.Named("gpa")
@@ -54,16 +54,6 @@ func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, walFolder string, stor
 		timers = timersOpt[0]
 	} else {
 		timers = NewStateManagerTimers()
-	}
-	var wal smGPAUtils.BlockWAL
-	if walFolder == "" {
-		wal = smGPAUtils.NewMockedBlockWAL()
-	} else {
-		wal, err = smGPAUtils.NewBlockWAL(walFolder, chainID, log)
-		if err != nil {
-			smLog.Debugf("Error creating block WAL: %v", err)
-			return nil, err
-		}
 	}
 	blockCache, err := smGPAUtils.NewBlockCache(store, timers.TimeProvider, wal, smLog)
 	if err != nil {

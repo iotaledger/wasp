@@ -29,7 +29,7 @@ func TestBasic(t *testing.T) {
 
 	chainID, blocks, stateOutputs := smGPAUtils.GetBlocks(t, 8, 1)
 	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
-	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, log)
+	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewMockedBlockWAL(), log)
 	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
 	sendBlocksToNode(t, tc, nodeID, blocks)
 
@@ -58,7 +58,7 @@ func TestManyNodes(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	for _, nodeID := range nodeIDs {
-		_, sm := createStateManagerGpa(t, chainID, nodeID, nodeIDs, log, smTimers)
+		_, sm := createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
 		sms[nodeID] = sm
 	}
 	tc := gpa.NewTestContext(sms)
@@ -120,12 +120,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 
 	chainID, blocks, _ := smGPAUtils.GetBlocks(t, 6, 2)
 	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
-	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, log, smTimers)
-	var err error
-	smImpl := sm.(*stateManagerGPA)
-	// WAL should not be used for this test
-	smImpl.blockCache, err = smGPAUtils.NewBlockCache(smImpl.store, smTimers.TimeProvider, smGPAUtils.NewEmptyBlockWAL(), smImpl.log)
-	require.NoError(t, err)
+	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewEmptyBlockWAL(), log, smTimers)
 	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
 
 	advanceTimeAndTimerTickFun := func(advance time.Duration) {
@@ -178,11 +173,11 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	require.Nil(t, blockCache.GetBlock(3, blocks[4].GetHash()))
 }
 
-func createStateManagerGpa(t *testing.T, chainID *isc.ChainID, me gpa.NodeID, nodeIDs []gpa.NodeID, log *logger.Logger, timers ...StateManagerTimers) (smUtils.NodeRandomiser, gpa.GPA) {
+func createStateManagerGpa(t *testing.T, chainID *isc.ChainID, me gpa.NodeID, nodeIDs []gpa.NodeID, wal smGPAUtils.BlockWAL, log *logger.Logger, timers ...StateManagerTimers) (smUtils.NodeRandomiser, gpa.GPA) {
 	log = log.Named(me.String()).Named("c-" + chainID.ShortString())
 	nr := smUtils.NewNodeRandomiser(me, nodeIDs, log)
 	store := mapdb.NewMapDB()
-	sm, err := New(chainID, nr, "", store, log, timers...)
+	sm, err := New(chainID, nr, wal, store, log, timers...)
 	require.NoError(t, err)
 	return nr, sm
 }
