@@ -4,7 +4,6 @@
 package smGPAUtils
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -15,25 +14,12 @@ import (
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 )
-
-func MakeNodeID(index int) gpa.NodeID {
-	return gpa.NodeID(fmt.Sprintf("Node%v", index))
-}
-
-func MakeNodeIDs(indexes []int) []gpa.NodeID {
-	result := make([]gpa.NodeID, len(indexes))
-	for i := range indexes {
-		result[i] = MakeNodeID(indexes[i])
-	}
-	return result
-}
 
 func GetOriginState(t require.TestingT) (*isc.ChainID, *isc.AliasOutputWithID, state.VirtualStateAccess) {
 	store := mapdb.NewMapDB()
