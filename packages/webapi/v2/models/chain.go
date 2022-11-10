@@ -57,6 +57,7 @@ type gasFeePolicy struct {
 }
 
 type ChainInfoResponse struct {
+	IsActive        bool         `swagger:"desc(Whether or not the chain is active.)"`
 	ChainID         string       `swagger:"desc(ChainID (bech32-encoded).)"`
 	EVMChainID      uint16       `swagger:"desc(The EVM chain ID)"`
 	ChainOwnerID    string       `swagger:"desc(The chain owner address (bech32-encoded).)"`
@@ -75,6 +76,7 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 	}
 
 	chainInfoResponse := ChainInfoResponse{
+		IsActive:     chainInfo.IsActive,
 		ChainID:      chainInfo.ChainID.String(),
 		EVMChainID:   evmChainID,
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
@@ -93,10 +95,5 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 }
 
 type RequestIDResponse struct {
-	RequestID string `swagger:"desc(The request ID of the given transaction ID)"`
-}
-
-type SaveChainRecordRequest struct {
-	ChainID string `json:"ChainID" swagger:"desc(The chain id)"`
-	Active  bool   `json:"Active" swagger:"desc(Decides if the chain is active or not)"`
+	RequestID string `swagger:"desc(The request ID of the given transaction ID.)"`
 }

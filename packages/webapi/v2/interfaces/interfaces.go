@@ -2,6 +2,11 @@ package interfaces
 
 import (
 	"net/http"
+	"time"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -30,7 +35,7 @@ type ChainService interface {
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
 	GetState(chainID *isc.ChainID, stateKey []byte) (state []byte, err error)
-	SaveChainRecord(chainID *isc.ChainID, active bool) error
+	WaitForRequestProcessed(chainID *isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
 }
 
 type EVMService interface {
@@ -46,6 +51,7 @@ type MetricsService interface {
 }
 
 type NodeService interface {
+	SetNodeOwnerCertificate(nodePubKey []byte, ownerAddress iotago.Address) ([]byte, error)
 	ShutdownNode()
 }
 
@@ -54,7 +60,7 @@ type RegistryService interface {
 }
 
 type CommitteeService interface {
-	GetCommitteeInfo(chain chain.Chain) (*dto.ChainNodeInfo, error)
+	GetCommitteeInfo(chainID *isc.ChainID) (*dto.ChainNodeInfo, error)
 	GetPublicKey() *cryptolib.PublicKey
 }
 
@@ -70,6 +76,15 @@ type PeeringService interface {
 type OffLedgerService interface {
 	EnqueueOffLedgerRequest(chainID *isc.ChainID, request []byte) error
 	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
+}
+
+type UserService interface {
+	AddUser(username string, password string, permissions []string) error
+	DeleteUser(username string) error
+	GetUser(username string) (*models.User, error)
+	GetUsers() *[]models.User
+	UpdateUserPassword(username string, password string) error
+	UpdateUserPermissions(username string, permissions []string) error
 }
 
 type VMService interface {

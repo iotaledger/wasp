@@ -18,23 +18,12 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
-	chainRecord, err := c.registryService.GetChainRecordByChainID(chainID)
+	chain, err := c.chainService.GetChainInfoByChainID(chainID)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
-	}
-
-	if chainRecord == nil {
 		return apierrors.ChainNotFoundError(e.Param("chainID"))
 	}
 
-	chain := c.chainService.GetChainByID(chainID)
-
-	if chain == nil {
-		return apierrors.ChainNotFoundError(e.Param("chainID"))
-	}
-
-	committeeInfo := chain.GetCommitteeInfo()
-	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chain)
+	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)
 
 	if err != nil {
 		return err
@@ -42,8 +31,8 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 
 	chainInfo := models.CommitteeInfoResponse{
 		ChainID:        chainID.String(),
-		Active:         chainRecord.Active,
-		StateAddress:   committeeInfo.Address.String(),
+		Active:         chain.IsActive,
+		StateAddress:   chainNodeInfo.Address.String(),
 		CommitteeNodes: models.MapCommitteeNodes(chainNodeInfo.CommitteeNodes),
 		AccessNodes:    models.MapCommitteeNodes(chainNodeInfo.AccessNodes),
 		CandidateNodes: models.MapCommitteeNodes(chainNodeInfo.CandidateNodes),

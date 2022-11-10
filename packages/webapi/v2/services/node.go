@@ -1,23 +1,63 @@
 package services
 
 import (
+	"bytes"
+	"errors"
+
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
+	"github.com/iotaledger/wasp/packages/isc"
+
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
 type NodeService struct {
 	logger *logger.Logger
 
-	shutdownHandler *shutdown.ShutdownHandler
+	nodeOwnerAddresses []string
+	registryProvider   registry.Provider
+	shutdownHandler    *shutdown.ShutdownHandler
 }
 
-func NewNodeService(log *logger.Logger, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
+func NewNodeService(log *logger.Logger, nodeOwnerAddresses []string, registryProvider registry.Provider, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
 	return &NodeService{
-		logger: log,
-
-		shutdownHandler: shutdownHandler,
+		logger:             log,
+		nodeOwnerAddresses: nodeOwnerAddresses,
+		registryProvider:   registryProvider,
+		shutdownHandler:    shutdownHandler,
 	}
+}
+
+func (n *NodeService) SetNodeOwnerCertificate(nodePubKey []byte, ownerAddress iotago.Address) ([]byte, error) {
+	nodeIdentity := n.registryProvider().GetNodeIdentity()
+
+	if !bytes.Equal(nodeIdentity.GetPublicKey().AsBytes(), nodePubKey) {
+		return nil, errors.New("wrong public key")
+	}
+
+	ownerAuthorized := false
+	for _, nodeOwnerAddressStr := range n.nodeOwnerAddresses {
+		_, nodeOwnerAddress, err := iotago.ParseBech32(nodeOwnerAddressStr)
+		if err != nil {
+			continue
+		}
+		if bytes.Equal(isc.BytesFromAddress(ownerAddress), isc.BytesFromAddress(nodeOwnerAddress)) {
+			ownerAuthorized = true
+			break
+		}
+	}
+
+	if !ownerAuthorized {
+		return nil, errors.New("unauthorized request")
+	}
+
+	cert := governance.NewNodeOwnershipCertificate(nodeIdentity, ownerAddress)
+
+	return cert.Bytes(), nil
 }
 
 func (n *NodeService) ShutdownNode() {

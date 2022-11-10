@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
-func (c *Controller) GetRegisteredPeers(e echo.Context) error {
+func (c *Controller) getRegisteredPeers(e echo.Context) error {
 	peers := c.peeringService.GetRegisteredPeers()
 	peerModels := make([]models.PeeringNodeStatusResponse, len(*peers))
 
@@ -28,7 +28,7 @@ func (c *Controller) GetRegisteredPeers(e echo.Context) error {
 	return e.JSON(http.StatusOK, peerModels)
 }
 
-func (c *Controller) GetTrustedPeers(e echo.Context) error {
+func (c *Controller) getTrustedPeers(e echo.Context) error {
 	peers, err := c.peeringService.GetTrustedPeers()
 	if err != nil {
 		return apierrors.InternalServerError(err)
@@ -46,7 +46,7 @@ func (c *Controller) GetTrustedPeers(e echo.Context) error {
 	return e.JSON(http.StatusOK, peerModels)
 }
 
-func (c *Controller) GetIdentity(e echo.Context) error {
+func (c *Controller) getIdentity(e echo.Context) error {
 	self := c.peeringService.GetIdentity()
 
 	peerModel := models.PeeringNodeIdentityResponse{
@@ -58,7 +58,7 @@ func (c *Controller) GetIdentity(e echo.Context) error {
 	return e.JSON(http.StatusOK, peerModel)
 }
 
-func (c *Controller) TrustPeer(e echo.Context) error {
+func (c *Controller) trustPeer(e echo.Context) error {
 	var trustedPeer models.PeeringTrustRequest
 
 	if err := e.Bind(&trustedPeer); err != nil {
@@ -78,7 +78,7 @@ func (c *Controller) TrustPeer(e echo.Context) error {
 	return e.NoContent(http.StatusOK)
 }
 
-func (c *Controller) DistrustPeer(e echo.Context) error {
+func (c *Controller) distrustPeer(e echo.Context) error {
 	var trustedPeer models.PeeringTrustRequest
 
 	if err := e.Bind(&trustedPeer); err != nil {

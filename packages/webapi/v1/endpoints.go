@@ -47,7 +47,7 @@ func Init(
 ) {
 	log = logger
 
-	pub := server.Group("public", "v1").SetDescription("Public endpoints")
+	pub := server.Group("public", "").SetDescription("Public endpoints")
 	addWebSocketEndpoint(pub, log)
 
 	info.AddEndpoints(pub, network, publisherPort)
@@ -65,7 +65,7 @@ func Init(
 		log,
 	)
 
-	adm := server.Group("admin", "v1").SetDescription("Admin endpoints")
+	adm := server.Group("admin", "").SetDescription("Admin endpoints")
 
 	admapi.AddEndpoints(
 		logger.Named("webapi/adm"),

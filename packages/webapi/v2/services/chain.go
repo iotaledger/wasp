@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
@@ -20,6 +21,8 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
+
+const MaxTimeout = 30 * time.Second
 
 type ChainService struct {
 	log *logger.Logger
@@ -147,22 +150,51 @@ func (c *ChainService) GetState(chainID *isc.ChainID, stateKey []byte) (state []
 	return state, err
 }
 
-func (c *ChainService) SaveChainRecord(chainID *isc.ChainID, active bool) error {
-	registryProvider := c.registryProvider()
+func (c *ChainService) WaitForRequestProcessed(chainID *isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
+	chain := c.chainsProvider().Get(chainID)
 
-	chainRecord, err := registryProvider.GetChainRecordByChainID(chainID)
+	if chain == nil {
+		return nil, nil, errors.New("chain does not exist")
+	}
+
+	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
+
 	if err != nil {
-		return err
+		return nil, vmError, err
 	}
 
-	if chainRecord != nil {
-		return errors.New("chain already exists")
+	if receipt != nil {
+		return receipt, vmError, nil
 	}
 
-	err = registryProvider.SaveChainRecord(&registry.ChainRecord{
-		Active:  active,
-		ChainID: *chainID,
+	// subscribe to event
+	requestProcessed := make(chan bool)
+	attachID := chain.AttachToRequestProcessed(func(rid isc.RequestID) {
+		if rid == requestID {
+			requestProcessed <- true
+		}
 	})
+	defer chain.DetachFromRequestProcessed(attachID)
 
-	return err
+	adjustedTimeout := timeout
+
+	if timeout > MaxTimeout {
+		adjustedTimeout = MaxTimeout
+	}
+
+	select {
+	case <-requestProcessed:
+		receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
+		if receipt != nil {
+			return receipt, vmError, err
+		}
+		return nil, nil, errors.New("unexpected error, receipt not found after request was processed")
+	case <-time.After(adjustedTimeout):
+		// check again, in case event was triggered just before we subscribed
+		receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
+		if receipt != nil {
+			return receipt, vmError, err
+		}
+		return nil, nil, errors.New("timeout while waiting for request to be processed")
+	}
 }

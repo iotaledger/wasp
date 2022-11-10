@@ -3,9 +3,9 @@ package services
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
+	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -33,7 +33,7 @@ func NewDKGService(log *logger.Logger, registryProvider registry.Provider, nodeP
 	}
 }
 
-func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeoutInMilliseconds uint32) (*dto.DKSharesInfo, error) {
+func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeoutInMilliseconds uint32) (*models.DKSharesInfo, error) {
 	// TODO: Make configurable
 	const roundRetry = 1 * time.Second // Retry for Peer <-> Peer communication.
 	const stepRetry = 3 * time.Second  // Retry for Initiator -> Peer communication.
@@ -50,7 +50,7 @@ func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKe
 	return dkShareInfo, err
 }
 
-func (d *DKGService) GetShares(sharedAddress iotago.Address) (*dto.DKSharesInfo, error) {
+func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesInfo, error) {
 	dkShare, err := d.registryProvider().LoadDKShare(sharedAddress)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func (d *DKGService) GetShares(sharedAddress iotago.Address) (*dto.DKSharesInfo,
 	return dkShareInfo, err
 }
 
-func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*dto.DKSharesInfo, error) {
+func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
 	sharedBinaryPubKey, err := dkShare.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*dto.DKSharesInfo, 
 		nodePubKeys[i] = dkShare.GetNodePubKeys()[i].AsBytes()
 	}
 
-	dkShareInfo := dto.DKSharesInfo{
+	dkShareInfo := models.DKSharesInfo{
 		Address:      dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 		PeerIndex:    dkShare.GetIndex(),
 		PeerPubKeys:  nodePubKeys,

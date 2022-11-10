@@ -14,14 +14,16 @@ import (
 type Controller struct {
 	log *loggerpkg.Logger
 
+	chainService     interfaces.ChainService
 	offLedgerService interfaces.OffLedgerService
 	peeringService   interfaces.PeeringService
 	vmService        interfaces.VMService
 }
 
-func NewRequestsController(log *loggerpkg.Logger, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService, vmService interfaces.VMService) interfaces.APIController {
+func NewRequestsController(log *loggerpkg.Logger, chainService interfaces.ChainService, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService, vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
 		log:              log,
+		chainService:     chainService,
 		offLedgerService: offLedgerService,
 		peeringService:   peeringService,
 		vmService:        vmService,
@@ -57,6 +59,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
 		SetSummary("Post an off-ledger request").
 		SetOperationId("offLedger")
+
+	publicAPI.GET("request/:chainID/request/:requestID/wait", c.waitForRequestToFinish).
+		SetSummary("Wait until the given request has been processed by the node").
+		AddParamPath("", "chainID", "ChainID (bech32)").
+		AddParamPath("", "requestID", "Request ID").
+		AddResponse(http.StatusNotFound, "", nil, nil).
+		AddResponse(http.StatusRequestTimeout, "", nil, nil).
+		AddResponse(http.StatusOK, "Request Receipt", mocker.Get(models.ReceiptResponse{}), nil)
 
 }
 

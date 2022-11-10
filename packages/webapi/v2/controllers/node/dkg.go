@@ -1,24 +1,76 @@
 package node
 
 import (
+	"errors"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-	"github.com/labstack/echo/v4"
 )
 
-func (c *Controller) generateDKG(e echo.Context) error {
-	generateDKGRequest := models.DKSharesPostRequest{}
+func parsePeerPubKeys(dkgRequestModel models.DKSharesPostRequest) ([]*cryptolib.PublicKey, error) {
+	if dkgRequestModel.PeerPubKeys == nil || len(dkgRequestModel.PeerPubKeys) == 0 {
+		return nil, apierrors.InvalidPropertyError("PeerPubKeys", errors.New("PeerPubKeys are mandatory"))
+	}
 
-	if err := e.Bind(&generateDKGRequest); err != nil {
+	peerPubKeys := make([]*cryptolib.PublicKey, len(dkgRequestModel.PeerPubKeys))
+	invalidPeerPubKeys := make([]string, 0)
+
+	for i, publicKey := range dkgRequestModel.PeerPubKeys {
+		peerPubKey, err := cryptolib.NewPublicKeyFromString(publicKey)
+
+		if err != nil {
+			invalidPeerPubKeys = append(invalidPeerPubKeys, publicKey)
+		}
+
+		peerPubKeys[i] = peerPubKey
+	}
+
+	if len(invalidPeerPubKeys) > 0 {
+		return nil, apierrors.InvalidPeerPublicKeys(invalidPeerPubKeys)
+	}
+
+	return peerPubKeys, nil
+}
+
+func (c *Controller) generateDKS(e echo.Context) error {
+	generateDKSRequest := models.DKSharesPostRequest{}
+
+	if err := e.Bind(&generateDKSRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	publicKeys := make([]cryptolib.PublicKey, 0)
+	peerPublicKeys, err := parsePeerPubKeys(generateDKSRequest)
 
-	for _, key := range generateDKGRequest.PeerPubKeys {
-		publicKeys = append(publicKeys)
+	if err != nil {
+		return err
 	}
 
-	c.dkgService.GenerateDistributedKey()
+	sharesInfo, err := c.dkgService.GenerateDistributedKey(peerPublicKeys, generateDKSRequest.Threshold, generateDKSRequest.TimeoutMS)
+
+	if err != nil {
+		return apierrors.InternalServerError(err)
+	}
+
+	return e.JSON(http.StatusOK, sharesInfo)
+}
+
+func (c *Controller) getDKSInfo(e echo.Context) error {
+	_, sharedAddress, err := iotago.ParseBech32(e.Param("sharedAddress"))
+
+	if err != nil {
+		return apierrors.InvalidPropertyError("sharedAddress", err)
+	}
+
+	sharesInfo, err := c.dkgService.GetShares(sharedAddress)
+
+	if err != nil {
+		return apierrors.InternalServerError(err)
+	}
+
+	return e.JSON(http.StatusOK, sharesInfo)
 }

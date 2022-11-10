@@ -1,8 +1,6 @@
 package services
 
 import (
-	"errors"
-
 	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
@@ -10,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
@@ -28,24 +25,75 @@ func NewUserService(log *logger.Logger, userManager *users.UserManager) interfac
 	}
 }
 
-func (u *UserService) AddUser(username string, password string, permissions []string) {
+func permissionsFromMap(mapPermissions map[string]struct{}) []string {
+	permissions := make([]string, len(mapPermissions))
 
+	for i, permission := range maps.Keys(mapPermissions) {
+		permissions[i] = permission
+	}
+
+	return permissions
 }
 
-func (u *UserService) UpdateUser(username string, User)
+func permissionsToMap(permissions []string) map[string]struct{} {
+	mapPermissions := make(map[string]struct{})
+
+	for _, permission := range permissions {
+		mapPermissions[permission] = struct{}{}
+	}
+
+	return mapPermissions
+}
+
+func (u *UserService) AddUser(username, password string, permissions []string) error {
+	passwordHash, passwordSalt, err := users.DerivePasswordKey(password)
+
+	if err != nil {
+		return err
+	}
+
+	err = u.userManager.AddUser(&users.User{
+		Name:         username,
+		PasswordHash: passwordHash,
+		PasswordSalt: passwordSalt,
+		Permissions:  permissionsToMap(permissions),
+	})
+
+	return err
+}
+
+func (u *UserService) UpdateUserPassword(username, password string) error {
+	passwordHash, passwordSalt, err := users.DerivePasswordKey(password)
+
+	if err != nil {
+		return err
+	}
+
+	err = u.userManager.ChangeUserPassword(username, passwordHash, passwordSalt)
+
+	return err
+}
+
+func (u *UserService) UpdateUserPermissions(username string, permissions []string) error {
+	mapPermissions := permissionsToMap(permissions)
+	err := u.userManager.ChangeUserPermissions(username, mapPermissions)
+
+	return err
+}
 
 func (u *UserService) DeleteUser(username string) error {
-	return u.userManager.RemoveUser(username)
+	err := u.userManager.RemoveUser(username)
+	return err
 }
 
 func (u *UserService) GetUsers() *[]models.User {
-	users := u.userManager.Users()
-	userModels := make([]models.User, len(users))
+	userList := u.userManager.Users()
+	userModels := make([]models.User, len(userList))
 
-	for i, user := range maps.Values(users) {
+	for i, user := range maps.Values(userList) {
 		userModels[i] = models.User{
 			Username:    user.Name,
-			Permissions: user.Permissions,
+			Permissions: permissionsFromMap(user.Permissions),
 		}
 	}
 
@@ -61,27 +109,6 @@ func (u *UserService) GetUser(username string) (*models.User, error) {
 
 	return &models.User{
 		Username:    user.Name,
-		Permissions: user.Permissions,
+		Permissions: permissionsFromMap(user.Permissions),
 	}, nil
-}
-
-func (v *UserService) getReceipt(chainID *isc.ChainID, requestID isc.RequestID) (*isc.Receipt, *isc.VMError, error) {
-	chain := v.chainsProvider().Get(chainID)
-	if chain == nil {
-		return nil, nil, errors.New("chain does not exist")
-	}
-
-	receipt, err := chain.GetRequestReceipt(requestID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	resolvedError, err := chain.ResolveError(receipt.Error)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	receiptData := receipt.ToISCReceipt(resolvedError)
-
-	return receiptData, resolvedError, nil
 }

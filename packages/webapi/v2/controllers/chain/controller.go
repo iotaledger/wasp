@@ -57,15 +57,8 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("chains", c.getChainList).
 		AddResponse(http.StatusOK, "A list of all available chains.", mocker.Get([]models.ChainInfoResponse{}), nil).
-		SetOperationId("getChainList").
+		SetOperationId("getChains").
 		SetSummary("Get a list of all chains.")
-
-	adminAPI.PUT("chains", c.saveChain).
-		AddParamBody(&models.SaveChainRecordRequest{}, "body", "The save chain request", true).
-		AddResponse(http.StatusNotModified, "Chain was not saved", nil, nil).
-		AddResponse(http.StatusOK, "Chain was saved", nil, nil).
-		SetOperationId("saveChain").
-		SetSummary("Saves a chain")
 
 	adminAPI.POST("chains/:chainID/activate", c.activateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").

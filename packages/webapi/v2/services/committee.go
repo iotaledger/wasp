@@ -1,9 +1,12 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/iotaledger/hive.go/core/logger"
-	chainpkg "github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -15,14 +18,15 @@ import (
 type CommitteeService struct {
 	log *logger.Logger
 
+	chainsProvider   chains.Provider
 	networkProvider  peering.NetworkProvider
 	registryProvider registry.Provider
 }
 
-func NewCommitteeService(log *logger.Logger, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.CommitteeService {
+func NewCommitteeService(log *logger.Logger, chainsProvider chains.Provider, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.CommitteeService {
 	return &CommitteeService{
-		log: log,
-
+		log:              log,
+		chainsProvider:   chainsProvider,
 		networkProvider:  networkProvider,
 		registryProvider: registryProvider,
 	}
@@ -32,7 +36,12 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 	return c.networkProvider.Self().PubKey()
 }
 
-func (c *CommitteeService) GetCommitteeInfo(chain chainpkg.Chain) (*dto.ChainNodeInfo, error) {
+func (c *CommitteeService) GetCommitteeInfo(chainID *isc.ChainID) (*dto.ChainNodeInfo, error) {
+	chain := c.chainsProvider().Get(chainID, true)
+	if chain == nil {
+		return nil, errors.New("chain does not exist")
+	}
+
 	committeeInfo := chain.GetCommitteeInfo()
 
 	dkShare, err := c.registryProvider().LoadDKShare(committeeInfo.Address)
@@ -76,6 +85,7 @@ func (c *CommitteeService) GetCommitteeInfo(chain chainpkg.Chain) (*dto.ChainNod
 	}
 
 	chainNodeInfo := dto.ChainNodeInfo{
+		Address:        committeeInfo.Address,
 		AccessNodes:    accessNodes,
 		CandidateNodes: filteredCandidateNodes,
 		CommitteeNodes: committeeNodes,
