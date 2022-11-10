@@ -5,9 +5,7 @@ if not exist schema_all.cmd goto :xit
 call schema_all.cmd
 cd ..
 golangci-lint run --fix
-cd ..\..\packages\wasmvm
-golangci-lint run --fix
-cd ..\..\contracts\wasm\scripts
+cd scripts
 goto :xit
 
 :root
