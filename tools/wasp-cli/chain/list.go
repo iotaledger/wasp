@@ -18,7 +18,16 @@ var listCmd = &cobra.Command{
 		client := config.WaspClient()
 		chains, err := client.GetChainRecordList()
 		log.Check(err)
-		log.Printf("Total %d chain(s) in wasp node %s\n", len(chains), client.BaseURL())
+		model := &ListChainModel{
+			Length:  len(chains),
+			BaseURL: client.BaseURL(),
+		}
+		model.Chains = make(map[string]bool)
+
+		for _, chain := range chains {
+			model.Chains[chain.ChainID.String()] = chain.Active
+		}
+		log.PrintCLIOutput(model)
 		showChainList(chains)
 	},
 }
@@ -33,4 +42,17 @@ func showChainList(chains []*registry.ChainRecord) {
 		}
 	}
 	log.PrintTable(header, rows)
+}
+
+type ListChainModel struct {
+	Length  int
+	BaseURL string
+	Chains  map[string]bool
+}
+
+var _ log.CLIOutput = &ListChainModel{}
+
+func (l *ListChainModel) AsText() (string, error) {
+	template := `Total {{ .Length }} chain(s) in wasp node {{ .BaseURL }}`
+	return log.ParseCLIOutputTemplate(l, template)
 }

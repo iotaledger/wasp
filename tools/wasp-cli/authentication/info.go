@@ -19,7 +19,7 @@ var infoCmd = &cobra.Command{
 			panic(err)
 		}
 
-		authInfoJSON, err := json.MarshalIndent(authInfo, "", "\t")
+		authInfoJSON, err := json.MarshalIndent(authInfo, "", "  ")
 		if err != nil {
 			panic(err)
 		}

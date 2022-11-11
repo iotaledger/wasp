@@ -15,6 +15,24 @@ var requestFundsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		address := Load().Address()
 		log.Check(config.L1Client().RequestFunds(address))
-		log.Printf("Request funds for address %s: success\n", address.Bech32(parameters.L1().Protocol.Bech32HRP))
+
+		model := &RequestFundsModel{
+			Address: address.Bech32(parameters.L1().Protocol.Bech32HRP),
+			Message: "success",
+		}
+
+		log.PrintCLIOutput(model)
 	},
+}
+
+type RequestFundsModel struct {
+	Address string
+	Message string
+}
+
+var _ log.CLIOutput = &RequestFundsModel{}
+
+func (r *RequestFundsModel) AsText() (string, error) {
+	template := `Request funds for addresss {{ .Address }} success`
+	return log.ParseCLIOutputTemplate(r, template)
 }
