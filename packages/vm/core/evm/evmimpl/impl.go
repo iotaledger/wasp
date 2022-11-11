@@ -314,7 +314,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 
 	res, err := emu.CallContract(callMsg, ctx.Privileged().GasBurnEnable)
 	ctx.RequireNoError(err)
-	ctx.RequireNoError(res.Err)
+	ctx.RequireNoError(tryGetRevertError(res))
 
 	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
 	{
