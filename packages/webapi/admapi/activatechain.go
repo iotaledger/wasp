@@ -103,10 +103,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	chainNodes := chain.GetChainNodes()
-	peeringStatus := make(map[cryptolib.PublicKeyKey]peering.PeerStatusProvider)
-	for _, n := range w.network.PeerStatus() {
-		peeringStatus[n.PubKey().AsKey()] = n
-	}
+	peeringStatus := peeringStatusIncludeSelf(w.network)
 	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
 	for _, n := range chain.GetCandidateNodes() {
 		pubKey, err := cryptolib.NewPublicKeyFromBytes(n.NodePubKey)
@@ -144,6 +141,15 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func peeringStatusIncludeSelf(networkProvider peering.NetworkProvider) map[cryptolib.PublicKeyKey]peering.PeerStatusProvider {
+	peeringStatus := make(map[cryptolib.PublicKeyKey]peering.PeerStatusProvider)
+	for _, n := range networkProvider.PeerStatus() {
+		peeringStatus[n.PubKey().AsKey()] = n
+	}
+	peeringStatus[networkProvider.Self().PubKey().AsKey()] = networkProvider.Self().Status()
+	return peeringStatus
 }
 
 func makeCmtNodes(
