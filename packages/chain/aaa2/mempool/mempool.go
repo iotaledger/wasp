@@ -108,7 +108,7 @@ func New(
 }
 
 // TODO this must be called from chainMGR
-func (m *mempool) SetPeers(committee []gpa.NodeID, accessNodes []gpa.NodeID) {
+func (m *mempool) SetPeers(committee, accessNodes []gpa.NodeID) {
 	m.gpa.SetPeers(committee, accessNodes)
 }
 

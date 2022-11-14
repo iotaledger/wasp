@@ -61,8 +61,6 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func now() time.Time { return time.Now() }
-
 func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
 	result := make([]isc.OnLedgerRequest, amount)
 	for i := range result {
