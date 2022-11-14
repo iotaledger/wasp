@@ -94,7 +94,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	// subscribe to event
 	requestProcessed := make(chan bool)
 	attachID := ch.AttachToRequestProcessed(func(rid isc.RequestID) {
-		if rid == reqID {
+		if rid.Equals(reqID) {
 			requestProcessed <- true
 		}
 	})

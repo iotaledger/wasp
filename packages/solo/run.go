@@ -50,7 +50,6 @@ func (ch *Chain) RunRequestsSync(reqs []isc.Request, trace string) (results []*v
 	defer ch.runVMMutex.Unlock()
 
 	ch.mempool.ReceiveRequests(reqs...)
-	ch.mempool.WaitInBufferEmpty()
 
 	return ch.runRequestsNolock(reqs, trace)
 }

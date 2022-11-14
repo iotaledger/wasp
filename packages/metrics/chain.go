@@ -23,8 +23,7 @@ type ChainMetrics interface {
 }
 
 type MempoolMetrics interface {
-	CountOffLedgerRequestIn()
-	CountOnLedgerRequestIn()
+	CountRequestIn(isc.Request)
 	CountRequestOut()
 	RecordRequestProcessingTime(isc.RequestID, time.Duration)
 	CountBlocksPerChain()
@@ -45,12 +44,12 @@ var (
 	_ ChainMetrics = &defaultChainMetrics{}
 )
 
-func (c *chainMetricsObj) CountOffLedgerRequestIn() {
-	c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
-}
-
-func (c *chainMetricsObj) CountOnLedgerRequestIn() {
-	c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+func (c *chainMetricsObj) CountRequestIn(req isc.Request) {
+	if req.IsOffLedger() {
+		c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+	} else {
+		c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+	}
 }
 
 func (c *chainMetricsObj) CountRequestOut() {
@@ -99,9 +98,7 @@ func DefaultChainMetrics() ChainMetrics {
 	return &defaultChainMetrics{}
 }
 
-func (m *defaultChainMetrics) CountOffLedgerRequestIn() {}
-
-func (m *defaultChainMetrics) CountOnLedgerRequestIn() {}
+func (m *defaultChainMetrics) CountRequestIn(_ isc.Request) {}
 
 func (m *defaultChainMetrics) CountRequestOut() {}
 

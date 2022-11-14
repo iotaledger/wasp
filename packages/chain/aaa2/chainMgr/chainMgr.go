@@ -204,7 +204,7 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputConsensusTimeout:
 		return cmi.handleInputConsensusTimeout(input)
 	}
-	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
+	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
 // Implements the gpa.GPA interface.

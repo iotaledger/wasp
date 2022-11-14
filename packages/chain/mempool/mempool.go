@@ -158,26 +158,17 @@ func (m *mempool) addToPool(req isc.Request) bool {
 	return true
 }
 
-func (m *mempool) countRequestInMetrics(req isc.Request) {
-	// TODO refactor, this should be part of metrics logic.
-	if req.IsOffLedger() {
-		m.mempoolMetrics.CountOffLedgerRequestIn()
-	} else {
-		m.mempoolMetrics.CountOnLedgerRequestIn()
-	}
-}
-
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *mempool) ReceiveRequests(reqs ...isc.Request) {
 	for _, req := range reqs {
-		m.countRequestInMetrics(req)
+		m.mempoolMetrics.CountRequestIn(req)
 		m.addToInBuffer(req)
 	}
 }
 
 // ReceiveRequest receives a single request and returns whether that request has been added to the in-buffer
 func (m *mempool) ReceiveRequest(req isc.Request) bool {
-	m.countRequestInMetrics(req)
+	m.mempoolMetrics.CountRequestIn(req)
 	return m.addToInBuffer(req)
 }
 

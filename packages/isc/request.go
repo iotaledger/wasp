@@ -136,10 +136,6 @@ func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 }
 
 func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime time.Time) bool {
-	if RequestIsExpired(req, currentTime) {
-		return false
-	}
-
 	output, _ := req.Output().(iotago.TransIndepIdentOutput)
 
 	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{

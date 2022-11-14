@@ -377,14 +377,17 @@ func TestISCGetRequestID(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	reqID := new(isc.RequestID)
-	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+	wrappedReqID := new(iscmagic.ISCRequestID)
+	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &wrappedReqID, "emitRequestID")
+
+	reqid, err := wrappedReqID.Unwrap()
+	require.NoError(t, err)
 
 	// check evm log is as expected
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].TxHash, common.Hash{})
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].BlockHash, common.Hash{})
 
-	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), *reqID)
+	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), reqid)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {

@@ -31,7 +31,7 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 
 func PeeringIDFromBytes(src []byte) PeeringID {
 	pid := PeeringID{}
-	copy(pid[:], src[:])
+	copy(pid[:], src)
 	return pid
 }
 

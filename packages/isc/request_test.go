@@ -81,6 +81,5 @@ func TestRequestIDToFromString(t *testing.T) {
 	require.NotEmpty(t, s)
 	parsedID, err := RequestIDFromString(s)
 	require.NoError(t, err)
-	require.Equal(t, oritinalID.TransactionID, parsedID.TransactionID)
-	require.Equal(t, oritinalID.TransactionOutputIndex, parsedID.TransactionOutputIndex)
+	require.EqualValues(t, oritinalID, parsedID)
 }

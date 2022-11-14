@@ -9,16 +9,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex uint32) ([]isc.RequestID, error) {
+func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
 	if blockIndex == 0 {
 		return []isc.RequestID{}, nil
 	}
-	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Contract.Hname().Bytes()))
+	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 
 	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
 	if err != nil {
