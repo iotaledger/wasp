@@ -12,7 +12,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -43,7 +42,7 @@ func newTestPool(t *testing.T) Mempool {
 	return New(
 		context.Background(),
 		&chainID,
-		gpa.NodeID("nodeID"),
+		cryptolib.NewKeyPair(),
 		peeringNetwork.NetworkProviders()[0],
 		CreateHasBeenProcessedFunc(stateReader.KVStoreReader()),
 		CreateGetProcessedReqsFunc(stateReader.KVStoreReader()),

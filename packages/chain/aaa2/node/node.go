@@ -30,11 +30,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cons"
 	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -120,7 +122,7 @@ type chainNodeImpl struct {
 	consOutputPipe       pipe.Pipe
 	consRecoverPipe      pipe.Pipe
 	publishingTXes       map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
-	procCache            *processors.Cache                           // TODO: ...
+	procCache            *processors.Cache                           // Cache for the SC processors.
 	activeCommitteeNodes []*cryptolib.PublicKey                      // The nodes acting as a committee for the latest consensus.
 	activeAccessNodes    []*cryptolib.PublicKey                      // All the nodes authorized for being access nodes (for the ActiveAO).
 	netRecvPipe          pipe.Pipe
@@ -176,7 +178,6 @@ func New(
 		nodeIdentity:         nodeIdentity,
 		chainID:              chainID,
 		nodeConn:             nodeConn,
-		mempool:              nil, // TODO: ...
 		recvAliasOutputPipe:  pipe.NewDefaultInfinitePipe(),
 		recvTxPublishedPipe:  pipe.NewDefaultInfinitePipe(),
 		recvMilestonePipe:    pipe.NewDefaultInfinitePipe(),
@@ -196,6 +197,7 @@ func New(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
+	chainMetrics := metrics.DefaultChainMetrics()
 	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkRegistry, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
@@ -213,8 +215,15 @@ func New(
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
 	}
+	mempool := mempool.New(
+		ctx, chainID, nodeIdentity, net,
+		func(reqID isc.RequestID) bool { return false },                      // TODO: Implement.
+		func(from, to *isc.AliasOutputWithID) []isc.RequestID { return nil }, // TODO: Implement.
+		log, chainMetrics,
+	)
 	cni.chainMgr = chainMgr
 	cni.stateMgr = stateMgr
+	cni.mempool = mempool
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()

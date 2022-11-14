@@ -36,6 +36,7 @@ type mempool struct {
 	netPeeringID           peering.PeeringID
 	netMsgsChan            chan gpa.OutMessages
 	peers                  map[gpa.NodeID]*cryptolib.PublicKey
+	peersLock              *sync.RWMutex
 	incomingRequests       *events.Event
 	hasBeenProcessed       HasBeenProcessedFunc
 	getProcessedRequests   GetProcessedRequestsFunc
@@ -50,7 +51,7 @@ var _ consGR.Mempool = &mempool{}
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
-	myNodeID gpa.NodeID,
+	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	hasBeenProcessed HasBeenProcessedFunc,
 	getProcessedRequests GetProcessedRequestsFunc,
@@ -62,6 +63,8 @@ func New(
 		pool:                   make(map[isc.RequestID]isc.Request),
 		net:                    net,
 		netMsgsChan:            make(chan gpa.OutMessages),
+		peers:                  map[gpa.NodeID]*cryptolib.PublicKey{},
+		peersLock:              &sync.RWMutex{},
 		hasBeenProcessed:       hasBeenProcessed,
 		getProcessedRequests:   getProcessedRequests,
 		ctx:                    ctx,
@@ -107,9 +110,29 @@ func New(
 	return pool
 }
 
-// TODO this must be called from chainMGR
-func (m *mempool) SetPeers(committee, accessNodes []gpa.NodeID) {
-	m.gpa.SetPeers(committee, accessNodes)
+// This is called from the Chain when a list of committee/access nodes is changed.
+func (m *mempool) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
+	committeeNodeIDs := []gpa.NodeID{}
+	accessNodeIDs := []gpa.NodeID{}
+	peerMapping := map[gpa.NodeID]*cryptolib.PublicKey{}
+	for i := range accessNodePubKeys {
+		nid := m.pubKeyAsNodeID(accessNodePubKeys[i])
+		peerMapping[nid] = accessNodePubKeys[i]
+		accessNodeIDs = append(accessNodeIDs, nid)
+	}
+	for i := range committeePubKeys {
+		nid := m.pubKeyAsNodeID(committeePubKeys[i])
+		if _, ok := peerMapping[nid]; !ok {
+			// Should be not needed, because the consensus nodes should
+			// be a subset of access nodes.
+			peerMapping[nid] = committeePubKeys[i]
+		}
+		committeeNodeIDs = append(committeeNodeIDs, nid)
+	}
+	m.peersLock.Lock()
+	m.peers = peerMapping
+	m.peersLock.Unlock()
+	m.gpa.SetPeers(committeeNodeIDs, accessNodeIDs)
 }
 
 func (m *mempool) enqueueNetworkMessages(msgs gpa.OutMessages) {
@@ -290,6 +313,11 @@ func (m *mempool) addToPoolNoLock(req isc.Request) bool {
 	m.metrics.CountRequestIn(req)
 	m.incomingRequests.Trigger(req)
 	return true
+}
+
+// Implement the interface needed by the Chain.
+func (m *mempool) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
+	m.ReceiveRequests(request)
 }
 
 func (m *mempool) ReceiveRequests(reqs ...isc.Request) []bool {
@@ -482,4 +510,8 @@ func (m *mempool) ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc
 	}()
 
 	return retChan
+}
+
+func (m *mempool) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
+	return gpa.NodeID(pubKey.String())
 }
