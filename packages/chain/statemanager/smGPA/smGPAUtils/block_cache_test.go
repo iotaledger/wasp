@@ -17,7 +17,7 @@ func TestBlockCacheSimple(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	_, blocks, _ := GetBlocks(t, 4, 1)
+	_, blocks, _, _ := GetBlocks(t, 4, 1)
 	blockCache, err := NewBlockCache(mapdb.NewMapDB(), NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
@@ -33,7 +33,7 @@ func TestBlockCacheCleaning(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	_, blocks, _ := GetBlocks(t, 6, 2)
+	_, blocks, _, _ := GetBlocks(t, 6, 2)
 	blockCache, err := NewBlockCache(mapdb.NewMapDB(), NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
 	beforeTime := time.Now()
@@ -68,7 +68,7 @@ func TestBlockCacheWAL(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	_, blocks, _ := GetBlocks(t, 3, 2)
+	_, blocks, _, _ := GetBlocks(t, 3, 2)
 	blockCache, err := NewBlockCache(mapdb.NewMapDB(), NewDefaultTimeProvider(), NewMockedBlockWAL(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])

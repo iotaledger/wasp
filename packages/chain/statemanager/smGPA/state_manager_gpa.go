@@ -141,7 +141,7 @@ func (smT *stateManagerGPA) Output() gpa.Output {
 }
 
 func (smT *stateManagerGPA) StatusString() string {
-	return ""
+	return "" // TODO
 }
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
@@ -299,7 +299,7 @@ func (smT *stateManagerGPA) traceBlockChain(block state.Block, requests ...block
 		createBaseStateFun = smT.createOriginState
 	}
 	smT.log.Debugf("Tracing the chain of blocks: the chain is complete, marking all the requests as completed based on %s state", stateType)
-	// Competing all the top priority requests (the ones that do not chagne the
+	// Completing all the top priority requests (the ones that do not change the
 	// state of manager state) and the one with the largest priority among the others.
 	// Other requests are just marked as completed without any call to respond function.
 	// The idea is that all the consensus requests must be completed and only

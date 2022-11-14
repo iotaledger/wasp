@@ -19,7 +19,7 @@ func TestBlockWALBasic(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	chainID, blocks, _ := GetBlocks(t, 5, 1)
+	chainID, blocks, _, _ := GetBlocks(t, 5, 1)
 	blocksInWAL := blocks[:4]
 	walGood, err := NewBlockWAL(constTestFolder, chainID, log)
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	chainID, blocks, _ := GetBlocks(t, 4, 1)
+	chainID, blocks, _, _ := GetBlocks(t, 4, 1)
 	wal, err := NewBlockWAL(constTestFolder, chainID, log)
 	require.NoError(t, err)
 	for i := range blocks {
@@ -95,7 +95,7 @@ func TestBlockWALRestart(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	chainID, blocks, _ := GetBlocks(t, 4, 1)
+	chainID, blocks, _, _ := GetBlocks(t, 4, 1)
 	wal, err := NewBlockWAL(constTestFolder, chainID, log)
 	require.NoError(t, err)
 	for i := range blocks {

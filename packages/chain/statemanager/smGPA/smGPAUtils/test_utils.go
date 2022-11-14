@@ -45,19 +45,41 @@ func GetOriginState(t require.TestingT) (*isc.ChainID, *isc.AliasOutputWithID, s
 	return &chainID, isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID), originVS
 }
 
-func GetBlocks(t require.TestingT, count, branchingFactor int) (*isc.ChainID, []state.Block, []*isc.AliasOutputWithID) {
+func GetBlocks(
+	t require.TestingT,
+	count,
+	branchingFactor int,
+) (*isc.ChainID, []state.Block, []*isc.AliasOutputWithID, []state.VirtualStateAccess) {
 	chainID, aliasOutput0, originVS := GetOriginState(t)
+	blocks, aliasOutputs, virtualStates := GetBlocksFrom(t, count, branchingFactor, originVS, aliasOutput0)
+	return chainID, blocks, aliasOutputs, virtualStates
+}
+
+func GetBlocksFrom(
+	t require.TestingT,
+	count,
+	branchingFactor int,
+	vs state.VirtualStateAccess,
+	aliasOutput *isc.AliasOutputWithID,
+	incrementFactorOpt ...uint64,
+) ([]state.Block, []*isc.AliasOutputWithID, []state.VirtualStateAccess) {
+	var incrementFactor uint64
+	if len(incrementFactorOpt) > 0 {
+		incrementFactor = incrementFactorOpt[0]
+	} else {
+		incrementFactor = 1
+	}
 	result := make([]state.Block, count+1)
 	vStates := make([]state.VirtualStateAccess, len(result))
-	vStates[0] = originVS
+	vStates[0] = vs
 	aliasOutputs := make([]*isc.AliasOutputWithID, len(result))
-	aliasOutputs[0] = aliasOutput0
+	aliasOutputs[0] = aliasOutput
 	for i := 1; i < len(result); i++ {
 		baseIndex := (i + branchingFactor - 2) / branchingFactor
-		increment := uint64(1 + i%branchingFactor)
+		increment := uint64(1+i%branchingFactor) * incrementFactor
 		result[i], aliasOutputs[i], vStates[i] = GetNextState(t, vStates[baseIndex], aliasOutputs[baseIndex], increment)
 	}
-	return chainID, result[1:], aliasOutputs[1:]
+	return result[1:], aliasOutputs[1:], vStates[1:]
 }
 
 func GetNextState(

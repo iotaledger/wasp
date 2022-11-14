@@ -3,6 +3,7 @@ package smGPA
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -27,11 +28,11 @@ func TestBasic(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	chainID, blocks, stateOutputs := smGPAUtils.GetBlocks(t, 8, 1)
+	chainID, blocks, stateOutputs, _ := smGPAUtils.GetBlocks(t, 8, 1)
 	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
 	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewMockedBlockWAL(), log)
 	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
-	sendBlocksToNode(t, tc, nodeID, blocks)
+	sendBlocksToNode(t, tc, nodeID, blocks...)
 
 	cspInput, cspRespChan := smInputs.NewConsensusStateProposal(context.Background(), stateOutputs[7])
 	tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cspInput}).RunAll()
@@ -54,15 +55,14 @@ func TestManyNodes(t *testing.T) {
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
 
-	chainID, blocks, stateOutputs := smGPAUtils.GetBlocks(t, 16, 1)
+	chainID, blocks, stateOutputs, _ := smGPAUtils.GetBlocks(t, 16, 1)
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	for _, nodeID := range nodeIDs {
-		_, sm := createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
-		sms[nodeID] = sm
+		_, sms[nodeID] = createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
 	}
 	tc := gpa.NewTestContext(sms)
-	sendBlocksToNode(t, tc, nodeIDs[0], blocks)
+	sendBlocksToNode(t, tc, nodeIDs[0], blocks...)
 
 	//Nodes are checked sequentially
 	var result bool
@@ -107,6 +107,91 @@ func TestManyNodes(t *testing.T) {
 	}
 }
 
+// 12 nodes setting.
+// 1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
+// 	 1.1 Chain of 10 blocks are generated; each of them are sent to a random node
+//   1.2 A randomly chosen block in a batch is chosen and is approved
+//   1.3 A successful change of state of state manager is waited for; each check
+//       fires a timer event to force the exchange of blocks between nodes.
+// 2. The last block of the last batch is approved and 1.3 is repeated.
+// 3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
+//    repeated branching from this block
+func TestFull(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+
+	nodeCount := 12
+	iterationSize := 10
+	iterationCount := 3
+	maxRetriesPerIteration := 100
+
+	artifficialTime := smGPAUtils.NewArtifficialTimeProvider()
+	smTimers := NewStateManagerTimers()
+	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
+	smTimers.TimeProvider = artifficialTime
+
+	chainID, lastAliasOutput, lastVirtualState := smGPAUtils.GetOriginState(t)
+	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
+	sms := make(map[gpa.NodeID]gpa.GPA)
+	for _, nodeID := range nodeIDs {
+		_, sms[nodeID] = createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
+	}
+	tc := gpa.NewTestContext(sms)
+
+	confirmAndWaitFun := func(stateOutput *isc.AliasOutputWithID) {
+		sendInputToNodes(t, tc, nodeIDs, func() gpa.Input {
+			return smInputs.NewChainReceiveConfirmedAliasOutput(stateOutput)
+		})
+
+		for i := 0; i < maxRetriesPerIteration; i++ {
+			t.Logf("\twaiting for approval to propagate through nodes: %v", i)
+			if isAllNodesAtState(t, stateOutput, sms) {
+				break
+			}
+			artifficialTime.SetNow(artifficialTime.GetNow().Add(smTimers.StateManagerGetBlockRetry))
+			sendTimerTickToNodes(t, tc, nodeIDs, artifficialTime.GetNow())
+		}
+		require.True(t, isAllNodesAtState(t, stateOutput, sms))
+	}
+
+	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseVirtualState state.VirtualStateAccess, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []state.VirtualStateAccess) {
+		t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
+		blocks, aliasOutputs, virtualStates := smGPAUtils.GetBlocksFrom(t, iterationSize, 1, baseVirtualState, baseAliasOutput, incrementFactor...)
+		for j := range blocks {
+			sendBlocksToNode(t, tc, nodeIDs[rand.Intn(nodeCount)], blocks[j])
+		}
+		confirmOutput := aliasOutputs[rand.Intn(iterationSize-1)] // Do not confirm the last state/blocks
+		t.Logf("Iteration %v: approving output index %v, id %v", i, confirmOutput.GetStateIndex(), confirmOutput)
+		confirmAndWaitFun(confirmOutput)
+		return aliasOutputs, virtualStates
+	}
+
+	var branchAliasOutput *isc.AliasOutputWithID
+	var branchVirtualState state.VirtualStateAccess
+	for i := 0; i < iterationCount; i++ {
+		aliasOutputs, virtualStates := testIterationFun(i, lastAliasOutput, lastVirtualState, 1)
+		lastAliasOutput = aliasOutputs[iterationSize-1]
+		lastVirtualState = virtualStates[iterationSize-1]
+		if i == 1 {
+			branchIndex := rand.Intn(iterationSize)
+			branchAliasOutput = aliasOutputs[branchIndex]
+			branchVirtualState = virtualStates[branchIndex]
+		}
+	}
+	confirmAndWaitFun(lastAliasOutput)
+
+	// Branching of  the second iteration
+	require.NotNil(t, branchAliasOutput)
+	lastAliasOutput = branchAliasOutput
+	lastVirtualState = branchVirtualState
+	for i := 0; i < iterationCount; i++ {
+		aliasOutputs, virtualStates := testIterationFun(i, lastAliasOutput, lastVirtualState, 2)
+		lastAliasOutput = aliasOutputs[iterationSize-1]
+		lastVirtualState = virtualStates[iterationSize-1]
+	}
+	confirmAndWaitFun(lastAliasOutput)
+}
+
 // Single node network. Checks if block cache is cleaned via state manager
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
@@ -118,7 +203,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
 	smTimers.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
 
-	chainID, blocks, _ := smGPAUtils.GetBlocks(t, 6, 2)
+	chainID, blocks, _, _ := smGPAUtils.GetBlocks(t, 6, 2)
 	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
 	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewEmptyBlockWAL(), log, smTimers)
 	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
@@ -213,7 +298,7 @@ func requireReceiveVState(t *testing.T, respChan <-chan (*consGR.StateMgrDecided
 	}
 }
 
-func sendBlocksToNode(t *testing.T, tc *gpa.TestContext, nodeID gpa.NodeID, blocks []state.Block) {
+func sendBlocksToNode(t *testing.T, tc *gpa.TestContext, nodeID gpa.NodeID, blocks ...state.Block) {
 	for i := range blocks {
 		cbpInput, cbpRespChan := smInputs.NewChainBlockProduced(context.Background(), blocks[i])
 		t.Logf("Supplying block %s to node %s", blocks[i].GetHash(), nodeID)
@@ -224,11 +309,42 @@ func sendBlocksToNode(t *testing.T, tc *gpa.TestContext, nodeID gpa.NodeID, bloc
 
 func sendTimerTickToNodes(t *testing.T, tc *gpa.TestContext, nodeIDs []gpa.NodeID, now time.Time) {
 	t.Logf("Time %v is sent to nodes %v", now, nodeIDs)
+	sendInputToNodes(t, tc, nodeIDs, func() gpa.Input {
+		return smInputs.NewStateManagerTimerTick(now)
+	})
+}
+
+func sendInputToNodes(t *testing.T, tc *gpa.TestContext, nodeIDs []gpa.NodeID, makeInputFun func() gpa.Input) {
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for i := range nodeIDs {
-		inputs[nodeIDs[i]] = smInputs.NewStateManagerTimerTick(now)
+		inputs[nodeIDs[i]] = makeInputFun()
 	}
 	tc.WithInputs(inputs).RunAll()
+}
+
+func isAllNodesAtState(t *testing.T, stateOutput *isc.AliasOutputWithID, smGPAs map[gpa.NodeID]gpa.GPA) bool {
+	for nodeID, smGPA := range smGPAs {
+		sm, ok := smGPA.(*stateManagerGPA)
+		require.True(t, ok)
+		expectedCommitment, err := state.L1CommitmentFromAliasOutput(stateOutput.GetAliasOutput())
+		require.NoError(t, err)
+		if stateOutput.GetStateIndex() != sm.solidState.BlockIndex() {
+			t.Logf("Node %s is not yet at state index %v, it is at state index %v",
+				nodeID, stateOutput.GetStateIndex(), sm.solidState.BlockIndex())
+			return false
+		}
+		if !state.EqualCommitments(expectedCommitment.StateCommitment, trie.RootCommitment(sm.solidState.TrieNodeStore())) {
+			t.Logf("Node %s is at state index %v, but state commitments do not match: expected %s, obtained %s",
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.StateCommitment, trie.RootCommitment(sm.solidState.TrieNodeStore()))
+			return false
+		}
+		if !expectedCommitment.BlockHash.Equals(sm.solidStateBlockHash) {
+			t.Logf("Node %s is at state index %v, but block hashes do not match: expected %s, obtained %s",
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.BlockHash, sm.solidStateBlockHash)
+			return false
+		}
+	}
+	return true
 }
 
 func requireReceiveAnythingNTimes(
