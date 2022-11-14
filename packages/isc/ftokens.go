@@ -18,8 +18,8 @@ import (
 
 // FungibleTokens is used as assets in the UTXO and as tokens in transfer
 type FungibleTokens struct {
-	BaseTokens uint64
-	Tokens     iotago.NativeTokens
+	BaseTokens uint64              `json:"base"`
+	Tokens     iotago.NativeTokens `json:"nativeTokens"`
 }
 
 var BaseTokenID = []byte{}

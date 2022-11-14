@@ -1,8 +1,12 @@
 package decode
 
 import (
+	"encoding/json"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -10,6 +14,7 @@ import (
 
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(decodeCmd)
+	rootCmd.AddCommand(translateMetadataCmd)
 }
 
 var decodeCmd = &cobra.Command{
@@ -49,5 +54,18 @@ var decodeCmd = &cobra.Command{
 				log.Printf("%s: %s\n", skey, util.ValueToString(vtype, val))
 			}
 		}
+	},
+}
+
+var translateMetadataCmd = &cobra.Command{
+	Use:   "decode-metadata <0x...>",
+	Short: "Translates metadata from Hex to a humanly-readable format",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		metadata, err := isc.RequestMetadataFromBytes(hexutil.MustDecode(args[0]))
+		log.Check(err)
+		jsonBytes, err := json.MarshalIndent(metadata, "", "  ")
+		log.Check(err)
+		log.Printf("%s\n", jsonBytes)
 	},
 }

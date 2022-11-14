@@ -2,7 +2,6 @@ package dict
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -299,16 +298,16 @@ type JSONDict struct {
 
 // Item is a JSON-compatible representation of a single key-value pair
 type Item struct {
-	Key   string `swagger:"desc(Key (base64-encoded))"`
-	Value string `swagger:"desc(Value (base64-encoded))"`
+	Key   string `swagger:"desc(key (hex-encoded))"`
+	Value string `swagger:"desc(value (hex-encoded))"`
 }
 
 // JSONDict returns a JSON-compatible representation of the Dict
 func (d Dict) JSONDict() JSONDict {
 	j := JSONDict{Items: make([]Item, len(d))}
 	for i, k := range d.KeysSorted() {
-		j.Items[i].Key = base64.StdEncoding.EncodeToString([]byte(k))
-		j.Items[i].Value = base64.StdEncoding.EncodeToString(d[k])
+		j.Items[i].Key = hexutil.Encode([]byte(k))
+		j.Items[i].Value = hexutil.Encode(d[k])
 	}
 	return j
 }
@@ -324,11 +323,11 @@ func (d *Dict) UnmarshalJSON(b []byte) error {
 	}
 	*d = make(Dict)
 	for _, item := range j.Items {
-		k, err := base64.StdEncoding.DecodeString(item.Key)
+		k, err := hexutil.Decode(item.Key)
 		if err != nil {
 			return err
 		}
-		v, err := base64.StdEncoding.DecodeString(item.Value)
+		v, err := hexutil.Decode(item.Value)
 		if err != nil {
 			return err
 		}
