@@ -97,14 +97,17 @@ contract MyEVMContract {
 * [ISCUtil](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ISCUtil.sol)
   interface, available at `ISC.util`
 * [ERC20BaseTokens](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ERC20BaseTokens.sol)
-  contract, available at `ISC.erc20BaseTokens`
+  contract, available at `ISC.baseTokens`
   (address `0x1074010000000000000000000000000000000000`)
 * [ERC20NativeTokens](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ERC20NativeTokens.sol)
-  contract, available at `ISC.erc20NativeTokens(foundrySN)` after being registered
+  contract, available at `ISC.nativeTokens(foundrySN)` after being registered
   by the foundry owner by calling
   [`registerERC20NativeToken`](../core_concepts/core_contracts/evm.md#registerERC20NativeToken)
   (address `0x107402xxxxxxxx00000000000000000000000000` where `xxxxxxxx` is the
   little-endian encoding of the foundry serial number)
+* [ERC721NFTs](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/evm/iscmagic/ERC721NFTs.sol)
+  contract, available at `ISC.nfts`
+  (address `0x1074030000000000000000000000000000000000`)
 
 There are some usage examples in
 the [ISCTest.sol](https://github.com/iotaledger/wasp/blob/develop/packages/evm/evmtest/ISCTest.sol) contract (used

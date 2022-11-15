@@ -12,6 +12,9 @@ interface ISCAccounts {
 
     // Get the L2 native tokens balance of an account
     function getL2BalanceNativeTokens(NativeTokenID memory id, ISCAgentID memory agentID) external view returns (uint256);
+
+    // Get the L2 NFTs of an account
+    function getL2NFTs(ISCAgentID memory agentID) external view returns (NFTID[] memory);
 }
 
 ISCAccounts constant __iscAccounts = ISCAccounts(ISC_MAGIC_ADDRESS);

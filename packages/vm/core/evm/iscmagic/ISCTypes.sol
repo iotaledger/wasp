@@ -9,6 +9,9 @@ address constant ISC_MAGIC_ADDRESS = 0x1074000000000000000000000000000000000000;
 // The ERC20 contract for base tokens is at this address:
 address constant ISC_ERC20BASETOKENS_ADDRESS = 0x1074010000000000000000000000000000000000;
 
+// The ERC721 contract for NFTs is at this address:
+address constant ISC_ERC721_ADDRESS = 0x1074030000000000000000000000000000000000;
+
 // An L1 IOTA address
 struct L1Address {
     bytes data;
@@ -41,6 +44,7 @@ struct ISCNFT {
     NFTID ID;
     L1Address issuer;
     bytes metadata;
+    ISCAgentID owner;
 }
 
 // An ISC transaction ID
@@ -130,5 +134,19 @@ library ISCTypes {
             r.data[i+1] = addrBytes[i];
         }
         return r;
+    }
+
+    function isEthereum(ISCAgentID memory a) internal pure returns (bool) {
+        return uint8(a.data[0]) == AgentIDKindEthereumAddress;
+    }
+
+    function ethAddress(ISCAgentID memory a) internal pure returns (address) {
+        bytes memory b = new bytes(20);
+        for (uint i = 0; i < 20; i++) b[i] = a.data[i+1];
+        return address(uint160(bytes20(b)));
+    }
+
+    function asNFTID(uint256 tokenID) internal pure returns (NFTID) {
+        return NFTID.wrap(bytes32(tokenID));
     }
 }

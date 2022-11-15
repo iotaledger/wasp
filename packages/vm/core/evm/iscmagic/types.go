@@ -138,9 +138,14 @@ func WrapNFTID(c iotago.NFTID) (ret NFTID) {
 	return
 }
 
-func (c NFTID) Unwrap() (ret iotago.NFTID) {
-	copy(ret[:], c[:])
+func (n NFTID) Unwrap() (ret iotago.NFTID) {
+	copy(ret[:], n[:])
 	return
+}
+
+// TokenID returns the uint256 tokenID for ERC721
+func (n NFTID) TokenID() *big.Int {
+	return new(big.Int).SetBytes(n[:])
 }
 
 // ISCNFT matches the struct definition in ISCTypes.sol
@@ -148,14 +153,19 @@ type ISCNFT struct {
 	ID       NFTID
 	Issuer   L1Address
 	Metadata []byte
+	Owner    ISCAgentID
 }
 
 func WrapISCNFT(n *isc.NFT) ISCNFT {
-	return ISCNFT{
+	r := ISCNFT{
 		ID:       WrapNFTID(n.ID),
 		Issuer:   WrapL1Address(n.Issuer),
 		Metadata: n.Metadata,
 	}
+	if n.Owner != nil {
+		r.Owner = WrapISCAgentID(n.Owner)
+	}
+	return r
 }
 
 func (n ISCNFT) Unwrap() (*isc.NFT, error) {
@@ -167,6 +177,7 @@ func (n ISCNFT) Unwrap() (*isc.NFT, error) {
 		ID:       n.ID.Unwrap(),
 		Issuer:   issuer,
 		Metadata: n.Metadata,
+		Owner:    n.Owner.MustUnwrap(),
 	}, nil
 }
 

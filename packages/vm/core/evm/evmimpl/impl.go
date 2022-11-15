@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -69,13 +70,21 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	// add the standard ISC contract at arbitrary address 0x1074...
 	deployMagicContractOnGenesis(genesisAlloc)
 
-	// add the standard ERC20 provider at address 0x1075
+	// add the standard ERC20 contract
 	genesisAlloc[iscmagic.ERC20BaseTokensAddress] = core.GenesisAccount{
 		Code:    iscmagic.ERC20BaseTokensRuntimeBytecode,
 		Storage: map[common.Hash]common.Hash{},
 		Balance: &big.Int{},
 	}
 	addToPrivileged(ctx, iscmagic.ERC20BaseTokensAddress)
+
+	// add the standard ERC721 contract
+	genesisAlloc[iscmagic.ERC721NFTsAddress] = core.GenesisAccount{
+		Code:    iscmagic.ERC721NFTsRuntimeBytecode,
+		Storage: map[common.Hash]common.Hash{},
+		Balance: &big.Int{},
+	}
+	addToPrivileged(ctx, iscmagic.ERC721NFTsAddress)
 
 	chainID := evmtypes.MustDecodeChainID(ctx.Params().MustGet(evm.FieldChainID), evm.DefaultChainID)
 	emulator.Init(
@@ -167,27 +176,15 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	}
 
 	// deploy the contract to the EVM state
-	encodeUint8 := func(n uint8) (ret common.Hash) {
-		ret[len(ret)-1] = n
-		return
-	}
-	slot := encodeUint8
-	encodeShortString := func(s string) (ret common.Hash) {
-		ctx.Requiref(len(s) <= 31, "string is too long: %q", s)
-		ret[len(ret)-1] = uint8(len(s) * 2)
-		copy(ret[:], s)
-		return
-	}
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
 	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
 	// see ERC20NativeTokens_storage.json
-	// and https://docs.soliditylang.org/en/v0.8.16/internals/layout_in_storage.html
-	evmState.SetState(addr, slot(0), encodeShortString(name))
-	evmState.SetState(addr, slot(1), encodeShortString(tickerSymbol))
-	evmState.SetState(addr, slot(2), encodeUint8(decimals))
+	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeShortString(name))
+	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(tickerSymbol))
+	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeUint8(decimals))
 
 	addToPrivileged(ctx, addr)
 
