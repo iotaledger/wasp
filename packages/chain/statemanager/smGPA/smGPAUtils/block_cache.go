@@ -61,6 +61,7 @@ func (bcT *blockCache) GetBlock(blockIndex uint32, blockHash state.BlockHash) st
 	block, ok := bcT.blocks[blockHash]
 
 	if ok {
+		bcT.log.Debugf("BLock %s retrieved from cache", blockHash)
 		return block
 	}
 	bcT.log.Debugf("Block %s is not in cache", blockHash)
@@ -72,6 +73,7 @@ func (bcT *blockCache) GetBlock(blockIndex uint32, blockHash state.BlockHash) st
 			bcT.log.Errorf("Error reading block %s from WAL: %v", blockHash, err)
 			return nil
 		}
+		bcT.log.Debugf("BLock %s retrieved from WAL", blockHash)
 		bcT.addBlockToCache(blockHash, block)
 		return block
 	}
@@ -98,7 +100,7 @@ func (bcT *blockCache) GetBlock(blockIndex uint32, blockHash state.BlockHash) st
 			blockIndex, blockHash)
 		return nil
 	}
-
+	bcT.log.Debugf("Block %s retrieved from the DB", blockHash)
 	bcT.addBlockToCache(blockHash, block)
 	return block
 }
