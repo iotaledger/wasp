@@ -1,3 +1,42 @@
+// A mempool basically does these functions:
+//   - Provide a proposed set of requests (refs) for the consensus.
+//   - Provide a set of requests for a TX as decided by the consensus.
+//   - Share Off-Ledger requests between the committee and the access nodes.
+//
+// When the consensus asks for a proposal set, the mempool has to determine,
+// if a reorg or a rollback has happened and adjust the request set accordingly.
+// For this to work the mempool has to maintain not only the requests, but also
+// the latest state for which it has provided the proposal. Let's say the mempool
+// has provided proposals for PrevAO (AO≡AliasOutput).
+//
+// Upon reception of the proposal query (ConsensusProposalsAsync) for NextAO
+// from the consensus, it asks the StateMgr for the virtual state VS(NextAO)
+// corresponding to the NextAO and a list of blocks that has to be reverted.
+// The state manager collects this information by finding a common ancestor of
+// the NextAO and PrevAO, say CommonAO = NextAO ⊓ PrevAO. The blocks to be
+// reverted are those in the range (CommonAO, PrevAO].
+//
+// When the mempool gets VS(NextAO) and RevertBlocks = (CommonAO, PrevAO] it
+// re-adds the requests from RevertBlocks to the mempool and then drops the
+// requests that are already processed in VS(NextAO). If the RevertBlocks set
+// is not empty, it has to drop all the on-ledger requests and re-read them from
+// the L1. In the normal execution, we'll have RevertBlocks=∅ and VS(NextAO)
+// will differ from VS(PrevAO) in a single block.
+//
+// The response to the requests decided by the consensus (ConsensusRequestsAsync)
+// should be unconditional and should ignore the current state of the requests.
+// This call should not modify nor the NextAO not the PrevAO. The state will be
+// updated later with the proposal query, because then the chain will know, which
+// branch to work on.
+//
+// Time-locked requests are maintained in the mempool as well. They are provided
+// to the proposal based on a tangle time. The tangle time is received from the
+// L1 with the milestones.
+//
+// NOTE: A node loses its off-ledger requests on restart. The on-ledger requests
+// will be added back to the mempool by reading them from the L1 node.
+//
+// TODO: Propose subset of the requests. That's for the next release.
 package mempool
 
 import (
