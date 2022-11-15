@@ -15,7 +15,7 @@ var listTrustedCmd = &cobra.Command{
 	Short: "List trusted wasp nodes.",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		trustedList, err := config.WaspClient().GetPeeringTrustedList()
+		trustedList, err := config.WaspClient(config.MustWaspAPI()).GetPeeringTrustedList()
 		log.Check(err)
 		header := []string{"PubKey", "NetID"}
 		rows := make([][]string, len(trustedList))

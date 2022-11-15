@@ -19,7 +19,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 	Short: "Show current value of collected metrics of connection to L1",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		if chainAlias == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)

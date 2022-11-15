@@ -132,7 +132,7 @@ func (c *l1client) PostTx(tx *iotago.Transaction, timeout ...time.Duration) erro
 	}
 	err = doBlockPow(ctxWithTimeout, block, c.config.UseRemotePoW, submitBlock, c.nodeAPIClient)
 	if err != nil {
-		return fmt.Errorf("failed duing PoW: %w", err)
+		return fmt.Errorf("failed during PoW: %w", err)
 	}
 	block, err = c.nodeAPIClient.SubmitBlock(ctxWithTimeout, block, parameters.L1().Protocol)
 	if err != nil {

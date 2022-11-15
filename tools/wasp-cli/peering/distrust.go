@@ -17,7 +17,7 @@ var distrustCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		pubKeyOrNetID := args[0]
-		waspClient := config.WaspClient()
+		waspClient := config.WaspClient(config.MustWaspAPI())
 		if peering.CheckNetID(pubKeyOrNetID) != nil {
 			log.Check(waspClient.DeletePeeringTrusted(pubKeyOrNetID))
 			log.Printf("# Distrusted PubKey: %v\n", pubKeyOrNetID)

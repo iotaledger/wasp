@@ -20,7 +20,7 @@ func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, 
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		_, err = config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
+		_, err = config.WaspClient(config.MustWaspAPI()).WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
 		log.Check(err)
 	}
 	// TODO print receipt?
@@ -33,7 +33,7 @@ func WithSCTransaction(chainID *isc.ChainID, f func() (*iotago.Transaction, erro
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err := config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
+		_, err := config.WaspClient(config.MustWaspAPI()).WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}
 

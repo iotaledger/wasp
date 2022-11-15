@@ -90,38 +90,27 @@ func TestWaspCLI1Chain(t *testing.T) {
 
 func checkBalance(t *testing.T, out []string, expected int) {
 	amount := 0
-	for _, line := range out {
-		r := regexp.MustCompile(`(?m)base( tokens)?\s+(\d+)`).FindStringSubmatch(line)
-		if r != nil {
-			var err error
-			amount, err = strconv.Atoi(r[2])
-			require.NoError(t, err)
-			break
-		}
+	r := regexp.MustCompile(`(?i).*base( tokens:)?\s+(\d+).*`).FindStringSubmatch(strings.Join(out, ""))
+	if r == nil {
+		panic("couldn't check balance")
 	}
+	amount, err := strconv.Atoi(r[2])
+	require.NoError(t, err)
 	require.GreaterOrEqual(t, amount, expected)
 }
 
-func getAddress(t *testing.T, out []string) (int, string) {
-	var address string
-	var addressIndex int
-
-	r := regexp.MustCompile(`(?m)Address index (\d+)[ \t]+Address:[ \t]+(\w+)`).FindStringSubmatch(strings.Join(out, " "))
-
-	if r != nil {
-		var err error
-		addressIndex, err = strconv.Atoi(r[1])
-		require.NoError(t, err)
-		address = r[2]
+func getAddress(out []string) string {
+	r := regexp.MustCompile(`.*Address:\s+(\w*).*`).FindStringSubmatch(strings.Join(out, ""))
+	if r == nil {
+		panic("couldn't get address")
 	}
-
-	return addressIndex, address
+	return r[1]
 }
 
 func TestWaspCLISendFunds(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	_, alternativeAddress := getAddress(t, w.Run("address", "--address-index=1"))
+	alternativeAddress := getAddress(w.Run("address", "--address-index=1"))
 
 	w.Run("send-funds", "-s", alternativeAddress, "base:1000000")
 	checkBalance(t, w.Run("balance", "--address-index=1"), 1000000)
@@ -141,7 +130,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	t.Run("deposit to ethereum account", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.Run("chain", "deposit", eth.String(), "base:1000000")
-		checkBalance(t, w.Run("chain", "balance", eth.String()), 1000000)
+		checkBalance(t, w.Run("chain", "balance", eth.String()), 1000000-100) //-100 for the fee
 	})
 }
 

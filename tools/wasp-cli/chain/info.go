@@ -23,7 +23,7 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		chainInfo, err := config.WaspClient().GetChainInfo(GetCurrentChainID())
+		chainInfo, err := config.WaspClient(config.MustWaspAPI()).GetChainInfo(GetCurrentChainID())
 		log.Check(err)
 
 		printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}

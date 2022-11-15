@@ -33,6 +33,6 @@ type RequestFundsModel struct {
 var _ log.CLIOutput = &RequestFundsModel{}
 
 func (r *RequestFundsModel) AsText() (string, error) {
-	template := `Request funds for addresss {{ .Address }} success`
+	template := `Request funds for address {{ .Address }} success`
 	return log.ParseCLIOutputTemplate(r, template)
 }

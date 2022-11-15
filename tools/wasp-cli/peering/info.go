@@ -15,7 +15,7 @@ var infoCmd = &cobra.Command{
 	Short: "Node info.",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		info, err := config.WaspClient().GetPeeringSelf()
+		info, err := config.WaspClient(config.MustWaspAPI()).GetPeeringSelf()
 		log.Check(err)
 
 		model := &InfoModel{PubKey: info.PubKey, NetID: info.NetID}

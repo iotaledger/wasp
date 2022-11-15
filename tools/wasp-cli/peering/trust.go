@@ -22,7 +22,7 @@ var trustCmd = &cobra.Command{
 		_, err := hexutil.Decode(pubKey) // Assert it can be decoded.
 		log.Check(err)
 		log.Check(peering.CheckNetID(netID))
-		_, err = config.WaspClient().PostPeeringTrusted(pubKey, netID)
+		_, err = config.WaspClient(config.MustWaspAPI()).PostPeeringTrusted(pubKey, netID)
 		log.Check(err)
 	},
 }

@@ -44,7 +44,7 @@ var loginCmd = &cobra.Command{
 			return
 		}
 
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		token, err := client.Login(username, password)
 		if err != nil {
 			panic(err)

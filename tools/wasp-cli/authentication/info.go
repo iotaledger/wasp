@@ -13,7 +13,7 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Receive information about the authentication methods",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		authInfo, err := client.AuthInfo()
 		if err != nil {
 			panic(err)

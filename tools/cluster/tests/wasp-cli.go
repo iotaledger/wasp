@@ -52,7 +52,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 
 	requestFundstext := w.Run("request-funds")
 	// latest line should print something like: "Request funds for address atoi...: success"
-	expectedRegexp := regexp.MustCompile("Request funds for address (.{64}): success")
+	expectedRegexp := regexp.MustCompile("Request funds for address (.{64}) success")
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
 	require.Len(t, rs, 2)
 	_, addr, err := iotago.ParseBech32(rs[1])

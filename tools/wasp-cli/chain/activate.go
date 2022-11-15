@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -23,7 +24,7 @@ func activateCmd() *cobra.Command {
 				nodes = getAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				client := Client(nodeIdx)
+				client := Client(config.WaspAPI(nodeIdx))
 				r, err := client.WaspClient.GetChainInfo(chainID)
 
 				if err != nil && !HTTP404ErrRegexp.MatchString(err.Error()) {
@@ -60,7 +61,7 @@ func deactivateCmd() *cobra.Command {
 				nodes = getAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				log.Check(Client(nodeIdx).WaspClient.DeactivateChain(chainID))
+				log.Check(Client(config.WaspAPI(nodeIdx)).WaspClient.DeactivateChain(chainID))
 			}
 		},
 	}

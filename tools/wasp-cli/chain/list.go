@@ -15,7 +15,7 @@ var listCmd = &cobra.Command{
 	Short: "List deployed chains",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		chains, err := client.GetChainRecordList()
 		log.Check(err)
 		model := &ListChainModel{
