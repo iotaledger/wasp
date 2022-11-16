@@ -33,7 +33,7 @@
 // to the proposal based on a tangle time. The tangle time is received from the
 // L1 with the milestones.
 //
-// NOTE: A node loses its off-ledger requests on restart. The on-ledger requests
+// NOTE: A node looses its off-ledger requests on restart. The on-ledger requests
 // will be added back to the mempool by reading them from the L1 node.
 //
 // TODO: Propose subset of the requests. That's for the next release.
@@ -77,8 +77,9 @@ type mempool struct {
 	peers                  map[gpa.NodeID]*cryptolib.PublicKey
 	peersLock              *sync.RWMutex
 	incomingRequests       *events.Event
-	hasBeenProcessed       HasBeenProcessedFunc
-	getProcessedRequests   GetProcessedRequestsFunc
+	hasBeenProcessed       HasBeenProcessedFunc     // TODO: Replaced by the stateMgr.
+	getProcessedRequests   GetProcessedRequestsFunc // TODO: Replaced by the stateMgr.
+	stateMgr               MempoolStateMgr          // TODO: pass it as a param.
 	ctx                    context.Context
 	log                    *logger.Logger
 	metrics                metrics_pkg.MempoolMetrics
@@ -352,6 +353,11 @@ func (m *mempool) addToPoolNoLock(req isc.Request) bool {
 	m.metrics.CountRequestIn(req)
 	m.incomingRequests.Trigger(req)
 	return true
+}
+
+// Implement the interface needed by the Chain.
+func (m *mempool) TrackNewChainHead(chainHeadAO isc.AliasOutputWithID) {
+	// TODO: ...
 }
 
 // Implement the interface needed by the Chain.
