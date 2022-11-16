@@ -441,6 +441,12 @@ github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a h1:SV
 github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a/go.mod h1:R3m6d5AFI0I++HOaYQR7QU8hY//vUSwbOyqQ7Bco2O4=
 github.com/iotaledger/trie.go v0.0.0-20221020134250-2142ee617d11 h1:6ZeCx+0IbU33DUVELoawVYckSPVdl7tofJdz2o4FD+M=
 github.com/iotaledger/trie.go v0.0.0-20221020134250-2142ee617d11/go.mod h1:PiH9j3MVFwSwF/5Ttcwgz1PatJYggmmGb4H3UZGueJo=
+github.com/iotaledger/trie.go v0.0.0-20221116184529-ea5359638823 h1:0XtHiVZ0gTS70Rod10CKFQgd5KbvFTl9ZlSdO/uzyaE=
+github.com/iotaledger/trie.go v0.0.0-20221116184529-ea5359638823/go.mod h1:PiH9j3MVFwSwF/5Ttcwgz1PatJYggmmGb4H3UZGueJo=
+github.com/iotaledger/trie.go v0.0.0-20221116185501-75f82b2687f4 h1:U+0wEwStd9j8bOI8lTya4SQjiSYWqyo/u1ZwdpNZu3o=
+github.com/iotaledger/trie.go v0.0.0-20221116185501-75f82b2687f4/go.mod h1:PiH9j3MVFwSwF/5Ttcwgz1PatJYggmmGb4H3UZGueJo=
+github.com/iotaledger/trie.go v0.0.0-20221116190047-9d0a1980c313 h1:TKO80n5DAdOKRxDloW2km2HdA/fWg0xQa9vOLfmYf4s=
+github.com/iotaledger/trie.go v0.0.0-20221116190047-9d0a1980c313/go.mod h1:PiH9j3MVFwSwF/5Ttcwgz1PatJYggmmGb4H3UZGueJo=
 github.com/ipfs/go-cid v0.3.2 h1:OGgOd+JCFM+y1DjWPmVH+2/4POtpDzwcr7VgnB7mZXc=
 github.com/ipfs/go-cid v0.3.2/go.mod h1:gQ8pKqT/sUxGY+tIwy1RPpAojYu7jAyCp5Tz1svoupw=
 github.com/ipfs/go-detect-race v0.0.1 h1:qX/xay2W3E4Q1U7d9lNs1sU9nvguX0a7319XbyQ6cOk=

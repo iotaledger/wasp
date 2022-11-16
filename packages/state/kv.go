@@ -31,8 +31,7 @@ func (t *trieKVAdapter) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) erro
 }
 
 func (t *trieKVAdapter) IterateKeys(prefix kv.Key, f func(kv.Key) bool) error {
-	// TODO: use IterateKeys
-	t.TrieReader.Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
+	t.TrieReader.Iterator([]byte(prefix)).IterateKeys(func(k []byte) bool {
 		return f(kv.Key(k))
 	})
 	return nil
