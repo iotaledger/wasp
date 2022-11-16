@@ -3,6 +3,8 @@ package chain
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/publisher/publisherws"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -20,6 +22,8 @@ type Controller struct {
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
 	vmService        interfaces.VMService
+
+	webSocketHandler *publisherws.PublisherWebSocketJSON
 }
 
 func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, committeeService interfaces.CommitteeService, evmService interfaces.EVMService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
@@ -31,6 +35,7 @@ func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainServ
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
+		webSocketHandler: publisherws.NewPublisherWebSocketJSON(log),
 	}
 }
 
@@ -42,23 +47,26 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
 	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
-		AddParamPath("", "chainID", "ChainID (bech32-encoded)").
+		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "txHash", "Transaction hash (hex-encoded)").
 		AddResponse(http.StatusOK, "Request ID", "", nil).
 		AddResponse(http.StatusNotFound, "Request ID not found", "", nil)
 
 	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
-		AddParamPath("", "chainID", "ChainID (bech32-encoded)").
+		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "stateKey", "Key (hex-encoded)").
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
+
+	publicAPI.GET("chains/:chainID/ws", c.handleWebSocket).
+		AddParamPath("", "chainID", "ChainID (bech32-encoded)")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("chains", c.getChainList).
-		AddResponse(http.StatusOK, "A list of all available chains.", mocker.Get([]models.ChainInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all available chains", mocker.Get([]models.ChainInfoResponse{}), nil).
 		SetOperationId("getChains").
-		SetSummary("Get a list of all chains.")
+		SetSummary("Get a list of all chains")
 
 	adminAPI.POST("chains/:chainID/activate", c.activateChain).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
@@ -76,19 +84,19 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.GET("chains/:chainID", c.getChainInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "Information about a specific chain.", mocker.Get(models.ChainInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
 		SetOperationId("getChainInfo").
-		SetSummary("Get information about a specific chain.")
+		SetSummary("Get information about a specific chain")
 
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all nodes tied to the chain.", mocker.Get(models.CommitteeInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all nodes tied to the chain", mocker.Get(models.CommitteeInfoResponse{}), nil).
 		SetOperationId("getCommitteeInfo").
-		SetSummary("Get basic chain info.")
+		SetSummary("Get basic chain info")
 
 	adminAPI.GET("chains/:chainID/contracts", c.getContracts).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all available contracts.", mocker.Get([]models.ContractInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all available contracts", mocker.Get([]models.ContractInfoResponse{}), nil).
 		SetOperationId("getContracts").
-		SetSummary("Get all available chain contracts.")
+		SetSummary("Get all available chain contracts")
 }

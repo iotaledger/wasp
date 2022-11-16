@@ -22,7 +22,7 @@ func NewMetricsService(log *logger.Logger, chainProvider chains.Provider) interf
 	}
 }
 
-func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetricsReport {
+func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 	chain := c.chainProvider()
 
 	if chain == nil {
@@ -31,7 +31,7 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetricsReport {
 
 	metrics := chain.GetNodeConnectionMetrics()
 
-	return &dto.ChainMetricsReport{
+	return &dto.ChainMetrics{
 		InAliasOutput:                   dto.MapMetricItem(metrics.GetInAliasOutput()),
 		InOnLedgerRequest:               dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
 		InOutput:                        dto.MapMetricItem(metrics.GetInOutput()),
@@ -44,7 +44,7 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetricsReport {
 	}
 }
 
-func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetricsReport {
+func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {
@@ -53,7 +53,7 @@ func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
 
 	metrics := chain.GetNodeConnectionMetrics()
 
-	return &dto.ChainMetricsReport{
+	return &dto.ChainMetrics{
 		InAliasOutput:                   dto.MapMetricItem(metrics.GetInAliasOutput()),
 		InOnLedgerRequest:               dto.MapMetricItem(metrics.GetInOnLedgerRequest()),
 		InOutput:                        dto.MapMetricItem(metrics.GetInOutput()),

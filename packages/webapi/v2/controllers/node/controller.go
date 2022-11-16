@@ -48,19 +48,20 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("node/peers/trusted", c.getTrustedPeers).
-		AddResponse(http.StatusOK, "A list of trusted peers.", mocker.Get([]models.PeeringNodeIdentityResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of trusted peers", mocker.Get([]models.PeeringNodeIdentityResponse{}), nil).
+		SetSummary("Get trusted peers").
 		SetOperationId("getTrustedPeers")
 
 	adminAPI.DELETE("node/peers/trusted", c.distrustPeer).
-		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to distrust.", true).
+		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to distrust", true).
 		AddResponse(http.StatusOK, "Peer was successfully distrusted", nil, nil).
-		SetSummary("Distrusts a peering node.").
+		SetSummary("Distrust a peering node").
 		SetOperationId("distrustPeer")
 
 	adminAPI.POST("node/peers/trusted", c.trustPeer).
-		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to trust.", true).
+		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to trust", true).
 		AddResponse(http.StatusOK, "Peer was successfully trusted", nil, nil).
-		SetSummary("Trusts a peering node.").
+		SetSummary("Trust a peering node").
 		SetOperationId("trustPeer")
 
 	adminAPI.POST("node/dks", c.generateDKS).
@@ -69,23 +70,29 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetSummary("Generate a new distributed key").
 		SetOperationId("generateDKS")
 
+	adminAPI.GET("node/dks/:sharedAddress", c.getDKSInfo).
+		AddParamPath("", "sharedAddress", "SharedAddress (Bech32)").
+		AddResponse(http.StatusOK, "DK shares info", mocker.Get(models.DKSharesInfo{}), nil).
+		SetSummary("Get information about the shared address DKS configuration").
+		SetOperationId("getDKSInfo")
+
 	adminAPI.GET("node/peers/identity", c.getIdentity).
-		AddResponse(http.StatusOK, "This node as a peer.", mocker.Get(models.PeeringNodeIdentityResponse{}), nil).
-		SetSummary("Basic peer info of the current node.").
+		AddResponse(http.StatusOK, "This node peering identity", mocker.Get(models.PeeringNodeIdentityResponse{}), nil).
+		SetSummary("Get basic peer info of the current node").
 		SetOperationId("getPeeringIdentity")
 
 	adminAPI.GET("node/peers", c.getRegisteredPeers).
-		AddResponse(http.StatusOK, "A list of all peers.", mocker.Get([]models.PeeringNodeStatusResponse{}), nil).
-		SetSummary("Basic information about all configured peers.").
+		AddResponse(http.StatusOK, "A list of all peers", mocker.Get([]models.PeeringNodeStatusResponse{}), nil).
+		SetSummary("Get basic information about all configured peers").
 		SetOperationId("getAllPeers")
 
 	adminAPI.POST("node/shutdown", c.shutdownNode).
 		AddResponse(http.StatusOK, "The node has been shut down", nil, nil).
-		SetSummary("Shuts down the node").
+		SetSummary("Shut down the node").
 		SetOperationId("shutdownNode")
 
 	adminAPI.GET("node/config", c.getConfiguration).
 		AddResponse(http.StatusOK, "Dumped configuration", nil, nil).
 		SetOperationId("getConfiguration").
-		SetSummary("Returns the Wasp configuration")
+		SetSummary("Return the Wasp configuration")
 }

@@ -40,33 +40,36 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	}.JSONDict()
 
 	publicAPI.GET("requests/:chainID/receipt/:requestID", c.getReceipt).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "requestID", "RequestID (Hex)").
 		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
 		SetSummary("Get a receipt from a request ID").
 		SetOperationId("getReceipt")
 
-	publicAPI.POST("request/callview", c.executeCallView).
+	publicAPI.POST("requests/callview", c.executeCallView).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamBody(dictExample, "body", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil).
 		SetSummary("Call a view function on a contract by Hname").
 		SetOperationId("callView")
 
-	publicAPI.POST("request/offledger", c.handleOffLedgerRequest).
+	publicAPI.POST("requests/offledger", c.handleOffLedgerRequest).
 		AddParamBody(
 			models.OffLedgerRequest{Request: "base64 string"},
 			"body",
-			"Offledger request as JSON. Request encoded in base64.",
+			"Offledger request as JSON. Request encoded in base64",
 			false).
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
 		SetSummary("Post an off-ledger request").
 		SetOperationId("offLedger")
 
-	publicAPI.GET("request/:chainID/request/:requestID/wait", c.waitForRequestToFinish).
+	publicAPI.GET("requests/:chainID/request/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
 		AddParamPath("", "chainID", "ChainID (bech32)").
-		AddParamPath("", "requestID", "Request ID").
-		AddResponse(http.StatusNotFound, "", nil, nil).
-		AddResponse(http.StatusRequestTimeout, "", nil, nil).
-		AddResponse(http.StatusOK, "Request Receipt", mocker.Get(models.ReceiptResponse{}), nil)
+		AddParamPath("", "requestID", "RequestID (Hex)").
+		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).
+		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
+		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
 
 }
 

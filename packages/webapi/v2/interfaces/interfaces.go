@@ -44,10 +44,10 @@ type EVMService interface {
 }
 
 type MetricsService interface {
-	GetAllChainsMetrics() *dto.ChainMetricsReport
+	GetAllChainsMetrics() *dto.ChainMetrics
 	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics
 	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *dto.ConsensusWorkflowMetrics
-	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetricsReport
+	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
 }
 
 type NodeService interface {

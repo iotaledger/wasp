@@ -15,7 +15,7 @@ type MetricItem[T any] struct {
 	LastMessage T
 }
 
-type ChainMetricsReport struct {
+type ChainMetrics struct {
 	InAliasOutput                   *MetricItem[*iotago.AliasOutput]
 	InOnLedgerRequest               *MetricItem[isc.OnLedgerRequest]
 	InOutput                        *MetricItem[*nodeconnmetrics.InOutput]

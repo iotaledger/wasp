@@ -3,6 +3,8 @@ package metrics
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
+
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
@@ -32,19 +34,19 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("metrics/chain/:chainID", c.getChainMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
+		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ChainMetrics{}), nil).
 		SetOperationId("getChainMetrics").
-		SetSummary("Get all available chain contracts.")
+		SetSummary("Get chain specific metrics.")
 
 	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
+		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ConsensusWorkflowMetrics{}), nil).
 		SetOperationId("getChainWorkflowMetrics").
-		SetSummary("Get all available chain contracts.")
+		SetSummary("Get chain workflow metrics.")
 
 	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddResponse(http.StatusOK, "A list of all available metrics.", nil, nil).
+		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ConsensusPipeMetrics{}), nil).
 		SetOperationId("getChainPipeMetrics").
-		SetSummary("Get all available chain contracts.")
+		SetSummary("Get chain pipe event metrics.")
 }
