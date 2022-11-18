@@ -29,6 +29,12 @@ Ethereum blocks containing Ethereum transactions. Since ISC works in a fundament
 providing 100% compatibility is not possible. We do our best to emulate the behavior of an Ethereum node, so the
 Ethereum tools think they are interfacing with an actual Ethereum node, but some differences in behavior are inevitable.
 
+:::warning
+There is a difference in the decimal precision of ether (18 decimal places) to MIOTA/SMR(6 decimal places). Because of this, when sending native tokens in the EVM, which are expressed in wei (ether = 10<sup>18</sup>wei), the last 12 decimal places will be ignored.
+
+example: 1,999,999,999,999,999,999 wei = 1.999,999 SMR/MIOTA
+:::
+
 Here are some of the most important properties and limitations of EVM support in IOTA Smart Contracts:
 
 - The Wasp node provides a JSON-RPC service, the standard protocol used by Ethereum tools. Upon receiving a signed
@@ -74,6 +80,3 @@ Here are some of the most important properties and limitations of EVM support in
 - The used EVM gas is converted to ISC gas before being charged to the sender. The conversion ratio is configurable. The
   token used to pay for gas is the same token configured in the ISC chain (IOTA by default). The gas fee is debited from
   the sender's L2 account and must be deposited beforehand.
-
-
-
