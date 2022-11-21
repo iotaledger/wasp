@@ -51,6 +51,12 @@ var configFileContentTemplate = `
       "path":"privatedb",
       "autoRevalidation":false
    },
+   "tangle": {
+      "milestoneTimeout": "30s",
+      "maxDeltaBlockYoungestConeRootIndexToCMI": 80,
+      "maxDeltaBlockOldestConeRootIndexToCMI": 130,
+      "whiteFlagParentsSolidTimeout": "2s"
+   },
    "snapshots":{
       "depth":50,
       "interval":200,
@@ -188,7 +194,7 @@ const protocolParameters = `
    "networkName":"private_tangle_wasp_cluster",
    "bech32HRP":"atoi",
    "minPoWScore":1,
-   "belowMaxDepth": 15,
+   "belowMaxDepth": 150,
    "rentStructure": {
        "vByteCost": 600,
        "vByteFactorData": 1,

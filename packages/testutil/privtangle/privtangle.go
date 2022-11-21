@@ -31,10 +31,10 @@ import (
 
 // ===== Wasp dependencies ===== // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/iotaledger/hornet (5b35e2a)
-// https://github.com/iotaledger/inx-indexer (7cdb3ed)
-// https://github.com/iotaledger/inx-coordinator (f84d8dd)
-// https://github.com/iotaledger/inx-faucet (c847f1c) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (b3b0153)
+// https://github.com/iotaledger/inx-indexer (3b84047)
+// https://github.com/iotaledger/inx-coordinator (5c0f794)
+// https://github.com/iotaledger/inx-faucet (0cb51d2) (requires `git submodule update --init --recursive` before building )
 // ============================= // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 
 type LogFunc func(format string, args ...interface{})
@@ -205,7 +205,8 @@ func (pt *PrivTangle) startCoordinator(i int) *exec.Cmd {
 	args := []string{
 		"--cooBootstrap",
 		"--cooStartIndex=0",
-		"--coordinator.interval=1s",
+		"--coordinator.interval=100ms",
+		"--coordinator.debugFakeMilestoneTimestamps=true",
 		fmt.Sprintf("--inx.address=0.0.0.0:%d", pt.NodePortINX(i)),
 	}
 	return pt.startINXPlugin(i, "inx-coordinator", args, env)
