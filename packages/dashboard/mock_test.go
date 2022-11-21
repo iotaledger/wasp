@@ -169,7 +169,11 @@ func (e *dashboardTestEnv) newChain() *solo.Chain {
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
 	w := &waspServicesMock{
 		solo:   s,
 		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),

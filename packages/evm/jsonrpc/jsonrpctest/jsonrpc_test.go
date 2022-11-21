@@ -37,7 +37,11 @@ type soloTestEnv struct {
 func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
 

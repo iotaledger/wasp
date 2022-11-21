@@ -35,10 +35,6 @@ type Config struct {
 type Client interface {
 	// requests funds from faucet, waits for confirmation
 	RequestFunds(addr iotago.Address, timeout ...time.Duration) error
-	// sends a block (including tipselection and local PoW if necessary)
-	PostBlock(block *iotago.Block, timeout ...time.Duration) (*iotago.Block, error)
-	// sends a tx (including tipselection and local PoW if necessary)
-	PostTx(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Block, error)
 	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
 	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (*iotago.Block, error)
 	// returns the outputs owned by a given address

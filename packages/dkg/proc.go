@@ -767,7 +767,8 @@ func (s *procStep) recv(msg *peering.PeerMessageGroupIn) {
 	s.recvCh <- msg
 }
 
-func (s *procStep) run() { //nolint:funlen, gocyclo
+//nolint:gocyclo,funlen
+func (s *procStep) run() {
 	var err error
 	for {
 		select {

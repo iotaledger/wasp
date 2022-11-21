@@ -132,7 +132,10 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
 	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()

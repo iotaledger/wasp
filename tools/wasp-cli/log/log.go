@@ -39,6 +39,7 @@ func HiveLogger() *logger.Logger {
 			DisableEvents:     true,
 			DisableCaller:     true,
 			DisableStacktrace: true,
+			StacktraceLevel:   "panic",
 		}
 		if DebugFlag {
 			loggerCfg.Level = "debug"

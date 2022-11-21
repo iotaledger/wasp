@@ -36,13 +36,8 @@ func TestHornetStartup(t *testing.T) {
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
 	nc := nodeclient.New(l1.Config.APIAddress)
-	nodeEvt, err := nc.EventAPI(ctx)
+	_, err := nc.Info(ctx)
 	require.NoError(t, err)
-	require.NoError(t, nodeEvt.Connect(ctx))
-	l1Info, err := nc.Info(ctx)
-	require.NoError(t, err)
-
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, l1Info.Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
 	client := l1connection.NewClient(l1.Config, log)
@@ -58,9 +53,6 @@ func TestHornetStartup(t *testing.T) {
 			break
 		}
 	}
-	t.Logf("Waiting for output event...")
-	outs := <-myAddressOutputsCh
-	t.Logf("Waiting for output event, done: %+v", outs)
 
 	//
 	// Check if the TX post works.
@@ -75,9 +67,6 @@ func TestHornetStartup(t *testing.T) {
 			break
 		}
 	}
-	t.Logf("Waiting for output event...")
-	outs = <-myAddressOutputsCh
-	t.Logf("Waiting for output event, done: %+v", outs)
 }
 
 func mustOutputCount(client l1connection.Client, myAddress *iotago.Ed25519Address) int {

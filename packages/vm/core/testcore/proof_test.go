@@ -1,6 +1,7 @@
 package testcore
 
 import (
+	"encoding/hex"
 	"os"
 	"testing"
 
@@ -134,7 +135,7 @@ func TestProofStateTerminals(t *testing.T) {
 		}
 		cS, err := ch.GetContractStateCommitment(ci.Hname())
 		require.NoError(t, err)
-		t.Logf("BEFORE: commitment to the state of the contract '%s': %s", ci.Name, cS)
+		t.Logf("BEFORE: commitment to the state of the contract '%s': %s", ci.Name, hex.EncodeToString(cS))
 	}
 
 	_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -153,6 +154,6 @@ func TestProofStateTerminals(t *testing.T) {
 		}
 		cS, err := ch.GetContractStateCommitment(ci.Hname())
 		require.NoError(t, err)
-		t.Logf("AFTER: commitment to the state of the contract '%s': %s", ci.Name, cS)
+		t.Logf("AFTER: commitment to the state of the contract '%s': %s", ci.Name, hex.EncodeToString(cS))
 	}
 }

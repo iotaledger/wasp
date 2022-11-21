@@ -24,7 +24,8 @@ func TestWriteToWAL(t *testing.T) {
 	walDir := walDirFromDataPath(e.Clu.DataPath, chain.ChainID.String())
 	require.True(t, walDirectoryCreated(walDir))
 
-	blockIndex, _ := chain.BlockIndex(0)
+	nodeIndex := 0
+	blockIndex, _ := chain.BlockIndex(nodeIndex)
 	checkCreatedFilenameMatchesBlockIndex(t, walDir, blockIndex)
 
 	segName := latestSegName(walDir)
@@ -34,7 +35,7 @@ func TestWriteToWAL(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, blockIndex, block.BlockIndex())
 
-	v, err := chain.Cluster.WaspClient(0).CallView(
+	v, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Name,
 		dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
@@ -62,7 +63,7 @@ func checkCreatedFilenameMatchesBlockIndex(t *testing.T, walDir string, blockInd
 	latestSegmentName := latestSegName(walDir)
 	index, _ := strconv.ParseUint(latestSegmentName, 10, 32)
 	t.Logf("Index: %d", index)
-	require.EqualValues(t, blockIndex, index)
+	require.EqualValues(t, blockIndex, uint32(index))
 }
 
 func latestSegName(walDir string) string {

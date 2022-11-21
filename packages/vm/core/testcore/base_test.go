@@ -510,7 +510,11 @@ func TestBurnLog(t *testing.T) {
 }
 
 func TestMessageSize(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true}).
+	env := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	}).
 		WithNativeContract(sbtestsc.Processor)
 	ch := env.NewChain()
 

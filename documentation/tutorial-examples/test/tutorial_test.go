@@ -94,8 +94,8 @@ func TestTutorialInvokeSCError(t *testing.T) {
 		WithMaxAffordableGasBudget()
 
 	_, err = chain.PostRequestSync(req, nil)
-	t.Log(err)
 	require.Error(t, err)
+	require.True(t, err.Error() == "WASM: panic in VM: missing mandatory string")
 }
 
 func TestTutorialAccounts(t *testing.T) {

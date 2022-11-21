@@ -29,16 +29,12 @@ func TestTutorialInvokeSCError(t *testing.T) {
 		WithMaxAffordableGasBudget()
 
 	_, err = chain.PostRequestSync(req, nil)
-	t.Log(err)
 	require.Error(t, err)
+	require.True(t, err.Error() == "WASM: panic in VM: missing mandatory string")
 }
 ```
 
-The `t.Log(err)` line will produce the following output:
-
-```log
-tutorial_test.go:94: WASM: panic in VM: missing mandatory str
-```
+The `_, err = chain.PostRequestSync(req, nil)` will return an error containing `WASM: panic in VM: missing mandatory string`.
 
 This shows that the request resulted in a panic.
 The Solo test passes because of the `require.Error(t, err)` line.
@@ -55,6 +51,3 @@ a receipt. In fact, the received Go error `err` in the test above is just genera
 
 If a panic occurs during a smart contract call, it is recovered by the VM context, and the request is marked as failed.
 Any state changes made prior to the panic are rolled back.
-
-
-
