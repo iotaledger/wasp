@@ -9,18 +9,15 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type block struct {
-	mutations         *buffered.Mutations
-	trieRoot          common.VCommitment
-	previousTrieRoot  common.VCommitment
-	approvingOutputID *iotago.UTXOInput
+	trieRoot             common.VCommitment
+	mutations            *buffered.Mutations
+	previousL1Commitment *L1Commitment
 }
 
 var _ Block = &block{}
@@ -28,47 +25,34 @@ var _ Block = &block{}
 func BlockFromBytes(blockBytes []byte) (*block, error) {
 	buf := bytes.NewBuffer(blockBytes)
 
-	muts := buffered.NewMutations()
-	err := muts.Read(buf)
-	if err != nil {
-		return nil, err
-	}
-
 	trieRoot, err := common.VectorCommitmentFromBytes(commitmentModel, buf.Next(int(commitmentModel.HashSize())))
 	if err != nil {
 		return nil, err
 	}
 
-	var hasPrevTrieRoot bool
-	if hasPrevTrieRoot, err = codec.DecodeBool(buf.Next(1)); err != nil {
+	muts := buffered.NewMutations()
+	err = muts.Read(buf)
+	if err != nil {
 		return nil, err
-	}
-	var prevTrieRoot common.VCommitment
-	if hasPrevTrieRoot {
-		prevTrieRoot, err = common.VectorCommitmentFromBytes(commitmentModel, buf.Next(int(commitmentModel.HashSize())))
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	var hasApprovingOutputID bool
-	var approvingOutputID *iotago.UTXOInput
-	if hasApprovingOutputID, err = codec.DecodeBool(buf.Next(1)); err != nil {
+	var hasPrevL1Commitment bool
+	if hasPrevL1Commitment, err = codec.DecodeBool(buf.Next(1)); err != nil {
 		return nil, err
 	}
-	if hasApprovingOutputID {
-		approvingOutputID = &iotago.UTXOInput{}
-		_, err := approvingOutputID.Deserialize(buf.Next(approvingOutputID.Size()), serializer.DeSeriModeNoValidation, nil)
+	var prevL1Commitment *L1Commitment
+	if hasPrevL1Commitment {
+		prevL1Commitment = new(L1Commitment)
+		err = prevL1Commitment.Read(buf)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return &block{
-		mutations:         muts,
-		trieRoot:          trieRoot,
-		previousTrieRoot:  prevTrieRoot,
-		approvingOutputID: approvingOutputID,
+		trieRoot:             trieRoot,
+		mutations:            muts,
+		previousL1Commitment: prevL1Commitment,
 	}, nil
 }
 
@@ -80,16 +64,8 @@ func (b *block) TrieRoot() common.VCommitment {
 	return b.trieRoot
 }
 
-func (b *block) PreviousTrieRoot() common.VCommitment {
-	return b.previousTrieRoot
-}
-
-func (b *block) ApprovingOutputID() *iotago.UTXOInput {
-	return b.approvingOutputID
-}
-
-func (b *block) setApprovingOutputID(oid *iotago.UTXOInput) {
-	b.approvingOutputID = oid
+func (b *block) PreviousL1Commitment() *L1Commitment {
+	return b.previousL1Commitment
 }
 
 func (b *block) essenceBytes() []byte {
@@ -100,24 +76,17 @@ func (b *block) essenceBytes() []byte {
 
 func (b *block) writeEssence(w io.Writer) {
 	w.Write(b.Mutations().Bytes())
+
+	w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil))
+	if b.PreviousL1Commitment() != nil {
+		w.Write(b.PreviousL1Commitment().Bytes())
+	}
 }
 
 func (b *block) Bytes() []byte {
 	var w bytes.Buffer
-	b.writeEssence(&w)
 	w.Write(b.TrieRoot().Bytes())
-	w.Write(codec.EncodeBool(b.PreviousTrieRoot() != nil))
-	if b.PreviousTrieRoot() != nil {
-		w.Write(b.PreviousTrieRoot().Bytes())
-	}
-	w.Write(codec.EncodeBool(b.approvingOutputID != nil))
-	if b.approvingOutputID != nil {
-		bytes, err := b.approvingOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
-		if err != nil {
-			panic(err)
-		}
-		_, _ = w.Write(bytes)
-	}
+	b.writeEssence(&w)
 	return w.Bytes()
 }
 
@@ -127,8 +96,8 @@ func (b *block) Hash() BlockHash {
 
 func (b *block) L1Commitment() *L1Commitment {
 	return &L1Commitment{
-		StateCommitment: b.TrieRoot(),
-		BlockHash:       b.Hash(),
+		TrieRoot:  b.TrieRoot(),
+		BlockHash: b.Hash(),
 	}
 }
 

@@ -6,7 +6,6 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -18,7 +17,8 @@ import (
 // stateDraft is the implementation of the StateDraft interface
 type stateDraft struct {
 	*buffered.BufferedKVStore
-	baseState State
+	baseL1Commitment *L1Commitment
+	baseState        State
 }
 
 var _ StateDraft = &stateDraft{}
@@ -29,11 +29,16 @@ func newOriginStateDraft() *stateDraft {
 	}
 }
 
-func newStateDraft(baseState State, timestamp time.Time, prevL1Commitment *L1Commitment) *stateDraft {
-	d := &stateDraft{
-		BufferedKVStore: buffered.NewBufferedKVStore(baseState),
-		baseState:       baseState,
+func newEmptyStateDraft(prevL1Commitment *L1Commitment, baseState State) *stateDraft {
+	return &stateDraft{
+		BufferedKVStore:  buffered.NewBufferedKVStore(baseState),
+		baseL1Commitment: prevL1Commitment,
+		baseState:        baseState,
 	}
+}
+
+func newStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment, baseState State) *stateDraft {
+	d := newEmptyStateDraft(prevL1Commitment, baseState)
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(baseState.BlockIndex()+1))
 	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(timestamp))
 	d.Set(kv.Key(coreutil.StatePrefixPrevL1Commitment), prevL1Commitment.Bytes())
@@ -58,11 +63,8 @@ func (s *stateDraft) Timestamp() time.Time {
 	return ts
 }
 
-func (s *stateDraft) BaseTrieRoot() common.VCommitment {
-	if s.baseState == nil {
-		return nil
-	}
-	return s.baseState.TrieRoot()
+func (s *stateDraft) BaseL1Commitment() *L1Commitment {
+	return s.baseL1Commitment
 }
 
 func (d *stateDraft) PreviousL1Commitment() *L1Commitment {

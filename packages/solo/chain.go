@@ -47,7 +47,9 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", ch.Store.LatestBlock().TrieRoot())
+	block, err := ch.Store.LatestBlock()
+	require.NoError(ch.Env.T, err)
+	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
@@ -658,5 +660,7 @@ func (*Chain) GetTimeData() time.Time {
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	return ch.Store.LatestBlockIndex()
+	i, err := ch.Store.LatestBlockIndex()
+	require.NoError(ch.Env.T, err)
+	return i
 }

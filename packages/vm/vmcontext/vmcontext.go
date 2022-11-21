@@ -88,7 +88,11 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 
-	task.StateDraft = task.Store.NewStateDraft(task.TimeAssumption, &l1Commitment)
+	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, &l1Commitment)
+	if err != nil {
+		// should never happen
+		panic(err)
+	}
 
 	ret := &VMContext{
 		task:                task,

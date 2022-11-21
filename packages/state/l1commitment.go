@@ -22,8 +22,8 @@ type BlockHash [BlockHashSize]byte
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	StateCommitment common.VCommitment
-	// hash of the essence of the last block
+	TrieRoot common.VCommitment
+	// hash of the essence of the block
 	BlockHash BlockHash
 }
 
@@ -37,8 +37,8 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 
 func newL1Commitment(c common.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
-		StateCommitment: c,
-		BlockHash:       blockHash,
+		TrieRoot:  c,
+		BlockHash: blockHash,
 	}
 }
 
@@ -86,7 +86,7 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.BlockHash == other.BlockHash && EqualCommitments(s.StateCommitment, other.StateCommitment)
+	return s.BlockHash == other.BlockHash && EqualCommitments(s.TrieRoot, other.TrieRoot)
 }
 
 func (s *L1Commitment) Bytes() []byte {
@@ -94,7 +94,7 @@ func (s *L1Commitment) Bytes() []byte {
 }
 
 func (s *L1Commitment) Write(w io.Writer) error {
-	if err := s.StateCommitment.Write(w); err != nil {
+	if err := s.TrieRoot.Write(w); err != nil {
 		return err
 	}
 	if _, err := w.Write(s.BlockHash[:]); err != nil {
@@ -104,8 +104,8 @@ func (s *L1Commitment) Write(w io.Writer) error {
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	s.StateCommitment = commitmentModel.NewVectorCommitment()
-	if err := s.StateCommitment.Read(r); err != nil {
+	s.TrieRoot = commitmentModel.NewVectorCommitment()
+	if err := s.TrieRoot.Read(r); err != nil {
 		return err
 	}
 	if _, err := r.Read(s.BlockHash[:]); err != nil {
@@ -115,7 +115,7 @@ func (s *L1Commitment) Read(r io.Reader) error {
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), iotago.EncodeHex(s.BlockHash[:]))
+	return fmt.Sprintf("L1Commitment(%s, %s)", s.TrieRoot.String(), iotago.EncodeHex(s.BlockHash[:]))
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {

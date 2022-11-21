@@ -17,7 +17,10 @@ import (
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := state.InitChainStore(db)
-	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+	latest, err := cs.LatestBlock()
+	assert.NoError(t, err)
+	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
+	assert.NoError(t, err)
 
 	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
@@ -77,7 +80,10 @@ func TestSetThenGet(t *testing.T) {
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
 	cs := state.InitChainStore(db)
-	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+	latest, err := cs.LatestBlock()
+	assert.NoError(t, err)
+	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
+	assert.NoError(t, err)
 
 	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
@@ -92,7 +98,7 @@ func TestIterate(t *testing.T) {
 	s.Set("xy2", []byte{42 * 2})
 
 	arr := make([][]byte, 0)
-	err := s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
+	err = s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
 		assert.True(t, strings.HasPrefix(string(k), "xy"))
 		arr = append(arr, v)
 		return true
@@ -109,13 +115,20 @@ func TestVmctxStateDeletion(t *testing.T) {
 
 	foo := kv.Key("foo")
 	{
-		stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+		latest, err := cs.LatestBlock()
+		assert.NoError(t, err)
+		stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
+		assert.NoError(t, err)
 		stateDraft.Set(foo, []byte("bar"))
 		block := cs.Commit(stateDraft)
-		cs.SetLatest(block.TrieRoot())
+		err = cs.SetLatest(block.TrieRoot())
+		require.NoError(t, err)
 	}
 
-	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+	latest, err := cs.LatestBlock()
+	assert.NoError(t, err)
+	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
+	assert.NoError(t, err)
 	stateUpdate := NewStateUpdate()
 	vmctx := &VMContext{
 		stateDraft:         stateDraft,

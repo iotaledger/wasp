@@ -28,9 +28,12 @@ func Test1(t *testing.T) {
 	count := 0
 	totalBytes := 0
 
-	sd := st.NewStateDraft(time.Now(), st.LatestBlock().L1Commitment())
+	latest, err := st.LatestBlock()
+	require.NoError(t, err)
+	sd, err := st.NewStateDraft(time.Now(), latest.L1Commitment())
+	require.NoError(t, err)
 
-	err := rndKVStream.Iterate(func(k []byte, v []byte) bool {
+	err = rndKVStream.Iterate(func(k []byte, v []byte) bool {
 		sd.Set(kv.Key(k), v)
 		count++
 		totalBytes += len(k) + len(v) + 6
@@ -41,12 +44,12 @@ func Test1(t *testing.T) {
 
 	tm = util.NewTimer()
 	block := st.Commit(sd)
-	st.SetLatest(block.TrieRoot())
+	err = st.SetLatest(block.TrieRoot())
+	require.NoError(t, err)
 	t.Logf("commit and save state to in-memory db took %v", tm.Duration())
 
+	rdr, err := st.LatestState()
 	require.NoError(t, err)
-
-	rdr := st.LatestState()
 
 	chid := rdr.ChainID()
 	stateidx := rdr.BlockIndex()

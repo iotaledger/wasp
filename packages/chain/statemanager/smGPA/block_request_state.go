@@ -105,7 +105,7 @@ func (sbrT *stateBlockRequest) markCompleted(createBaseStateFun createStateFun) 
 		vState := baseState
 		for i := len(sbrT.blocks) - 1; i >= 0; i-- {
 			calculatedStateCommitment := state.RootCommitment(vState.TrieNodeStore())
-			if !state.EqualCommitments(calculatedStateCommitment, sbrT.blocks[i].PreviousL1Commitment().StateCommitment) {
+			if !state.EqualCommitments(calculatedStateCommitment, sbrT.blocks[i].PreviousL1Commitment().TrieRoot) {
 				sbrT.log.Errorf("State index %v root commitment does not match block %s expected commitment", vState.BlockIndex(), sbrT.blocks[i].GetHash())
 				return
 			}

@@ -22,12 +22,15 @@ type state struct {
 
 var _ State = &state{}
 
-func newState(db *storeDB, root common.VCommitment) *state {
-	trie := db.trieReader(root)
+func newState(db *storeDB, root common.VCommitment) (*state, error) {
+	trie, err := db.trieReader(root)
+	if err != nil {
+		return nil, err
+	}
 	return &state{
 		KVStoreReader: &trieKVAdapter{trie},
 		trieReader:    trie,
-	}
+	}, nil
 }
 
 func (s *state) TrieRoot() common.VCommitment {

@@ -1,6 +1,7 @@
 package state
 
 import (
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
@@ -21,12 +22,30 @@ func InitChainStore(db kvstore.KVStore) Store {
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
 	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	block := store.Commit(d)
-	store.SetLatest(block.TrieRoot())
+	err := store.SetLatest(block.TrieRoot())
+	if err != nil {
+		panic(err)
+	}
 	return store
 }
 
 // OriginL1Commitment calculates the L1Commitment for the origin block, which is
 // the same for every chain.
 func OriginL1Commitment() *L1Commitment {
-	return InitChainStore(mapdb.NewMapDB()).LatestBlock().L1Commitment()
+	originL1CommitmentOnce.Do(calcOriginL1Commitment)
+	return originL1Commitment
+}
+
+var (
+	originL1Commitment     *L1Commitment
+	originL1CommitmentOnce sync.Once
+)
+
+func calcOriginL1Commitment() {
+	store := InitChainStore(mapdb.NewMapDB())
+	block, err := store.LatestBlock()
+	if err != nil {
+		panic(err)
+	}
+	originL1Commitment = block.L1Commitment()
 }

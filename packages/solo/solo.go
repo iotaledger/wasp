@@ -278,7 +278,12 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	kvStore, err := env.dbmanager.GetOrCreateChainStateKVStore(*chainID)
 	require.NoError(env.T, err)
 	store := state.InitChainStore(kvStore)
-	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), store.LatestBlock().TrieRoot())
+
+	{
+		block, err := store.LatestBlock()
+		require.NoError(env.T, err)
+		env.logger.Infof("     chain '%s'. origin trie root: %s", chainID.String(), block.TrieRoot())
+	}
 
 	ret := &Chain{
 		Env:                    env,
@@ -515,7 +520,9 @@ func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
 }
 
 func (ch *Chain) GetStateReader(blockIndex uint32) state.State {
-	return ch.Store.StateByIndex(blockIndex)
+	state, err := ch.Store.StateByIndex(blockIndex)
+	require.NoError(ch.Env.T, err)
+	return state
 }
 
 func (ch *Chain) ID() *isc.ChainID {

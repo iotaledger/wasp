@@ -8,25 +8,94 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+
+	"github.com/stretchr/testify/require"
 )
+
+type mustChainStore struct {
+	Store
+}
+
+func (m mustChainStore) BlockByIndex(i uint32) Block {
+	r, err := m.Store.BlockByIndex(i)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) StateByIndex(i uint32) State {
+	r, err := m.Store.StateByIndex(i)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) LatestState() State {
+	r, err := m.Store.LatestState()
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) StateByTrieRoot(root common.VCommitment) State {
+	r, err := m.Store.StateByTrieRoot(root)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) BlockByTrieRoot(root common.VCommitment) Block {
+	r, err := m.Store.BlockByTrieRoot(root)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) LatestBlock() Block {
+	r, err := m.Store.LatestBlock()
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) LatestBlockIndex() uint32 {
+	r, err := m.Store.LatestBlockIndex()
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func (m mustChainStore) NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment) StateDraft {
+	r, err := m.Store.NewStateDraft(timestamp, prevL1Commitment)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
 
 func TestOriginBlock(t *testing.T) {
 	db := mapdb.NewMapDB()
 	emptyChainID := isc.ChainID{}
 
-	cs := InitChainStore(db)
+	cs := mustChainStore{InitChainStore(db)}
 
-	validateBlock0 := func(block0 Block) {
-		require.True(t, block0.PreviousTrieRoot() == nil)
+	validateBlock0 := func(block0 Block, err error) {
+		require.NoError(t, err)
+		require.True(t, block0.PreviousL1Commitment() == nil)
 		require.False(t, block0.TrieRoot() == nil)
 		require.EqualValues(t, map[kv.Key][]byte{
 			KeyChainID:                             emptyChainID.Bytes(),
@@ -37,7 +106,7 @@ func TestOriginBlock(t *testing.T) {
 	}
 
 	block0 := cs.BlockByIndex(0)
-	validateBlock0(block0)
+	validateBlock0(block0, nil)
 	state := cs.StateByTrieRoot(block0.TrieRoot())
 	require.True(t, state.ChainID().Equals(&emptyChainID))
 	require.EqualValues(t, 0, state.BlockIndex())
@@ -49,18 +118,9 @@ func TestOriginBlock(t *testing.T) {
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
 }
 
-func TestApprovingOID(t *testing.T) {
-	db := mapdb.NewMapDB()
-	cs := InitChainStore(db)
-	oid := tpkg.RandUTXOInput()
-	block0 := cs.BlockByIndex(0)
-	cs.SetApprovingOutputID(block0.TrieRoot(), oid)
-	require.True(t, cs.BlockByTrieRoot(block0.TrieRoot()).ApprovingOutputID().Equals(oid))
-}
-
 func Test1Block(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := InitChainStore(db)
+	cs := mustChainStore{InitChainStore(db)}
 
 	chainID := isc.RandomChainID()
 
@@ -74,16 +134,13 @@ func Test1Block(t *testing.T) {
 
 		return cs.Commit(d)
 	}()
-	cs.SetLatest(block1.TrieRoot())
+	err := cs.SetLatest(block1.TrieRoot())
+	require.NoError(t, err)
 	require.EqualValues(t, 1, cs.LatestBlockIndex())
 
 	require.EqualValues(t, 0, cs.StateByIndex(0).BlockIndex())
 	require.EqualValues(t, 1, cs.StateByIndex(1).BlockIndex())
 	require.EqualValues(t, []byte{1}, cs.BlockByIndex(1).Mutations().Sets["a"])
-
-	oid := tpkg.RandUTXOInput()
-	cs.SetApprovingOutputID(block1.TrieRoot(), oid)
-	require.True(t, oid.Equals(cs.BlockByIndex(1).ApprovingOutputID()))
 
 	require.EqualValues(t, []byte{1}, cs.StateByIndex(1).MustGet("a"))
 	require.True(t, cs.StateByIndex(1).ChainID().Equals(chainID))
@@ -91,14 +148,15 @@ func Test1Block(t *testing.T) {
 
 func TestReorg(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := InitChainStore(db)
+	cs := mustChainStore{InitChainStore(db)}
 
 	// main branch
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", []byte("a"))
 		block := cs.Commit(d)
-		cs.SetLatest(block.TrieRoot())
+		err := cs.SetLatest(block.TrieRoot())
+		require.NoError(t, err)
 	}
 
 	// alt branch
@@ -117,7 +175,8 @@ func TestReorg(t *testing.T) {
 	}
 
 	// reorg
-	cs.SetLatest(block.TrieRoot())
+	err := cs.SetLatest(block.TrieRoot())
+	require.NoError(t, err)
 	require.EqualValues(t, 14, cs.LatestBlockIndex())
 	for i := uint32(1); i <= cs.LatestBlockIndex(); i++ {
 		t.Log(i)
@@ -130,9 +189,35 @@ func TestReorg(t *testing.T) {
 	}
 }
 
+func TestReplay(t *testing.T) {
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{InitChainStore(db)}
+	for i := 1; i < 10; i++ {
+		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+		d.Set("k", []byte(fmt.Sprintf("a%d", i)))
+		block := cs.Commit(d)
+		err := cs.SetLatest(block.TrieRoot())
+		require.NoError(t, err)
+	}
+
+	// create a clone of the store by replaying all the blocks
+	db2 := mapdb.NewMapDB()
+	cs2 := mustChainStore{InitChainStore(db2)}
+	for i := 1; i < 10; i++ {
+		block := cs.BlockByIndex(uint32(i))
+
+		d, err := cs2.NewEmptyStateDraft(block.PreviousL1Commitment())
+		require.NoError(t, err)
+		block.Mutations().ApplyTo(d)
+		cs2.Commit(d)
+	}
+	err := cs2.SetLatest(cs.LatestBlock().TrieRoot())
+	require.NoError(t, err)
+}
+
 func TestProof(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := InitChainStore(db)
+	cs := mustChainStore{InitChainStore(db)}
 
 	for _, k := range [][]byte{
 		[]byte(KeyChainID),

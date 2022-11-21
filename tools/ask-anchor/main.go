@@ -35,7 +35,7 @@ func main() {
 	l1Commitment, err := state.L1CommitmentFromBytes(stateOutput.StateMetadata)
 	mustNoErr(err)
 	fmt.Printf("L1Commitment:\n     state commitment: %s\n     block hash:       %s\n",
-		l1Commitment.StateCommitment, l1Commitment.BlockHash)
+		l1Commitment.TrieRoot, l1Commitment.BlockHash)
 }
 
 func mustNoErr(err error) {

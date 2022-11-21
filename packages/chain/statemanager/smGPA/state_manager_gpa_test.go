@@ -290,7 +290,7 @@ func requireReceiveVState(t *testing.T, respChan <-chan (*consGR.StateMgrDecided
 	case smds := <-respChan:
 		require.Equal(t, smds.VirtualStateAccess.BlockIndex(), index)
 		require.True(t, smds.StateBaseline.IsValid())
-		require.True(t, state.EqualCommitments(trie.RootCommitment(smds.VirtualStateAccess.TrieNodeStore()), l1c.StateCommitment))
+		require.True(t, state.EqualCommitments(trie.RootCommitment(smds.VirtualStateAccess.TrieNodeStore()), l1c.TrieRoot))
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive state timeouted")

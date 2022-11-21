@@ -35,8 +35,8 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 }
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) error {
-	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
-		task.Store.StateByTrieRoot(task.BaseTrieRoot), task.BaseTrieRoot, isc.OID(task.AnchorOutputID.UTXOInput()))
+	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
+		task.StateDraft.BaseL1Commitment().TrieRoot, isc.OID(task.AnchorOutputID.UTXOInput()))
 	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
 	task.StateDraft = draft
 	task.RotationAddress = nil
@@ -70,7 +70,8 @@ func nextState(
 	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
 	require.NoError(t, err)
 
-	draft := store.NewStateDraft(prev.StateCommitment, timeAssumption, &prev)
+	draft, err := store.NewStateDraft(timeAssumption, &prev)
+	require.NoError(t, err)
 
 	for i, req := range reqs {
 		key := kv.Key(blocklog.NewRequestLookupKey(draft.BlockIndex(), uint16(i)).Bytes())
@@ -102,7 +103,8 @@ func nextState(
 	inputsCommitment := iotago.Outputs{consumedOutput}.MustCommitment()
 
 	store.Commit(draft)
-	store.SetLatest(block.TrieRoot())
+	err = store.SetLatest(block.TrieRoot())
+	require.NoError(t, err)
 
 	return draft, block, txEssence, inputsCommitment
 }

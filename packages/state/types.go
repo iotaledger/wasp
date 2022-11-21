@@ -6,7 +6,6 @@ package state
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/trie.go/models/trie_blake2b"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,36 +28,47 @@ import (
 // For each trie root, the Store also stores a Block, which contains the mutations
 // between the previous and current states, and allows to calculate the L1 commitment.
 type Store interface {
+	// HasTrieRoot returns true if the given trie root exists in the store
+	HasTrieRoot(common.VCommitment) bool
 	// BlockByTrieRoot fetches the Block that corresponds to the given trie root
-	BlockByTrieRoot(common.VCommitment) Block
+	BlockByTrieRoot(common.VCommitment) (Block, error)
 	// StateByTrieRoot returns the chain state corresponding to the given trie root
-	StateByTrieRoot(common.VCommitment) State
-
-	SetApprovingOutputID(trieRoot common.VCommitment, oid *iotago.UTXOInput) // TODO: remove?
+	StateByTrieRoot(common.VCommitment) (State, error)
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
 	// This affects all `*ByIndex` and `Latest*` functions.
-	SetLatest(trieRoot common.VCommitment)
-	// BlockByIndex returns the block that corresponds to the given state index.
-	// The index must not be greater than the index of the latest block (see SetLatest).
-	BlockByIndex(uint32) Block
-	// StateByIndex returns the chain state corresponding to the given state index.
-	// The index must not be greater than the index of the latest block (see SetLatest).
-	StateByIndex(uint32) State
-	// LatestBlockIndex returns the index of the latest block (see SetLatest)
-	LatestBlockIndex() uint32
-	// LatestBlock returns the latest block of the chain (see SetLatest)
-	LatestBlock() Block
-	// LatestState returns the latest chain state (see SetLatest)
-	LatestState() State
+	SetLatest(trieRoot common.VCommitment) error
+	// BlockByIndex returns the block that corresponds to the given state index (see SetLatest).
+	BlockByIndex(uint32) (Block, error)
+	// StateByIndex returns the chain state corresponding to the given state index (see SetLatest).
+	StateByIndex(uint32) (State, error)
+	// LatestBlockIndex returns the index of the latest block, if set (see SetLatest)
+	LatestBlockIndex() (uint32, error)
+	// LatestBlock returns the latest block of the chain, if set (see SetLatest)
+	LatestBlock() (Block, error)
+	// LatestState returns the latest chain state, if set (see SetLatest)
+	LatestState() (State, error)
 
 	// NewOriginStateDraft starts a new StateDraft for the origin block
 	NewOriginStateDraft() StateDraft
-	// NewOriginStateDraft starts a new StateDraft
-	NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment) StateDraft
+
+	// NewStateDraft starts a new StateDraft.
+	// The newly created StateDraft will already contain a few mutations updating the common values:
+	// - timestamp
+	// - block index
+	// - previous L1 commitment
+	NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment) (StateDraft, error)
+
+	// NewEmptyStateDraft starts a new StateDraft without updating any the common values.
+	// It may be used to replay a block given the mutations.
+	// Note that calling any of the StateCommonValues methods may return invalid data before
+	// applying the mutations.
+	NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, error)
+
 	// Commit commits the given state, creating a new block and trie root in the DB.
 	// SetLatest must be called manually to consider the new state as the latest one.
 	Commit(StateDraft) Block
+
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.
 	ExtractBlock(StateDraft) Block
@@ -69,13 +79,13 @@ type Store interface {
 // Blocks are immutable.
 type Block interface {
 	Mutations() *buffered.Mutations
-	PreviousTrieRoot() common.VCommitment
 	TrieRoot() common.VCommitment
-	ApprovingOutputID() *iotago.UTXOInput
-	setApprovingOutputID(*iotago.UTXOInput)
-	Bytes() []byte
-	Hash() BlockHash
+	PreviousL1Commitment() *L1Commitment
+	// L1Commitment contains the TrieRoot + block Hash
 	L1Commitment() *L1Commitment
+	// Hash is computed from Mutations + PreviousL1Commitment
+	Hash() BlockHash
+	Bytes() []byte
 }
 
 type StateCommonValues interface {
@@ -97,7 +107,7 @@ type State interface {
 // All mutations are stored in-memory until committed.
 type StateDraft interface {
 	kv.KVStore
-	BaseTrieRoot() common.VCommitment
+	BaseL1Commitment() *L1Commitment
 	Mutations() *buffered.Mutations
 	StateCommonValues
 }
