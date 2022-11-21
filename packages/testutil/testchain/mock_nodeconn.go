@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/inx-app/nodebridge"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"

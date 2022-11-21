@@ -66,7 +66,7 @@ func TestHornetStartup(t *testing.T) {
 	// Check if the TX post works.
 	tx, err := l1connection.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
 	require.NoError(t, err)
-	err = client.PostTx(tx)
+	_, err = client.PostTxAndWaitUntilConfirmation(tx)
 	require.NoError(t, err)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")

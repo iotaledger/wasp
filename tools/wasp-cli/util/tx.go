@@ -11,7 +11,7 @@ import (
 )
 
 func PostTransaction(tx *iotago.Transaction) {
-	err := config.L1Client().PostTx(tx)
+	_, err := config.L1Client().PostTxAndWaitUntilConfirmation(tx)
 	log.Check(err)
 }
 

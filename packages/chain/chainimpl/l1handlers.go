@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 
-	"github.com/iotaledger/inx-app/nodebridge"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"

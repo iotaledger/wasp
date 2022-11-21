@@ -45,7 +45,7 @@ var rotateCmd = &cobra.Command{
 		)
 		log.Check(err)
 
-		err = l1Client.PostTx((tx))
+		_, err = l1Client.PostTxAndWaitUntilConfirmation(tx)
 		if err != nil {
 			panic(err)
 		}

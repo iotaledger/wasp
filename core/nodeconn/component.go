@@ -4,7 +4,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/inx-app/nodebridge"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"

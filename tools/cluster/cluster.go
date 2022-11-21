@@ -659,7 +659,8 @@ func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCo
 }
 
 func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
-	return clu.l1.PostTx(tx)
+	_, err := clu.l1.PostTxAndWaitUntilConfirmation(tx)
+	return err
 }
 
 func (clu *Cluster) AddressBalances(addr iotago.Address) *isc.FungibleTokens {

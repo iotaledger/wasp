@@ -62,7 +62,7 @@ func sendFundsCmd() *cobra.Command {
 			txID, err := tx.ID()
 			log.Check(err)
 
-			err = client.PostTx(tx)
+			_, err = client.PostTxAndWaitUntilConfirmation(tx)
 			log.Check(err)
 
 			log.Printf("Transaction [%v] sent successfully.\n", txID.ToHex())

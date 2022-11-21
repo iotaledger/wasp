@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/inx-app/nodebridge"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -46,7 +46,7 @@ func createChain(t *testing.T) *isc.ChainID {
 		utxoIDs,
 	)
 	require.NoError(t, err)
-	err = layer1Client.PostTx(originTx)
+	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
 	require.NoError(t, err)
 
 	return chainID

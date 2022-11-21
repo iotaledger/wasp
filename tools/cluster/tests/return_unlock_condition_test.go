@@ -80,7 +80,7 @@ func TestSDRC(t *testing.T) {
 
 	// // send a request with Storage Deposit Return Unlock
 	txSDRC := buildTX(t, env, addr, keyPair, true)
-	err = env.Clu.L1Client().PostTx(txSDRC)
+	_, err = env.Clu.L1Client().PostTxAndWaitUntilConfirmation(txSDRC)
 	require.NoError(t, err)
 
 	// wait some time and assert that the chain has not processed the request
@@ -95,7 +95,7 @@ func TestSDRC(t *testing.T) {
 
 	// send an equivalent request without StorageDepositReturnUnlockCondition
 	txNormal := buildTX(t, env, addr, keyPair, false)
-	err = env.Clu.L1Client().PostTx(txNormal)
+	_, err = env.Clu.L1Client().PostTxAndWaitUntilConfirmation(txNormal)
 	require.NoError(t, err)
 
 	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, 1*time.Minute)
