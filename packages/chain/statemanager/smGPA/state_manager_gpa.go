@@ -86,14 +86,14 @@ func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWA
 
 func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 	switch inputCasted := input.(type) {
-	case *smInputs.ConsensusBlockProduced: // From chain
-		return smT.handleConsensusBlockProduced(inputCasted)
 	case *smInputs.ChainReceiveConfirmedAliasOutput: // From chain
 		return smT.handleChainReceiveConfirmedAliasOutput(inputCasted.GetStateOutput())
 	case *smInputs.ConsensusStateProposal: // From consensus
 		return smT.handleConsensusStateProposal(inputCasted)
 	case *smInputs.ConsensusDecidedState: // From consensus
 		return smT.handleConsensusDecidedState(inputCasted)
+	case *smInputs.ConsensusBlockProduced: // From chain
+		return smT.handleConsensusBlockProduced(inputCasted)
 	case *smInputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
@@ -181,21 +181,6 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.ConsensusBlockProduced) gpa.OutMessages {
-	commitment := input.GetStateDraft().BaseL1Commitment()
-	smT.log.Debugf("Input received: consensus block produced on state %s", commitment)
-	request := smT.createStateBlockRequestLocal(commitment, func(_ obtainStateFun) {
-		block := smT.store.Commit(input.GetStateDraft())
-		smT.log.Debugf("State draft on %s has been committed to the store; block %s received",
-			input.GetStateDraft().BaseL1Commitment(), block.L1Commitment())
-		smT.blockCache.AddBlock(block)
-		smT.markRequestsCompleted(block.Hash())
-	})
-	messages, err := smT.traceBlockChainByRequest(request)
-	input.Respond(err)
-	return messages
-}
-
 func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
 	aliasOutputID := isc.OID(aliasOutput.ID())
 	smT.log.Debugf("Input received: chain confirmed alias output %s", aliasOutputID)
@@ -252,16 +237,110 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusD
 	return messages
 }
 
+func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.ConsensusBlockProduced) gpa.OutMessages {
+	commitment := input.GetStateDraft().BaseL1Commitment()
+	smT.log.Debugf("Input received: consensus block produced on state %s", commitment)
+	request := smT.createStateBlockRequestLocal(commitment, func(_ obtainStateFun) {
+		block := smT.store.Commit(input.GetStateDraft())
+		smT.log.Debugf("State draft on %s has been committed to the store; block %s received",
+			input.GetStateDraft().BaseL1Commitment(), block.L1Commitment())
+		smT.blockCache.AddBlock(block)
+		requestsWC, ok := smT.blockRequests[block.Hash()]
+		if ok {
+			for _, request := range requestsWC.blockRequests {
+				smT.markRequestCompleted(request)
+			}
+		}
+	})
+	messages, err := smT.traceBlockChainByRequest(request)
+	input.Respond(err)
+	return messages
+}
+
+func (smT *stateManagerGPA) createStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun) *stateBlockRequest {
+	smT.lastBlockRequestID++
+	return newStateBlockRequestLocal(commitment, respondFun, smT.log, smT.lastBlockRequestID)
+}
+
+func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
+	block := smT.getBlock(commitment)
+	if block != nil {
+		smT.log.Debugf("Block %s retrieved from cache", commitment)
+		return block
+	}
+	smT.log.Debugf("Block %s is not in cache", commitment)
+
+	// Check in store (DB).
+	var err error
+	block, err = smT.store.BlockByTrieRoot(commitment.GetTrieRoot())
+	if err != nil {
+		smT.log.Errorf("Loading block %s from the DB failed: %v", commitment, err)
+		return nil
+	}
+	if block == nil {
+		smT.log.Debugf("Block %s not found in the DB", commitment)
+		return nil
+	}
+	if !commitment.GetBlockHash().Equals(block.Hash()) {
+		smT.log.Errorf("Block %s loaded from the database has hash %s",
+			commitment, block.Hash())
+		return nil
+	}
+	if !state.EqualCommitments(commitment.GetTrieRoot(), block.TrieRoot()) {
+		smT.log.Errorf("Block %s loaded from the database has trie root %s",
+			commitment.GetTrieRoot(), block.TrieRoot())
+		return nil
+	}
+	smT.log.Debugf("Block %s retrieved from the DB", commitment)
+	smT.blockCache.AddBlock(block)
+	return block
+}
+
+func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.OutMessages, error) {
+	lastCommitment := request.getLastL1Commitment()
+	smT.log.Debugf("Tracing the chain of blocks ending with block %s", lastCommitment)
+	if smT.store.HasTrieRoot(lastCommitment.GetTrieRoot()) {
+		smT.log.Debugf("Block %s is already in the store, marking request completed", lastCommitment)
+		smT.markRequestCompleted(request)
+		return nil, nil // No messages to send
+	}
+	requestsWC, ok := smT.blockRequests[lastCommitment.GetBlockHash()]
+	requests := requestsWC.blockRequests
+	if ok {
+		smT.log.Debugf("~s request(s) are already waiting for block %s; adding this request to the list", len(requests), lastCommitment)
+		requestsWC.blockRequests = append(requests, request)
+		return nil, nil // No messages to send
+	}
+	return smT.traceBlockChain(lastCommitment, []blockRequest{request})
+}
+
+// TODO: state manager may ask for several requests at once: the request can be formulated
+//		 as "give me blocks from some commitment till some index". If the requested
+//		 node has the required block committed into the store, it certainly has
+//		 all the blocks before it.
 func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, requests []blockRequest) (gpa.OutMessages, error) {
 	smT.log.Debugf("Tracing block %s chain...", initCommitment)
 	commitment := initCommitment
 	for !smT.store.HasTrieRoot(commitment.GetTrieRoot()) && !commitment.Equals(state.OriginL1Commitment()) {
 		smT.log.Debugf("Tracing block %s chain: block %s is not stored and is not an origin block",
 			initCommitment, commitment)
-		block, response := smT.getBlockOrRequestMessages(commitment, requests...)
+		block := smT.getBlock(commitment)
 		if block == nil {
-			smT.log.Debugf("Tracing block %s chain completed: block %s not found", initCommitment, commitment)
-			return response, nil
+			// Mark that the requests are waiting for `blockHash` block
+			blockHash := commitment.GetBlockHash()
+			currrentRequestsWC, ok := smT.blockRequests[blockHash]
+			if !ok {
+				smT.log.Debugf("Block %s is missing, it is the first request waiting for it", commitment)
+				smT.blockRequests[blockHash] = &blockRequestsWithCommitment{
+					l1Commitment:  commitment,
+					blockRequests: requests,
+				}
+			} else {
+				currrentRequests := currrentRequestsWC.blockRequests
+				smT.log.Debugf("Tracing block %s chain completed: Block %s is missing, %v requests are waiting for it in addition to this one", initCommitment, commitment, len(currrentRequests))
+				currrentRequestsWC.blockRequests = append(currrentRequests, requests...)
+			}
+			return smT.makeGetBlockRequestMessages(commitment), nil
 		}
 		for _, request := range requests {
 			request.blockAvailable(block)
@@ -312,72 +391,7 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 	return nil, nil // No messages to send
 }
 
-func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.OutMessages, error) {
-	lastCommitment := request.getLastL1Commitment()
-	smT.log.Debugf("Tracing the chain of blocks ending with block %s", lastCommitment)
-	if smT.store.HasTrieRoot(lastCommitment.GetTrieRoot()) {
-		smT.log.Debugf("Block %s is already in the store, marking request completed", lastCommitment)
-		smT.markRequestCompleted(request)
-		return nil, nil // No messages to send
-	}
-	requestsWC, ok := smT.blockRequests[lastCommitment.GetBlockHash()]
-	requests := requestsWC.blockRequests
-	if ok {
-		smT.log.Debugf("~s request(s) are already waiting for block %s; adding this request to the list", len(requests), lastCommitment)
-		requestsWC.blockRequests = append(requests, request)
-		return nil, nil // No messages to send
-	}
-	return smT.traceBlockChain(lastCommitment, []blockRequest{request})
-}
-
-func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
-	request.markCompleted(func() (state.State, error) {
-		return smT.store.StateByTrieRoot(request.getLastL1Commitment().GetTrieRoot())
-	})
-}
-
-func (smT *stateManagerGPA) markRequestsCompleted(blockHash state.BlockHash) {
-	requestsWC, ok := smT.blockRequests[blockHash]
-	if ok {
-		for _, request := range requestsWC.blockRequests {
-			smT.markRequestCompleted(request)
-		}
-	}
-}
-
-func (smT *stateManagerGPA) createStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun) *stateBlockRequest {
-	smT.lastBlockRequestID++
-	return newStateBlockRequestLocal(commitment, respondFun, smT.log, smT.lastBlockRequestID)
-}
-
-// TODO: state manager may ask for several requests at once: the request can be formulated
-//		 as "give me blocks from some commitment till some index". If the requested
-//		 node has the required block committed into the store, it certainly has
-//		 all the blocks before it.
-func (smT *stateManagerGPA) getBlockOrRequestMessages(commitment *state.L1Commitment, requests ...blockRequest) (state.Block, gpa.OutMessages) {
-	block := smT.getBlock(commitment)
-	if block == nil {
-		// Mark that the requests are waiting for `blockHash` block
-		blockHash := commitment.GetBlockHash()
-		currrentRequestsWC, ok := smT.blockRequests[blockHash]
-		if !ok {
-			smT.log.Debugf("Block %s is missing, it is the first request waiting for it", commitment)
-			smT.blockRequests[blockHash] = &blockRequestsWithCommitment{
-				l1Commitment:  commitment,
-				blockRequests: requests,
-			}
-		} else {
-			currrentRequests := currrentRequestsWC.blockRequests
-			smT.log.Debugf("Block %s is missing, %v requests are waiting for it in addition to this one", commitment, len(currrentRequests))
-			currrentRequestsWC.blockRequests = append(currrentRequests, requests...)
-		}
-		return nil, smT.makeGetBlockRequestMessages(commitment)
-	}
-	return block, nil // Second parameter should not be used then
-}
-
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
-// TODO: `blockIndex` is a temporary parameter. Remove it after DB refactoring.
 func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Commitment) gpa.OutMessages {
 	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(numberOfNodesToRequestBlockFromConst)
 	smT.log.Debugf("Requesting block %s from %v random nodes %v", commitment.GetBlockHash(), numberOfNodesToRequestBlockFromConst, nodeIDs)
@@ -386,6 +400,12 @@ func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Comm
 		response.Add(smMessages.NewGetBlockMessage(commitment, nodeID))
 	}
 	return response
+}
+
+func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
+	request.markCompleted(func() (state.State, error) {
+		return smT.store.StateByTrieRoot(request.getLastL1Commitment().GetTrieRoot())
+	})
 }
 
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
@@ -446,38 +466,4 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 	}
 	smT.log.Debugf("Timer tick %v handled", now)
 	return result
-}
-
-func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
-	block := smT.getBlock(commitment)
-	if block != nil {
-		smT.log.Debugf("Block %s retrieved from cache", commitment)
-		return block
-	}
-	smT.log.Debugf("Block %s is not in cache", commitment)
-
-	// Check in store (DB).
-	var err error
-	block, err = smT.store.BlockByTrieRoot(commitment.GetTrieRoot())
-	if err != nil {
-		smT.log.Errorf("Loading block %s from the DB failed: %v", commitment, err)
-		return nil
-	}
-	if block == nil {
-		smT.log.Debugf("Block %s not found in the DB", commitment)
-		return nil
-	}
-	if !commitment.GetBlockHash().Equals(block.Hash()) {
-		smT.log.Errorf("Block %s loaded from the database has hash %s",
-			commitment, block.Hash())
-		return nil
-	}
-	if !state.EqualCommitments(commitment.GetTrieRoot(), block.TrieRoot()) {
-		smT.log.Errorf("Block %s loaded from the database has trie root %s",
-			commitment.GetTrieRoot(), block.TrieRoot())
-		return nil
-	}
-	smT.log.Debugf("Block %s retrieved from the DB", commitment)
-	smT.blockCache.AddBlock(block)
-	return block
 }
