@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
+func addDKSharesEndpoints(adm echoswagger.ApiGroup, dkShareRegistryProvider registry.DKShareRegistryProvider, nodeProvider dkg.NodeProvider) {
 	requestExample := model.DKSharesPostRequest{
 		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:   3,
@@ -43,8 +43,8 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 
 	s := &dkSharesService{
-		registry: registryProvider,
-		dkgNode:  nodeProvider,
+		dkShareRegistryProvider: dkShareRegistryProvider,
+		dkgNode:                 nodeProvider,
 	}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
@@ -59,8 +59,8 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 }
 
 type dkSharesService struct {
-	registry registry.Provider
-	dkgNode  dkg.NodeProvider
+	dkShareRegistryProvider registry.DKShareRegistryProvider
+	dkgNode                 dkg.NodeProvider
 }
 
 func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
@@ -115,7 +115,7 @@ func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 	if _, sharedAddress, err = iotago.ParseBech32(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-	if dkShare, err = s.registry().LoadDKShare(sharedAddress); err != nil {
+	if dkShare, err = s.dkShareRegistryProvider.LoadDKShare(sharedAddress); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	var response *model.DKSharesInfo

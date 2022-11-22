@@ -4,6 +4,7 @@
 package tcrypto
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func TestMarshaling(t *testing.T) {
+func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.PrivateKey) {
 	edSuite, err := suites.Find("Ed25519")
 	require.NoError(t, err)
 	blsSuite := bn256.NewSuite()
@@ -61,7 +62,30 @@ func TestMarshaling(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodeSecKeys[7])
+	return dks, edSuite, blsSuite, nodeSecKeys[7]
+}
+
+func TestMarshaling(t *testing.T) {
+	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+
+	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodePrivKey)
 	require.NoError(t, err)
+	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
+}
+
+func TestJSONMarshaling(t *testing.T) {
+	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+
+	jsonDKShare, err := json.Marshal(dks)
+	require.NoError(t, err)
+
+	dksBack := &dkShareImpl{
+		edSuite:     edSuite,
+		blsSuite:    blsSuite,
+		nodePrivKey: nodePrivKey,
+	}
+	err = json.Unmarshal(jsonDKShare, dksBack)
+	require.NoError(t, err)
+
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
 }

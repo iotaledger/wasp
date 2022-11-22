@@ -4,9 +4,9 @@
 package peering
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -19,7 +19,7 @@ var trustCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		pubKey := args[0]
 		netID := args[1]
-		_, err := hexutil.Decode(pubKey) // Assert it can be decoded.
+		_, err := iotago.DecodeHex(pubKey) // Assert it can be decoded.
 		log.Check(err)
 		log.Check(peering.CheckNetID(netID))
 		_, err = config.WaspClient(config.MustWaspAPI()).PostPeeringTrusted(pubKey, netID)

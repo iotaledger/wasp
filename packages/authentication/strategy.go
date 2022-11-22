@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
 )
@@ -62,14 +61,20 @@ func AddNoneAuth(webAPI WebAPI) {
 	webAPI.Use(noneFunc)
 }
 
-func AddAuthentication(webAPI WebAPI, userManager *users.UserManager, registryProvider registry.Provider, authConfig AuthConfiguration, claimValidator ClaimValidator) {
+func AddAuthentication(
+	webAPI WebAPI,
+	userManager *users.UserManager,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	authConfig AuthConfiguration,
+	claimValidator ClaimValidator,
+) {
 	addAuthContext(webAPI, authConfig)
 
 	switch authConfig.Scheme {
 	case AuthBasic:
 		AddBasicAuth(webAPI, userManager)
 	case AuthJWT:
-		nodeIdentity := registryProvider().GetNodeIdentity()
+		nodeIdentity := nodeIdentityProvider.NodeIdentity()
 
 		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 

@@ -14,14 +14,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider) {
+func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) {
 	rnd1 := isc.RandomChainID()
 	example := model.ChainRecord{
 		ChainID: model.NewChainID(rnd1),
 		Active:  false,
 	}
 
-	s := &chainRecordService{registryProvider}
+	s := &chainRecordService{chainRecordRegistryProvider}
 
 	adm.POST(routes.PutChainRecord(), s.handlePutChainRecord).
 		SetSummary("Create a new chain record").
@@ -38,7 +38,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry
 }
 
 type chainRecordService struct {
-	registry registry.Provider
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
 func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
@@ -48,10 +48,9 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	reg := s.registry()
 	bd := req.Record()
 
-	bd2, err := reg.GetChainRecordByChainID(&bd.ChainID)
+	bd2, err := s.chainRecordRegistryProvider.ChainRecord(bd.ChainID())
 	if err != nil {
 		return err
 	}
@@ -61,11 +60,11 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		// So just keep the existing, if it exists.
 		return c.NoContent(http.StatusCreated)
 	}
-	if err := reg.SaveChainRecord(bd); err != nil {
+	if err := s.chainRecordRegistryProvider.AddChainRecord(bd); err != nil {
 		return err
 	}
 
-	log.Infof("Chain record saved: %s", bd.String())
+	log.Infof("Chain record saved: ChainID: %s (active: %t)", bd.ChainID().String(), bd.Active)
 
 	return c.NoContent(http.StatusCreated)
 }
@@ -75,7 +74,7 @@ func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := s.registry().GetChainRecordByChainID(chainID)
+	bd, err := s.chainRecordRegistryProvider.ChainRecord(*chainID)
 	if err != nil {
 		return err
 	}
@@ -86,7 +85,7 @@ func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 }
 
 func (s *chainRecordService) handleGetChainRecordList(c echo.Context) error {
-	lst, err := s.registry().GetChainRecords()
+	lst, err := s.chainRecordRegistryProvider.ChainRecords()
 	if err != nil {
 		return err
 	}

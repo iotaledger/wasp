@@ -1,9 +1,4 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-// Implementation for the journal.Registry interface.
-
-package registry
+package journal
 
 import (
 	"encoding/binary"
@@ -21,8 +16,22 @@ const (
 	dbKeyForConsensusJournalLocalView
 )
 
-func (r *Impl) LoadConsensusJournal(id journal.ID) (journal.LogIndex, journal.LocalView, error) {
-	liBytes, err := r.store.Get(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLogIndex))
+type ConsensusJournal struct {
+	store kvstore.KVStore
+}
+
+func NewConsensusJournal(store kvstore.KVStore) *ConsensusJournal {
+	return &ConsensusJournal{
+		store: store,
+	}
+}
+
+func dbKeyForConsensusJournal(id journal.ID, subKey byte) []byte {
+	return dbkeys.MakeKey(subKey, id[:])
+}
+
+func (j *ConsensusJournal) LoadConsensusJournal(id journal.ID) (journal.LogIndex, journal.LocalView, error) {
+	liBytes, err := j.store.Get(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLogIndex))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
 			return 0, nil, journal.ErrConsensusJournalNotFound
@@ -31,7 +40,7 @@ func (r *Impl) LoadConsensusJournal(id journal.ID) (journal.LogIndex, journal.Lo
 	}
 	li := journal.LogIndex(binary.BigEndian.Uint32(liBytes))
 
-	lvBytes, err := r.store.Get(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLocalView))
+	lvBytes, err := j.store.Get(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLocalView))
 	if err != nil {
 		if errors.Is(err, kvstore.ErrKeyNotFound) {
 			return 0, nil, journal.ErrConsensusJournalNotFound
@@ -46,28 +55,24 @@ func (r *Impl) LoadConsensusJournal(id journal.ID) (journal.LogIndex, journal.Lo
 	return li, lv, nil
 }
 
-func (r *Impl) SaveConsensusJournalLogIndex(id journal.ID, logIndex journal.LogIndex) error {
+func (j *ConsensusJournal) SaveConsensusJournalLogIndex(id journal.ID, logIndex journal.LogIndex) error {
 	liBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(liBytes, logIndex.AsUint32())
 
-	err := r.store.Set(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLogIndex), liBytes)
+	err := j.store.Set(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLogIndex), liBytes)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Impl) SaveConsensusJournalLocalView(id journal.ID, localView journal.LocalView) error {
+func (j *ConsensusJournal) SaveConsensusJournalLocalView(id journal.ID, localView journal.LocalView) error {
 	lvBytes, err := localView.AsBytes()
 	if err != nil {
 		return xerrors.Errorf("cannot serialize localView: %w", err)
 	}
-	if err := r.store.Set(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLocalView), lvBytes); err != nil {
+	if err := j.store.Set(dbKeyForConsensusJournal(id, dbKeyForConsensusJournalLocalView), lvBytes); err != nil {
 		return err
 	}
 	return nil
-}
-
-func dbKeyForConsensusJournal(id journal.ID, subKey byte) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeConsensusJournal, []byte{subKey}, id[:])
 }

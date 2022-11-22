@@ -88,9 +88,9 @@ type ConsensusJournal interface {
 
 var ErrConsensusJournalNotFound = errors.New("ErrConsensusJournalNotFound")
 
-// RegistryProvider has to be provided for the ConsensusJournal and should
+// Provider has to be provided for the ConsensusJournal and should
 // implement the persistent store.
-type Registry interface {
+type Provider interface {
 	LoadConsensusJournal(id ID) (LogIndex, LocalView, error) // Can return ErrConsensusJournalNotFound
 	SaveConsensusJournalLogIndex(id ID, logIndex LogIndex) error
 	SaveConsensusJournalLocalView(id ID, localView LocalView) error
@@ -101,16 +101,16 @@ type Registry interface {
 // consensusJournalImpl implements ConsensusJournal and LocalView.
 // Here the local view is made persistent and a dimension of history added.
 type consensusJournalImpl struct {
-	id             ID
-	chainID        isc.ChainID
-	committee      iotago.Address //nolint: unused // probably can be removed
-	committeeN     int
-	committeeF     int
-	registry       Registry
-	logIndex       LogIndex
-	localView      LocalView
-	peerLogIndexes map[uint16]LogIndex // NodeIndex -> LogIndex.
-	log            *logger.Logger
+	id               ID
+	chainID          isc.ChainID
+	committee        iotago.Address //nolint: unused // probably can be removed
+	committeeN       int
+	committeeF       int
+	registryProvider Provider
+	logIndex         LogIndex
+	localView        LocalView
+	peerLogIndexes   map[uint16]LogIndex // NodeIndex -> LogIndex.
+	log              *logger.Logger
 }
 
 var (
@@ -118,21 +118,21 @@ var (
 	_ LocalView        = &consensusJournalImpl{}
 )
 
-func LoadConsensusJournal(chainID isc.ChainID, committee iotago.Address, registry Registry, committeeN, committeeF int, log *logger.Logger) (ConsensusJournal, error) {
+func LoadConsensusJournal(chainID isc.ChainID, committee iotago.Address, registryProvider Provider, committeeN, committeeF int, log *logger.Logger) (ConsensusJournal, error) {
 	id, err := MakeID(chainID, committee)
 	if err != nil {
 		return nil, err
 	}
 	j := &consensusJournalImpl{
-		id:             *id,
-		chainID:        chainID,
-		registry:       registry,
-		committeeN:     committeeN,
-		committeeF:     committeeF,
-		peerLogIndexes: map[uint16]LogIndex{},
-		log:            log,
+		id:               *id,
+		chainID:          chainID,
+		registryProvider: registryProvider,
+		committeeN:       committeeN,
+		committeeF:       committeeF,
+		peerLogIndexes:   map[uint16]LogIndex{},
+		log:              log,
 	}
-	li, lv, err := registry.LoadConsensusJournal(j.id)
+	li, lv, err := registryProvider.LoadConsensusJournal(j.id)
 	if err == nil {
 		j.logIndex = li
 		j.localView = lv
@@ -141,10 +141,10 @@ func LoadConsensusJournal(chainID isc.ChainID, committee iotago.Address, registr
 	if errors.Is(err, ErrConsensusJournalNotFound) {
 		j.localView = NewLocalView()
 		j.logIndex = 0
-		if err := registry.SaveConsensusJournalLogIndex(j.id, j.logIndex); err != nil {
+		if err := registryProvider.SaveConsensusJournalLogIndex(j.id, j.logIndex); err != nil {
 			return nil, xerrors.Errorf("cannot save consensus journal: %w", err)
 		}
-		if err := registry.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
+		if err := registryProvider.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
 			return nil, xerrors.Errorf("cannot save consensus journal: %w", err)
 		}
 		return j, nil
@@ -174,7 +174,7 @@ func (j *consensusJournalImpl) ConsensusReached(logIndex LogIndex) {
 		return
 	}
 	j.logIndex++
-	if err := j.registry.SaveConsensusJournalLogIndex(j.id, j.logIndex); err != nil {
+	if err := j.registryProvider.SaveConsensusJournalLogIndex(j.id, j.logIndex); err != nil {
 		panic(xerrors.Errorf("cannot store the log index: %w", err))
 	}
 }
@@ -218,7 +218,7 @@ func (j *consensusJournalImpl) GetBaseAliasOutputID() *iotago.OutputID {
 // Implements the LocalView interface.
 func (j *consensusJournalImpl) AliasOutputReceived(confirmed *isc.AliasOutputWithID) {
 	j.localView.AliasOutputReceived(confirmed)
-	if err := j.registry.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
+	if err := j.registryProvider.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
 		panic(xerrors.Errorf("cannot persist local view after AliasOutputReceived: %w", err))
 	}
 }
@@ -226,7 +226,7 @@ func (j *consensusJournalImpl) AliasOutputReceived(confirmed *isc.AliasOutputWit
 // Implements the LocalView interface.
 func (j *consensusJournalImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) {
 	j.localView.AliasOutputRejected(rejected)
-	if err := j.registry.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
+	if err := j.registryProvider.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
 		panic(xerrors.Errorf("cannot persist local view after AliasOutputRejected: %w", err))
 	}
 }
@@ -234,7 +234,7 @@ func (j *consensusJournalImpl) AliasOutputRejected(rejected *isc.AliasOutputWith
 // Implements the LocalView interface.
 func (j *consensusJournalImpl) AliasOutputPublished(consumed, published *isc.AliasOutputWithID) {
 	j.localView.AliasOutputPublished(consumed, published)
-	if err := j.registry.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
+	if err := j.registryProvider.SaveConsensusJournalLocalView(j.id, j.localView); err != nil {
 		panic(xerrors.Errorf("cannot persist local view after AliasOutputPublished: %w", err))
 	}
 }

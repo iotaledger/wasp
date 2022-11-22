@@ -80,11 +80,11 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) *MockedEn
 	log.Infof("running DKG and setting up mocked network..")
 	ret.NodeIDs, ret.NodeKeyPairs = testpeers.SetupKeys(n)
 	var err error
-	var dksRegistries []registry.DKShareRegistryProvider
-	ret.StateAddress, dksRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeKeyPairs)
-	ret.DKShares = make([]tcrypto.DKShare, len(dksRegistries))
-	for i := range dksRegistries {
-		ret.DKShares[i], err = dksRegistries[i].LoadDKShare(ret.StateAddress)
+	var dkShareRegistryProviders []registry.DKShareRegistryProvider
+	ret.StateAddress, dkShareRegistryProviders = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeKeyPairs)
+	ret.DKShares = make([]tcrypto.DKShare, len(dkShareRegistryProviders))
+	for i := range dkShareRegistryProviders {
+		ret.DKShares[i], err = dkShareRegistryProviders[i].LoadDKShare(ret.StateAddress)
 		require.NoError(t, err)
 	}
 	ret.NetworkProviders, _ = testpeers.SetupNet(ret.NodeIDs, ret.NodeKeyPairs, ret.NetworkBehaviour, log)

@@ -107,10 +107,13 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 func (b *BatchProposal) Bytes() []byte {
 	mu := marshalutil.New()
 	stateOutputID := b.StateOutputID.ID()
+	accessManaPledgeBytes, _ := b.AccessManaPledge.Bytes()
+	consensusManaPledgeBytes, _ := b.ConsensusManaPledge.Bytes()
+
 	mu.WriteUint16(b.ValidatorIndex).
 		WriteBytes(stateOutputID[:]).
-		Write(b.AccessManaPledge).
-		Write(b.ConsensusManaPledge).
+		WriteBytes(accessManaPledgeBytes).
+		WriteBytes(consensusManaPledgeBytes).
 		Write(b.FeeDestination).
 		WriteTime(b.TimeData).
 		WriteUint16(uint16(len(b.RequestIDs))).

@@ -20,7 +20,7 @@ type WaspConfigParams struct {
 const WaspConfig = `
 {
   "app": {
-    "checkForUpdates": false,
+    "checkForUpdates": true,
     "shutdown": {
       "stopGracePeriod": "5m",
       "log": {
@@ -31,24 +31,40 @@ const WaspConfig = `
   },
   "logger": {
     "level": "debug",
-    "disableCaller": false,
+    "disableCaller": true,
     "disableStacktrace": false,
+    "stacktraceLevel": "panic",
     "encoding": "console",
     "outputPaths": [
       "wasp.log"
-    ]
+    ],
+    "disableEvents": true
   },
   "inx": {
     "address": "{{.L1INXAddress}}",
-    "maxConnectionAttempts": 30
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
   "database": {
     "inMemory": false,
     "directory": "waspdb"
   },
+  "p2p": {
+    "identityPrivateKey": "",
+    "db": {
+      "path": "waspdb/p2pstore"
+    }
+  },
   "registry": {
-    "useText": false,
-    "fileName": "chain-registry.json"
+    "chains": {
+      "filePath": "waspdb/chain_registry.json"
+    },
+    "dkShares": {
+      "filePath": "waspdb/dkshares.json"
+    },
+    "trustedPeers": {
+      "filePath": "waspdb/trusted_peers.json"
+    }
   },
   "peering": {
     "netID": "127.0.0.1:{{.PeeringPort}}",
@@ -65,24 +81,35 @@ const WaspConfig = `
     "directory": "blocks"
   },
   "profiling": {
-    "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "writeProfiles": false,
-    "enabled": false
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
   },
   "wal": {
     "enabled": true,
     "directory": "wal"
   },
   "metrics": {
-    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
-    "enabled": false
+    "enabled": false,
+    "bindAddress": "0.0.0.0:{{.MetricsPort}}"
   },
   "webapi": {
     "enabled": true,
     "nodeOwnerAddresses": ["{{.OwnerAddress}}"],
     "bindAddress": "0.0.0.0:{{.APIPort}}",
+    "debugRequestLoggerEnabled": false,
     "auth": {
-      "scheme": "none"
+      "scheme": "none",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "0.0.0.0"
+        ]
+      }
     }
   },
   "nanomsg": {
@@ -93,29 +120,20 @@ const WaspConfig = `
     "enabled": true,
     "bindAddress":  "0.0.0.0:{{.DashboardPort}}",
     "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
     "auth": {
-      "scheme": "none"
-    }
-  },
-  "users": {
-    "users": {
-      "wasp": {
-        "Password": "wasp",
-        "Permissions": [
-          "dashboard",
-          "api",
-          "chain.read",
-          "chain.write"
+      "scheme": "none",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "0.0.0.0"
         ]
       }
     }
-  },
-  "offledger":{
-    "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
-  },
-  "debug": {
-    "rawblocksEnabled": false,
-    "rawblocksDirectory": "blocks"
   }
-}
-`
+}`

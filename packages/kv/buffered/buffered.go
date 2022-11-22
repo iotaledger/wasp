@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -24,7 +23,7 @@ func NewBufferedKVStoreAccess(r kv.KVStoreReader) *BufferedKVStoreAccess {
 	}
 }
 
-func (b *BufferedKVStoreAccess) Copy() *BufferedKVStoreAccess {
+func (b *BufferedKVStoreAccess) Clone() *BufferedKVStoreAccess {
 	return &BufferedKVStoreAccess{
 		r:    b.r,
 		muts: b.muts.Clone(),
@@ -58,11 +57,10 @@ func (b *BufferedKVStoreAccess) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStoreAccess:\n"
 	for k, v := range b.DangerouslyDumpToDict() {
 		ret += fmt.Sprintf(
-			"           [%s] 0x%s: 0x%s (hex: %s)\n",
+			"           [%s] %s: %s\n",
 			b.flag(k),
-			slice(hexutil.Encode([]byte(k))),
-			slice(hexutil.Encode(v)),
-			slice(hexutil.Encode(v)),
+			slice(iotago.EncodeHex([]byte(k))),
+			slice(iotago.EncodeHex(v)),
 		)
 	}
 	return ret

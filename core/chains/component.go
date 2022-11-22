@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -39,10 +40,13 @@ var (
 type dependencies struct {
 	dig.In
 
-	WAL             *wal.WAL
-	Chains          *chains.Chains
-	Metrics         *metrics.Metrics `optional:"true"`
-	DefaultRegistry registry.Registry
+	WAL                              *wal.WAL
+	Chains                           *chains.Chains
+	Metrics                          *metrics.Metrics `optional:"true"`
+	ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
+	DKShareRegistryProvider          registry.DKShareRegistryProvider
+	NodeIdentityProvider             registry.NodeIdentityProvider
+	ConsensusJournalRegistryProvider journal.Provider
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -66,10 +70,10 @@ func provide(c *dig.Container) error {
 	type chainsDeps struct {
 		dig.In
 
-		ProcessorsConfig       *processors.Config
-		DatabaseManager        *dbmanager.DBManager
-		DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
-		NodeConnection         chain.NodeConnection
+		ProcessorsConfig *processors.Config
+		DatabaseManager  *dbmanager.DBManager
+		NetworkProvider  peering.NetworkProvider `name:"networkProvider"`
+		NodeConnection   chain.NodeConnection
 	}
 
 	type chainsResult struct {
@@ -87,7 +91,7 @@ func provide(c *dig.Container) error {
 				ParamsChains.BroadcastUpToNPeers,
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,
-				deps.DefaultNetworkProvider,
+				deps.NetworkProvider,
 				deps.DatabaseManager.GetOrCreateKVStore,
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
@@ -103,9 +107,10 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		if err := deps.Chains.ActivateAllFromRegistry(
-			func() registry.Registry {
-				return deps.DefaultRegistry
-			},
+			deps.ChainRecordRegistryProvider,
+			deps.DKShareRegistryProvider,
+			deps.NodeIdentityProvider,
+			deps.ConsensusJournalRegistryProvider,
 			deps.Metrics,
 			deps.WAL,
 		); err != nil {

@@ -9,10 +9,10 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -188,7 +188,7 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		for k, v := range node {
 			tree = append(tree, TreeItem{
 				K: fmt.Sprintf("%q", string(k)),
-				V: fmt.Sprintf("0x%s", hexutil.Encode(v)),
+				V: fmt.Sprintf("0x%s", iotago.EncodeHex(v)),
 			})
 		}
 		PrintTree(tree, tab, tabwidth)

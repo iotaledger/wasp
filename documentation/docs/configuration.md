@@ -139,25 +139,77 @@ Example:
   }
 ```
 
-## <a id="registry"></a> 5. Registry
+## <a id="p2p"></a> 5. P2p
 
-| Name     | Description                                              | Type    | Default value         |
-| -------- | -------------------------------------------------------- | ------- | --------------------- |
-| useText  | Enable text key/value store for registry db.             | boolean | false                 |
-| fileName | Registry filename. Ignored if registry.useText is false. | string  | "chain-registry.json" |
+| Name               | Description                                             | Type   | Default value |
+| ------------------ | ------------------------------------------------------- | ------ | ------------- |
+| identityPrivateKey | Private key used to derive the node identity (optional) | string | ""            |
+| [db](#p2p_db)      | Configuration for Database                              | object |               |
+
+### <a id="p2p_db"></a> Database
+
+| Name | Description                  | Type   | Default value     |
+| ---- | ---------------------------- | ------ | ----------------- |
+| path | The path to the p2p database | string | "waspdb/p2pstore" |
+
+Example:
+
+```json
+  {
+    "p2p": {
+      "identityPrivateKey": "",
+      "db": {
+        "path": "waspdb/p2pstore"
+      }
+    }
+  }
+```
+
+## <a id="registry"></a> 6. Registry
+
+| Name                                   | Description                    | Type   | Default value |
+| -------------------------------------- | ------------------------------ | ------ | ------------- |
+| [chains](#registry_chains)             | Configuration for chains       | object |               |
+| [dkShares](#registry_dkshares)         | Configuration for dkShares     | object |               |
+| [trustedPeers](#registry_trustedpeers) | Configuration for trustedPeers | object |               |
+
+### <a id="registry_chains"></a> Chains
+
+| Name     | Description                         | Type   | Default value                |
+| -------- | ----------------------------------- | ------ | ---------------------------- |
+| filePath | The path to the chain registry file | string | "waspdb/chain_registry.json" |
+
+### <a id="registry_dkshares"></a> DkShares
+
+| Name     | Description                                          | Type   | Default value          |
+| -------- | ---------------------------------------------------- | ------ | ---------------------- |
+| filePath | The path to the distributed key shares registry file | string | "waspdb/dkshares.json" |
+
+### <a id="registry_trustedpeers"></a> TrustedPeers
+
+| Name     | Description                                 | Type   | Default value               |
+| -------- | ------------------------------------------- | ------ | --------------------------- |
+| filePath | The path to the trusted peers registry file | string | "waspdb/trusted_peers.json" |
 
 Example:
 
 ```json
   {
     "registry": {
-      "useText": false,
-      "fileName": "chain-registry.json"
+      "chains": {
+        "filePath": "waspdb/chain_registry.json"
+      },
+      "dkShares": {
+        "filePath": "waspdb/dkshares.json"
+      },
+      "trustedPeers": {
+        "filePath": "waspdb/trusted_peers.json"
+      }
     }
   }
 ```
 
-## <a id="peering"></a> 6. Peering
+## <a id="peering"></a> 7. Peering
 
 | Name  | Description                                          | Type   | Default value    |
 | ----- | ---------------------------------------------------- | ------ | ---------------- |
@@ -175,7 +227,7 @@ Example:
   }
 ```
 
-## <a id="chains"></a> 7. Chains
+## <a id="chains"></a> 8. Chains
 
 | Name                             | Description                                                          | Type    | Default value |
 | -------------------------------- | -------------------------------------------------------------------- | ------- | ------------- |
@@ -197,7 +249,7 @@ Example:
   }
 ```
 
-## <a id="rawblocks"></a> 8. Raw Blocks
+## <a id="rawblocks"></a> 9. Raw Blocks
 
 | Name      | Description                              | Type    | Default value |
 | --------- | ---------------------------------------- | ------- | ------------- |
@@ -215,7 +267,7 @@ Example:
   }
 ```
 
-## <a id="profiling"></a> 9. Profiling
+## <a id="profiling"></a> 10. Profiling
 
 | Name        | Description                                       | Type    | Default value    |
 | ----------- | ------------------------------------------------- | ------- | ---------------- |
@@ -233,7 +285,7 @@ Example:
   }
 ```
 
-## <a id="wal"></a> 10. Write-Ahead Logging
+## <a id="wal"></a> 11. Write-Ahead Logging
 
 | Name      | Description                       | Type    | Default value |
 | --------- | --------------------------------- | ------- | ------------- |
@@ -251,7 +303,7 @@ Example:
   }
 ```
 
-## <a id="metrics"></a> 11. Metrics
+## <a id="metrics"></a> 12. Metrics
 
 | Name        | Description                             | Type    | Default value    |
 | ----------- | --------------------------------------- | ------- | ---------------- |
@@ -269,7 +321,7 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 12. Web API
+## <a id="webapi"></a> 13. Web API
 
 | Name                      | Description                                              | Type    | Default value    |
 | ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
@@ -333,7 +385,7 @@ Example:
   }
 ```
 
-## <a id="nanomsg"></a> 13. nanomsg
+## <a id="nanomsg"></a> 14. nanomsg
 
 | Name    | Description                              | Type    | Default value |
 | ------- | ---------------------------------------- | ------- | ------------- |
@@ -351,7 +403,7 @@ Example:
   }
 ```
 
-## <a id="dashboard"></a> 14. Dashboard
+## <a id="dashboard"></a> 15. Dashboard
 
 | Name                      | Description                                              | Type    | Default value    |
 | ------------------------- | -------------------------------------------------------- | ------- | ---------------- |

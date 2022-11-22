@@ -18,9 +18,8 @@ import (
 	"go.dedis.ch/kyber/v3/util/key"
 	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -254,7 +253,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 			return nil, err
 		}
 		p.dkgLock.Unlock()
-		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
+		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, iotago.EncodeHex(r.Response.SessionID))
 		ourResponses = append(ourResponses, r)
 	}
 	//
@@ -296,10 +295,10 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 		for _, r := range recvResponses[i].responses {
 			p.dkgLock.Lock()
 			var j *rabin_dkg.Justification
-			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, hexutil.Encode(r.Response.SessionID))
+			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, iotago.EncodeHex(r.Response.SessionID))
 			if j, err = p.dkgImpl[kst].ProcessResponse(r); err != nil {
 				p.dkgLock.Unlock()
-				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, hexutil.Encode(r.Response.SessionID))
+				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, iotago.EncodeHex(r.Response.SessionID))
 				return nil, err
 			}
 			p.dkgLock.Unlock()
@@ -638,7 +637,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering
 		return nil, errors.New("there is no dkShare to commit")
 	}
 	p.dkShare.SetPublicShares(doneMsg.edPubShares, doneMsg.blsPubShares) // Store public shares of all the other peers.
-	if err := p.node.registry.SaveDKShare(p.dkShare); err != nil {
+	if err := p.node.dkShareRegistryProvider.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil

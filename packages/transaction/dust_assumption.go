@@ -36,6 +36,14 @@ func StorageDepositAssumptionFromBytes(data []byte) (*StorageDepositAssumption, 
 	return ret, nil
 }
 
+func (d *StorageDepositAssumption) Clone() *StorageDepositAssumption {
+	return &StorageDepositAssumption{
+		AnchorOutput:      d.AnchorOutput,
+		NativeTokenOutput: d.NativeTokenOutput,
+		NFTOutput:         d.NFTOutput,
+	}
+}
+
 func (d *StorageDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).

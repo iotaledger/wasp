@@ -209,7 +209,7 @@ func (c *chainObj) getChainDKShare(addr iotago.Address) (tcrypto.DKShare, error)
 	// just in case check if I am among committee nodes
 	// should not happen
 	selfPubKey := c.netProvider.Self().PubKey()
-	cmtDKShare, err := c.dksProvider.LoadDKShare(addr)
+	cmtDKShare, err := c.dkShareRegistryProvider.LoadDKShare(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(dkShare tcrypto.DKShare) error
 	c.log.Debugf("createNewCommitteeAndConsensus: creating new consensus object for chainID=%+v, committee=%+v", c.chainID, cmt)
 	cmtN := int(cmt.Size())
 	cmtF := cmtN - int(dkShare.GetT())
-	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, cmt.Address(), c.consensusJournalRegistry, cmtN, cmtF, c.log)
+	consensusJournal, err := journal.LoadConsensusJournal(*c.chainID, cmt.Address(), c.consensusJournalRegistryProvider, cmtN, cmtF, c.log)
 	if err != nil {
 		return xerrors.Errorf("cannot load consensus journal: %w", err)
 	}

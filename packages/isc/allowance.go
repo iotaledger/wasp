@@ -37,15 +37,19 @@ func NewAllowanceFungibleTokens(ftokens *FungibleTokens) *Allowance {
 	}
 }
 
+// returns nil if nil pointer receiver is cloned
 func (a *Allowance) Clone() *Allowance {
 	if a == nil {
 		return nil
 	}
+
 	nfts := make([]iotago.NFTID, len(a.NFTs))
-	for i, nft := range a.NFTs {
-		id := nft
-		nfts[i] = id
+	for i := range a.NFTs {
+		nftID := iotago.NFTID{}
+		copy(nftID[:], a.NFTs[i][:])
+		nfts[i] = nftID
 	}
+
 	return &Allowance{
 		Assets: a.Assets.Clone(),
 		NFTs:   nfts,

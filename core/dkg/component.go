@@ -30,21 +30,22 @@ func provide(c *dig.Container) error {
 	type nodeDeps struct {
 		dig.In
 
-		DefaultRegistry        registry.Registry
-		DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
+		NodeIdentityProvider    registry.NodeIdentityProvider
+		DKShareRegistryProvider registry.DKShareRegistryProvider
+		NetworkProvider         peering.NetworkProvider `name:"networkProvider"`
 	}
 
 	type nodeResult struct {
 		dig.Out
 
-		DefaultNode *dkg.Node `name:"defaultNode"`
+		Node *dkg.Node
 	}
 
 	if err := c.Provide(func(deps nodeDeps) nodeResult {
-		defaultNode, err := dkg.NewNode(
-			deps.DefaultRegistry.GetNodeIdentity(),
-			deps.DefaultNetworkProvider,
-			deps.DefaultRegistry,
+		node, err := dkg.NewNode(
+			deps.NodeIdentityProvider.NodeIdentity(),
+			deps.NetworkProvider,
+			deps.DKShareRegistryProvider,
 			CoreComponent.Logger().Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
 		)
 		if err != nil {
@@ -52,7 +53,7 @@ func provide(c *dig.Container) error {
 		}
 
 		return nodeResult{
-			DefaultNode: defaultNode,
+			Node: node,
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)

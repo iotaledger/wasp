@@ -5,6 +5,7 @@ package node_test
 
 import (
 	"bytes"
+	"crypto/ed25519"
 	"fmt"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/crypto/bls"
+	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	dss_node "github.com/iotaledger/wasp/packages/chain/dss/node"
@@ -31,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const ( // HT = High Threshold, LT = Low Threshold.
@@ -82,7 +85,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 			n.Close()
 		}
 	}()
-	dkShares := longTermDKG(dkgType, t, peerIdentities, f, log)
+	dkShares := longTermDKG(t, dkgType, peerIdentities, f, log)
 	//
 	//	Start the DSS instances.
 	key := hashing.HashData([]byte{1, 2, 3}).String()
@@ -123,14 +126,14 @@ func testGeneric(t *testing.T, n, f int, reliable bool, dkgType byte) {
 	}
 }
 
-func longTermDKG(dkgType byte, t *testing.T, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
+func longTermDKG(t *testing.T, dkgType byte, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
 	switch dkgType {
 	case dkgTypePregeneratedHT:
 		return longTermDKGPregeneratedHT(t, peerIdentities, f)
 	case dkgTypeRobustLT:
 		return longTermDKGRobustLT(t, peerIdentities, f, log)
 	case dkgTypeTrivialHT:
-		return longTermDKGTrivialHT(peerIdentities, f)
+		return longTermDKGTrivialHT(t, peerIdentities, f)
 	}
 	panic("unknown dkg type")
 }
@@ -149,13 +152,15 @@ func longTermDKGPregeneratedHT(t *testing.T, peerIdentities []*cryptolib.KeyPair
 
 func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int, log *logger.Logger) []tcrypto.DKShare {
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
-	nodeIDs := make([]gpa.NodeID, len(peerIdentities))
-	nodePKs := map[gpa.NodeID]kyber.Point{}
-	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
+
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
 	for i := range peerPubKeys {
 		peerPubKeys[i] = peerIdentities[i].GetPublicKey()
 	}
+
+	nodeIDs := make([]gpa.NodeID, len(peerIdentities))
+	nodePKs := map[gpa.NodeID]kyber.Point{}
+	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
 	for i := range nodeIDs {
 		kyberEdDSSA := eddsa.EdDSA{}
 		nodeIDs[i] = gpa.NodeID(peerIdentities[i].GetPublicKey().String())
@@ -163,33 +168,59 @@ func longTermDKGRobustLT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f in
 		nodePKs[nodeIDs[i]] = kyberEdDSSA.Public
 		nodeSKs[nodeIDs[i]] = kyberEdDSSA.Secret
 	}
+
 	longTermPK, longTermSecretShares := adkg.MakeTestDistributedKey(t, tcrypto.DefaultEd25519Suite(), nodeIDs, nodeSKs, nodePKs, f, log)
+
+	publicKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	sharedAddress := iotago.Ed25519AddressFromPubKey(publicKey)
+
 	for i := range dkShares {
-		dkShares[i] = &fakeDKShare{nodePubKeys: peerPubKeys, index: uint16(i), dssSecretShare: longTermSecretShares[nodeIDs[i]], dssSharedPublic: longTermPK}
+		dkShares[i] = &fakeDKShare{
+			id:              util.NewComparableAddress(&sharedAddress),
+			nodePubKeys:     peerPubKeys,
+			index:           uint16(i),
+			dssSecretShare:  longTermSecretShares[nodeIDs[i]],
+			dssSharedPublic: longTermPK,
+		}
 	}
 	return dkShares
 }
 
-func longTermDKGTrivialHT(peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
+func longTermDKGTrivialHT(t *testing.T, peerIdentities []*cryptolib.KeyPair, f int) []tcrypto.DKShare {
 	n := len(peerIdentities)
 	dkShares := make([]tcrypto.DKShare, len(peerIdentities))
+
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
 	for i := range peerPubKeys {
 		peerPubKeys[i] = peerIdentities[i].GetPublicKey()
 	}
+
 	suite := tcrypto.DefaultEd25519Suite()
 	priPoly := share.NewPriPoly(suite, n-f, nil, suite.RandomStream())
 	priShares := priPoly.Shares(len(peerIdentities))
 	_, commits := priPoly.Commit(suite.Point().Base()).Info()
 	pubKey := commits[0]
+
+	publicKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	sharedAddress := iotago.Ed25519AddressFromPubKey(publicKey)
+
 	for i := range dkShares {
 		secretShare := &fakeSecretShare{priShares[i], commits}
-		dkShares[i] = &fakeDKShare{nodePubKeys: peerPubKeys, index: uint16(i), dssSecretShare: secretShare, dssSharedPublic: pubKey}
+		dkShares[i] = &fakeDKShare{
+			id:              util.NewComparableAddress(&sharedAddress),
+			nodePubKeys:     peerPubKeys,
+			index:           uint16(i),
+			dssSecretShare:  secretShare,
+			dssSharedPublic: pubKey,
+		}
 	}
 	return dkShares
 }
 
 type fakeDKShare struct {
+	id              *util.ComparableAddress
 	nodePubKeys     []*cryptolib.PublicKey
 	index           uint16
 	dssSecretShare  tcrypto.SecretShare
@@ -197,6 +228,14 @@ type fakeDKShare struct {
 }
 
 var _ tcrypto.DKShare = &fakeDKShare{}
+
+func (f *fakeDKShare) ID() *util.ComparableAddress {
+	return f.id
+}
+
+func (f *fakeDKShare) Clone() onchangemap.Item[string, *util.ComparableAddress] {
+	panic("not important")
+}
 
 func (f *fakeDKShare) Bytes() []byte {
 	panic(xerrors.New("not important"))
@@ -302,6 +341,14 @@ func (f *fakeDKShare) AssignCommonData(dks tcrypto.DKShare) {
 }
 
 func (f *fakeDKShare) ClearCommonData() {
+	panic(xerrors.New("not important"))
+}
+
+func (f *fakeDKShare) MarshalJSON() ([]byte, error) {
+	panic(xerrors.New("not important"))
+}
+
+func (f *fakeDKShare) UnmarshalJSON(bytes []byte) error {
 	panic(xerrors.New("not important"))
 }
 

@@ -55,7 +55,7 @@ type chainObj struct {
 	nodeConn                           chain.NodeConnection
 	db                                 kvstore.KVStore
 	netProvider                        peering.NetworkProvider
-	dksProvider                        registry.DKShareRegistryProvider
+	dkShareRegistryProvider            registry.DKShareRegistryProvider
 	eventRequestProcessed              *events.Event
 	eventChainTransition               *events.Event
 	eventChainTransitionClosure        *events.Closure
@@ -76,7 +76,7 @@ type chainObj struct {
 	missingRequestIDsPeerMsgPipe       pipe.Pipe
 	missingRequestPeerMsgPipe          pipe.Pipe
 	timerTickMsgPipe                   pipe.Pipe
-	consensusJournalRegistry           journal.Registry
+	consensusJournalRegistryProvider   journal.Provider
 	wal                                chain.WAL
 }
 
@@ -91,14 +91,14 @@ func NewChain(
 	nc chain.NodeConnection,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider registry.DKShareRegistryProvider,
-	nidProvider registry.NodeIdentityProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	chainMetrics metrics.ChainMetrics,
-	consensusJournalRegistry journal.Registry,
+	consensusJournalRegistryProvider journal.Provider,
 	wal chain.WAL,
 	rawBlocksEnabled bool,
 	rawBlocksDir string,
@@ -106,7 +106,7 @@ func NewChain(
 	var err error
 	log.Debugf("creating chain object for %s", chainID.String())
 
-	nodeIdentity := nidProvider.GetNodeIdentity()
+	nodeIdentity := nodeIdentityProvider.NodeIdentity()
 
 	var peeringID peering.PeeringID
 	copy(peeringID[:], chainID.Bytes())
@@ -114,15 +114,15 @@ func NewChain(
 	chainLog := log.Named("c-" + chainID.AsAddress().String()[2:8])
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:        mempool_pkg.New(chainID.AsAddress(), state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
-		procset:        processors.MustNew(processorConfig),
-		chainID:        chainID,
-		log:            chainLog,
-		db:             db,
-		chainStateSync: chainStateSync,
-		stateReader:    state.NewOptimisticStateReader(db, chainStateSync),
-		netProvider:    netProvider,
-		dksProvider:    dksProvider,
+		mempool:                 mempool_pkg.New(chainID.AsAddress(), state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
+		procset:                 processors.MustNew(processorConfig),
+		chainID:                 chainID,
+		log:                     chainLog,
+		db:                      db,
+		chainStateSync:          chainStateSync,
+		stateReader:             state.NewOptimisticStateReader(db, chainStateSync),
+		netProvider:             netProvider,
+		dkShareRegistryProvider: dkShareRegistryProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ isc.RequestID))(params[0].(isc.RequestID))
 		}),
@@ -141,7 +141,7 @@ func NewChain(
 		missingRequestIDsPeerMsgPipe:     pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		missingRequestPeerMsgPipe:        pipe.NewLimitInfinitePipe(maxMsgBuffer),
 		timerTickMsgPipe:                 pipe.NewLimitInfinitePipe(1),
-		consensusJournalRegistry:         consensusJournalRegistry,
+		consensusJournalRegistryProvider: consensusJournalRegistryProvider,
 		wal:                              wal,
 		dssNode:                          dss_node_pkg.New(&peeringID, netProvider, nodeIdentity, log),
 		nodeConn:                         nc,

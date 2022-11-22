@@ -80,7 +80,7 @@ func (w *waspServicesMock) MyNetworkID() string {
 	return "127.0.0.1:4000"
 }
 
-func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
+func (w *waspServicesMock) ChainRecords() ([]*registry.ChainRecord, error) {
 	var ret []*registry.ChainRecord
 	for _, ch := range w.chains {
 		chr, err := w.GetChainRecord(ch.ChainID)
@@ -93,10 +93,7 @@ func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 }
 
 func (w *waspServicesMock) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	return &registry.ChainRecord{
-		ChainID: *chainID,
-		Active:  true,
-	}, nil
+	return registry.NewChainRecord(*chainID, true), nil
 }
 
 func (w *waspServicesMock) CallView(chainID *isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {

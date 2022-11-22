@@ -5,8 +5,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/iotaledger/hive.go/core/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -46,12 +44,12 @@ func (u utilImpl) BLS() isc.BLS {
 
 func (u utilImpl) Decode(s string) ([]byte, error) {
 	u.gas.Burn(gas.BurnCodeUtilsHexDecode)
-	return hexutil.Decode(s)
+	return iotago.DecodeHex(s)
 }
 
 func (u utilImpl) Encode(data []byte) string {
 	u.gas.Burn(gas.BurnCodeUtilsHexEncode)
-	return hexutil.Encode(data)
+	return iotago.EncodeHex(data)
 }
 
 // --- isc.Hashing interface

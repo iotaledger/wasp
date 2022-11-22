@@ -6,10 +6,10 @@ package admapi
 import (
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -71,7 +71,7 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 func handlePeeringSelfGet(c echo.Context) error {
 	network := c.Get("net").(peering.NetworkProvider)
 	resp := model.PeeringTrustedNode{
-		PubKey: hexutil.Encode(network.Self().PubKey().AsBytes()),
+		PubKey: iotago.EncodeHex(network.Self().PubKey().AsBytes()),
 		NetID:  network.Self().NetID(),
 	}
 	return c.JSON(http.StatusOK, resp)
@@ -85,7 +85,7 @@ func handlePeeringGetStatus(c echo.Context) error {
 
 	for k, v := range peeringStatus {
 		peers[k] = model.PeeringNodeStatus{
-			PubKey:   hexutil.Encode(v.PubKey().AsBytes()),
+			PubKey:   iotago.EncodeHex(v.PubKey().AsBytes()),
 			NetID:    v.NetID(),
 			IsAlive:  v.IsAlive(),
 			NumUsers: v.NumUsers(),
@@ -164,7 +164,7 @@ func handlePeeringTrustedGet(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	for _, tp := range tps {
-		if tp.PubKey.Equals(pubKey) {
+		if tp.PubKey().Equals(pubKey) {
 			return c.JSON(http.StatusOK, model.NewPeeringTrustedNode(tp))
 		}
 	}

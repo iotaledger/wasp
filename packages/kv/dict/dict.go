@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/marshalutil"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 )
@@ -55,7 +55,7 @@ func New() Dict {
 func (d Dict) Clone() Dict {
 	clone := make(Dict)
 	d.ForEach(func(key kv.Key, value []byte) bool {
-		clone.Set(key, value)
+		clone.Set(key, lo.CopySlice(value))
 		return true
 	})
 	return clone
@@ -79,10 +79,9 @@ func (d Dict) String() string {
 			val = val[:80]
 		}
 		ret += fmt.Sprintf(
-			"           0x%s: 0x%s (hex: %s) ('%s': '%s')\n",
-			slice(hexutil.Encode([]byte(key))),
-			slice(hexutil.Encode(val)),
-			slice(hexutil.Encode(val)),
+			"           %s: %s ('%s': '%s')\n",
+			slice(iotago.EncodeHex([]byte(key))),
+			slice(iotago.EncodeHex(val)),
 			printable([]byte(key)),
 			printable(val),
 		)
@@ -306,8 +305,8 @@ type Item struct {
 func (d Dict) JSONDict() JSONDict {
 	j := JSONDict{Items: make([]Item, len(d))}
 	for i, k := range d.KeysSorted() {
-		j.Items[i].Key = hexutil.Encode([]byte(k))
-		j.Items[i].Value = hexutil.Encode(d[k])
+		j.Items[i].Key = iotago.EncodeHex([]byte(k))
+		j.Items[i].Value = iotago.EncodeHex(d[k])
 	}
 	return j
 }
@@ -323,11 +322,11 @@ func (d *Dict) UnmarshalJSON(b []byte) error {
 	}
 	*d = make(Dict)
 	for _, item := range j.Items {
-		k, err := hexutil.Decode(item.Key)
+		k, err := iotago.DecodeHex(item.Key)
 		if err != nil {
 			return err
 		}
-		v, err := hexutil.Decode(item.Value)
+		v, err := iotago.DecodeHex(item.Value)
 		if err != nil {
 			return err
 		}

@@ -54,12 +54,13 @@ func provide(c *dig.Container) error {
 	type dashboardDeps struct {
 		dig.In
 
-		WebAPIBindAddress            string `name:"webAPIBindAddress"`
-		Chains                       *chains.Chains
-		DefaultRegistry              registry.Registry
-		DefaultNetworkProvider       peering.NetworkProvider       `name:"defaultNetworkProvider"`
-		DefaultTrustedNetworkManager peering.TrustedNetworkManager `name:"defaultTrustedNetworkManager"`
-		UserManager                  *users.UserManager
+		WebAPIBindAddress           string `name:"webAPIBindAddress"`
+		Chains                      *chains.Chains
+		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		NodeIdentityProvider        registry.NodeIdentityProvider
+		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		UserManager                 *users.UserManager
 	}
 
 	type dashboardResult struct {
@@ -85,9 +86,7 @@ func provide(c *dig.Container) error {
 		authentication.AddAuthentication(
 			e,
 			deps.UserManager,
-			func() registry.Registry {
-				return deps.DefaultRegistry
-			},
+			deps.NodeIdentityProvider,
 			ParamsDashboard.Auth,
 			claimValidator,
 		)
@@ -97,9 +96,9 @@ func provide(c *dig.Container) error {
 			ParamsDashboard.ExploreAddressURL,
 			Plugin.App().Config(),
 			deps.Chains,
-			deps.DefaultRegistry,
-			deps.DefaultNetworkProvider,
-			deps.DefaultTrustedNetworkManager,
+			deps.ChainRecordRegistryProvider,
+			deps.NetworkProvider,
+			deps.TrustedNetworkManager,
 		)
 
 		return dashboardResult{

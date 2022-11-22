@@ -117,7 +117,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -143,7 +143,7 @@ func TestTxBuilderBasic(t *testing.T) {
 		},
 			nil,
 			nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		txb.addDeltaBaseTokensToTotal(42)
 		require.EqualValues(t, int(initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput+42), int(txb.totalBaseTokensInL2Accounts))
@@ -153,7 +153,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
 			anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -179,7 +179,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -256,7 +256,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -293,7 +293,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -692,7 +692,7 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)

@@ -10,18 +10,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 //go:embed templates/base.tmpl
@@ -49,7 +48,7 @@ type WaspServicesInterface interface {
 	WebAPIPort() string
 	PeeringStats() (*PeeringStats, error)
 	MyNetworkID() string
-	GetChainRecords() ([]*registry.ChainRecord, error)
+	ChainRecords() ([]*registry.ChainRecord, error)
 	GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error)
 	GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error)
 	CallView(chainID *isc.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)

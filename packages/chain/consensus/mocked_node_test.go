@@ -98,10 +98,10 @@ func NewNode(env *MockedEnv, nodeIndex uint16, timers ConsensusTimers) *mockedNo
 	dss := dss_node.New(&peeringID, env.NetworkProviders[nodeIndex], ret.NodeKeyPair, log)
 	cmtN := int(cmt.Size())
 	cmtF := cmtN - int(cmt.Quorum())
-	registry, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), cmtN, cmtF, log)
+	consensusJournal, err := journal.LoadConsensusJournal(*env.ChainID, cmt.Address(), testchain.NewMockedConsensusJournalRegistry(), cmtN, cmtF, log)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, true, metrics.DefaultChainMetrics(), dss, registry, wal.NewDefault(), ret.NodeConn.PublishTransaction, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, cmtPeerGroup, true, metrics.DefaultChainMetrics(), dss, consensusJournal, wal.NewDefault(), ret.NodeConn.PublishTransaction, timers)
 	cons.(*consensus).vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 

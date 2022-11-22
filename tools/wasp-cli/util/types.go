@@ -7,8 +7,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -39,7 +37,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return codec.EncodeBool(b)
 	case "bytes", "hex":
-		b, err := hexutil.Decode(s)
+		b, err := iotago.DecodeHex(s)
 		log.Check(err)
 		return b
 	case "chainid":
@@ -129,7 +127,7 @@ func ValueToString(vtype string, v []byte) string {
 		}
 		return "false"
 	case "bytes", "hex":
-		return hexutil.Encode(v)
+		return iotago.EncodeHex(v)
 	case "chainid":
 		cid, err := codec.DecodeChainID(v)
 		log.Check(err)

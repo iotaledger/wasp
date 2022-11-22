@@ -23,10 +23,17 @@ type nativeTokenBalance struct {
 	out                   *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
-func (n *nativeTokenBalance) clone() *nativeTokenBalance {
+func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
+	tokenID := iotago.FoundryID{}
+	copy(tokenID[:], n.tokenID[:])
+
+	input := iotago.UTXOInput{}
+	copy(input.TransactionID[:], n.input.TransactionID[:])
+	input.TransactionOutputIndex = n.input.TransactionOutputIndex
+
 	return &nativeTokenBalance{
-		tokenID:               n.tokenID,
-		input:                 n.input,
+		tokenID:               tokenID,
+		input:                 input,
 		storageDepositCharged: n.storageDepositCharged,
 		in:                    cloneInternalBasicOutputOrNil(n.in),
 		out:                   cloneInternalBasicOutputOrNil(n.out),
@@ -200,7 +207,7 @@ func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeT
 	if b, ok := txb.balanceNativeTokens[*id]; ok {
 		return b
 	}
-	in, input := txb.loadTokenOutput(id) // output will be nil if no such token id accounted yet
+	in, input := txb.loadTokenOutputFunc(id) // output will be nil if no such token id accounted yet
 	if in != nil && txb.InputsAreFull() {
 		panic(vmexceptions.ErrInputLimitExceeded)
 	}

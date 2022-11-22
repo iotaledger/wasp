@@ -161,7 +161,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
-		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, "", registry.DefaultConfig()),
+		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, "", registry.NewChainRecordRegistry(nil)),
 		utxoDB:                          utxodb.New(utxoDBinitParams),
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),

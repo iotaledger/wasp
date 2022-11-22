@@ -7,6 +7,7 @@ package tcrypto
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 
 	"go.dedis.ch/kyber/v3"
@@ -20,6 +21,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/crypto/bls"
+	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -30,6 +32,16 @@ import (
 type secretShare struct {
 	priShare    *share.PriShare
 	commitments []kyber.Point
+}
+
+func (d *secretShare) Clone() SecretShare {
+	return &secretShare{
+		priShare: &share.PriShare{
+			I: d.priShare.I,
+			V: d.priShare.V.Clone(),
+		},
+		commitments: util.CloneSlice(d.commitments),
+	}
 }
 
 func (d *secretShare) PriShare() *share.PriShare {
@@ -43,7 +55,7 @@ func (d *secretShare) Commitments() []kyber.Point {
 // dkShareImpl stands for the information stored on
 // a node as a result of the DKG procedure.
 type dkShareImpl struct {
-	address     iotago.Address
+	address     *util.ComparableAddress
 	index       *uint16 // nil, if the current node is not a member of a group sharing the key.
 	n           uint16
 	t           uint16
@@ -51,14 +63,14 @@ type dkShareImpl struct {
 	nodePubKeys []*cryptolib.PublicKey
 	//
 	// Shares for the Schnorr signatures (for L1).
-	edSuite         suites.Suite // Transient, only needed for un-marshaling.
+	edSuite         suites.Suite // Used for unmarshaling and signing
 	edSharedPublic  kyber.Point
 	edPublicCommits []kyber.Point
 	edPublicShares  []kyber.Point
 	edPrivateShare  kyber.Scalar
 	//
 	// Shares for the randomness in the consensus et al.
-	blsSuite         Suite // Transient, only needed for un-marshaling.
+	blsSuite         Suite // Used for unmarshaling, signing and verification
 	blsSharedPublic  kyber.Point
 	blsPublicCommits []kyber.Point
 	blsPublicShares  []kyber.Point
@@ -95,7 +107,7 @@ func NewDKShare(
 	//
 	// Construct the DKShare.
 	dkShare := dkShareImpl{
-		address:          &sharedAddress,
+		address:          util.NewComparableAddress(&sharedAddress),
 		index:            &index,
 		n:                n,
 		t:                t,
@@ -115,6 +127,14 @@ func NewDKShare(
 	return &dkShare, nil
 }
 
+func NewEmptyDKShare(nodePrivKey *cryptolib.PrivateKey, edSuite suites.Suite, blsSuite Suite) DKShare {
+	return &dkShareImpl{
+		nodePrivKey: nodePrivKey,
+		edSuite:     edSuite,
+		blsSuite:    blsSuite,
+	}
+}
+
 // NewDKSharePublic creates a DKShare containing only the publicly accessible information.
 func NewDKSharePublic(
 	sharedAddress iotago.Address,
@@ -130,7 +150,7 @@ func NewDKSharePublic(
 	blsPublicShares []kyber.Point,
 ) DKShare {
 	s := dkShareImpl{
-		address:          sharedAddress,
+		address:          util.NewComparableAddress(sharedAddress),
 		index:            nil, // Not meaningful in this case.
 		n:                n,
 		t:                t,
@@ -148,6 +168,33 @@ func NewDKSharePublic(
 		blsPrivateShare:  nil, // Not meaningful in this case.
 	}
 	return &s
+}
+
+func (s *dkShareImpl) ID() *util.ComparableAddress {
+	return s.address
+}
+
+func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] {
+	index := *s.index
+
+	return &dkShareImpl{
+		address:          util.NewComparableAddress(s.GetAddress().Clone()),
+		index:            &index,
+		n:                s.n,
+		t:                s.t,
+		nodePrivKey:      s.nodePrivKey.Clone(),
+		nodePubKeys:      util.CloneSlice(s.nodePubKeys),
+		edSuite:          s.edSuite,
+		edSharedPublic:   s.edSharedPublic.Clone(),
+		edPublicCommits:  util.CloneSlice(s.edPublicCommits),
+		edPublicShares:   util.CloneSlice(s.edPublicShares),
+		edPrivateShare:   s.edPrivateShare.Clone(),
+		blsSuite:         s.blsSuite,
+		blsSharedPublic:  s.blsSharedPublic.Clone(),
+		blsPublicCommits: util.CloneSlice(s.blsPublicCommits),
+		blsPublicShares:  util.CloneSlice(s.blsPublicShares),
+		blsPrivateShare:  s.blsPrivateShare.Clone(),
+	}
 }
 
 // DKShareFromBytes reads DKShare from bytes.
@@ -177,8 +224,8 @@ func (s *dkShareImpl) Write(w io.Writer) error {
 	var err error
 	//
 	// Common attributes.
-	addressType := s.address.Type()
-	addressBytes, err := s.address.Serialize(serializer.DeSeriModeNoValidation, nil)
+	addressType := s.address.Address().Type()
+	addressBytes, err := s.address.Address().Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return xerrors.Errorf("cannot serialize an address: %w", err)
 	}
@@ -269,13 +316,16 @@ func (s *dkShareImpl) Read(r io.Reader) error {
 	if addressBytes, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	s.address, err = iotago.AddressSelector(uint32(addressTypeByte))
+
+	address, err := iotago.AddressSelector(uint32(addressTypeByte))
 	if err != nil {
 		return err
 	}
-	if _, err = s.address.Deserialize(addressBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
+	if _, err = address.Deserialize(addressBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
 		return err
 	}
+	s.address = util.NewComparableAddress(address)
+
 	var index uint16
 	if err := util.ReadUint16(r, &index); err != nil {
 		return err
@@ -398,7 +448,7 @@ func (s *dkShareImpl) readBLSAttrs(r io.Reader) error {
 }
 
 func (s *dkShareImpl) GetAddress() iotago.Address {
-	return s.address
+	return s.address.Address()
 }
 
 func (s *dkShareImpl) GetIndex() *uint16 {
@@ -519,9 +569,9 @@ func (s *dkShareImpl) DSSSecretShare() SecretShare {
 	return &secretShare{
 		priShare: &share.PriShare{
 			I: int(*s.index),
-			V: s.edPrivateShare,
+			V: s.edPrivateShare.Clone(),
 		},
-		commitments: s.edPublicCommits,
+		commitments: util.CloneSlice(s.edPublicCommits),
 	}
 }
 
@@ -630,4 +680,196 @@ func (s *dkShareImpl) ClearCommonData() {
 	s.blsPublicCommits = make([]kyber.Point, 0)
 	s.blsPublicShares = make([]kyber.Point, 0)
 	s.nodePubKeys = make([]*cryptolib.PublicKey, 0)
+}
+
+type jsonKeyShares struct {
+	SharedPublic  string   `json:"sharedPublic"`
+	PublicCommits []string `json:"publicCommits"`
+	PublicShares  []string `json:"publicShares"`
+	PrivateShare  string   `json:"privateShare"`
+}
+
+type jsonDKShares struct {
+	Address     *json.RawMessage `json:"address"`
+	Index       uint16           `json:"index"`
+	N           uint16           `json:"n"`
+	T           uint16           `json:"t"`
+	NodePubKeys []string         `json:"nodePubKeys"`
+	Ed25519     *jsonKeyShares   `json:"ed25519"`
+	BLS         *jsonKeyShares   `json:"bls"`
+}
+
+func DecodeHexKyperPoint(group kyber.Group, dataHex string) (kyber.Point, error) {
+	point := group.Point()
+	if err := util.DecodeHexBinaryMarshaled(dataHex, point); err != nil {
+		return nil, err
+	}
+
+	return point, nil
+}
+
+func DecodeHexKyperScalar(group kyber.Group, dataHex string) (kyber.Scalar, error) {
+	scalar := group.Scalar()
+	if err := util.DecodeHexBinaryMarshaled(dataHex, scalar); err != nil {
+		return nil, err
+	}
+
+	return scalar, nil
+}
+
+func DecodeHexKyperPoints(group kyber.Group, dataHex []string) ([]kyber.Point, error) {
+	results := make([]kyber.Point, len(dataHex))
+
+	for i, hex := range dataHex {
+		point, err := DecodeHexKyperPoint(group, hex)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = point
+	}
+
+	return results, nil
+}
+
+func (s *dkShareImpl) MarshalJSON() ([]byte, error) {
+	jAddressRaw, err := iotago.AddressToJSONRawMsg(s.address.Address())
+	if err != nil {
+		return nil, err
+	}
+
+	nodePubKeys := make([]string, 0)
+	for _, nodePubKey := range s.nodePubKeys {
+		nodePubKeys = append(nodePubKeys, cryptolib.PublicKeyToHex(nodePubKey))
+	}
+
+	ed25519SharedPublicHex, err := util.EncodeHexBinaryMarshaled(s.edSharedPublic)
+	if err != nil {
+		return nil, err
+	}
+
+	ed25519PublicCommitsHex, err := util.EncodeSliceHexBinaryMarshaled(s.edPublicCommits)
+	if err != nil {
+		return nil, err
+	}
+
+	ed25519PublicSharesHex, err := util.EncodeSliceHexBinaryMarshaled(s.edPublicShares)
+	if err != nil {
+		return nil, err
+	}
+
+	ed25519PrivateShareHex, err := util.EncodeHexBinaryMarshaled(s.edPrivateShare)
+	if err != nil {
+		return nil, err
+	}
+
+	blsSharedPublicHex, err := util.EncodeHexBinaryMarshaled(s.blsSharedPublic)
+	if err != nil {
+		return nil, err
+	}
+
+	blsPublicCommitsHex, err := util.EncodeSliceHexBinaryMarshaled(s.blsPublicCommits)
+	if err != nil {
+		return nil, err
+	}
+
+	blsPublicSharesHex, err := util.EncodeSliceHexBinaryMarshaled(s.blsPublicShares)
+	if err != nil {
+		return nil, err
+	}
+
+	blsPrivateShareHex, err := util.EncodeHexBinaryMarshaled(s.blsPrivateShare)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(&jsonDKShares{
+		Address:     jAddressRaw,
+		Index:       *s.index,
+		N:           s.n,
+		T:           s.t,
+		NodePubKeys: nodePubKeys,
+		Ed25519: &jsonKeyShares{
+			SharedPublic:  ed25519SharedPublicHex,
+			PublicCommits: ed25519PublicCommitsHex,
+			PublicShares:  ed25519PublicSharesHex,
+			PrivateShare:  ed25519PrivateShareHex,
+		},
+		BLS: &jsonKeyShares{
+			SharedPublic:  blsSharedPublicHex,
+			PublicCommits: blsPublicCommitsHex,
+			PublicShares:  blsPublicSharesHex,
+			PrivateShare:  blsPrivateShareHex,
+		},
+	})
+}
+
+// ATTENTION: edSuite and blsSuite need to be initialized already.
+// Use NewEmptyDKShare for init.
+func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
+	j := &jsonDKShares{}
+	if err := json.Unmarshal(bytes, j); err != nil {
+		return err
+	}
+
+	address, err := iotago.AddressFromJSONRawMsg(j.Address)
+	if err != nil {
+		return err
+	}
+	s.address = util.NewComparableAddress(address)
+
+	s.index = &j.Index
+	s.n = j.N
+	s.t = j.T
+
+	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
+	for i, nodePubKeyHex := range j.NodePubKeys {
+		nodePubKey, err := cryptolib.NewPublicKeyFromHex(nodePubKeyHex)
+		if err != nil {
+			return err
+		}
+
+		s.nodePubKeys[i] = nodePubKey
+	}
+
+	s.edSharedPublic, err = DecodeHexKyperPoint(s.edSuite, j.Ed25519.SharedPublic)
+	if err != nil {
+		return err
+	}
+
+	s.edPublicCommits, err = DecodeHexKyperPoints(s.edSuite, j.Ed25519.PublicCommits)
+	if err != nil {
+		return err
+	}
+
+	s.edPublicShares, err = DecodeHexKyperPoints(s.edSuite, j.Ed25519.PublicShares)
+	if err != nil {
+		return err
+	}
+
+	s.edPrivateShare, err = DecodeHexKyperScalar(s.edSuite, j.Ed25519.PrivateShare)
+	if err != nil {
+		return err
+	}
+
+	s.blsSharedPublic, err = DecodeHexKyperPoint(s.blsSuite.G2(), j.BLS.SharedPublic)
+	if err != nil {
+		return err
+	}
+
+	s.blsPublicCommits, err = DecodeHexKyperPoints(s.blsSuite.G2(), j.BLS.PublicCommits)
+	if err != nil {
+		return err
+	}
+
+	s.blsPublicShares, err = DecodeHexKyperPoints(s.blsSuite.G2(), j.BLS.PublicShares)
+	if err != nil {
+		return err
+	}
+
+	s.blsPrivateShare, err = DecodeHexKyperScalar(s.blsSuite.G2(), j.BLS.PrivateShare)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

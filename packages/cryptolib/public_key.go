@@ -3,7 +3,6 @@ package cryptolib
 import (
 	"crypto/ed25519"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -28,7 +27,7 @@ func NewEmptyPublicKey() *PublicKey {
 }
 
 func NewPublicKeyFromHexString(s string) (publicKey *PublicKey, err error) {
-	bytes, err := hexutil.Decode(s)
+	bytes, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
@@ -37,7 +36,7 @@ func NewPublicKeyFromHexString(s string) (publicKey *PublicKey, err error) {
 }
 
 func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
-	b, err := hexutil.Decode(s)
+	b, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
@@ -50,6 +49,30 @@ func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 		return nil, xerrors.Errorf("bytes too short")
 	}
 	return &PublicKey{publicKeyBytes}, nil
+}
+
+func PublicKeyToHex(pubKey *PublicKey) string {
+	return iotago.EncodeHex(pubKey.AsBytes())
+}
+
+func NewPublicKeyFromHex(pubKeyHex string) (*PublicKey, error) {
+	pubKeyData, err := iotago.DecodeHex(pubKeyHex)
+	if err != nil {
+		return nil, err
+	}
+
+	pubKey, err := NewPublicKeyFromBytes(pubKeyData)
+	if err != nil {
+		return nil, err
+	}
+
+	return pubKey, err
+}
+
+func (pkT *PublicKey) Clone() *PublicKey {
+	key := make([]byte, len(pkT.key))
+	copy(key, pkT.key)
+	return &PublicKey{key: key}
 }
 
 func (pkT *PublicKey) AsBytes() []byte {
@@ -84,5 +107,5 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 }
 
 func (pkT *PublicKey) String() string {
-	return hexutil.Encode(pkT.key)
+	return iotago.EncodeHex(pkT.key)
 }

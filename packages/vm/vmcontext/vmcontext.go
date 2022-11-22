@@ -155,7 +155,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		nativeTokenBalanceLoader,
 		foundryLoader,
 		nftLoader,
-		*ret.storageDepositAssumptions,
+		ret.storageDepositAssumptions,
 	)
 
 	return ret

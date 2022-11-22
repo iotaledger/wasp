@@ -22,13 +22,13 @@ import (
 )
 
 type WaspServices struct {
-	webAPIBindAddress     string
-	exploreAddressURL     string
-	config                *configuration.Configuration
-	chains                *chains.Chains
-	registry              registry.Registry
-	networkProvider       peering.NetworkProvider
-	trustedNetworkManager peering.TrustedNetworkManager
+	webAPIBindAddress           string
+	exploreAddressURL           string
+	config                      *configuration.Configuration
+	chains                      *chains.Chains
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	networkProvider             peering.NetworkProvider
+	trustedNetworkManager       peering.TrustedNetworkManager
 }
 
 func NewWaspServices(
@@ -36,18 +36,18 @@ func NewWaspServices(
 	exploreAddressURL string,
 	config *configuration.Configuration,
 	chains *chains.Chains,
-	registry registry.Registry,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 ) *WaspServices {
 	return &WaspServices{
-		webAPIBindAddress:     webAPIBindAddress,
-		exploreAddressURL:     exploreAddressURL,
-		config:                config,
-		chains:                chains,
-		registry:              registry,
-		networkProvider:       networkProvider,
-		trustedNetworkManager: trustedNetworkManager,
+		webAPIBindAddress:           webAPIBindAddress,
+		exploreAddressURL:           exploreAddressURL,
+		config:                      config,
+		chains:                      chains,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		networkProvider:             networkProvider,
+		trustedNetworkManager:       trustedNetworkManager,
 	}
 }
 
@@ -87,7 +87,7 @@ func (w *WaspServices) PeeringStats() (*PeeringStats, error) {
 	for i, t := range tpeers {
 		ret.TrustedPeers[i] = TrustedPeer{
 			NetID:  t.NetID,
-			PubKey: *t.PubKey,
+			PubKey: *t.PubKey(),
 		}
 	}
 	return ret, nil
@@ -97,12 +97,12 @@ func (w *WaspServices) MyNetworkID() string {
 	return w.networkProvider.Self().NetID()
 }
 
-func (w *WaspServices) GetChainRecords() ([]*registry.ChainRecord, error) {
-	return w.registry.GetChainRecords()
+func (w *WaspServices) ChainRecords() ([]*registry.ChainRecord, error) {
+	return w.chainRecordRegistryProvider.ChainRecords()
 }
 
 func (w *WaspServices) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	ch, err := w.registry.GetChainRecordByChainID(chainID)
+	ch, err := w.chainRecordRegistryProvider.ChainRecord(*chainID)
 	if err != nil {
 		return nil, err
 	}

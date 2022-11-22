@@ -19,13 +19,13 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeOwnerAddresses []string) {
+func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, nodeIdentityProvider registry.NodeIdentityProvider, nodeOwnerAddresses []string) {
 	nos := &nodeOwnerService{
 		nodeOwnerAddresses: nodeOwnerAddresses,
 	}
 	addCtx := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Set("reg", registryProvider)
+			c.Set("reg", nodeIdentityProvider)
 			return next(c)
 		}
 	}
@@ -47,7 +47,7 @@ type nodeOwnerService struct {
 }
 
 func (n *nodeOwnerService) handleAdmNodeOwnerCertificate(c echo.Context) error {
-	registryProvider := c.Get("reg").(registry.Provider)
+	nodeIdentityProvider := c.Get("reg").(registry.NodeIdentityProvider)
 
 	var req model.NodeOwnerCertificateRequest
 	if err := c.Bind(&req); err != nil {
@@ -56,7 +56,7 @@ func (n *nodeOwnerService) handleAdmNodeOwnerCertificate(c echo.Context) error {
 	reqOwnerAddress := req.OwnerAddress.Address()
 	reqNodePubKeyBytes := req.NodePubKey.Bytes()
 
-	nodeIdentity := registryProvider().GetNodeIdentity()
+	nodeIdentity := nodeIdentityProvider.NodeIdentity()
 
 	//
 	// Check, if supplied node PubKey matches.

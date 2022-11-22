@@ -4,8 +4,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -13,7 +12,7 @@ import (
 const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
-	ret, err := hexutil.Decode(s)
+	ret, err := iotago.DecodeHex(s)
 	if err != nil {
 		log.Fatalf("Invalid token id: %s", s)
 	}

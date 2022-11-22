@@ -29,9 +29,22 @@
     "inMemory": false,
     "directory": "waspdb"
   },
+  "p2p": {
+    "identityPrivateKey": "",
+    "db": {
+      "path": "waspdb/p2pstore"
+    }
+  },
   "registry": {
-    "useText": false,
-    "fileName": "chain-registry.json"
+    "chains": {
+      "filePath": "waspdb/chain_registry.json"
+    },
+    "dkShares": {
+      "filePath": "waspdb/dkshares.json"
+    },
+    "trustedPeers": {
+      "filePath": "waspdb/trusted_peers.json"
+    }
   },
   "peering": {
     "netID": "127.0.0.1:4000",

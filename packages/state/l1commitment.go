@@ -10,8 +10,6 @@ import (
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -49,7 +47,7 @@ func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 }
 
 func (bh BlockHash) String() string {
-	return hexutil.Encode(bh[:])
+	return iotago.EncodeHex(bh[:])
 }
 
 func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
@@ -97,7 +95,7 @@ func (s *L1Commitment) Read(r io.Reader) error {
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), hexutil.Encode(s.BlockHash[:]))
+	return fmt.Sprintf("L1Commitment(%s, %s)", s.StateCommitment.String(), iotago.EncodeHex(s.BlockHash[:]))
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {

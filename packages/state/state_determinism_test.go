@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -196,7 +196,7 @@ func readBlocks(t *testing.T, dir string) ([]Block, []trie.VCommitment, []hashin
 		require.NoError(t, err)
 		// expected all numbers from 1 to len()-1
 		require.True(t, n >= 1 && n <= len(retBlocks) && retBlocks[n-1] == nil)
-		vcbin, err := hexutil.Decode(part[1])
+		vcbin, err := iotago.DecodeHex(part[1])
 		require.NoError(t, err)
 		stateCommitment, err := VCommitmentFromBytes(vcbin)
 		require.NoError(t, err)

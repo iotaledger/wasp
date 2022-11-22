@@ -40,17 +40,19 @@ func (d *Dashboard) handleChainList(c echo.Context) error {
 }
 
 func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
-	crs, err := d.wasp.GetChainRecords()
+	crs, err := d.wasp.ChainRecords()
 	if err != nil {
 		return nil, err
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		chainInfo, err := d.fetchChainInfo(&cr.ChainID)
+		chainID := cr.ChainID()
+
+		chainInfo, err := d.fetchChainInfo(&chainID)
 		if err != nil {
 			return nil, err
 		}
-		cmtInfo, err := d.wasp.GetChainCommitteeInfo(&cr.ChainID)
+		cmtInfo, err := d.wasp.GetChainCommitteeInfo(&chainID)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +63,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 			cmtSize = len(cmtInfo.PeerStatus)
 		}
 		r[i] = &ChainOverview{
-			ChainID:       &cr.ChainID,
+			ChainID:       &chainID,
 			Active:        cr.Active,
 			ChainInfo:     chainInfo,
 			CommitteeSize: cmtSize,

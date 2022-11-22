@@ -19,6 +19,10 @@ func (s *RegistryKVStore) WithRealm(realm kvstore.Realm) (kvstore.KVStore, error
 	return s.store.WithRealm(realm)
 }
 
+func (s *RegistryKVStore) WithExtendedRealm(realm kvstore.Realm) (kvstore.KVStore, error) {
+	return s.store.WithExtendedRealm(realm)
+}
+
 func (s *RegistryKVStore) Realm() kvstore.Realm {
 	return s.store.Realm()
 }

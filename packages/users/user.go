@@ -4,6 +4,10 @@ import (
 	"encoding/hex"
 
 	"github.com/pkg/errors"
+
+	"github.com/iotaledger/hive.go/core/generics/lo"
+	"github.com/iotaledger/hive.go/core/generics/onchangemap"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type User struct {
@@ -45,8 +49,12 @@ func NewUser(username, passwordHashHex, passwordSaltHex string, permissions map[
 	}, nil
 }
 
+func (u *User) ID() util.ComparableString {
+	return util.ComparableString(u.Name)
+}
+
 // Clone returns a copy of a user.
-func (u *User) Clone() *User {
+func (u *User) Clone() onchangemap.Item[string, util.ComparableString] {
 	permissionsCopy := make(map[string]struct{}, len(u.Permissions))
 	for k := range u.Permissions {
 		permissionsCopy[k] = struct{}{}
@@ -54,8 +62,8 @@ func (u *User) Clone() *User {
 
 	return &User{
 		Name:         u.Name,
-		PasswordHash: u.PasswordHash,
-		PasswordSalt: u.PasswordSalt,
+		PasswordHash: lo.CopySlice(u.PasswordHash),
+		PasswordSalt: lo.CopySlice(u.PasswordSalt),
 		Permissions:  permissionsCopy,
 	}
 }

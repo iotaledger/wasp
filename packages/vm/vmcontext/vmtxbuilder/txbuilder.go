@@ -6,24 +6,23 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
 )
 
-// tokenOutputLoader externally supplied function which loads stored output from the state
+// tokenOutputLoaderFunc externally supplied function which loads stored output from the state
 // Should return nil if does not exist
-type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput)
+type tokenOutputLoaderFunc func(*iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput)
 
-// foundryLoader externally supplied function which returns foundry output and id by its serial number
+// foundryLoaderFunc externally supplied function which returns foundry output and id by its serial number
 // Should return nil if foundry does not exist
-type foundryLoader func(uint32) (*iotago.FoundryOutput, *iotago.UTXOInput)
+type foundryLoaderFunc func(uint32) (*iotago.FoundryOutput, *iotago.UTXOInput)
 
 // NFTOutputLoader externally supplied function which returns the stored NFT output from the state
 // Should return nil if NFT is not accounted for
@@ -41,11 +40,11 @@ type AnchorTransactionBuilder struct {
 	// base tokens which are on-chain. It does not include storage deposits on anchor and on internal outputs
 	totalBaseTokensInL2Accounts uint64
 	// minimum storage deposit assumption for internal outputs. It is used as constants. Assumed real storage deposit cost never grows
-	storageDepositAssumption transaction.StorageDepositAssumption
+	storageDepositAssumption *transaction.StorageDepositAssumption
 	// balance loader for native tokens
-	loadTokenOutput tokenOutputLoader
+	loadTokenOutputFunc tokenOutputLoaderFunc
 	// foundry loader
-	loadFoundry foundryLoader
+	loadFoundryFunc foundryLoaderFunc
 	// NFToutput loader
 	loadNFTOutput NFTOutputLoader
 	// balances of native tokens loaded during the batch run
@@ -62,10 +61,10 @@ type AnchorTransactionBuilder struct {
 func NewAnchorTransactionBuilder(
 	anchorOutput *iotago.AliasOutput,
 	anchorOutputID iotago.OutputID,
-	tokenBalanceLoader tokenOutputLoader,
-	foundryLoader foundryLoader,
+	tokenBalanceLoader tokenOutputLoaderFunc,
+	foundryLoader foundryLoaderFunc,
 	nftLoader NFTOutputLoader,
-	storageDepositAssumptions transaction.StorageDepositAssumption,
+	storageDepositAssumptions *transaction.StorageDepositAssumption,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < storageDepositAssumptions.AnchorOutput {
 		panic("internal inconsistency")
@@ -75,8 +74,8 @@ func NewAnchorTransactionBuilder(
 		anchorOutputID:              anchorOutputID,
 		totalBaseTokensInL2Accounts: anchorOutput.Amount - storageDepositAssumptions.AnchorOutput,
 		storageDepositAssumption:    storageDepositAssumptions,
-		loadTokenOutput:             tokenBalanceLoader,
-		loadFoundry:                 foundryLoader,
+		loadTokenOutputFunc:         tokenBalanceLoader,
+		loadFoundryFunc:             foundryLoader,
 		loadNFTOutput:               nftLoader,
 		consumed:                    make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
@@ -88,32 +87,22 @@ func NewAnchorTransactionBuilder(
 
 // Clone clones the AnchorTransactionBuilder object. Used to snapshot/recover
 func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
-	ret := &AnchorTransactionBuilder{
-		anchorOutput:                txb.anchorOutput,
-		anchorOutputID:              txb.anchorOutputID,
-		totalBaseTokensInL2Accounts: txb.totalBaseTokensInL2Accounts,
-		storageDepositAssumption:    txb.storageDepositAssumption,
-		loadTokenOutput:             txb.loadTokenOutput,
-		loadFoundry:                 txb.loadFoundry,
-		consumed:                    make([]isc.OnLedgerRequest, 0, cap(txb.consumed)),
-		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
-		postedOutputs:               make([]iotago.Output, 0, cap(txb.postedOutputs)),
-		invokedFoundries:            make(map[uint32]*foundryInvoked),
-		nftsIncluded:                make(map[iotago.NFTID]*nftIncluded),
-	}
+	anchorOutputID := iotago.OutputID{}
+	copy(anchorOutputID[:], txb.anchorOutputID[:])
 
-	ret.consumed = append(ret.consumed, txb.consumed...)
-	for k, v := range txb.balanceNativeTokens {
-		ret.balanceNativeTokens[k] = v.clone()
+	return &AnchorTransactionBuilder{
+		anchorOutput:                txb.anchorOutput.Clone().(*iotago.AliasOutput),
+		anchorOutputID:              anchorOutputID,
+		totalBaseTokensInL2Accounts: txb.totalBaseTokensInL2Accounts,
+		storageDepositAssumption:    txb.storageDepositAssumption.Clone(),
+		loadTokenOutputFunc:         txb.loadTokenOutputFunc,
+		loadFoundryFunc:             txb.loadFoundryFunc,
+		consumed:                    util.CloneSlice(txb.consumed),
+		balanceNativeTokens:         util.CloneMap(txb.balanceNativeTokens),
+		postedOutputs:               util.CloneSlice(txb.postedOutputs),
+		invokedFoundries:            util.CloneMap(txb.invokedFoundries),
+		nftsIncluded:                util.CloneMap(txb.nftsIncluded),
 	}
-	for k, v := range txb.invokedFoundries {
-		ret.invokedFoundries[k] = v.clone()
-	}
-	for k, v := range txb.nftsIncluded {
-		ret.nftsIncluded[k] = v.clone()
-	}
-	ret.postedOutputs = append(ret.postedOutputs, txb.postedOutputs...)
-	return ret
 }
 
 // TotalBaseTokensInL2Accounts returns number of on-chain base tokens.
@@ -390,11 +379,11 @@ func (txb *AnchorTransactionBuilder) subDeltaBaseTokensFromTotal(delta uint64) {
 }
 
 func stringUTXOInput(inp *iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", inp.TransactionOutputIndex, hexutil.Encode(inp.TransactionID[:]))
+	return fmt.Sprintf("[%d]%s", inp.TransactionOutputIndex, iotago.EncodeHex(inp.TransactionID[:]))
 }
 
 func stringNativeTokenID(id *iotago.NativeTokenID) string {
-	return hexutil.Encode(id[:])
+	return iotago.EncodeHex(id[:])
 }
 
 func (txb *AnchorTransactionBuilder) String() string {

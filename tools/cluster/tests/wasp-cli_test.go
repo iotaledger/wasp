@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -258,7 +258,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	for _, line := range out {
 		if strings.Contains(line, "foo") {
 			found = true
-			require.Contains(t, line, hexutil.Encode([]byte("bar")))
+			require.Contains(t, line, iotago.EncodeHex([]byte("bar")))
 			break
 		}
 	}

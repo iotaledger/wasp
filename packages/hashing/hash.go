@@ -7,10 +7,11 @@ import (
 	"io"
 	"math/rand"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 const HashSize = 32
@@ -28,7 +29,7 @@ func (h HashValue) String() string {
 }
 
 func (h HashValue) Hex() string {
-	return hexutil.Encode(h[:])
+	return iotago.EncodeHex(h[:])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {
@@ -59,7 +60,7 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 }
 
 func HashValueFromHex(s string) (HashValue, error) {
-	b, err := hexutil.Decode(s)
+	b, err := iotago.DecodeHex(s)
 	if err != nil {
 		return NilHash, err
 	}

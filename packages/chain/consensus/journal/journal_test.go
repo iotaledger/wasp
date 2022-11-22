@@ -21,8 +21,8 @@ func TestConsensusJournal(t *testing.T) {
 	chainID := *isc.RandomChainID()
 	committeeAddress := isc.RandomChainID().AsAddress()
 
-	registry := testchain.NewMockedConsensusJournalRegistry()
-	j, err := journal.LoadConsensusJournal(chainID, committeeAddress, registry, 1, 0, log)
+	consensusJournalRegistryProvider := testchain.NewMockedConsensusJournalRegistry()
+	j, err := journal.LoadConsensusJournal(chainID, committeeAddress, consensusJournalRegistryProvider, 1, 0, log)
 	require.NoError(t, err)
 	lv := j.GetLocalView()
 	require.NotNil(t, lv)
@@ -38,8 +38,8 @@ func TestConsensusJournalPeers(t *testing.T) {
 	chainID := *isc.RandomChainID()
 	committeeAddress := isc.RandomChainID().AsAddress()
 
-	registry := testchain.NewMockedConsensusJournalRegistry()
-	j, err := journal.LoadConsensusJournal(chainID, committeeAddress, registry, 4, 1, log)
+	consensusJournalRegistryProvider := testchain.NewMockedConsensusJournalRegistry()
+	j, err := journal.LoadConsensusJournal(chainID, committeeAddress, consensusJournalRegistryProvider, 4, 1, log)
 	require.NoError(t, err)
 	require.Equal(t, j.GetLogIndex(), journal.LogIndex(0))
 	require.False(t, j.PeerLogIndexReceived(1, 7))

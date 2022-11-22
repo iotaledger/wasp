@@ -106,7 +106,7 @@ func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
 		return f
 	}
 	// load foundry output from the state
-	foundryOutput, inp := txb.loadFoundry(sn)
+	foundryOutput, inp := txb.loadFoundryFunc(sn)
 	if foundryOutput == nil {
 		return nil
 	}
@@ -195,10 +195,16 @@ type foundryInvoked struct {
 	out          *iotago.FoundryOutput // nil if destroyed
 }
 
-func (f *foundryInvoked) clone() *foundryInvoked {
+func (f *foundryInvoked) Clone() *foundryInvoked {
+	input := iotago.UTXOInput{}
+	copy(input.TransactionID[:], f.input.TransactionID[:])
+	input.TransactionOutputIndex = f.input.TransactionOutputIndex
+
 	return &foundryInvoked{
-		in:  cloneFoundryOutput(f.in),
-		out: cloneFoundryOutput(f.out),
+		serialNumber: f.serialNumber,
+		input:        input,
+		in:           cloneFoundryOutput(f.in),
+		out:          cloneFoundryOutput(f.out),
 	}
 }
 

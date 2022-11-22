@@ -22,10 +22,20 @@ type nftIncluded struct {
 // - NFT comes in and goes out in the same block
 // all cases need 1 input and 1 output, but in the last case we don't need to keep the "accounting" for the NFT
 
-func (n *nftIncluded) clone() *nftIncluded {
+func (n *nftIncluded) Clone() *nftIncluded {
+	nftID := iotago.NFTID{}
+	copy(nftID[:], n.ID[:])
+
+	var input *iotago.UTXOInput
+	if n.input != nil {
+		input = &iotago.UTXOInput{}
+		copy(input.TransactionID[:], n.input.TransactionID[:])
+		input.TransactionOutputIndex = n.input.TransactionOutputIndex
+	}
+
 	return &nftIncluded{
-		ID:    n.ID,
-		input: n.input,
+		ID:    nftID,
+		input: input,
 		in:    cloneInternalNFTOutputOrNil(n.in),
 		out:   cloneInternalNFTOutputOrNil(n.out),
 	}

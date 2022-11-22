@@ -15,8 +15,6 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
@@ -32,7 +30,7 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 }
 
 func (pid *PeeringID) String() string {
-	return hexutil.Encode(pid[:])
+	return iotago.EncodeHex(pid[:])
 }
 
 func (pid *PeeringID) Read(r io.Reader) error {

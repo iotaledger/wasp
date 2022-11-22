@@ -184,7 +184,7 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 }
 
 func (n *netImpl) lppTrustedPeerID(trustedPeer *peering.TrustedPeer) (libp2ppeer.ID, crypto.PubKey, error) {
-	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey.AsBytes())
+	lppPeerPub, err := crypto.UnmarshalEd25519PublicKey(trustedPeer.PubKey().AsBytes())
 	if err != nil {
 		return "", nil, xerrors.Errorf("failed to convert pub key: %w", err)
 	}
@@ -276,7 +276,7 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 		p.trust(true)                 // It might be distrusted previously.
 		p.setNetID(trustedPeer.NetID) // It might be changed.
 	} else {
-		p = newPeer(trustedPeer.NetID, trustedPeer.PubKey, lppPeerID, n)
+		p = newPeer(trustedPeer.NetID, trustedPeer.PubKey(), lppPeerID, n)
 		n.peers[lppPeerID] = p
 	}
 	return nil

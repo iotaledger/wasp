@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -157,13 +158,17 @@ func (ms *Mutations) ApplyTo(w kv.KVWriter) {
 
 func (ms *Mutations) Clone() *Mutations {
 	clone := NewMutations()
+
 	for k, v := range ms.Sets {
-		clone.Set(k, v)
+		clone.Set(k, lo.CopySlice(v))
 	}
+
 	for k := range ms.Dels {
 		clone.Del(k)
 	}
+
 	clone.modified = ms.modified
+
 	return clone
 }
 

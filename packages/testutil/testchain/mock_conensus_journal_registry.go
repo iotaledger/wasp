@@ -13,9 +13,9 @@ type mockedConsensusJournalRegistryImpl struct {
 	lv map[journal.ID][]byte
 }
 
-var _ journal.Registry = &mockedConsensusJournalRegistryImpl{}
+var _ journal.Provider = &mockedConsensusJournalRegistryImpl{}
 
-func NewMockedConsensusJournalRegistry() journal.Registry {
+func NewMockedConsensusJournalRegistry() journal.Provider {
 	return &mockedConsensusJournalRegistryImpl{
 		li: map[journal.ID]journal.LogIndex{},
 		lv: map[journal.ID][]byte{},

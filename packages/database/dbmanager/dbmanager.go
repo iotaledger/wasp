@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/timeutil"
-	"github.com/iotaledger/wasp/packages/database/registrykvstore"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 )
@@ -18,17 +17,15 @@ import (
 type ChainKVStoreProvider func(chainID *isc.ChainID) kvstore.KVStore
 
 type DBManager struct {
-	log           *logger.Logger
-	registryDB    DB
-	registryStore kvstore.KVStore
-	databases     map[isc.ChainID]DB
-	stores        map[isc.ChainID]kvstore.KVStore
-	mutex         sync.RWMutex
-	inMemory      bool
-	databaseDir   string
+	log         *logger.Logger
+	databases   map[isc.ChainID]DB
+	stores      map[isc.ChainID]kvstore.KVStore
+	mutex       sync.RWMutex
+	inMemory    bool
+	databaseDir string
 }
 
-func NewDBManager(log *logger.Logger, inMemory bool, databaseDir string, registryConfig *registry.Config) *DBManager {
+func NewDBManager(log *logger.Logger, inMemory bool, databaseDir string, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) *DBManager {
 	dbm := DBManager{
 		log:         log,
 		databases:   make(map[isc.ChainID]DB),
@@ -37,17 +34,13 @@ func NewDBManager(log *logger.Logger, inMemory bool, databaseDir string, registr
 		inMemory:    inMemory,
 		databaseDir: databaseDir,
 	}
-	// registry db is created with an empty chainID
-	dbm.registryDB = dbm.createDB(nil)
-	dbm.registryStore = registrykvstore.New(dbm.registryDB.NewStore())
+
+	// TODO: check all active chain databases via chainRecordRegistryProvider
 	return &dbm
 }
 
 func getChainString(chainID *isc.ChainID) string {
-	if chainID != nil {
-		return chainID.String()
-	}
-	return "CHAIN_REGISTRY"
+	return chainID.String()
 }
 
 func (m *DBManager) createDB(chainID *isc.ChainID) DB {
@@ -88,10 +81,6 @@ func (m *DBManager) createDB(chainID *isc.ChainID) DB {
 	return db
 }
 
-func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
-	return m.registryStore
-}
-
 func (m *DBManager) GetOrCreateKVStore(chainID *isc.ChainID) kvstore.KVStore {
 	store := m.GetKVStore(chainID)
 	if store != nil {
@@ -111,14 +100,12 @@ func (m *DBManager) GetKVStore(chainID *isc.ChainID) kvstore.KVStore {
 }
 
 func (m *DBManager) Close() {
-	func() { _ = m.registryDB.Close() }() // please linter
 	for _, instance := range m.databases {
 		func() { _ = instance.Close() }()
 	}
 }
 
 func (m *DBManager) RunGC(_ context.Context) {
-	m.gc(m.registryDB)
 	for _, db := range m.databases {
 		m.gc(db)
 	}

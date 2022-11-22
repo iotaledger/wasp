@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -86,22 +87,29 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[isc.ChainID]chain.Chain)
 }
 
-func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
-	chainRecords, err := registryProvider().GetChainRecords()
+func (c *Chains) ActivateAllFromRegistry(
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	consensusJournalRegistryProvider journal.Provider,
+	allMetrics *metrics.Metrics,
+	w *wal.WAL,
+) error {
+	chainRecords, err := chainRecordRegistryProvider.ChainRecords()
 	if err != nil {
 		return err
 	}
 
 	astr := make([]string, len(chainRecords))
 	for i := range astr {
-		astr[i] = chainRecords[i].ChainID.String()[:10] + ".."
+		astr[i] = chainRecords[i].ChainID().String()[:10] + ".."
 	}
 	c.log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
 
 	for _, chr := range chainRecords {
 		if chr.Active {
-			if err := c.Activate(chr, registryProvider, allMetrics, w); err != nil {
-				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
+			if err := c.Activate(chr, dkShareRegistryProvider, nodeIdentityProvider, consensusJournalRegistryProvider, allMetrics, w); err != nil {
+				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID(), err)
 			}
 		}
 	}
@@ -112,41 +120,50 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, all
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in the L1 node
-func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
+func (c *Chains) Activate(
+	chr *registry.ChainRecord,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	consensusJournalRegistryProvider journal.Provider,
+	allMetrics *metrics.Metrics,
+	w *wal.WAL,
+) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
 	if !chr.Active {
 		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
-	ret, ok := c.allChains[chr.ChainID]
+
+	chainID := chr.ChainID()
+	ret, ok := c.allChains[chainID]
 	if ok && !ret.IsDismissed() {
-		c.log.Debugf("chain is already active: %s", chr.ChainID.String())
+		c.log.Debugf("chain is already active: %s", chainID.String())
 		return nil
 	}
+
 	// create new chain object
-	defaultRegistry := registryProvider()
-	chainKVStore := c.getOrCreateKVStore(&chr.ChainID)
-	chainMetrics := allMetrics.NewChainMetrics(&chr.ChainID)
-	chainWAL, err := w.NewChainWAL(&chr.ChainID)
+	chainKVStore := c.getOrCreateKVStore(&chainID)
+	chainMetrics := allMetrics.NewChainMetrics(&chainID)
+	chainWAL, err := w.NewChainWAL(&chainID)
 	if err != nil {
 		c.log.Debugf("Error creating wal object: %v", err)
 		chainWAL = wal.NewDefault()
 	}
 	newChain := chainimpl.NewChain(
-		&chr.ChainID,
+		&chainID,
 		c.log,
 		c.nodeConnection,
 		chainKVStore,
 		c.networkProvider,
-		defaultRegistry,
-		defaultRegistry,
+		dkShareRegistryProvider,
+		nodeIdentityProvider,
 		c.processorConfig,
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
 		chainMetrics,
-		defaultRegistry,
+		consensusJournalRegistryProvider,
 		chainWAL,
 		c.rawBlocksEnabled,
 		c.rawBlocksDir,
@@ -154,8 +171,8 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")
 	}
-	c.allChains[chr.ChainID] = newChain
-	c.log.Infof("activated chain: %s", chr.ChainID.String())
+	c.allChains[chainID] = newChain
+	c.log.Infof("activated chain: %s", chainID.String())
 	return nil
 }
 
@@ -164,14 +181,15 @@ func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	ch, ok := c.allChains[chr.ChainID]
+	chainID := chr.ChainID()
+	ch, ok := c.allChains[chainID]
 	if !ok || ch.IsDismissed() {
-		c.log.Debugf("chain is not active: %s", chr.ChainID.String())
+		c.log.Debugf("chain is not active: %s", chainID.String())
 		return nil
 	}
 	ch.Dismiss("deactivate")
-	c.nodeConnection.UnregisterChain(&chr.ChainID)
-	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
+	c.nodeConnection.UnregisterChain(&chainID)
+	c.log.Debugf("chain has been deactivated: %s", chainID.String())
 	return nil
 }
 

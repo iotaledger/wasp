@@ -63,6 +63,7 @@ type OffLedgerRequest interface {
 
 type OnLedgerRequest interface {
 	Request
+	Clone() OnLedgerRequest
 	Output() iotago.Output
 	IsInternalUTXO(*ChainID) bool
 	UTXOInput() iotago.UTXOInput

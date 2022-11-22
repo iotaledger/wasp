@@ -25,9 +25,11 @@ var _ Block = &blockImpl{}
 
 // validates, enumerates and creates a block from array of state updates
 func newBlock(muts *buffered.Mutations) (Block, error) {
-	ret := &blockImpl{stateUpdate: &stateUpdateImpl{
-		mutations: muts.Clone(),
-	}}
+	ret := &blockImpl{
+		stateUpdate: &stateUpdateImpl{
+			mutations: muts.Clone(),
+		},
+	}
 	var err error
 	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
 		return nil, err

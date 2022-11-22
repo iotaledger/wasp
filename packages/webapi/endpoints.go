@@ -12,6 +12,7 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -35,8 +36,11 @@ func Init(
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
 	userManager *users.UserManager,
-	registryProvider registry.Provider,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
+	consensusJournalRegistryProvider journal.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
@@ -77,7 +81,10 @@ func Init(
 		network,
 		tnm,
 		userManager,
-		registryProvider,
+		chainRecordRegistryProvider,
+		dkShareRegistryProvider,
+		nodeIdentityProvider,
+		consensusJournalRegistryProvider,
 		chainsProvider,
 		nodeProvider,
 		shutdown,

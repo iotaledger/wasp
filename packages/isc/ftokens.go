@@ -113,10 +113,12 @@ func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 	return ret
 }
 
+// returns nil if nil pointer receiver is cloned
 func (a *FungibleTokens) Clone() *FungibleTokens {
 	if a == nil {
 		return nil
 	}
+
 	return &FungibleTokens{
 		BaseTokens: a.BaseTokens,
 		Tokens:     a.Tokens.Clone(),

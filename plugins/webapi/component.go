@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
+	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -75,17 +76,20 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
-		ShutdownHandler              *shutdown.ShutdownHandler
-		WAL                          *wal.WAL
-		APICacheTTL                  time.Duration `name:"apiCacheTTL"`
-		PublisherPort                int           `name:"publisherPort"`
-		Chains                       *chains.Chains
-		Metrics                      *metrics.Metrics `optional:"true"`
-		DefaultRegistry              registry.Registry
-		DefaultNetworkProvider       peering.NetworkProvider       `name:"defaultNetworkProvider"`
-		DefaultTrustedNetworkManager peering.TrustedNetworkManager `name:"defaultTrustedNetworkManager"`
-		DefaultNode                  *dkg.Node                     `name:"defaultNode"`
-		UserManager                  *users.UserManager
+		ShutdownHandler                  *shutdown.ShutdownHandler
+		WAL                              *wal.WAL
+		APICacheTTL                      time.Duration `name:"apiCacheTTL"`
+		PublisherPort                    int           `name:"publisherPort"`
+		Chains                           *chains.Chains
+		Metrics                          *metrics.Metrics `optional:"true"`
+		ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
+		DKShareRegistryProvider          registry.DKShareRegistryProvider
+		NodeIdentityProvider             registry.NodeIdentityProvider
+		ConsensusJournalRegistryProvider journal.Provider
+		NetworkProvider                  peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager            peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		Node                             *dkg.Node
+		UserManager                      *users.UserManager
 	}
 
 	type webapiServerResult struct {
@@ -117,17 +121,18 @@ func provide(c *dig.Container) error {
 		webapi.Init(
 			Plugin.App().NewLogger("WebAPI"),
 			echoSwagger,
-			deps.DefaultNetworkProvider,
-			deps.DefaultTrustedNetworkManager,
+			deps.NetworkProvider,
+			deps.TrustedNetworkManager,
 			deps.UserManager,
-			func() registry.Registry {
-				return deps.DefaultRegistry
-			},
+			deps.ChainRecordRegistryProvider,
+			deps.DKShareRegistryProvider,
+			deps.NodeIdentityProvider,
 			func() *chains.Chains {
 				return deps.Chains
 			},
+			deps.ConsensusJournalRegistryProvider,
 			func() *dkg.Node {
-				return deps.DefaultNode
+				return deps.Node
 			},
 			func() {
 				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)

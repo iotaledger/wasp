@@ -12,16 +12,14 @@ import (
 
 func TestNewDbManager(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	dbm := NewDBManager(log, true, "", registry.DefaultConfig())
-	require.NotNil(t, dbm.registryDB)
-	require.NotNil(t, dbm.registryStore)
+	dbm := NewDBManager(log, true, "", registry.NewChainRecordRegistry(nil))
 	require.Empty(t, dbm.databases)
 	require.Empty(t, dbm.stores)
 }
 
 func TestCreateDb(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	dbm := NewDBManager(log, true, "", registry.DefaultConfig())
+	dbm := NewDBManager(log, true, "", registry.NewChainRecordRegistry(nil))
 	chainID := isc.RandomChainID()
 	require.Nil(t, dbm.GetKVStore(chainID))
 	require.NotNil(t, dbm.GetOrCreateKVStore(chainID))

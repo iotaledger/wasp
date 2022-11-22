@@ -68,7 +68,7 @@ func provide(c *dig.Container) error {
 			}
 		}
 
-		userManager.StoreOnChange(true)
+		userManager.EnableStoreOnChange()
 
 		return userManagerResult{
 			UserManager: userManager,

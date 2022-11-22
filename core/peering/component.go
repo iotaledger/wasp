@@ -33,29 +33,30 @@ var (
 type dependencies struct {
 	dig.In
 
-	DefaultNetworkProvider peering.NetworkProvider `name:"defaultNetworkProvider"`
+	NetworkProvider peering.NetworkProvider `name:"networkProvider"`
 }
 
 func provide(c *dig.Container) error {
 	type networkDeps struct {
 		dig.In
 
-		DefaultRegistry registry.Registry
+		NodeIdentityProvider         registry.NodeIdentityProvider
+		TrustedPeersRegistryProvider registry.TrustedPeersRegistryProvider `name:"TrustedPeersRegistryProvider"`
 	}
 
 	type networkResult struct {
 		dig.Out
 
-		DefaultNetworkProvider       peering.NetworkProvider       `name:"defaultNetworkProvider"`
-		DefaultTrustedNetworkManager peering.TrustedNetworkManager `name:"defaultTrustedNetworkManager"`
+		NetworkProvider       peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager peering.TrustedNetworkManager `name:"trustedNetworkManager"`
 	}
 
 	if err := c.Provide(func(deps networkDeps) networkResult {
 		netImpl, tnmImpl, err := lpp.NewNetworkProvider(
 			ParamsPeering.NetID,
 			ParamsPeering.Port,
-			deps.DefaultRegistry.GetNodeIdentity(),
-			deps.DefaultRegistry,
+			deps.NodeIdentityProvider.NodeIdentity(),
+			deps.TrustedPeersRegistryProvider,
 			CoreComponent.Logger(),
 		)
 		if err != nil {
@@ -64,8 +65,8 @@ func provide(c *dig.Container) error {
 		CoreComponent.LogInfof("------------- NetID is %s ------------------", ParamsPeering.NetID)
 
 		return networkResult{
-			DefaultNetworkProvider:       netImpl,
-			DefaultTrustedNetworkManager: tnmImpl,
+			NetworkProvider:       netImpl,
+			TrustedNetworkManager: tnmImpl,
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
@@ -77,7 +78,7 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(
 		"WaspPeering",
-		deps.DefaultNetworkProvider.Run,
+		deps.NetworkProvider.Run,
 		parameters.PriorityPeering,
 	)
 	if err != nil {

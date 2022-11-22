@@ -34,9 +34,7 @@ func activateCmd() *cobra.Command {
 					continue
 				} else {
 					log.Check(
-						client.WaspClient.PutChainRecord(&registry.ChainRecord{
-							ChainID: *chainID,
-						}),
+						client.WaspClient.PutChainRecord(registry.NewChainRecord(*chainID, false)),
 					)
 				}
 				log.Check(client.WaspClient.ActivateChain(chainID))

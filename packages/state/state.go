@@ -91,7 +91,7 @@ func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
 		db:          vs.db,
-		kvs:         vs.kvs.Copy(),
+		kvs:         vs.kvs.Clone(),
 		trie:        vs.trie.Clone(),
 		onBlockSave: vs.onBlockSave,
 	}

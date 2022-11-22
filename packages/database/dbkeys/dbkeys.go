@@ -5,18 +5,18 @@ import (
 )
 
 const (
-	ObjectTypeDBSchemaVersion = byte(iota) + 'A'
-	ObjectTypeChainRecord
-	ObjectTypeCommitteeRecord
-	ObjectTypeDistributedKeyData
+	ObjectTypeDBSchemaVersion    = byte(iota) + 'A'
+	ObjectTypeChainRecord        // deprecated
+	ObjectTypeCommitteeRecord    // unused
+	ObjectTypeDistributedKeyData // unused
 	ObjectTypeState
 	ObjectTypeTrie
 	ObjectTypeBlock
-	ObjectTypeNodeIdentity
-	ObjectTypeBlobCache
-	ObjectTypeBlobCacheTTL
-	ObjectTypeTrustedPeer
-	ObjectTypeConsensusJournal
+	ObjectTypeNodeIdentity     // deprecated
+	ObjectTypeBlobCache        // unused
+	ObjectTypeBlobCacheTTL     // unused
+	ObjectTypeTrustedPeer      // deprecated
+	ObjectTypeConsensusJournal // deprecated
 )
 
 // MakeKey makes key within the partition. It consists of one byte for object type
