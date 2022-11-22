@@ -4,6 +4,8 @@
 package evm
 
 import (
+	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -23,6 +25,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type jsonRPCWaspBackend struct {
@@ -98,6 +102,33 @@ func (b *jsonRPCWaspBackend) evictWhenExpired(txHash common.Hash) {
 
 func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return chainutil.EstimateGas(b.chain, callMsg)
+}
+
+func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
+	res, err := chainutil.CallView(b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
+	}
+	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
+	if err != nil {
+		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
+	}
+	res, err = chainutil.CallView(b.chain, evm.Contract.Hname(), evm.FuncGetGasRatio.Hname(), nil)
+	if err != nil {
+		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
+	}
+	gasRatio := codec.MustDecodeRatio32(res.MustGet(evm.FieldResult))
+
+	// convert to wei (18 decimals)
+	decimalsDifference := 18 - parameters.L1().BaseToken.Decimals
+	price := big.NewInt(10)
+	price.Exp(price, new(big.Int).SetUint64(uint64(decimalsDifference)), nil)
+
+	price.Mul(price, new(big.Int).SetUint64(uint64(gasRatio.A)))
+	price.Div(price, new(big.Int).SetUint64(uint64(gasRatio.B)))
+	price.Div(price, new(big.Int).SetUint64(feePolicy.GasPerToken))
+
+	return price
 }
 
 func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {

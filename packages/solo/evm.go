@@ -2,6 +2,7 @@ package solo
 
 import (
 	"crypto/ecdsa"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -36,6 +37,10 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 
 func (b *jsonRPCSoloBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return b.Chain.EstimateGasEthereum(callMsg)
+}
+
+func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
+	return big.NewInt(0)
 }
 
 func (b *jsonRPCSoloBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {

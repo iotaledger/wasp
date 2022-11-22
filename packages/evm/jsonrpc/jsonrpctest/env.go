@@ -358,3 +358,9 @@ func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Fu
 	_, ok := err.(*isc.VMError)
 	require.False(e.T, ok)
 }
+
+func (e *Env) TestGasPrice() {
+	gasPrice, err := e.Client.SuggestGasPrice(context.Background())
+	require.NoError(e.T, err)
+	require.NotZero(e.T, gasPrice.Uint64())
+}

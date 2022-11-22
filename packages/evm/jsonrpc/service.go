@@ -7,7 +7,6 @@ package jsonrpc
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum"
@@ -210,8 +209,12 @@ func (e *EthService) Accounts() []common.Address {
 	return e.accounts.Addresses()
 }
 
+// expressed in wei
+// 1 Ether =
+// 1_000_000_000 Gwei
+// 1_000_000_000_000_000_000 wei
 func (e *EthService) GasPrice() *hexutil.Big {
-	return (*hexutil.Big)(big.NewInt(0))
+	return (*hexutil.Big)(e.evmChain.GasPrice())
 }
 
 func (e *EthService) Mining() bool {

@@ -128,19 +128,14 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	return ethKey, ethAddr
 }
 
-func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
+func TestEVMJsonRPCCluster(t *testing.T) {
 	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 0, waspClusterOpts{
 		nNodes: 4,
 	})
 	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
-}
-
-func TestEVMJsonRPCClusterInvalidTx(t *testing.T) {
-	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 0, waspClusterOpts{
-		nNodes: 4,
-	})
 	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
 	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
+	e.TestGasPrice()
 }
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {

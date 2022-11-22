@@ -295,6 +295,10 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg) (uint64, error) {
 	return e.backend.EVMEstimateGas(callMsg)
 }
 
+func (e *EVMChain) GasPrice() *big.Int {
+	return e.backend.EVMGasPrice()
+}
+
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash rpc.BlockNumberOrHash) ([]byte, error) {
 	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetStorage.Name, paramsWithOptionalBlockNumberOrHash(blockNumberOrHash, dict.Dict{
 		evm.FieldAddress: address.Bytes(),
