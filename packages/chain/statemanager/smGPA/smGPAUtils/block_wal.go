@@ -33,7 +33,7 @@ func NewBlockWAL(baseDir string, chainID *isc.ChainID, log *logger.Logger) (Bloc
 
 // Overwrites, if block is already in WAL
 func (bwT *blockWAL) Write(block state.Block) error {
-	blockHash := block.GetHash()
+	blockHash := block.Hash()
 	fileName := fileName(blockHash)
 	filePath := filepath.Join(bwT.dir, fileName)
 	bwT.log.Debugf("Writing block %s to wal; file name - %s", blockHash, fileName)

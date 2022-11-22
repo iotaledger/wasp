@@ -5,27 +5,32 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type ConsensusStateProposal struct {
-	context     context.Context
-	aliasOutput *isc.AliasOutputWithID
-	resultCh    chan<- interface{}
+	context      context.Context
+	l1Commitment *state.L1Commitment
+	resultCh     chan<- interface{}
 }
 
 var _ gpa.Input = &ConsensusStateProposal{}
 
 func NewConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) (*ConsensusStateProposal, <-chan interface{}) {
+	commitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	if err != nil {
+		panic("Cannot make L1 commitment from alias output")
+	}
 	resultChannel := make(chan interface{}, 1)
 	return &ConsensusStateProposal{
-		context:     ctx,
-		aliasOutput: aliasOutput,
-		resultCh:    resultChannel,
+		context:      ctx,
+		l1Commitment: commitment,
+		resultCh:     resultChannel,
 	}, resultChannel
 }
 
-func (cspT *ConsensusStateProposal) GetAliasOutputWithID() *isc.AliasOutputWithID {
-	return cspT.aliasOutput
+func (cspT *ConsensusStateProposal) GetL1Commitment() *state.L1Commitment {
+	return cspT.l1Commitment
 }
 
 func (cspT *ConsensusStateProposal) IsValid() bool {

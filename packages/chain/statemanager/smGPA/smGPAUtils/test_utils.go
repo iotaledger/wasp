@@ -3,7 +3,7 @@
 
 package smGPAUtils
 
-import (
+/*import (
 	"crypto/rand"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/trie.go/trie"
+	//"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -176,3 +176,4 @@ func getRandomTxID() iotago.TransactionID {
 	rand.Read(result[:])
 	return result
 }
+*/

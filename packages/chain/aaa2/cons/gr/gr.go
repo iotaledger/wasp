@@ -53,19 +53,19 @@ type StateMgr interface {
 	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
-		aliasOutput *isc.AliasOutputWithID, // TODO: Can be replaced by state.L1Commitment after the "read only state" changes.
+		aliasOutput *isc.AliasOutputWithID,
 	) <-chan interface{}
 	// State manager has to ensure all the data needed for the specified alias
 	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
 	ConsensusDecidedState(
 		ctx context.Context,
-		aliasOutput *isc.AliasOutputWithID, // TODO: Can be replaced by state.L1Commitment after the "read only state" changes.
-	) <-chan *StateMgrDecidedState
+		aliasOutput *isc.AliasOutputWithID,
+	) <-chan state.State
 	// State manager has to persistently store the block and respond only after
 	// the block was flushed to the disk. A WAL can be used for that as well.
 	ConsensusProducedBlock(
 		ctx context.Context,
-		block state.Block,
+		block state.StateDraft,
 	) <-chan error
 }
 

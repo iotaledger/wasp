@@ -58,7 +58,7 @@ func (s *store) NewOriginStateDraft() StateDraft {
 }
 
 func (s *store) NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitment) (StateDraft, error) {
-	prevState, err := s.stateByTrieRoot(prevL1Commitment.TrieRoot)
+	prevState, err := s.stateByTrieRoot(prevL1Commitment.GetTrieRoot())
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (s *store) NewStateDraft(timestamp time.Time, prevL1Commitment *L1Commitmen
 }
 
 func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, error) {
-	prevState, err := s.stateByTrieRoot(prevL1Commitment.TrieRoot)
+	prevState, err := s.stateByTrieRoot(prevL1Commitment.GetTrieRoot())
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +80,10 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 	{
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
-			if !s.db.hasBlock(baseL1Commitment.TrieRoot) {
+			if !s.db.hasBlock(baseL1Commitment.GetTrieRoot()) {
 				panic("cannot commit state: base trie root not found")
 			}
-			baseTrieRoot = baseL1Commitment.TrieRoot
+			baseTrieRoot = baseL1Commitment.GetTrieRoot()
 		} else {
 			baseTrieRoot = bufDB.initTrie()
 		}
@@ -148,7 +148,7 @@ func (s *store) SetLatest(trieRoot common.VCommitment) error {
 	isNext := (blockIndex > 0 &&
 		s.trieRootByIndex[blockIndex] == nil &&
 		s.trieRootByIndex[blockIndex-1] != nil &&
-		EqualCommitments(s.trieRootByIndex[blockIndex-1], block.PreviousL1Commitment().TrieRoot))
+		EqualCommitments(s.trieRootByIndex[blockIndex-1], block.PreviousL1Commitment().GetTrieRoot()))
 	if !isNext {
 		// reorg
 		s.trieRootByIndex = map[uint32]common.VCommitment{}
@@ -194,7 +194,7 @@ func (s *store) findTrieRootByIndex(index uint32) (common.VCommitment, error) {
 		if err != nil {
 			return nil, err
 		}
-		s.trieRootByIndex[i-1] = block.PreviousL1Commitment().TrieRoot
+		s.trieRootByIndex[i-1] = block.PreviousL1Commitment().GetTrieRoot()
 	}
 	return s.trieRootByIndex[index], nil
 }

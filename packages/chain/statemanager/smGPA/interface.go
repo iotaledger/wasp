@@ -4,19 +4,18 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type createStateFun func() (state.VirtualStateAccess, error)
+type obtainStateFun func() (state.State, error)
 
 type blockRequestID uint64
 
 const topPriority = uint64(0)
 
 type blockRequest interface {
-	getLastBlockHash() state.BlockHash
-	getLastBlockIndex() uint32 // TODO: temporary function. Remove it after DB refactoring.
-	blockAvailable(state.Block)
+	getLastL1Commitment() *state.L1Commitment
 	isValid() bool
-	getPriority() uint64
-	markCompleted(createStateFun) // NOTE: not all the requests need the base state, so a function to create one is passed rather than the created state
+	blockAvailable(state.Block)
+	getBlockChain() []state.Block // NOTE: blocks are returned in decreasing index order
+	markCompleted(obtainStateFun) // NOTE: not all the requests need state, so a function to obtain one is passed rather than the created state
 	getType() string
 	getID() blockRequestID
 }

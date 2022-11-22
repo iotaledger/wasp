@@ -18,7 +18,7 @@ func NewMockedBlockWAL() BlockWAL {
 }
 
 func (mbwT *mockedBlockWAL) Write(block state.Block) error {
-	mbwT.walContents[block.GetHash()] = block
+	mbwT.walContents[block.Hash()] = block
 	return nil
 }
 

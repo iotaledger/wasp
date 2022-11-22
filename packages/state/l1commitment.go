@@ -22,9 +22,9 @@ type BlockHash [BlockHashSize]byte
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	TrieRoot common.VCommitment
+	trieRoot common.VCommitment
 	// hash of the essence of the block
-	BlockHash BlockHash
+	blockHash BlockHash
 }
 
 var l1CommitmentSize = len(newL1Commitment(commitmentModel.NewVectorCommitment(), BlockHash{}).Bytes())
@@ -37,8 +37,8 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 
 func newL1Commitment(c common.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
-		TrieRoot:  c,
-		BlockHash: blockHash,
+		trieRoot:  c,
+		blockHash: blockHash,
 	}
 }
 
@@ -50,15 +50,15 @@ func (bh BlockHash) Equals(bh2 BlockHash) bool {
 	return bh == bh2
 }
 
-func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {
+func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
 	if len(data) != l1CommitmentSize {
-		return L1Commitment{}, xerrors.New("L1CommitmentFromBytes: wrong data length")
+		return nil, xerrors.New("L1CommitmentFromBytes: wrong data length")
 	}
 	ret := L1Commitment{}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return L1Commitment{}, err
+		return nil, err
 	}
-	return ret, nil
+	return &ret, nil
 }
 
 func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, error) {
@@ -74,7 +74,7 @@ func L1CommitmentFromMarshalUtil(mu *marshalutil.MarshalUtil) (*L1Commitment, er
 	if err != nil {
 		return nil, err
 	}
-	return &l1c, nil
+	return l1c, nil
 }
 
 func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, error) {
@@ -82,11 +82,19 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 	if err != nil {
 		return nil, err
 	}
-	return &l1c, nil
+	return l1c, nil
+}
+
+func (s *L1Commitment) GetTrieRoot() common.VCommitment {
+	return s.trieRoot
+}
+
+func (s *L1Commitment) GetBlockHash() BlockHash {
+	return s.blockHash
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.BlockHash == other.BlockHash && EqualCommitments(s.TrieRoot, other.TrieRoot)
+	return s.GetBlockHash().Equals(other.GetBlockHash()) && EqualCommitments(s.GetTrieRoot(), other.GetTrieRoot())
 }
 
 func (s *L1Commitment) Bytes() []byte {
@@ -94,31 +102,32 @@ func (s *L1Commitment) Bytes() []byte {
 }
 
 func (s *L1Commitment) Write(w io.Writer) error {
-	if err := s.TrieRoot.Write(w); err != nil {
+	if err := s.GetTrieRoot().Write(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(s.BlockHash[:]); err != nil {
+	blockHash := s.GetBlockHash()
+	if _, err := w.Write(blockHash[:]); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	s.TrieRoot = commitmentModel.NewVectorCommitment()
-	if err := s.TrieRoot.Read(r); err != nil {
+	s.trieRoot = commitmentModel.NewVectorCommitment()
+	if err := s.trieRoot.Read(r); err != nil {
 		return err
 	}
-	if _, err := r.Read(s.BlockHash[:]); err != nil {
+	if _, err := r.Read(s.blockHash[:]); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("L1Commitment(%s, %s)", s.TrieRoot.String(), iotago.EncodeHex(s.BlockHash[:]))
+	return fmt.Sprintf("trie root: %s, block hash: %s", s.GetTrieRoot(), s.GetBlockHash())
 }
 
-func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (L1Commitment, error) {
+func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (*L1Commitment, error) {
 	return L1CommitmentFromBytes(o.StateMetadata)
 }
 
@@ -129,7 +138,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	L1CommitmentNil = &zs
+	L1CommitmentNil = zs
 }
 
 // RandL1Commitment is for testing only
@@ -140,5 +149,5 @@ func RandL1Commitment() *L1Commitment {
 	if err != nil {
 		panic(err)
 	}
-	return &ret
+	return ret
 }
