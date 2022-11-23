@@ -724,6 +724,21 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.printBalances("AFTER DESTROY")
+
+		// sent the last 50 tokens to an evm account
+		_, someEthereumAddr := solo.NewEthereumAccount()
+		someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+		err = v.ch.TransferAllowanceTo(
+			isc.NewAllowanceFungibleTokens(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50)),
+			someEthereumAgentID,
+			true,
+			v.user,
+		)
+		require.NoError(t, err)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(someEthereumAgentID, v.tokenID, 50)
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t, 2*isc.Million)

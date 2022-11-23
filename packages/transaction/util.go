@@ -196,7 +196,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 			}
 			// bIn >= bOut
 			s := new(big.Int).Sub(bIn, bOut)
-			if !util.IsZeroBigInt(bIn) {
+			if !util.IsZeroBigInt(s) {
 				remTokens[id] = s
 			}
 		case !okIn && okOut:
