@@ -464,7 +464,7 @@ func (e *evmContractInstance) callFnExpectEvent(opts []ethCallOptions, eventName
 	return res
 }
 
-func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) {
+func (e *evmContractInstance) callView(fnName string, args []interface{}, v interface{}) error {
 	e.chain.t.Logf("callView: %s %+v", fnName, args)
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
@@ -476,16 +476,18 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 		Data:     callArguments,
 	})
 	ret, err := e.chain.evmChain.CallContract(callMsg, latestBlock)
-	require.NoError(e.chain.t, err)
-	if v != nil {
-		err = e.abi.UnpackIntoInterface(v, fnName, ret)
-		require.NoError(e.chain.t, err)
+	if err != nil {
+		return err
 	}
+	if v != nil {
+		return e.abi.UnpackIntoInterface(v, fnName, ret)
+	}
+	return nil
 }
 
 func (i *iscTestContractInstance) getChainID() *isc.ChainID {
 	var v iscmagic.ISCChainID
-	i.callView("getChainID", nil, &v)
+	require.NoError(i.chain.t, i.callView("getChainID", nil, &v))
 	return v.MustUnwrap()
 }
 
@@ -499,7 +501,7 @@ func (i *iscTestContractInstance) triggerEventFail(s string, opts ...ethCallOpti
 
 func (s *storageContractInstance) retrieve() uint32 {
 	var v uint32
-	s.callView("retrieve", nil, &v)
+	require.NoError(s.chain.t, s.callView("retrieve", nil, &v))
 	return v
 }
 
@@ -509,13 +511,13 @@ func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (res c
 
 func (e *erc20ContractInstance) balanceOf(addr common.Address) *big.Int {
 	v := new(big.Int)
-	e.callView("balanceOf", []interface{}{addr}, &v)
+	require.NoError(e.chain.t, e.callView("balanceOf", []interface{}{addr}, &v))
 	return v
 }
 
 func (e *erc20ContractInstance) totalSupply() *big.Int {
 	v := new(big.Int)
-	e.callView("totalSupply", nil, &v)
+	require.NoError(e.chain.t, e.callView("totalSupply", nil, &v))
 	return v
 }
 

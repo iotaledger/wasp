@@ -53,13 +53,14 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	creator := stateAnchor.Sender
 
-	callerHname, _ := isc.HnameFromAgentID(ctx.Caller())
-	callerAddress, _ := isc.AddressFromAgentID(ctx.Caller())
+	sender := ctx.Request().SenderAccount()
+	senderHname, _ := isc.HnameFromAgentID(sender)
+	senderAddress, _ := isc.AddressFromAgentID(sender)
 	initConditionsCorrect := stateAnchor.IsOrigin &&
 		state.MustGet(root.StateVarStateInitialized) == nil &&
-		callerHname == 0 &&
+		senderHname == 0 &&
 		creator != nil &&
-		creator.Equal(callerAddress) &&
+		creator.Equal(senderAddress) &&
 		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
@@ -87,7 +88,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	storeAndInitCoreContract(ctx, governance.Contract, dict.Dict{
 		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
 		// chain owner is whoever creates origin and sends the 'init' request
-		governance.ParamChainOwner:     ctx.Caller().Bytes(),
+		governance.ParamChainOwner:     sender.Bytes(),
 		governance.ParamDescription:    ctx.Params().MustGet(governance.ParamDescription),
 		governance.ParamFeePolicyBytes: ctx.Params().MustGet(governance.ParamFeePolicyBytes),
 	})

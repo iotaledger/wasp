@@ -28,6 +28,8 @@ type SandboxBase interface {
 	Contract() Hname
 	// AccountID returns the agentID of the current contract (i.e. chainID + contract hname)
 	AccountID() AgentID
+	// Caller is the agentID of the caller.
+	Caller() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
@@ -88,8 +90,6 @@ type Sandbox interface {
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
-	// Caller is the agentID of the caller.
-	Caller() AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event

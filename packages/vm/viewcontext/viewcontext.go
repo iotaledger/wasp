@@ -90,6 +90,19 @@ func (ctx *ViewContext) AccountID() isc.AgentID {
 	return isc.NewContractAgentID(ctx.ChainID(), hname)
 }
 
+func (ctx *ViewContext) Caller() isc.AgentID {
+	switch len(ctx.callStack) {
+	case 0:
+		panic("getCallContext: stack is empty")
+	case 1:
+		// first call (from webapi)
+		return nil
+	default:
+		callerHname := ctx.callStack[len(ctx.callStack)-1].contract
+		return isc.NewContractAgentID(ctx.chainID, callerHname)
+	}
+}
+
 func (ctx *ViewContext) Processors() *processors.Cache {
 	return ctx.processors
 }

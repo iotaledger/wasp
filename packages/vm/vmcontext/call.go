@@ -86,7 +86,6 @@ func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}
-	// request context
 	return vmctx.req.SenderAccount()
 }
 

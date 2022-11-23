@@ -121,4 +121,24 @@ contract ISCTest {
     function testRevertReason() public pure {
         revert("foobar");
     }
+
+    function testStackOverflow() public view {
+        bytes memory args = bytes.concat(
+            hex"0000000000000000000000000000000000000000" // From address
+            hex"01" // Optional field ToAddr exists
+            , bytes20(uint160(address(this))), // Put our own address as ToAddr
+            hex"0000000000000000" // Gas limit
+            hex"00" // Optional field value does not exist
+            hex"04000000" // Data length
+            hex"b3ee6942" // Function to call: sha3.keccak_256(b'testStackOverflow()').hexdigest()[0:8]
+        );
+        ISCDict memory params = ISCDict(new ISCDictItem[](1));
+        params.items[0] = ISCDictItem("c", args);
+
+        ISC.sandbox.callView(
+            ISC.util.hn("evm"),
+            ISC.util.hn("callContract"),
+            params
+        );
+    }
 }

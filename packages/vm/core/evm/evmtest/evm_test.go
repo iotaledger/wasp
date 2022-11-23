@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -683,27 +684,27 @@ func TestERC20BaseTokens(t *testing.T) {
 
 	{
 		var name string
-		erc20.callView("name", nil, &name)
+		require.NoError(t, erc20.callView("name", nil, &name))
 		require.Equal(t, parameters.L1().BaseToken.Name, name)
 	}
 	{
 		var sym string
-		erc20.callView("symbol", nil, &sym)
+		require.NoError(t, erc20.callView("symbol", nil, &sym))
 		require.Equal(t, parameters.L1().BaseToken.TickerSymbol, sym)
 	}
 	{
 		var dec uint8
-		erc20.callView("decimals", nil, &dec)
+		require.NoError(t, erc20.callView("decimals", nil, &dec))
 		require.EqualValues(t, parameters.L1().BaseToken.Decimals, dec)
 	}
 	{
 		var supply *big.Int
-		erc20.callView("totalSupply", nil, &supply)
+		require.NoError(t, erc20.callView("totalSupply", nil, &supply))
 		require.Equal(t, parameters.L1().Protocol.TokenSupply, supply.Uint64())
 	}
 	{
 		var balance *big.Int
-		erc20.callView("balanceOf", []interface{}{ethAddr}, &balance)
+		require.NoError(t, erc20.callView("balanceOf", []interface{}{ethAddr}, &balance))
 		require.EqualValues(t,
 			env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr)),
 			balance.Uint64(),
@@ -742,7 +743,7 @@ func TestERC20BaseTokens(t *testing.T) {
 
 		{
 			var allowance *big.Int
-			erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+			require.NoError(t, erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance))
 			require.EqualValues(t,
 				1*isc.Million,
 				allowance.Uint64(),
@@ -763,7 +764,7 @@ func TestERC20BaseTokens(t *testing.T) {
 			)
 			{
 				var allowance *big.Int
-				erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+				require.NoError(t, erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance))
 				require.EqualValues(t,
 					1*isc.Million-amount,
 					allowance.Uint64(),
@@ -848,37 +849,37 @@ func TestERC20NativeTokens(t *testing.T) {
 
 	{
 		var sn uint32
-		erc20.callView("foundrySerialNumber", nil, &sn)
+		require.NoError(t, erc20.callView("foundrySerialNumber", nil, &sn))
 		require.Equal(t, foundrySN, sn)
 	}
 	{
 		var id struct{ iscmagic.NativeTokenID }
-		erc20.callView("nativeTokenID", nil, &id)
+		require.NoError(t, erc20.callView("nativeTokenID", nil, &id))
 		require.EqualValues(t, tokenID[:], id.NativeTokenID.Data)
 	}
 	{
 		var name string
-		erc20.callView("name", nil, &name)
+		require.NoError(t, erc20.callView("name", nil, &name))
 		require.Equal(t, tokenName, name)
 	}
 	{
 		var sym string
-		erc20.callView("symbol", nil, &sym)
+		require.NoError(t, erc20.callView("symbol", nil, &sym))
 		require.Equal(t, tokenTickerSymbol, sym)
 	}
 	{
 		var dec uint8
-		erc20.callView("decimals", nil, &dec)
+		require.NoError(t, erc20.callView("decimals", nil, &dec))
 		require.EqualValues(t, tokenDecimals, dec)
 	}
 	{
 		var sup *big.Int
-		erc20.callView("totalSupply", nil, &sup)
+		require.NoError(t, erc20.callView("totalSupply", nil, &sup))
 		require.Equal(t, supply.Uint64(), sup.Uint64())
 	}
 	{
 		var balance *big.Int
-		erc20.callView("balanceOf", []interface{}{ethAddr}, &balance)
+		require.NoError(t, erc20.callView("balanceOf", []interface{}{ethAddr}, &balance))
 		require.EqualValues(t,
 			l2Balance(ethAgentID),
 			balance.Uint64(),
@@ -919,7 +920,7 @@ func TestERC20NativeTokens(t *testing.T) {
 
 		{
 			var allowance *big.Int
-			erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+			require.NoError(t, erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance))
 			require.EqualValues(t,
 				1*isc.Million,
 				allowance.Uint64(),
@@ -941,7 +942,7 @@ func TestERC20NativeTokens(t *testing.T) {
 			)
 			{
 				var allowance *big.Int
-				erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance)
+				require.NoError(t, erc20.callView("allowance", []interface{}{ethAddr, ethAddr2}, &allowance))
 				require.EqualValues(t,
 					1*isc.Million-amount,
 					allowance.Uint64(),
@@ -1335,4 +1336,27 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 		uint64(tokensToMoveToEvmAccount)-result.iscReceipt.GasFeeCharged-actualTokensMovedInEVMRequest,
 		env.soloChain.L2Assets(ethAgentID).Tokens[0].Amount.Uint64(),
 	)
+}
+
+func TestSandboxStackOverflow(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	iscTest := env.deployISCTestContract(ethKey)
+
+	// tx contract call
+	ret, err := iscTest.callFn([]ethCallOptions{{
+		gasLimit: 100_000, // skip estimate gas (which will fail)
+	}}, "testStackOverflow")
+
+	require.Error(t, err)
+	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
+
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+
+	// view call
+	err = iscTest.callView("testStackOverflow", nil, nil)
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
 }

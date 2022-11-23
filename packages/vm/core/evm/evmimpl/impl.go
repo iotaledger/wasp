@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -115,6 +116,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
+	cannotBeCalledFromContracts(ctx)
 
 	tx, err := evmtypes.DecodeTransaction(ctx.Params().MustGet(evm.FieldTransaction))
 	ctx.RequireNoError(err)
@@ -274,7 +276,17 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
 }
 
+// this must only be callable from webapi, not from contract execution
+func cannotBeCalledFromContracts(ctx isc.SandboxBase) {
+	caller := ctx.Caller()
+	if caller != nil && caller.Kind() == isc.AgentIDKindContract {
+		panic(vm.ErrIllegalCall)
+	}
+}
+
 func callContract(ctx isc.SandboxView) dict.Dict {
+	cannotBeCalledFromContracts(ctx)
+
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
@@ -299,6 +311,8 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 }
 
 func estimateGas(ctx isc.Sandbox) dict.Dict {
+	cannotBeCalledFromContracts(ctx)
+
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)

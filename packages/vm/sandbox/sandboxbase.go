@@ -35,6 +35,11 @@ func (s *SandboxBase) AccountID() isc.AgentID {
 	return s.Ctx.AccountID()
 }
 
+func (s *SandboxBase) Caller() isc.AgentID {
+	s.Ctx.GasBurn(gas.BurnCodeGetCallerData)
+	return s.Ctx.Caller()
+}
+
 func (s *SandboxBase) BalanceBaseTokens() uint64 {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())

@@ -27,6 +27,7 @@ type WaspContext interface {
 	GetAssets(agentID isc.AgentID) *isc.FungibleTokens
 	Timestamp() time.Time
 	AccountID() isc.AgentID
+	Caller() isc.AgentID
 	GetBaseTokensBalance(agentID isc.AgentID) uint64
 	GetNativeTokenBalance(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int
 	Call(contractHname, entryPoint isc.Hname, params dict.Dict, allowance *isc.Allowance) dict.Dict

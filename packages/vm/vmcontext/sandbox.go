@@ -32,11 +32,6 @@ func (s *contractSandbox) Call(target, entryPoint isc.Hname, params dict.Dict, t
 	return s.Ctx.Call(target, entryPoint, params, transfer)
 }
 
-func (s *contractSandbox) Caller() isc.AgentID {
-	s.Ctx.GasBurn(gas.BurnCodeGetCallerData)
-	return s.Ctx.(*VMContext).Caller()
-}
-
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
 func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) {
