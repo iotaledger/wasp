@@ -34,20 +34,21 @@ func NewBlockCache(tp TimeProvider, wal BlockWAL, log *logger.Logger) (BlockCach
 
 // Adds block to cache and WAL
 func (bcT *blockCache) AddBlock(block state.Block) error {
-	blockKey := NewBlockKey(block.L1Commitment())
+	commitment := block.L1Commitment()
+	blockKey := NewBlockKey(commitment)
 	err := bcT.wal.Write(block)
 	if err != nil {
-		bcT.log.Errorf("Failed writing block %s to WAL: %v", blockKey, err)
+		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
 		return err
 	}
-	bcT.log.Debugf("Block %s written to WAL", blockKey)
+	bcT.log.Debugf("Block %s written to WAL", commitment)
 
 	bcT.blocks[blockKey] = block
 	bcT.times = append(bcT.times, &blockTime{
 		time:     bcT.timeProvider.GetNow(),
 		blockKey: blockKey,
 	})
-	bcT.log.Debugf("Block %s added to cache", blockKey)
+	bcT.log.Debugf("Block %s added to cache", commitment)
 	return nil
 }
 
