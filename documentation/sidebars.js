@@ -230,6 +230,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Chain Rotation',
+                    id: 'guide/chains_and_nodes/chain-rotation',
+                },
+                {
+                    type: 'doc',
                     label: 'Testnet',
                     id: 'guide/chains_and_nodes/testnet',
                 },
