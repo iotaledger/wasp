@@ -18,21 +18,23 @@ import (
 //const constTestFolder = "basicWALTest"
 
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
-	bw            BlockWAL
-	chainID       *isc.ChainID
-	ao            *isc.AliasOutputWithID
-	vs            state.VirtualStateAccess
-	blocks        map[state.BlockHash]state.Block
-	blocksMoved   []state.BlockHash
-	blocksDamaged []state.BlockHash
-	log           *logger.Logger
+	bw                  BlockWAL
+	factory             *BlockFactory
+	ao                  *isc.AliasOutputWithID
+	lastBlockCommitment *state.L1Commitment
+	blocks              map[state.BlockHash]state.Block
+	blocksMoved         []state.BlockHash
+	blocksDamaged       []state.BlockHash
+	log                 *logger.Logger
 }
 
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
-	bwtsmT.chainID, bwtsmT.ao, bwtsmT.vs = GetOriginState(t)
+	bwtsmT.factory = NewBlockFactory()
+	bwtsmT.ao = bwtsmT.factory.GetOriginOutput(t)
+	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
-	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.chainID, bwtsmT.log)
+	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.factory.GetChainID(), bwtsmT.log)
 	require.NoError(t, err)
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
@@ -49,13 +51,13 @@ func (bwtsmT *blockWALTestSM) Check(t *rapid.T) {
 }
 
 func (bwtsmT *blockWALTestSM) WriteBlock(t *rapid.T) {
-	block, aliasOutput, virtualState := GetNextState(t, bwtsmT.vs, bwtsmT.ao)
-	bwtsmT.blocks[block.GetHash()] = block
+	block, aliasOutput := bwtsmT.factory.GetNextBlock(t, bwtsmT.lastBlockCommitment, bwtsmT.ao)
 	bwtsmT.ao = aliasOutput
-	bwtsmT.vs = virtualState
+	bwtsmT.lastBlockCommitment = block.L1Commitment()
+	bwtsmT.blocks[bwtsmT.lastBlockCommitment.GetBlockHash()] = block
 	err := bwtsmT.bw.Write(block)
 	require.NoError(t, err)
-	t.Logf("Block %s written", block.GetHash())
+	t.Logf("Block %s written", bwtsmT.lastBlockCommitment.GetBlockHash())
 }
 
 // Correct the damaged block file
@@ -138,7 +140,7 @@ func (bwtsmT *blockWALTestSM) ReadGoodBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(blockHashes).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.True(t, block.Equals(bwtsmT.blocks[blockHash]))
+	require.True(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
 	t.Logf("Block %s read", blockHash)
 }
 
@@ -149,7 +151,7 @@ func (bwtsmT *blockWALTestSM) ReadMovedBlock(t *rapid.T) {
 	blockHash := rapid.SampledFrom(bwtsmT.blocksMoved).Example()
 	block, err := bwtsmT.bw.Read(blockHash)
 	require.NoError(t, err)
-	require.False(t, block.Equals(bwtsmT.blocks[blockHash]))
+	require.False(t, block.Hash().Equals(blockHash)) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
 	t.Logf("Moved block %s read", blockHash)
 }
 
@@ -165,7 +167,7 @@ func (bwtsmT *blockWALTestSM) ReadDamagedBlock(t *rapid.T) {
 
 func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.chainID, bwtsmT.log)
+	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.factory.GetChainID(), bwtsmT.log)
 	require.NoError(t, err)
 	t.Logf("Block WAL restarted")
 }
@@ -181,7 +183,7 @@ func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 }
 
 func (bwtsmT *blockWALTestSM) pathFromHash(blockHash state.BlockHash) string {
-	return filepath.Join(constTestFolder, bwtsmT.chainID.String(), fileName(blockHash))
+	return filepath.Join(constTestFolder, bwtsmT.factory.GetChainID().String(), fileName(blockHash))
 }
 
 func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
