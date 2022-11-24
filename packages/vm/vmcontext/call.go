@@ -83,6 +83,9 @@ func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 		return vmctx.MyAgentID()
 	}
 	if vmctx.req == nil {
+		if vmctx.callerIsVM {
+			return &isc.NilAgentID{} // calling open/close block context
+		}
 		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}

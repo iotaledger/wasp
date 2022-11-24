@@ -113,7 +113,9 @@ func (s *contractSandbox) RequireCallerAnyOf(agentIDs []isc.AgentID) {
 }
 
 func (s *contractSandbox) RequireCaller(agentID isc.AgentID) {
-	s.RequireCallerAnyOf([]isc.AgentID{agentID})
+	if !s.Caller().Equals(agentID) {
+		panic(vm.ErrUnauthorized)
+	}
 }
 
 func (s *contractSandbox) RequireCallerIsChainOwner() {

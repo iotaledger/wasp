@@ -37,7 +37,7 @@ type blockContext struct {
 // requests in the ISC block. The purpose is to create a single Ethereum block
 // for each ISC block.
 func openBlockContext(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
 	ctx.Privileged().SetBlockContext(&blockContext{emu: createEmulator(ctx)})
 	return nil
 }
@@ -45,7 +45,7 @@ func openBlockContext(ctx isc.Sandbox) dict.Dict {
 // closeBlockContext "mints" the Ethereum block after all requests in the ISC
 // block have been processed.
 func closeBlockContext(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
 	getBlockContext(ctx).mintBlock()
 	return nil
 }

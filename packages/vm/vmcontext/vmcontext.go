@@ -63,6 +63,9 @@ type VMContext struct {
 	gasFeeCharged uint64
 	// burn history. If disabled, it is nil
 	gasBurnLog *gas.BurnLog
+
+	// used to set caller = nil when executing "open/close block context" funcs (meaning caller is the VM itself)
+	callerIsVM bool
 }
 
 var _ execution.WaspContext = &VMContext{}
@@ -256,9 +259,11 @@ func (vmctx *VMContext) OpenBlockContexts() {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		subs = root.GetBlockContextSubscriptions(s)
 	})
+	vmctx.callerIsVM = true
 	for _, sub := range subs {
 		vmctx.callProgram(sub.Contract, sub.OpenFunc, nil, nil)
 	}
+	vmctx.callerIsVM = false
 
 	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
 }
@@ -272,9 +277,11 @@ func (vmctx *VMContext) closeBlockContexts() {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		subs = root.GetBlockContextSubscriptions(s)
 	})
+	vmctx.callerIsVM = true
 	for i := len(subs) - 1; i >= 0; i-- {
 		vmctx.callProgram(subs[i].Contract, subs[i].CloseFunc, nil, nil)
 	}
+	vmctx.callerIsVM = false
 }
 
 // saveInternalUTXOs relies on the order of the outputs in the anchor tx. If that order changes, this will be broken.

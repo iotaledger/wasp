@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -29,29 +28,31 @@ import (
 )
 
 var Processor = evm.Contract.Processor(initialize,
-	evm.FuncSetGasRatio.WithHandler(setGasRatio),
-	evm.FuncGetGasRatio.WithHandler(getGasRatio),
-	evm.FuncSendTransaction.WithHandler(applyTransaction),
-	evm.FuncGetBalance.WithHandler(getBalance),
-	evm.FuncCallContract.WithHandler(callContract),
-	evm.FuncEstimateGas.WithHandler(estimateGas),
-	evm.FuncGetNonce.WithHandler(getNonce),
-	evm.FuncGetReceipt.WithHandler(getReceipt),
-	evm.FuncGetCode.WithHandler(getCode),
-	evm.FuncGetBlockNumber.WithHandler(getBlockNumber),
-	evm.FuncGetBlockByNumber.WithHandler(getBlockByNumber),
-	evm.FuncGetBlockByHash.WithHandler(getBlockByHash),
-	evm.FuncGetTransactionByHash.WithHandler(getTransactionByHash),
-	evm.FuncGetTransactionByBlockHashAndIndex.WithHandler(getTransactionByBlockHashAndIndex),
-	evm.FuncGetTransactionByBlockNumberAndIndex.WithHandler(getTransactionByBlockNumberAndIndex),
-	evm.FuncGetTransactionCountByBlockHash.WithHandler(getTransactionCountByBlockHash),
-	evm.FuncGetTransactionCountByBlockNumber.WithHandler(getTransactionCountByBlockNumber),
-	evm.FuncGetStorage.WithHandler(getStorage),
-	evm.FuncGetLogs.WithHandler(getLogs),
-	evm.FuncGetChainID.WithHandler(getChainID),
-	evm.FuncOpenBlockContext.WithHandler(openBlockContext),
-	evm.FuncCloseBlockContext.WithHandler(closeBlockContext),
-	evm.FuncRegisterERC20NativeToken.WithHandler(registerERC20NativeToken),
+	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
+	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
+	evm.FuncSetGasRatio.WithHandler(restricted(setGasRatio)),
+	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
+	evm.FuncEstimateGas.WithHandler(restricted(estimateGas)),
+	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
+
+	// views
+	evm.FuncGetGasRatio.WithHandler(restrictedView(getGasRatio)),
+	evm.FuncGetBalance.WithHandler(restrictedView(getBalance)),
+	evm.FuncCallContract.WithHandler(restrictedView(callContract)),
+	evm.FuncGetNonce.WithHandler(restrictedView(getNonce)),
+	evm.FuncGetReceipt.WithHandler(restrictedView(getReceipt)),
+	evm.FuncGetCode.WithHandler(restrictedView(getCode)),
+	evm.FuncGetBlockNumber.WithHandler(restrictedView(getBlockNumber)),
+	evm.FuncGetBlockByNumber.WithHandler(restrictedView(getBlockByNumber)),
+	evm.FuncGetBlockByHash.WithHandler(restrictedView(getBlockByHash)),
+	evm.FuncGetTransactionByHash.WithHandler(restrictedView(getTransactionByHash)),
+	evm.FuncGetTransactionByBlockHashAndIndex.WithHandler(restrictedView(getTransactionByBlockHashAndIndex)),
+	evm.FuncGetTransactionByBlockNumberAndIndex.WithHandler(restrictedView(getTransactionByBlockNumberAndIndex)),
+	evm.FuncGetTransactionCountByBlockHash.WithHandler(restrictedView(getTransactionCountByBlockHash)),
+	evm.FuncGetTransactionCountByBlockNumber.WithHandler(restrictedView(getTransactionCountByBlockNumber)),
+	evm.FuncGetStorage.WithHandler(restrictedView(getStorage)),
+	evm.FuncGetLogs.WithHandler(restrictedView(getLogs)),
+	evm.FuncGetChainID.WithHandler(restrictedView(getChainID)),
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
@@ -116,7 +117,6 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
-	cannotBeCalledFromContracts(ctx)
 
 	tx, err := evmtypes.DecodeTransaction(ctx.Params().MustGet(evm.FieldTransaction))
 	ctx.RequireNoError(err)
@@ -194,7 +194,6 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 }
 
 func getBalance(ctx isc.SandboxView) dict.Dict {
-	// TODO: balance might change between two eth blocks
 	addr := common.BytesToAddress(ctx.Params().MustGet(evm.FieldAddress))
 	emu := createEmulatorR(ctx)
 	return result(emu.StateDB().GetBalance(addr).Bytes())
@@ -276,17 +275,7 @@ func getChainID(ctx isc.SandboxView) dict.Dict {
 	return result(evmtypes.EncodeChainID(emu.BlockchainDB().GetChainID()))
 }
 
-// this must only be callable from webapi, not from contract execution
-func cannotBeCalledFromContracts(ctx isc.SandboxBase) {
-	caller := ctx.Caller()
-	if caller != nil && caller.Kind() == isc.AgentIDKindContract {
-		panic(vm.ErrIllegalCall)
-	}
-}
-
 func callContract(ctx isc.SandboxView) dict.Dict {
-	cannotBeCalledFromContracts(ctx)
-
 	callMsg, err := evmtypes.DecodeCallMsg(ctx.Params().MustGet(evm.FieldCallMsg))
 	ctx.RequireNoError(err)
 	emu := createEmulatorR(ctx)
@@ -311,8 +300,6 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 }
 
 func estimateGas(ctx isc.Sandbox) dict.Dict {
-	cannotBeCalledFromContracts(ctx)
-
 	// we only want to charge gas for the actual execution of the ethereum tx
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
