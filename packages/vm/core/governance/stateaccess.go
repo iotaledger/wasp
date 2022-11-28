@@ -12,11 +12,11 @@ import (
 )
 
 type StateAccess struct {
-	state kv.KVStore
+	state kv.KVStoreReader
 }
 
-func NewStateAccess(store kv.KVStore) *StateAccess {
-	state := subrealm.New(store, kv.Key(Contract.Hname().Bytes()))
+func NewStateAccess(store kv.KVStoreReader) *StateAccess {
+	state := subrealm.NewReadOnly(store, kv.Key(Contract.Hname().Bytes()))
 	return &StateAccess{state: state}
 }
 

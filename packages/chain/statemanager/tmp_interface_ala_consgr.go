@@ -13,7 +13,7 @@ import (
 )
 
 // State manager has to implement this interface.
-type ConsGrStateMgr interface {
+type ConsGrStateMgr interface { // TODO: Remove, use consGr.StateMgr
 	// State manager has to return a signal via the return channel when it
 	// ensures all the needed blocks for the specified AliasOutput is present
 	// in the database. Context is used to cancel a request.
