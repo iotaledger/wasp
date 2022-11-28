@@ -33,7 +33,7 @@ You can access the testnet via the following endpoints:
             - Information about the Wasp access node
         - https://api.wasp.sc.iota.org/doc
             - API reference for the Wasp API
-    - https://api.sc.testnet.shimmer.network/chain/rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls/evm/jsonrpc
+    - https://api.sc.testnet.shimmer.network/evm/jsonrpc
         - The URL to interact with the Ethereum Virtual Machine on our testnet
 - https://api.testnet.shimmer.network
     - The public API exposed by Hornet for the Shimmer Beta network (testnet)
@@ -80,7 +80,7 @@ the following configuration:
 
 | Key                | Value                                                                                                                     |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------|
-| RPC URL            | https://api.sc.testnet.shimmer.network/chain/rms1prr4r7az8e46qhagz5atugjm6x0xrg27d84677e3lurg0s6s76jr59dw4ls/evm/jsonrpc  |
+| RPC URL            | https://api.sc.testnet.shimmer.network/evm/jsonrpc  |
 | Chain ID           | 1076                                                                                                                      |
 
 
@@ -90,7 +90,7 @@ The other values (network name and currency symbol) can be whatever value you li
 
 :::
 
-We have a faucet for you to use directly with your EVM address which can be found on https://deposit.sc.testnet.shimmer.network/
-We also have a withdrawal interface to get any native assets deposited to a EVM chain back into your L1 address: https://withdraw.sc.testnet.shimmer.network/
+We have a faucet for you to use directly with your EVM address which can be found on https://toolkit.sc.testnet.shimmer.network/
+We also have a withdrawal interface to get any native assets deposited to a EVM chain back into your L1 address on the same link.
 
 
