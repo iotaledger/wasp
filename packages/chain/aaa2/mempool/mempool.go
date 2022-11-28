@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // A mempool basically does these functions:
 //   - Provide a proposed set of requests (refs) for the consensus.
 //   - Provide a set of requests for a TX as decided by the consensus.
@@ -41,522 +44,658 @@ package mempool
 
 import (
 	"context"
-	"fmt"
-	"math"
-	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/events"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/core/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool/mempoolgpa"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool/distSync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	metrics_pkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
+
+const (
+	distShareDebugTick      = 10 * time.Second
+	distShareTimeTick       = 3 * time.Second
+	distShareMaxMsgsPerTick = 100
+	waitRequestCleanupEvery = 10
+)
+
+// Interface the mempool needs form the StateMgr.
+type StateMgr interface {
+	// The StateMgr has to find a common ancestor for the prevAO and nextAO, then return
+	// the state for Next ao and reject blocks in range (commonAO, prevAO]. The StateMgr
+	// can determine relative positions of the corresponding blocks based on their state
+	// indexes.
+	MempoolStateRequest(
+		ctx context.Context,
+		prevAO, nextAO *isc.AliasOutputWithID,
+	) (vs state.VirtualStateAccess, added, removed []state.Block)
+}
+
+// This part of the interface is only used by SOLO.
+// TODO: Move the implementation of these functions to the solo package, probably.
+type MempoolSolo interface {
+	ReceiveRequests(reqs ...isc.Request) []bool
+	RemoveRequests(reqs ...isc.RequestID)
+	Info() MempoolInfo
+}
+
+type MempoolInfo struct {
+	TotalPool      int
+	InPoolCounter  int
+	OutPoolCounter int
+}
+
+type Mempool interface {
+	consGR.Mempool
+	MempoolSolo
+	// Invoked by the chain, when new alias output is considered as a tip/head
+	// of the chain. Mempool can reorganize its state by removing/rejecting
+	// or re-adding some requests, depending on how the head has changed.
+	// It can mean simple advance of the chain, or a rollback or a reorg.
+	// This function is guaranteed to be called in the order, which is
+	// considered the chain block order by the ChainMgr.
+	TrackNewChainHead(chainHeadAO *isc.AliasOutputWithID)
+	// Invoked by the chain when a new off-ledger request is received from a node user.
+	// Inter-node off-ledger dissemination is NOT performed via this function.
+	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
+	// This is called when this node receives an off-ledger request from a user directly.
+	// I.e. when this node is an entry point of the off-ledger request.
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest)
+	// Invoked by the ChainMgr when a time of a tangle changes.
+	TangleTimeUpdated(tangleTime time.Time)
+	// Invoked by the chain when a set of access nodes has changed.
+	// These nodes should be used to disseminate the off-ledger requests.
+	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
+}
+
+type RequestPool[V isc.Request] interface {
+	Has(reqRef *isc.RequestRef) bool
+	Get(reqRef *isc.RequestRef) V
+	Add(request V)
+	Remove(request V)
+	Filter(predicate func(request V) bool)
+	StatusString() string
+}
+
+// This implementation tracks single branch of the chain only. I.e. all the consensus
+// instances that are asking for requests for alias outputs different than the current
+// head (as considered by the ChainMgr) will get empty proposal sets.
+//
+// In general we can track several branches, but then we have to remember, which
+// requests are available in which branches. Can be implemented later, if needed.
+type mempoolImpl struct {
+	chainID                        *isc.ChainID
+	stateMgr                       StateMgr
+	tangleTime                     time.Time
+	timePool                       TimePool
+	onLedgerPool                   RequestPool[isc.OnLedgerRequest]
+	offLedgerPool                  RequestPool[isc.OffLedgerRequest]
+	distSync                       gpa.GPA
+	chainHeadAO                    *isc.AliasOutputWithID
+	chainHeadState                 state.VirtualStateAccess
+	accessNodesUpdatedPipe         pipe.Pipe
+	accessNodes                    []*cryptolib.PublicKey
+	committeeNodes                 []*cryptolib.PublicKey
+	waitReq                        WaitReq
+	waitChainHead                  []*reqConsensusProposals
+	reqConsensusProposalsPipe      pipe.Pipe
+	reqConsensusRequestsPipe       pipe.Pipe
+	reqReceiveOnLedgerRequestPipe  pipe.Pipe
+	reqReceiveOffLedgerRequestPipe pipe.Pipe
+	reqTangleTimeUpdatedPipe       pipe.Pipe
+	reqTrackNewChainHeadPipe       pipe.Pipe
+	netRecvPipe                    pipe.Pipe
+	netPeeringID                   peering.PeeringID
+	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
+	net                            peering.NetworkProvider
+	log                            *logger.Logger
+	metrics                        metrics.MempoolMetrics
+}
+
+var _ Mempool = &mempoolImpl{}
 
 const (
 	msgTypeMempool byte = iota
 )
 
-type mempool struct {
-	chainAddress           iotago.Address
-	lastSeenChainOutput    *isc.AliasOutputWithID
-	poolMutex              sync.RWMutex
-	timelockedRequestsChan chan isc.OnLedgerRequest
-	inPoolCounter          int
-	outPoolCounter         int
-	pool                   map[isc.RequestID]isc.Request
-	net                    peering.NetworkProvider
-	netPeeringID           peering.PeeringID
-	netMsgsChan            chan gpa.OutMessages
-	peers                  map[gpa.NodeID]*cryptolib.PublicKey
-	peersLock              *sync.RWMutex
-	incomingRequests       *events.Event
-	hasBeenProcessed       HasBeenProcessedFunc     // TODO: Replaced by the stateMgr.
-	getProcessedRequests   GetProcessedRequestsFunc // TODO: Replaced by the stateMgr.
-	stateMgr               MempoolStateMgr          // TODO: pass it as a param.
-	ctx                    context.Context
-	log                    *logger.Logger
-	metrics                metrics_pkg.MempoolMetrics
-	gpa                    *mempoolgpa.Impl
+type reqAccessNodesUpdated struct {
+	committeePubKeys  []*cryptolib.PublicKey
+	accessNodePubKeys []*cryptolib.PublicKey
+}
+type reqConsensusProposals struct {
+	ctx         context.Context
+	aliasOutput *isc.AliasOutputWithID
+	responseCh  chan<- []*isc.RequestRef
 }
 
-var _ consGR.Mempool = &mempool{}
+type reqConsensusRequests struct {
+	ctx         context.Context
+	requestRefs []*isc.RequestRef
+	responseCh  chan<- []isc.Request
+}
 
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
 	nodeIdentity *cryptolib.KeyPair,
+	stateMgr StateMgr,
 	net peering.NetworkProvider,
-	hasBeenProcessed HasBeenProcessedFunc,
-	getProcessedRequests GetProcessedRequestsFunc,
 	log *logger.Logger,
-	mempoolMetrics metrics_pkg.MempoolMetrics,
+	metrics metrics.MempoolMetrics,
 ) Mempool {
-	pool := &mempool{
-		chainAddress:           chainID.AsAddress(),
-		pool:                   make(map[isc.RequestID]isc.Request),
-		net:                    net,
-		netMsgsChan:            make(chan gpa.OutMessages),
-		peers:                  map[gpa.NodeID]*cryptolib.PublicKey{},
-		peersLock:              &sync.RWMutex{},
-		hasBeenProcessed:       hasBeenProcessed,
-		getProcessedRequests:   getProcessedRequests,
-		ctx:                    ctx,
-		log:                    log.Named("mempool"),
-		metrics:                mempoolMetrics,
-		timelockedRequestsChan: make(chan isc.OnLedgerRequest),
-		incomingRequests: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ isc.Request))(params[0].(isc.Request))
-		}),
+	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
+	waitReq := NewWaitReq(waitRequestCleanupEvery)
+	mpi := &mempoolImpl{
+		chainID:                        chainID,
+		stateMgr:                       stateMgr,
+		tangleTime:                     time.Time{},
+		timePool:                       NewTimePool(),
+		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq),
+		offLedgerPool:                  NewTypedPool[isc.OffLedgerRequest](waitReq),
+		chainHeadAO:                    nil,
+		accessNodesUpdatedPipe:         pipe.NewDefaultInfinitePipe(),
+		accessNodes:                    []*cryptolib.PublicKey{},
+		committeeNodes:                 []*cryptolib.PublicKey{},
+		waitReq:                        waitReq,
+		waitChainHead:                  []*reqConsensusProposals{},
+		reqConsensusProposalsPipe:      pipe.NewDefaultInfinitePipe(),
+		reqConsensusRequestsPipe:       pipe.NewDefaultInfinitePipe(),
+		reqReceiveOnLedgerRequestPipe:  pipe.NewDefaultInfinitePipe(),
+		reqReceiveOffLedgerRequestPipe: pipe.NewDefaultInfinitePipe(),
+		reqTangleTimeUpdatedPipe:       pipe.NewDefaultInfinitePipe(),
+		reqTrackNewChainHeadPipe:       pipe.NewDefaultInfinitePipe(),
+		netRecvPipe:                    pipe.NewDefaultInfinitePipe(),
+		netPeeringID:                   netPeeringID,
+		netPeerPubs:                    map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                            net,
+		log:                            log,
+		metrics:                        metrics,
 	}
-
-	pool.gpa = mempoolgpa.New(
-		pool.ReceiveRequests,
-		pool.GetRequest,
-		pool.log,
+	mpi.distSync = distSync.New(
+		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
+		mpi.distSyncRequestNeededCB,
+		mpi.distSyncRequestReceivedCB,
+		distShareMaxMsgsPerTick,
+		log,
 	)
-	pool.netPeeringID = peering.PeeringIDFromBytes(
-		hashing.HashDataBlake2b(chainID.Bytes(), []byte("mempool")).Bytes(),
-	)
-	attachID := net.Attach(&pool.netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
+	netRecvPipeInCh := mpi.netRecvPipe.In()
+	netAttachID := net.Attach(&netPeeringID, peering.PeerMessageReceiverMempool, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeMempool {
-			pool.log.Warnf("Unexpected message, type=%v", recv.MsgType)
+			mpi.log.Warnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
-		msg, err := pool.gpa.UnmarshalMessage(recv.MsgData)
+		netRecvPipeInCh <- recv
+	})
+	go mpi.run(ctx, netAttachID)
+	return mpi
+}
+
+func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
+	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
+}
+
+func (mpi *mempoolImpl) TrackNewChainHead(chainHeadAO *isc.AliasOutputWithID) {
+	mpi.reqTrackNewChainHeadPipe.In() <- chainHeadAO
+}
+
+func (mpi *mempoolImpl) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
+	mpi.reqReceiveOnLedgerRequestPipe.In() <- request
+}
+
+func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
+}
+
+func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
+	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
+}
+
+func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
+	res := make(chan []*isc.RequestRef, 1)
+	req := &reqConsensusProposals{
+		ctx:         ctx,
+		aliasOutput: aliasOutput,
+		responseCh:  res,
+	}
+	mpi.reqConsensusProposalsPipe.In() <- req
+	return res
+}
+
+func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request {
+	res := make(chan []isc.Request, 1)
+	req := &reqConsensusRequests{
+		ctx:         ctx,
+		requestRefs: requestRefs,
+		responseCh:  res,
+	}
+	mpi.reqConsensusRequestsPipe.In() <- req
+	return res
+}
+
+func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint: gocyclo
+	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
+	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()
+	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
+	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
+	reqReceiveOffLedgerRequestPipeOutCh := mpi.reqReceiveOffLedgerRequestPipe.Out()
+	reqTangleTimeUpdatedPipeOutCh := mpi.reqTangleTimeUpdatedPipe.Out()
+	reqTrackNewChainHeadPipeOutCh := mpi.reqTrackNewChainHeadPipe.Out()
+	netRecvPipeOutCh := mpi.netRecvPipe.Out()
+	debugTicker := time.NewTicker(distShareDebugTick)
+	timeTicker := time.NewTicker(distShareTimeTick)
+	ctxDone := ctx.Done()
+	for {
+		select {
+		case recv, ok := <-accessNodesUpdatedPipeOutCh:
+			if !ok {
+				accessNodesUpdatedPipeOutCh = nil
+				break
+			}
+			mpi.handleAccessNodesUpdated(recv.(*reqAccessNodesUpdated))
+		case recv, ok := <-reqConsensusProposalsPipeOutCh:
+			if !ok {
+				reqConsensusProposalsPipeOutCh = nil
+				break
+			}
+			mpi.handleConsensusProposals(recv.(*reqConsensusProposals))
+		case recv, ok := <-reqConsensusRequestsPipeOutCh:
+			if !ok {
+				reqConsensusRequestsPipeOutCh = nil
+				break
+			}
+			mpi.handleConsensusRequests(recv.(*reqConsensusRequests))
+		case recv, ok := <-reqReceiveOnLedgerRequestPipeOutCh:
+			if !ok {
+				reqReceiveOnLedgerRequestPipeOutCh = nil
+				break
+			}
+			mpi.handleReceiveOnLedgerRequest(recv.(isc.OnLedgerRequest))
+		case recv, ok := <-reqReceiveOffLedgerRequestPipeOutCh:
+			if !ok {
+				reqReceiveOffLedgerRequestPipeOutCh = nil
+				break
+			}
+			mpi.handleReceiveOffLedgerRequest(recv.(isc.OffLedgerRequest))
+		case recv, ok := <-reqTangleTimeUpdatedPipeOutCh:
+			if !ok {
+				reqTangleTimeUpdatedPipeOutCh = nil
+				break
+			}
+			mpi.handleTangleTimeUpdated(recv.(time.Time))
+		case recv, ok := <-reqTrackNewChainHeadPipeOutCh:
+			if !ok {
+				reqTrackNewChainHeadPipeOutCh = nil
+				break
+			}
+			mpi.handleTrackNewChainHead(ctx, recv.(*isc.AliasOutputWithID))
+		case recv, ok := <-netRecvPipeOutCh:
+			if !ok {
+				netRecvPipeOutCh = nil
+				continue
+			}
+			mpi.handleNetMessage(recv.(*peering.PeerMessageIn))
+		case <-debugTicker.C:
+			mpi.handleDistSyncDebugTick()
+		case <-timeTicker.C:
+			mpi.handleDistSyncTimeTick()
+		case <-ctxDone:
+			// mpi.accessNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
+			// mpi.reqConsensusProposalsPipe.Close()
+			// mpi.reqConsensusRequestsPipe.Close()
+			// mpi.reqReceiveOnLedgerRequestPipe.Close()
+			// mpi.reqReceiveOffLedgerRequestPipe.Close()
+			// mpi.reqTangleTimeUpdatedPipe.Close()
+			// mpi.reqTrackNewChainHeadPipe.Close()
+			// mpi.netRecvPipe.Close()
+			debugTicker.Stop()
+			timeTicker.Stop()
+			mpi.net.Detach(netAttachID)
+			return
+		}
+	}
+}
+
+// A callback for distSync.
+func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.Request {
+	return mpi.offLedgerPool.Get(requestRef)
+}
+
+// A callback for distSync.
+func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
+	olr, ok := request.(isc.OffLedgerRequest)
+	if ok {
+		if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(olr)) {
+			mpi.offLedgerPool.Add(olr)
+			mpi.metrics.CountRequestIn(olr)
+		}
+		return
+	}
+	mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+}
+
+func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
+	mpi.accessNodes = recv.accessNodePubKeys
+	mpi.committeeNodes = recv.committeePubKeys
+	//
+	accessNodeIDs := make([]gpa.NodeID, len(mpi.accessNodes))
+	for i, nodePubKey := range mpi.accessNodes {
+		accessNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
+	}
+	committeeNodeIDs := make([]gpa.NodeID, len(mpi.committeeNodes))
+	for i, nodePubKey := range mpi.committeeNodes {
+		committeeNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
+	}
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(accessNodeIDs, committeeNodeIDs)))
+}
+
+// This implementation only tracks a single branch. So, we will only respond
+// to the request matching the TrackNewChainHead call.
+func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
+	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
+		mpi.waitChainHead = append(mpi.waitChainHead, recv)
+		return
+	}
+	mpi.handleConsensusProposalsForChainHead(recv)
+}
+
+func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusProposals) {
+	//
+	// The case for matching ChainHeadAO and request BaseAO
+	reqRefs := []*isc.RequestRef{}
+	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
+		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest) bool {
+			if isc.RequestIsExpired(request, mpi.tangleTime) {
+				return false // Drop it from the mempool
+			}
+			if isc.RequestIsUnlockable(request, mpi.chainID.AsAddress(), mpi.tangleTime) {
+				reqRefs = append(reqRefs, isc.RequestRefFromRequest(request))
+			}
+			return true // Keep them for now
+		})
+	}
+	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest) bool {
+		reqRefs = append(reqRefs, isc.RequestRefFromRequest(request))
+		return true // Keep them for now
+	})
+	if len(reqRefs) > 0 {
+		recv.responseCh <- reqRefs
+		return
+	}
+	//
+	// Wait for any request.
+	mpi.waitReq.WaitAny(recv.ctx, func(req isc.Request) {
+		recv.responseCh <- []*isc.RequestRef{isc.RequestRefFromRequest(req)}
+	})
+}
+
+func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
+	reqs := make([]isc.Request, len(recv.requestRefs))
+	missing := []*isc.RequestRef{}
+	missingIdx := map[isc.RequestRefKey]int{}
+	for i := range reqs {
+		reqRef := recv.requestRefs[i]
+		reqs[i] = mpi.onLedgerPool.Get(reqRef)
+		if reqs[i] == nil {
+			reqs[i] = mpi.offLedgerPool.Get(reqRef)
+		}
+		if reqs[i] == nil {
+			missing = append(missing, reqRef)
+			missingIdx[reqRef.AsKey()] = i
+		}
+	}
+	if len(missing) == 0 {
+		recv.responseCh <- reqs
+		return
+	}
+	//
+	// Wait for missing requests.
+	for i := range missing {
+		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputRequestNeeded(missing[i], true)))
+	}
+	mpi.waitReq.WaitMany(recv.ctx, missing, func(req isc.Request) {
+		reqRefKey := isc.RequestRefFromRequest(req).AsKey()
+		if idx, ok := missingIdx[reqRefKey]; ok {
+			reqs[idx] = req
+			delete(missingIdx, reqRefKey)
+			if len(missingIdx) == 0 {
+				recv.responseCh <- reqs
+			}
+		}
+	})
+}
+
+func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
+	requestID := request.ID()
+	requestRef := isc.RequestRefFromRequest(request)
+	//
+	// TODO: Do not process anything with SDRUC for now.
+	if _, ok := request.Features().ReturnAmount(); ok {
+		mpi.log.Warnf("dropping request, because it has ReturnAmount, ID=%v", requestID)
+		return
+	}
+	//
+	// Check, maybe mempool already has it.
+	if mpi.onLedgerPool.Has(requestRef) || mpi.timePool.Has(requestRef) {
+		return
+	}
+	//
+	// Maybe it has been processed before?
+	if mpi.chainHeadState != nil {
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState.KVStoreReader(), &requestID)
 		if err != nil {
-			pool.log.Warnf("cannot parse message: %v", err)
-			return
+			panic(xerrors.Errorf("cannot check if request was processed: %w", err))
 		}
-		// process the incoming message and send whatever is needed to other peers
-		pool.enqueueNetworkMessages(pool.gpa.Message(msg))
-	})
-
-	go func() {
-		<-pool.ctx.Done()
-		net.Detach(attachID)
-	}()
-
-	go pool.addTimelockedRequestsToMempool()
-	go pool.gpaTick()
-	go pool.sendNetworkMessages()
-
-	return pool
-}
-
-// This is called from the Chain when a list of committee/access nodes is changed.
-func (m *mempool) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
-	committeeNodeIDs := []gpa.NodeID{}
-	accessNodeIDs := []gpa.NodeID{}
-	peerMapping := map[gpa.NodeID]*cryptolib.PublicKey{}
-	for i := range accessNodePubKeys {
-		nid := m.pubKeyAsNodeID(accessNodePubKeys[i])
-		peerMapping[nid] = accessNodePubKeys[i]
-		accessNodeIDs = append(accessNodeIDs, nid)
-	}
-	for i := range committeePubKeys {
-		nid := m.pubKeyAsNodeID(committeePubKeys[i])
-		if _, ok := peerMapping[nid]; !ok {
-			// Should be not needed, because the consensus nodes should
-			// be a subset of access nodes.
-			peerMapping[nid] = committeePubKeys[i]
-		}
-		committeeNodeIDs = append(committeeNodeIDs, nid)
-	}
-	m.peersLock.Lock()
-	m.peers = peerMapping
-	m.peersLock.Unlock()
-	m.gpa.SetPeers(committeeNodeIDs, accessNodeIDs)
-}
-
-func (m *mempool) enqueueNetworkMessages(msgs gpa.OutMessages) {
-	m.netMsgsChan <- msgs
-}
-
-func (m *mempool) sendNetworkMessages() {
-	for {
-		select {
-		case msgs := <-m.netMsgsChan:
-			msgs.MustIterate(m.sendMsg)
-		case <-m.ctx.Done():
+		if processed {
 			return
 		}
 	}
+	//
+	// Add the request either to the onLedger request pool or time-locked request pool.
+	reqUnlockCondSet := request.Output().UnlockConditionSet()
+	timeLock := reqUnlockCondSet.Timelock()
+	if timeLock != nil {
+		expiration := reqUnlockCondSet.Expiration()
+		if expiration != nil && timeLock.UnixTime >= expiration.UnixTime {
+			// can never be processed, just reject
+			return
+		}
+		if mpi.tangleTime.IsZero() || timeLock.UnixTime > uint32(mpi.tangleTime.Unix()) {
+			mpi.timePool.AddRequest(time.Unix(int64(timeLock.UnixTime), 0), request)
+			return
+		}
+	}
+	mpi.onLedgerPool.Add(request)
+	mpi.metrics.CountRequestIn(request)
 }
 
-func (m *mempool) sendMsg(msg gpa.Message) {
-	msgData, err := msg.MarshalBinary()
+func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+	mpi.offLedgerPool.Add(request)
+	mpi.metrics.CountRequestIn(request)
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+}
+
+func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
+	oldTangleTime := mpi.tangleTime
+	mpi.tangleTime = tangleTime
+	//
+	// Add requests from time locked pool.
+	reqs := mpi.timePool.TakeTill(tangleTime)
+	for i := range reqs {
+		switch req := reqs[i].(type) {
+		case isc.OnLedgerRequest:
+			mpi.onLedgerPool.Add(req)
+			mpi.metrics.CountRequestIn(req)
+		case isc.OffLedgerRequest:
+			mpi.offLedgerPool.Add(req)
+			mpi.metrics.CountRequestIn(req)
+		default:
+			panic(xerrors.Errorf("unexpected request type: %T, %+v", req, req))
+		}
+	}
+	//
+	// Notify existing on-ledger requests if that's first time update.
+	if oldTangleTime.IsZero() {
+		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest) bool {
+			mpi.waitReq.Have(request)
+			return true
+		})
+	}
+}
+
+// - Ask StateMgr for the new state and the changes (in terms of blocks).
+// - Re-add all the request from the reverted blocks.
+// - Cleanup requests from the blocks that were added.
+func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+	vState, addedBlocks, removedBlocks := mpi.stateMgr.MempoolStateRequest(ctx, mpi.chainHeadAO, aliasOutput)
+	if len(removedBlocks) != 0 {
+		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(removedBlocks), len(addedBlocks))
+		// TODO: For IOTA 2.0: Maybe re-read the state from L1 (when reorgs will become possible).
+	}
+	//
+	// Re-add requests from the blocks that are reverted now.
+	for _, block := range removedBlocks {
+		blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
+		if err != nil {
+			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
+		}
+		for _, receipt := range blockReceipts {
+			mpi.tryReAddRequest(receipt.Request)
+		}
+	}
+	//
+	// Cleanup the requests that were consumed in the added blocks.
+	for _, block := range addedBlocks {
+		blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
+		if err != nil {
+			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
+		}
+		mpi.metrics.CountBlocksPerChain()
+		for _, receipt := range blockReceipts {
+			mpi.metrics.CountRequestOut()
+			mpi.tryRemoveRequest(receipt.Request)
+		}
+	}
+	//
+	// Record the head state.
+	mpi.chainHeadState = vState
+	mpi.chainHeadAO = aliasOutput
+	//
+	// Process the pending consensus proposal requests if any.
+	if len(mpi.waitChainHead) != 0 {
+		newWaitChainHead := []*reqConsensusProposals{}
+		for i, waiting := range mpi.waitChainHead {
+			if waiting.ctx.Err() != nil {
+				continue // Drop it.
+			}
+			if waiting.aliasOutput.Equals(mpi.chainHeadAO) {
+				mpi.handleConsensusProposalsForChainHead(waiting)
+				continue // Drop it from wait queue.
+			}
+			newWaitChainHead = append(newWaitChainHead, mpi.waitChainHead[i])
+		}
+		mpi.waitChainHead = newWaitChainHead
+	}
+}
+
+func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {
+	msg, err := mpi.distSync.UnmarshalMessage(recv.MsgData)
 	if err != nil {
-		m.log.Warnf("Failed to send a message: %v", err)
+		mpi.log.Warnf("cannot parse message: %v", err)
 		return
 	}
-	peerMsg := &peering.PeerMessageData{
-		PeeringID:   m.netPeeringID,
-		MsgReceiver: peering.PeerMessageReceiverChainCons,
-		MsgType:     msgTypeMempool,
-		MsgData:     msgData,
-	}
-	m.net.SendMsgByPubKey(m.peers[msg.Recipient()], peerMsg)
+	msg.SetSender(mpi.pubKeyAsNodeID(recv.SenderPubKey))
+	outMsgs := mpi.distSync.Message(msg) // Output is handled via callbacks in this case.
+	mpi.sendMessages(outMsgs)
 }
 
-func (m *mempool) attachToIncomingRequests(handler func(isc.Request)) *events.Closure {
-	closure := events.NewClosure(handler)
-	m.incomingRequests.Hook(closure)
-	return closure
+func (mpi *mempoolImpl) handleDistSyncDebugTick() {
+	mpi.log.Debugf(
+		"Mempool onLedger=%v, offLedger=%v distSync=%v",
+		mpi.onLedgerPool.StatusString(),
+		mpi.offLedgerPool.StatusString(),
+		mpi.distSync.StatusString(),
+	)
 }
 
-func shouldBeRemoved(req isc.Request, currentTime time.Time) bool {
-	onLedgerReq, ok := req.(isc.OnLedgerRequest)
-	if !ok {
-		return false
-	}
-
-	// TODO Do not process anything with SDRUC for now
-	if _, ok := onLedgerReq.Features().ReturnAmount(); ok {
-		return true
-	}
-
-	return isc.RequestIsExpired(onLedgerReq, currentTime)
+func (mpi *mempoolImpl) handleDistSyncTimeTick() {
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputTimeTick()))
 }
 
-// isRequestReady return whether a request is unlockable, the result is strictly deterministic
-func (m *mempool) isRequestReady(req isc.Request) bool {
-	if onLedgerReq, ok := req.(isc.OnLedgerRequest); ok {
-		return isc.RequestIsUnlockable(onLedgerReq, m.chainAddress, time.Now())
-	}
-	return true
-}
-
-func (m *mempool) GetRequest(id isc.RequestID) isc.Request {
-	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
-
-	return m.pool[id]
-}
-
-func (m *mempool) HasRequest(id isc.RequestID) bool {
-	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
-
-	_, ok := m.pool[id]
-	return ok
-}
-
-func (m *mempool) Info() MempoolInfo {
-	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
-
-	ret := MempoolInfo{
-		InPoolCounter:  m.inPoolCounter,
-		OutPoolCounter: m.outPoolCounter,
-		TotalPool:      len(m.pool),
-	}
-	return ret
-}
-
-func (m *mempool) addTimelockedRequestsToMempool() {
-	timelockedRequests := make(map[isc.RequestID]isc.OnLedgerRequest)
-	var nextUnlock time.Time
-	nextUnlockReqs := make(map[isc.RequestID]isc.Request)
-	var timeUntilNextUnlock time.Duration
-
-	for {
-		if nextUnlock.IsZero() {
-			timeUntilNextUnlock = math.MaxInt64
-		} else {
-			timeUntilNextUnlock = time.Until(nextUnlock)
-		}
-
-		select {
-		case req := <-m.timelockedRequestsChan:
-			timelockedRequests[req.ID()] = req
-			// if this request unlocks before `nextUnlock`, update nextUnlock and nextUnlockRequests
-			timelock := req.Output().UnlockConditionSet().Timelock()
-			if timelock == nil {
-				panic("request without timelock shouldn't have been added here")
-			}
-			unlockTime := time.Unix(int64(timelock.UnixTime), 0)
-			if nextUnlock.IsZero() || unlockTime.Before(nextUnlock) {
-				nextUnlock = unlockTime
-				nextUnlockReqs = make(map[isc.RequestID]isc.Request)
-				nextUnlockReqs[req.ID()] = req
-			}
-			if unlockTime.Equal(nextUnlock) {
-				nextUnlockReqs[req.ID()] = req
-			}
-
-		case <-time.After(timeUntilNextUnlock):
-			// try add To pool
-			func() {
-				m.poolMutex.Lock()
-				for id, req := range nextUnlockReqs {
-					m.addToPoolNoLock(req)
-					delete(timelockedRequests, id)
-				}
-				m.poolMutex.Unlock()
-			}()
-			// find the next set of requests to be unlockable
-			nextUnlock = time.Time{}
-			nextUnlockReqs = make(map[isc.RequestID]isc.Request)
-			for id, req := range timelockedRequests {
-				timelock := time.Unix(int64(req.Output().UnlockConditionSet().Timelock().UnixTime), 0)
-				if nextUnlock.IsZero() || timelock.Before(nextUnlock) {
-					nextUnlock = timelock
-					nextUnlockReqs = make(map[isc.RequestID]isc.Request)
-					nextUnlockReqs[id] = req
-					continue
-				}
-				if timelock.Equal(nextUnlock) {
-					nextUnlockReqs[id] = req
-				}
-			}
-		}
+func (mpi *mempoolImpl) tryReAddRequest(req isc.Request) {
+	switch req := req.(type) {
+	case isc.OnLedgerRequest:
+		// TODO: For IOTA 2.0: We will have to check, if the request has been reverted with the reorg.
+		//
+		// For now, the L1 cannot revert committed outputs and all the on-ledger requests
+		// are received, when they are committed. Therefore it is safe now to re-add the
+		// requests, because they were consumed in an uncommitted (and now reverted) transactions.
+		mpi.onLedgerPool.Add(req)
+	case isc.OffLedgerRequest:
+		mpi.offLedgerPool.Add(req)
+	default:
+		panic(xerrors.Errorf("unexpected request type: %T", req))
 	}
 }
 
-const gpaTickInterval = 100 * time.Millisecond
+func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
+	switch req := req.(type) {
+	case isc.OnLedgerRequest:
+		mpi.onLedgerPool.Remove(req)
+	case isc.OffLedgerRequest:
+		mpi.offLedgerPool.Remove(req)
+	default:
+		mpi.log.Warn("Trying to remove request of unexpected type %T: %+v", req, req)
+	}
+}
 
-func (m *mempool) gpaTick() {
-	ticker := time.NewTicker(gpaTickInterval)
-	for {
-		select {
-		case t := <-ticker.C:
-			m.enqueueNetworkMessages(m.gpa.Input(t))
-		case <-m.ctx.Done():
+func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
+	if outMsgs == nil {
+		return
+	}
+	outMsgs.MustIterate(func(m gpa.Message) {
+		msgData, err := m.MarshalBinary()
+		if err != nil {
+			mpi.log.Warnf("Failed to send a message: %v", err)
 			return
 		}
-	}
-}
-
-// adds a request to the pool after doing some basic checks, returns whether it was added successfully
-func (m *mempool) addToPoolNoLock(req isc.Request) bool {
-	if shouldBeRemoved(req, time.Now()) {
-		return false // if expired or shouldn't even be processed, don't add to mempool
-	}
-	// checking in the state if request is processed or already in mempool.
-	reqid := req.ID()
-	if _, ok := m.pool[reqid]; ok {
-		return false
-	}
-	if m.hasBeenProcessed(reqid) {
-		return false
-	}
-	m.pool[reqid] = req
-	m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
-	m.inPoolCounter++
-	m.metrics.CountRequestIn(req)
-	m.incomingRequests.Trigger(req)
-	return true
-}
-
-// Implement the interface needed by the Chain.
-func (m *mempool) TrackNewChainHead(chainHeadAO isc.AliasOutputWithID) {
-	// TODO: ...
-}
-
-// Implement the interface needed by the Chain.
-func (m *mempool) ReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
-	m.ReceiveRequests(request)
-}
-
-func (m *mempool) ReceiveRequests(reqs ...isc.Request) []bool {
-	if len(reqs) == 0 {
-		return nil
-	}
-	ret := make([]bool, len(reqs))
-	m.poolMutex.Lock()
-	defer m.poolMutex.Unlock()
-	for i, req := range reqs {
-		onledgerReq, ok := req.(isc.OnLedgerRequest)
-		if !ok {
-			// offledger
-			m.enqueueNetworkMessages(m.gpa.Input(req))
-			ret[i] = m.addToPoolNoLock(req)
-			continue
+		pm := &peering.PeerMessageData{
+			PeeringID:   mpi.netPeeringID,
+			MsgReceiver: peering.PeerMessageReceiverMempool,
+			MsgType:     msgTypeMempool,
+			MsgData:     msgData,
 		}
-		// if the request is timelocked, maybe it shouldn't be added to the mempool right away
-		timelock := onledgerReq.Output().UnlockConditionSet().Timelock()
-		if timelock != nil {
-			expiration := onledgerReq.Output().UnlockConditionSet().Expiration()
-			if expiration != nil && timelock.UnixTime >= expiration.UnixTime {
-				// can never be processed, just reject
-				ret[i] = false
-				continue
-			}
-			if timelock.UnixTime > uint32(time.Now().Unix()) {
-				// will be unlockable in the future, add to pool later
-				m.timelockedRequestsChan <- onledgerReq
-				ret[i] = true
-				continue
-			}
-		}
-		ret[i] = m.addToPoolNoLock(req)
-	}
-	return ret
-}
-
-func (m *mempool) removeFromPoolNoLock(reqID isc.RequestID) {
-	m.outPoolCounter++
-	delete(m.pool, reqID)
-	m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", reqID, m.inPoolCounter, m.outPoolCounter)
-	m.metrics.CountRequestOut()
-	m.metrics.CountBlocksPerChain()
-}
-
-func (m *mempool) RemoveRequests(reqs ...isc.RequestID) {
-	if len(reqs) == 0 {
-		return
-	}
-	m.gpa.Input(mempoolgpa.RemovedFromMempool{
-		RequestIDs: reqs,
+		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[m.Recipient()], pm)
 	})
-	m.poolMutex.Lock()
-	defer m.poolMutex.Unlock()
+}
 
-	for _, rid := range reqs {
-		if _, ok := m.pool[rid]; !ok {
-			continue
-		}
-		m.removeFromPoolNoLock(rid)
+func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
+	nodeID := gpa.NodeID(pubKey.String())
+	if _, ok := mpi.netPeerPubs[nodeID]; !ok {
+		mpi.netPeerPubs[nodeID] = pubKey
 	}
+	return nodeID
 }
 
-func (m *mempool) Empty() bool {
-	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
-	return len(m.pool) == 0
+////////////////////////////////////////////////////////////////////////////////
+// Functions for the SOLO tests.
+
+func (mpi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) []bool {
+	panic("to be implemented") // TODO: Implement.
 }
 
-const checkForRequestsInPoolInterval = 200 * time.Millisecond
-
-// ConsensusProposalsAsync returns a list of requests to be sent as a batch proposal
-func (m *mempool) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
-	// TODO handle reorgs (if possible, TBD)
-
-	if aliasOutput.GetStateIndex() == 0 {
-		m.lastSeenChainOutput = aliasOutput
-	} else {
-		// clean mempool from requests processed since lastSeenChainOutput until aliasOutput
-		lastSeenStateIndex := uint32(0)
-		if m.lastSeenChainOutput != nil {
-			lastSeenStateIndex = m.lastSeenChainOutput.GetStateIndex()
-		}
-		if aliasOutput.GetStateIndex() < lastSeenStateIndex {
-			panic(fmt.Sprintf("reorg happened, last seen: %s, received: %s", m.lastSeenChainOutput.String(), aliasOutput.String()))
-		}
-		processedReqs := m.getProcessedRequests(m.lastSeenChainOutput, aliasOutput)
-		m.RemoveRequests(processedReqs...)
-	}
-
-	retChan := make(chan []*isc.RequestRef, 1)
-	go func() {
-		// wait for some time or until the pool is not empty
-		for m.Empty() {
-			time.Sleep(checkForRequestsInPoolInterval)
-			if ctx.Err() != nil {
-				close(retChan)
-				return
-			}
-		}
-		m.poolMutex.RLock()
-		defer m.poolMutex.RUnlock()
-
-		// transverse the mempool, detect expired requests, build the batch proposal
-		ret := make([]*isc.RequestRef, 0, len(m.pool))
-		toRemove := []isc.RequestID{}
-		for _, req := range m.pool {
-			if shouldBeRemoved(req, time.Now()) {
-				toRemove = append(toRemove, req.ID())
-				continue
-			}
-			if m.isRequestReady(req) {
-				ret = append(ret, &isc.RequestRef{
-					ID:   req.ID(),
-					Hash: isc.RequestHash(req),
-				})
-			}
-		}
-		retChan <- ret
-		m.RemoveRequests(toRemove...)
-	}()
-
-	return retChan
+func (mpi *mempoolImpl) RemoveRequests(reqs ...isc.RequestID) {
+	panic("to be implemented") // TODO: Implement.
 }
 
-func (m *mempool) getRequestsFromRefs(requestRefs []*isc.RequestRef) (requests []isc.Request, missingReqs map[hashing.HashValue]int) {
-	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
-
-	requests = make([]isc.Request, len(requestRefs))
-	missingReqs = make(map[hashing.HashValue]int)
-	for i, ref := range requestRefs {
-		req, ok := m.pool[ref.ID]
-		if ok {
-			requests[i] = req
-		} else {
-			missingReqs[ref.Hash] = i
-		}
-	}
-	return requests, missingReqs
-}
-
-// ConsensusRequestsAsync return a list of requests to be processed
-func (m *mempool) ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request {
-	retChan := make(chan []isc.Request, 1)
-
-	go func() {
-		requests, missingReqs := m.getRequestsFromRefs(requestRefs)
-		if len(missingReqs) == 0 {
-			// we have all the requests
-			retChan <- requests
-			return
-		}
-
-		var missingRequestsChan chan isc.Request
-		if len(missingReqs) > 0 {
-			closure := m.attachToIncomingRequests(func(req isc.Request) {
-				missingRequestsChan <- req
-			})
-			defer m.incomingRequests.Detach(closure)
-
-			for _, idx := range missingReqs {
-				missingRef := requestRefs[idx]
-				m.enqueueNetworkMessages(
-					m.gpa.Input(missingRef),
-				)
-			}
-		}
-
-		for {
-			select {
-			case req := <-missingRequestsChan:
-				reqHash := isc.RequestHash(req)
-				idx, ok := missingReqs[reqHash]
-				if !ok {
-					continue // not the request we're looking for
-				}
-				requests[idx] = req
-				delete(missingReqs, reqHash)
-				if len(missingReqs) == 0 {
-					// we have all the requests
-					retChan <- requests
-					return
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	return retChan
-}
-
-func (m *mempool) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
+func (mpi *mempoolImpl) Info() MempoolInfo {
+	panic("to be implemented") // TODO: Implement.
 }

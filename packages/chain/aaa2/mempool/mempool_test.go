@@ -1,7 +1,13 @@
-package mempool
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+package mempool_test
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -9,58 +15,552 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
+	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/utxodb"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
-var chainAddress = tpkg.RandAliasAddress()
-
-func newTestPool(t *testing.T) Mempool {
-	log := testlogger.NewLogger(t)
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		[]string{"nodeID"}, []*cryptolib.KeyPair{cryptolib.NewKeyPair()}, 10000,
-		testutil.NewPeeringNetReliable(log),
-		log,
-	)
-
-	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
-	stateReader, _ := createStateReader(t, glb)
-	mempoolMetrics := new(MockMempoolMetrics)
-	chainID := isc.ChainIDFromAddress(chainAddress)
-	return New(
-		context.Background(),
-		&chainID,
-		cryptolib.NewKeyPair(),
-		peeringNetwork.NetworkProviders()[0],
-		CreateHasBeenProcessedFunc(stateReader.KVStoreReader()),
-		CreateGetProcessedReqsFunc(stateReader.KVStoreReader()),
-		log,
-		mempoolMetrics,
-	)
+type tc struct {
+	n        int
+	f        int
+	reliable bool
 }
 
-func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
-	store := mapdb.NewMapDB()
-	vs, err := state.CreateOriginState(store, isc.RandomChainID())
-	require.NoError(t, err)
-	ret := state.NewOptimisticStateReader(store, glb)
-	require.NoError(t, err)
-	return ret, vs
+func TestBasic(t *testing.T) {
+	t.Parallel()
+	tests := []tc{
+		{n: 1, f: 0, reliable: true},  // Low N
+		{n: 2, f: 0, reliable: true},  // Low N
+		{n: 3, f: 0, reliable: true},  // Low N
+		{n: 4, f: 1, reliable: true},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true}, // Typical config.
+	}
+	if !testing.Short() {
+		tests = append(tests,
+			tc{n: 4, f: 1, reliable: false},  // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false}, // Typical config.
+			tc{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
+		)
+	}
+	for _, tst := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
+			func(tt *testing.T) { testBasic(tt, tst.n, tst.f, tst.reliable) },
+		)
+	}
 }
 
-func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
+// Scenario:
+//   - Send an on-ledger/off-ledger requests to different nodes.
+//   - Send BaseAO to all nodes.
+//   - Get proposals in all nodes -> all have at least 1 of those reqs.
+//   - Get both requests for all nodes.
+//   - Send next BaseAO on all nodes.
+//   - Get proposals -- all waiting.
+//   - Send a request.
+//   - Get proposals -- all received 1 request.
+func testBasic(t *testing.T, n, f int, reliable bool) {
+	t.Parallel()
+	te := newEnv(t, n, f, reliable)
+	defer te.close()
+	chainInitReqs := te.tcl.MakeTxChainInit()
+	require.Len(t, chainInitReqs, 1)
+	chainInitReq := chainInitReqs[0]
+	//
+	offLedgerReq := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 0).Sign(te.governor)
+	t.Logf("Sending off-ledger request")
+	chosenMempool := rand.Intn(len(te.mempools))
+	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
+	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
+	t.Logf("Sending on-ledger request")
+	for _, node := range te.mempools {
+		node.ReceiveOnLedgerRequest(chainInitReq.(isc.OnLedgerRequest))
+	}
+	t.Logf("AccessNodesUpdated")
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	t.Logf("TrackNewChainHead")
+	for _, node := range te.mempools {
+		node.TrackNewChainHead(te.originAO)
+	}
+	t.Logf("Ask for proposals")
+	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
+	for i, node := range te.mempools {
+		proposals[i] = node.ConsensusProposalsAsync(te.ctx, te.originAO)
+	}
+	t.Logf("Wait for proposals and ask for decided requests")
+	decided := make([]<-chan []isc.Request, len(te.mempools))
+	for i, node := range te.mempools {
+		proposal := <-proposals[i]
+		require.True(t, len(proposal) == 1 || len(proposal) == 2)
+		decided[i] = node.ConsensusRequestsAsync(te.ctx, isc.RequestRefsFromRequests([]isc.Request{chainInitReq, offLedgerReq}))
+	}
+	t.Logf("Wait for decided requests")
+	for i := range te.mempools {
+		nodeDecidedReqs := <-decided[i]
+		require.Len(t, nodeDecidedReqs, 2)
+	}
+	//
+	// Make a block consuming those 2 requests.
+	kv := mapdb.NewMapDB()
+	chainState, err := state.CreateOriginState(kv, te.chainID)
+	require.NoError(t, err)
+	chainStateSync := coreutil.NewChainStateSync()
+	chainStateSync.SetSolidIndex(0)
+	vmTask := &vm.VMTask{
+		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
+		AnchorOutput:           te.originAO.GetAliasOutput(),
+		AnchorOutputID:         te.originAO.OutputID(),
+		SolidStateBaseline:     chainStateSync.GetSolidIndexBaseline(),
+		Requests:               []isc.Request{chainInitReq, offLedgerReq},
+		TimeAssumption:         tangleTime,
+		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
+		ValidatorFeeTarget:     te.chainID.CommonAccount(),
+		EstimateGasMode:        false,
+		EnableGasBurnLogging:   false,
+		VirtualStateAccess:     chainState,
+		MaintenanceModeEnabled: false,
+		Log:                    te.log.Named("VM"),
+	}
+	require.NoError(t, runvm.NewVMRunner().Run(vmTask))
+	block, err := chainState.ExtractBlock()
+	require.NoError(t, err)
+	//
+	// Check if block has both requests as consumed.
+	receipts, err := blocklog.RequestReceiptsFromBlock(block)
+	require.NoError(t, err)
+	require.Len(t, receipts, 2)
+	blockReqs := []isc.Request{}
+	for i := range receipts {
+		blockReqs = append(blockReqs, receipts[i].Request)
+	}
+	require.Contains(t, blockReqs, chainInitReq)
+	require.Contains(t, blockReqs, offLedgerReq)
+	nextAO, _ := te.tcl.FakeTX(te.originAO, te.cmtAddress)
+	//
+	// Ask proposals for the next
+	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
+	for i := range te.mempools {
+		te.stateMgrs[i].mockAliasOutput(nextAO, chainState, []state.Block{block}, []state.Block{})
+		proposals[i] = te.mempools[i].ConsensusProposalsAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
+		te.mempools[i].TrackNewChainHead(nextAO)
+	}
+	time.Sleep(200 * time.Millisecond) // Just wait for messages to be processed.
+	//
+	// We should not get any requests, because old requests are consumed
+	// and the new ones are not arrived yet.
+	for i := range te.mempools {
+		select {
+		case <-proposals[i]:
+			require.FailNow(t, "should not get a value here")
+		default:
+			// OK
+		}
+	}
+	// Add a message, we should get it now.
+	offLedgerReq2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 1).Sign(te.governor)
+	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
+	for i := range te.mempools {
+		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
+	}
+	for i := range te.mempools {
+		prop := <-proposals[i]
+		require.Len(t, prop, 1)
+		require.Contains(t, prop, offLedgerRef2)
+	}
+}
+
+func TestTimeLock(t *testing.T) {
+	t.Parallel()
+	tests := []tc{
+		{n: 1, f: 0, reliable: true},  // Low N
+		{n: 2, f: 0, reliable: true},  // Low N
+		{n: 3, f: 0, reliable: true},  // Low N
+		{n: 4, f: 1, reliable: true},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true}, // Typical config.
+	}
+	for _, tst := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
+			func(tt *testing.T) { testTimeLock(tt, tst.n, tst.f, tst.reliable) },
+		)
+	}
+}
+
+func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
+	t.Parallel()
+	te := newEnv(t, n, f, reliable)
+	defer te.close()
+	start := time.Now()
+	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 6, func(i int, p *isc.RequestParameters) {
+		switch i {
+		case 0: // + No time lock
+		case 1: // + Time lock before start
+			p.Options.Timelock = start.Add(-2 * time.Hour)
+		case 2: // + Time lock slightly before start due to time.Now() in ReadyNow being called later than in this test
+			p.Options.Timelock = start
+		case 3: // - Time lock 5s after start
+			p.Options.Timelock = start.Add(5 * time.Second)
+		case 4: // - Time lock 2h after start
+			p.Options.Timelock = start.Add(2 * time.Hour)
+		case 5: // - Time lock after expiration
+			p.Options.Timelock = start.Add(3 * time.Second)
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(2 * time.Second),
+				ReturnAddress: te.chainID.AsAddress(),
+			}
+		}
+	})
+	reqRefs := []*isc.RequestRef{
+		isc.RequestRefFromRequest(requests[0]),
+		isc.RequestRefFromRequest(requests[1]),
+		isc.RequestRefFromRequest(requests[2]),
+		isc.RequestRefFromRequest(requests[3]),
+		isc.RequestRefFromRequest(requests[4]),
+		isc.RequestRefFromRequest(requests[5]),
+	}
+	//
+	// Add the requests.
+	for _, mp := range te.mempools {
+		for _, r := range requests {
+			mp.ReceiveOnLedgerRequest(r)
+		}
+	}
+	for _, mp := range te.mempools {
+		mp.TangleTimeUpdated(start)
+		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		mp.TrackNewChainHead(te.originAO)
+	}
+	//
+	// Check, if requests are proposed.
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 3)
+		require.Contains(t, reqs, reqRefs[0])
+		require.Contains(t, reqs, reqRefs[1])
+		require.Contains(t, reqs, reqRefs[2])
+	}
+	//
+	// Add the requests twice should keep things the same.
+	for _, mp := range te.mempools {
+		for _, r := range requests {
+			mp.ReceiveOnLedgerRequest(r)
+		}
+	}
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 3)
+		require.Contains(t, reqs, reqRefs[0])
+		require.Contains(t, reqs, reqRefs[1])
+		require.Contains(t, reqs, reqRefs[2])
+	}
+	//
+	// More requests are proposed after 5s
+	for _, mp := range te.mempools {
+		mp.TangleTimeUpdated(start.Add(10 * time.Second))
+	}
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 4)
+		require.Contains(t, reqs, reqRefs[0])
+		require.Contains(t, reqs, reqRefs[1])
+		require.Contains(t, reqs, reqRefs[2])
+		require.Contains(t, reqs, reqRefs[3])
+	}
+	//
+	// Even more requests are proposed after 10h.
+	for _, mp := range te.mempools {
+		mp.TangleTimeUpdated(start.Add(10 * time.Hour))
+	}
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 5)
+		require.Contains(t, reqs, reqRefs[0])
+		require.Contains(t, reqs, reqRefs[1])
+		require.Contains(t, reqs, reqRefs[2])
+		require.Contains(t, reqs, reqRefs[3])
+		require.Contains(t, reqs, reqRefs[4])
+	}
+}
+
+func TestExpiration(t *testing.T) {
+	t.Parallel()
+	tests := []tc{
+		{n: 1, f: 0, reliable: true},  // Low N
+		{n: 2, f: 0, reliable: true},  // Low N
+		{n: 3, f: 0, reliable: true},  // Low N
+		{n: 4, f: 1, reliable: true},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true}, // Typical config.
+	}
+	for _, tst := range tests {
+		t.Run(
+			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
+			func(tt *testing.T) { testExpiration(tt, tst.n, tst.f, tst.reliable) },
+		)
+	}
+}
+
+func testExpiration(t *testing.T, n, f int, reliable bool) {
+	t.Parallel()
+	te := newEnv(t, n, f, reliable)
+	defer te.close()
+	start := time.Now()
+	requests := getRequestsOnLedger(t, te.chainID.AsAddress(), 4, func(i int, p *isc.RequestParameters) {
+		switch i {
+		case 1: // expired
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(-isc.RequestConsideredExpiredWindow),
+				ReturnAddress: te.chainID.AsAddress(),
+			}
+		case 2: // will expire soon
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(isc.RequestConsideredExpiredWindow / 2),
+				ReturnAddress: te.chainID.AsAddress(),
+			}
+		case 3: // not expired yet
+			p.Options.Expiration = &isc.Expiration{
+				Time:          start.Add(isc.RequestConsideredExpiredWindow * 2),
+				ReturnAddress: te.chainID.AsAddress(),
+			}
+		}
+	})
+	reqRefs := []*isc.RequestRef{
+		isc.RequestRefFromRequest(requests[0]),
+		isc.RequestRefFromRequest(requests[1]),
+		isc.RequestRefFromRequest(requests[2]),
+		isc.RequestRefFromRequest(requests[3]),
+	}
+	//
+	// Add the requests.
+	for _, mp := range te.mempools {
+		for _, r := range requests {
+			mp.ReceiveOnLedgerRequest(r)
+		}
+	}
+	for _, mp := range te.mempools {
+		mp.TangleTimeUpdated(start)
+		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		mp.TrackNewChainHead(te.originAO)
+	}
+	//
+	// Check, if requests are proposed.
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 2)
+		require.Contains(t, reqs, reqRefs[0])
+		require.Contains(t, reqs, reqRefs[3])
+	}
+	//
+	// The remaining request with an expiry expires some time after.
+	for _, mp := range te.mempools {
+		mp.TangleTimeUpdated(start.Add(10 * isc.RequestConsideredExpiredWindow))
+	}
+	time.Sleep(100 * time.Millisecond) // Just to make sure all the events have been consumed.
+	for _, mp := range te.mempools {
+		reqs := <-mp.ConsensusProposalsAsync(te.ctx, te.originAO)
+		require.Len(t, reqs, 1)
+		require.Contains(t, reqs, reqRefs[0])
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// testEnv
+
+// Setups testing environment and holds all the relevant info.
+type testEnv struct {
+	ctx              context.Context
+	ctxCancel        context.CancelFunc
+	log              *logger.Logger
+	utxoDB           *utxodb.UtxoDB
+	governor         *cryptolib.KeyPair
+	originator       *cryptolib.KeyPair
+	peerNetIDs       []string
+	peerIdentities   []*cryptolib.KeyPair
+	peerPubKeys      []*cryptolib.PublicKey
+	peeringNetwork   *testutil.PeeringNetwork
+	networkProviders []peering.NetworkProvider
+	tcl              *testchain.TestChainLedger
+	cmtAddress       iotago.Address
+	chainID          *isc.ChainID
+	originAO         *isc.AliasOutputWithID
+	mempools         []mempool.Mempool
+	stateMgrs        []*testStateMgr
+}
+
+func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
+	te := &testEnv{}
+	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
+	te.log = testlogger.NewLogger(t)
+	//
+	// Create ledger accounts.
+	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
+	te.governor = cryptolib.NewKeyPair()
+	te.originator = cryptolib.NewKeyPair()
+	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())
+	require.NoError(t, err)
+	_, err = te.utxoDB.GetFundsFromFaucet(te.originator.Address())
+	require.NoError(t, err)
+	//
+	// Create a fake network and keys for the tests.
+	te.peerNetIDs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
+	te.peerPubKeys = make([]*cryptolib.PublicKey, len(te.peerIdentities))
+	for i := range te.peerPubKeys {
+		te.peerPubKeys[i] = te.peerIdentities[i].GetPublicKey()
+	}
+	var networkBehaviour testutil.PeeringNetBehavior
+	if reliable {
+		networkBehaviour = testutil.NewPeeringNetReliable(te.log)
+	} else {
+		netLogger := testlogger.WithLevel(te.log.Named("Network"), logger.LevelInfo, false)
+		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
+	}
+	te.peeringNetwork = testutil.NewPeeringNetwork(
+		te.peerNetIDs, te.peerIdentities, 10000,
+		networkBehaviour,
+		testlogger.WithLevel(te.log, logger.LevelWarn, false),
+	)
+	te.networkProviders = te.peeringNetwork.NetworkProviders()
+	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.governor, te.originator)
+	te.originAO, te.chainID = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	//
+	// Initialize the nodes.
+	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
+	te.stateMgrs = make([]*testStateMgr, len(te.peerIdentities))
+	for i := range te.peerIdentities {
+		originState, err := state.CreateOriginState(mapdb.NewMapDB(), te.chainID)
+		require.NoError(t, err)
+		te.stateMgrs[i] = newTestStateMgr(t)
+		te.stateMgrs[i].mockAliasOutput(te.originAO, originState, []state.Block{}, []state.Block{})
+		te.mempools[i] = mempool.New(
+			te.ctx,
+			te.chainID,
+			te.peerIdentities[i],
+			te.stateMgrs[i],
+			te.networkProviders[i],
+			te.log.Named(fmt.Sprintf("N#%v", i)),
+			&MockMempoolMetrics{},
+		)
+	}
+	return te
+}
+
+func (te *testEnv) close() {
+	te.ctxCancel()
+	te.peeringNetwork.Close()
+	te.log.Sync()
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// testStateMgr
+
+type testStateMgr struct {
+	t         *testing.T
+	lock      *sync.Mutex
+	mockedAOs map[iotago.UTXOInput]*testStateMgrAO
+}
+
+type testStateMgrAO struct {
+	aliasOutput        *isc.AliasOutputWithID
+	virtualStateAccess state.VirtualStateAccess
+	added              []state.Block
+	removed            []state.Block
+}
+
+func newTestStateMgr(t *testing.T) *testStateMgr {
+	return &testStateMgr{
+		t:         t,
+		lock:      &sync.Mutex{},
+		mockedAOs: map[iotago.UTXOInput]*testStateMgrAO{},
+	}
+}
+
+func (tsm *testStateMgr) mockAliasOutput(aliasOutput *isc.AliasOutputWithID, virtualStateAccess state.VirtualStateAccess, added, removed []state.Block) {
+	tsm.mockedAOs[*aliasOutput.ID()] = &testStateMgrAO{
+		aliasOutput:        aliasOutput,
+		virtualStateAccess: virtualStateAccess,
+		added:              added,
+		removed:            removed,
+	}
+}
+
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
+	panic("should not be used in this test")
+}
+
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan *consGR.StateMgrDecidedState {
+	panic("should not be used in this test")
+}
+
+func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.Block) <-chan error {
+	panic("should not be used in this test")
+}
+
+func (tsm *testStateMgr) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (vs state.VirtualStateAccess, added, removed []state.Block) {
+	tsm.lock.Lock()
+	defer tsm.lock.Unlock()
+	mockInfo := tsm.mockedAOs[*nextAO.ID()]
+	return mockInfo.virtualStateAccess, mockInfo.added, mockInfo.removed
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// MockMempoolMetrics
+
+type MockMempoolMetrics struct {
+	mock.Mock
+	offLedgerRequestCounter int
+	onLedgerRequestCounter  int
+	processedRequestCounter int
+}
+
+func (m *MockMempoolMetrics) CountRequestIn(req isc.Request) {
+	if req.IsOffLedger() {
+		m.offLedgerRequestCounter++
+	} else {
+		m.onLedgerRequestCounter++
+	}
+}
+
+func (m *MockMempoolMetrics) CountRequestOut() {
+	m.processedRequestCounter++
+}
+
+func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {}
+
+func (m *MockMempoolMetrics) CountBlocksPerChain() {}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, f ...func(int, *isc.RequestParameters)) []isc.OnLedgerRequest {
 	result := make([]isc.OnLedgerRequest, amount)
 	for i := range result {
 		requestParams := isc.RequestParameters{
@@ -89,398 +589,4 @@ func getRequestsOnLedger(t *testing.T, amount int, f ...func(int, *isc.RequestPa
 		require.NoError(t, err)
 	}
 	return result
-}
-
-type MockMempoolMetrics struct {
-	mock.Mock
-	offLedgerRequestCounter int
-	onLedgerRequestCounter  int
-	processedRequestCounter int
-}
-
-func (m *MockMempoolMetrics) CountRequestIn(req isc.Request) {
-	if req.IsOffLedger() {
-		m.offLedgerRequestCounter++
-	} else {
-		m.onLedgerRequestCounter++
-	}
-}
-
-func (m *MockMempoolMetrics) CountRequestOut() {
-	m.processedRequestCounter++
-}
-
-func (m *MockMempoolMetrics) RecordRequestProcessingTime(reqID isc.RequestID, elapse time.Duration) {
-}
-
-func (m *MockMempoolMetrics) CountBlocksPerChain() {}
-
-// Test if mempool is created
-func TestMempool(t *testing.T) {
-	pool := newTestPool(t)
-	stats := pool.Info()
-	require.EqualValues(t, 0, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 0, stats.TotalPool)
-}
-
-// Test if single on ledger request is added to mempool
-func TestAddRequest(t *testing.T) {
-	pool := newTestPool(t)
-	requests := getRequestsOnLedger(t, 1)
-
-	pool.ReceiveRequests(requests[0])
-	time.Sleep(10 * time.Millisecond)
-	// require.True(t, pool.WaitRequestInPool(requests[0].ID()))
-	stats := pool.Info()
-	require.EqualValues(t, 1, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 1, stats.TotalPool)
-	metrics := pool.(*mempool).metrics.(*MockMempoolMetrics)
-	require.EqualValues(t, 1, metrics.onLedgerRequestCounter)
-}
-
-// Test if adding the same on ledger request more than once to the same mempool
-// is handled correctly
-func TestAddRequestTwice(t *testing.T) {
-	pool := newTestPool(t)
-	requests := getRequestsOnLedger(t, 1)
-
-	pool.ReceiveRequests(requests[0])
-	// require.True(t, pool.WaitRequestInPool(requests[0].ID(), 200*time.Millisecond))
-
-	stats := pool.Info()
-	require.EqualValues(t, 1, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 1, stats.TotalPool)
-
-	pool.ReceiveRequests(requests[0])
-	// require.True(t, pool.WaitRequestInPool(requests[0].ID(), 200*time.Millisecond))
-
-	stats = pool.Info()
-	require.EqualValues(t, 1, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 1, stats.TotalPool)
-}
-
-// Test if adding off ledger requests works as expected
-func TestAddOffLedgerRequest(t *testing.T) {
-	pool := newTestPool(t)
-	offLedgerRequest := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("dummyContract"), isc.Hn("dummyEP"), dict.New(), 0).
-		Sign(cryptolib.NewKeyPair())
-	metrics := pool.(*mempool).metrics.(*MockMempoolMetrics)
-	require.EqualValues(t, 0, metrics.offLedgerRequestCounter)
-	pool.ReceiveRequests(offLedgerRequest)
-	// require.True(t, pool.WaitRequestInPool(offLedgerRequest.ID(), 200*time.Millisecond))
-	stats := pool.Info()
-	require.EqualValues(t, 1, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, metrics.offLedgerRequestCounter)
-}
-
-// Test if processed request cannot be added to mempool
-func TestProcessedRequest(t *testing.T) {
-	pool := newTestPool(t)
-	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
-	stateReader, vs := createStateReader(t, glb)
-	pool.(*mempool).getProcessedRequests = CreateGetProcessedReqsFunc(stateReader.KVStoreReader())
-	pool.(*mempool).hasBeenProcessed = CreateHasBeenProcessedFunc(stateReader.KVStoreReader())
-
-	wrt := vs.KVStore()
-	stats := pool.Info()
-	require.EqualValues(t, 0, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 0, stats.TotalPool)
-
-	requests := getRequestsOnLedger(t, 1)
-
-	// artificially put request log record into the state
-	rec := &blocklog.RequestReceipt{
-		Request: requests[0],
-	}
-	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
-	err := blocklog.SaveRequestReceipt(blocklogPartition, rec, [6]byte{})
-	require.NoError(t, err)
-	blocklogPartition.Set(coreutil.StateVarBlockIndex, util.Uint64To8Bytes(1))
-	err = vs.Save()
-	require.NoError(t, err)
-
-	ret := pool.ReceiveRequests(requests[0])
-	require.Len(t, ret, 1)
-	require.False(t, ret[0])
-
-	stats = pool.Info()
-	require.EqualValues(t, 0, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 0, stats.TotalPool)
-}
-
-// Test if adding and removing requests is handled correctly
-func TestAddRemoveRequests(t *testing.T) {
-	pool := newTestPool(t)
-	requests := getRequestsOnLedger(t, 6)
-
-	pool.ReceiveRequests(
-		requests[0],
-		requests[1],
-		requests[2],
-		requests[3],
-		requests[4],
-		requests[5],
-	)
-	stats := pool.Info()
-	require.EqualValues(t, 6, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 6, stats.TotalPool)
-
-	pool.RemoveRequests(
-		requests[3].ID(),
-		requests[0].ID(),
-		requests[1].ID(),
-		requests[5].ID(),
-	)
-	require.False(t, pool.HasRequest(requests[0].ID()))
-	require.False(t, pool.HasRequest(requests[1].ID()))
-	require.True(t, pool.HasRequest(requests[2].ID()))
-	require.False(t, pool.HasRequest(requests[3].ID()))
-	require.True(t, pool.HasRequest(requests[4].ID()))
-	require.False(t, pool.HasRequest(requests[5].ID()))
-	stats = pool.Info()
-	require.EqualValues(t, 6, stats.InPoolCounter)
-	require.EqualValues(t, 4, stats.OutPoolCounter)
-	require.EqualValues(t, 2, stats.TotalPool)
-	metrics := pool.(*mempool).metrics.(*MockMempoolMetrics)
-	require.EqualValues(t, 4, metrics.processedRequestCounter)
-}
-
-var mockAliasOutput = isc.NewAliasOutputWithID(&iotago.AliasOutput{}, nil)
-
-func TestTimeLock(t *testing.T) {
-	pool := newTestPool(t)
-	start := time.Now()
-	requests := getRequestsOnLedger(t, 6, func(i int, p *isc.RequestParameters) {
-		switch i {
-		case 1:
-			p.Options.Timelock = start.Add(-2 * time.Hour)
-		case 2:
-			p.Options.Timelock = start
-		case 3:
-			p.Options.Timelock = start.Add(5 * time.Second)
-		case 4:
-			p.Options.Timelock = start.Add(2 * time.Hour)
-		case 5:
-			// expires before timelock
-			p.Options.Timelock = start.Add(3 * time.Second)
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(2 * time.Second),
-				ReturnAddress: chainAddress,
-			}
-		}
-	})
-
-	testStatsFun := func(in, out, total int) { // Info does not change after requests are added to the mempool
-		stats := pool.Info()
-		require.EqualValues(t, in, stats.InPoolCounter)
-		require.EqualValues(t, out, stats.OutPoolCounter)
-		require.EqualValues(t, total, stats.TotalPool)
-	}
-	ret := pool.ReceiveRequests(
-		requests[0], // + No time lock
-		requests[1], // + Time lock before start
-		requests[2], // + Time lock slightly before start due to time.Now() in ReadyNow being called later than in this test
-		requests[3], // - Time lock 5s after start
-		requests[4], // - Time lock 2h after start
-		requests[5], // - Time lock after expiration
-	)
-	require.Len(t, ret, 6)
-	require.True(t, ret[0])
-	require.True(t, ret[1])
-	require.True(t, ret[2])
-	require.True(t, ret[3])
-	require.True(t, ret[4])
-	require.False(t, ret[5])
-	testStatsFun(3, 0, 3)
-
-	requestRefs := <-pool.ConsensusProposalsAsync(context.Background(), mockAliasOutput)
-	requestsReady := <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 3)
-	require.Contains(t, requestsReady, requests[0])
-	require.Contains(t, requestsReady, requests[1])
-	require.Contains(t, requestsReady, requests[2])
-	testStatsFun(3, 0, 3)
-
-	// pass some time so that 1 request is unlocked
-	time.Sleep(6 * time.Second)
-
-	requestRefs = <-pool.ConsensusProposalsAsync(context.Background(), mockAliasOutput)
-	requestsReady = <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 4)
-	require.Contains(t, requestsReady, requests[0])
-	require.Contains(t, requestsReady, requests[1])
-	require.Contains(t, requestsReady, requests[2])
-	require.Contains(t, requestsReady, requests[3])
-	testStatsFun(4, 0, 4)
-}
-
-func TestExpiration(t *testing.T) {
-	pool := newTestPool(t)
-	start := time.Now()
-	requests := getRequestsOnLedger(t, 4, func(i int, p *isc.RequestParameters) {
-		switch i {
-		case 1:
-			// expired
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(-isc.RequestConsideredExpiredWindow),
-				ReturnAddress: chainAddress,
-			}
-		case 2:
-			// will expire soon
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(isc.RequestConsideredExpiredWindow / 2),
-				ReturnAddress: chainAddress,
-			}
-		case 3:
-			// not expired yet
-			p.Options.Expiration = &isc.Expiration{
-				Time:          start.Add(isc.RequestConsideredExpiredWindow * 2),
-				ReturnAddress: chainAddress,
-			}
-		}
-	})
-
-	ret := pool.ReceiveRequests(
-		requests[0], // + No expiration
-		requests[1], // + Expired
-		requests[2], // + Will expire soon
-		requests[3], // + Still valid
-	)
-	require.True(t, ret[0])
-	require.False(t, ret[1])
-	require.False(t, ret[2])
-	require.True(t, ret[3])
-
-	stats := pool.Info()
-	require.EqualValues(t, 2, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 2, stats.TotalPool)
-
-	requestRefs := <-pool.ConsensusProposalsAsync(context.Background(), mockAliasOutput)
-	requestsReady := <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 2)
-	require.Contains(t, requestsReady, requests[0])
-	require.Contains(t, requestsReady, requests[3])
-
-	// requests with the invalid deadline should have been removed from the mempool
-	ok := false
-	for i := 0; i < 100; i++ {
-		// just to let the `RemoveRequests` go routine get the pool mutex before we look into it
-		time.Sleep(10 * time.Millisecond)
-		if pool.GetRequest(requests[1].ID()) != nil {
-			continue
-		}
-		if pool.GetRequest(requests[2].ID()) != nil {
-			continue
-		}
-		if len(pool.(*mempool).pool) != 2 {
-			continue
-		}
-		ok = true
-		break
-	}
-	require.True(t, ok)
-}
-
-// Test if ConsensusRequestsAsync function correctly handle non-existing or removed IDs
-func TestConsensusRequestsAsync(t *testing.T) {
-	pool := newTestPool(t)
-	requests := getRequestsOnLedger(t, 5)
-
-	res := pool.ReceiveRequests(
-		requests[0],
-		requests[1],
-		requests[2],
-		requests[3],
-		requests[4],
-	)
-	require.Len(t, res, 5)
-	require.True(t, res[0])
-	require.True(t, res[1])
-	require.True(t, res[2])
-	require.True(t, res[3])
-	require.True(t, res[4])
-
-	stats := pool.Info()
-	require.EqualValues(t, 5, stats.InPoolCounter)
-	require.EqualValues(t, 0, stats.OutPoolCounter)
-	require.EqualValues(t, 5, stats.TotalPool)
-
-	requestRefs := <-pool.ConsensusProposalsAsync(context.Background(), mockAliasOutput)
-	requestsReady := <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 5)
-	for _, req := range requests {
-		require.Contains(t, requestsReady, req)
-	}
-
-	retReqs, missing := pool.(*mempool).getRequestsFromRefs(requestRefs)
-	require.Empty(t, missing)
-	require.Len(t, retReqs, 5)
-	for _, req := range requests {
-		require.Contains(t, retReqs, req)
-	}
-
-	// remove a request from the mempool
-	pool.RemoveRequests(requests[3].ID())
-	retReqs, missing = pool.(*mempool).getRequestsFromRefs(requestRefs)
-	require.Len(t, missing, 1)
-	require.NotNil(t, missing[isc.RequestHash(requests[3])])
-	require.Len(t, retReqs, 5)
-	for i, req := range requests {
-		if i == 3 {
-			require.NotContains(t, retReqs, req)
-			continue
-		}
-		require.Contains(t, retReqs, req)
-	}
-}
-
-func TestRequestsAreRemovedWithNewAliasOutput(t *testing.T) {
-	pool := newTestPool(t)
-	requests := getRequestsOnLedger(t, 2)
-
-	pool.ReceiveRequests(
-		requests[0],
-		requests[1],
-	)
-
-	requestRefs := <-pool.ConsensusProposalsAsync(context.Background(), mockAliasOutput)
-	requestsReady := <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 2)
-	for _, req := range requests {
-		require.Contains(t, requestsReady, req)
-	}
-
-	// mock "state read" functions, so that request 0 has been proceeds, 1 not
-	pool.(*mempool).getProcessedRequests = func(from, to *isc.AliasOutputWithID) []isc.RequestID {
-		return []isc.RequestID{requests[0].ID()}
-	}
-	pool.(*mempool).hasBeenProcessed = func(reqID isc.RequestID) bool {
-		return reqID.Equals(requests[0].ID())
-	}
-
-	nextAliasOutput := isc.NewAliasOutputWithID(&iotago.AliasOutput{
-		StateIndex: mockAliasOutput.GetStateIndex() + 1,
-	}, nil)
-	requestRefs = <-pool.ConsensusProposalsAsync(context.Background(), nextAliasOutput)
-	requestsReady = <-pool.ConsensusRequestsAsync(context.Background(), requestRefs)
-
-	require.Len(t, requestsReady, 1)
-	require.Equal(t, requestsReady[0], requests[1])
-	// request0 has been removed from the pool
-	require.False(t, pool.HasRequest(requests[0].ID()))
 }

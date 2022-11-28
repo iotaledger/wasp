@@ -156,8 +156,11 @@ func (s *dssSeriesImpl) newDSSImpl() (dss.DSS, gpa.AckHandler, error) {
 	return d, dAsGPA, nil
 }
 
-func (s *dssSeriesImpl) sendMessages(msgs gpa.OutMessages, index int) {
-	msgs.MustIterate(func(m gpa.Message) {
+func (s *dssSeriesImpl) sendMessages(outMsgs gpa.OutMessages, index int) {
+	if outMsgs == nil {
+		return
+	}
+	outMsgs.MustIterate(func(m gpa.Message) {
 		msgData, err := m.MarshalBinary()
 		if err != nil {
 			s.node.log.Warnf("Failed to send a message: %v", err)

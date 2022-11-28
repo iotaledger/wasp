@@ -6,8 +6,13 @@ import (
 	"io"
 	"math"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -61,6 +66,26 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	}
 
 	return ret, nil
+}
+
+func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
+	var respErr error
+	receipts := []*RequestReceipt{}
+	kvStore := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(Contract.Hname().Bytes()))
+	indexBytes := string(util.Uint32To4Bytes(block.BlockIndex()))
+	kvStore.MustIterate(kv.Key(prefixRequestReceipts+"."+indexBytes), func(key kv.Key, value []byte) bool { // TODO: Nicer way to construct the key?
+		receipt, err := RequestReceiptFromBytes(value)
+		if err != nil {
+			respErr = xerrors.Errorf("cannot deserialize requestReceipt: %w", err)
+			return true
+		}
+		receipts = append(receipts, receipt)
+		return true
+	})
+	if respErr != nil {
+		return nil, respErr
+	}
+	return receipts, nil
 }
 
 func (r *RequestReceipt) Bytes() []byte {

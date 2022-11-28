@@ -377,6 +377,9 @@ func (cgr *ConsGr) provideOutput(output *cons.Output) {
 }
 
 func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
+	if outMsgs == nil {
+		return
+	}
 	outMsgs.MustIterate(func(m gpa.Message) {
 		msgData, err := m.MarshalBinary()
 		if err != nil {

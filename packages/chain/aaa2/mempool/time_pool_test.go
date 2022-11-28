@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package mempool_test
 
 import (
@@ -24,16 +27,28 @@ func TestTimePoolBasic(t *testing.T) {
 	r1 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 1).Sign(kp)
 	r2 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 2).Sign(kp)
 	r3 := isc.NewOffLedgerRequest(isc.RandomChainID(), governance.Contract.Hname(), governance.FuncAddCandidateNode.Hname(), nil, 3).Sign(kp)
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r3)))
 	tp.AddRequest(t0, r0)
 	tp.AddRequest(t1, r1)
 	tp.AddRequest(t2, r2)
 	tp.AddRequest(t3, r3)
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r3)))
 
 	var taken []isc.Request
 
 	taken = tp.TakeTill(t0)
 	require.Len(t, taken, 1)
 	require.Equal(t, r0, taken[0])
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r3)))
 
 	taken = tp.TakeTill(t0)
 	require.Len(t, taken, 0)
@@ -42,10 +57,18 @@ func TestTimePoolBasic(t *testing.T) {
 	require.Len(t, taken, 2)
 	require.Contains(t, taken, r1)
 	require.Contains(t, taken, r2)
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.True(t, tp.Has(isc.RequestRefFromRequest(r3)))
 
 	taken = tp.TakeTill(t0.Add(30 * time.Hour))
 	require.Len(t, taken, 1)
 	require.Contains(t, taken, r3)
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r0)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r1)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r2)))
+	require.False(t, tp.Has(isc.RequestRefFromRequest(r3)))
 }
 
 func TestTimePoolRapid(t *testing.T) {

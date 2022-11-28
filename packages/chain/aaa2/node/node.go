@@ -215,12 +215,8 @@ func New(
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
 	}
-	mempool := mempool.New(
-		ctx, chainID, nodeIdentity, net,
-		func(reqID isc.RequestID) bool { return false },                      // TODO: Implement.
-		func(from, to *isc.AliasOutputWithID) []isc.RequestID { return nil }, // TODO: Implement.
-		log, chainMetrics,
-	)
+	// TODO: Review, if all needed functions are called for mempool.
+	mempool := mempool.New(ctx, chainID, nodeIdentity, stateMgr, net, log, chainMetrics)
 	cni.chainMgr = chainMgr
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
@@ -532,6 +528,9 @@ func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes map[iotago.Transa
 }
 
 func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
+	if outMsgs == nil {
+		return
+	}
 	outMsgs.MustIterate(func(m gpa.Message) {
 		msgData, err := m.MarshalBinary()
 		if err != nil {
