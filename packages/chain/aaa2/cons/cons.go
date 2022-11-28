@@ -87,16 +87,16 @@ type Cons interface {
 	AsGPA() gpa.GPA
 }
 
-type OutputState byte
+type OutputStatus byte
 
 const (
-	Running   OutputState = iota // Instance is still running.
-	Completed                    // Consensus reached, TX is prepared for publication.
-	Skipped                      // Consensus reached, no TX should be posted for this LogIndex.
+	Running   OutputStatus = iota // Instance is still running.
+	Completed                     // Consensus reached, TX is prepared for publication.
+	Skipped                       // Consensus reached, no TX should be posted for this LogIndex.
 )
 
 type Output struct {
-	State      OutputState
+	Status     OutputStatus
 	Terminated bool
 	//
 	// Requests for other components.
@@ -201,7 +201,7 @@ func New(
 		f:              f,
 		dss:            dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log),
 		acs:            acs.New(nodeIDs, me, f, acsCCInstFunc, log),
-		output:         &Output{State: Running},
+		output:         &Output{Status: Running},
 		log:            log,
 	}
 	c.asGPA = gpa.NewOwnHandler(me, c)
@@ -449,7 +449,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	if aggr.ShouldBeSkipped() {
 		// Cannot proceed with such proposals.
 		// Have to retry the consensus after some time with the next log index.
-		c.output.State = Skipped
+		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
 	}
@@ -525,7 +525,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if len(vmResult.Results) == 0 {
 		// No requests were processed, don't have what to do.
 		// Will need to retry the consensus with the next log index some time later.
-		c.output.State = Skipped
+		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
 	}
@@ -557,7 +557,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 		)
 		if err != nil {
 			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %v", err)
-			c.output.State = Skipped
+			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
 		}
@@ -588,7 +588,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	c.output.ResultTransaction = tx
 	c.output.ResultNextAliasOutput = chained
 	c.output.ResultState = resultState
-	c.output.State = Completed
+	c.output.Status = Completed
 	c.term.haveOutputProduced()
 	return nil
 }

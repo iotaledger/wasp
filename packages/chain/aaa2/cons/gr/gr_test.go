@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -112,10 +111,11 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
+		chainStore := state.InitChainStore(mapdb.NewMapDB())
 		mempools[i] = newTestMempool(t)
-		stateMgrs[i] = newTestStateMgr(t)
+		stateMgrs[i] = newTestStateMgr(t, chainStore)
 		nodes[i] = consGR.New(
-			ctx, chainID, dkShare, &logIndex, peerIdentities[i],
+			ctx, chainID, chainStore, dkShare, &logIndex, peerIdentities[i],
 			procCache, mempools[i], stateMgrs[i],
 			networkProviders[i],
 			1*time.Minute, // RecoverTimeout
@@ -137,7 +137,7 @@ func testGeneric(t *testing.T, n, f int, reliable bool) {
 	for i := range nodes {
 		nodes[i].Time(time.Now())
 		mempools[i].addRequests(originAO.OutputID(), chainInitReqs)
-		stateMgrs[i].addOriginState(originAO, chainID)
+		stateMgrs[i].addOriginState(originAO)
 	}
 	//
 	// Wait for outputs.
@@ -245,40 +245,36 @@ func (tmp *testMempool) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 // testStateMgr
 
 type testStateMgr struct {
-	t         *testing.T
-	lock      *sync.Mutex
-	states    map[hashing.HashValue]*consGR.StateMgrDecidedState
-	qProposal map[hashing.HashValue]chan interface{}
-	qDecided  map[hashing.HashValue]chan *consGR.StateMgrDecidedState
+	t          *testing.T
+	lock       *sync.Mutex
+	chainStore state.Store
+	states     map[hashing.HashValue]state.State
+	qProposal  map[hashing.HashValue]chan interface{}
+	qDecided   map[hashing.HashValue]chan state.State
 }
 
-func newTestStateMgr(t *testing.T) *testStateMgr {
+func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 	return &testStateMgr{
-		t:         t,
-		lock:      &sync.Mutex{},
-		states:    map[hashing.HashValue]*consGR.StateMgrDecidedState{},
-		qProposal: map[hashing.HashValue]chan interface{}{},
-		qDecided:  map[hashing.HashValue]chan *consGR.StateMgrDecidedState{},
+		t:          t,
+		lock:       &sync.Mutex{},
+		chainStore: chainStore,
+		states:     map[hashing.HashValue]state.State{},
+		qProposal:  map[hashing.HashValue]chan interface{}{},
+		qDecided:   map[hashing.HashValue]chan state.State{},
 	}
 }
 
-func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID, chainID *isc.ChainID) {
-	kvStore := mapdb.NewMapDB()
-	stateSync := coreutil.NewChainStateSync()
-	stateSync.SetSolidIndex(0)
-	vsAccess, err := state.CreateOriginState(kvStore, chainID)
+func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
+	chainState, err := tsm.chainStore.StateByTrieRoot(state.OriginL1Commitment().GetTrieRoot())
 	require.NoError(tsm.t, err)
-	tsm.addState(originAO, stateSync.GetSolidIndexBaseline(), vsAccess)
+	tsm.addState(originAO, chainState)
 }
 
-func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) {
+func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, chainState state.State) { // TODO: Why is it not called from other places???
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	hash := commitmentHashFromAO(aliasOutput)
-	tsm.states[hash] = &consGR.StateMgrDecidedState{
-		StateBaseline:      stateBaseline,
-		VirtualStateAccess: virtualStateAccess,
-	}
+	tsm.states[hash] = chainState
 	tsm.tryRespond(hash)
 }
 
@@ -294,10 +290,10 @@ func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput
 
 // State manager has to ensure all the data needed for the specified alias
 // output (presented as aliasOutputID+stateCommitment) is present in the DB.
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan *consGR.StateMgrDecidedState {
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	resp := make(chan *consGR.StateMgrDecidedState, 1)
+	resp := make(chan state.State, 1)
 	stateCommitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		panic(err)
@@ -308,7 +304,7 @@ func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput 
 	return resp
 }
 
-func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.Block) <-chan error {
+func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.StateDraft) <-chan error {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan error, 1)

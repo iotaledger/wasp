@@ -170,7 +170,7 @@ func testBasic(t *testing.T, n, f int) {
 	t.Logf("############ Provide TimeData and Proposals from SM/MP.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
-		require.Equal(t, cons.Running, out.State)
+		require.Equal(t, cons.Running, out.Status)
 		require.NotNil(t, out.NeedMempoolProposal)
 		require.NotNil(t, out.NeedStateMgrStateProposal)
 		tc.WithInput(nid, cons.NewInputMempoolProposal(initReqRefs))
@@ -184,7 +184,7 @@ func testBasic(t *testing.T, n, f int) {
 	t.Logf("############ Provide Decided Data from SM/MP.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
-		require.Equal(t, cons.Running, out.State)
+		require.Equal(t, cons.Running, out.Status)
 		require.Nil(t, out.NeedMempoolProposal)
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
@@ -203,7 +203,7 @@ func testBasic(t *testing.T, n, f int) {
 	t.Logf("############ Run VM, validate the result.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
-		require.Equal(t, cons.Running, out.State)
+		require.Equal(t, cons.Running, out.Status)
 		require.Nil(t, out.NeedMempoolProposal)
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.Nil(t, out.NeedMempoolRequests)
@@ -220,7 +220,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("After VM the VM Run", t.Logf)
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
-		require.Equal(t, cons.Running, out.State)
+		require.Equal(t, cons.Running, out.Status)
 		require.Nil(t, out.NeedMempoolProposal)
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.Nil(t, out.NeedMempoolRequests)
@@ -234,7 +234,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("All done.", t.Logf)
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
-		require.Equal(t, cons.Completed, out.State)
+		require.Equal(t, cons.Completed, out.Status)
 		require.True(t, out.Terminated)
 		require.Nil(t, out.NeedMempoolProposal)
 		require.Nil(t, out.NeedStateMgrStateProposal)
@@ -573,7 +573,7 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint: gocyclo
 	if !ok {
 		return
 	}
-	switch out.State {
+	switch out.Status {
 	case cons.Completed:
 		if tci.done[nodeID] {
 			return

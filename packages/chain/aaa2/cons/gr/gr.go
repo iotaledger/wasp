@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -39,11 +38,6 @@ const (
 type Mempool interface {
 	ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
-}
-
-type StateMgrDecidedState struct {
-	StateBaseline      coreutil.StateBaseline
-	VirtualStateAccess state.VirtualStateAccess
 }
 
 // State manager has to implement this interface.
@@ -77,10 +71,9 @@ type VM interface {
 // Implementation.
 
 type Output struct {
-	State     cons.OutputState         // Can only be Completed | Skipped.
-	TX        *iotago.Transaction      // The produced TX.
-	Block     state.Block              // The produced block.
-	NextState state.VirtualStateAccess // Virtual state at the end of transition.
+	Status    cons.OutputStatus   // Can only be Completed | Skipped.
+	TX        *iotago.Transaction // The produced TX.
+	NextState state.StateDraft    // Virtual state at the end of transition.
 }
 
 type input struct {
@@ -109,7 +102,7 @@ type ConsGr struct {
 	stateMgr                    StateMgr
 	stateMgrStateProposalRespCh <-chan interface{}
 	stateMgrStateProposalAsked  bool
-	stateMgrDecidedStateRespCh  <-chan *StateMgrDecidedState
+	stateMgrDecidedStateRespCh  <-chan state.State
 	stateMgrDecidedStateAsked   bool
 	stateMgrSaveBlockRespCh     <-chan error
 	stateMgrSaveBlockAsked      bool
@@ -128,6 +121,7 @@ type ConsGr struct {
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
+	chainStore state.Store,
 	dkShare tcrypto.DKShare,
 	logIndex *cmtLog.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
@@ -168,7 +162,7 @@ func New(
 		ctx:               ctx,
 		log:               log,
 	}
-	constInstRaw := cons.New(*chainID, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(*chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()
@@ -259,7 +253,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				cgr.stateMgrDecidedStateRespCh = nil
 				continue
 			}
-			cgr.handleConsInput(cons.NewInputStateMgrDecidedVirtualState(resp.StateBaseline, resp.VirtualStateAccess))
+			cgr.handleConsInput(cons.NewInputStateMgrDecidedVirtualState(resp))
 		case err, ok := <-cgr.stateMgrSaveBlockRespCh:
 			if !ok {
 				cgr.stateMgrSaveBlockRespCh = nil
@@ -355,24 +349,20 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)
 		cgr.vmAsked = true
 	}
-	if output.State != cons.Running && !cgr.outputReady {
+	if output.Status != cons.Running && !cgr.outputReady {
 		cgr.provideOutput(output)
 		cgr.outputReady = true
 	}
 }
 
 func (cgr *ConsGr) provideOutput(output *cons.Output) {
-	switch output.State {
+	switch output.Status {
 	case cons.Skipped:
-		cgr.outputCB(&Output{State: output.State})
+		cgr.outputCB(&Output{Status: output.Status})
 	case cons.Completed:
-		block, err := output.ResultState.ExtractBlock()
-		if err != nil {
-			panic(xerrors.Errorf("cannot extract block from virtual state: %w", err))
-		}
-		cgr.outputCB(&Output{State: output.State, TX: output.ResultTransaction, Block: block, NextState: output.ResultState})
+		cgr.outputCB(&Output{Status: output.Status, TX: output.ResultTransaction, NextState: output.ResultState})
 	default:
-		panic(xerrors.Errorf("unexpected cons.Output.State=%v", output.State))
+		panic(xerrors.Errorf("unexpected cons.Output.Status=%v", output.Status))
 	}
 }
 
