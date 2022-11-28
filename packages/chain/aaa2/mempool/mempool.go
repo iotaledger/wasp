@@ -77,7 +77,7 @@ type StateMgr interface {
 	MempoolStateRequest(
 		ctx context.Context,
 		prevAO, nextAO *isc.AliasOutputWithID,
-	) (vs state.VirtualStateAccess, added, removed []state.Block)
+	) (st state.State, added, removed []state.Block)
 }
 
 type Mempool interface {
@@ -126,7 +126,7 @@ type mempoolImpl struct {
 	offLedgerPool                  RequestPool[isc.OffLedgerRequest]
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
-	chainHeadState                 state.VirtualStateAccess
+	chainHeadState                 state.State
 	accessNodesUpdatedPipe         pipe.Pipe
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
@@ -475,7 +475,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	//
 	// Maybe it has been processed before?
 	if mpi.chainHeadState != nil {
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState.KVStoreReader(), &requestID)
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
 		if err != nil {
 			panic(xerrors.Errorf("cannot check if request was processed: %w", err))
 		}

@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -126,28 +125,24 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Make a block consuming those 2 requests.
-	kv := mapdb.NewMapDB()
-	chainState, err := state.CreateOriginState(kv, te.chainID)
-	require.NoError(t, err)
-	chainStateSync := coreutil.NewChainStateSync()
-	chainStateSync.SetSolidIndex(0)
+	store := te.stateMgrs[0].store
 	vmTask := &vm.VMTask{
 		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
 		AnchorOutput:           te.originAO.GetAliasOutput(),
 		AnchorOutputID:         te.originAO.OutputID(),
-		SolidStateBaseline:     chainStateSync.GetSolidIndexBaseline(),
+		Store:                  store,
 		Requests:               []isc.Request{chainInitReq, offLedgerReq},
 		TimeAssumption:         tangleTime,
 		Entropy:                hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:     te.chainID.CommonAccount(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
-		VirtualStateAccess:     chainState,
 		MaintenanceModeEnabled: false,
 		Log:                    te.log.Named("VM"),
 	}
 	require.NoError(t, runvm.NewVMRunner().Run(vmTask))
-	block, err := chainState.ExtractBlock()
+	block := store.Commit(vmTask.StateDraft)
+	chainState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
 	//
 	// Check if block has both requests as consumed.
@@ -457,9 +452,9 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stateMgrs = make([]*testStateMgr, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		originState, err := state.CreateOriginState(mapdb.NewMapDB(), te.chainID)
-		require.NoError(t, err)
 		te.stateMgrs[i] = newTestStateMgr(t)
+		originState, err := te.stateMgrs[i].store.LatestState()
+		require.NoError(t, err)
 		te.stateMgrs[i].mockAliasOutput(te.originAO, originState, []state.Block{}, []state.Block{})
 		te.mempools[i] = mempool.New(
 			te.ctx,
@@ -486,30 +481,35 @@ func (te *testEnv) close() {
 type testStateMgr struct {
 	t         *testing.T
 	lock      *sync.Mutex
+	store     state.Store
 	mockedAOs map[iotago.UTXOInput]*testStateMgrAO
 }
 
 type testStateMgrAO struct {
-	aliasOutput        *isc.AliasOutputWithID
-	virtualStateAccess state.VirtualStateAccess
-	added              []state.Block
-	removed            []state.Block
+	aliasOutput *isc.AliasOutputWithID
+	chainState  state.State
+	added       []state.Block
+	removed     []state.Block
 }
 
 func newTestStateMgr(t *testing.T) *testStateMgr {
-	return &testStateMgr{
+	tsm := &testStateMgr{
 		t:         t,
 		lock:      &sync.Mutex{},
+		store:     state.NewStore(mapdb.NewMapDB()),
 		mockedAOs: map[iotago.UTXOInput]*testStateMgrAO{},
 	}
+	originBlock := tsm.store.Commit(tsm.store.NewOriginStateDraft()) // TODO: Do we need to create the empty block?
+	tsm.store.SetLatest(originBlock.TrieRoot())
+	return tsm
 }
 
-func (tsm *testStateMgr) mockAliasOutput(aliasOutput *isc.AliasOutputWithID, virtualStateAccess state.VirtualStateAccess, added, removed []state.Block) {
+func (tsm *testStateMgr) mockAliasOutput(aliasOutput *isc.AliasOutputWithID, chainState state.State, added, removed []state.Block) {
 	tsm.mockedAOs[*aliasOutput.ID()] = &testStateMgrAO{
-		aliasOutput:        aliasOutput,
-		virtualStateAccess: virtualStateAccess,
-		added:              added,
-		removed:            removed,
+		aliasOutput: aliasOutput,
+		chainState:  chainState,
+		added:       added,
+		removed:     removed,
 	}
 }
 
@@ -525,11 +525,11 @@ func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state
 	panic("should not be used in this test")
 }
 
-func (tsm *testStateMgr) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (vs state.VirtualStateAccess, added, removed []state.Block) {
+func (tsm *testStateMgr) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (st state.State, added, removed []state.Block) {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	mockInfo := tsm.mockedAOs[*nextAO.ID()]
-	return mockInfo.virtualStateAccess, mockInfo.added, mockInfo.removed
+	return mockInfo.chainState, mockInfo.added, mockInfo.removed
 }
 
 ////////////////////////////////////////////////////////////////////////////////

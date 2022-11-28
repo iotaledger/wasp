@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -156,9 +155,9 @@ type SyncInfo struct {
 
 type ConsensusInfo struct {
 	StateIndex uint32
-	Mempool    mempool.MempoolInfo
-	TimerTick  int
-	TimeData   time.Time
+	// Mempool    mempool.MempoolInfo
+	TimerTick int
+	TimeData  time.Time
 }
 
 type ConsensusWorkflowStatus interface {

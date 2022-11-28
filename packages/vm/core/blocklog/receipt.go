@@ -72,8 +72,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 	var respErr error
 	receipts := []*RequestReceipt{}
 	kvStore := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(Contract.Hname().Bytes()))
-	indexBytes := string(util.Uint32To4Bytes(block.BlockIndex()))
-	kvStore.MustIterate(kv.Key(prefixRequestReceipts+"."+indexBytes), func(key kv.Key, value []byte) bool { // TODO: Nicer way to construct the key?
+	kvStore.MustIterate(kv.Key(prefixRequestReceipts+"."), func(key kv.Key, value []byte) bool { // TODO: Nicer way to construct the key?
 		receipt, err := RequestReceiptFromBytes(value)
 		if err != nil {
 			respErr = xerrors.Errorf("cannot deserialize requestReceipt: %w", err)
