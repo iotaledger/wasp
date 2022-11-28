@@ -19,7 +19,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -496,11 +495,12 @@ func newTestStateMgr(t *testing.T) *testStateMgr {
 	tsm := &testStateMgr{
 		t:         t,
 		lock:      &sync.Mutex{},
-		store:     state.NewStore(mapdb.NewMapDB()),
+		store:     state.InitChainStore(mapdb.NewMapDB()),
 		mockedAOs: map[iotago.UTXOInput]*testStateMgrAO{},
 	}
-	originBlock := tsm.store.Commit(tsm.store.NewOriginStateDraft()) // TODO: Do we need to create the empty block?
-	tsm.store.SetLatest(originBlock.TrieRoot())
+	_, err := tsm.store.StateByTrieRoot(state.OriginL1Commitment().GetTrieRoot()) // Make sure init state exist.
+	require.NoError(t, err)
+	tsm.store.SetLatest(state.OriginL1Commitment().GetTrieRoot())
 	return tsm
 }
 
@@ -517,7 +517,7 @@ func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput
 	panic("should not be used in this test")
 }
 
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan *consGR.StateMgrDecidedState {
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
 	panic("should not be used in this test")
 }
 
