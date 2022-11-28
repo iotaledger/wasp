@@ -2,36 +2,41 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {intFromString, WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
 
 export const ScInt8Length = 1;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function int8Decode(dec: wasmtypes.WasmDecoder): i8 {
+export function int8Decode(dec: WasmDecoder): i8 {
     return dec.byte() as i8;
 }
 
-export function int8Encode(enc: wasmtypes.WasmEncoder, value: i8): void {
+export function int8Encode(enc: WasmEncoder, value: i8): void {
     enc.byte(value as u8);
 }
 
-export function int8FromBytes(buf: u8[]): i8 {
+export function int8FromBytes(buf: Uint8Array): i8 {
     if (buf.length == 0) {
         return 0;
     }
     if (buf.length != ScInt8Length) {
         panic("invalid Int8 length");
     }
-    return buf[0] as i8;
+    const ret = buf[0] as i8;
+    return (ret & 0x80) ? ret - 0x100 : ret;
+
 }
 
-export function int8ToBytes(value: i8): u8[] {
-    return [value as u8];
+export function int8ToBytes(value: i8): Uint8Array {
+    const buf = new Uint8Array(ScInt8Length);
+    buf[0] = value as u8;
+    return buf;
 }
 
 export function int8FromString(value: string): i8 {
-    return wasmtypes.intFromString(value, 8) as i8;
+    return intFromString(value, 8) as i8;
 }
 
 export function int8ToString(value: i8): string {
@@ -41,9 +46,9 @@ export function int8ToString(value: i8): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableInt8 {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

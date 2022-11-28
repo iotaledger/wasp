@@ -27,9 +27,9 @@ export class WasmVMHost implements ScHost {
         hostStateSet(0, index, buf.dataStart, buf.length as i32);
     }
 
-    sandbox(funcNr: i32, params: u8[] | null): u8[] {
+    sandbox(funcNr: i32, params: Uint8Array | null): Uint8Array {
         if (params === null) {
-            params = [];
+            params = new Uint8Array(0);
         }
         // call sandbox function, result value will be cached by host
         // always negative funcNr as keyLen indicates sandbox call
@@ -38,24 +38,24 @@ export class WasmVMHost implements ScHost {
 
         // zero length, no need to retrieve cached value
         if (size == 0) {
-            return [];
+            return new Uint8Array(0);
         }
 
         // retrieve cached value from host
-        let result = new Array<u8>(size);
+        let result = new Uint8Array(size);
         hostStateGet(0, 0, result.dataStart, size);
         return result;
     }
 
-    stateDelete(key: u8[]): void {
+    stateDelete(key: Uint8Array): void {
         hostStateSet(key.dataStart, key.length as i32, 0, -1);
     }
 
-    stateExists(key: u8[]): bool {
+    stateExists(key: Uint8Array): bool {
         return hostStateGet(key.dataStart, key.length as i32, 0, -1) >= 0;
     }
 
-    stateGet(key: u8[]): u8[] | null {
+    stateGet(key: Uint8Array): Uint8Array | null {
         // variable sized result expected,
         // query size first by passing zero length buffer
         // value will be cached by host
@@ -68,16 +68,16 @@ export class WasmVMHost implements ScHost {
 
         // zero length, no need to retrieve cached value
         if (size == 0) {
-            return [];
+            return new Uint8Array(0);
         }
 
         // retrieve cached value from host
-        let result = new Array<u8>(size);
+        let result = new Uint8Array(size);
         hostStateGet(0, 0, result.dataStart, size);
         return result;
     }
 
-    stateSet(key: u8[], value: u8[]): void {
+    stateSet(key: Uint8Array, value: Uint8Array): void {
         hostStateSet(key.dataStart, key.length as i32, value.dataStart, value.length as i32);
     }
 }

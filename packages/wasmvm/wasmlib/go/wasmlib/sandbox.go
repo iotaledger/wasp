@@ -250,7 +250,7 @@ var (
 // generates a random value from 0 to max (exclusive max) using a deterministic RNG
 func (s ScSandboxFunc) Random(max uint64) (rnd uint64) {
 	if max == 0 {
-		s.Panic("random: max parameter should be non-zero")
+		s.Panic("random: max parameter should be > 0")
 	}
 
 	// note that entropy gets reset for every request

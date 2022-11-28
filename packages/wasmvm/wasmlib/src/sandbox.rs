@@ -250,7 +250,7 @@ pub trait ScSandboxFunc: ScSandbox {
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
     fn random(&self, max: u64) -> u64 {
         if max == 0 {
-            panic("random: max parameter should be non-zero");
+            panic("random: max parameter should be > 0");
         }
         unsafe {
             static mut ENTROPY: Vec<u8> = Vec::new();

@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {stringFromBytes} from "./scstring";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // WasmDecoder decodes separate entities from a byte buffer
 export class WasmDecoder {
-    buf: u8[];
+    buf: Uint8Array;
 
-    constructor(buf: u8[]) {
+    constructor(buf: Uint8Array) {
         if (buf.length == 0) {
             panic("empty decode buffer");
         }
@@ -23,12 +23,12 @@ export class WasmDecoder {
             panic("insufficient bytes");
         }
         const value = this.buf[0];
-        this.buf = this.buf.slice(1);
+        this.buf = this.buf.subarray(1);
         return value;
     }
 
     // decodes the next variable sized slice of bytes from the byte buffer
-    bytes(): u8[] {
+    bytes(): Uint8Array {
         const length = this.vluDecode(32) as u32;
         return this.fixedBytes(length);
     }
@@ -41,12 +41,12 @@ export class WasmDecoder {
     }
 
     // decodes the next fixed size slice of bytes from the byte buffer
-    fixedBytes(size: u32): u8[] {
+    fixedBytes(size: u32): Uint8Array {
         if ((this.buf.length as u32) < size) {
             panic("insufficient fixed bytes");
         }
         let value = this.buf.slice(0, size);
-        this.buf = this.buf.slice(size);
+        this.buf = this.buf.subarray(size);
         return value;
     }
 
@@ -59,50 +59,61 @@ export class WasmDecoder {
     }
 
     // Variable Length Integer decoder, uses modified LEB128
-    vliDecode(bits: i32): i64 {
+    vliDecode(bits: i32): i32 {
+        if (bits > 32) {
+            panic("vliDecode");
+        }
+        return Number(this.vliDecode64(bits)) as i32;
+    }
+
+    // Variable Length Integer decoder, uses modified LEB128
+    vliDecode64(bits: i32): i64 {
         let b = this.byte();
         const sign = b & 0x40;
 
         // first group of 6 bits
-        let value = (b & 0x3f) as i64;
-        let s = 6;
+        let value = BigInt(b & 0x3f) as i64;
+        let s = 6n;
 
         // while continuation bit is set
-        for (; (b & 0x80) != 0; s += 7) {
+        for (; (b & 0x80) != 0; s += 7n) {
             if (s >= bits) {
                 panic("integer representation too long");
             }
 
             // next group of 7 bits
             b = this.byte();
-            value |= ((b & 0x7f) as i64) << s;
+            value += (BigInt(b & 0x7f) << s) as i64;
         }
 
-        if (sign == 0) {
-            // positive, sign bits are already zero
-            return value;
-        }
-
-        // negative, extend sign bits
-        return value | ((-1 as i64) << s);
+        // value was encoded as absolute value
+        return (sign != 0) ? -value : value;
     }
 
     // Variable Length Unsigned decoder, uses ULEB128
-    vluDecode(bits: i32): u64 {
+    vluDecode(bits: i32): u32 {
+        if (bits > 32) {
+            panic("vluDecode");
+        }
+        return Number(this.vluDecode64(bits)) as u32;
+    }
+
+    // Variable Length Unsigned decoder, uses ULEB128
+    vluDecode64(bits: i32): u64 {
         // first group of 7 bits
         let b = this.byte();
-        let value = (b & 0x7f) as u64;
-        let s = 7;
+        let value = BigInt(b & 0x7f) as u64;
+        let s = 7n;
 
         // while continuation bit is set
-        for (; (b & 0x80) != 0; s += 7) {
+        for (; (b & 0x80) != 0; s += 7n) {
             if (s >= bits) {
                 panic("integer representation too long");
             }
 
             // next group of 7 bits
             b = this.byte();
-            value |= ((b & 0x7f) as u64) << s;
+            value += (BigInt(b & 0x7f) << s) as u64;
         }
 
         return value;
@@ -113,103 +124,133 @@ export class WasmDecoder {
 
 // WasmEncoder encodes separate entities into a byte buffer
 export class WasmEncoder {
-    data: u8[];
+    data: Uint8Array;
 
     // constructs an encoder
     constructor() {
-        this.data = [];
+        this.data = new Uint8Array(new ArrayBuffer(128), 0, 0);
     }
 
     // retrieves the encoded byte buffer
-    buf(): u8[] {
+    buf(): Uint8Array {
         return this.data;
     }
 
     // encodes a single byte into the byte buffer
-    byte(value: u8): wasmtypes.WasmEncoder {
-        this.data.push(value);
+    byte(value: u8): WasmEncoder {
+        const len = this.data.length;
+        if (len == this.data.buffer.byteLength){
+            const data = this.data;
+            this.data = new Uint8Array(new ArrayBuffer(len * 2), 0, len);
+            this.data.set(data);
+        }
+        this.data = new Uint8Array(this.data.buffer, 0, len+1);
+        this.data[len] = value;
         return this;
     }
 
     // encodes a variable sized slice of bytes into the byte buffer
-    bytes(value: u8[]): wasmtypes.WasmEncoder {
+    bytes(value: Uint8Array): WasmEncoder {
         const length = value.length;
-        this.vluEncode(length as u64);
+        this.vluEncode(length as u32);
         return this.fixedBytes(value, length as u32);
     }
 
     // encodes a fixed size slice of bytes into the byte buffer
-    fixedBytes(value: u8[], length: u32): wasmtypes.WasmEncoder {
+    fixedBytes(value: Uint8Array, length: u32): WasmEncoder {
         if ((value.length as u32) != length) {
             panic("invalid fixed bytes length");
         }
-        this.data = this.data.concat(value);
+        const len = this.data.length;
+        if (len + value.length > this.data.buffer.byteLength){
+            const data = this.data;
+            this.data = new Uint8Array(new ArrayBuffer(len * 2 + value.length), 0, len);
+            this.data.set(data);
+        }
+        this.data = new Uint8Array(this.data.buffer, 0, len+value.length);
+        this.data.set(value, len);
         return this;
     }
 
     // Variable Length Integer encoder, uses modified LEB128
-    vliEncode(value: i64): wasmtypes.WasmEncoder {
+    vliEncode(value: i32): WasmEncoder {
+        return this.vliEncode64(BigInt(value))
+    }
+
+    // Variable Length Integer encoder, uses modified LEB128
+    vliEncode64(value: i64): WasmEncoder {
         // bit 7 is always continuation bit
 
         // first group: 6 bits of data plus sign bit
         // bit 6 encodes 0 as positive and 1 as negative
-        let b = (value as u8) & 0x3f;
-        value >>= 6;
-
-        let finalValue: i64 = 0;
+        let sign: u8 = 0x00;
         if (value < 0) {
-            // 1st byte encodes 1 as negative in bit 6
-            b |= 0x40;
-            // negative value, start with all high bits set to 1
-            finalValue = -1;
+            sign = 0x40;
+            // encode absolute value
+            value = -value;
         }
 
+        let b = (Number(value & 0x3fn) | sign) as u8;
+        value >>= 6n;
+
         // keep shifting until all bits are done
-        while (value != finalValue) {
+        while (value != 0n) {
             // emit with continuation bit
-            this.data.push(b | 0x80);
+            this.byte(b | 0x80);
 
             // next group of 7 data bits
-            b = (value as u8) & 0x7f;
-            value >>= 7;
+            b = Number(value & 0x7fn) as u8;
+            value >>= 7n;
         }
 
         // emit without continuation bit to signal end
-        this.data.push(b);
+        this.byte(b);
         return this;
     }
 
     // Variable Length Unsigned encoder, uses ULEB128
-    vluEncode(value: u64): wasmtypes.WasmEncoder {
+    vluEncode(value: u32): WasmEncoder {
+        return this.vluEncode64(BigInt(value))
+    }
+
+    // Variable Length Unsigned encoder, uses ULEB128
+    vluEncode64(value: u64): WasmEncoder {
         // bit 7 is always continuation bit
 
         // first group of 7 data bits
-        let b = (value as u8) & 0x7f;
-        value >>= 7;
+        let b = Number(value & 0x7fn) as u8;
+        value >>= 7n;
 
         // keep shifting until all bits are done
-        while (value != 0) {
+        while (value != 0n) {
             // emit with continuation bit
-            this.data.push(b | 0x80);
+            this.byte(b | 0x80);
 
             // next group of 7 data bits
-            b = (value as u8) & 0x7f;
-            value >>= 7;
+            b = Number(value & 0x7fn) as u8;
+            value >>= 7n;
         }
 
         // emit without continuation bit to signal end
-        this.data.push(b);
+        this.byte(b);
         return this;
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
+export function concat(lhs: Uint8Array, rhs: Uint8Array): Uint8Array {
+    const buf = new Uint8Array(lhs.length + rhs.length);
+    buf.set(lhs);
+    buf.set(rhs, lhs.length);
+    return buf;
+}
+
 function has0xPrefix(s: string): boolean {
     return s.length >= 2 && s.charAt(0) == '0' && (s.charAt(1) == 'x' || s.charAt(1) == 'X')
 }
 
-export function hexDecode(hex: string): u8[] {
+export function hexDecode(hex: string): Uint8Array {
     if (!has0xPrefix(hex)) {
         panic("hex string missing 0x prefix")
     }
@@ -217,16 +258,16 @@ export function hexDecode(hex: string): u8[] {
     if ((digits & 1) != 0) {
         panic("odd hex string length");
     }
-    const buf = new Array<u8>(digits / 2);
+    const buf = new Uint8Array(digits / 2);
     for (let i = 0; i < digits; i += 2) {
         buf[i / 2] = (hexer(hex.charCodeAt(i + 2) as u8) << 4) | hexer(hex.charCodeAt(i + 3) as u8)
     }
     return buf
 }
 
-export function hexEncode(buf: u8[]): string {
+export function hexEncode(buf: Uint8Array): string {
     const bytes = buf.length;
-    const hex = new Array<u8>(bytes * 2);
+    const hex = new Uint8Array(bytes * 2);
     const alpha = (0x61 - 10) as u8;
     const digit = 0x30 as u8;
 
@@ -237,7 +278,7 @@ export function hexEncode(buf: u8[]): string {
         const b2: u8 = b & 0x0f;
         hex[i * 2 + 1] = b2 + ((b2 > 9) ? alpha : digit);
     }
-    return "0x" + wasmtypes.stringFromBytes(hex);
+    return "0x" + stringFromBytes(hex);
 }
 
 function hexer(hexDigit: u8): u8 {
@@ -257,22 +298,29 @@ function hexer(hexDigit: u8): u8 {
     return 0;
 }
 
-export function intFromString(value: string, bits: u32): i64 {
+export function intFromString(value: string, bits: u32): i32 {
+    if (bits > 32) {
+        panic("intFromString");
+    }
+    return Number(intFromString64(value, bits)) as i32
+}
+
+export function intFromString64(value: string, bits: u32): i64 {
     if (value.length == 0) {
         panic("intFromString: empty string");
     }
     let neg = false
     switch (value.charCodeAt(0)) {
         case 0x2b: // '+'
-            value = value.slice(1);
+            value = value.substring(1);
             break;
         case 0x2d: // '-'
             neg = true;
-            value = value.slice(1);
+            value = value.substring(1);
             break;
     }
-    const uns = uintFromString(value, bits);
-    const cutoff = (1 as u64) << (bits - 1);
+    const uns = uintFromString64(value, bits);
+    const cutoff = 2n**BigInt(bits - 1);
     if (neg) {
         if (neg && uns > cutoff) {
             panic("intFromString: min overflow");
@@ -285,15 +333,22 @@ export function intFromString(value: string, bits: u32): i64 {
     return uns as i64;
 }
 
-export function uintFromString(value: string, bits: u32): u64 {
+export function uintFromString(value: string, bits: u32): u32 {
+    if (bits > 32) {
+        panic("uintFromString");
+    }
+    return Number(uintFromString64(value, bits)) as u32
+}
+
+export function uintFromString64(value: string, bits: u32): u64 {
     if (value.length == 0) {
         panic("uintFromString: empty string");
     }
-    const cutoff = (-1 as u64) / 10 + 1;
+    const cutoff = 0xffffffffffffffffn / 10n + 1n;
 
-    const maxVal = (bits == 64) ? (-1 as u64) : (((1 as u64) << bits) - 1);
+    const maxVal = 2n**BigInt(bits) - 1n;
 
-    let n = 0 as u64;
+    let n = 0n as u64;
     for (let i = 0; i < value.length; i++) {
         const c = value.charCodeAt(i) as u32;
         if (c < 0x30 || c > 0x39) {
@@ -302,8 +357,8 @@ export function uintFromString(value: string, bits: u32): u64 {
         if (n >= cutoff) {
             panic("uintFromString: cutoff overflow");
         }
-        const n1 = n * 10;
-        n = n1 + c - 0x30;
+        const n1 = n * 10n;
+        n = n1 + BigInt(c - 0x30);
         if (n < n1 || n > maxVal) {
             panic("uintFromString: range overflow");
         }
@@ -311,8 +366,6 @@ export function uintFromString(value: string, bits: u32): u64 {
     return n;
 }
 
-export function zeroes(count: u32): u8[] {
-    const buf = new Array<u8>(count);
-    buf.fill(0);
-    return buf;
+export function zeroes(count: u32): Uint8Array {
+    return new Uint8Array(count);
 }

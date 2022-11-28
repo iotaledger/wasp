@@ -1,11 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmtypes from "./wasmtypes"
 import {log} from "./sandbox";
+import {IKvStore, Proxy} from "./wasmtypes/proxy";
+import {ScUint32Length, uint32FromBytes, uint32ToBytes} from "./wasmtypes/scuint32";
+import {stringFromBytes} from "./wasmtypes/scstring";
+import {WasmDecoder, WasmEncoder} from "./wasmtypes/codec";
+import {ScUint16Length, uint16FromBytes, uint16ToBytes} from "./wasmtypes/scuint16";
 
 // returns a hex string representing the byte buffer
-function hex(buf: u8[]): string {
+function hex(buf: Uint8Array): string {
     const hexa = "0123456789abcdef";
     let res = "";
     for (let i = 0; i < buf.length; i++) {
@@ -15,26 +19,26 @@ function hex(buf: u8[]): string {
     return res;
 }
 
-function keya(key: u8[]): string {
+function keya(key: Uint8Array): string {
     for (let i = 0; i < key.length; i++) {
         if (key[i] == 0x23) {
-            return wasmtypes.stringFromBytes(key.slice(0, i + 1)) + hex(key.slice(i + 1));
+            return stringFromBytes(key.slice(0, i + 1)) + hex(key.slice(i + 1));
         }
         if (key[i] < 0x20 || key[i] > 0x7e) {
             return hex(key);
         }
     }
-    return wasmtypes.stringFromBytes(key);
+    return stringFromBytes(key);
 }
 
-function vala(val: u8[]): string {
+function vala(val: Uint8Array): string {
     return hex(val);
 }
 
-export class ScDict implements wasmtypes.IKvStore {
-    dict: Map<string, u8[]> = new Map();
+export class ScDict implements IKvStore {
+    dict: Map<string, Uint8Array> = new Map();
 
-    static toKey(buf: u8[]): string {
+    static toKey(buf: Uint8Array): string {
         let key = "";
         for (let i = 0; i < buf.length; i++) {
             key += String.fromCharCode((buf[i] >> 4) + 0x40, (buf[i] & 0x0f) + 0x40);
@@ -42,8 +46,8 @@ export class ScDict implements wasmtypes.IKvStore {
         return key;
     }
 
-    static fromKey(key: string): u8[] {
-        let buf = new Array<u8>(key.length / 2);
+    static fromKey(key: string): Uint8Array {
+        let buf = new Uint8Array(key.length / 2);
         for (let i = 0; i < key.length; i += 2) {
             const b1 = key.charCodeAt(i) as u8;
             const b2 = key.charCodeAt(i + 1) as u8;
@@ -52,27 +56,27 @@ export class ScDict implements wasmtypes.IKvStore {
         return buf;
     }
 
-    public constructor(buf: u8[]) {
-        if (buf.length != 0) {
-            const dec = new wasmtypes.WasmDecoder(buf);
-            const size = wasmtypes.uint32FromBytes(dec.fixedBytes(wasmtypes.ScUint32Length));
+    public constructor(buf: Uint8Array | null) {
+        if (buf !== null && buf.length != 0) {
+            const dec = new WasmDecoder(buf);
+            const size = uint32FromBytes(dec.fixedBytes(ScUint32Length));
             for (let i: u32 = 0; i < size; i++) {
-                const keyBuf = dec.fixedBytes(wasmtypes.ScUint16Length);
-                const keyLen = wasmtypes.uint16FromBytes(keyBuf);
+                const keyBuf = dec.fixedBytes(ScUint16Length);
+                const keyLen = uint16FromBytes(keyBuf);
                 const key = dec.fixedBytes(keyLen as u32);
-                const valBuf = dec.fixedBytes(wasmtypes.ScUint32Length);
-                const valLen = wasmtypes.uint32FromBytes(valBuf);
+                const valBuf = dec.fixedBytes(ScUint32Length);
+                const valLen = uint32FromBytes(valBuf);
                 const val = dec.fixedBytes(valLen);
                 this.set(key, val);
             }
         }
     }
 
-    public asProxy(): wasmtypes.Proxy {
-        return new wasmtypes.Proxy(this);
+    public asProxy(): Proxy {
+        return new Proxy(this);
     }
 
-    delete(key: u8[]): void {
+    delete(key: Uint8Array): void {
         // this.dump("delete");
         // log("dict.delete(" + keya(key) + ")");
         this.dict.delete(ScDict.toKey(key));
@@ -80,13 +84,13 @@ export class ScDict implements wasmtypes.IKvStore {
     }
 
     protected dump(which: string): void {
-        const keys = this.dict.keys()
+        const keys = [...this.dict.keys()];
         for (let i = 0; i < keys.length; i++) {
-            log("dict." + which + "." + i.toString() + "." + keya(ScDict.fromKey(keys[i])) + " = " + vala(this.dict.get(keys[i])));
+            log("dict." + which + "." + i.toString() + "." + keya(ScDict.fromKey(keys[i])) + " = " + vala(this.dict.get(keys[i])!));
         }
     }
 
-    exists(key: u8[]): bool {
+    exists(key: Uint8Array): bool {
         const mapKey = ScDict.toKey(key);
         const ret = this.dict.has(mapKey);
         // this.dump("exists");
@@ -94,14 +98,14 @@ export class ScDict implements wasmtypes.IKvStore {
         return ret;
     }
 
-    get(key: u8[]): u8[] {
+    get(key: Uint8Array): Uint8Array {
         // this.dump("get")
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
             // log("dict.get(" + keya(key) + ") = null");
-            return [];
+            return new Uint8Array(0);
         }
-        const value = this.dict.get(mapKey);
+        const value = this.dict.get(mapKey)!;
         // log("dict.get(" + keya(key) + ") = " + vala(value));
         return value;
     }
@@ -110,27 +114,27 @@ export class ScDict implements wasmtypes.IKvStore {
         return new ScImmutableDict(this);
     }
 
-    set(key: u8[], value: u8[]): void {
+    set(key: Uint8Array, value: Uint8Array): void {
         // this.dump("set")
         // log("dict.set(" + keya(key) + ", " + vala(value) + ")");
         this.dict.set(ScDict.toKey(key), value);
         // this.dump("Set")
     }
 
-    public toBytes(): u8[] {
+    public toBytes(): Uint8Array {
         if (this.dict.size == 0) {
-            return [0, 0, 0, 0];
+            return new Uint8Array(ScUint32Length);
         }
-        const keys = this.dict.keys().sort();
-        const enc = new wasmtypes.WasmEncoder();
-        enc.fixedBytes(wasmtypes.uint32ToBytes(keys.length as u32), wasmtypes.ScUint32Length);
+        const keys = [...this.dict.keys()].sort();
+        const enc = new WasmEncoder();
+        enc.fixedBytes(uint32ToBytes(keys.length as u32), ScUint32Length);
         for (let i = 0; i < keys.length; i++) {
             const k = keys[i];
             const key = ScDict.fromKey(k);
-            let val = this.dict.get(k);
-            enc.fixedBytes(wasmtypes.uint16ToBytes(key.length as u16), wasmtypes.ScUint16Length);
+            let val = this.dict.get(k)!;
+            enc.fixedBytes(uint16ToBytes(key.length as u16), ScUint16Length);
             enc.fixedBytes(key, key.length as u32);
-            enc.fixedBytes(wasmtypes.uint32ToBytes(val.length as u32), wasmtypes.ScUint32Length);
+            enc.fixedBytes(uint32ToBytes(val.length as u32), ScUint32Length);
             enc.fixedBytes(val, val.length as u32);
         }
         return enc.buf();
@@ -138,21 +142,21 @@ export class ScDict implements wasmtypes.IKvStore {
 }
 
 export class ScImmutableDict {
-    dict: Map<string, u8[]>;
+    dict: Map<string, Uint8Array>;
 
     public constructor(dict: ScDict) {
         this.dict = dict.dict;
     }
 
-    exists(key: u8[]): bool {
+    exists(key: Uint8Array): bool {
         return this.dict.has(ScDict.toKey(key));
     }
 
-    get(key: u8[]): u8[] {
+    get(key: Uint8Array): Uint8Array {
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
-            return [];
+            return new Uint8Array(0);
         }
-        return this.dict.get(mapKey);
+        return this.dict.get(mapKey)!;
     }
 }

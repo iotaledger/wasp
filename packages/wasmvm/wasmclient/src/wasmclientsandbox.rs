@@ -4,15 +4,6 @@
 use crate::*;
 use wasmlib::*;
 
-// pub trait ScHost {
-//     fn export_name(&self, index: i32, name: &str);
-//     fn sandbox(&mut self, func_num: i32, params: &[u8]) -> Vec<u8>;
-//     fn state_delete(&self, key: &[u8]);
-//     fn state_exists(&self, key: &[u8]) -> bool;
-//     fn state_get(&self, key: &[u8]) -> Vec<u8>;
-//     fn state_set(&self, key: &[u8], value: &[u8]);
-// }
-
 pub trait WasmClientSandbox {
     fn fn_call(&self, args: &[u8]) -> Result<Vec<u8>, String>;
     fn fn_post(&self, args: &[u8]) -> Result<Vec<u8>, String>;
@@ -65,9 +56,9 @@ impl WasmClientSandbox for WasmClientContext {
         }
 
         return self.svc_client.call_view_by_hname(
-            self.chain_id,
-            req.contract,
-            req.function,
+            &self.chain_id,
+            &req.contract,
+            &req.function,
             &req.params,
         );
     }
@@ -97,6 +88,7 @@ impl WasmClientSandbox for WasmClientContext {
             &req.params,
             &sc_assets,
             self.key_pair.as_ref().unwrap(),
+            0, // FIXME must use counter
         )?;
         return Ok(Vec::new());
     }

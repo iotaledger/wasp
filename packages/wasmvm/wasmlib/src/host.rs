@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::*;
-
 pub trait ScHost {
     fn export_name(&self, index: i32, name: &str);
     fn sandbox(&self, func_nr: i32, params: &[u8]) -> Vec<u8>;
@@ -59,29 +57,26 @@ pub struct NullVmHost {}
 
 impl ScHost for NullVmHost {
     fn export_name(&self, _index: i32, _name: &str) {
-        panic("NullVmHost::export_name");
+        panic!("NullVmHost::export_name");
     }
 
     fn sandbox(&self, _func_nr: i32, _params: &[u8]) -> Vec<u8> {
-        panic("NullVmHost::sandbox");
-        Vec::new()
+        panic!("NullVmHost::sandbox");
     }
 
     fn state_delete(&self, _key: &[u8]) {
-        panic("NullVmHost::state_delete");
+        panic!("NullVmHost::state_delete");
     }
 
     fn state_exists(&self, _key: &[u8]) -> bool {
-        panic("NullVmHost::state_exists");
-        false
+        panic!("NullVmHost::state_exists");
     }
 
     fn state_get(&self, _key: &[u8]) -> Vec<u8> {
-        panic("NullVmHost::state_get");
-        Vec::new()
+        panic!("NullVmHost::state_get");
     }
 
     fn state_set(&self, _key: &[u8], _value: &[u8]) {
-        panic("NullVmHost::state_set");
+        panic!("NullVmHost::state_set");
     }
 }

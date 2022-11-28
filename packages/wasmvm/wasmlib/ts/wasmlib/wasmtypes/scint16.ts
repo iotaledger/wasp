@@ -2,21 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {intFromString, WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
 
 export const ScInt16Length = 2;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function int16Decode(dec: wasmtypes.WasmDecoder): i16 {
+export function int16Decode(dec: WasmDecoder): i16 {
     return dec.vliDecode(16) as i16;
 }
 
-export function int16Encode(enc: wasmtypes.WasmEncoder, value: i16): void {
-    enc.vliEncode(value as i64);
+export function int16Encode(enc: WasmEncoder, value: i16): void {
+    enc.vliEncode(value as i32);
 }
 
-export function int16FromBytes(buf: u8[]): i16 {
+export function int16FromBytes(buf: Uint8Array): i16 {
     if (buf.length == 0) {
         return 0;
     }
@@ -24,18 +25,20 @@ export function int16FromBytes(buf: u8[]): i16 {
         panic("invalid Int16 length");
     }
     let ret: i16 = buf[1];
-    return (ret << 8) | buf[0];
+    ret = (ret & 0x80) ? ret - 0x100 : ret;
+    ret = (ret << 8) | buf[0];
+    return ret;
 }
 
-export function int16ToBytes(value: i16): u8[] {
-    return [
-        value as u8,
-        (value >> 8) as u8,
-    ];
+export function int16ToBytes(value: i16): Uint8Array {
+    const buf = new Uint8Array(ScInt16Length);
+    buf[0] = value as u8;
+    buf[1] = (value >> 8) as u8;
+    return buf;
 }
 
 export function int16FromString(value: string): i16 {
-    return wasmtypes.intFromString(value, 16) as i16;
+    return intFromString(value, 16) as i16;
 }
 
 export function int16ToString(value: i16): string {
@@ -45,9 +48,9 @@ export function int16ToString(value: i16): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableInt16 {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

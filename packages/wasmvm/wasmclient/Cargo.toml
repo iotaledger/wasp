@@ -21,11 +21,14 @@ iota-client = { git = "https://github.com/iotaledger/iota.rs", branch = "develop
 iota-crypto = { git = "https://github.com/iotaledger/crypto.rs", branch = "dev", default-features = false, features = [ "std", "chacha", "blake2b", "ed25519", "random", "slip10", "bip39", "bip39-en" ] }
 wasmlib = { path = "../wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "develop" }
-hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 wasm-bindgen = "0.2.63"
 serde_json = "1.0.86"
 bech32 = "0.9.1"
+reqwest = { version = "0.11.12", features = ["blocking"] }
+httpmock = "0.6"
+tungstenite = "0.17.3"
+url = { version = "2.1.0", optional = true }
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

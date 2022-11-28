@@ -37,7 +37,7 @@ var TypeDependent = model.StringMapMap{
 		"AgentID":   "wasmtypes.ScAgentID",
 		"BigInt":    "wasmtypes.ScBigInt",
 		"Bool":      "bool",
-		"Bytes":     "u8[]",
+		"Bytes":     "Uint8Array",
 		"ChainID":   "wasmtypes.ScChainID",
 		"Hash":      "wasmtypes.ScHash",
 		"Hname":     "wasmtypes.ScHname",
@@ -56,10 +56,10 @@ var TypeDependent = model.StringMapMap{
 	},
 	"fldTypeInit": {
 		"Address":   "new wasmtypes.ScAddress()",
-		"AgentID":   "wasmtypes.agentIDFromBytes([])",
+		"AgentID":   "wasmtypes.agentIDFromBytes(null)",
 		"BigInt":    "new wasmtypes.ScBigInt()",
 		"Bool":      "false",
-		"Bytes":     "[]",
+		"Bytes":     "new Uint8Array(0)",
 		"ChainID":   "new wasmtypes.ScChainID()",
 		"Hash":      "new wasmtypes.ScHash()",
 		"Hname":     "new wasmtypes.ScHname(0)",
@@ -80,12 +80,20 @@ var TypeDependent = model.StringMapMap{
 
 var common = map[string]string{
 	// *******************************
+	"setWasmLib": `
+$#set wasmlib wasmlib
+`,
+	// *******************************
 	"importWasmLib": `
-import * as wasmlib from "wasmlib";
+$#set wasmlib ../index
+$#if core else setWasmLib
+import * as wasmlib from "$wasmlib";
 `,
 	// *******************************
 	"importWasmTypes": `
-import * as wasmtypes from "wasmlib/wasmtypes";
+$#set wasmlib ..
+$#if core else setWasmLib
+import * as wasmtypes from "$wasmlib/wasmtypes";
 `,
 	// *******************************
 	"importWasmVMHost": `

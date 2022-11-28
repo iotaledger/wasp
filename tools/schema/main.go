@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	flagClean = flag.Bool("clean", false, "clean up (re-)generted files")
+	flagClean = flag.Bool("clean", false, "clean up (re-)generated files")
 	flagCore  = flag.Bool("core", false, "generate core contract interface")
 	flagForce = flag.Bool("force", false, "force code generation")
 	flagGo    = flag.Bool("go", false, "generate Go code")

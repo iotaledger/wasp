@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 use bech32::*;
 use wasmlib::*;
 const BECH32_PREFIX: &'static str = "smr";

@@ -360,12 +360,12 @@ impl ScBigInt {
     }
 
     pub fn uint64(&self) -> u64 {
-        let zeroes = SC_UINT64_LENGTH - self.bytes.len();
-        if zeroes > SC_UINT64_LENGTH {
+        let uint_len = self.bytes.len();
+        if uint_len > SC_UINT64_LENGTH {
             panic("value exceeds Uint64");
         }
         let mut buf = self.bytes.clone();
-        buf.extend_from_slice(&ZERO_U64[..zeroes]);
+        buf.extend_from_slice(&ZERO_U64[..SC_UINT64_LENGTH - uint_len]);
         uint64_from_bytes(&buf)
     }
 }

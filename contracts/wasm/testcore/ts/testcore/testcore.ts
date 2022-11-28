@@ -32,7 +32,7 @@ export function funcCallOnChain(ctx: wasmlib.ScFuncContext, f: sc.CallOnChainCon
 
     counter.setValue(counter.value() + 1);
 
-    let params = new wasmlib.ScDict([]);
+    let params = new wasmlib.ScDict(null);
     const key = wasmtypes.stringToBytes(sc.ParamN);
     params.set(key, wasmtypes.uint64ToBytes(paramInt))
     let ret = ctx.call(hnameContract, hnameEP, params, null);

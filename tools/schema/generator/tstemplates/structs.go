@@ -16,7 +16,7 @@ $#each structComment _structComment
 export class $StrName {
 $#each struct structField
 
-    static fromBytes(buf: u8[]): $StrName {
+    static fromBytes(buf: Uint8Array): $StrName {
         const dec = new wasmtypes.WasmDecoder(buf);
         const data = new $StrName();
 $#each struct structDecode
@@ -24,7 +24,7 @@ $#each struct structDecode
         return data;
     }
 
-    bytes(): u8[] {
+    bytes(): Uint8Array {
         const enc = new wasmtypes.WasmEncoder();
 $#each struct structEncode
         return enc.buf();

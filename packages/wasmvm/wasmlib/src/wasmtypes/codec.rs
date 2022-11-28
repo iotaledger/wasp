@@ -71,13 +71,11 @@ impl WasmDecoder<'_> {
             s += 7;
         }
 
-        if sign == 0 {
-            // positive, sign bits are already zero
-            return value;
+        // value was encoded as absolute value
+        if sign != 0 {
+            return -value;
         }
-
-        // negative, extend sign bits
-        value | (-1_i64 << s)
+        value
     }
 
     // vlu (variable length unsigned) decoder
@@ -157,19 +155,18 @@ impl WasmEncoder {
     pub fn vli_encode(&mut self, mut value: i64) -> &WasmEncoder {
         // first group of 6 bits
         // 1st byte encodes 0 as positive in bit 6
-        let mut b = value as u8 & 0x3f;
-        value >>= 6;
-
-        let mut final_value = 0_i64;
+        let mut sign: u8 = 0x00;
         if value < 0 {
-            // encode negative value
-            // 1st byte encodes 1 as negative in bit 6
-            b |= 0x40;
-            final_value = -1_i64;
+            sign = 0x40;
+            // encode absolute value
+            value = -value;
         }
 
+        let mut b = value as u8 & 0x3f | sign;
+        value >>= 6;
+
         // keep shifting until all bits are done
-        while value != final_value {
+        while value != 0 {
             // emit with continuation bit
             self.buf.push(b | 0x80);
 
