@@ -148,7 +148,7 @@ func (s *store) SetLatest(trieRoot trie.VCommitment) error {
 	isNext := (blockIndex > 0 &&
 		s.trieRootByIndex[blockIndex] == nil &&
 		s.trieRootByIndex[blockIndex-1] != nil &&
-		s.trieRootByIndex[blockIndex-1].Equals(block.PreviousL1Commitment().TrieRoot))
+		s.trieRootByIndex[blockIndex-1].Equals(block.PreviousL1Commitment().GetTrieRoot()))
 	if !isNext {
 		// reorg
 		s.trieRootByIndex = map[uint32]trie.VCommitment{}

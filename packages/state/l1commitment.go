@@ -85,7 +85,7 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 	return l1c, nil
 }
 
-func (s *L1Commitment) GetTrieRoot() common.VCommitment {
+func (s *L1Commitment) GetTrieRoot() trie.VCommitment {
 	return s.trieRoot
 }
 
