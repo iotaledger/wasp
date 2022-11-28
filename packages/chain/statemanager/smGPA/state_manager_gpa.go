@@ -299,7 +299,7 @@ func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block
 			commitment, block.Hash())
 		return nil
 	}
-	if !state.EqualCommitments(commitment.GetTrieRoot(), block.TrieRoot()) {
+	if !commitment.GetTrieRoot().Equals(block.TrieRoot()) {
 		smT.log.Errorf("Block %s loaded from the database has trie root %s",
 			commitment, block.TrieRoot())
 		return nil
