@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 //const constTestFolder = "basicWALTest"
@@ -86,9 +87,9 @@ func (bwtsmT *blockWALTestSM) ReWriteBlock(t *rapid.T) {
 	err := bwtsmT.bw.Write(block)
 	require.NoError(t, err)
 	if takeFrom == 0 {
-		bwtsmT.blocksMoved = DeleteBlockHash(blockHash, bwtsmT.blocksMoved)
+		bwtsmT.blocksMoved = util.Remove(blockHash, bwtsmT.blocksMoved)
 	} else {
-		bwtsmT.blocksDamaged = DeleteBlockHash(blockHash, bwtsmT.blocksDamaged)
+		bwtsmT.blocksDamaged = util.Remove(blockHash, bwtsmT.blocksDamaged)
 	}
 	t.Logf("Block %s rewritten", blockHash)
 }
@@ -175,7 +176,7 @@ func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 	result := make([]state.BlockHash, 0)
 	for blockHash, _ := range bwtsmT.blocks { //nolint:gofmt,gofumpt,revive,gosimple
-		if !ContainsBlockHash(blockHash, bwtsmT.blocksMoved) && !ContainsBlockHash(blockHash, bwtsmT.blocksDamaged) {
+		if !util.Contains(blockHash, bwtsmT.blocksMoved) && !util.Contains(blockHash, bwtsmT.blocksDamaged) {
 			result = append(result, blockHash)
 		}
 	}

@@ -1,7 +1,5 @@
-// TODO: state.State neturi L1Commitment tik TrieRoot
-// TODO: state.Store Commit vis dar negrąžina klaidos
-// TODO: state.StateDraft PreviousL1Commitment ir BaseL1Commitment?
-// TODO: ar gali ConsensusProducedBlock atiduoti L1Commitment naujo bloko pasitikrinimui?
+// TODO: no BlockIndex in state.Block()
+// TODO: Equals for state.Block()
 
 package statemanager
 

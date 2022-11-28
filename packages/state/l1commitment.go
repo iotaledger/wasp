@@ -19,6 +19,8 @@ const BlockHashSize = 20
 
 type BlockHash [BlockHashSize]byte
 
+var _ util.Equatable = BlockHash{}
+
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
@@ -46,7 +48,11 @@ func (bh BlockHash) String() string {
 	return iotago.EncodeHex(bh[:])
 }
 
-func (bh BlockHash) Equals(bh2 BlockHash) bool {
+func (bh BlockHash) Equals(e2 util.Equatable) bool {
+	bh2, ok := e2.(BlockHash)
+	if !ok {
+		return false
+	}
 	return bh == bh2
 }
 
