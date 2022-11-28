@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package journal
+package journal // TODO: Remove it.
 
 import (
 	"encoding/binary"

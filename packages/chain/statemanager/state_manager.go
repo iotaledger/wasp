@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"

@@ -2,7 +2,7 @@ package testutil
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 )
 
 type mockedCmtLogStore struct {
