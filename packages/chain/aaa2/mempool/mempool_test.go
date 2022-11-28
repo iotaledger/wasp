@@ -169,18 +169,18 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		proposals[i] = te.mempools[i].ConsensusProposalsAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
 		te.mempools[i].TrackNewChainHead(nextAO)
 	}
-	time.Sleep(200 * time.Millisecond) // Just wait for messages to be processed.
 	//
 	// We should not get any requests, because old requests are consumed
 	// and the new ones are not arrived yet.
 	for i := range te.mempools {
 		select {
-		case <-proposals[i]:
-			require.FailNow(t, "should not get a value here")
+		case refs := <-proposals[i]:
+			require.FailNow(t, "should not get a value here", "Got %+v", refs)
 		default:
 			// OK
 		}
 	}
+	//
 	// Add a message, we should get it now.
 	offLedgerReq2 := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 1).Sign(te.governor)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
