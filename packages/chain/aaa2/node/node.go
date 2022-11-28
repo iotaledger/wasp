@@ -112,6 +112,7 @@ type chainNodeImpl struct {
 	nodeIdentity         *cryptolib.KeyPair
 	chainID              *isc.ChainID
 	chainMgr             chainMgr.ChainMgr
+	chainStore           state.Store
 	nodeConn             ChainNodeConn
 	mempool              ChainMempool
 	stateMgr             statemanager.StateMgr
@@ -177,6 +178,7 @@ func New(
 	cni := &chainNodeImpl{
 		nodeIdentity:         nodeIdentity,
 		chainID:              chainID,
+		chainStore:           chainStore,
 		nodeConn:             nodeConn,
 		recvAliasOutputPipe:  pipe.NewDefaultInfinitePipe(),
 		recvTxPublishedPipe:  pipe.NewDefaultInfinitePipe(),
@@ -403,7 +405,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 
 func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
 	var chainMgrInput gpa.Input
-	switch out.output.State {
+	switch out.output.Status {
 	case cons.Completed:
 		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
 		if err != nil {
@@ -475,7 +477,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
 			cgr := consGR.New(
-				consGrCtx, cni.chainID, dkShare, &logIndexCopy, cni.nodeIdentity,
+				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod, cni.log,
 			)
