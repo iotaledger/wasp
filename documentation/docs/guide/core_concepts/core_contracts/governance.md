@@ -181,13 +181,13 @@ Stops the maintenance mode.
 
 It can only be invoked by the chain owner.
 
-### `setGasRatio`
+### `setEVMGasRatio`
 
 Changes the ISC : EVM gas ratio.
 
 #### Parameters
 
-- `e` ([`GasRatio`](#gasratio)): The ISC : EVM gas ratio.
+- `e` ([`GasRatio`](#evm-gas-ratio)): The ISC : EVM gas ratio.
 
 ---
 
@@ -231,13 +231,13 @@ Returns the gas fee policy.
 
 - `g` ([`FeePolicy`](#feepolicy)): The gas fee policy.
 
-### `getGasRatio`
+### `getEVMGasRatio`
 
 Returns the ISC : EVM gas ratio.
 
 #### Returns
 
-- `e` ([`GasRatio`](#gasratio)): The ISC : EVM gas ratio.
+- `e` ([`GasRatio`](#evm-gas-ratio)): The ISC : EVM gas ratio.
 
 ### `getChainNodes()`
 
@@ -258,6 +258,14 @@ Returns whether the chain is ongoing maintenance.
 
 ## Schemas
 
+
+### `EVM gas ratio`
+
+ISC : EVM gas ratio is expressed as an `a : b` ratio, where `<ISC gas> = <EVM gas> * <a> / <b>`.
+
+`GasRatio` is encoded as the concatenation of the two `uint32` values `a` & `b`.
+
+
 ### `FeePolicy`
 
 `FeePolicy` is encoded as the concatenation of:
@@ -267,6 +275,7 @@ Returns whether the chain is ongoing maintenance.
 - Gas per token, i.e. how many units of gas a token pays for. (`uint64`)
 - Validator fee share. Must be between 0 and 100, meaning the percentage of the gas fees distributed to the
   validators. (`uint8`)
+- The [EVM gas ratio](#evm-gas-ratio)
 
 ### `AccessNodeInfo`
 
