@@ -35,6 +35,9 @@ var (
 	// fees
 	FuncSetFeePolicy = coreutil.Func("setFeePolicy")
 	ViewGetFeePolicy = coreutil.ViewFunc("getFeePolicy")
+	// evm fees
+	FuncSetEVMGasRatio = coreutil.Func("setGasRatio")
+	ViewGetEVMGasRatio = coreutil.ViewFunc("getGasRatio")
 
 	// chain info
 	FuncSetChainInfo   = coreutil.Func("setChainInfo")
@@ -92,6 +95,7 @@ const (
 
 	// fees
 	ParamFeePolicyBytes = "g"
+	ParamEVMGasRatio    = "e"
 
 	// chain info
 	ParamChainID                   = "c"

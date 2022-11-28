@@ -181,6 +181,14 @@ Stops the maintenance mode.
 
 It can only be invoked by the chain owner.
 
+### `setGasRatio`
+
+Changes the ISC : EVM gas ratio.
+
+#### Parameters
+
+- `e` ([`GasRatio`](#gasratio)): The ISC : EVM gas ratio.
+
 ---
 
 ## Views
@@ -222,6 +230,14 @@ Returns the gas fee policy.
 #### Returns
 
 - `g` ([`FeePolicy`](#feepolicy)): The gas fee policy.
+
+### `getGasRatio`
+
+Returns the ISC : EVM gas ratio.
+
+#### Returns
+
+- `e` ([`GasRatio`](#gasratio)): The ISC : EVM gas ratio.
 
 ### `getChainNodes()`
 

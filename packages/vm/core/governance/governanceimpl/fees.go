@@ -5,6 +5,7 @@ package governanceimpl
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -31,4 +32,20 @@ func getFeePolicy(ctx isc.SandboxView) dict.Dict {
 	ret := dict.New()
 	ret.Set(governance.ParamFeePolicyBytes, gp.Bytes())
 	return ret
+}
+
+func setEVMGasRatio(ctx isc.Sandbox) dict.Dict {
+	ctx.RequireCallerIsChainOwner()
+	ratio := codec.MustDecodeRatio32(ctx.Params().MustGet(governance.ParamEVMGasRatio))
+	policy := governance.MustGetGasFeePolicy(ctx.StateR())
+	policy.EVMGasRatio = ratio
+	ctx.State().Set(governance.VarGasFeePolicyBytes, policy.Bytes())
+	return nil
+}
+
+func getEVMGasRatio(ctx isc.SandboxView) dict.Dict {
+	policy := governance.MustGetGasFeePolicy(ctx.StateR())
+	return dict.Dict{
+		governance.ParamEVMGasRatio: policy.EVMGasRatio.Bytes(),
+	}
 }

@@ -26,6 +26,8 @@ var Processor = governance.Contract.Processor(initialize,
 	// fees
 	governance.FuncSetFeePolicy.WithHandler(setFeePolicy),
 	governance.ViewGetFeePolicy.WithHandler(getFeePolicy),
+	governance.FuncSetEVMGasRatio.WithHandler(setEVMGasRatio),
+	governance.ViewGetEVMGasRatio.WithHandler(getEVMGasRatio),
 
 	// chain info
 	governance.FuncSetChainInfo.WithHandler(setChainInfo),

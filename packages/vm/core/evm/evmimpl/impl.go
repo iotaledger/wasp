@@ -19,24 +19,24 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 var Processor = evm.Contract.Processor(initialize,
 	evm.FuncOpenBlockContext.WithHandler(restricted(openBlockContext)),
 	evm.FuncCloseBlockContext.WithHandler(restricted(closeBlockContext)),
-	evm.FuncSetGasRatio.WithHandler(restricted(setGasRatio)),
 	evm.FuncSendTransaction.WithHandler(restricted(applyTransaction)),
 	evm.FuncEstimateGas.WithHandler(restricted(estimateGas)),
 	evm.FuncRegisterERC20NativeToken.WithHandler(restricted(registerERC20NativeToken)),
 
 	// views
-	evm.FuncGetGasRatio.WithHandler(restrictedView(getGasRatio)),
 	evm.FuncGetBalance.WithHandler(restrictedView(getBalance)),
 	evm.FuncCallContract.WithHandler(restrictedView(callContract)),
 	evm.FuncGetNonce.WithHandler(restrictedView(getNonce)),
@@ -101,9 +101,6 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		getAddBalanceFunc(ctx),
 	)
 
-	gasRatio := codec.MustDecodeRatio32(ctx.Params().MustGet(evm.FieldGasRatio), evmtypes.DefaultGasRatio)
-	ctx.State().Set(keyGasRatio, gasRatio.Bytes())
-
 	// storing hname as a terminal value of the contract's state nil key.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -137,7 +134,7 @@ func applyTransaction(ctx isc.Sandbox) dict.Dict {
 	var gasErr error
 	if result != nil {
 		// convert burnt EVM gas to ISC gas
-		gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+		gasRatio := getGasRatio(ctx)
 		ctx.Privileged().GasBurnEnable(true)
 		gasErr = panicutil.CatchPanic(
 			func() {
@@ -314,7 +311,7 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireNoError(err)
 	ctx.RequireNoError(tryGetRevertError(res))
 
-	gasRatio := codec.MustDecodeRatio32(ctx.State().MustGet(keyGasRatio), evmtypes.DefaultGasRatio)
+	gasRatio := getGasRatio(ctx)
 	{
 		// burn the used EVM gas as it would be done for a normal request call
 		ctx.Privileged().GasBurnEnable(true)
@@ -330,4 +327,9 @@ func estimateGas(ctx isc.Sandbox) dict.Dict {
 	finalEvmGasUsed := evmtypes.ISCGasBurnedToEVM(ctx.Gas().Burned(), &gasRatio)
 
 	return result(codec.EncodeUint64(finalEvmGasUsed))
+}
+
+func getGasRatio(ctx isc.SandboxBase) util.Ratio32 {
+	gasRatioViewRes := ctx.CallView(governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
+	return codec.MustDecodeRatio32(gasRatioViewRes.MustGet(governance.ParamEVMGasRatio), evmtypes.DefaultGasRatio)
 }

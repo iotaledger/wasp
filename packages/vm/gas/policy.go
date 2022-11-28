@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -13,8 +14,13 @@ type GasFeePolicy struct {
 	GasFeeTokenID *iotago.NativeTokenID
 	// GasFeeTokenDecimals the number of decimals in the native token used to pay for gas fees. Only considered if GasFeeTokenID != nil
 	GasFeeTokenDecimals uint32
+
 	// GasPerToken specifies how many gas units are paid for each token ( 100 means 1 tokens pays for 100 gas)
 	GasPerToken uint64
+
+	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas (evm gas used * A/B)
+	EVMGasRatio util.Ratio32
+
 	// ValidatorFeeShare Validator/Governor fee split: percentage of fees which goes to Validator
 	// 0 mean all goes to Governor
 	// >=100 all goes to Validator
@@ -63,6 +69,7 @@ func DefaultGasFeePolicy() *GasFeePolicy {
 		GasFeeTokenID:     nil, // default is base token
 		GasPerToken:       100, // each token pays for 100 units of gas
 		ValidatorFeeShare: 0,   // by default all goes to the governor
+		EVMGasRatio:       evmtypes.DefaultGasRatio,
 	}
 }
 
@@ -99,6 +106,9 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 	if ret.ValidatorFeeShare, err = mu.ReadUint8(); err != nil {
 		return nil, err
 	}
+	if ret.EVMGasRatio, err = util.Ratio32FromBytes(mu.ReadRemainingBytes()); err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -111,5 +121,6 @@ func (p *GasFeePolicy) Bytes() []byte {
 	}
 	mu.WriteUint64(p.GasPerToken)
 	mu.WriteUint8(p.ValidatorFeeShare)
+	mu.WriteBytes(p.EVMGasRatio.Bytes())
 	return mu.Bytes()
 }

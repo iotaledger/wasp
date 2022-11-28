@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 type jsonRPCSoloBackend struct {
@@ -62,9 +63,9 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 
 func (ch *Chain) EVMGasRatio() util.Ratio32 {
 	// TODO: Cache the gas ratio?
-	ret, err := ch.CallView(evm.Contract.Name, evm.FuncGetGasRatio.Name)
+	ret, err := ch.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(ch.Env.T, err)
-	return codec.MustDecodeRatio32(ret.MustGet(evm.FieldResult))
+	return codec.MustDecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {

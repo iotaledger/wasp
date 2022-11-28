@@ -1289,6 +1289,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 		GasFeeTokenDecimals: customTokenDecimals,
 		GasPerToken:         100,
 		ValidatorFeeShare:   0,
+		EVMGasRatio:         gas.DefaultGasFeePolicy().EVMGasRatio,
 	}
 	// set the custom token as the gas fee token
 	env.soloChain.PostRequestSync(

@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 var latestBlock = rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)
@@ -80,9 +81,7 @@ type gasTestContractInstance struct {
 }
 
 type iscCallOptions struct {
-	wallet    *cryptolib.KeyPair
-	before    func(*solo.CallParams)
-	offledger bool
+	wallet *cryptolib.KeyPair
 }
 
 type ethCallOptions struct {
@@ -125,33 +124,6 @@ func (e *soloChainEnv) parseISCCallOptions(opts []iscCallOptions) iscCallOptions
 	return opt
 }
 
-func (e *soloChainEnv) postRequest(opts []iscCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
-	opt := e.parseISCCallOptions(opts)
-	req := solo.NewCallParams(evm.Contract.Name, funName, params...)
-	if opt.before != nil {
-		opt.before(req)
-	}
-	if req.GasBudget() == 0 {
-		gasBudget, gasFee, err := e.soloChain.EstimateGasOnLedger(req, opt.wallet, true)
-		if err != nil {
-			return nil, fmt.Errorf("could not estimate gas: %w", e.resolveError(err))
-		}
-		req.WithGasBudget(gasBudget).AddBaseTokens(gasFee)
-	}
-	if opt.offledger {
-		ret, err := e.soloChain.PostRequestOffLedger(req, opt.wallet)
-		if err != nil {
-			return nil, fmt.Errorf("PostRequestSync failed: %w", e.resolveError(err))
-		}
-		return ret, nil
-	}
-	ret, err := e.soloChain.PostRequestSync(req, opt.wallet)
-	if err != nil {
-		return nil, fmt.Errorf("PostRequestSync failed: %w", e.resolveError(err))
-	}
-	return ret, nil
-}
-
 func (e *soloChainEnv) resolveError(err error) error {
 	if err == nil {
 		return nil
@@ -184,15 +156,17 @@ func (e *soloChainEnv) getCode(addr common.Address) []byte {
 }
 
 func (e *soloChainEnv) getGasRatio() util.Ratio32 {
-	ret, err := e.callView(evm.FuncGetGasRatio.Name)
+	ret, err := e.soloChain.CallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name)
 	require.NoError(e.t, err)
-	ratio, err := codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
+	ratio, err := codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 	require.NoError(e.t, err)
 	return ratio
 }
 
 func (e *soloChainEnv) setGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {
-	_, err := e.postRequest(opts, evm.FuncSetGasRatio.Name, evm.FieldGasRatio, newGasRatio)
+	opt := e.parseISCCallOptions(opts)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetEVMGasRatio.Name, governance.ParamEVMGasRatio, newGasRatio.Bytes())
+	_, err := e.soloChain.PostRequestSync(req, opt.wallet)
 	return err
 }
 

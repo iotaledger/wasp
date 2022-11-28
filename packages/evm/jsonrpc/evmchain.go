@@ -53,11 +53,11 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) GasRatio() (util.Ratio32, error) {
-	ret, err := e.backend.ISCCallView(evm.Contract.Name, evm.FuncGetGasRatio.Name, nil)
+	ret, err := e.backend.ISCCallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
 	if err != nil {
 		return util.Ratio32{}, err
 	}
-	return codec.DecodeRatio32(ret.MustGet(evm.FieldResult))
+	return codec.DecodeRatio32(ret.MustGet(governance.ParamEVMGasRatio))
 }
 
 func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
