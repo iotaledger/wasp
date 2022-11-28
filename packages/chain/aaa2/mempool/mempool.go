@@ -356,6 +356,9 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 
 // A callback for distSync.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
+	// TODO: XXX: ...
+	// TODO: XXX: Have to check, if the current chan head state contains the request!!!!!!!!!!!!!!!!!
+	// TODO: XXX: ...
 	olr, ok := request.(isc.OffLedgerRequest)
 	if ok {
 		if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(olr)) {

@@ -6,7 +6,6 @@ package cons
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -18,10 +17,10 @@ type SyncSM interface {
 	//
 	// Decided state.
 	DecidedVirtualStateNeeded(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
-	DecidedVirtualStateReceived(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	DecidedVirtualStateReceived(chainState state.State) gpa.OutMessages
 	//
 	// Save the block.
-	BlockProduced(block state.Block) gpa.OutMessages
+	BlockProduced(block state.StateDraft) gpa.OutMessages
 	BlockSaved() gpa.OutMessages
 	//
 	// Supporting stuff.
@@ -40,11 +39,11 @@ type syncSMImpl struct {
 	decidedBaseAliasOutput         *isc.AliasOutputWithID
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
 	decidedStateReceived           bool
-	decidedStateReceivedCB         func(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages
+	decidedStateReceivedCB         func(chainState state.State) gpa.OutMessages
 	//
 	// Save the produced block.
-	producedBlock                  state.Block
-	saveProducedBlockInputsReadyCB func(producedBlock state.Block) gpa.OutMessages
+	producedBlock                  state.StateDraft
+	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages
 	saveProducedBlockDone          bool
 	saveProducedBlockDoneCB        func() gpa.OutMessages
 }
@@ -53,8 +52,8 @@ func NewSyncSM(
 	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	stateProposalReceivedCB func(proposedAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
 	decidedStateQueryInputsReadyCB func(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages,
-	decidedStateReceivedCB func(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages,
-	saveProducedBlockInputsReadyCB func(producedBlock state.Block) gpa.OutMessages,
+	decidedStateReceivedCB func(chainState state.State) gpa.OutMessages,
+	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages,
 	saveProducedBlockDoneCB func() gpa.OutMessages,
 ) SyncSM {
 	return &syncSMImpl{
@@ -92,17 +91,16 @@ func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAliasOutput *isc.Ali
 }
 
 func (sub *syncSMImpl) DecidedVirtualStateReceived(
-	stateBaseline coreutil.StateBaseline,
-	virtualStateAccess state.VirtualStateAccess,
+	chainState state.State,
 ) gpa.OutMessages {
 	if sub.decidedStateReceived {
 		return nil
 	}
 	sub.decidedStateReceived = true
-	return sub.decidedStateReceivedCB(stateBaseline, virtualStateAccess)
+	return sub.decidedStateReceivedCB(chainState)
 }
 
-func (sub *syncSMImpl) BlockProduced(block state.Block) gpa.OutMessages {
+func (sub *syncSMImpl) BlockProduced(block state.StateDraft) gpa.OutMessages {
 	if sub.producedBlock != nil {
 		return nil
 	}

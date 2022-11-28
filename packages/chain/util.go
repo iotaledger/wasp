@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 // LogStateTransition also used in testing

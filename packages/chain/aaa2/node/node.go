@@ -23,7 +23,6 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/chainMgr"
@@ -38,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -163,7 +163,7 @@ var _ ChainNode = &chainNodeImpl{}
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
-	chainKVStore kvstore.KVStore,
+	chainStore state.Store,
 	nodeConn ChainNodeConn,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
@@ -209,7 +209,7 @@ func New(
 		[]*cryptolib.PublicKey{nodeIdentity.GetPublicKey()},
 		net,
 		blockWAL,
-		chainKVStore,
+		chainStore,
 		log,
 	)
 	if err != nil {

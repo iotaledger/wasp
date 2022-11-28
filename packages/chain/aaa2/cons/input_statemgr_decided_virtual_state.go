@@ -5,18 +5,15 @@ package cons
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type inputStateMgrDecidedVirtualState struct {
-	stateBaseline      coreutil.StateBaseline
-	virtualStateAccess state.VirtualStateAccess
+	chainState state.State
 }
 
 func NewInputStateMgrDecidedVirtualState(
-	stateBaseline coreutil.StateBaseline,
-	virtualStateAccess state.VirtualStateAccess,
+	chainState state.State,
 ) gpa.Input {
-	return &inputStateMgrDecidedVirtualState{stateBaseline, virtualStateAccess}
+	return &inputStateMgrDecidedVirtualState{chainState: chainState}
 }

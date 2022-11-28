@@ -88,7 +88,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		panic(fmt.Errorf("CreateVMContext: can't parse state data as L1Commitment from chain input %w", err))
 	}
 
-	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, &l1Commitment)
+	task.StateDraft, err = task.Store.NewStateDraft(task.TimeAssumption, l1Commitment)
 	if err != nil {
 		// should never happen
 		panic(err)
@@ -122,7 +122,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 
 		// save the anchor tx ID of the current state
 		ret.callCore(blocklog.Contract, func(s kv.KVStore) {
-			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), &l1Commitment)
+			blocklog.UpdateLatestBlockInfo(s, ret.task.AnchorOutputID.TransactionID(), l1Commitment)
 		})
 
 		ret.currentStateUpdate.Mutations.ApplyTo(task.StateDraft)
@@ -204,7 +204,7 @@ func (vmctx *VMContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		TotalRequests:               numRequests,
 		NumSuccessfulRequests:       numSuccess,
 		NumOffLedgerRequests:        numOffLedger,
-		PreviousL1Commitment:        prevL1Commitment,
+		PreviousL1Commitment:        *prevL1Commitment,
 		L1Commitment:                nil,                    // current L1Commitment not known at this point
 		AnchorTransactionID:         iotago.TransactionID{}, // nil for now, will be updated the next round with the real tx id
 		TransactionSubEssenceHash:   subEssenceHash,

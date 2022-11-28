@@ -6,7 +6,6 @@ package aaa2
 import (
 	"context"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/node"
@@ -14,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -42,8 +42,8 @@ func New(
 	var dkRegistry tcrypto.DKShareRegistryProvider // TODO: Get it somehow.
 	var cmtLogStore cmtLog.Store                   // TODO: Get it somehow.
 	var smBlockWAL smGPAUtils.BlockWAL             // TODO: Get it somehow.
-	var chainKVStore kvstore.KVStore               // TODO: Get it somehow.
-	return node.New(ctx, chainID, chainKVStore, nodeConn, nodeIdentity, processorsConfig, dkRegistry, cmtLogStore, smBlockWAL, net, log)
+	var chainStore state.Store                     // TODO: Get it somehow.
+	return node.New(ctx, chainID, chainStore, nodeConn, nodeIdentity, processorsConfig, dkRegistry, cmtLogStore, smBlockWAL, net, log)
 }
 
 func ChainList() map[isc.ChainID]Chain {

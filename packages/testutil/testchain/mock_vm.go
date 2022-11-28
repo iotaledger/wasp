@@ -36,7 +36,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
-		task.StateDraft.BaseL1Commitment().TrieRoot, isc.OID(task.AnchorOutputID.UTXOInput()))
+		task.StateDraft.BaseL1Commitment().GetTrieRoot(), isc.OID(task.AnchorOutputID.UTXOInput()))
 	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
 	task.StateDraft = draft
 	task.RotationAddress = nil
@@ -70,7 +70,7 @@ func nextState(
 	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
 	require.NoError(t, err)
 
-	draft, err := store.NewStateDraft(timeAssumption, &prev)
+	draft, err := store.NewStateDraft(timeAssumption, prev)
 	require.NoError(t, err)
 
 	for i, req := range reqs {

@@ -10,7 +10,7 @@ type StateAccess struct {
 	state kv.KVStoreReader
 }
 
-func NewStateAccess(store kv.KVStore) *StateAccess {
+func NewStateAccess(store kv.KVStoreReader) *StateAccess {
 	state := subrealm.NewReadOnly(store, kv.Key(Contract.Hname().Bytes()))
 	return &StateAccess{state: state}
 }

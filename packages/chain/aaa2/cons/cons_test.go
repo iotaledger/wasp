@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -23,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -143,6 +141,7 @@ func testBasic(t *testing.T, n, f int) {
 	//
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
+	chainStates := map[gpa.NodeID]state.Store{}
 	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
 	procCache := processors.MustNew(procConfig)
 	nodeIDs := nodeIDsFromPubKeys(testpeers.PublicKeys(peerIdentities))
@@ -151,8 +150,9 @@ func testBasic(t *testing.T, n, f int) {
 		nodeLog := log.Named(string(nid))
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
+		chainStates[nid] = state.InitChainStore(mapdb.NewMapDB())
 		require.NoError(t, err)
-		nodes[nid] = cons.New(*chainID, nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(*chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -182,12 +182,6 @@ func testBasic(t *testing.T, n, f int) {
 	//
 	// Provide Decided data from SM and MP.
 	t.Logf("############ Provide Decided Data from SM/MP.")
-	kvStore := mapdb.NewMapDB()
-	virtualStateAccess, err := state.CreateOriginState(kvStore, chainID)
-	require.NoError(t, err)
-	chainStateSync := coreutil.NewChainStateSync()
-	chainStateSync.SetSolidIndex(0)
-	stateBaseline := chainStateSync.GetSolidIndexBaseline()
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Running, out.State)
@@ -195,8 +189,12 @@ func testBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
+		l1Commitment, err := state.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
+		require.NoError(t, err)
+		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.GetTrieRoot())
+		require.NoError(t, err)
 		tc.WithInput(nid, cons.NewInputMempoolRequests(initReqs))
-		tc.WithInput(nid, cons.NewInputStateMgrDecidedVirtualState(stateBaseline, virtualStateAccess))
+		tc.WithInput(nid, cons.NewInputStateMgrDecidedVirtualState(chainState))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM data", t.Logf)
@@ -246,8 +244,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.ResultTransaction)
 		require.NotNil(t, out.ResultNextAliasOutput)
 		require.NotNil(t, out.ResultState)
-		block, err := out.ResultState.ExtractBlock()
-		require.NoError(t, err)
+		block := chainStates[nid].Commit(out.ResultState)
 		require.NotNil(t, block)
 		if nid == nodeIDs[0] { // Just do this once.
 			require.NoError(t, utxoDB.AddToLedger(out.ResultTransaction))
@@ -349,9 +346,9 @@ func testChained(t *testing.T, n, f, b int) {
 	for _, nid := range nodeIDs {
 		doneCHs[nid] = make(chan *testInstInput, 1)
 	}
-	testNodeStates := map[gpa.NodeID]*testNodeState{}
+	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = newTestNodeState(t, chainID)
+		testNodeStates[nid] = state.InitChainStore(mapdb.NewMapDB())
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {
@@ -376,11 +373,14 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Logf("Going to provide inputs.")
+		originL1Commitment, err := state.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
+		require.NoError(t, err)
+		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.GetTrieRoot())
+		require.NoError(t, err)
 		testChainInsts[0].input(&testInstInput{
-			nodeID:             nid,
-			baseAliasOutput:    originAO,
-			stateBaseline:      testNodeStates[nid].getStateBaseline(),
-			virtualStateAccess: testNodeStates[nid].getVirtualStateAccess(),
+			nodeID:          nid,
+			baseAliasOutput: originAO,
+			baseState:       originState,
 		})
 	}
 	// Wait for all the instances to output.
@@ -395,54 +395,23 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	t.Logf("Done, last block was output and all instances terminated.")
 	for _, doneVal := range doneVals {
-		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.virtualStateAccess.KVStore()).GetMaintenanceStatus())
+		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetMaintenanceStatus())
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// testNodeState
-
-type testNodeState struct {
-	kvStore   kvstore.KVStore
-	stateSync coreutil.ChainStateSync
-	vsAccess  state.VirtualStateAccess
-}
-
-func newTestNodeState(t *testing.T, chainID *isc.ChainID) *testNodeState {
-	kvStore := mapdb.NewMapDB()
-	stateSync := coreutil.NewChainStateSync()
-	stateSync.SetSolidIndex(0)
-	vsAccess, err := state.CreateOriginState(kvStore, chainID)
-	require.NoError(t, err)
-	return &testNodeState{
-		kvStore:   kvStore,
-		stateSync: stateSync,
-		vsAccess:  vsAccess,
-	}
-}
-
-func (tns *testNodeState) getVirtualStateAccess() state.VirtualStateAccess {
-	return tns.vsAccess
-}
-
-func (tns *testNodeState) getStateBaseline() coreutil.StateBaseline {
-	return tns.stateSync.GetSolidIndexBaseline()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // testConsInst
 
 type testInstInput struct {
-	nodeID             gpa.NodeID
-	baseAliasOutput    *isc.AliasOutputWithID
-	stateBaseline      coreutil.StateBaseline
-	virtualStateAccess state.VirtualStateAccess
+	nodeID          gpa.NodeID
+	baseAliasOutput *isc.AliasOutputWithID
+	baseState       state.State // State committed with the baseAliasOutput
 }
 
 type testConsInst struct {
 	t            *testing.T
 	nodes        map[gpa.NodeID]gpa.GPA
-	nodeStates   map[gpa.NodeID]*testNodeState
+	nodeStates   map[gpa.NodeID]state.Store
 	stateIndex   int
 	requests     []isc.Request
 	tc           *gpa.TestContext
@@ -479,7 +448,7 @@ func newTestConsInst(
 	stateIndex int,
 	procCache *processors.Cache,
 	nodeIDs []gpa.NodeID,
-	nodeStates map[gpa.NodeID]*testNodeState,
+	nodeStates map[gpa.NodeID]state.Store,
 	peerIdentities []*cryptolib.KeyPair,
 	dkShareRegistryProviders []registry.DKShareRegistryProvider,
 	requests []isc.Request,
@@ -493,7 +462,7 @@ func newTestConsInst(
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(*chainID, nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(*chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
 	}
 	tci := &testConsInst{
 		t:                                t,
@@ -609,11 +578,13 @@ func (tci *testConsInst) tryHandleOutput(nodeID gpa.NodeID) { //nolint: gocyclo
 		if tci.done[nodeID] {
 			return
 		}
+		resultBlock := tci.nodeStates[nodeID].Commit(out.ResultState)
+		resultState, err := tci.nodeStates[nodeID].StateByTrieRoot(resultBlock.TrieRoot())
+		require.NoError(tci.t, err)
 		tci.doneCB(&testInstInput{
-			nodeID:             nodeID,
-			baseAliasOutput:    out.ResultNextAliasOutput,
-			stateBaseline:      tci.nodeStates[nodeID].getStateBaseline(),
-			virtualStateAccess: out.ResultState,
+			nodeID:          nodeID,
+			baseAliasOutput: out.ResultNextAliasOutput,
+			baseState:       resultState,
 		})
 		tci.done[nodeID] = true
 		return
@@ -694,7 +665,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, out *cons.Output, inp *testInstInput) {
 	if out.NeedStateMgrDecidedState != nil && !tci.handledNeedStateMgrDecidedState[nodeID] {
 		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
-			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.stateBaseline, inp.virtualStateAccess)}
+			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.baseState)}
 		} else {
 			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")
 		}

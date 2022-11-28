@@ -73,7 +73,6 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/isc/rotate"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -105,18 +104,19 @@ type Output struct {
 	NeedMempoolRequests       []*isc.RequestRef      // Request payloads are needed from mempool for this IDs/Hash.
 	NeedStateMgrStateProposal *isc.AliasOutputWithID // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *isc.AliasOutputWithID // Query for a decided Virtual State to be used by VM.
-	NeedStateMgrSaveBlock     state.Block            // Ask StateMgr to save the produced block.
+	NeedStateMgrSaveBlock     state.StateDraft       // Ask StateMgr to save the produced block.
 	NeedVMResult              *vm.VMTask             // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
 	// All the fields are filled, if State == Completed.
 	ResultTransaction     *iotago.Transaction
 	ResultNextAliasOutput *isc.AliasOutputWithID
-	ResultState           state.VirtualStateAccess
+	ResultState           state.StateDraft
 }
 
 type consImpl struct {
 	chainID        isc.ChainID
+	chainStore     state.Store
 	edSuite        suites.Suite // For signatures.
 	blsSuite       suites.Suite // For randomness only.
 	dkShare        tcrypto.DKShare
@@ -152,6 +152,7 @@ var (
 
 func New(
 	chainID isc.ChainID,
+	chainStore state.Store,
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
 	dkShare tcrypto.DKShare,
@@ -190,6 +191,7 @@ func New(
 	}
 	c := &consImpl{
 		chainID:        chainID,
+		chainStore:     chainStore,
 		edSuite:        edSuite,
 		blsSuite:       blsSuite,
 		dkShare:        dkShare,
@@ -282,7 +284,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputStateMgrProposalConfirmed:
 		return c.subSM.StateProposalConfirmedByStateMgr()
 	case *inputStateMgrDecidedVirtualState:
-		return c.subSM.DecidedVirtualStateReceived(input.stateBaseline, input.virtualStateAccess)
+		return c.subSM.DecidedVirtualStateReceived(input.chainState)
 	case *inputStateMgrBlockSaved:
 		return c.subSM.BlockSaved()
 	case *inputTimeData:
@@ -374,12 +376,12 @@ func (c *consImpl) uponSMDecidedStateQueryInputsReady(decidedBaseAliasOutput *is
 	return nil
 }
 
-func (c *consImpl) uponSMDecidedStateReceived(stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess) gpa.OutMessages {
+func (c *consImpl) uponSMDecidedStateReceived(chainState state.State) gpa.OutMessages {
 	c.output.NeedStateMgrDecidedState = nil
-	return c.subVM.DecidedStateReceived(stateBaseline, virtualStateAccess)
+	return c.subVM.DecidedStateReceived(chainState)
 }
 
-func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.Block) gpa.OutMessages {
+func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.StateDraft) gpa.OutMessages {
 	c.output.NeedStateMgrSaveBlock = producedBlock
 	return nil
 }
@@ -496,7 +498,8 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 ////////////////////////////////////////////////////////////////////////////////
 // VM
 
-func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, stateBaseline coreutil.StateBaseline, virtualStateAccess state.VirtualStateAccess, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
+	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
@@ -504,15 +507,14 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		Processors:             c.processorCache,
 		AnchorOutput:           decidedBaseAliasOutput.GetAliasOutput(),
 		AnchorOutputID:         decidedBaseAliasOutput.OutputID(),
-		SolidStateBaseline:     stateBaseline,
+		Store:                  c.chainStore,
 		Requests:               aggregatedProposals.OrderedRequests(requests, *randomness),
 		TimeAssumption:         aggregatedProposals.AggregatedTime(),
 		Entropy:                *randomness,
 		ValidatorFeeTarget:     aggregatedProposals.ValidatorFeeTarget(),
 		EstimateGasMode:        false,
 		EnableGasBurnLogging:   false,
-		VirtualStateAccess:     virtualStateAccess.Copy(),
-		MaintenanceModeEnabled: governance.NewStateAccess(virtualStateAccess.KVStore()).GetMaintenanceStatus(),
+		MaintenanceModeEnabled: governance.NewStateAccess(chainState).GetMaintenanceStatus(),
 		Log:                    c.log.Named("VM"),
 	}
 	return nil
@@ -531,12 +533,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 	if err != nil {
 		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
 	}
-	producedBlock, err := vmResult.VirtualStateAccess.ExtractBlock()
-	if err != nil {
-		panic(xerrors.Errorf("uponVMOutputReceived: cannot extract produced block: %v", err))
-	}
 	return gpa.NoMessages().
-		AddAll(c.subSM.BlockProduced(producedBlock)).
+		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.VMResultReceived(vmResult)).
 		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
 }
@@ -547,7 +545,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 // Everything is ready for the output TX, produce it.
 func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.OutMessages {
 	var resultTxEssence *iotago.TransactionEssence
-	var resultState state.VirtualStateAccess
+	var resultState state.StateDraft
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
@@ -570,7 +568,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 			c.log.Warnf("cannot create state TX, failed to get TX essence: nil")
 		}
 		resultTxEssence = vmResult.ResultTransactionEssence
-		resultState = vmResult.VirtualStateAccess
+		resultState = vmResult.StateDraft
 	}
 	publicKey := c.dkShare.GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
