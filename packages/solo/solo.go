@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -19,20 +18,16 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -105,7 +100,7 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	// mempool of the chain is used in Solo to mimic a real node
-	mempool mempool.Mempool
+	mempool Mempool
 	// used for non-standard VMs
 	bypassStardustVM bool
 }
@@ -302,24 +297,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		log:                    chainlog,
 	}
 
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		[]string{"nodeID"}, []*cryptolib.KeyPair{cryptolib.NewKeyPair()}, 10000,
-		testutil.NewPeeringNetReliable(chainlog),
-		chainlog,
-	)
-
-	ret.mempool = mempool.New(
-		context.Background(),
-		chainID,
-		gpa.NodeID("solo"),
-		peeringNetwork.NetworkProviders()[0],
-		mempool.CreateHasBeenProcessedFunc(ret.StateReader.KVStoreReader()),
-		mempool.CreateGetProcessedReqsFunc(ret.StateReader.KVStoreReader()),
-		chainlog,
-		metrics.DefaultChainMetrics(),
-	)
-
-	require.NoError(env.T, err)
+	ret.mempool = newMempool()
 
 	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
@@ -444,12 +422,7 @@ func (ch *Chain) GetAnchorOutput() *isc.AliasOutputWithID {
 func (ch *Chain) collateBatch() []isc.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
-
-	// get the requests from the mempool
-	ctx, cancelCtx := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancelCtx()
-	reqRefs := <-ch.mempool.ConsensusProposalsAsync(ctx, ch.GetAnchorOutput())
-	requests := <-ch.mempool.ConsensusRequestsAsync(ctx, reqRefs)
+	requests := ch.mempool.RequestBatchProposal()
 	batchSize := len(requests)
 
 	if batchSize > maxBatch {

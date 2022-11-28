@@ -80,23 +80,8 @@ type StateMgr interface {
 	) (vs state.VirtualStateAccess, added, removed []state.Block)
 }
 
-// This part of the interface is only used by SOLO.
-// TODO: Move the implementation of these functions to the solo package, probably.
-type MempoolSolo interface {
-	ReceiveRequests(reqs ...isc.Request) []bool
-	RemoveRequests(reqs ...isc.RequestID)
-	Info() MempoolInfo
-}
-
-type MempoolInfo struct {
-	TotalPool      int
-	InPoolCounter  int
-	OutPoolCounter int
-}
-
 type Mempool interface {
 	consGR.Mempool
-	MempoolSolo
 	// Invoked by the chain, when new alias output is considered as a tip/head
 	// of the chain. Mempool can reorganize its state by removing/rejecting
 	// or re-adding some requests, depending on how the head has changed.
@@ -683,19 +668,4 @@ func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}
 	return nodeID
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Functions for the SOLO tests.
-
-func (mpi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) []bool {
-	panic("to be implemented") // TODO: Implement.
-}
-
-func (mpi *mempoolImpl) RemoveRequests(reqs ...isc.RequestID) {
-	panic("to be implemented") // TODO: Implement.
-}
-
-func (mpi *mempoolImpl) Info() MempoolInfo {
-	panic("to be implemented") // TODO: Implement.
 }

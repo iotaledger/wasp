@@ -12,7 +12,8 @@ import (
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
+	"github.com/iotaledger/trie.go/models/trie_blake2b"
+	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -531,7 +532,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Duration) bool {
+func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) bool {
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -574,12 +575,12 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
 // requests in the mempool of the chain both become equal to the specified number
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	return ch.WaitUntil(func(mstats mempool.MempoolInfo) bool {
+	return ch.WaitUntil(func(mstats MempoolInfo) bool {
 		return mstats.OutPoolCounter == numReq
 	}, maxWait...)
 }
 
 // MempoolInfo returns stats about the chain mempool
-func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
+func (ch *Chain) MempoolInfo() MempoolInfo {
 	return ch.mempool.Info()
 }
