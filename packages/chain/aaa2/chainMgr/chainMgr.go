@@ -309,7 +309,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	})
 	//
 	// >     Update AccessNodes.
-	newAccessNodes := governance.NewStateAccess(input.nextVirtualState.KVStore()).GetAccessNodes()
+	newAccessNodes := governance.NewStateAccess(input.nextState).GetAccessNodes()
 	if !util.Same(newAccessNodes, cmi.activeAccessNodes) {
 		cmi.activeAccessNodesCB(newAccessNodes)
 		cmi.activeAccessNodes = newAccessNodes
