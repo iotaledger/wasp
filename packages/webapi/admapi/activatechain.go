@@ -55,13 +55,9 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	rec, err := w.chainRecordRegistryProvider.ActivateChainRecord(*chainID)
-	if err != nil {
-		return err
-	}
 
-	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID().String())
-	if err := w.chains().Activate(rec, w.dkShareRegistryProvider, w.nodeIdentityProvider, w.consensusJournalRegistryProvider, w.allMetrics, w.w); err != nil {
+	log.Debugw("calling Chains.Activate", "chainID", chainID.String())
+	if err := w.chains().Activate(chainID); err != nil {
 		return err
 	}
 
@@ -73,12 +69,8 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := w.chainRecordRegistryProvider.DeactivateChainRecord(*chainID)
-	if err != nil {
-		return err
-	}
 
-	err = w.chains().Deactivate(bd)
+	err = w.chains().Deactivate(chainID)
 	if err != nil {
 		return err
 	}
@@ -99,7 +91,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	if chainRecord == nil {
 		return httperrors.NotFound("")
 	}
-	chain := w.chains().Get(chainID, true)
+	chain := w.chains().Get(chainID)
 	committeeInfo := chain.GetCommitteeInfo()
 	dkShare, err := w.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
 	if err != nil {

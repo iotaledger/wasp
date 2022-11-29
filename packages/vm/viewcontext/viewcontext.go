@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -35,7 +36,7 @@ import (
 type ViewContext struct {
 	processors     *processors.Cache
 	stateReader    state.State
-	chainID        *isc.ChainID
+	chainID        isc.ChainID
 	log            *logger.Logger
 	chainInfo      *governance.ChainInfo
 	gasBurnLog     *gas.BurnLog
@@ -46,11 +47,16 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore, blockIndex uint32) *ViewContext {
+func New(ch chain.Chain, blockIndex uint32) *ViewContext {
+	state, err := ch.GetStateReader().StateByIndex(blockIndex)
+	if err != nil {
+		panic(xerrors.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err))
+	}
+	chainID := ch.ID()
 	return &ViewContext{
 		processors:     ch.Processors(),
-		stateReader:    ch.GetStateReader(blockIndex),
-		chainID:        ch.ID(),
+		stateReader:    state,
+		chainID:        *chainID,
 		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnEnabled: true,
 	}

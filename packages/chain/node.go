@@ -14,7 +14,7 @@
 // This object interacts with:
 //   - NodeConn.
 //   - Administrative functions.
-package node
+package chain
 
 import (
 	"context"
@@ -42,6 +42,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -54,11 +55,31 @@ const (
 	msgTypeChainMgr byte = iota
 )
 
-type ChainNode interface {
-	// TODO: All the public administrative functions.
-	// HeadStateAnchor (confirmed + unconfirmed).
-	// GetCurrentCommittee.
-	// GetCurrentAccessNodes.
+type Chain interface {
+	ChainCore
+	// ChainID() isc.ChainID
+	// ChainStore() state.Store
+	// Processors() *processors.Cache
+	// Log() *logger.Logger
+	// // TODO: All the public administrative functions.
+	// // HeadStateAnchor (confirmed + unconfirmed).
+	// // GetCurrentCommittee.
+	// // GetCurrentAccessNodes.
+	// // CommitteeInfo() *CommitteeInfo
+	// GetCommitteeInfo() *CommitteeInfo
+}
+
+type CommitteeInfo struct {
+	Address    iotago.Address
+	Size       uint16
+	Quorum     uint16
+	PeerStatus []*PeerStatus
+}
+
+type PeerStatus struct {
+	PubKey    *cryptolib.PublicKey
+	NetID     string
+	Connected bool
 }
 
 type ChainMempool interface {
@@ -159,7 +180,7 @@ type txPublished struct {
 	confirmed       bool
 }
 
-var _ ChainNode = &chainNodeImpl{}
+var _ Chain = &chainNodeImpl{}
 
 func New(
 	ctx context.Context,
@@ -173,7 +194,7 @@ func New(
 	blockWAL smGPAUtils.BlockWAL,
 	net peering.NetworkProvider,
 	log *logger.Logger,
-) (ChainNode, error) {
+) (Chain, error) {
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
 		nodeIdentity:         nodeIdentity,
@@ -555,4 +576,35 @@ func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID
 		cni.netPeerPubs[nodeID] = pubKey
 	}
 	return nodeID
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Support functions.
+
+func (cni *chainNodeImpl) ID() *isc.ChainID {
+	return cni.chainID
+}
+
+func (cni *chainNodeImpl) GetStateReader() state.Store {
+	return cni.chainStore
+}
+
+func (cni *chainNodeImpl) Processors() *processors.Cache {
+	return cni.procCache
+}
+
+func (cni *chainNodeImpl) Log() *logger.Logger {
+	return cni.log
+}
+
+func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
+	panic("IMPLEMENT: (cni *chainNodeImpl) GetCommitteeInfo()") // TODO: Implement.
+}
+
+func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider { // CommitteeNodes + AccessNodes
+	panic("IMPLEMENT: (cni *chainNodeImpl) GetChainNodes()") // TODO: Implement.
+}
+
+func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo { // All the current candidates.
+	panic("IMPLEMENT: (cni *chainNodeImpl) GetCandidateNodes()") // TODO: Implement.
 }

@@ -30,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -484,13 +483,13 @@ func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("unimplemented")
 }
 
-func (ch *Chain) StateCandidateToStateManager(trie.VCommitment, *iotago.UTXOInput) {
-	panic("unimplemented")
-}
+// func (ch *Chain) StateCandidateToStateManager(trie.VCommitment, *iotago.UTXOInput) {
+// 	panic("unimplemented")
+// }
 
-func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
-	panic("unimplemented")
-}
+// func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
+// 	panic("unimplemented")
+// }
 
 func (ch *Chain) GetStateReader(blockIndex uint32) state.State {
 	state, err := ch.Store.StateByIndex(blockIndex)
