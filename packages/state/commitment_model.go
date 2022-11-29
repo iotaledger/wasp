@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/trie.go/models/trie_blake2b"
 	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/common"
 )
 
 // singleton of CommitmentModel. In ISC we use the following trie parameters:
@@ -23,11 +23,11 @@ var (
 )
 
 func trieKVStore(db kvstore.KVStore) trie.KVStore {
-	return hive_adaptor.NewHiveKVStoreAdaptor(db, []byte{dbkeys.ObjectTypeTrie})
+	return hive_adaptor.NewHiveKVStoreAdaptor(db, []byte{common.ObjectTypeTrie})
 }
 
 func valueKVStore(db kvstore.KVStore) trie.KVStore {
-	return hive_adaptor.NewHiveKVStoreAdaptor(db, []byte{dbkeys.ObjectTypeState})
+	return hive_adaptor.NewHiveKVStoreAdaptor(db, []byte{common.ObjectTypeState})
 }
 
 func NewTrie(db kvstore.KVStore) *trie.Trie {

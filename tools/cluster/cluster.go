@@ -5,6 +5,7 @@ package cluster
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -13,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"sync"
 	"testing"
 	"text/template"
 	"time"
@@ -474,13 +476,44 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	// stop nodes
+	waspNodesCount := len(clu.waspCmds)
+
+	// send stop commands
 	for _, i := range nodeIndex {
-		if i >= len(clu.waspCmds) {
+		if i >= waspNodesCount {
+			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
+		}
+		clu.stopNode(i)
+	}
+
+	// wait until all nodes are stopped
+	exitedWaitGroup := sync.WaitGroup{}
+	exitedWaitGroup.Add(waspNodesCount)
+
+	exited := make(chan struct{})
+	go func() {
+		exitedWaitGroup.Wait()
+		close(exited)
+	}()
+
+	for _, i := range nodeIndex {
+		if i >= waspNodesCount {
 			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
 		}
 
-		clu.stopNode(i)
+		go func(process *exec.Cmd) {
+			_ = process.Wait()
+
+			// mark process as finished
+			exitedWaitGroup.Done()
+		}(clu.waspCmds[i])
+	}
+
+	select {
+	case <-time.After(20 * time.Second):
+		return errors.New("[cluster] Wasp nodes did not shutdown in time")
+	case <-exited:
+		// nodes stopped
 	}
 
 	// start nodes

@@ -16,9 +16,9 @@ import (
 
 func TestBasic(t *testing.T) {
 	logger := testlogger.NewLogger(t)
-	getOrCreateKVStore := func(chain *isc.ChainID) kvstore.KVStore {
-		return mapdb.NewMapDB()
+	chainStateStoreProvider := func(chain isc.ChainID) (kvstore.KVStore, error) {
+		return mapdb.NewMapDB(), nil
 	}
 
-	_ = New(logger, nil, coreprocessors.NewConfigWithCoreContracts(), 10, time.Second, false, nil, getOrCreateKVStore, false, "")
+	_ = New(logger, nil, coreprocessors.NewConfigWithCoreContracts(), 10, time.Second, false, nil, chainStateStoreProvider, false, "")
 }

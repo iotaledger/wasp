@@ -153,6 +153,25 @@ func (p *ChainRecordRegistry) ChainRecords() ([]*ChainRecord, error) {
 	return lo.Values(p.storeOnChangeMap.All()), nil
 }
 
+func (p *ChainRecordRegistry) ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error {
+	chainRecords, err := p.ChainRecords()
+	if err != nil {
+		return err
+	}
+
+	for _, chainRecord := range chainRecords {
+		if !chainRecord.Active {
+			continue
+		}
+
+		if !consumer(chainRecord) {
+			return nil
+		}
+	}
+
+	return nil
+}
+
 func (p *ChainRecordRegistry) AddChainRecord(chainRecord *ChainRecord) error {
 	return p.storeOnChangeMap.Add(chainRecord)
 }

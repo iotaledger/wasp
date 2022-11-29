@@ -35,3 +35,4 @@ snap-cli
 *.trie
 *.snapshot
 snapshot
+tests_output.log

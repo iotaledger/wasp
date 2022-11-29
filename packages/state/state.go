@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -23,9 +23,9 @@ import (
 // region VirtualStateAccess /////////////////////////////////////////////////
 
 type virtualStateAccess struct {
-	db   kvstore.KVStore
-	kvs  *buffered.BufferedKVStoreAccess
-	trie *trie.Trie
+	store kvstore.KVStore
+	kvs   *buffered.BufferedKVStoreAccess
+	trie  *trie.Trie
 	// onBlockSave (if != nil) is called each time block is saved to the db with the state
 	onBlockSave OnBlockSaveClosure
 }
@@ -33,12 +33,12 @@ type virtualStateAccess struct {
 var _ VirtualStateAccess = &virtualStateAccess{}
 
 // NewVirtualState creates VirtualStateAccess interface with the partition of KVStore
-func NewVirtualState(db kvstore.KVStore) *virtualStateAccess { //nolint:revive
-	subState := subRealm(db, []byte{dbkeys.ObjectTypeState})
+func NewVirtualState(store kvstore.KVStore) *virtualStateAccess { //nolint:revive
+	subState := subRealm(store, []byte{common.ObjectTypeState})
 	ret := &virtualStateAccess{
-		db:   db,
-		kvs:  buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(subState)),
-		trie: NewTrie(db),
+		store: store,
+		kvs:   buffered.NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(subState)),
+		trie:  NewTrie(store),
 	}
 
 	return ret
@@ -77,11 +77,13 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 	if db == nil {
 		return nil
 	}
-	ret, err := db.WithRealm(append(db.Realm(), realm...))
+
+	store, err := db.WithExtendedRealm(realm)
 	if err != nil {
 		panic(fmt.Errorf("error creating subRealm: %w", err))
 	}
-	return ret
+
+	return store
 }
 
 func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
@@ -90,7 +92,7 @@ func (vs *virtualStateAccess) WithOnBlockSave(fun OnBlockSaveClosure) {
 
 func (vs *virtualStateAccess) Copy() VirtualStateAccess {
 	ret := &virtualStateAccess{
-		db:          vs.db,
+		store:       vs.store,
 		kvs:         vs.kvs.Clone(),
 		trie:        vs.trie.Clone(),
 		onBlockSave: vs.onBlockSave,
@@ -116,7 +118,7 @@ func (vs *virtualStateAccess) KVStoreReader() kv.KVStoreReader {
 }
 
 func (vs *virtualStateAccess) OptimisticStateReader(glb coreutil.ChainStateSync) OptimisticStateReader {
-	return NewOptimisticStateReader(vs.db, glb)
+	return NewOptimisticStateReader(vs.store, glb)
 }
 
 func (vs *virtualStateAccess) ChainID() *isc.ChainID {
@@ -180,7 +182,7 @@ func (vs *virtualStateAccess) ApplyStateUpdate(upd Update) {
 }
 
 func (vs *virtualStateAccess) ProofGeneric(key []byte) *trie.ProofGeneric {
-	return trie.GetProofGeneric(vs.trie, dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key))
+	return trie.GetProofGeneric(vs.trie, common.MakeKey(common.ObjectTypeTrie, key))
 }
 
 // ExtractBlock creates a block from mutations
@@ -218,7 +220,7 @@ func (vs *virtualStateAccess) TrieNodeStore() trie.NodeStore {
 // Returns list of keys which cannot be proven to be consistent with the trie.
 // If everything ok, it is an empty list of keys
 func (vs *virtualStateAccess) ReconcileTrie() []kv.Key {
-	r := vs.trie.Reconcile(valueKVStore(vs.db))
+	r := vs.trie.Reconcile(valueKVStore(vs.store))
 	ret := make([]kv.Key, len(r))
 	for i, k := range r {
 		ret[i] = kv.Key(k)

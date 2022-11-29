@@ -27,7 +27,7 @@ type BasicAuthConfiguration struct {
 }
 
 type IPWhiteListAuthConfiguration struct {
-	Whitelist []string `default:"0.0.0.0" usage:"a list of ips that are allowed to access the service"`
+	Whitelist []string `default:"127.0.0.1" usage:"a list of ips that are allowed to access the service"`
 }
 
 type AuthConfiguration struct {

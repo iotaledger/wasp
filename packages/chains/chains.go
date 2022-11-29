@@ -4,6 +4,7 @@
 package chains
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -41,7 +42,7 @@ type Chains struct {
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
 	networkProvider                  peering.NetworkProvider
-	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
+	chainStateStoreProvider          database.ChainStateKVStoreProvider
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
 
@@ -57,7 +58,7 @@ func New(
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
 	networkProvider peering.NetworkProvider,
-	getOrCreateKVStore dbmanager.ChainKVStoreProvider,
+	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	rawBlocksEnabled bool,
 	rawBlocksDir string,
 ) *Chains {
@@ -70,7 +71,7 @@ func New(
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		networkProvider:                  networkProvider,
-		getOrCreateKVStore:               getOrCreateKVStore,
+		chainStateStoreProvider:          chainStateStoreProvider,
 		rawBlocksEnabled:                 rawBlocksEnabled,
 		rawBlocksDir:                     rawBlocksDir,
 	}
@@ -95,25 +96,19 @@ func (c *Chains) ActivateAllFromRegistry(
 	allMetrics *metrics.Metrics,
 	w *wal.WAL,
 ) error {
-	chainRecords, err := chainRecordRegistryProvider.ChainRecords()
-	if err != nil {
+	var innerErr error
+	if err := chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
+		if err := c.Activate(chainRecord, dkShareRegistryProvider, nodeIdentityProvider, consensusJournalRegistryProvider, allMetrics, w); err != nil {
+			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
+			return false
+		}
+
+		return true
+	}); err != nil {
 		return err
 	}
 
-	astr := make([]string, len(chainRecords))
-	for i := range astr {
-		astr[i] = chainRecords[i].ChainID().String()[:10] + ".."
-	}
-	c.log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
-
-	for _, chr := range chainRecords {
-		if chr.Active {
-			if err := c.Activate(chr, dkShareRegistryProvider, nodeIdentityProvider, consensusJournalRegistryProvider, allMetrics, w); err != nil {
-				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID(), err)
-			}
-		}
-	}
-	return nil
+	return innerErr
 }
 
 // Activate activates chain on the Wasp node:
@@ -143,7 +138,11 @@ func (c *Chains) Activate(
 	}
 
 	// create new chain object
-	chainKVStore := c.getOrCreateKVStore(&chainID)
+	chainStateStore, err := c.chainStateStoreProvider(chainID)
+	if err != nil {
+		return err
+	}
+
 	chainMetrics := allMetrics.NewChainMetrics(&chainID)
 	chainWAL, err := w.NewChainWAL(&chainID)
 	if err != nil {
@@ -154,7 +153,7 @@ func (c *Chains) Activate(
 		&chainID,
 		c.log,
 		c.nodeConnection,
-		chainKVStore,
+		chainStateStore,
 		c.networkProvider,
 		dkShareRegistryProvider,
 		nodeIdentityProvider,

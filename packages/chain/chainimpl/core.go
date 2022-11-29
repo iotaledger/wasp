@@ -53,7 +53,7 @@ func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
 
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
-	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
+	return state.NewOptimisticStateReader(c.chainStateStore, c.chainStateSync)
 }
 
 func (c *chainObj) GetChainNodes() []peering.PeerStatusProvider {

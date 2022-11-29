@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/common"
 )
 
 const (
@@ -27,7 +27,7 @@ func NewConsensusJournal(store kvstore.KVStore) *ConsensusJournal {
 }
 
 func dbKeyForConsensusJournal(id journal.ID, subKey byte) []byte {
-	return dbkeys.MakeKey(subKey, id[:])
+	return common.MakeKey(subKey, id[:])
 }
 
 func (j *ConsensusJournal) LoadConsensusJournal(id journal.ID) (journal.LogIndex, journal.LocalView, error) {

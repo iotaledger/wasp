@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -103,16 +104,16 @@ func scanFile(fname string) *snapshot.FileProperties {
 
 func restoreDb(prop *snapshot.FileProperties) {
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
-	kvstream, err := kv.OpenKVStreamFile(prop.FileName) //nolint:staticcheck // false-positive, kvstream IS used
+	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
 	mustNoErr(err)
 	if _, err := os.Stat(dbDir); !os.IsNotExist(err) {
 		fmt.Printf("directory %s already exists. Can't create new database\n", dbDir)
 		os.Exit(1)
 	}
 	fmt.Printf("creating new database for chain ID %s\n", dbDir)
-	db, err := dbmanager.NewDB(dbDir)
+	db, err := database.DatabaseWithDefaultSettings(dbDir, true, hivedb.EngineRocksDB, false)
 	mustNoErr(err)
-	st := state.NewVirtualState(db.NewStore())
+	st := state.NewVirtualState(db.KVStore())
 
 	const persistEach = 1_000_000
 
@@ -142,7 +143,7 @@ func restoreDb(prop *snapshot.FileProperties) {
 }
 
 func verify(prop *snapshot.FileProperties) {
-	kvstream, err := kv.OpenKVStreamFile(prop.FileName) //nolint:staticcheck // false-positive, kvstream IS used
+	kvstream, err := kv.OpenKVStreamFile(prop.FileName)
 	mustNoErr(err)
 	dbDir := dbdirFromSnapshotFile(prop.FileName)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
@@ -151,10 +152,13 @@ func verify(prop *snapshot.FileProperties) {
 	}
 	fmt.Printf("verifying database for chain ID/dbDir %s\n", dbDir)
 
-	db, err := dbmanager.NewDB(dbDir)
+	db, err := database.DatabaseWithDefaultSettings(dbDir, false, hivedb.EngineAuto, false)
+	if err != nil {
+		panic(err)
+	}
 	mustNoErr(err)
 
-	st := state.NewVirtualState(db.NewStore())
+	st := state.NewVirtualState(db.KVStore())
 	c := state.RootCommitment(st.TrieNodeStore())
 	fmt.Printf("root commitment is %s\n", c)
 
@@ -181,7 +185,7 @@ func verify(prop *snapshot.FileProperties) {
 	if useCachedNodeStore {
 		nodeStore = st.TrieNodeStore()
 	} else {
-		// this is uo to 3-4 times slower
+		// this is up to 3-4 times slower
 		glb := coreutil.NewChainStateSync()
 		glb.SetSolidIndex(st.BlockIndex())
 		rdr := st.OptimisticStateReader(glb)
@@ -218,12 +222,13 @@ func createSnapshot(dbDir string) {
 	}
 	fmt.Printf("creating shapshot for directory/chain ID %s\n", dbDir)
 
-	db, err := dbmanager.NewDB(dbDir)
+	db, err := database.DatabaseWithDefaultSettings(dbDir, false, hivedb.EngineAuto, false)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		os.Exit(1)
 	}
-	st := state.NewVirtualState(db.NewStore())
+
+	st := state.NewVirtualState(db.KVStore())
 
 	var stateIndex uint32
 	err = panicutil.CatchPanic(func() {
@@ -283,13 +288,14 @@ func extractBlocks(dbDir string, from uint32, targetDir string) {
 	fmt.Printf("using database for chain ID/dbDir %s\n", dbDir)
 	fmt.Printf("writing files to directory '%s'\n", targetDir)
 
-	db, err := dbmanager.NewDB(dbDir)
+	db, err := database.DatabaseWithDefaultSettings(dbDir, false, hivedb.EngineAuto, false)
 	mustNoErr(err)
+
 	err = os.MkdirAll(targetDir, 0o777)
 	mustNoErr(err)
 
 	indices := make([]uint32, 0)
-	store := db.NewStore()
+	store := db.KVStore()
 	err = state.ForEachBlockIndex(store, func(blockIndex uint32) bool {
 		indices = append(indices, blockIndex)
 		return true

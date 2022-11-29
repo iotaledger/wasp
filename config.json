@@ -10,9 +10,9 @@
     }
   },
   "logger": {
-    "level": "debug",
-    "disableCaller": false,
-    "disableStacktrace": true,
+    "level": "info",
+    "disableCaller": true,
+    "disableStacktrace": false,
     "stacktraceLevel": "panic",
     "encoding": "console",
     "outputPaths": [
@@ -23,18 +23,38 @@
   },
   "inx": {
     "address": "localhost:9029",
-    "maxConnectionAttempts": 30
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
-  "database": {
-    "inMemory": false,
-    "directory": "waspdb"
+  "db": {
+    "engine": "rocksdb",
+    "consensusJournal": {
+      "path": "waspdb/chains/consensus"
+    },
+    "chainState": {
+      "path": "waspdb/chains/data"
+    },
+    "debugSkipHealthCheck": false
+  },
+  "p2p": {
+    "identityPrivateKey": "",
+    "db": {
+      "path": "waspdb/p2pstore"
+    }
   },
   "registry": {
-    "useText": false,
-    "fileName": "chain-registry.json"
+    "chains": {
+      "filePath": "waspdb/chain_registry.json"
+    },
+    "dkShares": {
+      "filePath": "waspdb/dkshares.json"
+    },
+    "trustedPeers": {
+      "filePath": "waspdb/trusted_peers.json"
+    }
   },
   "peering": {
-    "netID": "127.0.0.1:4000",
+    "netID": "0.0.0.0:4000",
     "port": 4000
   },
   "chains": {
@@ -63,6 +83,7 @@
     "enabled": true,
     "nodeOwnerAddresses": [],
     "bindAddress": "0.0.0.0:9090",
+    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "none",
       "jwt": {
@@ -86,6 +107,7 @@
     "enabled": true,
     "bindAddress": "0.0.0.0:7000",
     "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
     "auth": {
       "scheme": "basic",
       "jwt": {
@@ -97,19 +119,6 @@
       "ip": {
         "whitelist": [
           "127.0.0.1"
-        ]
-      }
-    }
-  },
-  "users": {
-    "users": {
-      "wasp": {
-        "Password": "wasp",
-        "Permissions": [
-          "dashboard",
-          "api",
-          "chain.read",
-          "chain.write"
         ]
       }
     }

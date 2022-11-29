@@ -1,95 +1,125 @@
 variable "wasp_config" {
   default = <<EOH
 {
-	"database": {
-		"directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb"
-	},
-	"logger": {
-		"level": "debug",
-		"disableCaller": false,
-		"disableStacktrace": true,
-		"encoding": "console",
-		"outputPaths": [
-			"stdout",
-			"wasp.log"
-		],
-		"disableEvents": true
-	},
-	"network": {
-		"bindAddress": "0.0.0.0",
-		"externalAddress": "auto"
-	},
-	"node": {
-		"disablePlugins": [],
-		"enablePlugins": []
-	},
-  "webapi": {
-    "auth": {
-      "jwt": {
-        "durationHours": 24
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": ${adminWhitelist}
-      },
-      "scheme": "none"
-    },
-    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}"
-  },
-	"metrics": {
-    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
-    "enabled": true
-	},
-  "dashboard": {
-    "auth": {
-      "jwt": {
-        "durationHours": 24
-      },
-      "basic": {
-        "username": "wasp"
-      },
-      "ip": {
-        "whitelist": ${adminWhitelist}
-      },
-      "scheme": "basic"
-    },
-    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_dashboard" }}"
-  },
-  "users": {
-    "wasp": {
-      "password": "wasp",
-      "permissions": [
-        "dashboard",
-        "api",
-        "chain.read",
-        "chain.write"
-      ]
+  "app": {
+    "checkForUpdates": true,
+    "shutdown": {
+      "stopGracePeriod": "5m",
+      "log": {
+        "enabled": true,
+        "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/shutdown.log"
+      }
     }
   },
-	"peering":{
-		"port": {{ env "NOMAD_PORT_peering" }},
-		"netid": "{{ env "NOMAD_ADDR_peering" }}"
-	},
-  "profiling":{
-    "enabled": false,
-    "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
+  "logger": {
+    "level": "debug",
+    "disableCaller": false,
+    "disableStacktrace": false,
+    "stacktraceLevel": "panic",
+    "encoding": "console",
+    "outputPaths": [
+      "stdout",
+      "{{ env "NOMAD_TASK_DIR" }}/waspdb/wasp.log"
+    ],
+    "disableEvents": true
   },
   "inx": {
     "address": "{{ range service "inx.tangle-testnet-hornet" }}{{ .Address }}:{{ .Port }}{{ end }}",
-    "maxConnectionAttempts": 30
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
-	"nanomsg":{
-		"port": {{ env "NOMAD_PORT_nanomsg" }}
-	},
+  "db": {
+    "engine": "rocksdb",
+    "consensusJournal": {
+      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/consensus"
+    },
+    "chainState": {
+      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/data"
+    },
+    "debugSkipHealthCheck": false
+  },
+  "p2p": {
+    "identityPrivateKey": "",
+    "db": {
+      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/p2pstore"
+    }
+  },
+  "registry": {
+    "chains": {
+      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chain_registry.json"
+    },
+    "dkShares": {
+      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/dkshares.json"
+    },
+    "trustedPeers": {
+      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/trusted_peers.json"
+    }
+  },
+  "peering": {
+    "netID": "{{ env "NOMAD_ADDR_peering" }}",
+    "port": {{ env "NOMAD_PORT_peering" }}
+  },
+  "chains": {
+    "broadcastUpToNPeers": 2,
+    "broadcastInterval": "5s",
+    "apiCacheTTL": "5m",
+    "pullMissingRequestsFromCommittee": true
+  },
+  "rawBlocks": {
+    "enabled": false,
+    "directory": "blocks"
+  },
+  "profiling": {
+    "enabled": false,
+    "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
+  },
   "wal": {
-    "directory": "{{ env "NOMAD_TASK_DIR" }}/wal",
-    "enabled": true
+    "enabled": true,
+    "directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb/wal"
   },
-  "debug": {
-    "rawblocksEnabled": false,
-    "rawblocksDirectory": "{{ env "NOMAD_TASK_DIR" }}/blocks"
+  "metrics": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}"
+  },
+  "webapi": {
+    "enabled": true,
+    "nodeOwnerAddresses": [],
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_api" }}",
+    "debugRequestLoggerEnabled": false,
+    "auth": {
+      "scheme": "none",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": ${adminWhitelist}
+      }
+    }
+  },
+  "nanomsg": {
+    "enabled": true,
+    "port": {{ env "NOMAD_PORT_nanomsg" }}
+  },
+  "dashboard": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_dashboard" }}"
+    "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
+    "auth": {
+      "scheme": "basic",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": ${adminWhitelist}
+      }
+    }
   }
 }
 EOH

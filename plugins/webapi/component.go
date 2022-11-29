@@ -16,9 +16,9 @@ import (
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
@@ -179,7 +179,7 @@ func run() error {
 		}
 
 		Plugin.LogInfof("Stopping %s server ... done", Plugin.Name)
-	}, parameters.PriorityWebAPI); err != nil {
+	}, daemon.PriorityWebAPI); err != nil {
 		Plugin.LogPanicf("failed to start worker: %s", err)
 	}
 

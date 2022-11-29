@@ -1,32 +1,28 @@
-// Package database is a plugin that manages the badger database (e.g. garbage collection).
 package database
 
 import (
 	"context"
-	"path"
-	"runtime"
 
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/hive.go/core/kvstore/rocksdb"
+	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/daemon"
+	"github.com/iotaledger/wasp/packages/database"
 	journalpkg "github.com/iotaledger/wasp/packages/journal"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
 func init() {
 	CoreComponent = &app.CoreComponent{
 		Component: &app.Component{
-			Name:      "Database",
-			DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-			Params:    params,
-			Provide:   provide,
-			Configure: configure,
-			Run:       run,
+			Name:           "Database",
+			DepsFunc:       func(cDeps dependencies) { deps = cDeps },
+			Params:         params,
+			InitConfigPars: initConfigPars,
+			Provide:        provide,
+			Configure:      configure,
 		},
 	}
 }
@@ -39,9 +35,29 @@ var (
 type dependencies struct {
 	dig.In
 
-	DatabaseManager *dbmanager.DBManager
-	// TODO: remove this in the database refactor PR
-	JournalDatabase kvstore.KVStore `name:"journalDatabase"`
+	DatabaseManager *database.Manager
+}
+
+func initConfigPars(c *dig.Container) error {
+	type cfgResult struct {
+		dig.Out
+		DatabaseEngine hivedb.Engine `name:"databaseEngine"`
+	}
+
+	if err := c.Provide(func() cfgResult {
+		dbEngine, err := hivedb.EngineFromStringAllowed(ParamsDatabase.Engine, database.AllowedEnginesDefault...)
+		if err != nil {
+			CoreComponent.LogPanic(err)
+		}
+
+		return cfgResult{
+			DatabaseEngine: dbEngine,
+		}
+	}); err != nil {
+		CoreComponent.LogPanic(err)
+	}
+
+	return nil
 }
 
 func provide(c *dig.Container) error {
@@ -49,61 +65,48 @@ func provide(c *dig.Container) error {
 		dig.In
 
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		DatabaseEngine              hivedb.Engine `name:"databaseEngine"`
 	}
 
 	type databaseManagerResult struct {
 		dig.Out
 
-		DatabaseManager *dbmanager.DBManager
+		DatabaseManager *database.Manager
 	}
 
 	if err := c.Provide(func(deps databaseManagerDeps) databaseManagerResult {
+		dbManager, err := database.NewManager(
+			deps.ChainRecordRegistryProvider,
+			database.WithEngine(deps.DatabaseEngine),
+			database.WithDatabasePathConsensusJournal(ParamsDatabase.ConsensusJournal.Path),
+			database.WithDatabasesPathChainState(ParamsDatabase.ChainState.Path),
+		)
+		if err != nil {
+			CoreComponent.LogPanic(err)
+		}
+
 		return databaseManagerResult{
-			DatabaseManager: dbmanager.NewDBManager(
-				CoreComponent.App().NewLogger("dbmanager"),
-				ParamsDatabase.InMemory,
-				ParamsDatabase.Directory,
-				deps.ChainRecordRegistryProvider,
-			),
+			DatabaseManager: dbManager,
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
+	}
+
+	type consensusJournalDeps struct {
+		dig.In
+
+		DatabaseManager *database.Manager
 	}
 
 	type consensusJournalResult struct {
 		dig.Out
 
 		ConsensusJournalRegistryProvider journal.Provider
-
-		// TODO: remove this in the database refactor PR
-		JournalDatabase kvstore.KVStore `name:"journalDatabase"`
 	}
 
-	if err := c.Provide(func(deps databaseManagerDeps) consensusJournalResult {
-		// TODO: remove this in the database refactor PR
-		newRocksDB := func(path string) (*rocksdb.RocksDB, error) {
-			opts := []rocksdb.Option{
-				rocksdb.IncreaseParallelism(runtime.NumCPU() - 1),
-				rocksdb.Custom([]string{
-					"periodic_compaction_seconds=43200",
-					"level_compaction_dynamic_level_bytes=true",
-					"keep_log_file_num=2",
-					"max_log_file_size=50000000", // 50MB per log file
-				}),
-			}
-
-			return rocksdb.CreateDB(path, opts...)
-		}
-
-		rocksDB, err := newRocksDB(path.Join(ParamsDatabase.Directory, "journal"))
-		if err != nil {
-			CoreComponent.LogPanic(err)
-		}
-		rocksDBKVStore := rocksdb.New(rocksDB)
-
+	if err := c.Provide(func(deps consensusJournalDeps) consensusJournalResult {
 		return consensusJournalResult{
-			JournalDatabase:                  rocksDBKVStore,
-			ConsensusJournalRegistryProvider: journalpkg.NewConsensusJournal(rocksDBKVStore),
+			ConsensusJournalRegistryProvider: journalpkg.NewConsensusJournal(deps.DatabaseManager.ConsensusJournalKVStore()),
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
@@ -113,28 +116,61 @@ func provide(c *dig.Container) error {
 }
 
 func configure() error {
-	// we open the database in the configure, so we must also make sure it's closed here
-	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
+	// Create a background worker that marks the database as corrupted at clean startup.
+	// This has to be done in a background worker, because the Daemon could receive
+	// a shutdown signal during startup. If that is the case, the BackgroundWorker will never be started
+	// and the database will never be marked as corrupted.
+	if err := CoreComponent.Daemon().BackgroundWorker("Database Health", func(_ context.Context) {
+		if err := deps.DatabaseManager.MarkStoresCorrupted(); err != nil {
+			CoreComponent.LogPanic(err)
+		}
+	}, daemon.PriorityDatabaseHealth); err != nil {
+		CoreComponent.LogPanicf("failed to start worker: %s", err)
+	}
+
+	storesCorrupted, err := deps.DatabaseManager.AreStoresCorrupted()
+	if err != nil {
+		CoreComponent.LogPanic(err)
+	}
+
+	if storesCorrupted && !ParamsDatabase.DebugSkipHealthCheck {
+		CoreComponent.LogPanic(`
+WASP was not shut down properly, the database may be corrupted.
+You need to resolve this situation manually.
+`)
+	}
+
+	correctStoresVersion, err := deps.DatabaseManager.CheckCorrectStoresVersion()
+	if err != nil {
+		CoreComponent.LogPanic(err)
+	}
+
+	if !correctStoresVersion {
+		storesVersionUpdated, err := deps.DatabaseManager.UpdateStoresVersion()
+		if err != nil {
+			CoreComponent.LogPanic(err)
+		}
+
+		if !storesVersionUpdated {
+			CoreComponent.LogPanic("WASP database version mismatch. The database scheme was updated.")
+		}
+	}
+
+	if err = CoreComponent.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
 		<-ctx.Done()
-		CoreComponent.LogInfof("syncing database to disk...")
-		deps.DatabaseManager.Close()
-		// TODO: remove this in the database refactor PR
-		deps.JournalDatabase.Flush()
-		deps.JournalDatabase.Close()
-		CoreComponent.LogInfof("syncing database to disk... done")
-	}, parameters.PriorityDatabase)
-	if err != nil {
-		CoreComponent.LogPanicf("failed to start a daemon: %s", err)
+
+		if err = deps.DatabaseManager.MarkStoresHealthy(); err != nil {
+			CoreComponent.LogPanic(err)
+		}
+
+		CoreComponent.LogInfo("Syncing databases to disk ...")
+		if err = deps.DatabaseManager.FlushAndCloseStores(); err != nil {
+			CoreComponent.LogPanicf("Syncing databases to disk ... failed: %s", err)
+		}
+		CoreComponent.LogInfo("Syncing databases to disk ... done")
+	}, daemon.PriorityCloseDatabase); err != nil {
+		CoreComponent.LogPanicf("failed to start worker: %s", err)
 	}
 
-	return err
-}
-
-func run() error {
-	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name+"[GC]", deps.DatabaseManager.RunGC, parameters.PriorityDBGarbageCollection)
-	if err != nil {
-		CoreComponent.LogErrorf("failed to start as daemon: %s", err)
-	}
-
-	return err
+	return nil
 }

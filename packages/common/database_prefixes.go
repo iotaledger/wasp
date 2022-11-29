@@ -1,4 +1,4 @@
-package dbkeys
+package common
 
 import (
 	"bytes"
@@ -17,6 +17,8 @@ const (
 	ObjectTypeBlobCacheTTL     // unused
 	ObjectTypeTrustedPeer      // deprecated
 	ObjectTypeConsensusJournal // deprecated
+
+	StorePrefixHealth byte = 255
 )
 
 // MakeKey makes key within the partition. It consists of one byte for object type

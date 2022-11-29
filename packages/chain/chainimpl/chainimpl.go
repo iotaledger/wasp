@@ -53,7 +53,7 @@ type chainObj struct {
 	dssNode                            dss_node_pkg.DSSNode
 	log                                *logger.Logger
 	nodeConn                           chain.NodeConnection
-	db                                 kvstore.KVStore
+	chainStateStore                    kvstore.KVStore
 	netProvider                        peering.NetworkProvider
 	dkShareRegistryProvider            registry.DKShareRegistryProvider
 	eventRequestProcessed              *events.Event
@@ -89,7 +89,7 @@ func NewChain(
 	chainID *isc.ChainID,
 	log *logger.Logger,
 	nc chain.NodeConnection,
-	db kvstore.KVStore,
+	chainStateStore kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -114,13 +114,13 @@ func NewChain(
 	chainLog := log.Named("c-" + chainID.AsAddress().String()[2:8])
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:                 mempool_pkg.New(chainID.AsAddress(), state.NewOptimisticStateReader(db, chainStateSync), chainLog, chainMetrics),
+		mempool:                 mempool_pkg.New(chainID.AsAddress(), state.NewOptimisticStateReader(chainStateStore, chainStateSync), chainLog, chainMetrics),
 		procset:                 processors.MustNew(processorConfig),
 		chainID:                 chainID,
 		log:                     chainLog,
-		db:                      db,
+		chainStateStore:         chainStateStore,
 		chainStateSync:          chainStateSync,
-		stateReader:             state.NewOptimisticStateReader(db, chainStateSync),
+		stateReader:             state.NewOptimisticStateReader(chainStateStore, chainStateSync),
 		netProvider:             netProvider,
 		dkShareRegistryProvider: dkShareRegistryProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -161,7 +161,7 @@ func NewChain(
 		return nil
 	}
 
-	ret.stateMgr = statemgr.New(db, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal, rawBlocksEnabled, rawBlocksDir, false)
+	ret.stateMgr = statemgr.New(chainStateStore, ret, stateMgrDomain, ret.nodeConn, chainMetrics, wal, rawBlocksEnabled, rawBlocksDir, false)
 	ret.stateMgr.SetChainPeers(chainPeerNodes)
 
 	ret.eventChainTransitionClosure = events.NewClosure(ret.processChainTransition)

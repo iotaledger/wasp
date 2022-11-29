@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,14 +29,14 @@ func newValueBatch(batch kvstore.BatchedMutations) valueBatch {
 }
 
 func (b valueBatch) Set(key kv.Key, value []byte) {
-	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	k := common.MakeKey(common.ObjectTypeState, []byte(key))
 	if err := b.BatchedMutations.Set(k, value); err != nil {
 		panic(err)
 	}
 }
 
 func (b valueBatch) Del(key kv.Key) {
-	k := dbkeys.MakeKey(dbkeys.ObjectTypeState, []byte(key))
+	k := common.MakeKey(common.ObjectTypeState, []byte(key))
 	if err := b.BatchedMutations.Delete(k); err != nil {
 		panic(err)
 	}
@@ -54,7 +54,7 @@ func newTrieBatch(batch kvstore.BatchedMutations) trieBatch {
 }
 
 func (b trieBatch) Set(key, value []byte) {
-	k := dbkeys.MakeKey(dbkeys.ObjectTypeTrie, key)
+	k := common.MakeKey(common.ObjectTypeTrie, key)
 	if len(value) == 0 {
 		if err := b.BatchedMutations.Delete(k); err != nil {
 			panic(err)
@@ -74,7 +74,7 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	}
 	vs.Commit()
 
-	batch, err := vs.db.Batched()
+	batch, err := vs.store.Batched()
 	if err != nil {
 		panic(fmt.Errorf("error saving state: %w", err))
 	}
@@ -82,17 +82,12 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 	vs.trie.PersistMutations(newTrieBatch(batch))
 	vs.kvs.Mutations().Apply(newValueBatch(batch))
 	for _, blk := range blocks {
-		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
+		key := common.MakeKey(common.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
 			return err
 		}
 	}
 	if err := batch.Commit(); err != nil {
-		return err
-	}
-
-	// call flush explicitly, because batched.Commit doesn't actually write the changes to disk
-	if err := vs.db.Flush(); err != nil {
 		return err
 	}
 
@@ -114,7 +109,7 @@ func (vs *virtualStateAccess) Save(blocks ...Block) error {
 // Checks root commitment to chainID
 func LoadSolidState(store kvstore.KVStore, chainID *isc.ChainID) (VirtualStateAccess, bool, error) {
 	// check the existence of terminalCommitment at key ''. chainID is expected
-	v, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeState))
+	v, err := store.Get(common.MakeKey(common.ObjectTypeState))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		// state does not exist
 		return nil, false, nil
@@ -142,7 +137,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *isc.ChainID) (VirtualStateAc
 
 // LoadBlockBytes loads block bytes of the specified block index from DB
 func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
-	data, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
+	data, err := store.Get(common.MakeKey(common.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
@@ -180,7 +175,7 @@ func SaveRawBlockClosure(dir string, log *logger.Logger) OnBlockSaveClosure {
 // Order non-deterministic
 func ForEachBlockIndex(store kvstore.KVStore, fun func(blockIndex uint32) bool) error {
 	var err error
-	err1 := store.IterateKeys([]byte{dbkeys.ObjectTypeBlock}, func(key kvstore.Key) bool {
+	err1 := store.IterateKeys([]byte{common.ObjectTypeBlock}, func(key kvstore.Key) bool {
 		var index uint32
 		index, err = util.Uint32From4Bytes(key[1:])
 		if err != nil {

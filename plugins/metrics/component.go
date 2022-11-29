@@ -6,8 +6,8 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func init() {
@@ -101,7 +101,7 @@ func run() error {
 		if err := deps.Metrics.Stop(); err != nil { //nolint:contextcheck // false positive
 			Plugin.LogErrorf("error stopping: %s", err)
 		}
-	}, parameters.PriorityMetrics); err != nil {
+	}, daemon.PriorityMetrics); err != nil {
 		Plugin.LogWarnf("error starting as daemon: %s", err)
 	}
 

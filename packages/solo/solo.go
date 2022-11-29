@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
+	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -20,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -53,7 +54,7 @@ type Solo struct {
 	// instance of the test
 	T                               TestContext
 	logger                          *logger.Logger
-	dbmanager                       *dbmanager.DBManager
+	dbmanager                       *database.Manager
 	utxoDB                          *utxodb.UtxoDB
 	glbMutex                        sync.RWMutex
 	ledgerMutex                     sync.RWMutex
@@ -157,11 +158,16 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
+	dbManager, err := database.NewManager(registry.NewChainRecordRegistry(nil), database.WithEngine(hivedb.EngineMapDB))
+	if err != nil {
+		panic(err)
+	}
+
 	utxoDBinitParams := utxodb.DefaultInitParams()
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
-		dbmanager:                       dbmanager.NewDBManager(opt.Log.Named("db"), true, "", registry.NewChainRecordRegistry(nil)),
+		dbmanager:                       dbManager,
 		utxoDB:                          utxodb.New(utxoDBinitParams),
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
@@ -172,7 +178,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	ret.logger.Infof("Solo environment has been created: logical time: %v, time step: %v",
 		globalTime.Format(timeLayout), ret.utxoDB.TimeStep())
 
-	err := ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (isc.VMProcessor, error) {
+	err = ret.processorConfig.RegisterVMType(vmtypes.WasmTime, func(binaryCode []byte) (isc.VMProcessor, error) {
 		return wasmhost.GetProcessor(binaryCode, opt.Log)
 	})
 	require.NoError(t, err)
@@ -269,7 +275,9 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
-	store := env.dbmanager.GetOrCreateKVStore(chainID)
+	store, err := env.dbmanager.GetOrCreateChainStateKVStore(*chainID)
+	require.NoError(env.T, err)
+
 	vs, err := state.CreateOriginState(store, chainID)
 	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieNodeStore()))
 

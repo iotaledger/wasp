@@ -1,18 +1,16 @@
-//go:build rocksdb
-
 package database
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 
-	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/stretchr/testify/assert"
+
+	hivedb "github.com/iotaledger/hive.go/core/database"
+	"github.com/iotaledger/hive.go/core/kvstore"
+	"github.com/iotaledger/wasp/packages/database"
 )
 
-func count(t *testing.T, store kvstore.KVStore) int { //nolint:unused // unused false positive
+func count(t *testing.T, store kvstore.KVStore) int {
 	ret := 0
 	err := store.Iterate(kvstore.EmptyPrefix, func(k kvstore.Key, v kvstore.Value) bool {
 		ret++
@@ -26,15 +24,10 @@ func count(t *testing.T, store kvstore.KVStore) int { //nolint:unused // unused 
 }
 
 func TestDbClean(t *testing.T) {
-	dir, err := ioutil.TempDir("", "tmp")
+	tmpdb, err := database.DatabaseWithDefaultSettings("", false, hivedb.EngineMapDB, false)
 	assert.NoError(t, err)
 
-	defer os.RemoveAll(dir)
-
-	tmpdb, err := dbmanager.NewDB(dir)
-	assert.NoError(t, err)
-
-	storeTmp := tmpdb.NewStore()
+	storeTmp := tmpdb.KVStore()
 
 	err = storeTmp.Clear()
 	assert.NoError(t, err)

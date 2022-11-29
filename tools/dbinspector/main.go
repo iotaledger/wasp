@@ -8,25 +8,25 @@ import (
 	"io/fs"
 	"os"
 
+	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/common"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-//nolint:unused // false positive
 var dbKeysNames = map[byte]string{
-	dbkeys.ObjectTypeDBSchemaVersion:    "Schema Version",
-	dbkeys.ObjectTypeChainRecord:        "Chain Record",
-	dbkeys.ObjectTypeCommitteeRecord:    "Committee Record",
-	dbkeys.ObjectTypeDistributedKeyData: "Distributed Key Data",
-	dbkeys.ObjectTypeTrie:               "State Hash",
-	dbkeys.ObjectTypeBlock:              "Block",
-	dbkeys.ObjectTypeState:              "State Variable",
-	dbkeys.ObjectTypeNodeIdentity:       "Node Identity",
-	dbkeys.ObjectTypeBlobCache:          "BlobCache",
-	dbkeys.ObjectTypeBlobCacheTTL:       "BlobCacheTTL",
-	dbkeys.ObjectTypeTrustedPeer:        "TrustedPeer",
+	common.ObjectTypeDBSchemaVersion:    "Schema Version",
+	common.ObjectTypeChainRecord:        "Chain Record",
+	common.ObjectTypeCommitteeRecord:    "Committee Record",
+	common.ObjectTypeDistributedKeyData: "Distributed Key Data",
+	common.ObjectTypeTrie:               "State Hash",
+	common.ObjectTypeBlock:              "Block",
+	common.ObjectTypeState:              "State Variable",
+	common.ObjectTypeNodeIdentity:       "Node Identity",
+	common.ObjectTypeBlobCache:          "BlobCache",
+	common.ObjectTypeBlobCacheTTL:       "BlobCacheTTL",
+	common.ObjectTypeTrustedPeer:        "TrustedPeer",
 }
 
 const defaultDbpath = "/tmp/wasp-cluster/wasp0/waspdb"
@@ -36,11 +36,13 @@ func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 		fmt.Printf("Not a directory, skipping %s\n", dbDir.Name())
 		return
 	}
-	db, err := dbmanager.NewDB(fmt.Sprintf("%s/%s", dbpath, dbDir.Name()))
+
+	db, err := database.DatabaseWithDefaultSettings(fmt.Sprintf("%s/%s", dbpath, dbDir.Name()), false, hivedb.EngineAuto, false)
 	if err != nil {
 		panic(err)
 	}
-	store := db.NewStore()
+
+	store := db.KVStore()
 
 	fmt.Printf("\n\n------------------ %s ------------------\n", dbDir.Name())
 	accLen := 0

@@ -10,9 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/daemon"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -71,7 +71,7 @@ func provide(c *dig.Container) error {
 		dig.In
 
 		ProcessorsConfig *processors.Config
-		DatabaseManager  *dbmanager.DBManager
+		DatabaseManager  *database.Manager
 		NetworkProvider  peering.NetworkProvider `name:"networkProvider"`
 		NodeConnection   chain.NodeConnection
 	}
@@ -92,7 +92,7 @@ func provide(c *dig.Container) error {
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,
 				deps.NetworkProvider,
-				deps.DatabaseManager.GetOrCreateKVStore,
+				deps.DatabaseManager.GetOrCreateChainStateKVStore,
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
 			),
@@ -114,7 +114,7 @@ func run() error {
 			deps.Metrics,
 			deps.WAL,
 		); err != nil {
-			CoreComponent.LogErrorf("failed to read chain activation records from registry: %v", err)
+			CoreComponent.LogPanicf("failed to read chain activation records from registry: %v", err)
 			return
 		}
 
@@ -125,7 +125,7 @@ func run() error {
 			deps.Chains.Dismiss()
 			CoreComponent.LogInfo("dismissing chains... Done")
 		}()
-	}, parameters.PriorityChains)
+	}, daemon.PriorityChains)
 	if err != nil {
 		CoreComponent.LogError(err)
 		return err

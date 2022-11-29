@@ -36,7 +36,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221114150348-c47a0d622930 // indirect
+	github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221128154739-f91acb99733a // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a // indirect

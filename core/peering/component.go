@@ -7,7 +7,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/lpp"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -79,7 +79,7 @@ func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(
 		"WaspPeering",
 		deps.NetworkProvider.Run,
-		parameters.PriorityPeering,
+		daemon.PriorityPeering,
 	)
 	if err != nil {
 		panic(err)

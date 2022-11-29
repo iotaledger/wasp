@@ -244,8 +244,8 @@ github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7P
 github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d h1:oUgPn1b0WcjeF7PrMSNlL4NkTac+k1cNKjH4T3M1mHQ=
 github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
-github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221114150348-c47a0d622930 h1:+F8aP3cQEgYkQLhVs2TT+reBQm1cmqJFkxQWX09xVug=
-github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221114150348-c47a0d622930/go.mod h1:qTfNc5ukQyPI7U5XChpFeubragK/k+BRCn4u7C+GUdA=
+github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221128154739-f91acb99733a h1:GfGBPkqgDBFqz5mSKy67yju/FkdWm8dq9egWOV37ICo=
+github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221128154739-f91acb99733a/go.mod h1:POmRNWlS/NWFCrMowt+CcE4H8GAVe1BotWLN9QD6FLE=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 h1:x3xsI32h+1wTIzLWInC+AcwrUyk9/l7z2RFMQiuua2E=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1/go.mod h1:jkV//O5d+HHm32qDmTy6AWZUgxuZaXazTUVqox+5z4g=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=

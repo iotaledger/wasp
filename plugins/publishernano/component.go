@@ -13,7 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/events"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
@@ -79,7 +79,7 @@ func run() error {
 				return
 			}
 		}
-	}, parameters.PriorityNanoMsg)
+	}, daemon.PriorityNanoMsg)
 	if err != nil {
 		panic(err)
 	}

@@ -16,5 +16,5 @@ func (c *chainObj) GetTimeData() time.Time {
 }
 
 func (c *chainObj) GetVirtualState() (state.VirtualStateAccess, bool, error) {
-	return state.LoadSolidState(c.db, c.ID())
+	return state.LoadSolidState(c.chainStateStore, c.ID())
 }

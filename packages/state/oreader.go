@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -19,12 +19,12 @@ type optimisticStateReaderImpl struct {
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReaderImpl { //nolint:revive
-	chainReader := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeState}))
+func NewOptimisticStateReader(store kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReaderImpl { //nolint:revive
+	chainReader := kv.NewHiveKVStoreReader(subRealm(store, []byte{common.ObjectTypeState}))
 	baseline := glb.GetSolidIndexBaseline()
 	return &optimisticStateReaderImpl{
 		stateReader: optimism.NewOptimisticKVStoreReader(chainReader, baseline),
-		trie:        NewTrieReader(trieKVStore(db), valueKVStore(db)),
+		trie:        NewTrieReader(trieKVStore(store), valueKVStore(store)),
 	}
 }
 

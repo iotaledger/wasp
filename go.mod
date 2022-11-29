@@ -14,7 +14,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go v1.0.0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221114150348-c47a0d622930
+	github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221128154739-f91acb99733a
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1
 	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221120140724-fbc50b20fd91
 	github.com/iotaledger/inx/go v1.0.0-rc.1
@@ -94,7 +94,7 @@ require (
 	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
-	github.com/iotaledger/grocksdb v1.7.5-0.20220808142449-1dc0b8ac4d7d // indirect
+	github.com/iotaledger/grocksdb v1.7.5-0.20221128103803-fcdb79760195 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
