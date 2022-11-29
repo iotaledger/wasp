@@ -20,23 +20,39 @@ import (
 )
 
 type BlockFactory struct {
-	store          state.Store
-	chainID        *isc.ChainID
-	originOutput   *isc.AliasOutputWithID
-	firstIncrement uint64
+	store               state.Store
+	chainID             *isc.ChainID
+	originOutput        *isc.AliasOutputWithID
+	lastBlockCommitment *state.L1Commitment
+	lastAliasOutput     *isc.AliasOutputWithID
 }
 
 func NewBlockFactory() *BlockFactory {
-	return &BlockFactory{
-		store:          state.InitChainStore(mapdb.NewMapDB()),
-		chainID:        nil,
-		originOutput:   nil,
-		firstIncrement: 0,
+	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
+	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID.ID()))
+	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
+	aliasOutput0 := &iotago.AliasOutput{
+		Amount:        tpkg.TestTokenSupply,
+		AliasID:       *chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
+		StateMetadata: state.OriginL1Commitment().Bytes(),
+		Conditions: iotago.UnlockConditions{
+			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
+			&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
+		},
+		Features: iotago.Features{
+			&iotago.SenderFeature{
+				Address: stateAddress,
+			},
+		},
 	}
-}
-
-func (bfT *BlockFactory) isInitted() bool {
-	return bfT.chainID != nil
+	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
+	return &BlockFactory{
+		store:               state.InitChainStore(mapdb.NewMapDB()),
+		chainID:             &chainID,
+		originOutput:        originOutput,
+		lastBlockCommitment: state.OriginL1Commitment(),
+		lastAliasOutput:     originOutput,
+	}
 }
 
 func (bfT *BlockFactory) GetChainID() *isc.ChainID {
@@ -44,27 +60,6 @@ func (bfT *BlockFactory) GetChainID() *isc.ChainID {
 }
 
 func (bfT *BlockFactory) GetOriginOutput(t require.TestingT) *isc.AliasOutputWithID {
-	if !bfT.isInitted() {
-		aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
-		chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID.ID()))
-		stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
-		aliasOutput0 := &iotago.AliasOutput{
-			Amount:        tpkg.TestTokenSupply,
-			AliasID:       *chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
-			StateMetadata: state.OriginL1Commitment().Bytes(),
-			Conditions: iotago.UnlockConditions{
-				&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
-				&iotago.GovernorAddressUnlockCondition{Address: stateAddress},
-			},
-			Features: iotago.Features{
-				&iotago.SenderFeature{
-					Address: stateAddress,
-				},
-			},
-		}
-		bfT.chainID = &chainID
-		bfT.originOutput = isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
-	}
 	return bfT.originOutput
 }
 
@@ -73,10 +68,12 @@ func (bfT *BlockFactory) GetBlocks(
 	count,
 	branchingFactor int,
 ) ([]state.Block, []*isc.AliasOutputWithID) {
-	bfT.firstIncrement++
-	aliasOutput0 := bfT.GetOriginOutput(t)
-	block1, aliasOutput1 := bfT.GetNextBlock(t, state.OriginL1Commitment(), aliasOutput0, bfT.firstIncrement)
-	return bfT.GetBlocksFrom(t, count, branchingFactor, block1.L1Commitment(), aliasOutput1)
+	blocks, aliasOutpus := bfT.GetBlocksFrom(t, count, branchingFactor, bfT.lastBlockCommitment, bfT.lastAliasOutput)
+	require.Equal(t, count, len(blocks))
+	require.Equal(t, count, len(aliasOutpus))
+	bfT.lastBlockCommitment = blocks[count-1].L1Commitment()
+	bfT.lastAliasOutput = aliasOutpus[count-1]
+	return blocks, aliasOutpus
 }
 
 func (bfT *BlockFactory) GetBlocksFrom(
@@ -146,6 +143,13 @@ func (bfT *BlockFactory) GetNextBlock(
 	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
 
 	return block, aliasOutputWithID
+}
+
+func (bfT *BlockFactory) GetStateDraft(t require.TestingT, block state.Block) state.StateDraft {
+	result, err := bfT.store.NewEmptyStateDraft(block.PreviousL1Commitment())
+	require.NoError(t, err)
+	block.Mutations().ApplyTo(result)
+	return result
 }
 
 func getRandomTxID() iotago.TransactionID {

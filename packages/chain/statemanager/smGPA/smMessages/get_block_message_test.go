@@ -9,16 +9,15 @@ import (
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
-	_, blocks, _ := smGPAUtils.GetBlocks(t, 4, 1)
+	blocks, _ := smGPAUtils.NewBlockFactory().GetBlocks(t, 4, 1)
 	for i := range blocks {
-		blockHash := blocks[i].GetHash()
-		t.Logf("Checking block %v: %v", i, blockHash)
-		marshaled, err := NewGetBlockMessage(uint32(i+1), blockHash, "SOMETHING").MarshalBinary()
+		commitment := blocks[i].L1Commitment()
+		t.Logf("Checking block %v: %v", i, commitment)
+		marshaled, err := NewGetBlockMessage(commitment, "SOMETHING").MarshalBinary()
 		require.NoError(t, err)
 		unmarshaled := NewEmptyGetBlockMessage()
 		err = unmarshaled.UnmarshalBinary(marshaled)
 		require.NoError(t, err)
-		require.True(t, blockHash.Equals(unmarshaled.GetBlockHash()))
-		require.Equal(t, uint32(i+1), unmarshaled.GetBlockIndex())
+		require.True(t, commitment.Equals(unmarshaled.GetL1Commitment()))
 	}
 }

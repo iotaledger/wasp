@@ -20,26 +20,35 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
+type testEnv struct {
+	t            *testing.T
+	bf           *smGPAUtils.BlockFactory
+	nodeIDs      []gpa.NodeID
+	timeProvider smGPAUtils.TimeProvider
+	sms          map[gpa.NodeID]gpa.GPA
+	tc           *gpa.TestContext
+	log          *logger.Logger
+}
+
 // Single node network. 8 blocks are sent to state manager. The result is checked
 // by sending consensus requests, which force the access of the blocks.
 func TestBasic(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	defer env.finalize()
 
-	chainID, blocks, stateOutputs, _ := smGPAUtils.GetBlocks(t, 8, 1)
-	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
-	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewMockedBlockWAL(), log)
-	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
-	sendBlocksToNode(t, tc, nodeID, blocks...)
+	nodeID := nodeIDs[0]
+	blocks, stateOutputs := env.bf.GetBlocks(t, 8, 1)
+	env.sendBlocksToNode(nodeID, blocks...)
 
 	cspInput, cspRespChan := smInputs.NewConsensusStateProposal(context.Background(), stateOutputs[7])
-	tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cspInput}).RunAll()
-	require.NoError(t, requireReceiveAnything(cspRespChan, 5*time.Second))
+	env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cspInput}).RunAll()
+	require.NoError(t, env.requireReceiveAnything(cspRespChan, 5*time.Second))
 	commitment, err := state.L1CommitmentFromBytes(stateOutputs[7].GetAliasOutput().StateMetadata)
 	require.NoError(t, err)
 	cdsInput, cdsRespChan := smInputs.NewConsensusDecidedState(context.Background(), stateOutputs[7])
-	tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cdsInput}).RunAll()
-	require.NoError(t, requireReceiveVState(t, cdsRespChan, 8, &commitment, 5*time.Second))
+	env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cdsInput}).RunAll()
+	require.NoError(t, env.requireReceiveState(cdsRespChan, 8, commitment, 5*time.Second))
 }
 
 // 10 nodes in a network. 8 blocks are sent to state manager of the first node.
@@ -47,35 +56,28 @@ func TestBasic(t *testing.T) {
 // which force the access (and retrieval) of the blocks. For successful retrieval,
 // several timer events are required for nodes to try to request blocks from peers.
 func TestManyNodes(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	defer env.finalize()
 
-	chainID, blocks, stateOutputs, _ := smGPAUtils.GetBlocks(t, 16, 1)
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
-	sms := make(map[gpa.NodeID]gpa.GPA)
-	for _, nodeID := range nodeIDs {
-		_, sms[nodeID] = createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
-	}
-	tc := gpa.NewTestContext(sms)
-	sendBlocksToNode(t, tc, nodeIDs[0], blocks...)
+	blocks, stateOutputs := env.bf.GetBlocks(t, 16, 1)
+	env.sendBlocksToNode(nodeIDs[0], blocks...)
 
 	// Nodes are checked sequentially
 	var result bool
-	now := time.Now()
 	for i := 1; i < len(nodeIDs); i++ {
 		cspInput, cspRespChan := smInputs.NewConsensusStateProposal(context.Background(), stateOutputs[7])
-		tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeIDs[i]: cspInput}).RunAll()
-		t.Logf("Sequential: waiting for blocks ending with %s to be available on node %s...", blocks[7].GetHash(), nodeIDs[i])
-		now, result = requireReceiveAnythingNTimes(t, tc, cspRespChan, 10, nodeIDs, now, 200*time.Millisecond)
+		env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeIDs[i]: cspInput}).RunAll()
+		env.t.Logf("Sequential: waiting for blocks ending with %s to be available on node %s...", blocks[7].L1Commitment(), nodeIDs[i])
+		result = env.requireReceiveAnythingNTimes(cspRespChan, 10, 200*time.Millisecond)
 		require.True(t, result)
 		commitment, err := state.L1CommitmentFromBytes(stateOutputs[7].GetAliasOutput().StateMetadata)
 		require.NoError(t, err)
 		cdsInput, cdsRespChan := smInputs.NewConsensusDecidedState(context.Background(), stateOutputs[7])
-		tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeIDs[i]: cdsInput}).RunAll()
-		require.NoError(t, requireReceiveVState(t, cdsRespChan, 8, &commitment, 5*time.Second))
+		env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeIDs[i]: cdsInput}).RunAll()
+		require.NoError(env.t, env.requireReceiveState(cdsRespChan, 8, commitment, 5*time.Second))
 	}
 	// Nodes are checked in parallel
 	cspInputs := make(map[gpa.NodeID]gpa.Input)
@@ -84,24 +86,24 @@ func TestManyNodes(t *testing.T) {
 		nodeID := nodeIDs[i]
 		cspInputs[nodeID], cspRespChans[nodeID] = smInputs.NewConsensusStateProposal(context.Background(), stateOutputs[15])
 	}
-	tc.WithInputs(cspInputs).RunAll()
+	env.tc.WithInputs(cspInputs).RunAll()
 	for nodeID, cspRespChan := range cspRespChans {
-		t.Logf("Parallel: waiting for blocks ending with %s to be available on node %s...", blocks[15].GetHash(), nodeID)
-		now, result = requireReceiveAnythingNTimes(t, tc, cspRespChan, 10, nodeIDs, now, 200*time.Millisecond)
+		env.t.Logf("Parallel: waiting for blocks ending with %s to be available on node %s...", blocks[15].L1Commitment(), nodeID)
+		result = env.requireReceiveAnythingNTimes(cspRespChan, 10, 200*time.Millisecond)
 		require.True(t, result)
 	}
 	commitment, err := state.L1CommitmentFromBytes(stateOutputs[15].GetAliasOutput().StateMetadata)
 	require.NoError(t, err)
 	cdsInputs := make(map[gpa.NodeID]gpa.Input)
-	cdsRespChans := make(map[gpa.NodeID]<-chan *consGR.StateMgrDecidedState)
+	cdsRespChans := make(map[gpa.NodeID]<-chan state.State)
 	for i := 1; i < len(nodeIDs); i++ {
 		nodeID := nodeIDs[i]
 		cdsInputs[nodeID], cdsRespChans[nodeID] = smInputs.NewConsensusDecidedState(context.Background(), stateOutputs[15])
 	}
-	tc.WithInputs(cdsInputs).RunAll()
+	env.tc.WithInputs(cdsInputs).RunAll()
 	for nodeID, cdsRespChan := range cdsRespChans {
-		t.Logf("Parallel: waiting for state %s on node %s", commitment, nodeID)
-		require.NoError(t, requireReceiveVState(t, cdsRespChan, 16, &commitment, 5*time.Second))
+		env.t.Logf("Parallel: waiting for state %s on node %s", commitment, nodeID)
+		require.NoError(env.t, env.requireReceiveState(cdsRespChan, 16, commitment, 5*time.Second))
 	}
 }
 
@@ -115,167 +117,181 @@ func TestManyNodes(t *testing.T) {
 //  3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
 //     repeated branching from this block
 func TestFull(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-
 	nodeCount := 12
 	iterationSize := 10
 	iterationCount := 3
 	maxRetriesPerIteration := 100
 
-	artifficialTime := smGPAUtils.NewArtifficialTimeProvider()
+	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	smTimers.TimeProvider = artifficialTime
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	defer env.finalize()
 
-	chainID, lastAliasOutput, lastVirtualState := smGPAUtils.GetOriginState(t)
-	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
-	sms := make(map[gpa.NodeID]gpa.GPA)
-	for _, nodeID := range nodeIDs {
-		_, sms[nodeID] = createStateManagerGpa(t, chainID, nodeID, nodeIDs, smGPAUtils.NewMockedBlockWAL(), log, smTimers)
-	}
-	tc := gpa.NewTestContext(sms)
+	// artifficialTime := smGPAUtils.NewArtifficialTimeProvider()
+	// smTimers.TimeProvider = artifficialTime
 
-	confirmAndWaitFun := func(stateOutput *isc.AliasOutputWithID) {
-		sendInputToNodes(t, tc, nodeIDs, func() gpa.Input {
+	lastAliasOutput := env.bf.GetOriginOutput(t)
+	lastCommitment := state.OriginL1Commitment()
+
+	confirmAndWaitFun := func(stateOutput *isc.AliasOutputWithID) bool {
+		env.sendInputToNodes(func() gpa.Input {
 			return smInputs.NewChainReceiveConfirmedAliasOutput(stateOutput)
 		})
 
 		for i := 0; i < maxRetriesPerIteration; i++ {
 			t.Logf("\twaiting for approval to propagate through nodes: %v", i)
-			if isAllNodesAtState(t, stateOutput, sms) {
-				break
+			if env.isAllNodesAtState(stateOutput) {
+				return true
 			}
-			artifficialTime.SetNow(artifficialTime.GetNow().Add(smTimers.StateManagerGetBlockRetry))
-			sendTimerTickToNodes(t, tc, nodeIDs, artifficialTime.GetNow())
+			env.sendTimerTickToNodes(smTimers.StateManagerGetBlockRetry)
 		}
-		require.True(t, isAllNodesAtState(t, stateOutput, sms))
+		return env.isAllNodesAtState(stateOutput)
 	}
 
-	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseVirtualState state.VirtualStateAccess, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []state.VirtualStateAccess) {
-		t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
-		blocks, aliasOutputs, virtualStates := smGPAUtils.GetBlocksFrom(t, iterationSize, 1, baseVirtualState, baseAliasOutput, incrementFactor...)
-		for j := range blocks {
-			sendBlocksToNode(t, tc, nodeIDs[rand.Intn(nodeCount)], blocks[j])
+	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseCommitment *state.L1Commitment, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []*state.L1Commitment) {
+		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
+		blocks, aliasOutputs := env.bf.GetBlocksFrom(t, iterationSize, 1, baseCommitment, baseAliasOutput, incrementFactor...)
+		commitments := make([]*state.L1Commitment, len(blocks))
+		for j, block := range blocks {
+			env.sendBlocksToNode(nodeIDs[rand.Intn(nodeCount)], block)
+			commitments[j] = block.L1Commitment()
 		}
 		confirmOutput := aliasOutputs[rand.Intn(iterationSize-1)] // Do not confirm the last state/blocks
 		t.Logf("Iteration %v: approving output index %v, id %v", i, confirmOutput.GetStateIndex(), confirmOutput)
-		confirmAndWaitFun(confirmOutput)
-		return aliasOutputs, virtualStates
+		require.True(t, confirmAndWaitFun(confirmOutput))
+		return aliasOutputs, commitments
 	}
 
 	var branchAliasOutput *isc.AliasOutputWithID
-	var branchVirtualState state.VirtualStateAccess
+	var branchCommitment *state.L1Commitment
 	for i := 0; i < iterationCount; i++ {
-		aliasOutputs, virtualStates := testIterationFun(i, lastAliasOutput, lastVirtualState, 1)
+		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 1)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
-		lastVirtualState = virtualStates[iterationSize-1]
+		lastCommitment = commitments[iterationSize-1]
 		if i == 1 {
 			branchIndex := rand.Intn(iterationSize)
 			branchAliasOutput = aliasOutputs[branchIndex]
-			branchVirtualState = virtualStates[branchIndex]
+			branchCommitment = commitments[branchIndex]
 		}
 	}
-	confirmAndWaitFun(lastAliasOutput)
+	require.True(t, confirmAndWaitFun(lastAliasOutput))
 
-	// Branching of  the second iteration
+	// Branching from the middle of the second iteration
 	require.NotNil(t, branchAliasOutput)
 	lastAliasOutput = branchAliasOutput
-	lastVirtualState = branchVirtualState
+	lastCommitment = branchCommitment
 	for i := 0; i < iterationCount; i++ {
-		aliasOutputs, virtualStates := testIterationFun(i, lastAliasOutput, lastVirtualState, 2)
+		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 2)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
-		lastVirtualState = virtualStates[iterationSize-1]
+		lastCommitment = commitments[iterationSize-1]
 	}
-	confirmAndWaitFun(lastAliasOutput)
+	require.True(t, confirmAndWaitFun(lastAliasOutput))
 }
 
 // Single node network. Checks if block cache is cleaned via state manager
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-
-	tp := smGPAUtils.NewArtifficialTimeProvider()
-	smTimers := NewStateManagerTimers(tp)
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	smTimers := NewStateManagerTimers()
 	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
 	smTimers.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	defer env.finalize()
 
-	chainID, blocks, _, _ := smGPAUtils.GetBlocks(t, 6, 2)
-	nodeID := gpa.MakeTestNodeIDs("Node", 1)[0]
-	_, sm := createStateManagerGpa(t, chainID, nodeID, []gpa.NodeID{nodeID}, smGPAUtils.NewEmptyBlockWAL(), log, smTimers)
-	tc := gpa.NewTestContext(map[gpa.NodeID]gpa.GPA{nodeID: sm})
+	nodeID := nodeIDs[0]
+	blocks, _ := env.bf.GetBlocks(t, 6, 2)
 
-	advanceTimeAndTimerTickFun := func(advance time.Duration) {
-		tp.SetNow(tp.GetNow().Add(advance))
-		tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: smInputs.NewStateManagerTimerTick(tp.GetNow())}).RunAll()
-	}
-
-	blockCache := sm.(*stateManagerGPA).blockCache
+	blockCache := env.sms[nodeID].(*stateManagerGPA).blockCache
 	blockCache.AddBlock(blocks[0])
 	blockCache.AddBlock(blocks[1])
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	advanceTimeAndTimerTickFun(100 * time.Millisecond)
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	env.sendTimerTickToNodes(100 * time.Millisecond)
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
 	blockCache.AddBlock(blocks[2])
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
-	advanceTimeAndTimerTickFun(100 * time.Millisecond)
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	env.sendTimerTickToNodes(100 * time.Millisecond)
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
 	blockCache.AddBlock(blocks[3])
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[3].GetHash()))
-	advanceTimeAndTimerTickFun(80 * time.Millisecond)
-	tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: smInputs.NewStateManagerTimerTick(tp.GetNow())}).RunAll()
-	require.NotNil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[3].GetHash()))
-	advanceTimeAndTimerTickFun(100 * time.Millisecond)
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[3].L1Commitment()))
+	env.sendTimerTickToNodes(80 * time.Millisecond)
+	require.NotNil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[3].L1Commitment()))
+	env.sendTimerTickToNodes(100 * time.Millisecond)
 	blockCache.AddBlock(blocks[4])
-	require.Nil(t, blockCache.GetBlock(1, blocks[0].GetHash()))
-	require.Nil(t, blockCache.GetBlock(2, blocks[1].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[3].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[4].GetHash()))
-	advanceTimeAndTimerTickFun(100 * time.Millisecond)
-	require.Nil(t, blockCache.GetBlock(2, blocks[2].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[3].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[4].GetHash()))
-	advanceTimeAndTimerTickFun(100 * time.Millisecond)
-	require.Nil(t, blockCache.GetBlock(3, blocks[3].GetHash()))
-	require.NotNil(t, blockCache.GetBlock(3, blocks[4].GetHash()))
-	advanceTimeAndTimerTickFun(200 * time.Millisecond)
-	require.Nil(t, blockCache.GetBlock(3, blocks[4].GetHash()))
+	require.Nil(env.t, blockCache.GetBlock(blocks[0].L1Commitment()))
+	require.Nil(env.t, blockCache.GetBlock(blocks[1].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[3].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[4].L1Commitment()))
+	env.sendTimerTickToNodes(100 * time.Millisecond)
+	require.Nil(env.t, blockCache.GetBlock(blocks[2].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[3].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[4].L1Commitment()))
+	env.sendTimerTickToNodes(100 * time.Millisecond)
+	require.Nil(env.t, blockCache.GetBlock(blocks[3].L1Commitment()))
+	require.NotNil(env.t, blockCache.GetBlock(blocks[4].L1Commitment()))
+	env.sendTimerTickToNodes(200 * time.Millisecond)
+	require.Nil(env.t, blockCache.GetBlock(blocks[4].L1Commitment()))
 }
 
-func createStateManagerGpa(t *testing.T, chainID *isc.ChainID, me gpa.NodeID, nodeIDs []gpa.NodeID, wal smGPAUtils.BlockWAL, log *logger.Logger, timers ...StateManagerTimers) (smUtils.NodeRandomiser, gpa.GPA) {
-	log = log.Named(me.String()).Named("c-" + chainID.ShortString())
-	nr := smUtils.NewNodeRandomiser(me, nodeIDs, log)
-	store := mapdb.NewMapDB()
-	sm, err := New(chainID, nr, wal, store, log, timers...)
-	require.NoError(t, err)
-	return nr, sm
-}
-
-func requireReceiveNoError(t *testing.T, errChan <-chan (error), timeout time.Duration) error { //nolint:gocritic
-	select {
-	case err := <-errChan:
+func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUtils.BlockWAL, timersOpt ...StateManagerTimers) *testEnv {
+	bf := smGPAUtils.NewBlockFactory()
+	chainID := bf.GetChainID()
+	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
+	sms := make(map[gpa.NodeID]gpa.GPA)
+	var timers StateManagerTimers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = NewStateManagerTimers()
+	}
+	timers.TimeProvider = smGPAUtils.NewArtifficialTimeProvider()
+	for _, nodeID := range nodeIDs {
+		var err error
+		smLog := log.Named(nodeID.String())
+		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
+		wal := createWALFun()
+		store := state.InitChainStore(mapdb.NewMapDB())
+		sms[nodeID], err = New(chainID, nr, wal, store, smLog, timers)
 		require.NoError(t, err)
-		return nil
-	case <-time.After(timeout):
-		return fmt.Errorf("Waiting to receive no error timeouted")
+	}
+	return &testEnv{
+		t:            t,
+		bf:           bf,
+		nodeIDs:      nodeIDs,
+		timeProvider: timers.TimeProvider,
+		sms:          sms,
+		tc:           gpa.NewTestContext(sms),
+		log:          log,
 	}
 }
 
-func requireReceiveAnything(anyChan <-chan (interface{}), timeout time.Duration) error { //nolint:gocritic
+func (teT *testEnv) finalize() {
+	teT.log.Sync()
+}
+
+func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, blocks ...state.Block) {
+	for i := range blocks {
+		cbpInput, cbpRespChan := smInputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(teT.t, blocks[i]))
+		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID)
+		teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cbpInput}).RunAll()
+		require.NoError(teT.t, teT.requireReceiveNoError(cbpRespChan, 5*time.Second))
+	}
+}
+
+func (teT *testEnv) requireReceiveAnything(anyChan <-chan (interface{}), timeout time.Duration) error { //nolint:gocritic
 	select {
 	case <-anyChan:
 		return nil
@@ -284,79 +300,76 @@ func requireReceiveAnything(anyChan <-chan (interface{}), timeout time.Duration)
 	}
 }
 
-func requireReceiveVState(t *testing.T, respChan <-chan (*consGR.StateMgrDecidedState), index uint32, l1c *state.L1Commitment, timeout time.Duration) error { //nolint:gocritic
+func (teT *testEnv) requireReceiveAnythingNTimes(anyChan <-chan interface{}, n int, delay time.Duration) bool {
+	for j := 0; j < n; j++ {
+		teT.t.Logf("\t...iteration %v", j)
+		if teT.requireReceiveAnything(anyChan, 0*time.Second) == nil {
+			return true
+		}
+		teT.sendTimerTickToNodes(delay)
+	}
+	return false
+}
+
+func (teT *testEnv) requireReceiveNoError(errChan <-chan (error), timeout time.Duration) error { //nolint:gocritic
 	select {
-	case smds := <-respChan:
-		require.Equal(t, smds.VirtualStateAccess.BlockIndex(), index)
-		require.True(t, smds.StateBaseline.IsValid())
-		require.True(t, state.EqualCommitments(trie.RootCommitment(smds.VirtualStateAccess.TrieNodeStore()), l1c.TrieRoot))
+	case err := <-errChan:
+		require.NoError(teT.t, err)
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("Waiting to receive no error timeouted")
+	}
+}
+
+func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint32, commitment *state.L1Commitment, timeout time.Duration) error {
+	select {
+	case s := <-respChan:
+		require.Equal(teT.t, s.BlockIndex(), index)
+		require.True(teT.t, commitment.GetTrieRoot().Equals(s.TrieRoot()))
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive state timeouted")
 	}
 }
 
-func sendBlocksToNode(t *testing.T, tc *gpa.TestContext, nodeID gpa.NodeID, blocks ...state.Block) {
-	for i := range blocks {
-		cbpInput, cbpRespChan := smInputs.NewChainBlockProduced(context.Background(), blocks[i])
-		t.Logf("Supplying block %s to node %s", blocks[i].GetHash(), nodeID)
-		tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cbpInput}).RunAll()
-		require.NoError(t, requireReceiveNoError(t, cbpRespChan, 5*time.Second))
-	}
-}
-
-func sendTimerTickToNodes(t *testing.T, tc *gpa.TestContext, nodeIDs []gpa.NodeID, now time.Time) {
-	t.Logf("Time %v is sent to nodes %v", now, nodeIDs)
-	sendInputToNodes(t, tc, nodeIDs, func() gpa.Input {
+func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
+	now := teT.timeProvider.GetNow().Add(delay)
+	teT.timeProvider.SetNow(now)
+	teT.t.Logf("Time %v is sent to nodes %v", now, teT.nodeIDs)
+	teT.sendInputToNodes(func() gpa.Input {
 		return smInputs.NewStateManagerTimerTick(now)
 	})
 }
 
-func sendInputToNodes(t *testing.T, tc *gpa.TestContext, nodeIDs []gpa.NodeID, makeInputFun func() gpa.Input) {
+func (teT *testEnv) sendInputToNodes(makeInputFun func() gpa.Input) {
 	inputs := make(map[gpa.NodeID]gpa.Input)
-	for i := range nodeIDs {
-		inputs[nodeIDs[i]] = makeInputFun()
+	for _, nodeID := range teT.nodeIDs {
+		inputs[nodeID] = makeInputFun()
 	}
-	tc.WithInputs(inputs).RunAll()
+	teT.tc.WithInputs(inputs).RunAll()
 }
 
-func isAllNodesAtState(t *testing.T, stateOutput *isc.AliasOutputWithID, smGPAs map[gpa.NodeID]gpa.GPA) bool {
-	for nodeID, smGPA := range smGPAs {
+func (teT *testEnv) isAllNodesAtState(stateOutput *isc.AliasOutputWithID) bool {
+	for nodeID, smGPA := range teT.sms {
 		sm, ok := smGPA.(*stateManagerGPA)
-		require.True(t, ok)
+		require.True(teT.t, ok)
 		expectedCommitment, err := state.L1CommitmentFromAliasOutput(stateOutput.GetAliasOutput())
-		require.NoError(t, err)
-		if stateOutput.GetStateIndex() != sm.solidState.BlockIndex() {
-			t.Logf("Node %s is not yet at state index %v, it is at state index %v",
-				nodeID, stateOutput.GetStateIndex(), sm.solidState.BlockIndex())
+		require.NoError(teT.t, err)
+		if stateOutput.GetStateIndex() != sm.currentStateIndex {
+			teT.t.Logf("Node %s is not yet at state index %v, it is at state index %v",
+				nodeID, stateOutput.GetStateIndex(), sm.currentStateIndex)
 			return false
 		}
-		if !state.EqualCommitments(expectedCommitment.StateCommitment, trie.RootCommitment(sm.solidState.TrieNodeStore())) {
-			t.Logf("Node %s is at state index %v, but state commitments do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.StateCommitment, trie.RootCommitment(sm.solidState.TrieNodeStore()))
+		if !expectedCommitment.GetTrieRoot().Equals(sm.currentL1Commitment.GetTrieRoot()) {
+			teT.t.Logf("Node %s is at state index %v, but state commitments do not match: expected %s, obtained %s",
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetTrieRoot(), sm.currentL1Commitment.GetTrieRoot())
 			return false
 		}
-		if !expectedCommitment.BlockHash.Equals(sm.solidStateBlockHash) {
-			t.Logf("Node %s is at state index %v, but block hashes do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.BlockHash, sm.solidStateBlockHash)
+		if !expectedCommitment.GetBlockHash().Equals(sm.currentL1Commitment.GetBlockHash()) {
+			teT.t.Logf("Node %s is at state index %v, but block hashes do not match: expected %s, obtained %s",
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetBlockHash(), sm.currentL1Commitment.GetBlockHash())
 			return false
 		}
 	}
 	return true
-}
-
-func requireReceiveAnythingNTimes(
-	t *testing.T, tc *gpa.TestContext, anyChan <-chan (interface{}), n int, //nolint:gocritic
-	nodeIDs []gpa.NodeID, now time.Time, delay time.Duration,
-) (time.Time, bool) {
-	newNow := now
-	for j := 0; j < n; j++ {
-		t.Logf("\t...iteration %v", j)
-		if requireReceiveAnything(anyChan, 0*time.Second) == nil {
-			return newNow, true
-		}
-		newNow = newNow.Add(delay)
-		sendTimerTickToNodes(t, tc, nodeIDs, newNow)
-	}
-	return newNow, false
 }

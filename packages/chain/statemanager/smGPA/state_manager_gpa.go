@@ -37,6 +37,8 @@ type stateManagerGPA struct {
 	lastGetBlocksTime       time.Time
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
+	currentStateIndex       uint32              // Not used in the algorithm; only stores status of the state manager
+	currentL1Commitment     *state.L1Commitment // Not used in the algorithm; only stores status of the state manager
 	stateOutputSeq          blockRequestID
 	lastStateOutputSeq      blockRequestID // Must be strictly monotonic; see handleChainReceiveConfirmedAliasOutput
 	lastBlockRequestID      blockRequestID
@@ -72,6 +74,8 @@ func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWA
 		timers:                  timers,
 		lastGetBlocksTime:       time.Time{},
 		lastCleanBlockCacheTime: time.Time{},
+		currentStateIndex:       0,
+		currentL1Commitment:     state.OriginL1Commitment(),
 		stateOutputSeq:          0,
 		lastStateOutputSeq:      0,
 		lastBlockRequestID:      0,
@@ -175,7 +179,9 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	for _, request := range newRequests {
 		request.blockAvailable(block)
 	}
-	messages, err := smT.traceBlockChain(block.PreviousL1Commitment(), newRequests)
+	previousCommitment := block.PreviousL1Commitment()
+	smT.log.Debugf("Block %s: tracing previous block %s", blockCommitment, previousCommitment)
+	messages, err := smT.traceBlockChain(previousCommitment, newRequests)
 	if err != nil {
 		return nil // No messages to send
 	}
@@ -203,8 +209,10 @@ func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *
 		if seq <= smT.stateOutputSeq {
 			smT.log.Warnf("Chain receive confirmed alias output %s (%v-th in state manager): alias output is outdated", aliasOutputID, seq)
 		} else {
+			smT.currentStateIndex = aliasOutput.GetStateIndex()
+			smT.currentL1Commitment = stateCommitment
 			smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): STATE CHANGE: state manager is at state index %v, commitment %s",
-				aliasOutputID, seq, aliasOutput.GetStateIndex(), stateCommitment)
+				aliasOutputID, seq, smT.currentStateIndex, smT.currentL1Commitment)
 			smT.stateOutputSeq = seq
 		}
 	})
@@ -276,7 +284,7 @@ func (smT *stateManagerGPA) createStateBlockRequestLocal(commitment *state.L1Com
 }
 
 func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {
-	block := smT.getBlock(commitment)
+	block := smT.blockCache.GetBlock(commitment)
 	if block != nil {
 		smT.log.Debugf("Block %s retrieved from cache", commitment)
 		return block
@@ -284,14 +292,14 @@ func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block
 	smT.log.Debugf("Block %s is not in cache", commitment)
 
 	// Check in store (DB).
+	if !smT.store.HasTrieRoot(commitment.GetTrieRoot()) {
+		smT.log.Debugf("Block %s not found in the DB", commitment)
+		return nil
+	}
 	var err error
 	block, err = smT.store.BlockByTrieRoot(commitment.GetTrieRoot())
 	if err != nil {
 		smT.log.Errorf("Loading block %s from the DB failed: %v", commitment, err)
-		return nil
-	}
-	if block == nil {
-		smT.log.Debugf("Block %s not found in the DB", commitment)
 		return nil
 	}
 	if !commitment.GetBlockHash().Equals(block.Hash()) {
@@ -319,8 +327,8 @@ func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.
 		return nil, nil // No messages to send
 	}
 	requestsWC, ok := smT.blockRequests[lastCommitment.GetBlockHash()]
-	requests := requestsWC.blockRequests
 	if ok {
+		requests := requestsWC.blockRequests
 		smT.log.Debugf("Request %s id %v tracing block %s chain: ~s request(s) are already waiting for block %s; adding this request to the list",
 			request.getType(), request.getID(), len(requests), lastCommitment)
 		requestsWC.blockRequests = append(requests, request)
@@ -339,7 +347,7 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 	for !smT.store.HasTrieRoot(commitment.GetTrieRoot()) && !commitment.Equals(state.OriginL1Commitment()) {
 		smT.log.Debugf("Tracing block %s chain: block %s is not in store and is not an origin block",
 			initCommitment, commitment)
-		block := smT.getBlock(commitment)
+		block := smT.blockCache.GetBlock(commitment)
 		if block == nil {
 			smT.log.Debugf("Tracing block %s chain: block %s is missing", initCommitment, commitment)
 			// Mark that the requests are waiting for `blockHash` block
@@ -380,29 +388,23 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 				smT.log.Debugf("Tracing block %s chain: block %s is already committed", initCommitment, blockCommitment)
 			} else {
 				smT.log.Debugf("Tracing block %s chain: committing block %s...", initCommitment, blockCommitment)
-				var stateType string
 				var stateDraft state.StateDraft
 				previousCommitment := block.PreviousL1Commitment()
-				if previousCommitment.Equals(state.OriginL1Commitment()) {
-					stateDraft = smT.store.NewOriginStateDraft()
-					stateType = "origin state"
-				} else {
-					var err error
-					stateDraft, err = smT.store.NewEmptyStateDraft(previousCommitment)
-					if err != nil {
-						return nil, fmt.Errorf("Tracing block %s chain: error creating empty state draft to store block %s: %v",
-							initCommitment, blockCommitment, err)
-					}
-					stateType = fmt.Sprintf("state (%s, index %v)", previousCommitment, stateDraft.BlockIndex())
+				var err error
+				stateDraft, err = smT.store.NewEmptyStateDraft(previousCommitment)
+				if err != nil {
+					return nil, fmt.Errorf("Tracing block %s chain: error creating empty state draft to store block %s: %v",
+						initCommitment, blockCommitment, err)
 				}
 				block.Mutations().ApplyTo(stateDraft)
 				committedBlock := smT.store.Commit(stateDraft)
 				committedCommitment := committedBlock.L1Commitment()
 				if !committedCommitment.Equals(blockCommitment) {
 					smT.log.Panicf("Tracing block %s chain: block, received after committing (%s) differs from the block, which was committed (%s)",
-						committedCommitment, blockCommitment)
+						initCommitment, committedCommitment, blockCommitment)
 				}
-				smT.log.Debugf("Tracing block %s chain: block %s on %s has been committed to the store", blockCommitment, stateType)
+				smT.log.Debugf("Tracing block %s chain: block %s, index %v has been committed to the store on state %s",
+					initCommitment, blockCommitment, stateDraft.BlockIndex(), previousCommitment)
 				committedBlocks[blockCommitment.GetBlockHash()] = true
 			}
 		}
