@@ -2,6 +2,7 @@ package users
 
 import (
 	"github.com/iotaledger/hive.go/core/app"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 )
 
 const (
@@ -34,8 +35,17 @@ var ParamsUsers = &ParametersUsers{
 			PasswordHash: "c34ec258dd87938c9c19228f7062ef17c847ed9fac4f9a284ccfebdbff08e3f9",
 			PasswordSalt: "db32d4f152a3dadd81cd9b71074a4ea3346dbf8ff1998d33e9452091fff6f503",
 			Permissions: []string{
-				"dashboard",
-				"api",
+				permissions.MetricsRead,
+				permissions.UsersRead,
+				permissions.UsersWrite,
+				permissions.NodeRead,
+				permissions.NodeWrite,
+				permissions.PeeringRead,
+				permissions.PeeringWrite,
+				permissions.ChainRead,
+				permissions.ChainWrite,
+				permissions.API,
+				permissions.Dashboard,
 			},
 		},
 	},
