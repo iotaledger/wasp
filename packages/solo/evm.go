@@ -45,7 +45,7 @@ func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
 }
 
 func (b *jsonRPCSoloBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return b.Chain.CallView(scName, funName, args)
+	return b.Chain.CallViewAtBlockIndex(iscBlockIndex, scName, funName, args)
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestBlockIndex() uint32 {

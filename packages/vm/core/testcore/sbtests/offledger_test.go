@@ -65,7 +65,7 @@ func TestOffLedgerSuccess(t *testing.T) {
 		require.NoError(t, rec.Error.AsGoError())
 		t.Logf("receipt: %s", rec)
 
-		res, err := ch.CallView(ch.LatestBlockIndex(), ScName, sbtestsc.FuncGetInt.Name,
+		res, err := ch.CallView(ScName, sbtestsc.FuncGetInt.Name,
 			sbtestsc.ParamIntParamName, "ppp",
 		)
 		require.NoError(t, err)

@@ -27,7 +27,7 @@ func testCounter(t *testing.T, w bool) {
 		require.NoError(t, err)
 	}
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())
@@ -69,7 +69,7 @@ func testConcurrency(t *testing.T, w bool) {
 	}
 	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())
@@ -121,7 +121,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	}
 	require.True(t, chain.WaitForRequestsThrough(sum+4+extra, 180*time.Second))
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log())

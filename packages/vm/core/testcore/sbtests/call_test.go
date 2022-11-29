@@ -22,7 +22,7 @@ func testGetSet(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetInt.Name,
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
@@ -47,7 +47,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	t.Logf("receipt: %s", chain.LastReceipt())
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
@@ -69,7 +69,7 @@ func testCallFibonacci(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetFibonacci.Name,
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacci.Name,
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
 		sbtestsc.ParamN, fiboN,
 	)
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func testIndirectCallFibonacci(t *testing.T, w bool) { //nolint:dupl
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
-	ret, err = chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err = codec.DecodeUint64(ret.MustGet(sbtestsc.VarCounter))
@@ -132,7 +132,7 @@ func testIndirectCallFibonacciIndirect(t *testing.T, w bool) { //nolint:dupl
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
-	ret, err = chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err = codec.DecodeUint64(ret.MustGet(sbtestsc.VarCounter))

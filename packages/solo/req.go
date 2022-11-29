@@ -441,9 +441,7 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	i, err := ch.Store.LatestBlockIndex()
-	require.NoError(ch.Env.T, err)
-	return ch.CallViewAtBlockIndex(i, scName, funName, params...)
+	return ch.CallViewAtBlockIndex(ch.LatestBlockIndex(), scName, funName, params...)
 }
 
 func (ch *Chain) CallViewAtBlockIndex(blockIndex uint32, scName, funName string, params ...interface{}) (dict.Dict, error) {

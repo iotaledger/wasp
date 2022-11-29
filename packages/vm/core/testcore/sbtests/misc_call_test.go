@@ -14,7 +14,7 @@ func testChainOwnerIDView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncChainOwnerIDView.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncChainOwnerIDView.Name)
 	require.NoError(t, err)
 
 	c := ret.MustGet(sbtestsc.ParamChainOwnerID)
@@ -41,7 +41,7 @@ func testSandboxCall(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncSandboxCall.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncSandboxCall.Name)
 	require.NoError(t, err)
 
 	d := ret.MustGet(sbtestsc.VarSandboxCall)

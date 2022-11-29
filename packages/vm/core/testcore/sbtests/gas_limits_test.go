@@ -123,7 +123,7 @@ func testViewGasLimit(t *testing.T, w bool) {
 	}
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil, w)
-	_, err := ch.CallView(ch.LatestBlockIndex(), sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
+	_, err := ch.CallView(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 }

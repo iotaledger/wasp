@@ -13,7 +13,7 @@ import (
 )
 
 func TestPanicFull(t *testing.T) { run2(t, testPanicFull) }
-func testPanicFull(t *testing.T, w bool) { 
+func testPanicFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
@@ -49,7 +49,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	_, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncPanicViewEP.Name)
+	_, err := chain.CallView(ScName, sbtestsc.FuncPanicViewEP.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
 	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
@@ -106,7 +106,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 }
 
 func TestCallPanicViewFromFull(t *testing.T) { run2(t, testCallPanicViewFromFull) }
-func testCallPanicViewFromFull(t *testing.T, w bool) { 
+func testCallPanicViewFromFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
@@ -142,7 +142,7 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	_, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)
+	_, err := chain.CallView(ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)
 	testmisc.RequireErrorToBe(t, err, sbtestsc.MsgViewPanic)
 
 	receipts := chain.GetRequestReceiptsForBlockRange(0, 0)
