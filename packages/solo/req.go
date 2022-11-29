@@ -519,7 +519,7 @@ func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 }
 
 // GetRootCommitment returns the root commitment of the latest state index
-func (ch *Chain) GetRootCommitment() trie.VCommitment {
+func (ch *Chain) GetRootCommitment() trie.Hash {
 	block, err := ch.Store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	return block.TrieRoot()

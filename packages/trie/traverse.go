@@ -60,7 +60,7 @@ func (tr *TrieReader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode)
 }
 
 func (tr *TrieReader) traversePath(target []byte, fun func(*nodeData, []byte, pathEndingCode)) {
-	n, found := tr.nodeStore.FetchNodeData(tr.persistentRoot)
+	n, found := tr.nodeStore.FetchNodeData(tr.root)
 	if !found {
 		return
 	}

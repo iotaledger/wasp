@@ -9,13 +9,15 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type block struct {
-	trieRoot             trie.VCommitment
+	trieRoot             trie.Hash
 	mutations            *buffered.Mutations
 	previousL1Commitment *L1Commitment
 }
@@ -25,7 +27,7 @@ var _ Block = &block{}
 func BlockFromBytes(blockBytes []byte) (*block, error) {
 	buf := bytes.NewBuffer(blockBytes)
 
-	trieRoot, err := trie.ReadVectorCommitment(buf)
+	trieRoot, err := trie.ReadHash(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,14 @@ func (b *block) Mutations() *buffered.Mutations {
 	return b.mutations
 }
 
-func (b *block) TrieRoot() trie.VCommitment {
+func (b *block) MutationsReader() kv.KVStoreReader {
+	return buffered.NewBufferedKVStoreForMutations(
+		kv.NewHiveKVStoreReader(mapdb.NewMapDB()),
+		b.mutations,
+	)
+}
+
+func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
 
@@ -85,7 +94,8 @@ func (b *block) writeEssence(w io.Writer) {
 
 func (b *block) Bytes() []byte {
 	var w bytes.Buffer
-	w.Write(b.TrieRoot().Bytes())
+	root := b.TrieRoot()
+	w.Write(root[:])
 	b.writeEssence(&w)
 	return w.Bytes()
 }

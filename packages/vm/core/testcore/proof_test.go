@@ -90,7 +90,7 @@ func TestProofs(t *testing.T) {
 
 		require.NoError(t, err)
 
-		require.True(t, pastL1Commitment.GetTrieRoot().Equals(bi.L1Commitment.GetTrieRoot()))
+		require.Equal(t, pastL1Commitment.GetTrieRoot(), bi.L1Commitment.GetTrieRoot())
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
@@ -112,7 +112,7 @@ func TestProofs(t *testing.T) {
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
 		require.NoError(t, err)
 
-		require.True(t, pastL1Commitment.GetTrieRoot().Equals(pastBlockInfo.L1Commitment.GetTrieRoot()))
+		require.Equal(t, pastL1Commitment.GetTrieRoot(), pastBlockInfo.L1Commitment.GetTrieRoot())
 		err = poi.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), pastBlockInfo.Bytes())
 
 		require.NoError(t, err)

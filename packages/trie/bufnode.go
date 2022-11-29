@@ -10,7 +10,7 @@ type bufferedNode struct {
 	// persistent
 	nodeData            *nodeData
 	value               []byte // will be persisted in value store if not nil
-	terminal            TCommitment
+	terminal            *tcommitment
 	pathExtension       []byte
 	uncommittedChildren map[byte]*bufferedNode // children which has been modified
 	triePath            []byte
@@ -32,16 +32,16 @@ func newBufferedNode(n *nodeData, triePath []byte) *bufferedNode {
 
 // commitNode re-calculates node commitment and, recursively, its children commitments
 func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter) {
-	childUpdates := make(map[byte]VCommitment)
+	childUpdates := make(map[byte]*Hash)
 	for idx, child := range n.uncommittedChildren {
 		if child == nil {
 			childUpdates[idx] = nil
 		} else {
 			child.commitNode(triePartition, valuePartition)
-			childUpdates[idx] = child.nodeData.commitment
+			childUpdates[idx] = &child.nodeData.commitment
 		}
 	}
-	updateNodeCommitment(n.nodeData, childUpdates, n.terminal, n.pathExtension)
+	n.nodeData.update(childUpdates, n.terminal, n.pathExtension)
 
 	n.mustPersist(triePartition)
 	if len(n.value) > 0 {
@@ -123,7 +123,7 @@ func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
 	}
 	childTriePath := concat(n.triePath, n.pathExtension, []byte{childIndex})
 
-	nodeFetched, ok := db.FetchNodeData(childCommitment)
+	nodeFetched, ok := db.FetchNodeData(*childCommitment)
 	assert(ok, "TrieUpdatable::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
 		hex.EncodeToString(childCommitment.Bytes()), hex.EncodeToString(childTriePath))
 

@@ -38,8 +38,7 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 				// commitment to the next child is not included, it must be calculated by the verifier
 				continue
 			}
-			hash := childCommitment.Hash()
-			elem.Children[childIndex] = &hash
+			elem.Children[childIndex] = childCommitment
 		}
 		ret.Path[i] = elem
 	}
@@ -47,9 +46,9 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 	last := ret.Path[len(ret.Path)-1]
 	switch ending {
 	case endingTerminal:
-		last.ChildIndex = terminalCommitmentIndex
+		last.ChildIndex = terminalIndex
 	case endingExtend, endingSplit:
-		last.ChildIndex = pathExtensionCommitmentIndex
+		last.ChildIndex = pathExtensionIndex
 	default:
 		panic("wrong ending code")
 	}

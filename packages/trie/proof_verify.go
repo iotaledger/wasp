@@ -32,12 +32,12 @@ func (p *MerkleProof) MustKeyWithTerminal() ([]byte, []byte) {
 			panic("nil child commitment expected for proof of absence")
 		}
 		return p.Key, nil
-	case lastElem.ChildIndex == terminalCommitmentIndex:
+	case lastElem.ChildIndex == terminalIndex:
 		if lastElem.Terminal == nil {
 			return p.Key, nil
 		}
 		return p.Key, lastElem.Terminal
-	case lastElem.ChildIndex == pathExtensionCommitmentIndex:
+	case lastElem.ChildIndex == pathExtensionIndex:
 		return p.Key, nil
 	}
 	panic("wrong lastElem.ChildIndex")
@@ -118,9 +118,9 @@ func (p *MerkleProof) verify(pathIdx, keyIdx int) (Hash, error) {
 		}
 		return elem.hash(nil)
 	}
-	if elem.ChildIndex != terminalCommitmentIndex && elem.ChildIndex != pathExtensionCommitmentIndex {
+	if elem.ChildIndex != terminalIndex && elem.ChildIndex != pathExtensionIndex {
 		return Hash{}, fmt.Errorf("wrong proof: child index expected to be %d or %d. Path position: %d, key position %d",
-			terminalCommitmentIndex, pathExtensionCommitmentIndex, pathIdx, keyIdx)
+			terminalIndex, pathExtensionIndex, pathIdx, keyIdx)
 	}
 	return elem.hash(nil)
 }
@@ -143,12 +143,12 @@ func (e *MerkleProofElement) makeHashVector(missingCommitment []byte) (*hashVect
 	}
 	if len(e.Terminal) > 0 {
 		if len(e.Terminal) > HashSizeBytes {
-			return nil, fmt.Errorf(errTooLongCommitment+" (terminal)", terminalCommitmentIndex, HashSizeBytes)
+			return nil, fmt.Errorf(errTooLongCommitment+" (terminal)", terminalIndex, HashSizeBytes)
 		}
-		hashes[terminalCommitmentIndex] = e.Terminal
+		hashes[terminalIndex] = e.Terminal
 	}
 	rawBytes, _ := compressToHashSize(e.PathExtension)
-	hashes[pathExtensionCommitmentIndex] = rawBytes
+	hashes[pathExtensionIndex] = rawBytes
 	if isValidChildIndex(e.ChildIndex) {
 		if len(missingCommitment) > HashSizeBytes {
 			return nil, fmt.Errorf(errTooLongCommitment+" (skipped commitment)", e.ChildIndex, HashSizeBytes)
@@ -166,7 +166,7 @@ func (e *MerkleProofElement) hash(missingCommitment []byte) (Hash, error) {
 	return hashVector.Hash(), nil
 }
 
-func (p *MerkleProof) ValidateValue(trieRoot VCommitment, value []byte) error {
+func (p *MerkleProof) ValidateValue(trieRoot Hash, value []byte) error {
 	tc := CommitToData(value)
 	return p.ValidateWithTerminal(trieRoot.Bytes(), tc.Bytes())
 }

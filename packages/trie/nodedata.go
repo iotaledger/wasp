@@ -24,20 +24,19 @@ type nodeData struct {
 	pathExtension []byte
 
 	// if terminal != nil, it contains the commitment to a value in the trie
-	terminal TCommitment
+	terminal *tcommitment
 
 	// children contains pointers to up to 16 other nodes, one for each
 	// possible nibble
-	children [NumChildren]VCommitment
+	children [NumChildren]*Hash
 
-	// commitment is the hash(node), which is persisted in the key
-	commitment VCommitment
+	// commitment is hash(pathExtension|terminal|children), which is persisted in the key
+	commitment Hash
 }
 
 func newNodeData() *nodeData {
 	n := &nodeData{}
-	v := vectorCommitment(makeHashVector(n).Hash())
-	n.commitment = &v
+	n.commitment = n.makeHashVector().Hash()
 	return n
 }
 
@@ -72,14 +71,11 @@ func (n *nodeData) Clone() *nodeData {
 	if n.terminal != nil {
 		ret.terminal = n.terminal.Clone()
 	}
-	if n.commitment != nil {
-		ret.commitment = n.commitment.Clone()
-	}
-	for i, c := range n.children {
-		if c != nil {
-			ret.children[i] = c.Clone()
-		}
-	}
+	ret.commitment = n.commitment.Clone()
+	n.iterateChildren(func(i byte, h Hash) bool {
+		ret.children[i] = &h
+		return true
+	})
 	return ret
 }
 
@@ -89,11 +85,10 @@ func (n *nodeData) String() string {
 		t = n.terminal.String()
 	}
 	childIdx := make([]byte, 0)
-	for i := range n.children {
-		if n.children[i] != nil {
-			childIdx = append(childIdx, byte(i))
-		}
-	}
+	n.iterateChildren(func(i byte, _ Hash) bool {
+		childIdx = append(childIdx, byte(i))
+		return true
+	})
 	return fmt.Sprintf("c: %s, pf: '%s', childrenIdx: %v, term: '%s'",
 		n.commitment, string(n.pathExtension), childIdx, t)
 }
@@ -146,12 +141,10 @@ func (n *nodeData) Write(w io.Writer) error {
 
 	childrenFlags := cflags(0)
 	// compress children childrenFlags 32 bytes, if any
-	for i := range n.children {
-		if n.children[i] != nil {
-			childrenFlags.setFlag(byte(i))
-		}
-	}
-
+	n.iterateChildren(func(i byte, _ Hash) bool {
+		childrenFlags.setFlag(byte(i))
+		return true
+	})
 	if childrenFlags != 0 {
 		smallFlags |= hasChildrenFlag
 	}
@@ -181,12 +174,14 @@ func (n *nodeData) Write(w io.Writer) error {
 		if err = writeUint16(w, uint16(childrenFlags)); err != nil {
 			return err
 		}
-		for _, child := range n.children {
-			if child != nil {
-				if err = child.Write(w); err != nil {
-					return err
-				}
+		n.iterateChildren(func(_ byte, h Hash) bool {
+			if err = h.Write(w); err != nil {
+				return false
 			}
+			return true
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -225,7 +220,7 @@ func (n *nodeData) Read(r io.Reader) error {
 		for i := 0; i < NumChildren; i++ {
 			ib := uint8(i)
 			if flags.hasFlag(ib) {
-				n.children[ib] = newVectorCommitment()
+				n.children[ib] = &Hash{}
 				if err = n.children[ib].Read(r); err != nil {
 					return err
 				}
@@ -235,13 +230,39 @@ func (n *nodeData) Read(r io.Reader) error {
 	return nil
 }
 
-func (n *nodeData) iterateChildren(f func(byte, VCommitment) bool) bool {
+func (n *nodeData) iterateChildren(f func(byte, Hash) bool) bool {
 	for i, v := range n.children {
 		if v != nil {
-			if !f(byte(i), v) {
+			if !f(byte(i), *v) {
 				return false
 			}
 		}
 	}
 	return true
+}
+
+// update computes update to the node data and its commitment.
+func (n *nodeData) update(childUpdates map[byte]*Hash, newTerminalUpdate *tcommitment, pathExtension []byte) {
+	for i, upd := range childUpdates {
+		n.children[i] = upd
+	}
+	n.terminal = newTerminalUpdate // for hash commitment just replace
+	n.pathExtension = pathExtension
+	n.commitment = n.makeHashVector().Hash()
+}
+
+// makeHashVector makes the node vector to be hashed. Missing children are nil
+func (n *nodeData) makeHashVector() *hashVector {
+	hashes := &hashVector{}
+	n.iterateChildren(func(i byte, h Hash) bool {
+		hashes[i] = h[:]
+		return true
+	})
+	if n.terminal != nil {
+		// squeeze terminal it into the hash size, if longer than hash size
+		hashes[terminalIndex], _ = compressToHashSize(n.terminal.Bytes())
+	}
+	pathExtensionCommitmentBytes, _ := compressToHashSize(n.pathExtension)
+	hashes[pathExtensionIndex] = pathExtensionCommitmentBytes
+	return hashes
 }

@@ -13,11 +13,11 @@ type TrieUpdatable struct {
 
 // TrieReader direct read-only access to trie
 type TrieReader struct {
-	nodeStore      *nodeStore
-	persistentRoot VCommitment
+	nodeStore *nodeStore
+	root      Hash
 }
 
-func NewTrieUpdatable(store KVReader, root VCommitment, clearCacheAtSize ...int) (*TrieUpdatable, error) {
+func NewTrieUpdatable(store KVReader, root Hash, clearCacheAtSize ...int) (*TrieUpdatable, error) {
 	trieReader, err := NewTrieReader(store, root, clearCacheAtSize...)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func NewTrieUpdatable(store KVReader, root VCommitment, clearCacheAtSize ...int)
 	return ret, nil
 }
 
-func NewTrieReader(store KVReader, root VCommitment, clearCacheAtSize ...int) (*TrieReader, error) {
+func NewTrieReader(store KVReader, root Hash, clearCacheAtSize ...int) (*TrieReader, error) {
 	ret := &TrieReader{
 		nodeStore: openNodeStore(store, clearCacheAtSize...),
 	}
@@ -41,8 +41,8 @@ func NewTrieReader(store KVReader, root VCommitment, clearCacheAtSize ...int) (*
 	return ret, nil
 }
 
-func (tr *TrieReader) Root() VCommitment {
-	return tr.persistentRoot
+func (tr *TrieReader) Root() Hash {
+	return tr.root
 }
 
 func (tr *TrieReader) ClearCache() {
@@ -50,19 +50,19 @@ func (tr *TrieReader) ClearCache() {
 }
 
 // SetRoot fetches and sets new root. It clears cache before fetching the new root
-func (tr *TrieReader) setRoot(c VCommitment) (*nodeData, error) {
+func (tr *TrieReader) setRoot(h Hash) (*nodeData, error) {
 	tr.ClearCache()
-	rootNodeData, ok := tr.nodeStore.FetchNodeData(c)
+	rootNodeData, ok := tr.nodeStore.FetchNodeData(h)
 	if !ok {
-		return nil, fmt.Errorf("root commitment '%s' does not exist", c)
+		return nil, fmt.Errorf("root commitment '%s' does not exist", &h)
 	}
-	tr.persistentRoot = c.Clone()
+	tr.root = h
 	return rootNodeData, nil
 }
 
 // setRoot overloaded for updatable trie
-func (tr *TrieUpdatable) setRoot(c VCommitment) error {
-	rootNodeData, err := tr.TrieReader.setRoot(c)
+func (tr *TrieUpdatable) setRoot(h Hash) error {
+	rootNodeData, err := tr.TrieReader.setRoot(h)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (tr *TrieUpdatable) setRoot(c VCommitment) error {
 // The nodes and values are written into separate partitions
 // The buffered nodes are garbage collected, except the mutated ones
 // By default, it sets new root in the end and clears the trie reader cache. To override, use notSetNewRoot = true
-func (tr *TrieUpdatable) Commit(store KVWriter) VCommitment {
+func (tr *TrieUpdatable) Commit(store KVWriter) Hash {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
 
@@ -83,7 +83,7 @@ func (tr *TrieUpdatable) Commit(store KVWriter) VCommitment {
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
-	ret := tr.mutatedRoot.nodeData.commitment.Clone()
+	ret := tr.mutatedRoot.nodeData.commitment
 	err := tr.setRoot(ret) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
 	return ret

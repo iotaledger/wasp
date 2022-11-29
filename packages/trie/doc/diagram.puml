@@ -1,7 +1,7 @@
 @startuml
 struct TrieReader {
   nodeStore: nodeStore
-  root: VCommitment
+  root: Hash
 }
 
 struct nodeStore {
@@ -11,17 +11,17 @@ struct nodeStore {
 
 struct nodeData {
   {field} pathExtension: []byte
-  terminal: TCommitment
-  commitment: VCommitment
-  children: [16]VCommitment
+  terminal: tcommitment
+  children: [16]Hash
+  commitment: Hash
 }
 
-struct terminalCommitment {
+struct tcommitment {
   data: []byte
   isValue: bool
 }
 
-note right of terminalCommitment
+note right of tcommitment
   data is either:
   - value (if len(value) < 63)
   - hash(value)
@@ -30,9 +30,9 @@ note right of terminalCommitment
   where header = [isValue (1 bit) | len(data) (7 bits)]
 end note
 
-struct vectorCommitment {}
+struct Hash {}
 
-note left of vectorCommitment
+note right of Hash
   [20]byte hash
 end note
 
@@ -44,12 +44,13 @@ package db <<Database>> {
 }
 
 TrieReader *-- nodeStore
-TrieReader *-- vectorCommitment: root
-nodeData ..> trieStore: "k=Commitment.Bytes()\nv=nodeData.Bytes()"
+TrieReader *-- Hash: root
+nodeData ..> trieStore: "k=commitment\nv=nodeData.Bytes()"
 nodeData ..> valueStore: "(if !terminal.isValue)\nk=hash(terminal.value)\nv=terminal.value"
-nodeData "1" *-- "1" terminalCommitment: Terminal
-nodeData "1" *-- "1" vectorCommitment: Commitment
-nodeData "1" *-- "16" vectorCommitment: Children
-nodeStore ..> nodeData: creates
+nodeData "1" *-- "1" tcommitment: terminal
+nodeData "1" *-- "1" Hash: commitment
+nodeData "1" *-- "16" Hash: children
+nodeStore ..> nodeData: manages
+nodeStore o--> db
 
 @enduml

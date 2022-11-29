@@ -46,7 +46,7 @@ func (m mustChainStore) LatestState() State {
 	return r
 }
 
-func (m mustChainStore) StateByTrieRoot(root trie.VCommitment) State {
+func (m mustChainStore) StateByTrieRoot(root trie.Hash) State {
 	r, err := m.Store.StateByTrieRoot(root)
 	if err != nil {
 		panic(err)
@@ -54,7 +54,7 @@ func (m mustChainStore) StateByTrieRoot(root trie.VCommitment) State {
 	return r
 }
 
-func (m mustChainStore) BlockByTrieRoot(root trie.VCommitment) Block {
+func (m mustChainStore) BlockByTrieRoot(root trie.Hash) Block {
 	r, err := m.Store.BlockByTrieRoot(root)
 	if err != nil {
 		panic(err)
@@ -95,7 +95,6 @@ func TestOriginBlock(t *testing.T) {
 	validateBlock0 := func(block0 Block, err error) {
 		require.NoError(t, err)
 		require.True(t, block0.PreviousL1Commitment() == nil)
-		require.False(t, block0.TrieRoot() == nil)
 		require.EqualValues(t, map[kv.Key][]byte{
 			KeyChainID:                             emptyChainID.Bytes(),
 			kv.Key(coreutil.StatePrefixBlockIndex): codec.EncodeUint32(0),

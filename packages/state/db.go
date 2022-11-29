@@ -27,7 +27,7 @@ var (
 	ErrUnknownLatestTrieRoot = errors.New("latest trie root is unknown")
 )
 
-func keyBlockByTrieRoot(root trie.VCommitment) []byte {
+func keyBlockByTrieRoot(root trie.Hash) []byte {
 	return append([]byte{prefixBlockByTrieRoot}, root.Bytes()...)
 }
 
@@ -50,12 +50,12 @@ type storeDB struct {
 	kvstore.KVStore
 }
 
-func (db *storeDB) latestTrieRoot() (trie.VCommitment, error) {
+func (db *storeDB) latestTrieRoot() (trie.Hash, error) {
 	if !db.hasLatestTrieRoot() {
-		return nil, ErrUnknownLatestTrieRoot
+		return trie.Hash{}, ErrUnknownLatestTrieRoot
 	}
 	b := db.mustGet(keyLatestTrieRoot())
-	ret, err := trie.VectorCommitmentFromBytes(b)
+	ret, err := trie.HashFromBytes(b)
 	mustNoErr(err)
 	return ret, nil
 }
@@ -64,7 +64,7 @@ func (db *storeDB) hasLatestTrieRoot() bool {
 	return db.mustHas(keyLatestTrieRoot())
 }
 
-func (db *storeDB) setLatestTrieRoot(root trie.VCommitment) {
+func (db *storeDB) setLatestTrieRoot(root trie.Hash) {
 	db.mustSet(keyLatestTrieRoot(), root.Bytes())
 }
 
@@ -72,19 +72,19 @@ func (db *storeDB) trieStore() trie.KVStore {
 	return trie.NewHiveKVStoreAdapter(db, []byte{prefixTrie})
 }
 
-func (db *storeDB) trieUpdatable(root trie.VCommitment) (*trie.TrieUpdatable, error) {
+func (db *storeDB) trieUpdatable(root trie.Hash) (*trie.TrieUpdatable, error) {
 	return trie.NewTrieUpdatable(db.trieStore(), root)
 }
 
-func (db *storeDB) initTrie() trie.VCommitment {
+func (db *storeDB) initTrie() trie.Hash {
 	return trie.MustInitRoot(db.trieStore())
 }
 
-func (db *storeDB) trieReader(root trie.VCommitment) (*trie.TrieReader, error) {
+func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieReader, error) {
 	return trie.NewTrieReader(db.trieStore(), root)
 }
 
-func (db *storeDB) hasBlock(root trie.VCommitment) bool {
+func (db *storeDB) hasBlock(root trie.Hash) bool {
 	return db.mustHas(keyBlockByTrieRoot(root))
 }
 
@@ -100,7 +100,7 @@ func (db *storeDB) saveBlock(block Block) {
 	db.mustSet(keyBlockByTrieRoot(block.TrieRoot()), block.Bytes())
 }
 
-func (db *storeDB) readBlock(root trie.VCommitment) (*block, error) {
+func (db *storeDB) readBlock(root trie.Hash) (*block, error) {
 	key := keyBlockByTrieRoot(root)
 	if !db.mustHas(key) {
 		return nil, ErrTrieRootNotFound

@@ -19,7 +19,7 @@ type state struct {
 
 var _ State = &state{}
 
-func newState(db *storeDB, root trie.VCommitment) (*state, error) {
+func newState(db *storeDB, root trie.Hash) (*state, error) {
 	trie, err := db.trieReader(root)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,11 @@ func newState(db *storeDB, root trie.VCommitment) (*state, error) {
 	}, nil
 }
 
-func (s *state) TrieRoot() trie.VCommitment {
+func (s *state) L1Commitment() *L1Commitment {
+	return nil // TODO
+}
+
+func (s *state) TrieRoot() trie.Hash {
 	return s.trieReader.Root()
 }
 

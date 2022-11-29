@@ -24,7 +24,7 @@ var _ util.Equatable = BlockHash{}
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	TrieRoot trie.VCommitment
+	trieRoot trie.Hash
 	// hash of the essence of the block
 	blockHash BlockHash
 }
@@ -37,7 +37,7 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 	return
 }
 
-func newL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
+func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		trieRoot:  c,
 		blockHash: blockHash,
@@ -91,7 +91,7 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 	return l1c, nil
 }
 
-func (s *L1Commitment) GetTrieRoot() trie.VCommitment {
+func (s *L1Commitment) GetTrieRoot() trie.Hash {
 	return s.trieRoot
 }
 
@@ -100,7 +100,7 @@ func (s *L1Commitment) GetBlockHash() BlockHash {
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.BlockHash == other.BlockHash && s.TrieRoot.Equals(other.TrieRoot)
+	return s.blockHash == other.blockHash && s.trieRoot == other.trieRoot
 }
 
 func (s *L1Commitment) Bytes() []byte {
@@ -108,7 +108,8 @@ func (s *L1Commitment) Bytes() []byte {
 }
 
 func (s *L1Commitment) Write(w io.Writer) error {
-	if err := s.GetTrieRoot().Write(w); err != nil {
+	hash := s.GetTrieRoot()
+	if err := hash.Write(w); err != nil {
 		return err
 	}
 	blockHash := s.GetBlockHash()
@@ -120,7 +121,7 @@ func (s *L1Commitment) Write(w io.Writer) error {
 
 func (s *L1Commitment) Read(r io.Reader) error {
 	var err error
-	s.TrieRoot, err = trie.ReadVectorCommitment(r)
+	s.trieRoot, err = trie.ReadHash(r)
 	if err != nil {
 		return err
 	}

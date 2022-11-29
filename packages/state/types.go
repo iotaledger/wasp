@@ -28,15 +28,15 @@ import (
 // between the previous and current states, and allows to calculate the L1 commitment.
 type Store interface {
 	// HasTrieRoot returns true if the given trie root exists in the store
-	HasTrieRoot(trie.VCommitment) bool
+	HasTrieRoot(trie.Hash) bool
 	// BlockByTrieRoot fetches the Block that corresponds to the given trie root
-	BlockByTrieRoot(trie.VCommitment) (Block, error)
+	BlockByTrieRoot(trie.Hash) (Block, error)
 	// StateByTrieRoot returns the chain state corresponding to the given trie root
-	StateByTrieRoot(trie.VCommitment) (State, error)
+	StateByTrieRoot(trie.Hash) (State, error)
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
 	// This affects all `*ByIndex` and `Latest*` functions.
-	SetLatest(trieRoot trie.VCommitment) error
+	SetLatest(trieRoot trie.Hash) error
 	// BlockByIndex returns the block that corresponds to the given state index (see SetLatest).
 	BlockByIndex(uint32) (Block, error)
 	// StateByIndex returns the chain state corresponding to the given state index (see SetLatest).
@@ -78,7 +78,8 @@ type Store interface {
 // Blocks are immutable.
 type Block interface {
 	Mutations() *buffered.Mutations
-	TrieRoot() trie.VCommitment
+	MutationsReader() kv.KVStoreReader
+	TrieRoot() trie.Hash
 	PreviousL1Commitment() *L1Commitment
 	// L1Commitment contains the TrieRoot + block Hash
 	L1Commitment() *L1Commitment
@@ -97,7 +98,7 @@ type StateCommonValues interface {
 // State is an immutable view of a specific version of the chain state.
 type State interface {
 	kv.KVStoreReader
-	TrieRoot() trie.VCommitment
+	TrieRoot() trie.Hash
 	GetMerkleProof(key []byte) *trie.MerkleProof
 	StateCommonValues
 }

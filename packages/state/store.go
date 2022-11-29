@@ -23,33 +23,33 @@ type store struct {
 	// trieRootByIndex is a cache of index -> trieRoot, since the only one
 	// stored in the db is the latestTrieRoot and all others have to be discovered by
 	// traversing the block chain backwards
-	trieRootByIndex map[uint32]trie.VCommitment
+	trieRootByIndex map[uint32]trie.Hash
 }
 
 func NewStore(db kvstore.KVStore) Store {
 	return &store{
 		db:              &storeDB{db},
-		trieRootByIndex: make(map[uint32]trie.VCommitment),
+		trieRootByIndex: make(map[uint32]trie.Hash),
 	}
 }
 
-func (s *store) blockByTrieRoot(root trie.VCommitment) (*block, error) {
+func (s *store) blockByTrieRoot(root trie.Hash) (*block, error) {
 	return s.db.readBlock(root)
 }
 
-func (s *store) HasTrieRoot(root trie.VCommitment) bool {
+func (s *store) HasTrieRoot(root trie.Hash) bool {
 	return s.db.hasBlock(root)
 }
 
-func (s *store) BlockByTrieRoot(root trie.VCommitment) (Block, error) {
+func (s *store) BlockByTrieRoot(root trie.Hash) (Block, error) {
 	return s.blockByTrieRoot(root)
 }
 
-func (s *store) stateByTrieRoot(root trie.VCommitment) (*state, error) {
+func (s *store) stateByTrieRoot(root trie.Hash) (*state, error) {
 	return newState(s.db, root)
 }
 
-func (s *store) StateByTrieRoot(root trie.VCommitment) (State, error) {
+func (s *store) StateByTrieRoot(root trie.Hash) (State, error) {
 	return s.stateByTrieRoot(root)
 }
 
@@ -76,7 +76,7 @@ func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, 
 func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 	buf, bufDB := s.db.buffered()
 
-	var baseTrieRoot trie.VCommitment
+	var baseTrieRoot trie.Hash
 	{
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
@@ -126,7 +126,7 @@ func (s *store) Commit(d StateDraft) Block {
 	return block
 }
 
-func (s *store) SetLatest(trieRoot trie.VCommitment) error {
+func (s *store) SetLatest(trieRoot trie.Hash) error {
 	block, err := s.BlockByTrieRoot(trieRoot)
 	if err != nil {
 		return err
@@ -140,18 +140,23 @@ func (s *store) SetLatest(trieRoot trie.VCommitment) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.trieRootByIndex[blockIndex] != nil && s.trieRootByIndex[blockIndex].Equals(block.TrieRoot()) {
+	if s.trieRootByIndex[blockIndex] == block.TrieRoot() {
 		// nothing to do
 		return nil
 	}
 
-	isNext := (blockIndex > 0 &&
-		s.trieRootByIndex[blockIndex] == nil &&
-		s.trieRootByIndex[blockIndex-1] != nil &&
-		s.trieRootByIndex[blockIndex-1].Equals(block.PreviousL1Commitment().GetTrieRoot()))
-	if !isNext {
+	isNextInSameBranch := func() bool {
+		if blockIndex == 0 {
+			return false
+		}
+		if _, ok := s.trieRootByIndex[blockIndex]; ok {
+			return false
+		}
+		return s.trieRootByIndex[blockIndex-1] == block.PreviousL1Commitment().GetTrieRoot()
+	}()
+	if !isNextInSameBranch {
 		// reorg
-		s.trieRootByIndex = map[uint32]trie.VCommitment{}
+		s.trieRootByIndex = map[uint32]trie.Hash{}
 	}
 	s.trieRootByIndex[blockIndex] = block.TrieRoot()
 	s.db.setLatestTrieRoot(trieRoot)
@@ -166,13 +171,14 @@ func (s *store) BlockByIndex(index uint32) (Block, error) {
 	return s.BlockByTrieRoot(root)
 }
 
-func (s *store) findTrieRootByIndex(index uint32) (trie.VCommitment, error) {
-	if trieRoot := func() trie.VCommitment {
+func (s *store) findTrieRootByIndex(index uint32) (trie.Hash, error) {
+	if cached, ok := func() (ret trie.Hash, ok bool) {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
-		return s.trieRootByIndex[index]
-	}(); trieRoot != nil {
-		return trieRoot, nil
+		ret, ok = s.trieRootByIndex[index]
+		return
+	}(); ok {
+		return cached, nil
 	}
 
 	s.mu.Lock()
@@ -180,11 +186,11 @@ func (s *store) findTrieRootByIndex(index uint32) (trie.VCommitment, error) {
 
 	latestTrieRoot, err := s.db.latestTrieRoot()
 	if err != nil {
-		return nil, err
+		return trie.Hash{}, err
 	}
 	state, err := s.StateByTrieRoot(latestTrieRoot)
 	if err != nil {
-		return nil, err
+		return trie.Hash{}, err
 	}
 	latestBlockIndex := state.BlockIndex()
 	s.trieRootByIndex[latestBlockIndex] = latestTrieRoot
@@ -192,7 +198,7 @@ func (s *store) findTrieRootByIndex(index uint32) (trie.VCommitment, error) {
 	for i := latestBlockIndex; i > 0 && i > index; i-- {
 		block, err := s.BlockByTrieRoot(s.trieRootByIndex[i])
 		if err != nil {
-			return nil, err
+			return trie.Hash{}, err
 		}
 		s.trieRootByIndex[i-1] = block.PreviousL1Commitment().GetTrieRoot()
 	}

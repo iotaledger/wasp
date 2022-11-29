@@ -39,7 +39,7 @@ func (tr *TrieUpdatable) DeletePrefix(pathPrefix []byte) bool {
 // Get reads the trie with the key
 func (tr *TrieReader) Get(key []byte) []byte {
 	unpackedTriePath := unpackBytes(key)
-	var terminal TCommitment
+	var terminal *tcommitment
 	tr.traversePath(unpackedTriePath, func(n *nodeData, _ []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.terminal != nil {
 			terminal = n.terminal
@@ -119,7 +119,7 @@ func (tr *TrieReader) Snapshot(destStore KVWriter) {
 	triePartition := makeWriterPartition(destStore, partitionTrieNodes)
 	valuePartition := makeWriterPartition(destStore, partitionValues)
 
-	tr.iterateNodes(tr.persistentRoot, nil, func(nodeKey []byte, n *nodeData) bool {
+	tr.iterateNodes(tr.root, nil, func(nodeKey []byte, n *nodeData) bool {
 		// write trie node
 		var buf bytes.Buffer
 		err := n.Write(&buf)
@@ -258,21 +258,21 @@ func (tr *TrieUpdatable) mergeNodeIfNeeded(node *bufferedNode) *bufferedNode {
 // iteratePrefix iterates the key/value with keys with prefix.
 // The order of the iteration will be deterministic
 func (tr *TrieReader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []byte, extractValue bool) {
-	var root VCommitment
+	var root *Hash
 	var triePath []byte
 	unpackedPrefix := unpackBytes(prefix)
 	tr.traversePath(unpackedPrefix, func(n *nodeData, trieKey []byte, ending pathEndingCode) {
 		if bytes.HasPrefix(concat(trieKey, n.pathExtension), unpackedPrefix) {
-			root = n.commitment
+			root = &n.commitment
 			triePath = trieKey
 		}
 	})
 	if root != nil {
-		tr.iterate(root, triePath, f, extractValue)
+		tr.iterate(*root, triePath, f, extractValue)
 	}
 }
 
-func (tr *TrieReader) iterate(root VCommitment, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) bool {
+func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) bool {
 	return tr.iterateNodes(root, triePath, func(nodeKey []byte, n *nodeData) bool {
 		if n.terminal != nil {
 			key, err := packUnpackedBytes(concat(nodeKey, n.pathExtension))
@@ -295,14 +295,14 @@ func (tr *TrieReader) iterate(root VCommitment, triePath []byte, fun func(k []by
 }
 
 // iterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
-func (tr *TrieReader) iterateNodes(root VCommitment, rootKey []byte, fun func(nodeKey []byte, n *nodeData) bool) bool {
+func (tr *TrieReader) iterateNodes(root Hash, rootKey []byte, fun func(nodeKey []byte, n *nodeData) bool) bool {
 	n, found := tr.nodeStore.FetchNodeData(root)
 	assert(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(rootKey), root)
 
 	if !fun(rootKey, n) {
 		return false
 	}
-	return n.iterateChildren(func(childIndex byte, childCommitment VCommitment) bool {
+	return n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
 		return tr.iterateNodes(childCommitment, concat(rootKey, n.pathExtension, []byte{childIndex}), fun)
 	})
 }

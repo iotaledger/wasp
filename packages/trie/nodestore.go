@@ -20,7 +20,7 @@ const (
 )
 
 // MustInitRoot initializes a new empty trie
-func MustInitRoot(store KVWriter) VCommitment {
+func MustInitRoot(store KVWriter) Hash {
 	rootNodeData := newNodeData()
 	n := newBufferedNode(rootNodeData, nil)
 
@@ -28,7 +28,7 @@ func MustInitRoot(store KVWriter) VCommitment {
 	valueStore := makeWriterPartition(store, partitionValues)
 	n.commitNode(trieStore, valueStore)
 
-	return n.nodeData.commitment.Clone()
+	return n.nodeData.commitment
 }
 
 func openNodeStore(store KVReader, clearCacheAtSize ...int) *nodeStore {
@@ -44,7 +44,7 @@ func openNodeStore(store KVReader, clearCacheAtSize ...int) *nodeStore {
 	return ret
 }
 
-func (ns *nodeStore) FetchNodeData(nodeCommitment VCommitment) (*nodeData, bool) {
+func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*nodeData, bool) {
 	dbKey := nodeCommitment.Bytes()
 	if ns.clearCacheAtSize > 0 {
 		// if caching is used at all
@@ -68,7 +68,7 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment VCommitment) (*nodeData, bool)
 	return ret, true
 }
 
-func (ns *nodeStore) MustFetchNodeData(nodeCommitment VCommitment) *nodeData {
+func (ns *nodeStore) MustFetchNodeData(nodeCommitment Hash) *nodeData {
 	ret, ok := ns.FetchNodeData(nodeCommitment)
 	assert(ok, "NodeStore::MustFetchNodeData: cannot find node data: commitment: '%s'", nodeCommitment.String())
 	return ret
@@ -81,7 +81,7 @@ func (ns *nodeStore) FetchChild(n *nodeData, childIdx byte, trieKey []byte) (*no
 	}
 	childTriePath := concat(trieKey, n.pathExtension, []byte{childIdx})
 
-	ret, ok := ns.FetchNodeData(c)
+	ret, ok := ns.FetchNodeData(*c)
 	assert(ok, "immutable::FetchChild: failed to fetch node. trieKey: '%s', childIndex: %d",
 		hex.EncodeToString(trieKey), childIdx)
 	return ret, childTriePath

@@ -267,7 +267,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie.MerklePr
 
 // GetRootCommitment calculates root commitment from state.
 // A valid state must return root commitment equal to the L1Commitment from the anchor
-func (ctx *ViewContext) GetRootCommitment() trie.VCommitment {
+func (ctx *ViewContext) GetRootCommitment() trie.Hash {
 	return ctx.stateReader.TrieRoot()
 }
 
