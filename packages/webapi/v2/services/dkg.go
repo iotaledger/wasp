@@ -34,10 +34,9 @@ func NewDKGService(log *logger.Logger, registryProvider registry.Provider, nodeP
 }
 
 func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeoutInMilliseconds uint32) (*models.DKSharesInfo, error) {
-	// TODO: Make configurable
 	const roundRetry = 1 * time.Second // Retry for Peer <-> Peer communication.
 	const stepRetry = 3 * time.Second  // Retry for Initiator -> Peer communication.
-	// --
+
 	timeout := time.Duration(timeoutInMilliseconds) * time.Millisecond
 
 	dkShare, err := d.nodeProvider().GenerateDistributedKey(peerPublicKeys, threshold, roundRetry, stepRetry, timeout)

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type MetricsService struct {
@@ -66,7 +67,7 @@ func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
 	}
 }
 
-func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *dto.ConsensusWorkflowMetrics {
+func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *models.ConsensusWorkflowMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {
@@ -79,10 +80,10 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) 
 		return nil
 	}
 
-	return dto.MapConsensusWorkflowStatus(metrics)
+	return models.MapConsensusWorkflowStatus(metrics)
 }
 
-func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics {
+func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *models.ConsensusPipeMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {
@@ -95,5 +96,5 @@ func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto
 		return nil
 	}
 
-	return dto.MapConsensusPipeMetrics(metrics)
+	return models.MapConsensusPipeMetrics(metrics)
 }

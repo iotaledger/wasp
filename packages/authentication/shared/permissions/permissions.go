@@ -12,4 +12,8 @@ const (
 	PeeringRead  = "peering.read"
 	PeeringWrite = "peering.write"
 	NodeRead     = "node.read"
+	NodeWrite    = "node.write"
+	UsersRead    = "users.read"
+	UsersWrite   = "users.write"
+	MetricsRead  = "metrics.read"
 )

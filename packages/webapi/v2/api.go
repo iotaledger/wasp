@@ -1,7 +1,11 @@
 package v2
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/dkg"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
@@ -24,11 +28,11 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, _ registry.Provider, controllersToLoad []interfaces.APIController) {
-	/*claimValidator := func(claims *authentication.WaspClaims) bool {
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, userManager *userspkg.UserManager, registryProvider registry.Provider, controllersToLoad []interfaces.APIController) {
+	claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The API will be accessible if the token has an 'API' claim
 		return claims.HasPermission(permissions.API)
-	}*/
+	}
 
 	for _, controller := range controllersToLoad {
 		publicGroup := server.Group(controller.Name(), "v2/")
@@ -38,13 +42,13 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, _ registry.Prov
 		adminGroup := server.Group(controller.Name(), "v2/").
 			SetSecurity("Authorization")
 
-		/*authentication.AddAuthentication(adminGroup.EchoGroup(), registryProvider, authentication.AuthConfiguration{
+		authentication.AddAuthentication(adminGroup.EchoGroup(), userManager, registryProvider, authentication.AuthConfiguration{
 			Scheme: authentication.AuthJWT,
 			JWTConfig: authentication.JWTAuthConfiguration{
 				Duration: 24 * time.Hour,
 			},
 		}, claimValidator)
-		*/
+
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
 }
@@ -88,5 +92,5 @@ func Init(logger *loggerpkg.Logger,
 		users.NewUsersController(logger, userService),
 	}
 
-	loadControllers(server, mocker, registryProvider, controllersToLoad)
+	loadControllers(server, mocker, userManager, registryProvider, controllersToLoad)
 }

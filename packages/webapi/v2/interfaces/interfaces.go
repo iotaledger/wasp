@@ -45,8 +45,8 @@ type EVMService interface {
 
 type MetricsService interface {
 	GetAllChainsMetrics() *dto.ChainMetrics
-	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *dto.ConsensusPipeMetrics
-	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *dto.ConsensusWorkflowMetrics
+	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *models.ConsensusPipeMetrics
+	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *models.ConsensusWorkflowMetrics
 	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
 }
 

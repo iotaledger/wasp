@@ -3,6 +3,9 @@ package metrics
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -32,19 +35,19 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET("metrics/chain/:chainID", c.getChainMetrics).
+	adminAPI.GET("metrics/chain/:chainID", c.getChainMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ChainMetrics{}), nil).
 		SetOperationId("getChainMetrics").
 		SetSummary("Get chain specific metrics.")
 
-	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics).
+	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ConsensusWorkflowMetrics{}), nil).
 		SetOperationId("getChainWorkflowMetrics").
 		SetSummary("Get chain workflow metrics.")
 
-	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics).
+	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(dto.ConsensusPipeMetrics{}), nil).
 		SetOperationId("getChainPipeMetrics").
