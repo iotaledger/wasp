@@ -40,7 +40,7 @@ func testTypesView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID := setupTestSandboxSC(t, chain, nil, w)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView.Name,
+	_, err := chain.CallView(chain.LatestBlockIndex(), ScName, sbtestsc.FuncPassTypesView.Name,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,
