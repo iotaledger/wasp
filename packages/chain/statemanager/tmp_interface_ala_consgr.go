@@ -34,3 +34,15 @@ type ConsGrStateMgr interface { // TODO: Remove, use consGr.StateMgr
 		block state.StateDraft,
 	) <-chan error
 }
+
+// Interface the mempool needs form the StateMgr.
+type MempoolStateMgr interface { // TODO: Remove, use mempool.StateMgr
+	// The StateMgr has to find a common ancestor for the prevAO and nextAO, then return
+	// the state for Next ao and reject blocks in range (commonAO, prevAO]. The StateMgr
+	// can determine relative positions of the corresponding blocks based on their state
+	// indexes.
+	MempoolStateRequest(
+		ctx context.Context,
+		prevAO, nextAO *isc.AliasOutputWithID,
+	) (st state.State, added, removed []state.Block)
+}

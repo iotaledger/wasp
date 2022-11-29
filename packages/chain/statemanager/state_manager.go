@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	//consGR "github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
+	//"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
@@ -24,8 +24,8 @@ import (
 )
 
 type StateMgr interface {
-	consGR.StateMgr
-	mempool.StateMgr
+	ConsGrStateMgr  //TODO: TEMPORARY CHANGE, revert to ---> consGR.StateMgr
+	MempoolStateMgr //TODO: TEMPORARY CHANGE, revert to ---> mempool.StateMgr
 	// Invoked by the chain when new confirmed alias output is received.
 	// This event should be used to mark blocks as confirmed.
 	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID)
