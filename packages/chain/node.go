@@ -57,6 +57,7 @@ const (
 
 type Chain interface {
 	ChainCore
+	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	// ChainID() isc.ChainID
 	// ChainStore() state.Store
 	// Processors() *processors.Cache
@@ -82,16 +83,6 @@ type PeerStatus struct {
 	PubKey    *cryptolib.PublicKey
 	NetID     string
 	Connected bool
-}
-
-type ChainMempool interface {
-	consGR.Mempool
-	// Invoked by the chain when a new off-ledger request is received from a node user.
-	// Inter-node off-ledger dissemination is NOT performed via this function.
-	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
-	// Invoked by the chain when a set of access nodes has changed.
-	// These nodes should be used to disseminate the off-ledger requests.
-	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 }
 
 type RequestOutputHandler = func(outputID iotago.OutputID, output iotago.Output)
@@ -137,7 +128,7 @@ type chainNodeImpl struct {
 	chainMgr             chainMgr.ChainMgr
 	chainStore           state.Store
 	nodeConn             ChainNodeConn
-	mempool              ChainMempool
+	mempool              mempool.Mempool
 	stateMgr             statemanager.StateMgr
 	recvAliasOutputPipe  pipe.Pipe
 	recvTxPublishedPipe  pipe.Pipe
@@ -287,6 +278,11 @@ func New(
 	// Run the main thread.
 	go cni.run(ctx, netAttachID)
 	return cni, nil
+}
+
+func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+	// TODO: What to do with the sender's pub key?
+	cni.mempool.ReceiveOffLedgerRequest(request)
 }
 
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
