@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -32,11 +33,13 @@ type Chain interface { // TODO: ...
 
 type NodeConnection interface {
 	// TODO: node.ChainNodeConn
+	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 }
 
 func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
+	chainStore state.Store,
 	nodeConn node.ChainNodeConn,
 	nodeIdentity *cryptolib.KeyPair,
 	processorsConfig *processors.Config,
@@ -46,10 +49,5 @@ func New(
 	var dkRegistry tcrypto.DKShareRegistryProvider // TODO: Get it somehow.
 	var cmtLogStore cmtLog.Store                   // TODO: Get it somehow.
 	var smBlockWAL smGPAUtils.BlockWAL             // TODO: Get it somehow.
-	var chainStore state.Store                     // TODO: Get it somehow.
 	return node.New(ctx, chainID, chainStore, nodeConn, nodeIdentity, processorsConfig, dkRegistry, cmtLogStore, smBlockWAL, net, log)
-}
-
-func ChainList() map[isc.ChainID]Chain {
-	return nil // TODO: ...
 }
