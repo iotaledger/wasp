@@ -170,6 +170,9 @@ func (c *Chains) Activate(chainID *isc.ChainID) error {
 		nil, // TODO: c.nodeConnection,
 		c.registry.GetNodeIdentity(),
 		c.processorConfig,
+		nil, // TODO: dkRegistry tcrypto.DKShareRegistryProvider,
+		nil, // TODO: cmtLogStore cmtLog.Store,
+		nil, // TODO: blockWAL smGPAUtils.BlockWAL
 		c.networkProvider,
 		c.log,
 	)

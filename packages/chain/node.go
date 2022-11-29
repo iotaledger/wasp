@@ -70,13 +70,15 @@ type Chain interface {
 }
 
 type CommitteeInfo struct {
-	Address    iotago.Address
-	Size       uint16
-	Quorum     uint16
-	PeerStatus []*PeerStatus
+	Address       iotago.Address
+	Size          uint16
+	Quorum        uint16
+	QuorumIsAlive bool
+	PeerStatus    []*PeerStatus
 }
 
 type PeerStatus struct {
+	Index     uint16
 	PubKey    *cryptolib.PublicKey
 	NetID     string
 	Connected bool
