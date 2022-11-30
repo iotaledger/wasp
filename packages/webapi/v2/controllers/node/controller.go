@@ -43,13 +43,18 @@ func (c *Controller) Name() string {
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	publicAPI.GET("node/info", c.getInfo).
-		AddResponse(http.StatusOK, "Returns public information about this node.", nil, nil).
-		SetOperationId("getInfo").
-		SetSummary("Returns public information about this node.")
+	publicAPI.GET("node/version", c.getPublicInfo).
+		AddResponse(http.StatusOK, "Returns the version of the node.", "", nil).
+		SetOperationId("getVersion").
+		SetSummary("Returns the node version.")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
+	adminAPI.GET("node/info", c.getInfo).
+		AddResponse(http.StatusOK, "Returns information about this node.", mocker.Get(models.InfoResponse{}), nil).
+		SetOperationId("getInfo").
+		SetSummary("Returns private information about this node.")
+
 	adminAPI.GET("node/peers/trusted", c.getTrustedPeers, authentication.ValidatePermissions([]string{permissions.PeeringRead})).
 		AddResponse(http.StatusOK, "A list of trusted peers", mocker.Get([]models.PeeringNodeIdentityResponse{}), nil).
 		SetSummary("Get trusted peers").
