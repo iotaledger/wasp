@@ -46,12 +46,12 @@ func (hashes *hashVector) Hash() Hash {
 	return blake2b160(buf)
 }
 
-func (h *Hash) Clone() (ret Hash) {
+func (h Hash) Clone() (ret Hash) {
 	copy(ret[:], h[:])
 	return
 }
 
-func (h *Hash) Bytes() []byte {
+func (h Hash) Bytes() []byte {
 	return h[:]
 }
 
@@ -60,12 +60,12 @@ func (h *Hash) Read(r io.Reader) error {
 	return err
 }
 
-func (h *Hash) Write(w io.Writer) error {
+func (h Hash) Write(w io.Writer) error {
 	_, err := w.Write(h[:])
 	return err
 }
 
-func (h *Hash) String() string {
+func (h Hash) String() string {
 	return hex.EncodeToString(h[:])
 }
 
