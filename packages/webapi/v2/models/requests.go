@@ -14,11 +14,11 @@ type OffLedgerRequest struct {
 type ContractCallViewRequest struct {
 	ChainID string `swagger:"desc(The chain id)"`
 
-	ContractName  string
-	ContractHName isc.Hname
+	ContractName  string    `swagger:"desc(The contract name)"`
+	ContractHName isc.Hname `swagger:"desc(The contract name as HName)"`
 
-	FunctionName  string
-	FunctionHName isc.Hname
+	FunctionName  string    `swagger:"desc(The function name)"`
+	FunctionHName isc.Hname `swagger:"desc(The function name as HName)"`
 
-	Arguments dict.Dict
+	Arguments dict.Dict `swagger:"desc(Encoded arguments to be passed to the function)"`
 }
