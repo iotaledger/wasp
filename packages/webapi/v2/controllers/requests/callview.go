@@ -10,7 +10,7 @@ import (
 )
 
 func (c *Controller) executeCallView(e echo.Context) error {
-	var callViewRequest models.ContractCallViewRequest
+	var callViewRequest *models.ContractCallViewRequest
 
 	if err := e.Bind(callViewRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
