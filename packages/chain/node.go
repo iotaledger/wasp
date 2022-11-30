@@ -57,10 +57,14 @@ const (
 	msgTypeChainMgr byte = iota
 )
 
-type Chain interface {
-	ChainCore
+type ChainRequests interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
+}
+
+type Chain interface {
+	ChainCore
+	ChainRequests
 	// ChainID() isc.ChainID
 	// ChainStore() state.Store
 	// Processors() *processors.Cache
