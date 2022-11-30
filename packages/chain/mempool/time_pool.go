@@ -6,6 +6,8 @@ package mempool
 import (
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -14,6 +16,7 @@ type TimePool interface {
 	AddRequest(timestamp time.Time, request isc.Request)
 	TakeTill(timestamp time.Time) []isc.Request
 	Has(reqID *isc.RequestRef) bool
+	Filter(predicate func(request isc.Request) bool)
 }
 
 // Here we implement TimePool. We maintain the request in a list ordered by a timestamp.
@@ -101,6 +104,30 @@ func (tpi *timePoolImpl) TakeTill(timestamp time.Time) []isc.Request {
 func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
 	_, have := tpi.requests[reqRef.AsKey()]
 	return have
+}
+
+func (tpi *timePoolImpl) Filter(predicate func(request isc.Request) bool) {
+	prevNext := &tpi.slots
+	for slot := tpi.slots; slot != nil; slot = slot.next {
+		for ts := range slot.reqs {
+			tsReqs := slot.reqs[ts]
+			for i, req := range tsReqs {
+				if !predicate(req) {
+					tsReqs = slices.Delete(tsReqs, i, i+1)
+				}
+			}
+			slot.reqs[ts] = slices.Clip(tsReqs)
+			if len(slot.reqs[ts]) == 0 {
+				delete(slot.reqs, ts)
+			}
+		}
+		if len(slot.reqs) == 0 {
+			// Drop the current slot, if it is empty, keep the prevNext the same.
+			*prevNext = slot.next
+		} else {
+			prevNext = &slot.next
+		}
+	}
 }
 
 func (tpi *timePoolImpl) timestampSlotBounds(timestamp time.Time) (time.Time, time.Time) {

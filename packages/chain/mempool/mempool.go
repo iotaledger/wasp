@@ -383,9 +383,16 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 
 // A callback for distSync.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
-	// TODO: XXX: ...
-	// TODO: XXX: Have to check, if the current chan head state contains the request!!!!!!!!!!!!!!!!!
-	// TODO: XXX: ...
+	if mpi.chainHeadState != nil {
+		requestID := request.ID()
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
+		if err != nil {
+			panic(xerrors.Errorf("cannot check if request is processed in the blocklog: %w", err))
+		}
+		if processed {
+			return // Already processed.
+		}
+	}
 	olr, ok := request.(isc.OffLedgerRequest)
 	if ok {
 		if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(olr)) {
@@ -619,6 +626,11 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput
 		}
 	}
 	//
+	// Cleanup processed requests, if that's the first time we received the state.
+	if mpi.chainHeadState == nil {
+		mpi.tryCleanupProcessed(vState)
+	}
+	//
 	// Record the head state.
 	mpi.chainHeadState = vState
 	mpi.chainHeadAO = aliasOutput
@@ -691,6 +703,12 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 	}
 }
 
+func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
+	mpi.onLedgerPool.Filter(unprocessedPredicate[isc.OnLedgerRequest](chainState))
+	mpi.offLedgerPool.Filter(unprocessedPredicate[isc.OffLedgerRequest](chainState))
+	mpi.timePool.Filter(unprocessedPredicate[isc.Request](chainState))
+}
+
 func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 	if outMsgs == nil {
 		return
@@ -717,4 +735,15 @@ func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}
 	return nodeID
+}
+
+// Have to have it as a separate function to be able to use type params.
+func unprocessedPredicate[V isc.Request](chainState state.State) func(V) bool {
+	return func(request V) bool {
+		requestID := request.ID()
+		if processed, err := blocklog.IsRequestProcessed(chainState, &requestID); err != nil && processed {
+			return false
+		}
+		return true
+	}
 }
