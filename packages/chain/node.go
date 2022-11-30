@@ -36,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -68,6 +69,9 @@ type Chain interface {
 	// // GetCurrentAccessNodes.
 	// // CommitteeInfo() *CommitteeInfo
 	// GetCommitteeInfo() *CommitteeInfo
+	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
+	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
+	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 }
 
 type CommitteeInfo struct {
@@ -127,7 +131,7 @@ type chainNodeImpl struct {
 	chainID              *isc.ChainID
 	chainMgr             chainMgr.ChainMgr
 	chainStore           state.Store
-	nodeConn             ChainNodeConn
+	nodeConn             NodeConnection
 	mempool              mempool.Mempool
 	stateMgr             statemanager.StateMgr
 	recvAliasOutputPipe  pipe.Pipe
@@ -179,7 +183,7 @@ func New(
 	ctx context.Context,
 	chainID *isc.ChainID,
 	chainStore state.Store,
-	nodeConn ChainNodeConn,
+	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
@@ -606,3 +610,42 @@ func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider { // Comm
 func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo { // All the current candidates.
 	panic("IMPLEMENT: (cni *chainNodeImpl) GetCandidateNodes()") // TODO: Implement.
 }
+
+func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
+	return &consensusPipeMetricsImpl{}
+}
+
+func (cni *chainNodeImpl) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	return cni.nodeConn.GetMetrics()
+}
+
+func (cni *chainNodeImpl) GetConsensusWorkflowStatus() ConsensusWorkflowStatus {
+	return &consensusWorkflowStatusImpl{}
+}
+
+type consensusPipeMetricsImpl struct{}                                        // TODO: Fake data, for now. Review metrics in general.
+func (cpm *consensusPipeMetricsImpl) GetEventStateTransitionMsgPipeSize() int { return 0 }
+func (cpm *consensusPipeMetricsImpl) GetEventPeerLogIndexMsgPipeSize() int    { return 0 }
+func (cpm *consensusPipeMetricsImpl) GetEventACSMsgPipeSize() int             { return 0 }
+func (cpm *consensusPipeMetricsImpl) GetEventVMResultMsgPipeSize() int        { return 0 }
+func (cpm *consensusPipeMetricsImpl) GetEventTimerMsgPipeSize() int           { return 0 }
+
+type consensusWorkflowStatusImpl struct{}                                       // TODO: Fake data, for now. Review metrics in general.
+func (cws *consensusWorkflowStatusImpl) IsStateReceived() bool                  { return false }
+func (cws *consensusWorkflowStatusImpl) IsBatchProposalSent() bool              { return false }
+func (cws *consensusWorkflowStatusImpl) IsConsensusBatchKnown() bool            { return false }
+func (cws *consensusWorkflowStatusImpl) IsVMStarted() bool                      { return false }
+func (cws *consensusWorkflowStatusImpl) IsVMResultSigned() bool                 { return false }
+func (cws *consensusWorkflowStatusImpl) IsTransactionFinalized() bool           { return false }
+func (cws *consensusWorkflowStatusImpl) IsTransactionPosted() bool              { return false }
+func (cws *consensusWorkflowStatusImpl) IsTransactionSeen() bool                { return false }
+func (cws *consensusWorkflowStatusImpl) IsInProgress() bool                     { return false }
+func (cws *consensusWorkflowStatusImpl) GetBatchProposalSentTime() time.Time    { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetConsensusBatchKnownTime() time.Time  { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetVMStartedTime() time.Time            { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetVMResultSignedTime() time.Time       { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetTransactionFinalizedTime() time.Time { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetTransactionPostedTime() time.Time    { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetTransactionSeenTime() time.Time      { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetCompletedTime() time.Time            { return time.Time{} }
+func (cws *consensusWorkflowStatusImpl) GetCurrentStateIndex() uint32           { return 0 }
