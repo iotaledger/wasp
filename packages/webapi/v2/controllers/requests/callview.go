@@ -10,9 +10,9 @@ import (
 )
 
 func (c *Controller) executeCallView(e echo.Context) error {
-	var callViewRequest *models.ContractCallViewRequest
+	var callViewRequest models.ContractCallViewRequest
 
-	if err := e.Bind(callViewRequest); err != nil {
+	if err := e.Bind(&callViewRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
@@ -26,17 +26,11 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	var functionHName = callViewRequest.FunctionHName
 
 	if contractHName == 0 {
-		contractHName, err = isc.HnameFromString(callViewRequest.ContractName)
-		if err != nil {
-			return apierrors.InvalidPropertyError("contractName", err)
-		}
+		contractHName = isc.Hn(callViewRequest.ContractName)
 	}
 
 	if functionHName == 0 {
-		functionHName, err = isc.HnameFromString(callViewRequest.FunctionName)
-		if err != nil {
-			return apierrors.InvalidPropertyError("functionName", err)
-		}
+		functionHName = isc.Hn(callViewRequest.FunctionName)
 	}
 
 	result, err := c.vmService.CallViewByChainID(chainID, contractHName, functionHName, callViewRequest.Arguments)
