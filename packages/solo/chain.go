@@ -646,7 +646,7 @@ func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
 }
 
 // GetNodeConnectionMetrics implements chain.Chain
-func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesMetrics {
+func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("unimplemented")
 }
 
