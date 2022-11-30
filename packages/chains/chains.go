@@ -23,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-type Provider func() *Chains
+type Provider func() *Chains // TODO: Use DI instead of that.
 
 func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
 	return func(chainID *isc.ChainID) chain.Chain {
@@ -61,12 +61,12 @@ func New(
 	log *logger.Logger,
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
-	offledgerBroadcastUpToNPeers int,
-	offledgerBroadcastInterval time.Duration,
-	pullMissingRequestsFromCommittee bool,
+	offledgerBroadcastUpToNPeers int, // TODO: Unused for now.
+	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
+	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	networkProvider peering.NetworkProvider,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
-	rawBlocksEnabled bool,
+	rawBlocksEnabled bool, // TODO: Unused for now.
 	rawBlocksDir string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	allMetrics *metrics.Metrics,

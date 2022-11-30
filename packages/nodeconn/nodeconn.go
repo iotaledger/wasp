@@ -443,3 +443,22 @@ func (nc *nodeConn) promoteBlock(ctx context.Context, blockID iotago.BlockID) er
 
 	return nil
 }
+
+func (nc *nodeConn) PublishTX(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	tx *iotago.Transaction,
+	callback chain.TxPostHandler,
+) {
+	panic("IMPLEMENT: (nc *nodeConn) PublishTX") // TODO: Implement.
+}
+
+func (nc *nodeConn) AttachChain(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	recvRequestCB chain.RequestOutputHandler,
+	recvAliasOutput chain.AliasOutputHandler,
+	recvMilestone chain.MilestoneHandler,
+) {
+	panic("IMPLEMENT: (nc *nodeConn) AttachChain") // TODO: Implement.
+}
