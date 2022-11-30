@@ -19,8 +19,10 @@ package chain
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -73,8 +75,6 @@ type Chain interface {
 	// // HeadStateAnchor (confirmed + unconfirmed).
 	// // GetCurrentCommittee.
 	// // GetCurrentAccessNodes.
-	// // CommitteeInfo() *CommitteeInfo
-	// GetCommitteeInfo() *CommitteeInfo
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
@@ -132,29 +132,31 @@ type ChainNodeConn interface {
 }
 
 type chainNodeImpl struct {
-	me                   gpa.NodeID
-	nodeIdentity         *cryptolib.KeyPair
-	chainID              *isc.ChainID
-	chainMgr             chainMgr.ChainMgr
-	chainStore           state.Store
-	nodeConn             NodeConnection
-	mempool              mempool.Mempool
-	stateMgr             statemanager.StateMgr
-	recvAliasOutputPipe  pipe.Pipe
-	recvTxPublishedPipe  pipe.Pipe
-	recvMilestonePipe    pipe.Pipe
-	consensusInsts       map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	consOutputPipe       pipe.Pipe
-	consRecoverPipe      pipe.Pipe
-	publishingTXes       map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
-	procCache            *processors.Cache                           // Cache for the SC processors.
-	activeCommitteeNodes []*cryptolib.PublicKey                      // The nodes acting as a committee for the latest consensus.
-	activeAccessNodes    []*cryptolib.PublicKey                      // All the nodes authorized for being access nodes (for the ActiveAO).
-	netRecvPipe          pipe.Pipe
-	netPeeringID         peering.PeeringID
-	netPeerPubs          map[gpa.NodeID]*cryptolib.PublicKey
-	net                  peering.NetworkProvider
-	log                  *logger.Logger
+	me                     gpa.NodeID
+	nodeIdentity           *cryptolib.KeyPair
+	chainID                *isc.ChainID
+	chainMgr               chainMgr.ChainMgr
+	chainStore             state.Store
+	nodeConn               NodeConnection
+	mempool                mempool.Mempool
+	stateMgr               statemanager.StateMgr
+	recvAliasOutputPipe    pipe.Pipe
+	recvTxPublishedPipe    pipe.Pipe
+	recvMilestonePipe      pipe.Pipe
+	consensusInsts         map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
+	consOutputPipe         pipe.Pipe
+	consRecoverPipe        pipe.Pipe
+	publishingTXes         map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
+	procCache              *processors.Cache                           // Cache for the SC processors.
+	activeAccessLock       *sync.RWMutex                               // Mutex for accessing the active* fields from other threads.
+	activeCommitteeDKShare tcrypto.DKShare                             // DKShare of the current active committee.
+	activeCommitteeNodes   []*cryptolib.PublicKey                      // The nodes acting as a committee for the latest consensus.
+	activeAccessNodes      []*cryptolib.PublicKey                      // All the nodes authorized for being access nodes (for the ActiveAO).
+	netRecvPipe            pipe.Pipe
+	netPeeringID           peering.PeeringID
+	netPeerPubs            map[gpa.NodeID]*cryptolib.PublicKey
+	net                    peering.NetworkProvider
+	log                    *logger.Logger
 }
 
 type consensusInst struct {
@@ -200,25 +202,27 @@ func New(
 ) (Chain, error) {
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
-		nodeIdentity:         nodeIdentity,
-		chainID:              chainID,
-		chainStore:           chainStore,
-		nodeConn:             nodeConn,
-		recvAliasOutputPipe:  pipe.NewDefaultInfinitePipe(),
-		recvTxPublishedPipe:  pipe.NewDefaultInfinitePipe(),
-		recvMilestonePipe:    pipe.NewDefaultInfinitePipe(),
-		consensusInsts:       map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
-		consOutputPipe:       pipe.NewDefaultInfinitePipe(),
-		consRecoverPipe:      pipe.NewDefaultInfinitePipe(),
-		publishingTXes:       map[iotago.TransactionID]context.CancelFunc{},
-		procCache:            processors.MustNew(processorConfig),
-		activeCommitteeNodes: []*cryptolib.PublicKey{},
-		activeAccessNodes:    []*cryptolib.PublicKey{},
-		netRecvPipe:          pipe.NewDefaultInfinitePipe(),
-		netPeeringID:         netPeeringID,
-		netPeerPubs:          map[gpa.NodeID]*cryptolib.PublicKey{},
-		net:                  net,
-		log:                  log,
+		nodeIdentity:           nodeIdentity,
+		chainID:                chainID,
+		chainStore:             chainStore,
+		nodeConn:               nodeConn,
+		recvAliasOutputPipe:    pipe.NewDefaultInfinitePipe(),
+		recvTxPublishedPipe:    pipe.NewDefaultInfinitePipe(),
+		recvMilestonePipe:      pipe.NewDefaultInfinitePipe(),
+		consensusInsts:         map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
+		consOutputPipe:         pipe.NewDefaultInfinitePipe(),
+		consRecoverPipe:        pipe.NewDefaultInfinitePipe(),
+		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
+		procCache:              processors.MustNew(processorConfig),
+		activeAccessLock:       &sync.RWMutex{},
+		activeCommitteeDKShare: nil,
+		activeCommitteeNodes:   []*cryptolib.PublicKey{},
+		activeAccessNodes:      []*cryptolib.PublicKey{},
+		netRecvPipe:            pipe.NewDefaultInfinitePipe(),
+		netPeeringID:           netPeeringID,
+		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                    net,
+		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
@@ -353,9 +357,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
 func (cni *chainNodeImpl) handleAccessNodesCB(accessNodes []*cryptolib.PublicKey) {
+	cni.activeAccessLock.Lock()
 	cni.activeAccessNodes = accessNodes
-	cni.log.Infof("Access nodes updated: %+v", cni.activeAccessNodes)
-	cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, accessNodes)
+	activeCommitteeNodes := cni.activeCommitteeNodes
+	cni.activeAccessLock.Unlock()
+	cni.log.Infof("Access nodes updated: %+v", accessNodes)
+	cni.mempool.AccessNodesUpdated(activeCommitteeNodes, accessNodes)
 	cni.stateMgr.AccessNodesUpdated(accessNodes)
 }
 
@@ -488,8 +495,13 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
 		//
 		// Update committee nodes, if changed.
+		cni.activeAccessLock.Lock()
+		cni.activeCommitteeDKShare = needConsensus.DKShare
+		cni.activeAccessLock.Unlock()
 		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
+			cni.activeAccessLock.Lock()
 			cni.activeCommitteeNodes = ci.committee
+			cni.activeAccessLock.Unlock()
 			cni.log.Infof("Committee nodes updated: %+v", cni.activeCommitteeNodes)
 			cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, cni.activeAccessNodes)
 		}
@@ -610,7 +622,47 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 }
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
-	panic("IMPLEMENT: (cni *chainNodeImpl) GetCommitteeInfo()") // TODO: Implement.
+	cni.activeAccessLock.RLock()
+	dkShare := cni.activeCommitteeDKShare
+	cni.activeAccessLock.RUnlock()
+	if dkShare == nil {
+		return nil // There is no current committee for now.
+	}
+	committeePubKeys := dkShare.GetNodePubKeys()
+	netPeerStatus := cni.net.PeerStatus()
+	peerStatus := make([]*PeerStatus, len(committeePubKeys))
+	connectedCount := uint16(0)
+	for i, nodePubKey := range committeePubKeys {
+		index := slices.IndexFunc(netPeerStatus, func(st peering.PeerStatusProvider) bool {
+			return st.PubKey().Equals(nodePubKey)
+		})
+		if index == -1 {
+			peerStatus[i] = &PeerStatus{
+				Index:     uint16(i),
+				PubKey:    nodePubKey,
+				NetID:     "",
+				Connected: false,
+			}
+			continue
+		}
+		peerStatus[i] = &PeerStatus{
+			Index:     uint16(i),
+			PubKey:    nodePubKey,
+			NetID:     netPeerStatus[index].NetID(),
+			Connected: netPeerStatus[index].IsAlive(),
+		}
+		if netPeerStatus[index].IsAlive() {
+			connectedCount++
+		}
+	}
+	ci := &CommitteeInfo{
+		Address:       dkShare.GetAddress(),
+		Size:          dkShare.GetN(),
+		Quorum:        dkShare.GetT(),
+		QuorumIsAlive: connectedCount >= dkShare.GetT(),
+		PeerStatus:    peerStatus,
+	}
+	return ci
 }
 
 func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider { // CommitteeNodes + AccessNodes

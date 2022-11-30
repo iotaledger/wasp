@@ -93,9 +93,13 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 	chain := w.chains().Get(chainID)
 	committeeInfo := chain.GetCommitteeInfo()
-	dkShare, err := w.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
-	if err != nil {
-		return err
+	var dkShare tcrypto.DKShare
+	if committeeInfo != nil {
+		// Consider the committee as empty, if there is no current active committee.
+		dkShare, err = w.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
+		if err != nil {
+			return err
+		}
 	}
 
 	chainNodes := chain.GetChainNodes()
@@ -120,7 +124,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	acnNodes := makeAcnNodes(dkShare, chainNodes, peeringStatus, candidateNodes, inChainNodes)
 
 	//
-	// Candidate nodes have suplied applications, but are not included
+	// Candidate nodes have supplied applications, but are not included
 	// in the committee and to the set of the access nodes.
 	cndNodes, err := makeCndNodes(peeringStatus, candidateNodes, inChainNodes)
 	if err != nil {
@@ -155,9 +159,11 @@ func makeCmtNodes(
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
 ) []*model.ChainNodeStatus {
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
-	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-		cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
-		inChainNodes[cmtNodePubKey.AsKey()] = true
+	if dkShare != nil {
+		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+			cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
+			inChainNodes[cmtNodePubKey.AsKey()] = true
+		}
 	}
 	return cmtNodes
 }
@@ -173,10 +179,12 @@ func makeAcnNodes(
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
-		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-			if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
-				skip = true
-				break
+		if dkShare != nil {
+			for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+				if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
+					skip = true
+					break
+				}
 			}
 		}
 		if skip {

@@ -22,7 +22,7 @@ type NodeConnection interface {
 
 type ChainCore interface {
 	ID() *isc.ChainID
-	GetCommitteeInfo() *CommitteeInfo
+	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Processors() *processors.Cache
 	GetStateReader() state.Store                     // TODO: Rename to GetStore.
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
