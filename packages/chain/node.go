@@ -43,6 +43,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -59,6 +60,7 @@ const (
 type Chain interface {
 	ChainCore
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
+	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
 	// ChainID() isc.ChainID
 	// ChainStore() state.Store
 	// Processors() *processors.Cache
@@ -287,6 +289,10 @@ func New(
 func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 	// TODO: What to do with the sender's pub key?
 	cni.mempool.ReceiveOffLedgerRequest(request)
+}
+
+func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
+	return cni.mempool.AwaitRequestProcessed(ctx, requestID)
 }
 
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {

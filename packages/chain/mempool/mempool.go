@@ -62,10 +62,11 @@ import (
 )
 
 const (
-	distShareDebugTick      = 10 * time.Second
-	distShareTimeTick       = 3 * time.Second
-	distShareMaxMsgsPerTick = 100
-	waitRequestCleanupEvery = 10
+	distShareDebugTick        = 10 * time.Second
+	distShareTimeTick         = 3 * time.Second
+	distShareMaxMsgsPerTick   = 100
+	waitRequestCleanupEvery   = 10
+	waitProcessedCleanupEvery = 100
 )
 
 // Interface the mempool needs form the StateMgr.
@@ -95,6 +96,9 @@ type Mempool interface {
 	// This is called when this node receives an off-ledger request from a user directly.
 	// I.e. when this node is an entry point of the off-ledger request.
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest)
+	// Allows a client to synchronize on a request. The channel will emit a receipt, when the
+	// specified request will be processed. The query can be canceled via the context.
+	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
 	// Invoked by the ChainMgr when a time of a tangle changes.
 	TangleTimeUpdated(tangleTime time.Time)
 	// Invoked by the chain when a set of access nodes has changed.
@@ -132,10 +136,12 @@ type mempoolImpl struct {
 	committeeNodes                 []*cryptolib.PublicKey
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposals
+	waitProcessed                  WaitProcessed
 	reqConsensusProposalsPipe      pipe.Pipe
 	reqConsensusRequestsPipe       pipe.Pipe
 	reqReceiveOnLedgerRequestPipe  pipe.Pipe
 	reqReceiveOffLedgerRequestPipe pipe.Pipe
+	reqAwaitRequestProcessedPipe   pipe.Pipe
 	reqTangleTimeUpdatedPipe       pipe.Pipe
 	reqTrackNewChainHeadPipe       pipe.Pipe
 	netRecvPipe                    pipe.Pipe
@@ -151,6 +157,12 @@ var _ Mempool = &mempoolImpl{}
 const (
 	msgTypeMempool byte = iota
 )
+
+type reqAwaitRequestProcessed struct {
+	ctx        context.Context
+	requestID  isc.RequestID
+	responseCh chan<- *blocklog.RequestReceipt
+}
 
 type reqAccessNodesUpdated struct {
 	committeePubKeys  []*cryptolib.PublicKey
@@ -192,10 +204,12 @@ func New(
 		committeeNodes:                 []*cryptolib.PublicKey{},
 		waitReq:                        waitReq,
 		waitChainHead:                  []*reqConsensusProposals{},
+		waitProcessed:                  NewWaitProcessed(waitProcessedCleanupEvery),
 		reqConsensusProposalsPipe:      pipe.NewDefaultInfinitePipe(),
 		reqConsensusRequestsPipe:       pipe.NewDefaultInfinitePipe(),
 		reqReceiveOnLedgerRequestPipe:  pipe.NewDefaultInfinitePipe(),
 		reqReceiveOffLedgerRequestPipe: pipe.NewDefaultInfinitePipe(),
+		reqAwaitRequestProcessedPipe:   pipe.NewDefaultInfinitePipe(),
 		reqTangleTimeUpdatedPipe:       pipe.NewDefaultInfinitePipe(),
 		reqTrackNewChainHeadPipe:       pipe.NewDefaultInfinitePipe(),
 		netRecvPipe:                    pipe.NewDefaultInfinitePipe(),
@@ -240,6 +254,12 @@ func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
 }
 
+func (mpi *mempoolImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
+	responseCh := make(chan *blocklog.RequestReceipt, 1)
+	mpi.reqAwaitRequestProcessedPipe.In() <- &reqAwaitRequestProcessed{ctx, requestID, responseCh}
+	return responseCh
+}
+
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
 	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
 }
@@ -272,6 +292,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
 	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
 	reqReceiveOffLedgerRequestPipeOutCh := mpi.reqReceiveOffLedgerRequestPipe.Out()
+	reqAwaitRequestProcessedPipeOutCh := mpi.reqAwaitRequestProcessedPipe.Out()
 	reqTangleTimeUpdatedPipeOutCh := mpi.reqTangleTimeUpdatedPipe.Out()
 	reqTrackNewChainHeadPipeOutCh := mpi.reqTrackNewChainHeadPipe.Out()
 	netRecvPipeOutCh := mpi.netRecvPipe.Out()
@@ -310,6 +331,12 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 				break
 			}
 			mpi.handleReceiveOffLedgerRequest(recv.(isc.OffLedgerRequest))
+		case recv, ok := <-reqAwaitRequestProcessedPipeOutCh:
+			if !ok {
+				reqAwaitRequestProcessedPipeOutCh = nil
+				break
+			}
+			mpi.handleAwaitRequestProcessed(recv.(*reqAwaitRequestProcessed))
 		case recv, ok := <-reqTangleTimeUpdatedPipeOutCh:
 			if !ok {
 				reqTangleTimeUpdatedPipeOutCh = nil
@@ -511,6 +538,24 @@ func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerReque
 	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
 }
 
+func (mpi *mempoolImpl) handleAwaitRequestProcessed(recv *reqAwaitRequestProcessed) {
+	if mpi.chainHeadState != nil {
+		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &recv.requestID)
+		if err != nil {
+			mpi.log.Warnf("error while getting request receipt from blocklog: %v", err)
+			recv.responseCh <- nil
+			close(recv.responseCh)
+			return
+		}
+		if receipt != nil {
+			recv.responseCh <- receipt
+			close(recv.responseCh)
+			return
+		}
+	}
+	mpi.waitProcessed.Await(recv)
+}
+
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	oldTangleTime := mpi.tangleTime
 	mpi.tangleTime = tangleTime
@@ -569,6 +614,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput
 		mpi.metrics.CountBlocksPerChain()
 		for _, receipt := range blockReceipts {
 			mpi.metrics.CountRequestOut()
+			mpi.waitProcessed.Processed(receipt)
 			mpi.tryRemoveRequest(receipt.Request)
 		}
 	}
