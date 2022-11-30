@@ -42,8 +42,7 @@ func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
-	publicKey, err = NewPublicKeyFromBytes(b)
-	return publicKey, err
+	return NewPublicKeyFromBytes(b)
 }
 
 func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
