@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,6 +19,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -234,6 +234,24 @@ func TestLoop(t *testing.T) {
 			baseTokensSent,
 		)
 	}
+}
+
+func TestCallViewGasLimit(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	loop := env.deployLoopContract(ethKey)
+
+	callArguments, err := loop.abi.Pack("loop")
+	require.NoError(t, err)
+	senderAddress := crypto.PubkeyToAddress(loop.defaultSender.PublicKey)
+	callMsg := loop.callMsg(ethereum.CallMsg{
+		From:     senderAddress,
+		Gas:      math.MaxUint64,
+		GasPrice: evm.GasPrice,
+		Data:     callArguments,
+	})
+	_, err = loop.chain.evmChain.CallContract(callMsg, latestBlock)
+	require.Contains(t, err.Error(), "gas limit exceeds maximum allowed")
 }
 
 func TestMagicContract(t *testing.T) {
@@ -650,6 +668,8 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
+	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex
+
 	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
 		"send",
@@ -670,7 +690,11 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
-	time.Sleep(1 * time.Second) // wait a bit for the request going out of EVM to be processed by ISC
+
+	// wait a bit for the request going out of EVM to be processed by ISC
+	env.soloChain.WaitUntil(func(mempool.MempoolInfo) bool {
+		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
+	})
 
 	// assert inc counter was incremented
 	checkCounter(1)
