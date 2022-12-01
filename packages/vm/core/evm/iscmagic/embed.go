@@ -8,25 +8,11 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // If you change any of the .sol files, you must recompile.  You will need
 // the `solc` binary installed in your system. Then, simply run `go generate`
 // in this directory.
-
-const (
-	addressTypeISCMagic = iota
-	addressTypeERC20BaseTokens
-	addressTypeERC20NativeTokens
-	addressTypeERC721NFTs
-)
-
-var (
-	AddressPrefix = []byte{0x10, 0x74}
-	Address       = makeMagicAddress(addressTypeISCMagic, nil)
-)
 
 //go:generate sh -c "solc --abi --overwrite @iscmagic=`realpath .` ISCSandbox.sol -o ."
 //go:generate sh -c "solc --abi --overwrite @iscmagic=`realpath .` ISCUtil.sol -o ."
@@ -55,7 +41,7 @@ var (
 	erc20BaseRuntimeBytecodeHex    string
 	ERC20BaseTokensRuntimeBytecode = common.FromHex(strings.TrimSpace(erc20BaseRuntimeBytecodeHex))
 
-	ERC20BaseTokensAddress = makeMagicAddress(addressTypeERC20BaseTokens, nil)
+	ERC20BaseTokensAddress = packMagicAddress(addressKindERC20BaseTokens, nil)
 )
 
 //go:generate sh -c "solc --abi --bin-runtime --storage-layout --overwrite @iscmagic=`realpath .` ERC20NativeTokens.sol -o ."
@@ -68,14 +54,6 @@ var (
 	ERC20NativeTokensRuntimeBytecode    = common.FromHex(strings.TrimSpace(erc20NativeTokensRuntimeBytecodeHex))
 )
 
-func ERC20NativeTokensAddress(foundrySN uint32) common.Address {
-	return makeMagicAddress(addressTypeERC20NativeTokens, codec.EncodeUint32(foundrySN))
-}
-
-func ERC20NativeTokensFoundrySN(addr common.Address) uint32 {
-	return codec.MustDecodeUint32(addr[3:7])
-}
-
 //go:generate sh -c "solc --abi --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTs.sol -o ."
 var (
 	//go:embed ERC721NFTs.abi
@@ -84,17 +62,5 @@ var (
 	erc721NFTsBytecodeHex     string
 	ERC721NFTsRuntimeBytecode = common.FromHex(strings.TrimSpace(erc721NFTsBytecodeHex))
 
-	ERC721NFTsAddress = makeMagicAddress(addressTypeERC721NFTs, nil)
+	ERC721NFTsAddress = packMagicAddress(addressKindERC721NFTs, nil)
 )
-
-func makeMagicAddress(kind byte, payload []byte) common.Address {
-	var ret common.Address
-	// 2 bytes 1074 prefix + 1 byte "kind"
-	if len(payload) > common.AddressLength-3 {
-		panic("makeMagicAddress: invalid payload length")
-	}
-	copy(ret[0:2], AddressPrefix)
-	ret[2] = kind
-	copy(ret[3:], payload)
-	return ret
-}
