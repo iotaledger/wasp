@@ -1350,14 +1350,27 @@ func TestSandboxStackOverflow(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "testStackOverflow")
 
-	require.Error(t, err)
-	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
-
-	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
 
 	// view call
 	err = iscTest.callView("testStackOverflow", nil, nil)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+}
+
+func TestStaticCall(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	res, err := iscTest.callFn([]ethCallOptions{{
+		sender: ethKey,
+	}}, "testStaticCall")
+	require.NoError(t, err)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex)
+	require.NoError(t, err)
+	require.Len(t, ev, 1)
+	require.Contains(t, ev[0], "non-static")
 }
