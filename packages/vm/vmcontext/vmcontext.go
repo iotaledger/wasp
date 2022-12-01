@@ -183,8 +183,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	}
 
 	stateCommitment := trie.RootCommitment(vmctx.virtualState.TrieNodeStore())
-	blockHash := state.BlockHashFromData(block.EssenceBytes())
-	l1Commitment := state.NewL1Commitment(stateCommitment, blockHash)
+	l1Commitment := state.NewL1Commitment(stateCommitment, block.GetHash())
 
 	blockIndex := vmctx.virtualState.BlockIndex()
 	timestamp := vmctx.virtualState.Timestamp()

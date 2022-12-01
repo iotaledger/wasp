@@ -103,6 +103,10 @@ func (chid ChainID) String() string {
 	return chid.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
+func (chid *ChainID) ShortString() string {
+	return chid.AsAddress().String()[2:8]
+}
+
 func (chid *ChainID) AsAddress() iotago.Address {
 	ret := iotago.AliasAddress(*chid)
 	return &ret

@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -92,10 +93,10 @@ func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
 	b.stateOutputID = oid
 }
 
-func (b *blockImpl) EssenceBytes() []byte {
+func (b *blockImpl) essenceBytes() []byte {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
-		panic("EssenceBytes")
+		panic("essenceBytes")
 	}
 	return buf.Bytes()
 }
@@ -163,4 +164,14 @@ func (b *blockImpl) readOutputID(r io.Reader) error {
 	b.stateOutputID = &iotago.UTXOInput{}
 	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
 	return err
+}
+
+func (b *blockImpl) GetHash() (ret BlockHash) {
+	r := blake2b.Sum256(b.essenceBytes())
+	copy(ret[:BlockHashSize], r[:BlockHashSize])
+	return
+}
+
+func (b *blockImpl) Equals(other Block) bool {
+	return b.GetHash().Equals(other.GetHash())
 }

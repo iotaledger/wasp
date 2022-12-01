@@ -112,7 +112,7 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), state.BlockHashFromData(block.EssenceBytes())).Bytes(),
+				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), block.GetHash()).Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Features:       consumedOutput.Features,

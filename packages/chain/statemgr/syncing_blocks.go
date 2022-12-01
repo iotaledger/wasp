@@ -104,7 +104,7 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 
 func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualStateAccess) {
 	stateIndex := block.BlockIndex()
-	hash := state.BlockHashFromData(block.EssenceBytes())
+	hash := block.GetHash()
 	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %s; next state provided: %v", stateIndex, hash, nextState != nil)
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {

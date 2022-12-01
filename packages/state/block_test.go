@@ -51,14 +51,14 @@ func TestBatches(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 2, block2.BlockIndex())
 	assert.EqualValues(t, block1Bin, block2.Bytes())
-	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
+	assert.EqualValues(t, block1.(*blockImpl).essenceBytes(), block2.(*blockImpl).essenceBytes())
 
 	outID := tpkg.RandOutputID(0).UTXOInput()
 	block1.SetApprovingOutputID(outID)
-	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
+	assert.EqualValues(t, block1.(*blockImpl).essenceBytes(), block2.(*blockImpl).essenceBytes())
 
 	block2.SetApprovingOutputID(outID)
-	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())
+	assert.EqualValues(t, block1.(*blockImpl).essenceBytes(), block2.(*blockImpl).essenceBytes())
 	assert.EqualValues(t, block1.Bytes(), block2.Bytes())
 
 	assert.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(block2))

@@ -8,6 +8,14 @@ import "encoding"
 
 type NodeID string
 
+func (niT NodeID) Equals(other NodeID) bool {
+	return niT == other
+}
+
+func (niT NodeID) String() string {
+	return string(niT)
+}
+
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler

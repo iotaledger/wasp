@@ -7,7 +7,6 @@ import (
 	"io"
 	"math/rand"
 
-	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
@@ -34,12 +33,6 @@ const (
 
 var l1CommitmentSize = len(NewL1Commitment(model.NewVectorCommitment(), BlockHash{}).Bytes())
 
-func BlockHashFromData(data []byte) (ret BlockHash) {
-	r := blake2b.Sum256(data)
-	copy(ret[:BlockHashSize], r[:BlockHashSize])
-	return
-}
-
 func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		StateCommitment: c,
@@ -49,6 +42,10 @@ func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 
 func (bh BlockHash) String() string {
 	return iotago.EncodeHex(bh[:])
+}
+
+func (bh BlockHash) Equals(bh2 BlockHash) bool {
+	return bh == bh2
 }
 
 func L1CommitmentFromBytes(data []byte) (L1Commitment, error) {

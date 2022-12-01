@@ -314,7 +314,7 @@ func extractBlocks(dbDir string, from uint32, targetDir string) {
 			fmt.Printf("error: failed to load block data for index #%d: %v\n", idx, err)
 			continue
 		}
-		fname := snapshot.BlockFileName(dbDir, idx, state.BlockHashFromData(blk.EssenceBytes()))
+		fname := snapshot.BlockFileName(dbDir, idx, blk.GetHash())
 		fullName := path.Join(targetDir, fname)
 		err = os.WriteFile(fullName, blk.Bytes(), 0o600)
 		if err != nil {
