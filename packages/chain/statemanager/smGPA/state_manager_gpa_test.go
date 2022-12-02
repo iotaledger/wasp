@@ -137,7 +137,7 @@ func TestFull(t *testing.T) {
 	lastCommitment := state.OriginL1Commitment()
 
 	confirmAndWaitFun := func(stateOutput *isc.AliasOutputWithID) bool {
-		env.sendInputToNodes(func() gpa.Input {
+		env.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
 			return smInputs.NewChainReceiveConfirmedAliasOutput(stateOutput)
 		})
 
@@ -151,34 +151,32 @@ func TestFull(t *testing.T) {
 		return env.isAllNodesAtState(stateOutput)
 	}
 
-	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseCommitment *state.L1Commitment, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []*state.L1Commitment) {
+	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseCommitment *state.L1Commitment, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []state.Block) {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
 		blocks, aliasOutputs := env.bf.GetBlocksFrom(t, iterationSize, 1, baseCommitment, baseAliasOutput, incrementFactor...)
-		commitments := make([]*state.L1Commitment, len(blocks))
-		for j, block := range blocks {
+		for _, block := range blocks {
 			env.sendBlocksToNode(nodeIDs[rand.Intn(nodeCount)], block)
-			commitments[j] = block.L1Commitment()
 		}
 		confirmOutput := aliasOutputs[rand.Intn(iterationSize-1)] // Do not confirm the last state/blocks
 		t.Logf("Iteration %v: approving output index %v, id %v", i, confirmOutput.GetStateIndex(), confirmOutput)
 		require.True(t, confirmAndWaitFun(confirmOutput))
-		return aliasOutputs, commitments
+		return aliasOutputs, blocks
 	}
 
 	var branchAliasOutput *isc.AliasOutputWithID
 	var branchCommitment *state.L1Commitment
-	oldCommitments := make([]*state.L1Commitment, 0)
+	oldBlocks := make([]state.Block, 0)
 	for i := 0; i < iterationCount; i++ {
-		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 1)
+		aliasOutputs, blocks := testIterationFun(i, lastAliasOutput, lastCommitment, 1)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
-		lastCommitment = commitments[iterationSize-1]
+		lastCommitment = blocks[iterationSize-1].L1Commitment()
 		if i == 1 {
 			branchIndex := rand.Intn(iterationSize)
 			branchAliasOutput = aliasOutputs[branchIndex]
-			branchCommitment = commitments[branchIndex]
-			oldCommitments = append(oldCommitments, commitments[branchIndex+1:]...)
+			branchCommitment = blocks[branchIndex].L1Commitment()
+			oldBlocks = append(oldBlocks, blocks[branchIndex+1:]...)
 		} else if i == 2 {
-			oldCommitments = append(oldCommitments, commitments...)
+			oldBlocks = append(oldBlocks, blocks...)
 		}
 	}
 	require.True(t, confirmAndWaitFun(lastAliasOutput))
@@ -188,12 +186,12 @@ func TestFull(t *testing.T) {
 	require.NotNil(t, branchAliasOutput)
 	lastAliasOutput = branchAliasOutput
 	lastCommitment = branchCommitment
-	newCommitments := make([]*state.L1Commitment, 0)
+	newBlocks := make([]state.Block, 0)
 	for i := 0; i < iterationCount; i++ {
-		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 2)
+		aliasOutputs, blocks := testIterationFun(i, lastAliasOutput, lastCommitment, 2)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
-		lastCommitment = commitments[iterationSize-1]
-		newCommitments = append(newCommitments, commitments...)
+		lastCommitment = blocks[iterationSize-1].L1Commitment()
+		newBlocks = append(newBlocks, blocks...)
 	}
 	require.True(t, confirmAndWaitFun(lastAliasOutput))
 	newAliasOutput := lastAliasOutput
@@ -203,7 +201,63 @@ func TestFull(t *testing.T) {
 		request, responseCh := smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
 		env.t.Logf("Requesting state for Mempool from node %s", nodeID)
 		env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: request}).RunAll()
-		require.NoError(env.t, env.requireReceiveMempoolResults(responseCh, oldCommitments, newCommitments, 5*time.Second))
+		require.NoError(env.t, env.requireReceiveMempoolResults(responseCh, oldBlocks, newBlocks, 5*time.Second))
+	}
+}
+
+// 15 nodes setting.
+// 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
+//	  first node.
+// 2. A node is selected at random in the middle (from index 5 to 12), and a
+//	  branch of 5 nodes is generated.
+// 3. For each node a common ancestor (mempool) request is sent and the successful
+//	  completion is waited for; each check fires a timer event to force
+// 	  the exchange of blocks between nodes.
+func TestMempoolRequest(t *testing.T) {
+	nodeCount := 15
+	mainSize := 20
+	randomFrom := 5
+	randomTo := 12
+	branchSize := 5
+	maxRetries := 100
+
+	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
+	smTimers := NewStateManagerTimers()
+	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	defer env.finalize()
+
+	mainBlocks, mainAliasOutputs := env.bf.GetBlocks(env.t, mainSize, 1)
+	branchIndex := randomFrom + rand.Intn(randomTo-randomFrom)
+	branchBlocks, branchAliasOutputs := env.bf.GetBlocksFrom(env.t, branchSize, 1, mainBlocks[branchIndex].L1Commitment(), mainAliasOutputs[branchIndex], 2)
+
+	env.sendBlocksToNode(nodeIDs[0], mainBlocks...)
+	env.sendBlocksToNode(nodeIDs[0], branchBlocks...)
+
+	respChans := make(map[gpa.NodeID]<-chan *smInputs.MempoolStateRequestResults)
+	oldAliasOutput := mainAliasOutputs[len(mainAliasOutputs)-1]
+	newAliasOutput := branchAliasOutputs[len(branchAliasOutputs)-1]
+	env.sendInputToNodes(func(nodeID gpa.NodeID) gpa.Input {
+		input, respChan := smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
+		respChans[nodeID] = respChan
+		return input
+	})
+
+	oldBlocks := mainBlocks[branchIndex+1:]
+	for _, nodeID := range nodeIDs[1:] {
+		env.t.Logf("Waiting for response from node %s", nodeID)
+		respChan, ok := respChans[nodeID]
+		require.True(env.t, ok)
+		received := false
+		for i := 0; i < maxRetries && !received; i++ {
+			t.Logf("\twaiting for blocks to propagate through nodes: %v", i)
+			if env.requireReceiveMempoolResults(respChan, oldBlocks, branchBlocks, 0*time.Second) == nil {
+				received = true
+			} else {
+				env.sendTimerTickToNodes(smTimers.StateManagerGetBlockRetry)
+			}
+		}
+		require.True(env.t, received)
 	}
 }
 
@@ -350,22 +404,23 @@ func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint3
 	}
 }
 
-func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.MempoolStateRequestResults, oldCommitments, newCommitments []*state.L1Commitment, timeout time.Duration) error {
+func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.MempoolStateRequestResults, oldBlocks, newBlocks []state.Block, timeout time.Duration) error {
 	select {
 	case msrr := <-respChan:
-		require.True(teT.t, msrr.GetNewState().TrieRoot().Equals(newCommitments[len(newCommitments)-1].GetTrieRoot()))
-		requireEqualsFun := func(expectedCommitments []*state.L1Commitment, received []state.Block) {
-			require.Equal(teT.t, len(expectedCommitments), len(received))
-			for i := range expectedCommitments {
+		require.True(teT.t, msrr.GetNewState().TrieRoot().Equals(newBlocks[len(newBlocks)-1].TrieRoot()))
+		requireEqualsFun := func(expected, received []state.Block) {
+			require.Equal(teT.t, len(expected), len(received))
+			for i := range expected {
+				expectedCommitment := expected[i].L1Commitment()
 				receivedCommitment := received[i].L1Commitment()
-				teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expectedCommitments[i], receivedCommitment)
-				require.True(teT.t, expectedCommitments[i].Equals(receivedCommitment))
+				teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expectedCommitment, receivedCommitment)
+				require.True(teT.t, expectedCommitment.Equals(receivedCommitment))
 			}
 		}
 		teT.t.Logf("Checking added blocks...")
-		requireEqualsFun(newCommitments, msrr.GetAdded())
+		requireEqualsFun(newBlocks, msrr.GetAdded())
 		teT.t.Logf("Checking removed blocks...")
-		requireEqualsFun(oldCommitments, msrr.GetRemoved())
+		requireEqualsFun(oldBlocks, msrr.GetRemoved())
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive mempool results timeouted")
@@ -376,15 +431,15 @@ func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
 	now := teT.timeProvider.GetNow().Add(delay)
 	teT.timeProvider.SetNow(now)
 	teT.t.Logf("Time %v is sent to nodes %v", now, teT.nodeIDs)
-	teT.sendInputToNodes(func() gpa.Input {
+	teT.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
 		return smInputs.NewStateManagerTimerTick(now)
 	})
 }
 
-func (teT *testEnv) sendInputToNodes(makeInputFun func() gpa.Input) {
+func (teT *testEnv) sendInputToNodes(makeInputFun func(gpa.NodeID) gpa.Input) {
 	inputs := make(map[gpa.NodeID]gpa.Input)
 	for _, nodeID := range teT.nodeIDs {
-		inputs[nodeID] = makeInputFun()
+		inputs[nodeID] = makeInputFun(nodeID)
 	}
 	teT.tc.WithInputs(inputs).RunAll()
 }
