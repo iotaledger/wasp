@@ -111,12 +111,8 @@ func New(
 }
 
 // -------------------------------------
-// Implementations of node.ChainStateMgr
+// Implementations for node package
 // -------------------------------------
-
-func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (vs state.State, added, removed []state.Block) {
-	panic("to be implemented")
-}
 
 func (smT *stateManager) ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) {
 	smT.addInput(smInputs.NewChainReceiveConfirmedAliasOutput(aliasOutput))
@@ -147,6 +143,26 @@ func (smT *stateManager) ConsensusDecidedState(ctx context.Context, aliasOutput 
 
 func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan error {
 	input, resultCh := smInputs.NewConsensusBlockProduced(ctx, stateDraft)
+	smT.addInput(input)
+	return resultCh
+}
+
+// -------------------------------------
+// Implementations for mempool.StateMgr
+// -------------------------------------
+
+//vs, kaip suprantu yra pagal nextAO, added yra blokai nuo common iki nextAO, removed - blokai nuo common iki prevAO
+//Common - excluded tuose listuose.
+// TODO: Temporary function to make synchronous request asynchronous
+func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (state.State, []state.Block, []state.Block) {
+	resultCh := smT.mempoolStateRequestAsync(ctx, prevAO, nextAO)
+	result := <-resultCh // NOTE: blocks to wait for result... maybe infinitely.
+	return result.GetNewState(), result.GetAdded(), result.GetRemoved()
+}
+
+// TODO: Future interface function instead of `MempoolStateRequest`
+func (smT *stateManager) mempoolStateRequestAsync(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *smInputs.MempoolStateRequestResults {
+	input, resultCh := smInputs.NewMempoolStateRequest(ctx, prevAO, nextAO)
 	smT.addInput(input)
 	return resultCh
 }

@@ -66,6 +66,16 @@ func newStateBlockRequestFromConsensusDecidedState(input *smInputs.ConsensusDeci
 	return result
 }
 
+func newStateBlockRequestFromMempool(typeStr string, commitment *state.L1Commitment, isValidFun isValidFun, respondFun respondFun, log *logger.Logger, id blockRequestID) *stateBlockRequest {
+	result := newStateBlockRequestTemplate("sm"+typeStr, log, id)
+	result.lastL1Commitment = commitment
+	result.isValidFun = isValidFun
+	result.respondFun = respondFun
+	result.log.Debugf("State block request from mempool type %s id %v for block %s is created",
+		typeStr, result.id, result.lastL1Commitment)
+	return result
+}
+
 func newStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun, log *logger.Logger, id blockRequestID) *stateBlockRequest {
 	result := newStateBlockRequestTemplate("sl", log, id)
 	result.lastL1Commitment = commitment

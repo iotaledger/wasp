@@ -98,6 +98,8 @@ func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 		return smT.handleConsensusDecidedState(inputCasted)
 	case *smInputs.ConsensusBlockProduced: // From consensus
 		return smT.handleConsensusBlockProduced(inputCasted)
+	case *smInputs.MempoolStateRequest: // From mempool
+		return smT.handleMempoolStateRequest(inputCasted)
 	case *smInputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
@@ -276,6 +278,96 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	input.Respond(err)
 	smT.log.Debugf("Consensus block produced on state %s input handled; error=%v", commitment, err)
 	return messages
+}
+
+func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolStateRequest) gpa.OutMessages {
+	oldNewContainer := &struct {
+		oldStateBlockRequest          *stateBlockRequest
+		newStateBlockRequest          *stateBlockRequest
+		oldStateBlockRequestCompleted bool
+		newStateBlockRequestCompleted bool
+		obtainNewStateFun             obtainStateFun
+	}{
+		oldStateBlockRequestCompleted: false,
+		newStateBlockRequestCompleted: false,
+	}
+	isValidFun := func() bool { return input.IsValid() }
+	obtainCommittedBlockFun := func(commitment *state.L1Commitment) state.Block {
+		result, err := smT.store.BlockByTrieRoot(commitment.GetTrieRoot())
+		if err != nil {
+			smT.log.Panicf("Cannot obtain block %s: %v", commitment, err)
+		}
+		return result
+	}
+	respondFun := func() {
+		oldBaseIndex := input.GetOldStateIndex()
+		newBaseIndex := input.GetNewStateIndex()
+		var commonIndex uint32
+		if newBaseIndex > oldBaseIndex {
+			commonIndex = oldBaseIndex
+		} else {
+			commonIndex = newBaseIndex
+		}
+
+		oldBC := oldNewContainer.oldStateBlockRequest.getBlockChain()
+		newBC := oldNewContainer.newStateBlockRequest.getBlockChain()
+		oldCommitment := input.GetOldL1Commitment()
+		newCommitment := input.GetNewL1Commitment()
+		oldCOB := newChainOfBlocks(oldBC, oldCommitment, oldBaseIndex, obtainCommittedBlockFun)
+		newCOB := newChainOfBlocks(newBC, newCommitment, newBaseIndex, obtainCommittedBlockFun)
+
+		respondToMempoolFun := func(index uint32) {
+			newState, err := oldNewContainer.obtainNewStateFun()
+			if err != nil {
+				smT.log.Errorf("Unable to obtain new state: %v", err)
+				return
+			}
+
+			input.Respond(smInputs.NewMempoolStateRequestResults(
+				newState,
+				newCOB.getBlocksFrom(index),
+				oldCOB.getBlocksFrom(index),
+			))
+		}
+
+		for commonIndex > 0 {
+			if oldCOB.getL1Commitment(commonIndex).Equals(newCOB.getL1Commitment(commonIndex)) {
+				respondToMempoolFun(commonIndex)
+				return
+			}
+			commonIndex--
+		}
+		respondToMempoolFun(0)
+	}
+	respondIfNeededFun := func() {
+		if oldNewContainer.oldStateBlockRequestCompleted && oldNewContainer.newStateBlockRequestCompleted {
+			respondFun()
+		}
+	}
+	respondFromOldFun := func(_ obtainStateFun) {
+		oldNewContainer.oldStateBlockRequestCompleted = true
+		respondIfNeededFun()
+	}
+	respondFromNewFun := func(obtainStateFun obtainStateFun) {
+		oldNewContainer.newStateBlockRequestCompleted = true
+		oldNewContainer.obtainNewStateFun = obtainStateFun
+		respondIfNeededFun()
+	}
+	id := blockRequestID(5) //TODO
+	oldNewContainer.oldStateBlockRequest = newStateBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
+	oldNewContainer.newStateBlockRequest = newStateBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
+
+	messages, err := smT.traceBlockChainByRequest(oldNewContainer.oldStateBlockRequest)
+	if err != nil {
+		// TODO
+	}
+	result := messages
+	messages, err = smT.traceBlockChainByRequest(oldNewContainer.newStateBlockRequest)
+	if err != nil {
+		// TODO
+	}
+	result.AddAll(messages)
+	return result
 }
 
 func (smT *stateManagerGPA) createStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun) *stateBlockRequest {
