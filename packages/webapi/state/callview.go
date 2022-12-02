@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/chainutil"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -127,17 +125,9 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	var ret []byte
-	err = optimism.RetryOnStateInvalidated(func() error {
-		var err error
-		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
-		return err
-	})
+	ret, err := theChain.GetStateReader(theChain.LatestBlockIndex()).Get(kv.Key(key))
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, coreutil.ErrorStateInvalidated) {
-			return httperrors.Conflict(reason)
-		}
 		return httperrors.ServerError(reason)
 	}
 

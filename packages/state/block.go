@@ -9,13 +9,13 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 type block struct {
-	trieRoot             common.VCommitment
+	trieRoot             trie.VCommitment
 	mutations            *buffered.Mutations
 	previousL1Commitment *L1Commitment
 }
@@ -25,7 +25,7 @@ var _ Block = &block{}
 func BlockFromBytes(blockBytes []byte) (*block, error) {
 	buf := bytes.NewBuffer(blockBytes)
 
-	trieRoot, err := common.VectorCommitmentFromBytes(commitmentModel, buf.Next(int(commitmentModel.HashSize())))
+	trieRoot, err := trie.ReadVectorCommitment(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func (b *block) Mutations() *buffered.Mutations {
 	return b.mutations
 }
 
-func (b *block) TrieRoot() common.VCommitment {
+func (b *block) TrieRoot() trie.VCommitment {
 	return b.trieRoot
 }
 

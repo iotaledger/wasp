@@ -107,7 +107,11 @@ func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
 	return m.onGlobalStateSync()
 }
 
-func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {
+func (m *MockedChainCore) LatestBlockIndex() uint32 {
+	return m.LatestBlockIndex()
+}
+
+func (m *MockedChainCore) GetStateReader(i uint32) state.State {
 	return m.onGetStateReader()
 }
 

@@ -4,25 +4,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/trie.go/common"
-	"github.com/iotaledger/trie.go/immutable"
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/wasp/packages/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 // state is the implementation of the State interface
 type state struct {
-	trieReader *immutable.TrieReader
+	trieReader *trie.TrieReader
 	kv.KVStoreReader
 }
 
 var _ State = &state{}
 
-func newState(db *storeDB, root common.VCommitment) (*state, error) {
+func newState(db *storeDB, root trie.VCommitment) (*state, error) {
 	trie, err := db.trieReader(root)
 	if err != nil {
 		return nil, err
@@ -33,16 +30,12 @@ func newState(db *storeDB, root common.VCommitment) (*state, error) {
 	}, nil
 }
 
-func (s *state) L1Commitment() *L1Commitment {
-	return nil // TODO
-}
-
-func (s *state) TrieRoot() common.VCommitment {
+func (s *state) TrieRoot() trie.VCommitment {
 	return s.trieReader.Root()
 }
 
-func (s *state) GetMerkleProof(key []byte) *trie_blake2b.MerkleProof {
-	return commitmentModel.ProofImmutable(key, s.trieReader)
+func (s *state) GetMerkleProof(key []byte) *trie.MerkleProof {
+	return s.trieReader.MerkleProof(key)
 }
 
 func (s *state) ChainID() *isc.ChainID {

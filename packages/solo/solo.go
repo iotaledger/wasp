@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -36,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -511,7 +511,7 @@ func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("unimplemented")
 }
 
-func (ch *Chain) StateCandidateToStateManager(common.VCommitment, *iotago.UTXOInput) {
+func (ch *Chain) StateCandidateToStateManager(trie.VCommitment, *iotago.UTXOInput) {
 	panic("unimplemented")
 }
 

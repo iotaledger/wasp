@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/common"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -22,12 +22,12 @@ type BlockHash [BlockHashSize]byte
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	trieRoot common.VCommitment
+	TrieRoot trie.VCommitment
 	// hash of the essence of the block
 	blockHash BlockHash
 }
 
-var l1CommitmentSize = len(newL1Commitment(commitmentModel.NewVectorCommitment(), BlockHash{}).Bytes())
+var l1CommitmentSize = trie.HashSizeBytes + BlockHashSize
 
 func BlockHashFromData(data []byte) (ret BlockHash) {
 	r := blake2b.Sum256(data)
@@ -35,7 +35,7 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 	return
 }
 
-func newL1Commitment(c common.VCommitment, blockHash BlockHash) *L1Commitment {
+func newL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		trieRoot:  c,
 		blockHash: blockHash,
@@ -94,7 +94,7 @@ func (s *L1Commitment) GetBlockHash() BlockHash {
 }
 
 func (s *L1Commitment) Equals(other *L1Commitment) bool {
-	return s.GetBlockHash().Equals(other.GetBlockHash()) && EqualCommitments(s.GetTrieRoot(), other.GetTrieRoot())
+	return s.BlockHash == other.BlockHash && s.TrieRoot.Equals(other.TrieRoot)
 }
 
 func (s *L1Commitment) Bytes() []byte {
@@ -113,8 +113,9 @@ func (s *L1Commitment) Write(w io.Writer) error {
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	s.trieRoot = commitmentModel.NewVectorCommitment()
-	if err := s.trieRoot.Read(r); err != nil {
+	var err error
+	s.TrieRoot, err = trie.ReadVectorCommitment(r)
+	if err != nil {
 		return err
 	}
 	if _, err := r.Read(s.blockHash[:]); err != nil {

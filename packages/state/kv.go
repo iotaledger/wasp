@@ -4,13 +4,13 @@
 package state
 
 import (
-	"github.com/iotaledger/trie.go/immutable"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 // trieKVAdapter is a KVStoreReader backed by a TrieReader
 type trieKVAdapter struct {
-	*immutable.TrieReader
+	*trie.TrieReader
 }
 
 var _ kv.KVStoreReader = &trieKVAdapter{}

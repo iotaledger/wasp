@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	"github.com/iotaledger/trie.go/common"
-	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/trie"
 
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +46,7 @@ func (m mustChainStore) LatestState() State {
 	return r
 }
 
-func (m mustChainStore) StateByTrieRoot(root common.VCommitment) State {
+func (m mustChainStore) StateByTrieRoot(root trie.VCommitment) State {
 	r, err := m.Store.StateByTrieRoot(root)
 	if err != nil {
 		panic(err)
@@ -55,7 +54,7 @@ func (m mustChainStore) StateByTrieRoot(root common.VCommitment) State {
 	return r
 }
 
-func (m mustChainStore) BlockByTrieRoot(root common.VCommitment) Block {
+func (m mustChainStore) BlockByTrieRoot(root trie.VCommitment) Block {
 	r, err := m.Store.BlockByTrieRoot(root)
 	if err != nil {
 		panic(err)
@@ -229,8 +228,8 @@ func TestProof(t *testing.T) {
 			require.NotEmpty(t, v)
 
 			proof := cs.LatestState().GetMerkleProof([]byte(k))
-			require.False(t, trie_blake2b_verify.IsProofOfAbsence(proof))
-			err := ValidateMerkleProof(proof, cs.LatestBlock().TrieRoot(), v)
+			require.False(t, proof.IsProofOfAbsence())
+			err := proof.ValidateValue(cs.LatestBlock().TrieRoot(), v)
 			require.NoError(t, err)
 		})
 	}

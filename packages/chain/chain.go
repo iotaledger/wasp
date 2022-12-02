@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -19,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -28,7 +28,7 @@ import (
 type ChainCore interface {
 	ID() *isc.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	StateCandidateToStateManager(common.VCommitment, *iotago.UTXOInput)
+	StateCandidateToStateManager(trie.VCommitment, *iotago.UTXOInput)
 	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
 	LatestBlockIndex() uint32
@@ -116,7 +116,7 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueAliasOutput(*isc.AliasOutputWithID)
-	EnqueueStateCandidateMsg(common.VCommitment, *iotago.UTXOInput)
+	EnqueueStateCandidateMsg(trie.VCommitment, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	SetChainPeers(peers []*cryptolib.PublicKey)
@@ -124,7 +124,7 @@ type StateManager interface {
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(bool, common.VCommitment, *isc.AliasOutputWithID, time.Time)
+	EnqueueStateTransitionMsg(bool, trie.VCommitment, *isc.AliasOutputWithID, time.Time)
 	EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg)
 	EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
@@ -147,10 +147,10 @@ type AsynchronousCommonSubsetRunner interface {
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
-	SyncedStateCommitment common.VCommitment
+	SyncedStateCommitment trie.VCommitment
 	SyncedStateTimestamp  time.Time
 	StateOutput           *isc.AliasOutputWithID
-	StateOutputCommitment common.VCommitment
+	StateOutputCommitment trie.VCommitment
 	StateOutputTimestamp  time.Time
 }
 
@@ -212,7 +212,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	IsGovernance    bool
-	TrieRoot        common.VCommitment
+	TrieRoot        trie.VCommitment
 	ChainOutput     *isc.AliasOutputWithID
 	OutputTimestamp time.Time
 }

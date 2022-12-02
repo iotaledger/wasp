@@ -6,11 +6,10 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/trie.go/common"
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 // Store manages the storage of a chain's state.
@@ -29,15 +28,15 @@ import (
 // between the previous and current states, and allows to calculate the L1 commitment.
 type Store interface {
 	// HasTrieRoot returns true if the given trie root exists in the store
-	HasTrieRoot(common.VCommitment) bool
+	HasTrieRoot(trie.VCommitment) bool
 	// BlockByTrieRoot fetches the Block that corresponds to the given trie root
-	BlockByTrieRoot(common.VCommitment) (Block, error)
+	BlockByTrieRoot(trie.VCommitment) (Block, error)
 	// StateByTrieRoot returns the chain state corresponding to the given trie root
-	StateByTrieRoot(common.VCommitment) (State, error)
+	StateByTrieRoot(trie.VCommitment) (State, error)
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
 	// This affects all `*ByIndex` and `Latest*` functions.
-	SetLatest(trieRoot common.VCommitment) error
+	SetLatest(trieRoot trie.VCommitment) error
 	// BlockByIndex returns the block that corresponds to the given state index (see SetLatest).
 	BlockByIndex(uint32) (Block, error)
 	// StateByIndex returns the chain state corresponding to the given state index (see SetLatest).
@@ -79,7 +78,7 @@ type Store interface {
 // Blocks are immutable.
 type Block interface {
 	Mutations() *buffered.Mutations
-	TrieRoot() common.VCommitment
+	TrieRoot() trie.VCommitment
 	PreviousL1Commitment() *L1Commitment
 	// L1Commitment contains the TrieRoot + block Hash
 	L1Commitment() *L1Commitment
@@ -98,8 +97,8 @@ type StateCommonValues interface {
 // State is an immutable view of a specific version of the chain state.
 type State interface {
 	kv.KVStoreReader
-	TrieRoot() common.VCommitment
-	GetMerkleProof(key []byte) *trie_blake2b.MerkleProof
+	TrieRoot() trie.VCommitment
+	GetMerkleProof(key []byte) *trie.MerkleProof
 	StateCommonValues
 }
 

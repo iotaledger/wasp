@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 // store is the implementation of the Store interface
@@ -23,33 +23,33 @@ type store struct {
 	// trieRootByIndex is a cache of index -> trieRoot, since the only one
 	// stored in the db is the latestTrieRoot and all others have to be discovered by
 	// traversing the block chain backwards
-	trieRootByIndex map[uint32]common.VCommitment
+	trieRootByIndex map[uint32]trie.VCommitment
 }
 
 func NewStore(db kvstore.KVStore) Store {
 	return &store{
 		db:              &storeDB{db},
-		trieRootByIndex: make(map[uint32]common.VCommitment),
+		trieRootByIndex: make(map[uint32]trie.VCommitment),
 	}
 }
 
-func (s *store) blockByTrieRoot(root common.VCommitment) (*block, error) {
+func (s *store) blockByTrieRoot(root trie.VCommitment) (*block, error) {
 	return s.db.readBlock(root)
 }
 
-func (s *store) HasTrieRoot(root common.VCommitment) bool {
+func (s *store) HasTrieRoot(root trie.VCommitment) bool {
 	return s.db.hasBlock(root)
 }
 
-func (s *store) BlockByTrieRoot(root common.VCommitment) (Block, error) {
+func (s *store) BlockByTrieRoot(root trie.VCommitment) (Block, error) {
 	return s.blockByTrieRoot(root)
 }
 
-func (s *store) stateByTrieRoot(root common.VCommitment) (*state, error) {
+func (s *store) stateByTrieRoot(root trie.VCommitment) (*state, error) {
 	return newState(s.db, root)
 }
 
-func (s *store) StateByTrieRoot(root common.VCommitment) (State, error) {
+func (s *store) StateByTrieRoot(root trie.VCommitment) (State, error) {
 	return s.stateByTrieRoot(root)
 }
 
@@ -76,7 +76,7 @@ func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, 
 func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations) {
 	buf, bufDB := s.db.buffered()
 
-	var baseTrieRoot common.VCommitment
+	var baseTrieRoot trie.VCommitment
 	{
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
@@ -126,7 +126,7 @@ func (s *store) Commit(d StateDraft) Block {
 	return block
 }
 
-func (s *store) SetLatest(trieRoot common.VCommitment) error {
+func (s *store) SetLatest(trieRoot trie.VCommitment) error {
 	block, err := s.BlockByTrieRoot(trieRoot)
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (s *store) SetLatest(trieRoot common.VCommitment) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.trieRootByIndex[blockIndex] != nil && EqualCommitments(s.trieRootByIndex[blockIndex], block.TrieRoot()) {
+	if s.trieRootByIndex[blockIndex] != nil && s.trieRootByIndex[blockIndex].Equals(block.TrieRoot()) {
 		// nothing to do
 		return nil
 	}
@@ -148,10 +148,10 @@ func (s *store) SetLatest(trieRoot common.VCommitment) error {
 	isNext := (blockIndex > 0 &&
 		s.trieRootByIndex[blockIndex] == nil &&
 		s.trieRootByIndex[blockIndex-1] != nil &&
-		EqualCommitments(s.trieRootByIndex[blockIndex-1], block.PreviousL1Commitment().GetTrieRoot()))
+		s.trieRootByIndex[blockIndex-1].Equals(block.PreviousL1Commitment().TrieRoot))
 	if !isNext {
 		// reorg
-		s.trieRootByIndex = map[uint32]common.VCommitment{}
+		s.trieRootByIndex = map[uint32]trie.VCommitment{}
 	}
 	s.trieRootByIndex[blockIndex] = block.TrieRoot()
 	s.db.setLatestTrieRoot(trieRoot)
@@ -166,8 +166,8 @@ func (s *store) BlockByIndex(index uint32) (Block, error) {
 	return s.BlockByTrieRoot(root)
 }
 
-func (s *store) findTrieRootByIndex(index uint32) (common.VCommitment, error) {
-	if trieRoot := func() common.VCommitment {
+func (s *store) findTrieRootByIndex(index uint32) (trie.VCommitment, error) {
+	if trieRoot := func() trie.VCommitment {
 		s.mu.RLock()
 		defer s.mu.RUnlock()
 		return s.trieRootByIndex[index]

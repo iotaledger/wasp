@@ -4,15 +4,12 @@
 package state
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/iotaledger/hive.go/core/kvstore"
-	"github.com/iotaledger/trie.go/common"
-	"github.com/iotaledger/trie.go/hive_adaptor"
-	"github.com/iotaledger/trie.go/immutable"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 const (
@@ -30,10 +27,7 @@ var (
 	ErrUnknownLatestTrieRoot = errors.New("latest trie root is unknown")
 )
 
-// trieIdentity is the value assigned to the empty key in trie.go. It can be any non-empty value.
-var trieIdentity = []byte{0}
-
-func keyBlockByTrieRoot(root common.VCommitment) []byte {
+func keyBlockByTrieRoot(root trie.VCommitment) []byte {
 	return append([]byte{prefixBlockByTrieRoot}, root.Bytes()...)
 }
 
@@ -56,13 +50,12 @@ type storeDB struct {
 	kvstore.KVStore
 }
 
-func (db *storeDB) latestTrieRoot() (common.VCommitment, error) {
+func (db *storeDB) latestTrieRoot() (trie.VCommitment, error) {
 	if !db.hasLatestTrieRoot() {
 		return nil, ErrUnknownLatestTrieRoot
 	}
 	b := db.mustGet(keyLatestTrieRoot())
-	ret := commitmentModel.NewVectorCommitment()
-	err := ret.Read(bytes.NewReader(b))
+	ret, err := trie.VectorCommitmentFromBytes(b)
 	mustNoErr(err)
 	return ret, nil
 }
@@ -71,27 +64,27 @@ func (db *storeDB) hasLatestTrieRoot() bool {
 	return db.mustHas(keyLatestTrieRoot())
 }
 
-func (db *storeDB) setLatestTrieRoot(root common.VCommitment) {
+func (db *storeDB) setLatestTrieRoot(root trie.VCommitment) {
 	db.mustSet(keyLatestTrieRoot(), root.Bytes())
 }
 
-func (db *storeDB) trieStore() common.KVStore {
-	return hive_adaptor.NewHiveKVStoreAdaptor(db, []byte{prefixTrie})
+func (db *storeDB) trieStore() trie.KVStore {
+	return trie.NewHiveKVStoreAdapter(db, []byte{prefixTrie})
 }
 
-func (db *storeDB) trieUpdatable(root common.VCommitment) (*immutable.TrieUpdatable, error) {
-	return immutable.NewTrieUpdatable(commitmentModel, db.trieStore(), root)
+func (db *storeDB) trieUpdatable(root trie.VCommitment) (*trie.TrieUpdatable, error) {
+	return trie.NewTrieUpdatable(db.trieStore(), root)
 }
 
-func (db *storeDB) initTrie() common.VCommitment {
-	return immutable.MustInitRoot(db.trieStore(), commitmentModel, trieIdentity)
+func (db *storeDB) initTrie() trie.VCommitment {
+	return trie.MustInitRoot(db.trieStore())
 }
 
-func (db *storeDB) trieReader(root common.VCommitment) (*immutable.TrieReader, error) {
-	return immutable.NewTrieReader(commitmentModel, db.trieStore(), root)
+func (db *storeDB) trieReader(root trie.VCommitment) (*trie.TrieReader, error) {
+	return trie.NewTrieReader(db.trieStore(), root)
 }
 
-func (db *storeDB) hasBlock(root common.VCommitment) bool {
+func (db *storeDB) hasBlock(root trie.VCommitment) bool {
 	return db.mustHas(keyBlockByTrieRoot(root))
 }
 
@@ -107,7 +100,7 @@ func (db *storeDB) saveBlock(block Block) {
 	db.mustSet(keyBlockByTrieRoot(block.TrieRoot()), block.Bytes())
 }
 
-func (db *storeDB) readBlock(root common.VCommitment) (*block, error) {
+func (db *storeDB) readBlock(root trie.VCommitment) (*block, error) {
 	key := keyBlockByTrieRoot(root)
 	if !db.mustHas(key) {
 		return nil, ErrTrieRootNotFound

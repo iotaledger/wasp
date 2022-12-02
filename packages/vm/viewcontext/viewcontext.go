@@ -8,9 +8,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/common"
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/models/trie_blake2b/trie_blake2b_verify"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -224,7 +222,7 @@ func (ctx *ViewContext) CallViewExternal(targetContract, epCode isc.Hname, param
 }
 
 // GetMerkleProof returns proof for the key. It may also contain proof of absence of the key
-func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_blake2b.MerkleProof, err error) {
+func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie.MerkleProof, err error) {
 	err = panicutil.CatchAllButDBError(func() {
 		ret = ctx.stateReader.GetMerkleProof(key)
 	}, ctx.log, "GetMerkleProof: ")
@@ -239,9 +237,9 @@ func (ctx *ViewContext) GetMerkleProof(key []byte) (ret *trie_blake2b.MerkleProo
 // - blockInfo record in serialized form
 // - proof that the blockInfo is stored under the respective key.
 // Useful for proving commitment to the past state, because blockInfo contains commitment to that block
-func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_blake2b.MerkleProof, error) {
+func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie.MerkleProof, error) {
 	var retBlockInfoBin []byte
-	var retProof *trie_blake2b.MerkleProof
+	var retProof *trie.MerkleProof
 
 	err := panicutil.CatchAllButDBError(func() {
 		// retrieve serialized block info record
@@ -263,7 +261,7 @@ func (ctx *ViewContext) GetBlockProof(blockIndex uint32) ([]byte, *trie_blake2b.
 
 // GetRootCommitment calculates root commitment from state.
 // A valid state must return root commitment equal to the L1Commitment from the anchor
-func (ctx *ViewContext) GetRootCommitment() common.VCommitment {
+func (ctx *ViewContext) GetRootCommitment() trie.VCommitment {
 	return ctx.stateReader.TrieRoot()
 }
 
@@ -277,11 +275,11 @@ func (ctx *ViewContext) GetContractStateCommitment(hn isc.Hname) ([]byte, error)
 	err := panicutil.CatchAllButDBError(func() {
 		proof := ctx.stateReader.GetMerkleProof(hn.Bytes())
 		rootC := ctx.stateReader.TrieRoot()
-		retErr = state.ValidateMerkleProof(proof, rootC, hn.Bytes())
+		retErr = proof.ValidateValue(rootC, hn.Bytes())
 		if retErr != nil {
 			return
 		}
-		_, retC = trie_blake2b_verify.MustKeyWithTerminal(proof)
+		_, retC = proof.MustKeyWithTerminal()
 	}, ctx.log, "GetMerkleProof: ")
 	if err != nil {
 		return nil, err

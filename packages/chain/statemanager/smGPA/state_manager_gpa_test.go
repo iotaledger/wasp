@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smUtils"
