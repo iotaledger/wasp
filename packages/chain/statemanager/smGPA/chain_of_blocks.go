@@ -19,8 +19,6 @@ import (
 	log                           *logger.Logger
 }*/
 
-type obtainBlockFun func(*state.L1Commitment) state.Block
-
 /*var _ requestCommonAncestor = &requestCommonAncestorImpl{}
 
 func newCommonAncestorBlockRequest(input *smInputs.MempoolStateRequest, ocbFun obtainBlockFun, log *logger.Logger, id blockRequestID) requestCommonAncestor {
@@ -114,15 +112,17 @@ func (rcaiT *requestCommonAncestorImpl) isValid() bool {
 
 // chainOfBlocks is used in requestCommonAncestorImpl only
 
-type chainOfBlocks struct {
+type chainOfBlocksImpl struct {
 	blocks                  []state.Block
 	baseCommitment          *state.L1Commitment
 	baseIndex               uint32
 	obtainCommittedBlockFun obtainBlockFun
 }
 
-func newChainOfBlocks(blocks []state.Block, baseCommitment *state.L1Commitment, baseIndex uint32, ocbFun obtainBlockFun) *chainOfBlocks {
-	return &chainOfBlocks{
+var _ chainOfBlocks = &chainOfBlocksImpl{}
+
+func newChainOfBlocks(blocks []state.Block, baseCommitment *state.L1Commitment, baseIndex uint32, ocbFun obtainBlockFun) chainOfBlocks {
+	return &chainOfBlocksImpl{
 		blocks:                  blocks,
 		baseCommitment:          baseCommitment,
 		baseIndex:               baseIndex,
@@ -130,29 +130,29 @@ func newChainOfBlocks(blocks []state.Block, baseCommitment *state.L1Commitment, 
 	}
 }
 
-func (cobT *chainOfBlocks) getL1Commitment(blockIndex uint32) *state.L1Commitment {
-	index := cobT.baseIndex - blockIndex
-	if index < uint32(len(cobT.blocks)) {
-		return cobT.blocks[index].L1Commitment()
+func (cobiT *chainOfBlocksImpl) getL1Commitment(blockIndex uint32) *state.L1Commitment {
+	index := cobiT.baseIndex - blockIndex
+	if index < uint32(len(cobiT.blocks)) {
+		return cobiT.blocks[index].L1Commitment()
 	}
 	var previousCommitment *state.L1Commitment
-	if len(cobT.blocks) == 0 {
-		previousCommitment = cobT.baseCommitment
+	if len(cobiT.blocks) == 0 {
+		previousCommitment = cobiT.baseCommitment
 	} else {
-		previousCommitment = cobT.blocks[len(cobT.blocks)-1].PreviousL1Commitment()
+		previousCommitment = cobiT.blocks[len(cobiT.blocks)-1].PreviousL1Commitment()
 	}
-	for i := len(cobT.blocks); uint32(i) <= index; i++ {
-		block := cobT.obtainCommittedBlockFun(previousCommitment)
-		cobT.blocks = append(cobT.blocks, block)
+	for i := len(cobiT.blocks); uint32(i) <= index; i++ {
+		block := cobiT.obtainCommittedBlockFun(previousCommitment)
+		cobiT.blocks = append(cobiT.blocks, block)
 		previousCommitment = block.PreviousL1Commitment()
 	}
-	return cobT.blocks[index].L1Commitment()
+	return cobiT.blocks[index].L1Commitment()
 }
 
-func (cobT *chainOfBlocks) getBlocksFrom(blockIndex uint32) []state.Block { // Not including index; in proper order
-	result := make([]state.Block, cobT.baseIndex-blockIndex)
+func (cobiT *chainOfBlocksImpl) getBlocksFrom(blockIndex uint32) []state.Block { // Not including index; in proper order
+	result := make([]state.Block, cobiT.baseIndex-blockIndex)
 	for i := range result {
-		result[i] = cobT.blocks[cobT.baseIndex-blockIndex-uint32(i)-1]
+		result[i] = cobiT.blocks[cobiT.baseIndex-blockIndex-uint32(i)-1]
 	}
 	return result
 }

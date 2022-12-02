@@ -108,14 +108,16 @@ func TestManyNodes(t *testing.T) {
 }
 
 // 12 nodes setting.
-//  1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
-//     1.1 Chain of 10 blocks are generated; each of them are sent to a random node
-//     1.2 A randomly chosen block in a batch is chosen and is approved
-//     1.3 A successful change of state of state manager is waited for; each check
-//     fires a timer event to force the exchange of blocks between nodes.
-//  2. The last block of the last batch is approved and 1.3 is repeated.
-//  3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
-//     repeated branching from this block
+// 1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
+//   1.1 Chain of 10 blocks are generated; each of them are sent to a random node
+//   1.2 A randomly chosen block in a batch is chosen and is approved
+//   1.3 A successful change of state of state manager is waited for; each check
+//       fires a timer event to force the exchange of blocks between nodes.
+// 2. The last block of the last batch is approved and 1.3 is repeated.
+// 3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
+//    repeated branching from this block
+// 4. A common ancestor (mempool) request is sent to state manager for first and
+//    second batch ends.
 func TestFull(t *testing.T) {
 	nodeCount := 12
 	iterationSize := 10
@@ -165,6 +167,7 @@ func TestFull(t *testing.T) {
 
 	var branchAliasOutput *isc.AliasOutputWithID
 	var branchCommitment *state.L1Commitment
+	oldCommitments := make([]*state.L1Commitment, 0)
 	for i := 0; i < iterationCount; i++ {
 		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 1)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
@@ -173,20 +176,35 @@ func TestFull(t *testing.T) {
 			branchIndex := rand.Intn(iterationSize)
 			branchAliasOutput = aliasOutputs[branchIndex]
 			branchCommitment = commitments[branchIndex]
+			oldCommitments = append(oldCommitments, commitments[branchIndex+1:]...)
+		} else if i == 2 {
+			oldCommitments = append(oldCommitments, commitments...)
 		}
 	}
 	require.True(t, confirmAndWaitFun(lastAliasOutput))
+	oldAliasOutput := lastAliasOutput
 
 	// Branching from the middle of the second iteration
 	require.NotNil(t, branchAliasOutput)
 	lastAliasOutput = branchAliasOutput
 	lastCommitment = branchCommitment
+	newCommitments := make([]*state.L1Commitment, 0)
 	for i := 0; i < iterationCount; i++ {
 		aliasOutputs, commitments := testIterationFun(i, lastAliasOutput, lastCommitment, 2)
 		lastAliasOutput = aliasOutputs[iterationSize-1]
 		lastCommitment = commitments[iterationSize-1]
+		newCommitments = append(newCommitments, commitments...)
 	}
 	require.True(t, confirmAndWaitFun(lastAliasOutput))
+	newAliasOutput := lastAliasOutput
+
+	// Common ancestor request
+	for _, nodeID := range env.nodeIDs {
+		request, responseCh := smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
+		env.t.Logf("Requesting state for Mempool from node %s", nodeID)
+		env.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: request}).RunAll()
+		require.NoError(env.t, env.requireReceiveMempoolResults(responseCh, oldCommitments, newCommitments, 5*time.Second))
+	}
 }
 
 // Single node network. Checks if block cache is cleaned via state manager
@@ -329,6 +347,28 @@ func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint3
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive state timeouted")
+	}
+}
+
+func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.MempoolStateRequestResults, oldCommitments, newCommitments []*state.L1Commitment, timeout time.Duration) error {
+	select {
+	case msrr := <-respChan:
+		require.True(teT.t, msrr.GetNewState().TrieRoot().Equals(newCommitments[len(newCommitments)-1].GetTrieRoot()))
+		requireEqualsFun := func(expectedCommitments []*state.L1Commitment, received []state.Block) {
+			require.Equal(teT.t, len(expectedCommitments), len(received))
+			for i := range expectedCommitments {
+				receivedCommitment := received[i].L1Commitment()
+				teT.t.Logf("\tchecking %v-th element: expected %s, received %s", i, expectedCommitments[i], receivedCommitment)
+				require.True(teT.t, expectedCommitments[i].Equals(receivedCommitment))
+			}
+		}
+		teT.t.Logf("Checking added blocks...")
+		requireEqualsFun(newCommitments, msrr.GetAdded())
+		teT.t.Logf("Checking removed blocks...")
+		requireEqualsFun(oldCommitments, msrr.GetRemoved())
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("Waiting to receive mempool results timeouted")
 	}
 }
 
