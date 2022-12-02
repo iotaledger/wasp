@@ -22,9 +22,9 @@ func TestBlockWALBasic(t *testing.T) {
 	factory := NewBlockFactory()
 	blocks, _ := factory.GetBlocks(t, 5, 1)
 	blocksInWAL := blocks[:4]
-	walGood, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(constTestFolder, isc.RandomChainID(), log)
+	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -57,7 +57,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 
 	factory := NewBlockFactory()
 	blocks, _ := factory.GetBlocks(t, 4, 1)
-	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -99,7 +99,7 @@ func TestBlockWALRestart(t *testing.T) {
 
 	factory := NewBlockFactory()
 	blocks, _ := factory.GetBlocks(t, 4, 1)
-	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -107,7 +107,7 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 
 	//Restart: WAL object is recreated
-	wal, err = NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		require.True(t, wal.Contains(blocks[i].Hash()))

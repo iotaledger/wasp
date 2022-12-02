@@ -38,6 +38,7 @@ var (
 
 type dependencies struct {
 	dig.In
+
 	Chains *chains.Chains
 }
 
@@ -96,7 +97,6 @@ func provide(c *dig.Container) error {
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateCmtLog,
-				deps.Metrics,
 			),
 		}
 	}); err != nil {

@@ -35,7 +35,7 @@ func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	bwtsmT.ao = bwtsmT.factory.GetOriginOutput(t)
 	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
-	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.factory.GetChainID(), bwtsmT.log)
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
@@ -168,14 +168,14 @@ func (bwtsmT *blockWALTestSM) ReadDamagedBlock(t *rapid.T) {
 
 func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bwtsmT.bw, err = NewBlockWAL(constTestFolder, bwtsmT.factory.GetChainID(), bwtsmT.log)
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	t.Logf("Block WAL restarted")
 }
 
 func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 	result := make([]state.BlockHash, 0)
-	for blockHash, _ := range bwtsmT.blocks { //nolint:gofmt,gofumpt,revive,gosimple
+	for blockHash := range bwtsmT.blocks {
 		if !util.Contains(blockHash, bwtsmT.blocksMoved) && !util.Contains(blockHash, bwtsmT.blocksDamaged) {
 			result = append(result, blockHash)
 		}
@@ -188,7 +188,7 @@ func (bwtsmT *blockWALTestSM) pathFromHash(blockHash state.BlockHash) string {
 }
 
 func (bwtsmT *blockWALTestSM) invariantAllWrittenBlocksExist(t *rapid.T) {
-	for blockHash, _ := range bwtsmT.blocks { //nolint:gofmt,gofumpt,revive,gosimple
+	for blockHash := range bwtsmT.blocks {
 		require.True(t, bwtsmT.bw.Contains(blockHash))
 	}
 }

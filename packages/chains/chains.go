@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -52,8 +51,6 @@ type Chains struct {
 	nodeIdentityProvider        registry.NodeIdentityProvider
 	consensusStateCmtLog        cmtLog.Store
 
-	metrics *metrics.Metrics
-
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
 }
@@ -78,7 +75,6 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	consensusStateCmtLog cmtLog.Store,
-	allMetrics *metrics.Metrics,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -96,7 +92,6 @@ func New(
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
 		consensusStateCmtLog:             consensusStateCmtLog,
-		metrics:                          allMetrics,
 	}
 	return ret
 }

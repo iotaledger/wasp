@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/dkg"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
@@ -40,7 +40,7 @@ func Init(
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
-	metrics *metricspkg.Metrics,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	apiCacheTTL time.Duration,
@@ -83,7 +83,7 @@ func Init(
 		chainsProvider,
 		nodeProvider,
 		shutdown,
-		metrics,
+		nodeConnectionMetrics,
 		authConfig,
 		nodeOwnerAddresses,
 	)

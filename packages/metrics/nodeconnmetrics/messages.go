@@ -27,7 +27,7 @@ func createMetricsMessage[T any](ncmi *nodeConnectionMetricsImpl, chainID *isc.C
 		return simpleMessageMetrics
 	}
 
-	return newNodeConnectionMessageRelatedMetrics[T](simpleMessageMetrics, makeRelatedMetricsFun())
+	return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())
 }
 
 func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID) NodeConnectionMessagesMetrics {

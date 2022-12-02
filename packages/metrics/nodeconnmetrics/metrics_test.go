@@ -7,24 +7,20 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/nodeclient"
-
-	"github.com/iotaledger/iota.go/v3/tpkg"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestRegister(t *testing.T) {
-	log := testlogger.NewLogger(t)
 	chainID1 := isc.RandomChainID()
 	chainID2 := isc.RandomChainID()
 	chainID3 := isc.RandomChainID()
-	ncm := New(log)
+	ncm := New()
 
 	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
 
@@ -94,11 +90,10 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 }
 
 func TestMessageMetrics(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	ncm := New(log)
+	ncm := New()
 	cncm1 := ncm.NewMessagesMetrics(isc.RandomChainID())
 	cncm2 := ncm.NewMessagesMetrics(isc.RandomChainID())
-	ncm.RegisterMetrics()
+	ncm.Register(prometheus.NewRegistry())
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
