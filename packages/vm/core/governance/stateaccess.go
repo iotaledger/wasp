@@ -40,3 +40,16 @@ func (sa *StateAccess) GetAccessNodes() []*cryptolib.PublicKey {
 	})
 	return accessNodes
 }
+
+func (sa *StateAccess) GetCandidateNodes() []*AccessNodeInfo {
+	candidateNodes := []*AccessNodeInfo{}
+	collections.NewMapReadOnly(sa.state, VarAccessNodeCandidates).MustIterate(func(pubKeyBytes, accessNodeInfoBytes []byte) bool {
+		ani, err := NewAccessNodeInfoFromBytes(pubKeyBytes, accessNodeInfoBytes)
+		if err != nil {
+			panic(err)
+		}
+		candidateNodes = append(candidateNodes, ani)
+		return true
+	})
+	return candidateNodes
+}

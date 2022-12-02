@@ -67,14 +67,6 @@ type ChainRequests interface {
 type Chain interface {
 	ChainCore
 	ChainRequests
-	// ChainID() isc.ChainID
-	// ChainStore() state.Store
-	// Processors() *processors.Cache
-	// Log() *logger.Logger
-	// // TODO: All the public administrative functions.
-	// // HeadStateAnchor (confirmed + unconfirmed).
-	// // GetCurrentCommittee.
-	// // GetCurrentAccessNodes.
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
@@ -665,12 +657,48 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 	return ci
 }
 
-func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider { // CommitteeNodes + AccessNodes
-	panic("IMPLEMENT: (cni *chainNodeImpl) GetChainNodes()") // TODO: Implement.
+func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider {
+	cni.activeAccessLock.RLock()
+	dkShare := cni.activeCommitteeDKShare
+	acNodes := cni.activeAccessNodes
+	cni.activeAccessLock.RUnlock()
+	allNodeKeys := map[cryptolib.PublicKeyKey]*cryptolib.PublicKey{}
+	//
+	// Add committee nodes.
+	if dkShare != nil {
+		for _, nodePubKey := range dkShare.GetNodePubKeys() {
+			allNodeKeys[nodePubKey.AsKey()] = nodePubKey
+		}
+	}
+	//
+	// Add access nodes.
+	for _, nodePubKey := range acNodes {
+		if _, ok := allNodeKeys[nodePubKey.AsKey()]; !ok {
+			allNodeKeys[nodePubKey.AsKey()] = nodePubKey
+		}
+	}
+	//
+	// Collect the relevant info.
+	allNodes := []peering.PeerStatusProvider{}
+	netNodes := cni.net.PeerStatus()
+	for _, nodeKey := range allNodeKeys {
+		index := slices.IndexFunc(netNodes, func(psp peering.PeerStatusProvider) bool {
+			return nodeKey.Equals(psp.PubKey())
+		})
+		if index != -1 {
+			allNodes = append(allNodes, netNodes[index])
+		}
+	}
+	return allNodes
 }
 
-func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo { // All the current candidates.
-	panic("IMPLEMENT: (cni *chainNodeImpl) GetCandidateNodes()") // TODO: Implement.
+func (cni *chainNodeImpl) GetCandidateNodes() []*governance.AccessNodeInfo {
+	state, err := cni.chainStore.LatestState()
+	if err != nil {
+		cni.log.Error("Cannot get latest chain state: %v", err)
+		return []*governance.AccessNodeInfo{}
+	}
+	return governance.NewStateAccess(state).GetCandidateNodes()
 }
 
 func (cni *chainNodeImpl) GetConsensusPipeMetrics() ConsensusPipeMetrics {
