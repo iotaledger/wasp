@@ -19,7 +19,7 @@ func TestBlockWALBasic(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 5, 1)
 	blocksInWAL := blocks[:4]
 	walGood, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
@@ -55,7 +55,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 4, 1)
 	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
 	require.NoError(t, err)
@@ -88,7 +88,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
 	require.True(t, blocks[0].Hash().Equals(block.Hash()))
-	//require.True(t, blocks[0].Equals(block))
+	// require.True(t, blocks[0].Equals(block))
 }
 
 // Check if after restart wal is functioning correctly
@@ -97,7 +97,7 @@ func TestBlockWALRestart(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 4, 1)
 	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
 	require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestBlockWALRestart(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	//Restart: WAL object is recreated
+	// Restart: WAL object is recreated
 	wal, err = NewBlockWAL(constTestFolder, factory.GetChainID(), log)
 	require.NoError(t, err)
 	for i := range blocks {

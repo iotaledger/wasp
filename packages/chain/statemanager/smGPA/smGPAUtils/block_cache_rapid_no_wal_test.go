@@ -28,7 +28,7 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 
 func (bcnwtsmT *blockCacheNoWALTestSM) initWAL(t *rapid.T, wal BlockWAL) {
 	var err error
-	bcnwtsmT.factory = NewBlockFactory()
+	bcnwtsmT.factory = NewBlockFactory(t)
 	bcnwtsmT.ao = bcnwtsmT.factory.GetOriginOutput(t)
 	bcnwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bcnwtsmT.log = testlogger.NewLogger(t)

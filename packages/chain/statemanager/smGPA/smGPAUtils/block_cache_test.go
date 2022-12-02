@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	//	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
@@ -17,7 +16,7 @@ func TestBlockCacheSimple(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 4, 1)
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
@@ -34,7 +33,7 @@ func TestBlockCacheCleaning(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 6, 2)
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
@@ -70,7 +69,7 @@ func TestBlockCacheWAL(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	factory := NewBlockFactory()
+	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(t, 3, 2)
 	wal := NewMockedBlockWAL()
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), wal, log)

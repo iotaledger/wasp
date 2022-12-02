@@ -27,8 +27,8 @@ type BlockFactory struct {
 	lastAliasOutput     *isc.AliasOutputWithID
 }
 
-func NewBlockFactory() *BlockFactory {
-	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
+func NewBlockFactory(t require.TestingT) *BlockFactory {
+	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0).UTXOInput()
 	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID.ID()))
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
 	aliasOutput0 := &iotago.AliasOutput{
@@ -139,7 +139,7 @@ func (bfT *BlockFactory) GetNextBlock(
 		Conditions:     consumedAliasOutput.Conditions,
 		Features:       consumedAliasOutput.Features,
 	}
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0).UTXOInput()
 	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
 
 	return block, aliasOutputWithID
@@ -152,8 +152,9 @@ func (bfT *BlockFactory) GetStateDraft(t require.TestingT, block state.Block) st
 	return result
 }
 
-func getRandomTxID() iotago.TransactionID {
+func getRandomTxID(t require.TestingT) iotago.TransactionID {
 	var result iotago.TransactionID
-	rand.Read(result[:])
+	_, err := rand.Read(result[:])
+	require.NoError(t, err)
 	return result
 }

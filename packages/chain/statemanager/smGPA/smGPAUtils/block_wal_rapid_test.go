@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-//const constTestFolder = "basicWALTest"
-
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
 	bw                  BlockWAL
 	factory             *BlockFactory
@@ -31,7 +29,7 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
-	bwtsmT.factory = NewBlockFactory()
+	bwtsmT.factory = NewBlockFactory(t)
 	bwtsmT.ao = bwtsmT.factory.GetOriginOutput(t)
 	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
@@ -116,7 +114,7 @@ func (bwtsmT *blockWALTestSM) MoveBlock(t *rapid.T) {
 	t.Logf("Block %s damaged: block %s written instead", blockHashToDamage, blockHashOrig)
 }
 
-// Damage the block by writting random bytes to it
+// Damage the block by writing random bytes to it
 func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	blockHashes := bwtsmT.getGoodBlockHashes()
 	if len(blockHashes) == 0 {

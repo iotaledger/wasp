@@ -176,14 +176,14 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 		return nil // No messages to send
 	}
 	request := smT.createStateBlockRequestLocal(blockCommitment, func(_ obtainStateFun) {})
-	newRequests := append(requests, request)
+	requests = append(requests, request)
 	delete(smT.blockRequests, blockHash)
-	for _, request := range newRequests {
+	for _, request := range requests {
 		request.blockAvailable(block)
 	}
 	previousCommitment := block.PreviousL1Commitment()
 	smT.log.Debugf("Block %s: tracing previous block %s", blockCommitment, previousCommitment)
-	messages, err := smT.traceBlockChain(previousCommitment, newRequests)
+	messages, err := smT.traceBlockChain(previousCommitment, requests)
 	if err != nil {
 		return nil // No messages to send
 	}
@@ -280,7 +280,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	return messages
 }
 
-func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolStateRequest) gpa.OutMessages {
+func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolStateRequest) gpa.OutMessages { //nolint:funlen
 	oldNewContainer := &struct {
 		oldStateBlockRequest          *stateBlockRequest
 		newStateBlockRequest          *stateBlockRequest
@@ -421,17 +421,15 @@ func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.
 	}
 	requestsWC, ok := smT.blockRequests[lastCommitment.GetBlockHash()]
 	if ok {
-		requests := requestsWC.blockRequests
 		smT.log.Debugf("Request %s id %v tracing block %s chain: ~s request(s) are already waiting for block %s; adding this request to the list",
-			request.getType(), request.getID(), len(requests), lastCommitment)
-		requestsWC.blockRequests = append(requests, request)
+			request.getType(), request.getID(), len(requestsWC.blockRequests), lastCommitment)
+		requestsWC.blockRequests = append(requestsWC.blockRequests, request)
 		return nil, nil // No messages to send
 	}
 	return smT.traceBlockChain(lastCommitment, []blockRequest{request})
 }
 
 // TODO: state manager may ask for several requests at once: the request can be formulated
-//
 //	as "give me blocks from some commitment till some index". If the requested
 //	node has the required block committed into the store, it certainly has
 //	all the blocks before it.
@@ -455,9 +453,8 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 				smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s, no requests was waiting before",
 					initCommitment, len(requests), commitment)
 			} else {
-				currentRequests := currrentRequestsWC.blockRequests
-				oldLen := len(currentRequests)
-				currrentRequestsWC.blockRequests = append(currentRequests, requests...)
+				oldLen := len(currrentRequestsWC.blockRequests)
+				currrentRequestsWC.blockRequests = append(currrentRequestsWC.blockRequests, requests...)
 				smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s is missing, %v requests were waiting for it before",
 					initCommitment, len(currrentRequestsWC.blockRequests), commitment, oldLen)
 			}
@@ -472,7 +469,7 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 	smT.log.Debugf("Tracing block %s chain: tracing completed, committing the blocks", initCommitment)
 	committedBlocks := make(map[state.BlockHash]bool)
 	for _, request := range requests {
-		smT.log.Debugf("Tracing block %s chain: commiting blocks of %s request %v", initCommitment, request.getType(), request.getID())
+		smT.log.Debugf("Tracing block %s chain: committing blocks of %s request %v", initCommitment, request.getType(), request.getID())
 		blockChain := request.getBlockChain()
 		for i := len(blockChain) - 1; i >= 0; i-- {
 			block := blockChain[i]
