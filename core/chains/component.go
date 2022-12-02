@@ -6,6 +6,8 @@ import (
 
 	"go.uber.org/dig"
 
+	"github.com/prometheus/tsdb/wal"
+
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
@@ -41,8 +43,6 @@ type dependencies struct {
 
 	WAL                              *wal.WAL
 	Chains                           *chains.Chains
-	Metrics                          *metrics.Metrics `optional:"true"`
-	ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
 	DKShareRegistryProvider          registry.DKShareRegistryProvider
 	NodeIdentityProvider             registry.NodeIdentityProvider
 	ConsensusJournalRegistryProvider journal.Provider
@@ -69,10 +69,12 @@ func provide(c *dig.Container) error {
 	type chainsDeps struct {
 		dig.In
 
-		ProcessorsConfig *processors.Config
-		DatabaseManager  *database.Manager
-		NetworkProvider  peering.NetworkProvider `name:"networkProvider"`
-		NodeConnection   chain.NodeConnection
+		ProcessorsConfig            *processors.Config
+		DatabaseManager             *database.Manager
+		NetworkProvider             peering.NetworkProvider `name:"networkProvider"`
+		NodeConnection              chain.NodeConnection
+		Metrics                     *metrics.Metrics `optional:"true"`
+		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	}
 
 	type chainsResult struct {
@@ -94,6 +96,8 @@ func provide(c *dig.Container) error {
 				deps.DatabaseManager.GetOrCreateChainStateKVStore,
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
+				deps.ChainRecordRegistryProvider,
+				deps.Metrics,
 			),
 		}
 	}); err != nil {
@@ -105,24 +109,12 @@ func provide(c *dig.Container) error {
 
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
-		if err := deps.Chains.ActivateAllFromRegistry(
-			deps.ChainRecordRegistryProvider,
-			deps.DKShareRegistryProvider,
-			deps.NodeIdentityProvider,
-			deps.ConsensusJournalRegistryProvider,
-			deps.Metrics,
-		); err != nil {
-			CoreComponent.LogPanicf("failed to read chain activation records from registry: %v", err)
+		if err := deps.Chains.Run(ctx); err != nil {
+			CoreComponent.LogErrorf("failed to start chains: %v", err)
 			return
 		}
 
 		<-ctx.Done()
-
-		CoreComponent.LogInfo("dismissing chains...")
-		go func() {
-			deps.Chains.Dismiss()
-			CoreComponent.LogInfo("dismissing chains... Done")
-		}()
 	}, daemon.PriorityChains)
 	if err != nil {
 		CoreComponent.LogError(err)

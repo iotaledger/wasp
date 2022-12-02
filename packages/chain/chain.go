@@ -14,8 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -46,8 +46,8 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (Chain, error) {
-	var dkRegistry tcrypto.DKShareRegistryProvider // TODO: Get it somehow.
-	var cmtLogStore cmtLog.Store                   // TODO: Get it somehow.
-	var smBlockWAL smGPAUtils.BlockWAL             // TODO: Get it somehow.
+	var dkRegistry registry.DKShareRegistryProvider // TODO: Get it somehow.
+	var cmtLogStore cmtLog.Store                    // TODO: Get it somehow.
+	var smBlockWAL smGPAUtils.BlockWAL              // TODO: Get it somehow.
 	return node.New(ctx, chainID, chainStore, nodeConn, nodeIdentity, processorsConfig, dkRegistry, cmtLogStore, smBlockWAL, net, log)
 }

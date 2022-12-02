@@ -37,8 +37,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -168,7 +168,7 @@ func New(
 	nodeConn ChainNodeConn,
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
-	dkRegistry tcrypto.DKShareRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	cmtLogStore cmtLog.Store,
 	blockWAL smGPAUtils.BlockWAL,
 	net peering.NetworkProvider,
@@ -200,7 +200,7 @@ func New(
 	//
 	// Create sub-components.
 	chainMetrics := metrics.DefaultChainMetrics()
-	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkRegistry, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
+	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkShareRegistryProvider, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
 	}

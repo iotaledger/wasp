@@ -35,7 +35,6 @@ type ChainProvider func(chainID *isc.ChainID) chain.Chain
 
 type Chains struct {
 	ctx                              context.Context
-	ctxCancel                        context.CancelFunc
 	log                              *logger.Logger
 	nodeConnection                   chain.NodeConnection
 	processorConfig                  *processors.Config
@@ -46,7 +45,7 @@ type Chains struct {
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
-	chainRecordRegistryProvider      registry.Registry
+	chainRecordRegistryProvider      registry.ChainRecordRegistryProvider
 	allMetrics                       *metrics.Metrics
 
 	mutex     sync.RWMutex
@@ -59,7 +58,6 @@ type activeChain struct {
 }
 
 func New(
-	ctx context.Context,
 	log *logger.Logger,
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
@@ -73,10 +71,7 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	allMetrics *metrics.Metrics,
 ) *Chains {
-	subCtx, subCancel := context.WithCancel(ctx)
 	ret := &Chains{
-		ctx:                              subCtx,
-		ctxCancel:                        subCancel,
 		log:                              log,
 		allChains:                        map[isc.ChainID]*activeChain{},
 		nodeConnection:                   nodeConnection,
@@ -94,19 +89,19 @@ func New(
 	return ret
 }
 
-// This object can be disposed either by calling this function or by canceling the context passed to the constructor.
-func (c *Chains) Dismiss() {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-
-	for chainID, ch := range c.allChains {
-		ch.cancelFunc()
-		delete(c.allChains, chainID)
+func (c *Chains) Run(ctx context.Context) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.ctx == nil {
+		c.log.Warnf("Chains already running.")
+		return nil
 	}
-	c.ctxCancel()
+	c.ctx = ctx
+
+	return c.activateAllFromRegistry() //nolint:contextcheck
 }
 
-func (c *Chains) ActivateAllFromRegistry() error {
+func (c *Chains) activateAllFromRegistry() error {
 	var innerErr error
 	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
 		chainID := chainRecord.ChainID()
@@ -127,6 +122,9 @@ func (c *Chains) ActivateAllFromRegistry() error {
 func (c *Chains) Activate(chainID *isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	if c.ctx == nil {
+		return xerrors.Errorf("run chains first")
+	}
 	//
 	// Check, maybe it is already running.
 	if _, ok := c.allChains[*chainID]; ok {
