@@ -175,7 +175,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	if err != nil {
 		return nil // No messages to send
 	}
-	request := smT.createStateBlockRequestLocal(blockCommitment, func(_ obtainStateFun) {})
+	request := smT.createBlockRequestLocal(blockCommitment, func(_ obtainStateFun) {})
 	requests = append(requests, request)
 	delete(smT.blockRequests, blockHash)
 	for _, request := range requests {
@@ -206,7 +206,7 @@ func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *
 	smT.lastStateOutputSeq++
 	seq := smT.lastStateOutputSeq
 	smT.log.Debugf("Chain receive confirmed alias output %s: alias output is %v-th in state manager", aliasOutputID, seq)
-	request := smT.createStateBlockRequestLocal(stateCommitment, func(_ obtainStateFun) {
+	request := smT.createBlockRequestLocal(stateCommitment, func(_ obtainStateFun) {
 		smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): all blocks for the state are in store", aliasOutputID, seq)
 		if seq <= smT.stateOutputSeq {
 			smT.log.Warnf("Chain receive confirmed alias output %s (%v-th in state manager): alias output is outdated", aliasOutputID, seq)
@@ -231,7 +231,7 @@ func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *
 func (smT *stateManagerGPA) handleConsensusStateProposal(csp *smInputs.ConsensusStateProposal) gpa.OutMessages {
 	smT.log.Debugf("Consensus state proposal %s input received...", csp.GetL1Commitment())
 	smT.lastBlockRequestID++
-	request := newStateBlockRequestFromConsensusStateProposal(csp, smT.log, smT.lastBlockRequestID)
+	request := newBlockRequestFromConsensusStateProposal(csp, smT.log, smT.lastBlockRequestID)
 	messages, err := smT.traceBlockChainByRequest(request)
 	if err != nil {
 		smT.log.Errorf("Consensus state proposal %s: error tracing block chain: %v", csp.GetL1Commitment(), err)
@@ -244,7 +244,7 @@ func (smT *stateManagerGPA) handleConsensusStateProposal(csp *smInputs.Consensus
 func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusDecidedState) gpa.OutMessages {
 	smT.log.Debugf("Consensus decided state %s input received...", cds.GetL1Commitment())
 	smT.lastBlockRequestID++
-	messages, err := smT.traceBlockChainByRequest(newStateBlockRequestFromConsensusDecidedState(cds, smT.log, smT.lastBlockRequestID))
+	messages, err := smT.traceBlockChainByRequest(newBlockRequestFromConsensusDecidedState(cds, smT.log, smT.lastBlockRequestID))
 	if err != nil {
 		smT.log.Errorf("Consensus decided state %s: error tracing block chain: %v", cds.GetL1Commitment(), err)
 		return nil // No messages to send
@@ -256,7 +256,7 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusD
 func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.ConsensusBlockProduced) gpa.OutMessages {
 	commitment := input.GetStateDraft().BaseL1Commitment()
 	smT.log.Debugf("Consensus block produced on state %s input received...", commitment)
-	request := smT.createStateBlockRequestLocal(commitment, func(_ obtainStateFun) {
+	request := smT.createBlockRequestLocal(commitment, func(_ obtainStateFun) {
 		smT.log.Debugf("Consensus block produced on state %s: all blocks to commit state draft are in store, committing it", commitment)
 		block := smT.store.Commit(input.GetStateDraft())
 		smT.log.Debugf("Consensus block produced on state %s: state draft has been committed to the store; block %s received",
@@ -282,14 +282,14 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 
 func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolStateRequest) gpa.OutMessages { //nolint:funlen
 	oldNewContainer := &struct {
-		oldStateBlockRequest          *stateBlockRequest
-		newStateBlockRequest          *stateBlockRequest
-		oldStateBlockRequestCompleted bool
-		newStateBlockRequestCompleted bool
-		obtainNewStateFun             obtainStateFun
+		oldBlockRequest          *blockRequestImpl
+		newBlockRequest          *blockRequestImpl
+		oldBlockRequestCompleted bool
+		newBlockRequestCompleted bool
+		obtainNewStateFun        obtainStateFun
 	}{
-		oldStateBlockRequestCompleted: false,
-		newStateBlockRequestCompleted: false,
+		oldBlockRequestCompleted: false,
+		newBlockRequestCompleted: false,
 	}
 	isValidFun := func() bool { return input.IsValid() }
 	obtainCommittedBlockFun := func(commitment *state.L1Commitment) state.Block {
@@ -309,8 +309,8 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 			commonIndex = newBaseIndex
 		}
 
-		oldBC := oldNewContainer.oldStateBlockRequest.getBlockChain()
-		newBC := oldNewContainer.newStateBlockRequest.getBlockChain()
+		oldBC := oldNewContainer.oldBlockRequest.getBlockChain()
+		newBC := oldNewContainer.newBlockRequest.getBlockChain()
 		oldCommitment := input.GetOldL1Commitment()
 		newCommitment := input.GetNewL1Commitment()
 		oldCOB := newChainOfBlocks(oldBC, oldCommitment, oldBaseIndex, obtainCommittedBlockFun)
@@ -340,30 +340,30 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		respondToMempoolFun(0)
 	}
 	respondIfNeededFun := func() {
-		if oldNewContainer.oldStateBlockRequestCompleted && oldNewContainer.newStateBlockRequestCompleted {
+		if oldNewContainer.oldBlockRequestCompleted && oldNewContainer.newBlockRequestCompleted {
 			respondFun()
 		}
 	}
 	respondFromOldFun := func(_ obtainStateFun) {
-		oldNewContainer.oldStateBlockRequestCompleted = true
+		oldNewContainer.oldBlockRequestCompleted = true
 		respondIfNeededFun()
 	}
 	respondFromNewFun := func(obtainStateFun obtainStateFun) {
-		oldNewContainer.newStateBlockRequestCompleted = true
+		oldNewContainer.newBlockRequestCompleted = true
 		oldNewContainer.obtainNewStateFun = obtainStateFun
 		respondIfNeededFun()
 	}
 	id := blockRequestID(5) //TODO
-	oldNewContainer.oldStateBlockRequest = newStateBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
-	oldNewContainer.newStateBlockRequest = newStateBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
+	oldNewContainer.oldBlockRequest = newBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
+	oldNewContainer.newBlockRequest = newBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
 
 	result := gpa.NoMessages()
-	messages, err := smT.traceBlockChainByRequest(oldNewContainer.oldStateBlockRequest)
+	messages, err := smT.traceBlockChainByRequest(oldNewContainer.oldBlockRequest)
 	if err != nil {
 		// TODO
 	}
 	result.AddAll(messages)
-	messages, err = smT.traceBlockChainByRequest(oldNewContainer.newStateBlockRequest)
+	messages, err = smT.traceBlockChainByRequest(oldNewContainer.newBlockRequest)
 	if err != nil {
 		// TODO
 	}
@@ -371,9 +371,9 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 	return result
 }
 
-func (smT *stateManagerGPA) createStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun) *stateBlockRequest {
+func (smT *stateManagerGPA) createBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun) *blockRequestImpl {
 	smT.lastBlockRequestID++
-	return newStateBlockRequestLocal(commitment, respondFun, smT.log, smT.lastBlockRequestID)
+	return newBlockRequestLocal(commitment, respondFun, smT.log, smT.lastBlockRequestID)
 }
 
 func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block {

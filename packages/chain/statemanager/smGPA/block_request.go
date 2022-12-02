@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type stateBlockRequest struct {
+type blockRequestImpl struct {
 	lastL1Commitment *state.L1Commitment
 	done             bool
 	blocks           []state.Block
@@ -23,10 +23,10 @@ type isValidFun func() bool
 
 type respondFun func(obtainStateFun)
 
-var _ blockRequest = &stateBlockRequest{}
+var _ blockRequest = &blockRequestImpl{}
 
-func newStateBlockRequestTemplate(rType string, log *logger.Logger, id blockRequestID) *stateBlockRequest {
-	return &stateBlockRequest{
+func newBlockRequestTemplate(rType string, log *logger.Logger, id blockRequestID) *blockRequestImpl {
+	return &blockRequestImpl{
 		done:   false,
 		blocks: make([]state.Block, 0),
 		log:    log.Named(fmt.Sprintf("r%s-%v", rType, id)),
@@ -35,8 +35,8 @@ func newStateBlockRequestTemplate(rType string, log *logger.Logger, id blockRequ
 	}
 }
 
-func newStateBlockRequestFromConsensusStateProposal(input *smInputs.ConsensusStateProposal, log *logger.Logger, id blockRequestID) *stateBlockRequest {
-	result := newStateBlockRequestTemplate("scsp", log, id)
+func newBlockRequestFromConsensusStateProposal(input *smInputs.ConsensusStateProposal, log *logger.Logger, id blockRequestID) *blockRequestImpl {
+	result := newBlockRequestTemplate("scsp", log, id)
 	result.lastL1Commitment = input.GetL1Commitment()
 	result.isValidFun = func() bool {
 		return input.IsValid()
@@ -48,8 +48,8 @@ func newStateBlockRequestFromConsensusStateProposal(input *smInputs.ConsensusSta
 	return result
 }
 
-func newStateBlockRequestFromConsensusDecidedState(input *smInputs.ConsensusDecidedState, log *logger.Logger, id blockRequestID) *stateBlockRequest {
-	result := newStateBlockRequestTemplate("scds", log, id)
+func newBlockRequestFromConsensusDecidedState(input *smInputs.ConsensusDecidedState, log *logger.Logger, id blockRequestID) *blockRequestImpl {
+	result := newBlockRequestTemplate("scds", log, id)
 	result.lastL1Commitment = input.GetL1Commitment()
 	result.isValidFun = func() bool {
 		return input.IsValid()
@@ -66,8 +66,8 @@ func newStateBlockRequestFromConsensusDecidedState(input *smInputs.ConsensusDeci
 	return result
 }
 
-func newStateBlockRequestFromMempool(typeStr string, commitment *state.L1Commitment, isValidFun isValidFun, respondFun respondFun, log *logger.Logger, id blockRequestID) *stateBlockRequest {
-	result := newStateBlockRequestTemplate("sm"+typeStr, log, id)
+func newBlockRequestFromMempool(typeStr string, commitment *state.L1Commitment, isValidFun isValidFun, respondFun respondFun, log *logger.Logger, id blockRequestID) *blockRequestImpl {
+	result := newBlockRequestTemplate("sm"+typeStr, log, id)
 	result.lastL1Commitment = commitment
 	result.isValidFun = isValidFun
 	result.respondFun = respondFun
@@ -76,8 +76,8 @@ func newStateBlockRequestFromMempool(typeStr string, commitment *state.L1Commitm
 	return result
 }
 
-func newStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun, log *logger.Logger, id blockRequestID) *stateBlockRequest {
-	result := newStateBlockRequestTemplate("sl", log, id)
+func newBlockRequestLocal(commitment *state.L1Commitment, respondFun respondFun, log *logger.Logger, id blockRequestID) *blockRequestImpl {
+	result := newBlockRequestTemplate("sl", log, id)
 	result.lastL1Commitment = commitment
 	result.isValidFun = func() bool {
 		return true
@@ -87,27 +87,27 @@ func newStateBlockRequestLocal(commitment *state.L1Commitment, respondFun respon
 	return result
 }
 
-func (sbrT *stateBlockRequest) getLastL1Commitment() *state.L1Commitment {
+func (sbrT *blockRequestImpl) getLastL1Commitment() *state.L1Commitment {
 	return sbrT.lastL1Commitment
 }
 
-func (sbrT *stateBlockRequest) isValid() bool {
+func (sbrT *blockRequestImpl) isValid() bool {
 	if sbrT.done {
 		return false
 	}
 	return sbrT.isValidFun()
 }
 
-func (sbrT *stateBlockRequest) blockAvailable(block state.Block) {
+func (sbrT *blockRequestImpl) blockAvailable(block state.Block) {
 	sbrT.log.Debugf("State block request received block %s, appending it to chain", block.L1Commitment())
 	sbrT.blocks = append(sbrT.blocks, block)
 }
 
-func (sbrT *stateBlockRequest) getBlockChain() []state.Block {
+func (sbrT *blockRequestImpl) getBlockChain() []state.Block {
 	return sbrT.blocks
 }
 
-func (sbrT *stateBlockRequest) markCompleted(obtainStateFun obtainStateFun) {
+func (sbrT *blockRequestImpl) markCompleted(obtainStateFun obtainStateFun) {
 	if sbrT.isValid() {
 		sbrT.log.Debugf("State block request is valid, marking it completed and responding")
 		sbrT.done = true
@@ -118,10 +118,10 @@ func (sbrT *stateBlockRequest) markCompleted(obtainStateFun obtainStateFun) {
 	}
 }
 
-func (sbrT *stateBlockRequest) getType() string {
+func (sbrT *blockRequestImpl) getType() string {
 	return sbrT.rType
 }
 
-func (sbrT *stateBlockRequest) getID() blockRequestID {
+func (sbrT *blockRequestImpl) getID() blockRequestID {
 	return sbrT.id
 }
