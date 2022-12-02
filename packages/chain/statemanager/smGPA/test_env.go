@@ -67,7 +67,7 @@ func (teT *testEnv) finalize() {
 
 func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, blocks ...state.Block) {
 	for i := range blocks {
-		cbpInput, cbpRespChan := smInputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(teT.t, blocks[i]))
+		cbpInput, cbpRespChan := smInputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(blocks[i]))
 		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID)
 		teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: cbpInput}).RunAll()
 		require.NoError(teT.t, teT.requireReceiveNoError(cbpRespChan, 5*time.Second))

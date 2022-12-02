@@ -23,7 +23,7 @@ func TestBasic(t *testing.T) {
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
-	blocks, stateOutputs := env.bf.GetBlocks(t, 8, 1)
+	blocks, stateOutputs := env.bf.GetBlocks(8, 1)
 	env.sendBlocksToNode(nodeID, blocks...)
 
 	cspInput, cspRespChan := smInputs.NewConsensusStateProposal(context.Background(), stateOutputs[7])
@@ -47,7 +47,7 @@ func TestManyNodes(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
 	defer env.finalize()
 
-	blocks, stateOutputs := env.bf.GetBlocks(t, 16, 1)
+	blocks, stateOutputs := env.bf.GetBlocks(16, 1)
 	env.sendBlocksToNode(nodeIDs[0], blocks...)
 
 	// Nodes are checked sequentially
@@ -115,7 +115,7 @@ func TestFull(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
 	defer env.finalize()
 
-	lastAliasOutput := env.bf.GetOriginOutput(t)
+	lastAliasOutput := env.bf.GetOriginOutput()
 	lastCommitment := state.OriginL1Commitment()
 
 	confirmAndWaitFun := func(stateOutput *isc.AliasOutputWithID) bool {
@@ -135,7 +135,7 @@ func TestFull(t *testing.T) {
 
 	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseCommitment *state.L1Commitment, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []state.Block) {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
-		blocks, aliasOutputs := env.bf.GetBlocksFrom(t, iterationSize, 1, baseCommitment, baseAliasOutput, incrementFactor...)
+		blocks, aliasOutputs := env.bf.GetBlocksFrom(iterationSize, 1, baseCommitment, baseAliasOutput, incrementFactor...)
 		for _, block := range blocks {
 			env.sendBlocksToNode(nodeIDs[rand.Intn(nodeCount)], block)
 		}
@@ -209,9 +209,9 @@ func TestMempoolRequest(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
 	defer env.finalize()
 
-	mainBlocks, mainAliasOutputs := env.bf.GetBlocks(env.t, mainSize, 1)
+	mainBlocks, mainAliasOutputs := env.bf.GetBlocks(mainSize, 1)
 	branchIndex := randomFrom + rand.Intn(randomTo-randomFrom)
-	branchBlocks, branchAliasOutputs := env.bf.GetBlocksFrom(env.t, branchSize, 1, mainBlocks[branchIndex].L1Commitment(), mainAliasOutputs[branchIndex], 2)
+	branchBlocks, branchAliasOutputs := env.bf.GetBlocksFrom(branchSize, 1, mainBlocks[branchIndex].L1Commitment(), mainAliasOutputs[branchIndex], 2)
 
 	env.sendBlocksToNode(nodeIDs[0], mainBlocks...)
 	env.sendBlocksToNode(nodeIDs[0], branchBlocks...)
@@ -254,7 +254,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
-	blocks, _ := env.bf.GetBlocks(t, 6, 2)
+	blocks, _ := env.bf.GetBlocks(6, 2)
 
 	blockCache := env.sms[nodeID].(*stateManagerGPA).blockCache
 	blockCache.AddBlock(blocks[0])
