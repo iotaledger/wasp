@@ -12,7 +12,6 @@ import (
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -40,7 +39,6 @@ func Init(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
-	consensusJournalRegistryProvider journal.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
@@ -84,7 +82,6 @@ func Init(
 		chainRecordRegistryProvider,
 		dkShareRegistryProvider,
 		nodeIdentityProvider,
-		consensusJournalRegistryProvider,
 		chainsProvider,
 		nodeProvider,
 		shutdown,

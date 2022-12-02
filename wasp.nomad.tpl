@@ -30,7 +30,7 @@ variable "wasp_config" {
   },
   "db": {
     "engine": "rocksdb",
-    "consensusJournal": {
+    "consensusState": {
       "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/consensus"
     },
     "chainState": {

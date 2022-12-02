@@ -6,11 +6,9 @@ import (
 
 	"go.uber.org/dig"
 
-	"github.com/prometheus/tsdb/wal"
-
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/database"
@@ -40,12 +38,7 @@ var (
 
 type dependencies struct {
 	dig.In
-
-	WAL                              *wal.WAL
-	Chains                           *chains.Chains
-	DKShareRegistryProvider          registry.DKShareRegistryProvider
-	NodeIdentityProvider             registry.NodeIdentityProvider
-	ConsensusJournalRegistryProvider journal.Provider
+	Chains *chains.Chains
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -75,6 +68,9 @@ func provide(c *dig.Container) error {
 		NodeConnection              chain.NodeConnection
 		Metrics                     *metrics.Metrics `optional:"true"`
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		DKShareRegistryProvider     registry.DKShareRegistryProvider
+		NodeIdentityProvider        registry.NodeIdentityProvider
+		ConsensusStateCmtLog        cmtLog.Store
 	}
 
 	type chainsResult struct {
@@ -97,6 +93,9 @@ func provide(c *dig.Container) error {
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
 				deps.ChainRecordRegistryProvider,
+				deps.DKShareRegistryProvider,
+				deps.NodeIdentityProvider,
+				deps.ConsensusStateCmtLog,
 				deps.Metrics,
 			),
 		}
@@ -110,7 +109,7 @@ func provide(c *dig.Container) error {
 func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		if err := deps.Chains.Run(ctx); err != nil {
-			CoreComponent.LogErrorf("failed to start chains: %v", err)
+			CoreComponent.LogPanicf("failed to start chains: %v", err)
 			return
 		}
 

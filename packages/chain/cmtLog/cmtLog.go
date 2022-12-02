@@ -70,6 +70,7 @@
 package cmtLog
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -90,6 +91,18 @@ type CmtLog interface {
 
 type State struct {
 	LogIndex LogIndex
+}
+
+func (s *State) MarshalBinary() ([]byte, error) {
+	bin := make([]byte, 4)
+	binary.BigEndian.PutUint32(bin, s.LogIndex.AsUint32())
+	return bin, nil
+}
+
+func (s *State) UnmarshalBinary(data []byte) error {
+	val := binary.BigEndian.Uint32(data)
+	s.LogIndex = LogIndex(val)
+	return nil
 }
 
 // Interface used to store and recover the existing persistent state.

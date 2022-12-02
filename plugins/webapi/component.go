@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -76,20 +75,19 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
-		ShutdownHandler                  *shutdown.ShutdownHandler
-		WAL                              *wal.WAL
-		APICacheTTL                      time.Duration `name:"apiCacheTTL"`
-		PublisherPort                    int           `name:"publisherPort"`
-		Chains                           *chains.Chains
-		Metrics                          *metrics.Metrics `optional:"true"`
-		ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider          registry.DKShareRegistryProvider
-		NodeIdentityProvider             registry.NodeIdentityProvider
-		ConsensusJournalRegistryProvider journal.Provider
-		NetworkProvider                  peering.NetworkProvider       `name:"networkProvider"`
-		TrustedNetworkManager            peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                             *dkg.Node
-		UserManager                      *users.UserManager
+		ShutdownHandler             *shutdown.ShutdownHandler
+		WAL                         *wal.WAL
+		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
+		PublisherPort               int           `name:"publisherPort"`
+		Chains                      *chains.Chains
+		Metrics                     *metrics.Metrics `optional:"true"`
+		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		DKShareRegistryProvider     registry.DKShareRegistryProvider
+		NodeIdentityProvider        registry.NodeIdentityProvider
+		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		Node                        *dkg.Node
+		UserManager                 *users.UserManager
 	}
 
 	type webapiServerResult struct {
@@ -130,7 +128,6 @@ func provide(c *dig.Container) error {
 			func() *chains.Chains {
 				return deps.Chains
 			},
-			deps.ConsensusJournalRegistryProvider,
 			func() *dkg.Node {
 				return deps.Node
 			},

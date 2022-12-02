@@ -9,7 +9,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
@@ -29,7 +28,6 @@ func AddEndpoints(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusJournalRegistryProvider journal.Provider,
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
@@ -50,14 +48,13 @@ func AddEndpoints(
 	addChainRecordEndpoints(adm, chainRecordRegistryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{
-		chainRecordRegistryProvider:      chainRecordRegistryProvider,
-		dkShareRegistryProvider:          dkShareRegistryProvider,
-		nodeIdentityProvider:             nodeIdentityProvider,
-		consensusJournalRegistryProvider: consensusJournalRegistryProvider,
-		chains:                           chainsProvider,
-		network:                          network,
-		allMetrics:                       metrics,
-		w:                                w,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		dkShareRegistryProvider:     dkShareRegistryProvider,
+		nodeIdentityProvider:        nodeIdentityProvider,
+		chains:                      chainsProvider,
+		network:                     network,
+		allMetrics:                  metrics,
+		w:                           w,
 	})
 	addDKSharesEndpoints(adm, dkShareRegistryProvider, nodeProvider)
 	addPeeringEndpoints(adm, chainRecordRegistryProvider, network, tnm)

@@ -151,6 +151,7 @@ require (
 	github.com/raulk/go-watchdog v1.3.0 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
+	github.com/samber/lo v1.36.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/second-state/WasmEdge-go v0.11.2 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect

@@ -48,7 +48,7 @@ const WaspConfig = `
   },
   "db": {
     "engine": "rocksdb",
-    "consensusJournal": {
+    "consensusState": {
       "path": "waspdb/chains/consensus"
     },
     "chainState": {

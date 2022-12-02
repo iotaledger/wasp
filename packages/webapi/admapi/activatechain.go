@@ -11,7 +11,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"github.com/prometheus/tsdb/wal"
 
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -26,14 +25,13 @@ import (
 )
 
 type chainWebAPI struct {
-	chainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-	dkShareRegistryProvider          registry.DKShareRegistryProvider
-	nodeIdentityProvider             registry.NodeIdentityProvider
-	consensusJournalRegistryProvider journal.Provider
-	chains                           chains.Provider
-	network                          peering.NetworkProvider
-	allMetrics                       *metrics.Metrics
-	w                                *wal.WAL
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	nodeIdentityProvider        registry.NodeIdentityProvider
+	chains                      chains.Provider
+	network                     peering.NetworkProvider
+	allMetrics                  *metrics.Metrics
+	w                           *wal.WAL
 }
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {

@@ -13,6 +13,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -45,8 +46,13 @@ type Chains struct {
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
-	chainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-	allMetrics                       *metrics.Metrics
+
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	nodeIdentityProvider        registry.NodeIdentityProvider
+	consensusStateCmtLog        cmtLog.Store
+
+	metrics *metrics.Metrics
 
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
@@ -69,6 +75,9 @@ func New(
 	rawBlocksEnabled bool, // TODO: Unused for now.
 	rawBlocksDir string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	consensusStateCmtLog cmtLog.Store,
 	allMetrics *metrics.Metrics,
 ) *Chains {
 	ret := &Chains{
@@ -84,7 +93,10 @@ func New(
 		rawBlocksEnabled:                 rawBlocksEnabled,
 		rawBlocksDir:                     rawBlocksDir,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
-		allMetrics:                       allMetrics,
+		dkShareRegistryProvider:          dkShareRegistryProvider,
+		nodeIdentityProvider:             nodeIdentityProvider,
+		consensusStateCmtLog:             consensusStateCmtLog,
+		metrics:                          allMetrics,
 	}
 	return ret
 }
@@ -171,7 +183,7 @@ func (c *Chains) Activate(chainID *isc.ChainID) error {
 		c.registry.GetNodeIdentity(),
 		c.processorConfig,
 		nil, // TODO: dkRegistry tcrypto.DKShareRegistryProvider,
-		nil, // TODO: cmtLogStore cmtLog.Store,
+		c.consensusStateCmtLog,
 		nil, // TODO: blockWAL smGPAUtils.BlockWAL
 		c.networkProvider,
 		c.log,
