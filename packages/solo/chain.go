@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -612,11 +611,6 @@ func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Cl
 
 // DetachFromRequestProcessed implements chain.Chain
 func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
-	panic("unimplemented")
-}
-
-// EnqueueOffLedgerRequestMsg implements chain.Chain
-func (*Chain) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsgIn) {
 	panic("unimplemented")
 }
 

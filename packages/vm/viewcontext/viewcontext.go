@@ -47,7 +47,7 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.Chain, blockIndex uint32) *ViewContext {
+func New(ch chain.ChainCore, blockIndex uint32) *ViewContext {
 	state, err := ch.GetStateReader().StateByIndex(blockIndex)
 	if err != nil {
 		panic(xerrors.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err))
@@ -103,7 +103,7 @@ func (ctx *ViewContext) Caller() isc.AgentID {
 		return nil
 	default:
 		callerHname := ctx.callStack[len(ctx.callStack)-1].contract
-		return isc.NewContractAgentID(ctx.chainID, callerHname)
+		return isc.NewContractAgentID(&ctx.chainID, callerHname)
 	}
 }
 

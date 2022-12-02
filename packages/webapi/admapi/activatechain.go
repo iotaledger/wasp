@@ -9,7 +9,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"github.com/prometheus/tsdb/wal"
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -31,7 +30,6 @@ type chainWebAPI struct {
 	chains                      chains.Provider
 	network                     peering.NetworkProvider
 	allMetrics                  *metrics.Metrics
-	w                           *wal.WAL
 }
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {

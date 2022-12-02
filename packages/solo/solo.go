@@ -495,18 +495,8 @@ func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("unimplemented")
 }
 
-// func (ch *Chain) StateCandidateToStateManager(trie.VCommitment, *iotago.UTXOInput) {
-// 	panic("unimplemented")
-// }
-
-// func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
-// 	panic("unimplemented")
-// }
-
-func (ch *Chain) GetStateReader(blockIndex uint32) state.State {
-	state, err := ch.Store.StateByIndex(blockIndex)
-	require.NoError(ch.Env.T, err)
-	return state
+func (ch *Chain) GetStateReader() state.Store {
+	return ch.Store
 }
 
 func (ch *Chain) ID() *isc.ChainID {

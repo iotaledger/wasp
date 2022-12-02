@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/params"
@@ -22,20 +21,23 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
-func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
+func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
-	anchorOutput := ch.GetAnchorOutput()
+
+	// TODO how to get latest alias output?
+
+	// anchorOutput := ch.LatestAliasOutput()
 	task := &vm.VMTask{
-		Processors:           ch.Processors(),
-		AnchorOutput:         anchorOutput.GetAliasOutput(),
-		AnchorOutputID:       anchorOutput.OutputID(),
+		Processors: ch.Processors(),
+		// AnchorOutput:         anchorOutput.GetAliasOutput(),
+		// AnchorOutputID:       anchorOutput.OutputID(),
+		Store:                ch.GetStateReader(),
 		Requests:             []isc.Request{req},
 		TimeAssumption:       time.Now(),
-		Store:                ch.GetStore(),
 		Entropy:              hashing.RandomHash(nil),
 		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
 		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-		EnableGasBurnLogging: true,
+		EnableGasBurnLogging: false,
 		EstimateGasMode:      true,
 	}
 	err := vmRunner.Run(task)
@@ -43,7 +45,7 @@ func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 		return nil, err
 	}
 	if len(task.Results) == 0 {
-		return nil, xerrors.Errorf("request was skipped")
+		return nil, fmt.Errorf("request was skipped")
 	}
 	return task.Results[0], nil
 }
@@ -59,8 +61,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		hi     uint64
 		gasCap uint64
 	)
-
-	ret, err := CallView(ch, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
+	ret, err := CallView(latestBlockIndex(ch), ch, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	if err != nil {
 		return 0, err
 	}
@@ -87,7 +88,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 				// out of gas when charging ISC gas
 				return true, nil
 			}
-			vmerr, resolvingErr := ch.ResolveError(res.Receipt.Error)
+			vmerr, resolvingErr := ResolveError(ch, res.Receipt.Error)
 			if resolvingErr != nil {
 				panic(fmt.Errorf("error resolving vmerror %v", resolvingErr))
 			}

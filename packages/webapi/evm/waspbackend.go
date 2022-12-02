@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -78,13 +77,7 @@ func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	b.chain.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: b.chain.ID(),
-			Req:     req,
-		},
-		SenderPubKey: b.nodePubKey,
-	})
+	b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey)
 
 	// store the request ID so that the user can query it later (if the
 	// Etheeum tx fails, the Ethereum receipt is never generated).

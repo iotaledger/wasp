@@ -49,7 +49,7 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
 		return nil, errors.New("SoloClientService.CallViewByHname chain ID mismatch")
 	}
-	res, err := s.ctx.Chain.CallViewByHname(iscContract, iscFunction, params)
+	res, err := s.ctx.Chain.CallViewByHname(s.ctx.Chain.LatestBlockIndex(), iscContract, iscFunction, params)
 	if err != nil {
 		return nil, err
 	}

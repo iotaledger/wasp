@@ -12,8 +12,6 @@ import (
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -513,7 +511,7 @@ func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
 	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
-	return &ret
+	return ret
 }
 
 // GetRootCommitment returns the root commitment of the latest state index

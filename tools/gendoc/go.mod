@@ -19,9 +19,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
-	github.com/NebulousLabs/merkletree v0.0.0-20181203152040-08d5d54b07f5 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.0 // indirect
-	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
@@ -49,8 +47,6 @@ require (
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/getsentry/sentry-go v0.15.0 // indirect
-	github.com/go-kit/kit v0.9.0 // indirect
-	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
@@ -78,14 +74,12 @@ require (
 	github.com/iotaledger/inx/go v1.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a // indirect
-	github.com/iotaledger/trie.go v0.0.0-20221116190047-9d0a1980c313 // indirect
 	github.com/ipfs/go-cid v0.3.2 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/klauspost/compress v1.15.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.1 // indirect
-	github.com/klauspost/reedsolomon v1.11.2 // indirect
 	github.com/knadh/koanf v1.4.4 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
@@ -155,7 +149,6 @@ require (
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/second-state/WasmEdge-go v0.11.2 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spacemonkeygo/spacelog v0.0.0-20180420211403-2296661a0572 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect

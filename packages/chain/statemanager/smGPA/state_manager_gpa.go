@@ -430,9 +430,10 @@ func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.
 }
 
 // TODO: state manager may ask for several requests at once: the request can be formulated
-//		 as "give me blocks from some commitment till some index". If the requested
-//		 node has the required block committed into the store, it certainly has
-//		 all the blocks before it.
+//
+//	as "give me blocks from some commitment till some index". If the requested
+//	node has the required block committed into the store, it certainly has
+//	all the blocks before it.
 func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, requests []blockRequest) (gpa.OutMessages, error) {
 	smT.log.Debugf("Tracing block %s chain...", initCommitment)
 	commitment := initCommitment

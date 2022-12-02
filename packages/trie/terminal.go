@@ -116,7 +116,7 @@ func (t *tcommitment) Bytes() []byte {
 }
 
 func (t *tcommitment) String() string {
-	return hex.EncodeToString(t.data[:])
+	return hex.EncodeToString(t.data)
 }
 
 func (t *tcommitment) ExtractValue() ([]byte, bool) {

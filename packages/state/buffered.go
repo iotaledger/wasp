@@ -86,3 +86,7 @@ func (b *bufferedKVStore) Set(key []byte, value []byte) error {
 func (*bufferedKVStore) WithRealm(realm []byte) (kvstore.KVStore, error) {
 	panic("should no be called")
 }
+
+func (*bufferedKVStore) WithExtendedRealm(realm []byte) (kvstore.KVStore, error) {
+	panic("should no be called")
+}

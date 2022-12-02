@@ -8,7 +8,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"github.com/prometheus/tsdb/wal"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
@@ -42,7 +41,6 @@ func Init(
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
 	metrics *metricspkg.Metrics,
-	w *wal.WAL,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	apiCacheTTL time.Duration,
@@ -86,7 +84,6 @@ func Init(
 		nodeProvider,
 		shutdown,
 		metrics,
-		w,
 		authConfig,
 		nodeOwnerAddresses,
 	)

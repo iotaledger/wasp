@@ -88,7 +88,12 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	ret, err := chainutil.CallView(theChain, contractHname, functionHname, params)
+	// TODO should blockIndex be an optional parameter of this endpoint?
+	latestBlock, err := theChain.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
+	}
+	ret, err := chainutil.CallView(latestBlock, theChain, contractHname, functionHname, params)
 	if err != nil {
 		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -125,7 +130,13 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	ret, err := theChain.GetStateReader(theChain.LatestBlockIndex()).Get(kv.Key(key))
+	state, err := theChain.GetStateReader().LatestState()
+	if err != nil {
+		reason := fmt.Sprintf("View call failed: %v", err)
+		return httperrors.ServerError(reason)
+	}
+
+	ret, err := state.Get(kv.Key(key))
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
 		return httperrors.ServerError(reason)

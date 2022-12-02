@@ -124,7 +124,7 @@ func (a ISCAgentID) MustUnwrap() isc.AgentID {
 	return ret
 }
 
-// ISCRequestID matches the struct definition in ISC.sol
+// ISCRequestID matches the struct definition in ISCTypes.sol
 type ISCRequestID struct {
 	Data []byte
 }

@@ -54,7 +54,6 @@ func AddEndpoints(
 		chains:                      chainsProvider,
 		network:                     network,
 		allMetrics:                  metrics,
-		w:                           w,
 	})
 	addDKSharesEndpoints(adm, dkShareRegistryProvider, nodeProvider)
 	addPeeringEndpoints(adm, chainRecordRegistryProvider, network, tnm)

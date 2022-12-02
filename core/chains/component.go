@@ -62,15 +62,15 @@ func provide(c *dig.Container) error {
 	type chainsDeps struct {
 		dig.In
 
-		ProcessorsConfig            *processors.Config
-		DatabaseManager             *database.Manager
-		NetworkProvider             peering.NetworkProvider `name:"networkProvider"`
 		NodeConnection              chain.NodeConnection
-		Metrics                     *metrics.Metrics `optional:"true"`
+		ProcessorsConfig            *processors.Config
+		NetworkProvider             peering.NetworkProvider `name:"networkProvider"`
+		DatabaseManager             *database.Manager
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
 		ConsensusStateCmtLog        cmtLog.Store
+		Metrics                     *metrics.Metrics `optional:"true"`
 	}
 
 	type chainsResult struct {
@@ -110,7 +110,6 @@ func run() error {
 	err := CoreComponent.Daemon().BackgroundWorker(CoreComponent.Name, func(ctx context.Context) {
 		if err := deps.Chains.Run(ctx); err != nil {
 			CoreComponent.LogPanicf("failed to start chains: %v", err)
-			return
 		}
 
 		<-ctx.Done()

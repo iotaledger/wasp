@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"io"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -41,7 +43,7 @@ func (hashes *hashVector) Hash() Hash {
 			continue
 		}
 		pos := i * HashSizeBytes
-		copy(buf[pos:pos+HashSizeBytes], h[:])
+		copy(buf[pos:pos+HashSizeBytes], h)
 	}
 	return blake2b160(buf)
 }
@@ -67,6 +69,14 @@ func (h Hash) Write(w io.Writer) error {
 
 func (h Hash) String() string {
 	return hex.EncodeToString(h[:])
+}
+
+func (h Hash) Equals(other util.Equatable) bool {
+	h2, ok := other.(Hash)
+	if !ok {
+		return false
+	}
+	return h == h2
 }
 
 func ReadHash(r io.Reader) (ret Hash, err error) {

@@ -10,7 +10,7 @@ import (
 )
 
 func CheckNonce(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	res, err := CallView(ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(),
+	res, err := CallView(latestBlockIndex(ch), ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(),
 		dict.Dict{
 			accounts.ParamAgentID: codec.Encode(req.SenderAccount()),
 		})
@@ -19,4 +19,12 @@ func CheckNonce(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	}
 	nonce := codec.MustDecodeUint64(res.MustGet(accounts.ParamAccountNonce))
 	return vmcontext.CheckNonce(req, nonce)
+}
+
+func latestBlockIndex(ch chain.ChainCore) uint32 {
+	latestBlockIndex, err := ch.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		panic(err)
+	}
+	return latestBlockIndex
 }
