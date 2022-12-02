@@ -47,13 +47,12 @@ const (
 
 func New(
 	chainAddress iotago.Address,
-	stateReader state.OptimisticStateReader,
+	chain state.Store,
 	log *logger.Logger,
 	mempoolMetrics metrics.MempoolMetrics,
 ) Mempool {
 	isRequestProcessed := func(reqID *isc.RequestID) (bool, error) {
-		stateReader.SetBaseline()
-		ret, err := blocklog.IsRequestProcessed(stateReader.KVStoreReader(), reqID)
+		ret, err := blocklog.IsRequestProcessed(chain.LatestState(), reqID)
 		if err != nil {
 			// may be invalidated state. Do not remove from in-buffer yet
 			log.Debugf("addToPool, IsRequestProcessed error: %v", err)

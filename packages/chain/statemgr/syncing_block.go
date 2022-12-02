@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -64,29 +64,30 @@ func (syncT *syncingBlock) getApprovedBlockCandidateHash() state.BlockHash {
 	return syncT.approvalInfo.getBlockHash()
 }
 
-func (syncT *syncingBlock) getNextStateCommitment() trie.VCommitment {
+func (syncT *syncingBlock) getNextStateCommitment() common.VCommitment {
 	if syncT.approvalInfo == nil {
 		return nil
 	}
 	return syncT.approvalInfo.getNextStateCommitment()
 }
 
-func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.Block, nextState state.VirtualStateAccess) (isBlockNew bool, candidate *candidateBlock) {
+func (syncT *syncingBlock) addBlockCandidate(hash state.BlockHash, block state.Block, nextState state.StateDraft) (isBlockNew bool, candidate *candidateBlock) {
+	panic("TODO")
 	candidateExisting, ok := syncT.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
 		if !candidateExisting.getApprovingOutputID().Equals(block.ApprovingOutputID()) {
 			delete(syncT.blockCandidates, hash)
 			syncT.log.Warnf("addBlockCandidate: conflicting block index %v with hash %s arrived: present approvingOutputID %v, new block approvingOutputID: %v",
-				block.BlockIndex(), hash, isc.OID(candidateExisting.getApprovingOutputID()), isc.OID(block.ApprovingOutputID()))
+				nextState.BlockIndex(), hash, isc.OID(candidateExisting.getApprovingOutputID()), isc.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
-		syncT.log.Debugf("addBlockCandidate: existing block index %v with hash %s arrived, votes increased.", block.BlockIndex(), hash)
+		syncT.log.Debugf("addBlockCandidate: existing block index %v with hash %s arrived, votes increased.", nextState.BlockIndex(), hash)
 		return false, candidateExisting
 	}
 	candidate = newCandidateBlock(block, nextState)
 	syncT.blockCandidates[hash] = candidate
-	syncT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", block.BlockIndex(), hash)
+	syncT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", nextState.BlockIndex(), hash)
 	return true, candidate
 }
 

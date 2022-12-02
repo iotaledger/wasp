@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/iotaledger/wasp/packages/state"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -81,7 +80,7 @@ func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 
 // chain.ChainRunner implementation
 
-func (*mockedChain) GetVirtualState() (state.VirtualStateAccess, bool, error) {
+func (*mockedChain) GetBranch() (chainstore.Branch, bool, error) {
 	panic("unimplemented")
 }
 

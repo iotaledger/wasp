@@ -3,29 +3,27 @@ package vmcontext
 import (
 	"strings"
 	"testing"
-
-	"github.com/iotaledger/wasp/packages/vm"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 func TestSetThenGet(t *testing.T) {
-	chainID := isc.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	db := mapdb.NewMapDB()
+	cs := state.InitChainStore(db)
+	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 
-	stateUpdate := state.NewStateUpdate()
+	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
-		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
-		virtualState:       virtualState,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -35,8 +33,8 @@ func TestSetThenGet(t *testing.T) {
 
 	// contract sets variable x
 	s.Set("x", []byte{42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {42}}, stateUpdate.Mutations().Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {42}}, stateUpdate.Mutations.Sets)
+	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	// contract gets variable x
 	v, err := s.Get("x")
@@ -44,17 +42,17 @@ func TestSetThenGet(t *testing.T) {
 	assert.Equal(t, []byte{42}, v)
 
 	// mutation is in currentStateUpdate, prefixed by the contract id
-	assert.Equal(t, []byte{42}, stateUpdate.Mutations().Sets[subpartitionedKey])
+	assert.Equal(t, []byte{42}, stateUpdate.Mutations.Sets[subpartitionedKey])
 
 	// mutation is in the not committed to the virtual state yet
-	v, err = virtualState.KVStore().Get(subpartitionedKey)
+	v, err = stateDraft.Get(subpartitionedKey)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
 
 	// contract deletes variable x
 	s.Del("x")
-	assert.Equal(t, map[kv.Key][]byte{}, stateUpdate.Mutations().Sets)
-	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations().Dels)
+	assert.Equal(t, map[kv.Key][]byte{}, stateUpdate.Mutations.Sets)
+	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations.Dels)
 
 	// contract sees variable x does not exist
 	v, err = s.Get("x")
@@ -63,12 +61,12 @@ func TestSetThenGet(t *testing.T) {
 
 	// contract makes several writes to same variable, gets the latest value
 	s.Set("x", []byte{2 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {2 * 42}}, stateUpdate.Mutations().Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {2 * 42}}, stateUpdate.Mutations.Sets)
+	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	s.Set("x", []byte{3 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations().Sets)
-	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations.Sets)
+	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations.Dels)
 
 	v, err = s.Get("x")
 
@@ -77,15 +75,15 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	chainID := isc.RandomChainID([]byte("hmm"))
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	db := mapdb.NewMapDB()
+	cs := state.InitChainStore(db)
+	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 
-	stateUpdate := state.NewStateUpdate()
+	stateUpdate := NewStateUpdate()
 	hname := isc.Hn("test")
 
 	vmctx := &VMContext{
-		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
-		virtualState:       virtualState,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}
@@ -106,18 +104,21 @@ func TestIterate(t *testing.T) {
 }
 
 func TestVmctxStateDeletion(t *testing.T) {
-	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), isc.RandomChainID())
-	// stateUpdate := state.NewStateUpdate()
-	store := virtualState.KVStore()
-	foo := kv.Key("foo")
-	store.Set(foo, []byte("bar"))
-	virtualState.Commit()
-	require.EqualValues(t, "bar", store.MustGet(foo))
+	db := mapdb.NewMapDB()
+	cs := state.InitChainStore(db)
 
-	stateUpdate := state.NewStateUpdate()
+	foo := kv.Key("foo")
+	{
+		stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+		stateDraft.Set(foo, []byte("bar"))
+		block := cs.Commit(stateDraft)
+		cs.SetLatest(block.TrieRoot())
+	}
+
+	stateDraft := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
+	stateUpdate := NewStateUpdate()
 	vmctx := &VMContext{
-		task:               &vm.VMTask{SolidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline()},
-		virtualState:       virtualState,
+		stateDraft:         stateDraft,
 		currentStateUpdate: stateUpdate,
 	}
 	vmctxStore := vmctx.chainState()

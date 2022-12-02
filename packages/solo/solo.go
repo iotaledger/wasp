@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -94,12 +94,8 @@ type Chain struct {
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
 	ValidatorFeeTarget isc.AgentID
 
-	// State ia an interface to access virtual state of the chain: a buffered collection of key/value pairs
-	State state.VirtualStateAccess
-	// GlobalSync represents global atomic flag for the optimistic state reader. In Solo it has no function
-	GlobalSync coreutil.ChainStateSync
-	// StateReader is the read only access to the state
-	StateReader state.OptimisticStateReader
+	// Store is where the chain data (blocks, state) is stored
+	Store state.Store
 	// Log is the named logger of the chain
 	log *logger.Logger
 	// instance of VM
@@ -278,17 +274,11 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Bech32(parameters.L1().Protocol.Bech32HRP))
 
 	chainlog := env.logger.Named(name)
-	store, err := env.dbmanager.GetOrCreateChainStateKVStore(*chainID)
+
+	kvStore, err := env.dbmanager.GetOrCreateChainStateKVStore(*chainID)
 	require.NoError(env.T, err)
-
-	vs, err := state.CreateOriginState(store, chainID)
-	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), trie.RootCommitment(vs.TrieNodeStore()))
-
-	require.NoError(env.T, err)
-	require.EqualValues(env.T, 0, vs.BlockIndex())
-	require.True(env.T, vs.Timestamp().IsZero())
-
-	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
+	store := state.InitChainStore(kvStore)
+	env.logger.Infof("     chain '%s'. origin state commitment: %s", chainID.String(), store.LatestBlock().TrieRoot())
 
 	ret := &Chain{
 		Env:                    env,
@@ -300,9 +290,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
-		State:                  vs,
-		GlobalSync:             glbSync,
-		StateReader:            vs.OptimisticStateReader(glbSync),
+		Store:                  store,
 		bypassStardustVM:       bypassStardustVM,
 		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
@@ -507,34 +495,27 @@ func (ch *Chain) BacklogLen() int {
 }
 
 func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
-	// not used, just to implement ChainCore interface
-	return nil
+	panic("unimplemented")
 }
 
 func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
-	// not used, just to implement ChainCore interface
-	return nil
+	panic("unimplemented")
 }
 
 func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
-	// not used, just to implement ChainCore interface
-	return nil
+	panic("unimplemented")
 }
 
-func (ch *Chain) GlobalStateSync() coreutil.ChainStateSync {
-	return ch.GlobalSync
-}
-
-func (ch *Chain) StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput) {
-	// not used, just to implement ChainCore interface
+func (ch *Chain) StateCandidateToStateManager(common.VCommitment, *iotago.UTXOInput) {
+	panic("unimplemented")
 }
 
 func (ch *Chain) TriggerChainTransition(*chain.ChainTransitionEventData) {
-	// not used, just to implement ChainCore interface
+	panic("unimplemented")
 }
 
-func (ch *Chain) GetStateReader() state.OptimisticStateReader {
-	return ch.StateReader
+func (ch *Chain) GetStateReader(blockIndex uint32) state.State {
+	return ch.Store.StateByIndex(blockIndex)
 }
 
 func (ch *Chain) ID() *isc.ChainID {
@@ -549,16 +530,12 @@ func (ch *Chain) Processors() *processors.Cache {
 	return ch.proc
 }
 
-func (ch *Chain) VirtualStateAccess() state.VirtualStateAccess {
-	return ch.State.Copy()
-}
-
 func (ch *Chain) EnqueueDismissChain(_ string) {
-	// not used, just to implement ChainCore interface
+	panic("unimplemented")
 }
 
 func (ch *Chain) EnqueueAliasOutput(_ *isc.AliasOutputWithID) {
-	// not used, just to implement ChainCore interface
+	panic("unimplemented")
 }
 
 // ---------------------------------------------

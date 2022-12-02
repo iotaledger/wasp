@@ -251,7 +251,7 @@ func (s *StateDB) Buffered() *BufferedStateDB {
 // BufferedStateDB is a wrapper for StateDB that writes all mutations into an in-memory buffer,
 // leaving the original state unmodified until the mutations are applied manually with Commit().
 type BufferedStateDB struct {
-	buf        *buffered.BufferedKVStoreAccess
+	buf        *buffered.BufferedKVStore
 	base       kv.KVStore
 	getBalance GetBalanceFunc
 	subBalance SubBalanceFunc
@@ -260,7 +260,7 @@ type BufferedStateDB struct {
 
 func NewBufferedStateDB(base *StateDB) *BufferedStateDB {
 	return &BufferedStateDB{
-		buf:        buffered.NewBufferedKVStoreAccess(base.kv),
+		buf:        buffered.NewBufferedKVStore(base.kv),
 		base:       base.kv,
 		getBalance: base.getBalance,
 		subBalance: base.subBalance,

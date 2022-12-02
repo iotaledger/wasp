@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -48,7 +47,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", trie.RootCommitment(ch.State.TrieNodeStore()))
+	fmt.Fprintf(&buf, "Root commitment: %s\n", ch.Store.LatestBlock().TrieRoot())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
@@ -68,11 +67,6 @@ func (ch *Chain) DumpAccounts() string {
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
-}
-
-// RawState returns state of the chain for assess as raw KVStore
-func (ch *Chain) RawState() kv.KVStore {
-	return ch.VirtualStateAccess().KVStore()
 }
 
 // FindContract is a view call to the 'root' smart contract on the chain.
@@ -434,7 +428,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 
 	var blockIdx uint32
 	if len(blockIndex) == 0 {
-		blockIdx = ch.GetLatestBlockInfo().BlockIndex
+		blockIdx = ch.LatestBlockIndex()
 	} else {
 		blockIdx = blockIndex[0]
 	}
@@ -654,12 +648,15 @@ func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMessagesM
 	panic("unimplemented")
 }
 
-// GetDB implements chain.Chain
-func (ch *Chain) GetVirtualState() (state.VirtualStateAccess, bool, error) {
-	return ch.State.Copy(), true, nil
+func (ch *Chain) GetStore() state.Store {
+	return ch.Store
 }
 
 // GetTimeData implements chain.Chain
 func (*Chain) GetTimeData() time.Time {
 	panic("unimplemented")
+}
+
+func (ch *Chain) LatestBlockIndex() uint32 {
+	return ch.Store.LatestBlockIndex()
 }

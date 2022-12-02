@@ -1,3 +1,5 @@
+//go:build gascalibration
+
 package evmtest
 
 import (

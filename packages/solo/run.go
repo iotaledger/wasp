@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"strings"
@@ -71,12 +70,11 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 		AnchorOutputID:     anchorOutput.OutputID(),
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
-		VirtualStateAccess: ch.State.Copy(),
+		Store:              ch.Store,
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		// state baseline is always valid in Solo
-		SolidStateBaseline:   ch.GlobalSync.GetSolidIndexBaseline(),
 		EnableGasBurnLogging: true,
 		EstimateGasMode:      estimateGas,
 	}
@@ -122,8 +120,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 
 	if task.RotationAddress == nil {
 		// normal state transition
-		ch.State = task.VirtualStateAccess
-		ch.settleStateTransition(tx, task.GetProcessedRequestIDs())
+		ch.settleStateTransition(tx, task.GetProcessedRequestIDs(), task.StateDraft)
 	} else {
 		require.NoError(ch.Env.T, err)
 
@@ -137,29 +134,34 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	return task.Results
 }
 
-func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc.RequestID) {
+func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc.RequestID, stateDraft state.StateDraft) {
+	block := ch.Store.Commit(stateDraft)
+	ch.Store.SetLatest(block.TrieRoot())
+
 	anchor, stateOutput, err := transaction.GetAnchorFromTransaction(stateTx)
 	require.NoError(ch.Env.T, err)
 
 	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
-	block, err := ch.State.ExtractBlock()
-	require.NoError(ch.Env.T, err)
-	require.NotNil(ch.Env.T, block)
-	block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
+	//block, err := ch.State.ExtractBlock()
+	//require.NoError(ch.Env.T, err)
+	//require.NotNil(ch.Env.T, block)
+	//block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
+	//
+	//err = ch.State.Save(block)
+	//require.NoError(ch.Env.T, err)
+	//
+	//blockBack, err := state.LoadBlock(ch.Env.dbmanager.ChainStateKVStore(*ch.ChainID), ch.State.BlockIndex())
+	//require.NoError(ch.Env.T, err)
+	//require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
+	//require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
 
-	err = ch.State.Save(block)
-	require.NoError(ch.Env.T, err)
-
-	blockBack, err := state.LoadBlock(ch.Env.dbmanager.ChainStateKVStore(*ch.ChainID), ch.State.BlockIndex())
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
+	ch.Store.SetApprovingOutputID(block.TrieRoot(), anchor.OutputID.UTXOInput())
 
 	chain.PublishStateTransition(ch.ChainID, isc.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
 	chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
+		ch.Store.LatestBlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
 	ch.Log().Debugf("Batch processed: %s", batchShortStr(reqids))
 
 	ch.mempool.RemoveRequests(reqids...)

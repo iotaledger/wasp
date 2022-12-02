@@ -16,7 +16,8 @@ import (
 type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
 	EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error)
+	ISCCallView(iscBlockIndex uint32, scName string, funName string, args dict.Dict) (dict.Dict, error)
+	ISCLatestBlockIndex() uint32
 	EVMGasPrice() *big.Int
-	ISCCallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
 	BaseToken() *parameters.BaseToken
 }

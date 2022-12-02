@@ -4,13 +4,12 @@
 package smGPAUtils
 
 import (
-	"math/rand"
+	"crypto/rand"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
 func GetOriginState(t require.TestingT) (*isc.ChainID, *isc.AliasOutputWithID, state.VirtualStateAccess) {

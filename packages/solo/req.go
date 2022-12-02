@@ -12,8 +12,8 @@ import (
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/chain/aaa2/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -441,11 +441,19 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.CallViewByHname(isc.Hn(scName), isc.Hn(funName), params...)
+	return ch.CallViewAtBlockIndex(ch.Store.LatestBlockIndex(), scName, funName, params...)
 }
 
-func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewAtBlockIndex(blockIndex uint32, scName, funName string, params ...interface{}) (dict.Dict, error) {
+	ch.Log().Debugf("callView: %s::%s", scName, funName)
+	return ch.CallViewByHnameAtBlockIndex(blockIndex, isc.Hn(scName), isc.Hn(funName), params...)
+}
+
+func (ch *Chain) CallViewByHname(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+	return ch.CallViewByHnameAtBlockIndex(ch.Store.LatestBlockIndex(), hContract, hFunction, params...)
+}
+
+func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	if ch.bypassStardustVM {
 		return nil, xerrors.New("Solo: StardustVM context expected")
 	}
@@ -456,34 +464,31 @@ func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...inter
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, blockIndex)
 	return vmctx.CallViewExternal(hContract, hFunction, p)
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
-func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_blake2b.Proof {
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_blake2b.MerkleProof {
 	ch.Log().Debugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
 	return ret
 }
 
 // GetBlockProof returns Merkle proof of the key in the state
-func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_blake2b.Proof, error) {
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_blake2b.MerkleProof, error) {
 	ch.Log().Debugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	biBin, retProof, err := vmctx.GetBlockProof(blockIndex)
 	if err != nil {
 		return nil, nil, err
@@ -497,7 +502,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_bl
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie_blake2b.Proof {
+func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie_blake2b.MerkleProof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
@@ -509,19 +514,14 @@ func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	return &ret
 }
 
-// GetRootCommitment calculates root commitment from state
-func (ch *Chain) GetRootCommitment() trie.VCommitment {
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
-	ret, err := vmctx.GetRootCommitment()
-	require.NoError(ch.Env.T, err)
-	return ret
+// GetRootCommitment returns the root commitment of the latest state index
+func (ch *Chain) GetRootCommitment() common.VCommitment {
+	return ch.Store.LatestBlock().TrieRoot()
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	return vmctx.GetContractStateCommitment(hn)
 }
 

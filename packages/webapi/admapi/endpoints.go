@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wal"
 )
 
 var log *loggerpkg.Logger
@@ -35,7 +34,6 @@ func AddEndpoints(
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
-	w *wal.WAL,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 ) {

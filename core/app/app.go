@@ -22,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/metrics"
 	"github.com/iotaledger/wasp/plugins/publishernano"
-	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -46,7 +45,6 @@ func App() *app.App {
 		}...),
 		app.WithPlugins([]*app.Plugin{
 			profiling.Plugin,
-			wal.Plugin,
 			metrics.Plugin,
 			webapi.Plugin,
 			publishernano.Plugin,

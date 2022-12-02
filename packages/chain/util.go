@@ -4,14 +4,14 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, reqids []isc.RequestID, log *logger.Logger) {
+func LogStateTransition(blockIndex uint32, outputID string, rootCommitment common.VCommitment, reqids []isc.RequestID, log *logger.Logger) {
 	if blockIndex > 0 {
 		log.Infof("STATE TRANSITION TO #%d. Requests: %d, chain output: %s", blockIndex, len(reqids), outputID)
 		log.Debugf("STATE TRANSITION. Root commitment: %s", rootCommitment)
@@ -22,7 +22,7 @@ func LogStateTransition(blockIndex uint32, outputID string, rootCommitment trie.
 }
 
 // LogGovernanceTransition
-func LogGovernanceTransition(blockIndex uint32, outputID string, rootCommitment trie.VCommitment, log *logger.Logger) {
+func LogGovernanceTransition(blockIndex uint32, outputID string, rootCommitment common.VCommitment, log *logger.Logger) {
 	log.Infof("GOVERNANCE TRANSITION. State index #%d, anchor output: %s", blockIndex, outputID)
 	log.Debugf("GOVERNANCE TRANSITION. Root commitment: %s", rootCommitment)
 }

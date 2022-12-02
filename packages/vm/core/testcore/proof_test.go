@@ -19,8 +19,9 @@ func TestProofs(t *testing.T) {
 		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch := env.NewChain()
 
-		proof := ch.GetMerkleProofRaw(nil)
+		proof := ch.GetMerkleProofRaw([]byte(state.KeyChainID))
 		l1Commitment := ch.GetL1Commitment()
+		require.EqualValues(t, ch.ChainID[:], ch.Store.LatestState().ChainID().Bytes())
 		err := state.ValidateMerkleProof(proof, l1Commitment.StateCommitment, ch.ChainID[:])
 		require.NoError(t, err)
 	})
@@ -72,7 +73,7 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 
 		pastL1Commitment := ch.GetL1Commitment()
-		pastBlockIndex := ch.State.BlockIndex()
+		pastBlockIndex := ch.Store.LatestBlockIndex()
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
 		require.NoError(t, err)
@@ -98,7 +99,7 @@ func TestProofs(t *testing.T) {
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
-		pastBlockIndex := ch.State.BlockIndex()
+		pastBlockIndex := ch.Store.LatestBlockIndex()
 		pastL1Commitment := ch.GetL1Commitment()
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")

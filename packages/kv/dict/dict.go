@@ -62,7 +62,7 @@ func (d Dict) Clone() Dict {
 }
 
 // FromKVStore convert (copy) any KVStore to dict
-func FromKVStore(s kv.KVStore) (Dict, error) {
+func FromKVStore(s kv.KVStoreReader) (Dict, error) {
 	d := make(Dict)
 	err := s.Iterate(kv.EmptyPrefix, func(k kv.Key, v []byte) bool {
 		d[k] = v

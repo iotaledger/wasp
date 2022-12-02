@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
-	"github.com/iotaledger/wasp/packages/wal"
 )
 
 type MockedNode struct {

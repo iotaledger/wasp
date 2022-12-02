@@ -10,12 +10,11 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -29,11 +28,11 @@ import (
 type ChainCore interface {
 	ID() *isc.ChainID
 	GetCommitteeInfo() *CommitteeInfo
-	StateCandidateToStateManager(state.VirtualStateAccess, *iotago.UTXOInput)
+	StateCandidateToStateManager(common.VCommitment, *iotago.UTXOInput)
 	TriggerChainTransition(*ChainTransitionEventData)
 	Processors() *processors.Cache
-	GlobalStateSync() coreutil.ChainStateSync
-	GetStateReader() state.OptimisticStateReader
+	LatestBlockIndex() uint32
+	GetStateReader(blockIndex uint32) state.State
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger
@@ -65,7 +64,7 @@ type ChainMetrics interface {
 type ChainRunner interface {
 	GetAnchorOutput() *isc.AliasOutputWithID
 	GetTimeData() time.Time
-	GetVirtualState() (state.VirtualStateAccess, bool, error)
+	GetStore() state.Store
 }
 
 type Chain interface {
@@ -117,7 +116,7 @@ type StateManager interface {
 	EnqueueGetBlockMsg(msg *messages.GetBlockMsgIn)
 	EnqueueBlockMsg(msg *messages.BlockMsgIn)
 	EnqueueAliasOutput(*isc.AliasOutputWithID)
-	EnqueueStateCandidateMsg(state.VirtualStateAccess, *iotago.UTXOInput)
+	EnqueueStateCandidateMsg(common.VCommitment, *iotago.UTXOInput)
 	EnqueueTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	SetChainPeers(peers []*cryptolib.PublicKey)
@@ -125,7 +124,7 @@ type StateManager interface {
 }
 
 type Consensus interface {
-	EnqueueStateTransitionMsg(bool, state.VirtualStateAccess, *isc.AliasOutputWithID, time.Time)
+	EnqueueStateTransitionMsg(bool, common.VCommitment, *isc.AliasOutputWithID, time.Time)
 	EnqueueDssIndexProposalMsg(msg *messages.DssIndexProposalMsg)
 	EnqueueDssSignatureMsg(msg *messages.DssSignatureMsg)
 	EnqueueAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
@@ -145,19 +144,13 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
-type WAL interface {
-	Write(bytes []byte) error
-	Contains(i uint32) bool
-	Read(i uint32) ([]byte, error)
-}
-
 type SyncInfo struct {
 	Synced                bool
 	SyncedBlockIndex      uint32
-	SyncedStateCommitment trie.VCommitment
+	SyncedStateCommitment common.VCommitment
 	SyncedStateTimestamp  time.Time
 	StateOutput           *isc.AliasOutputWithID
-	StateOutputCommitment trie.VCommitment
+	StateOutputCommitment common.VCommitment
 	StateOutputTimestamp  time.Time
 }
 
@@ -219,7 +212,7 @@ type PeerStatus struct {
 
 type ChainTransitionEventData struct {
 	IsGovernance    bool
-	VirtualState    state.VirtualStateAccess
+	TrieRoot        common.VCommitment
 	ChainOutput     *isc.AliasOutputWithID
 	OutputTimestamp time.Time
 }

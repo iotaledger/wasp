@@ -8,7 +8,6 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
@@ -29,10 +28,12 @@ func (c *WaspClient) RequestReceipt(chainID *isc.ChainID, reqID isc.RequestID) (
 	return &receipt, nil
 }
 
+const waitRequestProcessedDefaultTimeout = 30 * time.Second
+
 // WaitUntilRequestProcessed blocks until the request has been processed by the node
 func (c *WaspClient) WaitUntilRequestProcessed(chainID *isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
 	if timeout == 0 {
-		timeout = reqstatus.WaitRequestProcessedDefaultTimeout
+		timeout = waitRequestProcessedDefaultTimeout
 	}
 	var res model.RequestReceiptResponse
 	err := c.do(

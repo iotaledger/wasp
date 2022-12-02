@@ -1,177 +1,143 @@
+// Copyright 2022 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package state
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-	"time"
 
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-type blockImpl struct {
-	stateOutputID *iotago.UTXOInput
-	stateUpdate   *stateUpdateImpl
-	blockIndex    uint32 // not persistent
+type block struct {
+	mutations         *buffered.Mutations
+	trieRoot          common.VCommitment
+	previousTrieRoot  common.VCommitment
+	approvingOutputID *iotago.UTXOInput
 }
 
-var _ Block = &blockImpl{}
+var _ Block = &block{}
 
-// validates, enumerates and creates a block from array of state updates
-func newBlock(muts *buffered.Mutations) (Block, error) {
-	ret := &blockImpl{
-		stateUpdate: &stateUpdateImpl{
-			mutations: muts.Clone(),
-		},
-	}
-	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
+func BlockFromBytes(blockBytes []byte) (*block, error) {
+	buf := bytes.NewBuffer(blockBytes)
+
+	muts := buffered.NewMutations()
+	err := muts.Read(buf)
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
-}
 
-func BlockFromBytes(data []byte) (Block, error) {
-	ret := new(blockImpl)
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
-	}
-	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
+	trieRoot, err := common.VectorCommitmentFromBytes(commitmentModel, buf.Next(int(commitmentModel.HashSize())))
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
-}
 
-func (b *blockImpl) Bytes() []byte {
-	return util.MustBytes(b)
-}
-
-func (b *blockImpl) String() string {
-	ret := ""
-	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", isc.OID(b.ApprovingOutputID()))
-	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
-	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
-	return ret
-}
-
-func (b *blockImpl) ApprovingOutputID() *iotago.UTXOInput {
-	return b.stateOutputID
-}
-
-func (b *blockImpl) BlockIndex() uint32 {
-	return b.blockIndex
-}
-
-// Timestamp of the last state update
-func (b *blockImpl) Timestamp() time.Time {
-	ts, err := findTimestampMutation(b.stateUpdate)
-	if err != nil {
-		panic(err)
+	var hasPrevTrieRoot bool
+	if hasPrevTrieRoot, err = codec.DecodeBool(buf.Next(1)); err != nil {
+		return nil, err
 	}
-	return ts
+	var prevTrieRoot common.VCommitment
+	if hasPrevTrieRoot {
+		prevTrieRoot, err = common.VectorCommitmentFromBytes(commitmentModel, buf.Next(int(commitmentModel.HashSize())))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var hasApprovingOutputID bool
+	var approvingOutputID *iotago.UTXOInput
+	if hasApprovingOutputID, err = codec.DecodeBool(buf.Next(1)); err != nil {
+		return nil, err
+	}
+	if hasApprovingOutputID {
+		approvingOutputID = &iotago.UTXOInput{}
+		_, err := approvingOutputID.Deserialize(buf.Next(approvingOutputID.Size()), serializer.DeSeriModeNoValidation, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &block{
+		mutations:         muts,
+		trieRoot:          trieRoot,
+		previousTrieRoot:  prevTrieRoot,
+		approvingOutputID: approvingOutputID,
+	}, nil
 }
 
-// PreviousStateHash of the last state update
-func (b *blockImpl) PreviousL1Commitment() *L1Commitment {
-	ph, err := findPrevStateCommitmentMutation(b.stateUpdate)
-	if err != nil {
-		panic(err)
-	}
-	return ph
+func (b *block) Mutations() *buffered.Mutations {
+	return b.mutations
 }
 
-func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
-	b.stateOutputID = oid
+func (b *block) TrieRoot() common.VCommitment {
+	return b.trieRoot
 }
 
-func (b *blockImpl) essenceBytes() []byte {
-	var buf bytes.Buffer
-	if err := b.writeEssence(&buf); err != nil {
-		panic("essenceBytes")
-	}
-	return buf.Bytes()
+func (b *block) PreviousTrieRoot() common.VCommitment {
+	return b.previousTrieRoot
 }
 
-func (b *blockImpl) Write(w io.Writer) error {
-	if err := b.writeEssence(w); err != nil {
-		return err
-	}
-	if err := b.writeOutputID(w); err != nil {
-		return err
-	}
-	return nil
+func (b *block) ApprovingOutputID() *iotago.UTXOInput {
+	return b.approvingOutputID
 }
 
-func (b *blockImpl) writeEssence(w io.Writer) error {
-	return b.stateUpdate.Write(w)
+func (b *block) setApprovingOutputID(oid *iotago.UTXOInput) {
+	b.approvingOutputID = oid
 }
 
-func (b *blockImpl) writeOutputID(w io.Writer) error {
-	if err := util.WriteBoolByte(w, b.stateOutputID != nil); err != nil {
-		return err
-	}
-	if b.stateOutputID == nil {
-		return nil
-	}
-	serialized, err := b.stateOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(serialized)
-	return err
+func (b *block) essenceBytes() []byte {
+	var w bytes.Buffer
+	b.writeEssence(&w)
+	return w.Bytes()
 }
 
-func (b *blockImpl) Read(r io.Reader) error {
-	if err := b.readEssence(r); err != nil {
-		return err
-	}
-	if err := b.readOutputID(r); err != nil {
-		return err
-	}
-	return nil
+func (b *block) writeEssence(w io.Writer) {
+	w.Write(b.Mutations().Bytes())
 }
 
-func (b *blockImpl) readEssence(r io.Reader) error {
-	var err error
-	b.stateUpdate, err = newStateUpdateFromReader(r)
-	if err != nil {
-		return err
+func (b *block) Bytes() []byte {
+	var w bytes.Buffer
+	b.writeEssence(&w)
+	w.Write(b.TrieRoot().Bytes())
+	w.Write(codec.EncodeBool(b.PreviousTrieRoot() != nil))
+	if b.PreviousTrieRoot() != nil {
+		w.Write(b.PreviousTrieRoot().Bytes())
 	}
-	return nil
+	w.Write(codec.EncodeBool(b.approvingOutputID != nil))
+	if b.approvingOutputID != nil {
+		bytes, err := b.approvingOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
+		if err != nil {
+			panic(err)
+		}
+		_, _ = w.Write(bytes)
+	}
+	return w.Bytes()
 }
 
-func (b *blockImpl) readOutputID(r io.Reader) error {
-	var oidPresent bool
-	if err := util.ReadBoolByte(r, &oidPresent); err != nil {
-		return err
-	}
-	if !oidPresent {
-		return nil
-	}
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(r); err != nil {
-		return err
-	}
-	b.stateOutputID = &iotago.UTXOInput{}
-	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
-	return err
+func (b *block) Hash() BlockHash {
+	return BlockHashFromData(b.essenceBytes())
 }
 
-func (b *blockImpl) GetHash() (ret BlockHash) {
+func (b *block) L1Commitment() *L1Commitment {
+	return &L1Commitment{
+		StateCommitment: b.TrieRoot(),
+		BlockHash:       b.Hash(),
+	}
+}
+
+func (b *block) GetHash() (ret BlockHash) {
 	r := blake2b.Sum256(b.essenceBytes())
 	copy(ret[:BlockHashSize], r[:BlockHashSize])
 	return
 }
 
-func (b *blockImpl) Equals(other Block) bool {
-	return b.GetHash().Equals(other.GetHash())
+func (b *block) Equals(other Block) bool {
+	return b.GetHash().Equals(other.Hash())
 }

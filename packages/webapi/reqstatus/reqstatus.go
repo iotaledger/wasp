@@ -13,9 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -58,7 +55,7 @@ func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 	return c.JSON(http.StatusOK, receiptResponse)
 }
 
-const WaitRequestProcessedDefaultTimeout = 30 * time.Second
+const waitRequestProcessedDefaultTimeout = 30 * time.Second
 
 func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	ch, reqID, err := r.parseParams(c)
@@ -67,7 +64,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 
 	req := model.WaitRequestProcessedParams{
-		Timeout: WaitRequestProcessedDefaultTimeout,
+		Timeout: waitRequestProcessedDefaultTimeout,
 	}
 	if c.Request().Header.Get("Content-Type") == "application/json" {
 		if err := c.Bind(&req); err != nil {
@@ -133,7 +130,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, isc.
 	return theChain, reqID, nil
 }
 
-func doGetISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.RequestReceiptResponse, error) {
+func getISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
 	receipt, err := ch.GetRequestReceipt(reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("error getting request receipt: %s", err)
@@ -155,17 +152,4 @@ func doGetISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.Reques
 	return &model.RequestReceiptResponse{
 		Receipt: string(receiptJSON),
 	}, nil
-}
-
-func getISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
-	err = optimism.RetryOnStateInvalidated(func() (err error) {
-		panicCatchErr := panicutil.CatchPanicReturnError(func() {
-			ret, err = doGetISCReceipt(ch, reqID)
-		}, coreutil.ErrorStateInvalidated)
-		if err != nil {
-			return err
-		}
-		return panicCatchErr
-	})
-	return ret, err
 }

@@ -4,12 +4,10 @@
 package statemgr
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -21,16 +19,15 @@ const (
 type syncingBlocks struct {
 	blocks       map[uint32]*syncingBlock // StateIndex -> BlockCandidates
 	log          *logger.Logger
-	wal          chain.WAL
 	lastPullTime time.Time // Time, when we pulled for some block last time.
 	lastRecvTime time.Time // Time, when we received any block we pulled. Used to determine, if fallback nodes should be used.
 }
 
-func newSyncingBlocks(log *logger.Logger, wal chain.WAL) *syncingBlocks {
+func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
+	panic("TODO")
 	return &syncingBlocks{
 		blocks: make(map[uint32]*syncingBlock),
 		log:    log,
-		wal:    wal,
 	}
 }
 
@@ -79,7 +76,7 @@ func (syncsT *syncingBlocks) getApprovedBlockCandidateHash(stateIndex uint32) st
 	return sync.getApprovedBlockCandidateHash()
 }
 
-func (syncsT *syncingBlocks) getNextStateCommitment(stateIndex uint32) trie.VCommitment {
+func (syncsT *syncingBlocks) getNextStateCommitment(stateIndex uint32) common.VCommitment {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return nil
@@ -102,9 +99,9 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 	return false
 }
 
-func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualStateAccess) {
-	stateIndex := block.BlockIndex()
-	hash := block.GetHash()
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.StateDraft) {
+	stateIndex := nextState.BlockIndex()
+	hash := state.BlockHashFromData(block.EssenceBytes())
 	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %s; next state provided: %v", stateIndex, hash, nextState != nil)
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
@@ -137,29 +134,32 @@ func (syncsT *syncingBlocks) isObtainedFromWAL(i uint32) bool {
 }
 
 func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
-	if !syncsT.isSyncing(stateIndex) {
-		syncsT.log.Debugf("startSyncingIfNeeded: starting syncing state index %v", stateIndex)
-		syncsT.blocks[stateIndex] = newSyncingBlock(syncsT.log.Named(fmt.Sprint(stateIndex)))
+	panic("TODO")
+	/*
+		if !syncsT.isSyncing(stateIndex) {
+			syncsT.log.Debugf("startSyncingIfNeeded: starting syncing state index %v", stateIndex)
+			syncsT.blocks[stateIndex] = newSyncingBlock(syncsT.log.Named(fmt.Sprint(stateIndex)))
 
-		// Getting block from write ahead log, if available
-		if !syncsT.wal.Contains(stateIndex) {
-			syncsT.log.Debugf("startSyncingIfNeeded: block with index %d not found in wal.", stateIndex)
-			return
+			// Getting block from write ahead log, if available
+			if !syncsT.wal.Contains(stateIndex) {
+				syncsT.log.Debugf("startSyncingIfNeeded: block with index %d not found in wal.", stateIndex)
+				return
+			}
+			blockBytes, err := syncsT.wal.Read(stateIndex)
+			if err != nil {
+				syncsT.log.Errorf("startSyncingIfNeeded: error reading block bytes for index %d from wal: %v", stateIndex, err)
+				return
+			}
+			block, err := state.BlockFromBytes(blockBytes)
+			if err != nil {
+				syncsT.log.Errorf("startSyncingIfNeeded: error obtaining block from block bytes in wal for index %d: %v", stateIndex, err)
+				return
+			}
+			syncsT.addBlockCandidate(block, nil)
+			syncsT.blocks[stateIndex].setReceivedFromWAL()
+			syncsT.log.Debugf("startSyncingIfNeeded: block with index %d included from wal.", stateIndex)
 		}
-		blockBytes, err := syncsT.wal.Read(stateIndex)
-		if err != nil {
-			syncsT.log.Errorf("startSyncingIfNeeded: error reading block bytes for index %d from wal: %v", stateIndex, err)
-			return
-		}
-		block, err := state.BlockFromBytes(blockBytes)
-		if err != nil {
-			syncsT.log.Errorf("startSyncingIfNeeded: error obtaining block from block bytes in wal for index %d: %v", stateIndex, err)
-			return
-		}
-		syncsT.addBlockCandidate(block, nil)
-		syncsT.blocks[stateIndex].setReceivedFromWAL()
-		syncsT.log.Debugf("startSyncingIfNeeded: block with index %d included from wal.", stateIndex)
-	}
+	*/
 }
 
 func (syncsT *syncingBlocks) isSyncing(stateIndex uint32) bool {

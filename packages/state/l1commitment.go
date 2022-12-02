@@ -2,16 +2,16 @@ package state
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"math/rand"
 
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/trie.go/common"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -19,21 +19,23 @@ const BlockHashSize = 20
 
 type BlockHash [BlockHashSize]byte
 
-// L1Commitment represents parsed data stored as a metadata in the anchor output
+// L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
-	StateCommitment trie.VCommitment
+	StateCommitment common.VCommitment
 	// hash of the essence of the last block
 	BlockHash BlockHash
 }
 
-const (
-	OriginStateCommitmentHex = "c4f09061cd63ea506f89b7cbb3c6e0984f124158"
-)
+var l1CommitmentSize = len(newL1Commitment(commitmentModel.NewVectorCommitment(), BlockHash{}).Bytes())
 
-var l1CommitmentSize = len(NewL1Commitment(model.NewVectorCommitment(), BlockHash{}).Bytes())
+func BlockHashFromData(data []byte) (ret BlockHash) {
+	r := blake2b.Sum256(data)
+	copy(ret[:BlockHashSize], r[:BlockHashSize])
+	return
+}
 
-func NewL1Commitment(c trie.VCommitment, blockHash BlockHash) *L1Commitment {
+func newL1Commitment(c common.VCommitment, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		StateCommitment: c,
 		BlockHash:       blockHash,
@@ -83,6 +85,10 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 	return &l1c, nil
 }
 
+func (s *L1Commitment) Equals(other *L1Commitment) bool {
+	return s.BlockHash == other.BlockHash && EqualCommitments(s.StateCommitment, other.StateCommitment)
+}
+
 func (s *L1Commitment) Bytes() []byte {
 	return util.MustBytes(s)
 }
@@ -98,7 +104,7 @@ func (s *L1Commitment) Write(w io.Writer) error {
 }
 
 func (s *L1Commitment) Read(r io.Reader) error {
-	s.StateCommitment = model.NewVectorCommitment()
+	s.StateCommitment = commitmentModel.NewVectorCommitment()
 	if err := s.StateCommitment.Read(r); err != nil {
 		return err
 	}
@@ -126,27 +132,7 @@ func init() {
 	L1CommitmentNil = &zs
 }
 
-func OriginStateCommitment() trie.VCommitment {
-	retBin, err := hex.DecodeString(OriginStateCommitmentHex)
-	if err != nil {
-		panic(err)
-	}
-	c := model.NewVectorCommitment()
-	if err = c.Read(bytes.NewReader(retBin)); err != nil {
-		panic(err)
-	}
-	return c
-}
-
-func OriginBlockHash() (ret BlockHash) {
-	return
-}
-
-func OriginL1Commitment() *L1Commitment {
-	return NewL1Commitment(OriginStateCommitment(), OriginBlockHash())
-}
-
-// RandL1Commitment for testing only
+// RandL1Commitment is for testing only
 func RandL1Commitment() *L1Commitment {
 	d := make([]byte, l1CommitmentSize)
 	rand.Read(d)

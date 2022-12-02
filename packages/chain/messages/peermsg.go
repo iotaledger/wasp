@@ -33,7 +33,7 @@ type StateTransitionMsg struct {
 	// is transition a governance update
 	IsGovernance bool
 	// new variable state
-	State state.VirtualStateAccess
+	StateDraft state.StateDraft
 	// corresponding state transaction
 	StateOutput *isc.AliasOutputWithID
 	//
@@ -42,7 +42,7 @@ type StateTransitionMsg struct {
 
 // StateCandidateMsg Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
-	State             state.VirtualStateAccess
+	StateDraft        state.StateDraft
 	ApprovingOutputID *iotago.UTXOInput
 }
 

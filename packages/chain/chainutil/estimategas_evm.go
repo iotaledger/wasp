@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -25,42 +24,28 @@ import (
 
 func executeIscVM(ch chain.Chain, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
-	var ret *vm.RequestResult
-	err := optimism.RetryOnStateInvalidated(func() (err error) {
-		anchorOutput := ch.GetAnchorOutput()
-		vs, ok, err := ch.GetVirtualState()
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return xerrors.Errorf("solid state does not exist")
-		}
-		task := &vm.VMTask{
-			Processors:         ch.Processors(),
-			AnchorOutput:       anchorOutput.GetAliasOutput(),
-			AnchorOutputID:     anchorOutput.OutputID(),
-			Requests:           []isc.Request{req},
-			TimeAssumption:     time.Now(),
-			VirtualStateAccess: vs,
-			Entropy:            hashing.RandomHash(nil),
-			ValidatorFeeTarget: isc.NewContractAgentID(ch.ID(), 0),
-			Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
-			// state baseline is always valid in Solo
-			SolidStateBaseline:   ch.GlobalStateSync().GetSolidIndexBaseline(),
-			EnableGasBurnLogging: true,
-			EstimateGasMode:      true,
-		}
-		err = vmRunner.Run(task)
-		if err != nil {
-			return err
-		}
-		if len(task.Results) == 0 {
-			return xerrors.Errorf("request was skipped")
-		}
-		ret = task.Results[0]
-		return nil
-	})
-	return ret, err
+	anchorOutput := ch.GetAnchorOutput()
+	task := &vm.VMTask{
+		Processors:           ch.Processors(),
+		AnchorOutput:         anchorOutput.GetAliasOutput(),
+		AnchorOutputID:       anchorOutput.OutputID(),
+		Requests:             []isc.Request{req},
+		TimeAssumption:       time.Now(),
+		Store:                ch.GetStore(),
+		Entropy:              hashing.RandomHash(nil),
+		ValidatorFeeTarget:   isc.NewContractAgentID(ch.ID(), 0),
+		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		EnableGasBurnLogging: true,
+		EstimateGasMode:      true,
+	}
+	err := vmRunner.Run(task)
+	if err != nil {
+		return nil, err
+	}
+	if len(task.Results) == 0 {
+		return nil, xerrors.Errorf("request was skipped")
+	}
+	return task.Results[0], nil
 }
 
 var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|(execution reverted$)")

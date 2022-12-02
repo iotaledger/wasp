@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/chain/aaa2/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smUtils"
@@ -64,7 +63,7 @@ func TestManyNodes(t *testing.T) {
 	tc := gpa.NewTestContext(sms)
 	sendBlocksToNode(t, tc, nodeIDs[0], blocks...)
 
-	//Nodes are checked sequentially
+	// Nodes are checked sequentially
 	var result bool
 	now := time.Now()
 	for i := 1; i < len(nodeIDs); i++ {
@@ -79,7 +78,7 @@ func TestManyNodes(t *testing.T) {
 		tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeIDs[i]: cdsInput}).RunAll()
 		require.NoError(t, requireReceiveVState(t, cdsRespChan, 8, &commitment, 5*time.Second))
 	}
-	//Nodes are checked in parallel
+	// Nodes are checked in parallel
 	cspInputs := make(map[gpa.NodeID]gpa.Input)
 	cspRespChans := make(map[gpa.NodeID]<-chan interface{})
 	for i := 1; i < len(nodeIDs); i++ {
@@ -108,14 +107,14 @@ func TestManyNodes(t *testing.T) {
 }
 
 // 12 nodes setting.
-// 1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
-// 	 1.1 Chain of 10 blocks are generated; each of them are sent to a random node
-//   1.2 A randomly chosen block in a batch is chosen and is approved
-//   1.3 A successful change of state of state manager is waited for; each check
-//       fires a timer event to force the exchange of blocks between nodes.
-// 2. The last block of the last batch is approved and 1.3 is repeated.
-// 3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
-//    repeated branching from this block
+//  1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
+//     1.1 Chain of 10 blocks are generated; each of them are sent to a random node
+//     1.2 A randomly chosen block in a batch is chosen and is approved
+//     1.3 A successful change of state of state manager is waited for; each check
+//     fires a timer event to force the exchange of blocks between nodes.
+//  2. The last block of the last batch is approved and 1.3 is repeated.
+//  3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
+//     repeated branching from this block
 func TestFull(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()

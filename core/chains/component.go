@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/wal"
 )
 
 func init() {
@@ -112,7 +111,6 @@ func run() error {
 			deps.NodeIdentityProvider,
 			deps.ConsensusJournalRegistryProvider,
 			deps.Metrics,
-			deps.WAL,
 		); err != nil {
 			CoreComponent.LogPanicf("failed to read chain activation records from registry: %v", err)
 			return
