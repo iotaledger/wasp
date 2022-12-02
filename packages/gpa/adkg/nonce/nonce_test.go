@@ -43,7 +43,7 @@ func TestBasic(t *testing.T) {
 		// Run the DKG
 		inputs := make(map[gpa.NodeID]gpa.Input)
 		for _, nid := range nodeIDs {
-			inputs[nid] = nil // Input is only a signal here.
+			inputs[nid] = nonce.NewInputStart() // Input is only a signal here.
 		}
 		tc.WithInputs(inputs).WithInputProbability(0.01)
 		tc.RunUntil(tc.NumberOfOutputsPredicate(n - f))
@@ -71,11 +71,9 @@ func TestBasic(t *testing.T) {
 		}
 		//
 		// Run the ADKG with agreement already decided.
-		agreementMsgs := []gpa.Message{}
 		for _, nid := range nodeIDs {
-			agreementMsgs = append(agreementMsgs, nonce.NewMsgAgreementResult(nid, decidedProposals))
+			tc.WithInput(nid, nonce.NewInputAgreementResult(decidedProposals))
 		}
-		tc.WithMessages(agreementMsgs)
 		tc.WithInputProbability(0.001)
 		tc.RunUntil(tc.OutOfMessagesPredicate())
 		//

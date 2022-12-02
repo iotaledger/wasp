@@ -3,7 +3,11 @@
 
 package blssig
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import (
+	"encoding"
+
+	"github.com/iotaledger/wasp/packages/gpa"
+)
 
 type msgSigShare struct {
 	recipient gpa.NodeID
@@ -11,7 +15,10 @@ type msgSigShare struct {
 	sigShare  []byte
 }
 
-var _ gpa.Message = &msgSigShare{}
+var (
+	_ gpa.Message              = &msgSigShare{}
+	_ encoding.BinaryMarshaler = &msgSigShare{}
+)
 
 func (m *msgSigShare) Recipient() gpa.NodeID {
 	return m.recipient
@@ -22,5 +29,10 @@ func (m *msgSigShare) SetSender(sender gpa.NodeID) {
 }
 
 func (m *msgSigShare) MarshalBinary() ([]byte, error) {
-	panic("not implemented yet") // TODO: ...
+	return m.sigShare, nil
+}
+
+func (m *msgSigShare) UnmarshalBinary(data []byte) error {
+	m.sigShare = data
+	return nil
 }

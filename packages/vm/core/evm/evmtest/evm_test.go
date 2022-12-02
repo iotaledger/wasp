@@ -14,9 +14,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/generics/lo"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -377,14 +377,17 @@ func TestISCGetRequestID(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	reqID := new(isc.RequestID)
-	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+	wrappedReqID := new(iscmagic.ISCRequestID)
+	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &wrappedReqID, "emitRequestID")
+
+	reqid, err := wrappedReqID.Unwrap()
+	require.NoError(t, err)
 
 	// check evm log is as expected
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].TxHash, common.Hash{})
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].BlockHash, common.Hash{})
 
-	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), *reqID)
+	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), reqid)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -487,7 +490,7 @@ func TestSendAsNFT(t *testing.T) {
 		[]iotago.NFTID{nft.ID},
 		lo.Map(
 			lo.Values(env.solo.L1NFTs(receiver)),
-			func(v *iotago.NFTOutput) iotago.NFTID { return v.NFTID },
+			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
 		),
 	)
 }

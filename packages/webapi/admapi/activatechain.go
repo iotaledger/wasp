@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,34 +18,31 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type chainWebAPI struct {
-	chainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-	dkShareRegistryProvider          registry.DKShareRegistryProvider
-	nodeIdentityProvider             registry.NodeIdentityProvider
-	consensusJournalRegistryProvider journal.Provider
-	chains                           chains.Provider
-	network                          peering.NetworkProvider
-	allMetrics                       *metrics.Metrics
-	w                                *wal.WAL
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	nodeIdentityProvider        registry.NodeIdentityProvider
+	chains                      chains.Provider
+	network                     peering.NetworkProvider
+	allMetrics                  *metrics.Metrics
 }
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
-		AddParamPath("", "chainID", "ChainID (string)").
+		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Activate a chain")
 
 	adm.POST(routes.DeactivateChain(":chainID"), c.handleDeactivateChain).
-		AddParamPath("", "chainID", "ChainID (string)").
+		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Deactivate a chain")
 
 	adm.GET(routes.GetChainInfo(":chainID"), c.handleGetChainInfo).
-		AddParamPath("", "chainID", "ChainID (string)").
+		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Get basic chain info.")
 }
 
@@ -55,13 +51,9 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	rec, err := w.chainRecordRegistryProvider.ActivateChainRecord(*chainID)
-	if err != nil {
-		return err
-	}
 
-	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID().String())
-	if err := w.chains().Activate(rec, w.dkShareRegistryProvider, w.nodeIdentityProvider, w.consensusJournalRegistryProvider, w.allMetrics, w.w); err != nil {
+	log.Debugw("calling Chains.Activate", "chainID", chainID.String())
+	if err := w.chains().Activate(*chainID); err != nil {
 		return err
 	}
 
@@ -73,12 +65,8 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := w.chainRecordRegistryProvider.DeactivateChainRecord(*chainID)
-	if err != nil {
-		return err
-	}
 
-	err = w.chains().Deactivate(bd)
+	err = w.chains().Deactivate(*chainID)
 	if err != nil {
 		return err
 	}
@@ -99,11 +87,15 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	if chainRecord == nil {
 		return httperrors.NotFound("")
 	}
-	chain := w.chains().Get(chainID, true)
+	chain := w.chains().Get(chainID)
 	committeeInfo := chain.GetCommitteeInfo()
-	dkShare, err := w.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
-	if err != nil {
-		return err
+	var dkShare tcrypto.DKShare
+	if committeeInfo != nil {
+		// Consider the committee as empty, if there is no current active committee.
+		dkShare, err = w.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
+		if err != nil {
+			return err
+		}
 	}
 
 	chainNodes := chain.GetChainNodes()
@@ -128,7 +120,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	acnNodes := makeAcnNodes(dkShare, chainNodes, peeringStatus, candidateNodes, inChainNodes)
 
 	//
-	// Candidate nodes have suplied applications, but are not included
+	// Candidate nodes have supplied applications, but are not included
 	// in the committee and to the set of the access nodes.
 	cndNodes, err := makeCndNodes(peeringStatus, candidateNodes, inChainNodes)
 	if err != nil {
@@ -163,9 +155,11 @@ func makeCmtNodes(
 	inChainNodes map[cryptolib.PublicKeyKey]bool,
 ) []*model.ChainNodeStatus {
 	cmtNodes := make([]*model.ChainNodeStatus, 0)
-	for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-		cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
-		inChainNodes[cmtNodePubKey.AsKey()] = true
+	if dkShare != nil {
+		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+			cmtNodes = append(cmtNodes, makeChainNodeStatus(cmtNodePubKey, peeringStatus, candidateNodes))
+			inChainNodes[cmtNodePubKey.AsKey()] = true
+		}
 	}
 	return cmtNodes
 }
@@ -181,10 +175,12 @@ func makeAcnNodes(
 	for _, chainNode := range chainNodes {
 		acnPubKey := chainNode.PubKey()
 		skip := false
-		for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
-			if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
-				skip = true
-				break
+		if dkShare != nil {
+			for _, cmtNodePubKey := range dkShare.GetNodePubKeys() {
+				if acnPubKey.AsKey() == cmtNodePubKey.AsKey() {
+					skip = true
+					break
+				}
 			}
 		}
 		if skip {

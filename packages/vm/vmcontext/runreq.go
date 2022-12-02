@@ -1,7 +1,6 @@
 package vmcontext
 
 import (
-	"errors"
 	"math"
 	"math/big"
 	"runtime/debug"
@@ -13,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -44,7 +44,11 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 	vmctx.gasFeeCharged = 0
 	vmctx.GasBurnEnable(false)
 
-	vmctx.currentStateUpdate = state.NewStateUpdate(vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond))
+	vmctx.currentStateUpdate = NewStateUpdate()
+	vmctx.chainState().Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(vmctx.stateDraft.Timestamp().Add(1*time.Nanosecond)))
+	if vmctx.isInitChainRequest() {
+		vmctx.chainState().Set(state.KeyChainID, vmctx.ChainID().Bytes())
+	}
 	defer func() { vmctx.currentStateUpdate = nil }()
 
 	if err := vmctx.earlyCheckReasonToSkip(); err != nil {
@@ -79,7 +83,7 @@ func (vmctx *VMContext) RunTheRequest(req isc.Request, requestIndex uint16) (res
 		vmctx.restoreTxBuilderSnapshot(txsnapshot)
 		return nil, err
 	}
-	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate.Mutations.ApplyTo(vmctx.stateDraft)
 	vmctx.assertConsistentL2WithL1TxBuilder("end RunTheRequest")
 	return result, nil
 }
@@ -201,10 +205,6 @@ func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
 	case string:
 		return coreerrors.ErrUntypedError.Create(err)
 	case error:
-		if errors.Is(err, coreutil.ErrorStateInvalidated) {
-			panic(err)
-		}
-
 		return coreerrors.ErrUntypedError.Create(err.Error())
 	}
 	return nil

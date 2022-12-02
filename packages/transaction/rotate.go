@@ -6,6 +6,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func NewRotateChainStateControllerTx(
@@ -15,8 +16,16 @@ func NewRotateChainStateControllerTx(
 	chainOutput iotago.Output,
 	kp *cryptolib.KeyPair,
 ) (*iotago.Transaction, error) {
-	if o, ok := chainOutput.(*iotago.AliasOutput); !ok || o.AliasID != chainID {
-		return nil, fmt.Errorf("provided output is not the correct one. expected ChainID: %s", chainID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP))
+	o, ok := chainOutput.(*iotago.AliasOutput)
+	if !ok {
+		return nil, fmt.Errorf("provided output is not the correct one. Expected AliasOutput, received %T=%v", chainOutput, chainOutput)
+	}
+	resolvedAliasID := util.AliasIDFromAliasOutput(o, chainOutputID)
+	if resolvedAliasID != chainID {
+		return nil, fmt.Errorf("provided output is not the correct one. Expected ChainID: %s, got: %s",
+			chainID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+			chainOutput.(*iotago.AliasOutput).AliasID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		)
 	}
 
 	// create a TX with that UTXO as input, and the updated addr unlock condition on the new output
@@ -26,6 +35,7 @@ func NewRotateChainStateControllerTx(
 	inputsCommitment := inputIDs.OrderedSet(outSet).MustCommitment()
 
 	newChainOutput := chainOutput.Clone().(*iotago.AliasOutput)
+	newChainOutput.AliasID = resolvedAliasID
 	oldUnlockConditions := newChainOutput.UnlockConditionSet()
 	newChainOutput.Conditions = make(iotago.UnlockConditions, len(oldUnlockConditions))
 

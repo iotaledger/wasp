@@ -29,3 +29,8 @@ func RandUTXOInput() (ret iotago.UTXOInput) {
 	ret.TransactionOutputIndex = uint16(rand.Intn(10))
 	return
 }
+
+func RandAliasID() (ret iotago.AliasID) {
+	copy(ret[:], tpkg.RandBytes(len(ret)))
+	return
+}

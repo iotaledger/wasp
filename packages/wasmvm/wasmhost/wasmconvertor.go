@@ -86,8 +86,7 @@ func (cvt WasmConvertor) IscNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
 func (cvt WasmConvertor) IscRequestID(requestID *wasmtypes.ScRequestID) *isc.RequestID {
 	buf := wasmtypes.RequestIDToBytes(*requestID)
 	iscRequestID := new(isc.RequestID)
-	copy(iscRequestID.TransactionID[:], buf)
-	iscRequestID.TransactionOutputIndex = wasmtypes.Uint16FromBytes(buf[wasmtypes.ScHashLength:])
+	copy(iscRequestID[:], buf)
 	return iscRequestID
 }
 

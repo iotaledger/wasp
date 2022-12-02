@@ -7,10 +7,9 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	hivedb "github.com/iotaledger/hive.go/core/database"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/database"
-	journalpkg "github.com/iotaledger/wasp/packages/journal"
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
@@ -78,7 +77,7 @@ func provide(c *dig.Container) error {
 		dbManager, err := database.NewManager(
 			deps.ChainRecordRegistryProvider,
 			database.WithEngine(deps.DatabaseEngine),
-			database.WithDatabasePathConsensusJournal(ParamsDatabase.ConsensusJournal.Path),
+			database.WithDatabasePathConsensusState(ParamsDatabase.ConsensusState.Path),
 			database.WithDatabasesPathChainState(ParamsDatabase.ChainState.Path),
 		)
 		if err != nil {
@@ -92,21 +91,21 @@ func provide(c *dig.Container) error {
 		CoreComponent.LogPanic(err)
 	}
 
-	type consensusJournalDeps struct {
+	type consensusStateDeps struct {
 		dig.In
 
 		DatabaseManager *database.Manager
 	}
 
-	type consensusJournalResult struct {
+	type consensusStateResult struct {
 		dig.Out
 
-		ConsensusJournalRegistryProvider journal.Provider
+		ConsensusStateRegistryProvider cmtLog.Store
 	}
 
-	if err := c.Provide(func(deps consensusJournalDeps) consensusJournalResult {
-		return consensusJournalResult{
-			ConsensusJournalRegistryProvider: journalpkg.NewConsensusJournal(deps.DatabaseManager.ConsensusJournalKVStore()),
+	if err := c.Provide(func(deps consensusStateDeps) consensusStateResult {
+		return consensusStateResult{
+			ConsensusStateRegistryProvider: database.NewConsensusState(deps.DatabaseManager.ConsensusStateKVStore()),
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)

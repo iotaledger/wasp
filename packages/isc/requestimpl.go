@@ -420,7 +420,7 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	if err != nil {
 		return
 	}
-	UTXOInputToMarshalUtil(&r.inputID, mu)
+	mu = UTXOInputToMarshalUtil(&r.inputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
 	mu.WriteByte(byte(r.output.Type()))
@@ -430,7 +430,7 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 var _ Calldata = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) ID() RequestID {
-	return RequestID(r.inputID)
+	return RequestID(r.inputID.ID())
 }
 
 func (r *onLedgerRequestData) Params() dict.Dict {
@@ -604,11 +604,64 @@ func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID iotago.UTXOInput
+type RequestID iotago.OutputID
 
 const RequestIDDigestLen = 6
 
 const RequestIDSeparator = "-"
+
+type RequestRef struct {
+	ID   RequestID
+	Hash hashing.HashValue
+}
+
+const RequestRefKeyLen = iotago.OutputIDLength + 32
+
+type RequestRefKey [RequestRefKeyLen]byte
+
+func RequestRefFromRequest(req Request) *RequestRef {
+	return &RequestRef{ID: req.ID(), Hash: RequestHash(req)}
+}
+
+func RequestRefsFromRequests(reqs []Request) []*RequestRef {
+	rr := make([]*RequestRef, len(reqs))
+	for i := range rr {
+		rr[i] = RequestRefFromRequest(reqs[i])
+	}
+	return rr
+}
+
+func (rr *RequestRef) AsKey() RequestRefKey {
+	var key RequestRefKey
+	copy(key[:], rr.Bytes())
+	return key
+}
+
+func (rr *RequestRef) IsFor(req Request) bool {
+	if rr.ID != req.ID() {
+		return false
+	}
+	return rr.Hash == RequestHash(req)
+}
+
+func (rr *RequestRef) Bytes() []byte {
+	ret := rr.Hash[:]
+	ret = append(ret, rr.ID.Bytes()...)
+	return ret
+}
+
+func RequestRefFromBytes(data []byte) (*RequestRef, error) {
+	reqID, err := RequestIDFromBytes(data[hashing.HashSize:])
+	if err != nil {
+		return nil, err
+	}
+	ret := &RequestRef{
+		ID: reqID,
+	}
+	copy(ret.Hash[:], data[:hashing.HashSize])
+
+	return ret, nil
+}
 
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
 // within one block, however it may collide globally. Used for quick checking for most requests
@@ -616,14 +669,15 @@ const RequestIDSeparator = "-"
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	return RequestID(iotago.UTXOInput{
+	ret := iotago.UTXOInput{
 		TransactionID:          txid,
 		TransactionOutputIndex: index,
-	})
+	}
+	return RequestID(ret.ID())
 }
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	var ret RequestID
+	var ret iotago.UTXOInput
 	txidData, err := mu.ReadBytes(iotago.TransactionIDLength)
 	if err != nil {
 		return RequestID{}, err
@@ -633,7 +687,7 @@ func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
 		return RequestID{}, err
 	}
 	copy(ret.TransactionID[:], txidData)
-	return ret, nil
+	return RequestID(ret.ID()), nil
 }
 
 func RequestIDFromBytes(data []byte) (RequestID, error) {
@@ -649,7 +703,8 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 	if err != nil {
 		return ret, err
 	}
-	ret.TransactionOutputIndex = uint16(txOutputIndex)
+	var u iotago.UTXOInput
+	u.TransactionOutputIndex = uint16(txOutputIndex)
 	txID, err := iotago.DecodeHex(split[1])
 	if err != nil {
 		return ret, err
@@ -657,32 +712,34 @@ func RequestIDFromString(s string) (ret RequestID, err error) {
 	if len(txID) != iotago.TransactionIDLength {
 		return ret, errors.New("error parsing requestID: wrong transactionID length")
 	}
-	copy(ret.TransactionID[:], txID)
-	return ret, nil
+	copy(u.TransactionID[:], txID)
+	return RequestID(u.ID()), nil
 }
 
 func (rid RequestID) UTXOInput() *iotago.UTXOInput {
-	r := iotago.UTXOInput(rid)
-	return &r
+	return iotago.OutputID(rid).UTXOInput()
 }
 
 func (rid RequestID) OutputID() iotago.OutputID {
-	r := iotago.UTXOInput(rid)
-	return r.ID()
+	return iotago.OutputID(rid)
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	copy(ret[:RequestIDDigestLen], rid.TransactionID[:RequestIDDigestLen])
-	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.TransactionOutputIndex))
+	copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
+	// last 2 bytes are the outputindex
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], rid[len(rid)-2:])
 	return ret
 }
 
 func (rid RequestID) Bytes() []byte {
 	var buf bytes.Buffer
-	buf.Write(rid.TransactionID[:])
-	buf.Write(util.Uint16To2Bytes(rid.TransactionOutputIndex))
+	buf.Write(rid[:])
 	return buf.Bytes()
+}
+
+func (rid RequestID) Equals(other RequestID) bool {
+	return rid == other
 }
 
 func (rid RequestID) String() string {
@@ -693,13 +750,6 @@ func (rid RequestID) Short() string {
 	oid := rid.UTXOInput()
 	txid := TxID(oid.TransactionID)
 	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
-}
-
-func (rid RequestID) Equals(reqID2 RequestID) bool {
-	if rid.TransactionOutputIndex != reqID2.TransactionOutputIndex {
-		return false
-	}
-	return rid.TransactionID == reqID2.TransactionID
 }
 
 func OID(o *iotago.UTXOInput) string {

@@ -120,12 +120,15 @@ func New(
 }
 
 func (n *nonceDKGImpl) Input(input gpa.Input) gpa.OutMessages {
-	if input != nil {
-		panic(xerrors.Errorf("only expect a nil input, got: %+v", input))
+	switch input := input.(type) {
+	case *inputStart:
+		secret := n.suite.Scalar().Pick(n.suite.RandomStream())
+		msgs := n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
+		return n.tryHandleACSSTermination(n.myIdx, msgs)
+	case *inputAgreementResult:
+		return n.handleAgreementResult(input)
 	}
-	secret := n.suite.Scalar().Pick(n.suite.RandomStream())
-	msgs := n.wrapper.WrapMessages(msgWrapperACSS, n.myIdx, n.acss[n.myIdx].Input(secret))
-	return n.tryHandleACSSTermination(n.myIdx, msgs)
+	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
 }
 
 func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
@@ -137,10 +140,6 @@ func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
 		default:
 			panic(xerrors.Errorf("unexpected message: %+v", msg))
 		}
-	case *msgACSSOutput:
-		return n.handleACSSOutput(msgT)
-	case *msgAgreementResult:
-		return n.handleAgreementResult(msgT)
 	default:
 		panic(xerrors.Errorf("unexpected message: %+v", msg))
 	}
@@ -171,19 +170,19 @@ func (n *nonceDKGImpl) tryHandleACSSTermination(acssIndex int, msgs gpa.OutMessa
 		if !ok {
 			panic(xerrors.Errorf("acss output wrong type: %+v", out))
 		}
-		msgs.Add(&msgACSSOutput{me: n.me, index: acssIndex, priShare: acssOutput.PriShare, commits: acssOutput.Commits})
+		msgs.AddAll(n.handleACSSOutput(acssIndex, acssOutput.PriShare, acssOutput.Commits))
 	}
 	return msgs
 }
 
-func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) gpa.OutMessages {
-	j := acssOutput.index
+func (n *nonceDKGImpl) handleACSSOutput(index int, priShare *share.PriShare, commits []kyber.Point) gpa.OutMessages {
+	j := index
 	if _, ok := n.st[j]; ok {
 		// Already set. Ignore the duplicate messages.
 		return nil
 	}
-	n.st[j] = acssOutput.priShare
-	n.stCommits[j] = acssOutput.commits
+	n.st[j] = priShare
+	n.stCommits[j] = commits
 	if len(n.st) == n.n-n.f && n.output == nil {
 		t := make([]int, 0)
 		for ti := range n.st {
@@ -198,16 +197,16 @@ func (n *nonceDKGImpl) handleACSSOutput(acssOutput *msgACSSOutput) gpa.OutMessag
 	return n.tryMakeFinalOutput()
 }
 
-func (n *nonceDKGImpl) handleAgreementResult(msg *msgAgreementResult) gpa.OutMessages {
+func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.OutMessages {
 	if n.agreedT != nil {
 		return nil
 	}
 
-	if len(msg.proposals) < n.n-n.f {
-		panic(xerrors.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(msg.proposals), n.n, n.f))
+	if len(input.proposals) < n.n-n.f {
+		panic(xerrors.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(input.proposals), n.n, n.f))
 	}
 	voteCounts := make([]int, n.n)
-	for _, proposal := range msg.proposals {
+	for _, proposal := range input.proposals {
 		if len(proposal) < n.f+1 {
 			n.log.Warnf("len(proposal) < f+1, that should not happen")
 			continue

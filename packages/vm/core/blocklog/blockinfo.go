@@ -146,12 +146,12 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := bi.PreviousL1Commitment.Read(r); err != nil {
 		return err
 	}
-	var knownStateCommitments bool
-	if err := util.ReadBoolByte(r, &knownStateCommitments); err != nil {
+	var hasL1Commitment bool
+	if err := util.ReadBoolByte(r, &hasL1Commitment); err != nil {
 		return err
 	}
 	bi.L1Commitment = nil
-	if knownStateCommitments {
+	if hasL1Commitment {
 		bi.L1Commitment = &state.L1Commitment{}
 		if err := bi.L1Commitment.Read(r); err != nil {
 			return err

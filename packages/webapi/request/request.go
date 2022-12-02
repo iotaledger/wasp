@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -126,13 +125,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
 	}
 
-	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: ch.ID(),
-			Req:     offLedgerReq,
-		},
-		SenderPubKey: o.nodePubKey,
-	})
+	ch.ReceiveOffLedgerRequest(offLedgerReq, o.nodePubKey)
 
 	return c.NoContent(http.StatusAccepted)
 }

@@ -5,7 +5,6 @@ package registry
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -17,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 )
-
-var ErrDKShareNotFound = errors.New("dkShare not found")
 
 type DKSharesRegistry struct {
 	storeOnChangeMap *onchangemap.OnChangeMap[string, *util.ComparableAddress, tcrypto.DKShare]
@@ -44,7 +41,7 @@ func (p *DKSharesRegistry) SaveDKShare(dkShare tcrypto.DKShare) error {
 func (p *DKSharesRegistry) LoadDKShare(sharedAddress iotago.Address) (tcrypto.DKShare, error) {
 	dkShare, err := p.storeOnChangeMap.Get(util.NewComparableAddress(sharedAddress))
 	if err != nil {
-		return dkShare, ErrDKShareNotFound
+		return dkShare, tcrypto.ErrDKShareNotFound
 	}
 	return dkShare, nil
 }

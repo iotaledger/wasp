@@ -64,7 +64,7 @@ func provide(c *dig.Container) error {
 
 func run() error {
 	if deps.MetricsEnabled {
-		deps.NodeConnection.SetMetrics(deps.Metrics.GetNodeConnectionMetrics())
+		//deps.NodeConnection.SetMetrics(deps.Metrics.GetNodeConnectionMetrics())
 	}
 
 	return nil

@@ -9,14 +9,12 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wal"
 )
 
 var log *loggerpkg.Logger
@@ -30,12 +28,10 @@ func AddEndpoints(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusJournalRegistryProvider journal.Provider,
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
 	metrics *metricspkg.Metrics,
-	w *wal.WAL,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 ) {
@@ -52,15 +48,14 @@ func AddEndpoints(
 	addChainRecordEndpoints(adm, chainRecordRegistryProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{
-		chainRecordRegistryProvider:      chainRecordRegistryProvider,
-		dkShareRegistryProvider:          dkShareRegistryProvider,
-		nodeIdentityProvider:             nodeIdentityProvider,
-		consensusJournalRegistryProvider: consensusJournalRegistryProvider,
-		chains:                           chainsProvider,
-		network:                          network,
-		allMetrics:                       metrics,
-		w:                                w,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		dkShareRegistryProvider:     dkShareRegistryProvider,
+		nodeIdentityProvider:        nodeIdentityProvider,
+		chains:                      chainsProvider,
+		network:                     network,
+		allMetrics:                  metrics,
 	})
 	addDKSharesEndpoints(adm, dkShareRegistryProvider, nodeProvider)
-	addPeeringEndpoints(adm, network, tnm)
+	addPeeringEndpoints(adm, chainRecordRegistryProvider, network, tnm)
+	addAccessNodesEndpoints(adm, chainRecordRegistryProvider, tnm)
 }

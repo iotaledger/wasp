@@ -476,7 +476,7 @@ func NFTMapEqual(a, b map[iotago.NFTID]bool) bool {
 	return true
 }
 
-func CheckLedger(state kv.KVStore, checkpoint string) {
+func CheckLedger(state kv.KVStoreReader, checkpoint string) {
 	a := GetTotalL2Assets(state)
 	c := calcL2TotalAssets(state)
 	if !a.Equals(c) {

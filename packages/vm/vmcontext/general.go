@@ -52,7 +52,7 @@ func (vmctx *VMContext) Caller() isc.AgentID {
 }
 
 func (vmctx *VMContext) Timestamp() time.Time {
-	return vmctx.virtualState.Timestamp()
+	return vmctx.task.TimeAssumption
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {

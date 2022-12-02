@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -22,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -76,20 +74,18 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
-		ShutdownHandler                  *shutdown.ShutdownHandler
-		WAL                              *wal.WAL
-		APICacheTTL                      time.Duration `name:"apiCacheTTL"`
-		PublisherPort                    int           `name:"publisherPort"`
-		Chains                           *chains.Chains
-		Metrics                          *metrics.Metrics `optional:"true"`
-		ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider          registry.DKShareRegistryProvider
-		NodeIdentityProvider             registry.NodeIdentityProvider
-		ConsensusJournalRegistryProvider journal.Provider
-		NetworkProvider                  peering.NetworkProvider       `name:"networkProvider"`
-		TrustedNetworkManager            peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                             *dkg.Node
-		UserManager                      *users.UserManager
+		ShutdownHandler             *shutdown.ShutdownHandler
+		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
+		PublisherPort               int           `name:"publisherPort"`
+		Chains                      *chains.Chains
+		Metrics                     *metrics.Metrics `optional:"true"`
+		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		DKShareRegistryProvider     registry.DKShareRegistryProvider
+		NodeIdentityProvider        registry.NodeIdentityProvider
+		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		Node                        *dkg.Node
+		UserManager                 *users.UserManager
 	}
 
 	type webapiServerResult struct {
@@ -130,7 +126,6 @@ func provide(c *dig.Container) error {
 			func() *chains.Chains {
 				return deps.Chains
 			},
-			deps.ConsensusJournalRegistryProvider,
 			func() *dkg.Node {
 				return deps.Node
 			},
@@ -138,7 +133,6 @@ func provide(c *dig.Container) error {
 				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
 			},
 			deps.Metrics,
-			deps.WAL,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,

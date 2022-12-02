@@ -119,6 +119,14 @@ func AdmNodeOwnerCertificate() string {
 	return "/adm/node/owner/certificate"
 }
 
+func AdmAddAccessNode(chainID string) string {
+	return "/adm/chain/" + chainID + "/access-node/add"
+}
+
+func AdmRemoveAccessNode(chainID string) string {
+	return "/adm/chain/" + chainID + "/access-node/remove"
+}
+
 func Shutdown() string {
 	return "/adm/shutdown"
 }

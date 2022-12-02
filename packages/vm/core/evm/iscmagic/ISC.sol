@@ -21,7 +21,11 @@ library ISC {
     ERC20BaseTokens constant baseTokens = __erc20BaseTokens;
 
     // Get the ERC20NativeTokens contract for the given foundry serial number
-    function nativeTokens(uint32 foundrySN) internal view returns (ERC20NativeTokens) {
+    function nativeTokens(uint32 foundrySN)
+        internal
+        view
+        returns (ERC20NativeTokens)
+    {
         return ERC20NativeTokens(sandbox.erc20NativeTokensAddress(foundrySN));
     }
 

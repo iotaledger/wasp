@@ -4,6 +4,7 @@
 package chains
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -12,19 +13,18 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainimpl"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/wal"
 )
 
-type Provider func() *Chains
+type Provider func() *Chains // TODO: Use DI instead of that.
 
 func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
 	return func(chainID *isc.ChainID) chain.Chain {
@@ -35,6 +35,7 @@ func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
 type ChainProvider func(chainID *isc.ChainID) chain.Chain
 
 type Chains struct {
+	ctx                              context.Context
 	log                              *logger.Logger
 	nodeConnection                   chain.NodeConnection
 	processorConfig                  *processors.Config
@@ -46,25 +47,42 @@ type Chains struct {
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
 
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	nodeIdentityProvider        registry.NodeIdentityProvider
+	consensusStateCmtLog        cmtLog.Store
+
+	metrics *metrics.Metrics
+
 	mutex     sync.RWMutex
-	allChains map[isc.ChainID]chain.Chain
+	allChains map[isc.ChainID]*activeChain
+}
+
+type activeChain struct {
+	chain      chain.Chain
+	cancelFunc context.CancelFunc
 }
 
 func New(
 	log *logger.Logger,
 	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
-	offledgerBroadcastUpToNPeers int,
-	offledgerBroadcastInterval time.Duration,
-	pullMissingRequestsFromCommittee bool,
+	offledgerBroadcastUpToNPeers int, // TODO: Unused for now.
+	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
+	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	networkProvider peering.NetworkProvider,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
-	rawBlocksEnabled bool,
+	rawBlocksEnabled bool, // TODO: Unused for now.
 	rawBlocksDir string,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	consensusStateCmtLog cmtLog.Store,
+	allMetrics *metrics.Metrics,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
-		allChains:                        make(map[isc.ChainID]chain.Chain),
+		allChains:                        map[isc.ChainID]*activeChain{},
 		nodeConnection:                   nodeConnection,
 		processorConfig:                  processorConfig,
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
@@ -74,31 +92,32 @@ func New(
 		chainStateStoreProvider:          chainStateStoreProvider,
 		rawBlocksEnabled:                 rawBlocksEnabled,
 		rawBlocksDir:                     rawBlocksDir,
+		chainRecordRegistryProvider:      chainRecordRegistryProvider,
+		dkShareRegistryProvider:          dkShareRegistryProvider,
+		nodeIdentityProvider:             nodeIdentityProvider,
+		consensusStateCmtLog:             consensusStateCmtLog,
+		metrics:                          allMetrics,
 	}
 	return ret
 }
 
-func (c *Chains) Dismiss() {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-
-	for _, ch := range c.allChains {
-		ch.Dismiss("shutdown")
+func (c *Chains) Run(ctx context.Context) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if c.ctx == nil {
+		c.log.Warnf("Chains already running.")
+		return nil
 	}
-	c.allChains = make(map[isc.ChainID]chain.Chain)
+	c.ctx = ctx
+
+	return c.activateAllFromRegistry() //nolint:contextcheck
 }
 
-func (c *Chains) ActivateAllFromRegistry(
-	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusJournalRegistryProvider journal.Provider,
-	allMetrics *metrics.Metrics,
-	w *wal.WAL,
-) error {
+func (c *Chains) activateAllFromRegistry() error {
 	var innerErr error
-	if err := chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
-		if err := c.Activate(chainRecord, dkShareRegistryProvider, nodeIdentityProvider, consensusJournalRegistryProvider, allMetrics, w); err != nil {
+	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
+		chainID := chainRecord.ChainID()
+		if err := c.Activate(chainID); err != nil {
 			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
 			return false
 		}
@@ -111,102 +130,111 @@ func (c *Chains) ActivateAllFromRegistry(
 	return innerErr
 }
 
-// Activate activates chain on the Wasp node:
-// - creates chain object
-// - insert it into the runtime registry
-// - subscribes for related transactions in the L1 node
-func (c *Chains) Activate(
-	chr *registry.ChainRecord,
-	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusJournalRegistryProvider journal.Provider,
-	allMetrics *metrics.Metrics,
-	w *wal.WAL,
-) error {
+// Activate activates chain on the Wasp node.
+func (c *Chains) Activate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-
-	if !chr.Active {
-		return xerrors.Errorf("cannot activate chain for deactivated chain record")
+	if c.ctx == nil {
+		return xerrors.Errorf("run chains first")
 	}
-
-	chainID := chr.ChainID()
-	ret, ok := c.allChains[chainID]
-	if ok && !ret.IsDismissed() {
-		c.log.Debugf("chain is already active: %s", chainID.String())
+	//
+	// Check, maybe it is already running.
+	if _, ok := c.allChains[chainID]; ok {
+		c.log.Debugf("Chain %v is already activated", chainID.String())
 		return nil
 	}
-
-	// create new chain object
-	chainStateStore, err := c.chainStateStoreProvider(chainID)
+	//
+	// Activate the chain in the persistent store, if it is not activated yet.
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
-		return err
+		return xerrors.Errorf("cannot get chain record for %v: %w", chainID, err)
 	}
-
-	chainMetrics := allMetrics.NewChainMetrics(&chainID)
-	chainWAL, err := w.NewChainWAL(&chainID)
+	if !chainRecord.Active {
+		if _, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err != nil {
+			return xerrors.Errorf("cannot activate chain: %w", err)
+		}
+	}
+	//
+	// Load or initialize new chain store.
+	chainKVStore, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
-		c.log.Debugf("Error creating wal object: %v", err)
-		chainWAL = wal.NewDefault()
+		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
-	newChain := chainimpl.NewChain(
+	chainStore := state.NewStore(chainKVStore)
+	chainState, err := chainStore.LatestState()
+	chainIDInState, errChainID := chainState.Has(state.KeyChainID)
+	if err != nil || errChainID != nil || !chainIDInState {
+		chainStore = state.InitChainStore(chainKVStore)
+	}
+	// TODO: chainMetrics := c.allMetrics.NewChainMetrics(&chr.ChainID)
+
+	// TODO:
+	/*
+		chainWAL, err := w.NewChainWAL(&chainID)
+		if err != nil {
+			c.log.Debugf("Error creating wal object: %v", err)
+			chainWAL = wal.NewDefault()
+		}
+	*/
+
+	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	newChain, err := chain.New(
+		chainCtx,
 		&chainID,
-		c.log,
-		c.nodeConnection,
-		chainStateStore,
-		c.networkProvider,
-		dkShareRegistryProvider,
-		nodeIdentityProvider,
+		chainStore,
+		nil, // TODO: c.nodeConnection,
+		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
-		c.offledgerBroadcastUpToNPeers,
-		c.offledgerBroadcastInterval,
-		c.pullMissingRequestsFromCommittee,
-		chainMetrics,
-		consensusJournalRegistryProvider,
-		chainWAL,
-		c.rawBlocksEnabled,
-		c.rawBlocksDir,
+		nil, // TODO: dkRegistry registry.DKShareRegistryProvider,
+		c.consensusStateCmtLog,
+		nil, // TODO: blockWAL smGPAUtils.BlockWAL
+		c.networkProvider,
+		c.log,
 	)
-	if newChain == nil {
-		return xerrors.New("Chains.Activate: failed to create chain object")
+	if err != nil {
+		chainCancel()
+		return xerrors.Errorf("Chains.Activate: failed to create chain object: %w", err)
 	}
-	c.allChains[chainID] = newChain
+	c.allChains[chainID] = &activeChain{
+		chain:      newChain,
+		cancelFunc: chainCancel,
+	}
+
 	c.log.Infof("activated chain: %s", chainID.String())
 	return nil
 }
 
-// Deactivate deactivates chain in the node
-func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
+// Deactivate chain in the node.
+func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	chainID := chr.ChainID()
+	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID); err != nil {
+		return xerrors.Errorf("cannot deactivate chain %v: %w", chainID, err)
+	}
+
 	ch, ok := c.allChains[chainID]
-	if !ok || ch.IsDismissed() {
+	if !ok {
 		c.log.Debugf("chain is not active: %s", chainID.String())
 		return nil
 	}
-	ch.Dismiss("deactivate")
-	c.nodeConnection.UnregisterChain(&chainID)
+	ch.cancelFunc()
+	delete(c.allChains, chainID)
 	c.log.Debugf("chain has been deactivated: %s", chainID.String())
 	return nil
 }
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *isc.ChainID, includeDeactivated ...bool) chain.Chain {
+func (c *Chains) Get(chainID *isc.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
 	ret, ok := c.allChains[*chainID]
-
-	if len(includeDeactivated) > 0 && includeDeactivated[0] {
-		return ret
-	}
-	if ok && ret.IsDismissed() {
+	if !ok {
 		return nil
 	}
-	return ret
+	return ret.chain
 }
 
 func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {

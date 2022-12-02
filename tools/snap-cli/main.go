@@ -30,6 +30,8 @@ USAGE: snap-cli -extractblocks <chainID> <fromIndex> <target directory>
 `
 
 func main() {
+	panic("TODO - this package is broken since the trie package was remove from trie.go")
+
 	ensureMinimumArgs(3)
 	cmd := os.Args[1]
 	param := os.Args[2]

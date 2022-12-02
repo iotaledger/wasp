@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -121,6 +120,7 @@ func (w *WaspServices) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.Commi
 }
 
 func (w *WaspServices) GetChainNodeConnectionMetrics(chainID *isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+	panic("TODO revisit, new consesus changed this")
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -133,6 +133,7 @@ func (w *WaspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectio
 }
 
 func (w *WaspServices) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
+	panic("TODO revisit, new consesus changed this")
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -141,6 +142,7 @@ func (w *WaspServices) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (ch
 }
 
 func (w *WaspServices) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
+	panic("TODO revisit, new consesus changed this")
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -153,14 +155,12 @@ func (w *WaspServices) CallView(chainID *isc.ChainID, scName, funName string, pa
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx := viewcontext.New(ch)
-	var ret dict.Dict
-	err := optimism.RetryOnStateInvalidated(func() error {
-		var err error
-		ret, err = vctx.CallViewExternal(isc.Hn(scName), isc.Hn(funName), params)
-		return err
-	})
-	return ret, err
+	blockIndex, err := ch.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		return nil, err
+	}
+	vctx := viewcontext.New(ch, blockIndex)
+	return vctx.CallViewExternal(isc.Hn(scName), isc.Hn(funName), params)
 }
 
 var _ WaspServicesInterface = &WaspServices{}

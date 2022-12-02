@@ -55,6 +55,7 @@ func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.Priv
 		edPts,                                   // edPublicCommits
 		edSuite.Scalar().Pick(randomness),       // edPrivateShare
 		blsSuite,                                // blsSuite
+		4,                                       // blsThreshold
 		blsSuite.G2().Point().Pick(randomness),  // blsSharedPublic
 		rnd1,                                    // blsPublicCommits
 		rnd2,                                    // blsPublicShares

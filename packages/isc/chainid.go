@@ -99,8 +99,12 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 }
 
 // String human readable form (bech32)
-func (chid ChainID) String() string {
+func (chid *ChainID) String() string {
 	return chid.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+}
+
+func (chid *ChainID) ShortString() string {
+	return chid.AsAddress().String()[2:8]
 }
 
 func (chid *ChainID) AsAddress() iotago.Address {

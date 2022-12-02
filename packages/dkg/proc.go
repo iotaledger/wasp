@@ -44,7 +44,8 @@ type proc struct {
 	node         *Node             // DKG node we are running in.
 	nodeIndex    uint16            // Index of this node.
 	initiatorPub *cryptolib.PublicKey
-	threshold    uint16
+	threshold    uint16                                     // Threshold used for the ED signatures.
+	blsThreshold uint16                                     // Here we must use low threshold.
 	roundRetry   time.Duration                              // Retry period for the Peer <-> Peer communication.
 	netGroup     peering.GroupProvider                      // A group for which the distributed key is generated.
 	dkgImpl      map[keySetType]*rabin_dkg.DistKeyGenerator // The cryptographic implementation to use.
@@ -64,6 +65,9 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	if netGroup, err = node.netProvider.PeerGroup(dkgID, msg.peerPubs); err != nil {
 		return nil, err
 	}
+
+	blsThreshold := deriveBlsThreshold(msg)
+
 	var dkgImpl map[keySetType]*rabin_dkg.DistKeyGenerator
 	if len(msg.peerPubs) >= 2 {
 		// We use real DKG only if N >= 2. Otherwise we just generate key pair, and that's all.
@@ -78,7 +82,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
 			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
-		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
+		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
 			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
@@ -89,6 +93,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		nodeIndex:    netGroup.SelfIndex(),
 		initiatorPub: msg.initiatorPub,
 		threshold:    msg.threshold,
+		blsThreshold: uint16(blsThreshold),
 		roundRetry:   msg.roundRetry,
 		netGroup:     netGroup,
 		dkgImpl:      dkgImpl,
@@ -152,6 +157,21 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	p.attachID = p.netGroup.Attach(peering.PeerMessageReceiverDkg, p.onPeerMessage)
 	stepsStart <- make(multiKeySetMsgs)
 	return &p, nil
+}
+
+// We have to take different thresholds for the BLS.
+// BLS is only used for randomness, thus F+1 is enough.
+// In the consensus, the BLS threshold has to be not bigger than N-2F.
+func deriveBlsThreshold(msg *initiatorInitMsg) int {
+	f := (len(msg.peerPubs) - 1) / 3
+	var blsThreshold int
+	if f > 0 {
+		blsThreshold = f + 1
+	} else {
+		// TODO: Low Threshold don't work with low N for some reason. Find out why and use F+1, i.e. 1.
+		blsThreshold = int(msg.threshold)
+	}
+	return blsThreshold
 }
 
 // Handles a message from a peer and pass it to the main thread.
@@ -524,6 +544,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 			[]kyber.Point{keyPairE.Public},  // Ed25519: PublicShares
 			keyPairE.Private,                // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
+			1,                               // BLS: Threshold
 			keyPairB.Public,                 // BLS: SharedPublic
 			make([]kyber.Point, 0),          // BLS: PublicCommits
 			[]kyber.Point{keyPairB.Public},  // BLS: PublicShares
@@ -601,6 +622,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 			publicSharesDSS,                 // Ed25519: PublicShares
 			distKeyShareDSS.PriShare().V,    // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
+			p.blsThreshold,                  // BLS: Threshold
 			distKeyShareBLS.Public(),        // BLS: SharedPublic
 			distKeyShareBLS.Commits,         // BLS: PublicCommits
 			publicSharesBLS,                 // BLS: PublicShares
