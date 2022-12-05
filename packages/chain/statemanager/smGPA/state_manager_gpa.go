@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockRequestsWithCommitment struct {
@@ -125,7 +126,17 @@ func (smT *stateManagerGPA) Output() gpa.Output {
 }
 
 func (smT *stateManagerGPA) StatusString() string {
-	return "" // TODO
+	return fmt.Sprintf(
+		"State manager is at state index %v, commitment (%s); "+
+			"it is waiting for %v blocks; "+
+			"last time blocks were requested from peer nodes: %v (every %v); "+
+			"last time outdated requests were cleared: %v (every %v); "+
+			"last time block cache was cleaned: %v (every %v).",
+		smT.currentStateIndex, smT.currentL1Commitment, len(smT.blockRequests),
+		util.TimeOrNever(smT.lastGetBlocksTime), smT.timers.StateManagerGetBlockRetry,
+		util.TimeOrNever(smT.lastCleanRequestsTime), smT.timers.StateManagerRequestCleaningPeriod,
+		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.timers.BlockCacheBlockCleaningPeriod,
+	)
 }
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
@@ -281,6 +292,12 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 }
 
 func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolStateRequest) gpa.OutMessages { //nolint:funlen
+	oldCommitment := input.GetOldL1Commitment()
+	newCommitment := input.GetNewL1Commitment()
+	oldBaseIndex := input.GetOldStateIndex()
+	newBaseIndex := input.GetNewStateIndex()
+	smT.log.Debugf("Mempool state request for state (index %v, %s) is received compared to state (index %v, %s)...",
+		newBaseIndex, newCommitment, oldBaseIndex, oldCommitment)
 	oldNewContainer := &struct {
 		oldBlockRequest          *blockRequestImpl
 		newBlockRequest          *blockRequestImpl
@@ -300,26 +317,23 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		return result
 	}
 	respondFun := func() {
-		oldBaseIndex := input.GetOldStateIndex()
-		newBaseIndex := input.GetNewStateIndex()
 		var commonIndex uint32
 		if newBaseIndex > oldBaseIndex {
 			commonIndex = oldBaseIndex
 		} else {
 			commonIndex = newBaseIndex
 		}
+		smT.log.Debugf("Mempool state request for state (index %v, %s): old request base index: %v, new request base index: %v, largest possible common index: %v",
+			newBaseIndex, newCommitment, oldBaseIndex, newBaseIndex, commonIndex)
 
-		oldBC := oldNewContainer.oldBlockRequest.getBlockChain()
-		newBC := oldNewContainer.newBlockRequest.getBlockChain()
-		oldCommitment := input.GetOldL1Commitment()
-		newCommitment := input.GetNewL1Commitment()
-		oldCOB := newChainOfBlocks(oldBC, oldCommitment, oldBaseIndex, obtainCommittedBlockFun)
-		newCOB := newChainOfBlocks(newBC, newCommitment, newBaseIndex, obtainCommittedBlockFun)
+		oldCOB := oldNewContainer.oldBlockRequest.getChainOfBlocks(oldBaseIndex, obtainCommittedBlockFun)
+		newCOB := oldNewContainer.newBlockRequest.getChainOfBlocks(newBaseIndex, obtainCommittedBlockFun)
 
 		respondToMempoolFun := func(index uint32) {
+			smT.log.Debugf("Mempool state request for state (index %v, %s): responding by blocks from index %v", newBaseIndex, newCommitment, index)
 			newState, err := oldNewContainer.obtainNewStateFun()
 			if err != nil {
-				smT.log.Errorf("Unable to obtain new state: %v", err)
+				smT.log.Errorf("Mempool state request for state (index %v, %s): unable to obtain new state: %v", newBaseIndex, newCommitment, err)
 				return
 			}
 
@@ -331,45 +345,62 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		}
 
 		for commonIndex > 0 {
-			if oldCOB.getL1Commitment(commonIndex).Equals(newCOB.getL1Commitment(commonIndex)) {
+			oldCommonCommitment := oldCOB.getL1Commitment(commonIndex)
+			newCommonCommitment := newCOB.getL1Commitment(commonIndex)
+			if oldCommonCommitment.Equals(newCommonCommitment) {
+				smT.log.Debugf("Mempool state request for state (index %v, %s): old and new blocks index %v match: %s",
+					newBaseIndex, newCommitment, commonIndex, newCommonCommitment)
 				respondToMempoolFun(commonIndex)
 				return
 			}
+			smT.log.Debugf("Mempool state request for state (index %v, %s): old (%s) and new (%s) blocks index %v do not match",
+				newBaseIndex, newCommitment, oldCommonCommitment, newCommonCommitment, commonIndex)
 			commonIndex--
 		}
 		respondToMempoolFun(0)
 	}
 	respondIfNeededFun := func() {
 		if oldNewContainer.oldBlockRequestCompleted && oldNewContainer.newBlockRequestCompleted {
+			smT.log.Debugf("Mempool state request for state (index %v, %s): both requests are completed, responding", newBaseIndex, newCommitment)
 			respondFun()
 		}
 	}
 	respondFromOldFun := func(_ obtainStateFun) {
+		smT.log.Debugf("Mempool state request for state (index %v, %s): old block request completed", newBaseIndex, newCommitment)
 		oldNewContainer.oldBlockRequestCompleted = true
 		respondIfNeededFun()
 	}
 	respondFromNewFun := func(obtainStateFun obtainStateFun) {
+		smT.log.Debugf("Mempool state request for state (index %v, %s): new block request completed", newBaseIndex, newCommitment)
 		oldNewContainer.newBlockRequestCompleted = true
 		oldNewContainer.obtainNewStateFun = obtainStateFun
 		respondIfNeededFun()
 	}
-	id := blockRequestID(5) //TODO
-	oldNewContainer.oldBlockRequest = newBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
-	oldNewContainer.newBlockRequest = newBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
+	smT.lastBlockRequestID++
+	idOld := smT.lastBlockRequestID
+	smT.lastBlockRequestID++
+	idNew := smT.lastBlockRequestID
+	oldNewContainer.oldBlockRequest = newBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, idOld)
+	oldNewContainer.newBlockRequest = newBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, idNew)
+	smT.log.Debugf("Mempool state request for state (index %v, %s): requests to fetch new (id %v) and old (id %v) blocks were created",
+		newBaseIndex, newCommitment, idNew, idOld)
 
 	result := gpa.NoMessages()
+	smT.log.Debugf("Mempool state request for state (index %v, %s): tracing chain by old block request", newBaseIndex, newCommitment)
 	messages, err := smT.traceBlockChainByRequest(oldNewContainer.oldBlockRequest)
 	if err != nil {
-		smT.log.Errorf("Error in traceBlockChainByRequest: %v", err)
-		// TODO
+		smT.log.Errorf("Mempool state request for state (index %v, %s): error tracing chain by old block request: %v", newBaseIndex, newCommitment, err)
+		return nil // No messages to send
 	}
 	result.AddAll(messages)
+	smT.log.Debugf("Mempool state request for state (index %v, %s): tracing chain by new block request", newBaseIndex, newCommitment)
 	messages, err = smT.traceBlockChainByRequest(oldNewContainer.newBlockRequest)
 	if err != nil {
-		smT.log.Errorf("Error in traceBlockChainByRequest: %v", err)
-		// TODO
+		smT.log.Errorf("Mempool state request for state (index %v, %s): error tracing chain by new block request: %v", newBaseIndex, newCommitment, err)
+		return nil // No messages to send
 	}
 	result.AddAll(messages)
+	smT.log.Debugf("Mempool state request for state (index %v, %s) handled", newBaseIndex, newCommitment)
 	return result
 }
 
@@ -532,6 +563,7 @@ func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	result := gpa.NoMessages()
 	smT.log.Debugf("State manager timer tick %v input received...", now)
+	smT.log.Debugf("Status: %s", smT.StatusString())
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		smT.log.Debugf("State manager timer tick %v: resending get block messages...", now)

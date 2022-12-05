@@ -107,6 +107,10 @@ func (sbrT *blockRequestImpl) getBlockChain() []state.Block {
 	return sbrT.blocks
 }
 
+func (sbrT *blockRequestImpl) getChainOfBlocks(baseIndex uint32, obtainBlockFun obtainBlockFun) chainOfBlocks {
+	return newChainOfBlocks(sbrT.getBlockChain(), sbrT.getLastL1Commitment(), baseIndex, obtainBlockFun, sbrT.log)
+}
+
 func (sbrT *blockRequestImpl) markCompleted(obtainStateFun obtainStateFun) {
 	if sbrT.isValid() {
 		sbrT.log.Debugf("State block request is valid, marking it completed and responding")

@@ -190,7 +190,7 @@ func TestFull(t *testing.T) {
 // 15 nodes setting.
 // 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
 //	  first node.
-// 2. A node is selected at random in the middle (from index 5 to 12), and a
+// 2. A block is selected at random in the middle (from index 5 to 12), and a
 //	  branch of 5 nodes is generated.
 // 3. For each node a common ancestor (mempool) request is sent and the successful
 //	  completion is waited for; each check fires a timer event to force
@@ -241,6 +241,62 @@ func TestMempoolRequest(t *testing.T) {
 		}
 		require.True(env.t, received)
 	}
+}
+
+// Single node setting.
+// 1. A single block is generated and sent to the node.
+// 2. A common ancestor (mempool) request is sent for block 1 as a new block
+//	  and block 0 as an old block.
+func TestMempoolRequestFirstStep(t *testing.T) {
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	defer env.finalize()
+
+	nodeID := nodeIDs[0]
+	blocks, stateOutputs := env.bf.GetBlocks(1, 1)
+	env.sendBlocksToNode(nodeID, blocks[0])
+
+	var respChan <-chan *smInputs.MempoolStateRequestResults
+	oldAliasOutput := env.bf.GetOriginOutput()
+	newAliasOutput := stateOutputs[0]
+	env.sendInputToNodes(func(nodeID gpa.NodeID) gpa.Input {
+		var input gpa.Input
+		input, respChan = smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
+		return input
+	})
+	oldBlocks := make([]state.Block, 0)
+	err := env.requireReceiveMempoolResults(respChan, oldBlocks, blocks, 0*time.Second)
+	require.NoError(env.t, err)
+}
+
+// Single node setting.
+// 1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
+// 2. A common ancestor (mempool) request is sent for block 10 as a new block
+//	  and block 5 as an old block.
+func TestMempoolRequestNoBranch(t *testing.T) {
+	batchSize := 10
+	middleBlock := 4
+
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	defer env.finalize()
+
+	nodeID := nodeIDs[0]
+	blocks, stateOutputs := env.bf.GetBlocks(batchSize, 1)
+	env.sendBlocksToNode(nodeID, blocks...)
+
+	var respChan <-chan *smInputs.MempoolStateRequestResults
+	oldAliasOutput := stateOutputs[middleBlock]
+	newAliasOutput := stateOutputs[len(stateOutputs)-1]
+	env.sendInputToNodes(func(nodeID gpa.NodeID) gpa.Input {
+		var input gpa.Input
+		input, respChan = smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
+		return input
+	})
+	oldBlocks := make([]state.Block, 0)
+	newBlocks := blocks[middleBlock+1:]
+	err := env.requireReceiveMempoolResults(respChan, oldBlocks, newBlocks, 0*time.Second)
+	require.NoError(env.t, err)
 }
 
 // Single node network. Checks if block cache is cleaned via state manager
