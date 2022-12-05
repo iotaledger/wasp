@@ -61,6 +61,7 @@ const (
 )
 
 type ChainRequests interface {
+	ChainReader
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
 }

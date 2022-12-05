@@ -353,7 +353,7 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		oldNewContainer.obtainNewStateFun = obtainStateFun
 		respondIfNeededFun()
 	}
-	id := blockRequestID(5) //TODO
+	id := blockRequestID(5) // TODO
 	oldNewContainer.oldStateBlockRequest = newStateBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
 	oldNewContainer.newStateBlockRequest = newStateBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
 
@@ -471,7 +471,7 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 	smT.log.Debugf("Tracing block %s chain: tracing completed, committing the blocks", initCommitment)
 	committedBlocks := make(map[state.BlockHash]bool)
 	for _, request := range requests {
-		smT.log.Debugf("Tracing block %s chain: commiting blocks of %s request %v", initCommitment, request.getType(), request.getID())
+		smT.log.Debugf("Tracing block %s chain: committing blocks of %s request %v", initCommitment, request.getType(), request.getID())
 		blockChain := request.getBlockChain()
 		for i := len(blockChain) - 1; i >= 0; i-- {
 			block := blockChain[i]

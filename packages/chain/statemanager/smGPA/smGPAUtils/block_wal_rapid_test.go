@@ -16,8 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-//const constTestFolder = "basicWALTest"
-
+// const constTestFolder = "basicWALTest"
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
 	bw                  BlockWAL
 	factory             *BlockFactory
@@ -110,13 +109,13 @@ func (bwtsmT *blockWALTestSM) MoveBlock(t *rapid.T) {
 	fileToDamagePath := bwtsmT.pathFromHash(blockHashToDamage)
 	data, err := os.ReadFile(fileOrigPath)
 	require.NoError(t, err)
-	err = os.WriteFile(fileToDamagePath, data, 0644)
+	err = os.WriteFile(fileToDamagePath, data, 0o644)
 	require.NoError(t, err)
 	bwtsmT.blocksMoved = append(bwtsmT.blocksMoved, blockHashToDamage)
 	t.Logf("Block %s damaged: block %s written instead", blockHashToDamage, blockHashOrig)
 }
 
-// Damage the block by writting random bytes to it
+// Damage the block by writing random bytes to it
 func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	blockHashes := bwtsmT.getGoodBlockHashes()
 	if len(blockHashes) == 0 {
@@ -127,7 +126,7 @@ func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	data := make([]byte, 50)
 	_, err := rand.Read(data)
 	require.NoError(t, err)
-	err = os.WriteFile(filePath, data, 0644)
+	err = os.WriteFile(filePath, data, 0o644)
 	require.NoError(t, err)
 	bwtsmT.blocksDamaged = append(bwtsmT.blocksDamaged, blockHash)
 	t.Logf("Block %s damaged: 50 random bytes written instead", blockHash)

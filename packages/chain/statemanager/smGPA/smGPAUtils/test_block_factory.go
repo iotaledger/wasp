@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/stretchr/testify/require"
 )
 
 type BlockFactory struct {
@@ -126,7 +127,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	counterBin = codec.EncodeUint64(counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
-	//require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
+	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 
 	consumedAliasOutput := consumedAliasOutputWithID.GetAliasOutput()
 	aliasOutput := &iotago.AliasOutput{

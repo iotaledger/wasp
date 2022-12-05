@@ -88,7 +88,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
 	require.True(t, blocks[0].Hash().Equals(block.Hash()))
-	//require.True(t, blocks[0].Equals(block))
+	// require.True(t, blocks[0].Equals(block))
 }
 
 // Check if after restart wal is functioning correctly
@@ -106,7 +106,7 @@ func TestBlockWALRestart(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	//Restart: WAL object is recreated
+	// Restart: WAL object is recreated
 	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {

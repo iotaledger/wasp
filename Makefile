@@ -9,7 +9,7 @@ BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS=./ ./tools/cluster/wasp-cluster/ ./tools/snap-cli/
+BUILD_PKGS=./ ./tools/cluster/wasp-cluster/
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
