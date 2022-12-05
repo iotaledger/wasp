@@ -46,14 +46,14 @@ type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx           context.Context
-	chains        map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock    sync.RWMutex
-	indexerClient nodeclient.IndexerClient
-	metrics       nodeconnmetrics.NodeConnectionMetrics
-	log           *logger.Logger
-	nodeBridge    *nodebridge.NodeBridge
-	nodeClient    *nodeclient.Client
+	ctx                   context.Context
+	chains                map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock            sync.RWMutex
+	indexerClient         nodeclient.IndexerClient
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
+	log                   *logger.Logger
+	nodeBridge            *nodebridge.NodeBridge
+	nodeClient            *nodeclient.Client
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  map[iotago.TransactionID]*PendingTransaction
@@ -80,7 +80,7 @@ func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.C
 	return context.WithTimeout(ctx, t)
 }
 
-func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) chain.NodeConnection {
+func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) chain.NodeConnection {
 	inxNodeClient := nodeBridge.INXNodeClient()
 
 	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
@@ -105,7 +105,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 		chains:                  make(map[string]*ncChain),
 		chainsLock:              sync.RWMutex{},
 		indexerClient:           indexerClient,
-		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		nodeConnectionMetrics:   nodeConnectionMetrics,
 		log:                     log.Named("nc"),
 		nodeBridge:              nodeBridge,
 		nodeClient:              inxNodeClient,
@@ -222,10 +222,6 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	return nil
 }
 
-func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
-	nc.metrics = metrics
-}
-
 // RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(
 	chainID *isc.ChainID,
@@ -233,7 +229,7 @@ func (nc *nodeConn) RegisterChain(
 	outputHandler func(iotago.OutputID, iotago.Output),
 	milestoneHandler func(*nodebridge.Milestone),
 ) {
-	nc.metrics.SetRegistered(chainID)
+	nc.nodeConnectionMetrics.SetRegistered(chainID)
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler, milestoneHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -243,7 +239,7 @@ func (nc *nodeConn) RegisterChain(
 
 // UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainID *isc.ChainID) {
-	nc.metrics.SetUnregistered(chainID)
+	nc.nodeConnectionMetrics.SetUnregistered(chainID)
 	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -310,7 +306,7 @@ func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInp
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return nc.metrics
+	return nc.nodeConnectionMetrics
 }
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotago.BlockID, error) {

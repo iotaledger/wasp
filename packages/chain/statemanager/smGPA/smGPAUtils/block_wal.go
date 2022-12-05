@@ -12,22 +12,23 @@ import (
 )
 
 type blockWAL struct {
+	*logger.WrappedLogger
+
 	dir     string
-	log     *logger.Logger
-	metrics *blockWALMetrics
+	metrics *BlockWALMetrics
 }
 
-func NewBlockWAL(baseDir string, chainID *isc.ChainID, log *logger.Logger) (BlockWAL, error) {
+func NewBlockWAL(log *logger.Logger, baseDir string, chainID *isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := os.MkdirAll(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}
 	result := &blockWAL{
-		dir:     dir,
-		metrics: newBlockWALMetrics(),
-		log:     log.Named("wal"),
+		WrappedLogger: logger.NewWrappedLogger(log.Named("wal")),
+		dir:           dir,
+		metrics:       metrics,
 	}
-	result.log.Debugf("BlockWAL created in folder %v", dir)
+	result.LogDebugf("BlockWAL created in folder %v", dir)
 	return result, nil
 }
 
@@ -36,7 +37,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	commitment := block.L1Commitment()
 	fileName := fileName(commitment.GetBlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
-	bwT.log.Debugf("Writing block %s to wal; file name - %s", commitment, fileName)
+	bwT.LogDebugf("Writing block %s to wal; file name - %s", commitment, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
 		bwT.metrics.failedWrites.Inc()

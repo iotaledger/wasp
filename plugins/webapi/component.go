@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
@@ -78,7 +78,7 @@ func provide(c *dig.Container) error {
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
 		PublisherPort               int           `name:"publisherPort"`
 		Chains                      *chains.Chains
-		Metrics                     *metrics.Metrics `optional:"true"`
+		NodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
@@ -91,6 +91,7 @@ func provide(c *dig.Container) error {
 	type webapiServerResult struct {
 		dig.Out
 
+		Echo        *echo.Echo          `name:"webapiEcho"`
 		EchoSwagger echoswagger.ApiRoot `name:"webapiServer"`
 	}
 
@@ -132,7 +133,7 @@ func provide(c *dig.Container) error {
 			func() {
 				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
 			},
-			deps.Metrics,
+			deps.NodeConnectionMetrics,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
@@ -140,6 +141,7 @@ func provide(c *dig.Container) error {
 		)
 
 		return webapiServerResult{
+			Echo:        e,
 			EchoSwagger: echoSwagger,
 		}
 	}); err != nil {

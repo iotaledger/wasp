@@ -11,7 +11,7 @@ const (
 	PriorityNodeConnection
 	PriorityWebAPI
 	PriorityDBGarbageCollection
-	PriorityMetrics
+	PriorityPrometheus
 	PriorityNanoMsg
 	PriorityDashboard
 )

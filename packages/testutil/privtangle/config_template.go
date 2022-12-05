@@ -204,9 +204,9 @@ var configFileContentTemplate = `
     "inxMetrics": true,
     "migrationMetrics": true,
     "debugMetrics": false,
-    "goMetrics": false,
-    "processMetrics": false,
-    "promhttpMetrics": false
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "inx": {
     "enabled": true,

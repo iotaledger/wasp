@@ -58,6 +58,7 @@ linters-settings:
             - style
             - opinionated
         disabled-checks:
+            - paramTypeCombine
             - commentedOutCode
             - ifElseChain
             - commentFormatting
