@@ -118,8 +118,12 @@ func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint3
 func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.MempoolStateRequestResults, oldBlocks, newBlocks []state.Block, timeout time.Duration) error {
 	select {
 	case msrr := <-respChan:
-		require.True(teT.t, msrr.GetNewState().TrieRoot().Equals(newBlocks[len(newBlocks)-1].TrieRoot()))
+		newStateTrieRoot := msrr.GetNewState().TrieRoot()
+		lastNewBlockTrieRoot := newBlocks[len(newBlocks)-1].TrieRoot()
+		teT.t.Logf("Checking trie roots: expected %s, obtained %s", lastNewBlockTrieRoot, newStateTrieRoot)
+		require.True(teT.t, newStateTrieRoot.Equals(lastNewBlockTrieRoot))
 		requireEqualsFun := func(expected, received []state.Block) {
+			teT.t.Logf("\tExpected %v elements, obtained %v elements", len(expected), len(received))
 			require.Equal(teT.t, len(expected), len(received))
 			for i := range expected {
 				expectedCommitment := expected[i].L1Commitment()

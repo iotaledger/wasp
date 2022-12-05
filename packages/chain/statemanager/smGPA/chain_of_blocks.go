@@ -55,6 +55,10 @@ func (cobiT *chainOfBlocksImpl) getL1Commitment(blockIndex uint32) *state.L1Comm
 func (cobiT *chainOfBlocksImpl) getBlocksFrom(blockIndex uint32) []state.Block {
 	cobiT.log.Debugf("Getting blocks from index %v: total blocks: %v, base index: %v...", blockIndex, len(cobiT.blocks), cobiT.baseIndex)
 	result := make([]state.Block, cobiT.baseIndex-blockIndex)
+	// if not all the blocks were fetched via `getL1Commitment`, we need to fetch them
+	if len(cobiT.blocks) < len(result) {
+		cobiT.getL1Commitment(blockIndex + 1) // block `blockIndex` is not needed; only the next one
+	}
 	for i := 0; i < len(result); i++ {
 		result[i] = cobiT.blocks[cobiT.baseIndex-blockIndex-uint32(i)-1]
 	}
