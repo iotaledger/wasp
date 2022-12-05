@@ -61,6 +61,10 @@ const (
 	msgTypeChainMgr byte = iota
 )
 
+type ChainEventListener interface {
+	BlockProduced() // TODO: Add callbacks for the publisher.
+}
+
 type ChainRequests interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt

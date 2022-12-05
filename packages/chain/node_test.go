@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -28,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
@@ -71,10 +73,9 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		tnc.waitAttached()
 	}
 	t.Logf("All attached to node conns.")
-	//
-	// Create the chain, post Chain Init, wait for the first block.
+	initTime := time.Now()
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond)
+		ticker := time.NewTicker(100 * time.Millisecond) // TODO: Maybe we have to pass initial time to all sub-components...
 		closed := te.ctx.Done()
 		for {
 			select {
@@ -87,14 +88,15 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			}
 		}
 	}()
-	now := time.Now()
+	//
+	// Create the chain, post Chain Init, wait for the first block.
 	initRequests := te.tcl.MakeTxChainInit()
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
 			[]iotago.OutputID{te.originAO.OutputID()},
 			[]*iotago.AliasOutput{te.originAO.GetAliasOutput()},
 		)
-		tnc.recvMilestone(now)
+		tnc.recvMilestone(initTime)
 		for _, req := range initRequests {
 			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
 		}
@@ -102,6 +104,62 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	for _, tnc := range te.nodeConns {
 		for {
 			if len(tnc.published) > 0 {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	//
+	// Create SC Client account with some deposit, deploy a contract, wait for a confirming TX.
+	scClient := cryptolib.NewKeyPair()
+	_, err := te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
+	require.NoError(t, err)
+	deployReqs := append(te.tcl.MakeTxDeployIncCounterContract(), te.tcl.MakeTxAccountsDeposit(scClient)...)
+	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.nodeConns[0].published[0])
+	require.NoError(t, err)
+	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID.UTXOInput())
+	for _, tnc := range te.nodeConns {
+		tnc.recvAliasOutput(
+			[]iotago.OutputID{deployBaseAO.OutputID()},
+			[]*iotago.AliasOutput{deployBaseAO.GetAliasOutput()},
+		)
+		for _, req := range deployReqs {
+			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
+		}
+	}
+	for _, tnc := range te.nodeConns {
+		for {
+			if len(tnc.published) > 1 {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	//
+	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
+	// We only send the requests to the first node. Mempool has to disseminate them.
+	incCount := 10
+	for i := 0; i < incCount; i++ {
+		scRequest := isc.NewOffLedgerRequest(
+			te.chainID,
+			inccounter.Contract.Hname(),
+			inccounter.FuncIncCounter.Hname(),
+			dict.New(), uint64(i),
+		).WithGasBudget(20000).Sign(scClient)
+		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+	}
+	for i, node := range te.nodes {
+		for {
+			latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+			_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+			require.NoError(t, err)
+			latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+			require.NoError(t, err)
+			st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
+			require.NoError(t, err)
+			cnt := inccounter.NewStateAccess(st).GetCounter()
+			t.Logf("Counter[node=%v]=%v", i, cnt)
+			if cnt >= int64(incCount) {
 				break
 			}
 			time.Sleep(50 * time.Millisecond)
