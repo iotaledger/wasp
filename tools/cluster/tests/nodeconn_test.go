@@ -93,19 +93,22 @@ func TestNodeConn(t *testing.T) {
 	chainOICh := make(chan iotago.OutputID)
 	chainStateOuts := make(map[iotago.OutputID]iotago.Output)
 	chainStateOutsICh := make(chan iotago.OutputID)
-	mChan := make(chan *nodebridge.Milestone, 10)
-	nc.RegisterChain(
+	mChan := make(chan time.Time, 10)
+	nc.AttachChain(
+		context.Background(),
 		chainID,
 		func(oi iotago.OutputID, o iotago.Output) {
 			chainStateOuts[oi] = o
 			chainStateOutsICh <- oi
 		},
-		func(oi iotago.OutputID, o iotago.Output) {
-			chainOuts[oi] = o
-			chainOICh <- oi
+		func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput) {
+			for i, oid := range outputIDs {
+				chainOuts[oid] = outputs[i]
+				chainOICh <- outputIDs[i]
+			}
 		},
-		func(m *nodebridge.Milestone) {
-			mChan <- m
+		func(timestamp time.Time) {
+			mChan <- timestamp
 		},
 	)
 	<-mChan
@@ -123,13 +126,14 @@ func TestNodeConn(t *testing.T) {
 	client.RequestFunds(wallet.Address())
 	tx, err := l1connection.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*isc.Million)
 	require.NoError(t, err)
-	err = nc.PublishTransaction(chainID, tx)
-	require.NoError(t, err)
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	nc.PublishTX(ctx, chainID, tx, func(tx *iotago.Transaction, confirmed bool) {
+		require.True(t, confirmed)
+		cancelCtx()
+	})
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh
 	t.Logf("Waiting for outputs posted via nodeConn... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
-
-	nc.UnregisterChain(chainID)
 
 	//
 	// Cleanup.
