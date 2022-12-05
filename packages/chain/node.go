@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"golang.org/x/xerrors"
 
@@ -233,7 +234,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		log, //.WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
+		log.WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
@@ -380,6 +381,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
+	cni.mempool.TangleTimeUpdated(timestamp)
 	for ji := range cni.consensusInsts {
 		for li := range cni.consensusInsts[ji] {
 			ci := cni.consensusInsts[ji][li]
