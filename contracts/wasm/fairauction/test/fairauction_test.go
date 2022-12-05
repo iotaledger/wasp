@@ -80,7 +80,9 @@ func TestGetAuctionInfo(t *testing.T) {
 	require.EqualValues(t, minBid, info.Results.MinimumBid().Value())
 	require.EqualValues(t, fairauction.OwnerMarginDefault, info.Results.OwnerMargin().Value())
 	// expect timestamp should has difference less than 1 second to the `auction.WhenStarted`
-	require.InDelta(t, uint64(ctx.Chain.State.Timestamp().UnixNano()), info.Results.WhenStarted().Value(), float64(1*time.Second.Nanoseconds()))
+	state, err := ctx.Chain.GetStateReader().LatestState()
+	require.NoError(t, err)
+	require.InDelta(t, uint64(state.Timestamp().UnixNano()), info.Results.WhenStarted().Value(), float64(1*time.Second.Nanoseconds()))
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)

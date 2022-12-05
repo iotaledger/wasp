@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/zap"
-
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -56,7 +55,7 @@ func (*mockedChain) GetCandidateNodes() []*governance.AccessNodeInfo {
 	panic("unimplemented")
 }
 
-func (*mockedChain) Log() *zap.SugaredLogger {
+func (*mockedChain) Log() *logger.Logger {
 	panic("unimplemented")
 }
 

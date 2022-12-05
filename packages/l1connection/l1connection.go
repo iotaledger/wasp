@@ -104,13 +104,14 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 			return nil, fmt.Errorf("failed to query address outputs: %w", err)
 		}
 		for res.Next() {
-			outs, err := res.Outputs()
+			outputs, err := res.Outputs()
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch address outputs: %w", err)
 			}
-			oids := res.Response.Items.MustOutputIDs()
-			for i, o := range outs {
-				result[oids[i]] = o
+
+			outputIDs := res.Response.Items.MustOutputIDs()
+			for i := range outputs {
+				result[outputIDs[i]] = outputs[i]
 			}
 		}
 	}

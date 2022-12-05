@@ -7,33 +7,86 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 )
 
-type mockChain struct{}
+type mockedChain struct {
+	// TODO mock chaincore is deprecated, what should be used in its place?
+	//*testchain.MockedChainCore
+}
 
-var _ chain.ChainRequests = &mockChain{}
+// chain.ChainCore implementation
 
-const foo = "foo"
+func (*mockedChain) ID() *isc.ChainID {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetCommitteeInfo() *chain.CommitteeInfo {
+	panic("unimplemented")
+}
+
+func (*mockedChain) Processors() *processors.Cache {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetStateReader() state.Store {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetChainNodes() []peering.PeerStatusProvider {
+	panic("unimplemented")
+}
+
+func (*mockedChain) GetCandidateNodes() []*governance.AccessNodeInfo {
+	panic("unimplemented")
+}
+
+func (*mockedChain) Log() *logger.Logger {
+	panic("unimplemented")
+}
 
 // chain.ChainRequests implementation
 
-func (m *mockChain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+func (*mockedChain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
-func (m *mockChain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
+func (*mockedChain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
 	panic("unimplemented")
 }
+
+// chain.Chain implementation
+
+func (m *mockedChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	panic("unimplemented")
+}
+
+func (m *mockedChain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	panic("unimplemented")
+}
+
+func (m *mockedChain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("unimplemented")
+}
+
+var _ chain.Chain = &mockedChain{}
 
 /*
+const foo = "foo"
+
 // TODO: still needed?
 func (m *mockChain) GetRequestReceipt(id isc.RequestID) (*blocklog.RequestReceipt, error) {
 	req := isc.NewOffLedgerRequest(
@@ -83,8 +136,8 @@ func (m *mockChain) EnqueueOffLedgerRequestMsg(msg *messages.OffLedgerRequestMsg
 */
 
 func TestRequestReceipt(t *testing.T) {
-	r := &reqstatusWebAPI{func(chainID *isc.ChainID) chain.ChainRequests {
-		return &mockChain{}
+	r := &reqstatusWebAPI{func(chainID *isc.ChainID) chain.Chain {
+		return &mockedChain{}
 	}}
 
 	chainID := isc.RandomChainID()

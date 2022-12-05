@@ -35,7 +35,7 @@ build-cli:
 build-full: compile-solidity build-cli
 	$(BUILD_CMD) ./...
 
-build: compile-solidity	build-cli
+build: compile-solidity build-cli
 	$(BUILD_CMD) $(BUILD_PKGS)
 
 build-lint: build lint
