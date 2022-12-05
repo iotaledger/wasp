@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-//const constTestFolder = "basicWALTest"
-
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
 	bw                  BlockWAL
 	factory             *BlockFactory
@@ -31,8 +29,8 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
-	bwtsmT.factory = NewBlockFactory()
-	bwtsmT.ao = bwtsmT.factory.GetOriginOutput(t)
+	bwtsmT.factory = NewBlockFactory(t)
+	bwtsmT.ao = bwtsmT.factory.GetOriginOutput()
 	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
 	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
@@ -52,7 +50,7 @@ func (bwtsmT *blockWALTestSM) Check(t *rapid.T) {
 }
 
 func (bwtsmT *blockWALTestSM) WriteBlock(t *rapid.T) {
-	block, aliasOutput := bwtsmT.factory.GetNextBlock(t, bwtsmT.lastBlockCommitment, bwtsmT.ao)
+	block, aliasOutput := bwtsmT.factory.GetNextBlock(bwtsmT.lastBlockCommitment, bwtsmT.ao)
 	bwtsmT.ao = aliasOutput
 	bwtsmT.lastBlockCommitment = block.L1Commitment()
 	bwtsmT.blocks[bwtsmT.lastBlockCommitment.GetBlockHash()] = block
@@ -116,7 +114,7 @@ func (bwtsmT *blockWALTestSM) MoveBlock(t *rapid.T) {
 	t.Logf("Block %s damaged: block %s written instead", blockHashToDamage, blockHashOrig)
 }
 
-// Damage the block by writting random bytes to it
+// Damage the block by writing random bytes to it
 func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 	blockHashes := bwtsmT.getGoodBlockHashes()
 	if len(blockHashes) == 0 {

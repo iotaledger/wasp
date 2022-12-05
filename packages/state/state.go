@@ -30,10 +30,6 @@ func newState(db *storeDB, root trie.Hash) (*state, error) {
 	}, nil
 }
 
-func (s *state) L1Commitment() *L1Commitment {
-	return nil // TODO
-}
-
 func (s *state) TrieRoot() trie.Hash {
 	return s.trieReader.Root()
 }

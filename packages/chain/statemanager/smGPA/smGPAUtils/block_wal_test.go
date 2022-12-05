@@ -19,8 +19,8 @@ func TestBlockWALBasic(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
-	blocks, _ := factory.GetBlocks(t, 5, 1)
+	factory := NewBlockFactory(t)
+	blocks, _ := factory.GetBlocks(5, 1)
 	blocksInWAL := blocks[:4]
 	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
@@ -55,8 +55,8 @@ func TestBlockWALOverwrite(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
-	blocks, _ := factory.GetBlocks(t, 4, 1)
+	factory := NewBlockFactory(t)
+	blocks, _ := factory.GetBlocks(4, 1)
 	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
@@ -97,8 +97,8 @@ func TestBlockWALRestart(t *testing.T) {
 	defer log.Sync()
 	defer cleanupAfterTest(t)
 
-	factory := NewBlockFactory()
-	blocks, _ := factory.GetBlocks(t, 4, 1)
+	factory := NewBlockFactory(t)
+	blocks, _ := factory.GetBlocks(4, 1)
 	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {

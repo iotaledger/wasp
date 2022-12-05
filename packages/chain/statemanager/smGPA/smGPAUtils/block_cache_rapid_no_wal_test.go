@@ -28,8 +28,8 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 
 func (bcnwtsmT *blockCacheNoWALTestSM) initWAL(t *rapid.T, wal BlockWAL) {
 	var err error
-	bcnwtsmT.factory = NewBlockFactory()
-	bcnwtsmT.ao = bcnwtsmT.factory.GetOriginOutput(t)
+	bcnwtsmT.factory = NewBlockFactory(t)
+	bcnwtsmT.ao = bcnwtsmT.factory.GetOriginOutput()
 	bcnwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), wal, bcnwtsmT.log)
@@ -53,7 +53,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) Check(t *rapid.T) {
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) AddNewBlock(t *rapid.T) {
-	block, aliasOutput := bcnwtsmT.factory.GetNextBlock(t, bcnwtsmT.lastBlockCommitment, bcnwtsmT.ao)
+	block, aliasOutput := bcnwtsmT.factory.GetNextBlock(bcnwtsmT.lastBlockCommitment, bcnwtsmT.ao)
 	bcnwtsmT.ao = aliasOutput
 	bcnwtsmT.lastBlockCommitment = block.L1Commitment()
 	bcnwtsmT.addBlock(t, block)
