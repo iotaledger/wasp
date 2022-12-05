@@ -150,19 +150,37 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	for i, node := range te.nodes {
 		for {
-			latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-			_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+			latestState, err := node.GetStateReader().LatestState()
 			require.NoError(t, err)
-			latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
-			require.NoError(t, err)
-			st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
-			require.NoError(t, err)
-			cnt := inccounter.NewStateAccess(st).GetCounter()
+			cnt := inccounter.NewStateAccess(latestState).GetCounter()
 			t.Logf("Counter[node=%v]=%v", i, cnt)
 			if cnt >= int64(incCount) {
+				// TODO: Double-check with the published TX.
+				/*
+					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+					require.NoError(t, err)
+					latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+					require.NoError(t, err)
+					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
+					require.NoError(t, err)
+					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
+				*/
 				break
 			}
-			time.Sleep(50 * time.Millisecond)
+			//
+			// For the unreliable-network tests we have to retry the requests.
+			// That's because the gossip in the mempool is primitive for now.
+			for i := 0; i < incCount; i++ {
+				scRequest := isc.NewOffLedgerRequest(
+					te.chainID,
+					inccounter.Contract.Hname(),
+					inccounter.FuncIncCounter.Hname(),
+					dict.New(), uint64(i),
+				).WithGasBudget(20000).Sign(scClient)
+				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
@@ -204,6 +222,15 @@ func (tnc *testNodeConn) PublishTX(
 	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)
+
+	stateAnchor, aoNoID, err := transaction.GetAnchorFromTransaction(tx)
+	if err != nil {
+		panic(err)
+	}
+	tnc.recvAliasOutput(
+		[]iotago.OutputID{stateAnchor.OutputID},
+		[]*iotago.AliasOutput{aoNoID},
+	)
 }
 
 func (tnc *testNodeConn) AttachChain(
