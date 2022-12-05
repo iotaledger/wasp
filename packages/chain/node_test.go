@@ -73,6 +73,20 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Logf("All attached to node conns.")
 	//
 	// Create the chain, post Chain Init, wait for the first block.
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		closed := te.ctx.Done()
+		for {
+			select {
+			case now := <-ticker.C:
+				for _, tnc := range te.nodeConns {
+					tnc.recvMilestone(now)
+				}
+			case <-closed:
+				return
+			}
+		}
+	}()
 	now := time.Now()
 	initRequests := te.tcl.MakeTxChainInit()
 	for _, tnc := range te.nodeConns {
