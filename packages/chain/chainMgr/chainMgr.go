@@ -292,8 +292,8 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	cmi.log.Debugf("handleInputConsensusOutputDone: %+v", input)
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
-	if cmi.needConsensus.BaseAliasOutput.ID().Equals(input.baseAliasOutputID.UTXOInput()) {
-		txID := input.nextAliasOutput.ID().TransactionID
+	if cmi.needConsensus.BaseAliasOutput.OutputID() == input.baseAliasOutputID {
+		txID := input.nextAliasOutput.TransactionID()
 		cmi.needPublishTX[txID] = &NeedPublishTX{
 			CommitteeAddr:     input.committeeAddr,
 			TxID:              txID,

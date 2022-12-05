@@ -16,6 +16,6 @@ import (
 func TestLocalView(t *testing.T) {
 	j := cmtLog.NewVarLocalView()
 	require.Nil(t, j.GetBaseAliasOutput())
-	require.True(t, j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, &iotago.UTXOInput{})))
+	require.True(t, j.AliasOutputConfirmed(isc.NewAliasOutputWithID(&iotago.AliasOutput{}, iotago.OutputID{})))
 	require.NotNil(t, j.GetBaseAliasOutput())
 }

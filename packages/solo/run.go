@@ -97,7 +97,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 		var err error
 		essence, err = rotate.MakeRotateStateControllerTransaction(
 			task.RotationAddress,
-			isc.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID.UTXOInput()),
+			isc.NewAliasOutputWithID(task.AnchorOutput, task.AnchorOutputID),
 			task.TimeAssumption.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},

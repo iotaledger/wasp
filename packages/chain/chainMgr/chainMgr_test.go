@@ -119,9 +119,9 @@ func testBasic(t *testing.T, n, f int) {
 	for _, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
 		require.Len(t, out.NeedPublishTX(), 1)
-		require.Equal(t, step2TX, out.NeedPublishTX()[step2AO.ID().TransactionID].Tx)
-		require.Equal(t, originAO.OutputID(), out.NeedPublishTX()[step2AO.ID().TransactionID].BaseAliasOutputID)
-		require.Equal(t, cmtAddrA, &out.NeedPublishTX()[step2AO.ID().TransactionID].CommitteeAddr)
+		require.Equal(t, step2TX, out.NeedPublishTX()[step2AO.TransactionID()].Tx)
+		require.Equal(t, originAO.OutputID(), out.NeedPublishTX()[step2AO.TransactionID()].BaseAliasOutputID)
+		require.Equal(t, cmtAddrA, &out.NeedPublishTX()[step2AO.TransactionID()].CommitteeAddr)
 		require.NotNil(t, out.NeedConsensus())
 		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
@@ -130,7 +130,7 @@ func testBasic(t *testing.T, n, f int) {
 	//
 	// Say TX is published
 	for nid := range nodes {
-		consReq := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX()[step2AO.ID().TransactionID]
+		consReq := nodes[nid].Output().(*chainMgr.Output).NeedPublishTX()[step2AO.TransactionID()]
 		tc.WithInput(nid, chainMgr.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.TxID, consReq.NextAliasOutput, true))
 	}
 	tc.RunAll()

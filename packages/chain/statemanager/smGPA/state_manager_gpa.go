@@ -192,12 +192,13 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 }
 
 func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
-	aliasOutputID := isc.OID(aliasOutput.ID())
-	smT.log.Debugf("Chain receive confirmed alias output %s input received...", aliasOutputID)
+	aliasOutputIDHex := aliasOutput.OutputID().ToHex()
+
+	smT.log.Debugf("Chain receive confirmed alias output %s input received...", aliasOutputIDHex)
 	stateCommitment, err := state.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
 	if err != nil {
 		smT.log.Errorf("Chain receive confirmed alias output %s: error retrieving state commitment from alias output: %v",
-			aliasOutputID, err)
+			aliasOutputIDHex, err)
 		return nil // No messages to send
 	}
 	// `lastStateOutputSeq` is used tu ensure that older state outputs don't
@@ -205,26 +206,26 @@ func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *
 	// in strictly the same order as they are approved by L1.
 	smT.lastStateOutputSeq++
 	seq := smT.lastStateOutputSeq
-	smT.log.Debugf("Chain receive confirmed alias output %s: alias output is %v-th in state manager", aliasOutputID, seq)
+	smT.log.Debugf("Chain receive confirmed alias output %s: alias output is %v-th in state manager", aliasOutputIDHex, seq)
 	request := smT.createStateBlockRequestLocal(stateCommitment, func(_ obtainStateFun) {
-		smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): all blocks for the state are in store", aliasOutputID, seq)
+		smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): all blocks for the state are in store", aliasOutputIDHex, seq)
 		if seq <= smT.stateOutputSeq {
-			smT.log.Warnf("Chain receive confirmed alias output %s (%v-th in state manager): alias output is outdated", aliasOutputID, seq)
+			smT.log.Warnf("Chain receive confirmed alias output %s (%v-th in state manager): alias output is outdated", aliasOutputIDHex, seq)
 		} else {
 			smT.currentStateIndex = aliasOutput.GetStateIndex()
 			smT.currentL1Commitment = stateCommitment
 			smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): STATE CHANGE: state manager is at state index %v, commitment %s",
-				aliasOutputID, seq, smT.currentStateIndex, smT.currentL1Commitment)
+				aliasOutputIDHex, seq, smT.currentStateIndex, smT.currentL1Commitment)
 			smT.stateOutputSeq = seq
 		}
 	})
 	messages, err := smT.traceBlockChainByRequest(request)
 	if err != nil {
 		smT.log.Errorf("Chain receive confirmed alias output %s (%v-th in state manager): error tracing block chain: %v",
-			aliasOutputID, seq, err)
+			aliasOutputIDHex, seq, err)
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager) input handled", aliasOutputID, seq)
+	smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager) input handled", aliasOutputIDHex, seq)
 	return messages
 }
 

@@ -550,7 +550,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
 			vmResult.RotationAddress,
-			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID.UTXOInput()),
+			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID),
 			vmResult.TimeAssumption,
 			identity.ID{},
 			identity.ID{},

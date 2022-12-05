@@ -29,8 +29,8 @@ type BlockFactory struct {
 }
 
 func NewBlockFactory() *BlockFactory {
-	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
-	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID.ID()))
+	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0)
+	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
@@ -140,7 +140,7 @@ func (bfT *BlockFactory) GetNextBlock(
 		Conditions:     consumedAliasOutput.Conditions,
 		Features:       consumedAliasOutput.Features,
 	}
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(), 0)
 	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
 
 	return block, aliasOutputWithID

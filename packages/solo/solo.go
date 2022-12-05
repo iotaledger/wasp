@@ -420,10 +420,10 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 }
 
 func (ch *Chain) GetAnchorOutput() *isc.AliasOutputWithID {
-	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
-	require.EqualValues(ch.Env.T, 1, len(outs))
-	for id, out := range outs {
-		return isc.NewAliasOutputWithID(out, id.UTXOInput())
+	outputs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+	require.EqualValues(ch.Env.T, 1, len(outputs))
+	for outputID, aliasOutput := range outputs {
+		return isc.NewAliasOutputWithID(aliasOutput, outputID)
 	}
 	panic("unreachable")
 }

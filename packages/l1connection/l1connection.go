@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 )
@@ -165,7 +164,7 @@ func (c *l1client) postTx(ctx context.Context, tx *iotago.Transaction) (*iotago.
 	if err != nil {
 		return nil, err
 	}
-	c.log.Infof("Posted transaction id %v", isc.TxID(txID))
+	c.log.Infof("Posted transaction id %v", txID.ToHex())
 
 	return block, nil
 }
