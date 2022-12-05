@@ -233,7 +233,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		log,
+		log, //.WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
@@ -485,6 +485,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
+		cni.mempool.TrackNewChainHead(needConsensus.BaseAliasOutput)
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
 		//
 		// Update committee nodes, if changed.

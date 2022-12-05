@@ -239,10 +239,12 @@ func New(
 }
 
 func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
+	mpi.log.Debugf("XXX: TangleTimeUpdated") // TODO: remove.
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
 func (mpi *mempoolImpl) TrackNewChainHead(chainHeadAO *isc.AliasOutputWithID) {
+	mpi.log.Debugf("XXX: TrackNewChainHead, chainHeadAO=%v", chainHeadAO) // TODO: remove.
 	mpi.reqTrackNewChainHeadPipe.In() <- chainHeadAO
 }
 
@@ -261,10 +263,12 @@ func (mpi *mempoolImpl) AwaitRequestProcessed(ctx context.Context, requestID isc
 }
 
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
+	mpi.log.Debugf("XXX: AccessNodesUpdated") // TODO: remove.
 	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
 }
 
 func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
+	mpi.log.Debugf("XXX: ConsensusProposalsAsync, ao=%v", aliasOutput) // TODO: remove.
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposals{
 		ctx:         ctx,
