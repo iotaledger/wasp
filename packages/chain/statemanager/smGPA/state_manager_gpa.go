@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockRequestsWithCommitment struct {
@@ -125,7 +126,17 @@ func (smT *stateManagerGPA) Output() gpa.Output {
 }
 
 func (smT *stateManagerGPA) StatusString() string {
-	return "" // TODO
+	return fmt.Sprintf(
+		"State manager is at state index %v, commitment (%s); "+
+			"it is waiting for %v blocks; "+
+			"last time blocks were requested from peer nodes: %v (every %v); "+
+			"last time outdated requests were cleared: %v (every %v); "+
+			"last time block cache was cleaned: %v (every %v).",
+		smT.currentStateIndex, smT.currentL1Commitment, len(smT.blockRequests),
+		util.TimeOrNever(smT.lastGetBlocksTime), smT.timers.StateManagerGetBlockRetry,
+		util.TimeOrNever(smT.lastCleanRequestsTime), smT.timers.StateManagerRequestCleaningPeriod,
+		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.timers.BlockCacheBlockCleaningPeriod,
+	)
 }
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
@@ -532,6 +543,7 @@ func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	result := gpa.NoMessages()
 	smT.log.Debugf("State manager timer tick %v input received...", now)
+	smT.log.Debugf("Status: %s", smT.StatusString())
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		smT.log.Debugf("State manager timer tick %v: resending get block messages...", now)
