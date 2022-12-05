@@ -228,7 +228,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		te.nodes[i], err = chain.New(
 			te.ctx,
 			te.chainID,
-			state.NewStore(mapdb.NewMapDB()),
+			state.InitChainStore(mapdb.NewMapDB()),
 			te.nodeConns[i],
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),

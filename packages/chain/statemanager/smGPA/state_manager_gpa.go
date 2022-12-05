@@ -357,13 +357,16 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 	oldNewContainer.oldStateBlockRequest = newStateBlockRequestFromMempool("old", input.GetOldL1Commitment(), isValidFun, respondFromOldFun, smT.log, id)
 	oldNewContainer.newStateBlockRequest = newStateBlockRequestFromMempool("new", input.GetNewL1Commitment(), isValidFun, respondFromNewFun, smT.log, id)
 
+	result := gpa.NoMessages()
 	messages, err := smT.traceBlockChainByRequest(oldNewContainer.oldStateBlockRequest)
 	if err != nil {
+		smT.log.Errorf("Error in traceBlockChainByRequest: %v", err)
 		// TODO
 	}
-	result := messages
+	result.AddAll(messages)
 	messages, err = smT.traceBlockChainByRequest(oldNewContainer.newStateBlockRequest)
 	if err != nil {
+		smT.log.Errorf("Error in traceBlockChainByRequest: %v", err)
 		// TODO
 	}
 	result.AddAll(messages)
