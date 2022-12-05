@@ -23,10 +23,10 @@ func setupRoot(t *testing.T) *wasmsolo.SoloContext {
 }
 
 func TestDeployContract(t *testing.T) {
-	if *wasmsolo.RsWasm {
-		// will fail because rust blob is already loaded
-		t.SkipNow()
-	}
+	//if *wasmsolo.RsWasm {
+	//	// will fail because rust blob is already loaded
+	//	t.SkipNow()
+	//}
 	ctxr := setupRoot(t)
 
 	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)

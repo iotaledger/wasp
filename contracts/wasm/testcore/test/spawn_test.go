@@ -3,6 +3,7 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
@@ -19,7 +20,7 @@ func TestSpawn(t *testing.T) {
 		require.NoError(t, ctx.Err)
 
 		spawnedName := testcore.ScName + "_spawned"
-		ctxSpawn := ctx.SoloContextForCore(t, spawnedName, testcore.OnDispatch)
+		ctxSpawn := ctx.SoloContextForCore(t, spawnedName, testcoreimpl.OnDispatch)
 		require.NoError(t, ctxSpawn.Err)
 		v := testcore.ScFuncs.GetCounter(ctxSpawn)
 		v.Func.Call()

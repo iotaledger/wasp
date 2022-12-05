@@ -30,30 +30,48 @@ func (g *TypeScriptGenerator) Cleanup() {
 	_ = os.Remove(g.folder + "../tsconfig.json")
 }
 
-func (g *TypeScriptGenerator) Generate() error {
-	err := g.generateCommonFiles()
+func (g *TypeScriptGenerator) GenerateImplementation() error {
+	err := g.generateImplementation()
 	if err != nil {
 		return err
 	}
-
-	// now generate language-specific files
-
-	err = g.createSourceFile("../main", !g.s.CoreContracts)
+	err = g.createSourceFile("index", true, "indexImpl")
 	if err != nil {
 		return err
 	}
-
-	err = g.generateTsConfig("../")
-	if err != nil {
-		return err
-	}
-
 	err = g.generateTsConfig("")
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	return g.createSourceFile("index", true)
+func (g *TypeScriptGenerator) GenerateInterface() error {
+	err := g.generateInterface()
+	if err != nil {
+		return err
+	}
+	err = g.createSourceFile("index", true)
+	if err != nil {
+		return err
+	}
+	err = g.generateTsConfig("")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *TypeScriptGenerator) GenerateWasmStub() error {
+	err := g.createSourceFile("../main", !g.s.CoreContracts)
+	if err != nil {
+		return err
+	}
+	err = g.generateTsConfig("../")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (g *TypeScriptGenerator) generateTsConfig(folder string) error {

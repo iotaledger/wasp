@@ -8,6 +8,7 @@ var resultsGo = map[string]string{
 	"results.go": `
 $#emit goPackage
 
+$#emit importWasmLib
 $#emit importWasmTypes
 $#each func resultsFunc
 `,
@@ -31,6 +32,14 @@ $#each result proxyContainers
 type $TypeName struct {
 	proxy wasmtypes.Proxy
 }
+$#if mut resultsMutConstructor
 $#each result proxyMethods
+`,
+	// *******************************
+	"resultsMutConstructor": `
+
+func New$TypeName(results *wasmlib.ScDict) $TypeName {
+	return $TypeName { proxy: results.AsProxy() }
+}
 `,
 }

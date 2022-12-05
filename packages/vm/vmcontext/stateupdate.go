@@ -12,7 +12,7 @@ type StateUpdate struct {
 }
 
 // NewStateUpdate creates a state update with timestamp mutation, if provided
-func NewStateUpdate() *StateUpdate { //nolint:revive
+func NewStateUpdate() *StateUpdate {
 	return &StateUpdate{
 		Mutations: buffered.NewMutations(),
 	}

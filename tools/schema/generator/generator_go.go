@@ -26,13 +26,22 @@ func (g *GoGenerator) Cleanup() {
 	// now clean up language-specific files
 }
 
-func (g *GoGenerator) Generate() error {
-	err := g.generateCommonFiles()
+func (g *GoGenerator) GenerateImplementation() error {
+	err := g.generateImplementation()
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	// now generate language-specific files
+func (g *GoGenerator) GenerateInterface() error {
+	err := g.generateInterface()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func (g *GoGenerator) GenerateWasmStub() error {
 	return g.createSourceFile("../main", !g.s.CoreContracts)
 }

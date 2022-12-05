@@ -6,6 +6,7 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/helloworld/go/helloworldimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/helloworld/go/helloworld"
@@ -13,7 +14,7 @@ import (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, helloworld.ScName, helloworld.OnDispatch)
+	return wasmsolo.NewSoloContext(t, helloworld.ScName, helloworldimpl.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

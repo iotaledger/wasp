@@ -11,9 +11,10 @@ var mainGo = map[string]string{
 
 package main
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
-
-import "$module/go/$package"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
+	"$module/go/$package$+impl"
+)
 
 func main() {
 }
@@ -24,12 +25,12 @@ func init() {
 
 //export on_call
 func onCall(index int32) {
-	$package.OnDispatch(index)
+	$package$+impl.OnDispatch(index)
 }
 
 //export on_load
 func onLoad() {
-	$package.OnDispatch(-1)
+	$package$+impl.OnDispatch(-1)
 }
 `,
 }

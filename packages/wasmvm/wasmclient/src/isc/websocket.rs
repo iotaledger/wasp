@@ -4,7 +4,7 @@ use std::sync::mpsc;
 pub type SocketType =
     tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>;
 
-struct Client {
+pub struct Client {
     url: String,
     socket: SocketType,
 }
@@ -37,6 +37,26 @@ impl Client {
                 }
             }
         }
+    }
+}
+
+impl Clone for Client {
+    fn clone(&self) -> Self {
+        match tungstenite::connect(&self.url) {
+            Ok((socket, _res)) => {
+                return Client {
+                    url: self.url.to_owned(),
+                    socket: socket,
+                }
+            }
+            Err(e) => panic!("websocket connection err: {}", e),
+        }
+    }
+}
+
+impl PartialEq for Client {
+    fn eq(&self, other: &Self) -> bool {
+        todo!()
     }
 }
 

@@ -18,6 +18,12 @@ pub struct ImmutableStoreStringParams {
 }
 
 impl ImmutableStoreStringParams {
+    pub fn new() -> ImmutableStoreStringParams {
+        ImmutableStoreStringParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn str(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_STR))
     }

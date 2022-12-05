@@ -6,7 +6,11 @@ package gotemplates
 var funcsGo = map[string]string{
 	// *******************************
 	"funcs.go": `
-$#emit goHeader
+package $package$+impl
+
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+)
 $#each func funcSignature
 `,
 	// *******************************

@@ -53,7 +53,7 @@ func AddEndpoints(
 		nodeIdentityProvider:        nodeIdentityProvider,
 		chains:                      chainsProvider,
 		network:                     network,
-		// TODO: what happend to the metrics?
+		// TODO: what happened to the metrics?
 		nodeConnectionMetrics: nodeConnectionMetrics,
 	})
 	addDKSharesEndpoints(adm, dkShareRegistryProvider, nodeProvider)

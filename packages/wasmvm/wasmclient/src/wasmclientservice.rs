@@ -3,6 +3,7 @@
 
 use crate::*;
 use isc::{offledgerrequest::*, waspclient::*};
+use std::sync::mpsc;
 use std::time::Duration;
 
 pub trait IClientService {
@@ -23,7 +24,7 @@ pub trait IClientService {
         key_pair: &keypair::KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID>;
-    fn subscribe_events(&self, msg: &Vec<String>) -> errors::Result<()>;
+    fn subscribe_events(&self, tx: mpsc::Sender<String>) -> errors::Result<()>;
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -35,6 +36,7 @@ pub trait IClientService {
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
     client: waspclient::WaspClient,
+    websocket: Option<websocket::Client>,
     event_port: String,
     last_err: errors::Result<()>,
 }
@@ -85,9 +87,8 @@ impl IClientService for WasmClientService {
         return Ok(req.id());
     }
 
-    // FIXME to impl channels, see https://doc.rust-lang.org/rust-by-example/std_misc/channels.html
-    fn subscribe_events(&self, _msg: &Vec<String>) -> errors::Result<()> {
-        todo!()
+    fn subscribe_events(&self, tx: mpsc::Sender<String>) -> errors::Result<()> {
+        self.websocket.clone().unwrap().subscribe(tx) // TODO remove clone
     }
 
     fn wait_until_request_processed(
@@ -105,9 +106,10 @@ impl IClientService for WasmClientService {
 }
 
 impl WasmClientService {
-    pub fn new(wasp_api: &str, event_port: &str) -> Self {
+    pub fn new(wasp_api: &str, event_port: &str, websocket_url: &str) -> Self {
         return WasmClientService {
             client: waspclient::WaspClient::new(wasp_api),
+            websocket: Some(websocket::Client::connect(websocket_url).unwrap()),
             event_port: event_port.to_string(),
             last_err: Ok(()),
         };
@@ -117,6 +119,7 @@ impl WasmClientService {
         return WasmClientService {
             client: waspclient::WaspClient::new("127.0.0.1:9090"),
             event_port: "127.0.0.1:5550".to_string(),
+            websocket: None, // TODO set an empty object
             last_err: Ok(()),
         };
     }
@@ -132,6 +135,7 @@ mod tests {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
             client: waspclient::WaspClient::new("127.0.0.1:9090"),
+            websocket: None,
             event_port: "127.0.0.1:5550".to_string(),
             last_err: Ok(()),
         };

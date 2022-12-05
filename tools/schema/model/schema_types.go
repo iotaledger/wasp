@@ -35,6 +35,7 @@ type SchemaDef struct {
 	Copyright   string
 	Name        DefElt
 	Description DefElt
+	Author      DefElt
 	Events      DefMapMap
 	Structs     DefMapMap
 	Typedefs    DefMap

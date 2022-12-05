@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func ReadAvailableBytesToBuffer(target []byte, targetOffset int, source []byte, sourceOffset int, sourceLength int) int { //nolint:gocritic
+func ReadAvailableBytesToBuffer(target []byte, targetOffset int, source []byte, sourceOffset int, sourceLength int) int {
 	availableBytes := sourceLength - sourceOffset
 	requiredBytes := len(target) - targetOffset
 

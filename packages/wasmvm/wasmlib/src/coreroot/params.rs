@@ -17,6 +17,12 @@ pub struct ImmutableDeployContractParams {
 }
 
 impl ImmutableDeployContractParams {
+    pub fn new() -> ImmutableDeployContractParams {
+        ImmutableDeployContractParams {
+            proxy: params_proxy(),
+        }
+    }
+
     // default 'N/A'
     pub fn description(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_DESCRIPTION))
@@ -59,6 +65,12 @@ pub struct ImmutableGrantDeployPermissionParams {
 }
 
 impl ImmutableGrantDeployPermissionParams {
+    pub fn new() -> ImmutableGrantDeployPermissionParams {
+        ImmutableGrantDeployPermissionParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn deployer(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
     }
@@ -81,6 +93,12 @@ pub struct ImmutableRequireDeployPermissionsParams {
 }
 
 impl ImmutableRequireDeployPermissionsParams {
+    pub fn new() -> ImmutableRequireDeployPermissionsParams {
+        ImmutableRequireDeployPermissionsParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn deploy_permissions_enabled(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(PARAM_DEPLOY_PERMISSIONS_ENABLED))
     }
@@ -103,6 +121,12 @@ pub struct ImmutableRevokeDeployPermissionParams {
 }
 
 impl ImmutableRevokeDeployPermissionParams {
+    pub fn new() -> ImmutableRevokeDeployPermissionParams {
+        ImmutableRevokeDeployPermissionParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn deployer(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_DEPLOYER))
     }
@@ -125,6 +149,12 @@ pub struct ImmutableSubscribeBlockContextParams {
 }
 
 impl ImmutableSubscribeBlockContextParams {
+    pub fn new() -> ImmutableSubscribeBlockContextParams {
+        ImmutableSubscribeBlockContextParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn close_func(&self) -> ScImmutableHname {
         ScImmutableHname::new(self.proxy.root(PARAM_CLOSE_FUNC))
     }
@@ -155,6 +185,12 @@ pub struct ImmutableFindContractParams {
 }
 
 impl ImmutableFindContractParams {
+    pub fn new() -> ImmutableFindContractParams {
+        ImmutableFindContractParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn hname(&self) -> ScImmutableHname {
         ScImmutableHname::new(self.proxy.root(PARAM_HNAME))
     }

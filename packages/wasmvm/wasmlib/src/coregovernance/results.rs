@@ -28,7 +28,7 @@ impl ArrayOfImmutableAddress {
 
 #[derive(Clone)]
 pub struct ImmutableGetAllowedStateControllerAddressesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetAllowedStateControllerAddressesResults {
@@ -63,10 +63,16 @@ impl ArrayOfMutableAddress {
 
 #[derive(Clone)]
 pub struct MutableGetAllowedStateControllerAddressesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetAllowedStateControllerAddressesResults {
+    pub fn new() -> MutableGetAllowedStateControllerAddressesResults {
+        MutableGetAllowedStateControllerAddressesResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn allowed_state_controller_addresses(&self) -> ArrayOfMutableAddress {
         ArrayOfMutableAddress { proxy: self.proxy.root(RESULT_ALLOWED_STATE_CONTROLLER_ADDRESSES) }
@@ -75,7 +81,7 @@ impl MutableGetAllowedStateControllerAddressesResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetChainInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetChainInfoResults {
@@ -110,10 +116,16 @@ impl ImmutableGetChainInfoResults {
 
 #[derive(Clone)]
 pub struct MutableGetChainInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetChainInfoResults {
+    pub fn new() -> MutableGetChainInfoResults {
+        MutableGetChainInfoResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn chain_id(&self) -> ScMutableChainID {
         ScMutableChainID::new(self.proxy.root(RESULT_CHAIN_ID))
     }
@@ -156,7 +168,7 @@ impl MapBytesToImmutableBytes {
 
 #[derive(Clone)]
 pub struct ImmutableGetChainNodesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetChainNodesResults {
@@ -186,10 +198,16 @@ impl MapBytesToMutableBytes {
 
 #[derive(Clone)]
 pub struct MutableGetChainNodesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetChainNodesResults {
+    pub fn new() -> MutableGetChainNodesResults {
+        MutableGetChainNodesResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn access_node_candidates(&self) -> MapBytesToMutableBytes {
         MapBytesToMutableBytes { proxy: self.proxy.root(RESULT_ACCESS_NODE_CANDIDATES) }
     }
@@ -201,7 +219,7 @@ impl MutableGetChainNodesResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetChainOwnerResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetChainOwnerResults {
@@ -212,10 +230,16 @@ impl ImmutableGetChainOwnerResults {
 
 #[derive(Clone)]
 pub struct MutableGetChainOwnerResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetChainOwnerResults {
+    pub fn new() -> MutableGetChainOwnerResults {
+        MutableGetChainOwnerResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn chain_owner(&self) -> ScMutableAgentID {
         ScMutableAgentID::new(self.proxy.root(RESULT_CHAIN_OWNER))
     }
@@ -223,7 +247,7 @@ impl MutableGetChainOwnerResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetFeePolicyResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetFeePolicyResults {
@@ -234,10 +258,16 @@ impl ImmutableGetFeePolicyResults {
 
 #[derive(Clone)]
 pub struct MutableGetFeePolicyResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetFeePolicyResults {
+    pub fn new() -> MutableGetFeePolicyResults {
+        MutableGetFeePolicyResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn fee_policy_bytes(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_FEE_POLICY_BYTES))
     }
@@ -245,7 +275,7 @@ impl MutableGetFeePolicyResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetMaxBlobSizeResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetMaxBlobSizeResults {
@@ -256,10 +286,16 @@ impl ImmutableGetMaxBlobSizeResults {
 
 #[derive(Clone)]
 pub struct MutableGetMaxBlobSizeResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetMaxBlobSizeResults {
+    pub fn new() -> MutableGetMaxBlobSizeResults {
+        MutableGetMaxBlobSizeResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn max_blob_size(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_MAX_BLOB_SIZE))
     }

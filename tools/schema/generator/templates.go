@@ -36,14 +36,20 @@ $copyrightMessage
 
 `,
 	// *******************************
-	"../README.md Sc": `
+	"../README.md Lib": `
 ## $package
 
-$scDesc
+Interface library for: $scDesc
 `,
 	// *******************************
-	"../README.md Main": `
-## $package$+_main
+	"../README.md Impl": `
+## $package$+impl
+
+Implementation library for: $scDesc
+`,
+	// *******************************
+	"../README.md Wasm": `
+## $package$+wasm
 
 Wasm VM host stub for: $scDesc
 `,

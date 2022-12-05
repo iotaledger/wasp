@@ -322,7 +322,7 @@ func (ctx *SoloContext) existFile(lang string) string {
 	// first check for new file in build path
 	pathName := "../" + lang + "/pkg/" + fileName
 	if lang == "bg" {
-		pathName = "../rs/" + ctx.scName + "_main/pkg/" + ctx.scName + "_main_bg.wasm"
+		pathName = "../rs/" + ctx.scName + "wasm/pkg/" + ctx.scName + "wasm_bg.wasm"
 	}
 	exists, _ := util.ExistsFilePath(pathName)
 	if exists {

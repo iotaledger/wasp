@@ -8,6 +8,7 @@ var stateGo = map[string]string{
 	"state.go": `
 $#emit goPackage
 
+$#emit importWasmLib
 $#emit importWasmTypes
 $#set Kind State
 $#set mut Immutable
@@ -22,6 +23,10 @@ $#each state proxyContainers
 
 type $TypeName struct {
 	proxy wasmtypes.Proxy
+}
+
+func New$TypeName() $TypeName {
+	return $TypeName { proxy: wasmlib.NewStateProxy() }
 }
 $#if mut stateProxyImmutableFunc
 $#each state proxyMethods

@@ -13,7 +13,7 @@ use crate::coreblocklog::*;
 
 #[derive(Clone)]
 pub struct ImmutableControlAddressesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableControlAddressesResults {
@@ -33,10 +33,16 @@ impl ImmutableControlAddressesResults {
 
 #[derive(Clone)]
 pub struct MutableControlAddressesResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableControlAddressesResults {
+    pub fn new() -> MutableControlAddressesResults {
+        MutableControlAddressesResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // the addresses have been set as state controller address or governing address since the following block index
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
@@ -53,7 +59,7 @@ impl MutableControlAddressesResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetBlockInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetBlockInfoResults {
@@ -68,10 +74,16 @@ impl ImmutableGetBlockInfoResults {
 
 #[derive(Clone)]
 pub struct MutableGetBlockInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetBlockInfoResults {
+    pub fn new() -> MutableGetBlockInfoResults {
+        MutableGetBlockInfoResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
@@ -98,7 +110,7 @@ impl ArrayOfImmutableBytes {
 
 #[derive(Clone)]
 pub struct ImmutableGetEventsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetEventsForBlockResults {
@@ -133,10 +145,16 @@ impl ArrayOfMutableBytes {
 
 #[derive(Clone)]
 pub struct MutableGetEventsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetEventsForBlockResults {
+    pub fn new() -> MutableGetEventsForBlockResults {
+        MutableGetEventsForBlockResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
@@ -145,7 +163,7 @@ impl MutableGetEventsForBlockResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetEventsForContractResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetEventsForContractResults {
@@ -157,10 +175,16 @@ impl ImmutableGetEventsForContractResults {
 
 #[derive(Clone)]
 pub struct MutableGetEventsForContractResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetEventsForContractResults {
+    pub fn new() -> MutableGetEventsForContractResults {
+        MutableGetEventsForContractResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
@@ -169,7 +193,7 @@ impl MutableGetEventsForContractResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetEventsForRequestResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetEventsForRequestResults {
@@ -181,10 +205,16 @@ impl ImmutableGetEventsForRequestResults {
 
 #[derive(Clone)]
 pub struct MutableGetEventsForRequestResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetEventsForRequestResults {
+    pub fn new() -> MutableGetEventsForRequestResults {
+        MutableGetEventsForRequestResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn event(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_EVENT) }
@@ -208,7 +238,7 @@ impl ArrayOfImmutableRequestID {
 
 #[derive(Clone)]
 pub struct ImmutableGetRequestIDsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetRequestIDsForBlockResults {
@@ -243,10 +273,16 @@ impl ArrayOfMutableRequestID {
 
 #[derive(Clone)]
 pub struct MutableGetRequestIDsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetRequestIDsForBlockResults {
+    pub fn new() -> MutableGetRequestIDsForBlockResults {
+        MutableGetRequestIDsForBlockResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn request_id(&self) -> ArrayOfMutableRequestID {
         ArrayOfMutableRequestID { proxy: self.proxy.root(RESULT_REQUEST_ID) }
@@ -255,7 +291,7 @@ impl MutableGetRequestIDsForBlockResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetRequestReceiptResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptResults {
@@ -274,10 +310,16 @@ impl ImmutableGetRequestReceiptResults {
 
 #[derive(Clone)]
 pub struct MutableGetRequestReceiptResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptResults {
+    pub fn new() -> MutableGetRequestReceiptResults {
+        MutableGetRequestReceiptResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn block_index(&self) -> ScMutableUint32 {
         ScMutableUint32::new(self.proxy.root(RESULT_BLOCK_INDEX))
     }
@@ -293,7 +335,7 @@ impl MutableGetRequestReceiptResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetRequestReceiptsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetRequestReceiptsForBlockResults {
@@ -305,10 +347,16 @@ impl ImmutableGetRequestReceiptsForBlockResults {
 
 #[derive(Clone)]
 pub struct MutableGetRequestReceiptsForBlockResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetRequestReceiptsForBlockResults {
+    pub fn new() -> MutableGetRequestReceiptsForBlockResults {
+        MutableGetRequestReceiptsForBlockResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // native contract, so this is an Array16
     pub fn request_record(&self) -> ArrayOfMutableBytes {
         ArrayOfMutableBytes { proxy: self.proxy.root(RESULT_REQUEST_RECORD) }
@@ -317,7 +365,7 @@ impl MutableGetRequestReceiptsForBlockResults {
 
 #[derive(Clone)]
 pub struct ImmutableIsRequestProcessedResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableIsRequestProcessedResults {
@@ -328,10 +376,16 @@ impl ImmutableIsRequestProcessedResults {
 
 #[derive(Clone)]
 pub struct MutableIsRequestProcessedResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableIsRequestProcessedResults {
+    pub fn new() -> MutableIsRequestProcessedResults {
+        MutableIsRequestProcessedResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn request_processed(&self) -> ScMutableBool {
         ScMutableBool::new(self.proxy.root(RESULT_REQUEST_PROCESSED))
     }

@@ -37,7 +37,17 @@ pub struct $TypeName {
 
 impl $TypeName {
 $#set separator $false
+$#if mut else paramsImmutConstructor
 $#each param proxyMethods
 }
+`,
+	// *******************************
+	"paramsImmutConstructor": `
+    pub fn new() -> $TypeName {
+        $TypeName {
+            proxy: params_proxy(),
+        }
+    }
+$#set separator $true
 `,
 }
