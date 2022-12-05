@@ -227,6 +227,13 @@ func (smT *stateManagerGPA) handleChainReceiveConfirmedAliasOutput(aliasOutput *
 			smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): STATE CHANGE: state manager is at state index %v, commitment %s",
 				aliasOutputID, seq, smT.currentStateIndex, smT.currentL1Commitment)
 			smT.stateOutputSeq = seq
+			err := smT.store.SetLatest(smT.currentL1Commitment.GetTrieRoot())
+			if err != nil {
+				smT.log.Errorf("Chain receive confirmed alias output %s (%v-th in state manager): error setting state change to the store: %v",
+					aliasOutputID, seq, err)
+				return
+			}
+			smT.log.Debugf("Chain receive confirmed alias output %s (%v-th in state manager): state change set in the store", aliasOutputID, seq)
 		}
 	})
 	messages, err := smT.traceBlockChainByRequest(request)
