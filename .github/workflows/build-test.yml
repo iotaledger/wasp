@@ -20,7 +20,7 @@ jobs:
 
       - name: Get dependencies
         run: |
-          make  wasm
+          make wasm
           go get -v -t -d ./...
 
       - name: Build

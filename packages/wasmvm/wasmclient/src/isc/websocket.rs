@@ -1,29 +1,22 @@
 use crate::*;
-use std::sync::mpsc;
+use std::{sync::mpsc, thread::spawn};
 
-pub type SocketType =
-    tungstenite::WebSocket<tungstenite::stream::MaybeTlsStream<std::net::TcpStream>>;
-
+#[derive(Clone)]
 pub struct Client {
     url: String,
-    socket: SocketType,
 }
 
 impl Client {
-    pub fn connect(url: &str) -> errors::Result<Self> {
-        match tungstenite::connect(url) {
-            Ok((socket, _res)) => {
-                return Ok(Client {
-                    url: url.to_owned(),
-                    socket: socket,
-                })
-            }
-            Err(e) => return Err(format!("websocket connection err: {}", e)),
-        }
+    pub fn new(url: &str) -> errors::Result<Self> {
+        return Ok(Client {
+            url: url.to_owned(),
+        });
     }
-    pub fn subscribe(&mut self, ch: mpsc::Sender<String>) -> errors::Result<()> {
-        loop {
-            match self.socket.read_message() {
+    pub fn subscribe(&self, ch: mpsc::Sender<String>) {
+        // FIXME should not reconnect every time
+        let (mut socket, _) = tungstenite::connect(&self.url).unwrap();
+        spawn(move || loop {
+            match socket.read_message() {
                 Ok(msg) => {
                     if msg.to_string() != "" {
                         ch.send(msg.to_string()).unwrap();
@@ -36,26 +29,12 @@ impl Client {
                     return Err(format!("subscribe err: {}", e));
                 }
             }
-        }
-    }
-}
-
-impl Clone for Client {
-    fn clone(&self) -> Self {
-        match tungstenite::connect(&self.url) {
-            Ok((socket, _res)) => {
-                return Client {
-                    url: self.url.to_owned(),
-                    socket: socket,
-                }
-            }
-            Err(e) => panic!("websocket connection err: {}", e),
-        }
+        });
     }
 }
 
 impl PartialEq for Client {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, _other: &Self) -> bool {
         todo!()
     }
 }
@@ -73,10 +52,10 @@ mod tests {
     }
 
     #[test]
-    fn client_connect() {
+    fn client_new() {
         let url = "ws://localhost:3012";
         mock_server(url, None);
-        let client = Client::connect(&url).unwrap();
+        let client = Client::new(&url).unwrap();
         assert!(client.url == url);
     }
 
@@ -91,9 +70,9 @@ mod tests {
                 count: 3,
             }),
         );
-        let mut client = Client::connect(&url).unwrap();
+        let client = Client::new(&url).unwrap();
         let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
-        client.subscribe(tx).unwrap();
+        client.subscribe(tx);
         let mut cnt = 0;
         for msg in rx.iter() {
             assert!(msg == format!("{}: cnt: {}", test_msg, cnt));

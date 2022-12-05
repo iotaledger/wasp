@@ -88,7 +88,8 @@ impl IClientService for WasmClientService {
     }
 
     fn subscribe_events(&self, tx: mpsc::Sender<String>) -> errors::Result<()> {
-        self.websocket.clone().unwrap().subscribe(tx) // TODO remove clone
+        self.websocket.clone().unwrap().subscribe(tx); // TODO remove clone
+        return Ok(());
     }
 
     fn wait_until_request_processed(
@@ -109,7 +110,7 @@ impl WasmClientService {
     pub fn new(wasp_api: &str, event_port: &str, websocket_url: &str) -> Self {
         return WasmClientService {
             client: waspclient::WaspClient::new(wasp_api),
-            websocket: Some(websocket::Client::connect(websocket_url).unwrap()),
+            websocket: Some(websocket::Client::new(websocket_url).unwrap()),
             event_port: event_port.to_string(),
             last_err: Ok(()),
         };

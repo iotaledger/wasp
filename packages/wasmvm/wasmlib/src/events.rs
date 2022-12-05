@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::*;
+use std::any::Any;
 
-pub trait IEventHandlers {
+pub trait IEventHandlers: Any + Send + Sync {
     fn call_handler(&self, topic: &str, params: &Vec<String>);
 }
 
@@ -43,9 +44,7 @@ pub struct EventDecoder {
 
 impl EventDecoder {
     pub fn new(msg: &Vec<String>) -> EventDecoder {
-        EventDecoder {
-            msg: msg.to_vec(),
-        }
+        EventDecoder { msg: msg.to_vec() }
     }
 
     pub fn decode(&mut self) -> String {
