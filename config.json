@@ -75,9 +75,16 @@
     "enabled": true,
     "directory": "wal"
   },
-  "metrics": {
+  "prometheus": {
     "enabled": true,
-    "bindAddress": "0.0.0.0:2112"
+    "bindAddress": "0.0.0.0:2112",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
     "enabled": true,

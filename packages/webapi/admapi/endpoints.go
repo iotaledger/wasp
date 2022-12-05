@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
@@ -31,7 +31,7 @@ func AddEndpoints(
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown ShutdownFunc,
-	metrics *metricspkg.Metrics,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 ) {
@@ -53,7 +53,8 @@ func AddEndpoints(
 		nodeIdentityProvider:        nodeIdentityProvider,
 		chains:                      chainsProvider,
 		network:                     network,
-		allMetrics:                  metrics,
+		// TODO: what happend to the metrics?
+		nodeConnectionMetrics: nodeConnectionMetrics,
 	})
 	addDKSharesEndpoints(adm, dkShareRegistryProvider, nodeProvider)
 	addPeeringEndpoints(adm, chainRecordRegistryProvider, network, tnm)

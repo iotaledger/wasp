@@ -220,7 +220,7 @@ func New(
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	//
 	// Create sub-components.
-	chainMetrics := metrics.DefaultChainMetrics()
+	chainMetrics := metrics.EmptyChainMetrics()
 	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkShareRegistryProvider, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)

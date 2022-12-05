@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -29,7 +29,7 @@ type chainWebAPI struct {
 	nodeIdentityProvider        registry.NodeIdentityProvider
 	chains                      chains.Provider
 	network                     peering.NetworkProvider
-	allMetrics                  *metrics.Metrics
+	nodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
 }
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {

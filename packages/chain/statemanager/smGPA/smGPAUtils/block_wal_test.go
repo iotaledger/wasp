@@ -22,9 +22,9 @@ func TestBlockWALBasic(t *testing.T) {
 	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(5, 1)
 	blocksInWAL := blocks[:4]
-	walGood, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(constTestFolder, isc.RandomChainID(), log)
+	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -57,7 +57,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -88,7 +88,7 @@ func TestBlockWALOverwrite(t *testing.T) {
 	block, err = wal.Read(blocks[0].Hash())
 	require.NoError(t, err)
 	require.True(t, blocks[0].Hash().Equals(block.Hash()))
-	// require.True(t, blocks[0].Equals(block))
+	//require.True(t, blocks[0].Equals(block))
 }
 
 // Check if after restart wal is functioning correctly
@@ -99,15 +99,15 @@ func TestBlockWALRestart(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks, _ := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
 		require.NoError(t, err)
 	}
 
-	// Restart: WAL object is recreated
-	wal, err = NewBlockWAL(constTestFolder, factory.GetChainID(), log)
+	//Restart: WAL object is recreated
+	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		require.True(t, wal.Contains(blocks[i].Hash()))

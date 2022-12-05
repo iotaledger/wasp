@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	hivedb "github.com/iotaledger/hive.go/core/database"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/database"
@@ -65,6 +66,11 @@ func provide(c *dig.Container) error {
 
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DatabaseEngine              hivedb.Engine `name:"databaseEngine"`
+
+		// NodeConnection is essential, even if it doesn't seem to be used.
+		// If we don't have that as a dependency, the L1 parameters would be unknown,
+		// but those are required in "NewManager"
+		NodeConnection chain.NodeConnection
 	}
 
 	type databaseManagerResult struct {

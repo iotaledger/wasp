@@ -41,7 +41,7 @@ type chainMetricsObj struct {
 
 var (
 	_ ChainMetrics = &chainMetricsObj{}
-	_ ChainMetrics = &defaultChainMetrics{}
+	_ ChainMetrics = &emptyChainMetrics{}
 )
 
 func (c *chainMetricsObj) CountRequestIn(req isc.Request) {
@@ -92,28 +92,28 @@ func (c *chainMetricsObj) LastSeenStateIndex(stateIndex uint32) {
 	c.metrics.lastSeenStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
 }
 
-type defaultChainMetrics struct{}
+type emptyChainMetrics struct{}
 
-func DefaultChainMetrics() ChainMetrics {
-	return &defaultChainMetrics{}
+func EmptyChainMetrics() ChainMetrics {
+	return &emptyChainMetrics{}
 }
 
-func (m *defaultChainMetrics) CountRequestIn(_ isc.Request) {}
+func (m *emptyChainMetrics) CountRequestIn(_ isc.Request) {}
 
-func (m *defaultChainMetrics) CountRequestOut() {}
+func (m *emptyChainMetrics) CountRequestOut() {}
 
-func (m *defaultChainMetrics) CountMessages() {}
+func (m *emptyChainMetrics) CountMessages() {}
 
-func (m *defaultChainMetrics) CurrentStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) CurrentStateIndex(stateIndex uint32) {}
 
-func (m *defaultChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
+func (m *emptyChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
 
-func (m *defaultChainMetrics) RecordVMRunTime(_ time.Duration) {}
+func (m *emptyChainMetrics) RecordVMRunTime(_ time.Duration) {}
 
-func (m *defaultChainMetrics) CountVMRuns() {}
+func (m *emptyChainMetrics) CountVMRuns() {}
 
-func (m *defaultChainMetrics) CountBlocksPerChain() {}
+func (m *emptyChainMetrics) CountBlocksPerChain() {}
 
-func (m *defaultChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
+func (m *emptyChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
 
-func (m *defaultChainMetrics) LastSeenStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) LastSeenStateIndex(stateIndex uint32) {}

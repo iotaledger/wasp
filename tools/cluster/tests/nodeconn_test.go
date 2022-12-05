@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -83,7 +84,7 @@ func TestNodeConn(t *testing.T) {
 	require.NoError(t, err)
 	go nodeBridge.Run(ctx)
 
-	nc := nodeconn.New(ctx, log, nodeBridge)
+	nc := nodeconn.New(ctx, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
 
 	//
 	// Check the chain operations.
