@@ -4,9 +4,11 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type obtainStateFun func() (state.State, error)
-type obtainBlockFun func(*state.L1Commitment) state.Block
-type blockRequestID uint64
+type (
+	obtainStateFun func() (state.State, error)
+	obtainBlockFun func(*state.L1Commitment) state.Block
+	blockRequestID uint64
+)
 
 type blockRequest interface {
 	getLastL1Commitment() *state.L1Commitment
