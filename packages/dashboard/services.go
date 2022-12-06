@@ -156,7 +156,10 @@ func (w *WaspServices) CallView(chainID *isc.ChainID, scName, funName string, pa
 	if err != nil {
 		return nil, err
 	}
-	vctx := viewcontext.New(ch, blockIndex)
+	vctx, err := viewcontext.New(ch, blockIndex)
+	if err != nil {
+		return nil, err
+	}
 	return vctx.CallViewExternal(isc.Hn(scName), isc.Hn(funName), params)
 }
 
