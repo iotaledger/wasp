@@ -3,6 +3,7 @@ package smGPA
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -74,6 +75,12 @@ func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, blocks ...state.Block) {
 	}
 }
 
+func (teT *testEnv) sendBlocksToRandomNode(nodeIDs []gpa.NodeID, blocks ...state.Block) {
+	for _, block := range blocks {
+		teT.sendBlocksToNode(nodeIDs[rand.Intn(len(nodeIDs))], block)
+	}
+}
+
 func (teT *testEnv) requireReceiveAnything(anyChan <-chan (interface{}), timeout time.Duration) error { //nolint:gocritic
 	select {
 	case <-anyChan:
@@ -140,6 +147,17 @@ func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.Mempo
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive mempool results timeouted")
 	}
+}
+
+func (teT *testEnv) requireAfterTime(title string, predicate func() bool, maxTime int, timeStep time.Duration) bool {
+	for i := 0; i < maxTime; i++ {
+		teT.t.Logf("Waiting for %s iteration %v", title, i)
+		if predicate() {
+			return true
+		}
+		teT.sendTimerTickToNodes(timeStep)
+	}
+	return false
 }
 
 func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {

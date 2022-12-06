@@ -123,22 +123,15 @@ func TestFull(t *testing.T) {
 			return smInputs.NewChainReceiveConfirmedAliasOutput(stateOutput)
 		})
 
-		for i := 0; i < maxRetriesPerIteration; i++ {
-			t.Logf("\twaiting for approval to propagate through nodes: %v", i)
-			if env.isAllNodesAtState(stateOutput) {
-				return true
-			}
-			env.sendTimerTickToNodes(smTimers.StateManagerGetBlockRetry)
-		}
-		return env.isAllNodesAtState(stateOutput)
+		return env.requireAfterTime("approval propagation through nodes", func() bool {
+			return env.isAllNodesAtState(stateOutput)
+		}, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry)
 	}
 
 	testIterationFun := func(i int, baseAliasOutput *isc.AliasOutputWithID, baseCommitment *state.L1Commitment, incrementFactor ...uint64) ([]*isc.AliasOutputWithID, []state.Block) {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
 		blocks, aliasOutputs := env.bf.GetBlocksFrom(iterationSize, 1, baseCommitment, baseAliasOutput, incrementFactor...)
-		for _, block := range blocks {
-			env.sendBlocksToNode(nodeIDs[rand.Intn(nodeCount)], block)
-		}
+		env.sendBlocksToRandomNode(nodeIDs, blocks...)
 		confirmOutput := aliasOutputs[rand.Intn(iterationSize-1)] // Do not confirm the last state/blocks
 		t.Logf("Iteration %v: approving output index %v, id %v", i, confirmOutput.GetStateIndex(), confirmOutput)
 		require.True(t, confirmAndWaitFun(confirmOutput))
@@ -230,16 +223,9 @@ func TestMempoolRequest(t *testing.T) {
 		env.t.Logf("Waiting for response from node %s", nodeID)
 		respChan, ok := respChans[nodeID]
 		require.True(env.t, ok)
-		received := false
-		for i := 0; i < maxRetries && !received; i++ {
-			t.Logf("\twaiting for blocks to propagate through nodes: %v", i)
-			if env.requireReceiveMempoolResults(respChan, oldBlocks, branchBlocks, 0*time.Second) == nil {
-				received = true
-			} else {
-				env.sendTimerTickToNodes(smTimers.StateManagerGetBlockRetry)
-			}
-		}
-		require.True(env.t, received)
+		require.True(env.t, env.requireAfterTime("blocks to be received by node", func() bool {
+			return env.requireReceiveMempoolResults(respChan, oldBlocks, branchBlocks, 0*time.Second) == nil
+		}, maxRetries, smTimers.StateManagerGetBlockRetry))
 	}
 }
 
@@ -297,6 +283,106 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 	newBlocks := blocks[middleBlock+1:]
 	err := env.requireReceiveMempoolResults(respChan, oldBlocks, newBlocks, 0*time.Second)
 	require.NoError(env.t, err)
+}
+
+// Single node setting.
+// 1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
+// 2. A batch of 8 consecutive blocks is branched from origin commitment. Each of
+//	  the blocks is sent to the node.
+// 3. A common ancestor (mempool) request is sent for the branch as a new and
+//	  and original batch as old.
+func TestMempoolRequestBranchFromOrigin(t *testing.T) {
+	batchSize := 10
+	branchSize := 8
+
+	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	defer env.finalize()
+
+	nodeID := nodeIDs[0]
+	oldBlocks, oldStateOutputs := env.bf.GetBlocks(batchSize, 1)
+	env.sendBlocksToNode(nodeID, oldBlocks...)
+
+	newBlocks, newStateOutputs := env.bf.GetBlocksFrom(branchSize, 1, state.OriginL1Commitment(), env.bf.GetOriginOutput(), 2)
+	env.sendBlocksToNode(nodeID, newBlocks...)
+
+	var respChan <-chan *smInputs.MempoolStateRequestResults
+	oldAliasOutput := oldStateOutputs[len(oldStateOutputs)-1]
+	newAliasOutput := newStateOutputs[len(newStateOutputs)-1]
+	env.sendInputToNodes(func(nodeID gpa.NodeID) gpa.Input {
+		var input gpa.Input
+		input, respChan = smInputs.NewMempoolStateRequest(context.Background(), oldAliasOutput, newAliasOutput)
+		return input
+	})
+	err := env.requireReceiveMempoolResults(respChan, oldBlocks, newBlocks, 0*time.Second)
+	require.NoError(env.t, err)
+}
+
+// 10 nodes setting.
+// 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
+//	  random node.
+// 2. Every fith block is approved in correct order. Approvals are sent to every
+//	  node. In between approvals, 5 timer events are fired for block sharing
+//	  between the nodes. NOTE: for a node to obtain a block, present in 1 other
+//	  node, at least 1 and at most 3 iterations are needed, since one iteration
+//	  requests block from 5 other random nodes. First iteration is started upon
+//	  obtaining first request to receive block. Thus for one block to arrive at
+//    least 0 and at most 2 timer events are needed. Therefor at least 0 and at
+//	  most 10 timer events are needed for 5 blocks. 5 (timer events) is a number
+//	  in the middle of those estimates.
+// 3. All nodes are checked, if their latest state has changed in store. Timer
+//    events for block sharing are fired in between the checks.
+func TestLatestStateIsStored(t *testing.T) {
+	nodeCount := 15
+	batchSize := 20
+	iterationStep := 5
+	timerEventsPerIteration := 5
+	maxRetriesPerFinalIteration := 100
+
+	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
+	smTimers := NewStateManagerTimers()
+	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	defer env.finalize()
+
+	blocks, stateOutputs := env.bf.GetBlocks(batchSize, 1)
+	env.sendBlocksToRandomNode(nodeIDs, blocks...)
+
+	var i int
+	for i = iterationStep - 1; i < batchSize; i += iterationStep {
+		env.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
+			return smInputs.NewChainReceiveConfirmedAliasOutput(stateOutputs[i])
+		})
+		for j := 0; j < timerEventsPerIteration; j++ {
+			env.sendTimerTickToNodes(smTimers.StateManagerGetBlockRetry)
+		}
+	}
+	i -= iterationStep
+
+	expectedStateIndex := stateOutputs[i].GetStateIndex()
+	expectedCommitment := blocks[i].L1Commitment()
+	for _, nodeID := range nodeIDs {
+		env.t.Logf("Checking if node %s is at state index %v, %s", nodeID, expectedStateIndex, expectedCommitment)
+		require.True(env.t, env.requireAfterTime("blocks to be received by node", func() bool {
+			smGPA, ok := env.sms[nodeID]
+			require.True(env.t, ok)
+			sm, ok := smGPA.(*stateManagerGPA)
+			require.True(env.t, ok)
+			actualBlockIndex, err := sm.store.LatestBlockIndex()
+			require.NoError(env.t, err)
+			if expectedStateIndex != actualBlockIndex {
+				return false
+			}
+			actualBlock, err := sm.store.LatestBlock()
+			require.NoError(env.t, err)
+			actualBlockCommitment := actualBlock.L1Commitment()
+			sameCommitments := expectedCommitment.Equals(actualBlockCommitment)
+			if !sameCommitments {
+				env.t.Logf("block indexes match, but stored block commitment is %s", actualBlockCommitment)
+			}
+			return sameCommitments
+		}, maxRetriesPerFinalIteration, smTimers.StateManagerGetBlockRetry))
+	}
 }
 
 // Single node network. Checks if block cache is cleaned via state manager
