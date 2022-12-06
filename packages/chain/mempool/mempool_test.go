@@ -169,7 +169,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	for i := range te.mempools {
 		select {
 		case refs := <-proposals[i]:
-			require.FailNow(t, "should not get a value here", "Got %+v", refs)
+			t.Fatalf("should not get a value here, Got %+v", refs)
 		default:
 			// OK
 		}
