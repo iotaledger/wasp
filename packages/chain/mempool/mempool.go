@@ -543,7 +543,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	mpi.metrics.CountRequestIn(request)
 }
 
-func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) { // TODO: Don't we need to reject processed requests?
 	mpi.offLedgerPool.Add(request)
 	mpi.metrics.CountRequestIn(request)
 	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
