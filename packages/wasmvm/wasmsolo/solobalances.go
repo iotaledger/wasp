@@ -93,6 +93,9 @@ func (bal *SoloBalances) dumpBalances() {
 		}
 	}
 	receipt := ctx.Chain.LastReceipt()
+	if receipt == nil {
+		panic("dumpBalances: missing last receipt")
+	}
 
 	fmt.Printf("%s\nGas: %d, fee %d (from last receipt)\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
 }

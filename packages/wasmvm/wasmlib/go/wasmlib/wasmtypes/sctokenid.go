@@ -49,7 +49,7 @@ func TokenIDFromString(value string) ScTokenID {
 }
 
 func TokenIDToString(value ScTokenID) string {
-	return HexEncode(TokenIDToBytes(value))
+	return HexEncode(value.id[:])
 }
 
 func tokenIDFromBytesUnchecked(buf []byte) ScTokenID {

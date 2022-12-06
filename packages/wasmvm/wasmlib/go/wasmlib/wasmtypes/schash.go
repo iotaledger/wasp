@@ -49,7 +49,7 @@ func HashFromString(value string) ScHash {
 }
 
 func HashToString(value ScHash) string {
-	return HexEncode(HashToBytes(value))
+	return HexEncode(value.id[:])
 }
 
 func hashFromBytesUnchecked(buf []byte) ScHash {

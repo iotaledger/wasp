@@ -3,10 +3,6 @@
 
 package wasmtypes
 
-import (
-	"strings"
-)
-
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 const (
@@ -55,18 +51,11 @@ func RequestIDToBytes(value ScRequestID) []byte {
 }
 
 func RequestIDFromString(value string) ScRequestID {
-	elts := strings.Split(value, RequestIDSeparator)
-	index := Uint16ToBytes(Uint16FromString(elts[0]))
-	buf := HexDecode(elts[1])
-	return RequestIDFromBytes(append(buf, index...))
+	return RequestIDFromBytes(HexDecode(value))
 }
 
 func RequestIDToString(value ScRequestID) string {
-	reqID := RequestIDToBytes(value)
-	// the last 2 byte is the TransactionOutputIndex
-	txID := HexEncode(reqID[:ScRequestIDLength-2])
-	index := Uint16FromBytes(reqID[ScRequestIDLength-2:])
-	return Uint16ToString(index) + RequestIDSeparator + txID
+	return HexEncode(value.id[:])
 }
 
 func requestIDFromBytesUnchecked(buf []byte) ScRequestID {

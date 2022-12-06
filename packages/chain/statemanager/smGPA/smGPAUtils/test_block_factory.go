@@ -126,7 +126,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	counterBin = codec.EncodeUint64(counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
-	//require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
+	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 
 	consumedAliasOutput := consumedAliasOutputWithID.GetAliasOutput()
 	aliasOutput := &iotago.AliasOutput{
