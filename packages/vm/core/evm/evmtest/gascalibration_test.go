@@ -13,6 +13,10 @@ import (
 const factor = 10
 
 func TestGasUsageMemoryContract(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	gasTest := env.deployGasTestMemoryContract(ethKey)
@@ -29,6 +33,10 @@ func TestGasUsageMemoryContract(t *testing.T) {
 }
 
 func TestGasUsageStorageContract(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	gasTest := env.deployGasTestStorageContract(ethKey)
@@ -45,6 +53,10 @@ func TestGasUsageStorageContract(t *testing.T) {
 }
 
 func TestGasUsageExecutionTimeContract(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	env := initEVM(t)
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	gasTestContract := env.deployGasTestExecutionTimeContract(ethKey)

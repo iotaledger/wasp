@@ -53,6 +53,7 @@ var Processor = evm.Contract.Processor(initialize,
 	evm.FuncGetStorage.WithHandler(restrictedView(getStorage)),
 	evm.FuncGetLogs.WithHandler(restrictedView(getLogs)),
 	evm.FuncGetChainID.WithHandler(restrictedView(getChainID)),
+	evm.FuncGetCallGasLimit.WithHandler(restrictedView(getCallGasLimit)),
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
@@ -178,6 +179,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
 	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
+	ctx.Requiref(!evmState.Exist(addr), "cannot register ERC20NativeTokens contract: EVM account already exists")
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
 	// see ERC20NativeTokens_storage.json
@@ -199,6 +201,19 @@ func getBalance(ctx isc.SandboxView) dict.Dict {
 func getBlockNumber(ctx isc.SandboxView) dict.Dict {
 	emu := createEmulatorR(ctx)
 	return result(new(big.Int).SetUint64(emu.BlockchainDB().GetNumber()).Bytes())
+}
+
+func getCallGasLimit(ctx isc.SandboxView) dict.Dict {
+	gasRatio := getGasRatio(ctx)
+	ret := evmtypes.ISCGasBudgetToEVM(gas.MaxGasPerRequest, &gasRatio)
+
+	emu := createEmulatorR(ctx)
+	evmBlockGasLimit := emu.BlockchainDB().GetGasLimit()
+	if evmBlockGasLimit < ret {
+		ret = evmBlockGasLimit
+	}
+
+	return result(codec.EncodeUint64(ret))
 }
 
 func getBlockByNumber(ctx isc.SandboxView) dict.Dict {

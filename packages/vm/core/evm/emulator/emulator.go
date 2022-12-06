@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -154,6 +155,9 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	}
 	if call.Gas == 0 {
 		call.Gas = e.GasLimit()
+	}
+	if call.Gas > e.GasLimit() {
+		return nil, errors.New("gas limit exceeds maximum allowed")
 	}
 	if call.Value == nil {
 		call.Value = big.NewInt(0)
