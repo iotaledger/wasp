@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"math"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum"
@@ -814,46 +815,15 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	foundrySN, tokenID := func() (uint32, *iotago.FoundryID) {
-		res, err := env.soloChain.PostRequestSync(
-			solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-				accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
-					MaximumSupply: supply,
-					MintedTokens:  util.Big0,
-					MeltedTokens:  util.Big0,
-				}),
-			).
-				WithMaxAffordableGasBudget().
-				WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
-			foundryOwner,
-		)
-		require.NoError(t, err)
-		foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-		tokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
-		require.NoError(t, err)
+	foundrySN, tokenID := env.createFoundry(foundryOwner, supply)
 
-		err = env.soloChain.MintTokens(foundrySN, supply, foundryOwner)
-		require.NoError(t, err)
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.NoError(t, err)
 
-		register := func() error {
-			_, err = env.soloChain.PostRequestSync(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name,
-				evm.FieldFoundrySN, codec.EncodeUint32(foundrySN),
-				evm.FieldTokenName, codec.EncodeString(tokenName),
-				evm.FieldTokenTickerSymbol, codec.EncodeString(tokenTickerSymbol),
-				evm.FieldTokenDecimals, codec.EncodeUint8(tokenDecimals),
-			).WithMaxAffordableGasBudget(), foundryOwner)
-			return err
-		}
+	// should not allow to register again
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.ErrorContains(t, err, "already exists")
 
-		err = register()
-		require.NoError(t, err)
-
-		// should not allow to register again
-		err = register()
-		require.ErrorContains(t, err, "already exists")
-
-		return foundrySN, &tokenID
-	}()
 	l2Balance := func(agentID isc.AgentID) uint64 {
 		return env.soloChain.L2NativeTokens(agentID, tokenID).Uint64()
 	}
@@ -992,6 +962,27 @@ func TestERC20NativeTokens(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestERC20NativeTokensLongName(t *testing.T) {
+	env := initEVM(t)
+
+	var (
+		tokenName         = strings.Repeat("A", 100_000)
+		tokenTickerSymbol = "ERC20NT"
+		tokenDecimals     = uint8(8)
+	)
+
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
+	require.NoError(t, err)
+
+	supply := big.NewInt(int64(10 * isc.Million))
+
+	foundrySN, _ := env.createFoundry(foundryOwner, supply)
+
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.ErrorContains(t, err, "too long")
 }
 
 // test withdrawing ALL EVM balance to a L1 address via the magic contract

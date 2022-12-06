@@ -18,10 +18,10 @@ func StorageEncodeUint8(n uint8) (ret common.Hash) {
 	return
 }
 
-// StorageEncodeShortString encodes a short according to the storage spec.
+// StorageEncodeShortString encodes a short string according to the storage spec.
 func StorageEncodeShortString(s string) (ret common.Hash) {
 	if len(s) > 31 {
-		panic(fmt.Sprintf("string is too long: %q", s))
+		panic(fmt.Sprintf("string is too long: %q...", s[:8]))
 	}
 	ret[len(ret)-1] = uint8(len(s) * 2)
 	copy(ret[:], s)
