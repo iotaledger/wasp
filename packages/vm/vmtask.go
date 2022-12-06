@@ -23,7 +23,6 @@ type VMRunner interface {
 type VMTask struct {
 	// INPUTS:
 
-	ACSSessionID       uint64
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
 	AnchorOutputID     iotago.OutputID

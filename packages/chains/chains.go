@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -69,7 +70,7 @@ func New(
 	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	networkProvider peering.NetworkProvider,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
-	rawBlocksEnabled bool, // TODO: Unused for now.
+	rawBlocksEnabled bool,
 	rawBlocksDir string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
@@ -161,28 +162,28 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	if err != nil || errChainID != nil || !chainIDInState {
 		chainStore = state.InitChainStore(chainKVStore)
 	}
-	// TODO: chainMetrics := c.allMetrics.NewChainMetrics(&chr.ChainID)
 
-	// TODO:
-	/*
-		chainWAL, err := w.NewChainWAL(&chainID)
+	var chainWAL smGPAUtils.BlockWAL
+	if c.rawBlocksEnabled {
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, &chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
-			c.log.Debugf("Error creating wal object: %v", err)
-			chainWAL = wal.NewDefault()
+			panic(xerrors.Errorf("cannot create WAL: %w", err))
 		}
-	*/
+	} else {
+		chainWAL = smGPAUtils.NewEmptyBlockWAL()
+	}
 
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
 		&chainID,
 		chainStore,
-		nil, // TODO: c.nodeConnection,
+		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
-		nil, // TODO: dkRegistry registry.DKShareRegistryProvider,
+		c.dkShareRegistryProvider,
 		c.consensusStateCmtLog,
-		nil, // TODO: blockWAL smGPAUtils.BlockWAL
+		chainWAL,
 		c.networkProvider,
 		c.log,
 	)

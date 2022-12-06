@@ -8,7 +8,6 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/packages/util"
-	//	"github.com/iotaledger/wasp/packages/state"
 )
 
 type blockCacheTestSM struct { // State machine for block cache property based Rapid tests

@@ -20,6 +20,10 @@ type MempoolStateRequest struct {
 var _ gpa.Input = &MempoolStateRequest{}
 
 func NewMempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (*MempoolStateRequest, <-chan *MempoolStateRequestResults) {
+	if prevAO == nil {
+		// Only the current state is needed, if prevAO is unknown.
+		prevAO = nextAO
+	}
 	oldCommitment, err := state.L1CommitmentFromAliasOutput(prevAO.GetAliasOutput())
 	if err != nil {
 		panic("Cannot make L1 commitment from previous alias output")

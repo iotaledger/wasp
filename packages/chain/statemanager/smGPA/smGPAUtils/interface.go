@@ -10,9 +10,6 @@ type BlockCache interface {
 	AddBlock(state.Block) error
 	GetBlock(*state.L1Commitment) state.Block
 	CleanOlderThan(time.Time)
-	/*StoreBlock(state.Block) error
-	StoreStateDraft(state.StateDraft) state.Block
-	IsBlockStored(*state.L1Commitment) bool*/
 }
 
 type BlockWAL interface {

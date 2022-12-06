@@ -1,6 +1,3 @@
-// TODO: no BlockIndex in state.Block()
-// TODO: Equals for state.Block()
-
 package statemanager
 
 import (
@@ -101,8 +98,8 @@ func New(
 	})
 
 	result.cleanupFun = func() {
-		result.inputPipe.Close()
-		result.messagePipe.Close()
+		// result.inputPipe.Close() // TODO: Uncomment it.
+		// result.messagePipe.Close() // TODO: Uncomment it.
 		result.net.Detach(attachID)
 	}
 
