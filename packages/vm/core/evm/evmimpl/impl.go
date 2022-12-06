@@ -179,6 +179,7 @@ func registerERC20NativeToken(ctx isc.Sandbox) dict.Dict {
 	addr := iscmagic.ERC20NativeTokensAddress(foundrySN)
 	emu := createEmulator(ctx)
 	evmState := emu.StateDB()
+	ctx.Requiref(!evmState.Exist(addr), "cannot register ERC20NativeTokens contract: EVM account already exists")
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC20NativeTokensRuntimeBytecode)
 	// see ERC20NativeTokens_storage.json

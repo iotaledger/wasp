@@ -835,13 +835,22 @@ func TestERC20NativeTokens(t *testing.T) {
 		err = env.soloChain.MintTokens(foundrySN, supply, foundryOwner)
 		require.NoError(t, err)
 
-		_, err = env.soloChain.PostRequestSync(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name,
-			evm.FieldFoundrySN, codec.EncodeUint32(foundrySN),
-			evm.FieldTokenName, codec.EncodeString(tokenName),
-			evm.FieldTokenTickerSymbol, codec.EncodeString(tokenTickerSymbol),
-			evm.FieldTokenDecimals, codec.EncodeUint8(tokenDecimals),
-		).WithMaxAffordableGasBudget(), foundryOwner)
+		register := func() error {
+			_, err = env.soloChain.PostRequestSync(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name,
+				evm.FieldFoundrySN, codec.EncodeUint32(foundrySN),
+				evm.FieldTokenName, codec.EncodeString(tokenName),
+				evm.FieldTokenTickerSymbol, codec.EncodeString(tokenTickerSymbol),
+				evm.FieldTokenDecimals, codec.EncodeUint8(tokenDecimals),
+			).WithMaxAffordableGasBudget(), foundryOwner)
+			return err
+		}
+
+		err = register()
 		require.NoError(t, err)
+
+		// should not allow to register again
+		err = register()
+		require.ErrorContains(t, err, "already exists")
 
 		return foundrySN, &tokenID
 	}()
