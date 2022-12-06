@@ -498,9 +498,9 @@ func newTestStateMgr(t *testing.T) *testStateMgr {
 		store:     state.InitChainStore(mapdb.NewMapDB()),
 		mockedAOs: map[iotago.OutputID]*testStateMgrAO{},
 	}
-	_, err := tsm.store.StateByTrieRoot(state.OriginL1Commitment().GetTrieRoot()) // Make sure init state exist.
+	_, err := tsm.store.StateByTrieRoot(state.OriginL1Commitment().TrieRoot()) // Make sure init state exist.
 	require.NoError(t, err)
-	tsm.store.SetLatest(state.OriginL1Commitment().GetTrieRoot())
+	tsm.store.SetLatest(state.OriginL1Commitment().TrieRoot())
 	return tsm
 }
 

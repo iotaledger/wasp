@@ -115,7 +115,7 @@ func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint3
 	select {
 	case s := <-respChan:
 		require.Equal(teT.t, s.BlockIndex(), index)
-		require.True(teT.t, commitment.GetTrieRoot().Equals(s.TrieRoot()))
+		require.True(teT.t, commitment.TrieRoot().Equals(s.TrieRoot()))
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive state timeouted")
@@ -188,14 +188,14 @@ func (teT *testEnv) isAllNodesAtState(stateOutput *isc.AliasOutputWithID) bool {
 				nodeID, stateOutput.GetStateIndex(), sm.currentStateIndex)
 			return false
 		}
-		if !expectedCommitment.GetTrieRoot().Equals(sm.currentL1Commitment.GetTrieRoot()) {
+		if !expectedCommitment.TrieRoot().Equals(sm.currentL1Commitment.TrieRoot()) {
 			teT.t.Logf("Node %s is at state index %v, but state commitments do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetTrieRoot(), sm.currentL1Commitment.GetTrieRoot())
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.TrieRoot(), sm.currentL1Commitment.TrieRoot())
 			return false
 		}
-		if !expectedCommitment.GetBlockHash().Equals(sm.currentL1Commitment.GetBlockHash()) {
+		if !expectedCommitment.BlockHash().Equals(sm.currentL1Commitment.BlockHash()) {
 			teT.t.Logf("Node %s is at state index %v, but block hashes do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetBlockHash(), sm.currentL1Commitment.GetBlockHash())
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.BlockHash(), sm.currentL1Commitment.BlockHash())
 			return false
 		}
 	}

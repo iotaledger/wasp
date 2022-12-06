@@ -190,7 +190,7 @@ func testBasic(t *testing.T, n, f int) {
 		require.NotNil(t, out.NeedStateMgrDecidedState)
 		l1Commitment, err := state.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
 		require.NoError(t, err)
-		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.GetTrieRoot())
+		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
 		require.NoError(t, err)
 		tc.WithInput(nid, cons.NewInputMempoolRequests(initReqs))
 		tc.WithInput(nid, cons.NewInputStateMgrDecidedVirtualState(chainState))
@@ -374,7 +374,7 @@ func testChained(t *testing.T, n, f, b int) {
 		t.Logf("Going to provide inputs.")
 		originL1Commitment, err := state.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
 		require.NoError(t, err)
-		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.GetTrieRoot())
+		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)
 		testChainInsts[0].input(&testInstInput{
 			nodeID:          nid,
