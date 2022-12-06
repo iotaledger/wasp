@@ -6,6 +6,7 @@ package chain_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -101,6 +102,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
 		}
 	}
+	awaitRequestsProcessed(te, initRequests, "initRequests")
 	for _, tnc := range te.nodeConns {
 		for {
 			if len(tnc.published) > 0 {
@@ -127,6 +129,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
 		}
 	}
+	awaitRequestsProcessed(te, deployReqs, "deployReqs")
 	for _, tnc := range te.nodeConns {
 		for {
 			if len(tnc.published) > 1 {
@@ -139,6 +142,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
 	incCount := 10
+	incRequests := make([]isc.Request, incCount)
 	for i := 0; i < incCount; i++ {
 		scRequest := isc.NewOffLedgerRequest(
 			te.chainID,
@@ -147,6 +151,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			dict.New(), uint64(i),
 		).WithGasBudget(20000).Sign(scClient)
 		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+		incRequests[i] = scRequest
 	}
 	for i, node := range te.nodes {
 		for {
@@ -182,14 +187,47 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		//
 		// Check if LastAliasOutput() works as expected.
-		confirmedAO, activeAO := node.LatestAliasOutput()
-		lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-		lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
-		require.NoError(t, err)
-		require.Equal(t, lastPublishedAO, confirmedAO) // In this test we confirm outputs immediately.
-		require.Equal(t, lastPublishedAO, activeAO)
+		awaitPredicate(te, "LatestAliasOutput", func() bool {
+			confirmedAO, activeAO := node.LatestAliasOutput()
+			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+			lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
+			require.NoError(t, err)
+			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
+				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+				return false
+			}
+			if !lastPublishedAO.Equals(activeAO) {
+				te.log.Debugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+				return false
+			}
+			return true
+		})
+	}
+	//
+	// Check if all requests were processed.
+	awaitRequestsProcessed(te, incRequests, "incRequests")
+}
+
+func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
+	reqRefs := isc.RequestRefsFromRequests(requests)
+	for i, node := range te.nodes {
+		for reqNum, reqRef := range reqRefs {
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...", desc, i, reqNum)
+			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID)
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...Done", desc, i, reqNum)
+		}
+	}
+}
+
+func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
+	for {
+		if predicate() {
+			te.log.Debugf("Predicate %v become true.", desc)
+			return
+		}
+		te.log.Debugf("Predicate %v still false, will retry.", desc)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -292,7 +330,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te := &testEnv{}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t)
+	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%v", rand.Intn(10000))) // For test instance ID.
 	//
 	// Create ledger accounts.
 	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())

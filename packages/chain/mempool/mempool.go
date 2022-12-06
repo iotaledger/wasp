@@ -387,7 +387,12 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
 		if err != nil {
-			panic(xerrors.Errorf("cannot check if request is processed in the blocklog: %w", err))
+			panic(xerrors.Errorf(
+				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
+				requestID,
+				mpi.chainHeadState,
+				err,
+			))
 		}
 		if processed {
 			return // Already processed.
@@ -491,6 +496,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		if idx, ok := missingIdx[reqRefKey]; ok {
 			reqs[idx] = req
 			delete(missingIdx, reqRefKey)
+			mpi.log.Debugf("XXX: waitReq.WaitMany, missingIdx=%v", missingIdx)
 			if len(missingIdx) == 0 {
 				recv.responseCh <- reqs
 				close(recv.responseCh)
@@ -669,10 +675,11 @@ func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 
 func (mpi *mempoolImpl) handleDistSyncDebugTick() {
 	mpi.log.Debugf(
-		"Mempool onLedger=%v, offLedger=%v distSync=%v",
+		"Mempool onLedger=%v, offLedger=%v distSync=%v waitProcessed=%v",
 		mpi.onLedgerPool.StatusString(),
 		mpi.offLedgerPool.StatusString(),
 		mpi.distSync.StatusString(),
+		mpi.waitProcessed.StatusString(),
 	)
 }
 
