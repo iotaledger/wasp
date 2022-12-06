@@ -484,6 +484,9 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 
 func (ctx *SoloContext) UpdateGasFees() {
 	receipt := ctx.Chain.LastReceipt()
+	if receipt == nil {
+		panic("UpdateGasFees: missing last receipt")
+	}
 	ctx.Gas = receipt.GasBurned
 	ctx.GasFee = receipt.GasFeeCharged
 }
