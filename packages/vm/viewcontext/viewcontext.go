@@ -1,11 +1,11 @@
 package viewcontext
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -47,10 +47,10 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore, blockIndex uint32) *ViewContext {
+func New(ch chain.ChainCore, blockIndex uint32) (*ViewContext, error) {
 	state, err := ch.GetStateReader().StateByIndex(blockIndex)
 	if err != nil {
-		panic(xerrors.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err))
+		return nil, fmt.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err)
 	}
 	chainID := ch.ID()
 	return &ViewContext{
@@ -59,7 +59,7 @@ func New(ch chain.ChainCore, blockIndex uint32) *ViewContext {
 		chainID:        *chainID,
 		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnEnabled: true,
-	}
+	}, nil
 }
 
 func (ctx *ViewContext) contractStateReader(contract isc.Hname) kv.KVStoreReader {

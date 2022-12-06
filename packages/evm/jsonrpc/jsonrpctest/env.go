@@ -171,11 +171,10 @@ func (e *Env) UncleByBlockHashAndIndex(blockHash common.Hash, index uint) map[st
 	return uncle
 }
 
-func (e *Env) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *jsonrpc.RPCTransaction {
+func (e *Env) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) (*jsonrpc.RPCTransaction, error) {
 	var tx *jsonrpc.RPCTransaction
 	err := e.RawClient.Call(&tx, "eth_getTransactionByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
-	require.NoError(e.T, err)
-	return tx
+	return tx, err
 }
 
 func (e *Env) UncleByBlockNumberAndIndex(blockNumber *big.Int, index uint) map[string]interface{} {
