@@ -117,7 +117,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	deployReqs := append(te.tcl.MakeTxDeployIncCounterContract(), te.tcl.MakeTxAccountsDeposit(scClient)...)
 	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.nodeConns[0].published[0])
 	require.NoError(t, err)
-	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID.UTXOInput())
+	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
 			[]iotago.OutputID{deployBaseAO.OutputID()},
