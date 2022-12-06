@@ -311,7 +311,7 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		newBlockRequest          *blockRequestImpl
 		oldBlockRequestCompleted bool
 		newBlockRequestCompleted bool
-		obtainNewStateFun             obtainStateFun
+		obtainNewStateFun        obtainStateFun
 	}{
 		oldBlockRequestCompleted: false,
 		newBlockRequestCompleted: false,
@@ -462,8 +462,8 @@ func (smT *stateManagerGPA) traceBlockChainByRequest(request blockRequest) (gpa.
 	}
 	requestsWC, ok := smT.blockRequests[lastCommitment.GetBlockHash()]
 	if ok {
-		smT.log.Debugf("Request %s id %v tracing block %s chain: ~s request(s) are already waiting for block %s; adding this request to the list",
-			request.getType(), request.getID(), len(requestsWC.blockRequests), lastCommitment)
+		smT.log.Debugf("Request %s id %v tracing block %s chain: %s request(s) are already waiting for the block; adding this request to the list",
+			request.getType(), request.getID(), lastCommitment, len(requestsWC.blockRequests))
 		requestsWC.blockRequests = append(requestsWC.blockRequests, request)
 		return nil, nil // No messages to send
 	}
@@ -498,8 +498,8 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 			}
 			oldLen := len(currrentRequestsWC.blockRequests)
 			currrentRequestsWC.blockRequests = append(currrentRequestsWC.blockRequests, requests...)
-				smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s is missing, %v requests were waiting for it before",
-					initCommitment, len(currrentRequestsWC.blockRequests), commitment, oldLen)
+			smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s is missing, %v requests were waiting for it before",
+				initCommitment, len(currrentRequestsWC.blockRequests), commitment, oldLen)
 			return nil, nil // No messages to send
 		}
 		for _, request := range requests {
@@ -571,7 +571,7 @@ func (smT *stateManagerGPA) markRequestCompleted(request blockRequest) {
 func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMessages {
 	result := gpa.NoMessages()
 	smT.log.Debugf("State manager timer tick %v input received...", now)
-	smT.log.Debugf("Status: %s", smT.StatusString())
+	smT.log.Infof("Status: %s", smT.StatusString())
 	nextGetBlocksTime := smT.lastGetBlocksTime.Add(smT.timers.StateManagerGetBlockRetry)
 	if now.After(nextGetBlocksTime) {
 		smT.log.Debugf("State manager timer tick %v: resending get block messages...", now)

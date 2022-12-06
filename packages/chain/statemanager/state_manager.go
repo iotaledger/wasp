@@ -53,8 +53,8 @@ var (
 )
 
 const (
-	constMsgTypeStm    byte = iota
-	constTimerTickTime      = 1 * time.Second
+	constMsgTypeStm           byte = iota
+	constDefaultTimerTickTime      = 1 * time.Second
 )
 
 func New(
@@ -66,6 +66,7 @@ func New(
 	wal smGPAUtils.BlockWAL,
 	store state.Store,
 	log *logger.Logger,
+	timerTickTimeOpt ...time.Duration,
 ) (StateMgr, error) {
 	smLog := log.Named("sm")
 	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), smLog)
@@ -103,7 +104,13 @@ func New(
 		result.net.Detach(attachID)
 	}
 
-	go result.run()
+	var timerTickTime time.Duration
+	if len(timerTickTimeOpt) > 0 {
+		timerTickTime = timerTickTimeOpt[0]
+	} else {
+		timerTickTime = constDefaultTimerTickTime
+	}
+	go result.run(timerTickTime)
 	return result, nil
 }
 
@@ -172,13 +179,13 @@ func (smT *stateManager) addInput(input gpa.Input) {
 	smT.inputPipe.In() <- input
 }
 
-func (smT *stateManager) run() {
+func (smT *stateManager) run(timerTickTime time.Duration) {
 	defer smT.cleanupFun()
 	ctxCloseCh := smT.ctx.Done()
 	inputPipeCh := smT.inputPipe.Out()
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
-	timerTickCh := time.After(constTimerTickTime)
+	timerTickCh := time.After(timerTickTime)
 	for {
 		select {
 		case input, ok := <-inputPipeCh:
@@ -202,7 +209,7 @@ func (smT *stateManager) run() {
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
-				timerTickCh = time.After(constTimerTickTime)
+				timerTickCh = time.After(timerTickTime)
 			} else {
 				timerTickCh = nil
 			}
