@@ -394,7 +394,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	t.Logf("Done, last block was output and all instances terminated.")
 	for _, doneVal := range doneVals {
-		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetMaintenanceStatus())
+		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetCounter())
 	}
 }
 

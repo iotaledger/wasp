@@ -6,6 +6,7 @@ package chain_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -28,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 )
@@ -71,20 +74,35 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		tnc.waitAttached()
 	}
 	t.Logf("All attached to node conns.")
+	initTime := time.Now()
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond) // TODO: Maybe we have to pass initial time to all sub-components...
+		closed := te.ctx.Done()
+		for {
+			select {
+			case now := <-ticker.C:
+				for _, tnc := range te.nodeConns {
+					tnc.recvMilestone(now)
+				}
+			case <-closed:
+				return
+			}
+		}
+	}()
 	//
 	// Create the chain, post Chain Init, wait for the first block.
-	now := time.Now()
 	initRequests := te.tcl.MakeTxChainInit()
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
 			[]iotago.OutputID{te.originAO.OutputID()},
 			[]*iotago.AliasOutput{te.originAO.GetAliasOutput()},
 		)
-		tnc.recvMilestone(now)
+		tnc.recvMilestone(initTime)
 		for _, req := range initRequests {
 			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
 		}
 	}
+	awaitRequestsProcessed(te, initRequests, "initRequests")
 	for _, tnc := range te.nodeConns {
 		for {
 			if len(tnc.published) > 0 {
@@ -92,6 +110,124 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
+	}
+	//
+	// Create SC Client account with some deposit, deploy a contract, wait for a confirming TX.
+	scClient := cryptolib.NewKeyPair()
+	_, err := te.utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
+	require.NoError(t, err)
+	deployReqs := append(te.tcl.MakeTxDeployIncCounterContract(), te.tcl.MakeTxAccountsDeposit(scClient)...)
+	deployBaseAnchor, deployBaseAONoID, err := transaction.GetAnchorFromTransaction(te.nodeConns[0].published[0])
+	require.NoError(t, err)
+	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
+	for _, tnc := range te.nodeConns {
+		tnc.recvAliasOutput(
+			[]iotago.OutputID{deployBaseAO.OutputID()},
+			[]*iotago.AliasOutput{deployBaseAO.GetAliasOutput()},
+		)
+		for _, req := range deployReqs {
+			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
+		}
+	}
+	awaitRequestsProcessed(te, deployReqs, "deployReqs")
+	for _, tnc := range te.nodeConns {
+		for {
+			if len(tnc.published) > 1 {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+	//
+	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
+	// We only send the requests to the first node. Mempool has to disseminate them.
+	incCount := 10
+	incRequests := make([]isc.Request, incCount)
+	for i := 0; i < incCount; i++ {
+		scRequest := isc.NewOffLedgerRequest(
+			te.chainID,
+			inccounter.Contract.Hname(),
+			inccounter.FuncIncCounter.Hname(),
+			dict.New(), uint64(i),
+		).WithGasBudget(20000).Sign(scClient)
+		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+		incRequests[i] = scRequest
+	}
+	for i, node := range te.nodes {
+		for {
+			latestState, err := node.GetStateReader().LatestState()
+			require.NoError(t, err)
+			cnt := inccounter.NewStateAccess(latestState).GetCounter()
+			t.Logf("Counter[node=%v]=%v", i, cnt)
+			if cnt >= int64(incCount) {
+				// TODO: Double-check with the published TX.
+				/*
+					latestTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+					_, latestAONoID, err := transaction.GetAnchorFromTransaction(latestTX)
+					require.NoError(t, err)
+					latestL1Commitment, err := state.L1CommitmentFromAliasOutput(latestAONoID)
+					require.NoError(t, err)
+					st, err := node.GetStateReader().StateByTrieRoot(latestL1Commitment.GetTrieRoot())
+					require.NoError(t, err)
+					require.GreaterOrEqual(t, incCount, inccounter.NewStateAccess(st).GetCounter())
+				*/
+				break
+			}
+			//
+			// For the unreliable-network tests we have to retry the requests.
+			// That's because the gossip in the mempool is primitive for now.
+			for ii := 0; ii < incCount; ii++ {
+				scRequest := isc.NewOffLedgerRequest(
+					te.chainID,
+					inccounter.Contract.Hname(),
+					inccounter.FuncIncCounter.Hname(),
+					dict.New(), uint64(ii),
+				).WithGasBudget(20000).Sign(scClient)
+				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+		// Check if LastAliasOutput() works as expected.
+		awaitPredicate(te, "LatestAliasOutput", func() bool {
+			confirmedAO, activeAO := node.LatestAliasOutput()
+			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+			lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
+			require.NoError(t, err)
+			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
+				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+				return false
+			}
+			if !lastPublishedAO.Equals(activeAO) {
+				te.log.Debugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+				return false
+			}
+			return true
+		})
+	}
+	//
+	// Check if all requests were processed.
+	awaitRequestsProcessed(te, incRequests, "incRequests")
+}
+
+func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
+	reqRefs := isc.RequestRefsFromRequests(requests)
+	for i, node := range te.nodes {
+		for reqNum, reqRef := range reqRefs {
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...", desc, i, reqNum)
+			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID)
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...Done", desc, i, reqNum)
+		}
+	}
+}
+
+func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
+	for {
+		if predicate() {
+			te.log.Debugf("Predicate %v become true.", desc)
+			return
+		}
+		te.log.Debugf("Predicate %v still false, will retry.", desc)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -132,6 +268,15 @@ func (tnc *testNodeConn) PublishTX(
 	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)
+
+	stateAnchor, aoNoID, err := transaction.GetAnchorFromTransaction(tx)
+	if err != nil {
+		panic(err)
+	}
+	tnc.recvAliasOutput(
+		[]iotago.OutputID{stateAnchor.OutputID},
+		[]*iotago.AliasOutput{aoNoID},
+	)
 }
 
 func (tnc *testNodeConn) AttachChain(
@@ -185,7 +330,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te := &testEnv{}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t)
+	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%v", rand.Intn(10000))) // For test instance ID.
 	//
 	// Create ledger accounts.
 	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())

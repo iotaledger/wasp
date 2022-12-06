@@ -503,7 +503,6 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
-		ACSSessionID:           0, // TODO: Remove the ACSSessionID when old consensus Impl is removed.
 		Processors:             c.processorCache,
 		AnchorOutput:           decidedBaseAliasOutput.GetAliasOutput(),
 		AnchorOutputID:         decidedBaseAliasOutput.OutputID(),

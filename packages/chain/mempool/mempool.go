@@ -239,12 +239,10 @@ func New(
 }
 
 func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
-	mpi.log.Debugf("XXX: TangleTimeUpdated") // TODO: remove.
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
 func (mpi *mempoolImpl) TrackNewChainHead(chainHeadAO *isc.AliasOutputWithID) {
-	mpi.log.Debugf("XXX: TrackNewChainHead, chainHeadAO=%v", chainHeadAO) // TODO: remove.
 	mpi.reqTrackNewChainHeadPipe.In() <- chainHeadAO
 }
 
@@ -263,12 +261,10 @@ func (mpi *mempoolImpl) AwaitRequestProcessed(ctx context.Context, requestID isc
 }
 
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
-	mpi.log.Debugf("XXX: AccessNodesUpdated") // TODO: remove.
 	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
 }
 
 func (mpi *mempoolImpl) ConsensusProposalsAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan []*isc.RequestRef {
-	mpi.log.Debugf("XXX: ConsensusProposalsAsync, ao=%v", aliasOutput) // TODO: remove.
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposals{
 		ctx:         ctx,
@@ -391,7 +387,12 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
 		if err != nil {
-			panic(xerrors.Errorf("cannot check if request is processed in the blocklog: %w", err))
+			panic(xerrors.Errorf(
+				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
+				requestID,
+				mpi.chainHeadState,
+				err,
+			))
 		}
 		if processed {
 			return // Already processed.
@@ -427,7 +428,6 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
 	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
-		mpi.log.Debugf("XXX: handleConsensusProposals, postponing %v", recv)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
@@ -435,7 +435,6 @@ func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
 }
 
 func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusProposals) {
-	mpi.log.Debugf("XXX: handleConsensusProposalsForChainHead[tt=%v], %v", mpi.tangleTime, recv)
 	//
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
@@ -455,16 +454,13 @@ func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusP
 		return true // Keep them for now
 	})
 	if len(reqRefs) > 0 {
-		mpi.log.Debugf("XXX: handleConsensusProposalsForChainHead, responding immediately, refs=%v")
 		recv.responseCh <- reqRefs
 		close(recv.responseCh)
 		return
 	}
 	//
 	// Wait for any request.
-	mpi.log.Debugf("XXX: handleConsensusProposalsForChainHead, waiting any...")
 	mpi.waitReq.WaitAny(recv.ctx, func(req isc.Request) {
-		mpi.log.Debugf("XXX: handleConsensusProposalsForChainHead, waiting any... have %v", req)
 		recv.responseCh <- []*isc.RequestRef{isc.RequestRefFromRequest(req)}
 		close(recv.responseCh)
 	})
@@ -500,6 +496,7 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		if idx, ok := missingIdx[reqRefKey]; ok {
 			reqs[idx] = req
 			delete(missingIdx, reqRefKey)
+			mpi.log.Debugf("XXX: waitReq.WaitMany, missingIdx=%v", missingIdx)
 			if len(missingIdx) == 0 {
 				recv.responseCh <- reqs
 				close(recv.responseCh)
@@ -509,7 +506,6 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 }
 
 func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest) {
-	mpi.log.Debugf("XXX: handleReceiveOnLedgerRequest, req=%v", request)
 	requestID := request.ID()
 	requestRef := isc.RequestRefFromRequest(request)
 	//
@@ -553,7 +549,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	mpi.metrics.CountRequestIn(request)
 }
 
-func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) { // TODO: Don't we need to reject processed requests?
 	mpi.offLedgerPool.Add(request)
 	mpi.metrics.CountRequestIn(request)
 	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
@@ -578,7 +574,6 @@ func (mpi *mempoolImpl) handleAwaitRequestProcessed(recv *reqAwaitRequestProcess
 }
 
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
-	mpi.log.Debugf("XXX: handleTangleTimeUpdated, tt=%v", tangleTime)
 	oldTangleTime := mpi.tangleTime
 	mpi.tangleTime = tangleTime
 	//
@@ -680,10 +675,11 @@ func (mpi *mempoolImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 
 func (mpi *mempoolImpl) handleDistSyncDebugTick() {
 	mpi.log.Debugf(
-		"Mempool onLedger=%v, offLedger=%v distSync=%v",
+		"Mempool onLedger=%v, offLedger=%v distSync=%v waitProcessed=%v",
 		mpi.onLedgerPool.StatusString(),
 		mpi.offLedgerPool.StatusString(),
 		mpi.distSync.StatusString(),
+		mpi.waitProcessed.StatusString(),
 	)
 }
 

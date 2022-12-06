@@ -4,6 +4,8 @@
 package mempool
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -13,6 +15,7 @@ import (
 type WaitProcessed interface {
 	Await(query *reqAwaitRequestProcessed)
 	Processed(receipt *blocklog.RequestReceipt)
+	StatusString() string
 }
 
 type waitProcessedImpl struct {
@@ -48,6 +51,10 @@ func (wpi *waitProcessedImpl) Processed(receipt *blocklog.RequestReceipt) {
 		}
 		delete(wpi.queries, requestID)
 	}
+}
+
+func (wpi *waitProcessedImpl) StatusString() string {
+	return fmt.Sprintf("{|queries|=%v}", len(wpi.queries))
 }
 
 func (wpi *waitProcessedImpl) maybeCleanup() {

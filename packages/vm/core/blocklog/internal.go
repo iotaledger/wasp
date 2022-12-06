@@ -154,11 +154,11 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
-			return nil, err
+			return nil, xerrors.Errorf("records.GetAt(lookupKey.Bytes()) returned: %w", err)
 		}
 		rec, err := RequestReceiptFromBytes(recBytes)
 		if err != nil {
-			return nil, err
+			return nil, xerrors.Errorf("RequestReceiptFromBytes returned: %w", err)
 		}
 		if rec.Request.ID().Equals(*reqID) {
 			rec.BlockIndex = lookupKey.BlockIndex()
@@ -173,10 +173,13 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *isc.RequestID) (*RequestReceipt, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot mustGetLookupKeyListFromReqID: %w", err)
 	}
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
-	return record, err
+	if err != nil {
+		return nil, xerrors.Errorf("cannot getCorrectRecordFromLookupKeyList: %w", err)
+	}
+	return record, nil
 }
 
 func getRequestEventsInternal(partition kv.KVStoreReader, reqID *isc.RequestID) ([]string, error) {
