@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
@@ -33,10 +34,10 @@ func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.So
 
 func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
 	if runWasm {
-		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnDispatch, init...)
+		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcoreimpl.OnDispatch, init...)
 	}
 
-	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnDispatch, sbtestsc.Processor, init...)
+	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcoreimpl.OnDispatch, sbtestsc.Processor, init...)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool)) {
@@ -66,7 +67,7 @@ func run2(t *testing.T, test func(*testing.T, bool)) {
 		*wasmsolo.GoWasm = false
 	}
 
-	exists, _ = util.ExistsFilePath("../rs/testcore_main/pkg/testcore_main_bg.wasm")
+	exists, _ = util.ExistsFilePath("../rs/testcorewasm/pkg/testcorewasm_bg.wasm")
 	if exists {
 		*wasmsolo.RsWasm = true
 		wasmlib.ConnectHost(nil)
@@ -122,7 +123,7 @@ func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64
 // originatorBalanceReducedBy checks the balance of the originator address has
 // reduced by the given amount, taking any extra uploadWasm() into account
 //
-//nolint:deadcode
+//nolint:unused
 func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64) {
 	if w {
 		// wasm setup takes 1 more iota than core setup due to uploadWasm()
@@ -139,7 +140,7 @@ func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.Sol
 	require.NoError(t, ctxRoot.Err)
 }
 
-//nolint:deadcode
+//nolint:unused
 func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
 	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnDispatch)
 	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))

@@ -6,6 +6,7 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/corecontracts/go/corecontractsimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/corecontracts/go/corecontracts"
@@ -13,7 +14,7 @@ import (
 )
 
 func setup(t *testing.T) *wasmsolo.SoloContext {
-	ctx := wasmsolo.NewSoloContext(t, corecontracts.ScName, corecontracts.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, corecontracts.ScName, corecontractsimpl.OnDispatch)
 	require.NoError(t, ctx.ContractExists(corecontracts.ScName))
 	return ctx
 }

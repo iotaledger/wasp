@@ -102,17 +102,18 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 }
 
 func (txb *AnchorTransactionBuilder) ensureFoundry(sn uint32) *foundryInvoked {
-	if f, ok := txb.invokedFoundries[sn]; ok {
-		return f
+	if foundryOutput, exists := txb.invokedFoundries[sn]; exists {
+		return foundryOutput
 	}
+
 	// load foundry output from the state
-	foundryOutput, inp := txb.loadFoundryFunc(sn)
+	foundryOutput, outputID := txb.loadFoundryFunc(sn)
 	if foundryOutput == nil {
 		return nil
 	}
 	f := &foundryInvoked{
 		serialNumber: foundryOutput.SerialNumber,
-		input:        *inp,
+		outputID:     outputID,
 		in:           foundryOutput,
 		out:          cloneFoundryOutput(foundryOutput),
 	}
@@ -190,19 +191,18 @@ func (txb *AnchorTransactionBuilder) FoundryOutputsBySN(serNums []uint32) map[ui
 
 type foundryInvoked struct {
 	serialNumber uint32
-	input        iotago.UTXOInput      // if in != nil
+	outputID     iotago.OutputID       // if in != nil
 	in           *iotago.FoundryOutput // nil if created
 	out          *iotago.FoundryOutput // nil if destroyed
 }
 
 func (f *foundryInvoked) Clone() *foundryInvoked {
-	input := iotago.UTXOInput{}
-	copy(input.TransactionID[:], f.input.TransactionID[:])
-	input.TransactionOutputIndex = f.input.TransactionOutputIndex
+	outputID := iotago.OutputID{}
+	copy(outputID[:], f.outputID[:])
 
 	return &foundryInvoked{
 		serialNumber: f.serialNumber,
-		input:        input,
+		outputID:     outputID,
 		in:           cloneFoundryOutput(f.in),
 		out:          cloneFoundryOutput(f.out),
 	}

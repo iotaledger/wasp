@@ -36,7 +36,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
-		task.StateDraft.BaseL1Commitment().GetTrieRoot(), isc.OID(task.AnchorOutputID.UTXOInput()))
+		task.StateDraft.BaseL1Commitment().GetTrieRoot(), task.AnchorOutputID.ToHex())
 	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
 	task.StateDraft = draft
 	task.RotationAddress = nil
@@ -115,7 +115,7 @@ func NextState(
 	store state.Store,
 	chainOutput *isc.AliasOutputWithID,
 	ts time.Time,
-) (state.Block, *iotago.Transaction, *iotago.UTXOInput) {
+) (state.Block, *iotago.Transaction, iotago.OutputID) {
 	if chainKey != nil {
 		require.True(t, chainOutput.GetStateAddress().Equal(chainKey.GetPublicKey().AsEd25519Address()))
 	}
@@ -134,7 +134,7 @@ func NextState(
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0)
 
 	return block, tx, aliasOutputID
 }

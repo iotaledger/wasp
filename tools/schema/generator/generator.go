@@ -18,7 +18,10 @@ import (
 
 type IGenerator interface {
 	Cleanup()
-	Generate() error
+	GenerateImplementation() error
+	GenerateInterface() error
+	GenerateWasmStub() error
+	IsLatest() bool
 }
 
 type GenBase struct {
@@ -36,6 +39,7 @@ type GenBase struct {
 	newTypes      map[string]bool
 	rootFolder    string
 	s             *model.Schema
+	subFolder     string
 	tab           int
 	templates     model.StringMap
 	typeDependent model.StringMapMap
@@ -56,6 +60,7 @@ func (g *GenBase) init(s *model.Schema, typeDependent model.StringMapMap, templa
 	g.language = config["language"]
 	g.extension = config["extension"]
 	g.rootFolder = config["rootFolder"]
+	g.subFolder = config["subFolder"]
 	g.funcRegexp = regexp.MustCompile(config["funcRegexp"])
 
 	g.addTemplates(commonTemplates)
@@ -73,17 +78,11 @@ func (g *GenBase) addTemplates(t model.StringMap) {
 }
 
 func (g *GenBase) cleanCommonFiles() {
-	g.generateCommonFolder()
-	g.cleanSourceFile("consts")
-	g.cleanSourceFile("events")
-	g.cleanSourceFile("eventhandlers")
-	g.cleanSourceFile("structs")
-	g.cleanSourceFile("typedefs")
-	g.cleanSourceFile("params")
-	g.cleanSourceFile("results")
-	g.cleanSourceFile("state")
-	g.cleanSourceFile("contract")
-	g.cleanSourceFile("lib")
+	g.generateCommonFolder("", false)
+	g.cleanFolder(g.folder)
+
+	g.generateCommonFolder("impl", true)
+	g.cleanSourceFile("thunks")
 	g.cleanSourceFile("../main")
 	g.cleanFolder(g.folder + "../pkg")
 }
@@ -115,11 +114,14 @@ func (g *GenBase) createFile(path string, overwrite bool, generator func()) (err
 	return nil
 }
 
-func (g *GenBase) createSourceFile(name string, condition bool) error {
+func (g *GenBase) createSourceFile(name string, condition bool, macro ...string) error {
 	path := g.folder + name + g.extension
 	if !condition {
 		_ = os.Remove(path)
 		return nil
+	}
+	if len(macro) == 1 {
+		name = macro[0]
 	}
 	return g.createFile(path, true, func() {
 		g.emit("copyright")
@@ -145,47 +147,82 @@ func (g *GenBase) funcName(f *model.Func) string {
 	return name
 }
 
-func (g *GenBase) generateCommonFiles() error {
-	g.generateCommonFolder()
+func (g *GenBase) IsLatest() bool {
+	g.generateCommonFolder("", true)
+
+	info, err := os.Stat(g.folder + "consts" + g.extension)
+	if err == nil && info.ModTime().After(g.s.SchemaTime) {
+		fmt.Printf("skipping %s code generation\n", g.language)
+		return true
+	}
+
+	fmt.Printf("generating %s code\n", g.language)
+	return false
+}
+
+func (g *GenBase) Generate(gen IGenerator, clean bool) error {
+	if clean {
+		gen.Cleanup()
+		return nil
+	}
+
+	if g.IsLatest() {
+		return nil
+	}
 
 	err := os.MkdirAll(g.folder, 0o755)
 	if err != nil {
 		return err
 	}
-	info, err := os.Stat(g.folder + "consts" + g.extension)
-	if err == nil && info.ModTime().After(g.s.SchemaTime) {
-		fmt.Printf("skipping %s code generation\n", g.language)
-		return nil
-	}
-
-	fmt.Printf("generating %s code\n", g.language)
-	err = g.generateCode()
+	err = gen.GenerateInterface()
 	if err != nil {
 		return err
 	}
-	if !g.s.CoreContracts {
-		err = g.generateTests()
-		if err != nil {
-			return err
-		}
+
+	if g.s.CoreContracts {
+		return nil
 	}
-	return nil
+
+	g.generateCommonFolder("impl", true)
+	err = os.MkdirAll(g.folder, 0o755)
+	if err != nil {
+		return err
+	}
+	err = gen.GenerateImplementation()
+	if err != nil {
+		return err
+	}
+
+	err = g.generateTests()
+	if err != nil {
+		return err
+	}
+
+	return gen.GenerateWasmStub()
 }
 
-func (g *GenBase) generateCommonFolder() {
-	g.folder = g.rootFolder + "/" + g.s.PackageName + "/"
+func (g *GenBase) generateCommonFolder(postfix string, withSubFolder bool) {
+	g.folder = g.rootFolder + "/" + g.s.PackageName + postfix + "/"
 	if g.s.CoreContracts {
 		g.folder = g.rootFolder + "/wasmlib/" + g.s.PackageName + "/"
 	}
-	if g.rootFolder == "rs" {
-		g.folder += "src/"
+	if withSubFolder && g.subFolder != "" {
+		g.folder += g.subFolder + "/"
 		if g.s.CoreContracts {
-			g.folder = "src/" + g.s.PackageName + "/"
+			g.folder = g.subFolder + "/" + g.s.PackageName + "/"
 		}
 	}
 }
 
-func (g *GenBase) generateCode() error {
+func (g *GenBase) generateImplementation() error {
+	err := g.createSourceFile("thunks", true)
+	if err != nil {
+		return err
+	}
+	return g.generateFuncs(g.appendFuncs)
+}
+
+func (g *GenBase) generateInterface() error {
 	err := g.createSourceFile("consts", true)
 	if err != nil {
 		return err
@@ -218,22 +255,11 @@ func (g *GenBase) generateCode() error {
 	if err != nil {
 		return err
 	}
-	err = g.createSourceFile("contract", true)
-	if err != nil {
-		return err
-	}
-	err = g.createSourceFile("lib", !g.s.CoreContracts)
-	if err != nil {
-		return err
-	}
-	if !g.s.CoreContracts {
-		return g.generateFuncs(g.appendFuncs)
-	}
-	return nil
+	return g.createSourceFile("contract", true)
 }
 
 func (g *GenBase) generateFuncs(appendFuncs func(existing model.StringMap)) error {
-	scFileName := g.folder + g.s.PackageName + g.extension
+	scFileName := g.folder + "funcs" + g.extension
 	if g.exists(scFileName) != nil {
 		// generate initial SC function file
 		return g.createFile(scFileName, false, func() {
@@ -253,7 +279,7 @@ func (g *GenBase) generateFuncs(appendFuncs func(existing model.StringMap)) erro
 	}
 
 	// save old one from overwrite
-	scOriginal := g.folder + g.s.PackageName + ".bak"
+	scOriginal := g.folder + "funcs.bak"
 	err = os.Rename(scFileName, scOriginal)
 	if err != nil {
 		return err

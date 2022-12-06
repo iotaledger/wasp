@@ -31,7 +31,12 @@ $#if state stateProxyImpl
 	"stateProxyImpl": `
 
 impl $TypeName {
-$#set separator $false
+    pub fn new() -> $TypeName {
+        $TypeName {
+            proxy: state_proxy(),
+        }
+    }
+$#set separator $true
 $#if mut stateProxyImmutableFunc
 $#each state proxyMethods
 }

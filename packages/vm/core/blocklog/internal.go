@@ -304,19 +304,27 @@ func getBlockInfoDataInternal(partition kv.KVStoreReader, blockIndex uint32) ([]
 	return data, err == nil, err
 }
 
-func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo {
+func getBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
 	data, ok, err := getBlockInfoDataInternal(partition, blockIndex)
 	if err != nil {
-		panic(xerrors.Errorf("mustGetBlockInfo: %w", err))
+		return nil, xerrors.Errorf("getBlockInfo: %w", err)
 	}
 	if !ok {
-		panic(xerrors.Errorf("mustGetBlockInfo: can't find block recird #%d", blockIndex))
+		return nil, xerrors.Errorf("getBlockInfo: can't find block record #%d", blockIndex)
 	}
 	ret, err := BlockInfoFromBytes(blockIndex, data)
 	if err != nil {
+		return nil, xerrors.Errorf("getBlockInfo: %w", err)
+	}
+	return ret, nil
+}
+
+func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo {
+	blockInfo, err := getBlockInfo(partition, blockIndex)
+	if err != nil {
 		panic(xerrors.Errorf("mustGetBlockInfo: %w", err))
 	}
-	return ret
+	return blockInfo
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -333,11 +341,13 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 	return recBin, true
 }
 
-func GetUTXOInput(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) *iotago.UTXOInput {
-	return &iotago.UTXOInput{
-		TransactionID:          mustGetBlockInfo(stateR, stateIndex).AnchorTransactionID,
-		TransactionOutputIndex: outputIndex,
+func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
+	blockInfo, err := getBlockInfo(stateR, stateIndex)
+	if err != nil {
+		return iotago.OutputID{}, err
 	}
+
+	return iotago.OutputIDFromTransactionIDAndIndex(blockInfo.AnchorTransactionID, outputIndex), nil
 }
 
 // tries to get block index from ParamBlockIndex, if no parameter is provided, returns the latest block index

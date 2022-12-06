@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -88,7 +89,7 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnDispatch)
+	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
-func ResolveError(ch chain.ChainCore, e *isc.UnresolvedVMError) (*isc.VMError, error) {
+func ResolveError(ch chain.ChainReader, e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	s, err := ch.GetStateReader().LatestState()
 	if err != nil {
 		return nil, err

@@ -1,3 +1,3 @@
 ## solotutorial
 
-Example ISC smart contract for the Solo tutorial
+Interface library for: Example ISC smart contract for the Solo tutorial

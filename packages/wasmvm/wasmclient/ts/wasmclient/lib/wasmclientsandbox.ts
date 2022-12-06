@@ -4,16 +4,16 @@
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import { panic } from 'wasmlib';
-import { IEventHandler, IClientService } from './';
+import { IClientService } from './';
 
 export class WasmClientSandbox implements wasmlib.ScHost {
     chID: wasmlib.ScChainID;
     Err: isc.Error = null;
     eventDone: bool = false;
-    eventHandlers: IEventHandler[] = [];
+    eventHandlers: wasmlib.IEventHandlers[] = [];
     eventReceived: bool = false;
     keyPair: isc.KeyPair | null = null;
-    nonce: u64 = 0;
+    nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = wasmlib.requestIDFromBytes(new Uint8Array(0));
     scName: string;
     scHname: wasmlib.ScHname;

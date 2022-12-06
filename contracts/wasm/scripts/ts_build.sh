@@ -1,8 +1,9 @@
 #!/bin/bash
-example_name=$1 # path relative to wasp/contracts/wasm
+example_path=$1
 flag=$2
+cd $example_path
+example_name=$(basename $example_path) # it is path relative to wasp/contracts/wasm in the meantime
 node_modules_path=$(git rev-parse --show-toplevel)/contracts/wasm/node_modules
-cd $example_name
 
 if [ ! -f "schema.yaml" ]; then
   echo "schema.yaml not found"

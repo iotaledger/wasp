@@ -7,6 +7,7 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storageimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
@@ -23,7 +24,7 @@ func TestCallF(t *testing.T) {
 	}
 
 	wasmlib.ConnectHost(nil)
-	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storage.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storageimpl.OnDispatch)
 	require.NoError(t, ctx.Err)
 
 	results := make(map[uint32]uint64)

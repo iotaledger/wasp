@@ -128,15 +128,15 @@ func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmtLog.Outpu
 }
 
 func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress iotago.Address) *isc.AliasOutputWithID {
-	id := testiotago.RandUTXOInput()
-	ao := &iotago.AliasOutput{
+	outputID := testiotago.RandOutputID()
+	aliasOutput := &iotago.AliasOutput{
 		AliasID: aliasID,
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
 			&iotago.GovernorAddressUnlockCondition{Address: governorAddress},
 		},
 	}
-	return isc.NewAliasOutputWithID(ao, &id)
+	return isc.NewAliasOutputWithID(aliasOutput, outputID)
 }
 
 func pubKeysAsNodeIDs(pubKeys []*cryptolib.PublicKey) []gpa.NodeID {

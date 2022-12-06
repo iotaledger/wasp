@@ -20,11 +20,15 @@ type NodeConnection interface {
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
 }
 
+type ChainReader interface {
+	GetStateReader() state.Store // TODO: Rename to GetStore.
+}
+
 type ChainCore interface {
+	ChainReader
 	ID() *isc.ChainID
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Processors() *processors.Cache
-	GetStateReader() state.Store                     // TODO: Rename to GetStore.
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger

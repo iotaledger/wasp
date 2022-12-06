@@ -43,7 +43,7 @@ type NodeConnectionMessagesMetrics interface {
 	GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics[*iotago.Transaction]
 	GetOutPullLatestOutput() NodeConnectionMessageMetrics[interface{}]
 	GetOutPullTxInclusionState() NodeConnectionMessageMetrics[iotago.TransactionID]
-	GetOutPullOutputByID() NodeConnectionMessageMetrics[*iotago.UTXOInput]
+	GetOutPullOutputByID() NodeConnectionMessageMetrics[iotago.OutputID]
 	GetInStateOutput() NodeConnectionMessageMetrics[*InStateOutput]
 	GetInAliasOutput() NodeConnectionMessageMetrics[*iotago.AliasOutput]
 	GetInOutput() NodeConnectionMessageMetrics[*InOutput]

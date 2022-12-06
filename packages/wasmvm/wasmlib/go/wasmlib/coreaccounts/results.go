@@ -7,7 +7,10 @@
 
 package coreaccounts
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type ImmutableFoundryCreateNewResults struct {
 	proxy wasmtypes.Proxy
@@ -19,6 +22,10 @@ func (s ImmutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScImmutableUint3
 
 type MutableFoundryCreateNewResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableFoundryCreateNewResults(results *wasmlib.ScDict) MutableFoundryCreateNewResults {
+	return MutableFoundryCreateNewResults{proxy: results.AsProxy()}
 }
 
 func (s MutableFoundryCreateNewResults) FoundrySN() wasmtypes.ScMutableUint32 {
@@ -69,6 +76,10 @@ type MutableAccountNFTsResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableAccountNFTsResults(results *wasmlib.ScDict) MutableAccountNFTsResults {
+	return MutableAccountNFTsResults{proxy: results.AsProxy()}
+}
+
 func (s MutableAccountNFTsResults) NftIDs() ArrayOfMutableNftID {
 	return ArrayOfMutableNftID{proxy: s.proxy.Root(ResultNftIDs)}
 }
@@ -103,6 +114,10 @@ func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMu
 
 type MutableAccountsResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableAccountsResults(results *wasmlib.ScDict) MutableAccountsResults {
+	return MutableAccountsResults{proxy: results.AsProxy()}
 }
 
 func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
@@ -141,6 +156,10 @@ type MutableBalanceResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableBalanceResults(results *wasmlib.ScDict) MutableBalanceResults {
+	return MutableBalanceResults{proxy: results.AsProxy()}
+}
+
 func (s MutableBalanceResults) Balances() MapTokenIDToMutableBigInt {
 	return MapTokenIDToMutableBigInt(s)
 }
@@ -157,6 +176,10 @@ type MutableFoundryOutputResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableFoundryOutputResults(results *wasmlib.ScDict) MutableFoundryOutputResults {
+	return MutableFoundryOutputResults{proxy: results.AsProxy()}
+}
+
 func (s MutableFoundryOutputResults) FoundryOutputBin() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultFoundryOutputBin))
 }
@@ -171,6 +194,10 @@ func (s ImmutableGetAccountNonceResults) AccountNonce() wasmtypes.ScImmutableUin
 
 type MutableGetAccountNonceResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetAccountNonceResults(results *wasmlib.ScDict) MutableGetAccountNonceResults {
+	return MutableGetAccountNonceResults{proxy: results.AsProxy()}
 }
 
 func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableUint64 {
@@ -209,6 +236,10 @@ type MutableGetNativeTokenIDRegistryResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetNativeTokenIDRegistryResults(results *wasmlib.ScDict) MutableGetNativeTokenIDRegistryResults {
+	return MutableGetNativeTokenIDRegistryResults{proxy: results.AsProxy()}
+}
+
 func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
 	return MapTokenIDToMutableBool(s)
 }
@@ -225,6 +256,10 @@ type MutableNftDataResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableNftDataResults(results *wasmlib.ScDict) MutableNftDataResults {
+	return MutableNftDataResults{proxy: results.AsProxy()}
+}
+
 func (s MutableNftDataResults) NftData() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultNftData))
 }
@@ -239,6 +274,10 @@ func (s ImmutableTotalAssetsResults) Assets() MapTokenIDToImmutableBigInt {
 
 type MutableTotalAssetsResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableTotalAssetsResults(results *wasmlib.ScDict) MutableTotalAssetsResults {
+	return MutableTotalAssetsResults{proxy: results.AsProxy()}
 }
 
 func (s MutableTotalAssetsResults) Assets() MapTokenIDToMutableBigInt {

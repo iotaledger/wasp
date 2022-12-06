@@ -23,7 +23,7 @@ export class OffLedgerRequest {
     signatureScheme: OffLedgerSignatureScheme = new OffLedgerSignatureScheme(new KeyPair(new Uint8Array(0)));
     nonce: u64;
     allowance: wasmlib.ScAssets = new wasmlib.ScAssets(new Uint8Array(0));
-    gasBudget: u64 = 0;
+    gasBudget: u64 = 0n;
 
     public constructor(chainID: wasmlib.ScChainID, contract: wasmlib.ScHname, entryPoint: wasmlib.ScHname, params: Uint8Array, nonce: u64) {
         this.chainID = chainID;

@@ -17,6 +17,8 @@ type $PkgName$+EventHandlers struct {
 $#each events eventHandlerMember
 }
 
+var _ wasmlib.IEventHandlers = new($PkgName$+EventHandlers)
+
 func (h *$PkgName$+EventHandlers) CallHandler(topic string, params []string) {
 	handler := $pkgName$+Handlers[topic]
 	if handler != nil {

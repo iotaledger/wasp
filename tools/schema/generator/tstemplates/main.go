@@ -7,7 +7,7 @@ var mainTs = map[string]string{
 	// *******************************
 	"../main.ts": `
 $#emit importWasmVMHost
-import * as sc from "./$package";
+import * as sc from "./$package$+impl";
 
 export function on_call(index: i32): void {
     wasmvmhost.WasmVMHost.connect();

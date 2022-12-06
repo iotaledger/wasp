@@ -61,7 +61,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (
 	require.NoError(tcl.t, err)
 	require.NotNil(tcl.t, stateAnchor)
 	require.NotNil(tcl.t, aliasOutput)
-	originAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID.UTXOInput())
+	originAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 	require.NoError(tcl.t, tcl.utxoDB.AddToLedger(originTX))
 	tcl.chainID = chainID
 	return originAO, chainID
@@ -148,9 +148,9 @@ func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeA
 	if err != nil {
 		panic(err)
 	}
-	for oid, out := range outputs {
-		if out.Type() == iotago.OutputAlias {
-			return isc.NewAliasOutputWithID(out.(*iotago.AliasOutput), oid.UTXOInput()), tx
+	for outputID, output := range outputs {
+		if output.Type() == iotago.OutputAlias {
+			return isc.NewAliasOutputWithID(output.(*iotago.AliasOutput), outputID), tx
 		}
 	}
 	panic("alias output not found")
@@ -158,18 +158,18 @@ func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeA
 
 func (tcl *TestChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Request {
 	reqs := []isc.Request{}
-	outs, err := tx.OutputsSet()
+	outputs, err := tx.OutputsSet()
 	require.NoError(tcl.t, err)
-	for outID, out := range outs {
+	for outputID, output := range outputs {
 		// If that's alias output of the chain, then it is not a request.
-		if out.Type() == iotago.OutputAlias {
+		if output.Type() == iotago.OutputAlias {
 			zeroAliasID := iotago.AliasID{}
-			outAsAlias := out.(*iotago.AliasOutput)
+			outAsAlias := output.(*iotago.AliasOutput)
 			if outAsAlias.AliasID == *tcl.chainID.AsAliasID() {
 				continue // That's our alias output, not the request, skip it here.
 			}
 			if outAsAlias.AliasID == zeroAliasID {
-				implicitAliasID := iotago.AliasIDFromOutputID(outID)
+				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
 				if implicitAliasID == *tcl.chainID.AsAliasID() {
 					continue // That's our origin alias output, not the request, skip it here.
 				}
@@ -177,14 +177,14 @@ func (tcl *TestChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Requ
 		}
 		//
 		// Otherwise check the receiving address.
-		outAddr := out.UnlockConditionSet().Address()
+		outAddr := output.UnlockConditionSet().Address()
 		if outAddr == nil {
 			continue
 		}
 		if !outAddr.Address.Equal(tcl.chainID.AsAddress()) {
 			continue
 		}
-		req, err := isc.OnLedgerFromUTXO(out, outID.UTXOInput())
+		req, err := isc.OnLedgerFromUTXO(output, outputID)
 		if err != nil {
 			continue
 		}

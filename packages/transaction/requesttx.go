@@ -146,10 +146,10 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*iotago.Transaction
 	return CreateAndSignTx(inputIDs, inputsCommitment, outputs, par.SenderKeyPair, parameters.L1().Protocol.NetworkID())
 }
 
-func outputMatchesSendAsAddress(output iotago.Output, oID iotago.OutputID, address iotago.Address) bool {
+func outputMatchesSendAsAddress(output iotago.Output, outputID iotago.OutputID, address iotago.Address) bool {
 	switch o := output.(type) {
 	case *iotago.NFTOutput:
-		if address.Equal(util.NFTIDFromNFTOutput(o, oID).ToAddress()) {
+		if address.Equal(util.NFTIDFromNFTOutput(o, outputID).ToAddress()) {
 			return true
 		}
 	case *iotago.AliasOutput:

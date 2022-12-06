@@ -17,6 +17,12 @@ pub struct ImmutableFoundryCreateNewParams {
 }
 
 impl ImmutableFoundryCreateNewParams {
+    pub fn new() -> ImmutableFoundryCreateNewParams {
+        ImmutableFoundryCreateNewParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn token_scheme(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_TOKEN_SCHEME))
     }
@@ -39,6 +45,12 @@ pub struct ImmutableFoundryDestroyParams {
 }
 
 impl ImmutableFoundryDestroyParams {
+    pub fn new() -> ImmutableFoundryDestroyParams {
+        ImmutableFoundryDestroyParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -61,6 +73,12 @@ pub struct ImmutableFoundryModifySupplyParams {
 }
 
 impl ImmutableFoundryModifySupplyParams {
+    pub fn new() -> ImmutableFoundryModifySupplyParams {
+        ImmutableFoundryModifySupplyParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn destroy_tokens(&self) -> ScImmutableBool {
         ScImmutableBool::new(self.proxy.root(PARAM_DESTROY_TOKENS))
     }
@@ -99,6 +117,12 @@ pub struct ImmutableHarvestParams {
 }
 
 impl ImmutableHarvestParams {
+    pub fn new() -> ImmutableHarvestParams {
+        ImmutableHarvestParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn force_minimum_base_tokens(&self) -> ScImmutableUint64 {
         ScImmutableUint64::new(self.proxy.root(PARAM_FORCE_MINIMUM_BASE_TOKENS))
     }
@@ -121,6 +145,12 @@ pub struct ImmutableTransferAllowanceToParams {
 }
 
 impl ImmutableTransferAllowanceToParams {
+    pub fn new() -> ImmutableTransferAllowanceToParams {
+        ImmutableTransferAllowanceToParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -151,6 +181,12 @@ pub struct ImmutableAccountNFTsParams {
 }
 
 impl ImmutableAccountNFTsParams {
+    pub fn new() -> ImmutableAccountNFTsParams {
+        ImmutableAccountNFTsParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -173,6 +209,12 @@ pub struct ImmutableBalanceParams {
 }
 
 impl ImmutableBalanceParams {
+    pub fn new() -> ImmutableBalanceParams {
+        ImmutableBalanceParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -195,6 +237,12 @@ pub struct ImmutableFoundryOutputParams {
 }
 
 impl ImmutableFoundryOutputParams {
+    pub fn new() -> ImmutableFoundryOutputParams {
+        ImmutableFoundryOutputParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn foundry_sn(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_FOUNDRY_SN))
     }
@@ -217,6 +265,12 @@ pub struct ImmutableGetAccountNonceParams {
 }
 
 impl ImmutableGetAccountNonceParams {
+    pub fn new() -> ImmutableGetAccountNonceParams {
+        ImmutableGetAccountNonceParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn agent_id(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
     }
@@ -239,6 +293,12 @@ pub struct ImmutableNftDataParams {
 }
 
 impl ImmutableNftDataParams {
+    pub fn new() -> ImmutableNftDataParams {
+        ImmutableNftDataParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn nft_id(&self) -> ScImmutableNftID {
         ScImmutableNftID::new(self.proxy.root(PARAM_NFT_ID))
     }

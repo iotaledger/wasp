@@ -148,8 +148,8 @@ func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft 
 // Implementations for mempool.StateMgr
 // -------------------------------------
 
-//vs, kaip suprantu yra pagal nextAO, added yra blokai nuo common iki nextAO, removed - blokai nuo common iki prevAO
-//Common - excluded tuose listuose.
+// vs, kaip suprantu yra pagal nextAO, added yra blokai nuo common iki nextAO, removed - blokai nuo common iki prevAO
+// Common - excluded tuose listuose.
 // TODO: Temporary function to make synchronous request asynchronous
 func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (state.State, []state.Block, []state.Block) {
 	resultCh := smT.mempoolStateRequestAsync(ctx, prevAO, nextAO)

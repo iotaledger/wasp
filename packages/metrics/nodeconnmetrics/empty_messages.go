@@ -27,8 +27,8 @@ func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullTxInclusionState() N
 	return newEmptyNodeConnectionMessageMetrics[iotago.TransactionID]()
 }
 
-func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullOutputByID() NodeConnectionMessageMetrics[*iotago.UTXOInput] {
-	return newEmptyNodeConnectionMessageMetrics[*iotago.UTXOInput]()
+func (encmmT *emptyNodeConnectionMessagesMetrics) GetOutPullOutputByID() NodeConnectionMessageMetrics[iotago.OutputID] {
+	return newEmptyNodeConnectionMessageMetrics[iotago.OutputID]()
 }
 
 func (encmmT *emptyNodeConnectionMessagesMetrics) GetInStateOutput() NodeConnectionMessageMetrics[*InStateOutput] {
