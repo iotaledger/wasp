@@ -167,7 +167,7 @@ A `RequestID` is encoded as the concatenation of:
 - Anchor transaction ID ([`iotago::TransactionID`](https://github.com/iotaledger/iota.go/blob/develop/transaction.go)).
 - Anchor transaction sub-essence hash (`[32]byte`).
 - Previous L1 commitment (except for block index 0).
-    - State commitment (`trie::VCommitment`).
+    - Trie root (`[20]byte`).
     - Block hash (`[20]byte`).
 - Total base tokens in L2 accounts (`uint64`).
 - Total storage deposit (`uint64`).

@@ -11,14 +11,19 @@ import "fmt"
 // protocols, one just send a message, and this handler passes it back
 // as an ordinary message.
 type OwnHandler struct {
-	me     NodeID
-	target GPA
+	me           NodeID
+	target       GPA
+	outPredicate func(msg Message) bool
 }
 
 var _ GPA = &OwnHandler{}
 
+func NewOwnHandlerWithOutPredicate(me NodeID, target GPA, outPredicate func(Message) bool) GPA {
+	return &OwnHandler{me: me, target: target, outPredicate: outPredicate}
+}
+
 func NewOwnHandler(me NodeID, target GPA) GPA {
-	return &OwnHandler{me: me, target: target}
+	return NewOwnHandlerWithOutPredicate(me, target, func(msg Message) bool { return false })
 }
 
 func (o *OwnHandler) Input(input Input) OutMessages {
@@ -38,7 +43,7 @@ func (o *OwnHandler) Output() Output {
 }
 
 func (o *OwnHandler) StatusString() string {
-	return fmt.Sprintf("{OwnHandler, target=%s}", o.target.StatusString())
+	return fmt.Sprintf("{OWN%s}", o.target.StatusString())
 }
 
 func (o *OwnHandler) UnmarshalMessage(data []byte) (Message, error) {
@@ -50,7 +55,7 @@ func (o *OwnHandler) handleMsgs(msgs, outMsgs OutMessages) OutMessages {
 		return outMsgs
 	}
 	msgs.MustIterate(func(msg Message) {
-		if msg.Recipient() == o.me {
+		if msg.Recipient() == o.me && !o.outPredicate(msg) {
 			msg.SetSender(o.me)
 			msgs.AddAll(o.target.Message(msg))
 		} else {

@@ -7,7 +7,10 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type MapStringToImmutableBytes struct {
 	proxy wasmtypes.Proxy
@@ -19,6 +22,10 @@ func (m MapStringToImmutableBytes) GetBytes(key string) wasmtypes.ScImmutableByt
 
 type ImmutableStoreBlobParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableStoreBlobParams() ImmutableStoreBlobParams {
+	return ImmutableStoreBlobParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 // set of named blobs
@@ -81,6 +88,10 @@ type ImmutableGetBlobFieldParams struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewImmutableGetBlobFieldParams() ImmutableGetBlobFieldParams {
+	return ImmutableGetBlobFieldParams{proxy: wasmlib.NewParamsProxy()}
+}
+
 // blob name
 func (s ImmutableGetBlobFieldParams) Field() wasmtypes.ScImmutableString {
 	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamField))
@@ -107,6 +118,10 @@ func (s MutableGetBlobFieldParams) Hash() wasmtypes.ScMutableHash {
 
 type ImmutableGetBlobInfoParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableGetBlobInfoParams() ImmutableGetBlobInfoParams {
+	return ImmutableGetBlobInfoParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 // blob set

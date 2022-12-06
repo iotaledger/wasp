@@ -7,7 +7,10 @@
 
 package coregovernance
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type ArrayOfImmutableAddress struct {
 	proxy wasmtypes.Proxy
@@ -54,6 +57,10 @@ type MutableGetAllowedStateControllerAddressesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetAllowedStateControllerAddressesResults(results *wasmlib.ScDict) MutableGetAllowedStateControllerAddressesResults {
+	return MutableGetAllowedStateControllerAddressesResults{proxy: results.AsProxy()}
+}
+
 // native contract, so this is an Array16
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableAddress {
 	return ArrayOfMutableAddress{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
@@ -93,6 +100,10 @@ func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableUin
 
 type MutableGetChainInfoResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetChainInfoResults(results *wasmlib.ScDict) MutableGetChainInfoResults {
+	return MutableGetChainInfoResults{proxy: results.AsProxy()}
 }
 
 func (s MutableGetChainInfoResults) ChainID() wasmtypes.ScMutableChainID {
@@ -159,6 +170,10 @@ type MutableGetChainNodesResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetChainNodesResults(results *wasmlib.ScDict) MutableGetChainNodesResults {
+	return MutableGetChainNodesResults{proxy: results.AsProxy()}
+}
+
 func (s MutableGetChainNodesResults) AccessNodeCandidates() MapBytesToMutableBytes {
 	return MapBytesToMutableBytes{proxy: s.proxy.Root(ResultAccessNodeCandidates)}
 }
@@ -179,6 +194,10 @@ type MutableGetChainOwnerResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetChainOwnerResults(results *wasmlib.ScDict) MutableGetChainOwnerResults {
+	return MutableGetChainOwnerResults{proxy: results.AsProxy()}
+}
+
 func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwner))
 }
@@ -195,6 +214,10 @@ type MutableGetFeePolicyResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetFeePolicyResults(results *wasmlib.ScDict) MutableGetFeePolicyResults {
+	return MutableGetFeePolicyResults{proxy: results.AsProxy()}
+}
+
 func (s MutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScMutableBytes {
 	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultFeePolicyBytes))
 }
@@ -209,6 +232,10 @@ func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableUint3
 
 type MutableGetMaxBlobSizeResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetMaxBlobSizeResults(results *wasmlib.ScDict) MutableGetMaxBlobSizeResults {
+	return MutableGetMaxBlobSizeResults{proxy: results.AsProxy()}
 }
 
 func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableUint32 {

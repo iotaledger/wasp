@@ -123,18 +123,18 @@ Example:
 
 ## <a id="db"></a> 4. Database
 
-| Name                                     | Description                                                                      | Type    | Default value |
-| ---------------------------------------- | -------------------------------------------------------------------------------- | ------- | ------------- |
-| engine                                   | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
-| [consensusJournal](#db_consensusjournal) | Configuration for consensusJournal                                               | object  |               |
-| [chainState](#db_chainstate)             | Configuration for chainState                                                     | object  |               |
-| debugSkipHealthCheck                     | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | false         |
+| Name                                 | Description                                                                      | Type    | Default value |
+| ------------------------------------ | -------------------------------------------------------------------------------- | ------- | ------------- |
+| engine                               | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
+| [consensusState](#db_consensusstate) | Configuration for consensusState                                                 | object  |               |
+| [chainState](#db_chainstate)         | Configuration for chainState                                                     | object  |               |
+| debugSkipHealthCheck                 | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | false         |
 
-### <a id="db_consensusjournal"></a> ConsensusJournal
+### <a id="db_consensusstate"></a> ConsensusState
 
-| Name | Description                                       | Type   | Default value             |
-| ---- | ------------------------------------------------- | ------ | ------------------------- |
-| path | The path to the consensus journal database folder | string | "waspdb/chains/consensus" |
+| Name | Description                                        | Type   | Default value             |
+| ---- | -------------------------------------------------- | ------ | ------------------------- |
+| path | The path to the consensus internal database folder | string | "waspdb/chains/consensus" |
 
 ### <a id="db_chainstate"></a> ChainState
 
@@ -148,7 +148,7 @@ Example:
   {
     "db": {
       "engine": "rocksdb",
-      "consensusJournal": {
+      "consensusState": {
         "path": "waspdb/chains/consensus"
       },
       "chainState": {
@@ -323,20 +323,34 @@ Example:
   }
 ```
 
-## <a id="metrics"></a> 12. Metrics
+## <a id="prometheus"></a> 12. Prometheus
 
-| Name        | Description                             | Type    | Default value    |
-| ----------- | --------------------------------------- | ------- | ---------------- |
-| enabled     | Whether the metrics plugin is enabled   | boolean | true             |
-| bindAddress | The bind address for the node dashboard | string  | "127.0.0.1:2112" |
+| Name            | Description                                                  | Type    | Default value    |
+| --------------- | ------------------------------------------------------------ | ------- | ---------------- |
+| enabled         | Whether the prometheus plugin is enabled                     | boolean | true             |
+| bindAddress     | The bind address on which the Prometheus exporter listens on | string  | "127.0.0.1:2112" |
+| nodeMetrics     | Whether to include node metrics                              | boolean | true             |
+| nodeConnMetrics | Whether to include node connection metrics                   | boolean | true             |
+| blockWALMetrics | Whether to include block Write-Ahead Log (WAL) metrics       | boolean | true             |
+| restAPIMetrics  | Whether to include restAPI metrics                           | boolean | true             |
+| goMetrics       | Whether to include go metrics                                | boolean | true             |
+| processMetrics  | Whether to include process metrics                           | boolean | true             |
+| promhttpMetrics | Whether to include promhttp metrics                          | boolean | true             |
 
 Example:
 
 ```json
   {
-    "metrics": {
+    "prometheus": {
       "enabled": true,
-      "bindAddress": "127.0.0.1:2112"
+      "bindAddress": "127.0.0.1:2112",
+      "nodeMetrics": true,
+      "nodeConnMetrics": true,
+      "blockWALMetrics": true,
+      "restAPIMetrics": true,
+      "goMetrics": true,
+      "processMetrics": true,
+      "promhttpMetrics": true
     }
   }
 ```

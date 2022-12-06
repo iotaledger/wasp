@@ -72,7 +72,7 @@ func (ncc *ncChain) PublishTransaction(tx *iotago.Transaction, timeout ...time.D
 	// track pending tx before publishing the transaction
 	ncc.nc.addPendingTransaction(pendingTx)
 
-	ncc.log.Debugf("publishing transaction %v...", isc.TxID(pendingTx.ID()))
+	ncc.log.Debugf("publishing transaction %v...", pendingTx.ID().ToHex())
 
 	// we use the context of the pending transaction to post the transaction. this way
 	// the proof of work will be canceled if the transaction already got confirmed in L1.

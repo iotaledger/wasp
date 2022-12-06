@@ -30,7 +30,7 @@ variable "wasp_config" {
   },
   "db": {
     "engine": "rocksdb",
-    "consensusJournal": {
+    "consensusState": {
       "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/consensus"
     },
     "chainState": {
@@ -77,9 +77,16 @@ variable "wasp_config" {
     "enabled": true,
     "directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb/wal"
   },
-  "metrics": {
+  "prometheus": {
     "enabled": true,
-    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}"
+    "bindAddress": "0.0.0.0:{{ env "NOMAD_PORT_metrics" }}",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
     "enabled": true,

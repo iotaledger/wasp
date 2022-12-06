@@ -32,12 +32,22 @@ $#each result proxyContainers
 
 #[derive(Clone)]
 pub struct $TypeName {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl $TypeName {
 $#set separator $false
+$#if mut resultsMutConstructor
 $#each result proxyMethods
 }
+`,
+	// *******************************
+	"resultsMutConstructor": `
+    pub fn new() -> $TypeName {
+        $TypeName {
+            proxy: results_proxy(),
+        }
+    }
+$#set separator $true
 `,
 }

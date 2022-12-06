@@ -72,3 +72,7 @@ func (m *testRoundMsg) SetSender(sender NodeID) {
 func (m *testRoundMsg) MarshalBinary() ([]byte, error) {
 	panic(xerrors.Errorf("should be not used"))
 }
+
+func (m *testRoundMsg) UnmarshalBinary(data []byte) error {
+	panic(xerrors.Errorf("should be not used"))
+}

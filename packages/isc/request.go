@@ -66,7 +66,7 @@ type OnLedgerRequest interface {
 	Clone() OnLedgerRequest
 	Output() iotago.Output
 	IsInternalUTXO(*ChainID) bool
-	UTXOInput() iotago.UTXOInput
+	OutputID() iotago.OutputID
 	Features() Features
 }
 
@@ -91,19 +91,17 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 	}
 
 	ret := make(map[ChainID][]Request)
-	for i, out := range tx.Essence.Outputs {
-		switch out.(type) {
+	for i, output := range tx.Essence.Outputs {
+		switch output.(type) {
 		case *iotago.BasicOutput, *iotago.NFTOutput:
 			// process it
 		default:
 			// only BasicOutputs and NFTs are interpreted right now, // TODO other outputs
 			continue
 		}
+
 		// wrap output into the isc.Request
-		odata, err := OnLedgerFromUTXO(out, &iotago.UTXOInput{
-			TransactionID:          txid,
-			TransactionOutputIndex: uint16(i),
-		})
+		odata, err := OnLedgerFromUTXO(output, iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i)))
 		if err != nil {
 			return nil, err // TODO: maybe log the error and keep processing?
 		}
@@ -136,10 +134,6 @@ func RequestIsExpired(req OnLedgerRequest, currentTime time.Time) bool {
 }
 
 func RequestIsUnlockable(req OnLedgerRequest, chainAddress iotago.Address, currentTime time.Time) bool {
-	if RequestIsExpired(req, currentTime) {
-		return false
-	}
-
 	output, _ := req.Output().(iotago.TransIndepIdentOutput)
 
 	return output.UnlockableBy(chainAddress, &iotago.ExternalUnlockParameters{

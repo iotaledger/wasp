@@ -20,9 +20,8 @@ import (
 	"github.com/iotaledger/wasp/core/wasmtimevm"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/plugins/dashboard"
-	"github.com/iotaledger/wasp/plugins/metrics"
+	"github.com/iotaledger/wasp/plugins/prometheus"
 	"github.com/iotaledger/wasp/plugins/publishernano"
-	"github.com/iotaledger/wasp/plugins/wal"
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
@@ -46,8 +45,7 @@ func App() *app.App {
 		}...),
 		app.WithPlugins([]*app.Plugin{
 			profiling.Plugin,
-			wal.Plugin,
-			metrics.Plugin,
+			prometheus.Plugin,
 			webapi.Plugin,
 			publishernano.Plugin,
 			dashboard.Plugin,

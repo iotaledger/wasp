@@ -48,7 +48,7 @@ type Field struct {
 	Type       string
 	BaseType   bool
 	Comment    string
-	Line       int // the line number originally in yaml/json file
+	Line       int // the line number originally in yaml file
 }
 
 //nolint:gocyclo

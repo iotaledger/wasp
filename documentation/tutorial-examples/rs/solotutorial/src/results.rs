@@ -14,7 +14,7 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct ImmutableGetStringResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetStringResults {
@@ -25,10 +25,16 @@ impl ImmutableGetStringResults {
 
 #[derive(Clone)]
 pub struct MutableGetStringResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetStringResults {
+    pub fn new() -> MutableGetStringResults {
+        MutableGetStringResults {
+            proxy: results_proxy(),
+        }
+    }
+
     pub fn str(&self) -> ScMutableString {
         ScMutableString::new(self.proxy.root(RESULT_STR))
     }

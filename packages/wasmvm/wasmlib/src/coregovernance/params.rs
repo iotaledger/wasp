@@ -17,6 +17,12 @@ pub struct ImmutableAddAllowedStateControllerAddressParams {
 }
 
 impl ImmutableAddAllowedStateControllerAddressParams {
+    pub fn new() -> ImmutableAddAllowedStateControllerAddressParams {
+        ImmutableAddAllowedStateControllerAddressParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn state_controller_address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
     }
@@ -39,6 +45,12 @@ pub struct ImmutableAddCandidateNodeParams {
 }
 
 impl ImmutableAddCandidateNodeParams {
+    pub fn new() -> ImmutableAddCandidateNodeParams {
+        ImmutableAddCandidateNodeParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn access_node_info_access_api(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_ACCESS_API))
     }
@@ -96,6 +108,12 @@ pub struct ImmutableChangeAccessNodesParams {
 }
 
 impl ImmutableChangeAccessNodesParams {
+    pub fn new() -> ImmutableChangeAccessNodesParams {
+        ImmutableChangeAccessNodesParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn change_access_nodes_actions(&self) -> MapBytesToImmutableUint8 {
         MapBytesToImmutableUint8 { proxy: self.proxy.root(PARAM_CHANGE_ACCESS_NODES_ACTIONS) }
     }
@@ -133,6 +151,12 @@ pub struct ImmutableDelegateChainOwnershipParams {
 }
 
 impl ImmutableDelegateChainOwnershipParams {
+    pub fn new() -> ImmutableDelegateChainOwnershipParams {
+        ImmutableDelegateChainOwnershipParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn chain_owner(&self) -> ScImmutableAgentID {
         ScImmutableAgentID::new(self.proxy.root(PARAM_CHAIN_OWNER))
     }
@@ -155,6 +179,12 @@ pub struct ImmutableRemoveAllowedStateControllerAddressParams {
 }
 
 impl ImmutableRemoveAllowedStateControllerAddressParams {
+    pub fn new() -> ImmutableRemoveAllowedStateControllerAddressParams {
+        ImmutableRemoveAllowedStateControllerAddressParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn state_controller_address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
     }
@@ -177,6 +207,12 @@ pub struct ImmutableRevokeAccessNodeParams {
 }
 
 impl ImmutableRevokeAccessNodeParams {
+    pub fn new() -> ImmutableRevokeAccessNodeParams {
+        ImmutableRevokeAccessNodeParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn access_node_info_certificate(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_ACCESS_NODE_INFO_CERTIFICATE))
     }
@@ -207,6 +243,12 @@ pub struct ImmutableRotateStateControllerParams {
 }
 
 impl ImmutableRotateStateControllerParams {
+    pub fn new() -> ImmutableRotateStateControllerParams {
+        ImmutableRotateStateControllerParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn state_controller_address(&self) -> ScImmutableAddress {
         ScImmutableAddress::new(self.proxy.root(PARAM_STATE_CONTROLLER_ADDRESS))
     }
@@ -229,6 +271,12 @@ pub struct ImmutableSetChainInfoParams {
 }
 
 impl ImmutableSetChainInfoParams {
+    pub fn new() -> ImmutableSetChainInfoParams {
+        ImmutableSetChainInfoParams {
+            proxy: params_proxy(),
+        }
+    }
+
     // default maximum size of a blob
     pub fn max_blob_size(&self) -> ScImmutableUint32 {
         ScImmutableUint32::new(self.proxy.root(PARAM_MAX_BLOB_SIZE))
@@ -273,6 +321,12 @@ pub struct ImmutableSetFeePolicyParams {
 }
 
 impl ImmutableSetFeePolicyParams {
+    pub fn new() -> ImmutableSetFeePolicyParams {
+        ImmutableSetFeePolicyParams {
+            proxy: params_proxy(),
+        }
+    }
+
     pub fn fee_policy_bytes(&self) -> ScImmutableBytes {
         ScImmutableBytes::new(self.proxy.root(PARAM_FEE_POLICY_BYTES))
     }

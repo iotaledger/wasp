@@ -7,24 +7,20 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/nodeclient"
-
-	"github.com/iotaledger/iota.go/v3/tpkg"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestRegister(t *testing.T) {
-	log := testlogger.NewLogger(t)
 	chainID1 := isc.RandomChainID()
 	chainID2 := isc.RandomChainID()
 	chainID3 := isc.RandomChainID()
-	ncm := New(log)
+	ncm := New()
 
 	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
 
@@ -89,16 +85,15 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 		},
 	}
 
-	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, iotago.OutputID{})
 	return onLedgerRequest1
 }
 
 func TestMessageMetrics(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	ncm := New(log)
+	ncm := New()
 	cncm1 := ncm.NewMessagesMetrics(isc.RandomChainID())
 	cncm2 := ncm.NewMessagesMetrics(isc.RandomChainID())
-	ncm.RegisterMetrics()
+	ncm.Register(prometheus.NewRegistry())
 
 	// IN State output
 	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
@@ -228,9 +223,9 @@ func TestMessageMetrics(t *testing.T) {
 	utxoInput2 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 	utxoInput3 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1)
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2)
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3)
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1.ID())
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2.ID())
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3.ID())
 
 	checkMetricsValues(t, 3, utxoInput3, cncm1.GetOutPullOutputByID())
 	checkMetricsValues(t, 0, nil, cncm2.GetOutPullOutputByID())

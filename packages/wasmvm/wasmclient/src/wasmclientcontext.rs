@@ -2,16 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::*;
-use std::any::Any;
+use std::{any::Any, sync::mpsc, thread::spawn};
 use wasmlib::*;
 
-pub trait IEventHandler: Any {
-    fn call_handler(&self, topic: &str, params: &[&str]);
-}
-
+// TODO to handle the request in parallel, WasmClientContext must be static now.
+// We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
-    pub event_handlers: Vec<Box<dyn IEventHandler>>,
+    pub event_handlers: Vec<Box<dyn IEventHandlers>>,
     pub key_pair: Option<keypair::KeyPair>,
     pub req_id: ScRequestID,
     pub sc_name: String,
@@ -61,9 +59,8 @@ impl WasmClientContext {
         return self.sc_hname;
     }
 
-    pub fn register(&mut self, handler: Box<dyn IEventHandler>) -> errors::Result<()> {
-        let handler_iterator = self.event_handlers.iter();
-        for h in handler_iterator {
+    pub fn register(&'static mut self, handler: Box<dyn IEventHandlers>) -> errors::Result<()> {
+        for h in self.event_handlers.iter() {
             if handler.type_id() == h.as_ref().type_id() {
                 return Ok(());
             }
@@ -84,7 +81,7 @@ impl WasmClientContext {
         self.key_pair = Some(key_pair.clone());
     }
 
-    pub fn unregister(&mut self, handler: Box<dyn IEventHandler>) {
+    pub fn unregister(&mut self, handler: Box<dyn IEventHandlers>) {
         self.event_handlers.retain(|h| {
             if handler.type_id() == h.as_ref().type_id() {
                 return false;
@@ -92,7 +89,6 @@ impl WasmClientContext {
                 return true;
             }
         });
-
         if self.event_handlers.len() == 0 {
             self.stop_event_handlers();
         }
@@ -111,11 +107,30 @@ impl WasmClientContext {
         );
     }
 
-    pub fn start_event_handlers(&self) -> errors::Result<()> {
-        todo!()
+    pub fn start_event_handlers(&'static self) -> errors::Result<()> {
+        let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        self.svc_client.subscribe_events(tx).unwrap();
+
+        spawn(move || {
+            for msg in rx {
+                self.process_event(&msg).unwrap();
+            }
+        });
+
+        return Ok(());
     }
 
     pub fn stop_event_handlers(&self) {
+        todo!()
+    }
+
+    fn process_event(&self, _msg: &str) -> errors::Result<()> {
+        // FIXME parse the msg
+        for handler in self.event_handlers.iter() {
+            handler
+                .as_ref()
+                .call_handler("topic", &vec!["params".to_string()]); // FIXME use the correct parsed message
+        }
         todo!()
     }
 }
@@ -123,10 +138,11 @@ impl WasmClientContext {
 #[cfg(test)]
 mod tests {
     use crate::*;
+    use wasmlib::*;
 
     struct FakeEventHandler {}
-    impl IEventHandler for FakeEventHandler {
-        fn call_handler(&self, _topic: &str, _params: &[&str]) {}
+    impl IEventHandlers for FakeEventHandler {
+        fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
     }
 
     #[test]

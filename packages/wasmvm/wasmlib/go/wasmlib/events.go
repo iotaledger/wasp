@@ -9,6 +9,10 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
+type IEventHandlers interface {
+	CallHandler(topic string, params []string)
+}
+
 type EventEncoder struct {
 	event string
 }

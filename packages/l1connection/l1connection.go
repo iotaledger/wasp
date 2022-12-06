@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/utxodb"
 )
@@ -104,13 +103,14 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 			return nil, fmt.Errorf("failed to query address outputs: %w", err)
 		}
 		for res.Next() {
-			outs, err := res.Outputs()
+			outputs, err := res.Outputs()
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch address outputs: %w", err)
 			}
-			oids := res.Response.Items.MustOutputIDs()
-			for i, o := range outs {
-				result[oids[i]] = o
+
+			outputIDs := res.Response.Items.MustOutputIDs()
+			for i := range outputs {
+				result[outputIDs[i]] = outputs[i]
 			}
 		}
 	}
@@ -164,7 +164,7 @@ func (c *l1client) postTx(ctx context.Context, tx *iotago.Transaction) (*iotago.
 	if err != nil {
 		return nil, err
 	}
-	c.log.Infof("Posted transaction id %v", isc.TxID(txID))
+	c.log.Infof("Posted transaction id %v", txID.ToHex())
 
 	return block, nil
 }

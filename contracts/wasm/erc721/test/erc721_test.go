@@ -6,6 +6,7 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
@@ -151,7 +152,7 @@ func setup(t *testing.T) *wasmsolo.SoloContext {
 	init := erc721.ScFuncs.Init(nil)
 	init.Params.Name().SetValue("My Valuable NFT")
 	init.Params.Symbol().SetValue("MVNFT")
-	ctx := wasmsolo.NewSoloContext(t, erc721.ScName, erc721.OnDispatch, init.Func)
+	ctx := wasmsolo.NewSoloContext(t, erc721.ScName, erc721impl.OnDispatch, init.Func)
 	require.NoError(t, ctx.Err)
 	return ctx
 }

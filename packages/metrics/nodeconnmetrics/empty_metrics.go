@@ -1,6 +1,8 @@
 package nodeconnmetrics
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -14,7 +16,7 @@ func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 	return &emptyNodeConnectionMetrics{}
 }
 
-func (encmT *emptyNodeConnectionMetrics) RegisterMetrics() {}
+func (encmT *emptyNodeConnectionMetrics) Register(registry *prometheus.Registry) {}
 
 func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {
 	encmT.emptyNodeConnectionMessagesMetrics = newEmptyNodeConnectionMessagesMetrics()

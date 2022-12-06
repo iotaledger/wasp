@@ -14,6 +14,7 @@ const (
 	KeyCopyright   string = "copyright"
 	KeyName        string = "name"
 	KeyDescription string = "description"
+	KeyAuthor      string = "author"
 	KeyEvents      string = "events"
 	KeyStructs     string = "structs"
 	KeyTypedefs    string = "typedefs"
@@ -26,7 +27,7 @@ const (
 )
 
 func Convert(root *Node, def *model.SchemaDef) error {
-	var name, description model.DefElt
+	var name, description, author model.DefElt
 	var events, structs model.DefMapMap
 	var typedefs, state model.DefMap
 	var funcs, views model.FuncDefMap
@@ -40,6 +41,9 @@ func Convert(root *Node, def *model.SchemaDef) error {
 		case KeyDescription:
 			description.Val = key.Contents[0].Val
 			description.Line = key.Line
+		case KeyAuthor:
+			author.Val = key.Contents[0].Val
+			author.Line = key.Line
 		case KeyEvents:
 			events = key.ToDefMapMap()
 		case KeyStructs:
@@ -58,6 +62,7 @@ func Convert(root *Node, def *model.SchemaDef) error {
 	}
 	def.Name = name
 	def.Description = description
+	def.Author = author
 	def.Events = events
 	def.Structs = structs
 	def.Typedefs = typedefs

@@ -48,7 +48,7 @@ const WaspConfig = `
   },
   "db": {
     "engine": "rocksdb",
-    "consensusJournal": {
+    "consensusState": {
       "path": "waspdb/chains/consensus"
     },
     "chainState": {
@@ -95,9 +95,16 @@ const WaspConfig = `
     "enabled": true,
     "directory": "wal"
   },
-  "metrics": {
-    "enabled": false,
-    "bindAddress": "0.0.0.0:{{.MetricsPort}}"
+  "prometheus": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
     "enabled": true,

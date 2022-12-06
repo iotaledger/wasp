@@ -6,6 +6,7 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacommentimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacomment"
@@ -13,6 +14,6 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, schemacomment.ScName, schemacomment.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, schemacomment.ScName, schemacommentimpl.OnDispatch)
 	require.NoError(t, ctx.ContractExists(schemacomment.ScName))
 }

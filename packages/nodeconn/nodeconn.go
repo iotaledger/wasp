@@ -46,14 +46,14 @@ type LedgerUpdateHandler func(*nodebridge.LedgerUpdate)
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConn struct {
-	ctx           context.Context
-	chains        map[string]*ncChain // key = iotago.Address.Key()
-	chainsLock    sync.RWMutex
-	indexerClient nodeclient.IndexerClient
-	metrics       nodeconnmetrics.NodeConnectionMetrics
-	log           *logger.Logger
-	nodeBridge    *nodebridge.NodeBridge
-	nodeClient    *nodeclient.Client
+	ctx                   context.Context
+	chains                map[string]*ncChain // key = iotago.Address.Key()
+	chainsLock            sync.RWMutex
+	indexerClient         nodeclient.IndexerClient
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
+	log                   *logger.Logger
+	nodeBridge            *nodebridge.NodeBridge
+	nodeClient            *nodeclient.Client
 
 	// pendingTransactionsMap is a map of sent transactions that are pending.
 	pendingTransactionsMap  map[iotago.TransactionID]*PendingTransaction
@@ -80,7 +80,7 @@ func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.C
 	return context.WithTimeout(ctx, t)
 }
 
-func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge) chain.NodeConnection {
+func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBridge, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) chain.NodeConnection {
 	inxNodeClient := nodeBridge.INXNodeClient()
 
 	ctxInfo, cancelInfo := context.WithTimeout(ctx, inxTimeoutInfo)
@@ -105,7 +105,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 		chains:                  make(map[string]*ncChain),
 		chainsLock:              sync.RWMutex{},
 		indexerClient:           indexerClient,
-		metrics:                 nodeconnmetrics.NewEmptyNodeConnectionMetrics(),
+		nodeConnectionMetrics:   nodeConnectionMetrics,
 		log:                     log.Named("nc"),
 		nodeBridge:              nodeBridge,
 		nodeClient:              inxNodeClient,
@@ -166,15 +166,12 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 
 				// we can easily check this by searching for output index 0.
 				// if this was created, the rest was created as well because transactions are atomic.
-				txOutputIndexZero := iotago.UTXOInput{
-					TransactionID:          pendingTx.ID(),
-					TransactionOutputIndex: 0,
-				}
+				txOutputIDIndexZero := iotago.OutputIDFromTransactionIDAndIndex(pendingTx.ID(), 0)
 
 				// mark waiting for pending transaction as done
 				nc.clearPendingTransactionWithoutLocking(pendingTx.ID())
 
-				if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
+				if _, created := newOutputsMap[txOutputIDIndexZero]; !created {
 					// transaction was conflicting
 					pendingTx.SetConflicting(xerrors.New("input was used in another transaction"))
 				} else {
@@ -222,10 +219,6 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 	return nil
 }
 
-func (nc *nodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
-	nc.metrics = metrics
-}
-
 // RegisterChain implements chain.NodeConnection.
 func (nc *nodeConn) RegisterChain(
 	chainID *isc.ChainID,
@@ -233,7 +226,7 @@ func (nc *nodeConn) RegisterChain(
 	outputHandler func(iotago.OutputID, iotago.Output),
 	milestoneHandler func(*nodebridge.Milestone),
 ) {
-	nc.metrics.SetRegistered(chainID)
+	nc.nodeConnectionMetrics.SetRegistered(chainID)
 	ncc := newNCChain(nc, chainID, stateOutputHandler, outputHandler, milestoneHandler)
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -243,7 +236,7 @@ func (nc *nodeConn) RegisterChain(
 
 // UnregisterChain implements chain.NodeConnection.
 func (nc *nodeConn) UnregisterChain(chainID *isc.ChainID) {
-	nc.metrics.SetUnregistered(chainID)
+	nc.nodeConnectionMetrics.SetUnregistered(chainID)
 	nccKey := chainID.Key()
 	nc.chainsLock.Lock()
 	defer nc.chainsLock.Unlock()
@@ -299,18 +292,18 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	nc.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 }
 
-func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
+func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, outputID iotago.OutputID) {
 	ncc := nc.chains[chainID.Key()]
 	if ncc == nil {
 		nc.log.Errorf("PullOutputByID: NCChain not  found for chainID %s", chainID)
 		return
 	}
-	ncc.PullStateOutputByID(id.ID())
-	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(id)
+	ncc.PullStateOutputByID(outputID)
+	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(outputID)
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return nc.metrics
+	return nc.nodeConnectionMetrics
 }
 
 func (nc *nodeConn) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotago.BlockID, error) {
@@ -442,4 +435,23 @@ func (nc *nodeConn) promoteBlock(ctx context.Context, blockID iotago.BlockID) er
 	}
 
 	return nil
+}
+
+func (nc *nodeConn) PublishTX(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	tx *iotago.Transaction,
+	callback chain.TxPostHandler,
+) {
+	panic("IMPLEMENT: (nc *nodeConn) PublishTX") // TODO: Implement.
+}
+
+func (nc *nodeConn) AttachChain(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	recvRequestCB chain.RequestOutputHandler,
+	recvAliasOutput chain.AliasOutputHandler,
+	recvMilestone chain.MilestoneHandler,
+) {
+	panic("IMPLEMENT: (nc *nodeConn) AttachChain") // TODO: Implement.
 }

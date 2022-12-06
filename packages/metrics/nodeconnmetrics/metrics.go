@@ -4,45 +4,49 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
-
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type nodeConnectionMetricsImpl struct {
 	NodeConnectionMessagesMetrics
-	log                 *logger.Logger
+	registered []*isc.ChainID
+
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
-	registered          []*isc.ChainID
-	inMilestoneMetrics  NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]
+
+	inMilestoneMetrics NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]
 }
 
 var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 
-func New(log *logger.Logger) NodeConnectionMetrics {
+func New() NodeConnectionMetrics {
 	ret := &nodeConnectionMetricsImpl{
-		log:        log.Named("nodeconn"),
 		registered: make([]*isc.ChainID, 0),
+
+		messageTotalCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "iota",
+			Subsystem: "wasp_nodeconn",
+			Name:      "message_total_counter",
+			Help:      "Number of messages send/received by node connection of the chain",
+		}, []string{chainLabelNameConst, msgTypeLabelNameConst}),
+
+		lastEventTimeGauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "iota",
+			Subsystem: "wasp_nodeconn",
+			Name:      "last_event_time_gauge",
+			Help:      "Last time when the message was sent/received by node connection of the chain",
+		}, []string{chainLabelNameConst, msgTypeLabelNameConst}),
 	}
 	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
 	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics[*nodeclient.MilestoneInfo](ret, nil, "in_milestone")
 	return ret
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) RegisterMetrics() {
-	ncmiT.log.Debug("Registering nodeconnection metrics to prometheus...")
-	ncmiT.messageTotalCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "wasp_nodeconn_message_total_counter",
-		Help: "Number of messages send/received by node connection of the chain",
-	}, []string{chainLabelNameConst, msgTypeLabelNameConst})
-	prometheus.MustRegister(ncmiT.messageTotalCounter)
-	ncmiT.lastEventTimeGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "wasp_nodeconn_last_event_time_gauge",
-		Help: "Last time when the message was sent/received by node connection of the chain",
-	}, []string{chainLabelNameConst, msgTypeLabelNameConst})
-	prometheus.MustRegister(ncmiT.lastEventTimeGauge)
-	ncmiT.log.Info("Registering nodeconnection metrics to prometheus... Done")
+func (ncmiT *nodeConnectionMetricsImpl) Register(registry *prometheus.Registry) {
+	registry.MustRegister(
+		ncmiT.messageTotalCounter,
+		ncmiT.lastEventTimeGauge,
+	)
 }
 
 func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {

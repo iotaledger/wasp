@@ -9,9 +9,9 @@ type ParametersDatabase struct {
 	// Engine defines the used database engine (rocksdb/mapdb).
 	Engine string `default:"rocksdb" usage:"the used database engine (rocksdb/mapdb)"`
 
-	ConsensusJournal struct {
-		// Path defines the path to the consensus journal database folder.
-		Path string `default:"waspdb/chains/consensus" usage:"the path to the consensus journal database folder"`
+	ConsensusState struct {
+		// Path defines the path to the consensus database folder for its local/internal state.
+		Path string `default:"waspdb/chains/consensus" usage:"the path to the consensus internal database folder"`
 	}
 
 	ChainState struct {

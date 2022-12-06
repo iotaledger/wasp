@@ -1,166 +1,119 @@
+// Copyright 2022 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package state
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-	"time"
 
-	"golang.org/x/xerrors"
+	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
-type blockImpl struct {
-	stateOutputID *iotago.UTXOInput
-	stateUpdate   *stateUpdateImpl
-	blockIndex    uint32 // not persistent
+type block struct {
+	trieRoot             trie.Hash
+	mutations            *buffered.Mutations
+	previousL1Commitment *L1Commitment
 }
 
-var _ Block = &blockImpl{}
+var _ Block = &block{}
 
-// validates, enumerates and creates a block from array of state updates
-func newBlock(muts *buffered.Mutations) (Block, error) {
-	ret := &blockImpl{
-		stateUpdate: &stateUpdateImpl{
-			mutations: muts.Clone(),
-		},
-	}
-	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
+func BlockFromBytes(blockBytes []byte) (*block, error) {
+	buf := bytes.NewBuffer(blockBytes)
+
+	trieRoot, err := trie.ReadHash(buf)
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
-}
 
-func BlockFromBytes(data []byte) (Block, error) {
-	ret := new(blockImpl)
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
-	}
-	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
+	muts := buffered.NewMutations()
+	err = muts.Read(buf)
+	if err != nil {
 		return nil, err
 	}
-	return ret, nil
+
+	var hasPrevL1Commitment bool
+	if hasPrevL1Commitment, err = codec.DecodeBool(buf.Next(1)); err != nil {
+		return nil, err
+	}
+	var prevL1Commitment *L1Commitment
+	if hasPrevL1Commitment {
+		prevL1Commitment = new(L1Commitment)
+		err = prevL1Commitment.Read(buf)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &block{
+		trieRoot:             trieRoot,
+		mutations:            muts,
+		previousL1Commitment: prevL1Commitment,
+	}, nil
 }
 
-func (b *blockImpl) Bytes() []byte {
-	return util.MustBytes(b)
+func (b *block) Mutations() *buffered.Mutations {
+	return b.mutations
 }
 
-func (b *blockImpl) String() string {
-	ret := ""
-	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
-	ret += fmt.Sprintf("state txid: %s\n", isc.OID(b.ApprovingOutputID()))
-	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
-	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
-	return ret
+func (b *block) MutationsReader() kv.KVStoreReader {
+	return buffered.NewBufferedKVStoreForMutations(
+		kv.NewHiveKVStoreReader(mapdb.NewMapDB()),
+		b.mutations,
+	)
 }
 
-func (b *blockImpl) ApprovingOutputID() *iotago.UTXOInput {
-	return b.stateOutputID
+func (b *block) TrieRoot() trie.Hash {
+	return b.trieRoot
 }
 
-func (b *blockImpl) BlockIndex() uint32 {
-	return b.blockIndex
+func (b *block) PreviousL1Commitment() *L1Commitment {
+	return b.previousL1Commitment
 }
 
-// Timestamp of the last state update
-func (b *blockImpl) Timestamp() time.Time {
-	ts, err := findTimestampMutation(b.stateUpdate)
-	if err != nil {
-		panic(err)
-	}
-	return ts
+func (b *block) essenceBytes() []byte {
+	var w bytes.Buffer
+	b.writeEssence(&w)
+	return w.Bytes()
 }
 
-// PreviousStateHash of the last state update
-func (b *blockImpl) PreviousL1Commitment() *L1Commitment {
-	ph, err := findPrevStateCommitmentMutation(b.stateUpdate)
-	if err != nil {
-		panic(err)
+func (b *block) writeEssence(w io.Writer) {
+	w.Write(b.Mutations().Bytes())
+
+	w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil))
+	if b.PreviousL1Commitment() != nil {
+		w.Write(b.PreviousL1Commitment().Bytes())
 	}
-	return ph
 }
 
-func (b *blockImpl) SetApprovingOutputID(oid *iotago.UTXOInput) {
-	b.stateOutputID = oid
+func (b *block) Bytes() []byte {
+	var w bytes.Buffer
+	root := b.TrieRoot()
+	w.Write(root[:])
+	b.writeEssence(&w)
+	return w.Bytes()
 }
 
-func (b *blockImpl) EssenceBytes() []byte {
-	var buf bytes.Buffer
-	if err := b.writeEssence(&buf); err != nil {
-		panic("EssenceBytes")
-	}
-	return buf.Bytes()
+func (b *block) Hash() BlockHash {
+	return BlockHashFromData(b.essenceBytes())
 }
 
-func (b *blockImpl) Write(w io.Writer) error {
-	if err := b.writeEssence(w); err != nil {
-		return err
-	}
-	if err := b.writeOutputID(w); err != nil {
-		return err
-	}
-	return nil
+func (b *block) L1Commitment() *L1Commitment {
+	return newL1Commitment(b.TrieRoot(), b.Hash())
 }
 
-func (b *blockImpl) writeEssence(w io.Writer) error {
-	return b.stateUpdate.Write(w)
+func (b *block) GetHash() (ret BlockHash) {
+	r := blake2b.Sum256(b.essenceBytes())
+	copy(ret[:BlockHashSize], r[:BlockHashSize])
+	return
 }
 
-func (b *blockImpl) writeOutputID(w io.Writer) error {
-	if err := util.WriteBoolByte(w, b.stateOutputID != nil); err != nil {
-		return err
-	}
-	if b.stateOutputID == nil {
-		return nil
-	}
-	serialized, err := b.stateOutputID.Serialize(serializer.DeSeriModeNoValidation, nil)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(serialized)
-	return err
-}
-
-func (b *blockImpl) Read(r io.Reader) error {
-	if err := b.readEssence(r); err != nil {
-		return err
-	}
-	if err := b.readOutputID(r); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *blockImpl) readEssence(r io.Reader) error {
-	var err error
-	b.stateUpdate, err = newStateUpdateFromReader(r)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (b *blockImpl) readOutputID(r io.Reader) error {
-	var oidPresent bool
-	if err := util.ReadBoolByte(r, &oidPresent); err != nil {
-		return err
-	}
-	if !oidPresent {
-		return nil
-	}
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(r); err != nil {
-		return err
-	}
-	b.stateOutputID = &iotago.UTXOInput{}
-	_, err := b.stateOutputID.Deserialize(buf.Bytes(), serializer.DeSeriModeNoValidation, nil)
-	return err
+func (b *block) Equals(other Block) bool {
+	return b.GetHash().Equals(other.Hash())
 }

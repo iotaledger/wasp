@@ -2,7 +2,6 @@ package state
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -10,13 +9,11 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/chain/chainutil"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -91,7 +88,12 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	ret, err := chainutil.CallView(theChain, contractHname, functionHname, params)
+	// TODO should blockIndex be an optional parameter of this endpoint?
+	latestBlock, err := theChain.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
+	}
+	ret, err := chainutil.CallView(latestBlock, theChain, contractHname, functionHname, params)
 	if err != nil {
 		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -128,17 +130,15 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	var ret []byte
-	err = optimism.RetryOnStateInvalidated(func() error {
-		var err error
-		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
-		return err
-	})
+	state, err := theChain.GetStateReader().LatestState()
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, coreutil.ErrorStateInvalidated) {
-			return httperrors.Conflict(reason)
-		}
+		return httperrors.ServerError(reason)
+	}
+
+	ret, err := state.Get(kv.Key(key))
+	if err != nil {
+		reason := fmt.Sprintf("View call failed: %v", err)
 		return httperrors.ServerError(reason)
 	}
 

@@ -29,6 +29,7 @@ type Struct struct {
 }
 
 type Schema struct {
+	Author        string
 	ContractName  string
 	Copyright     string
 	PackageName   string
@@ -56,6 +57,10 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.Copyright = schemaDef.Copyright
 	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description.Val)
+	s.Author = strings.TrimSpace(schemaDef.Author.Val)
+	if s.Author == "" {
+		s.Author = "Eric Hop <eric@iota.org>"
+	}
 
 	err := s.compileEvents(schemaDef)
 	if err != nil {

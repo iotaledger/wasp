@@ -50,7 +50,6 @@ Upon completion the VM notifies the calling code through the callback.
 The _MustRunVMTaskAsync_ takes as a parameter [vm.VMTask](vmtask.go#L24):
 ```go
 type VMTask struct {
-	ACSSessionID             uint64
 	Processors               *processors.Cache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualStateAccess       state.VirtualStateAccess

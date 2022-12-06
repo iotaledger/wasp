@@ -18,6 +18,12 @@ pub struct ImmutableSoloTutorialState {
 }
 
 impl ImmutableSoloTutorialState {
+    pub fn new() -> ImmutableSoloTutorialState {
+        ImmutableSoloTutorialState {
+            proxy: state_proxy(),
+        }
+    }
+
     pub fn str(&self) -> ScImmutableString {
         ScImmutableString::new(self.proxy.root(STATE_STR))
     }
@@ -29,6 +35,11 @@ pub struct MutableSoloTutorialState {
 }
 
 impl MutableSoloTutorialState {
+    pub fn new() -> MutableSoloTutorialState {
+        MutableSoloTutorialState {
+            proxy: state_proxy(),
+        }
+    }
     pub fn as_immutable(&self) -> ImmutableSoloTutorialState {
         ImmutableSoloTutorialState { proxy: self.proxy.root("") }
     }

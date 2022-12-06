@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	StoreVersionConsensusJournal byte = 1
-	StoreVersionChainState       byte = 1
+	StoreVersionConsensusState byte = 1
+	StoreVersionChainState     byte = 1
 )
 
 type ChainStateKVStoreProvider func(chainID isc.ChainID) (kvstore.KVStore, error)
@@ -24,13 +24,13 @@ type Manager struct {
 	mutex sync.RWMutex
 
 	// options
-	engine                       hivedb.Engine
-	databasePathConsensusJournal string
-	databasesPathChainState      string
+	engine                     hivedb.Engine
+	databasePathConsensusState string
+	databasesPathChainState    string
 
 	// databases
-	databaseConsensusJournal *databaseWithHealthTracker
-	databasesChainState      map[isc.ChainID]*databaseWithHealthTracker
+	databaseConsensusState *databaseWithHealthTracker
+	databasesChainState    map[isc.ChainID]*databaseWithHealthTracker
 }
 
 func WithEngine(engine hivedb.Engine) options.Option[Manager] {
@@ -39,9 +39,9 @@ func WithEngine(engine hivedb.Engine) options.Option[Manager] {
 	}
 }
 
-func WithDatabasePathConsensusJournal(databasePathConsensusJournal string) options.Option[Manager] {
+func WithDatabasePathConsensusState(databasePathConsensusState string) options.Option[Manager] {
 	return func(d *Manager) {
-		d.databasePathConsensusJournal = databasePathConsensusJournal
+		d.databasePathConsensusState = databasePathConsensusState
 	}
 }
 
@@ -53,20 +53,20 @@ func WithDatabasesPathChainState(databasesPathChainState string) options.Option[
 
 func NewManager(chainRecordRegistryProvider registry.ChainRecordRegistryProvider, opts ...options.Option[Manager]) (*Manager, error) {
 	m := options.Apply(&Manager{
-		engine:                       hivedb.EngineAuto,
-		databasePathConsensusJournal: "waspdb/chains/consensus",
-		databasesPathChainState:      "waspdb/chains/data",
+		engine:                     hivedb.EngineAuto,
+		databasePathConsensusState: "waspdb/chains/consensus",
+		databasesPathChainState:    "waspdb/chains/data",
 
-		databaseConsensusJournal: nil,
-		databasesChainState:      make(map[isc.ChainID]*databaseWithHealthTracker),
+		databaseConsensusState: nil,
+		databasesChainState:    make(map[isc.ChainID]*databaseWithHealthTracker),
 	}, opts)
 
-	// load consensus journal database
-	databaseConsensusJournal, err := newDatabaseWithHealthTracker(m.databasePathConsensusJournal, m.engine, true, StoreVersionConsensusJournal, nil)
+	// load consensus state database
+	databaseConsensusState, err := newDatabaseWithHealthTracker(m.databasePathConsensusState, m.engine, true, StoreVersionConsensusState, nil)
 	if err != nil {
-		return nil, fmt.Errorf("consensus journal database initialization failed: %w", err)
+		return nil, fmt.Errorf("consensus internal state database initialization failed: %w", err)
 	}
-	m.databaseConsensusJournal = databaseConsensusJournal
+	m.databaseConsensusState = databaseConsensusState
 
 	// load all active chain state databases
 	var innerErr error
@@ -88,8 +88,8 @@ func NewManager(chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	return m, nil
 }
 
-func (m *Manager) ConsensusJournalKVStore() kvstore.KVStore {
-	return m.databaseConsensusJournal.database.KVStore()
+func (m *Manager) ConsensusStateKVStore() kvstore.KVStore {
+	return m.databaseConsensusState.database.KVStore()
 }
 
 func (m *Manager) ChainStateKVStore(chainID isc.ChainID) kvstore.KVStore {
@@ -137,7 +137,7 @@ func (m *Manager) GetOrCreateChainStateKVStore(chainID isc.ChainID) (kvstore.KVS
 func (m *Manager) FlushAndCloseStores() error {
 	var err error
 
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	// Flush all databases
 	for _, db := range databases {
@@ -159,7 +159,7 @@ func (m *Manager) FlushAndCloseStores() error {
 func (m *Manager) MarkStoresCorrupted() error {
 	var err error
 
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		if errTmp := db.storeHealthTracker.MarkCorrupted(); errTmp != nil {
@@ -173,7 +173,7 @@ func (m *Manager) MarkStoresCorrupted() error {
 func (m *Manager) MarkStoresTainted() error {
 	var err error
 
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		if errTmp := db.storeHealthTracker.MarkTainted(); errTmp != nil {
@@ -187,7 +187,7 @@ func (m *Manager) MarkStoresTainted() error {
 func (m *Manager) MarkStoresHealthy() error {
 	var err error
 
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		if errTmp := db.storeHealthTracker.MarkHealthy(); errTmp != nil {
@@ -199,7 +199,7 @@ func (m *Manager) MarkStoresHealthy() error {
 }
 
 func (m *Manager) AreStoresCorrupted() (bool, error) {
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		corrupted, err := db.storeHealthTracker.IsCorrupted()
@@ -215,7 +215,7 @@ func (m *Manager) AreStoresCorrupted() (bool, error) {
 }
 
 func (m *Manager) AreStoresTainted() (bool, error) {
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		tainted, err := db.storeHealthTracker.IsTainted()
@@ -231,7 +231,7 @@ func (m *Manager) AreStoresTainted() (bool, error) {
 }
 
 func (m *Manager) CheckCorrectStoresVersion() (bool, error) {
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	for _, db := range databases {
 		correct, err := db.storeHealthTracker.CheckCorrectStoreVersion()
@@ -248,7 +248,7 @@ func (m *Manager) CheckCorrectStoresVersion() (bool, error) {
 
 // UpdateStoresVersion tries to migrate the existing data to the new store version.
 func (m *Manager) UpdateStoresVersion() (bool, error) {
-	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusJournal)
+	databases := append(lo.Values(m.databasesChainState), m.databaseConsensusState)
 
 	allCorrect := true
 	for _, db := range databases {

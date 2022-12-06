@@ -10,7 +10,7 @@ type nodeConnectionMessagesMetricsImpl struct {
 	outPublishGovernanceTransactionMetrics NodeConnectionMessageMetrics[*iotago.Transaction]
 	outPullLatestOutputMetrics             NodeConnectionMessageMetrics[interface{}]
 	outPullTxInclusionStateMetrics         NodeConnectionMessageMetrics[iotago.TransactionID]
-	outPullOutputByIDMetrics               NodeConnectionMessageMetrics[*iotago.UTXOInput]
+	outPullOutputByIDMetrics               NodeConnectionMessageMetrics[iotago.OutputID]
 
 	inStateOutputMetrics      NodeConnectionMessageMetrics[*InStateOutput]
 	inAliasOutputMetrics      NodeConnectionMessageMetrics[*iotago.AliasOutput]
@@ -27,7 +27,7 @@ func createMetricsMessage[T any](ncmi *nodeConnectionMetricsImpl, chainID *isc.C
 		return simpleMessageMetrics
 	}
 
-	return newNodeConnectionMessageRelatedMetrics[T](simpleMessageMetrics, makeRelatedMetricsFun())
+	return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())
 }
 
 func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID) NodeConnectionMessagesMetrics {
@@ -44,7 +44,7 @@ func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *
 		outPullTxInclusionStateMetrics: createMetricsMessage(ncmi, chainID, "out_pull_tx_inclusion_state", func() NodeConnectionMessageMetrics[iotago.TransactionID] {
 			return ncmi.GetOutPullTxInclusionState()
 		}),
-		outPullOutputByIDMetrics: createMetricsMessage(ncmi, chainID, "out_pull_output_by_id", func() NodeConnectionMessageMetrics[*iotago.UTXOInput] {
+		outPullOutputByIDMetrics: createMetricsMessage(ncmi, chainID, "out_pull_output_by_id", func() NodeConnectionMessageMetrics[iotago.OutputID] {
 			return ncmi.GetOutPullOutputByID()
 		}),
 		inStateOutputMetrics: createMetricsMessage(ncmi, chainID, "in_state_output", func() NodeConnectionMessageMetrics[*InStateOutput] {
@@ -81,7 +81,7 @@ func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullTxInclusionState() No
 	return ncmmiT.outPullTxInclusionStateMetrics
 }
 
-func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullOutputByID() NodeConnectionMessageMetrics[*iotago.UTXOInput] {
+func (ncmmiT *nodeConnectionMessagesMetricsImpl) GetOutPullOutputByID() NodeConnectionMessageMetrics[iotago.OutputID] {
 	return ncmmiT.outPullOutputByIDMetrics
 }
 

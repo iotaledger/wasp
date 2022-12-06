@@ -43,11 +43,10 @@ func TestAckHandler(t *testing.T) {
 			}
 			break
 		}
-		timeTicks := []Message{}
 		timestamp := time.Now()
 		for _, nid := range nodeIDs {
-			timeTicks = append(timeTicks, nodesAH[nid].MakeTickMsg(timestamp))
+			tc.WithInput(nid, nodesAH[nid].MakeTickInput(timestamp))
 		}
-		tc.WithMessages(timeTicks).RunAll()
+		tc.RunAll()
 	}
 }

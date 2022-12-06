@@ -153,6 +153,7 @@ func TestLowN(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	for n := uint16(1); n < 4; n++ {
+		t.Logf("------------------> running DKG with %v", n)
 		timeout := 100 * time.Second
 		threshold := n
 		peerCount := n
