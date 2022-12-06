@@ -6,6 +6,7 @@ import {concat, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./
 import {uint16FromBytes, uint16FromString, uint16ToBytes, uint16ToString} from "./scuint16";
 import {Proxy} from "./proxy";
 import {bytesCompare} from "./scbytes";
+import {hashFromBytes, hashToBytes} from "./schash";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -59,17 +60,11 @@ export function requestIDToBytes(value: ScRequestID): Uint8Array {
 }
 
 export function requestIDFromString(value: string): ScRequestID {
-    let elts = value.split(RequestIDSeparator);
-    let index = uint16ToBytes(uint16FromString(elts[0]));
-    let buf = hexDecode(elts[1]);
-    return requestIDFromBytes(concat(buf, index));
+    return requestIDFromBytes(hexDecode(value));
 }
 
 export function requestIDToString(value: ScRequestID): string {
-    let reqID = requestIDToBytes(value);
-    let txID = hexEncode(reqID.slice(0, ScRequestIDLength - 2));
-    let index = uint16FromBytes(reqID.slice(ScRequestIDLength - 2));
-    return uint16ToString(index) + RequestIDSeparator + txID;
+    return hexEncode(requestIDToBytes(value));
 }
 
 function requestIDFromBytesUnchecked(buf: Uint8Array): ScRequestID {

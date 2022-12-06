@@ -286,11 +286,11 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 }
 
 // Single node setting.
-// 1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
-// 2. A batch of 8 consecutive blocks is branched from origin commitment. Each of
-//	  the blocks is sent to the node.
-// 3. A common ancestor (mempool) request is sent for the branch as a new and
-//	  and original batch as old.
+//  1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
+//  2. A batch of 8 consecutive blocks is branched from origin commitment. Each of
+//     the blocks is sent to the node.
+//  3. A common ancestor (mempool) request is sent for the branch as a new and
+//     and original batch as old.
 func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	batchSize := 10
 	branchSize := 8
@@ -319,19 +319,19 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 }
 
 // 10 nodes setting.
-// 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
-//	  random node.
-// 2. Every fith block is approved in correct order. Approvals are sent to every
-//	  node. In between approvals, 5 timer events are fired for block sharing
-//	  between the nodes. NOTE: for a node to obtain a block, present in 1 other
-//	  node, at least 1 and at most 3 iterations are needed, since one iteration
-//	  requests block from 5 other random nodes. First iteration is started upon
-//	  obtaining first request to receive block. Thus for one block to arrive at
-//    least 0 and at most 2 timer events are needed. Therefor at least 0 and at
-//	  most 10 timer events are needed for 5 blocks. 5 (timer events) is a number
-//	  in the middle of those estimates.
-// 3. All nodes are checked, if their latest state has changed in store. Timer
-//    events for block sharing are fired in between the checks.
+//  1. A batch of 20 consecutive blocks is generated, each of them is sent to the
+//     random node.
+//  2. Every fith block is approved in correct order. Approvals are sent to every
+//     node. In between approvals, 5 timer events are fired for block sharing
+//     between the nodes. NOTE: for a node to obtain a block, present in 1 other
+//     node, at least 1 and at most 3 iterations are needed, since one iteration
+//     requests block from 5 other random nodes. First iteration is started upon
+//     obtaining first request to receive block. Thus for one block to arrive at
+//     least 0 and at most 2 timer events are needed. Therefor at least 0 and at
+//     most 10 timer events are needed for 5 blocks. 5 (timer events) is a number
+//     in the middle of those estimates.
+//  3. All nodes are checked, if their latest state has changed in store. Timer
+//     events for block sharing are fired in between the checks.
 func TestLatestStateIsStored(t *testing.T) {
 	nodeCount := 15
 	batchSize := 20

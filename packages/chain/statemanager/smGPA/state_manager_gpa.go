@@ -311,7 +311,7 @@ func (smT *stateManagerGPA) handleMempoolStateRequest(input *smInputs.MempoolSta
 		newBlockRequest          *blockRequestImpl
 		oldBlockRequestCompleted bool
 		newBlockRequestCompleted bool
-		obtainNewStateFun             obtainStateFun
+		obtainNewStateFun        obtainStateFun
 	}{
 		oldBlockRequestCompleted: false,
 		newBlockRequestCompleted: false,
@@ -498,8 +498,8 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 			}
 			oldLen := len(currrentRequestsWC.blockRequests)
 			currrentRequestsWC.blockRequests = append(currrentRequestsWC.blockRequests, requests...)
-				smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s is missing, %v requests were waiting for it before",
-					initCommitment, len(currrentRequestsWC.blockRequests), commitment, oldLen)
+			smT.log.Debugf("Tracing block %s chain completed: %v requests waiting for block %s is missing, %v requests were waiting for it before",
+				initCommitment, len(currrentRequestsWC.blockRequests), commitment, oldLen)
 			return nil, nil // No messages to send
 		}
 		for _, request := range requests {

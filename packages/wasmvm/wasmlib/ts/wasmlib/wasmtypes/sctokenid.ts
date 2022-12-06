@@ -57,7 +57,7 @@ export function tokenIDFromString(value: string): ScTokenID {
 }
 
 export function tokenIDToString(value: ScTokenID): string {
-    return hexEncode(tokenIDToBytes(value));
+    return hexEncode(value.id);
 }
 
 function tokenIDFromBytesUnchecked(buf: Uint8Array): ScTokenID {
