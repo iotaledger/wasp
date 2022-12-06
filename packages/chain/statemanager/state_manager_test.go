@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
-	//"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	//"github.com/iotaledger/wasp/packages/gpa"
 	//"github.com/iotaledger/wasp/packages/isc"
@@ -27,10 +27,11 @@ func TestCruelWorld(t *testing.T) {
 	nodeCount := 15
 	committeeSize := 5
 	blockCount := 50
-	minWaitToProduceBlock := 2 * time.Millisecond
+	minWaitToProduceBlock := 5 * time.Millisecond
 	maxMinWaitsToProduceBlock := 10
-	approveOutputPeriod := 5 * time.Millisecond
-	timerTickPeriod := 10 * time.Millisecond
+	approveOutputPeriod := 10 * time.Millisecond
+	getBlockPeriod := 35 * time.Millisecond
+	timerTickPeriod := 20 * time.Millisecond
 
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -47,8 +48,11 @@ func TestCruelWorld(t *testing.T) {
 	bf := smGPAUtils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
+	timers := smGPA.NewStateManagerTimers()
+	timers.StateManagerTimerTickPeriod = timerTickPeriod
+	timers.StateManagerGetBlockRetry = getBlockPeriod
 	for i := range sms {
-		t.Logf("Creating state manager for node %s", peerNetIDs[i])
+		t.Logf("Creating %v-th state manager for node %s", i, peerNetIDs[i])
 		var err error
 		stores[i] = state.InitChainStore(mapdb.NewMapDB())
 		sms[i], err = New(
@@ -60,7 +64,7 @@ func TestCruelWorld(t *testing.T) {
 			smGPAUtils.NewMockedBlockWAL(),
 			stores[i],
 			log.Named(peerNetIDs[i]),
-			timerTickPeriod,
+			timers,
 		)
 		require.NoError(t, err)
 	}
@@ -120,17 +124,17 @@ func TestCruelWorld(t *testing.T) {
 		requireTrueForSomeTime(t, sendBlockResult, 5*time.Second)
 	}
 	requireTrueForSomeTime(t, approveOutputResult, 5*time.Second)
-	time.Sleep(100 * time.Second)
+	time.Sleep(15 * time.Second)
 	expectedIndex := blockCount
 	expectedCommitment := blocks[blockCount-1].L1Commitment()
 	for i := 0; i < nodeCount; i++ {
 		t.Logf("Checking state of node %v", i)
 		actualIndex, err := stores[i].LatestBlockIndex()
 		require.NoError(t, err)
-		require.Equal(t, expectedIndex, actualIndex)
+		require.Equal(t, uint32(expectedIndex), actualIndex)
 		actualCommitment, err := stores[i].LatestBlock()
 		require.NoError(t, err)
-		require.Equal(t, expectedCommitment, actualCommitment)
+		require.True(t, expectedCommitment.Equals(actualCommitment.L1Commitment()))
 	}
 }
 

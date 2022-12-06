@@ -42,6 +42,7 @@ type stateManager struct {
 	nodePubKeysPipe pipe.Pipe
 	net             peering.NetworkProvider
 	netPeeringID    peering.PeeringID
+	timers          smGPA.StateManagerTimers
 	ctx             context.Context
 	cleanupFun      func()
 }
@@ -66,12 +67,18 @@ func New(
 	wal smGPAUtils.BlockWAL,
 	store state.Store,
 	log *logger.Logger,
-	timerTickTimeOpt ...time.Duration,
+	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
 	smLog := log.Named("sm")
 	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), smLog)
+	var timers smGPA.StateManagerTimers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = smGPA.NewStateManagerTimers()
+	}
 
-	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, smLog)
+	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, smLog, timers)
 	if err != nil {
 		smLog.Errorf("Failed to create state manager GPA: %v", err)
 		return nil, err
@@ -86,6 +93,7 @@ func New(
 		nodePubKeysPipe: pipe.NewDefaultInfinitePipe(),
 		net:             net,
 		netPeeringID:    peering.PeeringIDFromBytes(hashing.HashDataBlake2b(chainID.Bytes(), []byte("STM")).Bytes()),
+		timers:          timers,
 		ctx:             ctx,
 	}
 	result.handleNodePublicKeys(peerPubKeys)
@@ -104,13 +112,7 @@ func New(
 		result.net.Detach(attachID)
 	}
 
-	var timerTickTime time.Duration
-	if len(timerTickTimeOpt) > 0 {
-		timerTickTime = timerTickTimeOpt[0]
-	} else {
-		timerTickTime = constDefaultTimerTickTime
-	}
-	go result.run(timerTickTime)
+	go result.run()
 	return result, nil
 }
 
@@ -179,13 +181,13 @@ func (smT *stateManager) addInput(input gpa.Input) {
 	smT.inputPipe.In() <- input
 }
 
-func (smT *stateManager) run(timerTickTime time.Duration) {
+func (smT *stateManager) run() {
 	defer smT.cleanupFun()
 	ctxCloseCh := smT.ctx.Done()
 	inputPipeCh := smT.inputPipe.Out()
 	messagePipeCh := smT.messagePipe.Out()
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
-	timerTickCh := time.After(timerTickTime)
+	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
 	for {
 		select {
 		case input, ok := <-inputPipeCh:
@@ -209,7 +211,7 @@ func (smT *stateManager) run(timerTickTime time.Duration) {
 		case now, ok := <-timerTickCh:
 			if ok {
 				smT.handleTimerTick(now)
-				timerTickCh = time.After(timerTickTime)
+				timerTickCh = smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
 			} else {
 				timerTickCh = nil
 			}

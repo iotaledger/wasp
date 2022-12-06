@@ -51,15 +51,9 @@ const (
 	numberOfNodesToRequestBlockFromConst = 5
 )
 
-func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store state.Store, log *logger.Logger, timersOpt ...StateManagerTimers) (gpa.GPA, error) {
+func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store state.Store, log *logger.Logger, timers StateManagerTimers) (gpa.GPA, error) {
 	var err error
-	var timers StateManagerTimers
 	smLog := log.Named("gpa")
-	if len(timersOpt) > 0 {
-		timers = timersOpt[0]
-	} else {
-		timers = NewStateManagerTimers()
-	}
 	blockCache, err := smGPAUtils.NewBlockCache(timers.TimeProvider, wal, smLog)
 	if err != nil {
 		smLog.Errorf("Error creating block cache: %v", err)
