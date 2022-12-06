@@ -20,6 +20,11 @@ type MockChain struct{}
 
 var _ chain.Chain = &MockChain{}
 
+// LatestAliasOutput implements chain.Chain
+func (*MockChain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *isc.AliasOutputWithID) {
+	panic("unimplemented")
+}
+
 // GetCandidateNodes implements chain.Chain
 func (*MockChain) GetCandidateNodes() []*governance.AccessNodeInfo {
 	panic("unimplemented")
