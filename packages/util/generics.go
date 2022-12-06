@@ -25,3 +25,15 @@ func CloneMap[K comparable, T Cloneable[T]](base map[K]T) map[K]T {
 
 	return cloned
 }
+
+// KeyOnlyBy transforms a slice or an array of structs to a map based on a pivot callback.
+func KeyOnlyBy[K comparable, V any](collection []V, iteratee func(V) K) map[K]struct{} {
+	result := make(map[K]struct{}, len(collection))
+
+	for _, v := range collection {
+		k := iteratee(v)
+		result[k] = struct{}{}
+	}
+
+	return result
+}

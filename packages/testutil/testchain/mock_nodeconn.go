@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -36,15 +35,49 @@ func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logg
 		stopChannel:              make(chan bool),
 		attachMilestonesClosures: make(map[isc.ChainID]*events.Closure),
 	}
-	result.SetPublishStateTransactionAllowed(true)
-	result.SetPublishGovernanceTransactionAllowed(true)
-	result.SetPullLatestOutputAllowed(true)
-	result.SetPullTxInclusionStateAllowed(true)
-	result.SetPullOutputByIDAllowed(true)
+	//result.SetPublishStateTransactionAllowed(true)
+	//result.SetPublishGovernanceTransactionAllowed(true)
+	//result.SetPullLatestOutputAllowed(true)
+	//result.SetPullTxInclusionStateAllowed(true)
+	//result.SetPullOutputByIDAllowed(true)
 	result.log.Debugf("Nodeconn created")
 	return result
 }
 
+// Publishing can be canceled via the context.
+// The result must be returned via the callback, unless ctx is canceled first.
+// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
+func (mncT *MockedNodeConn) PublishTX(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	tx *iotago.Transaction,
+	callback chain.TxPostHandler,
+) error {
+	if mncT.publishTransactionAllowedFun(chainID, tx) {
+		return mncT.ledgers.GetLedger(chainID).PublishTransaction(tx)
+	}
+	return fmt.Errorf("Publishing state transaction for chain %s is not allowed", chainID)
+}
+
+func (mncT *MockedNodeConn) AttachChain(
+	ctx context.Context,
+	chainID *isc.ChainID,
+	recvRequestCB chain.RequestOutputHandler,
+	recvAliasOutput chain.AliasOutputHandler,
+	recvMilestone chain.MilestoneHandler,
+) {
+	panic("IMPLEMENT: (mncT *MockedNodeConn) AttachChain") // TODO: Implement.
+}
+
+func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	return nodeconnmetrics.NewEmptyNodeConnectionMetrics()
+}
+
+func (mncT *MockedNodeConn) Run(ctx context.Context) {
+	panic("should be unused in test")
+}
+
+/*
 func (mncT *MockedNodeConn) ID() string {
 	return mncT.id
 }
@@ -64,13 +97,6 @@ func (mncT *MockedNodeConn) UnregisterChain(chainID *isc.ChainID) {
 	mncT.DetachMilestones(mncT.attachMilestonesClosures[*chainID])
 }
 
-func (mncT *MockedNodeConn) PublishTransaction(chainID *isc.ChainID, tx *iotago.Transaction) error {
-	if mncT.publishTransactionAllowedFun(chainID, tx) {
-		return mncT.ledgers.GetLedger(chainID).PublishTransaction(tx)
-	}
-	return fmt.Errorf("Publishing state transaction for chain %s is not allowed", chainID)
-}
-
 func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	if mncT.pullLatestOutputAllowed {
 		mncT.ledgers.GetLedger(chainID).PullLatestOutput(mncT.id)
@@ -85,16 +111,6 @@ func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, outputID i
 	} else {
 		mncT.log.Errorf("Pull output by ID %s for address %s is not allowed", outputID, chainID)
 	}
-}
-
-func (mncT *MockedNodeConn) SetMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) {
-}
-
-func (mncT *MockedNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return nodeconnmetrics.NewEmptyNodeConnectionMetrics()
-}
-
-func (mncT *MockedNodeConn) Close() {
 }
 
 func (mncT *MockedNodeConn) SetPublishStateTransactionAllowed(flag bool) {
@@ -140,22 +156,4 @@ func (mncT *MockedNodeConn) AttachMilestones(handler func(*nodebridge.Milestone)
 func (mncT *MockedNodeConn) DetachMilestones(attachID *events.Closure) {
 	mncT.ledgers.DetachMilestones(attachID)
 }
-
-func (mncT *MockedNodeConn) PublishTX(
-	ctx context.Context,
-	chainID *isc.ChainID,
-	tx *iotago.Transaction,
-	callback chain.TxPostHandler,
-) {
-	panic("IMPLEMENT: (mncT *MockedNodeConn) PublishTX") // TODO: Implement.
-}
-
-func (mncT *MockedNodeConn) AttachChain(
-	ctx context.Context,
-	chainID *isc.ChainID,
-	recvRequestCB chain.RequestOutputHandler,
-	recvAliasOutput chain.AliasOutputHandler,
-	recvMilestone chain.MilestoneHandler,
-) {
-	panic("IMPLEMENT: (mncT *MockedNodeConn) AttachChain") // TODO: Implement.
-}
+*/

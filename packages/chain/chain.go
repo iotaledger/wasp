@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"context"
 	"time"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -18,6 +19,7 @@ import (
 type NodeConnection interface {
 	ChainNodeConn
 	GetMetrics() nodeconnmetrics.NodeConnectionMetrics
+	Run(ctx context.Context)
 }
 
 type ChainCore interface {
