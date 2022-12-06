@@ -25,9 +25,9 @@ import (
 )
 
 const (
-	SoloDebug        = false
-	SoloHostTracing  = false
-	SoloStackTracing = false
+	SoloDebug        = true
+	SoloHostTracing  = true
+	SoloStackTracing = true
 )
 
 var (
