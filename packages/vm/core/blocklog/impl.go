@@ -132,10 +132,10 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	seen, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
+	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
 	ctx.RequireNoError(err)
 	ret := dict.New()
-	if seen {
+	if requestReceipt != nil {
 		ret.Set(ParamRequestProcessed, codec.EncodeBool(true))
 	}
 	return ret

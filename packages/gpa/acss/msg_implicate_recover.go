@@ -62,7 +62,7 @@ func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if t != msgTypeImplicateRecover {
-		return xerrors.Errorf("unexpected msgType: %v", t)
+		return xerrors.Errorf("unexpected msgType: %v in acss.msgImplicateRecover", t)
 	}
 	k, err := util.ReadByte(r)
 	if err != nil {

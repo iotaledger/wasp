@@ -11,15 +11,13 @@ import (
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/chain/chainutil"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/dkg"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/evm"
 	"github.com/iotaledger/wasp/packages/webapi/info"
@@ -40,11 +38,9 @@ func Init(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
-	consensusJournalRegistryProvider journal.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
-	metrics *metricspkg.Metrics,
-	w *wal.WAL,
+	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 	apiCacheTTL time.Duration,
@@ -84,12 +80,10 @@ func Init(
 		chainRecordRegistryProvider,
 		dkShareRegistryProvider,
 		nodeIdentityProvider,
-		consensusJournalRegistryProvider,
 		chainsProvider,
 		nodeProvider,
 		shutdown,
-		metrics,
-		w,
+		nodeConnectionMetrics,
 		authConfig,
 		nodeOwnerAddresses,
 	)

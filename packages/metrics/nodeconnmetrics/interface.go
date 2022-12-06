@@ -3,6 +3,8 @@ package nodeconnmetrics
 import (
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -41,7 +43,7 @@ type NodeConnectionMessagesMetrics interface {
 	GetOutPublishGovernanceTransaction() NodeConnectionMessageMetrics[*iotago.Transaction]
 	GetOutPullLatestOutput() NodeConnectionMessageMetrics[interface{}]
 	GetOutPullTxInclusionState() NodeConnectionMessageMetrics[iotago.TransactionID]
-	GetOutPullOutputByID() NodeConnectionMessageMetrics[*iotago.UTXOInput]
+	GetOutPullOutputByID() NodeConnectionMessageMetrics[iotago.OutputID]
 	GetInStateOutput() NodeConnectionMessageMetrics[*InStateOutput]
 	GetInAliasOutput() NodeConnectionMessageMetrics[*iotago.AliasOutput]
 	GetInOutput() NodeConnectionMessageMetrics[*InOutput]
@@ -55,6 +57,6 @@ type NodeConnectionMetrics interface {
 	SetRegistered(*isc.ChainID)
 	SetUnregistered(*isc.ChainID)
 	GetRegistered() []*isc.ChainID
-	RegisterMetrics()
+	Register(registry *prometheus.Registry)
 	NewMessagesMetrics(*isc.ChainID) NodeConnectionMessagesMetrics
 }

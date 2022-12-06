@@ -12,9 +12,6 @@ import (
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/models/trie_blake2b"
-	"github.com/iotaledger/trie.go/trie"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -22,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -441,11 +439,21 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.CallViewByHname(isc.Hn(scName), isc.Hn(funName), params...)
+	return ch.CallViewAtBlockIndex(ch.LatestBlockIndex(), scName, funName, params...)
 }
 
-func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewAtBlockIndex(blockIndex uint32, scName, funName string, params ...interface{}) (dict.Dict, error) {
+	ch.Log().Debugf("callView: %s::%s", scName, funName)
+	return ch.CallViewByHnameAtBlockIndex(blockIndex, isc.Hn(scName), isc.Hn(funName), params...)
+}
+
+func (ch *Chain) CallViewByHname(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+	i, err := ch.Store.LatestBlockIndex()
+	require.NoError(ch.Env.T, err)
+	return ch.CallViewByHnameAtBlockIndex(i, hContract, hFunction, params...)
+}
+
+func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	if ch.bypassStardustVM {
 		return nil, xerrors.New("Solo: StardustVM context expected")
 	}
@@ -456,34 +464,31 @@ func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...inter
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, blockIndex)
 	return vmctx.CallViewExternal(hContract, hFunction, p)
 }
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
-func (ch *Chain) GetMerkleProofRaw(key []byte) *trie_blake2b.Proof {
+func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	ch.Log().Debugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
 	return ret
 }
 
 // GetBlockProof returns Merkle proof of the key in the state
-func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_blake2b.Proof, error) {
+func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.MerkleProof, error) {
 	ch.Log().Debugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	biBin, retProof, err := vmctx.GetBlockProof(blockIndex)
 	if err != nil {
 		return nil, nil, err
@@ -497,7 +502,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie_bl
 }
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
-func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie_blake2b.Proof {
+func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof {
 	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
 }
 
@@ -506,27 +511,24 @@ func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 	anchorOutput := ch.GetAnchorOutput()
 	ret, err := state.L1CommitmentFromAnchorOutput(anchorOutput.GetAliasOutput())
 	require.NoError(ch.Env.T, err)
-	return &ret
+	return ret
 }
 
-// GetRootCommitment calculates root commitment from state
-func (ch *Chain) GetRootCommitment() trie.VCommitment {
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
-	ret, err := vmctx.GetRootCommitment()
+// GetRootCommitment returns the root commitment of the latest state index
+func (ch *Chain) GetRootCommitment() trie.Hash {
+	block, err := ch.Store.LatestBlock()
 	require.NoError(ch.Env.T, err)
-	return ret
+	return block.TrieRoot()
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	vmctx := viewcontext.New(ch)
-	ch.StateReader.SetBaseline()
+	vmctx := viewcontext.New(ch, ch.LatestBlockIndex())
 	return vmctx.GetContractStateCommitment(hn)
 }
 
 // WaitUntil waits until the condition specified by the given predicate yields true
-func (ch *Chain) WaitUntil(p func(mempool.MempoolInfo) bool, maxWait ...time.Duration) bool {
+func (ch *Chain) WaitUntil(p func(MempoolInfo) bool, maxWait ...time.Duration) bool {
 	maxw := 10 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
@@ -553,24 +555,28 @@ func (ch *Chain) WaitUntilMempoolIsEmpty(timeout ...time.Duration) bool {
 	if len(timeout) > 0 {
 		realTimeout = timeout[0]
 	}
-	startTime := time.Now()
-	ret := ch.mempool.WaitInBufferEmpty(timeout...)
-	if !ret {
-		return false
+
+	deadline := time.Now().Add(realTimeout)
+	for {
+		if ch.mempool.Info().TotalPool == 0 {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return false
+		}
 	}
-	remainingTimeout := realTimeout - time.Since(startTime)
-	return ch.mempool.WaitPoolEmpty(remainingTimeout)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
 // requests in the mempool of the chain both become equal to the specified number
 func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
-	return ch.WaitUntil(func(mstats mempool.MempoolInfo) bool {
-		return mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq
+	return ch.WaitUntil(func(mstats MempoolInfo) bool {
+		return mstats.OutPoolCounter == numReq
 	}, maxWait...)
 }
 
 // MempoolInfo returns stats about the chain mempool
-func (ch *Chain) MempoolInfo() mempool.MempoolInfo {
-	return ch.mempool.Info(ch.Env.GlobalTime())
+func (ch *Chain) MempoolInfo() MempoolInfo {
+	return ch.mempool.Info()
 }

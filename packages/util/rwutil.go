@@ -480,22 +480,21 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	return WriteBytes16(w, bin)
 }
 
-func ReadOutputID(r io.Reader) (*iotago.UTXOInput, error) {
-	var realOid iotago.OutputID
-	n, err := r.Read(realOid[:])
+func ReadOutputID(r io.Reader) (iotago.OutputID, error) {
+	var outputID iotago.OutputID
+	n, err := r.Read(outputID[:])
 	if err != nil {
-		return nil, err
+		return iotago.OutputID{}, err
 	}
 	if n != iotago.OutputIDLength {
-		return nil, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
+		return iotago.OutputID{}, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
 			n, iotago.OutputIDLength)
 	}
-	return realOid.UTXOInput(), nil
+	return outputID, nil
 }
 
-func WriteOutputID(w io.Writer, oid *iotago.UTXOInput) error {
-	realOid := oid.ID()
-	n, err := w.Write(realOid[:])
+func WriteOutputID(w io.Writer, outputID iotago.OutputID) error {
+	n, err := w.Write(outputID[:])
 	if n != iotago.OutputIDLength {
 		return fmt.Errorf("error while writing output ID: written %v bytes, expected %v bytes",
 			n, iotago.OutputIDLength)

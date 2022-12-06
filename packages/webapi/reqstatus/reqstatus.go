@@ -8,28 +8,31 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type reqstatusWebAPI struct {
-	getChain func(chainID *isc.ChainID) chain.ChainRequests
+	getChain               func(chainID *isc.ChainID) chain.Chain
+	getReceiptFromBlocklog func(ch chain.Chain, reqID isc.RequestID) (*blocklog.RequestReceipt, error)
+	resolveReceipt         func(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt) error
 }
 
 // TODO  add examples for receipt json
 func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
-	r := &reqstatusWebAPI{func(chainID *isc.ChainID) chain.ChainRequests {
-		return getChain(chainID)
-	}}
+	r := &reqstatusWebAPI{
+		getChain:               getChain,
+		getReceiptFromBlocklog: getReceiptFromBlocklog,
+		resolveReceipt:         resolveReceipt,
+	}
 
 	server.GET(routes.RequestReceipt(":chainID", ":reqID"), r.handleRequestReceipt).
 		SetSummary("Get the processing status of a given request in the node").
@@ -50,15 +53,14 @@ func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	receiptResponse, err := getISCReceipt(ch, reqID)
+	rec, err := r.getReceiptFromBlocklog(ch, reqID)
 	if err != nil {
-		return httperrors.ServerError(err.Error())
+		return err
 	}
-	return c.JSON(http.StatusOK, receiptResponse)
+	return r.resolveReceipt(c, ch, rec)
 }
 
-const WaitRequestProcessedDefaultTimeout = 30 * time.Second
+const waitRequestProcessedDefaultTimeout = 30 * time.Second
 
 func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	ch, reqID, err := r.parseParams(c)
@@ -67,57 +69,18 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 
 	req := model.WaitRequestProcessedParams{
-		Timeout: WaitRequestProcessedDefaultTimeout,
+		Timeout: waitRequestProcessedDefaultTimeout,
 	}
 	if c.Request().Header.Get("Content-Type") == "application/json" {
 		if err := c.Bind(&req); err != nil {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-
-	tryGetReceipt := func() (bool, error) {
-		receiptResponse, err := getISCReceipt(ch, reqID)
-		if err != nil {
-			return receiptResponse != nil, httperrors.ServerError(err.Error())
-		}
-		if receiptResponse != nil {
-			return true, c.JSON(http.StatusOK, receiptResponse)
-		}
-		return false, nil
-	}
-
-	found, ret := tryGetReceipt()
-	if found {
-		return ret
-	}
-
-	// subscribe to event
-	requestProcessed := make(chan bool)
-	attachID := ch.AttachToRequestProcessed(func(rid isc.RequestID) {
-		if rid == reqID {
-			requestProcessed <- true
-		}
-	})
-	defer ch.DetachFromRequestProcessed(attachID)
-
-	select {
-	case <-requestProcessed:
-		found, ret := tryGetReceipt()
-		if found {
-			return ret
-		}
-		return httperrors.ServerError("Unexpected error, receipt not found after request was processed")
-	case <-time.After(req.Timeout):
-		// check again, in case event was triggered just before we subscribed
-		found, ret := tryGetReceipt()
-		if found {
-			return ret
-		}
-		return httperrors.Timeout("Timeout while waiting for request to be processed")
-	}
+	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID)
+	return r.resolveReceipt(c, ch, rec)
 }
 
-func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, isc.RequestID, error) {
+func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {
 	chainID, err := isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
 		return nil, isc.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
@@ -133,39 +96,42 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, isc.
 	return theChain, reqID, nil
 }
 
-func doGetISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (*model.RequestReceiptResponse, error) {
-	receipt, err := ch.GetRequestReceipt(reqID)
+func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
+	blockIndex, err := ch.GetStateReader().LatestBlockIndex()
 	if err != nil {
-		return nil, xerrors.Errorf("error getting request receipt: %s", err)
+		return nil, httperrors.ServerError("error getting latest chain block index")
 	}
-	if receipt == nil {
-		return nil, nil
-	}
-
-	resolvedError, err := ch.ResolveError(receipt.Error)
+	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
+		dict.Dict{
+			blocklog.ParamRequestID: reqID.Bytes(),
+		})
 	if err != nil {
-		return nil, xerrors.Errorf("error resolving the receipt error: %s", err)
+		return nil, httperrors.ServerError("error calling get receipt view")
 	}
-	iscReceipt := receipt.ToISCReceipt(resolvedError)
-
-	receiptJSON, err := json.Marshal(iscReceipt)
+	binRec, err := ret.Get(blocklog.ParamRequestRecord)
 	if err != nil {
-		return nil, xerrors.Errorf("error marshaling receipt into JSON: %s", err)
+		return nil, httperrors.ServerError("error parsing getReceipt view call result")
 	}
-	return &model.RequestReceiptResponse{
-		Receipt: string(receiptJSON),
-	}, nil
+	rec, err := blocklog.RequestReceiptFromBytes(binRec)
+	if err != nil {
+		return nil, httperrors.ServerError("error decoding receipt from getReceipt view call result")
+	}
+	return rec, nil
 }
 
-func getISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
-	err = optimism.RetryOnStateInvalidated(func() (err error) {
-		panicCatchErr := panicutil.CatchPanicReturnError(func() {
-			ret, err = doGetISCReceipt(ch, reqID)
-		}, coreutil.ErrorStateInvalidated)
-		if err != nil {
-			return err
-		}
-		return panicCatchErr
-	})
-	return ret, err
+func resolveReceipt(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt) error {
+	resolvedReceiptErr, err := chainutil.ResolveError(ch, rec.Error)
+	if err != nil {
+		return httperrors.ServerError("error resolving receipt error")
+	}
+	iscReceipt := rec.ToISCReceipt(resolvedReceiptErr)
+	receiptJSON, err := json.Marshal(iscReceipt)
+	if err != nil {
+		return httperrors.ServerError("error marshaling receipt into JSON")
+	}
+	return c.JSON(http.StatusOK,
+		&model.RequestReceiptResponse{
+			Receipt: string(receiptJSON),
+		},
+	)
 }

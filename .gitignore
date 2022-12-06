@@ -31,8 +31,9 @@ contracts/**/target/
 **/node_modules/
 /*.sh
 wal/
-snap-cli
+./snap-cli
 *.trie
 *.snapshot
-snapshot
+./snapshot
+./gascalibration
 tests_output.log

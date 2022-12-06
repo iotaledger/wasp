@@ -1,0 +1,26 @@
+# Copyright 2020 IOTA Stiftung
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "solotutorialwasm"
+description = "Wasm VM host stub for: Example ISC smart contract for the Solo tutorial"
+license = "Apache-2.0"
+version = "0.1.0"
+authors = ["Eric Hop <eric@iota.org>"]
+edition = "2021"
+repository = "https://github.com/iotaledger/wasp"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+solotutorialimpl = { path = "../solotutorialimpl" }
+wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
+console_error_panic_hook = { version = "0.1.6", optional = true }
+wee_alloc = { version = "0.4.5", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"

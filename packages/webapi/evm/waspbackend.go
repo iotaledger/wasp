@@ -15,8 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainutil"
-	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -56,7 +55,8 @@ func (b *jsonRPCWaspBackend) RequestIDByTransactionHash(txHash common.Hash) (isc
 
 func (b *jsonRPCWaspBackend) EVMGasRatio() (util.Ratio32, error) {
 	// TODO: Cache the gas ratio?
-	ret, err := b.ISCCallView(governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
+	currentBlockIndex := b.ISCLatestBlockIndex()
+	ret, err := b.ISCCallView(currentBlockIndex, governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
 	if err != nil {
 		return util.Ratio32{}, err
 	}
@@ -77,13 +77,7 @@ func (b *jsonRPCWaspBackend) EVMSendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	b.chain.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: b.chain.ID(),
-			Req:     req,
-		},
-		SenderPubKey: b.nodePubKey,
-	})
+	b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey)
 
 	// store the request ID so that the user can query it later (if the
 	// Etheeum tx fails, the Ethereum receipt is never generated).
@@ -104,7 +98,8 @@ func (b *jsonRPCWaspBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, e
 }
 
 func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
-	res, err := chainutil.CallView(b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
+	currentBlockIndex := b.ISCLatestBlockIndex()
+	res, err := chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
 	}
@@ -112,7 +107,7 @@ func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}
-	res, err = chainutil.CallView(b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
+	res, err = chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
 	}
@@ -130,10 +125,19 @@ func (b *jsonRPCWaspBackend) EVMGasPrice() *big.Int {
 	return price
 }
 
-func (b *jsonRPCWaspBackend) ISCCallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(b.chain, isc.Hn(scName), isc.Hn(funName), args)
+func (b *jsonRPCWaspBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
+	return chainutil.CallView(iscBlockIndex, b.chain, isc.Hn(scName), isc.Hn(funName), args)
 }
 
 func (b *jsonRPCWaspBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
+}
+
+// ISCLatestBlockIndex implements jsonrpc.ChainBackend
+func (b *jsonRPCWaspBackend) ISCLatestBlockIndex() uint32 {
+	currentBlockIndex, err := b.chain.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		panic(fmt.Sprintf("couldn't get latest block index: %s ", err.Error()))
+	}
+	return currentBlockIndex
 }

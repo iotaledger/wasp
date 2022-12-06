@@ -3,6 +3,7 @@ package webapi
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -14,15 +15,13 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
-	"github.com/iotaledger/wasp/packages/chain/consensus/journal"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -76,25 +75,24 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
-		ShutdownHandler                  *shutdown.ShutdownHandler
-		WAL                              *wal.WAL
-		APICacheTTL                      time.Duration `name:"apiCacheTTL"`
-		PublisherPort                    int           `name:"publisherPort"`
-		Chains                           *chains.Chains
-		Metrics                          *metrics.Metrics `optional:"true"`
-		ChainRecordRegistryProvider      registry.ChainRecordRegistryProvider
-		DKShareRegistryProvider          registry.DKShareRegistryProvider
-		NodeIdentityProvider             registry.NodeIdentityProvider
-		ConsensusJournalRegistryProvider journal.Provider
-		NetworkProvider                  peering.NetworkProvider       `name:"networkProvider"`
-		TrustedNetworkManager            peering.TrustedNetworkManager `name:"trustedNetworkManager"`
-		Node                             *dkg.Node
-		UserManager                      *users.UserManager
+		ShutdownHandler             *shutdown.ShutdownHandler
+		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
+		PublisherPort               int           `name:"publisherPort"`
+		Chains                      *chains.Chains
+		NodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
+		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
+		DKShareRegistryProvider     registry.DKShareRegistryProvider
+		NodeIdentityProvider        registry.NodeIdentityProvider
+		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
+		Node                        *dkg.Node
+		UserManager                 *users.UserManager
 	}
 
 	type webapiServerResult struct {
 		dig.Out
 
+		Echo        *echo.Echo          `name:"webapiEcho"`
 		EchoSwagger echoswagger.ApiRoot `name:"webapiServer"`
 	}
 
@@ -104,12 +102,20 @@ func provide(c *dig.Container) error {
 			nil,
 			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
+		e.Server.ReadTimeout = 5 * time.Second
+		e.Server.WriteTimeout = 10 * time.Second
+
 		e.HidePort = true
 		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: []string{"*"},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 			AllowMethods: []string{"*"},
+		}))
+
+		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+			ErrorMessage: "request timeout exceeded",
+			Timeout:      1 * time.Minute,
 		}))
 
 		echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
@@ -130,15 +136,13 @@ func provide(c *dig.Container) error {
 			func() *chains.Chains {
 				return deps.Chains
 			},
-			deps.ConsensusJournalRegistryProvider,
 			func() *dkg.Node {
 				return deps.Node
 			},
 			func() {
 				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
 			},
-			deps.Metrics,
-			deps.WAL,
+			deps.NodeConnectionMetrics,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
@@ -146,6 +150,7 @@ func provide(c *dig.Container) error {
 		)
 
 		return webapiServerResult{
+			Echo:        e,
 			EchoSwagger: echoSwagger,
 		}
 	}); err != nil {
@@ -164,6 +169,10 @@ func run() error {
 			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
 			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
+			}
+			deps.EchoSwagger.Echo().Server.BaseContext = func(_ net.Listener) context.Context {
+				// set BaseContext to be the same as the plugin, so that requests being processed don't hang the shutdown procedure
+				return ctx
 			}
 		}()
 

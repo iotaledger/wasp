@@ -9,17 +9,19 @@ var eventhandlersTs = map[string]string{
 $#emit importWasmLib
 $#emit importWasmTypes
 
-const $pkgName$+Handlers = new Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void>([
-$#each events eventHandler
-]);
+export class $PkgName$+EventHandlers implements wasmlib.IEventHandlers {
+    $pkgName$+Handlers: Map<string, (evt: $PkgName$+EventHandlers, msg: string[]) => void> = new Map();
 
-export class $PkgName$+EventHandlers implements wasmlib.IEventHandler {
     /* eslint-disable @typescript-eslint/no-empty-function */
 $#each events eventHandlerMember
     /* eslint-enable @typescript-eslint/no-empty-function */
 
+    public constructor() {
+$#each events eventHandler
+    }
+
     public callHandler(topic: string, params: string[]): void {
-        const handler = $pkgName$+Handlers.get(topic);
+        const handler = this.$pkgName$+Handlers.get(topic);
         if (handler) {
             handler(this, params);
         }
@@ -30,7 +32,7 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-    ["$package.$evtName", (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg))],
+        this.$pkgName$+Handlers.set("$package.$evtName", (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg)));
 `,
 	// *******************************
 	"eventHandlerMember": `

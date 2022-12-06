@@ -33,21 +33,21 @@ func testGetSet(t *testing.T, w bool) {
 
 func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
 func testCallRecursive(t *testing.T, w bool) {
-	_, ch := setupChain(t, nil)
-	setupTestSandboxSC(t, ch, nil, w)
+	_, chain := setupChain(t, nil)
+	setupTestSandboxSC(t, chain, nil, w)
 
 	depth := 27
-	t.Logf("originator base tokens: %d", ch.L2BaseTokens(ch.OriginatorAgentID))
+	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamN, depth,
 		sbtestsc.ParamHnameContract, HScName,
 		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
 		WithGasBudget(5_000_000)
-	_, err := ch.PostRequestSync(req, nil)
-	t.Logf("receipt: %s", ch.LastReceipt())
+	_, err := chain.PostRequestSync(req, nil)
+	t.Logf("receipt: %s", chain.LastReceipt())
 	require.NoError(t, err)
 
-	ret, err := ch.CallView(ScName, sbtestsc.FuncGetCounter.Name)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))

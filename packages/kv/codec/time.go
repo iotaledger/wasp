@@ -33,6 +33,14 @@ func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	return time.Unix(0, nanos), nil
 }
 
+func MustDecodeTime(b []byte, def ...time.Time) time.Time {
+	t, err := DecodeTime(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 var b8 [8]byte
 
 func EncodeTime(value time.Time) []byte {

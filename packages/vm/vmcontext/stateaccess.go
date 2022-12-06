@@ -12,29 +12,21 @@ type chainStateWrapper struct {
 	vmctx *VMContext
 }
 
-// chainState is a KVStore to access the whole state of the chain. To access the partition of the contract
-// use subrealm or methid (vmctx *VMContext) State() kv.KVStore
-// Each access to the state checks validity of the state. It panics optimistic reader error
-// if state has been invalidated (new state was committed)
 func (vmctx *VMContext) chainState() chainStateWrapper {
 	return chainStateWrapper{vmctx}
 }
 
 func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
-	if _, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]; ok {
+	if _, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]; ok {
 		return true, nil
 	}
-	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations().Dels[name]; wasDeleted {
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
 		return false, nil
 	}
-	return s.vmctx.virtualState.KVStore().Has(name)
+	return s.vmctx.stateDraft.Has(name)
 }
 
 func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
 	var err error
 	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -51,17 +43,15 @@ func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) e
 }
 
 func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
-	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
+	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
 		if k.HasPrefix(prefix) {
 			if !f(k) {
 				return nil
 			}
 		}
 	}
-	return s.vmctx.virtualState.KVStore().IterateKeys(prefix, func(k kv.Key) bool {
-		if !s.vmctx.currentStateUpdate.Mutations().Contains(k) {
+	return s.vmctx.stateDraft.IterateKeys(prefix, func(k kv.Key) bool {
+		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			return f(k)
 		}
 		return true
@@ -69,8 +59,6 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) e
 }
 
 func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
 	var err error
 	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -87,16 +75,14 @@ func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) b
 }
 
 func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
 	var keys []kv.Key
-	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
+	for k := range s.vmctx.currentStateUpdate.Mutations.Sets {
 		if k.HasPrefix(prefix) {
 			keys = append(keys, k)
 		}
 	}
-	err := s.vmctx.virtualState.KVStore().IterateKeysSorted(prefix, func(k kv.Key) bool {
-		if !s.vmctx.currentStateUpdate.Mutations().Contains(k) {
+	err := s.vmctx.stateDraft.IterateKeysSorted(prefix, func(k kv.Key) bool {
+		if !s.vmctx.currentStateUpdate.Mutations.Contains(k) {
 			keys = append(keys, k)
 		}
 		return true
@@ -114,46 +100,38 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 }
 
 func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-	v, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
+	v, ok := s.vmctx.currentStateUpdate.Mutations.Sets[name]
 	if ok {
 		return v, nil
 	}
-	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations().Dels[name]; wasDeleted {
+	if _, wasDeleted := s.vmctx.currentStateUpdate.Mutations.Dels[name]; wasDeleted {
 		return nil, nil
 	}
-	ret, err := s.vmctx.virtualState.KVStore().Get(name)
+	ret, err := s.vmctx.stateDraft.Get(name)
 	s.vmctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(ret)/100)+1) // minimum 1
 	return ret, err
 }
 
 func (s chainStateWrapper) Del(name kv.Key) {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
-	s.vmctx.currentStateUpdate.Mutations().Del(name)
+	s.vmctx.currentStateUpdate.Mutations.Del(name)
 }
 
 func (s chainStateWrapper) Set(name kv.Key, value []byte) {
-	s.vmctx.task.SolidStateBaseline.MustValidate()
-
-	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
+	s.vmctx.currentStateUpdate.Mutations.Set(name, value)
 	// only burning gas when storing bytes to the state
 	s.vmctx.GasBurn(gas.BurnCodeStorage1P, uint64(len(name)+len(value)))
 }
 
 func (vmctx *VMContext) State() kv.KVStore {
-	vmctx.task.SolidStateBaseline.MustValidate()
 	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
 func (vmctx *VMContext) StateReader() kv.KVStoreReader {
-	vmctx.task.SolidStateBaseline.MustValidate()
 	return subrealm.NewReadOnly(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
 // Disabled because of recursive calls
 //func (vmctx *VMContext) State(burnGas ...kv.BurnGasFn) kv.KVStore {
-//	vmctx.task.SolidStateBaseline.MustValidate()
 //	store := subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 //	if len(burnGas) > 0 {
 //		return kv.WithGas(store, burnGas[0])

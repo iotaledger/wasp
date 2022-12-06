@@ -27,7 +27,7 @@
   },
   "db": {
     "engine": "rocksdb",
-    "consensusJournal": {
+    "consensusState": {
       "path": "waspdb/chains/consensus"
     },
     "chainState": {
@@ -74,9 +74,16 @@
     "enabled": true,
     "directory": "wal"
   },
-  "metrics": {
+  "prometheus": {
     "enabled": true,
-    "bindAddress": "127.0.0.1:2112"
+    "bindAddress": "127.0.0.1:2112",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
     "enabled": true,

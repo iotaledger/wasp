@@ -59,7 +59,7 @@ func WriteKVToStream(store kv.KVIterator, stream kv.StreamWriter, p ...ConsoleRe
 	return nil
 }
 
-func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleReportParams) error {
+func WriteSnapshot(sr state.State, dir string, p ...ConsoleReportParams) error {
 	par := ConsoleReportParams{
 		Console:           io.Discard,
 		StatsEveryKVPairs: 100,
@@ -67,18 +67,9 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	if len(p) > 0 {
 		par = p[0]
 	}
-	chainID, err := ordr.ChainID()
-	if err != nil {
-		return err
-	}
-	stateIndex, err := ordr.BlockIndex()
-	if err != nil {
-		return err
-	}
-	timestamp, err := ordr.Timestamp()
-	if err != nil {
-		return err
-	}
+	chainID := sr.ChainID()
+	stateIndex := sr.BlockIndex()
+	timestamp := sr.Timestamp()
 	fmt.Fprintf(par.Console, "[WriteSnapshot] chainID:     %s\n", chainID)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] state index: %d\n", stateIndex)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] timestamp: %v\n", timestamp)
@@ -92,7 +83,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	defer fstream.File.Close()
 
 	fmt.Printf("[WriteSnapshot] writing to file ")
-	if err := WriteKVToStream(ordr.KVStoreReader(), fstream, par); err != nil {
+	if err := WriteKVToStream(sr, fstream, par); err != nil {
 		return err
 	}
 	tKV, tBytes := fstream.Stats()
@@ -116,7 +107,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 	var errR error
 
 	err := rdr.Iterate(func(k, v []byte) bool {
-		if len(k) == 0 {
+		if kv.Key(k) == state.KeyChainID {
 			if chainIDFound {
 				errR = xerrors.New("duplicate record with chainID")
 				return false

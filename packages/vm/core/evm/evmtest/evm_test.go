@@ -8,15 +8,14 @@ import (
 	"math"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/core/generics/lo"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -236,6 +235,24 @@ func TestLoop(t *testing.T) {
 	}
 }
 
+func TestCallViewGasLimit(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	loop := env.deployLoopContract(ethKey)
+
+	callArguments, err := loop.abi.Pack("loop")
+	require.NoError(t, err)
+	senderAddress := crypto.PubkeyToAddress(loop.defaultSender.PublicKey)
+	callMsg := loop.callMsg(ethereum.CallMsg{
+		From:     senderAddress,
+		Gas:      math.MaxUint64,
+		GasPrice: evm.GasPrice,
+		Data:     callArguments,
+	})
+	_, err = loop.chain.evmChain.CallContract(callMsg, latestBlock)
+	require.Contains(t, err.Error(), "gas limit exceeds maximum allowed")
+}
+
 func TestMagicContract(t *testing.T) {
 	// deploy the evm contract, which starts an EVM chain and automatically
 	// deploys the isc.sol EVM contract at address 0x10740000...
@@ -377,14 +394,17 @@ func TestISCGetRequestID(t *testing.T) {
 	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	reqID := new(isc.RequestID)
-	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &reqID, "emitRequestID")
+	wrappedReqID := new(iscmagic.ISCRequestID)
+	res := iscTest.callFnExpectEvent(nil, "RequestIDEvent", &wrappedReqID, "emitRequestID")
+
+	reqid, err := wrappedReqID.Unwrap()
+	require.NoError(t, err)
 
 	// check evm log is as expected
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].TxHash, common.Hash{})
 	require.NotEqualValues(t, res.evmReceipt.Logs[0].BlockHash, common.Hash{})
 
-	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), *reqID)
+	require.EqualValues(t, env.soloChain.LastReceipt().DeserializedRequest().ID(), reqid)
 }
 
 func TestISCGetSenderAccount(t *testing.T) {
@@ -487,7 +507,7 @@ func TestSendAsNFT(t *testing.T) {
 		[]iotago.NFTID{nft.ID},
 		lo.Map(
 			lo.Values(env.solo.L1NFTs(receiver)),
-			func(v *iotago.NFTOutput) iotago.NFTID { return v.NFTID },
+			func(v *iotago.NFTOutput, _ int) iotago.NFTID { return v.NFTID },
 		),
 	)
 }
@@ -650,6 +670,8 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
+	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex
+
 	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
 		"send",
@@ -670,7 +692,11 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
-	time.Sleep(1 * time.Second) // wait a bit for the request going out of EVM to be processed by ISC
+
+	// wait a bit for the request going out of EVM to be processed by ISC
+	env.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
+	})
 
 	// assert inc counter was incremented
 	checkCounter(1)
@@ -844,6 +870,13 @@ func TestERC20NativeTokens(t *testing.T) {
 		foundryOwner,
 	)
 	require.NoError(t, err)
+
+	{
+		sandbox := env.ISCMagicSandbox(ethKey)
+		var addr common.Address
+		sandbox.callView("erc20NativeTokensAddress", []any{foundrySN}, &addr)
+		require.Equal(t, iscmagic.ERC20NativeTokensAddress(foundrySN), addr)
+	}
 
 	erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
 

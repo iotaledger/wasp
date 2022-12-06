@@ -7,6 +7,7 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontimeimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
@@ -23,7 +24,7 @@ func TestCallF(t *testing.T) {
 		t.SkipNow()
 	}
 	wasmlib.ConnectHost(nil)
-	ctx := wasmsolo.NewSoloContext(t, executiontime.ScName, executiontime.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, executiontime.ScName, executiontimeimpl.OnDispatch)
 	require.NoError(t, ctx.Err)
 
 	f := executiontime.ScFuncs.F(ctx)

@@ -7,9 +7,7 @@ import (
 	"bytes"
 
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
-	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -41,24 +39,4 @@ func (m *msgRBCCEPayload) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	return nil
-}
-
-// An event to self.
-type msgRBCCEOutput struct {
-	me      gpa.NodeID
-	payload *msgRBCCEPayload
-}
-
-var _ gpa.Message = &msgRBCCEOutput{}
-
-func (m *msgRBCCEOutput) Recipient() gpa.NodeID {
-	return m.me
-}
-
-func (m *msgRBCCEOutput) SetSender(sender gpa.NodeID) {
-	// Don't care the sender.
-}
-
-func (m *msgRBCCEOutput) MarshalBinary() ([]byte, error) {
-	panic(xerrors.Errorf("msgRBCCEOutput is local, marshaling should be unused"))
 }

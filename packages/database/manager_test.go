@@ -14,7 +14,7 @@ func TestNewDbManager(t *testing.T) {
 	dbManager, err := NewManager(registry.NewChainRecordRegistry(nil), WithEngine(hivedb.EngineMapDB))
 	require.NoError(t, err)
 
-	require.NotNil(t, dbManager.ConsensusJournalKVStore())
+	require.NotNil(t, dbManager.ConsensusStateKVStore())
 	require.Empty(t, dbManager.databasesChainState)
 }
 

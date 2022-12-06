@@ -16,11 +16,11 @@ type VMRunner struct{}
 func (r VMRunner) Run(task *vm.VMTask) error {
 	// top exception catcher for all panics
 	// The VM session will be abandoned peacefully
-	err := panicutil.CatchPanic(func() {
+	err := panicutil.CatchAllButDBError(func() {
 		runTask(task)
-	})
+	}, task.Log)
 	if err != nil {
-		task.Log.Warnf("GENERAL VM EXCEPTION: the task (ACS id %d) has been abandoned due to: %s", task.ACSSessionID, err.Error())
+		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
 	}
 	return err
 }
@@ -64,7 +64,7 @@ func runTask(task *vm.VMTask) {
 	}
 
 	{
-		accountsState := subrealm.New(task.VirtualStateAccess.KVStore(), kv.Key(accounts.Contract.Hname().Bytes()))
+		accountsState := subrealm.NewReadOnly(task.StateDraft, kv.Key(accounts.Contract.Hname().Bytes()))
 		accounts.CheckLedger(accountsState, "runTask")
 	}
 

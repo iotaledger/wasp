@@ -81,8 +81,9 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
+
 	for _, nft := range txb.nftsIncluded {
-		if nft.input != nil {
+		if !isc.IsEmptyOutputID(nft.outputID) {
 			ret.TotalBaseTokensInStorageDeposit += nft.in.Amount
 		}
 	}

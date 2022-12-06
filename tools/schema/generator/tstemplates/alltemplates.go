@@ -21,13 +21,13 @@ var Templates = []map[string]string{
 	eventhandlersTs,
 	funcsTs,
 	indexTs,
-	libTs,
 	mainTs,
 	paramsTs,
 	proxyTs,
 	resultsTs,
 	stateTs,
 	structsTs,
+	thunksTs,
 	typedefsTs,
 }
 

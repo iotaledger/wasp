@@ -14,16 +14,14 @@ import (
 // Mutations is a set of mutations: one for each key
 // It provides a deterministic serialization
 type Mutations struct {
-	Sets     map[kv.Key][]byte
-	Dels     map[kv.Key]struct{}
-	modified bool
+	Sets map[kv.Key][]byte
+	Dels map[kv.Key]struct{}
 }
 
 func NewMutations() *Mutations {
 	return &Mutations{
-		Sets:     make(map[kv.Key][]byte),
-		Dels:     make(map[kv.Key]struct{}),
-		modified: true,
+		Sets: make(map[kv.Key][]byte),
+		Dels: make(map[kv.Key]struct{}),
 	}
 }
 
@@ -54,15 +52,6 @@ func (ms *Mutations) Write(w io.Writer) error {
 		}
 	}
 	return nil
-}
-
-func (ms *Mutations) Apply(kvw kv.KVWriter) {
-	for k, v := range ms.Sets {
-		kvw.Set(k, v)
-	}
-	for k := range ms.Dels {
-		kvw.Del(k)
-	}
 }
 
 //nolint:gocritic
@@ -138,13 +127,11 @@ func (ms *Mutations) Set(k kv.Key, v []byte) {
 	}
 	delete(ms.Dels, k)
 	ms.Sets[k] = v
-	ms.modified = true
 }
 
 func (ms *Mutations) Del(k kv.Key) {
 	delete(ms.Sets, k)
 	ms.Dels[k] = struct{}{}
-	ms.modified = true
 }
 
 func (ms *Mutations) ApplyTo(w kv.KVWriter) {
@@ -167,21 +154,11 @@ func (ms *Mutations) Clone() *Mutations {
 		clone.Del(k)
 	}
 
-	clone.modified = ms.modified
-
 	return clone
 }
 
 func (ms *Mutations) IsEmpty() bool {
 	return len(ms.Sets) == 0 && len(ms.Dels) == 0
-}
-
-func (ms *Mutations) IsModified() bool {
-	return ms.modified
-}
-
-func (ms *Mutations) ResetModified() {
-	ms.modified = false
 }
 
 func (ms *Mutations) Dump() string {

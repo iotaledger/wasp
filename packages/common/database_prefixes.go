@@ -12,11 +12,11 @@ const (
 	ObjectTypeState
 	ObjectTypeTrie
 	ObjectTypeBlock
-	ObjectTypeNodeIdentity     // deprecated
-	ObjectTypeBlobCache        // unused
-	ObjectTypeBlobCacheTTL     // unused
-	ObjectTypeTrustedPeer      // deprecated
-	ObjectTypeConsensusJournal // deprecated
+	ObjectTypeNodeIdentity   // deprecated
+	ObjectTypeBlobCache      // unused
+	ObjectTypeBlobCacheTTL   // unused
+	ObjectTypeTrustedPeer    // deprecated
+	ObjectTypeConsensusState // deprecated
 
 	StorePrefixHealth byte = 255
 )

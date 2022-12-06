@@ -9,12 +9,9 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
-	"github.com/iotaledger/trie.go/trie"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -38,10 +35,10 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 }
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) error {
-	r.log.Debugf("Mocked VM runner: VM started for state %v commitment %v output %v",
-		task.VirtualStateAccess.BlockIndex(), trie.RootCommitment(task.VirtualStateAccess.TrieNodeStore()), isc.OID(task.AnchorOutputID.UTXOInput()))
-	nextvs, txEssence, inputsCommitment := nextState(r.t, task.VirtualStateAccess, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests...)
-	task.VirtualStateAccess = nextvs
+	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
+		task.StateDraft.BaseL1Commitment().GetTrieRoot(), task.AnchorOutputID.ToHex())
+	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
+	task.StateDraft = draft
 	task.RotationAddress = nil
 	task.ResultTransactionEssence = txEssence
 	task.ResultInputsCommitment = inputsCommitment
@@ -56,50 +53,32 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 			},
 		}
 	}
-	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", nextvs.BlockIndex(), trie.RootCommitment(nextvs.TrieNodeStore()))
+	r.log.Debugf("Mocked VM runner: VM completed; state %v commitment %v received", draft.BlockIndex(), block.TrieRoot())
 	return nil
 }
 
 func nextState(
 	t *testing.T,
-	vs state.VirtualStateAccess,
+	store state.Store,
 	consumedOutput *iotago.AliasOutput,
 	consumedOutputID iotago.OutputID,
 	timeAssumption time.Time,
-	reqs ...isc.Request,
-) (state.VirtualStateAccess, *iotago.TransactionEssence, []byte) {
-	nextvs := vs.Copy()
-	prevBlockIndex := vs.BlockIndex()
-	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
-
-	counterBin, err := nextvs.KVStore().Get(counterKey)
-	require.NoError(t, err)
-
-	counter, err := codec.DecodeUint64(counterBin, 0)
-	require.NoError(t, err)
+	reqs []isc.Request,
+) (state.StateDraft, state.Block, *iotago.TransactionEssence, []byte) {
+	timeAssumption = timeAssumption.Add(time.Duration(len(reqs)) * time.Nanosecond)
 
 	prev, err := state.L1CommitmentFromBytes(consumedOutput.StateMetadata)
 	require.NoError(t, err)
-	suBlockIndex := state.NewStateUpdateWithBlockLogValues(prevBlockIndex+1, timeAssumption.Add(time.Duration(len(reqs))*time.Nanosecond), &prev)
 
-	suCounter := state.NewStateUpdate()
-	counterBin = codec.EncodeUint64(counter + 1)
-	suCounter.Mutations().Set(counterKey, counterBin)
+	draft, err := store.NewStateDraft(timeAssumption, prev)
+	require.NoError(t, err)
 
-	suReqs := state.NewStateUpdate()
 	for i, req := range reqs {
-		key := kv.Key(blocklog.NewRequestLookupKey(vs.BlockIndex()+1, uint16(i)).Bytes())
-		suReqs.Mutations().Set(key, req.ID().Bytes())
+		key := kv.Key(blocklog.NewRequestLookupKey(draft.BlockIndex(), uint16(i)).Bytes())
+		draft.Set(key, req.ID().Bytes())
 	}
 
-	nextvs.ApplyStateUpdate(suBlockIndex)
-	nextvs.ApplyStateUpdate(suCounter)
-	nextvs.ApplyStateUpdate(suReqs)
-	nextvs.Commit()
-	require.EqualValues(t, prevBlockIndex+1, nextvs.BlockIndex())
-
-	block, err := nextvs.ExtractBlock()
-	require.NoError(t, err)
+	block := store.ExtractBlock(draft)
 
 	aliasID := consumedOutput.AliasID
 	inputs := iotago.OutputIDs{consumedOutputID}
@@ -112,7 +91,7 @@ func nextState(
 				NativeTokens:   consumedOutput.NativeTokens,
 				AliasID:        aliasID,
 				StateIndex:     consumedOutput.StateIndex + 1,
-				StateMetadata:  state.NewL1Commitment(trie.RootCommitment(nextvs.TrieNodeStore()), state.BlockHashFromData(block.EssenceBytes())).Bytes(),
+				StateMetadata:  block.L1Commitment().Bytes(),
 				FoundryCounter: consumedOutput.FoundryCounter,
 				Conditions:     consumedOutput.Conditions,
 				Features:       consumedOutput.Features,
@@ -123,21 +102,25 @@ func nextState(
 
 	inputsCommitment := iotago.Outputs{consumedOutput}.MustCommitment()
 
-	return nextvs, txEssence, inputsCommitment
+	store.Commit(draft)
+	err = store.SetLatest(block.TrieRoot())
+	require.NoError(t, err)
+
+	return draft, block, txEssence, inputsCommitment
 }
 
 func NextState(
 	t *testing.T,
 	chainKey *cryptolib.KeyPair,
-	vs state.VirtualStateAccess,
+	store state.Store,
 	chainOutput *isc.AliasOutputWithID,
 	ts time.Time,
-) (state.VirtualStateAccess, *iotago.Transaction, *iotago.UTXOInput) {
+) (state.Block, *iotago.Transaction, iotago.OutputID) {
 	if chainKey != nil {
 		require.True(t, chainOutput.GetStateAddress().Equal(chainKey.GetPublicKey().AsEd25519Address()))
 	}
 
-	nextvs, txEssence, inputsCommitment := nextState(t, vs, chainOutput.GetAliasOutput(), chainOutput.OutputID(), ts)
+	_, block, txEssence, inputsCommitment := nextState(t, store, chainOutput.GetAliasOutput(), chainOutput.OutputID(), ts, nil)
 
 	signatures, err := txEssence.Sign(
 		inputsCommitment,
@@ -151,7 +134,7 @@ func NextState(
 
 	txID, err := tx.ID()
 	require.NoError(t, err)
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(txID, 0)
 
-	return nextvs, tx, aliasOutputID
+	return block, tx, aliasOutputID
 }

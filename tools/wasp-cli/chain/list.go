@@ -25,7 +25,8 @@ var listCmd = &cobra.Command{
 		model.Chains = make(map[string]bool)
 
 		for _, chain := range chains {
-			model.Chains[chain.ChainID().String()] = chain.Active
+			chainID := chain.ChainID()
+			model.Chains[(&chainID).String()] = chain.Active
 		}
 		log.PrintCLIOutput(model)
 		showChainList(chains)
@@ -36,8 +37,9 @@ func showChainList(chains []*registry.ChainRecord) {
 	header := []string{"chainid", "active"}
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {
+		chainID := chain.ChainID()
 		rows[i] = []string{
-			chain.ChainID().String(),
+			(&chainID).String(),
 			fmt.Sprintf("%v", chain.Active),
 		}
 	}

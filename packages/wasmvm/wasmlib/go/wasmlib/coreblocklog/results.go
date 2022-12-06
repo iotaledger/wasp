@@ -7,7 +7,10 @@
 
 package coreblocklog
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type ImmutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
@@ -28,6 +31,10 @@ func (s ImmutableControlAddressesResults) StateControllerAddress() wasmtypes.ScI
 
 type MutableControlAddressesResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableControlAddressesResults(results *wasmlib.ScDict) MutableControlAddressesResults {
+	return MutableControlAddressesResults{proxy: results.AsProxy()}
 }
 
 // the addresses have been set as state controller address or governing address since the following block index
@@ -57,6 +64,10 @@ func (s ImmutableGetBlockInfoResults) BlockInfo() wasmtypes.ScImmutableBytes {
 
 type MutableGetBlockInfoResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetBlockInfoResults(results *wasmlib.ScDict) MutableGetBlockInfoResults {
+	return MutableGetBlockInfoResults{proxy: results.AsProxy()}
 }
 
 func (s MutableGetBlockInfoResults) BlockIndex() wasmtypes.ScMutableUint32 {
@@ -112,6 +123,10 @@ type MutableGetEventsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetEventsForBlockResults(results *wasmlib.ScDict) MutableGetEventsForBlockResults {
+	return MutableGetEventsForBlockResults{proxy: results.AsProxy()}
+}
+
 // native contract, so this is an Array16
 func (s MutableGetEventsForBlockResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultEvent)}
@@ -130,6 +145,10 @@ type MutableGetEventsForContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetEventsForContractResults(results *wasmlib.ScDict) MutableGetEventsForContractResults {
+	return MutableGetEventsForContractResults{proxy: results.AsProxy()}
+}
+
 // native contract, so this is an Array16
 func (s MutableGetEventsForContractResults) Event() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultEvent)}
@@ -146,6 +165,10 @@ func (s ImmutableGetEventsForRequestResults) Event() ArrayOfImmutableBytes {
 
 type MutableGetEventsForRequestResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetEventsForRequestResults(results *wasmlib.ScDict) MutableGetEventsForRequestResults {
+	return MutableGetEventsForRequestResults{proxy: results.AsProxy()}
 }
 
 // native contract, so this is an Array16
@@ -198,6 +221,10 @@ type MutableGetRequestIDsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetRequestIDsForBlockResults(results *wasmlib.ScDict) MutableGetRequestIDsForBlockResults {
+	return MutableGetRequestIDsForBlockResults{proxy: results.AsProxy()}
+}
+
 // native contract, so this is an Array16
 func (s MutableGetRequestIDsForBlockResults) RequestID() ArrayOfMutableRequestID {
 	return ArrayOfMutableRequestID{proxy: s.proxy.Root(ResultRequestID)}
@@ -221,6 +248,10 @@ func (s ImmutableGetRequestReceiptResults) RequestRecord() wasmtypes.ScImmutable
 
 type MutableGetRequestReceiptResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetRequestReceiptResults(results *wasmlib.ScDict) MutableGetRequestReceiptResults {
+	return MutableGetRequestReceiptResults{proxy: results.AsProxy()}
 }
 
 func (s MutableGetRequestReceiptResults) BlockIndex() wasmtypes.ScMutableUint32 {
@@ -248,6 +279,10 @@ type MutableGetRequestReceiptsForBlockResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetRequestReceiptsForBlockResults(results *wasmlib.ScDict) MutableGetRequestReceiptsForBlockResults {
+	return MutableGetRequestReceiptsForBlockResults{proxy: results.AsProxy()}
+}
+
 // native contract, so this is an Array16
 func (s MutableGetRequestReceiptsForBlockResults) RequestRecord() ArrayOfMutableBytes {
 	return ArrayOfMutableBytes{proxy: s.proxy.Root(ResultRequestRecord)}
@@ -263,6 +298,10 @@ func (s ImmutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScImmut
 
 type MutableIsRequestProcessedResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableIsRequestProcessedResults(results *wasmlib.ScDict) MutableIsRequestProcessedResults {
+	return MutableIsRequestProcessedResults{proxy: results.AsProxy()}
 }
 
 func (s MutableIsRequestProcessedResults) RequestProcessed() wasmtypes.ScMutableBool {

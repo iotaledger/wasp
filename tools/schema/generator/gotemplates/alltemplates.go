@@ -20,13 +20,13 @@ var Templates = []map[string]string{
 	eventsGo,
 	eventhandlersGo,
 	funcsGo,
-	libGo,
 	mainGo,
 	paramsGo,
 	proxyGo,
 	resultsGo,
 	stateGo,
 	structsGo,
+	thunksGo,
 	typedefsGo,
 }
 

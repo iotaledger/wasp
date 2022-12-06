@@ -7,10 +7,17 @@
 
 package coregovernance
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type ImmutableAddAllowedStateControllerAddressParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableAddAllowedStateControllerAddressParams() ImmutableAddAllowedStateControllerAddressParams {
+	return ImmutableAddAllowedStateControllerAddressParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableAddAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
@@ -27,6 +34,10 @@ func (s MutableAddAllowedStateControllerAddressParams) StateControllerAddress() 
 
 type ImmutableAddCandidateNodeParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableAddCandidateNodeParams() ImmutableAddCandidateNodeParams {
+	return ImmutableAddCandidateNodeParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableAddCandidateNodeParams) AccessNodeInfoAccessAPI() wasmtypes.ScImmutableString {
@@ -77,6 +88,10 @@ type ImmutableChangeAccessNodesParams struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewImmutableChangeAccessNodesParams() ImmutableChangeAccessNodesParams {
+	return ImmutableChangeAccessNodesParams{proxy: wasmlib.NewParamsProxy()}
+}
+
 func (s ImmutableChangeAccessNodesParams) ChangeAccessNodesActions() MapBytesToImmutableUint8 {
 	return MapBytesToImmutableUint8{proxy: s.proxy.Root(ParamChangeAccessNodesActions)}
 }
@@ -105,6 +120,10 @@ type ImmutableDelegateChainOwnershipParams struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewImmutableDelegateChainOwnershipParams() ImmutableDelegateChainOwnershipParams {
+	return ImmutableDelegateChainOwnershipParams{proxy: wasmlib.NewParamsProxy()}
+}
+
 func (s ImmutableDelegateChainOwnershipParams) ChainOwner() wasmtypes.ScImmutableAgentID {
 	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamChainOwner))
 }
@@ -121,6 +140,10 @@ type ImmutableRemoveAllowedStateControllerAddressParams struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewImmutableRemoveAllowedStateControllerAddressParams() ImmutableRemoveAllowedStateControllerAddressParams {
+	return ImmutableRemoveAllowedStateControllerAddressParams{proxy: wasmlib.NewParamsProxy()}
+}
+
 func (s ImmutableRemoveAllowedStateControllerAddressParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -135,6 +158,10 @@ func (s MutableRemoveAllowedStateControllerAddressParams) StateControllerAddress
 
 type ImmutableRevokeAccessNodeParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableRevokeAccessNodeParams() ImmutableRevokeAccessNodeParams {
+	return ImmutableRevokeAccessNodeParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableRevokeAccessNodeParams) AccessNodeInfoCertificate() wasmtypes.ScImmutableBytes {
@@ -161,6 +188,10 @@ type ImmutableRotateStateControllerParams struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewImmutableRotateStateControllerParams() ImmutableRotateStateControllerParams {
+	return ImmutableRotateStateControllerParams{proxy: wasmlib.NewParamsProxy()}
+}
+
 func (s ImmutableRotateStateControllerParams) StateControllerAddress() wasmtypes.ScImmutableAddress {
 	return wasmtypes.NewScImmutableAddress(s.proxy.Root(ParamStateControllerAddress))
 }
@@ -175,6 +206,10 @@ func (s MutableRotateStateControllerParams) StateControllerAddress() wasmtypes.S
 
 type ImmutableSetChainInfoParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetChainInfoParams() ImmutableSetChainInfoParams {
+	return ImmutableSetChainInfoParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 // default maximum size of a blob
@@ -213,6 +248,10 @@ func (s MutableSetChainInfoParams) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
 
 type ImmutableSetFeePolicyParams struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewImmutableSetFeePolicyParams() ImmutableSetFeePolicyParams {
+	return ImmutableSetFeePolicyParams{proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableSetFeePolicyParams) FeePolicyBytes() wasmtypes.ScImmutableBytes {

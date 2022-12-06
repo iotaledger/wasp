@@ -8,10 +8,40 @@ import "encoding"
 
 type NodeID string
 
+func (niT NodeID) Equals(other NodeID) bool {
+	return niT == other
+}
+
+func (niT NodeID) String() string {
+	return string(niT)
+}
+
 type Message interface {
 	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
 	Recipient() NodeID // The sender should indicate the recipient.
 	SetSender(NodeID)  // The transport later will set a validated sender for a message.
+}
+
+type BasicMessage struct {
+	sender    NodeID
+	recipient NodeID
+}
+
+func NewBasicMessage(recipient NodeID) BasicMessage {
+	return BasicMessage{recipient: recipient}
+}
+
+func (msg *BasicMessage) Recipient() NodeID {
+	return msg.recipient
+}
+
+func (msg *BasicMessage) SetSender(sender NodeID) {
+	msg.sender = sender
+}
+
+func (msg *BasicMessage) Sender() NodeID {
+	return msg.sender
 }
 
 type Input interface{}
