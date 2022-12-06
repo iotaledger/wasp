@@ -4,9 +4,10 @@
 package client
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-	"net/http"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"

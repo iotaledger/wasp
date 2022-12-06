@@ -47,7 +47,6 @@ func permissionsToMap(permissions []string) map[string]struct{} {
 
 func (u *UserService) AddUser(username, password string, permissions []string) error {
 	passwordHash, passwordSalt, err := users.DerivePasswordKey(password)
-
 	if err != nil {
 		return err
 	}
@@ -64,7 +63,6 @@ func (u *UserService) AddUser(username, password string, permissions []string) e
 
 func (u *UserService) UpdateUserPassword(username, password string) error {
 	passwordHash, passwordSalt, err := users.DerivePasswordKey(password)
-
 	if err != nil {
 		return err
 	}
@@ -102,7 +100,6 @@ func (u *UserService) GetUsers() *[]models.User {
 
 func (u *UserService) GetUser(username string) (*models.User, error) {
 	user, err := u.userManager.User(username)
-
 	if err != nil {
 		return nil, err
 	}

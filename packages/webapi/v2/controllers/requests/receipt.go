@@ -3,10 +3,11 @@ package requests
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) getReceipt(e echo.Context) error {

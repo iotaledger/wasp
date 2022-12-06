@@ -158,7 +158,6 @@ func (c *ChainService) WaitForRequestProcessed(chainID *isc.ChainID, requestID i
 	}
 
 	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
-
 	if err != nil {
 		return nil, vmError, err
 	}

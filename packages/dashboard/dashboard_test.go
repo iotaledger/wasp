@@ -1,10 +1,11 @@
 package dashboard
 
 import (
-	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/require"

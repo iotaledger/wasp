@@ -51,6 +51,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.EchoGroup().Any("chains/:chainID/evm", c.handleJSONRPC)
 	publicAPI.GET("chains/:chainID/evm/tx/:txHash", c.getRequestID).
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
+		SetOperationId("getRequestIDFromEVMTransactionID").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "txHash", "Transaction hash (hex-encoded)").
 		AddResponse(http.StatusOK, "Request ID", "", nil).
@@ -58,11 +59,13 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.GET("chains/:chainID/state/:stateKey", c.getState).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
+		SetOperationId("getStateValue").
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "stateKey", "Key (hex-encoded)").
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 
 	publicAPI.GET("chains/:chainID/ws", c.handleWebSocket).
+		SetOperationId("attachToWebsocket").
 		AddParamPath("", "chainID", "ChainID (bech32-encoded)")
 }
 

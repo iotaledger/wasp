@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 
 	"github.com/ethereum/go-ethereum/rpc"
+
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 
@@ -59,7 +60,6 @@ func (e *EVMService) getEVMBackend(chainID *isc.ChainID) (*chainServer, error) {
 	}
 
 	evmChainID, err := e.chainService.GetEVMChainID(chainID)
-
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,6 @@ func (e *EVMService) getEVMBackend(chainID *isc.ChainID) (*chainServer, error) {
 
 func (e *EVMService) HandleJSONRPC(chainID *isc.ChainID, request *http.Request, response *echo.Response) error {
 	evmServer, err := e.getEVMBackend(chainID)
-
 	if err != nil {
 		return err
 	}
@@ -92,7 +91,6 @@ func (e *EVMService) HandleJSONRPC(chainID *isc.ChainID, request *http.Request, 
 
 func (e *EVMService) GetRequestID(chainID *isc.ChainID, hash string) (*isc.RequestID, error) {
 	evmServer, err := e.getEVMBackend(chainID)
-
 	if err != nil {
 		return nil, err
 	}

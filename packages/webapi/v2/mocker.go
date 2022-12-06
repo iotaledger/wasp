@@ -55,7 +55,7 @@ func createNewInstance(i interface{}) reflect.Value {
 func (m *Mocker) LoadMockFiles() {
 	files, err := mockDir.ReadDir("models/mock")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Mocker: %v", err)
 	}
 
 	for _, file := range files {
@@ -65,7 +65,7 @@ func (m *Mocker) LoadMockFiles() {
 
 		mockData, err := mockDir.ReadFile("models/mock/" + file.Name())
 		if err != nil {
-			panic(err.Error())
+			log.Fatalf("Mocker[%s] %v", file.Name(), err.Error())
 		}
 
 		name := strings.Replace(file.Name(), ".json", "", 1)
@@ -81,7 +81,7 @@ func (m *Mocker) Get(i interface{}) interface{} {
 	if jsonMockData, ok := m.mockData[name]; ok {
 		err := json.Unmarshal(jsonMockData, instance)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Mocker [%s] %v", name, err)
 		}
 	}
 

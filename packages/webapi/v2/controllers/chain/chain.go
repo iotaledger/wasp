@@ -24,7 +24,6 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	}
 
 	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)
-
 	if err != nil {
 		return err
 	}
@@ -101,7 +100,6 @@ func (c *Controller) getState(e echo.Context) error {
 	}
 
 	state, err := c.chainService.GetState(chainID, stateKey)
-
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}

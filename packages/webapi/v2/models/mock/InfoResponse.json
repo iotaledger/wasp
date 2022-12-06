@@ -1,0 +1,29 @@
+{
+  "Version": "0.3.8",
+  "PublicKey": "0x520c1f0cd3920fbbb8f10fd39c6eb6232c58a6fd47223d162d17150474d566bc",
+  "NetID": "127.0.0.1:4000",
+  "L1Params": {
+    "MaxPayloadSize": 32498,
+    "Protocol": {
+      "version": 2,
+      "networkName": "private_tangle1",
+      "bech32Hrp": "tst",
+      "minPowScore": 0,
+      "belowMaxDepth": 15,
+      "rentStructure": {
+        "vByteCost": 500,
+        "vByteFactorData": 1,
+        "vByteFactorKey": 10
+      },
+      "tokenSupply": "2779530283277761"
+    },
+    "BaseToken": {
+      "Name": "TestCoin",
+      "TickerSymbol": "TEST",
+      "Unit": "TEST",
+      "Subunit": "testies",
+      "Decimals": 6,
+      "UseMetricPrefix": false
+    }
+  }
+}

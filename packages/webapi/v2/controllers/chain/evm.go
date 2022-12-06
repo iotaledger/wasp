@@ -3,9 +3,10 @@ package chain
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) handleJSONRPC(e echo.Context) error {
@@ -25,7 +26,6 @@ func (c *Controller) getRequestID(e echo.Context) error {
 
 	txHash := e.Param("txHash")
 	requestID, err := c.evmService.GetRequestID(chainID, txHash)
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("txHash", err)
 	}

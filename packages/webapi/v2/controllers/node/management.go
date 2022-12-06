@@ -19,19 +19,16 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 	}
 
 	reqNodePubKeyBytes, err := base64.StdEncoding.DecodeString(request.NodePubKey)
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("NodePubKey", err)
 	}
 
 	_, reqOwnerAddress, err := iotago.ParseBech32(request.OwnerAddress)
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("OwnerAddress", err)
 	}
 
 	certificateBytes, err := c.nodeService.SetNodeOwnerCertificate(reqNodePubKeyBytes, reqOwnerAddress)
-
 	if err != nil {
 		return err
 	}

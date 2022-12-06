@@ -3,6 +3,8 @@ package metrics
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,8 +18,9 @@ func (c *Controller) getChainMetrics(e echo.Context) error {
 	}
 
 	metricsReport := c.metricsService.GetChainMetrics(chainID)
+	mappedMetrics := models.MapChainMetrics(metricsReport)
 
-	return e.JSON(http.StatusOK, metricsReport)
+	return e.JSON(http.StatusOK, mappedMetrics)
 }
 
 func (c *Controller) getChainWorkflowMetrics(e echo.Context) error {

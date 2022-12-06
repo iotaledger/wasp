@@ -45,13 +45,11 @@ func (c *Controller) generateDKS(e echo.Context) error {
 	}
 
 	peerPublicKeys, err := parsePeerPubKeys(generateDKSRequest)
-
 	if err != nil {
 		return err
 	}
 
 	sharesInfo, err := c.dkgService.GenerateDistributedKey(peerPublicKeys, generateDKSRequest.Threshold, generateDKSRequest.TimeoutMS)
-
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}
@@ -61,13 +59,11 @@ func (c *Controller) generateDKS(e echo.Context) error {
 
 func (c *Controller) getDKSInfo(e echo.Context) error {
 	_, sharedAddress, err := iotago.ParseBech32(e.Param("sharedAddress"))
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("sharedAddress", err)
 	}
 
 	sharesInfo, err := c.dkgService.GetShares(sharedAddress)
-
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}

@@ -3,29 +3,68 @@ package models
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/chain"
 )
 
-type MetricItem[T any] struct {
+type MetricItem[T interface{}] struct {
 	Messages    uint32
 	Timestamp   time.Time
 	LastMessage T
 }
 
+/*
+ChainMetrics
+Echo Swagger does not support generics such as MetricItem[Foo]
+Creating separate types works instead.
+To not create a mapper for each type, the actual service remains using MetricItem[Foo] but this model here is presented to the docs.
+This can be removed if we change to swag/echo-swagger
+*/
+type (
+	AliasOutputMetricItem         MetricItem[*Output]
+	OnLedgerRequestMetricItem     MetricItem[*OnLedgerRequest]
+	InOutputMetricItem            MetricItem[*InOutput]
+	InStateOutputMetricItem       MetricItem[*InStateOutput]
+	TxInclusionStateMsgMetricItem MetricItem[*TxInclusionStateMsg]
+	TransactionMetricItem         MetricItem[*Transaction]
+	TransactionIDMetricItem       MetricItem[*Transaction]
+	UTXOInputMetricItem           MetricItem[*UTXOInput]
+	InterfaceMetricItem           MetricItem[interface{}]
+)
+
 type ChainMetrics struct {
-	InAliasOutput                   *MetricItem[*iotago.AliasOutput]
-	InOnLedgerRequest               *MetricItem[isc.OnLedgerRequest]
-	InOutput                        *MetricItem[*nodeconnmetrics.InOutput]
-	InStateOutput                   *MetricItem[*nodeconnmetrics.InStateOutput]
-	InTxInclusionState              *MetricItem[*nodeconnmetrics.TxInclusionStateMsg]
-	OutPublishGovernanceTransaction *MetricItem[*iotago.Transaction]
-	OutPullLatestOutput             *MetricItem[interface{}]
-	OutPullOutputByID               *MetricItem[*iotago.UTXOInput]
-	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
+	InAliasOutput                   AliasOutputMetricItem
+	InOnLedgerRequest               OnLedgerRequestMetricItem
+	InOutput                        InOutputMetricItem
+	InStateOutput                   InStateOutputMetricItem
+	InTxInclusionState              TxInclusionStateMsgMetricItem
+	OutPublishGovernanceTransaction TransactionMetricItem
+	OutPullLatestOutput             InterfaceMetricItem
+	OutPullOutputByID               UTXOInputMetricItem
+	OutPullTxInclusionState         TransactionIDMetricItem
+}
+
+func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem[T] {
+	return MetricItem[T]{
+		Messages:    metrics.Messages,
+		Timestamp:   metrics.Timestamp,
+		LastMessage: value,
+	}
+}
+
+func MapChainMetrics(metrics *dto.ChainMetrics) *ChainMetrics {
+	return &ChainMetrics{
+		InAliasOutput:                   AliasOutputMetricItem(MapMetricItem(metrics.InAliasOutput, OutputFromIotaGoOutput(metrics.InAliasOutput.LastMessage))),
+		InOutput:                        InOutputMetricItem(MapMetricItem(metrics.InOutput, InOutputFromISCInOutput(metrics.InOutput.LastMessage))),
+		InTxInclusionState:              TxInclusionStateMsgMetricItem(MapMetricItem(metrics.InTxInclusionState, TxInclusionStateMsgFromISCTxInclusionStateMsg(metrics.InTxInclusionState.LastMessage))),
+		InOnLedgerRequest:               OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
+		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, UTXOInputFromIotaGoUTXOInput(metrics.OutPullOutputByID.LastMessage))),
+		OutPullTxInclusionState:         TransactionIDMetricItem(MapMetricItem(metrics.OutPullTxInclusionState, TransactionFromIotaGoTransactionID(&metrics.OutPullTxInclusionState.LastMessage))),
+		OutPullLatestOutput:             InterfaceMetricItem(MapMetricItem(metrics.OutPullLatestOutput, metrics.OutPullLatestOutput.LastMessage)),
+		InStateOutput:                   InStateOutputMetricItem(MapMetricItem(metrics.InStateOutput, InStateOutputFromISCInStateOutput(metrics.InStateOutput.LastMessage))),
+		OutPublishGovernanceTransaction: TransactionMetricItem(MapMetricItem(metrics.OutPublishGovernanceTransaction, TransactionFromIotaGoTransaction(metrics.OutPublishGovernanceTransaction.LastMessage))),
+	}
 }
 
 type ConsensusWorkflowMetrics struct {

@@ -4,9 +4,10 @@
 package apilib
 
 import (
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"math"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 
 	"golang.org/x/xerrors"
 

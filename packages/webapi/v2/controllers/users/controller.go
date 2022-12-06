@@ -6,8 +6,9 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -46,8 +47,15 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("getUser").
 		SetSummary("Get a user")
 
+	adminAPI.DELETE("users/:username", c.deleteUser, authentication.ValidatePermissions([]string{permissions.UsersWrite})).
+		AddParamPath("", "username", "The username").
+		AddResponse(http.StatusNotFound, "User not found", nil, nil).
+		AddResponse(http.StatusOK, "Deletes a specific user", nil, nil).
+		SetOperationId("deleteUser").
+		SetSummary("Deletes a user")
+
 	adminAPI.POST("users", c.addUser, authentication.ValidatePermissions([]string{permissions.UsersWrite})).
-		AddParamBody(mocker.Get(models.AddUserRequest{}), "body", "The user data", true).
+		AddParamBody(mocker.Get(models.AddUserRequest{}), "", "The user data", true).
 		AddResponse(http.StatusBadRequest, "Invalid request", nil, nil).
 		AddResponse(http.StatusCreated, "User successfully added", nil, nil).
 		SetOperationId("addUser").
@@ -55,7 +63,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.PUT("users/:username/permissions", c.updateUserPermissions, authentication.ValidatePermissions([]string{permissions.UsersWrite})).
 		AddParamPath("", "username", "The username.").
-		AddParamBody(mocker.Get(models.UpdateUserPermissionsRequest{}), "body", "The users new permissions", true).
+		AddParamBody(mocker.Get(models.UpdateUserPermissionsRequest{}), "", "The users new permissions", true).
 		AddResponse(http.StatusBadRequest, "Invalid request", nil, nil).
 		AddResponse(http.StatusOK, "User successfully updated", nil, nil).
 		SetOperationId("changeUserPermissions").
@@ -63,7 +71,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 
 	adminAPI.PUT("users/:username/password", c.updateUserPassword, authentication.ValidatePermissions([]string{permissions.UsersWrite})).
 		AddParamPath("", "username", "The username.").
-		AddParamBody(mocker.Get(models.UpdateUserPasswordRequest{}), "body", "The users new password", true).
+		AddParamBody(mocker.Get(models.UpdateUserPasswordRequest{}), "", "The users new password", true).
 		AddResponse(http.StatusBadRequest, "Invalid request", nil, nil).
 		AddResponse(http.StatusOK, "User successfully updated", nil, nil).
 		SetOperationId("changeUserPassword").

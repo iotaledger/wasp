@@ -5,10 +5,11 @@ package tests
 
 import (
 	"crypto/ecdsa"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"math"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"

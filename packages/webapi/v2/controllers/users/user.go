@@ -19,7 +19,6 @@ func (c *Controller) addUser(e echo.Context) error {
 	}
 
 	err := c.userService.AddUser(addUserModel.Username, addUserModel.Password, addUserModel.Permissions)
-
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}
@@ -41,7 +40,6 @@ func (c *Controller) updateUserPassword(e echo.Context) error {
 	}
 
 	err := c.userService.UpdateUserPassword(userName, updateUserPasswordModel.Password)
-
 	if err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
@@ -64,7 +62,6 @@ func (c *Controller) updateUserPermissions(e echo.Context) error {
 
 	// TODO: Later on, compare the permissions with the permission Wasp actually uses.
 	err := c.userService.UpdateUserPermissions(userName, updateUserPermissionsModel.Permissions)
-
 	if err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
@@ -80,7 +77,6 @@ func (c *Controller) deleteUser(e echo.Context) error {
 	}
 
 	err := c.userService.DeleteUser(userName)
-
 	if err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
@@ -96,7 +92,6 @@ func (c *Controller) getUser(e echo.Context) error {
 	}
 
 	user, err := c.userService.GetUser(userName)
-
 	if err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
-type MetricItem[T any] struct {
+type MetricItem[T interface{}] struct {
 	Messages    uint32
 	Timestamp   time.Time
 	LastMessage T
@@ -26,7 +26,7 @@ type ChainMetrics struct {
 	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
 }
 
-func MapMetricItem[T any](metrics nodeconnmetrics.NodeConnectionMessageMetrics[T]) *MetricItem[T] {
+func MapMetricItem[T interface{}](metrics nodeconnmetrics.NodeConnectionMessageMetrics[T]) *MetricItem[T] {
 	return &MetricItem[T]{
 		Messages:    metrics.GetMessageTotal(),
 		Timestamp:   metrics.GetLastEvent(),

@@ -3,9 +3,10 @@ package requests
 import (
 	"net/http"
 
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-	"github.com/pangpanglabs/echoswagger/v2"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -55,7 +56,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 	publicAPI.POST("requests/offledger", c.handleOffLedgerRequest).
 		AddParamBody(
 			models.OffLedgerRequest{Request: "base64 string"},
-			"body",
+			"",
 			"Offledger request as JSON. Request encoded in base64",
 			false).
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil).
@@ -64,14 +65,13 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.GET("requests/:chainID/request/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
+		SetOperationId("waitForTransaction").
 		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddParamPath("", "requestID", "RequestID (Hex)").
 		AddResponse(http.StatusNotFound, "The chain or request id is invalid", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
 		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
-
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-
 }

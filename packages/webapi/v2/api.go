@@ -3,6 +3,10 @@ package v2
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/metrics"
+
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
@@ -10,7 +14,6 @@ import (
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/users"
-	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/node"
 
@@ -76,7 +79,7 @@ func Init(logger *loggerpkg.Logger,
 	committeeService := services.NewCommitteeService(logger, chainsProvider, networkProvider, registryProvider)
 	registryService := services.NewRegistryService(logger, chainsProvider, registryProvider)
 	offLedgerService := services.NewOffLedgerService(logger, chainService, networkProvider)
-	//metricsService := services.NewMetricsService(logger, chainsProvider)
+	metricsService := services.NewMetricsService(logger, chainsProvider)
 	peeringService := services.NewPeeringService(logger, chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(logger, chainService, networkProvider)
 	nodeService := services.NewNodeService(logger, nodeOwnerAddresses, registryProvider, shutdownHandler)
@@ -86,7 +89,7 @@ func Init(logger *loggerpkg.Logger,
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, offLedgerService, registryService, vmService),
-		//metrics.NewMetricsController(logger, metricsService),
+		metrics.NewMetricsController(logger, metricsService),
 		node.NewNodeController(logger, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(logger, chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(logger, userService),

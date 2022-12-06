@@ -1,9 +1,10 @@
 package client
 
 import (
+	"net/http"
+
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-	"net/http"
 )
 
 // Info fetches general information about the node.

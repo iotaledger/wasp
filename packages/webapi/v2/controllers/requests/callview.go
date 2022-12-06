@@ -3,10 +3,11 @@ package requests
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) executeCallView(e echo.Context) error {
@@ -22,8 +23,8 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	}
 
 	// Get contract and function. The request model supports HName and common string names. HNames are preferred.
-	var contractHName = callViewRequest.ContractHName
-	var functionHName = callViewRequest.FunctionHName
+	contractHName := callViewRequest.ContractHName
+	functionHName := callViewRequest.FunctionHName
 
 	if contractHName == 0 {
 		contractHName = isc.Hn(callViewRequest.ContractName)

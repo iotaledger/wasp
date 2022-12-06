@@ -61,13 +61,19 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("getTrustedPeers")
 
 	adminAPI.DELETE("node/peers/trusted", c.distrustPeer, authentication.ValidatePermissions([]string{permissions.PeeringWrite})).
-		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to distrust", true).
+		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "", "Info of the peer to distrust", true).
 		AddResponse(http.StatusOK, "Peer was successfully distrusted", nil, nil).
 		SetSummary("Distrust a peering node").
 		SetOperationId("distrustPeer")
 
+	adminAPI.POST("node/owner/certificate", c.setNodeOwner, authentication.ValidatePermissions([]string{permissions.NodeWrite})).
+		AddParamBody(mocker.Get(models.NodeOwnerCertificateRequest{}), "", "The node owner certificate", true).
+		AddResponse(http.StatusOK, "Node owner was successfully changed", nil, nil).
+		SetSummary("Sets the node owner").
+		SetOperationId("setNodeOwner")
+
 	adminAPI.POST("node/peers/trusted", c.trustPeer, authentication.ValidatePermissions([]string{permissions.PeeringWrite})).
-		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "body", "Info of the peer to trust", true).
+		AddParamBody(mocker.Get(models.PeeringTrustRequest{}), "", "Info of the peer to trust", true).
 		AddResponse(http.StatusOK, "Peer was successfully trusted", nil, nil).
 		SetSummary("Trust a peering node").
 		SetOperationId("trustPeer")
@@ -100,7 +106,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("shutdownNode")
 
 	adminAPI.GET("node/config", c.getConfiguration, authentication.ValidatePermissions([]string{permissions.NodeRead})).
-		AddResponse(http.StatusOK, "Dumped configuration", nil, nil).
+		AddResponse(http.StatusOK, "Dumped configuration", map[string]interface{}{}, nil).
 		SetOperationId("getConfiguration").
 		SetSummary("Return the Wasp configuration")
 }

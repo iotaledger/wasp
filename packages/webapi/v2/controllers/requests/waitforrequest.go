@@ -6,9 +6,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) waitForRequestToFinish(e echo.Context) error {

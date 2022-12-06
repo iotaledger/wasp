@@ -3,12 +3,13 @@ package testutil
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/labstack/echo/v4"

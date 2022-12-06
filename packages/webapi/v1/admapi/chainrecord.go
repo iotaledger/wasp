@@ -2,10 +2,11 @@ package admapi
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
