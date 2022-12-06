@@ -848,6 +848,13 @@ func TestERC20NativeTokens(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	{
+		sandbox := env.ISCMagicSandbox(ethKey)
+		var addr common.Address
+		sandbox.callView("erc20NativeTokensAddress", []any{foundrySN}, &addr)
+		require.Equal(t, iscmagic.ERC20NativeTokensAddress(foundrySN), addr)
+	}
+
 	erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
 
 	{
