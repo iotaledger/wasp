@@ -5,7 +5,6 @@ package isc
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -15,14 +14,14 @@ import (
 )
 
 type AliasOutputWithID struct {
-	output *iotago.AliasOutput
-	id     *iotago.UTXOInput
+	outputID    iotago.OutputID
+	aliasOutput *iotago.AliasOutput
 }
 
-func NewAliasOutputWithID(output *iotago.AliasOutput, id *iotago.UTXOInput) *AliasOutputWithID {
+func NewAliasOutputWithID(aliasOutput *iotago.AliasOutput, outputID iotago.OutputID) *AliasOutputWithID {
 	return &AliasOutputWithID{
-		output: output,
-		id:     id,
+		outputID:    outputID,
+		aliasOutput: aliasOutput,
 	}
 }
 
@@ -31,33 +30,36 @@ func NewAliasOutputWithIDFromBytes(data []byte) (*AliasOutputWithID, error) {
 }
 
 func NewAliasOutputWithIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AliasOutputWithID, error) {
-	id, err := UTXOInputFromMarshalUtil(mu)
+	id, err := OutputIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	outLen, err := mu.ReadUint16()
+
+	outputLen, err := mu.ReadUint16()
 	if err != nil {
 		return nil, err
 	}
-	outBytes, err := mu.ReadBytes(int(outLen))
+
+	outputBytes, err := mu.ReadBytes(int(outputLen))
 	if err != nil {
 		return nil, err
 	}
-	out := &iotago.AliasOutput{}
-	if _, err := out.Deserialize(outBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
+
+	aliasOutput := &iotago.AliasOutput{}
+	if _, err := aliasOutput.Deserialize(outputBytes, serializer.DeSeriModeNoValidation, nil); err != nil {
 		return nil, err
 	}
-	a := &AliasOutputWithID{
-		id:     id,
-		output: out,
-	}
-	return a, nil
+
+	return &AliasOutputWithID{
+		outputID:    id,
+		aliasOutput: aliasOutput,
+	}, nil
 }
 
 func (a *AliasOutputWithID) Bytes() []byte {
 	mu := marshalutil.New()
-	mu = UTXOInputToMarshalUtil(a.id, mu)
-	outBytes, err := a.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	mu = OutputIDToMarshalUtil(a.outputID, mu)
+	outBytes, err := a.aliasOutput.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -65,43 +67,43 @@ func (a *AliasOutputWithID) Bytes() []byte {
 }
 
 func (a *AliasOutputWithID) GetAliasOutput() *iotago.AliasOutput {
-	return a.output
-}
-
-func (a *AliasOutputWithID) ID() *iotago.UTXOInput {
-	return a.id
+	return a.aliasOutput
 }
 
 func (a *AliasOutputWithID) OutputID() iotago.OutputID {
-	return a.id.ID()
+	return a.outputID
+}
+
+func (a *AliasOutputWithID) TransactionID() iotago.TransactionID {
+	return a.outputID.TransactionID()
 }
 
 func (a *AliasOutputWithID) GetStateIndex() uint32 {
-	return a.output.StateIndex
+	return a.aliasOutput.StateIndex
 }
 
 func (a *AliasOutputWithID) GetStateMetadata() []byte {
-	return a.output.StateMetadata
+	return a.aliasOutput.StateMetadata
 }
 
 func (a *AliasOutputWithID) GetStateAddress() iotago.Address {
-	return a.output.StateController()
+	return a.aliasOutput.StateController()
 }
 
 func (a *AliasOutputWithID) GetAliasID() iotago.AliasID {
-	return util.AliasIDFromAliasOutput(a.output, a.id.ID())
+	return util.AliasIDFromAliasOutput(a.aliasOutput, a.outputID)
 }
 
 func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
-	out1, err := a.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	out1, err := a.aliasOutput.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic(err)
 	}
-	out2, err := other.output.Serialize(serializer.DeSeriModeNoValidation, nil)
+	out2, err := other.aliasOutput.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic(err)
 	}
-	return a.id.Equals(other.id) && bytes.Equal(out1, out2)
+	return a.outputID == other.outputID && bytes.Equal(out1, out2)
 }
 
 func (a *AliasOutputWithID) Hash() hashing.HashValue {
@@ -112,7 +114,7 @@ func (a *AliasOutputWithID) String() string {
 	if a == nil {
 		return "nil"
 	}
-	return a.id.ID().ToHex()
+	return a.outputID.ToHex()
 }
 
 func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
@@ -149,16 +151,6 @@ func AliasOutputsEqual(ao1, ao2 *iotago.AliasOutput) bool {
 		}
 	}
 	return ao1.Features.Equal(ao2.Features)
-}
-
-func UTXOInputIDFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
-	idBytes, err := marshalUtil.ReadBytes(iotago.OutputIDLength)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse output ID: %v", err)
-	}
-	var oid iotago.OutputID
-	copy(oid[:], idBytes)
-	return oid.UTXOInput(), nil
 }
 
 func OutputSetToOutputIDs(outputSet iotago.OutputSet) iotago.OutputIDs {

@@ -3,6 +3,7 @@ package webapi
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -101,12 +102,20 @@ func provide(c *dig.Container) error {
 			nil,
 			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
+		e.Server.ReadTimeout = 5 * time.Second
+		e.Server.WriteTimeout = 10 * time.Second
+
 		e.HidePort = true
 		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: []string{"*"},
 			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 			AllowMethods: []string{"*"},
+		}))
+
+		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+			ErrorMessage: "request timeout exceeded",
+			Timeout:      1 * time.Minute,
 		}))
 
 		echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
@@ -160,6 +169,10 @@ func run() error {
 			Plugin.LogInfof("You can now access the WebAPI using: http://%s", ParamsWebAPI.BindAddress)
 			if err := deps.EchoSwagger.Echo().Start(ParamsWebAPI.BindAddress); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				Plugin.LogWarnf("Stopped %s server due to an error (%s)", Plugin.Name, err)
+			}
+			deps.EchoSwagger.Echo().Server.BaseContext = func(_ net.Listener) context.Context {
+				// set BaseContext to be the same as the plugin, so that requests being processed don't hang the shutdown procedure
+				return ctx
 			}
 		}()
 

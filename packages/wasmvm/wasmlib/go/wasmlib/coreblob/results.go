@@ -7,7 +7,10 @@
 
 package coreblob
 
-import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 
 type ImmutableStoreBlobResults struct {
 	proxy wasmtypes.Proxy
@@ -20,6 +23,10 @@ func (s ImmutableStoreBlobResults) Hash() wasmtypes.ScImmutableHash {
 
 type MutableStoreBlobResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableStoreBlobResults(results *wasmlib.ScDict) MutableStoreBlobResults {
+	return MutableStoreBlobResults{proxy: results.AsProxy()}
 }
 
 // calculated hash of blob set
@@ -38,6 +45,10 @@ func (s ImmutableGetBlobFieldResults) Bytes() wasmtypes.ScImmutableBytes {
 
 type MutableGetBlobFieldResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableGetBlobFieldResults(results *wasmlib.ScDict) MutableGetBlobFieldResults {
+	return MutableGetBlobFieldResults{proxy: results.AsProxy()}
 }
 
 // blob data
@@ -78,6 +89,10 @@ type MutableGetBlobInfoResults struct {
 	proxy wasmtypes.Proxy
 }
 
+func NewMutableGetBlobInfoResults(results *wasmlib.ScDict) MutableGetBlobInfoResults {
+	return MutableGetBlobInfoResults{proxy: results.AsProxy()}
+}
+
 // size for each named blob
 func (s MutableGetBlobInfoResults) BlobSizes() MapStringToMutableInt32 {
 	return MapStringToMutableInt32(s)
@@ -114,6 +129,10 @@ func (m MapHashToMutableInt32) GetInt32(key wasmtypes.ScHash) wasmtypes.ScMutabl
 
 type MutableListBlobsResults struct {
 	proxy wasmtypes.Proxy
+}
+
+func NewMutableListBlobsResults(results *wasmlib.ScDict) MutableListBlobsResults {
+	return MutableListBlobsResults{proxy: results.AsProxy()}
 }
 
 // total size for each blob set

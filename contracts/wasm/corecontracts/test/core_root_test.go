@@ -23,12 +23,15 @@ func setupRoot(t *testing.T) *wasmsolo.SoloContext {
 }
 
 func TestDeployContract(t *testing.T) {
-	if *wasmsolo.RsWasm {
-		// will fail because rust blob is already loaded
-		t.SkipNow()
-	}
 	ctxr := setupRoot(t)
 
+	// first turn off default required deploy permission
+	f := coreroot.ScFuncs.RequireDeployPermissions(ctxr)
+	f.Params.DeployPermissionsEnabled().SetValue(false)
+	f.Func.Post()
+	require.NoError(t, ctxr.Err)
+
+	// now deploy
 	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctxb.Err)
 	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.NewSoloAgent()))

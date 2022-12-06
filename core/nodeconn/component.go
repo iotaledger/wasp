@@ -19,12 +19,9 @@ func init() {
 	}
 }
 
-var (
-	CoreComponent *app.CoreComponent
-)
+var CoreComponent *app.CoreComponent
 
 func provide(c *dig.Container) error {
-
 	type nodeConnectionMetricsResult struct {
 		dig.Out
 

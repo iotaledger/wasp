@@ -17,15 +17,11 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type IEventHandler interface {
-	CallHandler(topic string, params []string)
-}
-
 type WasmClientContext struct {
 	chainID       wasmtypes.ScChainID
 	Err           error
 	eventDone     chan bool
-	eventHandlers []IEventHandler
+	eventHandlers []wasmlib.IEventHandlers
 	eventReceived bool
 	keyPair       *cryptolib.KeyPair
 	nonce         uint64
@@ -64,7 +60,7 @@ func (s *WasmClientContext) InitViewCallContext(hContract wasmtypes.ScHname) was
 	return s.scHname
 }
 
-func (s *WasmClientContext) Register(handler IEventHandler) error {
+func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
 	for _, h := range s.eventHandlers {
 		if h == handler {
 			return nil
@@ -94,7 +90,7 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.nonce = n.Results.AccountNonce().Value()
 }
 
-func (s *WasmClientContext) Unregister(handler IEventHandler) {
+func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 	for i, h := range s.eventHandlers {
 		if h == handler {
 			s.eventHandlers = append(s.eventHandlers[:i], s.eventHandlers[i+1:]...)

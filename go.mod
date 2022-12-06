@@ -18,7 +18,6 @@ require (
 	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221120140724-fbc50b20fd91
 	github.com/iotaledger/inx/go v1.0.0-rc.1
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a
-	github.com/iotaledger/trie.go v0.0.0-20220913055112-2b1eae4ebed9
 	github.com/labstack/echo-contrib v0.13.0
 	github.com/labstack/echo/v4 v4.9.1
 	github.com/libp2p/go-libp2p v0.23.4

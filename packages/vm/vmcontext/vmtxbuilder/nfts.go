@@ -10,7 +10,7 @@ import (
 
 type nftIncluded struct {
 	ID          iotago.NFTID
-	input       *iotago.UTXOInput // only available when the input is already accounted for (NFT was deposited in a previous block)
+	outputID    iotago.OutputID // only available when the input is already accounted for (NFT was deposited in a previous block)
 	in          *iotago.NFTOutput
 	out         *iotago.NFTOutput
 	sentOutside bool
@@ -26,18 +26,14 @@ func (n *nftIncluded) Clone() *nftIncluded {
 	nftID := iotago.NFTID{}
 	copy(nftID[:], n.ID[:])
 
-	var input *iotago.UTXOInput
-	if n.input != nil {
-		input = &iotago.UTXOInput{}
-		copy(input.TransactionID[:], n.input.TransactionID[:])
-		input.TransactionOutputIndex = n.input.TransactionOutputIndex
-	}
+	outputID := iotago.OutputID{}
+	copy(outputID[:], n.outputID[:])
 
 	return &nftIncluded{
-		ID:    nftID,
-		input: input,
-		in:    cloneInternalNFTOutputOrNil(n.in),
-		out:   cloneInternalNFTOutputOrNil(n.out),
+		ID:       nftID,
+		outputID: outputID,
+		in:       cloneInternalNFTOutputOrNil(n.in),
+		out:      cloneInternalNFTOutputOrNil(n.out),
 	}
 }
 
@@ -90,14 +86,14 @@ func (txb *AnchorTransactionBuilder) NFTOutputsToBeUpdated() (toBeAdded, toBeRem
 	return toBeAdded, toBeRemoved
 }
 
-func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput iotago.UTXOInput) int64 {
+func (txb *AnchorTransactionBuilder) consumeNFT(nftOutput *iotago.NFTOutput, outputID iotago.OutputID) int64 {
 	storageDeposit := int64(txb.storageDepositAssumption.NFTOutput)
 
 	// keep the number of base tokens in the output == required storage deposit
 	// take all native tokens out of the NFT output
 	txb.subDeltaBaseTokensFromTotal(txb.storageDepositAssumption.NFTOutput)
 
-	out := o.Clone().(*iotago.NFTOutput)
+	out := nftOutput.Clone().(*iotago.NFTOutput)
 	out.Amount = uint64(storageDeposit)
 	chainAddr := txb.anchorOutput.AliasID.ToAddress()
 	out.NativeTokens = nil
@@ -114,7 +110,7 @@ func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput i
 
 	if out.NFTID.Empty() {
 		// nft was just minted to the chain
-		out.NFTID = iotago.NFTIDFromOutputID(utxoInput.ID())
+		out.NFTID = iotago.NFTIDFromOutputID(outputID)
 	}
 
 	toInclude := &nftIncluded{
@@ -124,7 +120,7 @@ func (txb *AnchorTransactionBuilder) consumeNFT(o *iotago.NFTOutput, utxoInput i
 		sentOutside: false,
 	}
 
-	txb.nftsIncluded[o.NFTID] = toInclude
+	txb.nftsIncluded[nftOutput.NFTID] = toInclude
 	return -storageDeposit
 }
 
@@ -143,11 +139,11 @@ func (txb *AnchorTransactionBuilder) sendNFT(o *iotago.NFTOutput) int64 {
 		}
 
 		// using NFT already owned by the chain
-		in, input := txb.loadNFTOutput(o.NFTID)
+		in, outputID := txb.loadNFTOutput(o.NFTID)
 		toInclude := &nftIncluded{
 			ID:          o.NFTID,
 			in:          in,
-			input:       input,
+			outputID:    outputID,
 			out:         o,
 			sentOutside: true,
 		}

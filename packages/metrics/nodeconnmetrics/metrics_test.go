@@ -85,7 +85,7 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 		},
 	}
 
-	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+	onLedgerRequest1, _ := isc.OnLedgerFromUTXO(outputOn, iotago.OutputID{})
 	return onLedgerRequest1
 }
 
@@ -223,9 +223,9 @@ func TestMessageMetrics(t *testing.T) {
 	utxoInput2 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 	utxoInput3 := &iotago.UTXOInput{TransactionID: iotago.TransactionID{1}}
 
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1)
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2)
-	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3)
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput1.ID())
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2.ID())
+	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3.ID())
 
 	checkMetricsValues(t, 3, utxoInput3, cncm1.GetOutPullOutputByID())
 	checkMetricsValues(t, 0, nil, cncm2.GetOutPullOutputByID())

@@ -1,6 +1,7 @@
 package reqstatus
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,7 +11,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -46,11 +50,26 @@ func (r *reqstatusWebAPI) handleRequestReceipt(c echo.Context) error {
 		return err
 	}
 
-	receiptResponse, err := getISCReceipt(ch, reqID)
+	blockIndex, err := ch.GetStateReader().LatestBlockIndex()
 	if err != nil {
-		return httperrors.ServerError(err.Error())
+		return httperrors.ServerError("error getting latest chain block index")
 	}
-	return c.JSON(http.StatusOK, receiptResponse)
+	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
+		dict.Dict{
+			blocklog.ParamRequestID: reqID.Bytes(),
+		})
+	if err != nil {
+		return httperrors.ServerError("error calling get receipt view")
+	}
+	binRec, err := ret.Get(blocklog.ParamRequestRecord)
+	if err != nil {
+		return httperrors.ServerError("error parsing getReceipt view call result")
+	}
+	rec, err := blocklog.RequestReceiptFromBytes(binRec)
+	if err != nil {
+		return httperrors.ServerError("error decoding receipt from getReceipt view call result")
+	}
+	return resolveReceipt(c, ch, rec)
 }
 
 const waitRequestProcessedDefaultTimeout = 30 * time.Second
@@ -70,53 +89,8 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 		}
 	}
 
-	// TODO: we should add some timeout here and the context of the wasp node
-	// TODO: fix the code here
-	_ = <-ch.AwaitRequestProcessed(c.Request().Context(), reqID)
-	return httperrors.ServerError("not implemented")
-
-	/*
-		tryGetReceipt := func() (bool, error) {
-			receiptResponse, err := getISCReceipt(ch, reqID)
-			if err != nil {
-				return receiptResponse != nil, httperrors.ServerError(err.Error())
-			}
-			if receiptResponse != nil {
-				return true, c.JSON(http.StatusOK, receiptResponse)
-			}
-			return false, nil
-		}
-
-		found, ret := tryGetReceipt()
-		if found {
-			return ret
-		}
-
-		// subscribe to event
-		requestProcessed := make(chan bool)
-		attachID := ch.AttachToRequestProcessed(func(rid isc.RequestID) {
-			if rid.Equals(reqID) {
-				requestProcessed <- true
-			}
-		})
-		defer ch.DetachFromRequestProcessed(attachID)
-
-		select {
-		case <-requestProcessed:
-			found, ret := tryGetReceipt()
-			if found {
-				return ret
-			}
-			return httperrors.ServerError("Unexpected error, receipt not found after request was processed")
-		case <-time.After(req.Timeout):
-			// check again, in case event was triggered just before we subscribed
-			found, ret := tryGetReceipt()
-			if found {
-				return ret
-			}
-			return httperrors.Timeout("Timeout while waiting for request to be processed")
-		}
-	*/
+	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID)
+	return resolveReceipt(c, ch, rec)
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {
@@ -135,30 +109,19 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestI
 	return theChain, reqID, nil
 }
 
-func getISCReceipt(ch chain.ChainRequests, reqID isc.RequestID) (ret *model.RequestReceiptResponse, err error) {
-	//TODO: Fixme
-	/*
-		receipt, err := ch.GetRequestReceipt(reqID)
-		if err != nil {
-			return nil, xerrors.Errorf("error getting request receipt: %s", err)
-		}
-		if receipt == nil {
-			return nil, nil
-		}
-
-		resolvedError, err := chainutil.ResolveError(ch, receipt.Error)
-		if err != nil {
-			return nil, xerrors.Errorf("error resolving the receipt error: %s", err)
-		}
-		iscReceipt := receipt.ToISCReceipt(resolvedError)
-
-		receiptJSON, err := json.Marshal(iscReceipt)
-		if err != nil {
-			return nil, xerrors.Errorf("error marshaling receipt into JSON: %s", err)
-		}
-		return &model.RequestReceiptResponse{
+func resolveReceipt(c echo.Context, ch chain.ChainRequests, rec *blocklog.RequestReceipt) error {
+	resolvedReceiptErr, err := chainutil.ResolveError(ch, rec.Error)
+	if err != nil {
+		return httperrors.ServerError("error resolving receipt error")
+	}
+	iscReceipt := rec.ToISCReceipt(resolvedReceiptErr)
+	receiptJSON, err := json.Marshal(iscReceipt)
+	if err != nil {
+		return httperrors.ServerError("error marshaling receipt into JSON")
+	}
+	return c.JSON(http.StatusOK,
+		&model.RequestReceiptResponse{
 			Receipt: string(receiptJSON),
-		}, nil
-	*/
-	panic("unimplemented")
+		},
+	)
 }

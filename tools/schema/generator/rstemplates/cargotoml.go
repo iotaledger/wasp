@@ -13,7 +13,7 @@ var cargoToml = map[string]string{
 $#emit package$cargoMain
 license = "Apache-2.0"
 version = "0.1.0"
-authors = ["Eric Hop <eric@iota.org>"]
+authors = ["$author"]
 edition = "2021"
 repository = "https://github.com/iotaledger/wasp"
 
@@ -26,27 +26,38 @@ $#emit dependencies$cargoMain
 wasm-bindgen-test = "0.3.13"
 `,
 	// *******************************
-	"packageSc": `
+	"packageLib": `
 name = "$package"
-description = "$scDesc"
+description = "Interface library for: $scDesc"
 `,
 	// *******************************
-	"packageMain": `
-name = "$package$+_main"
+	"packageImpl": `
+name = "$package$+impl"
+description = "Implementation library for: $scDesc"
+`,
+	// *******************************
+	"packageWasm": `
+name = "$package$+wasm"
 description = "Wasm VM host stub for: $scDesc"
 `,
 	// *******************************
-	"dependenciesSc": `
+	"dependenciesLib": `
 [dependencies]
 wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
 `,
 	// *******************************
-	"dependenciesMain": `
+	"dependenciesImpl": `
+[dependencies]
+$package = { path = "../$package" }
+wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
+`,
+	// *******************************
+	"dependenciesWasm": `
 [features]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-$package = { path = "../$package" }
+$package$+impl = { path = "../$package$+impl" }
 wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }

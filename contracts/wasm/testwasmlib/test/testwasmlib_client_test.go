@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 
@@ -99,7 +100,7 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {
-	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnDispatch)
+	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 	chainID := ctx.CurrentChainID()
 	wallet := ctx.Chain.OriginatorPrivateKey
 

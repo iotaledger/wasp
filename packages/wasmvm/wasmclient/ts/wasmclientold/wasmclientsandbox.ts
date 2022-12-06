@@ -10,7 +10,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
     chID: wasmlib.ScChainID;
     Err: isc.Error = null;
     eventDone: bool = false;
-    eventHandlers: wc.IEventHandler[] = [];
+    eventHandlers: wc.IEventHandlers[] = [];
     eventReceived: bool = false;
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0;

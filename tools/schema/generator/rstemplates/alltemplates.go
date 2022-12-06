@@ -9,6 +9,7 @@ var config = map[string]string{
 	"language":   "Rust",
 	"extension":  ".rs",
 	"rootFolder": "rs",
+	"subFolder":  "src",
 	"funcRegexp": `^pub fn (\w+).+$`,
 }
 
@@ -18,9 +19,9 @@ var Templates = []map[string]string{
 	cargoToml,
 	constsRs,
 	contractRs,
+	eventhandlersRs,
 	eventsRs,
 	funcsRs,
-	libRs,
 	mainRs,
 	modRs,
 	paramsRs,
@@ -28,6 +29,7 @@ var Templates = []map[string]string{
 	resultsRs,
 	stateRs,
 	structsRs,
+	thunksRs,
 	typedefsRs,
 }
 
@@ -149,5 +151,15 @@ $nextLine
 	// *******************************
 	"_typedefComment": `
 $nextLine
+`,
+	// *******************************
+	"lib.rs": `
+#![allow(unused_imports)]
+
+pub use funcs::*;
+pub use thunks::*;
+
+pub mod funcs;
+pub mod thunks;
 `,
 }

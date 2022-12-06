@@ -13,7 +13,7 @@ use crate::coreblob::*;
 
 #[derive(Clone)]
 pub struct ImmutableStoreBlobResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableStoreBlobResults {
@@ -25,10 +25,16 @@ impl ImmutableStoreBlobResults {
 
 #[derive(Clone)]
 pub struct MutableStoreBlobResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableStoreBlobResults {
+    pub fn new() -> MutableStoreBlobResults {
+        MutableStoreBlobResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // calculated hash of blob set
     pub fn hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.proxy.root(RESULT_HASH))
@@ -37,7 +43,7 @@ impl MutableStoreBlobResults {
 
 #[derive(Clone)]
 pub struct ImmutableGetBlobFieldResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetBlobFieldResults {
@@ -49,10 +55,16 @@ impl ImmutableGetBlobFieldResults {
 
 #[derive(Clone)]
 pub struct MutableGetBlobFieldResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetBlobFieldResults {
+    pub fn new() -> MutableGetBlobFieldResults {
+        MutableGetBlobFieldResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // blob data
     pub fn bytes(&self) -> ScMutableBytes {
         ScMutableBytes::new(self.proxy.root(RESULT_BYTES))
@@ -72,7 +84,7 @@ impl MapStringToImmutableInt32 {
 
 #[derive(Clone)]
 pub struct ImmutableGetBlobInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableGetBlobInfoResults {
@@ -99,10 +111,16 @@ impl MapStringToMutableInt32 {
 
 #[derive(Clone)]
 pub struct MutableGetBlobInfoResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableGetBlobInfoResults {
+    pub fn new() -> MutableGetBlobInfoResults {
+        MutableGetBlobInfoResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // size for each named blob
     pub fn blob_sizes(&self) -> MapStringToMutableInt32 {
         MapStringToMutableInt32 { proxy: self.proxy.clone() }
@@ -122,7 +140,7 @@ impl MapHashToImmutableInt32 {
 
 #[derive(Clone)]
 pub struct ImmutableListBlobsResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl ImmutableListBlobsResults {
@@ -149,10 +167,16 @@ impl MapHashToMutableInt32 {
 
 #[derive(Clone)]
 pub struct MutableListBlobsResults {
-    pub(crate) proxy: Proxy,
+    pub proxy: Proxy,
 }
 
 impl MutableListBlobsResults {
+    pub fn new() -> MutableListBlobsResults {
+        MutableListBlobsResults {
+            proxy: results_proxy(),
+        }
+    }
+
     // total size for each blob set
     pub fn blob_sizes(&self) -> MapHashToMutableInt32 {
         MapHashToMutableInt32 { proxy: self.proxy.clone() }

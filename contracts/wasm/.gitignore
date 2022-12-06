@@ -3,11 +3,11 @@
 **/go/*/contract.go
 **/go/*/eventhandlers.go
 **/go/*/events.go
-**/go/*/lib.go
 **/go/*/params.go
 **/go/*/results.go
 **/go/*/state.go
 **/go/*/structs.go
+**/go/*/thunks.go
 **/go/*/typedefs.go
 
 **/rs/*/src/consts.rs
@@ -19,6 +19,7 @@
 **/rs/*/src/results.rs
 **/rs/*/src/state.rs
 **/rs/*/src/structs.rs
+**/rs/*/src/thunks.rs
 **/rs/*/src/typedefs.rs
 **/rs/*/Cargo.*
 **/rs/*/LICENSE
@@ -30,11 +31,11 @@
 **/ts/*/eventhandlers.ts
 **/ts/*/events.ts
 **/ts/*/index.ts
-**/ts/*/lib.ts
 **/ts/*/params.ts
 **/ts/*/results.ts
 **/ts/*/state.ts
 **/ts/*/structs.ts
+**/ts/*/thunks.ts
 **/ts/*/tsconfig.json
 **/ts/*/typedefs.ts
 **/ts/*/*.js

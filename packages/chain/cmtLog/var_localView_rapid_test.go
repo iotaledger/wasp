@@ -157,10 +157,10 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 func (sm *varLocalViewSM) nextAO() *isc.AliasOutputWithID {
 	sm.utxoIDCounter++
 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
-	utxoInput := &iotago.UTXOInput{}
+	utxoInput := iotago.UTXOInput{}
 	copy(utxoInput.TransactionID[:], txIDBytes)
 	utxoInput.TransactionOutputIndex = 0
-	return isc.NewAliasOutputWithID(nil, utxoInput)
+	return isc.NewAliasOutputWithID(nil, utxoInput.ID())
 }
 
 // Alias output can be proposed, if there is at least one AO confirmed and there is no

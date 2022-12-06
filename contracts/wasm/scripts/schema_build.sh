@@ -8,4 +8,4 @@ if [ ! -f "schema.yaml" ]; then
 fi
 
 echo "Generating $example_name"
-schema -go -rust -ts $flag
+schema -go -rs -ts $flag

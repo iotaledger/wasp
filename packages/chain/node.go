@@ -66,6 +66,7 @@ type ChainEventListener interface {
 }
 
 type ChainRequests interface {
+	ChainReader
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
 }
@@ -266,15 +267,15 @@ func New(
 			return
 		}
 		for i := range outputIDs {
-			aliasOutput := isc.NewAliasOutputWithID(outputs[i], outputIDs[i].UTXOInput())
+			aliasOutput := isc.NewAliasOutputWithID(outputs[i], outputIDs[i])
 			cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
 		}
 		last := len(outputIDs) - 1
-		lastAliasOutput := isc.NewAliasOutputWithID(outputs[last], outputIDs[last].UTXOInput())
+		lastAliasOutput := isc.NewAliasOutputWithID(outputs[last], outputIDs[last])
 		recvAliasOutputPipeInCh <- lastAliasOutput
 	}
 	recvRequestCB := func(outputID iotago.OutputID, output iotago.Output) {
-		req, err := isc.OnLedgerFromUTXO(output, outputID.UTXOInput())
+		req, err := isc.OnLedgerFromUTXO(output, outputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
 			return
@@ -450,7 +451,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		if err != nil {
 			panic(xerrors.Errorf("cannot extract next AliasOutput from TX: %w", err))
 		}
-		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID.UTXOInput())
+		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,

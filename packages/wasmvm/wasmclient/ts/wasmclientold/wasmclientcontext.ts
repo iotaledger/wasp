@@ -7,7 +7,7 @@ import * as isc from "./isc"
 import * as wasmlib from "wasmlib"
 import * as wc from "./index";
 
-export interface IEventHandler {
+export interface IEventHandlers {
     callHandler(topic: string, params: string[]): void;
 }
 
@@ -26,7 +26,7 @@ export class WasmClientContext extends wc.WasmClientSandbox {
         return this.scHname;
     }
 
-    public register(handler: IEventHandler): isc.Error {
+    public register(handler: IEventHandlers): isc.Error {
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] == handler) {
                 return null;
@@ -59,7 +59,7 @@ export class WasmClientContext extends wc.WasmClientSandbox {
         this.nonce = n.results.accountNonce().value()
     }
 
-    public unregister(handler: IEventHandler): void {
+    public unregister(handler: IEventHandlers): void {
         for (let i = 0; i < this.eventHandlers.length; i++) {
             if (this.eventHandlers[i] == handler) {
                 const handlers = this.eventHandlers;

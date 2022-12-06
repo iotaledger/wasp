@@ -481,7 +481,7 @@ type testStateMgr struct {
 	t         *testing.T
 	lock      *sync.Mutex
 	store     state.Store
-	mockedAOs map[iotago.UTXOInput]*testStateMgrAO
+	mockedAOs map[iotago.OutputID]*testStateMgrAO
 }
 
 type testStateMgrAO struct {
@@ -496,7 +496,7 @@ func newTestStateMgr(t *testing.T) *testStateMgr {
 		t:         t,
 		lock:      &sync.Mutex{},
 		store:     state.InitChainStore(mapdb.NewMapDB()),
-		mockedAOs: map[iotago.UTXOInput]*testStateMgrAO{},
+		mockedAOs: map[iotago.OutputID]*testStateMgrAO{},
 	}
 	_, err := tsm.store.StateByTrieRoot(state.OriginL1Commitment().GetTrieRoot()) // Make sure init state exist.
 	require.NoError(t, err)
@@ -505,7 +505,7 @@ func newTestStateMgr(t *testing.T) *testStateMgr {
 }
 
 func (tsm *testStateMgr) mockAliasOutput(aliasOutput *isc.AliasOutputWithID, chainState state.State, added, removed []state.Block) {
-	tsm.mockedAOs[*aliasOutput.ID()] = &testStateMgrAO{
+	tsm.mockedAOs[aliasOutput.OutputID()] = &testStateMgrAO{
 		aliasOutput: aliasOutput,
 		chainState:  chainState,
 		added:       added,
@@ -528,7 +528,7 @@ func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state
 func (tsm *testStateMgr) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (st state.State, added, removed []state.Block) {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	mockInfo := tsm.mockedAOs[*nextAO.ID()]
+	mockInfo := tsm.mockedAOs[nextAO.OutputID()]
 	return mockInfo.chainState, mockInfo.added, mockInfo.removed
 }
 
@@ -583,7 +583,7 @@ func getRequestsOnLedger(t *testing.T, chainAddress iotago.Address, amount int, 
 			isc.Hn("dummySenderContract"),
 			requestParams,
 		)
-		outputID := tpkg.RandOutputID(uint16(i)).UTXOInput()
+		outputID := tpkg.RandOutputID(uint16(i))
 		var err error
 		result[i], err = isc.OnLedgerFromUTXO(output, outputID)
 		require.NoError(t, err)

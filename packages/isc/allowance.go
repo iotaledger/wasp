@@ -190,18 +190,20 @@ func (a *Allowance) String() string {
 	return ret
 }
 
-func (a *Allowance) fillEmptyNFTIDs(o iotago.Output, utxoInput *iotago.UTXOInput) *Allowance {
+func (a *Allowance) fillEmptyNFTIDs(output iotago.Output, outputID iotago.OutputID) *Allowance {
 	if a == nil {
 		return nil
 	}
-	nftOut, ok := o.(*iotago.NFTOutput)
+
+	nftOutput, ok := output.(*iotago.NFTOutput)
 	if !ok {
 		return a
 	}
+
 	// see if there is an empty NFTID in allowance (this can happpen if the NTF is minted as a request to the chain)
-	for i, nft := range a.NFTs {
-		if nft.Empty() {
-			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOut, utxoInput.ID())
+	for i, nftID := range a.NFTs {
+		if nftID.Empty() {
+			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOutput, outputID)
 		}
 	}
 	return a

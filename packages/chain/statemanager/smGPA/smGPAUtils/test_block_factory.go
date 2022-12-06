@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -16,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/stretchr/testify/require"
 )
 
 type BlockFactory struct {
@@ -29,8 +30,8 @@ type BlockFactory struct {
 }
 
 func NewBlockFactory(t require.TestingT) *BlockFactory {
-	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0).UTXOInput()
-	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID.ID()))
+	aliasOutput0ID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(t), 0)
+	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
@@ -125,7 +126,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	counterBin = codec.EncodeUint64(counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
-	//require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
+	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 
 	consumedAliasOutput := consumedAliasOutputWithID.GetAliasOutput()
 	aliasOutput := &iotago.AliasOutput{
@@ -138,7 +139,7 @@ func (bfT *BlockFactory) GetNextBlock(
 		Conditions:     consumedAliasOutput.Conditions,
 		Features:       consumedAliasOutput.Features,
 	}
-	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(bfT.t), 0).UTXOInput()
+	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(bfT.t), 0)
 	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
 
 	return block, aliasOutputWithID
