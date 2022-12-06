@@ -275,22 +275,27 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	commitment := input.GetStateDraft().BaseL1Commitment()
 	smT.log.Debugf("Input block produced on state %s received...", commitment)
 	request := smT.createBlockRequestLocal(commitment, func(_ obtainStateFun) {
-		smT.log.Debugf("Input block produced on state %s: all blocks to commit state draft index %v are in store, committing it",
+		smT.log.Debugf("Input block produced on state %s: all blocks to commit state draft index %v are in store, producing block",
 			commitment, input.GetStateDraft().BlockIndex())
-		block := smT.store.Commit(input.GetStateDraft())
-		smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store; block %s received",
-			commitment, input.GetStateDraft().BlockIndex(), block.L1Commitment())
+		block := smT.store.ExtractBlock(input.GetStateDraft())
+		blockCommitment := block.L1Commitment()
+		smT.log.Debugf("Input block produced on state %s: state draft index %v produced block %s",
+			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
 		smT.blockCache.AddBlock(block)
-		requestsWC, ok := smT.blockRequests[block.Hash()]
+		requestsWC, ok := smT.blockRequests[blockCommitment.GetBlockHash()]
 		if ok {
-			// It seems, there should never be requests, waiting for this block.
-			// If there were some, they should have been marked completed at the
-			// same time, as this request. Leaving this code just in case.
-			smT.log.Debugf("Input block produced on state %s: marking %v requests, waiting for block %s, completed",
-				commitment, len(requestsWC.blockRequests), block.L1Commitment())
-			for _, request := range requestsWC.blockRequests {
-				smT.markRequestCompleted(request)
+			requests := requestsWC.blockRequests
+			smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
+				commitment, len(requestsWC.blockRequests))
+			delete(smT.blockRequests, blockCommitment.GetBlockHash())
+			for _, request := range requests {
+				request.blockAvailable(block)
 			}
+			smT.log.Debugf("Input block produced on state %s: completing %v requests",
+				commitment, len(requestsWC.blockRequests))
+			err := smT.completeRequests(requests)
+			smT.log.Debugf("Input block produced on state %s: %v requests completed, err=%v",
+				commitment, len(requestsWC.blockRequests), err)
 		}
 	})
 	messages, err := smT.traceBlockChainByRequest(request)
@@ -507,48 +512,53 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 		}
 		commitment = block.PreviousL1Commitment()
 	}
+	smT.log.Debugf("Tracing block %s chain: tracing completed, completing %v requests", initCommitment, len(requests))
+	err := smT.completeRequests(requests)
+	smT.log.Debugf("Tracing block %s chain done, err=%v", initCommitment, err)
+	return nil, err // No messages to send
+}
 
-	smT.log.Debugf("Tracing block %s chain: tracing completed, committing the blocks", initCommitment)
+func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
+	smT.log.Debugf("Completing %v requests: committing blocks...", len(requests))
 	committedBlocks := make(map[state.BlockHash]bool)
 	for _, request := range requests {
-		smT.log.Debugf("Tracing block %s chain: committing blocks of %s request %v", initCommitment, request.getType(), request.getID())
+		smT.log.Debugf("Completing %v requests: committing blocks of %s request %v", len(requests), request.getType(), request.getID())
 		blockChain := request.getBlockChain()
 		for i := len(blockChain) - 1; i >= 0; i-- {
 			block := blockChain[i]
 			blockCommitment := block.L1Commitment()
 			_, ok := committedBlocks[blockCommitment.GetBlockHash()]
 			if ok {
-				smT.log.Debugf("Tracing block %s chain: block %s is already committed", initCommitment, blockCommitment)
+				smT.log.Debugf("Completing %v requests: block %s is already committed, skipping", len(requests), blockCommitment)
 			} else {
-				smT.log.Debugf("Tracing block %s chain: committing block %s...", initCommitment, blockCommitment)
+				smT.log.Debugf("Completing %v requests: committing block %s...", len(requests), blockCommitment)
 				var stateDraft state.StateDraft
 				previousCommitment := block.PreviousL1Commitment()
 				var err error
 				stateDraft, err = smT.store.NewEmptyStateDraft(previousCommitment)
 				if err != nil {
-					return nil, fmt.Errorf("Tracing block %s chain: error creating empty state draft to store block %s: %v",
-						initCommitment, blockCommitment, err)
+					return fmt.Errorf("Completing %v requests: error creating empty state draft to store block %s: %v",
+						len(requests), blockCommitment, err)
 				}
 				block.Mutations().ApplyTo(stateDraft)
 				committedBlock := smT.store.Commit(stateDraft)
 				committedCommitment := committedBlock.L1Commitment()
 				if !committedCommitment.Equals(blockCommitment) {
-					smT.log.Panicf("Tracing block %s chain: block, received after committing (%s) differs from the block, which was committed (%s)",
-						initCommitment, committedCommitment, blockCommitment)
+					smT.log.Panicf("Completing %v requests: block, received after committing (%s) differs from the block, which was committed (%s)",
+						len(requests), committedCommitment, blockCommitment)
 				}
-				smT.log.Debugf("Tracing block %s chain: block index %v %s has been committed to the store on state %s",
-					initCommitment, stateDraft.BlockIndex(), blockCommitment, previousCommitment)
+				smT.log.Debugf("Completing %v requests: block index %v %s has been committed to the store on state %s",
+					len(requests), stateDraft.BlockIndex(), blockCommitment, previousCommitment)
 				committedBlocks[blockCommitment.GetBlockHash()] = true
 			}
 		}
 	}
 
-	smT.log.Debugf("Tracing block %s chain: committing blocks completed, marking all the requests as completed", initCommitment)
+	smT.log.Debugf("Completing %v requests: committing blocks completed, marking all the requests as completed", len(requests))
 	for _, request := range requests {
 		smT.markRequestCompleted(request)
 	}
-	smT.log.Debugf("Tracing block %s chain done", initCommitment)
-	return nil, nil // No messages to send
+	return nil
 }
 
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
