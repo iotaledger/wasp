@@ -24,12 +24,13 @@ import (
 func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
 
-	// anchorOutput := ch.LatestAliasOutput()
+	_, aliasOutput := ch.LatestAliasOutput()
+
 	task := &vm.VMTask{
 		Processors: ch.Processors(),
 
-		// AnchorOutput:         anchorOutput.GetAliasOutput(),
-		// AnchorOutputID:       anchorOutput.OutputID(),
+		AnchorOutput:         aliasOutput.GetAliasOutput(),
+		AnchorOutputID:       aliasOutput.OutputID(),
 		Store:                ch.GetStateReader(),
 		Requests:             []isc.Request{req},
 		TimeAssumption:       time.Now(),
