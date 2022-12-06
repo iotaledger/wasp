@@ -131,31 +131,37 @@ type ChainNodeConn interface {
 }
 
 type chainNodeImpl struct {
-	me                     gpa.NodeID
-	nodeIdentity           *cryptolib.KeyPair
-	chainID                *isc.ChainID
-	chainMgr               chainMgr.ChainMgr
-	chainStore             state.Store
-	nodeConn               NodeConnection
-	mempool                mempool.Mempool
-	stateMgr               statemanager.StateMgr
-	recvAliasOutputPipe    pipe.Pipe
-	recvTxPublishedPipe    pipe.Pipe
-	recvMilestonePipe      pipe.Pipe
-	consensusInsts         map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	consOutputPipe         pipe.Pipe
-	consRecoverPipe        pipe.Pipe
-	publishingTXes         map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
-	procCache              *processors.Cache                           // Cache for the SC processors.
-	activeAccessLock       *sync.RWMutex                               // Mutex for accessing the active* fields from other threads.
-	activeCommitteeDKShare tcrypto.DKShare                             // DKShare of the current active committee.
-	activeCommitteeNodes   []*cryptolib.PublicKey                      // The nodes acting as a committee for the latest consensus.
-	activeAccessNodes      []*cryptolib.PublicKey                      // All the nodes authorized for being access nodes (for the ActiveAO).
-	netRecvPipe            pipe.Pipe
-	netPeeringID           peering.PeeringID
-	netPeerPubs            map[gpa.NodeID]*cryptolib.PublicKey
-	net                    peering.NetworkProvider
-	log                    *logger.Logger
+	me                  gpa.NodeID
+	nodeIdentity        *cryptolib.KeyPair
+	chainID             *isc.ChainID
+	chainMgr            chainMgr.ChainMgr
+	chainStore          state.Store
+	nodeConn            NodeConnection
+	mempool             mempool.Mempool
+	stateMgr            statemanager.StateMgr
+	recvAliasOutputPipe pipe.Pipe
+	recvTxPublishedPipe pipe.Pipe
+	recvMilestonePipe   pipe.Pipe
+	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
+	consOutputPipe      pipe.Pipe
+	consRecoverPipe     pipe.Pipe
+	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
+	procCache           *processors.Cache                           // Cache for the SC processors.
+	//
+	// Information for other components.
+	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
+	activeCommitteeDKShare tcrypto.DKShare        // DKShare of the current active committee.
+	activeCommitteeNodes   []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
+	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (for the ActiveAO).
+	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
+	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
+	//
+	// Infrastructure.
+	netRecvPipe  pipe.Pipe
+	netPeeringID peering.PeeringID
+	netPeerPubs  map[gpa.NodeID]*cryptolib.PublicKey
+	net          peering.NetworkProvider
+	log          *logger.Logger
 }
 
 type consensusInst struct {
@@ -213,10 +219,12 @@ func New(
 		consRecoverPipe:        pipe.NewDefaultInfinitePipe(),
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
-		activeAccessLock:       &sync.RWMutex{},
+		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
 		activeAccessNodes:      []*cryptolib.PublicKey{},
+		latestConfirmedAO:      nil,
+		latestActiveAO:         nil,
 		netRecvPipe:            pipe.NewDefaultInfinitePipe(),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -356,10 +364,10 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
 func (cni *chainNodeImpl) handleAccessNodesCB(accessNodes []*cryptolib.PublicKey) {
-	cni.activeAccessLock.Lock()
+	cni.accessLock.Lock()
 	cni.activeAccessNodes = accessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
-	cni.activeAccessLock.Unlock()
+	cni.accessLock.Unlock()
 	cni.log.Infof("Access nodes updated: %+v", accessNodes)
 	cni.mempool.AccessNodesUpdated(activeCommitteeNodes, accessNodes)
 	cni.stateMgr.AccessNodesUpdated(accessNodes)
@@ -441,6 +449,12 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		}
 	}
 	cni.cleanupPublishingTXes(outputNeedPostTXes)
+	//
+	// Update info for access by other components.
+	cni.accessLock.Lock()
+	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
+	cni.latestActiveAO = output.LatestActiveAliasOutput()
+	cni.accessLock.Unlock()
 }
 
 func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
@@ -496,13 +510,13 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
 		//
 		// Update committee nodes, if changed.
-		cni.activeAccessLock.Lock()
+		cni.accessLock.Lock()
 		cni.activeCommitteeDKShare = needConsensus.DKShare
-		cni.activeAccessLock.Unlock()
+		cni.accessLock.Unlock()
 		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
-			cni.activeAccessLock.Lock()
+			cni.accessLock.Lock()
 			cni.activeCommitteeNodes = ci.committee
-			cni.activeAccessLock.Unlock()
+			cni.accessLock.Unlock()
 			cni.log.Infof("Committee nodes updated: %+v", cni.activeCommitteeNodes)
 			cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, cni.activeAccessNodes)
 		}
@@ -622,10 +636,16 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 	return cni.log
 }
 
+func (cni *chainNodeImpl) LatestAliasOutput() (confirmed, active *isc.AliasOutputWithID) {
+	cni.accessLock.RLock()
+	defer cni.accessLock.RUnlock()
+	return cni.latestConfirmedAO, cni.latestActiveAO
+}
+
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
-	cni.activeAccessLock.RLock()
+	cni.accessLock.RLock()
 	dkShare := cni.activeCommitteeDKShare
-	cni.activeAccessLock.RUnlock()
+	cni.accessLock.RUnlock()
 	if dkShare == nil {
 		return nil // There is no current committee for now.
 	}
@@ -667,10 +687,10 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 }
 
 func (cni *chainNodeImpl) GetChainNodes() []peering.PeerStatusProvider {
-	cni.activeAccessLock.RLock()
+	cni.accessLock.RLock()
 	dkShare := cni.activeCommitteeDKShare
 	acNodes := cni.activeAccessNodes
-	cni.activeAccessLock.RUnlock()
+	cni.accessLock.RUnlock()
 	allNodeKeys := map[cryptolib.PublicKeyKey]*cryptolib.PublicKey{}
 	//
 	// Add committee nodes.

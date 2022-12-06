@@ -171,17 +171,25 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			//
 			// For the unreliable-network tests we have to retry the requests.
 			// That's because the gossip in the mempool is primitive for now.
-			for i := 0; i < incCount; i++ {
+			for ii := 0; ii < incCount; ii++ {
 				scRequest := isc.NewOffLedgerRequest(
 					te.chainID,
 					inccounter.Contract.Hname(),
 					inccounter.FuncIncCounter.Hname(),
-					dict.New(), uint64(i),
+					dict.New(), uint64(ii),
 				).WithGasBudget(20000).Sign(scClient)
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
+		//
+		// Check if LastAliasOutput() works as expected.
+		confirmedAO, activeAO := node.LatestAliasOutput()
+		lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
+		lastPublishedAO, err := transaction.GetAliasOutput(lastPublishedTX, te.chainID.AsAddress())
+		require.NoError(t, err)
+		require.Equal(t, lastPublishedAO, confirmedAO) // In this test we confirm outputs immediately.
+		require.Equal(t, lastPublishedAO, activeAO)
 	}
 }
 
