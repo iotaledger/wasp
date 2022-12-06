@@ -24,7 +24,7 @@ func TestProofs(t *testing.T) {
 		st, err := ch.Store.LatestState()
 		require.NoError(t, err)
 		require.EqualValues(t, ch.ChainID[:], st.ChainID().Bytes())
-		err = proof.ValidateValue(l1Commitment.GetTrieRoot(), ch.ChainID[:])
+		err = proof.ValidateValue(l1Commitment.TrieRoot(), ch.ChainID[:])
 		require.NoError(t, err)
 	})
 	t.Run("check PoI blob", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestProofs(t *testing.T) {
 
 		key := blob.FieldValueKey(h, "file")
 		proof := ch.GetMerkleProof(blob.Contract.Hname(), key)
-		err = proof.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), data)
+		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), data)
 		require.NoError(t, err)
 		t.Logf("key size = %d", len(key))
 	})
@@ -61,7 +61,7 @@ func TestProofs(t *testing.T) {
 
 		recKey := blocklog.RequestReceiptKey(rec.LookupKey())
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), recKey)
-		err = proof.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), rec.Bytes())
+		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), rec.Bytes())
 
 		require.NoError(t, err)
 	})
@@ -86,11 +86,11 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 
 		proof := ch.GetMerkleProof(blocklog.Contract.Hname(), blocklog.BlockInfoKey(pastBlockIndex))
-		err = proof.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), bi.Bytes())
+		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), bi.Bytes())
 
 		require.NoError(t, err)
 
-		require.Equal(t, pastL1Commitment.GetTrieRoot(), bi.L1Commitment.GetTrieRoot())
+		require.Equal(t, pastL1Commitment.TrieRoot(), bi.L1Commitment.TrieRoot())
 	})
 	t.Run("proof past block", func(t *testing.T) {
 		env := solo.New(t)
@@ -112,8 +112,8 @@ func TestProofs(t *testing.T) {
 		pastBlockInfo, poi, err := ch.GetBlockProof(pastBlockIndex)
 		require.NoError(t, err)
 
-		require.Equal(t, pastL1Commitment.GetTrieRoot(), pastBlockInfo.L1Commitment.GetTrieRoot())
-		err = poi.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), pastBlockInfo.Bytes())
+		require.Equal(t, pastL1Commitment.TrieRoot(), pastBlockInfo.L1Commitment.TrieRoot())
+		err = poi.ValidateValue(ch.GetL1Commitment().TrieRoot(), pastBlockInfo.Bytes())
 
 		require.NoError(t, err)
 	})
@@ -129,7 +129,7 @@ func TestProofStateTerminals(t *testing.T) {
 	// core contracts must contain their hname at nil key in their state
 	for _, ci := range corecontracts.AllSortedByName() {
 		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), ci.Hname().Bytes())
+		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), ci.Hname().Bytes())
 		if err != nil {
 			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
 				ci.Name, ci.Hname())
@@ -148,7 +148,7 @@ func TestProofStateTerminals(t *testing.T) {
 	// core contracts must contain their hname at nil key in their state
 	for _, ci := range corecontracts.AllSortedByName() {
 		proof := ch.GetMerkleProof(ci.Hname(), nil)
-		err = proof.ValidateValue(ch.GetL1Commitment().GetTrieRoot(), ci.Hname().Bytes())
+		err = proof.ValidateValue(ch.GetL1Commitment().TrieRoot(), ci.Hname().Bytes())
 		if err != nil {
 			t.Fatalf("core contract '%s' does not contain it's hname '%s' at its nil key",
 				ci.Name, ci.Hname())

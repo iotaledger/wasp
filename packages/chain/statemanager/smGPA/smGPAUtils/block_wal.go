@@ -35,7 +35,7 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID *isc.ChainID, metri
 // Overwrites, if block is already in WAL
 func (bwT *blockWAL) Write(block state.Block) error {
 	commitment := block.L1Commitment()
-	fileName := fileName(commitment.GetBlockHash())
+	fileName := fileName(commitment.BlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
 	bwT.LogDebugf("Writing block %s to wal; file name - %s", commitment, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
