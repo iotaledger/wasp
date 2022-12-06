@@ -503,7 +503,6 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	c.output.NeedVMResult = &vm.VMTask{
-		ACSSessionID:           0, // TODO: Remove the ACSSessionID when old consensus Impl is removed.
 		Processors:             c.processorCache,
 		AnchorOutput:           decidedBaseAliasOutput.GetAliasOutput(),
 		AnchorOutputID:         decidedBaseAliasOutput.OutputID(),
@@ -550,7 +549,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
 			vmResult.RotationAddress,
-			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID.UTXOInput()),
+			isc.NewAliasOutputWithID(vmResult.AnchorOutput, vmResult.AnchorOutputID),
 			vmResult.TimeAssumption,
 			identity.ID{},
 			identity.ID{},

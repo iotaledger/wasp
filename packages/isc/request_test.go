@@ -41,7 +41,7 @@ func TestSerializeRequestData(t *testing.T) {
 			Allowance:      NewAllowanceBaseTokens(1),
 			GasBudget:      1000,
 		}
-		outputOn := &iotago.BasicOutput{
+		basicOutput := &iotago.BasicOutput{
 			Amount: 123,
 			NativeTokens: iotago.NativeTokens{
 				&iotago.NativeToken{
@@ -57,7 +57,7 @@ func TestSerializeRequestData(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: sender},
 			},
 		}
-		req, err = OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+		req, err = OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
 		require.NoError(t, err)
 
 		serialized := req.Bytes()

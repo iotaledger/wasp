@@ -132,13 +132,13 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
+	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
 		return ret.loadNativeTokenOutput(id)
 	}
-	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, *iotago.UTXOInput) {
+	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
 		return ret.loadFoundry(serNum)
 	}
-	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput) {
+	nftLoader := func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
 		return ret.loadNFT(id)
 	}
 	ret.txbuilder = vmtxbuilder.NewAnchorTransactionBuilder(

@@ -85,7 +85,7 @@ func (lvi *varLocalViewImpl) GetBaseAliasOutput() *isc.AliasOutputWithID {
 func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWithID) bool {
 	foundIdx := -1
 	for i := range lvi.entries {
-		if lvi.entries[i].output.ID().Equals(confirmed.ID()) {
+		if lvi.entries[i].output.OutputID() == confirmed.OutputID() {
 			foundIdx = i
 			break
 		}
@@ -112,7 +112,7 @@ func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.AliasOutputWith
 // Trim the suffix of rejected AOs.
 func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *isc.AliasOutputWithID) bool {
 	for i := range lvi.entries {
-		if lvi.entries[i].output.ID().Equals(rejected.ID()) {
+		if lvi.entries[i].output.OutputID() == rejected.OutputID() {
 			lvi.entries = lvi.entries[0:i]
 			lvi.resync = i > 1
 			return !lvi.resync
@@ -128,7 +128,7 @@ func (lvi *varLocalViewImpl) ConsensusOutputDone(consumed iotago.OutputID, publi
 		// Just ignore this call, it is outdated.
 		return false
 	}
-	if !lvi.entries[len(lvi.entries)-1].output.OutputID().UTXOInput().Equals(consumed.UTXOInput()) {
+	if lvi.entries[len(lvi.entries)-1].output.OutputID() != consumed {
 		// Some other output was published in parallel?
 		// Just ignore this call, it is outdated.
 		return false

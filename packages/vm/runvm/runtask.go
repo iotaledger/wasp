@@ -20,7 +20,7 @@ func (r VMRunner) Run(task *vm.VMTask) error {
 		runTask(task)
 	}, task.Log)
 	if err != nil {
-		task.Log.Warnf("GENERAL VM EXCEPTION: the task (ACS id %d) has been abandoned due to: %s", task.ACSSessionID, err.Error())
+		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
 	}
 	return err
 }

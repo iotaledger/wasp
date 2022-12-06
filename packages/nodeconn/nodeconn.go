@@ -166,15 +166,12 @@ func (nc *nodeConn) handleLedgerUpdate(update *nodebridge.LedgerUpdate) error {
 
 				// we can easily check this by searching for output index 0.
 				// if this was created, the rest was created as well because transactions are atomic.
-				txOutputIndexZero := iotago.UTXOInput{
-					TransactionID:          pendingTx.ID(),
-					TransactionOutputIndex: 0,
-				}
+				txOutputIDIndexZero := iotago.OutputIDFromTransactionIDAndIndex(pendingTx.ID(), 0)
 
 				// mark waiting for pending transaction as done
 				nc.clearPendingTransactionWithoutLocking(pendingTx.ID())
 
-				if _, created := newOutputsMap[txOutputIndexZero.ID()]; !created {
+				if _, created := newOutputsMap[txOutputIDIndexZero]; !created {
 					// transaction was conflicting
 					pendingTx.SetConflicting(xerrors.New("input was used in another transaction"))
 				} else {
@@ -295,14 +292,14 @@ func (nc *nodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	nc.GetMetrics().GetOutPullLatestOutput().CountLastMessage(nil)
 }
 
-func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
+func (nc *nodeConn) PullStateOutputByID(chainID *isc.ChainID, outputID iotago.OutputID) {
 	ncc := nc.chains[chainID.Key()]
 	if ncc == nil {
 		nc.log.Errorf("PullOutputByID: NCChain not  found for chainID %s", chainID)
 		return
 	}
-	ncc.PullStateOutputByID(id.ID())
-	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(id)
+	ncc.PullStateOutputByID(outputID)
+	nc.GetMetrics().GetOutPullOutputByID().CountLastMessage(outputID)
 }
 
 func (nc *nodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {

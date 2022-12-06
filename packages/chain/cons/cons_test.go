@@ -81,13 +81,13 @@ func testBasic(t *testing.T, n, f int) {
 	require.NoError(t, err)
 	//
 	// Construct the chain on L1: Create the origin TX.
-	outs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
+	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
 	originTX, chainID, err := transaction.NewChainOriginTransaction(
 		originator,
 		committeeAddress,
 		governor.Address(),
 		1_000_000,
-		outs,
+		outputs,
 		outIDs,
 	)
 	require.NoError(t, err)
@@ -95,17 +95,17 @@ func testBasic(t *testing.T, n, f int) {
 	require.NoError(t, err)
 	require.NotNil(t, stateAnchor)
 	require.NotNil(t, aliasOutput)
-	ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID.UTXOInput())
+	ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 	err = utxoDB.AddToLedger(originTX)
 	require.NoError(t, err)
 	//
 	// Construct the chain on L1: Create the Init Request TX.
-	outs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
+	outputs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
 	initTX, err := transaction.NewRootInitRequestTransaction(
 		originator,
 		chainID,
 		"my test chain",
-		outs,
+		outputs,
 		outIDs,
 	)
 	require.NoError(t, err)
@@ -116,22 +116,21 @@ func testBasic(t *testing.T, n, f int) {
 	// Construct the chain on L1: Find the requests (the init request).
 	initReqs := []isc.Request{}
 	initReqRefs := []*isc.RequestRef{}
-	outs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
-	for outID, out := range outs {
-		if out.Type() == iotago.OutputAlias {
-			zeroAliasID := iotago.AliasID{}
-			outAsAlias := out.(*iotago.AliasOutput)
-			if outAsAlias.AliasID == *chainID.AsAliasID() {
+	outputs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
+	for outputID, output := range outputs {
+		if output.Type() == iotago.OutputAlias {
+			aliasOutput := output.(*iotago.AliasOutput)
+			if aliasOutput.AliasID == *chainID.AsAliasID() {
 				continue // That's our alias output, not the request, skip it here.
 			}
-			if outAsAlias.AliasID == zeroAliasID {
-				implicitAliasID := iotago.AliasIDFromOutputID(outID)
+			if aliasOutput.AliasID.Empty() {
+				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
 				if implicitAliasID == *chainID.AsAliasID() {
 					continue // That's our origin alias output, not the request, skip it here.
 				}
 			}
 		}
-		req, err := isc.OnLedgerFromUTXO(out, outID.UTXOInput())
+		req, err := isc.OnLedgerFromUTXO(output, outputID)
 		if err != nil {
 			continue
 		}
@@ -395,7 +394,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	t.Logf("Done, last block was output and all instances terminated.")
 	for _, doneVal := range doneVals {
-		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetMaintenanceStatus())
+		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetCounter())
 	}
 }
 

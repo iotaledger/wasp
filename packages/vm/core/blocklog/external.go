@@ -46,7 +46,7 @@ func GetRequestReceipt(stateReader kv.KVStoreReader, requestID *isc.RequestID) (
 func IsRequestProcessed(stateReader kv.KVStoreReader, requestID *isc.RequestID) (bool, error) {
 	requestReceipt, err := GetRequestReceipt(stateReader, requestID)
 	if err != nil {
-		return false, err
+		return false, xerrors.Errorf("cannot get request receipt: %w", err)
 	}
 	return requestReceipt != nil, nil
 }

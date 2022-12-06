@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -33,7 +32,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -104,16 +102,6 @@ type Chain struct {
 	mempool Mempool
 	// used for non-standard VMs
 	bypassStardustVM bool
-}
-
-// ReceiveOffLedgerRequest implements chain.Chain
-func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
-	panic("unimplemented")
-}
-
-// AwaitRequestProcessed implements chain.Chain
-func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
-	panic("unimplemented")
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -420,10 +408,10 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 }
 
 func (ch *Chain) GetAnchorOutput() *isc.AliasOutputWithID {
-	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
-	require.EqualValues(ch.Env.T, 1, len(outs))
-	for id, out := range outs {
-		return isc.NewAliasOutputWithID(out, id.UTXOInput())
+	outputs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
+	require.EqualValues(ch.Env.T, 1, len(outputs))
+	for outputID, aliasOutput := range outputs {
+		return isc.NewAliasOutputWithID(aliasOutput, outputID)
 	}
 	panic("unreachable")
 }

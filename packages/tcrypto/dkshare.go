@@ -223,7 +223,7 @@ func (s *dkShareImpl) Bytes() []byte {
 // Write returns byte representation of this struct.
 //
 
-//nolint:gocyclo
+//nolint:gocyclo,funlen
 func (s *dkShareImpl) Write(w io.Writer) error {
 	var err error
 	//
@@ -714,13 +714,14 @@ type jsonKeyShares struct {
 }
 
 type jsonDKShares struct {
-	Address     *json.RawMessage `json:"address"`
-	Index       uint16           `json:"index"`
-	N           uint16           `json:"n"`
-	T           uint16           `json:"t"`
-	NodePubKeys []string         `json:"nodePubKeys"`
-	Ed25519     *jsonKeyShares   `json:"ed25519"`
-	BLS         *jsonKeyShares   `json:"bls"`
+	Address      *json.RawMessage `json:"address"`
+	Index        uint16           `json:"index"`
+	N            uint16           `json:"n"`
+	T            uint16           `json:"t"`
+	NodePubKeys  []string         `json:"nodePubKeys"`
+	Ed25519      *jsonKeyShares   `json:"ed25519"`
+	BlsThreshold uint16           `json:"blsThreshold"`
+	BLS          *jsonKeyShares   `json:"bls"`
 }
 
 func DecodeHexKyperPoint(group kyber.Group, dataHex string) (kyber.Point, error) {
@@ -818,6 +819,7 @@ func (s *dkShareImpl) MarshalJSON() ([]byte, error) {
 			PublicShares:  ed25519PublicSharesHex,
 			PrivateShare:  ed25519PrivateShareHex,
 		},
+		BlsThreshold: s.blsThreshold,
 		BLS: &jsonKeyShares{
 			SharedPublic:  blsSharedPublicHex,
 			PublicCommits: blsPublicCommitsHex,
@@ -844,6 +846,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 	s.index = &j.Index
 	s.n = j.N
 	s.t = j.T
+	s.blsThreshold = j.BlsThreshold
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {

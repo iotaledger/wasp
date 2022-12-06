@@ -21,7 +21,7 @@ type MockedNodeConn struct {
 	publishGovernanceTransactionAllowedFun func(chainID *isc.ChainID, tx *iotago.Transaction) bool
 	pullLatestOutputAllowed                bool
 	pullTxInclusionStateAllowedFun         func(chainID *isc.ChainID, txID iotago.TransactionID) bool
-	pullOutputByIDAllowedFun               func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool
+	pullOutputByIDAllowedFun               func(chainID *isc.ChainID, outputID iotago.OutputID) bool
 	stopChannel                            chan bool
 	attachMilestonesClosures               map[isc.ChainID]*events.Closure
 }
@@ -79,11 +79,11 @@ func (mncT *MockedNodeConn) PullLatestOutput(chainID *isc.ChainID) {
 	}
 }
 
-func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, id *iotago.UTXOInput) {
-	if mncT.pullOutputByIDAllowedFun(chainID, id) {
-		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, id)
+func (mncT *MockedNodeConn) PullStateOutputByID(chainID *isc.ChainID, outputID iotago.OutputID) {
+	if mncT.pullOutputByIDAllowedFun(chainID, outputID) {
+		mncT.ledgers.GetLedger(chainID).PullStateOutputByID(mncT.id, outputID)
 	} else {
-		mncT.log.Errorf("Pull output by ID for address %s ID %v is not allowed", chainID, isc.OID(id))
+		mncT.log.Errorf("Pull output by ID %s for address %s is not allowed", outputID, chainID)
 	}
 }
 
@@ -126,10 +126,10 @@ func (mncT *MockedNodeConn) SetPullTxInclusionStateAllowedFun(fun func(chainID *
 }
 
 func (mncT *MockedNodeConn) SetPullOutputByIDAllowed(flag bool) {
-	mncT.SetPullOutputByIDAllowedFun(func(*isc.ChainID, *iotago.UTXOInput) bool { return flag })
+	mncT.SetPullOutputByIDAllowedFun(func(*isc.ChainID, iotago.OutputID) bool { return flag })
 }
 
-func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.ChainID, outputID *iotago.UTXOInput) bool) {
+func (mncT *MockedNodeConn) SetPullOutputByIDAllowedFun(fun func(chainID *isc.ChainID, outputID iotago.OutputID) bool) {
 	mncT.pullOutputByIDAllowedFun = fun
 }
 

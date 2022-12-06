@@ -137,7 +137,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
 		return err
 	}
-	if err := util.ReadTransactionID(r, &bi.AnchorTransactionID); err != nil {
+	if err := util.ReadTransactionID(r, bi.AnchorTransactionID); err != nil {
 		return err
 	}
 	if err := ReadTransactionSubEssenceHash(r, &bi.TransactionSubEssenceHash); err != nil {

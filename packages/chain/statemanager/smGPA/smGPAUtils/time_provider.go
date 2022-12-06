@@ -1,10 +1,3 @@
-//
-//
-//
-//
-//
-//
-
 package smGPAUtils
 
 import (
