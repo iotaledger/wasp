@@ -5,6 +5,7 @@ package chains
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -98,13 +99,20 @@ func New(
 }
 
 func (c *Chains) Run(ctx context.Context) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	if c.ctx == nil {
-		c.log.Warnf("Chains already running.")
+	// inline func used to release the lock with defer before calling "activateAllFromRegistry"
+	if err := func() error {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+
+		if c.ctx != nil {
+			return errors.New("chains already running")
+		}
+		c.ctx = ctx
+
 		return nil
+	}(); err != nil {
+		return err
 	}
-	c.ctx = ctx
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
@@ -158,9 +166,13 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	}
 	chainStore := state.NewStore(chainKVStore)
 	chainState, err := chainStore.LatestState()
-	chainIDInState, errChainID := chainState.Has(state.KeyChainID)
-	if err != nil || errChainID != nil || !chainIDInState {
+	if err != nil {
 		chainStore = state.InitChainStore(chainKVStore)
+	} else {
+		chainIDInState, errChainID := chainState.Has(state.KeyChainID)
+		if errChainID != nil || !chainIDInState {
+			chainStore = state.InitChainStore(chainKVStore)
+		}
 	}
 
 	var chainWAL smGPAUtils.BlockWAL
