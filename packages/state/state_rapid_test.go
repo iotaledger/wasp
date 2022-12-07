@@ -198,20 +198,11 @@ func TestRapidReproduced(t *testing.T) { // TODO: Fails to reproduce....
 
 func TestRapidReproduced2(t *testing.T) {
 	var err error
-	// XXX: Init
 	store := state.NewStore(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
-	model := mapdb.NewMapDB()
-	// XXX: KVSet 0x0=>0
 	draft.Set(kv.Key([]byte{0}), []byte{0})
-	model.Set([]byte{0x0}, []byte{0})
-	// XXX: KVSet 0x1=>0
-	draft.Set(kv.Key([]byte{0}), []byte{0})
-	model.Set([]byte{0x1}, []byte{0})
-	// XXX: KVSet 0x16=>0
-	draft.Set(kv.Key([]byte{0}), []byte{0})
-	model.Set([]byte{0x16}, []byte{0})
-	// XXX: CommitAddEmpty
+	draft.Set(kv.Key([]byte{1}), []byte{0})
+	draft.Set(kv.Key([]byte{0x10}), []byte{0})
 	block := store.Commit(draft)
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
@@ -223,7 +214,7 @@ func TestRapidReproduced2(t *testing.T) {
 	has, err = blockState.Has(kv.Key([]byte{1}))
 	require.NoError(t, err)
 	require.True(t, has)
-	has, err = blockState.Has(kv.Key([]byte{16}))
+	has, err = blockState.Has(kv.Key([]byte{0x10}))
 	require.NoError(t, err)
 	require.True(t, has)
 }
