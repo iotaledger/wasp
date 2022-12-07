@@ -43,26 +43,26 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	var err error
 
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read GasBudget: %w", err)
 	}
 	if ret.GasBurned, err = mu.ReadUint64(); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read GasBurned: %w", err)
 	}
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read GasFeeCharged: %w", err)
 	}
 	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read Request: %w", err)
 	}
 
 	if isError, err := mu.ReadBool(); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read isError: %w", err)
 	} else if !isError {
 		return ret, nil
 	}
 
 	if ret.Error, err = isc.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("cannot read Error: %w", err)
 	}
 
 	return ret, nil
