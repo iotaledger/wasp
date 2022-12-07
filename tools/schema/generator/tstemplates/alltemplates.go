@@ -111,6 +111,19 @@ import * as sc from "./index";
 }
 `,
 	// *******************************
+	"package.json": `
+{
+  "name": "$package",
+  "version": "1.0.0",
+  "description": "Interface library for: $scDesc",
+  "main": "index.ts",
+  "author": "$author",
+  "license": "Apache-2.0",
+  "dependencies": {
+  }
+}
+`,
+	// *******************************
 	"_eventComment": `
     $nextLine
 `,

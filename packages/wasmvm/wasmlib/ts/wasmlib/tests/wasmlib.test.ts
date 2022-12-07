@@ -18,11 +18,11 @@ function vluCheck(i: u64) {
     expect(i == v).toBeTruthy();
 }
 
-function checkString(testValue: string) {
-    const buf = wasmlib.stringToBytes(testValue);
-    expect(wasmlib.stringFromBytes(buf) == testValue).toBeTruthy();
-    const str = wasmlib.stringToString(testValue);
-    expect(wasmlib.stringFromString(str) == testValue).toBeTruthy();
+function checkHash(testValue: wasmlib.ScHash) {
+    const buf = wasmlib.hashToBytes(testValue);
+    expect(wasmlib.hashFromBytes(buf).equals(testValue)).toBeTruthy();
+    const str = wasmlib.hashToString(testValue);
+    expect(wasmlib.hashFromString(str).equals(testValue)).toBeTruthy();
 }
 
 function checkInt8(testValue: i8) {
@@ -51,6 +51,13 @@ function checkInt64(testValue: i64) {
     expect(wasmlib.int64FromBytes(buf) == testValue).toBeTruthy();
     const str = wasmlib.int64ToString(testValue);
     expect(wasmlib.int64FromString(str) == testValue).toBeTruthy();
+}
+
+function checkString(testValue: string) {
+    const buf = wasmlib.stringToBytes(testValue);
+    expect(wasmlib.stringFromBytes(buf) == testValue).toBeTruthy();
+    const str = wasmlib.stringToString(testValue);
+    expect(wasmlib.stringFromString(str) == testValue).toBeTruthy();
 }
 
 function checkUint8(testValue: u8) {
@@ -86,6 +93,14 @@ describe('conversions', function () {
         checkString("");
         checkString("?");
         checkString("Some weird test string");
+    });
+    it('hash conversion', () => {
+        const hash = new wasmlib.ScHash();
+        checkHash(hash);
+        for (let i = 0; i < wasmlib.ScHashLength; i++) {
+            hash.id[i] = Math.floor(Math.random() * 256) as u8;
+        }
+        checkHash(hash);
     });
     it('int8 conversion', () => {
         checkInt8(0x7f);
