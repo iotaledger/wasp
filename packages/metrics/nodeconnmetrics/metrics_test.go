@@ -22,10 +22,10 @@ func TestRegister(t *testing.T) {
 	chainID3 := isc.RandomChainID()
 	ncm := New()
 
-	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
-	require.Equal(t, []*isc.ChainID{chainID1}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID1}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID2)
 	registered := ncm.GetRegistered()
@@ -34,7 +34,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID2)
 
 	ncm.SetUnregistered(chainID1)
-	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
@@ -43,7 +43,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID3)
 
 	ncm.SetUnregistered(chainID3)
-	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
 	registered = ncm.GetRegistered()

@@ -76,7 +76,7 @@ type Chain struct {
 	StateControllerAddress iotago.Address
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
@@ -269,7 +269,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	chainlog := env.logger.Named(name)
 
-	kvStore, err := env.dbmanager.GetOrCreateChainStateKVStore(*chainID)
+	kvStore, err := env.dbmanager.GetOrCreateChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	store := state.InitChainStore(kvStore)
 
@@ -315,7 +315,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 	require.NoError(env.T, err)
 
 	env.glbMutex.Lock()
-	env.chains[*chainID] = ret
+	env.chains[chainID] = ret
 	env.glbMutex.Unlock()
 
 	go ret.batchLoop()
@@ -345,12 +345,12 @@ func (env *Solo) AddToLedger(tx *iotago.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID *isc.ChainID) ([]isc.Request, error) {
+func (env *Solo) RequestsForChain(tx *iotago.Transaction, chainID isc.ChainID) ([]isc.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
 	m := env.requestsByChain(tx)
-	ret, ok := m[*chainID]
+	ret, ok := m[chainID]
 	if !ok {
 		return nil, fmt.Errorf("chain %s does not exist", chainID.String())
 	}
@@ -391,12 +391,10 @@ func (env *Solo) EnqueueRequests(tx *iotago.Transaction) {
 
 	requests := env.requestsByChain(tx)
 
-	for chidArr, reqs := range requests {
-		chid, err := isc.ChainIDFromBytes(chidArr[:])
-		require.NoError(env.T, err)
-		ch, ok := env.chains[chidArr]
+	for chainID, reqs := range requests {
+		ch, ok := env.chains[chainID]
 		if !ok {
-			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
+			env.logger.Infof("dispatching requests. Unknown chain: %s", chainID.String())
 			continue
 		}
 		ch.runVMMutex.Lock()
@@ -487,7 +485,7 @@ func (ch *Chain) GetStateReader() state.Store {
 	return ch.Store
 }
 
-func (ch *Chain) ID() *isc.ChainID {
+func (ch *Chain) ID() isc.ChainID {
 	return ch.ChainID
 }
 

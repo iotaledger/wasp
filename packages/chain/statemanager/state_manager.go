@@ -33,7 +33,7 @@ type StateMgr interface {
 
 type stateManager struct {
 	log             *logger.Logger
-	chainID         *isc.ChainID
+	chainID         isc.ChainID
 	stateManagerGPA gpa.GPA
 	nodeRandomiser  smUtils.NodeRandomiser
 	nodeIDToPubKey  map[gpa.NodeID]*cryptolib.PublicKey
@@ -59,7 +59,7 @@ const (
 
 func New(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	me *cryptolib.PublicKey,
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,

@@ -13,7 +13,7 @@ import (
 //go:embed templates/metrics_chain.tmpl
 var tplMetricsChain string
 
-func metricsChainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChain"),
 		Title: fmt.Sprintf("Metrics: %.8s", chainID.String()),

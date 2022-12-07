@@ -109,7 +109,7 @@ type ChainNodeConn interface {
 	// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
 	PublishTX(
 		ctx context.Context,
-		chainID *isc.ChainID,
+		chainID isc.ChainID,
 		tx *iotago.Transaction,
 		callback TxPostHandler,
 	) error
@@ -123,7 +123,7 @@ type ChainNodeConn interface {
 	// NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 	AttachChain(
 		ctx context.Context,
-		chainID *isc.ChainID,
+		chainID isc.ChainID,
 		recvRequestCB RequestOutputHandler,
 		recvAliasOutput AliasOutputHandler,
 		recvMilestone MilestoneHandler,
@@ -133,7 +133,7 @@ type ChainNodeConn interface {
 type chainNodeImpl struct {
 	me                  gpa.NodeID
 	nodeIdentity        *cryptolib.KeyPair
-	chainID             *isc.ChainID
+	chainID             isc.ChainID
 	chainMgr            chainMgr.ChainMgr
 	chainStore          state.Store
 	nodeConn            NodeConnection
@@ -194,7 +194,7 @@ var _ Chain = &chainNodeImpl{}
 
 func New(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	chainStore state.Store,
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
@@ -237,7 +237,7 @@ func New(
 	chainMetrics := metrics.EmptyChainMetrics()
 	chainMgr, err := chainMgr.New(
 		cni.me,
-		*cni.chainID,
+		cni.chainID,
 		cmtLogStore,
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
@@ -639,7 +639,7 @@ func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID
 ////////////////////////////////////////////////////////////////////////////////
 // Support functions.
 
-func (cni *chainNodeImpl) ID() *isc.ChainID {
+func (cni *chainNodeImpl) ID() isc.ChainID {
 	return cni.chainID
 }
 

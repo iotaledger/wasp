@@ -120,12 +120,12 @@ func testBasic(t *testing.T, n, f int) {
 	for outputID, output := range outputs {
 		if output.Type() == iotago.OutputAlias {
 			aliasOutput := output.(*iotago.AliasOutput)
-			if aliasOutput.AliasID == *chainID.AsAliasID() {
+			if aliasOutput.AliasID == chainID.AsAliasID() {
 				continue // That's our alias output, not the request, skip it here.
 			}
 			if aliasOutput.AliasID.Empty() {
 				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
-				if implicitAliasID == *chainID.AsAliasID() {
+				if implicitAliasID == chainID.AsAliasID() {
 					continue // That's our origin alias output, not the request, skip it here.
 				}
 			}
@@ -151,7 +151,7 @@ func testBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = state.InitChainStore(mapdb.NewMapDB())
 		require.NoError(t, err)
-		nodes[nid] = cons.New(*chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -442,7 +442,7 @@ type testConsInst struct {
 
 func newTestConsInst(
 	t *testing.T,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	committeeAddress iotago.Address,
 	stateIndex int,
 	procCache *processors.Cache,
@@ -461,7 +461,7 @@ func newTestConsInst(
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(*chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
 	}
 	tci := &testConsInst{
 		t:                                t,

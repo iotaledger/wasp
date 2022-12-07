@@ -59,8 +59,8 @@ func HnameFromAgentID(a AgentID) (Hname, bool) {
 // otherwise a ContractAgentID with hname = 0.
 func NewAgentID(addr iotago.Address) AgentID {
 	if addr.Type() == iotago.AddressAlias {
-		chid := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(&chid, 0)
+		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
+		return NewContractAgentID(chainID, 0)
 	}
 	return &AddressAgentID{a: addr}
 }

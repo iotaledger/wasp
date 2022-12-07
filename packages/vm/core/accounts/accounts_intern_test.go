@@ -16,11 +16,11 @@ import (
 )
 
 func knownAgentID(b byte, h uint32) isc.AgentID {
-	var chid isc.ChainID
-	for i := range chid {
-		chid[i] = b
+	var chainID isc.ChainID
+	for i := range chainID {
+		chainID[i] = b
 	}
-	return isc.NewContractAgentID(&chid, isc.Hname(h))
+	return isc.NewContractAgentID(chainID, isc.Hname(h))
 }
 
 func TestBasic(t *testing.T) {

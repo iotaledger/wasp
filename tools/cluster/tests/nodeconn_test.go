@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-func createChain(t *testing.T) *isc.ChainID {
+func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
 	layer1Client := l1connection.NewClient(l1.Config, testlogger.NewLogger(t))
 	layer1Client.RequestFunds(originator.Address())

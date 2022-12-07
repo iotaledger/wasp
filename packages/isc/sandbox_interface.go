@@ -21,7 +21,7 @@ type SandboxBase interface {
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
-	ChainID() *ChainID
+	ChainID() ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
 	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context

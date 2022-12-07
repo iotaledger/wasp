@@ -6,15 +6,15 @@ import (
 )
 
 // ActivateChain sends a request to activate a chain in all wasp nodes
-func (m *MultiClient) ActivateChain(chID *isc.ChainID) error {
+func (m *MultiClient) ActivateChain(chainID isc.ChainID) error {
 	return m.Do(func(i int, w *client.WaspClient) error {
-		return w.ActivateChain(chID)
+		return w.ActivateChain(chainID)
 	})
 }
 
 // DeactivateChain sends a request to deactivate a chain in all wasp nodes
-func (m *MultiClient) DeactivateChain(chID *isc.ChainID) error {
+func (m *MultiClient) DeactivateChain(chainID isc.ChainID) error {
 	return m.Do(func(i int, w *client.WaspClient) error {
-		return w.DeactivateChain(chID)
+		return w.DeactivateChain(chainID)
 	})
 }

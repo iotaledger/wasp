@@ -84,9 +84,9 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
 
-	chID, err := isc.ChainIDFromString(cfgChainID)
+	chainID, err := isc.ChainIDFromString(cfgChainID)
 	require.NoError(t, err)
-	chainID := wasmtypes.ChainIDFromBytes(chID.Bytes())
+	wasmChainID := wasmtypes.ChainIDFromBytes(chainID.Bytes())
 
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := base58.Decode(cfgSeed)
@@ -96,7 +96,7 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	// we're testing against disposable wasp-cluster, so defaults will do
-	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
+	return newClient(t, wasmclient.DefaultWasmClientService(), wasmChainID, wallet)
 }
 
 func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {

@@ -62,14 +62,14 @@ type dkShareImpl struct {
 	nodePubKeys []*cryptolib.PublicKey
 	//
 	// Shares for the Schnorr signatures (for L1).
-	edSuite         suites.Suite // Used for unmarshaling and signing
+	edSuite         suites.Suite // Used for unmarshalling and signing
 	edSharedPublic  kyber.Point
 	edPublicCommits []kyber.Point
 	edPublicShares  []kyber.Point
 	edPrivateShare  kyber.Scalar
 	//
 	// Shares for the randomness in the consensus et al.
-	blsSuite         Suite  // Used for unmarshaling, signing and verification
+	blsSuite         Suite  // Used for unmarshalling, signing and verification
 	blsThreshold     uint16 // BLS Threshold has to be low (F+1)
 	blsSharedPublic  kyber.Point
 	blsPublicCommits []kyber.Point

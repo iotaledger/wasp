@@ -17,7 +17,7 @@ type nodeConnectionMessageSimpleMetrics[T any] struct {
 	lastMessage     T
 }
 
-func newNodeConnectionMessageSimpleMetrics[T any](ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID, msgType string) NodeConnectionMessageMetrics[T] {
+func newNodeConnectionMessageSimpleMetrics[T any](ncmi *nodeConnectionMetricsImpl, chainID isc.ChainID, msgType string) NodeConnectionMessageMetrics[T] {
 	return &nodeConnectionMessageSimpleMetrics[T]{
 		nodeConnMetrics: ncmi,
 		metricsLabel:    getMetricsLabel(chainID, msgType),

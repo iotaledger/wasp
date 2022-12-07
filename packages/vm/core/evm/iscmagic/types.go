@@ -22,16 +22,16 @@ func init() {
 	}
 }
 
-func WrapISCChainID(c *isc.ChainID) (ret ISCChainID) {
+func WrapISCChainID(c isc.ChainID) (ret ISCChainID) {
 	copy(ret[:], c.Bytes())
 	return
 }
 
-func (c ISCChainID) Unwrap() (*isc.ChainID, error) {
+func (c ISCChainID) Unwrap() (isc.ChainID, error) {
 	return isc.ChainIDFromBytes(c[:])
 }
 
-func (c ISCChainID) MustUnwrap() *isc.ChainID {
+func (c ISCChainID) MustUnwrap() isc.ChainID {
 	ret, err := c.Unwrap()
 	if err != nil {
 		panic(err)

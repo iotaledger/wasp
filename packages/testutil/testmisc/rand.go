@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-func RandChainID() *isc.ChainID {
-	ret := isc.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
-	return &ret
+func RandChainID() isc.ChainID {
+	return isc.ChainIDFromAliasID(tpkg.RandAliasAddress().AliasID())
 }

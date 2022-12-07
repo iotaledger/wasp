@@ -21,7 +21,7 @@ type ConsoleReportParams struct {
 	StatsEveryKVPairs int
 }
 
-func FileName(chainID *isc.ChainID, stateIndex uint32) string {
+func FileName(chainID isc.ChainID, stateIndex uint32) string {
 	return fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
 }
 
@@ -93,7 +93,7 @@ func WriteSnapshot(sr state.State, dir string, p ...ConsoleReportParams) error {
 
 type FileProperties struct {
 	FileName   string
-	ChainID    *isc.ChainID
+	ChainID    isc.ChainID
 	StateIndex uint32
 	TimeStamp  time.Time
 	NumRecords int

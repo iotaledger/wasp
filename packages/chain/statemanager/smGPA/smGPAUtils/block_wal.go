@@ -18,7 +18,7 @@ type blockWAL struct {
 	metrics *BlockWALMetrics
 }
 
-func NewBlockWAL(log *logger.Logger, baseDir string, chainID *isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
+func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := os.MkdirAll(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)

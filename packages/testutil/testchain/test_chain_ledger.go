@@ -27,7 +27,7 @@ type TestChainLedger struct {
 	utxoDB      *utxodb.UtxoDB
 	governor    *cryptolib.KeyPair
 	originator  *cryptolib.KeyPair
-	chainID     *isc.ChainID
+	chainID     isc.ChainID
 	fetchedReqs map[iotago.Address]map[iotago.OutputID]bool
 }
 
@@ -42,11 +42,11 @@ func NewTestChainLedger(t *testing.T, utxoDB *utxodb.UtxoDB, governor, originato
 }
 
 // Only set after MakeTxChainOrigin.
-func (tcl *TestChainLedger) ChainID() *isc.ChainID {
+func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*isc.AliasOutputWithID, *isc.ChainID) {
+func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress iotago.Address) (*isc.AliasOutputWithID, isc.ChainID) {
 	outs, outIDs := tcl.utxoDB.GetUnspentOutputs(tcl.originator.Address())
 	originTX, chainID, err := transaction.NewChainOriginTransaction(
 		tcl.originator,
@@ -135,7 +135,7 @@ func (tcl *TestChainLedger) MakeTxDeployIncCounterContract() []isc.Request {
 
 func (tcl *TestChainLedger) FakeTX(baseAO *isc.AliasOutputWithID, nextCommitteeAddr iotago.Address) (*isc.AliasOutputWithID, *iotago.Transaction) {
 	tx, err := transaction.NewRotateChainStateControllerTx(
-		*tcl.chainID.AsAliasID(),
+		tcl.chainID.AsAliasID(),
 		nextCommitteeAddr,
 		baseAO.OutputID(),
 		baseAO.GetAliasOutput(),
@@ -163,14 +163,13 @@ func (tcl *TestChainLedger) findChainRequests(tx *iotago.Transaction) []isc.Requ
 	for outputID, output := range outputs {
 		// If that's alias output of the chain, then it is not a request.
 		if output.Type() == iotago.OutputAlias {
-			zeroAliasID := iotago.AliasID{}
 			outAsAlias := output.(*iotago.AliasOutput)
-			if outAsAlias.AliasID == *tcl.chainID.AsAliasID() {
+			if outAsAlias.AliasID == tcl.chainID.AsAliasID() {
 				continue // That's our alias output, not the request, skip it here.
 			}
-			if outAsAlias.AliasID == zeroAliasID {
+			if outAsAlias.AliasID.Empty() {
 				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
-				if implicitAliasID == *tcl.chainID.AsAliasID() {
+				if implicitAliasID == tcl.chainID.AsAliasID() {
 					continue // That's our origin alias output, not the request, skip it here.
 				}
 			}

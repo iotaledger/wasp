@@ -7,48 +7,48 @@ func Info() string {
 	return "/info"
 }
 
-func NewRequest(chainID string) string {
-	return "/chain/" + chainID + "/request"
+func NewRequest(chainIDBech32 string) string {
+	return "/chain/" + chainIDBech32 + "/request"
 }
 
-func CallViewByName(chainID, contractHname, functionName string) string {
-	return "/chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
+func CallViewByName(chainIDBech32, contractHname, functionName string) string {
+	return "/chain/" + chainIDBech32 + "/contract/" + contractHname + "/callview/" + functionName
 }
 
-func CallViewByHname(chainID, contractHname, functionHname string) string {
-	return "/chain/" + chainID + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
+func CallViewByHname(chainIDBech32, contractHname, functionHname string) string {
+	return "/chain/" + chainIDBech32 + "/contract/" + contractHname + "/callviewbyhname/" + functionHname
 }
 
-func RequestReceipt(chainID, reqID string) string {
-	return "/chain/" + chainID + "/request/" + reqID + "/receipt"
+func RequestReceipt(chainIDBech32, reqID string) string {
+	return "/chain/" + chainIDBech32 + "/request/" + reqID + "/receipt"
 }
 
-func WaitRequestProcessed(chainID, reqID string) string {
-	return "/chain/" + chainID + "/request/" + reqID + "/wait"
+func WaitRequestProcessed(chainIDBech32, reqID string) string {
+	return "/chain/" + chainIDBech32 + "/request/" + reqID + "/wait"
 }
 
-func StateGet(chainID, key string) string {
-	return "/chain/" + chainID + "/state/" + key
+func StateGet(chainIDBech32, key string) string {
+	return "/chain/" + chainIDBech32 + "/state/" + key
 }
 
-func RequestIDByEVMTransactionHash(chainID, txHash string) string {
-	return "/chain/" + chainID + "/evm/reqid/" + txHash
+func RequestIDByEVMTransactionHash(chainIDBech32, txHash string) string {
+	return "/chain/" + chainIDBech32 + "/evm/reqid/" + txHash
 }
 
-func EVMJSONRPC(chainID string) string {
-	return "/chain/" + chainID + "/evm/jsonrpc"
+func EVMJSONRPC(chainIDBech32 string) string {
+	return "/chain/" + chainIDBech32 + "/evm/jsonrpc"
 }
 
-func ActivateChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/activate"
+func ActivateChain(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/activate"
 }
 
-func DeactivateChain(chainID string) string {
-	return "/adm/chain/" + chainID + "/deactivate"
+func DeactivateChain(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/deactivate"
 }
 
-func GetChainInfo(chainID string) string {
-	return "/adm/chain/" + chainID + "/info"
+func GetChainInfo(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/info"
 }
 
 func ListChainRecords() string {
@@ -59,24 +59,24 @@ func PutChainRecord() string {
 	return "/adm/chainrecord"
 }
 
-func GetChainRecord(chainID string) string {
-	return "/adm/chainrecord/" + chainID
+func GetChainRecord(chainIDBech32 string) string {
+	return "/adm/chainrecord/" + chainIDBech32
 }
 
 func GetChainsNodeConnectionMetrics() string {
 	return "/adm/chain/nodeconn/metrics"
 }
 
-func GetChainNodeConnectionMetrics(chainID string) string {
-	return "/adm/chain/" + chainID + "/nodeconn/metrics"
+func GetChainNodeConnectionMetrics(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/nodeconn/metrics"
 }
 
-func GetChainConsensusWorkflowStatus(chainID string) string {
-	return "/adm/chain/" + chainID + "/consensus/status"
+func GetChainConsensusWorkflowStatus(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/consensus/status"
 }
 
-func GetChainConsensusPipeMetrics(chainID string) string {
-	return "/adm/chain/" + chainID + "/consensus/metrics/pipe"
+func GetChainConsensusPipeMetrics(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/consensus/metrics/pipe"
 }
 
 func DKSharesPost() string {
@@ -119,12 +119,12 @@ func AdmNodeOwnerCertificate() string {
 	return "/adm/node/owner/certificate"
 }
 
-func AdmAddAccessNode(chainID string) string {
-	return "/adm/chain/" + chainID + "/access-node/add"
+func AdmAddAccessNode(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/access-node/add"
 }
 
-func AdmRemoveAccessNode(chainID string) string {
-	return "/adm/chain/" + chainID + "/access-node/remove"
+func AdmRemoveAccessNode(chainIDBech32 string) string {
+	return "/adm/chain/" + chainIDBech32 + "/access-node/remove"
 }
 
 func Shutdown() string {

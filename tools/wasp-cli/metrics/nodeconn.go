@@ -32,9 +32,9 @@ var nodeconnMetricsCmd = &cobra.Command{
 				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
 			)
 		} else {
-			chid, err := isc.ChainIDFromString(chainAlias)
+			chainID, err := isc.ChainIDFromString(chainAlias)
 			log.Check(err)
-			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
+			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chainID)
 			log.Check(err)
 			printMessagesMetrics(msgsMetrics, [][]string{})
 		}

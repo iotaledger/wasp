@@ -59,7 +59,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 	j.chainServersMutex.Lock()
 	defer j.chainServersMutex.Unlock()
 
-	if j.chainServers[*chainID] == nil {
+	if j.chainServers[chainID] == nil {
 		chain := j.chains().Get(chainID)
 		if chain == nil {
 			return nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %+v", c.Param("chainID")))
@@ -84,7 +84,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 			}
 		}
 
-		j.chainServers[*chainID] = &chainServer{
+		j.chainServers[chainID] = &chainServer{
 			backend: backend,
 			rpc: jsonrpc.NewServer(
 				jsonrpc.NewEVMChain(backend, evmChainID),
@@ -93,7 +93,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 		}
 	}
 
-	return j.chainServers[*chainID], nil
+	return j.chainServers[chainID], nil
 }
 
 func (j *jsonRPCService) handleJSONRPC(c echo.Context) error {

@@ -46,7 +46,7 @@ func (*MockChain) GetStateReader() state.Store {
 }
 
 // ID implements chain.Chain
-func (*MockChain) ID() *isc.ChainID {
+func (*MockChain) ID() isc.ChainID {
 	panic("unimplemented")
 }
 

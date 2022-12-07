@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func (c *WaspClient) GetGasFeePolicy(chainID *isc.ChainID) (*gas.GasFeePolicy, error) {
+func (c *WaspClient) GetGasFeePolicy(chainID isc.ChainID) (*gas.GasFeePolicy, error) {
 	res, err := c.CallViewByHname(chainID, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
 	if err != nil {
 		return nil, err

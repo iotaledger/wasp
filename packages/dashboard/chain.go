@@ -21,7 +21,7 @@ import (
 //go:embed templates/chain.tmpl
 var tplChain string
 
-func chainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func chainBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
 		Title: fmt.Sprintf("Chain %.8s…", chainID.String()),
@@ -93,7 +93,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func (d *Dashboard) getLatestBlock(chainID *isc.ChainID) (*LatestBlock, error) {
+func (d *Dashboard) getLatestBlock(chainID isc.ChainID) (*LatestBlock, error) {
 	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetBlockInfo.Name, nil)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (d *Dashboard) getLatestBlock(chainID *isc.ChainID) (*LatestBlock, error) {
 	return &LatestBlock{Index: index, Info: block}, nil
 }
 
-func (d *Dashboard) fetchAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
+func (d *Dashboard) fetchAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewAccounts.Name, nil)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (d *Dashboard) fetchAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(chainID *isc.ChainID) (*isc.FungibleTokens, error) {
+func (d *Dashboard) fetchTotalAssets(chainID isc.ChainID) (*isc.FungibleTokens, error) {
 	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.ViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (d *Dashboard) fetchTotalAssets(chainID *isc.ChainID) (*isc.FungibleTokens,
 	return isc.FungibleTokensFromDict(bal)
 }
 
-func (d *Dashboard) fetchBlobs(chainID *isc.ChainID) (map[hashing.HashValue]uint32, error) {
+func (d *Dashboard) fetchBlobs(chainID isc.ChainID) (map[hashing.HashValue]uint32, error) {
 	ret, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.ViewListBlobs.Name, nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (d *Dashboard) fetchBlobs(chainID *isc.ChainID) (map[hashing.HashValue]uint
 	return blob.DecodeDirectory(ret)
 }
 
-func (d *Dashboard) fetchEVMChainID(chainID *isc.ChainID) (uint16, error) {
+func (d *Dashboard) fetchEVMChainID(chainID isc.ChainID) (uint16, error) {
 	ret, err := d.wasp.CallView(chainID, evm.Contract.Name, evm.FuncGetChainID.Name, nil)
 	if err != nil {
 		return 0, err
@@ -158,7 +158,7 @@ type LatestBlock struct {
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 
 	EVMChainID  uint16
 	Record      *registry.ChainRecord

@@ -89,7 +89,7 @@ type Block interface {
 }
 
 type StateCommonValues interface {
-	ChainID() *isc.ChainID
+	ChainID() isc.ChainID
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousL1Commitment() *L1Commitment
