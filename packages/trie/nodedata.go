@@ -36,7 +36,7 @@ type nodeData struct {
 
 func newNodeData() *nodeData {
 	n := &nodeData{}
-	n.commitment = n.makeHashVector().Hash()
+	n.updateCommitment()
 	return n
 }
 
@@ -89,8 +89,8 @@ func (n *nodeData) String() string {
 		childIdx = append(childIdx, byte(i))
 		return true
 	})
-	return fmt.Sprintf("c: %s, pf: '%s', childrenIdx: %v, term: '%s'",
-		n.commitment, string(n.pathExtension), childIdx, t)
+	return fmt.Sprintf("c:%s ext:%v childIdx:%v term:%s",
+		n.commitment, n.pathExtension, childIdx, t)
 }
 
 // Read/Write implements optimized serialization of the trie node
@@ -248,11 +248,10 @@ func (n *nodeData) update(childUpdates map[byte]*Hash, newTerminalUpdate *tcommi
 	}
 	n.terminal = newTerminalUpdate // for hash commitment just replace
 	n.pathExtension = pathExtension
-	n.commitment = n.makeHashVector().Hash()
+	n.updateCommitment()
 }
 
-// makeHashVector makes the node vector to be hashed. Missing children are nil
-func (n *nodeData) makeHashVector() *hashVector {
+func (n *nodeData) updateCommitment() {
 	hashes := &hashVector{}
 	n.iterateChildren(func(i byte, h Hash) bool {
 		hashes[i] = h[:]
@@ -264,5 +263,5 @@ func (n *nodeData) makeHashVector() *hashVector {
 	}
 	pathExtensionCommitmentBytes, _ := compressToHashSize(n.pathExtension)
 	hashes[pathExtensionIndex] = pathExtensionCommitmentBytes
-	return hashes
+	n.commitment = hashes.Hash()
 }

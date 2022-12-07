@@ -2,6 +2,7 @@ package trie
 
 import (
 	"fmt"
+	"strings"
 )
 
 // TrieUpdatable is an updatable trie implemented on top of the unpackedKey/value store. It is virtualized and optimized by caching of the
@@ -94,4 +95,12 @@ func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) 
 	ret.setPathExtension(pathExtension)
 	ret.setValue(value)
 	return ret
+}
+
+// dump prints the structure of the tree to stdout, for debugging purposes.
+func (tr *TrieReader) dump() {
+	tr.iterateNodes(tr.root, nil, func(nodeKey []byte, n *nodeData) bool {
+		fmt.Printf("%s %v %s\n", strings.Repeat(" ", len(nodeKey)), nodeKey, n)
+		return true
+	})
 }

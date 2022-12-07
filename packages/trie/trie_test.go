@@ -69,6 +69,31 @@ func TestBasic(t *testing.T) {
 	require.Equal(t, root0, root3)
 }
 
+func TestBasic2(t *testing.T) {
+	store := NewInMemoryKVStore()
+
+	root0 := MustInitRoot(store)
+
+	var root1 Hash
+	{
+		tr, err := NewTrieUpdatable(store, root0)
+		require.NoError(t, err)
+		tr.Update([]byte{0x00}, []byte{0})
+		tr.Update([]byte{0x01}, []byte{0})
+		tr.Update([]byte{0x10}, []byte{0})
+		root1 = tr.Commit(store)
+	}
+
+	tr, err := NewTrieReader(store, root1)
+	require.NoError(t, err)
+	tr.dump()
+	for i := 0; i < 10; i++ {
+		require.True(t, tr.Has([]byte{0x00}))
+		require.True(t, tr.Has([]byte{0x01}))
+		require.True(t, tr.Has([]byte{0x10}))
+	}
+}
+
 func TestCreateTrie(t *testing.T) {
 	t.Run("ok init-"+"", func(t *testing.T) {
 		rootC1 := MustInitRoot(NewInMemoryKVStore())
