@@ -21,6 +21,7 @@ func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocket
 	}
 
 	e.GET("/chain/:chainID/ws", api.handleWebSocket).
+		SetDeprecated().
 		AddParamPath("", "chainID", "ChainID (bech32-encoded)")
 
 	return api

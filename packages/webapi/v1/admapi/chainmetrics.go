@@ -94,10 +94,12 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 	}
 
 	adm.GET(routes.GetChainsNodeConnectionMetrics(), cms.handleGetChainsNodeConnMetrics).
+		SetDeprecated().
 		SetSummary("Get cummulative chains node connection metrics").
 		AddResponse(http.StatusOK, "Cummulative chains metrics", example, nil)
 
 	adm.GET(routes.GetChainNodeConnectionMetrics(":chainID"), cms.handleGetChainNodeConnMetrics).
+		SetDeprecated().
 		SetSummary("Get chain node connection metrics for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain metrics", chainExample, nil)
@@ -128,6 +130,7 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 	}
 
 	adm.GET(routes.GetChainConsensusWorkflowStatus(":chainID"), cms.handleGetChainConsensusWorkflowStatus).
+		SetDeprecated().
 		SetSummary("Get chain state statistics for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain consensus stats", example, nil).
@@ -144,6 +147,7 @@ func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainM
 	}
 
 	adm.GET(routes.GetChainConsensusPipeMetrics(":chainID"), cms.handleGetChainConsensusPipeMetrics).
+		SetDeprecated().
 		SetSummary("Get consensus pipe metrics").
 		AddParamPath("", "chainID", "chainID").
 		AddResponse(http.StatusOK, "Chain consensus pipe metrics", example, nil).

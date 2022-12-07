@@ -37,18 +37,21 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("metrics/chain/:chainID", c.getChainMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMetrics{}, nil).
 		SetOperationId("getChainMetrics").
 		SetSummary("Get chain specific metrics.")
 
 	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(models.ConsensusWorkflowMetrics{}), nil).
 		SetOperationId("getChainWorkflowMetrics").
 		SetSummary("Get chain workflow metrics.")
 
 	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics, authentication.ValidatePermissions([]string{permissions.MetricsRead})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(models.ConsensusPipeMetrics{}), nil).
 		SetOperationId("getChainPipeMetrics").
 		SetSummary("Get chain pipe event metrics.")

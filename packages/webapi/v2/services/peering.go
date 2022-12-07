@@ -38,11 +38,17 @@ func (p *PeeringService) GetIdentity() *dto.PeeringNodeIdentity {
 }
 
 func (p *PeeringService) GetRegisteredPeers() *[]dto.PeeringNodeStatus {
+	p.logger.Debug("GetRegisteredPeers")
 	peers := p.networkProvider.PeerStatus()
+	p.logger.Debug("Got peer status")
+
 	peerModels := make([]dto.PeeringNodeStatus, len(peers))
 
 	for k, v := range peers {
+		p.logger.Debug("IsTrustedPeer")
+
 		isTrustedErr := p.trustedNetworkManager.IsTrustedPeer(v.PubKey())
+		p.logger.Debug("IsTrustedPeer done")
 
 		peerModels[k] = dto.PeeringNodeStatus{
 			PublicKey: v.PubKey(),

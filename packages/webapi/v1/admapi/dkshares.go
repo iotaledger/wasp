@@ -49,11 +49,13 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, dkShareRegistryProvider regi
 	}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
+		SetDeprecated().
 		AddParamBody(requestExample, "DKSharesPostRequest", "Request parameters", true).
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Generate a new distributed key")
 
 	adm.GET(routes.DKSharesGet(":sharedAddress"), s.handleDKSharesGet).
+		SetDeprecated().
 		AddParamPath("", "sharedAddress", "Address of the DK share (hex)").
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Get distributed key properties")

@@ -49,6 +49,7 @@ func AddEndpoints(
 		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
+		SetDeprecated().
 		SetSummary("Post an off-ledger request").
 		AddParamPath("", "chainID", "chainID").
 		AddParamBody(

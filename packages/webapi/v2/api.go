@@ -1,15 +1,13 @@
 package v2
 
 import (
-	"time"
-
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	corecontracts "github.com/iotaledger/wasp/packages/webapi/v2/controllers/core_contracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/metrics"
-
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/dkg"
 	userspkg "github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/requests"
@@ -31,26 +29,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, userManager *userspkg.UserManager, registryProvider registry.Provider, controllersToLoad []interfaces.APIController) {
-	claimValidator := func(claims *authentication.WaspClaims) bool {
-		// The API will be accessible if the token has an 'API' claim
-		return claims.HasPermission(permissions.API)
-	}
-
+func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
 		publicGroup := server.Group(controller.Name(), "v2/")
 
 		controller.RegisterPublic(publicGroup, mocker)
 
 		adminGroup := server.Group(controller.Name(), "v2/").
-			SetSecurity("Authorization")
-
-		authentication.AddAuthentication(adminGroup.EchoGroup(), userManager, registryProvider, authentication.AuthConfiguration{
-			Scheme: authentication.AuthJWT,
-			JWTConfig: authentication.JWTAuthConfiguration{
-				Duration: 24 * time.Hour,
-			},
-		}, claimValidator)
+			SetSecurity("JWT")
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
@@ -58,6 +44,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, userManager *us
 
 func Init(logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
+	authConfig authentication.AuthConfiguration,
 	config *configuration.Configuration,
 	chainsProvider chains.Provider,
 	dkgNodeProvider dkg.NodeProvider,
@@ -93,7 +80,15 @@ func Init(logger *loggerpkg.Logger,
 		node.NewNodeController(logger, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(logger, chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(logger, userService),
+		corecontracts.NewCoreContractsController(logger, vmService),
 	}
 
-	loadControllers(server, mocker, userManager, registryProvider, controllersToLoad)
+	claimValidator := func(claims *authentication.WaspClaims) bool {
+		// The API will be accessible if the token has an 'API' claim
+		return claims.HasPermission(permissions.API)
+	}
+
+	authentication.AddAuthentication(server.Echo(), userManager, registryProvider, authConfig, claimValidator)
+
+	loadControllers(server, mocker, controllersToLoad)
 }

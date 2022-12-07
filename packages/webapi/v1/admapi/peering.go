@@ -42,34 +42,41 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider r
 	}
 
 	adm.GET(routes.PeeringSelfGet(), p.handlePeeringSelfGet).
+		SetDeprecated().
 		AddResponse(http.StatusOK, "This node as a peer.", listExample[0], nil).
 		SetSummary("Basic peer info of the current node.")
 
 	adm.GET(routes.PeeringTrustedList(), p.handlePeeringTrustedList).
+		SetDeprecated().
 		AddResponse(http.StatusOK, "A list of trusted peers.", listExample, nil).
 		SetSummary("Get a list of trusted peers.")
 
 	adm.GET(routes.PeeringTrustedGet(":pubKey"), p.handlePeeringTrustedGet).
+		SetDeprecated().
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Get details on a particular trusted peer.")
 
 	adm.PUT(routes.PeeringTrustedPut(":pubKey"), p.handlePeeringTrustedPut).
+		SetDeprecated().
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
 
 	adm.GET(routes.PeeringGetStatus(), p.handlePeeringGetStatus).
+		SetDeprecated().
 		AddResponse(http.StatusOK, "A list of all peers.", peeringStatusExample, nil).
 		SetSummary("Basic information about all configured peers.")
 
 	adm.POST(routes.PeeringTrustedPost(), p.handlePeeringTrustedPost).
+		SetDeprecated().
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer.")
 
 	adm.DELETE(routes.PeeringTrustedDelete(":pubKey"), p.handlePeeringTrustedDelete).
+		SetDeprecated().
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (hex).").
 		SetSummary("Distrust the specified peer.")
 }

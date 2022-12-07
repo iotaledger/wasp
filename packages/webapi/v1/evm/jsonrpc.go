@@ -45,7 +45,9 @@ func AddEndpoints(server echoswagger.ApiGroup, allChains chains.Provider, nodePu
 	server.EchoGroup().Any(routes.EVMJSONRPC(":chainID"), j.handleJSONRPC)
 
 	reqid := model.NewRequestID(isc.NewRequestID(iotago.TransactionID{}, 0))
+
 	server.GET(routes.RequestIDByEVMTransactionHash(":chainID", ":txHash"), j.handleRequestID).
+		SetDeprecated().
 		SetSummary("Get the ISC request ID for the given Ethereum transaction hash").
 		AddParamPath("", "chainID", "ChainID (bech32-encoded)").
 		AddParamPath("", "txHash", "Transaction hash (hex-encoded)").

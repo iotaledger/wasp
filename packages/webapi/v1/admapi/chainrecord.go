@@ -26,15 +26,18 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvid
 	s := &chainRecordService{chainRecordRegistryProvider, chainsProvider}
 
 	adm.POST(routes.PutChainRecord(), s.handlePutChainRecord).
+		SetDeprecated().
 		SetSummary("Create a new chain record").
 		AddParamBody(example, "Record", "Chain record", true)
 
 	adm.GET(routes.GetChainRecord(":chainID"), s.handleGetChainRecord).
+		SetDeprecated().
 		SetSummary("Find the chain record for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (bech32)").
 		AddResponse(http.StatusOK, "Chain Record", example, nil)
 
 	adm.GET(routes.ListChainRecords(), s.handleGetChainRecordList).
+		SetDeprecated().
 		SetSummary("Get the list of chain records in the node").
 		AddResponse(http.StatusOK, "Chain Record", []model.ChainRecord{example}, nil)
 }

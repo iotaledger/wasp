@@ -54,8 +54,8 @@ func getTotalL2AssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap 
 	return collections.NewMapReadOnly(state, prefixTotalL2AssetsAccount)
 }
 
-// getAccountsMap is a map which contains all non-empty accounts
-func getAccountsMap(state kv.KVStore) *collections.Map {
+// GetAccountsMap is a map which contains all non-empty accounts
+func GetAccountsMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixAllAccounts)
 }
 
@@ -111,7 +111,7 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 		return
 	}
 	agentid := []byte(account.Name())[1:] // skip the prefix
-	accounts := getAccountsMap(state)
+	accounts := GetAccountsMap(state)
 	if account.MustLen() == 0 {
 		accounts.MustDelAt(agentid)
 	} else {
@@ -550,7 +550,7 @@ func mustFoundryOutputRecFromBytes(data []byte) *foundryOutputRec {
 	return ret
 }
 
-// getAccountsMap is a map which contains all foundries owned by the chain
+// GetAccountsMap is a map which contains all foundries owned by the chain
 func getFoundriesMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixFoundryOutputRecords)
 }
@@ -687,7 +687,7 @@ func mustNativeTokenOutputRecFromBytes(data []byte) *nativeTokenOutputRec {
 	return ret
 }
 
-// getAccountsMap is a map which contains all foundries owned by the chain
+// GetAccountsMap is a map which contains all foundries owned by the chain
 func getNativeTokenOutputMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixNativeTokenOutputMap)
 }
@@ -785,7 +785,7 @@ func mustNFTOutputRecFromBytes(data []byte) *NFTOutputRec {
 	return ret
 }
 
-// getAccountsMap is a map which contains all foundries owned by the chain
+// GetAccountsMap is a map which contains all foundries owned by the chain
 func getNFTOutputMap(state kv.KVStore) *collections.Map {
 	return collections.NewMap(state, prefixNFTOutputRecords)
 }

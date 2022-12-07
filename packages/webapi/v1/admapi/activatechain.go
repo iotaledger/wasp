@@ -34,14 +34,17 @@ type chainWebAPI struct {
 
 func addChainEndpoints(adm echoswagger.ApiGroup, c *chainWebAPI) {
 	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
+		SetDeprecated().
 		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Activate a chain")
 
 	adm.POST(routes.DeactivateChain(":chainID"), c.handleDeactivateChain).
+		SetDeprecated().
 		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Deactivate a chain")
 
 	adm.GET(routes.GetChainInfo(":chainID"), c.handleGetChainInfo).
+		SetDeprecated().
 		AddParamPath("", "chainID", "ChainID (bech32))").
 		SetSummary("Get basic chain info.")
 }

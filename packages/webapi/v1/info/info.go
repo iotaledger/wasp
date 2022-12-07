@@ -25,6 +25,7 @@ func AddEndpoints(server echoswagger.ApiRouter, network peering.NetworkProvider,
 	}
 
 	server.GET(routes.Info(), s.handleInfo).
+		SetDeprecated().
 		SetSummary("Get information about the node").
 		AddResponse(http.StatusOK, "Node properties", model.InfoResponse{}, nil)
 }

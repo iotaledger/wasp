@@ -3,7 +3,6 @@ package admapi
 import (
 	"net/http"
 
-
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 
 	"github.com/labstack/echo/v4"
@@ -20,6 +19,7 @@ func addShutdownEndpoint(adm echoswagger.ApiGroup, shutdown ShutdownFunc) {
 	s := &shutdownService{shutdown}
 
 	adm.GET(routes.Shutdown(), s.handleShutdown).
+		SetDeprecated().
 		SetSummary("Shut down the node")
 }
 

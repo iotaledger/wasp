@@ -38,6 +38,7 @@ func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, nodeIdentityProvider regist
 		Certificate: model.NewBytes([]byte{0, 1, 17, 19}),
 	}
 	adm.POST(routes.AdmNodeOwnerCertificate(), nos.handleAdmNodeOwnerCertificate, addCtx).
+		SetDeprecated().
 		AddParamBody(reqExample, "Request", "Certificate request", true).
 		AddResponse(http.StatusOK, "Generated certificate.", resExample, nil).
 		SetSummary("Provides a certificate, if the node recognizes the owner.")
