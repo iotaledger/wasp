@@ -18,9 +18,9 @@ FILES=$(go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 ${GO_EXECUTABLE} clean -testcache
 
 if [ "$OUTPUT_TO_FILE" = false ]; then
-    ${GO_EXECUTABLE} test -timeout=5h ${FILES}
+    ${GO_EXECUTABLE} test --short --count 1 -failfast -timeout=5h ${FILES}
 else
-    ${GO_EXECUTABLE} test -v -timeout=5h ${FILES} 2>&1 | tee tests_output.log
+    ${GO_EXECUTABLE} test --short --count 1 -failfast -v -timeout=5h ${FILES} 2>&1 | tee tests_output.log
 fi
 
 cd ${CURRENT_DIR}
