@@ -32,7 +32,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   iotago.Address
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 
 	Cluster *Cluster
 }

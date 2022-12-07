@@ -18,26 +18,26 @@ func (c *WaspClient) GetNodeConnectionMetrics() (*model.NodeConnectionMetrics, e
 }
 
 // GetNodeConnectionMetrics fetches a connection to L1 metrics by address
-func (c *WaspClient) GetChainNodeConnectionMetrics(chID *isc.ChainID) (*model.NodeConnectionMessagesMetrics, error) {
+func (c *WaspClient) GetChainNodeConnectionMetrics(chainID isc.ChainID) (*model.NodeConnectionMessagesMetrics, error) {
 	ncmm := &model.NodeConnectionMessagesMetrics{}
-	if err := c.do(http.MethodGet, routes.GetChainNodeConnectionMetrics(chID.String()), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainNodeConnectionMetrics(chainID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil
 }
 
 // GetNodeConnectionMetrics fetches a consensus workflow status by address
-func (c *WaspClient) GetChainConsensusWorkflowStatus(chID *isc.ChainID) (*model.ConsensusWorkflowStatus, error) {
+func (c *WaspClient) GetChainConsensusWorkflowStatus(chainID isc.ChainID) (*model.ConsensusWorkflowStatus, error) {
 	ncmm := &model.ConsensusWorkflowStatus{}
-	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chID.String()), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainConsensusWorkflowStatus(chainID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil
 }
 
-func (c *WaspClient) GetChainConsensusPipeMetrics(chID *isc.ChainID) (*model.ConsensusPipeMetrics, error) {
+func (c *WaspClient) GetChainConsensusPipeMetrics(chainID isc.ChainID) (*model.ConsensusPipeMetrics, error) {
 	ncmm := &model.ConsensusPipeMetrics{}
-	if err := c.do(http.MethodGet, routes.GetChainConsensusPipeMetrics(chID.String()), nil, ncmm); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainConsensusPipeMetrics(chainID.String()), nil, ncmm); err != nil {
 		return nil, err
 	}
 	return ncmm, nil

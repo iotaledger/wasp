@@ -12,7 +12,7 @@ import (
 )
 
 // RequestReceipt fetches the processing status of a request.
-func (c *WaspClient) RequestReceipt(chainID *isc.ChainID, reqID isc.RequestID) (*isc.Receipt, error) {
+func (c *WaspClient) RequestReceipt(chainID isc.ChainID, reqID isc.RequestID) (*isc.Receipt, error) {
 	var res model.RequestReceiptResponse
 	if err := c.do(http.MethodGet, routes.RequestReceipt(chainID.String(), reqID.String()), nil, &res); err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (c *WaspClient) RequestReceipt(chainID *isc.ChainID, reqID isc.RequestID) (
 const waitRequestProcessedDefaultTimeout = 30 * time.Second
 
 // WaitUntilRequestProcessed blocks until the request has been processed by the node
-func (c *WaspClient) WaitUntilRequestProcessed(chainID *isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
+func (c *WaspClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
 	if timeout == 0 {
 		timeout = waitRequestProcessedDefaultTimeout
 	}
@@ -55,13 +55,13 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *isc.ChainID, reqID isc.R
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
-func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID *isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
+func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
 	reqs, err := isc.RequestsInTransaction(tx)
 	if err != nil {
 		return nil, err
 	}
 	ret := make([]*isc.Receipt, len(reqs))
-	for i, req := range reqs[*chainID] {
+	for i, req := range reqs[chainID] {
 		receipt, err := c.WaitUntilRequestProcessed(chainID, req.ID(), timeout)
 		if err != nil {
 			return nil, err

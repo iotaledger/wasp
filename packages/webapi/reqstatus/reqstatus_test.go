@@ -23,7 +23,7 @@ const foo = "foo"
 
 func mockedGetReceiptFromBlocklog(_ chain.Chain, id isc.RequestID) (*blocklog.RequestReceipt, error) {
 	req := isc.NewOffLedgerRequest(
-		&isc.ChainID{123},
+		isc.ChainID{123},
 		isc.Hn("some contract"),
 		isc.Hn("some entrypoint"),
 		dict.Dict{foo: []byte("bar")},
@@ -60,7 +60,7 @@ func mockedResolveReceipt(c echo.Context, ch chain.Chain, rec *blocklog.RequestR
 
 func TestRequestReceipt(t *testing.T) {
 	r := &reqstatusWebAPI{
-		getChain: func(chainID *isc.ChainID) chain.Chain {
+		getChain: func(chainID isc.ChainID) chain.Chain {
 			return &testutil.MockChain{}
 		},
 		getReceiptFromBlocklog: mockedGetReceiptFromBlocklog,

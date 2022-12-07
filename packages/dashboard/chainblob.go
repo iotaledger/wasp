@@ -111,7 +111,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 type ChainBlobTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 	Hash    hashing.HashValue
 
 	Blob []BlobField

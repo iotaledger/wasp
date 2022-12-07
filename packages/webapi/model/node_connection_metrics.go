@@ -30,15 +30,15 @@ type NodeConnectionMessagesMetrics struct {
 type NodeConnectionMetrics struct {
 	NodeConnectionMessagesMetrics
 	InMilestone *NodeConnectionMessageMetrics `swagger:"desc(Stats of received Milestone messages)"`
-	Registered  []ChainID                     `swagger:"desc(Chain IDs of the chains registered to receiving L1 events)"`
+	Registered  []ChainIDBech32               `swagger:"desc(Chain IDs of the chains registered to receiving L1 events)"`
 }
 
 func NewNodeConnectionMetrics(metrics nodeconnmetrics.NodeConnectionMetrics) *NodeConnectionMetrics {
 	ncmm := NewNodeConnectionMessagesMetrics(metrics)
 	registered := metrics.GetRegistered()
-	r := make([]ChainID, len(registered))
+	r := make([]ChainIDBech32, len(registered))
 	for i := range r {
-		r[i] = NewChainID(registered[i])
+		r[i] = NewChainIDBech32(registered[i])
 	}
 	return &NodeConnectionMetrics{
 		NodeConnectionMessagesMetrics: *ncmm,

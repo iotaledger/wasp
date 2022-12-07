@@ -49,13 +49,13 @@ type WaspServicesInterface interface {
 	PeeringStats() (*PeeringStats, error)
 	MyNetworkID() string
 	ChainRecords() ([]*registry.ChainRecord, error)
-	GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error)
-	GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error)
-	CallView(chainID *isc.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
-	GetChainNodeConnectionMetrics(*isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
+	GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error)
+	GetChainCommitteeInfo(chainID isc.ChainID) (*chain.CommitteeInfo, error)
+	CallView(chainID isc.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainNodeConnectionMetrics(isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error)
 	GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectionMetrics, error)
-	GetChainConsensusWorkflowStatus(*isc.ChainID) (chain.ConsensusWorkflowStatus, error)
-	GetChainConsensusPipeMetrics(*isc.ChainID) (chain.ConsensusPipeMetrics, error)
+	GetChainConsensusWorkflowStatus(isc.ChainID) (chain.ConsensusWorkflowStatus, error)
+	GetChainConsensusPipeMetrics(isc.ChainID) (chain.ConsensusPipeMetrics, error)
 }
 
 type Dashboard struct {
@@ -114,7 +114,7 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"exploreAddressUrl":      d.exploreAddressURL,
 		"args":                   args,
 		"hashref":                hashref,
-		"chainidref":             chainIDref,
+		"chainIDBech32":          chainIDBech32,
 		"assedID":                assetID,
 		"trim":                   trim,
 		"incUint32":              incUint32,

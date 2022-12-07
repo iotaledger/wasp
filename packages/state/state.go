@@ -38,16 +38,16 @@ func (s *state) GetMerkleProof(key []byte) *trie.MerkleProof {
 	return s.trieReader.MerkleProof(key)
 }
 
-func (s *state) ChainID() *isc.ChainID {
+func (s *state) ChainID() isc.ChainID {
 	return loadChainIDFromState(s)
 }
 
-func loadChainIDFromState(s kv.KVStoreReader) *isc.ChainID {
-	chid, err := isc.ChainIDFromBytes(s.MustGet(KeyChainID))
+func loadChainIDFromState(s kv.KVStoreReader) isc.ChainID {
+	chainID, err := isc.ChainIDFromBytes(s.MustGet(KeyChainID))
 	if err != nil {
 		panic(err)
 	}
-	return chid
+	return chainID
 }
 
 func (s *state) BlockIndex() uint32 {

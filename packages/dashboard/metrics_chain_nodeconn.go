@@ -14,7 +14,7 @@ import (
 //go:embed templates/metrics_chain_nodeconn.tmpl
 var tplMetricsChainNodeconn string
 
-func metricsChainNodeconnBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainNodeconnBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChainNodeconn"),
 		Title: fmt.Sprintf("Metrics: %.8s: Connection to L1", chainID.String()),

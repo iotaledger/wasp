@@ -23,7 +23,7 @@ type NodeConnection interface {
 }
 
 type ChainCore interface {
-	ID() *isc.ChainID
+	ID() isc.ChainID
 	// Returns the current latest confirmed alias output and the active one.
 	// The active AO can be ahead of the confirmed one by several blocks.
 	// Both values can be nil, if the node haven't received an output from

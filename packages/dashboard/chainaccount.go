@@ -59,7 +59,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 	AgentID isc.AgentID
 
 	Balances *isc.FungibleTokens

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
@@ -25,7 +23,7 @@ import (
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[iotago.AliasIDLength]byte]*solo.Chain
+	chains map[isc.ChainID]*solo.Chain
 }
 
 var _ WaspServicesInterface = &waspServicesMock{}
@@ -92,20 +90,20 @@ func (w *waspServicesMock) ChainRecords() ([]*registry.ChainRecord, error) {
 	return ret, nil
 }
 
-func (w *waspServicesMock) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	return registry.NewChainRecord(*chainID, true), nil
+func (w *waspServicesMock) GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	return registry.NewChainRecord(chainID, true), nil
 }
 
-func (w *waspServicesMock) CallView(chainID *isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
-	ch, ok := w.chains[*chainID]
+func (w *waspServicesMock) CallView(chainID isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
+	ch, ok := w.chains[chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
 	return ch.CallView(scName, fname, args)
 }
 
-func (w *waspServicesMock) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error) {
-	_, ok := w.chains[*chainID]
+func (w *waspServicesMock) GetChainCommitteeInfo(chainID isc.ChainID) (*chain.CommitteeInfo, error) {
+	_, ok := w.chains[chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
@@ -134,7 +132,7 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.C
 	}, nil
 }
 
-func (w *waspServicesMock) GetChainNodeConnectionMetrics(*isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+func (w *waspServicesMock) GetChainNodeConnectionMetrics(isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -142,11 +140,11 @@ func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConne
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
+func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
+func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID isc.ChainID) (chain.ConsensusPipeMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -160,7 +158,7 @@ type dashboardTestEnv struct {
 func (e *dashboardTestEnv) newChain() *solo.Chain {
 	kp, _ := e.solo.NewKeyPairWithFunds()
 	ch, _, _ := e.solo.NewChainExt(kp, 0, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[*ch.ChainID] = ch
+	e.wasp.chains[ch.ChainID] = ch
 	return ch
 }
 
@@ -173,7 +171,7 @@ func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	})
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
+		chains: make(map[isc.ChainID]*solo.Chain),
 	}
 	d := New(testlogger.NewLogger(t), e, w)
 	return &dashboardTestEnv{

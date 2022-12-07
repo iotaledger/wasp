@@ -81,7 +81,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 type ChainContractTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 	Hname   isc.Hname
 
 	ContractRecord *root.ContractRecord

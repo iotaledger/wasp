@@ -53,7 +53,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	}
 
 	log.Debugw("calling Chains.Activate", "chainID", chainID.String())
-	if err := w.chains().Activate(*chainID); err != nil {
+	if err := w.chains().Activate(chainID); err != nil {
 		return err
 	}
 
@@ -66,7 +66,7 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 		return err
 	}
 
-	err = w.chains().Deactivate(*chainID)
+	err = w.chains().Deactivate(chainID)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
 
-	chainRecord, err := w.chainRecordRegistryProvider.ChainRecord(*chainID)
+	chainRecord, err := w.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -128,7 +128,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 
 	res := model.ChainInfo{
-		ChainID:        model.ChainID(chainID.String()),
+		ChainID:        model.ChainIDBech32(chainID.String()),
 		Active:         chainRecord.Active,
 		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,

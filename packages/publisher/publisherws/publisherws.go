@@ -32,7 +32,7 @@ func New(log *logger.Logger, msgTypes []string) *PublisherWebSocket {
 	}
 }
 
-func (p *PublisherWebSocket) ServeHTTP(chainID *isc.ChainID, w http.ResponseWriter, r *http.Request) error {
+func (p *PublisherWebSocket) ServeHTTP(chainID isc.ChainID, w http.ResponseWriter, r *http.Request) error {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true, // TODO: make accept origin configurable
 	})

@@ -19,8 +19,8 @@ func hashref(hash hashing.HashValue) *hashing.HashValue {
 	return &hash
 }
 
-func chainIDref(chID isc.ChainID) *isc.ChainID {
-	return &chID
+func chainIDBech32(chainID isc.ChainID) string {
+	return chainID.String()
 }
 
 func assetID(aID []byte) []byte {

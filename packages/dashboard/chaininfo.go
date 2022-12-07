@@ -12,7 +12,7 @@ type ChainInfo struct {
 	Contracts map[isc.Hname]*root.ContractRecord
 }
 
-func (d *Dashboard) fetchChainInfo(chainID *isc.ChainID) (ret *ChainInfo, err error) {
+func (d *Dashboard) fetchChainInfo(chainID isc.ChainID) (ret *ChainInfo, err error) {
 	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.ViewGetChainInfo.Name, nil)
 	if err != nil {
 		d.log.Error(err)

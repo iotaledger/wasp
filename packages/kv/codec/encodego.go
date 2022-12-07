@@ -47,9 +47,9 @@ func Encode(v interface{}) []byte {
 	case iotago.Address:
 		return EncodeAddress(vt)
 	case *isc.ChainID:
-		return EncodeChainID(vt)
+		return EncodeChainID(*vt)
 	case isc.ChainID:
-		return EncodeChainID(&vt)
+		return EncodeChainID(vt)
 	case isc.AgentID:
 		return EncodeAgentID(vt)
 	case isc.RequestID:

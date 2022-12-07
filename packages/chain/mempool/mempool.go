@@ -122,7 +122,7 @@ type RequestPool[V isc.Request] interface {
 // In general we can track several branches, but then we have to remember, which
 // requests are available in which branches. Can be implemented later, if needed.
 type mempoolImpl struct {
-	chainID                        *isc.ChainID
+	chainID                        isc.ChainID
 	stateMgr                       StateMgr
 	tangleTime                     time.Time
 	timePool                       TimePool
@@ -182,7 +182,7 @@ type reqConsensusRequests struct {
 
 func New(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	nodeIdentity *cryptolib.KeyPair,
 	stateMgr StateMgr,
 	net peering.NetworkProvider,

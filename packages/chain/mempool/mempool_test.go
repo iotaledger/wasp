@@ -404,7 +404,7 @@ type testEnv struct {
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
 	cmtAddress       iotago.Address
-	chainID          *isc.ChainID
+	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	mempools         []mempool.Mempool
 	stateMgrs        []*testStateMgr

@@ -27,13 +27,13 @@ import (
 
 type Provider func() *Chains // TODO: Use DI instead of that.
 
-func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
-	return func(chainID *isc.ChainID) chain.Chain {
+func (chains Provider) ChainProvider() func(chainID isc.ChainID) chain.Chain {
+	return func(chainID isc.ChainID) chain.Chain {
 		return chains().Get(chainID)
 	}
 }
 
-type ChainProvider func(chainID *isc.ChainID) chain.Chain
+type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
 	ctx                              context.Context
@@ -168,7 +168,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 
 	var chainWAL smGPAUtils.BlockWAL
 	if c.rawBlocksEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, &chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(xerrors.Errorf("cannot create WAL: %w", err))
 		}
@@ -179,7 +179,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
-		&chainID,
+		chainID,
 		chainStore,
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
@@ -233,11 +233,11 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *isc.ChainID) chain.Chain {
+func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	ret, ok := c.allChains[*chainID]
+	ret, ok := c.allChains[chainID]
 	if !ok {
 		return nil
 	}

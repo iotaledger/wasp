@@ -14,7 +14,7 @@ import (
 //go:embed templates/metrics_chain_consensus.tmpl
 var tplMetricsChainConsensus string
 
-func metricsChainConsensusBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainConsensusBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChainConsensus"),
 		Title: fmt.Sprintf("Metrics: %.8s: Consensus", chainID.String()),

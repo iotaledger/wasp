@@ -21,7 +21,7 @@ func NewChainOriginTransaction(
 	deposit uint64,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,
-) (*iotago.Transaction, *isc.ChainID, error) {
+) (*iotago.Transaction, isc.ChainID, error) {
 	if len(unspentOutputs) != len(unspentOutputIDs) {
 		panic("mismatched lengths of outputs and inputs slices")
 	}
@@ -56,7 +56,7 @@ func NewChainOriginTransaction(
 		unspentOutputIDs,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, isc.ChainID{}, err
 	}
 	outputs := iotago.Outputs{aliasOutput}
 	if remainderOutput != nil {
@@ -72,7 +72,7 @@ func NewChainOriginTransaction(
 		keyPair.GetPrivateKey().AddressKeysForEd25519Address(walletAddr),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, isc.ChainID{}, err
 	}
 	tx := &iotago.Transaction{
 		Essence: essence,
@@ -80,10 +80,10 @@ func NewChainOriginTransaction(
 	}
 	txid, err := tx.ID()
 	if err != nil {
-		return nil, nil, err
+		return nil, isc.ChainID{}, err
 	}
 	chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(iotago.OutputIDFromTransactionIDAndIndex(txid, 0)))
-	return tx, &chainID, nil
+	return tx, chainID, nil
 }
 
 // NewRootInitRequestTransaction is a transaction with one request output.
@@ -93,7 +93,7 @@ func NewChainOriginTransaction(
 // The signer must be the same that created the origin transaction.
 func NewRootInitRequestTransaction(
 	keyPair *cryptolib.KeyPair,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	description string,
 	unspentOutputs iotago.OutputSet,
 	unspentOutputIDs iotago.OutputIDs,

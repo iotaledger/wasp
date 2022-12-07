@@ -196,7 +196,7 @@ func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 		})
 	})
 	for _, r := range chainRecsToModify {
-		_, err = p.registry.UpdateChainRecord(*r.ID(), func(rec *registry.ChainRecord) bool {
+		_, err = p.registry.UpdateChainRecord(r.ID(), func(rec *registry.ChainRecord) bool {
 			return rec.RemoveAccessNode(pubKey)
 		})
 		if err != nil {

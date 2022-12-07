@@ -29,9 +29,9 @@ func (e *ChainEnv) checkCoreContracts() {
 		ret, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+		chainID, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.ChainID, chid)
+		require.EqualValues(e.t, e.Chain.ChainID, chainID)
 
 		aid, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
@@ -168,7 +168,7 @@ func (e *ChainEnv) checkLedger() {
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
-func (e *ChainEnv) getChainInfo() (*isc.ChainID, isc.AgentID) {
+func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Name, nil,
 	)

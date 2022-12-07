@@ -27,7 +27,7 @@ type ncChain struct {
 	*logger.WrappedLogger
 
 	nodeConn             *nodeConnection
-	chainID              *isc.ChainID
+	chainID              isc.ChainID
 	requestOutputHandler chain.RequestOutputHandler
 	aliasOutputHandler   chain.AliasOutputHandler
 	milestoneHandler     chain.MilestoneHandler
@@ -35,7 +35,7 @@ type ncChain struct {
 
 func newNCChain(
 	nodeConn *nodeConnection,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	requestOutputHandler chain.RequestOutputHandler,
 	aliasOutputHandler chain.AliasOutputHandler,
 	milestoneHandler chain.MilestoneHandler,
@@ -128,7 +128,7 @@ func (ncc *ncChain) queryLatestChainStateUTXO() error {
 	ctx, cancel := newCtxWithTimeout(ncc.nodeConn.ctx, inxTimeoutIndexerOutputs)
 	defer cancel()
 
-	outputID, output, err := ncc.nodeConn.indexerClient.Alias(ctx, *ncc.chainID.AsAliasID())
+	outputID, output, err := ncc.nodeConn.indexerClient.Alias(ctx, ncc.chainID.AsAliasID())
 	if err != nil {
 		return fmt.Errorf("error while fetching chain state output: %w", err)
 	}

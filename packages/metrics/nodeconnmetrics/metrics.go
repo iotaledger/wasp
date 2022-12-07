@@ -9,7 +9,7 @@ import (
 
 type nodeConnectionMetricsImpl struct {
 	NodeConnectionMessagesMetrics
-	registered []*isc.ChainID
+	registered []isc.ChainID
 
 	messageTotalCounter *prometheus.CounterVec
 	lastEventTimeGauge  *prometheus.GaugeVec
@@ -21,7 +21,7 @@ var _ NodeConnectionMetrics = &nodeConnectionMetricsImpl{}
 
 func New() NodeConnectionMetrics {
 	ret := &nodeConnectionMetricsImpl{
-		registered: make([]*isc.ChainID, 0),
+		registered: make([]isc.ChainID, 0),
 
 		messageTotalCounter: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota",
@@ -37,8 +37,8 @@ func New() NodeConnectionMetrics {
 			Help:      "Last time when the message was sent/received by node connection of the chain",
 		}, []string{chainLabelNameConst, msgTypeLabelNameConst}),
 	}
-	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, nil)
-	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics[*nodeclient.MilestoneInfo](ret, nil, "in_milestone")
+	ret.NodeConnectionMessagesMetrics = newNodeConnectionMessagesMetrics(ret, isc.ChainID{})
+	ret.inMilestoneMetrics = newNodeConnectionMessageSimpleMetrics[*nodeclient.MilestoneInfo](ret, isc.ChainID{}, "in_milestone")
 	return ret
 }
 
@@ -49,17 +49,17 @@ func (ncmiT *nodeConnectionMetricsImpl) Register(registry *prometheus.Registry) 
 	)
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {
+func (ncmiT *nodeConnectionMetricsImpl) NewMessagesMetrics(chainID isc.ChainID) NodeConnectionMessagesMetrics {
 	return newNodeConnectionMessagesMetrics(ncmiT, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID *isc.ChainID) {
+func (ncmiT *nodeConnectionMetricsImpl) SetRegistered(chainID isc.ChainID) {
 	ncmiT.registered = append(ncmiT.registered, chainID)
 }
 
 // TODO: connect registered to Prometheus
-func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *isc.ChainID) {
+func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID isc.ChainID) {
 	var i int
 	for i = 0; i < len(ncmiT.registered); i++ {
 		if ncmiT.registered[i] == chainID {
@@ -69,7 +69,7 @@ func (ncmiT *nodeConnectionMetricsImpl) SetUnregistered(chainID *isc.ChainID) {
 	}
 }
 
-func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []*isc.ChainID {
+func (ncmiT *nodeConnectionMetricsImpl) GetRegistered() []isc.ChainID {
 	return ncmiT.registered
 }
 

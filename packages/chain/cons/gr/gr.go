@@ -120,7 +120,7 @@ type ConsGr struct {
 
 func New(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	chainStore state.Store,
 	dkShare tcrypto.DKShare,
 	logIndex *cmtLog.LogIndex,
@@ -162,7 +162,7 @@ func New(
 		ctx:               ctx,
 		log:               log,
 	}
-	constInstRaw := cons.New(*chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()

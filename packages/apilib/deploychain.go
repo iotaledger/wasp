@@ -40,11 +40,11 @@ type CreateChainParams struct {
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (*isc.ChainID, iotago.Address, error) {
+func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, error) {
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
 	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
-		return nil, nil, err
+		return isc.ChainID{}, nil, err
 	}
 	govControllerAddr := stateControllerAddr
 	if par.GovernanceController != nil {
@@ -52,7 +52,7 @@ func DeployChainWithDKG(par CreateChainParams) (*isc.ChainID, iotago.Address, er
 	}
 	chainID, err := DeployChain(par, stateControllerAddr, govControllerAddr)
 	if err != nil {
-		return nil, nil, err
+		return isc.ChainID{}, nil, err
 	}
 	return chainID, stateControllerAddr, nil
 }
@@ -60,7 +60,7 @@ func DeployChainWithDKG(par CreateChainParams) (*isc.ChainID, iotago.Address, er
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (*isc.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr iotago.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -84,12 +84,12 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
 	}
 	txID, err := initRequestTx.ID()
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
 	}
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
@@ -98,7 +98,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
 	}
 	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.String())
 
@@ -107,7 +107,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
 	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
@@ -132,12 +132,12 @@ func CreateChainOrigin(
 	stateController iotago.Address,
 	governanceController iotago.Address,
 	dscr string, initParams dict.Dict,
-) (*isc.ChainID, *iotago.Transaction, error) {
+) (isc.ChainID, *iotago.Transaction, error) {
 	originatorAddr := originator.GetPublicKey().AsEd25519Address()
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ----------- create origin transaction
@@ -150,18 +150,18 @@ func CreateChainOrigin(
 		utxoIDsFromUtxoMap(utxoMap),
 	)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ------------- post origin transaction and wait for confirmation
 	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	utxoMap, err = layer1Client.OutputMap(originatorAddr)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// NOTE: whoever send first init request, is an owner of the chain
@@ -175,13 +175,13 @@ func CreateChainOrigin(
 		initParams,
 	)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ---------- post root init request transaction and wait for confirmation
 	_, err = layer1Client.PostTxAndWaitUntilConfirmation(reqTx)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	return chainID, reqTx, nil
@@ -189,10 +189,10 @@ func CreateChainOrigin(
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts []string, chainID *isc.ChainID) error {
+func ActivateChainOnAccessNodes(apiHosts []string, chainID isc.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
-	err := nodes.PutChainRecord(registry.NewChainRecord(*chainID, false))
+	err := nodes.PutChainRecord(registry.NewChainRecord(chainID, false))
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}

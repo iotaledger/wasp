@@ -16,115 +16,120 @@ import (
 
 const ChainIDLength = iotago.AliasIDLength
 
+var emptyChainID = ChainID{}
+
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
 type ChainID iotago.AliasID
 
+// EmptyChainID returns an empty ChainID.
+func EmptyChainID() ChainID {
+	return emptyChainID
+}
+
 // ChainIDFromAliasID creates new chain ID from alias address
-func ChainIDFromAliasID(addr iotago.AliasID) ChainID {
-	return ChainID(addr)
+func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
+	return ChainID(aliasID)
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
-func ChainIDFromBytes(data []byte) (*ChainID, error) {
-	var ret ChainID
-	if len(ret) != len(data) {
-		return &ChainID{}, xerrors.New("cannot decode ChainID: wrong data length")
+func ChainIDFromBytes(data []byte) (ChainID, error) {
+	var chainID ChainID
+	if ChainIDLength != len(data) {
+		return ChainID{}, xerrors.New("cannot decode ChainID: wrong data length")
 	}
-	copy(ret[:], data)
-	return &ret, nil
+	copy(chainID[:], data)
+	return chainID, nil
 }
 
-func ChainIDFromString(s string) (*ChainID, error) {
+func ChainIDFromString(s string) (ChainID, error) {
 	_, addr, err := iotago.ParseBech32(s)
 	if err != nil {
-		return nil, err
+		return ChainID{}, err
 	}
 	aliasAddr, ok := addr.(*iotago.AliasAddress)
 	if !ok {
-		return nil, fmt.Errorf("chainID must be an alias address")
+		return ChainID{}, fmt.Errorf("chainID must be an alias address")
 	}
-	cid := ChainIDFromAddress(aliasAddr)
-	return &cid, nil
+	return ChainIDFromAddress(aliasAddr), nil
 }
 
 // ChainIDFromMarshalUtil reads from Marshalutil
-func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
+func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ChainID, error) {
 	bin, err := mu.ReadBytes(ChainIDLength)
 	if err != nil {
-		return &ChainID{}, err
+		return ChainID{}, err
 	}
 	return ChainIDFromBytes(bin)
 }
 
 func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
-	var alias iotago.AliasID
-	copy(alias[:], addr[:])
-	return ChainIDFromAliasID(alias)
+	var aliasID iotago.AliasID
+	copy(aliasID[:], addr[:])
+	return ChainIDFromAliasID(aliasID)
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
-func RandomChainID(seed ...[]byte) *ChainID {
+func RandomChainID(seed ...[]byte) ChainID {
 	var h hashing.HashValue
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])
 	} else {
 		h = hashing.RandomHash(nil)
 	}
-	ret, _ := ChainIDFromBytes(h[:ChainIDLength])
-	return ret
-}
-
-func (chid *ChainID) AsAliasID() *iotago.AliasID {
-	return (*iotago.AliasID)(chid)
-}
-
-func (chid *ChainID) Bytes() []byte {
-	return chid[:]
-}
-
-func (chid *ChainID) Key() string {
-	return chid.AsAliasID().String()
-}
-
-// Equals for using
-func (chid *ChainID) Equals(chid1 *ChainID) bool {
-	if chid == chid1 {
-		return true
+	chainID, err := ChainIDFromBytes(h[:ChainIDLength])
+	if err != nil {
+		panic(err)
 	}
-	if chid == nil || chid1 == nil {
-		return false
-	}
-	return *chid == *chid1
+	return chainID
+}
+
+func (id ChainID) AsAliasID() iotago.AliasID {
+	return iotago.AliasID(id)
+}
+
+func (id ChainID) Bytes() []byte {
+	return id[:]
+}
+
+func (id ChainID) Key() string {
+	return id.AsAliasID().String()
+}
+
+func (id ChainID) Equals(other ChainID) bool {
+	return id == other
+}
+
+func (id ChainID) Empty() bool {
+	return id == emptyChainID
 }
 
 // String human readable form (bech32)
-func (chid *ChainID) String() string {
-	return chid.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
+func (id ChainID) String() string {
+	return id.AsAddress().Bech32(parameters.L1().Protocol.Bech32HRP)
 }
 
-func (chid *ChainID) ShortString() string {
-	return chid.AsAddress().String()[2:8]
+func (id ChainID) ShortString() string {
+	return id.AsAddress().String()[0:10]
 }
 
-func (chid *ChainID) AsAddress() iotago.Address {
-	ret := iotago.AliasAddress(*chid)
-	return &ret
+func (id ChainID) AsAddress() iotago.Address {
+	addr := iotago.AliasAddress(id)
+	return &addr
 }
 
-func (chid *ChainID) AsAliasAddress() *iotago.AliasAddress {
-	ret := iotago.AliasAddress(*chid)
-	return &ret
+func (id ChainID) AsAliasAddress() iotago.AliasAddress {
+	return iotago.AliasAddress(id)
 }
 
-func (chid *ChainID) CommonAccount() AgentID {
-	return NewContractAgentID(chid, 0)
+func (id ChainID) CommonAccount() AgentID {
+	return NewContractAgentID(id, 0)
 }
 
-func (chid *ChainID) IsSameChain(aid AgentID) bool {
-	contract, ok := aid.(*ContractAgentID)
+func (id ChainID) IsSameChain(agentID AgentID) bool {
+	contract, ok := agentID.(*ContractAgentID)
 	if !ok {
 		return false
 	}
-	return chid.Equals(contract.ChainID())
+	return id.Equals(contract.ChainID())
 }

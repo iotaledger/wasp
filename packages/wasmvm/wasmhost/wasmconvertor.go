@@ -58,9 +58,9 @@ func (cvt WasmConvertor) IscBigInt(amount wasmtypes.ScBigInt) *big.Int {
 	return res
 }
 
-func (cvt WasmConvertor) IscChainID(chainID *wasmtypes.ScChainID) *isc.ChainID {
+func (cvt WasmConvertor) IscChainID(chainID *wasmtypes.ScChainID) isc.ChainID {
 	buf := wasmtypes.ChainIDToBytes(*chainID)
-	iscChainID := new(isc.ChainID)
+	iscChainID := isc.ChainID{}
 	copy(iscChainID[:], buf)
 	return iscChainID
 }
@@ -124,7 +124,7 @@ func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
 	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
-func (cvt WasmConvertor) ScChainID(chainID *isc.ChainID) wasmtypes.ScChainID {
+func (cvt WasmConvertor) ScChainID(chainID isc.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
 }
 

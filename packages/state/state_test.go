@@ -88,7 +88,6 @@ func (m mustChainStore) NewStateDraft(timestamp time.Time, prevL1Commitment *L1C
 
 func TestOriginBlock(t *testing.T) {
 	db := mapdb.NewMapDB()
-	emptyChainID := isc.ChainID{}
 
 	cs := mustChainStore{InitChainStore(db)}
 
@@ -96,7 +95,7 @@ func TestOriginBlock(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, block0.PreviousL1Commitment() == nil)
 		require.EqualValues(t, map[kv.Key][]byte{
-			KeyChainID:                             emptyChainID.Bytes(),
+			KeyChainID:                             isc.EmptyChainID().Bytes(),
 			kv.Key(coreutil.StatePrefixBlockIndex): codec.EncodeUint32(0),
 			kv.Key(coreutil.StatePrefixTimestamp):  codec.EncodeTime(time.Unix(0, 0)),
 		}, block0.Mutations().Sets)
@@ -106,7 +105,7 @@ func TestOriginBlock(t *testing.T) {
 	block0 := cs.BlockByIndex(0)
 	validateBlock0(block0, nil)
 	state := cs.StateByTrieRoot(block0.TrieRoot())
-	require.True(t, state.ChainID().Equals(&emptyChainID))
+	require.True(t, state.ChainID().Empty())
 	require.EqualValues(t, 0, state.BlockIndex())
 	require.True(t, state.Timestamp().IsZero())
 
