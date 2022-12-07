@@ -18,6 +18,12 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
+      - name: Install solc
+        run: | 
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install solc
+
       - name: Get dependencies
         run: |
           make wasm
@@ -43,6 +49,12 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: "1.18.5"
+
+      - name: Install solc
+        run: | 
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install solc
 
       - name: install tinygo
         # only work on x86_64
@@ -92,6 +104,7 @@ jobs:
         env:
           TEST_LANG: ${{matrix.TEST_LANG}}
         run: |
+          make compile-solidity
           cd contracts/wasm
           if [ $TEST_LANG == "go" ]; then
             go test ./...
@@ -115,6 +128,14 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
+      - name: Install solc
+        run: | 
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install solc
+      - name: compile solidity contracts
+        run: make compile-solidity
+  
       # - name: Generate SC files
       #   run: |
       #     cd contracts/wasm/scripts

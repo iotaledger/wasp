@@ -37,3 +37,7 @@ wal/
 ./snapshot
 ./gascalibration
 tests_output.log
+packages/evm/**/*.bin
+packages/evm/**/*.bin-runtime
+packages/vm/core/evm/**/*.bin
+packages/vm/core/evm/**/*.bin-runtime
