@@ -94,7 +94,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	initRequests := te.tcl.MakeTxChainInit()
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
-			isc.NewOutputInfo(te.originAO.OutputID(), te.originAO.GetAliasOutput(), te.originAO.TransactionID()),
+			isc.NewOutputInfo(te.originAO.OutputID(), te.originAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
 		tnc.recvMilestone(initTime)
 		for _, req := range initRequests {
@@ -124,7 +124,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
-			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), deployBaseAO.TransactionID()),
+			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
 		for _, req := range deployReqs {
 			onLedgerRequest := req.(isc.OnLedgerRequest)
