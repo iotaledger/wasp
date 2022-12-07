@@ -3,6 +3,7 @@ package smGPA
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -74,6 +75,12 @@ func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, blocks ...state.Block) {
 	}
 }
 
+func (teT *testEnv) sendBlocksToRandomNode(nodeIDs []gpa.NodeID, blocks ...state.Block) {
+	for _, block := range blocks {
+		teT.sendBlocksToNode(nodeIDs[rand.Intn(len(nodeIDs))], block)
+	}
+}
+
 func (teT *testEnv) requireReceiveAnything(anyChan <-chan (interface{}), timeout time.Duration) error { //nolint:gocritic
 	select {
 	case <-anyChan:
@@ -108,7 +115,7 @@ func (teT *testEnv) requireReceiveState(respChan <-chan state.State, index uint3
 	select {
 	case s := <-respChan:
 		require.Equal(teT.t, s.BlockIndex(), index)
-		require.True(teT.t, commitment.GetTrieRoot().Equals(s.TrieRoot()))
+		require.True(teT.t, commitment.TrieRoot().Equals(s.TrieRoot()))
 		return nil
 	case <-time.After(timeout):
 		return fmt.Errorf("Waiting to receive state timeouted")
@@ -142,6 +149,17 @@ func (teT *testEnv) requireReceiveMempoolResults(respChan <-chan *smInputs.Mempo
 	}
 }
 
+func (teT *testEnv) requireAfterTime(title string, predicate func() bool, maxTime int, timeStep time.Duration) bool {
+	for i := 0; i < maxTime; i++ {
+		teT.t.Logf("Waiting for %s iteration %v", title, i)
+		if predicate() {
+			return true
+		}
+		teT.sendTimerTickToNodes(timeStep)
+	}
+	return false
+}
+
 func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
 	now := teT.timeProvider.GetNow().Add(delay)
 	teT.timeProvider.SetNow(now)
@@ -170,14 +188,14 @@ func (teT *testEnv) isAllNodesAtState(stateOutput *isc.AliasOutputWithID) bool {
 				nodeID, stateOutput.GetStateIndex(), sm.currentStateIndex)
 			return false
 		}
-		if !expectedCommitment.GetTrieRoot().Equals(sm.currentL1Commitment.GetTrieRoot()) {
+		if !expectedCommitment.TrieRoot().Equals(sm.currentL1Commitment.TrieRoot()) {
 			teT.t.Logf("Node %s is at state index %v, but state commitments do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetTrieRoot(), sm.currentL1Commitment.GetTrieRoot())
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.TrieRoot(), sm.currentL1Commitment.TrieRoot())
 			return false
 		}
-		if !expectedCommitment.GetBlockHash().Equals(sm.currentL1Commitment.GetBlockHash()) {
+		if !expectedCommitment.BlockHash().Equals(sm.currentL1Commitment.BlockHash()) {
 			teT.t.Logf("Node %s is at state index %v, but block hashes do not match: expected %s, obtained %s",
-				nodeID, stateOutput.GetStateIndex(), expectedCommitment.GetBlockHash(), sm.currentL1Commitment.GetBlockHash())
+				nodeID, stateOutput.GetStateIndex(), expectedCommitment.BlockHash(), sm.currentL1Commitment.BlockHash())
 			return false
 		}
 	}

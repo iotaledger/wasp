@@ -49,7 +49,7 @@ func NftIDFromString(value string) ScNftID {
 }
 
 func NftIDToString(value ScNftID) string {
-	return HexEncode(NftIDToBytes(value))
+	return HexEncode(value.id[:])
 }
 
 func nftIDFromBytesUnchecked(buf []byte) ScNftID {

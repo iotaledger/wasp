@@ -57,7 +57,7 @@ export function nftIDFromString(value: string): ScNftID {
 }
 
 export function nftIDToString(value: ScNftID): string {
-    return hexEncode(nftIDToBytes(value));
+    return hexEncode(value.id);
 }
 
 function nftIDFromBytesUnchecked(buf: Uint8Array): ScNftID {

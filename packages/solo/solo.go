@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -33,7 +32,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -104,16 +102,6 @@ type Chain struct {
 	mempool Mempool
 	// used for non-standard VMs
 	bypassStardustVM bool
-}
-
-// ReceiveOffLedgerRequest implements chain.Chain
-func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
-	panic("unimplemented")
-}
-
-// AwaitRequestProcessed implements chain.Chain
-func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
-	panic("unimplemented")
 }
 
 var _ chain.ChainCore = &Chain{}
@@ -308,7 +296,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		log:                    chainlog,
 	}
 
-	ret.mempool = newMempool()
+	ret.mempool = newMempool(env.utxoDB.GlobalTime)
 
 	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)

@@ -10,7 +10,7 @@ type BlockKey state.BlockHash
 var _ util.Equatable = BlockKey{}
 
 func NewBlockKey(commitment *state.L1Commitment) BlockKey {
-	return BlockKey(commitment.GetBlockHash())
+	return BlockKey(commitment.BlockHash())
 }
 
 func (bkT BlockKey) Equals(e2 util.Equatable) bool {

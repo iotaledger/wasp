@@ -7,8 +7,8 @@ import (
 	"bytes"
 	"math"
 	"math/big"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -234,6 +234,24 @@ func TestLoop(t *testing.T) {
 			baseTokensSent,
 		)
 	}
+}
+
+func TestCallViewGasLimit(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	loop := env.deployLoopContract(ethKey)
+
+	callArguments, err := loop.abi.Pack("loop")
+	require.NoError(t, err)
+	senderAddress := crypto.PubkeyToAddress(loop.defaultSender.PublicKey)
+	callMsg := loop.callMsg(ethereum.CallMsg{
+		From:     senderAddress,
+		Gas:      math.MaxUint64,
+		GasPrice: evm.GasPrice,
+		Data:     callArguments,
+	})
+	_, err = loop.chain.evmChain.CallContract(callMsg, latestBlock)
+	require.Contains(t, err.Error(), "gas limit exceeds maximum allowed")
 }
 
 func TestMagicContract(t *testing.T) {
@@ -653,6 +671,8 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	sendBaseTokens := 700 * isc.Million
 
+	blockIndex := env.soloChain.GetLatestBlockInfo().BlockIndex
+
 	ret, err := env.ISCMagicSandbox(ethKey).callFn(
 		nil,
 		"send",
@@ -673,7 +693,11 @@ func TestISCSendWithArgs(t *testing.T) {
 
 	senderFinalBalance := env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
 	require.Less(t, senderFinalBalance, senderInitialBalance-sendBaseTokens)
-	time.Sleep(1 * time.Second) // wait a bit for the request going out of EVM to be processed by ISC
+
+	// wait a bit for the request going out of EVM to be processed by ISC
+	env.soloChain.WaitUntil(func(solo.MempoolInfo) bool {
+		return env.soloChain.GetLatestBlockInfo().BlockIndex == blockIndex+2
+	})
 
 	// assert inc counter was incremented
 	checkCounter(1)
@@ -791,37 +815,15 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	foundrySN, tokenID := func() (uint32, *iotago.FoundryID) {
-		res, err := env.soloChain.PostRequestSync(
-			solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-				accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
-					MaximumSupply: supply,
-					MintedTokens:  util.Big0,
-					MeltedTokens:  util.Big0,
-				}),
-			).
-				WithMaxAffordableGasBudget().
-				WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
-			foundryOwner,
-		)
-		require.NoError(t, err)
-		foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-		tokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
-		require.NoError(t, err)
+	foundrySN, tokenID := env.createFoundry(foundryOwner, supply)
 
-		err = env.soloChain.MintTokens(foundrySN, supply, foundryOwner)
-		require.NoError(t, err)
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.NoError(t, err)
 
-		_, err = env.soloChain.PostRequestSync(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name,
-			evm.FieldFoundrySN, codec.EncodeUint32(foundrySN),
-			evm.FieldTokenName, codec.EncodeString(tokenName),
-			evm.FieldTokenTickerSymbol, codec.EncodeString(tokenTickerSymbol),
-			evm.FieldTokenDecimals, codec.EncodeUint8(tokenDecimals),
-		).WithMaxAffordableGasBudget(), foundryOwner)
-		require.NoError(t, err)
+	// should not allow to register again
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.ErrorContains(t, err, "already exists")
 
-		return foundrySN, &tokenID
-	}()
 	l2Balance := func(agentID isc.AgentID) uint64 {
 		return env.soloChain.L2NativeTokens(agentID, tokenID).Uint64()
 	}
@@ -847,6 +849,13 @@ func TestERC20NativeTokens(t *testing.T) {
 		foundryOwner,
 	)
 	require.NoError(t, err)
+
+	{
+		sandbox := env.ISCMagicSandbox(ethKey)
+		var addr common.Address
+		sandbox.callView("erc20NativeTokensAddress", []any{foundrySN}, &addr)
+		require.Equal(t, iscmagic.ERC20NativeTokensAddress(foundrySN), addr)
+	}
 
 	erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
 
@@ -953,6 +962,27 @@ func TestERC20NativeTokens(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestERC20NativeTokensLongName(t *testing.T) {
+	env := initEVM(t)
+
+	var (
+		tokenName         = strings.Repeat("A", 100_000)
+		tokenTickerSymbol = "ERC20NT"
+		tokenDecimals     = uint8(8)
+	)
+
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
+	require.NoError(t, err)
+
+	supply := big.NewInt(int64(10 * isc.Million))
+
+	foundrySN, _ := env.createFoundry(foundryOwner, supply)
+
+	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
+	require.ErrorContains(t, err, "too long")
 }
 
 // test withdrawing ALL EVM balance to a L1 address via the magic contract
@@ -1353,14 +1383,27 @@ func TestSandboxStackOverflow(t *testing.T) {
 		gasLimit: 100_000, // skip estimate gas (which will fail)
 	}}, "testStackOverflow")
 
-	require.Error(t, err)
-	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
-
-	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+	require.NotNil(t, ret.evmReceipt) // evm receipt is produced
 
 	// view call
 	err = iscTest.callView("testStackOverflow", nil, nil)
 	require.Error(t, err)
 	testmisc.RequireErrorToBe(t, err, vm.ErrIllegalCall)
+}
+
+func TestStaticCall(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+	iscTest := env.deployISCTestContract(ethKey)
+
+	res, err := iscTest.callFn([]ethCallOptions{{
+		sender: ethKey,
+	}}, "testStaticCall")
+	require.NoError(t, err)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.evmReceipt.Status)
+	ev, err := env.soloChain.GetEventsForBlock(env.soloChain.GetLatestBlockInfo().BlockIndex)
+	require.NoError(t, err)
+	require.Len(t, ev, 1)
+	require.Contains(t, ev[0], "non-static")
 }

@@ -5,6 +5,7 @@ package solo
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -650,6 +651,22 @@ func (ch *Chain) GetStore() state.Store {
 
 // GetTimeData implements chain.Chain
 func (*Chain) GetTimeData() time.Time {
+	panic("unimplemented")
+}
+
+// LatestAliasOutput implements chain.Chain
+func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *isc.AliasOutputWithID) {
+	ao := ch.GetAnchorOutput()
+	return ao, ao
+}
+
+// ReceiveOffLedgerRequest implements chain.Chain
+func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
+// AwaitRequestProcessed implements chain.Chain
+func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
 	panic("unimplemented")
 }
 

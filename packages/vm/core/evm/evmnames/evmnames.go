@@ -25,6 +25,7 @@ const (
 	FuncGetStorage                          = "getStorage"
 	FuncGetLogs                             = "getLogs"
 	FuncGetChainID                          = "getChainID"
+	FuncGetCallGasLimit                     = "getCallGasLimit"
 
 	FuncRegisterERC20NativeToken = "registerERC20NativeToken"
 

@@ -93,7 +93,7 @@ func (bfT *BlockFactory) GetBlocksFrom(
 	}
 	result := make([]state.Block, count+1)
 	var err error
-	result[0], err = bfT.store.BlockByTrieRoot(commitment.GetTrieRoot())
+	result[0], err = bfT.store.BlockByTrieRoot(commitment.TrieRoot())
 	require.NoError(bfT.t, err)
 	aliasOutputs := make([]*isc.AliasOutputWithID, len(result))
 	aliasOutputs[0] = aliasOutput

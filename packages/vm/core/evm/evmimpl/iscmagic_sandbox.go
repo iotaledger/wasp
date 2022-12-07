@@ -26,8 +26,8 @@ func (h *magicContractHandler) TriggerEvent(s string) {
 }
 
 // handler for ISCSandbox::getRequestID
-func (h *magicContractHandler) GetRequestID() isc.RequestID {
-	return h.ctx.Request().ID()
+func (h *magicContractHandler) GetRequestID() iscmagic.ISCRequestID {
+	return iscmagic.WrapISCRequestID(h.ctx.Request().ID())
 }
 
 // handler for ISCSandbox::getSenderAccount

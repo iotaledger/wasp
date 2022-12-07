@@ -9,6 +9,9 @@ import (
 
 // CallView executes a view call on the latest block of the chain
 func CallView(iscBlockIndex uint32, ch chain.ChainCore, contractHname, viewHname isc.Hname, params dict.Dict) (dict.Dict, error) {
-	vctx := viewcontext.New(ch, iscBlockIndex)
+	vctx, err := viewcontext.New(ch, iscBlockIndex)
+	if err != nil {
+		return nil, err
+	}
 	return vctx.CallViewExternal(contractHname, viewHname, params)
 }

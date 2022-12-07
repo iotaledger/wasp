@@ -40,7 +40,7 @@ func funcStoreStringThunk(ctx wasmlib.ScFuncContext) {
 		Params: solotutorial.NewImmutableStoreStringParams(),
 		State:  solotutorial.NewMutableSoloTutorialState(),
 	}
-	ctx.Require(f.Params.Str().Exists(), "missing mandatory str")
+	ctx.Require(f.Params.Str().Exists(), "missing mandatory string")
 	funcStoreString(ctx, f)
 	ctx.Log("solotutorial.funcStoreString ok")
 }

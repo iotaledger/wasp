@@ -10,6 +10,11 @@ import (
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
 
+const (
+	packageJson  = "package.json"
+	tsconfigJson = "tsconfig.json"
+)
+
 type TypeScriptGenerator struct {
 	GenBase
 }
@@ -27,7 +32,7 @@ func (g *TypeScriptGenerator) Cleanup() {
 
 	// now clean up language-specific files
 	g.cleanSourceFile("index")
-	_ = os.Remove(g.folder + "../tsconfig.json")
+	_ = os.Remove(g.folder + "../" + tsconfigJson)
 }
 
 func (g *TypeScriptGenerator) GenerateImplementation() error {
@@ -39,7 +44,7 @@ func (g *TypeScriptGenerator) GenerateImplementation() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateTsConfig("")
+	err = g.generateConfig("", tsconfigJson)
 	if err != nil {
 		return err
 	}
@@ -55,7 +60,11 @@ func (g *TypeScriptGenerator) GenerateInterface() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateTsConfig("")
+	err = g.generateConfig("", tsconfigJson)
+	if err != nil {
+		return err
+	}
+	err = g.generateConfig("", packageJson)
 	if err != nil {
 		return err
 	}
@@ -67,16 +76,15 @@ func (g *TypeScriptGenerator) GenerateWasmStub() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateTsConfig("../")
+	err = g.generateConfig("../", tsconfigJson)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (g *TypeScriptGenerator) generateTsConfig(folder string) error {
-	const tsconfig = "tsconfig.json"
-	return g.createFile(g.folder+folder+tsconfig, false, func() {
-		g.emit(tsconfig)
+func (g *TypeScriptGenerator) generateConfig(folder string, name string) error {
+	return g.createFile(g.folder+folder+name, false, func() {
+		g.emit(name)
 	})
 }

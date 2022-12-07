@@ -127,7 +127,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 
 	rootC := ch.GetRootCommitment()
 	l1C := ch.GetL1Commitment()
-	require.Equal(ch.Env.T, rootC, l1C.GetTrieRoot())
+	require.Equal(ch.Env.T, rootC, l1C.TrieRoot())
 
 	return task.Results
 }
@@ -138,26 +138,6 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	if err != nil {
 		panic(err)
 	}
-
-	// anchor, stateOutput, err := transaction.GetAnchorFromTransaction(stateTx)
-	// require.NoError(ch.Env.T, err)
-
-	// // saving block just to check consistency. Otherwise, saved blocks are not used in Solo
-	// block, err := ch.State.ExtractBlock()
-	// require.NoError(ch.Env.T, err)
-	// require.NotNil(ch.Env.T, block)
-	// block.SetApprovingOutputID(anchor.OutputID.UTXOInput())
-
-	// err = ch.State.Save(block)
-	// require.NoError(ch.Env.T, err)
-
-	// blockBack, err := state.LoadBlock(ch.Env.dbmanager.ChainStateKVStore(*ch.ChainID), ch.State.BlockIndex())
-	// require.NoError(ch.Env.T, err)
-	// require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
-	// require.EqualValues(ch.Env.T, anchor.OutputID, blockBack.ApprovingOutputID().ID())
-
-	// chain.PublishStateTransition(ch.ChainID, isc.NewAliasOutputWithID(stateOutput, anchor.OutputID.UTXOInput()), len(reqids))
-	// chain.PublishRequestsSettled(ch.ChainID, anchor.StateIndex, reqids)
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		stateDraft.BlockIndex, len(reqids), len(stateTx.Essence.Outputs))

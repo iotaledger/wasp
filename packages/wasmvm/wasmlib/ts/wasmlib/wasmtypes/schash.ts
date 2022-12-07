@@ -57,7 +57,7 @@ export function hashFromString(value: string): ScHash {
 }
 
 export function hashToString(value: ScHash): string {
-    return hexEncode(hashToBytes(value));
+    return hexEncode(value.id);
 }
 
 function hashFromBytesUnchecked(buf: Uint8Array): ScHash {
