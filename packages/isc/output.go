@@ -13,6 +13,30 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+var emptyTransactionID = iotago.TransactionID{}
+
+type OutputInfo struct {
+	OutputID           iotago.OutputID
+	Output             iotago.Output
+	TransactionIDSpent iotago.TransactionID
+}
+
+func (o *OutputInfo) Consumed() bool {
+	return o.TransactionIDSpent != emptyTransactionID
+}
+
+func NewOutputInfo(outputID iotago.OutputID, output iotago.Output, transactionIDSpent iotago.TransactionID) *OutputInfo {
+	return &OutputInfo{
+		OutputID:           outputID,
+		Output:             output,
+		TransactionIDSpent: transactionIDSpent,
+	}
+}
+
+func (o *OutputInfo) AliasOutputWithID() *AliasOutputWithID {
+	return NewAliasOutputWithID(o.Output.(*iotago.AliasOutput), o.OutputID)
+}
+
 type AliasOutputWithID struct {
 	outputID    iotago.OutputID
 	aliasOutput *iotago.AliasOutput

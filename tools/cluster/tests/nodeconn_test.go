@@ -84,7 +84,8 @@ func TestNodeConn(t *testing.T) {
 	require.NoError(t, err)
 	go nodeBridge.Run(ctx)
 
-	nc := nodeconn.New(ctx, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
+	nc, err := nodeconn.New(ctx, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
+	require.NoError(t, err)
 
 	//
 	// Check the chain operations.
@@ -97,15 +98,13 @@ func TestNodeConn(t *testing.T) {
 	nc.AttachChain(
 		context.Background(),
 		chainID,
-		func(oi iotago.OutputID, o iotago.Output) {
-			chainStateOuts[oi] = o
-			chainStateOutsICh <- oi
+		func(outputInfo *isc.OutputInfo) {
+			chainStateOuts[outputInfo.OutputID] = outputInfo.Output
+			chainStateOutsICh <- outputInfo.OutputID
 		},
-		func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput) {
-			for i, oid := range outputIDs {
-				chainOuts[oid] = outputs[i]
-				chainOICh <- outputIDs[i]
-			}
+		func(outputInfo *isc.OutputInfo) {
+			chainOuts[outputInfo.OutputID] = outputInfo.Output
+			chainOICh <- outputInfo.OutputID
 		},
 		func(timestamp time.Time) {
 			mChan <- timestamp
