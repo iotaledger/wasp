@@ -16,20 +16,21 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // ChainRecord represents chain the node is participating in.
 type ChainRecord struct {
 	id          isc.ChainID
 	Active      bool
-	AccessNodes []cryptolib.PublicKey
+	AccessNodes []*cryptolib.PublicKey
 }
 
 func NewChainRecord(chainID isc.ChainID, active bool) *ChainRecord {
 	return &ChainRecord{
 		id:          chainID,
 		Active:      active,
-		AccessNodes: []cryptolib.PublicKey{},
+		AccessNodes: []*cryptolib.PublicKey{},
 	}
 }
 
@@ -45,22 +46,22 @@ func (r *ChainRecord) Clone() onchangemap.Item[string, *isc.ChainID] {
 	return &ChainRecord{
 		id:          r.id,
 		Active:      r.Active,
-		AccessNodes: []cryptolib.PublicKey{},
+		AccessNodes: util.CloneSlice(r.AccessNodes),
 	}
 }
 
 func (r *ChainRecord) AddAccessNode(pubKey *cryptolib.PublicKey) error {
-	if lo.ContainsBy(r.AccessNodes, func(p cryptolib.PublicKey) bool {
+	if lo.ContainsBy(r.AccessNodes, func(p *cryptolib.PublicKey) bool {
 		return p.Equals(pubKey)
 	}) {
 		return fmt.Errorf("node is already an access node")
 	}
-	r.AccessNodes = append(r.AccessNodes, *pubKey)
+	r.AccessNodes = append(r.AccessNodes, pubKey)
 	return nil
 }
 
 func (r *ChainRecord) RemoveAccessNode(pubKey *cryptolib.PublicKey) (modified bool) {
-	newAccessNodes := []cryptolib.PublicKey{}
+	newAccessNodes := []*cryptolib.PublicKey{}
 	for _, p := range r.AccessNodes {
 		if p.Equals(pubKey) {
 			modified = true
@@ -73,15 +74,21 @@ func (r *ChainRecord) RemoveAccessNode(pubKey *cryptolib.PublicKey) (modified bo
 }
 
 type jsonChainRecord struct {
-	ChainID     string                `json:"chainID"`
-	Active      bool                  `json:"active"`
-	AccessNodes []cryptolib.PublicKey `json:"accessNodes"`
+	ChainID     string   `json:"chainID"`
+	Active      bool     `json:"active"`
+	AccessNodes []string `json:"accessNodes"`
 }
 
 func (r *ChainRecord) MarshalJSON() ([]byte, error) {
+	accessNodesPubKeysHex := make([]string, 0)
+	for _, accessNodePubKey := range r.AccessNodes {
+		accessNodesPubKeysHex = append(accessNodesPubKeysHex, cryptolib.PublicKeyToHex(accessNodePubKey))
+	}
+
 	return json.Marshal(&jsonChainRecord{
-		ChainID: r.ID().String(),
-		Active:  r.Active,
+		ChainID:     r.ID().String(),
+		Active:      r.Active,
+		AccessNodes: accessNodesPubKeysHex,
 	})
 }
 
@@ -109,7 +116,21 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 		return errors.New("chainID is not an alias address")
 	}
 
-	*r = *NewChainRecord(isc.ChainID(aliasAddress.AliasID()), j.Active)
+	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
+	for i, accessNodePubKeyHex := range j.AccessNodes {
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromHex(accessNodePubKeyHex)
+		if err != nil {
+			return err
+		}
+
+		accessNodesPubKeys[i] = accessNodePubKey
+	}
+
+	*r = ChainRecord{
+		id:          isc.ChainID(aliasAddress.AliasID()),
+		Active:      j.Active,
+		AccessNodes: accessNodesPubKeys,
+	}
 
 	return nil
 }

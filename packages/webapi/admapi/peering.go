@@ -191,7 +191,7 @@ func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 		return httperrors.ServerError("Peer trust removed, but errored when trying to get chain list from registry")
 	}
 	chainRecsToModify := lo.Filter(chainRecs, func(r *registry.ChainRecord, _ int) bool {
-		return lo.ContainsBy(r.AccessNodes, func(p cryptolib.PublicKey) bool {
+		return lo.ContainsBy(r.AccessNodes, func(p *cryptolib.PublicKey) bool {
 			return p.Equals(pubKey)
 		})
 	})

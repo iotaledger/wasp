@@ -66,7 +66,7 @@ func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.Priv
 	return dks, edSuite, blsSuite, nodeSecKeys[7]
 }
 
-func TestMarshaling(t *testing.T) {
+func TestMarshalling(t *testing.T) {
 	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
 
 	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodePrivKey)
@@ -74,7 +74,7 @@ func TestMarshaling(t *testing.T) {
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
 }
 
-func TestJSONMarshaling(t *testing.T) {
+func TestJSONMarshalling(t *testing.T) {
 	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
 
 	jsonDKShare, err := json.Marshal(dks)
