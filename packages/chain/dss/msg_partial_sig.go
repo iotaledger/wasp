@@ -16,7 +16,7 @@ import (
 )
 
 type msgPartialSig struct {
-	suite      suites.Suite // Transient, for un-marshalling only.
+	suite      suites.Suite // Transient, for un-marshaling only.
 	sender     gpa.NodeID   // Transient.
 	recipient  gpa.NodeID   // Transient.
 	partialSig *dss.PartialSig
@@ -37,7 +37,7 @@ func (m *msgPartialSig) MarshalBinary() ([]byte, error) {
 	if err := util.WriteByte(w, msgTypePartialSig); err != nil {
 		return nil, xerrors.Errorf("cannot marshal type=msgTypePartialSig: %w", err)
 	}
-	if err := util.WriteUint16(w, uint16(m.partialSig.Partial.I)); err != nil { // TODO: Resolve it from the context, instead of marshalling.
+	if err := util.WriteUint16(w, uint16(m.partialSig.Partial.I)); err != nil { // TODO: Resolve it from the context, instead of marshaling.
 		return nil, xerrors.Errorf("cannot marshal partialSig.Partial.I: %w", err)
 	}
 	if err := util.WriteMarshaled(w, m.partialSig.Partial.V); err != nil {

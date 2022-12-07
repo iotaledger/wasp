@@ -54,7 +54,7 @@ func TestAddMemberFailMissingAddress(t *testing.T) {
 	member.Params.Factor().SetValue(100)
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "missing mandatory address")
+	require.Contains(t, ctx.Err.Error(), "missing mandatory param: address")
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
@@ -65,7 +65,7 @@ func TestAddMemberFailMissingFactor(t *testing.T) {
 	member.Params.Address().SetValue(member1.ScAgentID().Address())
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
+	require.Contains(t, ctx.Err.Error(), "missing mandatory param: factor")
 }
 
 func TestDivide1Member(t *testing.T) {

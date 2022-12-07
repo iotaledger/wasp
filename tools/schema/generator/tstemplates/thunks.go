@@ -71,7 +71,7 @@ $#if result returnResultDict
 `,
 	// *******************************
 	"requireMandatory": `
-    ctx.require(f.params.$fldName().exists(), "missing mandatory $fldName");
+    ctx.require(f.params.$fldName().exists(), "missing mandatory param: $fldName");
 `,
 	// *******************************
 	"accessCheck": `

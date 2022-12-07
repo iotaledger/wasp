@@ -139,7 +139,7 @@ $#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"requireMandatory": `
-    ctx.require(f.params.$fld_name().exists(), "missing mandatory $fldName");
+    ctx.require(f.params.$fld_name().exists(), "missing mandatory param: $fldName");
 `,
 	// *******************************
 	"accessCheck": `

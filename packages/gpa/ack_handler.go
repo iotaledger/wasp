@@ -238,7 +238,7 @@ type ackHandlerBatch struct {
 	msgs      []Message  // Messages in the batch.
 	acks      []int      // Acknowledged batches.
 	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
-	nestedGPA GPA        // Transient, for un-marshalling only.
+	nestedGPA GPA        // Transient, for un-marshaling only.
 }
 
 var _ Message = &ackHandlerBatch{}

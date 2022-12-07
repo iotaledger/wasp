@@ -140,7 +140,7 @@ $#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"requireMandatory": `
-	ctx.Require(f.Params.$FldName().Exists(), "missing mandatory $fldName")
+	ctx.Require(f.Params.$FldName().Exists(), "missing mandatory param: $fldName")
 `,
 	// *******************************
 	"accessCheck": `
