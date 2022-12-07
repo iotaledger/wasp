@@ -296,7 +296,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		log:                    chainlog,
 	}
 
-	ret.mempool = newMempool()
+	ret.mempool = newMempool(env.utxoDB.GlobalTime)
 
 	// creating origin transaction with the origin of the Alias chain
 	outs, ids := env.utxoDB.GetUnspentOutputs(originatorAddr)
