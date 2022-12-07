@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -349,6 +350,40 @@ func (e *soloChainEnv) mintNFTAndSendToL2(to isc.AgentID) *isc.NFT {
 	require.Equal(e.t, []iotago.NFTID{nft.ID}, e.soloChain.L2NFTs(to))
 
 	return nft
+}
+
+func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *big.Int) (uint32, *iotago.FoundryID) {
+	res, err := e.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
+			accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+				MaximumSupply: supply,
+				MintedTokens:  util.Big0,
+				MeltedTokens:  util.Big0,
+			}),
+		).
+			WithMaxAffordableGasBudget().
+			WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
+		foundryOwner,
+	)
+	require.NoError(e.t, err)
+	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
+	tokenID, err := e.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+	require.NoError(e.t, err)
+
+	err = e.soloChain.MintTokens(foundrySN, supply, foundryOwner)
+	require.NoError(e.t, err)
+
+	return foundrySN, &tokenID
+}
+
+func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, foundrySN uint32, tokenName, tokenTickerSymbol string, tokenDecimals uint8) error {
+	_, err := e.soloChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC20NativeToken.Name, dict.Dict{
+		evm.FieldFoundrySN:         codec.EncodeUint32(foundrySN),
+		evm.FieldTokenName:         codec.EncodeString(tokenName),
+		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
+		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
+	}).WithMaxAffordableGasBudget(), foundryOwner)
+	return err
 }
 
 func (e *evmContractInstance) callMsg(callMsg ethereum.CallMsg) ethereum.CallMsg {
