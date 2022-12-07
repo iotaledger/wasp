@@ -91,10 +91,14 @@ impl OffLedgerRequest for OffLedgerRequestData {
     }
 }
 
+use crypto::hashes::{blake2b::Blake2b256, Digest};
+
 impl OffLedgerRequestData {
     pub fn id(&self) -> ScRequestID {
-        todo!()
+        let hash = Blake2b256::digest(self.to_bytes());
+        return wasmlib::request_id_from_bytes(&hash.to_vec());
     }
+
     pub fn essence(&self) -> Vec<u8> {
         let mut data: Vec<u8> = vec![1];
         data.append(self.chain_id.to_bytes().as_mut());
