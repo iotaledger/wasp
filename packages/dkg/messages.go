@@ -406,9 +406,9 @@ func (m *initiatorStepMsg) IsResponse() bool {
 type initiatorDoneMsg struct {
 	step         byte
 	edPubShares  []kyber.Point
-	edSuite      kyber.Group // Transient, for un-marshaling only.
+	edSuite      kyber.Group // Transient, for un-marshalling only.
 	blsPubShares []kyber.Point
-	blsSuite     kyber.Group // Transient, for un-marshaling only.
+	blsSuite     kyber.Group // Transient, for un-marshalling only.
 }
 
 func (m *initiatorDoneMsg) MsgType() byte {
@@ -508,11 +508,11 @@ type initiatorPubShareMsg struct {
 	edSharedPublic  kyber.Point
 	edPublicShare   kyber.Point
 	edSignature     []byte
-	edSuite         kyber.Group // Transient, for un-marshaling only.
+	edSuite         kyber.Group // Transient, for un-marshalling only.
 	blsSharedPublic kyber.Point
 	blsPublicShare  kyber.Point
 	blsSignature    []byte
-	blsSuite        kyber.Group // Transient, for un-marshaling only.
+	blsSuite        kyber.Group // Transient, for un-marshalling only.
 }
 
 func (m *initiatorPubShareMsg) MsgType() byte {
@@ -845,7 +845,7 @@ func (m *rabinResponseMsg) fromBytes(buf []byte) error {
 type rabinJustificationMsg struct {
 	step           byte
 	justifications []*rabin_dkg.Justification
-	blsSuite       kyber.Group // Just for un-marshaling.
+	blsSuite       kyber.Group // Just for un-marshalling.
 }
 
 func (m *rabinJustificationMsg) MsgType() byte {
@@ -935,7 +935,7 @@ func (m *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) erro
 type rabinSecretCommitsMsg struct {
 	step          byte
 	secretCommits *rabin_dkg.SecretCommits
-	blsSuite      kyber.Group // Just for un-marshaling.
+	blsSuite      kyber.Group // Just for un-marshalling.
 }
 
 func (m *rabinSecretCommitsMsg) MsgType() byte {
@@ -1027,7 +1027,7 @@ func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) erro
 type rabinComplaintCommitsMsg struct {
 	step             byte
 	complaintCommits []*rabin_dkg.ComplaintCommits
-	blsSuite         kyber.Group // Just for un-marshaling.
+	blsSuite         kyber.Group // Just for un-marshalling.
 }
 
 func (m *rabinComplaintCommitsMsg) MsgType() byte {
