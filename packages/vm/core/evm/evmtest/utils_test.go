@@ -494,7 +494,7 @@ func (e *evmContractInstance) callView(fnName string, args []interface{}, v inte
 	return nil
 }
 
-func (i *iscTestContractInstance) getChainID() *isc.ChainID {
+func (i *iscTestContractInstance) getChainID() isc.ChainID {
 	var v iscmagic.ISCChainID
 	require.NoError(i.chain.t, i.callView("getChainID", nil, &v))
 	return v.MustUnwrap()

@@ -432,7 +432,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 		baseAliasOutput,
 		util.NewFixedSizeBitVector(int(c.dkShare.GetN())).SetBits(dssIndexProposal),
 		timeData,
-		isc.NewContractAgentID(&c.chainID, 0),
+		isc.NewContractAgentID(c.chainID, 0),
 		requestRefs,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())

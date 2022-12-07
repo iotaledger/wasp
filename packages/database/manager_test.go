@@ -23,8 +23,8 @@ func TestCreateDb(t *testing.T) {
 	require.NoError(t, err)
 
 	chainID := isc.RandomChainID()
-	require.Nil(t, dbManager.ChainStateKVStore(*chainID))
-	store, err := dbManager.GetOrCreateChainStateKVStore(*chainID)
+	require.Nil(t, dbManager.ChainStateKVStore(chainID))
+	store, err := dbManager.GetOrCreateChainStateKVStore(chainID)
 	require.NoError(t, err)
 	require.NotNil(t, store)
 	require.Len(t, dbManager.databasesChainState, 1)

@@ -59,8 +59,8 @@ func TestAgentID(t *testing.T) {
 	}
 
 	{
-		chid := ChainIDFromAddress(tpkg.RandAliasAddress())
-		a := NewContractAgentID(&chid, 42)
+		chainID := ChainIDFromAddress(tpkg.RandAliasAddress())
+		a := NewContractAgentID(chainID, 42)
 
 		{
 			s := a.String()

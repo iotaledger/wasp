@@ -55,7 +55,7 @@ type nodeConnection struct {
 
 	ctx                   context.Context
 	chainsLock            sync.RWMutex
-	chainsMap             *shrinkingmap.ShrinkingMap[iotago.AliasID, *ncChain]
+	chainsMap             *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
 	indexerClient         nodeclient.IndexerClient
 	nodeBridge            *nodebridge.NodeBridge
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics
@@ -110,7 +110,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 	nc := &nodeConnection{
 		WrappedLogger: logger.NewWrappedLogger(log),
 		ctx:           nil,
-		chainsMap: shrinkingmap.New[iotago.AliasID, *ncChain](
+		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
 		),
@@ -204,23 +204,23 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 	nc.chainsLock.RLock()
 	defer nc.chainsLock.RUnlock()
 
-	trackedAliasOutputsCreatedSortedMapByAliasID, trackedAliasOutputsCreatedMapByOutputID, err := filterAndSortAliasOutputs(nc.chainsMap, ledgerUpdate)
+	trackedAliasOutputsCreatedSortedMapByChainID, trackedAliasOutputsCreatedMapByOutputID, err := filterAndSortAliasOutputs(nc.chainsMap, ledgerUpdate)
 	if err != nil {
 		return err
 	}
 
-	otherOutputsCreatedMapByAliasID := filterOtherOutputs(nc.chainsMap, ledgerUpdate.outputsCreatedMap, trackedAliasOutputsCreatedMapByOutputID)
+	otherOutputsCreatedMapByChainID := filterOtherOutputs(nc.chainsMap, ledgerUpdate.outputsCreatedMap, trackedAliasOutputsCreatedMapByOutputID)
 
 	// fire milestone events for every chain
-	nc.chainsMap.ForEach(func(aliasID iotago.AliasID, chain *ncChain) bool {
+	nc.chainsMap.ForEach(func(_ isc.ChainID, chain *ncChain) bool {
 		// the callbacks have to be fired synchronously, we can't guarantee the order of execution of go routines
 		chain.milestoneHandler(ledgerUpdate.milestoneTimestamp)
 		return true
 	})
 
-	// fire the alias events in order
-	for aliasID, aliasOutputsSorted := range trackedAliasOutputsCreatedSortedMapByAliasID {
-		ncChain, exists := nc.chainsMap.Get(aliasID)
+	// fire the alias output events in order
+	for chainID, aliasOutputsSorted := range trackedAliasOutputsCreatedSortedMapByChainID {
+		ncChain, exists := nc.chainsMap.Get(chainID)
 		if !exists {
 			continue
 		}
@@ -232,8 +232,8 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 	}
 
 	// fire events for all other outputs that were received by the chains
-	for aliasID, outputs := range otherOutputsCreatedMapByAliasID {
-		ncChain, exists := nc.chainsMap.Get(aliasID)
+	for chainID, outputs := range otherOutputsCreatedMapByChainID {
+		ncChain, exists := nc.chainsMap.Get(chainID)
 		if !exists {
 			continue
 		}
@@ -316,11 +316,11 @@ func (nc *nodeConnection) handleLedgerUpdate(update *nodebridge.LedgerUpdate) er
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.
-func (nc *nodeConnection) GetChain(chainID *isc.ChainID) (*ncChain, error) {
+func (nc *nodeConnection) GetChain(chainID isc.ChainID) (*ncChain, error) {
 	nc.chainsLock.RLock()
 	defer nc.chainsLock.RUnlock()
 
-	ncc, exists := nc.chainsMap.Get(iotago.AliasID(*chainID))
+	ncc, exists := nc.chainsMap.Get(chainID)
 	if !exists {
 		return nil, fmt.Errorf("chain %v is not connected", chainID.String())
 	}
@@ -469,7 +469,7 @@ func (nc *nodeConnection) promoteBlock(ctx context.Context, blockID iotago.Block
 // TODO: is it ok to call the callback if the context was canceled?
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	tx *iotago.Transaction,
 	callback chain.TxPostHandler,
 ) error {
@@ -501,14 +501,12 @@ func (nc *nodeConnection) PublishTX(
 // NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 func (nc *nodeConnection) AttachChain(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
 ) {
 	mergedCtx, mergedCancel := contextutils.MergeContexts(nc.ctx, ctx)
-
-	aliasID := iotago.AliasID(*chainID)
 
 	if err := func() error {
 		// we need to lock until the chain init is done, otherwise there could be race conditions with new ledger updates in parallel
@@ -519,7 +517,7 @@ func (nc *nodeConnection) AttachChain(
 		if err != nil {
 			return err
 		}
-		nc.chainsMap.Set(aliasID, chain)
+		nc.chainsMap.Set(chainID, chain)
 		nc.nodeConnectionMetrics.SetRegistered(chainID)
 		nc.LogDebugf("chain registered: %s", chainID)
 
@@ -536,7 +534,7 @@ func (nc *nodeConnection) AttachChain(
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		nc.chainsMap.Delete(aliasID)
+		nc.chainsMap.Delete(chainID)
 		nc.nodeConnectionMetrics.SetUnregistered(chainID)
 		nc.LogDebugf("chain unregistered: %s", chainID)
 	}()

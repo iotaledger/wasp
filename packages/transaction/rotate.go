@@ -10,7 +10,7 @@ import (
 )
 
 func NewRotateChainStateControllerTx(
-	chainID iotago.AliasID,
+	aliasID iotago.AliasID,
 	newStateController iotago.Address,
 	chainOutputID iotago.OutputID,
 	chainOutput iotago.Output,
@@ -21,9 +21,9 @@ func NewRotateChainStateControllerTx(
 		return nil, fmt.Errorf("provided output is not the correct one. Expected AliasOutput, received %T=%v", chainOutput, chainOutput)
 	}
 	resolvedAliasID := util.AliasIDFromAliasOutput(o, chainOutputID)
-	if resolvedAliasID != chainID {
+	if resolvedAliasID != aliasID {
 		return nil, fmt.Errorf("provided output is not the correct one. Expected ChainID: %s, got: %s",
-			chainID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+			aliasID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 			chainOutput.(*iotago.AliasOutput).AliasID.ToAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 		)
 	}

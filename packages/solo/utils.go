@@ -42,5 +42,5 @@ func NewIscRequestFromCallParams(ch *Chain, req *CallParams, keyPair *cryptolib.
 	if err != nil {
 		return nil, err
 	}
-	return requestsFromSignedTx[*ch.ChainID][0], nil
+	return requestsFromSignedTx[ch.ChainID][0], nil
 }

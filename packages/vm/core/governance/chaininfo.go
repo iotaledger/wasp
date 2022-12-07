@@ -10,7 +10,7 @@ import (
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
-	ChainID         *isc.ChainID
+	ChainID         isc.ChainID
 	ChainOwnerID    isc.AgentID
 	Description     string
 	GasFeePolicy    *gas.GasFeePolicy

@@ -53,7 +53,7 @@ func (s *stateDraft) BlockIndex() uint32 {
 	return loadBlockIndexFromState(s)
 }
 
-func (s *stateDraft) ChainID() *isc.ChainID {
+func (s *stateDraft) ChainID() isc.ChainID {
 	return loadChainIDFromState(s)
 }
 

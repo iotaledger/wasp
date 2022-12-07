@@ -25,7 +25,7 @@ func (p *ChainRecordRegistryProvider) AddChainRecord(chainRecord *registry.Chain
 	return nil
 }
 
-func (p *ChainRecordRegistryProvider) LoadChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	ret := p.DB[*chainID]
+func (p *ChainRecordRegistryProvider) LoadChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	ret := p.DB[chainID]
 	return ret, nil
 }

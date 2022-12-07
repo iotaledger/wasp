@@ -577,7 +577,7 @@ func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
-func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
+func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
 	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(sn))
 	if data == nil {
 		return nil, 0, 0
@@ -711,7 +711,7 @@ func DeleteNativeTokenOutput(state kv.KVStore, tokenID iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
 	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
 	if data == nil {
 		return nil, 0, 0
@@ -808,7 +808,7 @@ func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
 	getNFTOutputMap(state).MustDelAt(id[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID *isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
+func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
 	data := getNFTOutputMapR(state).MustGetAt(id[:])
 	if data == nil {
 		return nil, 0, 0

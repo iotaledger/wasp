@@ -16,15 +16,15 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (vmctx *VMContext) ChainID() *isc.ChainID {
-	var ret isc.ChainID
+func (vmctx *VMContext) ChainID() isc.ChainID {
+	var chainID isc.ChainID
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		// origin
-		ret = isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
+		chainID = isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(vmctx.task.AnchorOutputID))
 	} else {
-		ret = isc.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
+		chainID = isc.ChainIDFromAliasID(vmctx.task.AnchorOutput.AliasID)
 	}
-	return &ret
+	return chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() isc.AgentID {
@@ -164,7 +164,7 @@ func (vmctx *VMContext) StateAnchor() *isc.StateAnchor {
 		sender = senderBlock.Address
 	}
 	return &isc.StateAnchor{
-		ChainID:              *vmctx.ChainID(),
+		ChainID:              vmctx.ChainID(),
 		Sender:               sender,
 		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
 		StateController:      vmctx.task.AnchorOutput.StateController(),

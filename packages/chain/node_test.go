@@ -240,7 +240,7 @@ func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
 
 type testNodeConn struct {
 	t               *testing.T
-	chainID         *isc.ChainID
+	chainID         isc.ChainID
 	published       []*iotago.Transaction
 	recvRequestCB   chain.RequestOutputHandler
 	recvAliasOutput chain.AliasOutputHandler
@@ -260,11 +260,11 @@ func newTestNodeConn(t *testing.T) *testNodeConn {
 
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	tx *iotago.Transaction,
 	callback chain.TxPostHandler,
 ) error {
-	if tnc.chainID == nil {
+	if tnc.chainID.Empty() {
 		tnc.t.Errorf("NodeConn::PublishTX before attach.")
 	}
 	if !tnc.chainID.Equals(chainID) {
@@ -286,12 +286,12 @@ func (tnc *testNodeConn) PublishTX(
 
 func (tnc *testNodeConn) AttachChain(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
 ) {
-	if tnc.chainID != nil {
+	if !tnc.chainID.Empty() {
 		tnc.t.Errorf("duplicate attach")
 	}
 	tnc.chainID = chainID
@@ -330,7 +330,7 @@ type testEnv struct {
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
 	cmtAddress       iotago.Address
-	chainID          *isc.ChainID
+	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain

@@ -178,14 +178,14 @@ func getAliasIDOtherOutputs(output iotago.Output) iotago.AliasID {
 	return addressToCheck.(*iotago.AliasAddress).AliasID()
 }
 
-// filterAndSortAliasOutputs filters and groups all alias outputs by alias ID and then sorts them,
+// filterAndSortAliasOutputs filters and groups all alias outputs by chain ID and then sorts them,
 // because they could have been transitioned several times in the same milestone. applying the alias outputs to the consensus
 // we need to apply them in correct order.
 // chainsLock needs to be read locked outside
-func filterAndSortAliasOutputs(chainsMap *shrinkingmap.ShrinkingMap[iotago.AliasID, *ncChain], ledgerUpdate *ledgerUpdate) (map[iotago.AliasID][]*isc.OutputInfo, map[iotago.OutputID]struct{}, error) {
-	// filter and group "created alias outputs" by alias ID and also remember the tracked outputs
+func filterAndSortAliasOutputs(chainsMap *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain], ledgerUpdate *ledgerUpdate) (map[isc.ChainID][]*isc.OutputInfo, map[iotago.OutputID]struct{}, error) {
+	// filter and group "created alias outputs" by chain ID and also remember the tracked outputs
 	trackedAliasOutputsCreatedMapByOutputID := make(map[iotago.OutputID]struct{})
-	trackedAliasOutputsCreatedMapByAliasID := make(map[iotago.AliasID][]*isc.OutputInfo)
+	trackedAliasOutputsCreatedMapByChainID := make(map[isc.ChainID][]*isc.OutputInfo)
 	for outputID := range ledgerUpdate.outputsCreatedMap {
 		outputInfo := ledgerUpdate.outputsCreatedMap[outputID]
 
@@ -194,18 +194,20 @@ func filterAndSortAliasOutputs(chainsMap *shrinkingmap.ShrinkingMap[iotago.Alias
 			continue
 		}
 
+		chainID := isc.ChainIDFromAliasID(aliasID)
+
 		// only allow tracked chains
-		if !chainsMap.Has(aliasID) {
+		if !chainsMap.Has(chainID) {
 			continue
 		}
 
 		trackedAliasOutputsCreatedMapByOutputID[outputInfo.OutputID] = struct{}{}
 
-		if _, exists := trackedAliasOutputsCreatedMapByAliasID[aliasID]; !exists {
-			trackedAliasOutputsCreatedMapByAliasID[aliasID] = make([]*isc.OutputInfo, 0)
+		if _, exists := trackedAliasOutputsCreatedMapByChainID[chainID]; !exists {
+			trackedAliasOutputsCreatedMapByChainID[chainID] = make([]*isc.OutputInfo, 0)
 		}
 
-		trackedAliasOutputsCreatedMapByAliasID[aliasID] = append(trackedAliasOutputsCreatedMapByAliasID[aliasID], outputInfo)
+		trackedAliasOutputsCreatedMapByChainID[chainID] = append(trackedAliasOutputsCreatedMapByChainID[chainID], outputInfo)
 	}
 
 	// create a map for faster lookups of output IDs that were spent by a transaction ID.
@@ -219,8 +221,10 @@ func filterAndSortAliasOutputs(chainsMap *shrinkingmap.ShrinkingMap[iotago.Alias
 			continue
 		}
 
+		chainID := isc.ChainIDFromAliasID(aliasID)
+
 		// only allow tracked chains
-		if !chainsMap.Has(aliasID) {
+		if !chainsMap.Has(chainID) {
 			continue
 		}
 
@@ -233,25 +237,25 @@ func filterAndSortAliasOutputs(chainsMap *shrinkingmap.ShrinkingMap[iotago.Alias
 		}
 	}
 
-	for aliasID := range trackedAliasOutputsCreatedMapByAliasID {
+	for chainID := range trackedAliasOutputsCreatedMapByChainID {
 		if err := sortAliasOutputsOfChain(
-			trackedAliasOutputsCreatedMapByAliasID[aliasID],
+			trackedAliasOutputsCreatedMapByChainID[chainID],
 			trackedAliasOutputsConsumedMapByTransactionID,
 		); err != nil {
 			return nil, nil, err
 		}
 	}
 
-	return trackedAliasOutputsCreatedMapByAliasID, trackedAliasOutputsCreatedMapByOutputID, nil
+	return trackedAliasOutputsCreatedMapByChainID, trackedAliasOutputsCreatedMapByOutputID, nil
 }
 
 // chainsLock needs to be read locked
 func filterOtherOutputs(
-	chainsMap *shrinkingmap.ShrinkingMap[iotago.AliasID, *ncChain],
+	chainsMap *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain],
 	outputsCreatedMap map[iotago.OutputID]*isc.OutputInfo,
 	trackedAliasOutputsCreatedMapByOutputID map[iotago.OutputID]struct{},
-) map[iotago.AliasID][]*isc.OutputInfo {
-	otherOutputsCreatedByAliasID := make(map[iotago.AliasID][]*isc.OutputInfo)
+) map[isc.ChainID][]*isc.OutputInfo {
+	otherOutputsCreatedByChainID := make(map[isc.ChainID][]*isc.OutputInfo)
 
 	// we need to filter all other output types in case they were consumed in the same milestone.
 	for outputID := range outputsCreatedMap {
@@ -273,18 +277,20 @@ func filterOtherOutputs(
 			continue
 		}
 
+		chainID := isc.ChainIDFromAliasID(aliasID)
+
 		// allow only tracked chains
-		if !chainsMap.Has(aliasID) {
+		if !chainsMap.Has(chainID) {
 			continue
 		}
 
-		if _, exists := otherOutputsCreatedByAliasID[aliasID]; !exists {
-			otherOutputsCreatedByAliasID[aliasID] = make([]*isc.OutputInfo, 0)
+		if _, exists := otherOutputsCreatedByChainID[chainID]; !exists {
+			otherOutputsCreatedByChainID[chainID] = make([]*isc.OutputInfo, 0)
 		}
 
 		// add the output to the tracked chain
-		otherOutputsCreatedByAliasID[aliasID] = append(otherOutputsCreatedByAliasID[aliasID], outputInfo)
+		otherOutputsCreatedByChainID[chainID] = append(otherOutputsCreatedByChainID[chainID], outputInfo)
 	}
 
-	return otherOutputsCreatedByAliasID
+	return otherOutputsCreatedByChainID
 }

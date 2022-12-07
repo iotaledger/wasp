@@ -40,8 +40,8 @@ type KVDecoder interface {
 	MustGetRequestID(key kv.Key, def ...RequestID) RequestID
 	GetAgentID(key kv.Key, def ...AgentID) (AgentID, error)
 	MustGetAgentID(key kv.Key, def ...AgentID) AgentID
-	GetChainID(key kv.Key, def ...*ChainID) (*ChainID, error)
-	MustGetChainID(key kv.Key, def ...*ChainID) *ChainID
+	GetChainID(key kv.Key, def ...ChainID) (ChainID, error)
+	MustGetChainID(key kv.Key, def ...ChainID) ChainID
 	GetBytes(key kv.Key, def ...[]byte) ([]byte, error)
 	MustGetBytes(key kv.Key, def ...[]byte) []byte
 	GetTokenScheme(key kv.Key, def ...iotago.TokenScheme) (iotago.TokenScheme, error)

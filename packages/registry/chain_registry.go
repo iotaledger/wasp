@@ -34,15 +34,15 @@ func NewChainRecord(chainID isc.ChainID, active bool) *ChainRecord {
 	}
 }
 
-func (r *ChainRecord) ID() *isc.ChainID {
-	return &r.id
+func (r *ChainRecord) ID() isc.ChainID {
+	return r.id
 }
 
 func (r *ChainRecord) ChainID() isc.ChainID {
 	return r.id
 }
 
-func (r *ChainRecord) Clone() onchangemap.Item[string, *isc.ChainID] {
+func (r *ChainRecord) Clone() onchangemap.Item[string, isc.ChainID] {
 	return &ChainRecord{
 		id:          r.id,
 		Active:      r.Active,
@@ -136,7 +136,7 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 }
 
 type ChainRecordRegistry struct {
-	storeOnChangeMap *onchangemap.OnChangeMap[string, *isc.ChainID, *ChainRecord]
+	storeOnChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
 }
 
 var _ ChainRecordRegistryProvider = &ChainRecordRegistry{}
@@ -144,7 +144,7 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistry{}
 // NewChainRecordRegistry creates new instance of the chain registry implementation.
 func NewChainRecordRegistry(storeCallback func(chainRecords []*ChainRecord) error) *ChainRecordRegistry {
 	return &ChainRecordRegistry{
-		storeOnChangeMap: onchangemap.NewOnChangeMap[string, *isc.ChainID](storeCallback),
+		storeOnChangeMap: onchangemap.NewOnChangeMap[string, isc.ChainID](storeCallback),
 	}
 }
 
@@ -153,7 +153,7 @@ func (p *ChainRecordRegistry) EnableStoreOnChange() {
 }
 
 func (p *ChainRecordRegistry) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	chainRecord, err := p.storeOnChangeMap.Get(&chainID)
+	chainRecord, err := p.storeOnChangeMap.Get(chainID)
 	if err != nil {
 		// chain record doesn't exist
 		return nil, nil
@@ -190,12 +190,12 @@ func (p *ChainRecordRegistry) AddChainRecord(chainRecord *ChainRecord) error {
 }
 
 func (p *ChainRecordRegistry) DeleteChainRecord(chainID isc.ChainID) error {
-	return p.storeOnChangeMap.Delete(&chainID)
+	return p.storeOnChangeMap.Delete(chainID)
 }
 
 // UpdateChainRecord modifies a ChainRecord in the Registry.
 func (p *ChainRecordRegistry) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
-	return p.storeOnChangeMap.Modify(&chainID, callback)
+	return p.storeOnChangeMap.Modify(chainID, callback)
 }
 
 func (p *ChainRecordRegistry) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {

@@ -181,7 +181,7 @@ func (r *CallParams) WithSender(sender iotago.Address) *CallParams {
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(chainID *isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
+func (r *CallParams) NewRequestOffLedger(chainID isc.ChainID, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	ret := isc.NewOffLedgerRequest(chainID, r.target, r.entryPoint, r.params, r.nonce).
 		WithGasBudget(r.gasBudget).
 		WithAllowance(r.allowance)
@@ -284,7 +284,7 @@ func (ch *Chain) requestFromParams(req *CallParams, keyPair *cryptolib.KeyPair) 
 	reqs, err := isc.RequestsInTransaction(tx)
 	require.NoError(ch.Env.T, err)
 
-	for _, r := range reqs[*ch.ChainID] {
+	for _, r := range reqs[ch.ChainID] {
 		// return the first one
 		return r, nil
 	}

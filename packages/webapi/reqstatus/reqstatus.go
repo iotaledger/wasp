@@ -21,7 +21,7 @@ import (
 )
 
 type reqstatusWebAPI struct {
-	getChain               func(chainID *isc.ChainID) chain.Chain
+	getChain               func(chainID isc.ChainID) chain.Chain
 	getReceiptFromBlocklog func(ch chain.Chain, reqID isc.RequestID) (*blocklog.RequestReceipt, error)
 	resolveReceipt         func(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt) error
 }

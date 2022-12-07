@@ -51,11 +51,11 @@ func Test1(t *testing.T) {
 	rdr, err := st.LatestState()
 	require.NoError(t, err)
 
-	chid := rdr.ChainID()
+	chainID := rdr.ChainID()
 	stateidx := rdr.BlockIndex()
 	ts := rdr.Timestamp()
 
-	fname := FileName(chid, stateidx)
+	fname := FileName(chainID, stateidx)
 	t.Logf("file: %s", fname)
 
 	tm = util.NewTimer()
@@ -69,7 +69,7 @@ func Test1(t *testing.T) {
 
 	v, err := ScanFile(fname)
 	require.NoError(t, err)
-	require.True(t, chid.Equals(v.ChainID))
+	require.True(t, chainID.Equals(v.ChainID))
 	require.EqualValues(t, stateidx, v.StateIndex)
 	require.True(t, ts.Equal(v.TimeStamp))
 }

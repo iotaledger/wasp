@@ -23,7 +23,7 @@ import (
 type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
-	chainID             *isc.ChainID
+	chainID             isc.ChainID
 	originOutput        *isc.AliasOutputWithID
 	lastBlockCommitment *state.L1Commitment
 	lastAliasOutput     *isc.AliasOutputWithID
@@ -35,7 +35,7 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 	stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
 	aliasOutput0 := &iotago.AliasOutput{
 		Amount:        tpkg.TestTokenSupply,
-		AliasID:       *chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
+		AliasID:       chainID.AsAliasID(), // NOTE: not very correct: origin output's AliasID should be empty; left here to make mocking transitions easier
 		StateMetadata: state.OriginL1Commitment().Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress},
@@ -51,14 +51,14 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 	return &BlockFactory{
 		t:                   t,
 		store:               state.InitChainStore(mapdb.NewMapDB()),
-		chainID:             &chainID,
+		chainID:             chainID,
 		originOutput:        originOutput,
 		lastBlockCommitment: state.OriginL1Commitment(),
 		lastAliasOutput:     originOutput,
 	}
 }
 
-func (bfT *BlockFactory) GetChainID() *isc.ChainID {
+func (bfT *BlockFactory) GetChainID() isc.ChainID {
 	return bfT.chainID
 }
 

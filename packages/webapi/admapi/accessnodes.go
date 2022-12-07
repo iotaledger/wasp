@@ -66,7 +66,7 @@ func (a *accessNodesService) handleAddAccessNode(c echo.Context) error {
 	if !ok {
 		return httperrors.NotFound(fmt.Sprintf("couldn't find peer with public key %s", pubKey))
 	}
-	_, err = a.registry.UpdateChainRecord(*chainID, func(rec *registry.ChainRecord) bool {
+	_, err = a.registry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
 		rec.AddAccessNode(pubKey)
 		// TODO what should this return?
 		return false
@@ -86,7 +86,7 @@ func (a *accessNodesService) handleRemoveAccessNode(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest("invalid pub key")
 	}
-	_, err = a.registry.UpdateChainRecord(*chainID, func(rec *registry.ChainRecord) bool {
+	_, err = a.registry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
 		return rec.RemoveAccessNode(pubKey)
 	})
 	if err != nil {

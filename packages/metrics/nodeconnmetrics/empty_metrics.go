@@ -18,17 +18,17 @@ func NewEmptyNodeConnectionMetrics() NodeConnectionMetrics {
 
 func (encmT *emptyNodeConnectionMetrics) Register(registry *prometheus.Registry) {}
 
-func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID *isc.ChainID) NodeConnectionMessagesMetrics {
+func (encmT *emptyNodeConnectionMetrics) NewMessagesMetrics(chainID isc.ChainID) NodeConnectionMessagesMetrics {
 	encmT.emptyNodeConnectionMessagesMetrics = newEmptyNodeConnectionMessagesMetrics()
 	encmT.emptyInMileStoneMetrics = newEmptyNodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]()
 	return encmT.emptyNodeConnectionMessagesMetrics
 }
 
-func (encmT *emptyNodeConnectionMetrics) SetRegistered(*isc.ChainID)   {}
-func (encmT *emptyNodeConnectionMetrics) SetUnregistered(*isc.ChainID) {}
+func (encmT *emptyNodeConnectionMetrics) SetRegistered(isc.ChainID)   {}
+func (encmT *emptyNodeConnectionMetrics) SetUnregistered(isc.ChainID) {}
 
-func (encmT *emptyNodeConnectionMetrics) GetRegistered() []*isc.ChainID {
-	return []*isc.ChainID{}
+func (encmT *emptyNodeConnectionMetrics) GetRegistered() []isc.ChainID {
+	return []isc.ChainID{}
 }
 
 func (encmT *emptyNodeConnectionMetrics) GetInMilestone() NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo] {

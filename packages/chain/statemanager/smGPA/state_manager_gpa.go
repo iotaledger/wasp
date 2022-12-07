@@ -29,7 +29,7 @@ type blockRequestsWithCommitment struct {
 
 type stateManagerGPA struct {
 	log                     *logger.Logger
-	chainID                 *isc.ChainID
+	chainID                 isc.ChainID
 	blockCache              smGPAUtils.BlockCache
 	blockRequests           map[state.BlockHash]*blockRequestsWithCommitment
 	nodeRandomiser          smUtils.NodeRandomiser
@@ -51,7 +51,7 @@ const (
 	numberOfNodesToRequestBlockFromConst = 5
 )
 
-func New(chainID *isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store state.Store, log *logger.Logger, timersOpt ...StateManagerTimers) (gpa.GPA, error) {
+func New(chainID isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL, store state.Store, log *logger.Logger, timersOpt ...StateManagerTimers) (gpa.GPA, error) {
 	var err error
 	var timers StateManagerTimers
 	smLog := log.Named("gpa")

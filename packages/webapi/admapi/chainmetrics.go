@@ -86,9 +86,9 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 			LastEvent:   time.Now().Add(1 * time.Second),
 			LastMessage: "Last received Milestone message structure",
 		},
-		Registered: []model.ChainID{
-			model.NewChainID(isc.RandomChainID()),
-			model.NewChainID(isc.RandomChainID()),
+		Registered: []model.ChainIDBech32{
+			model.NewChainIDBech32(isc.RandomChainID()),
+			model.NewChainIDBech32(isc.RandomChainID()),
 		},
 	}
 

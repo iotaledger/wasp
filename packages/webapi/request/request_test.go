@@ -30,7 +30,7 @@ func checkNonceMocked(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 
 func newMockedAPI() *offLedgerReqAPI {
 	return &offLedgerReqAPI{
-		getChain: func(chainID *isc.ChainID) chain.Chain {
+		getChain: func(chainID isc.ChainID) chain.Chain {
 			return &testutil.MockChain{}
 		},
 		getAccountAssets:        getAccountBalanceMocked,
@@ -40,7 +40,7 @@ func newMockedAPI() *offLedgerReqAPI {
 	}
 }
 
-func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID *isc.ChainID, body interface{}, expectedStatus int) {
+func testRequest(t *testing.T, instance *offLedgerReqAPI, chainID isc.ChainID, body interface{}, expectedStatus int) {
 	testutil.CallWebAPIRequestHandler(
 		t,
 		instance.handleNewRequest,

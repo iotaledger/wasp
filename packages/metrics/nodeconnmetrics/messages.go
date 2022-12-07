@@ -21,16 +21,16 @@ type nodeConnectionMessagesMetricsImpl struct {
 
 var _ NodeConnectionMessagesMetrics = &nodeConnectionMessagesMetricsImpl{}
 
-func createMetricsMessage[T any](ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID, msgType string, makeRelatedMetricsFun func() NodeConnectionMessageMetrics[T]) NodeConnectionMessageMetrics[T] {
+func createMetricsMessage[T any](ncmi *nodeConnectionMetricsImpl, chainID isc.ChainID, msgType string, makeRelatedMetricsFun func() NodeConnectionMessageMetrics[T]) NodeConnectionMessageMetrics[T] {
 	simpleMessageMetrics := newNodeConnectionMessageSimpleMetrics[T](ncmi, chainID, msgType)
-	if chainID == nil {
+	if chainID.Empty() {
 		return simpleMessageMetrics
 	}
 
 	return newNodeConnectionMessageRelatedMetrics(simpleMessageMetrics, makeRelatedMetricsFun())
 }
 
-func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID *isc.ChainID) NodeConnectionMessagesMetrics {
+func newNodeConnectionMessagesMetrics(ncmi *nodeConnectionMetricsImpl, chainID isc.ChainID) NodeConnectionMessagesMetrics {
 	return &nodeConnectionMessagesMetricsImpl{
 		outPublishStateTransactionMetrics: createMetricsMessage(ncmi, chainID, "out_publish_state_transaction", func() NodeConnectionMessageMetrics[*StateTransaction] {
 			return ncmi.GetOutPublishStateTransaction()

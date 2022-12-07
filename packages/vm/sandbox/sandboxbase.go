@@ -71,7 +71,7 @@ func (s *SandboxBase) GetNFTData(nftID iotago.NFTID) isc.NFT {
 	return s.Ctx.GetNFTData(nftID)
 }
 
-func (s *SandboxBase) ChainID() *isc.ChainID {
+func (s *SandboxBase) ChainID() isc.ChainID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ChainID()
 }
