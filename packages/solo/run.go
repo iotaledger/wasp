@@ -88,6 +88,10 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 	ch.Log().Debugf("runRequestsNolock ('%s')", trace)
 
 	task := ch.runTaskNoLock(reqs, false)
+	if len(task.Results) == 0 {
+		// don't produce empty blocks
+		return task.Results
+	}
 
 	var essence *iotago.TransactionEssence
 	if task.RotationAddress == nil {
@@ -140,7 +144,7 @@ func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc
 	}
 
 	ch.Log().Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		stateDraft.BlockIndex, len(reqids), len(stateTx.Essence.Outputs))
+		stateDraft.BlockIndex(), len(reqids), len(stateTx.Essence.Outputs))
 	ch.Log().Debugf("Batch processed: %s", batchShortStr(reqids))
 
 	ch.mempool.RemoveRequests(reqids...)
