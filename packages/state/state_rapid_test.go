@@ -112,14 +112,17 @@ func TestRapidReproduced2(t *testing.T) {
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
 	//
-	require.NoError(t, err)
-	has, err := blockState.Has(kv.Key([]byte{0}))
-	require.NoError(t, err)
-	require.True(t, has)
-	has, err = blockState.Has(kv.Key([]byte{1}))
-	require.NoError(t, err)
-	require.True(t, has)
-	has, err = blockState.Has(kv.Key([]byte{0x10}))
-	require.NoError(t, err)
-	require.True(t, has)
+	check := func(b byte) {
+		keyBin := []byte{b}
+		key := kv.Key(keyBin)
+		has, err := blockState.Has(key)
+		require.NoError(t, err)
+		require.True(t, has)
+		val, err := blockState.Get(key)
+		require.NoError(t, err)
+		require.Equal(t, []byte{0}, val, "values equal for key %v", keyBin)
+	}
+	check(0)
+	check(1)
+	check(0x10)
 }
