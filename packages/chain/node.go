@@ -446,7 +446,6 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 					confirmed:       confirmed,
 				}
 			}); err != nil {
-				// TODO: what should happen if a chain doesn't exist in nodeConn?
 				panic(err)
 			}
 		}

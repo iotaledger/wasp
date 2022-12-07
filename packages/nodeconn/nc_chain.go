@@ -19,8 +19,6 @@ import (
 
 func shouldBeProcessed(out iotago.Output) bool {
 	// only outputs without SDRC should be processed.
-	// TODO: that should be changed in the future, because the SDRC was a
-	// requirement by the wasp team and was added to the protocol because of that.
 	return !out.UnlockConditionSet().HasStorageDepositReturnCondition()
 }
 
@@ -156,46 +154,45 @@ func (ncc *ncChain) queryChainUTXOs() error {
 		// &nodeclient.AliasesQuery{GovernorBech32: bech32Addr}, // TODO chains can't own alias outputs for now
 	}
 
-	var innerErr error
-	for _, query := range queries {
-		// inline function used to cancel the ctx with defer
-		if err := func() error {
-			ctx, cancel := newCtxWithTimeout(ncc.nodeConn.ctx, inxTimeoutIndexerOutputs)
-			defer cancel()
+	processChainUTXOQuery := func(query nodeclient.IndexerQuery) error {
+		ctx, cancel := newCtxWithTimeout(ncc.nodeConn.ctx, inxTimeoutIndexerOutputs)
+		defer cancel()
 
-			res, err := ncc.nodeConn.indexerClient.Outputs(ctx, query)
+		res, err := ncc.nodeConn.indexerClient.Outputs(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to query address outputs: %w", err)
+		}
+
+		for res.Next() {
+			if res.Error != nil {
+				return fmt.Errorf("error iterating indexer results: %w", err)
+			}
+
+			outputs, err := res.Outputs()
 			if err != nil {
-				return fmt.Errorf("failed to query address outputs: %w", err)
+				return fmt.Errorf("failed to fetch address outputs: %w", err)
 			}
 
-			for res.Next() {
-				if res.Error != nil {
-					return fmt.Errorf("error iterating indexer results: %w", err)
-				}
-
-				outputs, err := res.Outputs()
-				if err != nil {
-					return fmt.Errorf("failed to fetch address outputs: %w", err)
-				}
-
-				outputIDs, err := res.Response.Items.OutputIDs()
-				if err != nil {
-					return fmt.Errorf("failed to get outputIDs from response items: %w", err)
-				}
-
-				for i := range outputs {
-					outputID := outputIDs[i]
-					ncc.LogDebugf("received UTXO, outputID: %s", outputID.ToHex())
-					ncc.requestOutputHandler(isc.NewOutputInfo(outputID, outputs[i], iotago.TransactionID{}))
-				}
+			outputIDs, err := res.Response.Items.OutputIDs()
+			if err != nil {
+				return fmt.Errorf("failed to get outputIDs from response items: %w", err)
 			}
 
-			return nil
-		}(); err != nil {
-			innerErr = err
-			break
+			for i := range outputs {
+				outputID := outputIDs[i]
+				ncc.LogDebugf("received UTXO, outputID: %s", outputID.ToHex())
+				ncc.requestOutputHandler(isc.NewOutputInfo(outputID, outputs[i], iotago.TransactionID{}))
+			}
+		}
+
+		return nil
+	}
+
+	for _, query := range queries {
+		if err := processChainUTXOQuery(query); err != nil {
+			return err
 		}
 	}
 
-	return innerErr
+	return nil
 }

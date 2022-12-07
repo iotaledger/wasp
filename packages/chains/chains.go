@@ -99,20 +99,13 @@ func New(
 }
 
 func (c *Chains) Run(ctx context.Context) error {
-	// inline func used to release the lock with defer before calling "activateAllFromRegistry"
-	if err := func() error {
-		c.mutex.Lock()
-		defer c.mutex.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-		if c.ctx != nil {
-			return errors.New("chains already running")
-		}
-		c.ctx = ctx
-
-		return nil
-	}(); err != nil {
-		return err
+	if c.ctx != nil {
+		return errors.New("chains already running")
 	}
+	c.ctx = ctx
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
@@ -121,7 +114,7 @@ func (c *Chains) activateAllFromRegistry() error {
 	var innerErr error
 	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
 		chainID := chainRecord.ChainID()
-		if err := c.Activate(chainID); err != nil {
+		if err := c.activateWithoutLocking(chainID); err != nil {
 			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
 			return false
 		}
@@ -134,10 +127,8 @@ func (c *Chains) activateAllFromRegistry() error {
 	return innerErr
 }
 
-// Activate activates chain on the Wasp node.
-func (c *Chains) Activate(chainID isc.ChainID) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+// activateWithoutLocking activates a chain in the node.
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
 		return xerrors.Errorf("run chains first")
 	}
@@ -212,7 +203,15 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	return nil
 }
 
-// Deactivate chain in the node.
+// Activate activates a chain in the node.
+func (c *Chains) Activate(chainID isc.ChainID) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.activateWithoutLocking(chainID)
+}
+
+// Deactivate a chain in the node.
 func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

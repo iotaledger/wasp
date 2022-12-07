@@ -171,7 +171,7 @@ func getAliasIDOtherOutputs(output iotago.Output) iotago.AliasID {
 
 	if addressToCheck.Type() != iotago.AddressAlias {
 		// output is not owned by an alias address => ignore it
-		// TODO: what if we have nested ownerships? do we need to take care of that?
+		// nested ownerships are also ignored (Chain owns NFT that owns NFT's etc).
 		return iotago.AliasID{}
 	}
 
