@@ -3,7 +3,7 @@
 
 use crate::*;
 use isc::{offledgerrequest::*, waspclient::*};
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, RwLock};
 use std::time::Duration;
 
 pub trait IClientService {
@@ -24,7 +24,11 @@ pub trait IClientService {
         key_pair: &keypair::KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID>;
-    fn subscribe_events(&self, tx: mpsc::Sender<String>) -> errors::Result<()>;
+    fn subscribe_events(
+        &self,
+        tx: mpsc::Sender<String>,
+        done: Arc<RwLock<bool>>,
+    ) -> errors::Result<()>;
     fn wait_until_request_processed(
         &self,
         chain_id: &ScChainID,
@@ -87,8 +91,12 @@ impl IClientService for WasmClientService {
         return Ok(req.id());
     }
 
-    fn subscribe_events(&self, tx: mpsc::Sender<String>) -> errors::Result<()> {
-        self.websocket.clone().unwrap().subscribe(tx); // TODO remove clone
+    fn subscribe_events(
+        &self,
+        tx: mpsc::Sender<String>,
+        done: Arc<RwLock<bool>>,
+    ) -> errors::Result<()> {
+        self.websocket.clone().unwrap().subscribe(tx, done); // TODO remove clone
         return Ok(());
     }
 
@@ -115,8 +123,10 @@ impl WasmClientService {
             last_err: Ok(()),
         };
     }
+}
 
-    pub fn default() -> Self {
+impl Default for WasmClientService {
+    fn default() -> Self {
         return WasmClientService {
             client: waspclient::WaspClient::new("127.0.0.1:9090"),
             event_port: "127.0.0.1:5550".to_string(),

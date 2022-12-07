@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::*;
-use std::{any::Any, sync::mpsc, thread::spawn};
+use std::{
+    any::Any,
+    sync::{mpsc, Arc, RwLock},
+    thread::spawn,
+};
 use wasmlib::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
@@ -15,6 +19,7 @@ pub struct WasmClientContext {
     pub sc_name: String,
     pub sc_hname: ScHname,
     pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
+    pub done: Arc<RwLock<bool>>,       // Send true, or drop() to close the ongoing `subscribe()`
 }
 
 impl WasmClientContext {
@@ -31,18 +36,7 @@ impl WasmClientContext {
             event_handlers: Vec::new(),
             key_pair: None,
             req_id: request_id_from_bytes(&[]),
-        }
-    }
-
-    pub fn default() -> WasmClientContext {
-        WasmClientContext {
-            svc_client: WasmClientService::default(),
-            sc_name: String::new(),
-            sc_hname: ScHname(0),
-            chain_id: chain_id_from_bytes(&[]),
-            event_handlers: Vec::new(),
-            key_pair: None,
-            req_id: request_id_from_bytes(&[]),
+            done: Arc::new(RwLock::new(false)),
         }
     }
 
@@ -109,29 +103,47 @@ impl WasmClientContext {
 
     pub fn start_event_handlers(&'static self) -> errors::Result<()> {
         let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
-        self.svc_client.subscribe_events(tx).unwrap();
+        let done = Arc::clone(&self.done);
+        self.svc_client.subscribe_events(tx, done).unwrap();
 
-        spawn(move || {
-            for msg in rx {
-                self.process_event(&msg).unwrap();
-            }
-        });
+        self.process_event(rx).unwrap();
 
         return Ok(());
     }
 
     pub fn stop_event_handlers(&self) {
-        todo!()
+        let mut done = self.done.write().unwrap();
+        *done = true;
     }
 
-    fn process_event(&self, _msg: &str) -> errors::Result<()> {
-        // FIXME parse the msg
-        for handler in self.event_handlers.iter() {
-            handler
-                .as_ref()
-                .call_handler("topic", &vec!["params".to_string()]); // FIXME use the correct parsed message
+    fn process_event(&'static self, rx: mpsc::Receiver<String>) -> errors::Result<()> {
+        for _msg in rx {
+            spawn(move || {
+                // FIXME parse the msg
+                for handler in self.event_handlers.iter() {
+                    handler
+                        .as_ref()
+                        .call_handler("topic", &vec!["params".to_string()]); // FIXME use the correct parsed message
+                }
+            });
         }
+
         todo!()
+    }
+}
+
+impl Default for WasmClientContext {
+    fn default() -> WasmClientContext {
+        WasmClientContext {
+            svc_client: WasmClientService::default(),
+            sc_name: String::new(),
+            sc_hname: ScHname(0),
+            chain_id: chain_id_from_bytes(&[]),
+            event_handlers: Vec::new(),
+            key_pair: None,
+            req_id: request_id_from_bytes(&[]),
+            done: Arc::new(RwLock::new(false)),
+        }
     }
 }
 
