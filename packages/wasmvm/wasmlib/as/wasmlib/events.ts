@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ScFuncContext} from "./context";
-import {uint64ToString} from "./wasmtypes/scuint64";
-import {uint32FromString} from "./wasmtypes/scuint32";
+import {uint64FromString, uint64ToString} from "./wasmtypes/scuint64";
 
 export interface IEventHandlers {
     callHandler(topic: string, params: string[]): void;
@@ -42,7 +41,7 @@ export class EventDecoder {
         return this.msg.shift()!;
     }
 
-    timestamp(): u32 {
-        return uint32FromString(this.decode());
+    timestamp(): u64 {
+        return uint64FromString(this.decode());
     }
 }
