@@ -377,12 +377,36 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 }
 
 // A callback for distSync.
+//   - We only return off-ledger requests here.
+//   - The requests can be in the mempool
+//   - Or they are processed already (a lagging node asks
+//     for them), then the state has to be accessed.
 func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.Request {
-	return mpi.offLedgerPool.Get(requestRef)
+	if req := mpi.offLedgerPool.Get(requestRef); req != nil {
+		return req
+	}
+	if mpi.chainHeadState != nil {
+		requestID := requestRef.ID
+		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &requestID)
+		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
+			return receipt.Request
+		}
+	}
+	return nil
 }
 
 // A callback for distSync.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
+	// mpi.log.Debugf("XXX: distSyncRequestReceivedCB, req.ID=%v", request.ID().String()) // TODO: ...
+	offLedgerReq, ok := request.(isc.OffLedgerRequest)
+	if !ok {
+		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+		return
+	}
+	mpi.addOffLedgerRequestIfUnseen(offLedgerReq)
+}
+
+func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest) bool {
 	if mpi.chainHeadState != nil {
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
@@ -395,18 +419,15 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 			))
 		}
 		if processed {
-			return // Already processed.
+			return false // Already processed.
 		}
 	}
-	olr, ok := request.(isc.OffLedgerRequest)
-	if ok {
-		if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(olr)) {
-			mpi.offLedgerPool.Add(olr)
-			mpi.metrics.CountRequestIn(olr)
-		}
-		return
+	if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(request)) {
+		mpi.offLedgerPool.Add(request)
+		mpi.metrics.CountRequestIn(request)
+		return true
 	}
-	mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+	return false
 }
 
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
@@ -549,15 +570,17 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	mpi.metrics.CountRequestIn(request)
 }
 
-func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) { // TODO: Don't we need to reject processed requests?
-	mpi.offLedgerPool.Add(request)
-	mpi.metrics.CountRequestIn(request)
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+	if mpi.addOffLedgerRequestIfUnseen(request) {
+		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+	}
 }
 
 func (mpi *mempoolImpl) handleAwaitRequestProcessed(recv *reqAwaitRequestProcessed) {
+	mpi.log.Debugf("XXX: handleAwaitRequestProcessed, req.ID=%v", recv.requestID.String()) // TODO: ...
 	if mpi.chainHeadState != nil {
 		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &recv.requestID)
+		mpi.log.Debugf("XXX: handleAwaitRequestProcessed, req.ID=%v, have chainHeadState, index=%v, receipt=%v", recv.requestID.String(), mpi.chainHeadState.BlockIndex(), receipt) // TODO: ...
 		if err != nil {
 			mpi.log.Warnf("error while getting request receipt from blocklog: %v", err)
 			recv.responseCh <- nil
@@ -606,6 +629,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 // - Cleanup requests from the blocks that were added.
 func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
 	vState, addedBlocks, removedBlocks := mpi.stateMgr.MempoolStateRequest(ctx, mpi.chainHeadAO, aliasOutput)
+	mpi.log.Debugf("XXX: handleTrackNewChainHead, index=%v", vState.BlockIndex()) // TODO: ...
 	if len(removedBlocks) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(removedBlocks), len(addedBlocks))
 		// TODO: For IOTA 2.0: Maybe re-read the state from L1 (when reorgs will become possible).
@@ -630,6 +654,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput
 		}
 		mpi.metrics.CountBlocksPerChain()
 		for _, receipt := range blockReceipts {
+			mpi.log.Debugf("XXX: handleTrackNewChainHead, consumed req.ID=%v", receipt.Request.ID().String()) // TODO: ...
 			mpi.metrics.CountRequestOut()
 			mpi.waitProcessed.Processed(receipt)
 			mpi.tryRemoveRequest(receipt.Request)
