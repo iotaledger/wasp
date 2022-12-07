@@ -41,8 +41,9 @@ func (hashes *hashVector) Hash() Hash {
 	for _, b := range hashes {
 		sum += len(b)
 	}
-	buf := make([]byte, 0, sum)
+	buf := make([]byte, 0, sum+len(hashes))
 	for _, b := range hashes {
+		buf = append(buf, byte(len(b)))
 		buf = append(buf, b...)
 	}
 	return blake2b160(buf)
