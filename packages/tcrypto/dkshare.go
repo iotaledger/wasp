@@ -194,6 +194,7 @@ func (s *dkShareImpl) Clone() onchangemap.Item[string, *util.ComparableAddress] 
 		edPublicShares:   util.CloneSlice(s.edPublicShares),
 		edPrivateShare:   s.edPrivateShare.Clone(),
 		blsSuite:         s.blsSuite,
+		blsThreshold:     s.blsThreshold,
 		blsSharedPublic:  s.blsSharedPublic.Clone(),
 		blsPublicCommits: util.CloneSlice(s.blsPublicCommits),
 		blsPublicShares:  util.CloneSlice(s.blsPublicShares),
