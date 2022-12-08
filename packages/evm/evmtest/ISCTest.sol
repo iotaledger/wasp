@@ -155,4 +155,8 @@ contract ISCTest {
         (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature("triggerEvent(string)", "static"));
         require(!success, "staticcall to non-view should fail");
     }
+
+    function testSelfDestruct(address payable beneficiary) public {
+        selfdestruct(beneficiary);
+    }
 }

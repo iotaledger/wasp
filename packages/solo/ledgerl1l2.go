@@ -361,7 +361,10 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Fungi
 	require.False(ch.Env.T, toSend.IsEmpty())
 	sumAssets := toSend.Clone().AddBaseTokens(totalBaseTokens)
 	_, err := ch.PostRequestSync(
-		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, accounts.ParamAgentID, target).
+		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
+			accounts.ParamAgentID, target,
+			accounts.ParamForceOpenAccount, codec.EncodeBool(true),
+		).
 			AddFungibleTokens(sumAssets).
 			AddAllowance(isc.NewAllowanceFungibleTokens(toSend)).
 			WithGasBudget(math.MaxUint64),

@@ -1407,3 +1407,31 @@ func TestStaticCall(t *testing.T) {
 	require.Len(t, ev, 1)
 	require.Contains(t, ev[0], "non-static")
 }
+
+func TestSelfDestruct(t *testing.T) {
+	env := initEVM(t)
+	ethKey, _ := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	iscTest := env.deployISCTestContract(ethKey)
+	iscTestAgentID := isc.NewEthereumAddressAgentID(iscTest.address)
+
+	// send some tokens to the ISCTest contract
+	{
+		const baseTokensDepositFee = 100
+		k, _ := env.solo.NewKeyPairWithFunds()
+		err := env.soloChain.SendFromL1ToL2AccountBaseTokens(baseTokensDepositFee, 1*isc.Million, iscTestAgentID, k)
+		require.NoError(t, err)
+		require.EqualValues(t, 1*isc.Million, env.soloChain.L2BaseTokens(iscTestAgentID))
+	}
+
+	_, beneficiary := solo.NewEthereumAccount()
+
+	require.NotEmpty(t, env.getCode(iscTest.address))
+
+	_, err := iscTest.callFn([]ethCallOptions{{sender: ethKey}}, "testSelfDestruct", beneficiary)
+	require.NoError(t, err)
+
+	require.Empty(t, env.getCode(iscTest.address))
+	require.Zero(t, env.soloChain.L2BaseTokens(iscTestAgentID))
+	require.EqualValues(t, 1*isc.Million, env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(beneficiary)))
+}
