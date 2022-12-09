@@ -12,10 +12,10 @@ type Errors struct {
 	vmService interfaces.VMService
 }
 
-func (a *Errors) GetMessageFormat(chainID *isc.ChainID, contractID isc.Hname, errorID uint16) (string, error) {
+func (e *Errors) GetMessageFormat(chainID *isc.ChainID, contractID isc.Hname, errorID uint16) (string, error) {
 	errorCode := isc.NewVMErrorCode(contractID, errorID)
 
-	ret, err := a.vmService.CallViewByChainID(chainID, errors.Contract.Hname(), errors.ViewGetErrorMessageFormat.Hname(), codec.MakeDict(map[string]interface{}{
+	ret, err := e.vmService.CallViewByChainID(chainID, errors.Contract.Hname(), errors.ViewGetErrorMessageFormat.Hname(), codec.MakeDict(map[string]interface{}{
 		errors.ParamErrorCode: errorCode.Bytes(),
 	}))
 
@@ -31,9 +31,4 @@ func (a *Errors) GetMessageFormat(chainID *isc.ChainID, contractID isc.Hname, er
 	}
 
 	return messageFormat, nil
-}
-
-func (a *Errors) GetErrorMessage(chainID *isc.ChainID, contractID isc.Hname, errorID uint16) string {
-	//messageFormat, err := a.GetMessageFormat(chainID, contractID, errorID)
-	return ""
 }
