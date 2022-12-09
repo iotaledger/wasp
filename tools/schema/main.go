@@ -146,10 +146,19 @@ func generateSchema(file *os.File) error {
 	}
 
 	if *flagTs {
-		g := generator.NewTypeScriptGenerator(s)
+		g := generator.NewTypeScriptGenerator(s, "ts")
 		err = g.Generate(g, *flagClean)
 		if err != nil {
 			return err
+		}
+		if s.CoreContracts {
+			// note that we have a separate WasmLib for AssemblyScript
+			// core contracts are identical except for package.json
+			g = generator.NewTypeScriptGenerator(s, "as")
+			err = g.Generate(g, *flagClean)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
