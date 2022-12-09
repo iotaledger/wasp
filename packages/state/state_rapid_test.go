@@ -22,7 +22,6 @@ var _ rapid.StateMachine = &stateSM{}
 
 // State Machine initialization.
 func (sm *stateSM) Init(t *rapid.T) {
-	// fmt.Printf("XXX: Init\n")
 	sm.store = state.NewStore(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
@@ -32,14 +31,27 @@ func (sm *stateSM) Init(t *rapid.T) {
 func (sm *stateSM) KVSet(t *rapid.T) {
 	keyB := rapid.Byte().Draw(t, "key")
 	valB := rapid.Byte().Draw(t, "val")
-	// fmt.Printf("XXX: KVSet %v=>%v\n", keyB, valB)
 	sm.draft.Set(kv.Key([]byte{keyB}), []byte{valB})
 	require.NoError(t, sm.model.Set([]byte{keyB}, []byte{valB}))
 }
 
+// Action: Set a value for the KV store (a longer slice).
+func (sm *stateSM) KVSetSlices(t *rapid.T) {
+	keyBin := rapid.SliceOfBytesMatching(".+").Draw(t, "key")
+	valBin := rapid.SliceOfBytesMatching(".+").Draw(t, "val") // Nil values are not supported.
+	sm.draft.Set(kv.Key(keyBin), valBin)
+	require.NoError(t, sm.model.Set(keyBin, valBin))
+}
+
+// Action: Delete a value from the KV store.
+func (sm *stateSM) KVDel(t *rapid.T) {
+	keyB := rapid.Byte().Draw(t, "key")
+	sm.draft.Del(kv.Key([]byte{keyB}))
+	require.NoError(t, sm.model.Delete([]byte{keyB}))
+}
+
 // Action: Commit a block, start new empty draft.
 func (sm *stateSM) CommitAddEmpty(t *rapid.T) {
-	// fmt.Printf("XXX: CommitAddEmpty\n")
 	var err error
 	block := sm.store.Commit(sm.draft)
 	//
@@ -52,22 +64,6 @@ func (sm *stateSM) CommitAddEmpty(t *rapid.T) {
 	sm.draft, err = sm.store.NewEmptyStateDraft(block.L1Commitment())
 	require.NoError(t, err)
 }
-
-// TODO: Action: Commit a block, start new draft with the common fields.
-// func (sm *stateSM) CommitAddDraft(t *rapid.T) {
-// 	var err error
-// 	block := sm.store.Commit(sm.draft)
-// 	//
-// 	// Validate, if the committed state is correct.
-// 	blockState, err := sm.store.StateByTrieRoot(block.TrieRoot())
-// 	require.NoError(t, err)
-// 	sm.propStateReaderMatchesModel(t, blockState)
-// 	//
-// 	// Proceed to the next transition.
-// 	timestamp := rapid.Int64().Draw(t, "timestamp")
-// 	sm.draft, err = sm.store.NewStateDraft(time.UnixMilli(timestamp), block.L1Commitment())
-// 	require.NoError(t, err)
-// }
 
 // Invariants to check.
 func (sm *stateSM) Check(t *rapid.T) {
@@ -100,7 +96,7 @@ func TestRapid(t *testing.T) {
 	rapid.Check(t, rapid.Run[*stateSM]())
 }
 
-func TestRapidReproduced2(t *testing.T) {
+func TestRapidReproduced(t *testing.T) {
 	var err error
 	store := state.NewStore(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
