@@ -16,51 +16,52 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // ChainRecord represents chain the node is participating in.
 type ChainRecord struct {
 	id          isc.ChainID
 	Active      bool
-	AccessNodes []cryptolib.PublicKey
+	AccessNodes []*cryptolib.PublicKey
 }
 
 func NewChainRecord(chainID isc.ChainID, active bool) *ChainRecord {
 	return &ChainRecord{
 		id:          chainID,
 		Active:      active,
-		AccessNodes: []cryptolib.PublicKey{},
+		AccessNodes: []*cryptolib.PublicKey{},
 	}
 }
 
-func (r *ChainRecord) ID() *isc.ChainID {
-	return &r.id
+func (r *ChainRecord) ID() isc.ChainID {
+	return r.id
 }
 
 func (r *ChainRecord) ChainID() isc.ChainID {
 	return r.id
 }
 
-func (r *ChainRecord) Clone() onchangemap.Item[string, *isc.ChainID] {
+func (r *ChainRecord) Clone() onchangemap.Item[string, isc.ChainID] {
 	return &ChainRecord{
 		id:          r.id,
 		Active:      r.Active,
-		AccessNodes: []cryptolib.PublicKey{},
+		AccessNodes: util.CloneSlice(r.AccessNodes),
 	}
 }
 
 func (r *ChainRecord) AddAccessNode(pubKey *cryptolib.PublicKey) error {
-	if lo.ContainsBy(r.AccessNodes, func(p cryptolib.PublicKey) bool {
+	if lo.ContainsBy(r.AccessNodes, func(p *cryptolib.PublicKey) bool {
 		return p.Equals(pubKey)
 	}) {
 		return fmt.Errorf("node is already an access node")
 	}
-	r.AccessNodes = append(r.AccessNodes, *pubKey)
+	r.AccessNodes = append(r.AccessNodes, pubKey)
 	return nil
 }
 
 func (r *ChainRecord) RemoveAccessNode(pubKey *cryptolib.PublicKey) (modified bool) {
-	newAccessNodes := []cryptolib.PublicKey{}
+	newAccessNodes := []*cryptolib.PublicKey{}
 	for _, p := range r.AccessNodes {
 		if p.Equals(pubKey) {
 			modified = true
@@ -73,15 +74,21 @@ func (r *ChainRecord) RemoveAccessNode(pubKey *cryptolib.PublicKey) (modified bo
 }
 
 type jsonChainRecord struct {
-	ChainID     string                `json:"chainID"`
-	Active      bool                  `json:"active"`
-	AccessNodes []cryptolib.PublicKey `json:"accessNodes"`
+	ChainID     string   `json:"chainID"`
+	Active      bool     `json:"active"`
+	AccessNodes []string `json:"accessNodes"`
 }
 
 func (r *ChainRecord) MarshalJSON() ([]byte, error) {
+	accessNodesPubKeysHex := make([]string, 0)
+	for _, accessNodePubKey := range r.AccessNodes {
+		accessNodesPubKeysHex = append(accessNodesPubKeysHex, cryptolib.PublicKeyToHex(accessNodePubKey))
+	}
+
 	return json.Marshal(&jsonChainRecord{
-		ChainID: r.ID().String(),
-		Active:  r.Active,
+		ChainID:     r.ID().String(),
+		Active:      r.Active,
+		AccessNodes: accessNodesPubKeysHex,
 	})
 }
 
@@ -109,13 +116,27 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 		return errors.New("chainID is not an alias address")
 	}
 
-	*r = *NewChainRecord(isc.ChainID(aliasAddress.AliasID()), j.Active)
+	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
+	for i, accessNodePubKeyHex := range j.AccessNodes {
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromHex(accessNodePubKeyHex)
+		if err != nil {
+			return err
+		}
+
+		accessNodesPubKeys[i] = accessNodePubKey
+	}
+
+	*r = ChainRecord{
+		id:          isc.ChainID(aliasAddress.AliasID()),
+		Active:      j.Active,
+		AccessNodes: accessNodesPubKeys,
+	}
 
 	return nil
 }
 
 type ChainRecordRegistry struct {
-	storeOnChangeMap *onchangemap.OnChangeMap[string, *isc.ChainID, *ChainRecord]
+	storeOnChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
 }
 
 var _ ChainRecordRegistryProvider = &ChainRecordRegistry{}
@@ -123,7 +144,7 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistry{}
 // NewChainRecordRegistry creates new instance of the chain registry implementation.
 func NewChainRecordRegistry(storeCallback func(chainRecords []*ChainRecord) error) *ChainRecordRegistry {
 	return &ChainRecordRegistry{
-		storeOnChangeMap: onchangemap.NewOnChangeMap[string, *isc.ChainID](storeCallback),
+		storeOnChangeMap: onchangemap.NewOnChangeMap[string, isc.ChainID](storeCallback),
 	}
 }
 
@@ -132,7 +153,7 @@ func (p *ChainRecordRegistry) EnableStoreOnChange() {
 }
 
 func (p *ChainRecordRegistry) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	chainRecord, err := p.storeOnChangeMap.Get(&chainID)
+	chainRecord, err := p.storeOnChangeMap.Get(chainID)
 	if err != nil {
 		// chain record doesn't exist
 		return nil, nil
@@ -169,12 +190,12 @@ func (p *ChainRecordRegistry) AddChainRecord(chainRecord *ChainRecord) error {
 }
 
 func (p *ChainRecordRegistry) DeleteChainRecord(chainID isc.ChainID) error {
-	return p.storeOnChangeMap.Delete(&chainID)
+	return p.storeOnChangeMap.Delete(chainID)
 }
 
 // UpdateChainRecord modifies a ChainRecord in the Registry.
 func (p *ChainRecordRegistry) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
-	return p.storeOnChangeMap.Modify(&chainID, callback)
+	return p.storeOnChangeMap.Modify(chainID, callback)
 }
 
 func (p *ChainRecordRegistry) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {

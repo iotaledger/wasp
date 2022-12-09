@@ -17,8 +17,7 @@ import (
 func InitChainStore(db kvstore.KVStore) Store {
 	store := NewStore(db)
 	d := store.NewOriginStateDraft()
-	emptyChainID := isc.ChainID{}
-	d.Set(KeyChainID, emptyChainID.Bytes())
+	d.Set(KeyChainID, isc.EmptyChainID().Bytes())
 	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint32(0))
 	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(time.Unix(0, 0)))
 	block := store.Commit(d)

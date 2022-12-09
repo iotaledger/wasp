@@ -91,11 +91,11 @@ func L1CommitmentFromAliasOutput(output *iotago.AliasOutput) (*L1Commitment, err
 	return l1c, nil
 }
 
-func (s *L1Commitment) GetTrieRoot() trie.Hash {
+func (s *L1Commitment) TrieRoot() trie.Hash {
 	return s.trieRoot
 }
 
-func (s *L1Commitment) GetBlockHash() BlockHash {
+func (s *L1Commitment) BlockHash() BlockHash {
 	return s.blockHash
 }
 
@@ -108,11 +108,11 @@ func (s *L1Commitment) Bytes() []byte {
 }
 
 func (s *L1Commitment) Write(w io.Writer) error {
-	hash := s.GetTrieRoot()
+	hash := s.TrieRoot()
 	if err := hash.Write(w); err != nil {
 		return err
 	}
-	blockHash := s.GetBlockHash()
+	blockHash := s.BlockHash()
 	if _, err := w.Write(blockHash[:]); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (s *L1Commitment) Read(r io.Reader) error {
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("<%s;%s>", s.GetTrieRoot(), s.GetBlockHash())
+	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (*L1Commitment, error) {

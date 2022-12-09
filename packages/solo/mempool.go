@@ -28,14 +28,16 @@ type MempoolInfo struct {
 }
 
 type mempoolImpl struct {
-	requests map[isc.RequestID]isc.Request
-	info     MempoolInfo
+	requests    map[isc.RequestID]isc.Request
+	info        MempoolInfo
+	currentTime func() time.Time
 }
 
-func newMempool() Mempool {
+func newMempool(currentTime func() time.Time) Mempool {
 	return &mempoolImpl{
-		requests: map[isc.RequestID]isc.Request{},
-		info:     MempoolInfo{},
+		requests:    map[isc.RequestID]isc.Request{},
+		info:        MempoolInfo{},
+		currentTime: currentTime,
 	}
 }
 
@@ -50,7 +52,7 @@ func (mi *mempoolImpl) ReceiveRequests(reqs ...isc.Request) {
 }
 
 func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
-	now := time.Now()
+	now := mi.currentTime()
 	batch := []isc.Request{}
 	for rid, request := range mi.requests {
 		switch request := request.(type) {

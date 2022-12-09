@@ -6,10 +6,11 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/documentation/tutorial-examples/go/solotutorial"
 	"github.com/iotaledger/wasp/documentation/tutorial-examples/go/solotutorialimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {

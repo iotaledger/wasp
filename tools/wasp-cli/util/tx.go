@@ -15,7 +15,7 @@ func PostTransaction(tx *iotago.Transaction) {
 	log.Check(err)
 }
 
-func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
+func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
@@ -26,7 +26,7 @@ func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, 
 	// TODO print receipt?
 }
 
-func WithSCTransaction(chainID *isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
+func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
 	tx, err := f()
 	log.Check(err)
 	logTx(chainID, tx)
@@ -40,12 +40,12 @@ func WithSCTransaction(chainID *isc.ChainID, f func() (*iotago.Transaction, erro
 	return tx
 }
 
-func logTx(chainID *isc.ChainID, tx *iotago.Transaction) {
+func logTx(chainID isc.ChainID, tx *iotago.Transaction) {
 	allReqs, err := isc.RequestsInTransaction(tx)
 	log.Check(err)
 	txid, err := tx.ID()
 	log.Check(err)
-	reqs := allReqs[*chainID]
+	reqs := allReqs[chainID]
 	if len(reqs) == 0 {
 		log.Printf("Posted on-ledger transaction %s\n", txid.ToHex())
 	} else {

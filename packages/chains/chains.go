@@ -5,6 +5,7 @@ package chains
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -26,13 +27,13 @@ import (
 
 type Provider func() *Chains // TODO: Use DI instead of that.
 
-func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
-	return func(chainID *isc.ChainID) chain.Chain {
+func (chains Provider) ChainProvider() func(chainID isc.ChainID) chain.Chain {
+	return func(chainID isc.ChainID) chain.Chain {
 		return chains().Get(chainID)
 	}
 }
 
-type ChainProvider func(chainID *isc.ChainID) chain.Chain
+type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
 	ctx                              context.Context
@@ -100,9 +101,9 @@ func New(
 func (c *Chains) Run(ctx context.Context) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if c.ctx == nil {
-		c.log.Warnf("Chains already running.")
-		return nil
+
+	if c.ctx != nil {
+		return errors.New("chains already running")
 	}
 	c.ctx = ctx
 
@@ -113,7 +114,7 @@ func (c *Chains) activateAllFromRegistry() error {
 	var innerErr error
 	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
 		chainID := chainRecord.ChainID()
-		if err := c.Activate(chainID); err != nil {
+		if err := c.activateWithoutLocking(chainID); err != nil {
 			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
 			return false
 		}
@@ -126,10 +127,8 @@ func (c *Chains) activateAllFromRegistry() error {
 	return innerErr
 }
 
-// Activate activates chain on the Wasp node.
-func (c *Chains) Activate(chainID isc.ChainID) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+// activateWithoutLocking activates a chain in the node.
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
 		return xerrors.Errorf("run chains first")
 	}
@@ -158,14 +157,18 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	}
 	chainStore := state.NewStore(chainKVStore)
 	chainState, err := chainStore.LatestState()
-	chainIDInState, errChainID := chainState.Has(state.KeyChainID)
-	if err != nil || errChainID != nil || !chainIDInState {
+	if err != nil {
 		chainStore = state.InitChainStore(chainKVStore)
+	} else {
+		chainIDInState, errChainID := chainState.Has(state.KeyChainID)
+		if errChainID != nil || !chainIDInState {
+			chainStore = state.InitChainStore(chainKVStore)
+		}
 	}
 
 	var chainWAL smGPAUtils.BlockWAL
 	if c.rawBlocksEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, &chainID, smGPAUtils.NewBlockWALMetrics())
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(xerrors.Errorf("cannot create WAL: %w", err))
 		}
@@ -176,7 +179,7 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	newChain, err := chain.New(
 		chainCtx,
-		&chainID,
+		chainID,
 		chainStore,
 		c.nodeConnection,
 		c.nodeIdentityProvider.NodeIdentity(),
@@ -200,7 +203,15 @@ func (c *Chains) Activate(chainID isc.ChainID) error {
 	return nil
 }
 
-// Deactivate chain in the node.
+// Activate activates a chain in the node.
+func (c *Chains) Activate(chainID isc.ChainID) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.activateWithoutLocking(chainID)
+}
+
+// Deactivate a chain in the node.
 func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -222,11 +233,11 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *isc.ChainID) chain.Chain {
+func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	ret, ok := c.allChains[*chainID]
+	ret, ok := c.allChains[chainID]
 	if !ok {
 		return nil
 	}

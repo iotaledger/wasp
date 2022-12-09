@@ -36,7 +36,7 @@ type ConsensusMetrics interface {
 
 type chainMetricsObj struct {
 	metrics *Metrics
-	chainID *isc.ChainID
+	chainID isc.ChainID
 }
 
 var (

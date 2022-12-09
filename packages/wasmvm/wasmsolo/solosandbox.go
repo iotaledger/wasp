@@ -74,7 +74,7 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 		default:
 			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
 		}
-		s.ctx.Chain.Log().Infof("stolor error:: %s", s.ctx.Err.Error())
+		s.ctx.Chain.Log().Infof("SoloSandbox error:: %s", s.ctx.Err.Error())
 	}()
 	switch funcNr {
 	case wasmlib.FnCall:

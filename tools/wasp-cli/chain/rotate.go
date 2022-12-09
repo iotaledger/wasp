@@ -31,13 +31,13 @@ var rotateCmd = &cobra.Command{
 
 		kp := wallet.Load().KeyPair
 
-		chainID := *GetCurrentChainID().AsAliasID()
+		aliasID := GetCurrentChainID().AsAliasID()
 
-		chainOutputID, chainOutput, err := l1Client.GetAliasOutput(chainID)
+		chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 		log.Check(err)
 
 		tx, err := transaction.NewRotateChainStateControllerTx(
-			chainID,
+			aliasID,
 			newStateControllerAddr,
 			chainOutputID,
 			chainOutput,

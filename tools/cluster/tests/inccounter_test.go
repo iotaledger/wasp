@@ -104,9 +104,9 @@ func (e *contractEnv) checkSC(numRequests int) {
 		info, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
+		chainID, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.ChainID, chid)
+		require.EqualValues(e.t, e.Chain.ChainID, chainID)
 
 		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)

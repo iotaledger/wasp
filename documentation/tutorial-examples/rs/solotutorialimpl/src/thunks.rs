@@ -40,7 +40,7 @@ fn func_store_string_thunk(ctx: &ScFuncContext) {
         params: ImmutableStoreStringParams::new(),
         state: MutableSoloTutorialState::new(),
     };
-    ctx.require(f.params.str().exists(), "missing mandatory str");
+    ctx.require(f.params.str().exists(), "missing mandatory param: str");
     func_store_string(ctx, &f);
     ctx.log("solotutorial.funcStoreString ok");
 }

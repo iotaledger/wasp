@@ -123,7 +123,7 @@ func TestIterateSorted(t *testing.T) {
 	require.Equal(t, []kv.Key{"k1", "k2", "k3", "k4", "k5"}, seen)
 }
 
-func TestMarshaling(t *testing.T) {
+func TestMarshalling(t *testing.T) {
 	vars1 := New()
 	vars1.Set("k1", []byte("kuku"))
 	vars1.Set("k2", []byte{42})
@@ -135,7 +135,7 @@ func TestMarshaling(t *testing.T) {
 	require.EqualValues(t, vars1.Bytes(), vars2.Bytes())
 }
 
-func TestJSONMarshaling(t *testing.T) {
+func TestJSONMarshalling(t *testing.T) {
 	vars1 := New()
 	vars1.Set("k1", []byte("kuku"))
 	vars1.Set("k2", []byte{42})

@@ -44,7 +44,7 @@ type Features interface {
 }
 
 type OffLedgerRequestData interface {
-	ChainID() *ChainID
+	ChainID() ChainID
 	Nonce() uint64
 }
 
@@ -65,7 +65,7 @@ type OnLedgerRequest interface {
 	Request
 	Clone() OnLedgerRequest
 	Output() iotago.Output
-	IsInternalUTXO(*ChainID) bool
+	IsInternalUTXO(ChainID) bool
 	OutputID() iotago.OutputID
 	Features() Features
 }
@@ -113,7 +113,7 @@ func RequestsInTransaction(tx *iotago.Transaction) (map[ChainID][]Request, error
 
 		chainID := ChainIDFromAliasID(addr.(*iotago.AliasAddress).AliasID())
 
-		if odata.IsInternalUTXO(&chainID) {
+		if odata.IsInternalUTXO(chainID) {
 			continue
 		}
 

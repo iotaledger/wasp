@@ -54,7 +54,7 @@ func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 // region offLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type offLedgerRequestData struct {
-	chainID         *ChainID
+	chainID         ChainID
 	contract        Hname
 	entryPoint      Hname
 	params          dict.Dict
@@ -102,7 +102,7 @@ func (s *offLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) er
 	return err
 }
 
-func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
+func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
 	return &offLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -126,7 +126,7 @@ var (
 	_ OffLedgerRequest         = &offLedgerRequestData{}
 )
 
-func (r *offLedgerRequestData) ChainID() *ChainID {
+func (r *offLedgerRequestData) ChainID() ChainID {
 	return r.chainID
 }
 
@@ -443,8 +443,8 @@ func (r *onLedgerRequestData) SenderAccount() AgentID {
 		if sender.Type() != iotago.AddressAlias {
 			panic("inconsistency: non-alias address cannot have hname != 0")
 		}
-		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
-		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+		chainID := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(chainID, r.requestMetadata.SenderContract)
 	}
 	return NewAgentID(sender)
 }
@@ -552,14 +552,14 @@ func (r *onLedgerRequestData) Output() iotago.Output {
 }
 
 // IsInternalUTXO if true the output cannot be interpreted as a request
-func (r *onLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
+func (r *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 	if r.output.Type() == iotago.OutputFoundry {
 		return true
 	}
 	if r.SenderAddress() == nil {
 		return false
 	}
-	if !r.SenderAddress().Equal(chinID.AsAddress()) {
+	if !r.SenderAddress().Equal(chainID.AsAddress()) {
 		return false
 	}
 	if r.requestMetadata != nil {

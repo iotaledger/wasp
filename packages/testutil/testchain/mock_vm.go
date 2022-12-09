@@ -36,7 +36,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) error {
 	r.log.Debugf("Mocked VM runner: VM started for trie root %v output %v",
-		task.StateDraft.BaseL1Commitment().GetTrieRoot(), task.AnchorOutputID.ToHex())
+		task.StateDraft.BaseL1Commitment().TrieRoot(), task.AnchorOutputID.ToHex())
 	draft, block, txEssence, inputsCommitment := nextState(r.t, task.Store, task.AnchorOutput, task.AnchorOutputID, task.TimeAssumption, task.Requests)
 	task.StateDraft = draft
 	task.RotationAddress = nil

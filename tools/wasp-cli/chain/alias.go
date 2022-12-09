@@ -34,8 +34,8 @@ func AddChainAlias(chainAlias, id string) {
 	SetCurrentChain(chainAlias)
 }
 
-func GetCurrentChainID() *isc.ChainID {
-	chid, err := isc.ChainIDFromString(viper.GetString("chains." + GetChainAlias()))
+func GetCurrentChainID() isc.ChainID {
+	chainID, err := isc.ChainIDFromString(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
-	return chid
+	return chainID
 }

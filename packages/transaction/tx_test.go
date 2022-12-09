@@ -21,7 +21,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
-	var chainID *isc.ChainID
+	var chainID isc.ChainID
 	var originTxID iotago.TransactionID
 
 	initTest := func() {
@@ -86,7 +86,7 @@ func TestCreateOrigin(t *testing.T) {
 		anchor, _, err := GetAnchorFromTransaction(originTx)
 		require.NoError(t, err)
 		require.True(t, anchor.IsOrigin)
-		require.EqualValues(t, *chainID, anchor.ChainID)
+		require.EqualValues(t, chainID, anchor.ChainID)
 		require.EqualValues(t, 0, anchor.StateIndex)
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))

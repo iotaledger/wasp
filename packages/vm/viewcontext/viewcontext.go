@@ -1,11 +1,11 @@
 package viewcontext
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
 	"go.uber.org/zap"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -47,19 +47,19 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore, blockIndex uint32) *ViewContext {
+func New(ch chain.ChainCore, blockIndex uint32) (*ViewContext, error) {
 	state, err := ch.GetStateReader().StateByIndex(blockIndex)
 	if err != nil {
-		panic(xerrors.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err))
+		return nil, fmt.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err)
 	}
 	chainID := ch.ID()
 	return &ViewContext{
 		processors:     ch.Processors(),
 		stateReader:    state,
-		chainID:        *chainID,
+		chainID:        chainID,
 		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnEnabled: true,
-	}
+	}, nil
 }
 
 func (ctx *ViewContext) contractStateReader(contract isc.Hname) kv.KVStoreReader {
@@ -103,7 +103,7 @@ func (ctx *ViewContext) Caller() isc.AgentID {
 		return nil
 	default:
 		callerHname := ctx.callStack[len(ctx.callStack)-1].contract
-		return isc.NewContractAgentID(&ctx.chainID, callerHname)
+		return isc.NewContractAgentID(ctx.chainID, callerHname)
 	}
 }
 
@@ -143,7 +143,7 @@ func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict,
 	return ctx.callView(targetContract, epCode, params)
 }
 
-func (ctx *ViewContext) ChainID() *isc.ChainID {
+func (ctx *ViewContext) ChainID() isc.ChainID {
 	return ctx.chainInfo.ChainID
 }
 

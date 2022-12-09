@@ -22,10 +22,10 @@ func TestRegister(t *testing.T) {
 	chainID3 := isc.RandomChainID()
 	ncm := New()
 
-	require.Equal(t, []*isc.ChainID{}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
-	require.Equal(t, []*isc.ChainID{chainID1}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID1}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID2)
 	registered := ncm.GetRegistered()
@@ -34,7 +34,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID2)
 
 	ncm.SetUnregistered(chainID1)
-	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID3)
 	registered = ncm.GetRegistered()
@@ -43,7 +43,7 @@ func TestRegister(t *testing.T) {
 	require.Contains(t, registered, chainID3)
 
 	ncm.SetUnregistered(chainID3)
-	require.Equal(t, []*isc.ChainID{chainID2}, ncm.GetRegistered())
+	require.Equal(t, []isc.ChainID{chainID2}, ncm.GetRegistered())
 
 	ncm.SetRegistered(chainID1)
 	registered = ncm.GetRegistered()
@@ -105,7 +105,7 @@ func TestMessageMetrics(t *testing.T) {
 	cncm1.GetInStateOutput().CountLastMessage(outputID3)
 
 	checkMetricsValues(t, 3, outputID3, cncm1.GetInStateOutput())
-	checkMetricsValues(t, 0, nil, cncm2.GetInStateOutput())
+	checkMetricsValues(t, 0, new(InStateOutput), cncm2.GetInStateOutput())
 	checkMetricsValues(t, 3, outputID3, ncm.GetInStateOutput())
 
 	// IN Alias output
@@ -118,7 +118,7 @@ func TestMessageMetrics(t *testing.T) {
 	cncm1.GetInAliasOutput().CountLastMessage(aliasOutput3)
 
 	checkMetricsValues(t, 2, aliasOutput3, cncm1.GetInAliasOutput())
-	checkMetricsValues(t, 0, nil, cncm2.GetInAliasOutput())
+	checkMetricsValues(t, 0, new(iotago.AliasOutput), cncm2.GetInAliasOutput())
 	checkMetricsValues(t, 3, aliasOutput3, ncm.GetInAliasOutput())
 
 	// IN Output
@@ -227,9 +227,9 @@ func TestMessageMetrics(t *testing.T) {
 	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput2.ID())
 	cncm1.GetOutPullOutputByID().CountLastMessage(utxoInput3.ID())
 
-	checkMetricsValues(t, 3, utxoInput3, cncm1.GetOutPullOutputByID())
-	checkMetricsValues(t, 0, nil, cncm2.GetOutPullOutputByID())
-	checkMetricsValues(t, 3, utxoInput3, ncm.GetOutPullOutputByID())
+	checkMetricsValues(t, 3, utxoInput3.ID(), cncm1.GetOutPullOutputByID())
+	checkMetricsValues(t, 0, iotago.OutputID{}, cncm2.GetOutPullOutputByID())
+	checkMetricsValues(t, 3, utxoInput3.ID(), ncm.GetOutPullOutputByID())
 
 	// IN Milestone
 	milestoneInfo1 := &nodeclient.MilestoneInfo{Index: 0}
@@ -241,10 +241,11 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 2, milestoneInfo2, ncm.GetInMilestone())
 }
 
-func checkMetricsValues[T any](t *testing.T, expectedTotal uint32, expectedLastMessage interface{}, metrics NodeConnectionMessageMetrics[T]) {
+func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expectedLastMessage V, metrics NodeConnectionMessageMetrics[T]) {
 	require.Equal(t, expectedTotal, metrics.GetMessageTotal())
 	if expectedTotal == 0 {
-		require.Nil(t, metrics.GetLastMessage())
+		var zeroValue V
+		require.Equal(t, zeroValue, metrics.GetLastMessage())
 	} else {
 		require.Equal(t, expectedLastMessage, metrics.GetLastMessage())
 	}

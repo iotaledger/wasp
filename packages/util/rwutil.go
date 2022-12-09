@@ -502,7 +502,7 @@ func WriteOutputID(w io.Writer, outputID iotago.OutputID) error {
 	return err
 }
 
-func ReadTransactionID(r io.Reader, txid iotago.TransactionID) error {
+func ReadTransactionID(r io.Reader, txid *iotago.TransactionID) error {
 	n, err := r.Read(txid[:])
 	if err != nil {
 		return err

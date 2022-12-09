@@ -5,6 +5,7 @@ package solo
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"os"
@@ -249,7 +250,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 //   - chainID
 //   - agentID of the chain owner
 //   - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (*isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
@@ -650,6 +651,22 @@ func (ch *Chain) GetStore() state.Store {
 
 // GetTimeData implements chain.Chain
 func (*Chain) GetTimeData() time.Time {
+	panic("unimplemented")
+}
+
+// LatestAliasOutput implements chain.Chain
+func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *isc.AliasOutputWithID) {
+	ao := ch.GetAnchorOutput()
+	return ao, ao
+}
+
+// ReceiveOffLedgerRequest implements chain.Chain
+func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
+// AwaitRequestProcessed implements chain.Chain
+func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
 	panic("unimplemented")
 }
 

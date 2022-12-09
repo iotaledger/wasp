@@ -116,14 +116,7 @@ func New(nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics) *Metrics {
 	}
 }
 
-func (m *Metrics) NewChainMetrics(chainID *isc.ChainID) ChainMetrics {
-	/*
-		TODO: why was that needed?
-		if m == nil {
-			return EmptyChainMetrics()
-		}
-	*/
-
+func (m *Metrics) NewChainMetrics(chainID isc.ChainID) ChainMetrics {
 	return &chainMetricsObj{
 		metrics: m,
 		chainID: chainID,
@@ -150,11 +143,5 @@ func (m *Metrics) Register(registry *prometheus.Registry) {
 }
 
 func (m *Metrics) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	/*
-		TODO: why was that needed?
-		if m == nil {
-			return nodeconnmetrics.NewEmptyNodeConnectionMetrics()
-		}
-	*/
 	return m.nodeConnectionMetrics
 }

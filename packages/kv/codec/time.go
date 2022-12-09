@@ -8,14 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-var zeroUnixNano = time.Time{}.UnixNano()
-
-func init() {
-	if zeroUnixNano != -6795364578871345152 {
-		panic("inconsistency: zeroUnixNano != -6795364578871345152")
-	}
-}
-
 func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	if b == nil {
 		if len(def) == 0 {
@@ -41,12 +33,9 @@ func MustDecodeTime(b []byte, def ...time.Time) time.Time {
 	return t
 }
 
-var b8 [8]byte
-
 func EncodeTime(value time.Time) []byte {
-	nanos := value.UnixNano()
-	if nanos == zeroUnixNano {
-		return b8[:]
+	if value.IsZero() {
+		return make([]byte, 8)
 	}
-	return util.Int64To8Bytes(nanos)
+	return util.Int64To8Bytes(value.UnixNano())
 }

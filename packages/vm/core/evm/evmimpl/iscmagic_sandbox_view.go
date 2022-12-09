@@ -79,9 +79,16 @@ func (h *magicContractViewHandler) GetBaseTokenProperties() iscmagic.ISCTokenPro
 	}
 }
 
+// handler for ISCSandbox::erc20NativeTokensAddress
+func (h *magicContractViewHandler) Erc20NativeTokensAddress(foundrySN uint32) common.Address {
+	return iscmagic.ERC20NativeTokensAddress(foundrySN)
+}
+
 // handler for ISCSandbox::erc20NativeTokensFoundrySerialNumber
 func (h *magicContractViewHandler) Erc20NativeTokensFoundrySerialNumber(addr common.Address) uint32 {
-	return iscmagic.ERC20NativeTokensFoundrySN(addr)
+	sn, err := iscmagic.ERC20NativeTokensFoundrySN(addr)
+	h.ctx.RequireNoError(err)
+	return sn
 }
 
 // handler for ISCSandbox::getNativeTokenID

@@ -58,17 +58,11 @@ pub fn request_id_to_bytes(value: &ScRequestID) -> Vec<u8> {
 }
 
 pub fn request_id_from_string(value: &str) -> ScRequestID {
-    let elts: Vec<&str> = value.split(REQUEST_ID_SEPARATOR).collect();
-    let index = uint16_to_bytes(uint16_from_string(elts[0]));
-    let buf = hex_decode(elts[1]);
-    return request_id_from_bytes(&[buf, index].concat());
+    request_id_from_bytes(&hex_decode(value))
 }
 
 pub fn request_id_to_string(value: &ScRequestID) -> String {
-    let req_id = request_id_to_bytes(value);
-    let tx_id = hex_encode(&req_id[..SC_REQUEST_ID_LENGTH - 2]);
-    let index = uint16_from_bytes(&req_id[SC_REQUEST_ID_LENGTH - 2..]);
-    return uint16_to_string(index) + REQUEST_ID_SEPARATOR + &tx_id;
+    hex_encode(&value.id)
 }
 
 fn request_id_from_bytes_unchecked(buf: &[u8]) -> ScRequestID {

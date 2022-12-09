@@ -265,7 +265,7 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 }
 
 func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
-	chainState, err := tsm.chainStore.StateByTrieRoot(state.OriginL1Commitment().GetTrieRoot())
+	chainState, err := tsm.chainStore.StateByTrieRoot(state.OriginL1Commitment().TrieRoot())
 	require.NoError(tsm.t, err)
 	tsm.addState(originAO, chainState)
 }

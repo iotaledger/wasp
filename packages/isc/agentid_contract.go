@@ -9,46 +9,48 @@ import (
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
 type ContractAgentID struct {
-	chainID *ChainID
+	chainID ChainID
 	h       Hname
 }
 
 var _ AgentIDWithL1Address = &ContractAgentID{}
 
-func NewContractAgentID(chainID *ChainID, hname Hname) *ContractAgentID {
+func NewContractAgentID(chainID ChainID, hname Hname) *ContractAgentID {
 	return &ContractAgentID{chainID: chainID, h: hname}
 }
 
 func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error) {
-	var chID *ChainID
-	var err error
-	if chID, err = ChainIDFromMarshalUtil(mu); err != nil {
+	chainID, err := ChainIDFromMarshalUtil(mu)
+	if err != nil {
 		return nil, err
 	}
-	var h Hname
-	if h, err = HnameFromMarshalUtil(mu); err != nil {
+
+	h, err := HnameFromMarshalUtil(mu)
+	if err != nil {
 		return nil, err
 	}
-	return NewContractAgentID(chID, h), nil
+
+	return NewContractAgentID(chainID, h), nil
 }
 
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
-	chID, err := ChainIDFromString(addrPart)
+	chainID, err := ChainIDFromString(addrPart)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
+
 	h, err := HnameFromString(hnamePart)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
-	return NewContractAgentID(chID, h), nil
+	return NewContractAgentID(chainID, h), nil
 }
 
 func (a *ContractAgentID) Address() iotago.Address {
 	return a.chainID.AsAddress()
 }
 
-func (a *ContractAgentID) ChainID() *ChainID {
+func (a *ContractAgentID) ChainID() ChainID {
 	return a.chainID
 }
 

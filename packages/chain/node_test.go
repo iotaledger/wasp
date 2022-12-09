@@ -94,12 +94,14 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	initRequests := te.tcl.MakeTxChainInit()
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
-			[]iotago.OutputID{te.originAO.OutputID()},
-			[]*iotago.AliasOutput{te.originAO.GetAliasOutput()},
+			isc.NewOutputInfo(te.originAO.OutputID(), te.originAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
 		tnc.recvMilestone(initTime)
 		for _, req := range initRequests {
-			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
+			onLedgerRequest := req.(isc.OnLedgerRequest)
+			tnc.recvRequestCB(
+				isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
+			)
 		}
 	}
 	awaitRequestsProcessed(te, initRequests, "initRequests")
@@ -122,11 +124,13 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	deployBaseAO := isc.NewAliasOutputWithID(deployBaseAONoID, deployBaseAnchor.OutputID)
 	for _, tnc := range te.nodeConns {
 		tnc.recvAliasOutput(
-			[]iotago.OutputID{deployBaseAO.OutputID()},
-			[]*iotago.AliasOutput{deployBaseAO.GetAliasOutput()},
+			isc.NewOutputInfo(deployBaseAO.OutputID(), deployBaseAO.GetAliasOutput(), iotago.TransactionID{}),
 		)
 		for _, req := range deployReqs {
-			tnc.recvRequestCB(req.ID().OutputID(), req.(isc.OnLedgerRequest).Output())
+			onLedgerRequest := req.(isc.OnLedgerRequest)
+			tnc.recvRequestCB(
+				isc.NewOutputInfo(onLedgerRequest.ID().OutputID(), onLedgerRequest.Output(), iotago.TransactionID{}),
+			)
 		}
 	}
 	awaitRequestsProcessed(te, deployReqs, "deployReqs")
@@ -236,7 +240,7 @@ func awaitPredicate(te *testEnv, desc string, predicate func() bool) {
 
 type testNodeConn struct {
 	t               *testing.T
-	chainID         *isc.ChainID
+	chainID         isc.ChainID
 	published       []*iotago.Transaction
 	recvRequestCB   chain.RequestOutputHandler
 	recvAliasOutput chain.AliasOutputHandler
@@ -256,11 +260,11 @@ func newTestNodeConn(t *testing.T) *testNodeConn {
 
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	tx *iotago.Transaction,
 	callback chain.TxPostHandler,
-) {
-	if tnc.chainID == nil {
+) error {
+	if tnc.chainID.Empty() {
 		tnc.t.Errorf("NodeConn::PublishTX before attach.")
 	}
 	if !tnc.chainID.Equals(chainID) {
@@ -271,22 +275,23 @@ func (tnc *testNodeConn) PublishTX(
 
 	stateAnchor, aoNoID, err := transaction.GetAnchorFromTransaction(tx)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	tnc.recvAliasOutput(
-		[]iotago.OutputID{stateAnchor.OutputID},
-		[]*iotago.AliasOutput{aoNoID},
+		isc.NewOutputInfo(stateAnchor.OutputID, aoNoID, iotago.TransactionID{}),
 	)
+
+	return nil
 }
 
 func (tnc *testNodeConn) AttachChain(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	recvRequestCB chain.RequestOutputHandler,
 	recvAliasOutput chain.AliasOutputHandler,
 	recvMilestone chain.MilestoneHandler,
 ) {
-	if tnc.chainID != nil {
+	if !tnc.chainID.Empty() {
 		tnc.t.Errorf("duplicate attach")
 	}
 	tnc.chainID = chainID
@@ -297,6 +302,10 @@ func (tnc *testNodeConn) AttachChain(
 }
 
 func (tnc *testNodeConn) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	panic("should be unused in test")
+}
+
+func (tnc *testNodeConn) Run(ctx context.Context) {
 	panic("should be unused in test")
 }
 
@@ -321,7 +330,7 @@ type testEnv struct {
 	networkProviders []peering.NetworkProvider
 	tcl              *testchain.TestChainLedger
 	cmtAddress       iotago.Address
-	chainID          *isc.ChainID
+	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain

@@ -17,7 +17,7 @@ import (
 func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) {
 	rnd1 := isc.RandomChainID()
 	example := model.ChainRecord{
-		ChainID: model.NewChainID(rnd1),
+		ChainID: model.NewChainIDBech32(rnd1),
 		Active:  false,
 	}
 
@@ -74,7 +74,7 @@ func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := s.chainRecordRegistryProvider.ChainRecord(*chainID)
+	bd, err := s.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return err
 	}

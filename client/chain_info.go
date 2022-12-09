@@ -12,9 +12,9 @@ import (
 )
 
 // GetChainRecord fetches ChainInfo by address
-func (c *WaspClient) GetChainInfo(chID *isc.ChainID) (*model.ChainInfo, error) {
+func (c *WaspClient) GetChainInfo(chainID isc.ChainID) (*model.ChainInfo, error) {
 	res := &model.ChainInfo{}
-	if err := c.do(http.MethodGet, routes.GetChainInfo(chID.String()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainInfo(chainID.String()), nil, res); err != nil {
 		return nil, err
 	}
 	return res, nil

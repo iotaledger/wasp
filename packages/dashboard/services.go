@@ -100,8 +100,8 @@ func (w *WaspServices) ChainRecords() ([]*registry.ChainRecord, error) {
 	return w.chainRecordRegistryProvider.ChainRecords()
 }
 
-func (w *WaspServices) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	ch, err := w.chainRecordRegistryProvider.ChainRecord(*chainID)
+func (w *WaspServices) GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	ch, err := w.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (w *WaspServices) GetChainRecord(chainID *isc.ChainID) (*registry.ChainReco
 	return ch, nil
 }
 
-func (w *WaspServices) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error) {
+func (w *WaspServices) GetChainCommitteeInfo(chainID isc.ChainID) (*chain.CommitteeInfo, error) {
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -119,8 +119,7 @@ func (w *WaspServices) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.Commi
 	return ch.GetCommitteeInfo(), nil
 }
 
-func (w *WaspServices) GetChainNodeConnectionMetrics(chainID *isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
-	panic("TODO revisit, new consesus changed this")
+func (w *WaspServices) GetChainNodeConnectionMetrics(chainID isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -132,8 +131,7 @@ func (w *WaspServices) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConnectio
 	return w.chains.GetNodeConnectionMetrics(), nil
 }
 
-func (w *WaspServices) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
-	panic("TODO revisit, new consesus changed this")
+func (w *WaspServices) GetChainConsensusWorkflowStatus(chainID isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -141,8 +139,7 @@ func (w *WaspServices) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (ch
 	return ch.GetConsensusWorkflowStatus(), nil
 }
 
-func (w *WaspServices) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
-	panic("TODO revisit, new consesus changed this")
+func (w *WaspServices) GetChainConsensusPipeMetrics(chainID isc.ChainID) (chain.ConsensusPipeMetrics, error) {
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -150,7 +147,7 @@ func (w *WaspServices) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain
 	return ch.GetConsensusPipeMetrics(), nil
 }
 
-func (w *WaspServices) CallView(chainID *isc.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
+func (w *WaspServices) CallView(chainID isc.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := w.chains.Get(chainID)
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
@@ -159,7 +156,10 @@ func (w *WaspServices) CallView(chainID *isc.ChainID, scName, funName string, pa
 	if err != nil {
 		return nil, err
 	}
-	vctx := viewcontext.New(ch, blockIndex)
+	vctx, err := viewcontext.New(ch, blockIndex)
+	if err != nil {
+		return nil, err
+	}
 	return vctx.CallViewExternal(isc.Hn(scName), isc.Hn(funName), params)
 }
 

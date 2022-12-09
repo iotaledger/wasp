@@ -31,6 +31,7 @@
 **/ts/*/eventhandlers.ts
 **/ts/*/events.ts
 **/ts/*/index.ts
+**/ts/*/package.json
 **/ts/*/params.ts
 **/ts/*/results.ts
 **/ts/*/state.ts

@@ -66,7 +66,6 @@ type ChainEventListener interface {
 }
 
 type ChainRequests interface {
-	ChainReader
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
 }
@@ -94,11 +93,11 @@ type PeerStatus struct {
 	Connected bool
 }
 
-type RequestOutputHandler = func(outputID iotago.OutputID, output iotago.Output)
+type RequestOutputHandler = func(outputInfo *isc.OutputInfo)
 
 // The Alias Outputs must be passed here in-order. The last alias output in the list
 // is the unspent one (if there is a chain of outputs confirmed in a milestone).
-type AliasOutputHandler = func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput)
+type AliasOutputHandler = func(outputInfo *isc.OutputInfo)
 
 type TxPostHandler = func(tx *iotago.Transaction, confirmed bool)
 
@@ -107,12 +106,13 @@ type MilestoneHandler = func(timestamp time.Time)
 type ChainNodeConn interface {
 	// Publishing can be canceled via the context.
 	// The result must be returned via the callback, unless ctx is canceled first.
+	// PublishTX handles promoting and reattachments until the tx is confirmed or the context is canceled.
 	PublishTX(
 		ctx context.Context,
-		chainID *isc.ChainID,
+		chainID isc.ChainID,
 		tx *iotago.Transaction,
 		callback TxPostHandler,
-	)
+	) error
 	// Alias outputs are expected to be returned in order. Considering the Hornet node, the rules are:
 	//   - Upon Attach -- existing unspent alias output is returned FIRST.
 	//   - Upon receiving a spent/unspent AO from L1 they are returned in
@@ -123,7 +123,7 @@ type ChainNodeConn interface {
 	// NOTE: Any out-of-order AO will be considered as a rollback or AO by the chain impl.
 	AttachChain(
 		ctx context.Context,
-		chainID *isc.ChainID,
+		chainID isc.ChainID,
 		recvRequestCB RequestOutputHandler,
 		recvAliasOutput AliasOutputHandler,
 		recvMilestone MilestoneHandler,
@@ -133,7 +133,7 @@ type ChainNodeConn interface {
 type chainNodeImpl struct {
 	me                  gpa.NodeID
 	nodeIdentity        *cryptolib.KeyPair
-	chainID             *isc.ChainID
+	chainID             isc.ChainID
 	chainMgr            chainMgr.ChainMgr
 	chainStore          state.Store
 	nodeConn            NodeConnection
@@ -194,7 +194,7 @@ var _ Chain = &chainNodeImpl{}
 
 func New(
 	ctx context.Context,
-	chainID *isc.ChainID,
+	chainID isc.ChainID,
 	chainStore state.Store,
 	nodeConn NodeConnection,
 	nodeIdentity *cryptolib.KeyPair,
@@ -235,7 +235,7 @@ func New(
 	//
 	// Create sub-components.
 	chainMetrics := metrics.EmptyChainMetrics()
-	chainMgr, err := chainMgr.New(cni.me, *cni.chainID, cmtLogStore, dkShareRegistryProvider, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
+	chainMgr, err := chainMgr.New(cni.me, cni.chainID, cmtLogStore, dkShareRegistryProvider, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
 	}
@@ -270,20 +270,19 @@ func New(
 	//
 	// Attach to the L1.
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
-	recvAliasOutputCB := func(outputIDs []iotago.OutputID, outputs []*iotago.AliasOutput) {
-		if len(outputIDs) == 0 {
+	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
+		aliasOutput := outputInfo.AliasOutputWithID()
+		cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
+
+		if outputInfo.Consumed() {
+			// we don't need to send consumed alias outputs to the pipe
 			return
 		}
-		for i := range outputIDs {
-			aliasOutput := isc.NewAliasOutputWithID(outputs[i], outputIDs[i])
-			cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
-		}
-		last := len(outputIDs) - 1
-		lastAliasOutput := isc.NewAliasOutputWithID(outputs[last], outputIDs[last])
-		recvAliasOutputPipeInCh <- lastAliasOutput
+
+		recvAliasOutputPipeInCh <- aliasOutput
 	}
-	recvRequestCB := func(outputID iotago.OutputID, output iotago.Output) {
-		req, err := isc.OnLedgerFromUTXO(output, outputID)
+	recvRequestCB := func(outputInfo *isc.OutputInfo) {
+		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
 			return
@@ -438,14 +437,17 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		if _, ok := cni.publishingTXes[txToPost.TxID]; !ok {
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes[txToPost.TxID] = subCancel
-			cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(tx *iotago.Transaction, confirmed bool) {
+			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(_ *iotago.Transaction, confirmed bool) {
+				// TODO: why is *iotago.Transaction unused?
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
 					txID:            txToPost.TxID,
 					nextAliasOutput: txToPost.NextAliasOutput,
 					confirmed:       confirmed,
 				}
-			})
+			}); err != nil {
+				panic(err)
+			}
 		}
 	}
 	cni.cleanupPublishingTXes(outputNeedPostTXes)
@@ -620,7 +622,7 @@ func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID
 ////////////////////////////////////////////////////////////////////////////////
 // Support functions.
 
-func (cni *chainNodeImpl) ID() *isc.ChainID {
+func (cni *chainNodeImpl) ID() isc.ChainID {
 	return cni.chainID
 }
 

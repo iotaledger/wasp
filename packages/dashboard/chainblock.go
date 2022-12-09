@@ -119,7 +119,7 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 
 type ChainBlockTemplateParams struct {
 	BaseTemplateParams
-	ChainID          *isc.ChainID
+	ChainID          isc.ChainID
 	Index            uint32
 	LatestBlockIndex uint32
 	Block            *blocklog.BlockInfo

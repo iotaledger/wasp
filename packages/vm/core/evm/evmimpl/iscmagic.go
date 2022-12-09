@@ -83,7 +83,7 @@ func catchISCPanics(run RunFunc, evm *vm.EVM, caller vm.ContractRef, input []byt
 		vmexceptions.AllProtocolLimits...,
 	)
 	if executionErr != nil {
-		log.Infof("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), iotago.EncodeHex(input), executionErr)
+		log.Debugf("EVM request failed with ISC panic, caller: %s, input: %s,err: %v", caller.Address(), iotago.EncodeHex(input), executionErr)
 		// TODO this works, but is there a better way to encode the error in the required abi format?
 
 		// include the ISC error as the revert reason by encoding it into the returnData
@@ -122,6 +122,9 @@ func (c *magicContract) doRun(evm *vm.EVM, caller vm.ContractRef, input []byte, 
 	method, args := parseCall(input, privileged)
 	if method.IsConstant() {
 		return callViewHandler(c.ctx, caller, method, args)
+	}
+	if readOnly {
+		panic("attempt to call non-view method in read-only context")
 	}
 	return callHandler(c.ctx, caller, method, args)
 }

@@ -141,4 +141,22 @@ contract ISCTest {
             params
         );
     }
+
+    function testStaticCall() public {
+        bool success;
+        bytes memory result;
+
+        (success, result) = address(ISC.sandbox).call(abi.encodeWithSignature("triggerEvent(string)", "non-static"));
+        require(success, "call should succeed");
+
+        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature("getChainID()"));
+        require(success, "staticcall to view should succeed");
+
+        (success, result) = address(ISC.sandbox).staticcall(abi.encodeWithSignature("triggerEvent(string)", "static"));
+        require(!success, "staticcall to non-view should fail");
+    }
+
+    function testSelfDestruct(address payable beneficiary) public {
+        selfdestruct(beneficiary);
+    }
 }

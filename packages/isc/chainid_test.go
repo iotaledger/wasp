@@ -7,19 +7,14 @@ import (
 )
 
 func TestChainID(t *testing.T) {
-	chid := RandomChainID()
+	chainID := RandomChainID()
+	chainIDStr := chainID.String()
 
-	chidStr := chid.String()
-	t.Logf("chidStr = %s", chidStr)
-
-	chidHex := chid.String()
-	t.Logf("childString = %s", chidHex)
-
-	chidback, err := ChainIDFromBytes(chid.Bytes())
+	chainIDFromBytes, err := ChainIDFromBytes(chainID.Bytes())
 	assert.NoError(t, err)
-	assert.EqualValues(t, chidback, chid)
+	assert.EqualValues(t, chainIDFromBytes, chainID)
 
-	chidback, err = ChainIDFromString(chidHex)
+	chainIDFromString, err := ChainIDFromString(chainIDStr)
 	assert.NoError(t, err)
-	assert.EqualValues(t, chidback, chid)
+	assert.EqualValues(t, chainIDFromString, chainID)
 }

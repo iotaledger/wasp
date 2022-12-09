@@ -93,16 +93,16 @@ func TestManyNodes(t *testing.T) {
 }
 
 // 12 nodes setting.
-// 1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
-//   1.1 Chain of 10 blocks are generated; each of them are sent to a random node
-//   1.2 A randomly chosen block in a batch is chosen and is approved
-//   1.3 A successful change of state of state manager is waited for; each check
-//       fires a timer event to force the exchange of blocks between nodes.
-// 2. The last block of the last batch is approved and 1.3 is repeated.
-// 3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
-//    repeated branching from this block
-// 4. A common ancestor (mempool) request is sent to state manager for first and
-//    second batch ends.
+//  1. This is repeated 3 times, resulting in 3 consecutive batches of blocks:
+//     1.1 Chain of 10 blocks are generated; each of them are sent to a random node
+//     1.2 A randomly chosen block in a batch is chosen and is approved
+//     1.3 A successful change of state of state manager is waited for; each check
+//     fires a timer event to force the exchange of blocks between nodes.
+//  2. The last block of the last batch is approved and 1.3 is repeated.
+//  3. A random block is chosen in the second batch and 1.1, 1.2, 1.3 and 2 are
+//     repeated branching from this block
+//  4. A common ancestor (mempool) request is sent to state manager for first and
+//     second batch ends.
 func TestFull(t *testing.T) {
 	nodeCount := 12
 	iterationSize := 10
@@ -181,13 +181,13 @@ func TestFull(t *testing.T) {
 }
 
 // 15 nodes setting.
-// 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
-//	  first node.
-// 2. A block is selected at random in the middle (from index 5 to 12), and a
-//	  branch of 5 nodes is generated.
-// 3. For each node a common ancestor (mempool) request is sent and the successful
-//	  completion is waited for; each check fires a timer event to force
-// 	  the exchange of blocks between nodes.
+//  1. A batch of 20 consecutive blocks is generated, each of them is sent to the
+//     first node.
+//  2. A block is selected at random in the middle (from index 5 to 12), and a
+//     branch of 5 nodes is generated.
+//  3. For each node a common ancestor (mempool) request is sent and the successful
+//     completion is waited for; each check fires a timer event to force
+//     the exchange of blocks between nodes.
 func TestMempoolRequest(t *testing.T) {
 	nodeCount := 15
 	mainSize := 20
@@ -230,9 +230,9 @@ func TestMempoolRequest(t *testing.T) {
 }
 
 // Single node setting.
-// 1. A single block is generated and sent to the node.
-// 2. A common ancestor (mempool) request is sent for block 1 as a new block
-//	  and block 0 as an old block.
+//  1. A single block is generated and sent to the node.
+//  2. A common ancestor (mempool) request is sent for block 1 as a new block
+//     and block 0 as an old block.
 func TestMempoolRequestFirstStep(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
@@ -256,9 +256,9 @@ func TestMempoolRequestFirstStep(t *testing.T) {
 }
 
 // Single node setting.
-// 1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
-// 2. A common ancestor (mempool) request is sent for block 10 as a new block
-//	  and block 5 as an old block.
+//  1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
+//  2. A common ancestor (mempool) request is sent for block 10 as a new block
+//     and block 5 as an old block.
 func TestMempoolRequestNoBranch(t *testing.T) {
 	batchSize := 10
 	middleBlock := 4
@@ -286,11 +286,11 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 }
 
 // Single node setting.
-// 1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
-// 2. A batch of 8 consecutive blocks is branched from origin commitment. Each of
-//	  the blocks is sent to the node.
-// 3. A common ancestor (mempool) request is sent for the branch as a new and
-//	  and original batch as old.
+//  1. A batch of 10 consecutive blocks is generated, each of them is sent to the node.
+//  2. A batch of 8 consecutive blocks is branched from origin commitment. Each of
+//     the blocks is sent to the node.
+//  3. A common ancestor (mempool) request is sent for the branch as a new and
+//     and original batch as old.
 func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	batchSize := 10
 	branchSize := 8
@@ -319,19 +319,19 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 }
 
 // 10 nodes setting.
-// 1. A batch of 20 consecutive blocks is generated, each of them is sent to the
-//	  random node.
-// 2. Every fith block is approved in correct order. Approvals are sent to every
-//	  node. In between approvals, 5 timer events are fired for block sharing
-//	  between the nodes. NOTE: for a node to obtain a block, present in 1 other
-//	  node, at least 1 and at most 3 iterations are needed, since one iteration
-//	  requests block from 5 other random nodes. First iteration is started upon
-//	  obtaining first request to receive block. Thus for one block to arrive at
-//    least 0 and at most 2 timer events are needed. Therefor at least 0 and at
-//	  most 10 timer events are needed for 5 blocks. 5 (timer events) is a number
-//	  in the middle of those estimates.
-// 3. All nodes are checked, if their latest state has changed in store. Timer
-//    events for block sharing are fired in between the checks.
+//  1. A batch of 20 consecutive blocks is generated, each of them is sent to the
+//     random node.
+//  2. Every fith block is approved in correct order. Approvals are sent to every
+//     node. In between approvals, 5 timer events are fired for block sharing
+//     between the nodes. NOTE: for a node to obtain a block, present in 1 other
+//     node, at least 1 and at most 3 iterations are needed, since one iteration
+//     requests block from 5 other random nodes. First iteration is started upon
+//     obtaining first request to receive block. Thus for one block to arrive at
+//     least 0 and at most 2 timer events are needed. Therefor at least 0 and at
+//     most 10 timer events are needed for 5 blocks. 5 (timer events) is a number
+//     in the middle of those estimates.
+//  3. All nodes are checked, if their latest state has changed in store. Timer
+//     events for block sharing are fired in between the checks.
 func TestLatestStateIsStored(t *testing.T) {
 	nodeCount := 15
 	batchSize := 20

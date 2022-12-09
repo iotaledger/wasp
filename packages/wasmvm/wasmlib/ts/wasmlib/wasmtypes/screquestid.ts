@@ -59,17 +59,11 @@ export function requestIDToBytes(value: ScRequestID): Uint8Array {
 }
 
 export function requestIDFromString(value: string): ScRequestID {
-    let elts = value.split(RequestIDSeparator);
-    let index = uint16ToBytes(uint16FromString(elts[0]));
-    let buf = hexDecode(elts[1]);
-    return requestIDFromBytes(concat(buf, index));
+    return requestIDFromBytes(hexDecode(value));
 }
 
 export function requestIDToString(value: ScRequestID): string {
-    let reqID = requestIDToBytes(value);
-    let txID = hexEncode(reqID.slice(0, ScRequestIDLength - 2));
-    let index = uint16FromBytes(reqID.slice(ScRequestIDLength - 2));
-    return uint16ToString(index) + RequestIDSeparator + txID;
+    return hexEncode(value.id);
 }
 
 function requestIDFromBytesUnchecked(buf: Uint8Array): ScRequestID {

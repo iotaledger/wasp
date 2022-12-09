@@ -64,7 +64,7 @@ func TestSerializeRequestData(t *testing.T) {
 		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 		chainID := ChainIDFromAddress(sender)
-		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(&chainID, requestMetadata.SenderContract)))
+		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(chainID, requestMetadata.SenderContract)))
 		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
 		require.True(t, req.SenderAccount().Equals(req2.SenderAccount()))

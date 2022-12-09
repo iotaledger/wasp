@@ -54,9 +54,9 @@ type NodeConnectionMessagesMetrics interface {
 type NodeConnectionMetrics interface {
 	NodeConnectionMessagesMetrics
 	GetInMilestone() NodeConnectionMessageMetrics[*nodeclient.MilestoneInfo]
-	SetRegistered(*isc.ChainID)
-	SetUnregistered(*isc.ChainID)
-	GetRegistered() []*isc.ChainID
+	SetRegistered(isc.ChainID)
+	SetUnregistered(isc.ChainID)
+	GetRegistered() []isc.ChainID
 	Register(registry *prometheus.Registry)
-	NewMessagesMetrics(*isc.ChainID) NodeConnectionMessagesMetrics
+	NewMessagesMetrics(isc.ChainID) NodeConnectionMessagesMetrics
 }

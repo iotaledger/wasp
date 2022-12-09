@@ -25,7 +25,7 @@ func main() {
 
 	indexerClient, err := nodeclient.New(APIAddress).Indexer(context.Background())
 	mustNoErr(err)
-	stateOutputID, stateOutput, err := indexerClient.Alias(context.Background(), *chainID.AsAliasID())
+	stateOutputID, stateOutput, err := indexerClient.Alias(context.Background(), chainID.AsAliasID())
 	mustNoErr(err)
 
 	fmt.Printf("outputID: %v\n", stateOutputID.ToHex())
@@ -35,7 +35,7 @@ func main() {
 	l1Commitment, err := state.L1CommitmentFromBytes(stateOutput.StateMetadata)
 	mustNoErr(err)
 	fmt.Printf("L1Commitment:\n     state commitment: %s\n     block hash:       %s\n",
-		l1Commitment.GetTrieRoot(), l1Commitment.GetBlockHash())
+		l1Commitment.TrieRoot(), l1Commitment.BlockHash())
 }
 
 func mustNoErr(err error) {

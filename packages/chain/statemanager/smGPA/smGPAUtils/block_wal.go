@@ -18,7 +18,7 @@ type blockWAL struct {
 	metrics *BlockWALMetrics
 }
 
-func NewBlockWAL(log *logger.Logger, baseDir string, chainID *isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
+func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := os.MkdirAll(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
@@ -35,7 +35,7 @@ func NewBlockWAL(log *logger.Logger, baseDir string, chainID *isc.ChainID, metri
 // Overwrites, if block is already in WAL
 func (bwT *blockWAL) Write(block state.Block) error {
 	commitment := block.L1Commitment()
-	fileName := fileName(commitment.GetBlockHash())
+	fileName := fileName(commitment.BlockHash())
 	filePath := filepath.Join(bwT.dir, fileName)
 	bwT.LogDebugf("Writing block %s to wal; file name - %s", commitment, fileName)
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
