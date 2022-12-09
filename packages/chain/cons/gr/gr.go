@@ -349,7 +349,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)
 		cgr.vmAsked = true
 	}
-	if output.Status != cons.Running && !cgr.outputReady {
+	if output.Status != cons.Running && !cgr.outputReady && cgr.outputCB != nil {
 		cgr.provideOutput(output)
 		cgr.outputReady = true
 	}

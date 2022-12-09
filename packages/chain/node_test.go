@@ -69,11 +69,11 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
-	t.Logf("All started.")
+	te.log.Debugf("All started.")
 	for _, tnc := range te.nodeConns {
 		tnc.waitAttached()
 	}
-	t.Logf("All attached to node conns.")
+	te.log.Debugf("All attached to node conns.")
 	initTime := time.Now()
 	go func() {
 		ticker := time.NewTicker(100 * time.Millisecond) // TODO: Maybe we have to pass initial time to all sub-components...
@@ -105,14 +105,14 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		}
 	}
 	awaitRequestsProcessed(te, initRequests, "initRequests")
-	for _, tnc := range te.nodeConns {
-		for {
-			if len(tnc.published) > 0 {
-				break
+	awaitPredicate(te, "len(published) > 0", func() bool {
+		for _, tnc := range te.nodeConns {
+			if len(tnc.published) == 0 {
+				return false
 			}
-			time.Sleep(50 * time.Millisecond)
 		}
-	}
+		return true
+	})
 	//
 	// Create SC Client account with some deposit, deploy a contract, wait for a confirming TX.
 	scClient := cryptolib.NewKeyPair()
@@ -134,14 +134,14 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		}
 	}
 	awaitRequestsProcessed(te, deployReqs, "deployReqs")
-	for _, tnc := range te.nodeConns {
-		for {
-			if len(tnc.published) > 1 {
-				break
+	awaitPredicate(te, "len(tnc.published) > 1", func() bool {
+		for _, tnc := range te.nodeConns {
+			if len(tnc.published) <= 1 {
+				return false
 			}
-			time.Sleep(50 * time.Millisecond)
 		}
-	}
+		return true
+	})
 	//
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
@@ -162,7 +162,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 			latestState, err := node.GetStateReader().LatestState()
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
-			t.Logf("Counter[node=%v]=%v", i, cnt)
+			te.log.Debugf("Counter[node=%v]=%v", i, cnt)
 			if cnt >= int64(incCount) {
 				// TODO: Double-check with the published TX.
 				/*
@@ -217,9 +217,9 @@ func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...", desc, i, reqNum)
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
 			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID)
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, reqNum=%v...Done", desc, i, reqNum)
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
 }
@@ -339,7 +339,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te := &testEnv{}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%v", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 	//
 	// Create ledger accounts.
 	te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
@@ -394,6 +394,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 		)
 		require.NoError(t, err)
 	}
+	te.log = te.log.Named("TC")
 	return te
 }
 

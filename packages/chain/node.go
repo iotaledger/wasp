@@ -14,6 +14,8 @@
 // This object interacts with:
 //   - NodeConn.
 //   - Administrative functions.
+//
+// TODO: Ensure access nodes contain the committee nodes.
 package chain
 
 import (
@@ -235,7 +237,15 @@ func New(
 	//
 	// Create sub-components.
 	chainMetrics := metrics.EmptyChainMetrics()
-	chainMgr, err := chainMgr.New(cni.me, cni.chainID, cmtLogStore, dkShareRegistryProvider, cni.pubKeyAsNodeID, cni.handleAccessNodesCB, cni.log)
+	chainMgr, err := chainMgr.New(
+		cni.me,
+		cni.chainID,
+		cmtLogStore,
+		dkShareRegistryProvider,
+		cni.pubKeyAsNodeID,
+		cni.handleAccessNodesCB,
+		cni.log.Named("CM"),
+	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
 	}
@@ -247,13 +257,21 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		log.WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
+		log.Named("SM").WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
 	}
 	// TODO: Review, if all needed functions are called for mempool.
-	mempool := mempool.New(ctx, chainID, nodeIdentity, stateMgr, net, log, chainMetrics)
+	mempool := mempool.New(
+		ctx,
+		chainID,
+		nodeIdentity,
+		stateMgr,
+		net,
+		log.Named("MP"),
+		chainMetrics,
+	)
 	cni.chainMgr = chainMgr
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
@@ -541,7 +559,8 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
-				recoveryTimeout, redeliveryPeriod, printStatusPeriod, cni.log,
+				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
+				cni.log.Named(fmt.Sprintf("C%v", logIndexCopy)),
 			)
 			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
 				cancelFunc: consGrCancel,

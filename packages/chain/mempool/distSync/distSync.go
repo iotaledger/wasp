@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"time"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -102,6 +103,11 @@ func (dsi *distSyncImpl) StatusString() string {
 func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
 	dsi.accessNodes = input.accessNodes
 	dsi.committeeNodes = input.committeeNodes
+	for i := range dsi.committeeNodes { // Ensure access nodes contain the committee nodes.
+		if slices.Index(dsi.accessNodes, dsi.committeeNodes[i]) == -1 {
+			dsi.accessNodes = append(dsi.accessNodes, dsi.committeeNodes[i])
+		}
+	}
 	dsi.nodeCountToShare = (len(dsi.committeeNodes)-1)/3 + 1 // F+1
 	if dsi.nodeCountToShare < 2 {
 		dsi.nodeCountToShare = 2
@@ -151,11 +157,11 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	if len(dsi.needed) == 0 {
 		return nil
 	}
-	msgs := gpa.NoMessages()
 	nodeCount := len(dsi.accessNodes)
 	if nodeCount == 0 {
 		return nil
 	}
+	msgs := gpa.NoMessages()
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
 	for _, reqRef := range dsi.needed { // Access is randomized.

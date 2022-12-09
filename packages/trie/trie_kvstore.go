@@ -64,11 +64,9 @@ func (tr *TrieReader) Get(key []byte) []byte {
 func (tr *TrieReader) Has(key []byte) bool {
 	unpackedTriePath := unpackBytes(key)
 	found := false
-	tr.traversePath(unpackedTriePath, func(n *nodeData, _ []byte, ending pathEndingCode) {
-		if ending == endingTerminal {
-			if n.terminal != nil {
-				found = true
-			}
+	tr.traversePath(unpackedTriePath, func(n *nodeData, p []byte, ending pathEndingCode) {
+		if ending == endingTerminal && n.terminal != nil {
+			found = true
 		}
 	})
 	return found

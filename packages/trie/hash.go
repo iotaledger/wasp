@@ -37,13 +37,14 @@ func compressToHashSize(data []byte) (ret []byte, valueInCommitment bool) {
 }
 
 func (hashes *hashVector) Hash() Hash {
-	buf := make([]byte, vectorLength*HashSizeBytes)
-	for i, h := range hashes {
-		if h == nil {
-			continue
-		}
-		pos := i * HashSizeBytes
-		copy(buf[pos:pos+HashSizeBytes], h)
+	sum := 0
+	for _, b := range hashes {
+		sum += len(b)
+	}
+	buf := make([]byte, 0, sum+len(hashes))
+	for _, b := range hashes {
+		buf = append(buf, byte(len(b)))
+		buf = append(buf, b...)
 	}
 	return blake2b160(buf)
 }
