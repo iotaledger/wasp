@@ -6,6 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type GenericError struct {
+	Error string
+}
+
 // HTTPErrorHandler must be hooked to an echo server to render instances
 // of HTTPError as JSON
 func HTTPErrorHandler(err error, c echo.Context) {
@@ -18,6 +22,9 @@ func HTTPErrorHandler(err error, c echo.Context) {
 				err = c.JSON(he.HTTPCode, he.GetErrorResult())
 			}
 		}
+	} else {
+		err = c.JSON(http.StatusInternalServerError, GenericError{Error: err.Error()})
 	}
+
 	c.Echo().DefaultHTTPErrorHandler(err, c)
 }

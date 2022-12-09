@@ -30,6 +30,7 @@ type ChainService interface {
 	ActivateChain(chainID *isc.ChainID) error
 	DeactivateChain(chainID *isc.ChainID) error
 	GetAllChainIDs() ([]*isc.ChainID, error)
+	HasChain(chainID *isc.ChainID) bool
 	GetChainByID(chainID *isc.ChainID) chain.Chain
 	GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error)
 	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)

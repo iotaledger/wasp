@@ -73,6 +73,10 @@ func (c *ChainService) DeactivateChain(chainID *isc.ChainID) error {
 	return err
 }
 
+func (c *ChainService) HasChain(chainID *isc.ChainID) bool {
+	return c.GetChainByID(chainID) != nil
+}
+
 func (c *ChainService) GetChainByID(chainID *isc.ChainID) chainpkg.Chain {
 	chain := c.chainsProvider().Get(chainID, true)
 

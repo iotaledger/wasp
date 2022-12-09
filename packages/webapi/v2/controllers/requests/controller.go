@@ -40,7 +40,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		"key1": []byte("value1"),
 	}.JSONDict()
 
-	publicAPI.GET("requests/:chainID/receipt/:requestID", c.getReceipt).
+	publicAPI.GET("chains/:chainID/receipts/:requestID", c.getReceipt).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "RequestID (Hex)").
 		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
@@ -63,7 +63,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		SetSummary("Post an off-ledger request").
 		SetOperationId("offLedger")
 
-	publicAPI.GET("requests/:chainID/request/:requestID/wait", c.waitForRequestToFinish).
+	publicAPI.GET("chains/:chainID/requests/:requestID/wait", c.waitForRequestToFinish).
 		SetSummary("Wait until the given request has been processed by the node").
 		SetOperationId("waitForTransaction").
 		AddParamPath("", "chainID", "ChainID (bech32)").
