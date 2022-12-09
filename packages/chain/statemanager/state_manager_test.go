@@ -27,11 +27,11 @@ func TestCruelWorld(t *testing.T) {
 	nodeCount := 15
 	committeeSize := 5
 	blockCount := 50
-	minWaitToProduceBlock := 5 * time.Millisecond
+	minWaitToProduceBlock := 15 * time.Millisecond
 	maxMinWaitsToProduceBlock := 10
-	approveOutputPeriod := 10 * time.Millisecond
-	getBlockPeriod := 35 * time.Millisecond
-	timerTickPeriod := 20 * time.Millisecond
+	approveOutputPeriod := 120 * time.Millisecond
+	getBlockPeriod := 100 * time.Millisecond
+	timerTickPeriod := 35 * time.Millisecond
 
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
