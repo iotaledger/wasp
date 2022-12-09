@@ -21,4 +21,5 @@ type BlockWAL interface {
 type TimeProvider interface {
 	SetNow(time.Time)
 	GetNow() time.Time
+	After(time.Duration) <-chan time.Time
 }

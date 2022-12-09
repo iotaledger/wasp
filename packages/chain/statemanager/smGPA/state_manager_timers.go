@@ -18,6 +18,8 @@ type StateManagerTimers struct {
 	StateManagerGetBlockRetry time.Duration
 	// How often requests waiting for response should be checked for expired context
 	StateManagerRequestCleaningPeriod time.Duration
+	// How often timer tick fires in state manager
+	StateManagerTimerTickPeriod time.Duration
 
 	TimeProvider smGPAUtils.TimeProvider
 }
@@ -34,6 +36,7 @@ func NewStateManagerTimers(tpOpt ...smGPAUtils.TimeProvider) StateManagerTimers 
 		BlockCacheBlockCleaningPeriod:     1 * time.Minute,
 		StateManagerGetBlockRetry:         3 * time.Second,
 		StateManagerRequestCleaningPeriod: 1 * time.Second,
+		StateManagerTimerTickPeriod:       1 * time.Second,
 		TimeProvider:                      tp,
 	}
 }

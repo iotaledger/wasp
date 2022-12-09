@@ -132,7 +132,7 @@ func (s *L1Commitment) Read(r io.Reader) error {
 }
 
 func (s *L1Commitment) String() string {
-	return fmt.Sprintf("trie root: %s, block hash: %s", s.TrieRoot(), s.BlockHash())
+	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
 }
 
 func L1CommitmentFromAnchorOutput(o *iotago.AliasOutput) (*L1Commitment, error) {
