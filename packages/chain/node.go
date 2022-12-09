@@ -14,6 +14,8 @@
 // This object interacts with:
 //   - NodeConn.
 //   - Administrative functions.
+//
+// TODO: Ensure access nodes contain the committee nodes.
 package chain
 
 import (

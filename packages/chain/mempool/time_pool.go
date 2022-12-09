@@ -16,7 +16,7 @@ type TimePool interface {
 	AddRequest(timestamp time.Time, request isc.Request)
 	TakeTill(timestamp time.Time) []isc.Request
 	Has(reqID *isc.RequestRef) bool
-	Filter(predicate func(request isc.Request) bool)
+	Filter(predicate func(request isc.Request, ts time.Time) bool)
 }
 
 // Here we implement TimePool. We maintain the request in a list ordered by a timestamp.
@@ -106,13 +106,13 @@ func (tpi *timePoolImpl) Has(reqRef *isc.RequestRef) bool {
 	return have
 }
 
-func (tpi *timePoolImpl) Filter(predicate func(request isc.Request) bool) {
+func (tpi *timePoolImpl) Filter(predicate func(request isc.Request, ts time.Time) bool) {
 	prevNext := &tpi.slots
 	for slot := tpi.slots; slot != nil; slot = slot.next {
 		for ts := range slot.reqs {
 			tsReqs := slot.reqs[ts]
 			for i, req := range tsReqs {
-				if !predicate(req) {
+				if !predicate(req, ts) {
 					tsReqs = slices.Delete(tsReqs, i, i+1)
 				}
 			}
