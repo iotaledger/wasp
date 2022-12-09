@@ -9,8 +9,8 @@ import * as wasmlib from "../index";
 import * as sc from "./index";
 
 export class StoreBlobCall {
-    func: wasmlib.ScFunc;
-    params: sc.MutableStoreBlobParams = new sc.MutableStoreBlobParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScFunc;
+    params:  sc.MutableStoreBlobParams = new sc.MutableStoreBlobParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableStoreBlobResults = new sc.ImmutableStoreBlobResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -19,8 +19,8 @@ export class StoreBlobCall {
 }
 
 export class GetBlobFieldCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetBlobFieldParams = new sc.MutableGetBlobFieldParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetBlobFieldParams = new sc.MutableGetBlobFieldParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlobFieldResults = new sc.ImmutableGetBlobFieldResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -29,8 +29,8 @@ export class GetBlobFieldCall {
 }
 
 export class GetBlobInfoCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetBlobInfoParams = new sc.MutableGetBlobInfoParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetBlobInfoParams = new sc.MutableGetBlobInfoParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlobInfoResults = new sc.ImmutableGetBlobInfoResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -39,7 +39,7 @@ export class GetBlobInfoCall {
 }
 
 export class ListBlobsCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableListBlobsResults = new sc.ImmutableListBlobsResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {

@@ -6,7 +6,7 @@ package gotemplates
 var structsGo = map[string]string{
 	// *******************************
 	"structs.go": `
-$#emit goPackage
+package $package
 
 $#emit importWasmTypes
 $#each structs structType

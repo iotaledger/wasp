@@ -12,8 +12,8 @@ var mainGo = map[string]string{
 package main
 
 import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
 	"$module/go/$package$+impl"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
 )
 
 func main() {

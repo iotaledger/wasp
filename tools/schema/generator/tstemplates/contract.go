@@ -17,10 +17,11 @@ $#each func FuncNameForCall
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit alignCalculate
 $#emit setupInitFunc
 
 export class $FuncName$+Call {
-    func: wasmlib.Sc$initFunc$Kind;
+    func:$falign wasmlib.Sc$initFunc$Kind;
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 
@@ -46,15 +47,15 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"PackageEventsExist": `
-    events: sc.$Package$+Events = new sc.$Package$+Events();
+    events:$align sc.$Package$+Events = new sc.$Package$+Events();
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `
-    params: sc.Immutable$FuncName$+Params = new sc.Immutable$FuncName$+Params(wasmlib.paramsProxy());
+    params:$align sc.Immutable$FuncName$+Params = new sc.Immutable$FuncName$+Params(wasmlib.paramsProxy());
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-    params: sc.Mutable$FuncName$+Params = new sc.Mutable$FuncName$+Params(wasmlib.ScView.nilProxy);
+    params:$align sc.Mutable$FuncName$+Params = new sc.Mutable$FuncName$+Params(wasmlib.ScView.nilProxy);
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
@@ -71,11 +72,11 @@ $#if view ImmutablePackageState
 `,
 	// *******************************
 	"ImmutablePackageState": `
-    state: sc.Immutable$Package$+State = new sc.Immutable$Package$+State(wasmlib.ScState.proxy());
+    state:$salign sc.Immutable$Package$+State = new sc.Immutable$Package$+State(wasmlib.ScState.proxy());
 `,
 	// *******************************
 	"MutablePackageState": `
-    state: sc.Mutable$Package$+State = new sc.Mutable$Package$+State(wasmlib.ScState.proxy());
+    state:$salign sc.Mutable$Package$+State = new sc.Mutable$Package$+State(wasmlib.ScState.proxy());
 `,
 	// *******************************
 	"FuncNameForCall": `
