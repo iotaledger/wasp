@@ -189,6 +189,8 @@ func (smT *stateManager) run() {
 	nodePubKeysPipeCh := smT.nodePubKeysPipe.Out()
 	timerTickCh := smT.timers.TimeProvider.After(smT.timers.StateManagerTimerTickPeriod)
 	for {
+		smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
+			smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		select {
 		case input, ok := <-inputPipeCh:
 			if ok {
