@@ -127,7 +127,7 @@ func resolveReceipt(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt
 	iscReceipt := rec.ToISCReceipt(resolvedReceiptErr)
 	receiptJSON, err := json.Marshal(iscReceipt)
 	if err != nil {
-		return httperrors.ServerError("error marshalling receipt into JSON")
+		return httperrors.ServerError("error marshaling receipt into JSON")
 	}
 	return c.JSON(http.StatusOK,
 		&model.RequestReceiptResponse{

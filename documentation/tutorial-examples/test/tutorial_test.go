@@ -95,7 +95,7 @@ func TestTutorialInvokeSCError(t *testing.T) {
 
 	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
-	require.True(t, err.Error() == "WASM: panic in VM: missing mandatory string")
+	require.True(t, err.Error() == "WASM: panic in VM: missing mandatory param: str")
 }
 
 func TestTutorialAccounts(t *testing.T) {

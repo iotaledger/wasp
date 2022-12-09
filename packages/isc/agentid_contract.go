@@ -42,7 +42,6 @@ func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	h, err := HnameFromString(hnamePart)
 	if err != nil {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
-
 	}
 	return NewContractAgentID(chainID, h), nil
 }

@@ -35,11 +35,11 @@ func NewMockedNodeConnection(id string, ledgers *MockedLedgers, log *logger.Logg
 		stopChannel:              make(chan bool),
 		attachMilestonesClosures: make(map[isc.ChainID]*events.Closure),
 	}
-	//result.SetPublishStateTransactionAllowed(true)
-	//result.SetPublishGovernanceTransactionAllowed(true)
-	//result.SetPullLatestOutputAllowed(true)
-	//result.SetPullTxInclusionStateAllowed(true)
-	//result.SetPullOutputByIDAllowed(true)
+	// result.SetPublishStateTransactionAllowed(true)
+	// result.SetPublishGovernanceTransactionAllowed(true)
+	// result.SetPullLatestOutputAllowed(true)
+	// result.SetPullTxInclusionStateAllowed(true)
+	// result.SetPullOutputByIDAllowed(true)
 	result.log.Debugf("Nodeconn created")
 	return result
 }

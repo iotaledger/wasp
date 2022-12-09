@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	keyAccountNonce = "n"
-	keyAccountCode  = "c"
-	keyAccountState = "s"
+	keyAccountNonce    = "n"
+	keyAccountCode     = "c"
+	keyAccountState    = "s"
+	keyAccountSuicided = "S"
 )
 
 func accountKey(prefix kv.Key, addr common.Address) kv.Key {
@@ -37,6 +38,10 @@ func accountCodeKey(addr common.Address) kv.Key {
 
 func accountStateKey(addr common.Address, hash common.Hash) kv.Key {
 	return accountKey(keyAccountState, addr) + kv.Key(hash[:])
+}
+
+func accountSuicidedKey(addr common.Address) kv.Key {
+	return accountKey(keyAccountSuicided, addr)
 }
 
 type (
@@ -178,10 +183,18 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 		s.kv.Del(k)
 	}
 
+	// for some reason the EVM engine calls AddBalance to the beneficiary address,
+	// but not SubBalance for the suicided address.
+	s.subBalance(addr, s.getBalance(addr))
+
+	s.kv.Set(accountSuicidedKey(addr), []byte{1})
+
 	return true
 }
 
-func (s *StateDB) HasSuicided(common.Address) bool { return false }
+func (s *StateDB) HasSuicided(addr common.Address) bool {
+	return s.kv.MustHas(accountSuicidedKey(addr))
+}
 
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for suicided accounts.
