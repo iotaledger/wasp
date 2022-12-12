@@ -687,6 +687,7 @@ func (clu *Cluster) ActiveNodes() []int {
 	return nodes
 }
 
+// TODO deprecate MessageCounter
 func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
 	return NewMessageCounter(clu, clu.Config.AllNodes(), expectations)
 }
