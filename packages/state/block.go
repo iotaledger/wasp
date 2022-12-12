@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -75,6 +76,10 @@ func (b *block) TrieRoot() trie.Hash {
 
 func (b *block) PreviousL1Commitment() *L1Commitment {
 	return b.previousL1Commitment
+}
+
+func (b *block) StateIndex() uint32 {
+	return codec.MustDecodeUint32(b.MutationsReader().MustGet(kv.Key(coreutil.StatePrefixBlockIndex)))
 }
 
 func (b *block) essenceBytes() []byte {

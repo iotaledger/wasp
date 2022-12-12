@@ -82,6 +82,16 @@ type StateMgr interface {
 	) (st state.State, added, removed []state.Block)
 }
 
+// Partial interface for providing chain events to the outside.
+// This interface is in the mempool part only because it tracks
+// the actual state for checking the consumed requests.
+type ChainListener interface {
+	// This function is called by the chain when new block is applied to the
+	// state. This block might be not confirmed yet, but the chain is going
+	// to build the next block on top of this one.
+	BlockApplied(chainID isc.ChainID, block state.Block)
+}
+
 type Mempool interface {
 	consGR.Mempool
 	// Invoked by the chain, when new alias output is considered as a tip/head
@@ -151,6 +161,7 @@ type mempoolImpl struct {
 	net                            peering.NetworkProvider
 	log                            *logger.Logger
 	metrics                        metrics.MempoolMetrics
+	listener                       ChainListener
 }
 
 var _ Mempool = &mempoolImpl{}
@@ -189,6 +200,7 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 	metrics metrics.MempoolMetrics,
+	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
@@ -219,6 +231,7 @@ func New(
 		net:                            net,
 		log:                            log,
 		metrics:                        metrics,
+		listener:                       listener,
 	}
 	mpi.distSync = distSync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
@@ -653,6 +666,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput
 			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
 		}
 		mpi.metrics.CountBlocksPerChain()
+		mpi.listener.BlockApplied(mpi.chainID, block)
 		for _, receipt := range blockReceipts {
 			mpi.metrics.CountRequestOut()
 			mpi.waitProcessed.Processed(receipt)
