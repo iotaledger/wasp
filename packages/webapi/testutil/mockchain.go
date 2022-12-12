@@ -69,6 +69,11 @@ func (*MockChain) AwaitRequestProcessed(ctx context.Context, requestID isc.Reque
 func (*MockChain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 }
 
+// ConfigUpdated implements chain.Chain
+func (*MockChain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
 // GetConsensusPipeMetrics implements chain.Chain
 func (*MockChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("unimplemented")

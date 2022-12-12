@@ -76,7 +76,7 @@ func packUnpackedBytes(unpacked []byte) ([]byte, error) {
 
 func mustEncodeUnpackedBytes(unpacked []byte) []byte {
 	ret, err := encodeUnpackedBytes(unpacked)
-	assert(err == nil, "trie::MustEncodeUnpackedBytes: err: %v, unpacked: %s", err, hex.EncodeToString(unpacked))
+	assertf(err == nil, "trie::MustEncodeUnpackedBytes: err: %v, unpacked: %s", err, hex.EncodeToString(unpacked))
 	return ret
 }
 

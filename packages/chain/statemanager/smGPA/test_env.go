@@ -63,7 +63,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 }
 
 func (teT *testEnv) finalize() {
-	teT.log.Sync()
+	_ = teT.log.Sync()
 }
 
 func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, blocks ...state.Block) {

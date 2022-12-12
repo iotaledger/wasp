@@ -29,6 +29,7 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 	return pid
 }
 
+//nolint:revive
 func PeeringIDFromBytes(src []byte) PeeringID {
 	pid := PeeringID{}
 	copy(pid[:], src)

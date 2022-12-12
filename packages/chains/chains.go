@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -110,6 +111,14 @@ func (c *Chains) Run(ctx context.Context) error {
 	}
 	c.ctx = ctx
 
+	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
+		c.mutex.RLock()
+		defer c.mutex.RUnlock()
+		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
+			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+		}
+	}))
+
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
 
@@ -191,6 +200,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.consensusStateRegistry,
 		chainWAL,
 		c.chainListener,
+		chainRecord.AccessNodes,
 		c.networkProvider,
 		c.log,
 	)

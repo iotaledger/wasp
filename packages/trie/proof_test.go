@@ -20,7 +20,7 @@ func TestProofScenariosBlake2b(t *testing.T) {
 			require.NoError(t, err)
 			for k, v := range checklist {
 				vBin := trr.Get([]byte(k))
-				if len(v) == 0 {
+				if v == "" {
 					require.EqualValues(t, 0, len(vBin))
 				} else {
 					require.EqualValues(t, []byte(v), vBin)
@@ -29,7 +29,7 @@ func TestProofScenariosBlake2b(t *testing.T) {
 				err = p.Validate(root.Bytes())
 				require.NoError(t, err)
 				if len(v) > 0 {
-					cID := CommitToData([]byte(v))
+					cID := commitToData([]byte(v))
 					err = p.ValidateWithTerminal(root.Bytes(), cID.Bytes())
 					require.NoError(t, err)
 				} else {

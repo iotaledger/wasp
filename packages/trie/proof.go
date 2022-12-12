@@ -27,7 +27,7 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 			ChildIndex:    int(e.ChildIndex),
 		}
 		if e.NodeData.terminal != nil {
-			elem.Terminal, _ = compressToHashSize(e.NodeData.terminal.Bytes())
+			elem.Terminal = compressToHashSize(e.NodeData.terminal.Bytes())
 		}
 		isLast := i == len(nodePath)-1
 		for childIndex, childCommitment := range e.NodeData.children {
@@ -42,7 +42,7 @@ func (tr *TrieReader) MerkleProof(key []byte) *MerkleProof {
 		}
 		ret.Path[i] = elem
 	}
-	assert(len(ret.Path) > 0, "len(ret.Path)")
+	assertf(len(ret.Path) > 0, "len(ret.Path)")
 	last := ret.Path[len(ret.Path)-1]
 	switch ending {
 	case endingTerminal:

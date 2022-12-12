@@ -65,6 +65,7 @@ func TestBasic(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo
 func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)
@@ -390,6 +391,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			testutil.NewConsensusStateRegistry(),
 			smGPAUtils.NewMockedBlockWAL(),
 			chain.NewEmptyChainListener(),
+			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 		)

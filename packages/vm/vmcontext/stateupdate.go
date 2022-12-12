@@ -18,14 +18,6 @@ func NewStateUpdate() *StateUpdate {
 	}
 }
 
-func newStateUpdateFromReader(r io.Reader) (*StateUpdate, error) {
-	ret := &StateUpdate{
-		Mutations: buffered.NewMutations(),
-	}
-	err := ret.Read(r)
-	return ret, err
-}
-
 func (su *StateUpdate) Clone() *StateUpdate {
 	return &StateUpdate{Mutations: su.Mutations.Clone()}
 }

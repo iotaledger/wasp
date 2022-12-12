@@ -25,6 +25,7 @@ type block struct {
 
 var _ Block = &block{}
 
+//nolint:revive
 func BlockFromBytes(blockBytes []byte) (*block, error) {
 	buf := bytes.NewBuffer(blockBytes)
 
@@ -89,11 +90,18 @@ func (b *block) essenceBytes() []byte {
 }
 
 func (b *block) writeEssence(w io.Writer) {
-	w.Write(b.Mutations().Bytes())
+	if _, err := w.Write(b.Mutations().Bytes()); err != nil {
+		panic(err)
+	}
 
-	w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil))
+	if _, err := w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil)); err != nil {
+		panic(err)
+	}
+
 	if b.PreviousL1Commitment() != nil {
-		w.Write(b.PreviousL1Commitment().Bytes())
+		if _, err := w.Write(b.PreviousL1Commitment().Bytes()); err != nil {
+			panic(err)
+		}
 	}
 }
 
