@@ -241,8 +241,8 @@ func New(
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
-		activeAccessNodes:      nil,                // updated bellow.
-		accessNodesFromNode:    accessNodesForNode, // TODO: Update it on event.
+		activeAccessNodes:      nil, // updated bellow.
+		accessNodesFromNode:    accessNodesForNode,
 		accessNodesFromChain:   []*cryptolib.PublicKey{},
 		latestConfirmedAO:      nil,
 		latestActiveAO:         nil,
