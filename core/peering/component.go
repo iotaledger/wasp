@@ -41,7 +41,7 @@ func provide(c *dig.Container) error {
 		dig.In
 
 		NodeIdentityProvider         registry.NodeIdentityProvider
-		TrustedPeersRegistryProvider registry.TrustedPeersRegistryProvider `name:"TrustedPeersRegistryProvider"`
+		TrustedPeersRegistryProvider registry.TrustedPeersRegistryProvider
 	}
 
 	type networkResult struct {

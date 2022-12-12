@@ -10,22 +10,27 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 )
 
-func TestNewDbManager(t *testing.T) {
-	dbManager, err := NewManager(registry.NewChainRecordRegistry(nil), WithEngine(hivedb.EngineMapDB))
+func TestNewChainStateDatabaseManager(t *testing.T) {
+	chainRecordRegistry, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)
 
-	require.NotNil(t, dbManager.ConsensusStateKVStore())
-	require.Empty(t, dbManager.databasesChainState)
+	chainStateDatabaseManager, err := NewChainStateDatabaseManager(chainRecordRegistry, WithEngine(hivedb.EngineMapDB))
+	require.NoError(t, err)
+
+	require.Empty(t, chainStateDatabaseManager.databases)
 }
 
-func TestCreateDb(t *testing.T) {
-	dbManager, err := NewManager(registry.NewChainRecordRegistry(nil), WithEngine(hivedb.EngineMapDB))
+func TestCreateChainStateDatabase(t *testing.T) {
+	chainRecordRegistry, err := registry.NewChainRecordRegistryImpl("")
+	require.NoError(t, err)
+
+	chainStateDatabaseManager, err := NewChainStateDatabaseManager(chainRecordRegistry, WithEngine(hivedb.EngineMapDB))
 	require.NoError(t, err)
 
 	chainID := isc.RandomChainID()
-	require.Nil(t, dbManager.ChainStateKVStore(chainID))
-	store, err := dbManager.GetOrCreateChainStateKVStore(chainID)
+	require.Nil(t, chainStateDatabaseManager.chainStateKVStore(chainID))
+	store, err := chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(t, err)
 	require.NotNil(t, store)
-	require.Len(t, dbManager.databasesChainState, 1)
+	require.Len(t, chainStateDatabaseManager.databases, 1)
 }

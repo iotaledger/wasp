@@ -59,8 +59,8 @@ func testBasic(t *testing.T, n, f int) {
 	for i := range gpaNodeIDs {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		store := testutil.NewMockedCmtLogStore() // Empty store in this case.
-		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], chainID, dkShare, store, pubKeyAsNodeID, log)
+		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
+		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, pubKeyAsNodeID, log)
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
