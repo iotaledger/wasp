@@ -133,14 +133,14 @@ func (smT *stateManager) AccessNodesUpdated(accessNodePubKeys []*cryptolib.Publi
 // -------------------------------------
 
 // ConsensusStateProposal asks State manager to ensure that all the blocks for aliasOutput are available.
-// `true` is sent via the returned channel uppon successful retrieval of every block for aliasOutput.
+// `nil` is sent via the returned channel upon successful retrieval of every block for aliasOutput.
 func (smT *stateManager) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
 	input, resultCh := smInputs.NewConsensusStateProposal(ctx, aliasOutput)
 	smT.addInput(input)
 	return resultCh
 }
 
-// ConsensusDecidedState asks State manager to return a virtual state vith stateCommitment as its state commitment
+// ConsensusDecidedState asks State manager to return a virtual state with stateCommitment as its state commitment
 func (smT *stateManager) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
 	input, resultCh := smInputs.NewConsensusDecidedState(ctx, aliasOutput)
 	smT.addInput(input)

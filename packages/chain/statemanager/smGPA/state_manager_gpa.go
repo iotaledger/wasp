@@ -258,10 +258,10 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusD
 	smT.lastBlockRequestID++
 	messages, err := smT.traceBlockChainByRequest(newBlockRequestFromConsensusDecidedState(cds, smT.log, smT.lastBlockRequestID))
 	if err != nil {
-		smT.log.Errorf("Input consensus state proposal %s: error tracing block chain: %v", cds.GetL1Commitment(), err)
+		smT.log.Errorf("Input consensus decided state %s: error tracing block chain: %v", cds.GetL1Commitment(), err)
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Input consensus state proposal %s handled", cds.GetL1Commitment())
+	smT.log.Debugf("Input consensus decided state %s handled", cds.GetL1Commitment())
 	return messages
 }
 
