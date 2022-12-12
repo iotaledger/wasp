@@ -15,7 +15,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.R
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
-	m.Timeout = timeout + 10*time.Second
+	m.Timeout = timeout
 
 	var receipt *isc.Receipt
 	var err error
@@ -45,7 +45,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iot
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
-	m.Timeout = timeout + 10*time.Second
+	m.Timeout = timeout
 	var receipts []*isc.Receipt
 	var err error
 	err = m.Do(func(i int, w *client.WaspClient) error {
