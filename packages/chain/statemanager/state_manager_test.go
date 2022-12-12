@@ -36,6 +36,8 @@ func TestCruelWorld(t *testing.T) {
 	consensusStateProposalCount := 50
 	consensusDecidedStateDelay := 50 * time.Millisecond
 	consensusDecidedStateCount := 50
+	mempoolStateRequestDelay := 50 * time.Millisecond
+	mempoolStateRequestCount := 50
 	endIteration := 50 * time.Millisecond
 	endMaxIterations := 100
 
@@ -144,8 +146,44 @@ func TestCruelWorld(t *testing.T) {
 		responseCh := sms[nodeIndex].ConsensusDecidedState(context.Background(), stateOutputs[blockIndex])
 		state := <-responseCh
 		if !blocks[blockIndex].TrieRoot().Equals(state.TrieRoot()) {
-			t.Logf("Consensus decided state proposal for block %v to node %v return wrong state: expected trie root %s, received %v",
+			t.Logf("Consensus decided state proposal for block %v to node %v return wrong state: expected trie root %s, received %s",
 				blockIndex+1, peerNetIDs[nodeIndex], blocks[blockIndex].TrieRoot(), state.TrieRoot())
+			return false
+		}
+		return true
+	})
+
+	// Send MempoolStateRequest requests
+	mempoolStateRequestResult := makeNRequests(mempoolStateRequestCount, mempoolStateRequestDelay, func(_ int) bool {
+		nodeIndex := rand.Intn(nodeCount)
+		newBlockIndex := getRandomProducedBlockAIndexFun()
+		for ; newBlockIndex == 0; newBlockIndex = getRandomProducedBlockAIndexFun() {
+		}
+		oldBlockIndex := rand.Intn(newBlockIndex)
+		t.Logf("Mempool state request for new block %v and old block %v is sent to node %v", newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex])
+		responseCh := sms[nodeIndex].(*stateManager).mempoolStateRequestAsync(context.Background(), stateOutputs[oldBlockIndex], stateOutputs[newBlockIndex]) // TODO: change this to async interface function
+		results := <-responseCh
+		if !bf.GetState(blocks[newBlockIndex].L1Commitment()).TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong new state: expected trie root %s, received %s",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], blocks[newBlockIndex].TrieRoot(), results.GetNewState().TrieRoot())
+			return false
+		}
+		expectedAddedLength := newBlockIndex - oldBlockIndex
+		if len(results.GetAdded()) != expectedAddedLength {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong size added array: expected %v, received %v elements",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], expectedAddedLength, len(results.GetAdded()))
+			return false
+		}
+		for i := 0; i < len(results.GetAdded()); i++ {
+			if !results.GetAdded()[i].L1Commitment().Equals(blocks[oldBlockIndex+i+1].L1Commitment()) { // TODO: should compare blocks instead of commitments
+				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
+					newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
+				return false
+			}
+		}
+		if len(results.GetRemoved()) > 0 {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return too large removed array: expected it to be empty, received %v elements",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], len(results.GetRemoved()))
 			return false
 		}
 		return true
@@ -158,6 +196,7 @@ func TestCruelWorld(t *testing.T) {
 	requireTrueForSomeTime(t, approveOutputResult, 10*time.Second)
 	requireTrueForSomeTime(t, consensusStateProposalResult, 10*time.Second)
 	requireTrueForSomeTime(t, consensusDecidedStateResult, 10*time.Second)
+	requireTrueForSomeTime(t, mempoolStateRequestResult, 10*time.Second)
 
 	expectedIndex := blockCount
 	expectedCommitment := blocks[blockCount-1].L1Commitment()

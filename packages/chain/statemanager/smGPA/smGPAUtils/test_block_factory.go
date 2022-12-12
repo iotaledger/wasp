@@ -152,6 +152,12 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
+func (bfT *BlockFactory) GetState(commitment *state.L1Commitment) state.State {
+	result, err := bfT.store.StateByTrieRoot(commitment.TrieRoot())
+	require.NoError(bfT.t, err)
+	return result
+}
+
 func getRandomTxID(t require.TestingT) iotago.TransactionID {
 	var result iotago.TransactionID
 	_, err := rand.Read(result[:])
