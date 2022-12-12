@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -14,21 +15,13 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 func TestBasicAccounts(t *testing.T) {
 	e := setupWithNoChain(t)
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"state":       2,
-		"request_in":  0,
-		"request_out": 1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
-	newChainEnv(t, e.Clu, chain).testBasicAccounts(counter)
+	newChainEnv(t, e.Clu, chain).testBasicAccounts()
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
@@ -38,14 +31,9 @@ func TestBasicAccountsNLow(t *testing.T) {
 		for i := range chainNodes {
 			chainNodes[i] = i
 		}
-		counter, err := cluster.NewMessageCounter(e.Clu, chainNodes, map[string]int{
-			"state": 3,
-		})
-		require.NoError(tt, err)
-		defer counter.Close()
 		chain, err := e.Clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
-		newChainEnv(tt, e.Clu, chain).testBasicAccounts(counter)
+		newChainEnv(tt, e.Clu, chain).testBasicAccounts()
 	}
 	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
 	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
@@ -53,20 +41,19 @@ func TestBasicAccountsNLow(t *testing.T) {
 	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
-func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
+func (e *ChainEnv) testBasicAccounts() {
 	hname := isc.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
 
-	_, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
+	tx, err := e.Chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(e.t, err)
 
-	if !counter.WaitUntilExpectationsMet() {
-		e.t.Fatal()
-	}
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err)
 
 	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
 	e.t.Logf("   %s: %s", accounts.Contract.Name, accounts.Contract.Hname().String())
@@ -125,14 +112,6 @@ func (e *ChainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 func TestBasic2Accounts(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"state":       2,
-		"request_in":  0,
-		"request_out": 1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
@@ -143,15 +122,14 @@ func TestBasic2Accounts(t *testing.T) {
 	programHash1 := inccounter.Contract.ProgramHash
 	require.NoError(t, err)
 
-	_, err = chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
+	tx, err := chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        nativeIncCounterSCName,
 	})
 	require.NoError(t, err)
 
-	if !counter.WaitUntilExpectationsMet() {
-		t.Fatal()
-	}
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
+	require.NoError(e.t, err)
 
 	chEnv.checkCoreContracts()
 
@@ -217,9 +195,19 @@ func TestBasic2Accounts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
+	rec, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
 	require.NoError(t, err)
 
+	// wait for the block that includes the request to be added to the ledger
+	// (the func above only waits until the block is produced, not until it is accepted on L1)
+	waitTrue(
+		20*time.Second,
+		func() bool {
+			_, out, err := e.Clu.L1Client().GetAliasOutput(chain.ChainID.AsAliasID())
+			require.NoError(t, err)
+			return out.(*iotago.AliasOutput).StateIndex == rec.BlockIndex
+		},
+	)
 	chEnv.checkLedger()
 
 	chEnv.printAccounts("withdraw after")
