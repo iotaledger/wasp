@@ -4,9 +4,8 @@
 package isc
 
 import (
+	"errors"
 	"fmt"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -36,22 +35,21 @@ func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
 func ChainIDFromBytes(data []byte) (ChainID, error) {
 	var chainID ChainID
 	if ChainIDLength != len(data) {
-		return ChainID{}, xerrors.New("cannot decode ChainID: wrong data length")
+		return ChainID{}, errors.New("cannot decode ChainID: wrong data length")
 	}
 	copy(chainID[:], data)
 	return chainID, nil
 }
 
-func ChainIDFromString(s string) (ChainID, error) {
-	_, addr, err := iotago.ParseBech32(s)
+func ChainIDFromString(bech32 string) (ChainID, error) {
+	_, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
 		return ChainID{}, err
 	}
-	aliasAddr, ok := addr.(*iotago.AliasAddress)
-	if !ok {
-		return ChainID{}, fmt.Errorf("chainID must be an alias address")
+	if addr.Type() != iotago.AddressAlias {
+		return ChainID{}, fmt.Errorf("chainID must be an alias address (%s)", bech32)
 	}
-	return ChainIDFromAddress(aliasAddr), nil
+	return ChainIDFromAddress(addr.(*iotago.AliasAddress)), nil
 }
 
 // ChainIDFromMarshalUtil reads from Marshalutil
@@ -64,9 +62,7 @@ func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (ChainID, error) {
 }
 
 func ChainIDFromAddress(addr *iotago.AliasAddress) ChainID {
-	var aliasID iotago.AliasID
-	copy(aliasID[:], addr[:])
-	return ChainIDFromAliasID(aliasID)
+	return ChainIDFromAliasID(addr.AliasID())
 }
 
 // RandomChainID creates a random chain ID. Used for testing only

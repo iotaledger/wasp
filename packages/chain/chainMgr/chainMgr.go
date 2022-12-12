@@ -138,7 +138,7 @@ type cmtLogInst struct {
 type chainMgrImpl struct {
 	chainID                 isc.ChainID                             // This instance is responsible for this chain.
 	cmtLogs                 map[iotago.Ed25519Address]*cmtLogInst   // All the committee log instances for this chain.
-	cmtLogStore             cmtLog.Store                            // Persistent store for log indexes.
+	consensusStateRegistry  cmtLog.ConsensusStateRegistry           // Persistent store for log indexes.
 	latestActiveCmt         *iotago.Ed25519Address                  // The latest active committee.
 	latestConfirmedAO       *isc.AliasOutputWithID                  // The latest confirmed AO (follows Active AO).
 	activeAccessNodes       []*cryptolib.PublicKey                  // All the nodes authorized for being access nodes (for the ActiveAO).
@@ -161,7 +161,7 @@ var (
 func New(
 	me gpa.NodeID,
 	chainID isc.ChainID,
-	cmtLogStore cmtLog.Store,
+	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	activeAccessNodesCB func([]*cryptolib.PublicKey),
@@ -170,7 +170,7 @@ func New(
 	cmi := &chainMgrImpl{
 		chainID:                 chainID,
 		cmtLogs:                 map[iotago.Ed25519Address]*cmtLogInst{},
-		cmtLogStore:             cmtLogStore,
+		consensusStateRegistry:  consensusStateRegistry,
 		activeAccessNodes:       []*cryptolib.PublicKey{},
 		activeAccessNodesCB:     activeAccessNodesCB,
 		needConsensus:           nil,
@@ -471,7 +471,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		return nil, nil, xerrors.Errorf("cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
-	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.cmtLogStore, cmi.nodeIDFromPubKey, cmi.log)
+	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.log)
 	if err != nil {
 		return nil, nil, xerrors.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
 	}

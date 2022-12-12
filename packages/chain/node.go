@@ -202,7 +202,7 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	cmtLogStore cmtLog.Store,
+	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	blockWAL smGPAUtils.BlockWAL,
 	net peering.NetworkProvider,
 	log *logger.Logger,
@@ -240,7 +240,7 @@ func New(
 	chainMgr, err := chainMgr.New(
 		cni.me,
 		cni.chainID,
-		cmtLogStore,
+		consensusStateRegistry,
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
 		cni.handleAccessNodesCB,

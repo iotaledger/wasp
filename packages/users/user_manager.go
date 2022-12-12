@@ -14,38 +14,40 @@ import (
 // UserManager handles the list of users that are stored in the user config.
 // It calls a function if the list changed.
 type UserManager struct {
-	storeOnChangeMap *onchangemap.OnChangeMap[string, util.ComparableString, *User]
+	onChangeMap *onchangemap.OnChangeMap[string, util.ComparableString, *User]
 }
 
 // NewUserManager creates a new user manager.
 func NewUserManager(storeCallback func([]*User) error) *UserManager {
 	return &UserManager{
-		storeOnChangeMap: onchangemap.NewOnChangeMap[string, util.ComparableString](storeCallback),
+		onChangeMap: onchangemap.NewOnChangeMap(
+			onchangemap.WithChangedCallback[string, util.ComparableString](storeCallback),
+		),
 	}
 }
 
 func (m *UserManager) EnableStoreOnChange() {
-	m.storeOnChangeMap.CallbackEnabled(true)
+	m.onChangeMap.CallbacksEnabled(true)
 }
 
 // Users returns a copy of all known users.
 func (m *UserManager) Users() map[string]*User {
-	return m.storeOnChangeMap.All()
+	return m.onChangeMap.All()
 }
 
 // User returns a copy of a user.
 func (m *UserManager) User(name string) (*User, error) {
-	return m.storeOnChangeMap.Get(util.ComparableString(name))
+	return m.onChangeMap.Get(util.ComparableString(name))
 }
 
 // AddUser adds a user to the user manager.
 func (m *UserManager) AddUser(user *User) error {
-	return m.storeOnChangeMap.Add(user)
+	return m.onChangeMap.Add(user)
 }
 
 // ModifyUser modifies a user in the user manager.
 func (m *UserManager) ModifyUser(user *User) error {
-	_, err := m.storeOnChangeMap.Modify(user.ID(), func(item *User) bool {
+	_, err := m.onChangeMap.Modify(user.ID(), func(item *User) bool {
 		*item = *user
 		return true
 	})
@@ -54,7 +56,7 @@ func (m *UserManager) ModifyUser(user *User) error {
 
 // RemoveUser removes a user from the user manager.
 func (m *UserManager) RemoveUser(name string) error {
-	return m.storeOnChangeMap.Delete(util.ComparableString(name))
+	return m.onChangeMap.Delete(util.ComparableString(name))
 }
 
 // DerivePasswordKey derives a password key by hashing the given password with a salt.
