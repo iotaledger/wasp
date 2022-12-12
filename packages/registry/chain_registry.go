@@ -79,6 +79,10 @@ type jsonChainRecord struct {
 	AccessNodes []string `json:"accessNodes"`
 }
 
+type jsonChainRecords struct {
+	ChainRecords []*ChainRecord `json:"chainRecords"`
+}
+
 func (r *ChainRecord) MarshalJSON() ([]byte, error) {
 	accessNodesPubKeysHex := make([]string, 0)
 	for _, accessNodePubKey := range r.AccessNodes {
@@ -135,25 +139,73 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-type ChainRecordRegistry struct {
-	storeOnChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
+type ChainRecordRegistryImpl struct {
+	onChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
+
+	filePath string
 }
 
-var _ ChainRecordRegistryProvider = &ChainRecordRegistry{}
+var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
 
-// NewChainRecordRegistry creates new instance of the chain registry implementation.
-func NewChainRecordRegistry(storeCallback func(chainRecords []*ChainRecord) error) *ChainRecordRegistry {
-	return &ChainRecordRegistry{
-		storeOnChangeMap: onchangemap.NewOnChangeMap[string, isc.ChainID](storeCallback),
+// NewChainRecordRegistryImpl creates new instance of the chain registry implementation.
+func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {
+	registry := &ChainRecordRegistryImpl{
+		filePath: filePath,
 	}
+
+	registry.onChangeMap = onchangemap.NewOnChangeMap(
+		onchangemap.WithChangedCallback[string, isc.ChainID](registry.writeChainRecordsJSON),
+	)
+
+	// load chain records on startup
+	if err := registry.loadChainRecordsJSON(); err != nil {
+		return nil, fmt.Errorf("unable to read chain records configuration (%s): %s", filePath, err)
+	}
+
+	registry.onChangeMap.CallbacksEnabled(true)
+
+	return registry, nil
 }
 
-func (p *ChainRecordRegistry) EnableStoreOnChange() {
-	p.storeOnChangeMap.CallbackEnabled(true)
+func (p *ChainRecordRegistryImpl) loadChainRecordsJSON() error {
+	if p.filePath == "" {
+		// do not load entries if no path is given
+		return nil
+	}
+
+	tmpChainRecords := &jsonChainRecords{}
+	if err := ioutils.ReadJSONFromFile(p.filePath, tmpChainRecords); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unable to unmarshal json file: %w", err)
+	}
+
+	for i := range tmpChainRecords.ChainRecords {
+		if err := p.AddChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
+			return fmt.Errorf("unable to add ChainRecord to registry: %w", err)
+		}
+	}
+
+	return nil
 }
 
-func (p *ChainRecordRegistry) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
-	chainRecord, err := p.storeOnChangeMap.Get(chainID)
+func (p *ChainRecordRegistryImpl) writeChainRecordsJSON(chainRecords []*ChainRecord) error {
+	if p.filePath == "" {
+		// do not store entries if no path is given
+		return nil
+	}
+
+	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
+		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	}
+
+	if err := ioutils.WriteJSONToFile(p.filePath, &jsonChainRecords{ChainRecords: chainRecords}, 0o600); err != nil {
+		return fmt.Errorf("unable to marshal json file: %w", err)
+	}
+
+	return nil
+}
+
+func (p *ChainRecordRegistryImpl) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
+	chainRecord, err := p.onChangeMap.Get(chainID)
 	if err != nil {
 		// chain record doesn't exist
 		return nil, nil
@@ -162,11 +214,11 @@ func (p *ChainRecordRegistry) ChainRecord(chainID isc.ChainID) (*ChainRecord, er
 	return chainRecord, nil
 }
 
-func (p *ChainRecordRegistry) ChainRecords() ([]*ChainRecord, error) {
-	return lo.Values(p.storeOnChangeMap.All()), nil
+func (p *ChainRecordRegistryImpl) ChainRecords() ([]*ChainRecord, error) {
+	return lo.Values(p.onChangeMap.All()), nil
 }
 
-func (p *ChainRecordRegistry) ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error {
+func (p *ChainRecordRegistryImpl) ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error {
 	chainRecords, err := p.ChainRecords()
 	if err != nil {
 		return err
@@ -185,20 +237,20 @@ func (p *ChainRecordRegistry) ForEachActiveChainRecord(consumer func(*ChainRecor
 	return nil
 }
 
-func (p *ChainRecordRegistry) AddChainRecord(chainRecord *ChainRecord) error {
-	return p.storeOnChangeMap.Add(chainRecord)
+func (p *ChainRecordRegistryImpl) AddChainRecord(chainRecord *ChainRecord) error {
+	return p.onChangeMap.Add(chainRecord)
 }
 
-func (p *ChainRecordRegistry) DeleteChainRecord(chainID isc.ChainID) error {
-	return p.storeOnChangeMap.Delete(chainID)
+func (p *ChainRecordRegistryImpl) DeleteChainRecord(chainID isc.ChainID) error {
+	return p.onChangeMap.Delete(chainID)
 }
 
 // UpdateChainRecord modifies a ChainRecord in the Registry.
-func (p *ChainRecordRegistry) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
-	return p.storeOnChangeMap.Modify(chainID, callback)
+func (p *ChainRecordRegistryImpl) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
+	return p.onChangeMap.Modify(chainID, callback)
 }
 
-func (p *ChainRecordRegistry) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
+func (p *ChainRecordRegistryImpl) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
 	return p.UpdateChainRecord(chainID, func(r *ChainRecord) bool {
 		if r.Active {
 			// chain was already active
@@ -209,7 +261,7 @@ func (p *ChainRecordRegistry) ActivateChainRecord(chainID isc.ChainID) (*ChainRe
 	})
 }
 
-func (p *ChainRecordRegistry) DeactivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
+func (p *ChainRecordRegistryImpl) DeactivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
 	return p.UpdateChainRecord(chainID, func(r *ChainRecord) bool {
 		if !r.Active {
 			// chain was already disabled
@@ -218,35 +270,4 @@ func (p *ChainRecordRegistry) DeactivateChainRecord(chainID isc.ChainID) (*Chain
 		r.Active = false
 		return true
 	})
-}
-
-type jsonChainRecords struct {
-	ChainRecords []*ChainRecord `json:"chainRecords"`
-}
-
-func LoadChainRecordsJSONFromFile(filePath string, chainRecordsRegistry *ChainRecordRegistry) error {
-	tmpChainRecords := &jsonChainRecords{}
-	if err := ioutils.ReadJSONFromFile(filePath, tmpChainRecords); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("unable to unmarshal json file: %w", err)
-	}
-
-	for i := range tmpChainRecords.ChainRecords {
-		if err := chainRecordsRegistry.AddChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
-			return fmt.Errorf("unable to add ChainRecord to registry: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func WriteChainRecordsJSONToFile(filePath string, chainRecords []*ChainRecord) error {
-	if err := os.MkdirAll(path.Dir(filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(filePath), err)
-	}
-
-	if err := ioutils.WriteJSONToFile(filePath, &jsonChainRecords{ChainRecords: chainRecords}, 0o600); err != nil {
-		return fmt.Errorf("unable to marshal json file: %w", err)
-	}
-
-	return nil
 }

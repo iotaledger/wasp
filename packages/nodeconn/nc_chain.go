@@ -41,7 +41,7 @@ func newNCChain(
 	milestoneHandler chain.MilestoneHandler,
 ) (*ncChain, error) {
 	chain := &ncChain{
-		WrappedLogger: logger.NewWrappedLogger(nodeConn.WrappedLogger.LoggerNamed(chainID.String()[:6])),
+		WrappedLogger: logger.NewWrappedLogger(nodeConn.Logger()),
 		nodeConn:      nodeConn,
 		chainID:       chainID,
 		requestOutputHandler: func(outputInfo *isc.OutputInfo) {
@@ -61,7 +61,7 @@ func newNCChain(
 }
 
 func (ncc *ncChain) queryInititalState() error {
-	ncc.LogInfo("Querying initial state and owned outputs...")
+	ncc.LogInfof("Querying initial state and owned outputs for %s...", ncc.chainID)
 
 	// TODO: there is a potential race condition if the milestone index
 	// on L1 changes during querying of the initial chain state
@@ -82,7 +82,7 @@ func (ncc *ncChain) queryInititalState() error {
 		return err
 	}
 
-	ncc.LogInfof("Querying initial state and owned outputs... done. (MilestoneIndex: %d", cmi)
+	ncc.LogInfof("Querying initial state and owned outputs for %s... done. (MilestoneIndex: %d)", ncc.chainID, cmi)
 	return nil
 }
 
@@ -101,7 +101,7 @@ func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error
 	// track pending tx before publishing the transaction
 	ncc.nodeConn.addPendingTransaction(pendingTx)
 
-	ncc.LogDebugf("publishing transaction %v...", pendingTx.ID().ToHex())
+	ncc.LogDebugf("publishing transaction %v (chainID: %s)...", pendingTx.ID().ToHex(), ncc.chainID)
 
 	// we use the context of the pending transaction to post the transaction. this way
 	// the proof of work will be canceled if the transaction already got confirmed on L1.
@@ -133,7 +133,7 @@ func (ncc *ncChain) queryLatestChainStateUTXO() error {
 		return fmt.Errorf("error while fetching chain state output: %w", err)
 	}
 
-	ncc.LogDebugf("received chain state update, outputID: %s", outputID.ToHex())
+	ncc.LogDebugf("received chain state update, chainID: %s, outputID: %s", ncc.chainID, outputID.ToHex())
 	ncc.aliasOutputHandler(isc.NewOutputInfo(*outputID, output, iotago.TransactionID{}))
 
 	return nil
@@ -180,7 +180,7 @@ func (ncc *ncChain) queryChainUTXOs() error {
 
 			for i := range outputs {
 				outputID := outputIDs[i]
-				ncc.LogDebugf("received UTXO, outputID: %s", outputID.ToHex())
+				ncc.LogDebugf("received chainID: %s, outputID: %s", ncc.chainID, outputID.ToHex())
 				ncc.requestOutputHandler(isc.NewOutputInfo(outputID, outputs[i], iotago.TransactionID{}))
 			}
 		}

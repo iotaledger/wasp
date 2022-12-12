@@ -76,8 +76,8 @@ func testBasic(t *testing.T, n, f int) {
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		cmtLogStore := testutil.NewMockedCmtLogStore()
-		cm, err := chainMgr.New(nid, chainID, cmtLogStore, dkRegs[i], pubKeyAsNodeID, func(pk []*cryptolib.PublicKey) {}, log.Named(string(nid)[:6]))
+		consensusStateRegistry := testutil.NewConsensusStateRegistry()
+		cm, err := chainMgr.New(nid, chainID, consensusStateRegistry, dkRegs[i], pubKeyAsNodeID, func(pk []*cryptolib.PublicKey) {}, log.Named(string(nid)[:6]))
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
 	}

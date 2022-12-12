@@ -51,7 +51,7 @@ type Solo struct {
 	// instance of the test
 	T                               TestContext
 	logger                          *logger.Logger
-	dbmanager                       *database.Manager
+	chainStateDatabaseManager       *database.ChainStateDatabaseManager
 	utxoDB                          *utxodb.UtxoDB
 	glbMutex                        sync.RWMutex
 	ledgerMutex                     sync.RWMutex
@@ -151,7 +151,10 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	dbManager, err := database.NewManager(registry.NewChainRecordRegistry(nil), database.WithEngine(hivedb.EngineMapDB))
+	chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl("")
+	require.NoError(t, err)
+
+	chainStateDatabaseManager, err := database.NewChainStateDatabaseManager(chainRecordRegistryProvider, database.WithEngine(hivedb.EngineMapDB))
 	if err != nil {
 		panic(err)
 	}
@@ -160,7 +163,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	ret := &Solo{
 		T:                               t,
 		logger:                          opt.Log,
-		dbmanager:                       dbManager,
+		chainStateDatabaseManager:       chainStateDatabaseManager,
 		utxoDB:                          utxodb.New(utxoDBinitParams),
 		chains:                          make(map[isc.ChainID]*Chain),
 		processorConfig:                 coreprocessors.NewConfigWithCoreContracts(),
@@ -269,7 +272,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 
 	chainlog := env.logger.Named(name)
 
-	kvStore, err := env.dbmanager.GetOrCreateChainStateKVStore(chainID)
+	kvStore, err := env.chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(env.T, err)
 	store := state.InitChainStore(kvStore)
 
