@@ -11,6 +11,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -50,14 +51,15 @@ func (r *ChainRecord) Clone() onchangemap.Item[string, isc.ChainID] {
 	}
 }
 
-func (r *ChainRecord) AddAccessNode(pubKey *cryptolib.PublicKey) error {
+func (r *ChainRecord) AddAccessNode(pubKey *cryptolib.PublicKey) (modified bool) {
 	if lo.ContainsBy(r.AccessNodes, func(p *cryptolib.PublicKey) bool {
 		return p.Equals(pubKey)
 	}) {
-		return fmt.Errorf("node is already an access node")
+		// node already exists
+		return false
 	}
 	r.AccessNodes = append(r.AccessNodes, pubKey)
-	return nil
+	return true
 }
 
 func (r *ChainRecord) RemoveAccessNode(pubKey *cryptolib.PublicKey) (modified bool) {
@@ -139,8 +141,21 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
+// ChainRecordModifiedEvent contains the updated information of a chain record.
+type ChainRecordModifiedEvent struct {
+	ChainRecord *ChainRecord
+}
+
+// ChainRecordRegistryEvents contain all events of the ChainRecordRegistry.
+type ChainRecordRegistryEvents struct {
+	// A ChainRecordModified event is triggered, when a chain record was modified.
+	ChainRecordModified *event.Event[*ChainRecordModifiedEvent]
+}
+
 type ChainRecordRegistryImpl struct {
 	onChangeMap *onchangemap.OnChangeMap[string, isc.ChainID, *ChainRecord]
+
+	events *ChainRecordRegistryEvents
 
 	filePath string
 }
@@ -151,6 +166,9 @@ var _ ChainRecordRegistryProvider = &ChainRecordRegistryImpl{}
 func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, error) {
 	registry := &ChainRecordRegistryImpl{
 		filePath: filePath,
+		events: &ChainRecordRegistryEvents{
+			ChainRecordModified: event.New[*ChainRecordModifiedEvent](),
+		},
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
@@ -204,6 +222,10 @@ func (p *ChainRecordRegistryImpl) writeChainRecordsJSON(chainRecords []*ChainRec
 	return nil
 }
 
+func (p *ChainRecordRegistryImpl) Events() *ChainRecordRegistryEvents {
+	return p.events
+}
+
 func (p *ChainRecordRegistryImpl) ChainRecord(chainID isc.ChainID) (*ChainRecord, error) {
 	chainRecord, err := p.onChangeMap.Get(chainID)
 	if err != nil {
@@ -247,7 +269,24 @@ func (p *ChainRecordRegistryImpl) DeleteChainRecord(chainID isc.ChainID) error {
 
 // UpdateChainRecord modifies a ChainRecord in the Registry.
 func (p *ChainRecordRegistryImpl) UpdateChainRecord(chainID isc.ChainID, callback func(*ChainRecord) bool) (*ChainRecord, error) {
-	return p.onChangeMap.Modify(chainID, callback)
+	var modified bool
+	callbackHook := func(chainRecord *ChainRecord) bool {
+		modified = callback(chainRecord)
+		return modified
+	}
+
+	chainRecord, err := p.onChangeMap.Modify(chainID, callbackHook)
+	if err != nil {
+		return chainRecord, err
+	}
+
+	if modified {
+		p.events.ChainRecordModified.Trigger(&ChainRecordModifiedEvent{
+			ChainRecord: chainRecord,
+		})
+	}
+
+	return chainRecord, nil
 }
 
 func (p *ChainRecordRegistryImpl) ActivateChainRecord(chainID isc.ChainID) (*ChainRecord, error) {

@@ -200,7 +200,7 @@ func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 			return rec.RemoveAccessNode(pubKey)
 		})
 		if err != nil {
-			return httperrors.ServerError(fmt.Sprintf("Peer trust removed, but errored whentrying to save chain record %s", r.ChainID()))
+			return httperrors.ServerError(fmt.Sprintf("Peer trust removed, but errored when trying to save chain record %s", r.ChainID()))
 		}
 	}
 	return c.JSON(http.StatusOK, model.NewPeeringTrustedNode(tp))

@@ -25,7 +25,7 @@ validate real smart contracts and entire inter-chain protocols before deploying 
 
 ### Prerequisites
 
-[Go (version 1.18)](https://tip.golang.org/doc/go1.18). As _Solo_ tests are written in Go, you must 
+[Go (version 1.19)](https://tip.golang.org/doc/go1.19). As _Solo_ tests are written in Go, you must 
 [install Go](https://go.dev/doc/install).
 
 ### Access the Solo Framework
