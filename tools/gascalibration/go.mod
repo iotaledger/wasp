@@ -1,12 +1,12 @@
 module github.com/iotaledger/wasp/tools/gascalibration
 
-go 1.18
+go 1.19
 
-replace github.com/iotaledger/wasp => ../../
-
-replace github.com/iotaledger/wasp/tools/wasp-cli => ../wasp-cli/
-
-replace github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d
+replace (
+	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d
+	github.com/iotaledger/wasp => ../../
+	github.com/iotaledger/wasp/tools/wasp-cli => ../wasp-cli/
+)
 
 require (
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000

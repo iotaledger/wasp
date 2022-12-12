@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -29,7 +28,6 @@ var Event = events.NewEvent(func(handler interface{}, params ...interface{}) {
 type Publisher struct {
 	blockAppliedPipe pipe.Pipe
 	mutex            *sync.RWMutex
-	running          *atomic.Bool
 	log              *logger.Logger
 }
 
@@ -44,7 +42,6 @@ func NewPublisher(log *logger.Logger) *Publisher {
 	p := &Publisher{
 		blockAppliedPipe: pipe.NewDefaultInfinitePipe(),
 		mutex:            &sync.RWMutex{},
-		running:          &atomic.Bool{},
 		log:              log,
 	}
 	return p

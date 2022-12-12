@@ -67,9 +67,7 @@ func (a *accessNodesService) handleAddAccessNode(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("couldn't find peer with public key %s", pubKey))
 	}
 	_, err = a.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		rec.AddAccessNode(pubKey)
-		// TODO what should this return?
-		return false
+		return rec.AddAccessNode(pubKey)
 	})
 	if err != nil {
 		return httperrors.ServerError("error saving chain record.")
