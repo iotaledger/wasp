@@ -59,8 +59,8 @@ jobs:
       - name: install tinygo
         # only work on x86_64
         run: |
-          wget https://github.com/tinygo-org/tinygo/releases/download/v0.23.0/tinygo_0.23.0_amd64.deb
-          sudo dpkg -i tinygo_0.23.0_amd64.deb
+          wget https://github.com/tinygo-org/tinygo/releases/download/v0.26.0/tinygo_0.26.0_amd64.deb
+          sudo dpkg -i tinygo_0.26.0_amd64.deb
           export PATH=$PATH:/usr/local/bin
 
       - name: install rust-toolchain
