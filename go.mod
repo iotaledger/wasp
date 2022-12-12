@@ -1,6 +1,6 @@
 module github.com/iotaledger/wasp
 
-go 1.18
+go 1.19
 
 replace (
 	github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20220823095040-07b2628097ef // branch: kp-make-it-working

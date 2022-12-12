@@ -1,4 +1,4 @@
-FROM node:lts-buster as build
+FROM node:lts-bullseye as build
 
 COPY package.json .
 COPY package-lock.json .
