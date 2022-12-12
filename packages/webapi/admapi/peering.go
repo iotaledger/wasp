@@ -21,12 +21,12 @@ import (
 )
 
 type peeringService struct {
-	registry   registry.ChainRecordRegistryProvider
-	network    peering.NetworkProvider
-	networkMgr peering.TrustedNetworkManager
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	network                     peering.NetworkProvider
+	networkMgr                  peering.TrustedNetworkManager
 }
 
-func addPeeringEndpoints(adm echoswagger.ApiGroup, reg registry.ChainRecordRegistryProvider, network peering.NetworkProvider, tnm peering.TrustedNetworkManager) {
+func addPeeringEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, network peering.NetworkProvider, tnm peering.TrustedNetworkManager) {
 	listExample := []*model.PeeringTrustedNode{
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", NetID: "some-host:9081"},
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", NetID: "some-host:9082"},
@@ -36,9 +36,9 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, reg registry.ChainRecordRegis
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", IsAlive: true, NumUsers: 1, NetID: "some-host:9082"},
 	}
 	p := &peeringService{
-		registry:   reg,
-		network:    network,
-		networkMgr: tnm,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		network:                     network,
+		networkMgr:                  tnm,
 	}
 
 	adm.GET(routes.PeeringSelfGet(), p.handlePeeringSelfGet).
@@ -186,7 +186,7 @@ func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 		return c.NoContent(http.StatusOK)
 	}
 	// remove any access nodes for the distrusted peer
-	chainRecs, err := p.registry.ChainRecords()
+	chainRecs, err := p.chainRecordRegistryProvider.ChainRecords()
 	if err != nil {
 		return httperrors.ServerError("Peer trust removed, but errored when trying to get chain list from registry")
 	}
@@ -196,11 +196,11 @@ func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 		})
 	})
 	for _, r := range chainRecsToModify {
-		_, err = p.registry.UpdateChainRecord(r.ID(), func(rec *registry.ChainRecord) bool {
+		_, err = p.chainRecordRegistryProvider.UpdateChainRecord(r.ID(), func(rec *registry.ChainRecord) bool {
 			return rec.RemoveAccessNode(pubKey)
 		})
 		if err != nil {
-			return httperrors.ServerError(fmt.Sprintf("Peer trust removed, but errored whentrying to save chain record %s", r.ChainID()))
+			return httperrors.ServerError(fmt.Sprintf("Peer trust removed, but errored when trying to save chain record %s", r.ChainID()))
 		}
 	}
 	return c.JSON(http.StatusOK, model.NewPeeringTrustedNode(tp))

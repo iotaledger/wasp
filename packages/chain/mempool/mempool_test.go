@@ -19,6 +19,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -463,6 +464,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 			&MockMempoolMetrics{},
+			chain.NewEmptyChainListener(),
 		)
 	}
 	return te

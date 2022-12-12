@@ -123,18 +123,11 @@ Example:
 
 ## <a id="db"></a> 4. Database
 
-| Name                                 | Description                                                                      | Type    | Default value |
-| ------------------------------------ | -------------------------------------------------------------------------------- | ------- | ------------- |
-| engine                               | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
-| [consensusState](#db_consensusstate) | Configuration for consensusState                                                 | object  |               |
-| [chainState](#db_chainstate)         | Configuration for chainState                                                     | object  |               |
-| debugSkipHealthCheck                 | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | false         |
-
-### <a id="db_consensusstate"></a> ConsensusState
-
-| Name | Description                                        | Type   | Default value             |
-| ---- | -------------------------------------------------- | ------ | ------------------------- |
-| path | The path to the consensus internal database folder | string | "waspdb/chains/consensus" |
+| Name                         | Description                                                                      | Type    | Default value |
+| ---------------------------- | -------------------------------------------------------------------------------- | ------- | ------------- |
+| engine                       | The used database engine (rocksdb/mapdb)                                         | string  | "rocksdb"     |
+| [chainState](#db_chainstate) | Configuration for chainState                                                     | object  |               |
+| debugSkipHealthCheck         | Ignore the check for corrupted databases (should only be used for debug reasons) | boolean | false         |
 
 ### <a id="db_chainstate"></a> ChainState
 
@@ -148,9 +141,6 @@ Example:
   {
     "db": {
       "engine": "rocksdb",
-      "consensusState": {
-        "path": "waspdb/chains/consensus"
-      },
       "chainState": {
         "path": "waspdb/chains/data"
       },
@@ -161,10 +151,17 @@ Example:
 
 ## <a id="p2p"></a> 5. P2p
 
-| Name               | Description                                             | Type   | Default value |
-| ------------------ | ------------------------------------------------------- | ------ | ------------- |
-| identityPrivateKey | Private key used to derive the node identity (optional) | string | ""            |
-| [db](#p2p_db)      | Configuration for Database                              | object |               |
+| Name                      | Description                | Type   | Default value |
+| ------------------------- | -------------------------- | ------ | ------------- |
+| [identity](#p2p_identity) | Configuration for identity | object |               |
+| [db](#p2p_db)             | Configuration for Database | object |               |
+
+### <a id="p2p_identity"></a> Identity
+
+| Name       | Description                                             | Type   | Default value                  |
+| ---------- | ------------------------------------------------------- | ------ | ------------------------------ |
+| privateKey | Private key used to derive the node identity (optional) | string | ""                             |
+| filePath   | Private key used to derive the node identity (optional) | string | "waspdb/identity/identity.key" |
 
 ### <a id="p2p_db"></a> Database
 
@@ -177,7 +174,10 @@ Example:
 ```json
   {
     "p2p": {
-      "identityPrivateKey": "",
+      "identity": {
+        "privateKey": "",
+        "filePath": "waspdb/identity/identity.key"
+      },
       "db": {
         "path": "waspdb/p2pstore"
       }
@@ -185,45 +185,55 @@ Example:
   }
 ```
 
-## <a id="registry"></a> 6. Registry
+## <a id="registries"></a> 6. Registries
 
-| Name                                   | Description                    | Type   | Default value |
-| -------------------------------------- | ------------------------------ | ------ | ------------- |
-| [chains](#registry_chains)             | Configuration for chains       | object |               |
-| [dkShares](#registry_dkshares)         | Configuration for dkShares     | object |               |
-| [trustedPeers](#registry_trustedpeers) | Configuration for trustedPeers | object |               |
+| Name                                         | Description                      | Type   | Default value |
+| -------------------------------------------- | -------------------------------- | ------ | ------------- |
+| [chains](#registries_chains)                 | Configuration for chains         | object |               |
+| [dkShares](#registries_dkshares)             | Configuration for dkShares       | object |               |
+| [trustedPeers](#registries_trustedpeers)     | Configuration for trustedPeers   | object |               |
+| [consensusState](#registries_consensusstate) | Configuration for consensusState | object |               |
 
-### <a id="registry_chains"></a> Chains
+### <a id="registries_chains"></a> Chains
 
-| Name     | Description                         | Type   | Default value                |
-| -------- | ----------------------------------- | ------ | ---------------------------- |
-| filePath | The path to the chain registry file | string | "waspdb/chain_registry.json" |
+| Name     | Description                         | Type   | Default value                       |
+| -------- | ----------------------------------- | ------ | ----------------------------------- |
+| filePath | The path to the chain registry file | string | "waspdb/chains/chain_registry.json" |
 
-### <a id="registry_dkshares"></a> DkShares
+### <a id="registries_dkshares"></a> DkShares
 
-| Name     | Description                                          | Type   | Default value          |
-| -------- | ---------------------------------------------------- | ------ | ---------------------- |
-| filePath | The path to the distributed key shares registry file | string | "waspdb/dkshares.json" |
+| Name | Description                                              | Type   | Default value     |
+| ---- | -------------------------------------------------------- | ------ | ----------------- |
+| path | The path to the distributed key shares registries folder | string | "waspdb/dkshares" |
 
-### <a id="registry_trustedpeers"></a> TrustedPeers
+### <a id="registries_trustedpeers"></a> TrustedPeers
 
 | Name     | Description                                 | Type   | Default value               |
 | -------- | ------------------------------------------- | ------ | --------------------------- |
 | filePath | The path to the trusted peers registry file | string | "waspdb/trusted_peers.json" |
 
+### <a id="registries_consensusstate"></a> ConsensusState
+
+| Name | Description                                       | Type   | Default value             |
+| ---- | ------------------------------------------------- | ------ | ------------------------- |
+| path | The path to the consensus state registries folder | string | "waspdb/chains/consensus" |
+
 Example:
 
 ```json
   {
-    "registry": {
+    "registries": {
       "chains": {
-        "filePath": "waspdb/chain_registry.json"
+        "filePath": "waspdb/chains/chain_registry.json"
       },
       "dkShares": {
-        "filePath": "waspdb/dkshares.json"
+        "path": "waspdb/dkshares"
       },
       "trustedPeers": {
         "filePath": "waspdb/trusted_peers.json"
+      },
+      "consensusState": {
+        "path": "waspdb/chains/consensus"
       }
     }
   }
@@ -305,25 +315,7 @@ Example:
   }
 ```
 
-## <a id="wal"></a> 11. Write-Ahead Logging
-
-| Name      | Description                       | Type    | Default value |
-| --------- | --------------------------------- | ------- | ------------- |
-| enabled   | Whether the WAL plugin is enabled | boolean | true          |
-| directory | Path to logs folder               | string  | "wal"         |
-
-Example:
-
-```json
-  {
-    "wal": {
-      "enabled": true,
-      "directory": "wal"
-    }
-  }
-```
-
-## <a id="prometheus"></a> 12. Prometheus
+## <a id="prometheus"></a> 11. Prometheus
 
 | Name            | Description                                                  | Type    | Default value    |
 | --------------- | ------------------------------------------------------------ | ------- | ---------------- |
@@ -355,7 +347,7 @@ Example:
   }
 ```
 
-## <a id="webapi"></a> 13. Web API
+## <a id="webapi"></a> 12. Web API
 
 | Name                      | Description                                              | Type    | Default value    |
 | ------------------------- | -------------------------------------------------------- | ------- | ---------------- |
@@ -419,7 +411,7 @@ Example:
   }
 ```
 
-## <a id="nanomsg"></a> 14. nanomsg
+## <a id="nanomsg"></a> 13. nanomsg
 
 | Name    | Description                              | Type    | Default value |
 | ------- | ---------------------------------------- | ------- | ------------- |
@@ -437,7 +429,7 @@ Example:
   }
 ```
 
-## <a id="dashboard"></a> 15. Dashboard
+## <a id="dashboard"></a> 14. Dashboard
 
 | Name                      | Description                                              | Type    | Default value    |
 | ------------------------- | -------------------------------------------------------- | ------- | ---------------- |

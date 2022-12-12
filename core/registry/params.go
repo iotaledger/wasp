@@ -4,22 +4,27 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 )
 
-type ParametersRegistry struct {
+type ParametersRegistries struct {
 	Chains struct {
-		FilePath string `default:"waspdb/chain_registry.json" usage:"the path to the chain registry file"`
+		FilePath string `default:"waspdb/chains/chain_registry.json" usage:"the path to the chain registry file"`
 	}
 	DKShares struct {
-		FilePath string `default:"waspdb/dkshares.json" usage:"the path to the distributed key shares registry file"`
+		Path string `default:"waspdb/dkshares" usage:"the path to the distributed key shares registries folder"`
 	}
 	TrustedPeers struct {
 		FilePath string `default:"waspdb/trusted_peers.json" usage:"the path to the trusted peers registry file"`
+	}
+	ConsensusState struct {
+		Path string `default:"waspdb/chains/consensus" usage:"the path to the consensus state registries folder"`
 	}
 }
 
 // ParametersP2P contains the definition of the parameters used by p2p.
 type ParametersP2P struct {
-	// Defines the private key used to derive the node identity (optional).
-	IdentityPrivateKey string `default:"" usage:"private key used to derive the node identity (optional)"`
+	Identity struct {
+		PrivateKey string `default:"" usage:"private key used to derive the node identity (optional)"`
+		FilePath   string `default:"waspdb/identity/identity.key" usage:"the path to the node identity PEM file"`
+	}
 
 	Database struct {
 		// Defines the path to the p2p database.
@@ -28,14 +33,14 @@ type ParametersP2P struct {
 }
 
 var (
-	ParamsRegistry = &ParametersRegistry{}
-	ParamsP2P      = &ParametersP2P{}
+	ParamsRegistries = &ParametersRegistries{}
+	ParamsP2P        = &ParametersP2P{}
 )
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"registry": ParamsRegistry,
-		"p2p":      ParamsP2P,
+		"registries": ParamsRegistries,
+		"p2p":        ParamsP2P,
 	},
-	Masked: []string{"p2p.identityPrivateKey"},
+	Masked: []string{"p2p.identity.privateKey"},
 }

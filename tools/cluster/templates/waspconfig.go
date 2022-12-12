@@ -48,29 +48,32 @@ const WaspConfig = `
   },
   "db": {
     "engine": "rocksdb",
-    "consensusState": {
-      "path": "waspdb/chains/consensus"
-    },
     "chainState": {
       "path": "waspdb/chains/data"
     },
     "debugSkipHealthCheck": false
   },
   "p2p": {
-    "identityPrivateKey": "",
+    "identity": {
+      "privateKey": "",
+      "filePath": "waspdb/identity/identity.key"
+    },
     "db": {
       "path": "waspdb/p2pstore"
     }
   },
-  "registry": {
+  "registries": {
     "chains": {
-      "filePath": "waspdb/chain_registry.json"
+      "filePath": "waspdb/chains/chain_registry.json"
     },
     "dkShares": {
-      "filePath": "waspdb/dkshares.json"
+      "path": "waspdb/dkshares"
     },
     "trustedPeers": {
       "filePath": "waspdb/trusted_peers.json"
+    },
+    "consensusState": {
+      "path": "waspdb/chains/consensus"
     }
   },
   "peering": {
@@ -90,10 +93,6 @@ const WaspConfig = `
   "profiling": {
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
-  },
-  "wal": {
-    "enabled": true,
-    "directory": "wal"
   },
   "prometheus": {
     "enabled": true,

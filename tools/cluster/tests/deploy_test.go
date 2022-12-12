@@ -19,8 +19,8 @@ func TestDeployChain(t *testing.T) {
 
 	counter1, err := e.Clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
-		"state":           2,
-		"request_out":     1,
+		"state":           0, // TODO: Was 2, is it meaningful to check this?
+		"request_out":     6, // Init + (N=4)*AddAccessNodes + ChangeAccessNodes
 	})
 	require.NoError(t, err)
 	defer counter1.Close()

@@ -387,8 +387,9 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.peerIdentities[i],
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
-			testutil.NewMockedCmtLogStore(),
+			testutil.NewConsensusStateRegistry(),
 			smGPAUtils.NewMockedBlockWAL(),
+			chain.NewEmptyChainListener(),
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 		)

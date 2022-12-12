@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/hive.go/core/app"
 	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -35,7 +34,7 @@ var (
 type dependencies struct {
 	dig.In
 
-	DatabaseManager *database.Manager
+	ChainStateDatabaseManager *database.ChainStateDatabaseManager
 }
 
 func initConfigPars(c *dig.Container) error {
@@ -73,45 +72,24 @@ func provide(c *dig.Container) error {
 		NodeConnection chain.NodeConnection
 	}
 
-	type databaseManagerResult struct {
+	type chainStateDatabaseManagerResult struct {
 		dig.Out
 
-		DatabaseManager *database.Manager
+		ChainStateDatabaseManager *database.ChainStateDatabaseManager
 	}
 
-	if err := c.Provide(func(deps databaseManagerDeps) databaseManagerResult {
-		dbManager, err := database.NewManager(
+	if err := c.Provide(func(deps databaseManagerDeps) chainStateDatabaseManagerResult {
+		manager, err := database.NewChainStateDatabaseManager(
 			deps.ChainRecordRegistryProvider,
 			database.WithEngine(deps.DatabaseEngine),
-			database.WithDatabasePathConsensusState(ParamsDatabase.ConsensusState.Path),
-			database.WithDatabasesPathChainState(ParamsDatabase.ChainState.Path),
+			database.WithPath(ParamsDatabase.ChainState.Path),
 		)
 		if err != nil {
 			CoreComponent.LogPanic(err)
 		}
 
-		return databaseManagerResult{
-			DatabaseManager: dbManager,
-		}
-	}); err != nil {
-		CoreComponent.LogPanic(err)
-	}
-
-	type consensusStateDeps struct {
-		dig.In
-
-		DatabaseManager *database.Manager
-	}
-
-	type consensusStateResult struct {
-		dig.Out
-
-		ConsensusStateRegistryProvider cmtLog.Store
-	}
-
-	if err := c.Provide(func(deps consensusStateDeps) consensusStateResult {
-		return consensusStateResult{
-			ConsensusStateRegistryProvider: database.NewConsensusState(deps.DatabaseManager.ConsensusStateKVStore()),
+		return chainStateDatabaseManagerResult{
+			ChainStateDatabaseManager: manager,
 		}
 	}); err != nil {
 		CoreComponent.LogPanic(err)
@@ -126,14 +104,14 @@ func configure() error {
 	// a shutdown signal during startup. If that is the case, the BackgroundWorker will never be started
 	// and the database will never be marked as corrupted.
 	if err := CoreComponent.Daemon().BackgroundWorker("Database Health", func(_ context.Context) {
-		if err := deps.DatabaseManager.MarkStoresCorrupted(); err != nil {
+		if err := deps.ChainStateDatabaseManager.MarkStoresCorrupted(); err != nil {
 			CoreComponent.LogPanic(err)
 		}
 	}, daemon.PriorityDatabaseHealth); err != nil {
 		CoreComponent.LogPanicf("failed to start worker: %s", err)
 	}
 
-	storesCorrupted, err := deps.DatabaseManager.AreStoresCorrupted()
+	storesCorrupted, err := deps.ChainStateDatabaseManager.AreStoresCorrupted()
 	if err != nil {
 		CoreComponent.LogPanic(err)
 	}
@@ -145,13 +123,13 @@ You need to resolve this situation manually.
 `)
 	}
 
-	correctStoresVersion, err := deps.DatabaseManager.CheckCorrectStoresVersion()
+	correctStoresVersion, err := deps.ChainStateDatabaseManager.CheckCorrectStoresVersion()
 	if err != nil {
 		CoreComponent.LogPanic(err)
 	}
 
 	if !correctStoresVersion {
-		storesVersionUpdated, err := deps.DatabaseManager.UpdateStoresVersion()
+		storesVersionUpdated, err := deps.ChainStateDatabaseManager.UpdateStoresVersion()
 		if err != nil {
 			CoreComponent.LogPanic(err)
 		}
@@ -164,12 +142,12 @@ You need to resolve this situation manually.
 	if err = CoreComponent.Daemon().BackgroundWorker("Close database", func(ctx context.Context) {
 		<-ctx.Done()
 
-		if err = deps.DatabaseManager.MarkStoresHealthy(); err != nil {
+		if err = deps.ChainStateDatabaseManager.MarkStoresHealthy(); err != nil {
 			CoreComponent.LogPanic(err)
 		}
 
 		CoreComponent.LogInfo("Syncing databases to disk ...")
-		if err = deps.DatabaseManager.FlushAndCloseStores(); err != nil {
+		if err = deps.ChainStateDatabaseManager.FlushAndCloseStores(); err != nil {
 			CoreComponent.LogPanicf("Syncing databases to disk ... failed: %s", err)
 		}
 		CoreComponent.LogInfo("Syncing databases to disk ... done")

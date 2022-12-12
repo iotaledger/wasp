@@ -30,29 +30,32 @@ variable "wasp_config" {
   },
   "db": {
     "engine": "rocksdb",
-    "consensusState": {
-      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/consensus"
-    },
     "chainState": {
       "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/data"
     },
     "debugSkipHealthCheck": false
   },
   "p2p": {
-    "identityPrivateKey": "",
+    "identity": {
+      "privateKey": "",
+      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/identity/identity.key"
+    },
     "db": {
       "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/p2pstore"
     }
   },
-  "registry": {
+  "registries": {
     "chains": {
-      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chain_registry.json"
+      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/chain_registry.json"
     },
     "dkShares": {
-      "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/dkshares.json"
+      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/dkshares"
     },
     "trustedPeers": {
       "filePath": "{{ env "NOMAD_TASK_DIR" }}/waspdb/trusted_peers.json"
+    },
+    "consensusState": {
+      "path": "{{ env "NOMAD_TASK_DIR" }}/waspdb/chains/consensus"
     }
   },
   "peering": {
@@ -72,10 +75,6 @@ variable "wasp_config" {
   "profiling": {
     "enabled": false,
     "bindAddress": "{{ env "NOMAD_ADDR_profiling" }}"
-  },
-  "wal": {
-    "enabled": true,
-    "directory": "{{ env "NOMAD_TASK_DIR" }}/waspdb/wal"
   },
   "prometheus": {
     "enabled": true,

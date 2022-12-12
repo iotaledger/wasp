@@ -22,6 +22,7 @@ type DKShareRegistryProvider interface {
 }
 
 type ChainRecordRegistryProvider interface {
+	Events() *ChainRecordRegistryEvents
 	ChainRecord(chainID isc.ChainID) (*ChainRecord, error)
 	ChainRecords() ([]*ChainRecord, error)
 	ForEachActiveChainRecord(consumer func(*ChainRecord) bool) error

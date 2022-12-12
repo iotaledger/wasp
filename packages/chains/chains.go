@@ -51,7 +51,8 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateCmtLog        cmtLog.Store
+	consensusStateRegistry      cmtLog.ConsensusStateRegistry
+	chainListener               chain.ChainListener
 
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
@@ -76,7 +77,8 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateCmtLog cmtLog.Store,
+	consensusStateRegistry cmtLog.ConsensusStateRegistry,
+	chainListener chain.ChainListener,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -93,7 +95,8 @@ func New(
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
-		consensusStateCmtLog:             consensusStateCmtLog,
+		chainListener:                    chainListener,
+		consensusStateRegistry:           consensusStateRegistry,
 	}
 	return ret
 }
@@ -185,8 +188,9 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
 		c.dkShareRegistryProvider,
-		c.consensusStateCmtLog,
+		c.consensusStateRegistry,
 		chainWAL,
+		c.chainListener,
 		c.networkProvider,
 		c.log,
 	)
