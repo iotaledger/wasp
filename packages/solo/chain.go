@@ -620,13 +620,8 @@ func (ch *Chain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 	return ch.ResolveVMError(e), nil
 }
 
-// Dismiss implements chain.Chain
-func (*Chain) Dismiss(reason string) {
-	panic("unimplemented")
-}
-
-// IsDismissed implements chain.Chain
-func (*Chain) IsDismissed() bool {
+// ConfigUpdated implements chain.Chain
+func (*Chain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
