@@ -69,6 +69,10 @@ type ChainRequests interface {
 type Chain interface {
 	ChainCore
 	ChainRequests
+	// This is invoked when a node owner updates the chain configuration,
+	// possibly to update the per-node accessNode list.
+	ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKey)
+	// Metrics and the current descriptive state.
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
 	GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
@@ -143,6 +147,7 @@ type chainNodeImpl struct {
 	consRecoverPipe     pipe.Pipe
 	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
 	procCache           *processors.Cache                           // Cache for the SC processors.
+	configUpdatedCh     chan *configUpdate
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -189,6 +194,11 @@ type txPublished struct {
 	confirmed       bool
 }
 
+// Represents config update event locally on this node.
+type configUpdate struct {
+	accessNodes []*cryptolib.PublicKey
+}
+
 var _ Chain = &chainNodeImpl{}
 
 func New(
@@ -226,6 +236,7 @@ func New(
 		consRecoverPipe:        pipe.NewDefaultInfinitePipe(),
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
+		configUpdatedCh:        make(chan *configUpdate, 1),
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -242,7 +253,7 @@ func New(
 		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-	cni.updateActiveAccessNodes()
+	cni.deriveActiveAccessNodes()
 	//
 	// Create sub-components.
 	chainMetrics := metrics.EmptyChainMetrics()
@@ -252,7 +263,7 @@ func New(
 		consensusStateRegistry,
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
-		cni.handleAccessNodesCB,
+		cni.handleAccessNodesOnChainUpdatedCB, // Access nodes updated on the governance contract.
 		cni.log.Named("CM"),
 	)
 	if err != nil {
@@ -337,6 +348,10 @@ func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID i
 	return cni.mempool.AwaitRequestProcessed(ctx, requestID)
 }
 
+func (cni *chainNodeImpl) ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKey) {
+	cni.configUpdatedCh <- &configUpdate{accessNodes: accessNodesPerNode}
+}
+
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
@@ -381,6 +396,11 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				continue
 			}
 			cni.handleConsensusRecover(ctx, recv.(*consRecover))
+		case cfg, ok := <-cni.configUpdatedCh:
+			if !ok {
+				cni.configUpdatedCh = nil
+			}
+			cni.handleAccessNodesConfigUpdated(cfg.accessNodes)
 		case <-ctx.Done():
 			cni.net.Detach(netAttachID)
 			return
@@ -389,16 +409,16 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 }
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
-func (cni *chainNodeImpl) handleAccessNodesCB(accessNodesFromChain []*cryptolib.PublicKey) {
-	cni.accessLock.Lock()
-	cni.accessNodesFromChain = accessNodesFromChain
-	cni.updateActiveAccessNodes()
-	activeAccessNodes := cni.activeAccessNodes
-	activeCommitteeNodes := cni.activeCommitteeNodes
-	cni.accessLock.Unlock()
-	cni.log.Infof("Access nodes updated fromChain=%+v, active=%+v", accessNodesFromChain, activeAccessNodes)
-	cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
-	cni.stateMgr.AccessNodesUpdated(activeAccessNodes)
+func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain []*cryptolib.PublicKey) {
+	cni.updateAccessNodes(func() {
+		cni.accessNodesFromChain = accessNodesFromChain
+	})
+}
+
+func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*cryptolib.PublicKey) {
+	cni.updateAccessNodes(func() {
+		cni.accessNodesFromNode = accessNodesFromNode
+	})
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
@@ -545,12 +565,10 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		cni.activeCommitteeDKShare = needConsensus.DKShare
 		cni.accessLock.Unlock()
 		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
-			cni.accessLock.Lock()
-			cni.activeCommitteeNodes = ci.committee
-			cni.updateActiveAccessNodes()
-			cni.accessLock.Unlock()
-			cni.log.Infof("Committee nodes updated: %+v", cni.activeCommitteeNodes)
-			cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, cni.activeAccessNodes)
+			cni.updateAccessNodes(func() {
+				cni.activeCommitteeNodes = ci.committee
+			})
+			cni.log.Infof("Committee nodes updated: %+v", ci.committee)
 		}
 	}
 }
@@ -643,7 +661,7 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 // activeAccessNodes = ∪{{Self}, accessNodesFromNode, accessNodesFromChain, activeCommitteeNodes}
-func (cni *chainNodeImpl) updateActiveAccessNodes() {
+func (cni *chainNodeImpl) deriveActiveAccessNodes() {
 	nodes := []*cryptolib.PublicKey{cni.nodeIdentity.GetPublicKey()}
 	index := map[cryptolib.PublicKeyKey]bool{nodes[0].AsKey(): true}
 	for _, k := range cni.accessNodesFromNode {
@@ -665,6 +683,21 @@ func (cni *chainNodeImpl) updateActiveAccessNodes() {
 		}
 	}
 	cni.activeAccessNodes = nodes
+}
+
+func (cni *chainNodeImpl) updateAccessNodes(update func()) {
+	cni.accessLock.Lock()
+	oldAccessNodes := cni.activeAccessNodes
+	update()
+	cni.deriveActiveAccessNodes()
+	activeAccessNodes := cni.activeAccessNodes
+	activeCommitteeNodes := cni.activeCommitteeNodes
+	cni.accessLock.Unlock()
+	if !util.Same(oldAccessNodes, activeAccessNodes) {
+		cni.log.Infof("Access nodes updated, active=%+v", activeAccessNodes)
+		cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
+		cni.stateMgr.AccessNodesUpdated(activeAccessNodes)
+	}
 }
 
 func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {

@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -109,6 +110,14 @@ func (c *Chains) Run(ctx context.Context) error {
 		return errors.New("chains already running")
 	}
 	c.ctx = ctx
+
+	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
+		c.mutex.Lock()
+		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
+			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+		}
+		defer c.mutex.Unlock()
+	}))
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
