@@ -65,6 +65,7 @@ func TestBasic(t *testing.T) {
 	}
 }
 
+//nolint:gocyclo
 func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable)

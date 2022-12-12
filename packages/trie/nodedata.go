@@ -86,7 +86,7 @@ func (n *nodeData) String() string {
 	}
 	childIdx := make([]byte, 0)
 	n.iterateChildren(func(i byte, _ Hash) bool {
-		childIdx = append(childIdx, byte(i))
+		childIdx = append(childIdx, i)
 		return true
 	})
 	return fmt.Sprintf("c:%s ext:%v childIdx:%v term:%s",
@@ -142,7 +142,7 @@ func (n *nodeData) Write(w io.Writer) error {
 	childrenFlags := cflags(0)
 	// compress children childrenFlags 32 bytes, if any
 	n.iterateChildren(func(i byte, _ Hash) bool {
-		childrenFlags.setFlag(byte(i))
+		childrenFlags.setFlag(i)
 		return true
 	})
 	if childrenFlags != 0 {
@@ -156,22 +156,22 @@ func (n *nodeData) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err = writeByte(w, smallFlags); err != nil {
+	if err := writeByte(w, smallFlags); err != nil {
 		return err
 	}
 	if smallFlags&isExtensionNodeFlag != 0 {
-		if err = writeBytes16(w, pathExtensionEncoded); err != nil {
+		if err := writeBytes16(w, pathExtensionEncoded); err != nil {
 			return err
 		}
 	}
 	if smallFlags&isTerminalNodeFlag != 0 {
-		if err = n.terminal.Write(w); err != nil {
+		if err := n.terminal.Write(w); err != nil {
 			return err
 		}
 	}
 	// write child commitments if any
 	if smallFlags&hasChildrenFlag != 0 {
-		if err = writeUint16(w, uint16(childrenFlags)); err != nil {
+		if err := writeUint16(w, uint16(childrenFlags)); err != nil {
 			return err
 		}
 		n.iterateChildren(func(_ byte, h Hash) bool {
@@ -208,7 +208,7 @@ func (n *nodeData) Read(r io.Reader) error {
 	n.terminal = nil
 	if smallFlags&isTerminalNodeFlag != 0 {
 		n.terminal = newTerminalCommitment()
-		if err = n.terminal.Read(r); err != nil {
+		if err := n.terminal.Read(r); err != nil {
 			return err
 		}
 	}
@@ -221,7 +221,7 @@ func (n *nodeData) Read(r io.Reader) error {
 			ib := uint8(i)
 			if flags.hasFlag(ib) {
 				n.children[ib] = &Hash{}
-				if err = n.children[ib].Read(r); err != nil {
+				if err := n.children[ib].Read(r); err != nil {
 					return err
 				}
 			}
@@ -259,9 +259,9 @@ func (n *nodeData) updateCommitment() {
 	})
 	if n.terminal != nil {
 		// squeeze terminal it into the hash size, if longer than hash size
-		hashes[terminalIndex], _ = compressToHashSize(n.terminal.Bytes())
+		hashes[terminalIndex] = compressToHashSize(n.terminal.Bytes())
 	}
-	pathExtensionCommitmentBytes, _ := compressToHashSize(n.pathExtension)
+	pathExtensionCommitmentBytes := compressToHashSize(n.pathExtension)
 	hashes[pathExtensionIndex] = pathExtensionCommitmentBytes
 	n.commitment = hashes.Hash()
 }

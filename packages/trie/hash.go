@@ -24,10 +24,9 @@ type Hash [HashSizeBytes]byte
 type hashVector [vectorLength][]byte
 
 // compressToHashSize hashes data if longer than hash size, otherwise copies it
-func compressToHashSize(data []byte) (ret []byte, valueInCommitment bool) {
+func compressToHashSize(data []byte) (ret []byte) {
 	if len(data) <= HashSizeBytes {
 		ret = make([]byte, len(data))
-		valueInCommitment = true
 		copy(ret, data)
 	} else {
 		hash := blake2b160(data)

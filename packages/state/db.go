@@ -88,14 +88,6 @@ func (db *storeDB) hasBlock(root trie.Hash) bool {
 	return db.mustHas(keyBlockByTrieRoot(root))
 }
 
-func (db *storeDB) addBlock(block Block) {
-	prev := block.PreviousL1Commitment()
-	if prev != nil && !db.mustHas(keyBlockByTrieRoot(prev.TrieRoot())) {
-		panic("cannot add block to store: previous block not found")
-	}
-	db.saveBlock(block)
-}
-
 func (db *storeDB) saveBlock(block Block) {
 	db.mustSet(keyBlockByTrieRoot(block.TrieRoot()), block.Bytes())
 }
