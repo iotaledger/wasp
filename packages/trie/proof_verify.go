@@ -75,7 +75,7 @@ func (p *MerkleProof) ValidateWithTerminal(rootBytes, terminalBytes []byte) erro
 		return err
 	}
 	_, terminalBytesInProof := p.MustKeyWithTerminal()
-	compressedTerm, _ := compressToHashSize(terminalBytes)
+	compressedTerm := compressToHashSize(terminalBytes)
 	if !bytes.Equal(compressedTerm, terminalBytesInProof) {
 		return errors.New("key does not correspond to the given value commitment")
 	}
@@ -83,8 +83,8 @@ func (p *MerkleProof) ValidateWithTerminal(rootBytes, terminalBytes []byte) erro
 }
 
 func (p *MerkleProof) verify(pathIdx, keyIdx int) (Hash, error) {
-	assert(pathIdx < len(p.Path), "assertion: pathIdx < lenPlus1(p.Path)")
-	assert(keyIdx <= len(p.Key), "assertion: keyIdx <= lenPlus1(p.Key)")
+	assertf(pathIdx < len(p.Path), "assertion: pathIdx < lenPlus1(p.Path)")
+	assertf(keyIdx <= len(p.Key), "assertion: keyIdx <= lenPlus1(p.Key)")
 
 	elem := p.Path[pathIdx]
 	tail := p.Key[keyIdx:]
@@ -94,7 +94,7 @@ func (p *MerkleProof) verify(pathIdx, keyIdx int) (Hash, error) {
 		return Hash{}, fmt.Errorf("wrong proof: proof path does not follow the key. Path position: %d, key position %d", pathIdx, keyIdx)
 	}
 	if !last {
-		assert(isPrefix, "assertion: isPrefix")
+		assertf(isPrefix, "assertion: isPrefix")
 		if !isValidChildIndex(elem.ChildIndex) {
 			return Hash{}, fmt.Errorf("wrong proof: wrong child index. Path position: %d, key position %d", pathIdx, keyIdx)
 		}
@@ -133,7 +133,7 @@ func (e *MerkleProofElement) makeHashVector(missingCommitment []byte) (*hashVect
 		if c == nil {
 			continue
 		}
-		if !isValidChildIndex(int(idx)) {
+		if !isValidChildIndex(idx) {
 			return nil, fmt.Errorf("wrong child index %d", idx)
 		}
 		if len(c) > HashSizeBytes {
@@ -147,8 +147,8 @@ func (e *MerkleProofElement) makeHashVector(missingCommitment []byte) (*hashVect
 		}
 		hashes[terminalIndex] = e.Terminal
 	}
-	rawBytes, _ := compressToHashSize(e.PathExtension)
-	hashes[pathExtensionIndex] = rawBytes
+
+	hashes[pathExtensionIndex] = compressToHashSize(e.PathExtension)
 	if isValidChildIndex(e.ChildIndex) {
 		if len(missingCommitment) > HashSizeBytes {
 			return nil, fmt.Errorf(errTooLongCommitment+" (skipped commitment)", e.ChildIndex, HashSizeBytes)
@@ -167,6 +167,6 @@ func (e *MerkleProofElement) hash(missingCommitment []byte) (Hash, error) {
 }
 
 func (p *MerkleProof) ValidateValue(trieRoot Hash, value []byte) error {
-	tc := CommitToData(value)
+	tc := commitToData(value)
 	return p.ValidateWithTerminal(trieRoot.Bytes(), tc.Bytes())
 }

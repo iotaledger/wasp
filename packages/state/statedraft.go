@@ -67,6 +67,6 @@ func (s *stateDraft) BaseL1Commitment() *L1Commitment {
 	return s.baseL1Commitment
 }
 
-func (d *stateDraft) PreviousL1Commitment() *L1Commitment {
-	return loadPrevL1CommitmentFromState(d)
+func (s *stateDraft) PreviousL1Commitment() *L1Commitment {
+	return loadPrevL1CommitmentFromState(s)
 }

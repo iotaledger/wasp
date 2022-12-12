@@ -62,7 +62,7 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*nodeData, bool) {
 		return nil, false
 	}
 	ret, err := nodeDataFromBytes(nodeBin)
-	assert(err == nil, "NodeStore::FetchNodeData err: '%v' nodeBin: '%s', commitment: %s",
+	assertf(err == nil, "NodeStore::FetchNodeData err: '%v' nodeBin: '%s', commitment: %s",
 		err, hex.EncodeToString(nodeBin), nodeCommitment)
 	ret.commitment = nodeCommitment
 	return ret, true
@@ -70,7 +70,7 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*nodeData, bool) {
 
 func (ns *nodeStore) MustFetchNodeData(nodeCommitment Hash) *nodeData {
 	ret, ok := ns.FetchNodeData(nodeCommitment)
-	assert(ok, "NodeStore::MustFetchNodeData: cannot find node data: commitment: '%s'", nodeCommitment.String())
+	assertf(ok, "NodeStore::MustFetchNodeData: cannot find node data: commitment: '%s'", nodeCommitment.String())
 	return ret
 }
 
@@ -82,7 +82,7 @@ func (ns *nodeStore) FetchChild(n *nodeData, childIdx byte, trieKey []byte) (*no
 	childTriePath := concat(trieKey, n.pathExtension, []byte{childIdx})
 
 	ret, ok := ns.FetchNodeData(*c)
-	assert(ok, "immutable::FetchChild: failed to fetch node. trieKey: '%s', childIndex: %d",
+	assertf(ok, "immutable::FetchChild: failed to fetch node. trieKey: '%s', childIndex: %d",
 		hex.EncodeToString(trieKey), childIdx)
 	return ret, childTriePath
 }

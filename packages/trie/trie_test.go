@@ -227,7 +227,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 	uncommitted := false
 	var ret Hash
 	for _, cmd := range scenario {
-		if len(cmd) == 0 {
+		if cmd == "" {
 			continue
 		}
 		if cmd == "*" {
@@ -241,7 +241,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 		var key, value []byte
 		before, after, found := strings.Cut(cmd, "/")
 		if found {
-			if len(before) == 0 {
+			if before == "" {
 				continue // key must not be empty
 			}
 			key = []byte(before)
@@ -285,9 +285,8 @@ func checkResult(t *testing.T, trie *TrieUpdatable, checklist map[string]string)
 				fmt.Printf("NOT FOUND '%s' (expected '%s')\n", key, func() string {
 					if len(expectedValue) > 0 {
 						return "FOUND"
-					} else {
-						return "NOT FOUND"
 					}
+					return "NOT FOUND"
 				}())
 			}
 		}
@@ -543,7 +542,7 @@ func TestDeletePrefix(t *testing.T) {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}
 				require.NotEmpty(t, k)
-				if deleted && len(prefix) != 0 {
+				if deleted && prefix != "" {
 					require.False(t, strings.HasPrefix(string(k), prefix))
 				}
 				return true

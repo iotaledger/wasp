@@ -12,17 +12,19 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 )
 
+// TODO: fix MockedNodeConn (do we need the commented code?)
 type MockedNodeConn struct {
-	log                                    *logger.Logger
-	ledgers                                *MockedLedgers
-	id                                     string
-	publishTransactionAllowedFun           func(chainID isc.ChainID, tx *iotago.Transaction) bool
-	publishGovernanceTransactionAllowedFun func(chainID isc.ChainID, tx *iotago.Transaction) bool
-	pullLatestOutputAllowed                bool
-	pullTxInclusionStateAllowedFun         func(chainID isc.ChainID, txID iotago.TransactionID) bool
-	pullOutputByIDAllowedFun               func(chainID isc.ChainID, outputID iotago.OutputID) bool
-	stopChannel                            chan bool
-	attachMilestonesClosures               map[isc.ChainID]*events.Closure
+	log                          *logger.Logger
+	ledgers                      *MockedLedgers
+	id                           string
+	publishTransactionAllowedFun func(chainID isc.ChainID, tx *iotago.Transaction) bool
+	//
+	//publishGovernanceTransactionAllowedFun func(chainID isc.ChainID, tx *iotago.Transaction) bool
+	//pullLatestOutputAllowed                bool
+	//pullTxInclusionStateAllowedFun         func(chainID isc.ChainID, txID iotago.TransactionID) bool
+	//pullOutputByIDAllowedFun               func(chainID isc.ChainID, outputID iotago.OutputID) bool
+	stopChannel              chan bool
+	attachMilestonesClosures map[isc.ChainID]*events.Closure
 }
 
 var _ chain.NodeConnection = &MockedNodeConn{}

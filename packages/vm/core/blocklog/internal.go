@@ -322,14 +322,6 @@ func getBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, er
 	return ret, nil
 }
 
-func mustGetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) *BlockInfo {
-	blockInfo, err := getBlockInfo(partition, blockIndex)
-	if err != nil {
-		panic(xerrors.Errorf("mustGetBlockInfo: %w", err))
-	}
-	return blockInfo
-}
-
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
 	return collections.MapElemKey(prefixRequestReceipts, rkey.Bytes())
 }

@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"testing"
 
-	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -32,36 +30,6 @@ func concat(par ...[]byte) []byte {
 
 // ---------------------------------------------------------------------------
 // r/w utility functions
-
-func readBytes8(r io.Reader) ([]byte, error) {
-	length, err := readByte(r)
-	if err != nil {
-		return nil, err
-	}
-	if length == 0 {
-		return []byte{}, nil
-	}
-	ret := make([]byte, length)
-	_, err = r.Read(ret)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func writeBytes8(w io.Writer, data []byte) error {
-	if len(data) > 256 {
-		panic(fmt.Sprintf("WriteBytes8: too long data (%v)", len(data)))
-	}
-	err := writeByte(w, byte(len(data)))
-	if err != nil {
-		return err
-	}
-	if len(data) != 0 {
-		_, err = w.Write(data)
-	}
-	return err
-}
 
 func readBytes16(r io.Reader) ([]byte, error) {
 	var length uint16
@@ -204,39 +172,12 @@ func blake2b160(data []byte) (ret [HashSizeBytes]byte) {
 	return
 }
 
-func catchPanicOrError(f func() error) error {
-	var err error
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				return
-			}
-			var ok bool
-			if err, ok = r.(error); !ok {
-				err = fmt.Errorf("%v", r)
-			}
-		}()
-		err = f()
-	}()
-	return err
-}
-
-func requireErrorWith(t *testing.T, err error, s string) {
-	require.Error(t, err)
-	require.Contains(t, err.Error(), s)
-}
-
-func requirePanicOrErrorWith(t *testing.T, f func() error, s string) {
-	requireErrorWith(t, catchPanicOrError(f), s)
-}
-
-func assert(cond bool, format string, args ...interface{}) {
+func assertf(cond bool, format string, args ...interface{}) {
 	if !cond {
 		panic(fmt.Sprintf("assertion failed:: "+format, args...))
 	}
 }
 
 func assertNoError(err error) {
-	assert(err == nil, "error: %v", err)
+	assertf(err == nil, "error: %v", err)
 }

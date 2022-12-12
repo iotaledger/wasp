@@ -201,6 +201,7 @@ type configUpdate struct {
 
 var _ Chain = &chainNodeImpl{}
 
+//nolint:funlen
 func New(
 	ctx context.Context,
 	chainID isc.ChainID,
@@ -352,6 +353,7 @@ func (cni *chainNodeImpl) ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKe
 	cni.configUpdatedCh <- &configUpdate{accessNodes: accessNodesPerNode}
 }
 
+//nolint:gocyclo
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()

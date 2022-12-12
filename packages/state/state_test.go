@@ -225,7 +225,7 @@ func TestProof(t *testing.T) {
 			v := cs.LatestState().MustGet(kv.Key(k))
 			require.NotEmpty(t, v)
 
-			proof := cs.LatestState().GetMerkleProof([]byte(k))
+			proof := cs.LatestState().GetMerkleProof(k)
 			require.False(t, proof.IsProofOfAbsence())
 			err := proof.ValidateValue(cs.LatestBlock().TrieRoot(), v)
 			require.NoError(t, err)
