@@ -112,11 +112,11 @@ func (c *Chains) Run(ctx context.Context) error {
 	c.ctx = ctx
 
 	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
-		c.mutex.Lock()
+		c.mutex.RLock()
+		defer c.mutex.RUnlock()
 		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
 			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
 		}
-		defer c.mutex.Unlock()
 	}))
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
