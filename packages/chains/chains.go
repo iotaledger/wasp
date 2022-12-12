@@ -191,6 +191,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.consensusStateRegistry,
 		chainWAL,
 		c.chainListener,
+		chainRecord.AccessNodes,
 		c.networkProvider,
 		c.log,
 	)

@@ -14,8 +14,6 @@
 // This object interacts with:
 //   - NodeConn.
 //   - Administrative functions.
-//
-// TODO: Ensure access nodes contain the committee nodes.
 package chain
 
 import (
@@ -151,7 +149,9 @@ type chainNodeImpl struct {
 	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
 	activeCommitteeDKShare tcrypto.DKShare        // DKShare of the current active committee.
 	activeCommitteeNodes   []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
-	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (for the ActiveAO).
+	activeAccessNodes      []*cryptolib.PublicKey // All the nodes authorized for being access nodes (∪{{Self}, accessNodesFromNode, accessNodesFromChain, activeCommitteeNodes}).
+	accessNodesFromNode    []*cryptolib.PublicKey // Access nodes, as configured locally by a user in this node.
+	accessNodesFromChain   []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the ActiveAO).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
 	//
@@ -202,11 +202,15 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	blockWAL smGPAUtils.BlockWAL,
 	listener ChainListener,
+	accessNodesForNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (Chain, error) {
 	if listener == nil {
 		listener = NewEmptyChainListener()
+	}
+	if accessNodesForNode == nil {
+		accessNodesForNode = []*cryptolib.PublicKey{}
 	}
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
@@ -226,7 +230,9 @@ func New(
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
-		activeAccessNodes:      []*cryptolib.PublicKey{},
+		activeAccessNodes:      nil,                // updated bellow.
+		accessNodesFromNode:    accessNodesForNode, // TODO: Update it on event.
+		accessNodesFromChain:   []*cryptolib.PublicKey{},
 		latestConfirmedAO:      nil,
 		latestActiveAO:         nil,
 		netRecvPipe:            pipe.NewDefaultInfinitePipe(),
@@ -236,6 +242,7 @@ func New(
 		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
+	cni.updateActiveAccessNodes()
 	//
 	// Create sub-components.
 	chainMetrics := metrics.EmptyChainMetrics()
@@ -382,14 +389,16 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 }
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
-func (cni *chainNodeImpl) handleAccessNodesCB(accessNodes []*cryptolib.PublicKey) {
+func (cni *chainNodeImpl) handleAccessNodesCB(accessNodesFromChain []*cryptolib.PublicKey) {
 	cni.accessLock.Lock()
-	cni.activeAccessNodes = accessNodes
+	cni.accessNodesFromChain = accessNodesFromChain
+	cni.updateActiveAccessNodes()
+	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()
-	cni.log.Infof("Access nodes updated: %+v", accessNodes)
-	cni.mempool.AccessNodesUpdated(activeCommitteeNodes, accessNodes)
-	cni.stateMgr.AccessNodesUpdated(accessNodes)
+	cni.log.Infof("Access nodes updated fromChain=%+v, active=%+v", accessNodesFromChain, activeAccessNodes)
+	cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
+	cni.stateMgr.AccessNodesUpdated(activeAccessNodes)
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
@@ -538,6 +547,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 		if !util.Same(ci.committee, cni.activeCommitteeNodes) {
 			cni.accessLock.Lock()
 			cni.activeCommitteeNodes = ci.committee
+			cni.updateActiveAccessNodes()
 			cni.accessLock.Unlock()
 			cni.log.Infof("Committee nodes updated: %+v", cni.activeCommitteeNodes)
 			cni.mempool.AccessNodesUpdated(cni.activeCommitteeNodes, cni.activeAccessNodes)
@@ -630,6 +640,31 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 		}
 		cni.net.SendMsgByPubKey(cni.netPeerPubs[m.Recipient()], pm)
 	})
+}
+
+// activeAccessNodes = ∪{{Self}, accessNodesFromNode, accessNodesFromChain, activeCommitteeNodes}
+func (cni *chainNodeImpl) updateActiveAccessNodes() {
+	nodes := []*cryptolib.PublicKey{cni.nodeIdentity.GetPublicKey()}
+	index := map[cryptolib.PublicKeyKey]bool{nodes[0].AsKey(): true}
+	for _, k := range cni.accessNodesFromNode {
+		if _, ok := index[k.AsKey()]; !ok {
+			index[k.AsKey()] = true
+			nodes = append(nodes, k)
+		}
+	}
+	for _, k := range cni.accessNodesFromChain {
+		if _, ok := index[k.AsKey()]; !ok {
+			index[k.AsKey()] = true
+			nodes = append(nodes, k)
+		}
+	}
+	for _, k := range cni.activeCommitteeNodes {
+		if _, ok := index[k.AsKey()]; !ok {
+			index[k.AsKey()] = true
+			nodes = append(nodes, k)
+		}
+	}
+	cni.activeAccessNodes = nodes
 }
 
 func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
