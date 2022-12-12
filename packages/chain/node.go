@@ -331,7 +331,6 @@ func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID i
 }
 
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
-	ctxDone := ctx.Done()
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -375,7 +374,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				continue
 			}
 			cni.handleConsensusRecover(ctx, recv.(*consRecover))
-		case <-ctxDone:
+		case <-ctx.Done():
 			cni.net.Detach(netAttachID)
 			return
 		}

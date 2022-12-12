@@ -313,7 +313,6 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 	debugTicker := time.NewTicker(distShareDebugTick)
 	timeTicker := time.NewTicker(distShareTimeTick)
 	rePublishTicker := time.NewTicker(distShareRePublishTick)
-	ctxDone := ctx.Done()
 	for {
 		select {
 		case recv, ok := <-accessNodesUpdatedPipeOutCh:
@@ -376,7 +375,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 			mpi.handleDistSyncTimeTick()
 		case <-rePublishTicker.C:
 			mpi.handleRePublishTimeTick()
-		case <-ctxDone:
+		case <-ctx.Done():
 			// mpi.accessNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
 			// mpi.reqConsensusProposalsPipe.Close()
 			// mpi.reqConsensusRequestsPipe.Close()

@@ -59,12 +59,15 @@ func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block) {
 // This is called by the component to run this.
 func (p *Publisher) Run(ctx context.Context) {
 	blockAppliedPipeOutCh := p.blockAppliedPipe.Out()
-	ctxDone := ctx.Done()
 	for {
 		select {
-		case blockAppliedUntyped := <-blockAppliedPipeOutCh:
+		case blockAppliedUntyped, ok := <-blockAppliedPipeOutCh:
+			if !ok {
+				blockAppliedPipeOutCh = nil
+				continue
+			}
 			p.handleBlockApplied(blockAppliedUntyped.(*publisherBlockApplied))
-		case <-ctxDone:
+		case <-ctx.Done():
 			return
 		}
 	}
