@@ -390,6 +390,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			testutil.NewConsensusStateRegistry(),
 			smGPAUtils.NewMockedBlockWAL(),
 			chain.NewEmptyChainListener(),
+			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 		)

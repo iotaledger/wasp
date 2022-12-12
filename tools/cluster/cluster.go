@@ -433,6 +433,7 @@ func (clu *Cluster) Start(dataPath string) error {
 }
 
 func (clu *Cluster) start() error {
+	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
 	initOk := make(chan bool, len(clu.Config.Wasp))
@@ -451,7 +452,7 @@ func (clu *Cluster) start() error {
 			return xerrors.Errorf("Timeout starting wasp nodes\n")
 		}
 	}
-	fmt.Printf("[cluster] started %d Wasp nodes\n", len(clu.Config.Wasp))
+	fmt.Printf("[cluster] started %d Wasp nodes in %v\n", len(clu.Config.Wasp), time.Since(start))
 	return nil
 }
 
