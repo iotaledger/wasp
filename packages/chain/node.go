@@ -63,10 +63,6 @@ const (
 	msgTypeChainMgr byte = iota
 )
 
-type ChainEventListener interface {
-	BlockProduced() // TODO: Add callbacks for the publisher.
-}
-
 type ChainRequests interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
 	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
@@ -151,6 +147,7 @@ type chainNodeImpl struct {
 	procCache           *processors.Cache                           // Cache for the SC processors.
 	//
 	// Information for other components.
+	listener               ChainListener          // Object expecting event notifications.
 	accessLock             *sync.RWMutex          // Mutex for accessing informative fields from other threads.
 	activeCommitteeDKShare tcrypto.DKShare        // DKShare of the current active committee.
 	activeCommitteeNodes   []*cryptolib.PublicKey // The nodes acting as a committee for the latest consensus.
@@ -204,9 +201,13 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	blockWAL smGPAUtils.BlockWAL,
+	listener ChainListener,
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (Chain, error) {
+	if listener == nil {
+		listener = NewEmptyChainListener()
+	}
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
 		nodeIdentity:           nodeIdentity,
@@ -221,6 +222,7 @@ func New(
 		consRecoverPipe:        pipe.NewDefaultInfinitePipe(),
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
+		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
@@ -271,6 +273,7 @@ func New(
 		net,
 		log.Named("MP"),
 		chainMetrics,
+		cni.listener,
 	)
 	cni.chainMgr = chainMgr
 	cni.stateMgr = stateMgr
@@ -328,7 +331,6 @@ func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID i
 }
 
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
-	ctxDone := ctx.Done()
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -372,7 +374,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				continue
 			}
 			cni.handleConsensusRecover(ctx, recv.(*consRecover))
-		case <-ctxDone:
+		case <-ctx.Done():
 			cni.net.Detach(netAttachID)
 			return
 		}

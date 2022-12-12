@@ -12,6 +12,7 @@ const (
 	PriorityWebAPI
 	PriorityDBGarbageCollection
 	PriorityPrometheus
+	PriorityPublisher
 	PriorityNanoMsg
 	PriorityDashboard
 )

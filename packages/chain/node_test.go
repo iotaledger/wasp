@@ -389,6 +389,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			smGPAUtils.NewMockedBlockWAL(),
+			chain.NewEmptyChainListener(),
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 		)

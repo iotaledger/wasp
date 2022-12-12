@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/core/nodeconn"
 	"github.com/iotaledger/wasp/core/peering"
 	"github.com/iotaledger/wasp/core/processors"
+	"github.com/iotaledger/wasp/core/publisher"
 	"github.com/iotaledger/wasp/core/registry"
 	"github.com/iotaledger/wasp/core/users"
 	"github.com/iotaledger/wasp/core/wasmtimevm"
@@ -42,6 +43,7 @@ func App() *app.App {
 			processors.CoreComponent,
 			wasmtimevm.CoreComponent,
 			chains.CoreComponent,
+			publisher.CoreComponent,
 		}...),
 		app.WithPlugins([]*app.Plugin{
 			profiling.Plugin,
