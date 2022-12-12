@@ -36,7 +36,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 		controller.RegisterPublic(publicGroup, mocker)
 
 		adminGroup := server.Group(controller.Name(), "v2/").
-			SetSecurity("JWT")
+			SetSecurity("Authorization")
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
