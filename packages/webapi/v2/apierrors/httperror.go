@@ -1,24 +1,32 @@
 package apierrors
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/labstack/echo/v4"
+)
 
 type HTTPErrorResult struct {
-	Message string
+	Message interface{}
 	Error   error
 }
 
 type HTTPError struct {
 	HTTPCode        int
-	Message         string
+	Message         interface{}
 	AdditionalError error
 }
 
-func NewHTTPError(httpCode int, message string, err error) *HTTPError {
+func NewHTTPError(httpCode int, message interface{}, err error) *HTTPError {
 	return &HTTPError{
 		HTTPCode:        httpCode,
 		Message:         message,
 		AdditionalError: err,
 	}
+}
+
+func HTTPErrorFromEchoError(httpError *echo.HTTPError) *HTTPError {
+	return NewHTTPError(httpError.Code, httpError.Message, httpError.Internal)
 }
 
 func (he *HTTPError) Error() string {
