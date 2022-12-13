@@ -29,13 +29,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
 
+// Env is a testing environment for the EVM JSON-RPC support, allowing to run the same tests
+// with both Solo and cluster backends.
 type Env struct {
-	T               *testing.T
-	Client          *ethclient.Client
-	RawClient       *rpc.Client
-	ChainID         uint16
-	accountManager  *jsonrpc.AccountManager
-	WaitTxConfirmed func(common.Hash) error
+	T                     *testing.T
+	Client                *ethclient.Client
+	RawClient             *rpc.Client
+	ChainID               uint16
+	accountManager        *jsonrpc.AccountManager
+	WaitTxConfirmed       func(common.Hash) error
+	NewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
 }
 
 func (e *Env) Signer() types.Signer {
@@ -211,10 +214,14 @@ func (e *Env) UncleCountByBlockNumber(blockNumber *big.Int) uint {
 	return uint(res)
 }
 
-func (e *Env) Balance(address common.Address) *big.Int {
-	bal, err := e.Client.BalanceAt(context.Background(), address, nil)
+func (e *Env) BalanceAt(address common.Address, blockNumber *big.Int) *big.Int {
+	bal, err := e.Client.BalanceAt(context.Background(), address, blockNumber)
 	require.NoError(e.T, err)
 	return bal
+}
+
+func (e *Env) Balance(address common.Address) *big.Int {
+	return e.BalanceAt(address, nil)
 }
 
 func (e *Env) Code(address common.Address) []byte {
@@ -278,10 +285,8 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	return logs
 }
 
-type FuncNewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
-
-func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
-	creator, creatorAddress := newAccountWithL2Funds()
+func (e *Env) TestRPCGetLogs() {
+	creator, creatorAddress := e.NewAccountWithL2Funds()
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(e.T, err)
 	contractAddress := crypto.CreateAddress(creatorAddress, e.NonceAt(creatorAddress))
@@ -297,7 +302,7 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 
 	require.Equal(e.T, 1, len(e.getLogs(filterQuery)))
 
-	_, recipientAddress := newAccountWithL2Funds()
+	_, recipientAddress := e.NewAccountWithL2Funds()
 	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
 	require.NoError(e.T, err)
 	value := big.NewInt(0)
@@ -318,9 +323,9 @@ func (e *Env) TestRPCGetLogs(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
 
-func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
-	from, fromAddress := newAccountWithL2Funds()
-	_, toAddress := newAccountWithL2Funds()
+func (e *Env) TestRPCInvalidNonce() {
+	from, fromAddress := e.NewAccountWithL2Funds()
+	_, toAddress := e.NewAccountWithL2Funds()
 	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress) + 1
 	gasLimit := params.TxGas
@@ -338,9 +343,9 @@ func (e *Env) TestRPCInvalidNonce(newAccountWithL2Funds FuncNewAccountWithL2Fund
 	require.False(e.T, ok)
 }
 
-func (e *Env) TestRPCGasLimitTooLow(newAccountWithL2Funds FuncNewAccountWithL2Funds) {
-	from, fromAddress := newAccountWithL2Funds()
-	_, toAddress := newAccountWithL2Funds()
+func (e *Env) TestRPCGasLimitTooLow() {
+	from, fromAddress := e.NewAccountWithL2Funds()
+	_, toAddress := e.NewAccountWithL2Funds()
 	value := big.NewInt(0)
 	nonce := e.NonceAt(fromAddress)
 	gasLimit := uint64(1) // lower than intrinsic gas
@@ -362,4 +367,24 @@ func (e *Env) TestGasPrice() {
 	gasPrice, err := e.Client.SuggestGasPrice(context.Background())
 	require.NoError(e.T, err)
 	require.NotZero(e.T, gasPrice.Uint64())
+}
+
+func (e *Env) TestRPCAccessHistoricalState() {
+	firstBlockNumber := e.BlockNumber()
+
+	var addrs []common.Address
+
+	for i := 0; i < 10; i++ {
+		_, addr := e.NewAccountWithL2Funds()
+		addrs = append(addrs, addr)
+	}
+
+	require.Equal(e.T, firstBlockNumber+uint64(len(addrs)), e.BlockNumber())
+
+	for i := 0; i < len(addrs); i++ {
+		addr := addrs[i]
+		n := firstBlockNumber + uint64(i)
+		require.Zero(e.T, e.BalanceAt(addr, new(big.Int).SetUint64(n)).Uint64())
+		require.NotZero(e.T, e.BalanceAt(addr, new(big.Int).SetUint64(n+1)).Uint64())
+	}
 }
