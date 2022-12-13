@@ -34,7 +34,7 @@ export class WaspClient {
     public postOffLedgerRequest(chainID: wasmlib.ScChainID, signed: OffLedgerRequest): Error {
         this.Err = null;
         const url = this.baseURL + '/chain/' + chainID.toString() + '/request';
-        const request = Base64.encode(wasmlib.bytesToUint8Array(signed.bytes()));
+        const request = Base64.encode(signed.bytes());
         const response = new SyncRequestClient().post(url, request);
         return null;
     }

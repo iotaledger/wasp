@@ -37,7 +37,7 @@ const waspConfig = `
     "chainState": {
       "path": "waspdb/chains/data"
     },
-    "debugSkipHealthCheck": true
+    "debugSkipHealthCheck": false
   },
   "p2p": {
     "identity": {
