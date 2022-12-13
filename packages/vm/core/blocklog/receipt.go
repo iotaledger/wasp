@@ -78,6 +78,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 			respErr = xerrors.Errorf("cannot deserialize requestReceipt: %w", err)
 			return true
 		}
+		receipt = receipt.WithBlockData(receipt.BlockIndex, 0) // TODO: Better approach for setting these fields?
 		receipts = append(receipts, receipt)
 		return true
 	})

@@ -63,7 +63,7 @@ const (
 
 type ChainRequests interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
-	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
+	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt
 }
 
 type Chain interface {
@@ -148,6 +148,7 @@ type chainNodeImpl struct {
 	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
 	procCache           *processors.Cache                           // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
+	waitConfirmed       WaitConfirmed
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -238,6 +239,7 @@ func New(
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
 		configUpdatedCh:        make(chan *configUpdate, 1),
+		waitConfirmed:          NewWaitConfirmed(),
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
@@ -345,8 +347,25 @@ func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, 
 	cni.mempool.ReceiveOffLedgerRequest(request)
 }
 
-func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
-	return cni.mempool.AwaitRequestProcessed(ctx, requestID)
+func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
+	responseCh := cni.mempool.AwaitRequestProcessed(ctx, requestID)
+	if !confirmed {
+		return responseCh
+	}
+	wrappedResponseCh := make(chan *blocklog.RequestReceipt, 1)
+	go func() {
+		select {
+		case resp, ok := <-responseCh:
+			if !ok {
+				close(wrappedResponseCh)
+				return
+			}
+			cni.waitConfirmed.AwaitUntilConfirmed(ctx, resp, wrappedResponseCh)
+		case <-ctx.Done():
+			close(wrappedResponseCh)
+		}
+	}()
+	return wrappedResponseCh
 }
 
 func (cni *chainNodeImpl) ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKey) {
@@ -436,6 +455,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+	cni.waitConfirmed.StateIndexConfirmed(aliasOutput.GetStateIndex())
 	outMsgs := cni.chainMgr.AsGPA().Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
 	)
