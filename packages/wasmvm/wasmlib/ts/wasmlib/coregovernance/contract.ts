@@ -9,7 +9,7 @@ import * as wasmlib from "../index";
 import * as sc from "./index";
 
 export class AddAllowedStateControllerAddressCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableAddAllowedStateControllerAddressParams = new sc.MutableAddAllowedStateControllerAddressParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -18,7 +18,7 @@ export class AddAllowedStateControllerAddressCall {
 }
 
 export class AddCandidateNodeCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableAddCandidateNodeParams = new sc.MutableAddCandidateNodeParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -27,7 +27,7 @@ export class AddCandidateNodeCall {
 }
 
 export class ChangeAccessNodesCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableChangeAccessNodesParams = new sc.MutableChangeAccessNodesParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -44,7 +44,7 @@ export class ClaimChainOwnershipCall {
 }
 
 export class DelegateChainOwnershipCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableDelegateChainOwnershipParams = new sc.MutableDelegateChainOwnershipParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -53,7 +53,7 @@ export class DelegateChainOwnershipCall {
 }
 
 export class RemoveAllowedStateControllerAddressCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableRemoveAllowedStateControllerAddressParams = new sc.MutableRemoveAllowedStateControllerAddressParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -62,7 +62,7 @@ export class RemoveAllowedStateControllerAddressCall {
 }
 
 export class RevokeAccessNodeCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableRevokeAccessNodeParams = new sc.MutableRevokeAccessNodeParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -71,7 +71,7 @@ export class RevokeAccessNodeCall {
 }
 
 export class RotateStateControllerCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableRotateStateControllerParams = new sc.MutableRotateStateControllerParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -80,7 +80,7 @@ export class RotateStateControllerCall {
 }
 
 export class SetChainInfoCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableSetChainInfoParams = new sc.MutableSetChainInfoParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -89,7 +89,7 @@ export class SetChainInfoCall {
 }
 
 export class SetFeePolicyCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableSetFeePolicyParams = new sc.MutableSetFeePolicyParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -98,7 +98,7 @@ export class SetFeePolicyCall {
 }
 
 export class GetAllowedStateControllerAddressesCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetAllowedStateControllerAddressesResults = new sc.ImmutableGetAllowedStateControllerAddressesResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -107,7 +107,7 @@ export class GetAllowedStateControllerAddressesCall {
 }
 
 export class GetChainInfoCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetChainInfoResults = new sc.ImmutableGetChainInfoResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -116,7 +116,7 @@ export class GetChainInfoCall {
 }
 
 export class GetChainNodesCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetChainNodesResults = new sc.ImmutableGetChainNodesResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -125,7 +125,7 @@ export class GetChainNodesCall {
 }
 
 export class GetChainOwnerCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetChainOwnerResults = new sc.ImmutableGetChainOwnerResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -134,7 +134,7 @@ export class GetChainOwnerCall {
 }
 
 export class GetFeePolicyCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetFeePolicyResults = new sc.ImmutableGetFeePolicyResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -143,7 +143,7 @@ export class GetFeePolicyCall {
 }
 
 export class GetMaxBlobSizeCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetMaxBlobSizeResults = new sc.ImmutableGetMaxBlobSizeResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {

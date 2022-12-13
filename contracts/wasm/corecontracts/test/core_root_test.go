@@ -90,7 +90,7 @@ func TestFindContract(t *testing.T) {
 	f.Params.Hname().SetValue(coreroot.HScName)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	require.Equal(t, []byte{0xff}, f.Results.ContractFound().Value())
+	require.True(t, f.Results.ContractFound().Value())
 	require.NotNil(t, f.Results.ContractRecData().Value())
 	rbin := f.Results.ContractRecData().Value()
 	record, err := root.ContractRecordFromBytes(rbin)

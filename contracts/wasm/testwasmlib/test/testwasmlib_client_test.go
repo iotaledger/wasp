@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 
@@ -42,6 +43,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
+	templates.WaspConfig = waspConfig
 	e := cluster_tests.SetupWithChain(t)
 	chainID := wasmtypes.ChainIDFromBytes(e.Chain.ChainID.Bytes())
 	wallet := cryptolib.NewKeyPair()
@@ -57,12 +59,12 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	// deploy the contract
-	wasm, err := os.ReadFile("../pkg/testwasmlib_bg.wasm")
-	require.NoError(t, err)
-
-	_, err = e.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
-	require.NoError(t, err)
+	//// deploy the contract
+	//wasm, err := os.ReadFile("../rs/testwasmlibwasm/pkg/testwasmlibwasm_bg.wasm")
+	//require.NoError(t, err)
+	//
+	//_, err = e.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
+	//require.NoError(t, err)
 
 	// we're testing against wasp-cluster, so defaults will do
 	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)

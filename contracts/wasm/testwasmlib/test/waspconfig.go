@@ -1,23 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package templates
+package test
 
-type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
-
-type WaspConfigParams struct {
-	APIPort                      int
-	DashboardPort                int
-	PeeringPort                  int
-	NanomsgPort                  int
-	L1INXAddress                 string
-	ProfilingPort                int
-	MetricsPort                  int
-	OffledgerBroadcastUpToNPeers int
-	OwnerAddress                 string
-}
-
-var WaspConfig = `
+const waspConfig = `
 {
   "app": {
     "checkForUpdates": true,
@@ -47,11 +33,11 @@ var WaspConfig = `
     "targetNetworkName": ""
   },
   "db": {
-    "engine": "rocksdb",
+    "engine": "mapdb",
     "chainState": {
       "path": "waspdb/chains/data"
     },
-    "debugSkipHealthCheck": false
+    "debugSkipHealthCheck": true
   },
   "p2p": {
     "identity": {

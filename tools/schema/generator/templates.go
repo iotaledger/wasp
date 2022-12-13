@@ -80,4 +80,28 @@ $#if init setInitFunc
 	"setInitFunc": `
 $#set initFunc Init
 `,
+	// *******************************
+	"alignCalculate": `
+$#set align $nil
+$#if events align1space
+$#if param align1space
+$#if result align2spaces
+$#set salign $align
+$#set align $nil
+$#if result align1space
+$#set falign $nil
+$#if salign alignSetFunc
+`,
+	// *******************************
+	"align1space": `
+$#set align $space
+`,
+	// *******************************
+	"align2spaces": `
+$#set align $space$space
+`,
+	// *******************************
+	"alignSetFunc": `
+$#set falign $salign$space
+`,
 }

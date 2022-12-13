@@ -22,17 +22,18 @@ $#each func FuncNameForCall
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit alignCalculate
 $#emit setupInitFunc
 
 pub struct $FuncName$+Call {
-    pub func: Sc$initFunc$Kind,
+    pub func:$falign Sc$initFunc$Kind,
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-    pub params: Mutable$FuncName$+Params,
+    pub params:$align Mutable$FuncName$+Params,
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `
@@ -51,7 +52,7 @@ $#if ptrs setPtrs noPtrs
 	// *******************************
 	"setPtrs": `
         let mut f = $FuncName$+Call {
-            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
+            func:$falign Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
 $#if param FuncNameParamsInit
 $#if result FuncNameResultsInit
         };
@@ -61,7 +62,7 @@ $#if result FuncNameResultsLink
 `,
 	// *******************************
 	"FuncNameParamsInit": `
-            params: Mutable$FuncName$+Params { proxy: Proxy::nil() },
+            params:$align Mutable$FuncName$+Params { proxy: Proxy::nil() },
 `,
 	// *******************************
 	"FuncNameResultsInit": `

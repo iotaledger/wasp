@@ -329,17 +329,17 @@ func ReadBoolByte(r io.Reader, cond *bool) error {
 	if err != nil {
 		return err
 	}
-	*cond = b[0] == 0xFF
-	if !*cond && b[0] != 0x00 {
+	if (b[0] & 0xfe) != 0x00 {
 		return errors.New("ReadBoolByte: unexpected value")
 	}
+	*cond = b[0] == 1
 	return nil
 }
 
 func WriteBoolByte(w io.Writer, cond bool) error {
 	var b [1]byte
 	if cond {
-		b[0] = 0xFF
+		b[0] = 1
 	}
 	_, err := w.Write(b[:])
 	return err
