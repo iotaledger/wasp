@@ -309,6 +309,14 @@ func New(
 	})
 	//
 	// Attach to the L1.
+	recvRequestCB := func(outputInfo *isc.OutputInfo) {
+		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
+		if err != nil {
+			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
+			return
+		}
+		cni.mempool.ReceiveOnLedgerRequest(req)
+	}
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
 		aliasOutput := outputInfo.AliasOutputWithID()
@@ -320,14 +328,6 @@ func New(
 		}
 
 		recvAliasOutputPipeInCh <- aliasOutput
-	}
-	recvRequestCB := func(outputInfo *isc.OutputInfo) {
-		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
-		if err != nil {
-			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
-			return
-		}
-		cni.mempool.ReceiveOnLedgerRequest(req)
 	}
 	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
 	recvMilestoneCB := func(timestamp time.Time) {
