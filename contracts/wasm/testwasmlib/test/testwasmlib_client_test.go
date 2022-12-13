@@ -59,12 +59,12 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	//// deploy the contract
-	//wasm, err := os.ReadFile("../rs/testwasmlibwasm/pkg/testwasmlibwasm_bg.wasm")
-	//require.NoError(t, err)
-	//
-	//_, err = e.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
-	//require.NoError(t, err)
+	// deploy the contract
+	wasm, err := os.ReadFile("../rs/testwasmlibwasm/pkg/testwasmlibwasm_bg.wasm")
+	require.NoError(t, err)
+
+	_, err = e.Chain.DeployWasmContract("testwasmlib", "Test WasmLib", wasm, nil)
+	require.NoError(t, err)
 
 	// we're testing against wasp-cluster, so defaults will do
 	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
