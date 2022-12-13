@@ -17,7 +17,7 @@ type gasFeePolicy struct {
 	ValidatorFeeShare uint8  `swagger:"desc(The validator fee share.)"`
 }
 
-type ChainInfoResponse struct {
+type GovChainInfoResponse struct {
 	ChainID         string       `swagger:"desc(ChainID (Bech32-encoded).)"`
 	ChainOwnerID    string       `swagger:"desc(The chain owner address (Bech32-encoded).)"`
 	Description     string       `swagger:"desc(The description of the chain.)"`
@@ -27,14 +27,14 @@ type ChainInfoResponse struct {
 	MaxEventsPerReq uint16       `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
-func MapChainInfoResponse(chainInfo *governance.ChainInfo) ChainInfoResponse {
+func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {
 	gasFeeTokenID := ""
 
 	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 
-	chainInfoResponse := ChainInfoResponse{
+	chainInfoResponse := GovChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
 		ChainOwnerID: chainInfo.ChainOwnerID.String(),
 		Description:  chainInfo.Description,
@@ -63,7 +63,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	chainInfoResponse := MapChainInfoResponse(chainInfo)
+	chainInfoResponse := MapGovChainInfoResponse(chainInfo)
 
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }

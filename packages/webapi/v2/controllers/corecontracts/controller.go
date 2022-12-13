@@ -145,7 +145,7 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 	api.GET("chains/:chainID/core/governance/chaininfo", c.getChainInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The chain info", mocker.Get(ChainInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "The chain info", mocker.Get(GovChainInfoResponse{}), nil).
 		SetOperationId("governanceGetChainInfo").
 		SetDescription("If you are using the common API functions, you most likely rather want to use '/chains/:chainID' to get information about a chain.").
 		SetSummary("Get the chain info")
