@@ -384,13 +384,10 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	exist0 := f.Results.Mapping().GetBool(tokenID0).Value()
-	assert.True(t, exist0)
-	exist1 := f.Results.Mapping().GetBool(tokenID1).Value()
-	assert.True(t, exist1)
+	assert.True(t, f.Results.Mapping().GetBytes(tokenID0).Exists())
+	assert.True(t, f.Results.Mapping().GetBytes(tokenID1).Exists())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	exist2 := f.Results.Mapping().GetBool(notExistTokenID).Value()
-	assert.False(t, exist2)
+	assert.False(t, f.Results.Mapping().GetBytes(notExistTokenID).Exists())
 }
 
 func TestFoundryOutput(t *testing.T) {
