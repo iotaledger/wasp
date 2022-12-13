@@ -337,12 +337,10 @@ func TestAccounts(t *testing.T) {
 	f := coreaccounts.ScFuncs.Accounts(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	exist0 := f.Results.AllAccounts().GetBool(user0.ScAgentID()).Value()
-	assert.True(t, exist0)
-	exist1 := f.Results.AllAccounts().GetBool(user1.ScAgentID()).Value()
-	assert.True(t, exist1)
-	exist2 := f.Results.AllAccounts().GetBool(ctx.NewSoloAgent().ScAgentID()).Value()
-	assert.False(t, exist2)
+	allAccounts := f.Results.AllAccounts()
+	assert.True(t, allAccounts.GetBytes(user0.ScAgentID()).Exists())
+	assert.True(t, allAccounts.GetBytes(user1.ScAgentID()).Exists())
+	assert.False(t, allAccounts.GetBytes(ctx.NewSoloAgent().ScAgentID()).Exists())
 }
 
 func TestGetAccountNonce(t *testing.T) {

@@ -6,7 +6,7 @@ package wasmtypes
 const (
 	ScBoolLength = 1
 	ScBoolFalse  = 0x00
-	ScBoolTrue   = 0xff
+	ScBoolTrue   = 0x01
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

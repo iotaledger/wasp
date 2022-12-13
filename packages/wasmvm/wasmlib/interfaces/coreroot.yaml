@@ -27,7 +27,7 @@ views:
     params:
       hname=hn: Hname
     results:
-      contractFound=cf: Bytes # encoded contract record
+      contractFound=cf: Bool
       contractRecData=dt: Bytes # encoded contract record
   getContractRecords:
     results:

@@ -9,7 +9,7 @@ use crate::*;
 
 pub const SC_BOOL_LENGTH: usize = 1;
 pub const SC_BOOL_FALSE: u8 = 0x00;
-pub const SC_BOOL_TRUE: u8 = 0xff;
+pub const SC_BOOL_TRUE: u8 = 0x01;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

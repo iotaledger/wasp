@@ -9,9 +9,8 @@ import * as wasmtypes from "../wasmtypes";
 import * as sc from "./index";
 
 export class ImmutableFindContractResults extends wasmtypes.ScProxy {
-    // encoded contract record
-    contractFound(): wasmtypes.ScImmutableBytes {
-        return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultContractFound));
+    contractFound(): wasmtypes.ScImmutableBool {
+        return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ResultContractFound));
     }
 
     // encoded contract record
@@ -21,9 +20,8 @@ export class ImmutableFindContractResults extends wasmtypes.ScProxy {
 }
 
 export class MutableFindContractResults extends wasmtypes.ScProxy {
-    // encoded contract record
-    contractFound(): wasmtypes.ScMutableBytes {
-        return new wasmtypes.ScMutableBytes(this.proxy.root(sc.ResultContractFound));
+    contractFound(): wasmtypes.ScMutableBool {
+        return new wasmtypes.ScMutableBool(this.proxy.root(sc.ResultContractFound));
     }
 
     // encoded contract record
