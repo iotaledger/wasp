@@ -5,23 +5,23 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 func (c *Controller) handleJSONRPC(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	return c.evmService.HandleJSONRPC(chainID, e.Request(), e.Response())
 }
 
 func (c *Controller) getRequestID(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	txHash := e.Param("txHash")

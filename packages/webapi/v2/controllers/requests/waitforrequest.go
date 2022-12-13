@@ -5,25 +5,23 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 )
 
 func (c *Controller) waitForRequestToFinish(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestID", err)
+		return err
 	}
 
-	receipt, vmError, err := c.chainService.WaitForRequestProcessed(chainID, requestID, 30*time.Second)
+	receipt, vmError, err := c.chainService.WaitForRequestProcessed(chainID, *requestID, 30*time.Second)
 	if err != nil {
 		return err
 	}

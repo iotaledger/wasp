@@ -5,10 +5,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,9 +20,9 @@ type BlobListResponse struct {
 }
 
 func (c *Controller) listBlobs(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	blobList, err := c.blob.ListBlobs(chainID)
@@ -52,19 +50,19 @@ type BlobValueResponse struct {
 }
 
 func (c *Controller) getBlobValue(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	blobHash, err := hashing.HashValueFromHex(e.Param("blobHash"))
+	blobHash, err := params.DecodeBlobHash(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("blobHash", err)
+		return err
 	}
 
 	fieldKey := e.Param("fieldKey")
 
-	blobValueBytes, err := c.blob.GetBlobValue(chainID, blobHash, fieldKey)
+	blobValueBytes, err := c.blob.GetBlobValue(chainID, *blobHash, fieldKey)
 
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
@@ -82,17 +80,17 @@ type BlobInfoResponse struct {
 }
 
 func (c *Controller) getBlobInfo(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	blobHash, err := hashing.HashValueFromHex(e.Param("blobHash"))
+	blobHash, err := params.DecodeBlobHash(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("blobHash", err)
+		return err
 	}
 
-	blobInfo, ok, err := c.blob.GetBlobInfo(chainID, blobHash)
+	blobInfo, ok, err := c.blob.GetBlobInfo(chainID, *blobHash)
 
 	if err != nil {
 		return apierrors.ContractExecutionError(err)

@@ -2,13 +2,13 @@ package corecontracts
 
 import (
 	"net/http"
-	"strconv"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/labstack/echo/v4"
 )
@@ -40,9 +40,9 @@ type AccountListResponse struct {
 }
 
 func (c *Controller) getAccounts(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	accounts, err := c.accounts.GetAccounts(chainID)
@@ -68,9 +68,9 @@ type AssetsResponse struct {
 }
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	assets, err := c.accounts.GetTotalAssets(chainID)
@@ -88,14 +88,14 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	agentID, err := isc.NewAgentIDFromString(e.Param("agentID"))
+	agentID, err := params.DecodeAgentID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("agentID", err)
+		return err
 	}
 
 	assets, err := c.accounts.GetAccountBalance(chainID, agentID)
@@ -117,14 +117,14 @@ type AccountNFTsResponse struct {
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	agentID, err := isc.NewAgentIDFromString(e.Param("agentID"))
+	agentID, err := params.DecodeAgentID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("agentID", err)
+		return err
 	}
 
 	nfts, err := c.accounts.GetAccountNFTs(chainID, agentID)
@@ -149,14 +149,14 @@ type AccountNonceResponse struct {
 }
 
 func (c *Controller) getAccountNonce(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	agentID, err := isc.NewAgentIDFromString(e.Param("agentID"))
+	agentID, err := params.DecodeAgentID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("agentID", err)
+		return err
 	}
 
 	nonce, err := c.accounts.GetAccountNonce(chainID, agentID)
@@ -180,28 +180,17 @@ type NFTDataResponse struct {
 }
 
 func (c *Controller) getNFTData(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	nftIDBytes, err := hexutil.Decode(e.Param("nftID"))
+	nftID, err := params.DecodeNFTID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("nftID", err)
+		return err
 	}
 
-	if len(nftIDBytes) != iotago.NFTIDLength {
-		return apierrors.InvalidPropertyError("nftID", err)
-	}
-
-	var nftID iotago.NFTID
-	copy(nftID[:], nftIDBytes)
-
-	if err != nil {
-		return apierrors.InvalidPropertyError("agentID", err)
-	}
-
-	nftData, err := c.accounts.GetNFTData(chainID, nftID)
+	nftData, err := c.accounts.GetNFTData(chainID, *nftID)
 
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
@@ -225,9 +214,9 @@ type NativeTokenIDRegistryResponse struct {
 }
 
 func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	registries, err := c.accounts.GetNativeTokenIDRegistry(chainID)
@@ -253,14 +242,14 @@ type FoundryOutputResponse struct {
 }
 
 func (c *Controller) getFoundryOutput(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	serialNumber, err := strconv.ParseUint(e.Param("serialNumber"), 10, 64)
+	serialNumber, err := params.DecodeUInt(e, "serialNumber")
 	if err != nil {
-		return apierrors.InvalidPropertyError("serialNumber", err)
+		return err
 	}
 
 	foundryOutput, err := c.accounts.GetFoundryOutput(chainID, uint32(serialNumber))

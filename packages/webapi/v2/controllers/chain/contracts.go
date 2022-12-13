@@ -3,19 +3,16 @@ package chain
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func (c *Controller) getContracts(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	contracts, err := c.chainService.GetContracts(chainID)

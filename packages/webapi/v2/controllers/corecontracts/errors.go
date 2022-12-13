@@ -2,9 +2,9 @@ package corecontracts
 
 import (
 	"net/http"
-	"strconv"
 
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/labstack/echo/v4"
 )
@@ -14,19 +14,19 @@ type ErrorMessageFormatResponse struct {
 }
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	contractHname, err := isc.HnameFromString(e.Param("contractHname"))
+	contractHname, err := params.DecodeHNameFromHNameString(e, "contractHname")
 	if err != nil {
-		return apierrors.InvalidPropertyError("contractHname", err)
+		return err
 	}
 
-	errorID, err := strconv.ParseUint(e.Param("errorID"), 10, 64)
+	errorID, err := params.DecodeUInt(e, "errorID")
 	if err != nil {
-		return apierrors.InvalidPropertyError("errorID", err)
+		return err
 	}
 
 	messageFormat, err := c.errors.GetMessageFormat(chainID, contractHname, uint16(errorID))

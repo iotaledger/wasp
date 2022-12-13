@@ -29,14 +29,21 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
-func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLoad []interfaces.APIController) {
+func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManager, registryProvider registry.Provider, authConfig authentication.AuthConfiguration, mocker *Mocker, controllersToLoad []interfaces.APIController) {
 	for _, controller := range controllersToLoad {
 		publicGroup := server.Group(controller.Name(), "v2/")
 
 		controller.RegisterPublic(publicGroup, mocker)
 
+		claimValidator := func(claims *authentication.WaspClaims) bool {
+			// The API will be accessible if the token has an 'API' claim
+			return claims.HasPermission(permissions.API)
+		}
+
 		adminGroup := server.Group(controller.Name(), "v2/").
 			SetSecurity("Authorization")
+
+		authentication.AddAuthentication(adminGroup.EchoGroup(), userManager, registryProvider, authConfig, claimValidator)
 
 		controller.RegisterAdmin(adminGroup, mocker)
 	}
@@ -83,12 +90,5 @@ func Init(logger *loggerpkg.Logger,
 		corecontracts.NewCoreContractsController(logger, vmService),
 	}
 
-	claimValidator := func(claims *authentication.WaspClaims) bool {
-		// The API will be accessible if the token has an 'API' claim
-		return claims.HasPermission(permissions.API)
-	}
-
-	authentication.AddAuthentication(server.Echo(), userManager, registryProvider, authConfig, claimValidator)
-
-	loadControllers(server, mocker, controllersToLoad)
+	loadControllers(server, userManager, registryProvider, authConfig, mocker, controllersToLoad)
 }

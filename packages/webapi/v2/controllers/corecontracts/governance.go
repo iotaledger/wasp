@@ -3,9 +3,10 @@ package corecontracts
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
+
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/labstack/echo/v4"
 )
@@ -51,9 +52,9 @@ func MapChainInfoResponse(chainInfo *governance.ChainInfo) ChainInfoResponse {
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	chainInfo, err := c.governance.GetChainInfo(chainID)

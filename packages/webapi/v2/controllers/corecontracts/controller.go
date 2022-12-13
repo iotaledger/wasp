@@ -49,25 +49,25 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetOperationId("accountsGetAccounts").
 		SetSummary("Get a list of all accounts")
 
-	api.GET("chains/:chainID/core/accounts/account/:accountID/balance", c.getAccountBalance).
+	api.GET("chains/:chainID/core/accounts/account/:agentID/balance", c.getAccountBalance).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "accountID", "AccountID (Bech32 for WasmVM | Hex for EVM)").
+		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "All assets belonging to an account", mocker.Get(AssetsResponse{}), nil).
 		SetOperationId("accountsGetAccountBalance").
 		SetSummary("Get all assets belonging to an account")
 
-	api.GET("chains/:chainID/core/accounts/account/:accountID/nfts", c.getAccountNFTs).
+	api.GET("chains/:chainID/core/accounts/account/:agentID/nfts", c.getAccountNFTs).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "accountID", "AccountID (Bech32 for WasmVM | Hex for EVM)").
+		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "All NFT ids belonging to an account", mocker.Get(AccountNFTsResponse{}), nil).
 		SetOperationId("accountsGetAccountNFTIDs").
 		SetSummary("Get all NFT ids belonging to an account")
 
-	api.GET("chains/:chainID/core/accounts/account/:accountID/nonce", c.getAccountNFTs).
+	api.GET("chains/:chainID/core/accounts/account/:agentID/nonce", c.getAccountNFTs).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "accountID", "AccountID (Bech32 for WasmVM | Hex for EVM)").
+		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The current nonce of an account", mocker.Get(AccountNonceResponse{}), nil).
 		SetOperationId("accountsGetAccountNonce").

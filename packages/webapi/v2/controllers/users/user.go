@@ -27,10 +27,10 @@ func (c *Controller) addUser(e echo.Context) error {
 }
 
 func (c *Controller) updateUserPassword(e echo.Context) error {
-	userName := e.Param("userName")
+	userName := e.Param("username")
 
 	if userName == "" {
-		return apierrors.InvalidPropertyError("userName", errors.New("username is empty"))
+		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
 	}
 
 	var updateUserPasswordModel models.UpdateUserPasswordRequest
@@ -48,10 +48,10 @@ func (c *Controller) updateUserPassword(e echo.Context) error {
 }
 
 func (c *Controller) updateUserPermissions(e echo.Context) error {
-	userName := e.Param("userName")
+	userName := e.Param("username")
 
 	if userName == "" {
-		return apierrors.InvalidPropertyError("userName", errors.New("username is empty"))
+		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
 	}
 
 	var updateUserPermissionsModel models.UpdateUserPermissionsRequest
@@ -70,10 +70,10 @@ func (c *Controller) updateUserPermissions(e echo.Context) error {
 }
 
 func (c *Controller) deleteUser(e echo.Context) error {
-	userName := e.Param("userName")
+	userName := e.Param("username")
 
 	if userName == "" {
-		return apierrors.InvalidPropertyError("userName", errors.New("username is empty"))
+		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
 	}
 
 	err := c.userService.DeleteUser(userName)
@@ -85,10 +85,10 @@ func (c *Controller) deleteUser(e echo.Context) error {
 }
 
 func (c *Controller) getUser(e echo.Context) error {
-	userName := e.Param("userName")
+	userName := e.Param("username")
 
 	if userName == "" {
-		return apierrors.InvalidPropertyError("userName", errors.New("username is empty"))
+		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
 	}
 
 	user, err := c.userService.GetUser(userName)

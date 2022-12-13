@@ -1,13 +1,12 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func (c *Controller) handleWebSocket(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
 	}

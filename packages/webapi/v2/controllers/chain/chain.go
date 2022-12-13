@@ -1,21 +1,22 @@
 package chain
 
 import (
-	"encoding/hex"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func (c *Controller) getCommitteeInfo(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	chain, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -41,9 +42,9 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID)
@@ -89,12 +90,12 @@ func (c *Controller) getChainList(e echo.Context) error {
 }
 
 func (c *Controller) getState(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	stateKey, err := hex.DecodeString(e.Param("stateKey"))
+	stateKey, err := hexutil.Decode(e.Param("stateKey"))
 	if err != nil {
 		return apierrors.InvalidPropertyError("stateKey", err)
 	}

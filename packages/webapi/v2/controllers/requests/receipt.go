@@ -3,25 +3,26 @@ package requests
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
+
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 func (c *Controller) getReceipt(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestID", err)
+		return err
 	}
 
-	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
+	receipt, vmError, err := c.vmService.GetReceipt(chainID, *requestID)
 	if err != nil {
 		return apierrors.ReceiptError(err)
 	}

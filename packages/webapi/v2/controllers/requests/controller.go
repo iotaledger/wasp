@@ -51,6 +51,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamBody(mocker.Get(models.ContractCallViewRequest{}), "", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil).
 		SetSummary("Call a view function on a contract by Hname").
+		SetDescription("Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.").
 		SetOperationId("callView")
 
 	publicAPI.POST("requests/offledger", c.handleOffLedgerRequest).

@@ -3,12 +3,11 @@ package metrics
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/labstack/echo/v4"
-
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 )
 
 func (c *Controller) getL1Metrics(e echo.Context) error {
@@ -19,9 +18,9 @@ func (c *Controller) getL1Metrics(e echo.Context) error {
 }
 
 func (c *Controller) getChainMetrics(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	metricsReport := c.metricsService.GetChainMetrics(chainID)
@@ -31,9 +30,9 @@ func (c *Controller) getChainMetrics(e echo.Context) error {
 }
 
 func (c *Controller) getChainWorkflowMetrics(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	metricsReport := c.metricsService.GetChainConsensusWorkflowMetrics(chainID)
@@ -42,9 +41,9 @@ func (c *Controller) getChainWorkflowMetrics(e echo.Context) error {
 }
 
 func (c *Controller) getChainPipeMetrics(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	metricsReport := c.metricsService.GetChainConsensusPipeMetrics(chainID)

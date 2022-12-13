@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -27,9 +28,9 @@ type ControlAddressesResponse struct {
 }
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	controlAddresses, err := c.blocklog.GetControlAddresses(chainID)
@@ -88,9 +89,9 @@ func mapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 }
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	var blockInfo *blocklog.BlockInfo
@@ -121,9 +122,9 @@ type RequestIDsResponse struct {
 }
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	var requestIDs []isc.RequestID
@@ -132,9 +133,9 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	if blockIndex == "latest" {
 		requestIDs, err = c.blocklog.GetRequestIDsForLatestBlock(chainID)
 	} else {
-		blockIndexNum, err := strconv.ParseUint(e.Param("blockIndex"), 10, 64)
+		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
 		if err != nil {
-			return apierrors.InvalidPropertyError("blockIndex", err)
+			return err
 		}
 
 		requestIDs, err = c.blocklog.GetRequestIDsForBlock(chainID, uint32(blockIndexNum))
@@ -201,17 +202,17 @@ func mapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.Chai
 }
 
 func (c *Controller) getRequestReceipt(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestID", err)
+		return err
 	}
 
-	receipt, err := c.blocklog.GetRequestReceipt(chainID, requestID)
+	receipt, err := c.blocklog.GetRequestReceipt(chainID, *requestID)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -229,9 +230,9 @@ type BlockReceiptsResponse struct {
 }
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	var receipts []*blocklog.RequestReceipt
@@ -245,9 +246,9 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex)
 	} else {
-		blockIndexNum, err := strconv.ParseUint(e.Param("blockIndex"), 10, 64)
+		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
 		if err != nil {
-			return apierrors.InvalidPropertyError("blockIndex", err)
+			return err
 		}
 
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, uint32(blockIndexNum))
@@ -280,17 +281,17 @@ type RequestProcessedResponse struct {
 }
 
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestID", err)
+		return err
 	}
 
-	requestProcessed, err := c.blocklog.IsRequestProcessed(chainID, requestID)
+	requestProcessed, err := c.blocklog.IsRequestProcessed(chainID, *requestID)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -309,9 +310,9 @@ type EventsResponse struct {
 }
 
 func (c *Controller) getBlockEvents(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
 	var events []string
@@ -325,9 +326,9 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 
 		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
 	} else {
-		blockIndexNum, err := strconv.ParseUint(e.Param("blockIndex"), 10, 64)
+		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
 		if err != nil {
-			return apierrors.InvalidPropertyError("blockIndex", err)
+			return err
 		}
 
 		events, err = c.blocklog.GetEventsForBlock(chainID, uint32(blockIndexNum))
@@ -345,12 +346,16 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 }
 
 func (c *Controller) getContractEvents(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	contractHname := isc.Hn(e.Param("contractHname"))
+	contractHname, err := params.DecodeHNameFromHNameString(e, "contractHname")
+	if err != nil {
+		return err
+	}
+
 	events, err := c.blocklog.GetEventsForContract(chainID, contractHname)
 
 	if err != nil {
@@ -365,17 +370,17 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 }
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
-	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
+	chainID, err := params.DecodeChainID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return err
 	}
 
-	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
+	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestID", err)
+		return err
 	}
 
-	events, err := c.blocklog.GetEventsForRequest(chainID, requestID)
+	events, err := c.blocklog.GetEventsForRequest(chainID, *requestID)
 
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
