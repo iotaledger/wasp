@@ -14,16 +14,19 @@ if [ "$OUTPUT_TO_FILE" = false ] && [ -x "$(command -v richgo)" ]; then
     GO_EXECUTABLE=richgo
 fi
 
-FILES=$(go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
+# enter the specific test you want to run here
+TESTS="^TestNodeConn$ github.com/iotaledger/wasp/tools/cluster/tests"
+
 ${GO_EXECUTABLE} clean -testcache
 
 make wasm
 make install
 
+echo "Start tests... ${TESTS}"
 if [ "$OUTPUT_TO_FILE" = false ]; then
-    ${GO_EXECUTABLE} test --short --count 1 -failfast -timeout=5h ${FILES}
+    ${GO_EXECUTABLE} test -timeout=5m -run ${TESTS}
 else
-    ${GO_EXECUTABLE} test --short --count 1 -failfast -v -timeout=5h ${FILES} 2>&1 | tee tests_output.log
+    ${GO_EXECUTABLE} test -v -timeout=5m -run ${TESTS} 2>&1 | tee tests_output.log
 fi
 
 cd ${CURRENT_DIR}

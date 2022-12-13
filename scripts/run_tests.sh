@@ -17,6 +17,9 @@ fi
 FILES=$(go list ./... | grep -v github.com/iotaledger/wasp/contracts/wasm)
 ${GO_EXECUTABLE} clean -testcache
 
+make wasm
+make install
+
 if [ "$OUTPUT_TO_FILE" = false ]; then
     ${GO_EXECUTABLE} test -timeout=5h ${FILES}
 else
