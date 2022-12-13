@@ -65,7 +65,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetOperationId("accountsGetAccountNFTIDs").
 		SetSummary("Get all NFT ids belonging to an account")
 
-	api.GET("chains/:chainID/core/accounts/account/:agentID/nonce", c.getAccountNFTs).
+	api.GET("chains/:chainID/core/accounts/account/:agentID/nonce", c.getAccountNonce).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
