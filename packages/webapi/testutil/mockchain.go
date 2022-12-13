@@ -61,7 +61,7 @@ func (*MockChain) Processors() *processors.Cache {
 }
 
 // AwaitRequestProcessed implements chain.Chain
-func (*MockChain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
+func (*MockChain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
 	panic("unimplemented")
 }
 
