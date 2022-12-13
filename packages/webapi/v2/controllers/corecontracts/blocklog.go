@@ -156,14 +156,14 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	return e.JSON(http.StatusOK, requestIDsResponse)
 }
 
-type Error struct {
+type ReceiptError struct {
 	Hash         string
 	ErrorMessage string
 }
 
 type RequestReceiptResponse struct {
 	BlockIndex    uint32
-	Error         *Error
+	Error         *ReceiptError
 	GasBudget     uint64
 	GasBurnLog    *gas.BurnLog
 	GasBurned     uint64
@@ -192,7 +192,7 @@ func mapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.Chai
 			return nil, err
 		}
 
-		response.Error = &Error{
+		response.Error = &ReceiptError{
 			Hash:         hexutil.EncodeUint64(uint64(resolved.Hash())),
 			ErrorMessage: resolved.Error(),
 		}
