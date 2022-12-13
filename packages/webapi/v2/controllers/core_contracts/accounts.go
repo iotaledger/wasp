@@ -1,6 +1,7 @@
 package corecontracts
 
 import (
+	"encoding/base64"
 	"net/http"
 	"strconv"
 
@@ -175,7 +176,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 type NFTDataResponse struct {
 	ID       string
 	Issuer   string
-	Metadata []byte // (ImmutableMetadata)
+	Metadata string
 	Owner    string
 }
 
@@ -210,7 +211,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 	nftDataResponse := &NFTDataResponse{
 		ID:       nftData.ID.ToHex(),
 		Issuer:   nftData.Issuer.String(),
-		Metadata: nftData.Metadata,
+		Metadata: base64.StdEncoding.EncodeToString(nftData.Metadata),
 	}
 
 	if nftData.Owner != nil {
