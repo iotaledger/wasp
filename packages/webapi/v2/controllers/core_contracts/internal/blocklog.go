@@ -14,6 +14,12 @@ type BlockLog struct {
 	vmService interfaces.VMService
 }
 
+func NewBlockLog(vmService interfaces.VMService) *BlockLog {
+	return &BlockLog{
+		vmService: vmService,
+	}
+}
+
 func (b *BlockLog) GetControlAddresses(chainID *isc.ChainID) (*blocklog.ControlAddresses, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewControlAddresses.Hname(), nil)
 	if err != nil {
@@ -46,15 +52,8 @@ func (b *BlockLog) GetControlAddresses(chainID *isc.ChainID) (*blocklog.ControlA
 	return controlAddresses, nil
 }
 
-func (b *BlockLog) GetBlockInfo(chainID *isc.ChainID, blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), codec.MakeDict(map[string]interface{}{
-		blocklog.ParamBlockIndex: blockIndex,
-	}))
-	if err != nil {
-		return nil, err
-	}
-
-	resultDecoder := kvdecoder.New(ret)
+func handleBlockInfo(info dict.Dict) (*blocklog.BlockInfo, error) {
+	resultDecoder := kvdecoder.New(info)
 
 	blockInfoBin, err := resultDecoder.GetBytes(blocklog.ParamBlockInfo)
 	if err != nil {
@@ -72,6 +71,27 @@ func (b *BlockLog) GetBlockInfo(chainID *isc.ChainID, blockIndex uint32) (*block
 	}
 
 	return blockInfo, nil
+}
+
+func (b *BlockLog) GetLatestBlockInfo(chainID *isc.ChainID) (*blocklog.BlockInfo, error) {
+	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return handleBlockInfo(ret)
+}
+
+func (b *BlockLog) GetBlockInfo(chainID *isc.ChainID, blockIndex uint32) (*blocklog.BlockInfo, error) {
+	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), codec.MakeDict(map[string]interface{}{
+		blocklog.ParamBlockIndex: blockIndex,
+	}))
+	if err != nil {
+		return nil, err
+	}
+
+	return handleBlockInfo(ret)
 }
 
 func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {

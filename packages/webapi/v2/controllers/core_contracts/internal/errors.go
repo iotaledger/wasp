@@ -12,6 +12,12 @@ type Errors struct {
 	vmService interfaces.VMService
 }
 
+func NewErrors(vmService interfaces.VMService) *Errors {
+	return &Errors{
+		vmService: vmService,
+	}
+}
+
 func (e *Errors) GetMessageFormat(chainID *isc.ChainID, contractID isc.Hname, errorID uint16) (string, error) {
 	errorCode := isc.NewVMErrorCode(contractID, errorID)
 

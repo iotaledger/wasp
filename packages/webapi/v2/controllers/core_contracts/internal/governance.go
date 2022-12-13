@@ -13,6 +13,12 @@ type Governance struct {
 	vmService interfaces.VMService
 }
 
+func NewGovernance(vmService interfaces.VMService) *Governance {
+	return &Governance{
+		vmService: vmService,
+	}
+}
+
 func (g *Governance) GetAllowedStateControllerAddresses(chainID *isc.ChainID) ([]iotago.Address, error) {
 	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
 

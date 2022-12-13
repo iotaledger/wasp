@@ -16,6 +16,12 @@ type Accounts struct {
 	vmService interfaces.VMService
 }
 
+func NewAccounts(vmService interfaces.VMService) *Accounts {
+	return &Accounts{
+		vmService: vmService,
+	}
+}
+
 func (a *Accounts) GetAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
 
@@ -139,7 +145,7 @@ func parseNativeTokenIDFromBytes(data []byte) (*iotago.NativeTokenID, error) {
 	return ret, nil
 }
 
-func (a *Accounts) GetNativeTokenIDRegistry(chainID *isc.ChainID, nftID iotago.NFTID) ([]*iotago.NativeTokenID, error) {
+func (a *Accounts) GetNativeTokenIDRegistry(chainID *isc.ChainID) ([]*iotago.NativeTokenID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 
 	if err != nil {
