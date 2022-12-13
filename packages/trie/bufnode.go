@@ -63,17 +63,18 @@ func (n *bufferedNode) isRoot() bool {
 
 // indexAsChild return index of the node as a child in the parent commitment and flag if it is a mutatedRoot
 func (n *bufferedNode) indexAsChild() byte {
-	assert(!n.isRoot(), "indexAsChild:: receiver can't be a root node")
+	assertf(!n.isRoot(), "indexAsChild:: receiver can't be a root node")
 	return n.triePath[len(n.triePath)-1]
 }
 
+//nolint:unparam // for later use of idx
 func (n *bufferedNode) setModifiedChild(child *bufferedNode, idx ...byte) {
 	var index byte
 
 	if child != nil {
 		index = child.indexAsChild()
 	} else {
-		assert(len(idx) > 0, "setModifiedChild: index of the child must be specified if the child is nil")
+		assertf(len(idx) > 0, "setModifiedChild: index of the child must be specified if the child is nil")
 		index = idx[0]
 	}
 	n.uncommittedChildren[index] = child
@@ -82,7 +83,7 @@ func (n *bufferedNode) setModifiedChild(child *bufferedNode, idx ...byte) {
 func (n *bufferedNode) removeChild(child *bufferedNode, idx ...byte) {
 	var index byte
 	if child == nil {
-		assert(len(idx) > 0, "child index must be specified")
+		assertf(len(idx) > 0, "child index must be specified")
 		index = idx[0]
 	} else {
 		index = child.indexAsChild()
@@ -100,7 +101,7 @@ func (n *bufferedNode) setValue(value []byte) {
 		n.value = nil
 		return
 	}
-	n.terminal = CommitToData(value)
+	n.terminal = commitToData(value)
 	_, valueIsInCommitment := n.terminal.ExtractValue()
 	if valueIsInCommitment {
 		n.value = nil
@@ -124,7 +125,7 @@ func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
 	childTriePath := concat(n.triePath, n.pathExtension, []byte{childIndex})
 
 	nodeFetched, ok := db.FetchNodeData(*childCommitment)
-	assert(ok, "TrieUpdatable::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
+	assertf(ok, "TrieUpdatable::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
 		hex.EncodeToString(childCommitment.Bytes()), hex.EncodeToString(childTriePath))
 
 	return newBufferedNode(nodeFetched, childTriePath)

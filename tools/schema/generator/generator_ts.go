@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	packageJson  = "package.json"
-	tsconfigJson = "tsconfig.json"
+	packageJSON  = "package.json"
+	tsconfigJSON = "tsconfig.json"
 )
 
 type TypeScriptGenerator struct {
@@ -32,7 +32,7 @@ func (g *TypeScriptGenerator) Cleanup() {
 
 	// now clean up language-specific files
 	g.cleanSourceFile("index")
-	_ = os.Remove(g.folder + "../" + tsconfigJson)
+	_ = os.Remove(g.folder + "../" + tsconfigJSON)
 }
 
 func (g *TypeScriptGenerator) GenerateImplementation() error {
@@ -44,7 +44,7 @@ func (g *TypeScriptGenerator) GenerateImplementation() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("", tsconfigJson)
+	err = g.generateConfig("", tsconfigJSON)
 	if err != nil {
 		return err
 	}
@@ -60,11 +60,11 @@ func (g *TypeScriptGenerator) GenerateInterface() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("", tsconfigJson)
+	err = g.generateConfig("", tsconfigJSON)
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("", packageJson)
+	err = g.generateConfig("", packageJSON)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (g *TypeScriptGenerator) GenerateWasmStub() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("../", tsconfigJson)
+	err = g.generateConfig("../", tsconfigJSON)
 	if err != nil {
 		return err
 	}

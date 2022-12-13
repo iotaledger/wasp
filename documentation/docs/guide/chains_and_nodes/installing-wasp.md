@@ -29,7 +29,7 @@ Alternatively, you can run a prebuilt Wasp node using one of the provided docker
 ## Requirements
 
 - [Git](https://git-scm.com/).
-- [Go 1.18](https://golang.org/doc/install).
+- [Go 1.19](https://golang.org/doc/install).
 - [solc](https://docs.soliditylang.org/en/v0.8.9/installing-solidity.html) >= 0.8.11.
 
 ## Clone the Wasp Repository

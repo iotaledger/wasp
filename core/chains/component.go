@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -66,11 +67,12 @@ func provide(c *dig.Container) error {
 		NodeConnection              chain.NodeConnection
 		ProcessorsConfig            *processors.Config
 		NetworkProvider             peering.NetworkProvider `name:"networkProvider"`
-		DatabaseManager             *database.Manager
+		ChainStateDatabaseManager   *database.ChainStateDatabaseManager
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
 		NodeIdentityProvider        registry.NodeIdentityProvider
-		ConsensusStateCmtLog        cmtLog.Store
+		ConsensusStateRegistry      cmtLog.ConsensusStateRegistry
+		ChainListener               *publisher.Publisher
 		Metrics                     *metrics.Metrics `optional:"true"`
 	}
 
@@ -90,13 +92,14 @@ func provide(c *dig.Container) error {
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,
 				deps.NetworkProvider,
-				deps.DatabaseManager.GetOrCreateChainStateKVStore,
+				deps.ChainStateDatabaseManager.ChainStateKVStore,
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
 				deps.ChainRecordRegistryProvider,
 				deps.DKShareRegistryProvider,
 				deps.NodeIdentityProvider,
-				deps.ConsensusStateCmtLog,
+				deps.ConsensusStateRegistry,
+				deps.ChainListener,
 			),
 		}
 	}); err != nil {

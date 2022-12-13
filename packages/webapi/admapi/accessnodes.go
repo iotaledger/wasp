@@ -20,12 +20,12 @@ const pubKeyParam = "PublicKey"
 
 func addAccessNodesEndpoints(
 	adm echoswagger.ApiGroup,
-	registryProvider registry.ChainRecordRegistryProvider,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	tnm peering.TrustedNetworkManager,
 ) {
 	a := &accessNodesService{
-		registry:   registryProvider,
-		networkMgr: tnm,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		networkMgr:                  tnm,
 	}
 	adm.POST(routes.AdmAddAccessNode(":chainID"), a.handleAddAccessNode).
 		AddParamPath("", "chainID", "ChainID (bech32))").
@@ -39,8 +39,8 @@ func addAccessNodesEndpoints(
 }
 
 type accessNodesService struct {
-	registry   registry.ChainRecordRegistryProvider
-	networkMgr peering.TrustedNetworkManager
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	networkMgr                  peering.TrustedNetworkManager
 }
 
 func paramsPubKey(c echo.Context) (*cryptolib.PublicKey, error) {
@@ -66,10 +66,8 @@ func (a *accessNodesService) handleAddAccessNode(c echo.Context) error {
 	if !ok {
 		return httperrors.NotFound(fmt.Sprintf("couldn't find peer with public key %s", pubKey))
 	}
-	_, err = a.registry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
-		rec.AddAccessNode(pubKey)
-		// TODO what should this return?
-		return false
+	_, err = a.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+		return rec.AddAccessNode(pubKey)
 	})
 	if err != nil {
 		return httperrors.ServerError("error saving chain record.")
@@ -86,7 +84,7 @@ func (a *accessNodesService) handleRemoveAccessNode(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest("invalid pub key")
 	}
-	_, err = a.registry.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	_, err = a.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
 		return rec.RemoveAccessNode(pubKey)
 	})
 	if err != nil {

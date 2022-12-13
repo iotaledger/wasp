@@ -70,7 +70,6 @@
 package cmtLog
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 
@@ -93,23 +92,11 @@ type State struct {
 	LogIndex LogIndex
 }
 
-func (s *State) MarshalBinary() ([]byte, error) {
-	bin := make([]byte, 4)
-	binary.BigEndian.PutUint32(bin, s.LogIndex.AsUint32())
-	return bin, nil
-}
-
-func (s *State) UnmarshalBinary(data []byte) error {
-	val := binary.BigEndian.Uint32(data)
-	s.LogIndex = LogIndex(val)
-	return nil
-}
-
 // Interface used to store and recover the existing persistent state.
 // To be implemented by the registry.
-type Store interface {
-	LoadCmtLogState(committeeAddress iotago.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
-	SaveCmtLogState(committeeAddress iotago.Address, state *State) error
+type ConsensusStateRegistry interface {
+	Get(chainID isc.ChainID, committeeAddress iotago.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
+	Set(chainID isc.ChainID, committeeAddress iotago.Address, state *State) error
 }
 
 var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
@@ -136,17 +123,17 @@ func (o *Output) GetBaseAliasOutput() *isc.AliasOutputWithID {
 
 // Protocol implementation.
 type cmtLogImpl struct {
-	chainID      isc.ChainID    // Chain, for which this log is maintained by this committee.
-	cmtAddr      iotago.Address // Address of the committee running this chain.
-	store        Store          // Persistent storage.
-	suspended    bool           // Is this committee suspended?
-	minLI        LogIndex       // Lowest log index this instance is allowed to participate.
-	consensusLI  LogIndex       // Latest LogIndex for which consensus was been started.
-	varLogIndex  VarLogIndex    // Calculates the current log index.
-	varLocalView VarLocalView   // Tracks the pending alias outputs.
-	output       *Output        // The current request for a consensus.
-	asGPA        gpa.GPA        // This object, just with all the needed wrappers.
-	log          *logger.Logger
+	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
+	cmtAddr                iotago.Address         // Address of the committee running this chain.
+	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
+	suspended              bool                   // Is this committee suspended?
+	minLI                  LogIndex               // Lowest log index this instance is allowed to participate.
+	consensusLI            LogIndex               // Latest LogIndex for which consensus was been started.
+	varLogIndex            VarLogIndex            // Calculates the current log index.
+	varLocalView           VarLocalView           // Tracks the pending alias outputs.
+	output                 *Output                // The current request for a consensus.
+	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
+	log                    *logger.Logger
 }
 
 var _ gpa.GPA = &cmtLogImpl{}
@@ -161,7 +148,7 @@ func New(
 	me gpa.NodeID,
 	chainID isc.ChainID,
 	dkShare tcrypto.DKShare,
-	store Store,
+	consensusStateRegistry ConsensusStateRegistry,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	log *logger.Logger,
 ) (CmtLog, error) {
@@ -169,16 +156,17 @@ func New(
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex
-	state, err := store.LoadCmtLogState(cmtAddr)
-	if err == nil {
+	state, err := consensusStateRegistry.Get(chainID, cmtAddr)
+	if err != nil {
+		if !errors.Is(err, ErrCmtLogStateNotFound) {
+			return nil, xerrors.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
+		}
+		prevLI = NilLogIndex()
+	} else {
 		// Don't participate in the last stored LI, because maybe we have already sent some messages.
 		prevLI = state.LogIndex
 	}
-	if errors.Is(err, ErrCmtLogStateNotFound) {
-		prevLI = NilLogIndex()
-	} else if err != nil {
-		return nil, xerrors.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
-	}
+
 	//
 	// Make node IDs.
 	nodePKs := dkShare.GetNodePubKeys()
@@ -195,15 +183,15 @@ func New(
 	}
 	minLogIndex := prevLI.Next()
 	cl := &cmtLogImpl{
-		chainID:      chainID,
-		cmtAddr:      cmtAddr,
-		store:        store,
-		suspended:    false,
-		minLI:        minLogIndex,
-		consensusLI:  NilLogIndex(),
-		varLogIndex:  NewVarLogIndex(nodeIDs, n, f, prevLI, log),
-		varLocalView: NewVarLocalView(),
-		log:          log,
+		chainID:                chainID,
+		cmtAddr:                cmtAddr,
+		consensusStateRegistry: consensusStateRegistry,
+		suspended:              false,
+		minLI:                  minLogIndex,
+		consensusLI:            NilLogIndex(),
+		varLogIndex:            NewVarLogIndex(nodeIDs, n, f, prevLI, log),
+		varLocalView:           NewVarLocalView(),
+		log:                    log,
 	}
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
@@ -384,7 +372,7 @@ func (cl *cmtLogImpl) tryProposeConsensus() {
 		//
 		// Persist the log index to ensure we will not participate in the
 		// same consensus after the restart.
-		if err := cl.store.SaveCmtLogState(cl.cmtAddr, &State{logIndex}); err != nil {
+		if err := cl.consensusStateRegistry.Set(cl.chainID, cl.cmtAddr, &State{LogIndex: logIndex}); err != nil {
 			// Nothing to do, if we cannot persist this.
 			panic(xerrors.Errorf("cannot persist the cmtLog state: %w", err))
 		}

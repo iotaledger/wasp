@@ -16,25 +16,77 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 )
 
-type TrustedPeersRegistry struct {
-	storeOnChangeMap *onchangemap.OnChangeMap[string, *peering.ComparablePubKey, *peering.TrustedPeer]
+type jsonTrustedPeers struct {
+	TrustedPeers []*peering.TrustedPeer `json:"trustedPeers"`
 }
 
-var _ TrustedPeersRegistryProvider = &TrustedPeersRegistry{}
+type TrustedPeersRegistryImpl struct {
+	onChangeMap *onchangemap.OnChangeMap[string, *peering.ComparablePubKey, *peering.TrustedPeer]
 
-// NewTrustedPeersRegistry creates new instance of the trusted peers registry implementation.
-func NewTrustedPeersRegistry(storeCallback func(trustedPeers []*peering.TrustedPeer) error) *TrustedPeersRegistry {
-	return &TrustedPeersRegistry{
-		storeOnChangeMap: onchangemap.NewOnChangeMap[string, *peering.ComparablePubKey](storeCallback),
+	filePath string
+}
+
+var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
+
+// NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
+func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {
+	registry := &TrustedPeersRegistryImpl{
+		filePath: filePath,
 	}
+
+	registry.onChangeMap = onchangemap.NewOnChangeMap(
+		onchangemap.WithChangedCallback[string, *peering.ComparablePubKey](registry.writeTrustedPeersJSON),
+	)
+
+	// load TrustedPeers on startup
+	if err := registry.loadTrustedPeersJSON(); err != nil {
+		return nil, fmt.Errorf("unable to read TrustedPeers configuration (%s): %s", filePath, err)
+	}
+
+	registry.onChangeMap.CallbacksEnabled(true)
+
+	return registry, nil
 }
 
-func (p *TrustedPeersRegistry) EnableStoreOnChange() {
-	p.storeOnChangeMap.CallbackEnabled(true)
+func (p *TrustedPeersRegistryImpl) loadTrustedPeersJSON() error {
+	if p.filePath == "" {
+		// do not load entries if no path is given
+		return nil
+	}
+
+	tmpTrustedPeers := &jsonTrustedPeers{}
+	if err := ioutils.ReadJSONFromFile(p.filePath, tmpTrustedPeers); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("unable to unmarshal json file: %w", err)
+	}
+
+	for _, trustedPeer := range tmpTrustedPeers.TrustedPeers {
+		if _, err := p.TrustPeer(trustedPeer.PubKey(), trustedPeer.NetID); err != nil {
+			return fmt.Errorf("unable to add trusted peer (%s): %s", p.filePath, err)
+		}
+	}
+
+	return nil
 }
 
-func (p *TrustedPeersRegistry) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
-	_, err := p.storeOnChangeMap.Get(peering.NewComparablePubKey(pubKey))
+func (p *TrustedPeersRegistryImpl) writeTrustedPeersJSON(trustedPeers []*peering.TrustedPeer) error {
+	if p.filePath == "" {
+		// do not store entries if no path is given
+		return nil
+	}
+
+	if err := os.MkdirAll(path.Dir(p.filePath), 0o770); err != nil {
+		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(p.filePath), err)
+	}
+
+	if err := ioutils.WriteJSONToFile(p.filePath, &jsonTrustedPeers{TrustedPeers: trustedPeers}, 0o600); err != nil {
+		return fmt.Errorf("unable to marshal json file: %w", err)
+	}
+
+	return nil
+}
+
+func (p *TrustedPeersRegistryImpl) IsTrustedPeer(pubKey *cryptolib.PublicKey) error {
+	_, err := p.onChangeMap.Get(peering.NewComparablePubKey(pubKey))
 	if err != nil {
 		return kvstore.ErrKeyNotFound
 	}
@@ -42,11 +94,11 @@ func (p *TrustedPeersRegistry) IsTrustedPeer(pubKey *cryptolib.PublicKey) error 
 	return nil
 }
 
-func (p *TrustedPeersRegistry) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
+func (p *TrustedPeersRegistryImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	trustedPeer := peering.NewTrustedPeer(pubKey, netID)
-	if err := p.storeOnChangeMap.Add(trustedPeer); err != nil {
+	if err := p.onChangeMap.Add(trustedPeer); err != nil {
 		// already exists, modify the existing
-		return p.storeOnChangeMap.Modify(peering.NewComparablePubKey(pubKey), func(item *peering.TrustedPeer) bool {
+		return p.onChangeMap.Modify(peering.NewComparablePubKey(pubKey), func(item *peering.TrustedPeer) bool {
 			*item = *peering.NewTrustedPeer(pubKey, netID)
 			return true
 		})
@@ -55,52 +107,21 @@ func (p *TrustedPeersRegistry) TrustPeer(pubKey *cryptolib.PublicKey, netID stri
 	return trustedPeer, nil
 }
 
-func (p *TrustedPeersRegistry) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
+func (p *TrustedPeersRegistryImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	addr := peering.NewComparablePubKey(pubKey)
 
-	trustedPeer, err := p.storeOnChangeMap.Get(addr)
+	trustedPeer, err := p.onChangeMap.Get(addr)
 	if err != nil {
 		return nil, nil
 	}
 
-	if err := p.storeOnChangeMap.Delete(addr); err != nil {
+	if err := p.onChangeMap.Delete(addr); err != nil {
 		return nil, nil
 	}
 
 	return trustedPeer, nil
 }
 
-func (p *TrustedPeersRegistry) TrustedPeers() ([]*peering.TrustedPeer, error) {
-	return lo.Values(p.storeOnChangeMap.All()), nil
-}
-
-type jsonTrustedPeers struct {
-	TrustedPeers []*peering.TrustedPeer `json:"trustedPeers"`
-}
-
-func LoadTrustedPeersJSONFromFile(filePath string, trustedPeersRegistry *TrustedPeersRegistry) error {
-	tmpTrustedPeers := &jsonTrustedPeers{}
-	if err := ioutils.ReadJSONFromFile(filePath, tmpTrustedPeers); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("unable to unmarshal json file: %w", err)
-	}
-
-	for _, trustedPeer := range tmpTrustedPeers.TrustedPeers {
-		if _, err := trustedPeersRegistry.TrustPeer(trustedPeer.PubKey(), trustedPeer.NetID); err != nil {
-			return fmt.Errorf("unable to add trusted peer (%s): %s", filePath, err)
-		}
-	}
-
-	return nil
-}
-
-func WriteTrustedPeersJSONToFile(filePath string, trustedPeers []*peering.TrustedPeer) error {
-	if err := os.MkdirAll(path.Dir(filePath), 0o770); err != nil {
-		return fmt.Errorf("unable to create folder \"%s\": %w", path.Dir(filePath), err)
-	}
-
-	if err := ioutils.WriteJSONToFile(filePath, &jsonTrustedPeers{TrustedPeers: trustedPeers}, 0o600); err != nil {
-		return fmt.Errorf("unable to marshal json file: %w", err)
-	}
-
-	return nil
+func (p *TrustedPeersRegistryImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
+	return lo.Values(p.onChangeMap.All()), nil
 }

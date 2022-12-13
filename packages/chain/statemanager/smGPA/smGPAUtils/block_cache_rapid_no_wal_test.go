@@ -1,3 +1,4 @@
+//nolint:unused // false positives because of rapid.Check
 package smGPAUtils
 
 import (
@@ -147,12 +148,6 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 	block := bcnwtsmT.bc.GetBlock(blockExpected.L1Commitment())
 	require.NotNil(t, block)
 	require.True(t, blockExpected.Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
-}
-
-func (bcnwtsmT *blockCacheNoWALTestSM) getCommitment(t *rapid.T, blockKey BlockKey) *state.L1Commitment {
-	block, ok := bcnwtsmT.blocks[blockKey]
-	require.True(t, ok)
-	return block.L1Commitment()
 }
 
 func TestBlockCacheNoWALPropBased(t *testing.T) {

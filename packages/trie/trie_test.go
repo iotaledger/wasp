@@ -69,6 +69,52 @@ func TestBasic(t *testing.T) {
 	require.Equal(t, root0, root3)
 }
 
+func TestBasic2(t *testing.T) {
+	store := NewInMemoryKVStore()
+
+	root0 := MustInitRoot(store)
+
+	var root1 Hash
+	{
+		tr, err := NewTrieUpdatable(store, root0)
+		require.NoError(t, err)
+		tr.Update([]byte{0x00}, []byte{0})
+		tr.Update([]byte{0x01}, []byte{0})
+		tr.Update([]byte{0x10}, []byte{0})
+		root1 = tr.Commit(store)
+	}
+
+	tr, err := NewTrieReader(store, root1)
+	require.NoError(t, err)
+	require.True(t, tr.Has([]byte{0x00}))
+	require.True(t, tr.Has([]byte{0x01}))
+	require.True(t, tr.Has([]byte{0x10}))
+}
+
+func TestBasic3(t *testing.T) {
+	store := NewInMemoryKVStore()
+
+	root0 := MustInitRoot(store)
+
+	var root1 Hash
+	{
+		tr, err := NewTrieUpdatable(store, root0)
+		require.NoError(t, err)
+		tr.Update([]byte{0x30}, []byte{1})
+		tr.Update([]byte{0x31}, []byte{1})
+		tr.Update([]byte{0xb0}, []byte{1})
+		tr.Update([]byte{0xb2}, []byte{1})
+		root1 = tr.Commit(store)
+	}
+
+	tr, err := NewTrieReader(store, root1)
+	require.NoError(t, err)
+	require.Equal(t, []byte{1}, tr.Get([]byte{0x30}))
+	require.Equal(t, []byte{1}, tr.Get([]byte{0x31}))
+	require.Equal(t, []byte{1}, tr.Get([]byte{0xb0}))
+	require.Equal(t, []byte{1}, tr.Get([]byte{0xb2}))
+}
+
 func TestCreateTrie(t *testing.T) {
 	t.Run("ok init-"+"", func(t *testing.T) {
 		rootC1 := MustInitRoot(NewInMemoryKVStore())
@@ -152,7 +198,6 @@ func TestBaseUpdate(t *testing.T) {
 			// data = data[:2]
 			for _, key := range data {
 				value := strings.Repeat(key, 5)
-				fmt.Printf("+++ update key='%s', value='%s'\n", key, value)
 				tr.UpdateStr(key, value)
 			}
 			rootNext := tr.Commit(store)
@@ -182,7 +227,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 	uncommitted := false
 	var ret Hash
 	for _, cmd := range scenario {
-		if len(cmd) == 0 {
+		if cmd == "" {
 			continue
 		}
 		if cmd == "*" {
@@ -196,7 +241,7 @@ func runUpdateScenario(trie *TrieUpdatable, store KVWriter, scenario []string) (
 		var key, value []byte
 		before, after, found := strings.Cut(cmd, "/")
 		if found {
-			if len(before) == 0 {
+			if before == "" {
 				continue // key must not be empty
 			}
 			key = []byte(before)
@@ -240,9 +285,8 @@ func checkResult(t *testing.T, trie *TrieUpdatable, checklist map[string]string)
 				fmt.Printf("NOT FOUND '%s' (expected '%s')\n", key, func() string {
 					if len(expectedValue) > 0 {
 						return "FOUND"
-					} else {
-						return "NOT FOUND"
 					}
+					return "NOT FOUND"
 				}())
 			}
 		}
@@ -321,7 +365,6 @@ func TestDeletionLoop(t *testing.T) {
 func TestDeterminism(t *testing.T) {
 	tf := func(scenario1, scenario2 []string) func(t *testing.T) {
 		return func(t *testing.T) {
-			fmt.Printf("--------- scenario1: %v\n", scenario1)
 			store1 := NewInMemoryKVStore()
 			initRoot1 := MustInitRoot(store1)
 
@@ -331,7 +374,6 @@ func TestDeterminism(t *testing.T) {
 			checklist1, root1 := runUpdateScenario(tr1, store1, scenario1)
 			checkResult(t, tr1, checklist1)
 
-			fmt.Printf("--------- scenario2: %v\n", scenario2)
 			store2 := NewInMemoryKVStore()
 			initRoot2 := MustInitRoot(store2)
 
@@ -500,7 +542,7 @@ func TestDeletePrefix(t *testing.T) {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}
 				require.NotEmpty(t, k)
-				if deleted && len(prefix) != 0 {
+				if deleted && prefix != "" {
 					require.False(t, strings.HasPrefix(string(k), prefix))
 				}
 				return true

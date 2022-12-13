@@ -54,7 +54,7 @@ func (tr *TrieReader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode)
 		endingCode = ending
 		ret = append(ret, elem)
 	})
-	assert(len(ret) > 0, "len(ret)>0")
+	assertf(len(ret) > 0, "len(ret)>0")
 	ret[len(ret)-1].ChildIndex = 0
 	return ret, endingCode
 }
@@ -113,7 +113,7 @@ func (tr *TrieUpdatable) traverseMutatedPath(triePath []byte, fun func(n *buffer
 			}
 			return
 		default:
-			assert(len(keyPlusPathExtension) < len(triePath), "len(keyPlusPathExtension) < len(triePath)")
+			assertf(len(keyPlusPathExtension) < len(triePath), "len(keyPlusPathExtension) < len(triePath)")
 			prefix, _, _ := commonPrefix(keyPlusPathExtension, triePath)
 			if !bytes.Equal(prefix, keyPlusPathExtension) {
 				fun(n, endingSplit)

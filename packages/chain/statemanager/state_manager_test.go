@@ -3,6 +3,7 @@ package statemanager
 import (
 	"context"
 	"math/rand"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -12,15 +13,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	//"github.com/iotaledger/wasp/packages/gpa"
-	//"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
-func TestCruelWorld(t *testing.T) {
+func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -78,18 +77,18 @@ func TestCruelWorld(t *testing.T) {
 	}
 	blocks, stateOutputs := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)
-	blockProduced := make([]bool, blockCount)
-	blockApproved := make([]bool, blockCount)
+	blockProduced := make([]*atomic.Bool, blockCount)
+	blockApproved := make([]*atomic.Bool, blockCount)
 	for i := range blocks {
 		stateDrafts[i] = bf.GetStateDraft(blocks[i])
-		blockProduced[i] = false
-		blockApproved[i] = false
+		blockProduced[i] = &atomic.Bool{}
+		blockApproved[i] = &atomic.Bool{}
 	}
 	getRandomProducedBlockAIndexFun := func() int {
-		for !blockProduced[0] {
+		for !blockProduced[0].Load() {
 		}
 		var maxIndex int
-		for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex]; maxIndex++ {
+		for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex].Load(); maxIndex++ {
 		}
 		return rand.Intn(maxIndex)
 	}
@@ -101,14 +100,14 @@ func TestCruelWorld(t *testing.T) {
 		sendBlockResults[i] = makeNRequestsVarDelay(blockCount, func() time.Duration {
 			return time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock
 		}, func(bi int) bool {
-			if !blockApproved[bi] { // If block is already approved, then consensus should not be working on it
+			if !blockApproved[bi].Load() { // If block is already approved, then consensus should not be working on it
 				t.Logf("Sending block %v to node %s", bi+1, peerNetIDs[ii])
 				err := <-sms[ii].ConsensusProducedBlock(context.Background(), stateDrafts[bi])
 				if err != nil {
 					t.Logf("Sending block %v to node %s FAILED: %v", bi+1, peerNetIDs[ii], err)
 					return false
 				}
-				blockProduced[bi] = true
+				blockProduced[bi].Store(true)
 			}
 			return true
 		})
@@ -116,15 +115,17 @@ func TestCruelWorld(t *testing.T) {
 
 	// Approve blocks (node mock)
 	approveOutputResult := makeNRequests(blockCount, 0*time.Millisecond, func(bi int) bool {
-		for !blockProduced[bi] {
-		} // Wait for block to be produced in some node at least
+		for !blockProduced[bi].Load() {
+			// Wait for block to be produced in some node at least
+		}
+
 		time.Sleep(approveOutputPeriod)
 		t.Logf("Approving alias output %v", bi+1)
 		for i := 0; i < nodeCount; i++ {
 			t.Logf("Approving alias output %v in node %v", bi+1, peerNetIDs[i])
 			sms[i].ReceiveConfirmedAliasOutput(stateOutputs[bi])
 		}
-		blockApproved[bi] = true
+		blockApproved[bi].Store(true)
 		return true
 	})
 
@@ -191,7 +192,7 @@ func TestCruelWorld(t *testing.T) {
 
 	// Check results
 	for _, sendBlockResult := range sendBlockResults {
-		requireTrueForSomeTime(t, sendBlockResult, 10*time.Second)
+		requireTrueForSomeTime(t, sendBlockResult, 11*time.Second) // 11s instead of 10s just to avoid linter warning
 	}
 	requireTrueForSomeTime(t, approveOutputResult, 10*time.Second)
 	requireTrueForSomeTime(t, consensusStateProposalResult, 10*time.Second)

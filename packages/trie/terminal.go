@@ -28,10 +28,10 @@ const (
 )
 
 func init() {
-	assert(tcommitmentDataSizeMax <= tcommitmentDataSizeMask, "tcommitmentDataSizeMax <= tcommitmentDataSizeMask")
+	assertf(tcommitmentDataSizeMax <= tcommitmentDataSizeMask, "tcommitmentDataSizeMax <= tcommitmentDataSizeMask")
 }
 
-func CommitToData(data []byte) *tcommitment {
+func commitToData(data []byte) *tcommitment {
 	if len(data) == 0 {
 		// empty slice -> no data (deleted)
 		return nil
@@ -49,7 +49,7 @@ func CommitToData(data []byte) *tcommitment {
 		// just cloning bytes. The data is its own commitment
 		commitmentBytes = concat(data)
 	}
-	assert(len(commitmentBytes) <= tcommitmentDataSizeMax,
+	assertf(len(commitmentBytes) <= tcommitmentDataSizeMax,
 		"len(commitmentBytes) <= m.tcommitmentDataSizeMax")
 	return &tcommitment{
 		data:    commitmentBytes,
@@ -77,7 +77,7 @@ func (t *tcommitment) Clone() *tcommitment {
 }
 
 func (t *tcommitment) Write(w io.Writer) error {
-	assert(len(t.data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
+	assertf(len(t.data) <= tcommitmentDataSizeMax, "size <= tcommitmentDataSizeMax")
 	size := byte(len(t.data))
 	if t.isValue {
 		size |= tcommitmentIsValueMask
@@ -124,24 +124,4 @@ func (t *tcommitment) ExtractValue() ([]byte, bool) {
 		return t.data, true
 	}
 	return nil, false
-}
-
-func readTcommitment(r io.Reader) (*tcommitment, error) {
-	ret := newTerminalCommitment()
-	if err := ret.Read(r); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func tcommitmentFromBytes(data []byte) (*tcommitment, error) {
-	rdr := bytes.NewReader(data)
-	ret, err := readTcommitment(rdr)
-	if err != nil {
-		return nil, err
-	}
-	if rdr.Len() > 0 {
-		return nil, ErrNotAllBytesConsumed
-	}
-	return ret, nil
 }

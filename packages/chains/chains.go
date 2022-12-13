@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -51,7 +52,8 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateCmtLog        cmtLog.Store
+	consensusStateRegistry      cmtLog.ConsensusStateRegistry
+	chainListener               chain.ChainListener
 
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
@@ -76,7 +78,8 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateCmtLog cmtLog.Store,
+	consensusStateRegistry cmtLog.ConsensusStateRegistry,
+	chainListener chain.ChainListener,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -93,7 +96,8 @@ func New(
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
-		consensusStateCmtLog:             consensusStateCmtLog,
+		chainListener:                    chainListener,
+		consensusStateRegistry:           consensusStateRegistry,
 	}
 	return ret
 }
@@ -106,6 +110,14 @@ func (c *Chains) Run(ctx context.Context) error {
 		return errors.New("chains already running")
 	}
 	c.ctx = ctx
+
+	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
+		c.mutex.RLock()
+		defer c.mutex.RUnlock()
+		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
+			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+		}
+	}))
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
 }
@@ -185,8 +197,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
 		c.dkShareRegistryProvider,
-		c.consensusStateCmtLog,
+		c.consensusStateRegistry,
 		chainWAL,
+		c.chainListener,
+		chainRecord.AccessNodes,
 		c.networkProvider,
 		c.log,
 	)

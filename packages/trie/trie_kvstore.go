@@ -7,7 +7,7 @@ import (
 
 // Update updates TrieUpdatable with the unpackedKey/value. Reorganizes and re-calculates trie, keeps cache consistent
 func (tr *TrieUpdatable) Update(key []byte, value []byte) {
-	assert(len(key) > 0, "len(key) must be > 0")
+	assertf(len(key) > 0, "len(key) must be > 0")
 	unpackedTriePath := unpackBytes(key)
 	if len(value) == 0 {
 		tr.delete(unpackedTriePath)
@@ -50,12 +50,12 @@ func (tr *TrieReader) Get(key []byte) []byte {
 	}
 	value, valueInCommitment := terminal.ExtractValue()
 	if valueInCommitment {
-		assert(len(value) > 0, "value in commitment must be not nil. Unpacked key: '%s'",
+		assertf(len(value) > 0, "value in commitment must be not nil. Unpacked key: '%s'",
 			hex.EncodeToString(unpackedTriePath))
 		return value
 	}
 	value = tr.nodeStore.valueStore.Get(terminal.Bytes())
-	assert(len(value) > 0, "value in the value store must be not nil. Unpacked key: '%s'",
+	assertf(len(value) > 0, "value in the value store must be not nil. Unpacked key: '%s'",
 		hex.EncodeToString(unpackedTriePath))
 	return value
 }
@@ -64,11 +64,9 @@ func (tr *TrieReader) Get(key []byte) []byte {
 func (tr *TrieReader) Has(key []byte) bool {
 	unpackedTriePath := unpackBytes(key)
 	found := false
-	tr.traversePath(unpackedTriePath, func(n *nodeData, _ []byte, ending pathEndingCode) {
-		if ending == endingTerminal {
-			if n.terminal != nil {
-				found = true
-			}
+	tr.traversePath(unpackedTriePath, func(n *nodeData, p []byte, ending pathEndingCode) {
+		if ending == endingTerminal && n.terminal != nil {
+			found = true
 		}
 	})
 	return found
@@ -135,14 +133,14 @@ func (tr *TrieReader) Snapshot(destStore KVWriter) {
 		}
 		valueKey := n.terminal.Bytes()
 		value := tr.nodeStore.valueStore.Get(valueKey)
-		assert(len(value) > 0, "can't find value for nodeKey '%s'", hex.EncodeToString(valueKey))
+		assertf(len(value) > 0, "can't find value for nodeKey '%s'", hex.EncodeToString(valueKey))
 		valuePartition.Set(valueKey, value)
 		return true
 	})
 }
 
 func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
-	assert(len(value) > 0, "len(value)>0")
+	assertf(len(value) > 0, "len(value)>0")
 
 	nodes := make([]*bufferedNode, 0)
 	var ends pathEndingCode
@@ -150,7 +148,7 @@ func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 		nodes = append(nodes, n)
 		ends = ending
 	})
-	assert(len(nodes) > 0, "len(nodes) > 0")
+	assertf(len(nodes) > 0, "len(nodes) > 0")
 	for i := len(nodes) - 2; i >= 0; i-- {
 		nodes[i].setModifiedChild(nodes[i+1])
 	}
@@ -163,10 +161,10 @@ func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 	case endingExtend:
 		// extend the current node with the new terminal node
 		keyPlusPathExtension := concat(lastNode.triePath, lastNode.pathExtension)
-		assert(len(keyPlusPathExtension) < len(triePath), "len(keyPlusPathExtension) < len(triePath)")
+		assertf(len(keyPlusPathExtension) < len(triePath), "len(keyPlusPathExtension) < len(triePath)")
 		childTriePath := triePath[:len(keyPlusPathExtension)+1]
 		childIndex := childTriePath[len(childTriePath)-1]
-		assert(lastNode.getChild(childIndex, tr.nodeStore) == nil, "lastNode.getChild(childIndex, tr.nodeStore)==nil")
+		assertf(lastNode.getChild(childIndex, tr.nodeStore) == nil, "lastNode.getChild(childIndex, tr.nodeStore)==nil")
 		child := tr.newTerminalNode(childTriePath, triePath[len(keyPlusPathExtension)+1:], value)
 		lastNode.setModifiedChild(child)
 
@@ -177,7 +175,7 @@ func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 			prevNode = nodes[len(nodes)-2]
 		}
 		trieKey := lastNode.triePath
-		assert(len(trieKey) <= len(triePath), "len(trieKey) <= len(triePath)")
+		assertf(len(trieKey) <= len(triePath), "len(trieKey) <= len(triePath)")
 		remainingTriePath := triePath[len(trieKey):]
 
 		prefix, pathExtensionTail, triePathTail := commonPrefix(lastNode.pathExtension, remainingTriePath)
@@ -207,7 +205,7 @@ func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 		}
 
 	default:
-		assert(false, "inconsistency: wrong value")
+		assertf(false, "inconsistency: wrong value")
 	}
 }
 
@@ -218,7 +216,7 @@ func (tr *TrieUpdatable) delete(triePath []byte) {
 		nodes = append(nodes, n)
 		ends = ending
 	})
-	assert(len(nodes) > 0, "len(nodes) > 0")
+	assertf(len(nodes) > 0, "len(nodes) > 0")
 	if ends != endingTerminal {
 		// the key is not present in the trie, do nothing
 		return
@@ -236,7 +234,7 @@ func (tr *TrieUpdatable) delete(triePath []byte) {
 			nodes[i-1].removeChild(nil, idxAsChild)
 		}
 	}
-	assert(nodes[0] != nil, "please do not delete root")
+	assertf(nodes[0] != nil, "please do not delete root")
 }
 
 func (tr *TrieUpdatable) mergeNodeIfNeeded(node *bufferedNode) *bufferedNode {
@@ -283,7 +281,7 @@ func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v [
 				value, inTheCommitment = n.terminal.ExtractValue()
 				if !inTheCommitment {
 					value = tr.nodeStore.valueStore.Get(n.terminal.Bytes())
-					assert(len(value) > 0, "can't fetch value. triePath: '%s', data commitment: %s", hex.EncodeToString(key), n.terminal)
+					assertf(len(value) > 0, "can't fetch value. triePath: '%s', data commitment: %s", hex.EncodeToString(key), n.terminal)
 				}
 			}
 			if !fun(key, value) {
@@ -297,7 +295,7 @@ func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v [
 // iterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
 func (tr *TrieReader) iterateNodes(root Hash, rootKey []byte, fun func(nodeKey []byte, n *nodeData) bool) bool {
 	n, found := tr.nodeStore.FetchNodeData(root)
-	assert(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(rootKey), root)
+	assertf(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(rootKey), root)
 
 	if !fun(rootKey, n) {
 		return false
@@ -323,7 +321,7 @@ func (tr *TrieUpdatable) deletePrefix(pathPrefix []byte) bool {
 	if !prefixExists {
 		return false
 	}
-	assert(len(nodes) > 1, "len(nodes) > 0")
+	assertf(len(nodes) > 1, "len(nodes) > 0")
 	// remove the last node and propagate
 
 	// remove terminal and the children from the current node

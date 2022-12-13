@@ -275,7 +275,9 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 		blockCommitment := block.L1Commitment()
 		smT.log.Debugf("Input block produced on state %s: state draft index %v produced block %s",
 			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-		smT.blockCache.AddBlock(block)
+		if err := smT.blockCache.AddBlock(block); err != nil {
+			smT.log.Panic(err.Error())
+		}
 		requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
 		if ok {
 			requests := requestsWC.blockRequests
@@ -446,7 +448,9 @@ func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block
 		return nil
 	}
 	smT.log.Debugf("Block %s retrieved from the DB", commitment)
-	smT.blockCache.AddBlock(block)
+	if err := smT.blockCache.AddBlock(block); err != nil {
+		smT.log.Panic(err.Error())
+	}
 	return block
 }
 

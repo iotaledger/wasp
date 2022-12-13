@@ -81,6 +81,7 @@ type Block interface {
 	MutationsReader() kv.KVStoreReader
 	TrieRoot() trie.Hash
 	PreviousL1Commitment() *L1Commitment
+	StateIndex() uint32
 	// L1Commitment contains the TrieRoot + block Hash
 	L1Commitment() *L1Commitment
 	// Hash is computed from Mutations + PreviousL1Commitment

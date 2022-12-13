@@ -1,3 +1,4 @@
+//nolint:unused // false positives because of rapid.Check
 package smGPAUtils
 
 import (

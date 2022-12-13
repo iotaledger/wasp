@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,6 +25,7 @@ type block struct {
 
 var _ Block = &block{}
 
+//nolint:revive
 func BlockFromBytes(blockBytes []byte) (*block, error) {
 	buf := bytes.NewBuffer(blockBytes)
 
@@ -77,6 +79,10 @@ func (b *block) PreviousL1Commitment() *L1Commitment {
 	return b.previousL1Commitment
 }
 
+func (b *block) StateIndex() uint32 {
+	return codec.MustDecodeUint32(b.MutationsReader().MustGet(kv.Key(coreutil.StatePrefixBlockIndex)))
+}
+
 func (b *block) essenceBytes() []byte {
 	var w bytes.Buffer
 	b.writeEssence(&w)
@@ -84,11 +90,18 @@ func (b *block) essenceBytes() []byte {
 }
 
 func (b *block) writeEssence(w io.Writer) {
-	w.Write(b.Mutations().Bytes())
+	if _, err := w.Write(b.Mutations().Bytes()); err != nil {
+		panic(err)
+	}
 
-	w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil))
+	if _, err := w.Write(codec.EncodeBool(b.PreviousL1Commitment() != nil)); err != nil {
+		panic(err)
+	}
+
 	if b.PreviousL1Commitment() != nil {
-		w.Write(b.PreviousL1Commitment().Bytes())
+		if _, err := w.Write(b.PreviousL1Commitment().Bytes()); err != nil {
+			panic(err)
+		}
 	}
 }
 

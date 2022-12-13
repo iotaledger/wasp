@@ -65,6 +65,7 @@ const (
 	distShareDebugTick        = 10 * time.Second
 	distShareTimeTick         = 3 * time.Second
 	distShareMaxMsgsPerTick   = 100
+	distShareRePublishTick    = 5 * time.Second
 	waitRequestCleanupEvery   = 10
 	waitProcessedCleanupEvery = 100
 )
@@ -79,6 +80,16 @@ type StateMgr interface {
 		ctx context.Context,
 		prevAO, nextAO *isc.AliasOutputWithID,
 	) (st state.State, added, removed []state.Block)
+}
+
+// Partial interface for providing chain events to the outside.
+// This interface is in the mempool part only because it tracks
+// the actual state for checking the consumed requests.
+type ChainListener interface {
+	// This function is called by the chain when new block is applied to the
+	// state. This block might be not confirmed yet, but the chain is going
+	// to build the next block on top of this one.
+	BlockApplied(chainID isc.ChainID, block state.Block)
 }
 
 type Mempool interface {
@@ -111,7 +122,7 @@ type RequestPool[V isc.Request] interface {
 	Get(reqRef *isc.RequestRef) V
 	Add(request V)
 	Remove(request V)
-	Filter(predicate func(request V) bool)
+	Filter(predicate func(request V, ts time.Time) bool)
 	StatusString() string
 }
 
@@ -150,6 +161,7 @@ type mempoolImpl struct {
 	net                            peering.NetworkProvider
 	log                            *logger.Logger
 	metrics                        metrics.MempoolMetrics
+	listener                       ChainListener
 }
 
 var _ Mempool = &mempoolImpl{}
@@ -188,6 +200,7 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 	metrics metrics.MempoolMetrics,
+	listener ChainListener,
 ) Mempool {
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
@@ -218,6 +231,7 @@ func New(
 		net:                            net,
 		log:                            log,
 		metrics:                        metrics,
+		listener:                       listener,
 	}
 	mpi.distSync = distSync.New(
 		mpi.pubKeyAsNodeID(nodeIdentity.GetPublicKey()),
@@ -298,7 +312,7 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 	netRecvPipeOutCh := mpi.netRecvPipe.Out()
 	debugTicker := time.NewTicker(distShareDebugTick)
 	timeTicker := time.NewTicker(distShareTimeTick)
-	ctxDone := ctx.Done()
+	rePublishTicker := time.NewTicker(distShareRePublishTick)
 	for {
 		select {
 		case recv, ok := <-accessNodesUpdatedPipeOutCh:
@@ -359,7 +373,9 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 			mpi.handleDistSyncDebugTick()
 		case <-timeTicker.C:
 			mpi.handleDistSyncTimeTick()
-		case <-ctxDone:
+		case <-rePublishTicker.C:
+			mpi.handleRePublishTimeTick()
+		case <-ctx.Done():
 			// mpi.accessNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
 			// mpi.reqConsensusProposalsPipe.Close()
 			// mpi.reqConsensusRequestsPipe.Close()
@@ -377,12 +393,36 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 }
 
 // A callback for distSync.
+//   - We only return off-ledger requests here.
+//   - The requests can be in the mempool
+//   - Or they are processed already (a lagging node asks
+//     for them), then the state has to be accessed.
 func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.Request {
-	return mpi.offLedgerPool.Get(requestRef)
+	if req := mpi.offLedgerPool.Get(requestRef); req != nil {
+		return req
+	}
+	if mpi.chainHeadState != nil {
+		requestID := requestRef.ID
+		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &requestID)
+		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
+			return receipt.Request
+		}
+		return nil
+	}
+	return nil
 }
 
 // A callback for distSync.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
+	offLedgerReq, ok := request.(isc.OffLedgerRequest)
+	if !ok {
+		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+		return
+	}
+	mpi.addOffLedgerRequestIfUnseen(offLedgerReq)
+}
+
+func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest) bool {
 	if mpi.chainHeadState != nil {
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
@@ -395,18 +435,15 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 			))
 		}
 		if processed {
-			return // Already processed.
+			return false // Already processed.
 		}
 	}
-	olr, ok := request.(isc.OffLedgerRequest)
-	if ok {
-		if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(olr)) {
-			mpi.offLedgerPool.Add(olr)
-			mpi.metrics.CountRequestIn(olr)
-		}
-		return
+	if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(request)) {
+		mpi.offLedgerPool.Add(request)
+		mpi.metrics.CountRequestIn(request)
+		return true
 	}
-	mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+	return false
 }
 
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
@@ -439,7 +476,7 @@ func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusP
 	// The case for matching ChainHeadAO and request BaseAO
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
-		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest) bool {
+		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, ts time.Time) bool {
 			if isc.RequestIsExpired(request, mpi.tangleTime) {
 				return false // Drop it from the mempool
 			}
@@ -449,7 +486,7 @@ func (mpi *mempoolImpl) handleConsensusProposalsForChainHead(recv *reqConsensusP
 			return true // Keep them for now
 		})
 	}
-	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest) bool {
+	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
 		reqRefs = append(reqRefs, isc.RequestRefFromRequest(request))
 		return true // Keep them for now
 	})
@@ -496,7 +533,6 @@ func (mpi *mempoolImpl) handleConsensusRequests(recv *reqConsensusRequests) {
 		if idx, ok := missingIdx[reqRefKey]; ok {
 			reqs[idx] = req
 			delete(missingIdx, reqRefKey)
-			mpi.log.Debugf("XXX: waitReq.WaitMany, missingIdx=%v", missingIdx)
 			if len(missingIdx) == 0 {
 				recv.responseCh <- reqs
 				close(recv.responseCh)
@@ -549,10 +585,10 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	mpi.metrics.CountRequestIn(request)
 }
 
-func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) { // TODO: Don't we need to reject processed requests?
-	mpi.offLedgerPool.Add(request)
-	mpi.metrics.CountRequestIn(request)
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
+	if mpi.addOffLedgerRequestIfUnseen(request) {
+		mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+	}
 }
 
 func (mpi *mempoolImpl) handleAwaitRequestProcessed(recv *reqAwaitRequestProcessed) {
@@ -594,7 +630,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 	//
 	// Notify existing on-ledger requests if that's first time update.
 	if oldTangleTime.IsZero() {
-		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest) bool {
+		mpi.onLedgerPool.Filter(func(request isc.OnLedgerRequest, ts time.Time) bool {
 			mpi.waitReq.Have(request)
 			return true
 		})
@@ -629,6 +665,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(ctx context.Context, aliasOutput
 			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
 		}
 		mpi.metrics.CountBlocksPerChain()
+		mpi.listener.BlockApplied(mpi.chainID, block)
 		for _, receipt := range blockReceipts {
 			mpi.metrics.CountRequestOut()
 			mpi.waitProcessed.Processed(receipt)
@@ -685,6 +722,18 @@ func (mpi *mempoolImpl) handleDistSyncDebugTick() {
 
 func (mpi *mempoolImpl) handleDistSyncTimeTick() {
 	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputTimeTick()))
+}
+
+// Re-send off-ledger messages that are hanging here for a long time.
+// Probably not a lot of nodes have them.
+func (mpi *mempoolImpl) handleRePublishTimeTick() {
+	retryOlder := time.Now().Add(-distShareRePublishTick)
+	mpi.offLedgerPool.Filter(func(request isc.OffLedgerRequest, ts time.Time) bool {
+		if ts.Before(retryOlder) {
+			mpi.sendMessages(mpi.distSync.Input(distSync.NewInputPublishRequest(request)))
+		}
+		return true
+	})
 }
 
 func (mpi *mempoolImpl) tryReAddRequest(req isc.Request) {
@@ -749,8 +798,8 @@ func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
 }
 
 // Have to have it as a separate function to be able to use type params.
-func unprocessedPredicate[V isc.Request](chainState state.State) func(V) bool {
-	return func(request V) bool {
+func unprocessedPredicate[V isc.Request](chainState state.State) func(V, time.Time) bool {
+	return func(request V, ts time.Time) bool {
 		requestID := request.ID()
 		if processed, err := blocklog.IsRequestProcessed(chainState, &requestID); err != nil && processed {
 			return false
