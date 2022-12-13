@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -245,6 +247,11 @@ func (smT *stateManager) handleNodePublicKeys(peerPubKeys []*cryptolib.PublicKey
 		peerNodeIDs[i] = pubKeyAsNodeID(peerPubKeys[i])
 		smT.nodeIDToPubKey[peerNodeIDs[i]] = peerPubKeys[i]
 	}
+	smT.log.Infof("Updating list of nodeIDs: [%v]",
+		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
+			return acc + " " + string(item)
+		}, ""),
+	)
 	smT.nodeRandomiser.UpdateNodeIDs(peerNodeIDs)
 }
 

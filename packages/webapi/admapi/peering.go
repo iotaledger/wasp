@@ -124,7 +124,7 @@ func (p *peeringService) handlePeeringTrustedPut(c echo.Context) error {
 	if req.PubKey != pubKeyStr {
 		return httperrors.BadRequest("Pub keys do not match.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromHexString(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -141,7 +141,7 @@ func (p *peeringService) handlePeeringTrustedPost(c echo.Context) error {
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
 	}
-	pubKey, err := cryptolib.NewPublicKeyFromHexString(req.PubKey)
+	pubKey, err := cryptolib.NewPublicKeyFromString(req.PubKey)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -155,7 +155,7 @@ func (p *peeringService) handlePeeringTrustedPost(c echo.Context) error {
 func (p *peeringService) handlePeeringTrustedGet(c echo.Context) error {
 	var err error
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromHexString(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
@@ -174,7 +174,7 @@ func (p *peeringService) handlePeeringTrustedGet(c echo.Context) error {
 func (p *peeringService) handlePeeringTrustedDelete(c echo.Context) error {
 	var err error
 	pubKeyStr := c.Param("pubKey")
-	pubKey, err := cryptolib.NewPublicKeyFromHexString(pubKeyStr)
+	pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

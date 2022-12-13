@@ -28,21 +28,12 @@ func NewEmptyPublicKey() *PublicKey {
 	}
 }
 
-func NewPublicKeyFromHexString(s string) (publicKey *PublicKey, err error) {
+func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 	bytes, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
-	publicKey, err = NewPublicKeyFromBytes(bytes)
-	return publicKey, err
-}
-
-func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
-	b, err := iotago.DecodeHex(s)
-	if err != nil {
-		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
-	}
-	return NewPublicKeyFromBytes(b)
+	return NewPublicKeyFromBytes(bytes)
 }
 
 func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
@@ -50,24 +41,6 @@ func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 		return nil, xerrors.Errorf("bytes too short")
 	}
 	return &PublicKey{publicKeyBytes}, nil
-}
-
-func PublicKeyToHex(pubKey *PublicKey) string {
-	return iotago.EncodeHex(pubKey.AsBytes())
-}
-
-func NewPublicKeyFromHex(pubKeyHex string) (*PublicKey, error) {
-	pubKeyData, err := iotago.DecodeHex(pubKeyHex)
-	if err != nil {
-		return nil, err
-	}
-
-	pubKey, err := NewPublicKeyFromBytes(pubKeyData)
-	if err != nil {
-		return nil, err
-	}
-
-	return pubKey, err
 }
 
 func (pkT *PublicKey) Clone() *PublicKey {

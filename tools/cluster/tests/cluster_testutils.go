@@ -33,6 +33,9 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transact
 	require.NoError(e.t, err)
 	require.Greater(e.t, blockIndex, uint32(1))
 
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(e.t, err)
+
 	// wait until all nodes (including access nodes) are at least at block `blockIndex`
 	retries := 0
 	for i := 1; i < len(e.Chain.AllPeers); i++ {
@@ -40,7 +43,7 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transact
 		b, err := e.Chain.BlockIndex(peerIdx)
 		if err != nil || b < blockIndex {
 			if retries >= 10 {
-				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 5 retries. Peer index: %d", peerIdx)
+				e.t.Fatalf("error on deployIncCounterSC, failed to wait for all peers to be on the same block index after 10 retries. Peer index: %d", peerIdx)
 			}
 			// retry (access nodes might take slightly more time to sync)
 			retries++
