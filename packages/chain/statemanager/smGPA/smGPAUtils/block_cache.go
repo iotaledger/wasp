@@ -33,15 +33,15 @@ func NewBlockCache(tp TimeProvider, wal BlockWAL, log *logger.Logger) (BlockCach
 }
 
 // Adds block to cache and WAL
-func (bcT *blockCache) AddBlock(block state.Block) error {
+func (bcT *blockCache) AddBlock(block state.Block) {
 	commitment := block.L1Commitment()
 	blockKey := NewBlockKey(commitment)
 	err := bcT.wal.Write(block)
 	if err != nil {
 		bcT.log.Errorf("Failed writing block %s to WAL: %v", commitment, err)
-		return err
+	} else {
+		bcT.log.Debugf("Block %s written to WAL", commitment)
 	}
-	bcT.log.Debugf("Block %s written to WAL", commitment)
 
 	bcT.blocks[blockKey] = block
 	bcT.times = append(bcT.times, &blockTime{
@@ -49,7 +49,6 @@ func (bcT *blockCache) AddBlock(block state.Block) error {
 		blockKey: blockKey,
 	})
 	bcT.log.Debugf("Block %s added to cache", commitment)
-	return nil
 }
 
 func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {

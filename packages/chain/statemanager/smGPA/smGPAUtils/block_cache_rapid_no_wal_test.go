@@ -128,8 +128,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) invariantBlocksInCacheBijectionToBlockTim
 func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 	blockKey := NewBlockKey(block.L1Commitment())
 	bcnwtsmT.blocks[blockKey] = block
-	err := bcnwtsmT.bc.AddBlock(block)
-	require.NoError(t, err)
+	bcnwtsmT.bc.AddBlock(block)
 	require.False(t, util.Contains(blockKey, bcnwtsmT.blocksInCache))
 	bcnwtsmT.blocksInCache = append(bcnwtsmT.blocksInCache, blockKey)
 	bcnwtsmT.blockTimes = append(bcnwtsmT.blockTimes, &blockTime{

@@ -176,10 +176,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	}
 	requests := requestsWC.blockRequests
 	smT.log.Debugf("Message Block %s: %v requests are waiting for the block", blockCommitment, len(requests))
-	err := smT.blockCache.AddBlock(block)
-	if err != nil {
-		return nil // No messages to send
-	}
+	smT.blockCache.AddBlock(block)
 	request := smT.createBlockRequestLocal(blockCommitment, func(_ obtainStateFun) {})
 	requests = append(requests, request)
 	delete(smT.blockRequests, blockHash)
@@ -275,9 +272,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 		blockCommitment := block.L1Commitment()
 		smT.log.Debugf("Input block produced on state %s: state draft index %v produced block %s",
 			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-		if err := smT.blockCache.AddBlock(block); err != nil {
-			smT.log.Panic(err.Error())
-		}
+		smT.blockCache.AddBlock(block)
 		requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
 		if ok {
 			requests := requestsWC.blockRequests
@@ -448,9 +443,7 @@ func (smT *stateManagerGPA) getBlock(commitment *state.L1Commitment) state.Block
 		return nil
 	}
 	smT.log.Debugf("Block %s retrieved from the DB", commitment)
-	if err := smT.blockCache.AddBlock(block); err != nil {
-		smT.log.Panic(err.Error())
-	}
+	smT.blockCache.AddBlock(block)
 	return block
 }
 
