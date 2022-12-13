@@ -1,4 +1,4 @@
-package internal
+package corecontracts
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
@@ -94,15 +94,8 @@ func (b *BlockLog) GetBlockInfo(chainID *isc.ChainID, blockIndex uint32) (*block
 	return handleBlockInfo(ret)
 }
 
-func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {
-	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
-		blocklog.ParamBlockIndex: blockIndex,
-	}))
-	if err != nil {
-		return nil, err
-	}
-
-	requestIDCollection := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestID)
+func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
+	requestIDCollection := collections.NewArray16ReadOnly(requestIDsDict, blocklog.ParamRequestID)
 	requestIDsCount, err := requestIDCollection.Len()
 	if err != nil {
 		return nil, err
@@ -123,6 +116,26 @@ func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32
 	}
 
 	return requestIDs, nil
+}
+
+func (b *BlockLog) GetRequestIDsForLatestBlock(chainID *isc.ChainID) ([]isc.RequestID, error) {
+	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleRequestIDs(ret)
+}
+
+func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {
+	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
+		blocklog.ParamBlockIndex: blockIndex,
+	}))
+	if err != nil {
+		return nil, err
+	}
+
+	return handleRequestIDs(ret)
 }
 
 func (b *BlockLog) GetRequestReceipt(chainID *isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {

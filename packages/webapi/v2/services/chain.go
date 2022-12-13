@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -15,7 +17,6 @@ import (
 	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	walpkg "github.com/iotaledger/wasp/packages/wal"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
@@ -27,6 +28,7 @@ const MaxTimeout = 30 * time.Second
 type ChainService struct {
 	log *logger.Logger
 
+	governance       *corecontracts.Governance
 	chainsProvider   chains.Provider
 	metrics          *metricspkg.Metrics
 	registryProvider registry.Provider
@@ -38,6 +40,7 @@ func NewChainService(log *logger.Logger, chainsProvider chains.Provider, metrics
 	return &ChainService{
 		log: log,
 
+		governance:       corecontracts.NewGovernance(vmService),
 		chainsProvider:   chainsProvider,
 		metrics:          metrics,
 		registryProvider: registryProvider,
@@ -108,12 +111,7 @@ func (c *ChainService) GetAllChainIDs() ([]*isc.ChainID, error) {
 }
 
 func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error) {
-	info, err := c.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	governanceChainInfo, err := governance.GetChainInfo(info)
+	governanceChainInfo, err := c.governance.GetChainInfo(chainID)
 	if err != nil {
 		return nil, err
 	}

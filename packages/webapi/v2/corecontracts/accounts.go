@@ -1,4 +1,4 @@
-package internal
+package corecontracts
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ func (a *Accounts) GetAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
 
 	accountIds := make([]isc.AgentID, 0)
 
-	for k, _ := range ret {
+	for k := range ret {
 		agentID, err := codec.DecodeAgentID([]byte(k))
 
 		if err != nil {

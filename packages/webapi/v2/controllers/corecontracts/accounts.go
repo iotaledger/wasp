@@ -1,7 +1,6 @@
 package corecontracts
 
 import (
-	"encoding/base64"
 	"net/http"
 	"strconv"
 
@@ -211,7 +210,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 	nftDataResponse := &NFTDataResponse{
 		ID:       nftData.ID.ToHex(),
 		Issuer:   nftData.Issuer.String(),
-		Metadata: base64.StdEncoding.EncodeToString(nftData.Metadata),
+		Metadata: hexutil.Encode(nftData.Metadata),
 	}
 
 	if nftData.Owner != nil {
@@ -259,9 +258,9 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 		return apierrors.InvalidPropertyError("chainID", err)
 	}
 
-	serialNumber, err := strconv.ParseUint(e.Param("chainID"), 10, 64)
+	serialNumber, err := strconv.ParseUint(e.Param("serialNumber"), 10, 64)
 	if err != nil {
-		return apierrors.InvalidPropertyError("chainID", err)
+		return apierrors.InvalidPropertyError("serialNumber", err)
 	}
 
 	foundryOutput, err := c.accounts.GetFoundryOutput(chainID, uint32(serialNumber))

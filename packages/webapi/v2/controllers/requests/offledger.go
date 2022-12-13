@@ -1,8 +1,9 @@
 package requests
 
 import (
-	"encoding/base64"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
@@ -23,7 +24,7 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 		return apierrors.InvalidPropertyError("ChainID", err)
 	}
 
-	requestDecoded, err := base64.StdEncoding.DecodeString(request.Request)
+	requestDecoded, err := hexutil.Decode(request.Request)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
 	}

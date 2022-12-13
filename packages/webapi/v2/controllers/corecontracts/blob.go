@@ -1,8 +1,9 @@
 package corecontracts
 
 import (
-	"encoding/base64"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 
@@ -69,10 +70,8 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	blobValue := base64.StdEncoding.EncodeToString(blobValueBytes)
-
 	blobValueResponse := &BlobValueResponse{
-		ValueData: blobValue,
+		ValueData: hexutil.Encode(blobValueBytes),
 	}
 
 	return e.JSON(http.StatusOK, blobValueResponse)

@@ -17,8 +17,8 @@ type gasFeePolicy struct {
 }
 
 type ChainInfoResponse struct {
-	ChainID         string       `swagger:"desc(ChainID (bech32-encoded).)"`
-	ChainOwnerID    string       `swagger:"desc(The chain owner address (bech32-encoded).)"`
+	ChainID         string       `swagger:"desc(ChainID (Bech32-encoded).)"`
+	ChainOwnerID    string       `swagger:"desc(The chain owner address (Bech32-encoded).)"`
 	Description     string       `swagger:"desc(The description of the chain.)"`
 	GasFeePolicy    gasFeePolicy `json:"GasFeePolicy"`
 	MaxBlobSize     uint32       `swagger:"desc(The maximum contract blob size.)"`

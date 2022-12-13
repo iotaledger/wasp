@@ -13,7 +13,7 @@ type ErrorMessageFormatResponse struct {
 	MessageFormat string
 }
 
-func (c *Controller) getMessageFormat(e echo.Context) error {
+func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
 		return apierrors.InvalidPropertyError("chainID", err)

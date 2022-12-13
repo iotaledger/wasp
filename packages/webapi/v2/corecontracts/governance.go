@@ -1,4 +1,4 @@
-package internal
+package corecontracts
 
 import (
 	iotago "github.com/iotaledger/iota.go/v3"

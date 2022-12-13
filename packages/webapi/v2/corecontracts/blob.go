@@ -1,4 +1,4 @@
-package internal
+package corecontracts
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"

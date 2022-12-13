@@ -38,7 +38,7 @@ type CommitteeInfoResponse struct {
 	AccessNodes    []CommitteeNode `swagger:"desc(A list of all access nodes and their peering info.)"`
 	Active         bool            `swagger:"desc(Whether or not the chain is active.)"`
 	CandidateNodes []CommitteeNode `swagger:"desc(A list of all candidate nodes and their peering info.)"`
-	ChainID        string          `swagger:"desc(ChainID (bech32-encoded).)"`
+	ChainID        string          `swagger:"desc(ChainID (Bech32-encoded).)"`
 	CommitteeNodes []CommitteeNode `swagger:"desc(A list of all committee nodes and their peering info.)"`
 	StateAddress   string          `swagger:"desc(State address, if we are part of it.)"`
 }
@@ -58,9 +58,9 @@ type gasFeePolicy struct {
 
 type ChainInfoResponse struct {
 	IsActive        bool         `swagger:"desc(Whether or not the chain is active.)"`
-	ChainID         string       `swagger:"desc(ChainID (bech32-encoded).)"`
+	ChainID         string       `swagger:"desc(ChainID (Bech32-encoded).)"`
 	EVMChainID      uint16       `swagger:"desc(The EVM chain ID)"`
-	ChainOwnerID    string       `swagger:"desc(The chain owner address (bech32-encoded).)"`
+	ChainOwnerID    string       `swagger:"desc(The chain owner address (Bech32-encoded).)"`
 	Description     string       `swagger:"desc(The description of the chain.)"`
 	GasFeePolicy    gasFeePolicy `json:"GasFeePolicy"`
 	MaxBlobSize     uint32       `swagger:"desc(The maximum contract blob size.)"`

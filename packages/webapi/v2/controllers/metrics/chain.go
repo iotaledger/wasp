@@ -11,6 +11,13 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 )
 
+func (c *Controller) getL1Metrics(e echo.Context) error {
+	metricsReport := c.metricsService.GetAllChainsMetrics()
+	mappedMetrics := models.MapChainMetrics(metricsReport)
+
+	return e.JSON(http.StatusOK, mappedMetrics)
+}
+
 func (c *Controller) getChainMetrics(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {

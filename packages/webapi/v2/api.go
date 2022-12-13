@@ -3,7 +3,7 @@ package v2
 import (
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-	corecontracts "github.com/iotaledger/wasp/packages/webapi/v2/controllers/core_contracts"
+	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/controllers/metrics"
 	"github.com/pangpanglabs/echoswagger/v2"
 

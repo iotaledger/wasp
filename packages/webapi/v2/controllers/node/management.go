@@ -1,8 +1,9 @@
 package node
 
 import (
-	"encoding/base64"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
@@ -18,7 +19,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	reqNodePubKeyBytes, err := base64.StdEncoding.DecodeString(request.NodePubKey)
+	reqNodePubKeyBytes, err := hexutil.Decode(request.NodePubKey)
 	if err != nil {
 		return apierrors.InvalidPropertyError("NodePubKey", err)
 	}
@@ -34,7 +35,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 	}
 
 	response := models.NodeOwnerCertificateResponse{
-		Certificate: base64.StdEncoding.EncodeToString(certificateBytes),
+		Certificate: hexutil.Encode(certificateBytes),
 	}
 
 	return e.JSON(http.StatusOK, response)

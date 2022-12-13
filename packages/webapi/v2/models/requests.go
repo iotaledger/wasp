@@ -8,7 +8,7 @@ import (
 type OffLedgerRequest struct {
 	ChainID string `swagger:"desc(The chain id)"`
 
-	Request string `swagger:"desc(Offledger Request (base64))"`
+	Request string `swagger:"desc(Offledger Request (Hex))"`
 }
 
 type ContractCallViewRequest struct {

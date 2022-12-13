@@ -3,12 +3,12 @@ package models
 import "github.com/iotaledger/wasp/packages/parameters"
 
 type NodeOwnerCertificateRequest struct {
-	NodePubKey   string `swagger:"desc(Node pub key. (base64))"`
-	OwnerAddress string `swagger:"desc(Node owner address. (bech32))"`
+	NodePubKey   string `swagger:"desc(Node pub key. (Hex))"`
+	OwnerAddress string `swagger:"desc(Node owner address. (Bech32))"`
 }
 
 type NodeOwnerCertificateResponse struct {
-	Certificate string `swagger:"desc(Certificate stating the ownership. (base64))"`
+	Certificate string `swagger:"desc(Certificate stating the ownership. (Hex))"`
 }
 
 type InfoResponse struct {
