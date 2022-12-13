@@ -55,11 +55,12 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 
 	return &soloTestEnv{
 		Env: Env{
-			T:              t,
-			Client:         client,
-			RawClient:      rawClient,
-			ChainID:        evm.DefaultChainID,
-			accountManager: accounts,
+			T:                     t,
+			Client:                client,
+			RawClient:             rawClient,
+			ChainID:               evm.DefaultChainID,
+			accountManager:        accounts,
+			NewAccountWithL2Funds: chain.NewEthereumAccountWithL2Funds,
 		},
 		solo:      s,
 		soloChain: chain,
@@ -353,9 +354,14 @@ func TestRPCCall(t *testing.T) {
 	require.Equal(t, uint32(42), v)
 }
 
+func TestRPCAccessHistoricalState(t *testing.T) {
+	env := newSoloTestEnv(t)
+	env.TestRPCAccessHistoricalState()
+}
+
 func TestRPCGetLogs(t *testing.T) {
 	env := newSoloTestEnv(t)
-	env.TestRPCGetLogs(env.soloChain.NewEthereumAccountWithL2Funds)
+	env.TestRPCGetLogs()
 }
 
 func TestRPCEthChainID(t *testing.T) {

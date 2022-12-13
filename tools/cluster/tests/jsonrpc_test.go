@@ -76,7 +76,7 @@ func newClusterTestEnv(t *testing.T, committee []int, nodeIndex int, opt ...wasp
 		return nil
 	}
 
-	return &clusterTestEnv{
+	e := &clusterTestEnv{
 		Env: jsonrpctest.Env{
 			T:               t,
 			Client:          client,
@@ -87,6 +87,8 @@ func newClusterTestEnv(t *testing.T, committee []int, nodeIndex int, opt ...wasp
 		cluster: clu,
 		chain:   chain,
 	}
+	e.Env.NewAccountWithL2Funds = e.newEthereumAccountWithL2Funds
+	return e
 }
 
 func newEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
@@ -132,9 +134,10 @@ func TestEVMJsonRPCCluster(t *testing.T) {
 	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 0, waspClusterOpts{
 		nNodes: 4,
 	})
-	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
-	e.TestRPCInvalidNonce(e.newEthereumAccountWithL2Funds)
-	e.TestRPCGasLimitTooLow(e.newEthereumAccountWithL2Funds)
+	e.TestRPCGetLogs()
+	e.TestRPCInvalidNonce()
+	e.TestRPCGasLimitTooLow()
+	e.TestRPCAccessHistoricalState()
 	e.TestGasPrice()
 }
 
@@ -142,5 +145,5 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 	e := newClusterTestEnv(t, []int{0, 1, 2, 3}, 4, waspClusterOpts{
 		nNodes: 5, // node #4 is an access node
 	})
-	e.TestRPCGetLogs(e.newEthereumAccountWithL2Funds)
+	e.TestRPCGetLogs()
 }
