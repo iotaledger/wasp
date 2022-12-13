@@ -5,6 +5,7 @@ package mempool
 
 import (
 	"context"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 )
 
 func TestWaitProcessed(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	client := cryptolib.NewKeyPair()
 	req := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.EntryPointInit, isc.EntryPointInit, dict.New(), 0).Sign(client)
 	reqID := req.ID()

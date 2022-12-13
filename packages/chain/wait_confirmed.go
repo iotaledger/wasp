@@ -26,7 +26,10 @@ type waitConfirmedEntry struct {
 }
 
 func NewWaitConfirmed() WaitConfirmed {
-	return &waitConfirmedImpl{}
+	return &waitConfirmedImpl{
+		lastIndex: 0,
+		entries:   map[uint32][]*waitConfirmedEntry{},
+	}
 }
 
 func (wci *waitConfirmedImpl) AwaitUntilConfirmed(ctx context.Context, receipt *blocklog.RequestReceipt, responseCh chan<- *blocklog.RequestReceipt) {

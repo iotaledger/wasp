@@ -68,6 +68,7 @@ func TestBasic(t *testing.T) {
 //nolint:gocyclo
 func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	te.log.Debugf("All started.")
