@@ -1,3 +1,6 @@
+// TODO remove this nolint after the statemgr tests are fixed
+//
+//nolint:unused // state_manager_gpa_test.go tests are currently skipped
 package smGPA
 
 import (
