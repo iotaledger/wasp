@@ -765,7 +765,7 @@ func (s *dkShareImpl) MarshalJSON() ([]byte, error) {
 
 	nodePubKeys := make([]string, 0)
 	for _, nodePubKey := range s.nodePubKeys {
-		nodePubKeys = append(nodePubKeys, cryptolib.PublicKeyToHex(nodePubKey))
+		nodePubKeys = append(nodePubKeys, nodePubKey.String())
 	}
 
 	ed25519SharedPublicHex, err := util.EncodeHexBinaryMarshaled(s.edSharedPublic)
@@ -851,7 +851,7 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 
 	s.nodePubKeys = make([]*cryptolib.PublicKey, len(j.NodePubKeys))
 	for i, nodePubKeyHex := range j.NodePubKeys {
-		nodePubKey, err := cryptolib.NewPublicKeyFromHex(nodePubKeyHex)
+		nodePubKey, err := cryptolib.NewPublicKeyFromString(nodePubKeyHex)
 		if err != nil {
 			return err
 		}

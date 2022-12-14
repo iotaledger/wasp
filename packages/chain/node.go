@@ -22,7 +22,6 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"golang.org/x/xerrors"
 
@@ -278,7 +277,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		log.Named("SM").WithOptions(zap.IncreaseLevel(logger.LevelInfo)), // TODO: Temporary.
+		log.Named("SM"),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)

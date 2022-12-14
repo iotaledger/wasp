@@ -44,7 +44,7 @@ type accessNodesService struct {
 }
 
 func paramsPubKey(c echo.Context) (*cryptolib.PublicKey, error) {
-	return cryptolib.NewPublicKeyFromHexString(c.Param(pubKeyParam))
+	return cryptolib.NewPublicKeyFromString(c.Param(pubKeyParam))
 }
 
 func (a *accessNodesService) handleAddAccessNode(c echo.Context) error {

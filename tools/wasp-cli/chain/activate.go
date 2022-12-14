@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -34,7 +35,7 @@ func activateCmd() *cobra.Command {
 					continue
 				} else {
 					log.Check(
-						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, false)),
+						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{})),
 					)
 				}
 				log.Check(client.WaspClient.ActivateChain(chainID))

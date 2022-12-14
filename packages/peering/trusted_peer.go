@@ -74,7 +74,7 @@ type jsonTrustedPeer struct {
 
 func (tp *TrustedPeer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&jsonTrustedPeer{
-		PubKey: cryptolib.PublicKeyToHex(tp.PubKey()),
+		PubKey: tp.PubKey().String(),
 		NetID:  tp.NetID,
 	})
 }
@@ -85,7 +85,7 @@ func (tp *TrustedPeer) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	nodePubKey, err := cryptolib.NewPublicKeyFromHex(j.PubKey)
+	nodePubKey, err := cryptolib.NewPublicKeyFromString(j.PubKey)
 	if err != nil {
 		return err
 	}

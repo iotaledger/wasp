@@ -27,11 +27,11 @@ type ChainRecord struct {
 	AccessNodes []*cryptolib.PublicKey
 }
 
-func NewChainRecord(chainID isc.ChainID, active bool) *ChainRecord {
+func NewChainRecord(chainID isc.ChainID, active bool, accessNodes []*cryptolib.PublicKey) *ChainRecord {
 	return &ChainRecord{
 		id:          chainID,
 		Active:      active,
-		AccessNodes: []*cryptolib.PublicKey{},
+		AccessNodes: accessNodes,
 	}
 }
 
@@ -88,7 +88,7 @@ type jsonChainRecords struct {
 func (r *ChainRecord) MarshalJSON() ([]byte, error) {
 	accessNodesPubKeysHex := make([]string, 0)
 	for _, accessNodePubKey := range r.AccessNodes {
-		accessNodesPubKeysHex = append(accessNodesPubKeysHex, cryptolib.PublicKeyToHex(accessNodePubKey))
+		accessNodesPubKeysHex = append(accessNodesPubKeysHex, accessNodePubKey.String())
 	}
 
 	return json.Marshal(&jsonChainRecord{
@@ -124,7 +124,7 @@ func (r *ChainRecord) UnmarshalJSON(bytes []byte) error {
 
 	accessNodesPubKeys := make([]*cryptolib.PublicKey, len(j.AccessNodes))
 	for i, accessNodePubKeyHex := range j.AccessNodes {
-		accessNodePubKey, err := cryptolib.NewPublicKeyFromHex(accessNodePubKeyHex)
+		accessNodePubKey, err := cryptolib.NewPublicKeyFromString(accessNodePubKeyHex)
 		if err != nil {
 			return err
 		}
