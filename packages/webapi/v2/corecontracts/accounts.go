@@ -152,7 +152,7 @@ func (a *Accounts) GetNativeTokenIDRegistry(chainID *isc.ChainID) ([]*iotago.Nat
 		return nil, err
 	}
 
-	tokenIDs := make([]*iotago.NativeTokenID, 0, len(ret))
+	tokenIDs := make([]*iotago.NativeTokenID, len(ret))
 	for k := range ret {
 		parsedTokenID, err := parseNativeTokenIDFromBytes([]byte(k))
 

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/parameters"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
@@ -39,9 +41,9 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 	}
 
 	controlAddressesResponse := &ControlAddressesResponse{
-		GoverningAddress: controlAddresses.GoverningAddress.String(),
+		GoverningAddress: controlAddresses.GoverningAddress.Bech32(parameters.L1().Protocol.Bech32HRP),
 		SinceBlockIndex:  controlAddresses.SinceBlockIndex,
-		StateAddress:     controlAddresses.StateAddress.String(),
+		StateAddress:     controlAddresses.StateAddress.Bech32(parameters.L1().Protocol.Bech32HRP),
 	}
 
 	return e.JSON(http.StatusOK, controlAddressesResponse)
@@ -259,7 +261,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	}
 
 	receiptsResponse := BlockReceiptsResponse{
-		Receipts: make([]*RequestReceiptResponse, 0, len(receipts)),
+		Receipts: make([]*RequestReceiptResponse, len(receipts)),
 	}
 
 	for k, v := range receipts {
