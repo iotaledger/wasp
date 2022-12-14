@@ -32,10 +32,10 @@ func (bd *ChainRecord) Record() (*registry.ChainRecord, error) {
 
 	for i, pubKeyStr := range bd.AccessNodes {
 		pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
-		accessNodes[i] = pubKey
 		if err != nil {
 			return nil, err
 		}
+		accessNodes[i] = pubKey
 	}
 	rec := registry.NewChainRecord(bd.ChainID.ChainID(), bd.Active, accessNodes)
 	return rec, nil

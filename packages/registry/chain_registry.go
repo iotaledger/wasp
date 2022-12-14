@@ -281,8 +281,6 @@ func (p *ChainRecordRegistryImpl) UpdateChainRecord(chainID isc.ChainID, callbac
 	}
 
 	if modified {
-		s, _ := chainRecord.MarshalJSON()
-		println("AAA ", string(s))
 		p.events.ChainRecordModified.Trigger(&ChainRecordModifiedEvent{
 			ChainRecord: chainRecord,
 		})
