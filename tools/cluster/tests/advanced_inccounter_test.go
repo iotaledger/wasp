@@ -191,9 +191,6 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	}
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
-
-	// TODO is this needed?
-	time.Sleep(10 * time.Second) // five time for the nodes to shutdown properly before running the next test
 }
 
 // extreme test
