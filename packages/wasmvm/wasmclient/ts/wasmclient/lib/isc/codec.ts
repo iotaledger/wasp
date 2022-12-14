@@ -6,6 +6,7 @@ import * as wasmlib from 'wasmlib';
 
 // Thank you, @iota/crypto.js, for making my life easy
 export class Codec {
+    //TODO get this from Hornat node config
     public static bech32Prefix = 'smr';
 
     public static bech32Decode(bech32: string): wasmlib.ScAddress | null {
@@ -24,9 +25,7 @@ export class Codec {
     }
 
     public static hNameBytes(name: string): Uint8Array {
-        const data = new TextEncoder()
-            .encode(name);
-
+        const data = wasmlib.stringToBytes(name)
         const hash = Blake2b.sum256(data);
 
         // follow exact algorithm from packages/isc/hname.go

@@ -74,8 +74,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
         }
-        const res = this.svcClient.callViewByHname(this.chID, req.contract, req.function, req.params);
-        this.Err = this.svcClient.Err();
+        const [res, err] = this.svcClient.callViewByHname(this.chID, req.contract, req.function, req.params);
+        this.Err = err;
         if (this.Err != null) {
             return new Uint8Array(0);
         }
@@ -88,18 +88,19 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return new Uint8Array(0);
         }
         const req = wasmlib.PostRequest.fromBytes(args);
-        if (req.chainID != this.chID) {
+        if (!req.chainID.equals(this.chID)) {
             this.Err = 'unknown chain id: ' + req.chainID.toString();
             return new Uint8Array(0);
         }
-        if (req.contract != this.scHname) {
+        if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract:' + req.contract.toString();
             return new Uint8Array(0);
         }
         const scAssets = new wasmlib.ScAssets(req.transfer);
         this.nonce++;
-        this.ReqID = this.svcClient.postRequest(this.chID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
-        this.Err = this.svcClient.Err();
+        const [reqId, err] = this.svcClient.postRequest(this.chID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
+        this.ReqID = reqId;
+        this.Err = err;
         return new Uint8Array(0);
     }
 

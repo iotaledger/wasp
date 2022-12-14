@@ -5,11 +5,9 @@ import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 
 export interface IClientService {
-    callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): Uint8Array;
+    callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error];
 
-    Err(): isc.Error;
-
-    postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): wasmlib.ScRequestID;
+    postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error];
 
     subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error;
 
@@ -18,7 +16,6 @@ export interface IClientService {
 
 export class WasmClientService implements IClientService {
     waspClient: isc.WaspClient;
-    lastError: isc.Error = null;
     eventPort: string;
 
     public constructor(waspAPI: string, eventPort: string) {
@@ -30,28 +27,23 @@ export class WasmClientService implements IClientService {
         return new WasmClientService('127.0.0.1:9090', '127.0.0.1:5550');
     }
 
-    public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): Uint8Array {
-        const res = this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
-        this.lastError = this.waspClient.Err;
-        if (this.lastError != null) {
-            return new Uint8Array(0);
+    public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
+        const [res, err] = this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
+        if (err != null) {
+            return [new Uint8Array(0), err];
         }
-        return res;
+        return [res, null];
     }
 
-    public Err(): isc.Error {
-        return this.lastError;
-    }
-
-    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): wasmlib.ScRequestID {
+    public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error] {
         const req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
         const signed = req.sign(keyPair);
-        this.lastError = this.waspClient.postOffLedgerRequest(chainID, signed);
-        if (this.lastError != null) {
-            return wasmlib.requestIDFromBytes(new Uint8Array(0));
+        const err = this.waspClient.postOffLedgerRequest(chainID, signed);
+        if (err != null) {
+            return [new wasmlib.ScRequestID(), err];
         }
-        return signed.ID();
+        return [signed.ID(), null];
     }
 
     public subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error {
