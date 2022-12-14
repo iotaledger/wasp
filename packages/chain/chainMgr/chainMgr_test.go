@@ -5,7 +5,9 @@ package chainMgr_test
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -45,6 +47,7 @@ func TestBasic(t *testing.T) {
 }
 
 func testBasic(t *testing.T, n, f int) {
+	rand.Seed(time.Now().UnixNano())
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	//

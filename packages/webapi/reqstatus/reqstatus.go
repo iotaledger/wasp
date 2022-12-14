@@ -76,7 +76,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID)
+	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
 	return r.resolveReceipt(c, ch, rec)
 }
 

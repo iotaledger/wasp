@@ -52,17 +52,18 @@ import (
 )
 
 const (
-	recoveryTimeout         time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod       time.Duration = 10 * time.Second // TODO: Make it configurable?
-	consensusInstsInAdvance int           = 3                // TODO: Make it configurable?
+	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
+	redeliveryPeriod         time.Duration = 3 * time.Second  // TODO: Make it configurable?
+	printStatusPeriod        time.Duration = 10 * time.Second // TODO: Make it configurable?
+	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
+	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
 
 	msgTypeChainMgr byte = iota
 )
 
 type ChainRequests interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey)
-	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt
+	AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt
 }
 
 type Chain interface {
@@ -147,6 +148,10 @@ type chainNodeImpl struct {
 	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
 	procCache           *processors.Cache                           // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
+	awaitReceiptActCh   chan *awaitReceiptReq
+	awaitReceiptCnfCh   chan *awaitReceiptReq
+	stateTrackerAct     StateTracker
+	stateTrackerCnf     StateTracker
 	//
 	// Information for other components.
 	listener               ChainListener          // Object expecting event notifications.
@@ -237,11 +242,15 @@ func New(
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
 		configUpdatedCh:        make(chan *configUpdate, 1),
+		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
+		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
+		stateTrackerAct:        nil, // Set bellow.
+		stateTrackerCnf:        nil, // Set bellow.
 		listener:               listener,
 		accessLock:             &sync.RWMutex{},
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
-		activeAccessNodes:      nil, // updated bellow.
+		activeAccessNodes:      nil, // Set bellow.
 		accessNodesFromNode:    accessNodesForNode,
 		accessNodesFromChain:   []*cryptolib.PublicKey{},
 		latestConfirmedAO:      nil,
@@ -282,12 +291,10 @@ func New(
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
 	}
-	// TODO: Review, if all needed functions are called for mempool.
 	mempool := mempool.New(
 		ctx,
 		chainID,
 		nodeIdentity,
-		stateMgr,
 		net,
 		log.Named("MP"),
 		chainMetrics,
@@ -296,6 +303,8 @@ func New(
 	cni.chainMgr = chainMgr
 	cni.stateMgr = stateMgr
 	cni.mempool = mempool
+	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB)
+	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB)
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
@@ -318,15 +327,11 @@ func New(
 	}
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
-		aliasOutput := outputInfo.AliasOutputWithID()
-		cni.stateMgr.ReceiveConfirmedAliasOutput(aliasOutput)
-
 		if outputInfo.Consumed() {
 			// we don't need to send consumed alias outputs to the pipe
 			return
 		}
-
-		recvAliasOutputPipeInCh <- aliasOutput
+		recvAliasOutputPipeInCh <- outputInfo.AliasOutputWithID()
 	}
 	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
 	recvMilestoneCB := func(timestamp time.Time) {
@@ -344,8 +349,14 @@ func (cni *chainNodeImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, 
 	cni.mempool.ReceiveOffLedgerRequest(request)
 }
 
-func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
-	return cni.mempool.AwaitRequestProcessed(ctx, requestID)
+func (cni *chainNodeImpl) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
+	query, responseCh := newAwaitReceiptReq(ctx, requestID)
+	if confirmed {
+		cni.awaitReceiptCnfCh <- query
+	} else {
+		cni.awaitReceiptActCh <- query
+	}
+	return responseCh
 }
 
 func (cni *chainNodeImpl) ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKey) {
@@ -400,8 +411,29 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 		case cfg, ok := <-cni.configUpdatedCh:
 			if !ok {
 				cni.configUpdatedCh = nil
+				continue
 			}
 			cni.handleAccessNodesConfigUpdated(cfg.accessNodes)
+		case query, ok := <-cni.awaitReceiptActCh:
+			if !ok {
+				cni.awaitReceiptActCh = nil
+				continue
+			}
+			cni.stateTrackerAct.AwaitRequestReceipt(query)
+		case query, ok := <-cni.awaitReceiptCnfCh:
+			if !ok {
+				cni.awaitReceiptCnfCh = nil
+				continue
+			}
+			cni.stateTrackerCnf.AwaitRequestReceipt(query)
+		case resp, ok := <-cni.stateTrackerAct.ChainNodeAwaitStateMgrCh():
+			if ok {
+				cni.stateTrackerAct.ChainNodeStateMgrResponse(resp)
+			}
+		case resp, ok := <-cni.stateTrackerCnf.ChainNodeAwaitStateMgrCh():
+			if ok {
+				cni.stateTrackerCnf.ChainNodeStateMgrResponse(resp)
+			}
 		case <-ctx.Done():
 			cni.net.Detach(netAttachID)
 			return
@@ -414,6 +446,27 @@ func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromChain = accessNodesFromChain
 	})
+}
+
+// The active state is needed by the mempool to cleanup the processed requests, etc.
+// The request/receipt awaits are already handled in the StateTracker.
+func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
+}
+
+// The committed state is required here because:
+//   - This way we make sure the state has all the blocks till the specified trie root.
+//   - We set it as latest here. This is then used in many places to access the latest version of the state.
+//
+// The request/receipt awaits are already handled in the StateTracker.
+func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	l1Commitment, err := state.L1CommitmentFromAliasOutput(till.GetAliasOutput())
+	if err != nil {
+		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
+	}
+	if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
+		panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
+	}
 }
 
 func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*cryptolib.PublicKey) {
@@ -435,6 +488,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput)
 	outMsgs := cni.chainMgr.AsGPA().Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
 	)
@@ -558,7 +612,7 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.mempool.TrackNewChainHead(needConsensus.BaseAliasOutput)
+		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput)
 		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
 		//
 		// Update committee nodes, if changed.
