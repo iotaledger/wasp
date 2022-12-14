@@ -18,6 +18,7 @@ import (
 // Single node network. 8 blocks are sent to state manager. The result is checked
 // by sending consensus requests, which force the access of the blocks.
 func TestBasic(t *testing.T) {
+	t.Skip()
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
@@ -41,6 +42,7 @@ func TestBasic(t *testing.T) {
 // which force the access (and retrieval) of the blocks. For successful retrieval,
 // several timer events are required for nodes to try to request blocks from peers.
 func TestManyNodes(t *testing.T) {
+	t.Skip()
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
@@ -104,6 +106,7 @@ func TestManyNodes(t *testing.T) {
 //  4. A common ancestor (mempool) request is sent to state manager for first and
 //     second batch ends.
 func TestFull(t *testing.T) {
+	t.Skip()
 	nodeCount := 12
 	iterationSize := 10
 	iterationCount := 3
@@ -189,6 +192,7 @@ func TestFull(t *testing.T) {
 //     completion is waited for; each check fires a timer event to force
 //     the exchange of blocks between nodes.
 func TestMempoolRequest(t *testing.T) {
+	t.Skip()
 	nodeCount := 15
 	mainSize := 20
 	randomFrom := 5
@@ -234,6 +238,7 @@ func TestMempoolRequest(t *testing.T) {
 //  2. A common ancestor (mempool) request is sent for block 1 as a new block
 //     and block 0 as an old block.
 func TestMempoolRequestFirstStep(t *testing.T) {
+	t.Skip()
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
@@ -260,6 +265,7 @@ func TestMempoolRequestFirstStep(t *testing.T) {
 //  2. A common ancestor (mempool) request is sent for block 10 as a new block
 //     and block 5 as an old block.
 func TestMempoolRequestNoBranch(t *testing.T) {
+	t.Skip()
 	batchSize := 10
 	middleBlock := 4
 
@@ -292,6 +298,7 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 //  3. A common ancestor (mempool) request is sent for the branch as a new and
 //     and original batch as old.
 func TestMempoolRequestBranchFromOrigin(t *testing.T) {
+	t.Skip()
 	batchSize := 10
 	branchSize := 8
 
@@ -333,6 +340,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 //  3. All nodes are checked, if their latest state has changed in store. Timer
 //     events for block sharing are fired in between the checks.
 func TestLatestStateIsStored(t *testing.T) {
+	t.Skip()
 	nodeCount := 15
 	batchSize := 20
 	iterationStep := 5
@@ -388,6 +396,7 @@ func TestLatestStateIsStored(t *testing.T) {
 // Single node network. Checks if block cache is cleaned via state manager
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
+	t.Skip()
 	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
 	smTimers := NewStateManagerTimers()
 	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
