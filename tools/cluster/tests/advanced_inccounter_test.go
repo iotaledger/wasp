@@ -54,32 +54,32 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
 		const numRequests = 8
 		const numValidatorNodes = 3
-		const clusterSize = 4 // TODO this should be 10, but its failing (port conflict probably)
+		const clusterSize = 10
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 
-	// t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
-	// 	const numRequests = 100
-	// 	const numValidatorNodes = 4
-	// 	const clusterSize = 10
-	// 	testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	// })
+	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
 
-	// t.Run("cluster=15, N=4, req=200", func(t *testing.T) {
-	// 	testutil.RunHeavy(t)
-	// 	const numRequests = 200
-	// 	const numValidatorNodes = 4
-	// 	const clusterSize = 15
-	// 	testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	// })
+	t.Run("cluster=15, N=4, req=200", func(t *testing.T) {
+		testutil.RunHeavy(t)
+		const numRequests = 200
+		const numValidatorNodes = 4
+		const clusterSize = 15
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
 
-	// t.Run("cluster=15, N=6, req=200", func(t *testing.T) {
-	// 	testutil.RunHeavy(t)
-	// 	const numRequests = 200
-	// 	const numValidatorNodes = 6
-	// 	const clusterSize = 15
-	// 	testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	// })
+	t.Run("cluster=15, N=6, req=200", func(t *testing.T) {
+		testutil.RunHeavy(t)
+		const numRequests = 200
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
