@@ -24,7 +24,7 @@ export class WasmClientService implements IClientService {
     }
 
     public static DefaultWasmClientService(): WasmClientService {
-        return new WasmClientService('127.0.0.1:9090', '127.0.0.1:5550');
+        return new WasmClientService('127.0.0.1:19090', '127.0.0.1:15550');
     }
 
     public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {

@@ -27,7 +27,7 @@ export class WasmClientService implements IClientService {
     }
 
     public static DefaultWasmClientService(): WasmClientService {
-        return new WasmClientService("127.0.0.1:9090", "127.0.0.1:5550");
+        return new WasmClientService("127.0.0.1:19090", "127.0.0.1:15550");
     }
 
     public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: u8[]): u8[] {
@@ -49,7 +49,7 @@ export class WasmClientService implements IClientService {
         let signed = req.sign(keyPair);
         this.lastError = this.waspClient.postOffLedgerRequest(chainID, signed);
         if (this.lastError != null) {
-            return wasmlib.requestIDFromBytes([]);
+            return wasmlib.requestIDFromBytes(null);
         }
         return signed.ID();
     }
