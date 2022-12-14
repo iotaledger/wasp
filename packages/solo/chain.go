@@ -661,7 +661,7 @@ func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryp
 }
 
 // AwaitRequestProcessed implements chain.Chain
-func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID) <-chan *blocklog.RequestReceipt {
+func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
 	panic("unimplemented")
 }
 

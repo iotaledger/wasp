@@ -23,7 +23,7 @@ func (c *WaspClient) GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord,
 	if err := c.do(http.MethodGet, routes.GetChainRecord(chainID.String()), nil, res); err != nil {
 		return nil, err
 	}
-	return res.Record(), nil
+	return res.Record()
 }
 
 // GetChainRecordList fetches the list of all chains in the node
@@ -34,7 +34,11 @@ func (c *WaspClient) GetChainRecordList() ([]*registry.ChainRecord, error) {
 	}
 	list := make([]*registry.ChainRecord, len(res))
 	for i, bd := range res {
-		list[i] = bd.Record()
+		rec, err := bd.Record()
+		if err != nil {
+			return nil, err
+		}
+		list[i] = rec
 	}
 	return list, nil
 }

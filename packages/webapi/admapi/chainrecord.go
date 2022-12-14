@@ -48,23 +48,34 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	bd := req.Record()
+	requestChainRec, err := req.Record()
+	if err != nil {
+		return httperrors.BadRequest("Error parsing chain record")
+	}
 
-	bd2, err := s.chainRecordRegistryProvider.ChainRecord(bd.ChainID())
+	storedChainRec, err := s.chainRecordRegistryProvider.ChainRecord(requestChainRec.ChainID())
 	if err != nil {
 		return err
 	}
-	if bd2 != nil {
-		// Make this call idempotent.
-		// Record has no information apart from the ChainID and activation status.
-		// So just keep the existing, if it exists.
-		return c.NoContent(http.StatusCreated)
+	if storedChainRec != nil {
+		_, err = s.chainRecordRegistryProvider.UpdateChainRecord(
+			requestChainRec.ChainID(),
+			func(rec *registry.ChainRecord) bool {
+				rec.AccessNodes = requestChainRec.AccessNodes
+				rec.Active = requestChainRec.Active
+				return true
+			},
+		)
+		if err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusAccepted)
 	}
-	if err := s.chainRecordRegistryProvider.AddChainRecord(bd); err != nil {
+	if err := s.chainRecordRegistryProvider.AddChainRecord(requestChainRec); err != nil {
 		return err
 	}
 
-	log.Infof("Chain record saved: ChainID: %s (active: %t)", bd.ChainID(), bd.Active)
+	log.Infof("Chain record saved: ChainID: %s (active: %t)", requestChainRec.ChainID(), requestChainRec.Active)
 
 	return c.NoContent(http.StatusCreated)
 }

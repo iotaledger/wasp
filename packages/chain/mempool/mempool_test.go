@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"sync"
 	"testing"
 	"time"
 
@@ -81,6 +80,7 @@ func TestBasic(t *testing.T) {
 //   - Get proposals -- all received 1 request.
 func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	chainInitReqs := te.tcl.MakeTxChainInit()
@@ -103,8 +103,8 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 		node.TangleTimeUpdated(tangleTime)
 	}
 	t.Logf("TrackNewChainHead")
-	for _, node := range te.mempools {
-		node.TrackNewChainHead(te.originAO)
+	for i, node := range te.mempools {
+		node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	t.Logf("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
@@ -125,7 +125,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	//
 	// Make a block consuming those 2 requests.
-	store := te.stateMgrs[0].store
+	store := te.stores[0]
 	vmTask := &vm.VMTask{
 		Processors:             processors.MustNew(coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)),
 		AnchorOutput:           te.originAO.GetAliasOutput(),
@@ -160,9 +160,8 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	// Ask proposals for the next
 	proposals = make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i := range te.mempools {
-		te.stateMgrs[i].mockAliasOutput(nextAO, chainState, []state.Block{block}, []state.Block{})
 		proposals[i] = te.mempools[i].ConsensusProposalsAsync(te.ctx, nextAO) // Intentionally invalid order (vs TrackNewChainHead).
-		te.mempools[i].TrackNewChainHead(nextAO)
+		te.mempools[i].TrackNewChainHead(chainState, te.originAO, nextAO, []state.Block{block}, []state.Block{})
 	}
 	//
 	// We should not get any requests, because old requests are consumed
@@ -208,6 +207,7 @@ func TestTimeLock(t *testing.T) {
 
 func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
 	t.Parallel()
+	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	start := time.Now()
@@ -245,10 +245,10 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
 			mp.ReceiveOnLedgerRequest(r)
 		}
 	}
-	for _, mp := range te.mempools {
+	for i, mp := range te.mempools {
 		mp.TangleTimeUpdated(start)
 		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
-		mp.TrackNewChainHead(te.originAO)
+		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	//
 	// Check, if requests are proposed.
@@ -325,6 +325,7 @@ func TestExpiration(t *testing.T) {
 
 func testExpiration(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	start := time.Now()
@@ -360,10 +361,10 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 			mp.ReceiveOnLedgerRequest(r)
 		}
 	}
-	for _, mp := range te.mempools {
+	for i, mp := range te.mempools {
 		mp.TangleTimeUpdated(start)
 		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
-		mp.TrackNewChainHead(te.originAO)
+		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	//
 	// Check, if requests are proposed.
@@ -392,6 +393,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 
 // Setups testing environment and holds all the relevant info.
 type testEnv struct {
+	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
 	log              *logger.Logger
@@ -408,11 +410,11 @@ type testEnv struct {
 	chainID          isc.ChainID
 	originAO         *isc.AliasOutputWithID
 	mempools         []mempool.Mempool
-	stateMgrs        []*testStateMgr
+	stores           []state.Store
 }
 
 func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
-	te := &testEnv{}
+	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t)
 	//
@@ -450,17 +452,13 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	//
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
-	te.stateMgrs = make([]*testStateMgr, len(te.peerIdentities))
+	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stateMgrs[i] = newTestStateMgr(t)
-		originState, err := te.stateMgrs[i].store.LatestState()
-		require.NoError(t, err)
-		te.stateMgrs[i].mockAliasOutput(te.originAO, originState, []state.Block{}, []state.Block{})
+		te.stores[i] = state.InitChainStore(mapdb.NewMapDB())
 		te.mempools[i] = mempool.New(
 			te.ctx,
 			te.chainID,
 			te.peerIdentities[i],
-			te.stateMgrs[i],
 			te.networkProviders[i],
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 			&MockMempoolMetrics{},
@@ -470,68 +468,18 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	return te
 }
 
+func (te *testEnv) stateForAO(i int, ao *isc.AliasOutputWithID) state.State {
+	l1Commitment, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	require.NoError(te.t, err)
+	st, err := te.stores[i].StateByTrieRoot(l1Commitment.TrieRoot())
+	require.NoError(te.t, err)
+	return st
+}
+
 func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
 	te.log.Sync()
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// testStateMgr
-
-type testStateMgr struct {
-	t         *testing.T
-	lock      *sync.Mutex
-	store     state.Store
-	mockedAOs map[iotago.OutputID]*testStateMgrAO
-}
-
-type testStateMgrAO struct {
-	aliasOutput *isc.AliasOutputWithID
-	chainState  state.State
-	added       []state.Block
-	removed     []state.Block
-}
-
-func newTestStateMgr(t *testing.T) *testStateMgr {
-	tsm := &testStateMgr{
-		t:         t,
-		lock:      &sync.Mutex{},
-		store:     state.InitChainStore(mapdb.NewMapDB()),
-		mockedAOs: map[iotago.OutputID]*testStateMgrAO{},
-	}
-	_, err := tsm.store.StateByTrieRoot(state.OriginL1Commitment().TrieRoot()) // Make sure init state exist.
-	require.NoError(t, err)
-	tsm.store.SetLatest(state.OriginL1Commitment().TrieRoot())
-	return tsm
-}
-
-func (tsm *testStateMgr) mockAliasOutput(aliasOutput *isc.AliasOutputWithID, chainState state.State, added, removed []state.Block) {
-	tsm.mockedAOs[aliasOutput.OutputID()] = &testStateMgrAO{
-		aliasOutput: aliasOutput,
-		chainState:  chainState,
-		added:       added,
-		removed:     removed,
-	}
-}
-
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
-	panic("should not be used in this test")
-}
-
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
-	panic("should not be used in this test")
-}
-
-func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, block state.Block) <-chan error {
-	panic("should not be used in this test")
-}
-
-func (tsm *testStateMgr) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (st state.State, added, removed []state.Block) {
-	tsm.lock.Lock()
-	defer tsm.lock.Unlock()
-	mockInfo := tsm.mockedAOs[nextAO.OutputID()]
-	return mockInfo.chainState, mockInfo.added, mockInfo.removed
 }
 
 ////////////////////////////////////////////////////////////////////////////////

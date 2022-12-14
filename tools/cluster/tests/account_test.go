@@ -200,6 +200,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	// wait for the block that includes the request to be added to the ledger
 	// (the func above only waits until the block is produced, not until it is accepted on L1)
+	// TODO remove, shouldn't be needed once we have webapi "wait until confimed request"
 	waitTrue(
 		20*time.Second,
 		func() bool {

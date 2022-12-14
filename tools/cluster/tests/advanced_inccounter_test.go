@@ -47,26 +47,13 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	return e
 }
 
-func (e *ChainEnv) printBlocks(expected int) {
-	recs, err := e.Chain.GetAllBlockInfoRecordsReverse()
-	require.NoError(e.t, err)
-
-	sum := 0
-	for _, rec := range recs {
-		e.t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-		sum += int(rec.TotalRequests)
-	}
-	e.t.Logf("Total requests processed: %d", sum)
-	require.EqualValues(e.t, expected, sum)
-}
-
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
 	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
 		const numRequests = 8
-		const numValidatorNodes = 4
+		const numValidatorNodes = 3
 		const clusterSize = 10
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
@@ -96,28 +83,25 @@ func TestAccessNodesOnLedger(t *testing.T) {
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
-	cmt := util.MakeRange(0, numValidatorNodes-1)
+	cmt := util.MakeRange(0, numValidatorNodes)
 	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
 
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
-		for i := 0; i < 5 && (err != nil); i++ {
+		var err error
+		for i := 0; i < 5; i++ {
+			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+			if err == nil {
+				break
+			}
 			fmt.Printf("Error posting request, will retry... %v", err)
 			time.Sleep(100 * time.Millisecond)
-			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 		}
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
-
-	e.printBlocks(
-		numRequests + // The actual IncCounter requests.
-			4 + // Initial State + IncCounter SC Deploy + ???
-			clusterSize, // Access node applications.
-	)
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.AllNodes(), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
@@ -207,13 +191,6 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	}
 
 	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
-
-	e.printBlocks(
-		numRequests + // The actual IncCounter requests.
-			5 + // ???
-			clusterSize, // Access nodes applications.
-	)
-	time.Sleep(10 * time.Second) // five time for the nodes to shutdown properly before running the next test
 }
 
 // extreme test
@@ -245,9 +222,4 @@ func TestAccessNodesMany(t *testing.T) {
 		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
-	e.printBlocks(
-		posted + // The actual SC requests.
-			4 + // ???
-			clusterSize, // GOV: Access Node Applications.
-	)
 }
