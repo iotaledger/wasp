@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smInputs"
@@ -22,10 +21,17 @@ import (
 
 type StateMgr interface {
 	consGR.StateMgr
-	mempool.StateMgr
+	// The StateMgr has to find a common ancestor for the prevAO and nextAO, then return
+	// the state for Next ao and reject blocks in range (commonAO, prevAO]. The StateMgr
+	// can determine relative positions of the corresponding blocks based on their state
+	// indexes.
+	MempoolStateRequest( // TODO: Rename to get rid of the mempool here. Maybe: FetchStateDiff?
+		ctx context.Context,
+		prevAO, nextAO *isc.AliasOutputWithID,
+	) <-chan *smInputs.MempoolStateRequestResults
 	// Invoked by the chain when new confirmed alias output is received.
 	// This event should be used to mark blocks as confirmed.
-	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID)
+	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) // TODO: Not used anymore, can be removed.
 	// Invoked by the chain when a set of access nodes has changed.
 	// These nodes should be used to perform block replication.
 	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
@@ -48,9 +54,8 @@ type stateManager struct {
 }
 
 var (
-	_ StateMgr         = &stateManager{}
-	_ consGR.StateMgr  = &stateManager{}
-	_ mempool.StateMgr = &stateManager{}
+	_ StateMgr        = &stateManager{}
+	_ consGR.StateMgr = &stateManager{}
 )
 
 const (
@@ -157,17 +162,7 @@ func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft 
 // Implementations for mempool.StateMgr
 // -------------------------------------
 
-// vs, kaip suprantu yra pagal nextAO, added yra blokai nuo common iki nextAO, removed - blokai nuo common iki prevAO
-// Common - excluded tuose listuose.
-// TODO: Temporary function to make synchronous request asynchronous
-func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (state.State, []state.Block, []state.Block) {
-	resultCh := smT.mempoolStateRequestAsync(ctx, prevAO, nextAO)
-	result := <-resultCh // NOTE: blocks to wait for result... maybe infinitely.
-	return result.GetNewState(), result.GetAdded(), result.GetRemoved()
-}
-
-// TODO: Future interface function instead of `MempoolStateRequest`
-func (smT *stateManager) mempoolStateRequestAsync(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *smInputs.MempoolStateRequestResults {
+func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *smInputs.MempoolStateRequestResults {
 	input, resultCh := smInputs.NewMempoolStateRequest(ctx, prevAO, nextAO)
 	smT.addInput(input)
 	return resultCh

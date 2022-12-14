@@ -1,10 +1,8 @@
 package smInputs
 
-import (
-	"github.com/iotaledger/wasp/packages/state"
-)
+import "github.com/iotaledger/wasp/packages/state"
 
-type MempoolStateRequestResults struct { // TODO: move to mempool package
+type MempoolStateRequestResults struct {
 	newState state.State   // state for newL1Commitment
 	added    []state.Block // blocks from common to newL1Commitment (excluding common)
 	removed  []state.Block // blocks from common to oldL1Commitment (excluding common)
