@@ -9,7 +9,7 @@ import * as wasmlib from "../index";
 import * as sc from "./index";
 
 export class DeployContractCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableDeployContractParams = new sc.MutableDeployContractParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -18,7 +18,7 @@ export class DeployContractCall {
 }
 
 export class GrantDeployPermissionCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableGrantDeployPermissionParams = new sc.MutableGrantDeployPermissionParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -27,7 +27,7 @@ export class GrantDeployPermissionCall {
 }
 
 export class RequireDeployPermissionsCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableRequireDeployPermissionsParams = new sc.MutableRequireDeployPermissionsParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -36,7 +36,7 @@ export class RequireDeployPermissionsCall {
 }
 
 export class RevokeDeployPermissionCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableRevokeDeployPermissionParams = new sc.MutableRevokeDeployPermissionParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -45,7 +45,7 @@ export class RevokeDeployPermissionCall {
 }
 
 export class SubscribeBlockContextCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableSubscribeBlockContextParams = new sc.MutableSubscribeBlockContextParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -54,8 +54,8 @@ export class SubscribeBlockContextCall {
 }
 
 export class FindContractCall {
-    func: wasmlib.ScView;
-    params: sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableFindContractParams = new sc.MutableFindContractParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableFindContractResults = new sc.ImmutableFindContractResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -64,7 +64,7 @@ export class FindContractCall {
 }
 
 export class GetContractRecordsCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetContractRecordsResults = new sc.ImmutableGetContractRecordsResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {

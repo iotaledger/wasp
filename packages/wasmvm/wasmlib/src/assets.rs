@@ -24,16 +24,21 @@ impl ScAssets {
         }
 
         let mut dec = WasmDecoder::new(buf);
+        let empty = bool_decode(&mut dec);
+        if empty {
+            return assets;
+        }
+
         assets.base_tokens = uint64_decode(&mut dec);
 
-        let size = uint32_decode(&mut dec);
+        let size = uint16_decode(&mut dec);
         for _i in 0..size {
             let token_id = token_id_decode(&mut dec);
             let amount = big_int_decode(&mut dec);
             assets.tokens.insert(token_id.to_bytes(), amount);
         }
 
-        let size = uint32_decode(&mut dec);
+        let size = uint16_decode(&mut dec);
         for _i in 0..size {
             let nft_id = nft_id_decode(&mut dec);
             assets.nft_ids.insert(nft_id);
@@ -69,19 +74,25 @@ impl ScAssets {
 
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut enc = WasmEncoder::new();
+        let empty = self.is_empty();
+        bool_encode(&mut enc, empty);
+        if empty {
+            return enc.buf();
+        }
+
         uint64_encode(&mut enc, self.base_tokens);
 
-        uint32_encode(&mut enc, self.tokens.len() as u32);
+        uint16_encode(&mut enc, self.tokens.len() as u16);
         for (token_id, amount) in self.tokens.iter() {
             enc.fixed_bytes(token_id, SC_TOKEN_ID_LENGTH);
             big_int_encode(&mut enc, amount);
         }
 
-        uint32_encode(&mut enc, self.nft_ids.len() as u32);
+        uint16_encode(&mut enc, self.nft_ids.len() as u16);
         for nft_id in self.nft_ids.iter() {
             nft_id_encode(&mut enc, &nft_id);
         }
-        return enc.buf();
+        enc.buf()
     }
 
     pub fn token_ids(&self) -> Vec<ScTokenID> {

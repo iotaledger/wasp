@@ -77,59 +77,87 @@ func TestNodeConn(t *testing.T) {
 	)
 	t.Logf("Peering network created.")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	nodeBridge, err := nodebridge.NewNodeBridge(ctx, l1.Config.INXAddress, 10, log.Named("NodeBridge"))
+	ctxInit, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancelInit()
+
+	nodeBridge, err := nodebridge.NewNodeBridge(ctxInit, l1.Config.INXAddress, 10, log.Named("NodeBridge"))
 	require.NoError(t, err)
+
 	go nodeBridge.Run(ctx)
 
-	nc, err := nodeconn.New(ctx, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
+	nc, err := nodeconn.New(ctxInit, log, nodeBridge, nodeconnmetrics.NewEmptyNodeConnectionMetrics())
 	require.NoError(t, err)
+
+	defer cancelInit()
+
+	// run the node connection
+	go nc.Run(ctx)
 
 	//
 	// Check the chain operations.
 	chainID := createChain(t)
 	chainOuts := make(map[iotago.OutputID]iotago.Output)
-	chainOICh := make(chan iotago.OutputID)
+	chainOICh := make(chan iotago.OutputID, 100)
 	chainStateOuts := make(map[iotago.OutputID]iotago.Output)
-	chainStateOutsICh := make(chan iotago.OutputID)
-	mChan := make(chan time.Time, 10)
+	chainStateOutsICh := make(chan iotago.OutputID, 100)
+
+	drainChannel := func(channel chan iotago.OutputID) {
+		for {
+			select {
+			case <-channel:
+			default:
+				return
+			}
+		}
+	}
+
+	drainChannels := func() {
+		drainChannel(chainOICh)
+		drainChannel(chainStateOutsICh)
+	}
+
 	nc.AttachChain(
 		context.Background(),
 		chainID,
 		func(outputInfo *isc.OutputInfo) {
-			chainStateOuts[outputInfo.OutputID] = outputInfo.Output
-			chainStateOutsICh <- outputInfo.OutputID
-		},
-		func(outputInfo *isc.OutputInfo) {
 			chainOuts[outputInfo.OutputID] = outputInfo.Output
 			chainOICh <- outputInfo.OutputID
 		},
-		func(timestamp time.Time) {
-			mChan <- timestamp
+		func(outputInfo *isc.OutputInfo) {
+			chainStateOuts[outputInfo.OutputID] = outputInfo.Output
+			chainStateOutsICh <- outputInfo.OutputID
 		},
+		func(timestamp time.Time) {},
 	)
-	<-mChan
 
 	client := l1connection.NewClient(l1.Config, log)
+
+	drainChannels()
+
 	// Post a TX directly, and wait for it in the message stream (e.g. a request).
 	err = client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
+
 	t.Logf("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh
 	t.Logf("Waiting for outputs posted via tangle... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
 
-	require.NoError(t, err)
+	drainChannels()
+
 	wallet := cryptolib.NewKeyPair()
 	client.RequestFunds(wallet.Address())
 	tx, err := l1connection.MakeSimpleValueTX(client, wallet, chainID.AsAddress(), 1*isc.Million)
 	require.NoError(t, err)
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	nc.PublishTX(ctx, chainID, tx, func(tx *iotago.Transaction, confirmed bool) {
+
+	ctxPublish, cancelPublish := context.WithCancel(context.Background())
+	nc.PublishTX(ctxPublish, chainID, tx, func(tx *iotago.Transaction, confirmed bool) {
 		require.True(t, confirmed)
-		cancelCtx()
+		cancelPublish()
 	})
+
 	t.Logf("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh
 	t.Logf("Waiting for outputs posted via nodeConn... Done, have %v=%v", oid.ToHex(), chainOuts[oid])

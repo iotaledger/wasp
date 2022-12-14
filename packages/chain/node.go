@@ -317,14 +317,6 @@ func New(
 	})
 	//
 	// Attach to the L1.
-	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
-	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
-		if outputInfo.Consumed() {
-			// we don't need to send consumed alias outputs to the pipe
-			return
-		}
-		recvAliasOutputPipeInCh <- outputInfo.AliasOutputWithID()
-	}
 	recvRequestCB := func(outputInfo *isc.OutputInfo) {
 		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
@@ -332,6 +324,14 @@ func New(
 			return
 		}
 		cni.mempool.ReceiveOnLedgerRequest(req)
+	}
+	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
+	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
+		if outputInfo.Consumed() {
+			// we don't need to send consumed alias outputs to the pipe
+			return
+		}
+		recvAliasOutputPipeInCh <- outputInfo.AliasOutputWithID()
 	}
 	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
 	recvMilestoneCB := func(timestamp time.Time) {

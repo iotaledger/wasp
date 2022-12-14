@@ -42,12 +42,12 @@ type ClusterConfig struct {
 func DefaultWaspConfig() WaspConfig {
 	return WaspConfig{
 		NumNodes:           4,
-		FirstAPIPort:       9090,
-		FirstPeeringPort:   4000,
-		FirstNanomsgPort:   5550,
-		FirstDashboardPort: 7000,
-		FirstProfilingPort: 1060,
-		FirstMetricsPort:   2112,
+		FirstAPIPort:       19090,
+		FirstPeeringPort:   14000,
+		FirstNanomsgPort:   15550,
+		FirstDashboardPort: 17000,
+		FirstProfilingPort: 11060,
+		FirstMetricsPort:   12112,
 	}
 }
 

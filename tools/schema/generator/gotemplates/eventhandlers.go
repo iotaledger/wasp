@@ -6,10 +6,11 @@ package gotemplates
 var eventhandlersGo = map[string]string{
 	// *******************************
 	"eventhandlers.go": `
-$#emit goHeader
-$#emit importWasmTypes
+package $package
 
-var $pkgName$+Handlers = map[string]func(*$PkgName$+EventHandlers, []string) {
+$#emit importWasmLibAndWasmTypes
+
+var $pkgName$+Handlers = map[string]func(*$PkgName$+EventHandlers, []string){
 $#each events eventHandler
 }
 
@@ -56,7 +57,7 @@ func (h *$PkgName$+EventHandlers) on$PkgName$EvtName$+Thunk(msg []string) {
 		return
 	}
 	evt := wasmlib.NewEventDecoder(msg)
-	e := &Event$EvtName{ Timestamp: evt.Timestamp() }
+	e := &Event$EvtName{Timestamp: evt.Timestamp()}
 $#each event eventHandlerField
 	h.$evtName(e)
 }

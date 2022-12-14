@@ -6,13 +6,12 @@ package gotemplates
 var eventsGo = map[string]string{
 	// *******************************
 	"events.go": `
-//nolint:gocritic
-$#emit goHeader
-$#emit importWasmTypes
+package $package
+
+$#emit importWasmLibAndWasmTypes
 
 $#set TypeName $Package$+Events
-type $TypeName struct {
-}
+type $TypeName struct{}
 $#each events eventFunc
 `,
 	// *******************************

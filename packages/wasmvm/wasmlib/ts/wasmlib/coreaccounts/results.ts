@@ -62,33 +62,33 @@ export class MutableAccountNFTsResults extends wasmtypes.ScProxy {
     }
 }
 
-export class MapAgentIDToImmutableBool extends wasmtypes.ScProxy {
+export class MapAgentIDToImmutableBytes extends wasmtypes.ScProxy {
 
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+    getBytes(key: wasmtypes.ScAgentID): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 
 export class ImmutableAccountsResults extends wasmtypes.ScProxy {
-    allAccounts(): sc.MapAgentIDToImmutableBool {
-        return new sc.MapAgentIDToImmutableBool(this.proxy);
+    allAccounts(): sc.MapAgentIDToImmutableBytes {
+        return new sc.MapAgentIDToImmutableBytes(this.proxy);
     }
 }
 
-export class MapAgentIDToMutableBool extends wasmtypes.ScProxy {
+export class MapAgentIDToMutableBytes extends wasmtypes.ScProxy {
 
     clear(): void {
         this.proxy.clearMap();
     }
 
-    getBool(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.agentIDToBytes(key)));
+    getBytes(key: wasmtypes.ScAgentID): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.agentIDToBytes(key)));
     }
 }
 
 export class MutableAccountsResults extends wasmtypes.ScProxy {
-    allAccounts(): sc.MapAgentIDToMutableBool {
-        return new sc.MapAgentIDToMutableBool(this.proxy);
+    allAccounts(): sc.MapAgentIDToMutableBytes {
+        return new sc.MapAgentIDToMutableBytes(this.proxy);
     }
 }
 
@@ -146,33 +146,33 @@ export class MutableGetAccountNonceResults extends wasmtypes.ScProxy {
     }
 }
 
-export class MapTokenIDToImmutableBool extends wasmtypes.ScProxy {
+export class MapTokenIDToImmutableBytes extends wasmtypes.ScProxy {
 
-    getBool(key: wasmtypes.ScTokenID): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+    getBytes(key: wasmtypes.ScTokenID): wasmtypes.ScImmutableBytes {
+        return new wasmtypes.ScImmutableBytes(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
     }
 }
 
 export class ImmutableGetNativeTokenIDRegistryResults extends wasmtypes.ScProxy {
-    mapping(): sc.MapTokenIDToImmutableBool {
-        return new sc.MapTokenIDToImmutableBool(this.proxy);
+    mapping(): sc.MapTokenIDToImmutableBytes {
+        return new sc.MapTokenIDToImmutableBytes(this.proxy);
     }
 }
 
-export class MapTokenIDToMutableBool extends wasmtypes.ScProxy {
+export class MapTokenIDToMutableBytes extends wasmtypes.ScProxy {
 
     clear(): void {
         this.proxy.clearMap();
     }
 
-    getBool(key: wasmtypes.ScTokenID): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
+    getBytes(key: wasmtypes.ScTokenID): wasmtypes.ScMutableBytes {
+        return new wasmtypes.ScMutableBytes(this.proxy.key(wasmtypes.tokenIDToBytes(key)));
     }
 }
 
 export class MutableGetNativeTokenIDRegistryResults extends wasmtypes.ScProxy {
-    mapping(): sc.MapTokenIDToMutableBool {
-        return new sc.MapTokenIDToMutableBool(this.proxy);
+    mapping(): sc.MapTokenIDToMutableBytes {
+        return new sc.MapTokenIDToMutableBytes(this.proxy);
     }
 }
 

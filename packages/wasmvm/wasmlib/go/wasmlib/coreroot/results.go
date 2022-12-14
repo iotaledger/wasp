@@ -16,9 +16,8 @@ type ImmutableFindContractResults struct {
 	proxy wasmtypes.Proxy
 }
 
-// encoded contract record
-func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractFound))
+func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBool {
+	return wasmtypes.NewScImmutableBool(s.proxy.Root(ResultContractFound))
 }
 
 // encoded contract record
@@ -34,9 +33,8 @@ func NewMutableFindContractResults(results *wasmlib.ScDict) MutableFindContractR
 	return MutableFindContractResults{proxy: results.AsProxy()}
 }
 
-// encoded contract record
-func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractFound))
+func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBool {
+	return wasmtypes.NewScMutableBool(s.proxy.Root(ResultContractFound))
 }
 
 // encoded contract record

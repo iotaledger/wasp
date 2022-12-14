@@ -6,7 +6,7 @@ package gotemplates
 var contractGo = map[string]string{
 	// *******************************
 	"contract.go": `
-$#emit goPackage
+package $package
 $#if funcs emitContract
 `,
 	// *******************************
@@ -23,17 +23,18 @@ $#if core coreOnDispatch
 `,
 	// *******************************
 	"FuncNameCall": `
+$#emit alignCalculate
 $#emit setupInitFunc
 
 type $FuncName$+Call struct {
-	Func    *wasmlib.Sc$initFunc$Kind
+	Func$falign *wasmlib.Sc$initFunc$Kind
 $#if param MutableFuncNameParams
 $#if result ImmutableFuncNameResults
 }
 `,
 	// *******************************
 	"MutableFuncNameParams": `
-	Params  Mutable$FuncName$+Params
+	Params$align Mutable$FuncName$+Params
 `,
 	// *******************************
 	"ImmutableFuncNameResults": `

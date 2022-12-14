@@ -21,8 +21,10 @@ type TypeScriptGenerator struct {
 
 var _ IGenerator = new(TypeScriptGenerator)
 
-func NewTypeScriptGenerator(s *model.Schema) *TypeScriptGenerator {
+func NewTypeScriptGenerator(s *model.Schema, rootFolder string) *TypeScriptGenerator {
 	g := &TypeScriptGenerator{}
+	config := tstemplates.Templates[0]
+	config["rootFolder"] = rootFolder
 	g.init(s, tstemplates.TypeDependent, tstemplates.Templates)
 	return g
 }
@@ -64,9 +66,11 @@ func (g *TypeScriptGenerator) GenerateInterface() error {
 	if err != nil {
 		return err
 	}
-	err = g.generateConfig("", packageJSON)
-	if err != nil {
-		return err
+	if g.s.CoreContracts && g.rootFolder == "ts" {
+		err = g.generateConfig("", packageJSON)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

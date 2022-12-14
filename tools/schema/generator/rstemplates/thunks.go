@@ -52,6 +52,7 @@ $#if view libExportViewThunk
 `,
 	// *******************************
 	"libThunk": `
+$#emit alignCalculate
 
 pub struct $FuncName$+Context {
 $#if func PackageEvents
@@ -81,7 +82,7 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"PackageEventsExist": `
-    pub events:  $Package$+Events,
+    pub events:$align $Package$+Events,
 `,
 	// *******************************
 	"PackageEventsInit": `
@@ -89,15 +90,15 @@ $#if events PackageEventsInitExist
 `,
 	// *******************************
 	"PackageEventsInitExist": `
-        events:  $Package$+Events {},
+        events:$align $Package$+Events {},
 `,
 	// *******************************
 	"ImmutableFuncNameParams": `
-    pub params: Immutable$FuncName$+Params,
+    pub params:$align Immutable$FuncName$+Params,
 `,
 	// *******************************
 	"ImmutableFuncNameParamsInit": `
-        params: Immutable$FuncName$+Params::new(),
+        params:$align Immutable$FuncName$+Params::new(),
 `,
 	// *******************************
 	"MutableFuncNameResults": `
@@ -114,11 +115,11 @@ $#if view ImmutablePackageState
 `,
 	// *******************************
 	"MutablePackageState": `
-    pub state: Mutable$Package$+State,
+    pub state:$salign Mutable$Package$+State,
 `,
 	// *******************************
 	"ImmutablePackageState": `
-    pub state: Immutable$Package$+State,
+    pub state:$salign Immutable$Package$+State,
 `,
 	// *******************************
 	"PackageStateInit": `
@@ -127,11 +128,11 @@ $#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"MutablePackageStateInit": `
-        state: Mutable$Package$+State::new(),
+        state:$salign Mutable$Package$+State::new(),
 `,
 	// *******************************
 	"ImmutablePackageStateInit": `
-        state: Immutable$Package$+State::new(),
+        state:$salign Immutable$Package$+State::new(),
 `,
 	// *******************************
 	"returnResultDict": `

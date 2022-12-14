@@ -77,7 +77,7 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 		}
 
 		// add node 0 from cluster 2 as an access node in the governance contract
-		pubKey, err := cryptolib.NewPublicKeyFromHexString(node0peerInfo.PubKey)
+		pubKey, err := cryptolib.NewPublicKeyFromString(node0peerInfo.PubKey)
 		require.NoError(t, err)
 
 		out = w.Run("chain", "change-access-nodes", "accept", pubKey.String())

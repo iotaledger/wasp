@@ -6,7 +6,7 @@ package gotemplates
 var typedefsGo = map[string]string{
 	// *******************************
 	"typedefs.go": `
-$#emit goPackage
+package $package
 
 $#emit importWasmTypes
 $#each typedef typedefProxy

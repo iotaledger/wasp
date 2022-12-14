@@ -106,13 +106,13 @@ impl MutableAccountNFTsResults {
 }
 
 #[derive(Clone)]
-pub struct MapAgentIDToImmutableBool {
+pub struct MapAgentIDToImmutableBytes {
     pub(crate) proxy: Proxy,
 }
 
-impl MapAgentIDToImmutableBool {
-    pub fn get_bool(&self, key: &ScAgentID) -> ScImmutableBool {
-        ScImmutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
+impl MapAgentIDToImmutableBytes {
+    pub fn get_bytes(&self, key: &ScAgentID) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
@@ -122,23 +122,23 @@ pub struct ImmutableAccountsResults {
 }
 
 impl ImmutableAccountsResults {
-    pub fn all_accounts(&self) -> MapAgentIDToImmutableBool {
-        MapAgentIDToImmutableBool { proxy: self.proxy.clone() }
+    pub fn all_accounts(&self) -> MapAgentIDToImmutableBytes {
+        MapAgentIDToImmutableBytes { proxy: self.proxy.clone() }
     }
 }
 
 #[derive(Clone)]
-pub struct MapAgentIDToMutableBool {
+pub struct MapAgentIDToMutableBytes {
     pub(crate) proxy: Proxy,
 }
 
-impl MapAgentIDToMutableBool {
+impl MapAgentIDToMutableBytes {
     pub fn clear(&self) {
         self.proxy.clear_map();
     }
 
-    pub fn get_bool(&self, key: &ScAgentID) -> ScMutableBool {
-        ScMutableBool::new(self.proxy.key(&agent_id_to_bytes(key)))
+    pub fn get_bytes(&self, key: &ScAgentID) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.key(&agent_id_to_bytes(key)))
     }
 }
 
@@ -154,8 +154,8 @@ impl MutableAccountsResults {
         }
     }
 
-    pub fn all_accounts(&self) -> MapAgentIDToMutableBool {
-        MapAgentIDToMutableBool { proxy: self.proxy.clone() }
+    pub fn all_accounts(&self) -> MapAgentIDToMutableBytes {
+        MapAgentIDToMutableBytes { proxy: self.proxy.clone() }
     }
 }
 
@@ -270,13 +270,13 @@ impl MutableGetAccountNonceResults {
 }
 
 #[derive(Clone)]
-pub struct MapTokenIDToImmutableBool {
+pub struct MapTokenIDToImmutableBytes {
     pub(crate) proxy: Proxy,
 }
 
-impl MapTokenIDToImmutableBool {
-    pub fn get_bool(&self, key: &ScTokenID) -> ScImmutableBool {
-        ScImmutableBool::new(self.proxy.key(&token_id_to_bytes(key)))
+impl MapTokenIDToImmutableBytes {
+    pub fn get_bytes(&self, key: &ScTokenID) -> ScImmutableBytes {
+        ScImmutableBytes::new(self.proxy.key(&token_id_to_bytes(key)))
     }
 }
 
@@ -286,23 +286,23 @@ pub struct ImmutableGetNativeTokenIDRegistryResults {
 }
 
 impl ImmutableGetNativeTokenIDRegistryResults {
-    pub fn mapping(&self) -> MapTokenIDToImmutableBool {
-        MapTokenIDToImmutableBool { proxy: self.proxy.clone() }
+    pub fn mapping(&self) -> MapTokenIDToImmutableBytes {
+        MapTokenIDToImmutableBytes { proxy: self.proxy.clone() }
     }
 }
 
 #[derive(Clone)]
-pub struct MapTokenIDToMutableBool {
+pub struct MapTokenIDToMutableBytes {
     pub(crate) proxy: Proxy,
 }
 
-impl MapTokenIDToMutableBool {
+impl MapTokenIDToMutableBytes {
     pub fn clear(&self) {
         self.proxy.clear_map();
     }
 
-    pub fn get_bool(&self, key: &ScTokenID) -> ScMutableBool {
-        ScMutableBool::new(self.proxy.key(&token_id_to_bytes(key)))
+    pub fn get_bytes(&self, key: &ScTokenID) -> ScMutableBytes {
+        ScMutableBytes::new(self.proxy.key(&token_id_to_bytes(key)))
     }
 }
 
@@ -318,8 +318,8 @@ impl MutableGetNativeTokenIDRegistryResults {
         }
     }
 
-    pub fn mapping(&self) -> MapTokenIDToMutableBool {
-        MapTokenIDToMutableBool { proxy: self.proxy.clone() }
+    pub fn mapping(&self) -> MapTokenIDToMutableBytes {
+        MapTokenIDToMutableBytes { proxy: self.proxy.clone() }
     }
 }
 

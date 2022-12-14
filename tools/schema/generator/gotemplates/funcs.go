@@ -9,7 +9,9 @@ var funcsGo = map[string]string{
 package $package$+impl
 
 import (
+	"$module/go/$package$+impl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 $#each func funcSignature
 `,

@@ -7,7 +7,8 @@ import {uint64Decode, uint64Encode} from "./wasmtypes/scuint64";
 import {bigIntDecode, bigIntEncode, ScBigInt} from "./wasmtypes/scbigint";
 import {nftIDDecode, nftIDEncode, ScNftID} from "./wasmtypes/scnftid";
 import {WasmDecoder, WasmEncoder} from "./wasmtypes/codec";
-import {uint32Decode, uint32Encode} from "./wasmtypes/scuint32";
+import {uint16Decode, uint16Encode} from "./wasmtypes/scuint16";
+import {boolDecode, boolEncode} from "./wasmtypes/scbool";
 
 export class ScAssets {
     baseTokens: u64 = 0;
@@ -18,18 +19,24 @@ export class ScAssets {
         if (buf === null || buf.length == 0) {
             return this;
         }
+        
         const dec = new WasmDecoder(buf);
+        const empty = boolDecode(dec);
+        if (empty) {
+            return this;
+        }
+
         this.baseTokens = uint64Decode(dec);
 
-        let size = uint32Decode(dec);
-        for (let i: u32 = 0; i < size; i++) {
+        let size = uint16Decode(dec);
+        for (let i: u16 = 0; i < size; i++) {
             const tokenID = tokenIDDecode(dec);
             const amount = bigIntDecode(dec);
             this.tokens.set(ScDict.toKey(tokenID.id), amount);
         }
 
-        size = uint32Decode(dec);
-        for (let i: u32 = 0; i < size; i++) {
+        size = uint16Decode(dec);
+        for (let i: u16 = 0; i < size; i++) {
             const nftID = nftIDDecode(dec);
             this.nftIDs.add(nftID)
         }
@@ -54,10 +61,16 @@ export class ScAssets {
 
     public toBytes(): Uint8Array {
         const enc = new WasmEncoder();
+        const empty = this.isEmpty();
+        boolEncode(enc, empty);
+        if (empty) {
+            return enc.buf()
+        }
+
         uint64Encode(enc, this.baseTokens);
 
         let tokenIDs = this.tokenIDs();
-        uint32Encode(enc, tokenIDs.length as u32);
+        uint16Encode(enc, tokenIDs.length as u16);
         for (let i = 0; i < tokenIDs.length; i++) {
             const tokenID = tokenIDs[i]
             tokenIDEncode(enc, tokenID);
@@ -66,7 +79,7 @@ export class ScAssets {
             bigIntEncode(enc, amount);
         }
 
-        uint32Encode(enc, this.nftIDs.size as u32);
+        uint16Encode(enc, this.nftIDs.size as u16);
         let arr = this.nftIDs.values();
         for (let i = 0; i < arr.length; i++) {
             let nftID = arr[i];
