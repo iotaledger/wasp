@@ -97,7 +97,7 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 	var blockInfo *blocklog.BlockInfo
 	blockIndex := e.Param("blockIndex")
 
-	if blockIndex == "latest" {
+	if blockIndex == "" {
 		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 	} else {
 		blockIndexNum, err := strconv.ParseUint(e.Param("blockIndex"), 10, 64)
@@ -130,7 +130,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	var requestIDs []isc.RequestID
 	blockIndex := e.Param("blockIndex")
 
-	if blockIndex == "latest" {
+	if blockIndex == "" {
 		requestIDs, err = c.blocklog.GetRequestIDsForLatestBlock(chainID)
 	} else {
 		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
@@ -238,7 +238,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	var receipts []*blocklog.RequestReceipt
 	blockIndex := e.Param("blockIndex")
 
-	if blockIndex == "latest" {
+	if blockIndex == "" {
 		blockInfo, err := c.blocklog.GetLatestBlockInfo(chainID)
 		if err != nil {
 			return apierrors.ContractExecutionError(err)
@@ -318,7 +318,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	var events []string
 	blockIndex := e.Param("blockIndex")
 
-	if blockIndex == "latest" {
+	if blockIndex == "" {
 		blockInfo, err := c.blocklog.GetLatestBlockInfo(chainID)
 		if err != nil {
 			return apierrors.ContractExecutionError(err)
