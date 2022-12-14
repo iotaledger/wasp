@@ -3,6 +3,8 @@ package corecontracts
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+
 	corecontracts2 "github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 
 	"github.com/iotaledger/wasp/packages/authentication"
@@ -45,7 +47,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 	api.GET("chains/:chainID/core/accounts", c.getAccounts).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of all accounts", mocker.Get(AccountListResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all accounts", mocker.Get(models.AccountListResponse{}), nil).
 		SetOperationId("accountsGetAccounts").
 		SetSummary("Get a list of all accounts")
 
@@ -53,7 +55,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All assets belonging to an account", mocker.Get(AssetsResponse{}), nil).
+		AddResponse(http.StatusOK, "All assets belonging to an account", mocker.Get(models.AssetsResponse{}), nil).
 		SetOperationId("accountsGetAccountBalance").
 		SetSummary("Get all assets belonging to an account")
 
@@ -61,7 +63,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All NFT ids belonging to an account", mocker.Get(AccountNFTsResponse{}), nil).
+		AddResponse(http.StatusOK, "All NFT ids belonging to an account", mocker.Get(models.AccountNFTsResponse{}), nil).
 		SetOperationId("accountsGetAccountNFTIDs").
 		SetSummary("Get all NFT ids belonging to an account")
 
@@ -69,7 +71,7 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "agentID", "AgentID (Bech32 for WasmVM | Hex for EVM | '000000@Bech32' Addresses require urlencode)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The current nonce of an account", mocker.Get(AccountNonceResponse{}), nil).
+		AddResponse(http.StatusOK, "The current nonce of an account", mocker.Get(models.AccountNonceResponse{}), nil).
 		SetOperationId("accountsGetAccountNonce").
 		SetSummary("Get the current nonce of an account")
 
@@ -77,14 +79,14 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "nftID", "NFT ID (Hex)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The NFT data", mocker.Get(NFTDataResponse{}), nil).
+		AddResponse(http.StatusOK, "The NFT data", mocker.Get(models.NFTDataResponse{}), nil).
 		SetOperationId("accountsGetNFTData").
 		SetSummary("Get the NFT data by an ID")
 
 	api.GET("chains/:chainID/core/accounts/token_registry", c.getNativeTokenIDRegistry).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of all registries", mocker.Get(NativeTokenIDRegistryResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of all registries", mocker.Get(models.NativeTokenIDRegistryResponse{}), nil).
 		SetOperationId("accountsGetNativeTokenIDRegistry").
 		SetSummary("Get a list of all registries")
 
@@ -92,14 +94,14 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "chainID", "Serial Number (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The foundry output", mocker.Get(FoundryOutputResponse{}), nil).
+		AddResponse(http.StatusOK, "The foundry output", mocker.Get(models.FoundryOutputResponse{}), nil).
 		SetOperationId("accountsGetFoundryOutput").
 		SetSummary("Get the foundry output")
 
 	api.GET("chains/:chainID/core/accounts/total_assets", c.getTotalAssets).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All stored assets", mocker.Get(AssetsResponse{}), nil).
+		AddResponse(http.StatusOK, "All stored assets", mocker.Get(models.AssetsResponse{}), nil).
 		SetOperationId("accountsGetTotalAssets").
 		SetSummary("Get all stored assets")
 }
@@ -155,7 +157,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 	api.GET("chains/:chainID/core/blocklog/controladdresses", c.getControlAddresses).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The chain info", mocker.Get(ControlAddressesResponse{}), nil).
+		AddResponse(http.StatusOK, "The chain info", mocker.Get(models.ControlAddressesResponse{}), nil).
 		SetOperationId("blocklogGetControlAddresses").
 		SetSummary("Get the control addresses")
 
@@ -163,14 +165,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath(0, "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The block info", mocker.Get(BlockInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "The block info", mocker.Get(models.BlockInfoResponse{}), nil).
 		SetOperationId("blocklogGetBlockInfo").
 		SetSummary("Get the block info of a certain block index")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/latest", c.getBlockInfo).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The block info", mocker.Get(BlockInfoResponse{}), nil).
+		AddResponse(http.StatusOK, "The block info", mocker.Get(models.BlockInfoResponse{}), nil).
 		SetOperationId("blocklogGetLatestBlockInfo").
 		SetSummary("Get the block info of the latest block")
 
@@ -178,14 +180,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath(0, "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(RequestIDsResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(models.RequestIDsResponse{}), nil).
 		SetOperationId("blocklogGetRequestIDsForBlock").
 		SetSummary("Get the request ids for a certain block index")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/latest/requestids", c.getRequestIDsForBlock).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(RequestIDsResponse{}), nil).
+		AddResponse(http.StatusOK, "A list of request ids (ISCRequestID[])", mocker.Get(models.RequestIDsResponse{}), nil).
 		SetOperationId("blocklogGetRequestIDsForLatestBlock").
 		SetSummary("Get the request ids for the latest block")
 
@@ -193,14 +195,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath(0, "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfBlock").
 		SetSummary("Get all receipts of a certain block")
 
 	api.GET("chains/:chainID/core/blocklog/blocks/latest/receipts", c.getRequestReceiptsForBlock).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceiptsOfLatestBlock").
 		SetSummary("Get all receipts of the latest block")
 
@@ -208,7 +210,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "Request ID (ISCRequestID)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipt", mocker.Get(RequestReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipt", mocker.Get(models.RequestReceiptResponse{}), nil).
 		SetOperationId("blocklogGetRequestReceipt").
 		SetSummary("Get the receipt of a certain request id")
 
@@ -216,7 +218,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "Request ID (ISCRequestID)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The processing result", mocker.Get(RequestProcessedResponse{}), nil).
+		AddResponse(http.StatusOK, "The processing result", mocker.Get(models.RequestProcessedResponse{}), nil).
 		SetOperationId("blocklogGetRequestIsProcessed").
 		SetSummary("Get the request processing status")
 
@@ -224,14 +226,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath(0, "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The events", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfBlock").
 		SetSummary("Get events of a block")
 
 	api.GET("chains/:chainID/core/blocklog/events/block/latest", c.getBlockEvents).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfLatestBlock").
 		SetSummary("Get events of the latest block")
 
@@ -239,7 +241,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "Request ID (ISCRequestID)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The events", mocker.Get(models.BlockReceiptsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfRequest").
 		SetSummary("Get events of a request")
 }

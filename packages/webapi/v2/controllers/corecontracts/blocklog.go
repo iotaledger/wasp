@@ -3,31 +3,24 @@ package corecontracts
 import (
 	"net/http"
 	"strconv"
-	"time"
+
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 
 	"github.com/iotaledger/wasp/packages/parameters"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/labstack/echo/v4"
 )
-
-type ControlAddressesResponse struct {
-	GoverningAddress string
-	SinceBlockIndex  uint32
-	StateAddress     string
-}
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
@@ -40,54 +33,13 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	controlAddressesResponse := &ControlAddressesResponse{
+	controlAddressesResponse := &models.ControlAddressesResponse{
 		GoverningAddress: controlAddresses.GoverningAddress.Bech32(parameters.L1().Protocol.Bech32HRP),
 		SinceBlockIndex:  controlAddresses.SinceBlockIndex,
 		StateAddress:     controlAddresses.StateAddress.Bech32(parameters.L1().Protocol.Bech32HRP),
 	}
 
 	return e.JSON(http.StatusOK, controlAddressesResponse)
-}
-
-type BlockInfoResponse struct {
-	AnchorTransactionID         string
-	BlockIndex                  uint32
-	GasBurned                   uint64
-	GasFeeCharged               uint64
-	L1CommitmentHash            string
-	NumOffLedgerRequests        uint16
-	NumSuccessfulRequests       uint16
-	PreviousL1CommitmentHash    string
-	Timestamp                   time.Time
-	TotalBaseTokensInL2Accounts uint64
-	TotalRequests               uint16
-	TotalStorageDeposit         uint64
-	TransactionSubEssenceHash   string
-}
-
-func mapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
-	transactionEssenceHash := hexutil.Encode(info.TransactionSubEssenceHash[:])
-	commitmentHash := ""
-
-	if info.L1Commitment != nil {
-		commitmentHash = info.L1Commitment.BlockHash.String()
-	}
-
-	return &BlockInfoResponse{
-		AnchorTransactionID:         info.AnchorTransactionID.ToHex(),
-		BlockIndex:                  info.BlockIndex,
-		GasBurned:                   info.GasBurned,
-		GasFeeCharged:               info.GasFeeCharged,
-		L1CommitmentHash:            commitmentHash,
-		NumOffLedgerRequests:        info.NumOffLedgerRequests,
-		NumSuccessfulRequests:       info.NumSuccessfulRequests,
-		PreviousL1CommitmentHash:    info.PreviousL1Commitment.BlockHash.String(),
-		Timestamp:                   info.Timestamp,
-		TotalBaseTokensInL2Accounts: info.TotalBaseTokensInL2Accounts,
-		TotalRequests:               info.TotalRequests,
-		TotalStorageDeposit:         info.TotalStorageDeposit,
-		TransactionSubEssenceHash:   transactionEssenceHash,
-	}
 }
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
@@ -114,13 +66,9 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	blockInfoResponse := mapBlockInfoResponse(blockInfo)
+	blockInfoResponse := models.MapBlockInfoResponse(blockInfo)
 
 	return e.JSON(http.StatusOK, blockInfoResponse)
-}
-
-type RequestIDsResponse struct {
-	RequestIDs []string
 }
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
@@ -147,7 +95,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	requestIDsResponse := &RequestIDsResponse{
+	requestIDsResponse := &models.RequestIDsResponse{
 		RequestIDs: make([]string, len(requestIDs)),
 	}
 
@@ -158,30 +106,14 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	return e.JSON(http.StatusOK, requestIDsResponse)
 }
 
-type ReceiptError struct {
-	Hash         string
-	ErrorMessage string
-}
-
-type RequestReceiptResponse struct {
-	BlockIndex    uint32
-	Error         *ReceiptError
-	GasBudget     uint64
-	GasBurnLog    *gas.BurnLog
-	GasBurned     uint64
-	GasFeeCharged uint64
-	Request       isc.Request
-	RequestIndex  uint16
-}
-
-func mapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.ChainID, receipt *blocklog.RequestReceipt) (*RequestReceiptResponse, error) {
-	response := &RequestReceiptResponse{
+func MapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.ChainID, receipt *blocklog.RequestReceipt) (*models.RequestReceiptResponse, error) {
+	response := &models.RequestReceiptResponse{
 		BlockIndex:    receipt.BlockIndex,
 		GasBudget:     receipt.GasBudget,
 		GasBurnLog:    receipt.GasBurnLog,
 		GasBurned:     receipt.GasBurned,
 		GasFeeCharged: receipt.GasFeeCharged,
-		Request:       receipt.Request,
+		Request:       models.MapRequestDetail(receipt.Request),
 		RequestIndex:  receipt.RequestIndex,
 	}
 
@@ -194,7 +126,7 @@ func mapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.Chai
 			return nil, err
 		}
 
-		response.Error = &ReceiptError{
+		response.Error = &models.BlockReceiptError{
 			Hash:         hexutil.EncodeUint64(uint64(resolved.Hash())),
 			ErrorMessage: resolved.Error(),
 		}
@@ -219,16 +151,12 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	mappedReceiptResponse, err := mapRequestReceiptResponse(c.vmService, chainID, receipt)
+	mappedReceiptResponse, err := MapRequestReceiptResponse(c.vmService, chainID, receipt)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
 
 	return e.JSON(http.StatusOK, mappedReceiptResponse)
-}
-
-type BlockReceiptsResponse struct {
-	Receipts []*RequestReceiptResponse
 }
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
@@ -260,12 +188,12 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	receiptsResponse := BlockReceiptsResponse{
-		Receipts: make([]*RequestReceiptResponse, len(receipts)),
+	receiptsResponse := models.BlockReceiptsResponse{
+		Receipts: make([]*models.RequestReceiptResponse, len(receipts)),
 	}
 
 	for k, v := range receipts {
-		receipt, err := mapRequestReceiptResponse(c.vmService, chainID, v)
+		receipt, err := MapRequestReceiptResponse(c.vmService, chainID, v)
 		if err != nil {
 			return apierrors.InvalidPropertyError("receipt", err)
 		}
@@ -274,12 +202,6 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, receiptsResponse)
-}
-
-type RequestProcessedResponse struct {
-	ChainID     string
-	RequestID   string
-	IsProcessed bool
 }
 
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
@@ -298,17 +220,13 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	requestProcessedResponse := RequestProcessedResponse{
+	requestProcessedResponse := models.RequestProcessedResponse{
 		ChainID:     chainID.String(),
 		RequestID:   requestID.String(),
 		IsProcessed: requestProcessed,
 	}
 
 	return e.JSON(http.StatusOK, requestProcessedResponse)
-}
-
-type EventsResponse struct {
-	Events []string
 }
 
 func (c *Controller) getBlockEvents(e echo.Context) error {
@@ -340,7 +258,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	eventsResponse := EventsResponse{
+	eventsResponse := models.EventsResponse{
 		Events: events,
 	}
 
@@ -364,7 +282,7 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	eventsResponse := EventsResponse{
+	eventsResponse := models.EventsResponse{
 		Events: events,
 	}
 
@@ -388,7 +306,7 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 		return apierrors.ContractExecutionError(err)
 	}
 
-	eventsResponse := EventsResponse{
+	eventsResponse := models.EventsResponse{
 		Events: events,
 	}
 
