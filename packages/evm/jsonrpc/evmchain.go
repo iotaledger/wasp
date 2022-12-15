@@ -193,9 +193,11 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret, err := e.backend.ISCCallView(blockIndex, evm.Contract.Name, evm.FuncGetBlockByNumber.Name, dict.Dict{
-		evm.FieldBlockNumber: blockNumber.Bytes(),
-	})
+	params := dict.Dict{}
+	if blockNumber != nil {
+		params[evm.FieldBlockNumber] = blockNumber.Bytes()
+	}
+	ret, err := e.backend.ISCCallView(blockIndex, evm.Contract.Name, evm.FuncGetBlockByNumber.Name, params)
 	if err != nil {
 		return nil, err
 	}
