@@ -7,17 +7,17 @@ import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import { WasmClientSandbox } from './wasmclientsandbox';
 
-export class WasmClientContext extends WasmClientSandbox {
+export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
 
-    public chainID(): wasmlib.ScChainID {
-        return this.chID;
+    public currentChainID(): wasmlib.ScChainID {
+        return this.chainID;
     }
 
     public initFuncCallContext(): void {
         wasmlib.connectHost(this);
     }
 
-    public initViewCallContext(hContract: wasmlib.ScHname): wasmlib.ScHname {
+    public initViewCallContext(_hContract: wasmlib.ScHname): wasmlib.ScHname {
         wasmlib.connectHost(this);
         return this.scHname;
     }
@@ -44,11 +44,10 @@ export class WasmClientContext extends WasmClientSandbox {
         this.keyPair = keyPair;
 
         // get last used nonce from accounts core contract
-        const iscAddr = new Ed25519Address(keyPair.publicKey).toAddress();
-        //TODO iscAddr convert to ScAddress
-        const addr = wasmlib.addressFromBytes(wasmlib.bytesFromUint8Array(iscAddr));
+        const address = new Ed25519Address(keyPair.publicKey).toAddress();
+        const addr = wasmlib.addressFromBytes(address);
         const agent = wasmlib.ScAgentID.fromAddress(addr);
-        const ctx = new WasmClientContext(this.svcClient, this.chID, coreaccounts.ScName);
+        const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);
         n.func.call();
@@ -73,7 +72,7 @@ export class WasmClientContext extends WasmClientSandbox {
         if (reqID !== undefined) {
             rID = reqID;
         }
-        return this.svcClient.waitUntilRequestProcessed(this.chID, rID, 60);
+        return this.svcClient.waitUntilRequestProcessed(this.chainID, rID, 60);
     }
 
     public startEventHandlers(): isc.Error {

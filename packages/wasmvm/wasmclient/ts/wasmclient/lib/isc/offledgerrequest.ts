@@ -34,7 +34,9 @@ export class OffLedgerRequest {
     }
 
     public bytes(): Uint8Array {
-        return concat(this.essence(), this.signatureScheme.signature);
+        const sig = this.signatureScheme.signature;
+        let data = concat(this.essence(), wasmlib.uint16ToBytes(sig.length as u16));
+        return concat(data, sig);
     }
 
     public essence(): Uint8Array {

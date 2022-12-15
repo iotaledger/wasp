@@ -16,7 +16,7 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
     //     return null;
     // }
 
-    chainID(): ScChainID {
+    currentChainID(): ScChainID {
         return super.currentChainID();
     }
 
@@ -33,7 +33,7 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
 // smart contract view interface which has only immutable access to state
 export class ScViewContext extends ScSandboxView implements ScViewCallContext {
 
-    chainID(): ScChainID {
+    currentChainID(): ScChainID {
         return super.currentChainID();
     }
 
