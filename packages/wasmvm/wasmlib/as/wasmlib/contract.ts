@@ -13,7 +13,7 @@ import {ScHname} from "./wasmtypes/schname";
 // base contract objects
 
 export interface ScViewCallContext {
-    chainID(): ScChainID;
+    currentChainID(): ScChainID;
 
     initViewCallContext(hContract: ScHname): ScHname;
 }

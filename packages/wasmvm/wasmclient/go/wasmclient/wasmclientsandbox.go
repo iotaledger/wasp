@@ -94,13 +94,14 @@ func (s *WasmClientContext) fnPost(args []byte) []byte {
 }
 
 func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
-	hrp, addr, err := iotago.ParseBech32(string(args))
+	bech32 := wasmtypes.StringFromBytes(args)
+	hrp, addr, err := iotago.ParseBech32(bech32)
 	if err != nil {
 		s.Err = err
 		return nil
 	}
-	if hrp != parameters.L1().Protocol.Bech32HRP {
-		s.Err = errors.Errorf("Invalid protocol prefix: %s", string(hrp))
+	if string(hrp) != s.hrp {
+		s.Err = errors.Errorf("invalid protocol prefix: %s", string(hrp))
 		return nil
 	}
 	var cvt wasmhost.WasmConvertor
