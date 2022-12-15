@@ -68,6 +68,7 @@ func TestBasic(t *testing.T) {
 //nolint:gocyclo
 func testBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
+	rand.Seed(time.Now().UnixNano())
 	te := newEnv(t, n, f, reliable)
 	defer te.close()
 	te.log.Debugf("All started.")
@@ -219,7 +220,8 @@ func awaitRequestsProcessed(te *testEnv, requests []isc.Request, desc string) {
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
-			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID)
+			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, false)
+			<-node.AwaitRequestProcessed(te.ctx, reqRef.ID, true)
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}

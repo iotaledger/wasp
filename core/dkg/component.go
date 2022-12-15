@@ -5,11 +5,9 @@ package dkg
 
 import (
 	"go.uber.org/dig"
-	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/app"
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -46,7 +44,7 @@ func provide(c *dig.Container) error {
 			deps.NodeIdentityProvider.NodeIdentity(),
 			deps.NetworkProvider,
 			deps.DKShareRegistryProvider,
-			CoreComponent.Logger().Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
+			CoreComponent.Logger(),
 		)
 		if err != nil {
 			CoreComponent.LogPanic(xerrors.Errorf("failed to initialize the DKG node: %w", err))

@@ -6,10 +6,9 @@ package gotemplates
 var stateGo = map[string]string{
 	// *******************************
 	"state.go": `
-$#emit goPackage
+package $package
 
-$#emit importWasmLib
-$#emit importWasmTypes
+$#emit importWasmLibAndWasmTypes
 $#set Kind State
 $#set mut Immutable
 $#emit stateProxyStruct
@@ -26,7 +25,7 @@ type $TypeName struct {
 }
 
 func New$TypeName() $TypeName {
-	return $TypeName { proxy: wasmlib.NewStateProxy() }
+	return $TypeName{proxy: wasmlib.NewStateProxy()}
 }
 $#if mut stateProxyImmutableFunc
 $#each state proxyMethods

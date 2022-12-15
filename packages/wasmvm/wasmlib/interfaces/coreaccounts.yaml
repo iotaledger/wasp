@@ -38,7 +38,7 @@ views:
       assets=this: map[TokenID]BigInt
   accounts:
     results:
-      allAccounts=this: map[AgentID]Bool
+      allAccounts=this: map[AgentID]Bytes
   getAccountNonce:
     params:
       agentID=a: AgentID
@@ -46,7 +46,7 @@ views:
       accountNonce=n: Uint64
   getNativeTokenIDRegistry:
     results:
-      mapping=this: map[TokenID]Bool
+      mapping=this: map[TokenID]Bytes
   foundryOutput:
     params:
       foundrySN=s: Uint32

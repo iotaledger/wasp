@@ -84,32 +84,32 @@ func (s MutableAccountNFTsResults) NftIDs() ArrayOfMutableNftID {
 	return ArrayOfMutableNftID{proxy: s.proxy.Root(ResultNftIDs)}
 }
 
-type MapAgentIDToImmutableBool struct {
+type MapAgentIDToImmutableBytes struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToImmutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (m MapAgentIDToImmutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type ImmutableAccountsResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBool {
-	return MapAgentIDToImmutableBool(s)
+func (s ImmutableAccountsResults) AllAccounts() MapAgentIDToImmutableBytes {
+	return MapAgentIDToImmutableBytes(s)
 }
 
-type MapAgentIDToMutableBool struct {
+type MapAgentIDToMutableBytes struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapAgentIDToMutableBool) Clear() {
+func (m MapAgentIDToMutableBytes) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapAgentIDToMutableBool) GetBool(key wasmtypes.ScAgentID) wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
+func (m MapAgentIDToMutableBytes) GetBytes(key wasmtypes.ScAgentID) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.AgentIDToBytes(key)))
 }
 
 type MutableAccountsResults struct {
@@ -120,8 +120,8 @@ func NewMutableAccountsResults(results *wasmlib.ScDict) MutableAccountsResults {
 	return MutableAccountsResults{proxy: results.AsProxy()}
 }
 
-func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBool {
-	return MapAgentIDToMutableBool(s)
+func (s MutableAccountsResults) AllAccounts() MapAgentIDToMutableBytes {
+	return MapAgentIDToMutableBytes(s)
 }
 
 type MapTokenIDToImmutableBigInt struct {
@@ -204,32 +204,32 @@ func (s MutableGetAccountNonceResults) AccountNonce() wasmtypes.ScMutableUint64 
 	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultAccountNonce))
 }
 
-type MapTokenIDToImmutableBool struct {
+type MapTokenIDToImmutableBytes struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapTokenIDToImmutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+func (m MapTokenIDToImmutableBytes) GetBytes(key wasmtypes.ScTokenID) wasmtypes.ScImmutableBytes {
+	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type ImmutableGetNativeTokenIDRegistryResults struct {
 	proxy wasmtypes.Proxy
 }
 
-func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBool {
-	return MapTokenIDToImmutableBool(s)
+func (s ImmutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToImmutableBytes {
+	return MapTokenIDToImmutableBytes(s)
 }
 
-type MapTokenIDToMutableBool struct {
+type MapTokenIDToMutableBytes struct {
 	proxy wasmtypes.Proxy
 }
 
-func (m MapTokenIDToMutableBool) Clear() {
+func (m MapTokenIDToMutableBytes) Clear() {
 	m.proxy.ClearMap()
 }
 
-func (m MapTokenIDToMutableBool) GetBool(key wasmtypes.ScTokenID) wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
+func (m MapTokenIDToMutableBytes) GetBytes(key wasmtypes.ScTokenID) wasmtypes.ScMutableBytes {
+	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.TokenIDToBytes(key)))
 }
 
 type MutableGetNativeTokenIDRegistryResults struct {
@@ -240,8 +240,8 @@ func NewMutableGetNativeTokenIDRegistryResults(results *wasmlib.ScDict) MutableG
 	return MutableGetNativeTokenIDRegistryResults{proxy: results.AsProxy()}
 }
 
-func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBool {
-	return MapTokenIDToMutableBool(s)
+func (s MutableGetNativeTokenIDRegistryResults) Mapping() MapTokenIDToMutableBytes {
+	return MapTokenIDToMutableBytes(s)
 }
 
 type ImmutableNftDataResults struct {

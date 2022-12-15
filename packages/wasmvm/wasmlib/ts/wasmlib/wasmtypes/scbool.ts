@@ -7,7 +7,7 @@ import {Proxy} from "./proxy";
 
 export const ScBoolLength = 1;
 export const ScBoolFalse = 0x00
-export const ScBoolTrue = 0xff
+export const ScBoolTrue = 0x01
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

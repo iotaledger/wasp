@@ -119,6 +119,9 @@ func (a *AliasOutputWithID) GetAliasID() iotago.AliasID {
 }
 
 func (a *AliasOutputWithID) Equals(other *AliasOutputWithID) bool {
+	if a != nil && other == nil {
+		return false
+	}
 	out1, err := a.aliasOutput.Serialize(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		panic(err)

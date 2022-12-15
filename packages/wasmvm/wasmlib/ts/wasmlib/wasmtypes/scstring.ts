@@ -20,8 +20,7 @@ export function stringFromBytes(buf: Uint8Array): string {
 }
 
 export function stringToBytes(value: string): Uint8Array {
-    const u8Array = new TextEncoder().encode(value);
-    return bytesFromUint8Array(u8Array);
+    return new TextEncoder().encode(value);
 }
 
 export function stringFromString(value: string): string {

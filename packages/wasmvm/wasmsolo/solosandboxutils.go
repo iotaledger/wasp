@@ -13,6 +13,8 @@ import (
 func (s *SoloSandbox) fnUtilsBech32Decode(args []byte) []byte {
 	hrp, addr, err := iotago.ParseBech32(string(args))
 	s.checkErr(err)
+	// Wasm VM will never be able to go outside the current network,
+	// so it probably does not make sense to use any external addresses
 	if hrp != parameters.L1().Protocol.Bech32HRP {
 		s.Panicf("Invalid protocol prefix: %s", string(hrp))
 	}

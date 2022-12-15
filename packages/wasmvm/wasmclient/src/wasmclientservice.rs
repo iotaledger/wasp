@@ -128,8 +128,8 @@ impl WasmClientService {
 impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:9090"),
-            event_port: "127.0.0.1:5550".to_string(),
+            client: waspclient::WaspClient::new("127.0.0.1:19090"),
+            event_port: "127.0.0.1:15550".to_string(),
             websocket: None, // TODO set an empty object
             last_err: Ok(()),
         };
@@ -145,9 +145,9 @@ mod tests {
     fn service_default() {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:9090"),
+            client: waspclient::WaspClient::new("127.0.0.1:19090"),
             websocket: None,
-            event_port: "127.0.0.1:5550".to_string(),
+            event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
         assert!(default_service.event_port == service.event_port);

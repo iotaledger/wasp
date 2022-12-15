@@ -17,9 +17,8 @@ pub struct ImmutableFindContractResults {
 }
 
 impl ImmutableFindContractResults {
-    // encoded contract record
-    pub fn contract_found(&self) -> ScImmutableBytes {
-        ScImmutableBytes::new(self.proxy.root(RESULT_CONTRACT_FOUND))
+    pub fn contract_found(&self) -> ScImmutableBool {
+        ScImmutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }
 
     // encoded contract record
@@ -40,9 +39,8 @@ impl MutableFindContractResults {
         }
     }
 
-    // encoded contract record
-    pub fn contract_found(&self) -> ScMutableBytes {
-        ScMutableBytes::new(self.proxy.root(RESULT_CONTRACT_FOUND))
+    pub fn contract_found(&self) -> ScMutableBool {
+        ScMutableBool::new(self.proxy.root(RESULT_CONTRACT_FOUND))
     }
 
     // encoded contract record

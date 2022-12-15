@@ -6,7 +6,7 @@ package gotemplates
 var constsGo = map[string]string{
 	// *******************************
 	"consts.go": `
-$#emit goPackage
+package $package
 
 $#emit importWasmTypes
 

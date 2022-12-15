@@ -13,7 +13,7 @@ The comprehensive overview of design decisions of _IOTA Smart Contracts_ can be 
 
 ## Documentation
 
-The documentation for Wasp and IOTA Smart Contracts can be found on the [IOTA Wiki](https://wiki.iota.org/wasp/overview).
+The documentation for Wasp and IOTA Smart Contracts can be found on the [IOTA Wiki](https://wiki.iota.org/shimmer/smart-contracts/overview).
 
 ## Contributing
 

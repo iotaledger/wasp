@@ -9,7 +9,7 @@ import * as wasmlib from "../index";
 import * as sc from "./index";
 
 export class ControlAddressesCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableControlAddressesResults = new sc.ImmutableControlAddressesResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -18,8 +18,8 @@ export class ControlAddressesCall {
 }
 
 export class GetBlockInfoCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetBlockInfoParams = new sc.MutableGetBlockInfoParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetBlockInfoParams = new sc.MutableGetBlockInfoParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetBlockInfoResults = new sc.ImmutableGetBlockInfoResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -28,8 +28,8 @@ export class GetBlockInfoCall {
 }
 
 export class GetEventsForBlockCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetEventsForBlockParams = new sc.MutableGetEventsForBlockParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetEventsForBlockParams = new sc.MutableGetEventsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForBlockResults = new sc.ImmutableGetEventsForBlockResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -38,8 +38,8 @@ export class GetEventsForBlockCall {
 }
 
 export class GetEventsForContractCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetEventsForContractParams = new sc.MutableGetEventsForContractParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetEventsForContractParams = new sc.MutableGetEventsForContractParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForContractResults = new sc.ImmutableGetEventsForContractResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -48,8 +48,8 @@ export class GetEventsForContractCall {
 }
 
 export class GetEventsForRequestCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetEventsForRequestParams = new sc.MutableGetEventsForRequestParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetEventsForRequestParams = new sc.MutableGetEventsForRequestParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetEventsForRequestResults = new sc.ImmutableGetEventsForRequestResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -58,8 +58,8 @@ export class GetEventsForRequestCall {
 }
 
 export class GetRequestIDsForBlockCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetRequestIDsForBlockParams = new sc.MutableGetRequestIDsForBlockParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetRequestIDsForBlockParams = new sc.MutableGetRequestIDsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestIDsForBlockResults = new sc.ImmutableGetRequestIDsForBlockResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -68,8 +68,8 @@ export class GetRequestIDsForBlockCall {
 }
 
 export class GetRequestReceiptCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetRequestReceiptParams = new sc.MutableGetRequestReceiptParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetRequestReceiptParams = new sc.MutableGetRequestReceiptParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestReceiptResults = new sc.ImmutableGetRequestReceiptResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -78,8 +78,8 @@ export class GetRequestReceiptCall {
 }
 
 export class GetRequestReceiptsForBlockCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetRequestReceiptsForBlockParams = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetRequestReceiptsForBlockParams = new sc.MutableGetRequestReceiptsForBlockParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetRequestReceiptsForBlockResults = new sc.ImmutableGetRequestReceiptsForBlockResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -88,8 +88,8 @@ export class GetRequestReceiptsForBlockCall {
 }
 
 export class IsRequestProcessedCall {
-    func: wasmlib.ScView;
-    params: sc.MutableIsRequestProcessedParams = new sc.MutableIsRequestProcessedParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableIsRequestProcessedParams = new sc.MutableIsRequestProcessedParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableIsRequestProcessedResults = new sc.ImmutableIsRequestProcessedResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {

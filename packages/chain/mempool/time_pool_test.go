@@ -4,6 +4,7 @@
 package mempool_test
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 )
 
 func TestTimePoolBasic(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	kp := cryptolib.NewKeyPair()
 	tp := mempool.NewTimePool()
 	t0 := time.Now()

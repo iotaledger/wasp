@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -195,19 +194,9 @@ func TestBasic2Accounts(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	rec, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
 	require.NoError(t, err)
 
-	// wait for the block that includes the request to be added to the ledger
-	// (the func above only waits until the block is produced, not until it is accepted on L1)
-	waitTrue(
-		20*time.Second,
-		func() bool {
-			_, out, err := e.Clu.L1Client().GetAliasOutput(chain.ChainID.AsAliasID())
-			require.NoError(t, err)
-			return out.(*iotago.AliasOutput).StateIndex == rec.BlockIndex
-		},
-	)
 	chEnv.checkLedger()
 
 	chEnv.printAccounts("withdraw after")

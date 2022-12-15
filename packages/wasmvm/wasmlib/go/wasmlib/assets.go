@@ -24,9 +24,14 @@ func NewScAssets(buf []byte) *ScAssets {
 	}
 
 	dec := wasmtypes.NewWasmDecoder(buf)
+	empty := wasmtypes.BoolDecode(dec)
+	if empty {
+		return assets
+	}
+
 	assets.BaseTokens = wasmtypes.Uint64Decode(dec)
 
-	size := wasmtypes.Uint32Decode(dec)
+	size := wasmtypes.Uint16Decode(dec)
 	if size > 0 {
 		assets.Tokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
@@ -35,7 +40,7 @@ func NewScAssets(buf []byte) *ScAssets {
 		}
 	}
 
-	size = wasmtypes.Uint32Decode(dec)
+	size = wasmtypes.Uint16Decode(dec)
 	if size > 0 {
 		assets.NftIDs = make(map[wasmtypes.ScNftID]bool)
 	}
@@ -56,15 +61,21 @@ func (a *ScAssets) Bytes() []byte {
 	}
 
 	enc := wasmtypes.NewWasmEncoder()
+	empty := a.IsEmpty()
+	wasmtypes.BoolEncode(enc, empty)
+	if empty {
+		return enc.Buf()
+	}
+
 	wasmtypes.Uint64Encode(enc, a.BaseTokens)
 
-	wasmtypes.Uint32Encode(enc, uint32(len(a.Tokens)))
+	wasmtypes.Uint16Encode(enc, uint16(len(a.Tokens)))
 	for _, tokenID := range a.TokenIDs() {
 		wasmtypes.TokenIDEncode(enc, *tokenID)
 		wasmtypes.BigIntEncode(enc, a.Tokens[*tokenID])
 	}
 
-	wasmtypes.Uint32Encode(enc, uint32(len(a.NftIDs)))
+	wasmtypes.Uint16Encode(enc, uint16(len(a.NftIDs)))
 	for nftID := range a.NftIDs {
 		wasmtypes.NftIDEncode(enc, nftID)
 	}

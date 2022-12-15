@@ -91,7 +91,7 @@ func (w *waspServicesMock) ChainRecords() ([]*registry.ChainRecord, error) {
 }
 
 func (w *waspServicesMock) GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
-	return registry.NewChainRecord(chainID, true), nil
+	return registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}), nil
 }
 
 func (w *waspServicesMock) CallView(chainID isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {

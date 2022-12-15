@@ -17,8 +17,8 @@ export class DepositCall {
 }
 
 export class FoundryCreateNewCall {
-    func: wasmlib.ScFunc;
-    params: sc.MutableFoundryCreateNewParams = new sc.MutableFoundryCreateNewParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScFunc;
+    params:  sc.MutableFoundryCreateNewParams = new sc.MutableFoundryCreateNewParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableFoundryCreateNewResults = new sc.ImmutableFoundryCreateNewResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -27,7 +27,7 @@ export class FoundryCreateNewCall {
 }
 
 export class FoundryDestroyCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableFoundryDestroyParams = new sc.MutableFoundryDestroyParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -36,7 +36,7 @@ export class FoundryDestroyCall {
 }
 
 export class FoundryModifySupplyCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableFoundryModifySupplyParams = new sc.MutableFoundryModifySupplyParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -45,7 +45,7 @@ export class FoundryModifySupplyCall {
 }
 
 export class HarvestCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableHarvestParams = new sc.MutableHarvestParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -54,7 +54,7 @@ export class HarvestCall {
 }
 
 export class TransferAllowanceToCall {
-    func: wasmlib.ScFunc;
+    func:   wasmlib.ScFunc;
     params: sc.MutableTransferAllowanceToParams = new sc.MutableTransferAllowanceToParams(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScFuncCallContext) {
@@ -71,8 +71,8 @@ export class WithdrawCall {
 }
 
 export class AccountNFTsCall {
-    func: wasmlib.ScView;
-    params: sc.MutableAccountNFTsParams = new sc.MutableAccountNFTsParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableAccountNFTsParams = new sc.MutableAccountNFTsParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableAccountNFTsResults = new sc.ImmutableAccountNFTsResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -81,7 +81,7 @@ export class AccountNFTsCall {
 }
 
 export class AccountsCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableAccountsResults = new sc.ImmutableAccountsResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -90,8 +90,8 @@ export class AccountsCall {
 }
 
 export class BalanceCall {
-    func: wasmlib.ScView;
-    params: sc.MutableBalanceParams = new sc.MutableBalanceParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableBalanceParams = new sc.MutableBalanceParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableBalanceResults = new sc.ImmutableBalanceResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -100,8 +100,8 @@ export class BalanceCall {
 }
 
 export class FoundryOutputCall {
-    func: wasmlib.ScView;
-    params: sc.MutableFoundryOutputParams = new sc.MutableFoundryOutputParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableFoundryOutputParams = new sc.MutableFoundryOutputParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableFoundryOutputResults = new sc.ImmutableFoundryOutputResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -110,8 +110,8 @@ export class FoundryOutputCall {
 }
 
 export class GetAccountNonceCall {
-    func: wasmlib.ScView;
-    params: sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableGetAccountNonceParams = new sc.MutableGetAccountNonceParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableGetAccountNonceResults = new sc.ImmutableGetAccountNonceResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -120,7 +120,7 @@ export class GetAccountNonceCall {
 }
 
 export class GetNativeTokenIDRegistryCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableGetNativeTokenIDRegistryResults = new sc.ImmutableGetNativeTokenIDRegistryResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -129,8 +129,8 @@ export class GetNativeTokenIDRegistryCall {
 }
 
 export class NftDataCall {
-    func: wasmlib.ScView;
-    params: sc.MutableNftDataParams = new sc.MutableNftDataParams(wasmlib.ScView.nilProxy);
+    func:    wasmlib.ScView;
+    params:  sc.MutableNftDataParams = new sc.MutableNftDataParams(wasmlib.ScView.nilProxy);
     results: sc.ImmutableNftDataResults = new sc.ImmutableNftDataResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {
@@ -139,7 +139,7 @@ export class NftDataCall {
 }
 
 export class TotalAssetsCall {
-    func: wasmlib.ScView;
+    func:    wasmlib.ScView;
     results: sc.ImmutableTotalAssetsResults = new sc.ImmutableTotalAssetsResults(wasmlib.ScView.nilProxy);
 
     public constructor(ctx: wasmlib.ScViewCallContext) {

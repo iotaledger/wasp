@@ -6,10 +6,9 @@ package gotemplates
 var resultsGo = map[string]string{
 	// *******************************
 	"results.go": `
-$#emit goPackage
+package $package
 
-$#emit importWasmLib
-$#emit importWasmTypes
+$#emit importWasmLibAndWasmTypes
 $#each func resultsFunc
 `,
 	// *******************************
@@ -39,7 +38,7 @@ $#each result proxyMethods
 	"resultsMutConstructor": `
 
 func New$TypeName(results *wasmlib.ScDict) $TypeName {
-	return $TypeName { proxy: results.AsProxy() }
+	return $TypeName{proxy: results.AsProxy()}
 }
 `,
 }
