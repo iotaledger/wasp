@@ -45,11 +45,10 @@ jobs:
 
       - name: Install solc
         run: |
+          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
-      - name: Compile solidity contracts
-        run: make compile-solidity
 
       - name: Build and push to Dockerhub
         uses: docker/build-push-action@v3

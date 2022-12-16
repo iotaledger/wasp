@@ -17,6 +17,7 @@ jobs:
           go-version: 1.19.4
       - name: Install solc
         run: |
+          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc

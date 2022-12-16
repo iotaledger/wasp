@@ -64,7 +64,7 @@ lint:
 gofumpt-list:
 	gofumpt -l ./
 
-docker-build:
+docker-build: compile-solidity
 	DOCKER_BUILDKIT=1 docker build \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
 		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
