@@ -43,11 +43,13 @@ jobs:
           username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
 
-      - name: Compile solidity contracts
+      - name: Install solc
         run: |
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
+      - name: Compile solidity contracts
+        run: make compile-solidity
 
       - name: Build and push to Dockerhub
         uses: docker/build-push-action@v3
