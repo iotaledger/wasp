@@ -122,6 +122,30 @@ export class MutableBalanceResults extends wasmtypes.ScProxy {
     }
 }
 
+export class ImmutableBalanceBaseTokenResults extends wasmtypes.ScProxy {
+    balance(): wasmtypes.ScImmutableUint64 {
+        return new wasmtypes.ScImmutableUint64(this.proxy.root(sc.ResultBalance));
+    }
+}
+
+export class MutableBalanceBaseTokenResults extends wasmtypes.ScProxy {
+    balance(): wasmtypes.ScMutableUint64 {
+        return new wasmtypes.ScMutableUint64(this.proxy.root(sc.ResultBalance));
+    }
+}
+
+export class ImmutableBalanceNativeTokenResults extends wasmtypes.ScProxy {
+    tokens(): wasmtypes.ScImmutableBigInt {
+        return new wasmtypes.ScImmutableBigInt(this.proxy.root(sc.ResultTokens));
+    }
+}
+
+export class MutableBalanceNativeTokenResults extends wasmtypes.ScProxy {
+    tokens(): wasmtypes.ScMutableBigInt {
+        return new wasmtypes.ScMutableBigInt(this.proxy.root(sc.ResultTokens));
+    }
+}
+
 export class ImmutableFoundryOutputResults extends wasmtypes.ScProxy {
     foundryOutputBin(): wasmtypes.ScImmutableBytes {
         return new wasmtypes.ScImmutableBytes(this.proxy.root(sc.ResultFoundryOutputBin));

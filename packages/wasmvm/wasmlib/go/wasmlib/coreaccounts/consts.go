@@ -23,6 +23,7 @@ const (
 	ParamFoundrySN              = "s"
 	ParamNftID                  = "z"
 	ParamSupplyDeltaAbs         = "d"
+	ParamTokenID                = "N"
 	ParamTokenScheme            = "t"
 )
 
@@ -30,12 +31,14 @@ const (
 	ResultAccountNonce     = "n"
 	ResultAllAccounts      = "this"
 	ResultAssets           = "this"
+	ResultBalance          = "B"
 	ResultBalances         = "this"
 	ResultFoundryOutputBin = "b"
 	ResultFoundrySN        = "s"
 	ResultMapping          = "this"
 	ResultNftData          = "e"
 	ResultNftIDs           = "i"
+	ResultTokens           = "B"
 )
 
 const (
@@ -49,6 +52,8 @@ const (
 	ViewAccountNFTs              = "accountNFTs"
 	ViewAccounts                 = "accounts"
 	ViewBalance                  = "balance"
+	ViewBalanceBaseToken         = "balanceBaseToken"
+	ViewBalanceNativeToken       = "balanceNativeToken"
 	ViewFoundryOutput            = "foundryOutput"
 	ViewGetAccountNonce          = "getAccountNonce"
 	ViewGetNativeTokenIDRegistry = "getNativeTokenIDRegistry"
@@ -67,6 +72,8 @@ const (
 	HViewAccountNFTs              = wasmtypes.ScHname(0x27422359)
 	HViewAccounts                 = wasmtypes.ScHname(0x3c4b5e02)
 	HViewBalance                  = wasmtypes.ScHname(0x84168cb4)
+	HViewBalanceBaseToken         = wasmtypes.ScHname(0x4c8ccd0f)
+	HViewBalanceNativeToken       = wasmtypes.ScHname(0x1fea3104)
 	HViewFoundryOutput            = wasmtypes.ScHname(0xd9647be3)
 	HViewGetAccountNonce          = wasmtypes.ScHname(0x529d7df9)
 	HViewGetNativeTokenIDRegistry = wasmtypes.ScHname(0x2ad8a59f)

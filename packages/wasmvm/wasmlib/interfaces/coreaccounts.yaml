@@ -33,6 +33,17 @@ views:
       agentID=a: AgentID
     results:
       balances=this: map[TokenID]BigInt
+  balanceBaseToken:
+    params:
+      agentID=a: AgentID
+    results:
+      balance=B: Uint64
+  balanceNativeToken:
+    params:
+      agentID=a: AgentID
+      tokenID=N: TokenID
+    results:
+      tokens=B: BigInt
   totalAssets:
     results:
       assets=this: map[TokenID]BigInt

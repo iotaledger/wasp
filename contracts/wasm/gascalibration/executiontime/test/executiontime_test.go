@@ -7,11 +7,11 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontimeimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontime"
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/executiontime/go/executiontimeimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )

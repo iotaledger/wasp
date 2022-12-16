@@ -1,10 +1,9 @@
 package wasmsolo
 
 import (
+	"errors"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"

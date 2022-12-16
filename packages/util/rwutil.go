@@ -3,12 +3,11 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"

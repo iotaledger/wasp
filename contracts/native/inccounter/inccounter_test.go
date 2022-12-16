@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -140,12 +139,7 @@ func TestSpawn(t *testing.T) {
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
-	opts := &solo.InitOptions{
-		Debug:                    false,
-		PrintStackTrace:          false,
-		Seed:                     cryptolib.Seed{},
-		AutoAdjustStorageDeposit: false, // is OFF by default
-	}
+	opts := solo.DefaultInitOptions()
 	opts.Log = log
 	env := solo.New(b, opts).WithNativeContract(Processor)
 	chain := env.NewChain()

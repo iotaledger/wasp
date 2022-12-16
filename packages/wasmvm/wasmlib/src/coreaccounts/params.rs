@@ -232,6 +232,70 @@ impl MutableBalanceParams {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBalanceBaseTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBalanceBaseTokenParams {
+    pub fn new() -> ImmutableBalanceBaseTokenParams {
+        ImmutableBalanceBaseTokenParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableBalanceBaseTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableBalanceBaseTokenParams {
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableBalanceNativeTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl ImmutableBalanceNativeTokenParams {
+    pub fn new() -> ImmutableBalanceNativeTokenParams {
+        ImmutableBalanceNativeTokenParams {
+            proxy: params_proxy(),
+        }
+    }
+
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    pub fn token_id(&self) -> ScImmutableTokenID {
+        ScImmutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableBalanceNativeTokenParams {
+    pub(crate) proxy: Proxy,
+}
+
+impl MutableBalanceNativeTokenParams {
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.proxy.root(PARAM_AGENT_ID))
+    }
+
+    pub fn token_id(&self) -> ScMutableTokenID {
+        ScMutableTokenID::new(self.proxy.root(PARAM_TOKEN_ID))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableFoundryOutputParams {
     pub(crate) proxy: Proxy,
 }

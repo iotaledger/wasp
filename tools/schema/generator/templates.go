@@ -61,9 +61,10 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"$module/go/$package"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {

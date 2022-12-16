@@ -4,20 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
+	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 )
 
 const (
@@ -41,8 +46,9 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
-	templates.WaspConfig = waspConfig
-	e := cluster_tests.SetupWithChain(t)
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+	e := clustertests.SetupWithChain(t)
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 
 	// request funds to the wallet that the wasmclient will use
@@ -68,7 +74,7 @@ func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
 }
 
-func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
+func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	// load config file
 	configBytes, err := os.ReadFile("wasp-cli.json")
 	require.NoError(t, err)
@@ -85,7 +91,7 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 	cfgSeed := cfgWallet["seed"].(string)
 
 	// we'll use the seed keypair to sign requests
-	seedBytes, err := base58.Decode(cfgSeed)
+	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
 
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
@@ -95,7 +101,7 @@ func setupClientDisposable(t *testing.T) *wasmclient.WasmClientContext {
 	return newClient(t, wasmclient.DefaultWasmClientService(), chain, wallet)
 }
 
-func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {
+func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 	chain := ctx.CurrentChainID().String()
 	wallet := ctx.Chain.OriginatorPrivateKey
@@ -104,7 +110,7 @@ func setupClientSolo(t *testing.T) *wasmclient.WasmClientContext {
 	return newClient(t, wasmsolo.NewSoloClientService(ctx), chain, wallet)
 }
 
-func newClient(t *testing.T, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
+func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientContext(svcClient, chain, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 	svc.SignRequests(wallet)
@@ -208,27 +214,21 @@ func TestClientArray(t *testing.T) {
 	require.EqualValues(t, 0, v.Results.Length().Value())
 }
 
-//func TestClientAccountBalance(t *testing.T) {
-//	// note: this calls core accounts contract instead of testwasmlib
-//
-//	// for now skip client tests
-//	t.SkipNow()
-//
-//	// we're testing against wasp-cluster, so defaults will do
-//	svcClient := wasmclient.DefaultWasmClientService()
-//
-//	// create the service for the testwasmlib smart contract
-//	svc, err := coreaccountsclient.NewCoreAccountsService(svcClient, myChainID)
-//	require.NoError(t, err)
-//
-//	// we'll use the first address in the seed to sign requests
-//	svc.SignRequests(wasmclient.SeedToKeyPair(mySeed, 0))
-//
-//	bal := coreaccounts.ScFuncs.Balance(svc)
-//	agent := wasmclient.SeedToAgentID(mySeed, 0)
-//	bal.Params.AgentID().SetValue(agent)
-//	bal.Func.Call()
-//	require.NoError(t, svc.Err)
-//	balances := bal.Results.Balances()
-//	fmt.Printf("Balance: %v\n", balances.GetInt64(wasmtypes.IOTA))
-//}
+func TestClientAccountBalance(t *testing.T) {
+	svc := setupClient(t)
+	wallet := svc.CurrentKeyPair()
+
+	// note: this calls core accounts contract instead of testwasmlib
+	svc = wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
+	svc.SignRequests(wallet)
+
+	addr := isc.NewAgentID(wallet.Address())
+	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
+
+	bal := coreaccounts.ScFuncs.BalanceBaseToken(svc)
+	bal.Params.AgentID().SetValue(agent)
+	bal.Func.Call()
+	require.NoError(t, svc.Err)
+	balance := bal.Results.Balance()
+	fmt.Printf("Balance: %d\n", balance.Value())
+}
