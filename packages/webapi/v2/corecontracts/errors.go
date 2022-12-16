@@ -18,7 +18,7 @@ func NewErrors(vmService interfaces.VMService) *Errors {
 	}
 }
 
-func (e *Errors) GetMessageFormat(chainID *isc.ChainID, contractID isc.Hname, errorID uint16) (string, error) {
+func (e *Errors) GetMessageFormat(chainID isc.ChainID, contractID isc.Hname, errorID uint16) (string, error) {
 	errorCode := isc.NewVMErrorCode(contractID, errorID)
 
 	ret, err := e.vmService.CallViewByChainID(chainID, errors.Contract.Hname(), errors.ViewGetErrorMessageFormat.Hname(), codec.MakeDict(map[string]interface{}{

@@ -4,20 +4,19 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-	"github.com/labstack/echo/v4"
 )
 
-func DecodeChainID(e echo.Context) (*isc.ChainID, error) {
+func DecodeChainID(e echo.Context) (isc.ChainID, error) {
 	chainID, err := isc.ChainIDFromString(e.Param("chainID"))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("chainID", err)
+		return isc.ChainID{}, apierrors.InvalidPropertyError("chainID", err)
 	}
 	return chainID, nil
 }

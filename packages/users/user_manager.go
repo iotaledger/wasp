@@ -54,32 +54,36 @@ func (m *UserManager) ModifyUser(user *User) error {
 }
 
 // ChangeUserPassword changes the password of a user.
-func (pm *UserManager) ChangeUserPassword(name string, passwordHash, passwordSalt []byte) error {
-	pm.usersLock.Lock()
-	defer pm.usersLock.Unlock()
-
-	if _, exists := pm.users[name]; !exists {
-		return fmt.Errorf("unable to change password for user: user \"%s\" does not exist", name)
+func (m *UserManager) ChangeUserPassword(name string, passwordHash, passwordSalt []byte) error {
+	user, err := m.User(name)
+	if err != nil {
+		return fmt.Errorf("unable to change password for user \"%s\": user does not exist", name)
 	}
 
-	pm.users[name].PasswordHash = passwordHash
-	pm.users[name].PasswordSalt = passwordSalt
+	user.PasswordHash = passwordHash
+	user.PasswordSalt = passwordSalt
 
-	return pm.Store()
+	if err := m.ModifyUser(user); err != nil {
+		return fmt.Errorf("unable to change password for user \"%s\": %w", name, err)
+	}
+
+	return nil
 }
 
 // ChangeUserPermissions changes the permissions of a user.
-func (pm *UserManager) ChangeUserPermissions(name string, permissions map[string]struct{}) error {
-	pm.usersLock.Lock()
-	defer pm.usersLock.Unlock()
-
-	if _, exists := pm.users[name]; !exists {
-		return fmt.Errorf("unable to change permissions for user: user \"%s\" does not exist", name)
+func (m *UserManager) ChangeUserPermissions(name string, permissions map[string]struct{}) error {
+	user, err := m.User(name)
+	if err != nil {
+		return fmt.Errorf("unable to change permissions for user \"%s\": user does not exist", name)
 	}
 
-	pm.users[name].Permissions = permissions
+	user.Permissions = permissions
 
-	return pm.Store()
+	if err := m.ModifyUser(user); err != nil {
+		return fmt.Errorf("unable to change permissions for user \"%s\": %w", name, err)
+	}
+
+	return nil
 }
 
 // RemoveUser removes a user from the user manager.

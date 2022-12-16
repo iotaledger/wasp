@@ -4,17 +4,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/peering"
-
-	"github.com/iotaledger/hive.go/core/marshalutil"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
-
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/chain/chainutil"
-	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/hive.go/core/marshalutil"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
 type OffLedgerService struct {
@@ -49,7 +45,7 @@ func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequ
 	return req, nil
 }
 
-func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID *isc.ChainID, binaryRequest []byte) error {
+func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRequest []byte) error {
 	request, err := c.ParseRequest(binaryRequest)
 	if err != nil {
 		return err
@@ -104,13 +100,7 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID *isc.ChainID, binaryR
 		return fmt.Errorf("invalid nonce, %v", err)
 	}
 
-	chain.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: chain.ID(),
-			Req:     request,
-		},
-		SenderPubKey: c.networkProvider.Self().PubKey(),
-	})
+	chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey())
 
 	return nil
 }

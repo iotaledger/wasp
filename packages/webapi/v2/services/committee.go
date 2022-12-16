@@ -18,17 +18,17 @@ import (
 type CommitteeService struct {
 	log *logger.Logger
 
-	chainsProvider   chains.Provider
-	networkProvider  peering.NetworkProvider
-	registryProvider registry.Provider
+	chainsProvider          chains.Provider
+	networkProvider         peering.NetworkProvider
+	dkShareRegistryProvider registry.DKShareRegistryProvider
 }
 
-func NewCommitteeService(log *logger.Logger, chainsProvider chains.Provider, networkProvider peering.NetworkProvider, registryProvider registry.Provider) interfaces.CommitteeService {
+func NewCommitteeService(log *logger.Logger, chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
 	return &CommitteeService{
-		log:              log,
-		chainsProvider:   chainsProvider,
-		networkProvider:  networkProvider,
-		registryProvider: registryProvider,
+		log:                     log,
+		chainsProvider:          chainsProvider,
+		networkProvider:         networkProvider,
+		dkShareRegistryProvider: dkShareRegistryProvider,
 	}
 }
 
@@ -36,15 +36,15 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 	return c.networkProvider.Self().PubKey()
 }
 
-func (c *CommitteeService) GetCommitteeInfo(chainID *isc.ChainID) (*dto.ChainNodeInfo, error) {
-	chain := c.chainsProvider().Get(chainID, true)
+func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error) {
+	chain := c.chainsProvider().Get(chainID)
 	if chain == nil {
 		return nil, errors.New("chain does not exist")
 	}
 
 	committeeInfo := chain.GetCommitteeInfo()
 
-	dkShare, err := c.registryProvider().LoadDKShare(committeeInfo.Address)
+	dkShare, err := c.dkShareRegistryProvider.LoadDKShare(committeeInfo.Address)
 	if err != nil {
 		return nil, err
 	}

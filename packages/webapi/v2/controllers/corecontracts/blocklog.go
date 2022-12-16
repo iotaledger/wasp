@@ -106,7 +106,7 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	return e.JSON(http.StatusOK, requestIDsResponse)
 }
 
-func MapRequestReceiptResponse(vmService interfaces.VMService, chainID *isc.ChainID, receipt *blocklog.RequestReceipt) (*models.RequestReceiptResponse, error) {
+func MapRequestReceiptResponse(vmService interfaces.VMService, chainID isc.ChainID, receipt *blocklog.RequestReceipt) (*models.RequestReceiptResponse, error) {
 	response := &models.RequestReceiptResponse{
 		BlockIndex:    receipt.BlockIndex,
 		GasBudget:     receipt.GasBudget,

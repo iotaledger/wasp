@@ -18,22 +18,22 @@ import (
 type NodeService struct {
 	logger *logger.Logger
 
-	nodeOwnerAddresses []string
-	registryProvider   registry.Provider
-	shutdownHandler    *shutdown.ShutdownHandler
+	nodeOwnerAddresses   []string
+	nodeIdentityProvider registry.NodeIdentityProvider
+	shutdownHandler      *shutdown.ShutdownHandler
 }
 
-func NewNodeService(log *logger.Logger, nodeOwnerAddresses []string, registryProvider registry.Provider, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
+func NewNodeService(log *logger.Logger, nodeOwnerAddresses []string, nodeIdentityProvider registry.NodeIdentityProvider, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
 	return &NodeService{
-		logger:             log,
-		nodeOwnerAddresses: nodeOwnerAddresses,
-		registryProvider:   registryProvider,
-		shutdownHandler:    shutdownHandler,
+		logger:               log,
+		nodeOwnerAddresses:   nodeOwnerAddresses,
+		nodeIdentityProvider: nodeIdentityProvider,
+		shutdownHandler:      shutdownHandler,
 	}
 }
 
 func (n *NodeService) SetNodeOwnerCertificate(nodePubKey []byte, ownerAddress iotago.Address) ([]byte, error) {
-	nodeIdentity := n.registryProvider().GetNodeIdentity()
+	nodeIdentity := n.nodeIdentityProvider.NodeIdentity()
 
 	if !bytes.Equal(nodeIdentity.GetPublicKey().AsBytes(), nodePubKey) {
 		return nil, errors.New("wrong public key")

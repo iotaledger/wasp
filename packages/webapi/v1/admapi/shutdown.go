@@ -12,7 +12,7 @@ import (
 type ShutdownFunc func()
 
 type shutdownService struct {
-	shutdown ShutdownFunc
+	shutdownFunc ShutdownFunc
 }
 
 func addShutdownEndpoint(adm echoswagger.ApiGroup, shutdown ShutdownFunc) {
@@ -28,6 +28,6 @@ func addShutdownEndpoint(adm echoswagger.ApiGroup, shutdown ShutdownFunc) {
 // signal does not work on Windows.
 func (s *shutdownService) handleShutdown(c echo.Context) error {
 	log.Info("Received a shutdown request from WebAPI.")
-	s.shutdown()
+	s.shutdownFunc()
 	return c.String(http.StatusOK, "Shutting down...")
 }

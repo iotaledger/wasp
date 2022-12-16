@@ -45,12 +45,12 @@ func NewEVMService(log *logger.Logger, chainService interfaces.ChainService, net
 	}
 }
 
-func (e *EVMService) getEVMBackend(chainID *isc.ChainID) (*chainServer, error) {
+func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	e.evmBackendMutex.Lock()
 	defer e.evmBackendMutex.Unlock()
 
-	if e.evmChainServers[*chainID] != nil {
-		return e.evmChainServers[*chainID], nil
+	if e.evmChainServers[chainID] != nil {
+		return e.evmChainServers[chainID], nil
 	}
 
 	chain := e.chainService.GetChainByID(chainID)
@@ -67,7 +67,7 @@ func (e *EVMService) getEVMBackend(chainID *isc.ChainID) (*chainServer, error) {
 	nodePubKey := e.networkProvider.Self().PubKey()
 	backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
-	e.evmChainServers[*chainID] = &chainServer{
+	e.evmChainServers[chainID] = &chainServer{
 		backend: backend,
 		rpc: jsonrpc.NewServer(
 			jsonrpc.NewEVMChain(backend, evmChainID),
@@ -75,10 +75,10 @@ func (e *EVMService) getEVMBackend(chainID *isc.ChainID) (*chainServer, error) {
 		),
 	}
 
-	return e.evmChainServers[*chainID], nil
+	return e.evmChainServers[chainID], nil
 }
 
-func (e *EVMService) HandleJSONRPC(chainID *isc.ChainID, request *http.Request, response *echo.Response) error {
+func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (e *EVMService) HandleJSONRPC(chainID *isc.ChainID, request *http.Request, 
 	return nil
 }
 
-func (e *EVMService) GetRequestID(chainID *isc.ChainID, hash string) (*isc.RequestID, error) {
+func (e *EVMService) GetRequestID(chainID isc.ChainID, hash string) (*isc.RequestID, error) {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
 		return nil, err

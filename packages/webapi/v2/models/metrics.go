@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -29,7 +30,7 @@ type (
 	TxInclusionStateMsgMetricItem MetricItem[*TxInclusionStateMsg]
 	TransactionMetricItem         MetricItem[*Transaction]
 	TransactionIDMetricItem       MetricItem[*Transaction]
-	UTXOInputMetricItem           MetricItem[*UTXOInput]
+	UTXOInputMetricItem           MetricItem[iotago.OutputID]
 	InterfaceMetricItem           MetricItem[interface{}]
 )
 
@@ -59,7 +60,7 @@ func MapChainMetrics(metrics *dto.ChainMetrics) *ChainMetrics {
 		InOutput:                        InOutputMetricItem(MapMetricItem(metrics.InOutput, InOutputFromISCInOutput(metrics.InOutput.LastMessage))),
 		InTxInclusionState:              TxInclusionStateMsgMetricItem(MapMetricItem(metrics.InTxInclusionState, TxInclusionStateMsgFromISCTxInclusionStateMsg(metrics.InTxInclusionState.LastMessage))),
 		InOnLedgerRequest:               OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
-		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, UTXOInputFromIotaGoUTXOInput(metrics.OutPullOutputByID.LastMessage))),
+		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, metrics.OutPullOutputByID.LastMessage)),
 		OutPullTxInclusionState:         TransactionIDMetricItem(MapMetricItem(metrics.OutPullTxInclusionState, TransactionFromIotaGoTransactionID(&metrics.OutPullTxInclusionState.LastMessage))),
 		OutPullLatestOutput:             InterfaceMetricItem(MapMetricItem(metrics.OutPullLatestOutput, metrics.OutPullLatestOutput.LastMessage)),
 		InStateOutput:                   InStateOutputMetricItem(MapMetricItem(metrics.InStateOutput, InStateOutputFromISCInStateOutput(metrics.InStateOutput.LastMessage))),

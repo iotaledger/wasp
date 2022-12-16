@@ -45,7 +45,7 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 	}
 }
 
-func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics {
+func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {
@@ -67,7 +67,7 @@ func (c *MetricsService) GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
 	}
 }
 
-func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *models.ConsensusWorkflowMetrics {
+func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {
@@ -83,7 +83,7 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) 
 	return models.MapConsensusWorkflowStatus(metrics)
 }
 
-func (c *MetricsService) GetChainConsensusPipeMetrics(chainID *isc.ChainID) *models.ConsensusPipeMetrics {
+func (c *MetricsService) GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics {
 	chain := c.chainProvider().Get(chainID)
 
 	if chain == nil {

@@ -71,7 +71,7 @@ func (p *PeeringService) GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error) {
 	peers := make([]dto.PeeringNodeIdentity, len(trustedPeers))
 	for k, v := range trustedPeers {
 		peers[k] = dto.PeeringNodeIdentity{
-			PublicKey: v.PubKey,
+			PublicKey: v.PubKey(),
 			NetID:     v.NetID,
 			IsTrusted: true,
 		}
@@ -83,7 +83,7 @@ func (p *PeeringService) GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error) {
 func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error) {
 	identity, err := p.trustedNetworkManager.TrustPeer(publicKey, netID)
 	mappedIdentity := &dto.PeeringNodeIdentity{
-		PublicKey: identity.PubKey,
+		PublicKey: identity.PubKey(),
 		NetID:     identity.NetID,
 		IsTrusted: true,
 	}
@@ -94,7 +94,7 @@ func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string)
 func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error) {
 	identity, err := p.trustedNetworkManager.DistrustPeer(publicKey)
 	mappedIdentity := &dto.PeeringNodeIdentity{
-		PublicKey: identity.PubKey,
+		PublicKey: identity.PubKey(),
 		NetID:     identity.NetID,
 		IsTrusted: false,
 	}

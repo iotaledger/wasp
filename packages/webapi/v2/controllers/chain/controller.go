@@ -3,18 +3,14 @@ package chain
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
-
-	"github.com/iotaledger/wasp/packages/authentication"
-
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/authentication"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
+	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type Controller struct {

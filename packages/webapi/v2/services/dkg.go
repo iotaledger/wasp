@@ -20,16 +20,15 @@ import (
 type DKGService struct {
 	log *logger.Logger
 
-	registryProvider registry.Provider
-	nodeProvider     dkg.NodeProvider
+	dkShareRegistryProvider registry.DKShareRegistryProvider
+	dkgNodeProvider         dkg.NodeProvider
 }
 
-func NewDKGService(log *logger.Logger, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) *DKGService {
+func NewDKGService(log *logger.Logger, dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider) *DKGService {
 	return &DKGService{
-		log: log,
-
-		registryProvider: registryProvider,
-		nodeProvider:     nodeProvider,
+		log:                     log,
+		dkShareRegistryProvider: dkShareRegistryProvider,
+		dkgNodeProvider:         dkgNodeProvider,
 	}
 }
 
@@ -39,7 +38,7 @@ func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKe
 
 	timeout := time.Duration(timeoutInMilliseconds) * time.Millisecond
 
-	dkShare, err := d.nodeProvider().GenerateDistributedKey(peerPublicKeys, threshold, roundRetry, stepRetry, timeout)
+	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPublicKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +49,7 @@ func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKe
 }
 
 func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesInfo, error) {
-	dkShare, err := d.registryProvider().LoadDKShare(sharedAddress)
+	dkShare, err := d.dkShareRegistryProvider.LoadDKShare(sharedAddress)
 	if err != nil {
 		return nil, err
 	}

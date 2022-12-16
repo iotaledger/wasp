@@ -22,7 +22,7 @@ type ChainMetrics struct {
 	InTxInclusionState              *MetricItem[*nodeconnmetrics.TxInclusionStateMsg]
 	OutPublishGovernanceTransaction *MetricItem[*iotago.Transaction]
 	OutPullLatestOutput             *MetricItem[interface{}]
-	OutPullOutputByID               *MetricItem[*iotago.UTXOInput]
+	OutPullOutputByID               *MetricItem[iotago.OutputID]
 	OutPullTxInclusionState         *MetricItem[iotago.TransactionID]
 }
 

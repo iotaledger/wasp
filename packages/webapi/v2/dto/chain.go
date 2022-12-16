@@ -13,7 +13,7 @@ type (
 
 type ChainInfo struct {
 	IsActive        bool
-	ChainID         *isc.ChainID
+	ChainID         isc.ChainID
 	ChainOwnerID    isc.AgentID
 	Description     string
 	GasFeePolicy    *gas.GasFeePolicy

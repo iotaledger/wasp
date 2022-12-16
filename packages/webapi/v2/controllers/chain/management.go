@@ -3,8 +3,9 @@ package chain
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 func (c *Controller) activateChain(e echo.Context) error {

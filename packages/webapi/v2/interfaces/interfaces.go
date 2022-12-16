@@ -27,28 +27,28 @@ type APIController interface {
 }
 
 type ChainService interface {
-	ActivateChain(chainID *isc.ChainID) error
-	DeactivateChain(chainID *isc.ChainID) error
-	GetAllChainIDs() ([]*isc.ChainID, error)
-	HasChain(chainID *isc.ChainID) bool
-	GetChainByID(chainID *isc.ChainID) chain.Chain
-	GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error)
-	GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error)
-	GetEVMChainID(chainID *isc.ChainID) (uint16, error)
-	GetState(chainID *isc.ChainID, stateKey []byte) (state []byte, err error)
-	WaitForRequestProcessed(chainID *isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
+	ActivateChain(chainID isc.ChainID) error
+	DeactivateChain(chainID isc.ChainID) error
+	GetAllChainIDs() ([]isc.ChainID, error)
+	HasChain(chainID isc.ChainID) bool
+	GetChainByID(chainID isc.ChainID) chain.Chain
+	GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error)
+	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
+	GetEVMChainID(chainID isc.ChainID) (uint16, error)
+	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
+	WaitForRequestProcessed(chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
 }
 
 type EVMService interface {
-	HandleJSONRPC(chainID *isc.ChainID, request *http.Request, response *echo.Response) error
-	GetRequestID(chainID *isc.ChainID, hash string) (*isc.RequestID, error)
+	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
+	GetRequestID(chainID isc.ChainID, hash string) (*isc.RequestID, error)
 }
 
 type MetricsService interface {
 	GetAllChainsMetrics() *dto.ChainMetrics
-	GetChainConsensusPipeMetrics(chainID *isc.ChainID) *models.ConsensusPipeMetrics
-	GetChainConsensusWorkflowMetrics(chainID *isc.ChainID) *models.ConsensusWorkflowMetrics
-	GetChainMetrics(chainID *isc.ChainID) *dto.ChainMetrics
+	GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics
+	GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics
+	GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics
 }
 
 type NodeService interface {
@@ -57,11 +57,11 @@ type NodeService interface {
 }
 
 type RegistryService interface {
-	GetChainRecordByChainID(chainID *isc.ChainID) (*registry.ChainRecord, error)
+	GetChainRecordByChainID(chainID isc.ChainID) (*registry.ChainRecord, error)
 }
 
 type CommitteeService interface {
-	GetCommitteeInfo(chainID *isc.ChainID) (*dto.ChainNodeInfo, error)
+	GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error)
 	GetPublicKey() *cryptolib.PublicKey
 }
 
@@ -75,7 +75,7 @@ type PeeringService interface {
 }
 
 type OffLedgerService interface {
-	EnqueueOffLedgerRequest(chainID *isc.ChainID, request []byte) error
+	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
 	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
 }
 
@@ -89,9 +89,9 @@ type UserService interface {
 }
 
 type VMService interface {
-	CallView(chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
-	CallViewByChainID(chainID *isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
-	GetReceipt(chainID *isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
+	CallView(blockIndex uint32, chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
+	CallViewByChainID(chainID isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
+	GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
 }
 
 type Mocker interface {

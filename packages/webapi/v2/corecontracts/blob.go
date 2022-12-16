@@ -18,7 +18,7 @@ func NewBlob(vmService interfaces.VMService) *Blob {
 	}
 }
 
-func (b *Blob) GetBlobInfo(chainID *isc.ChainID, blobHash hashing.HashValue) (map[string]uint32, bool, error) {
+func (b *Blob) GetBlobInfo(chainID isc.ChainID, blobHash hashing.HashValue) (map[string]uint32, bool, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Hname(), codec.MakeDict(map[string]interface{}{
 		blob.ParamHash: blobHash[:],
 	}))
@@ -39,7 +39,7 @@ func (b *Blob) GetBlobInfo(chainID *isc.ChainID, blobHash hashing.HashValue) (ma
 	return blobMap, true, nil
 }
 
-func (b *Blob) GetBlobValue(chainID *isc.ChainID, blobHash hashing.HashValue, key string) ([]byte, error) {
+func (b *Blob) GetBlobValue(chainID isc.ChainID, blobHash hashing.HashValue, key string) ([]byte, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Hname(), codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  blobHash[:],
 		blob.ParamField: []byte(key),
@@ -52,7 +52,7 @@ func (b *Blob) GetBlobValue(chainID *isc.ChainID, blobHash hashing.HashValue, ke
 	return ret[blob.ParamBytes], nil
 }
 
-func (b *Blob) ListBlobs(chainID *isc.ChainID) (map[hashing.HashValue]uint32, error) {
+func (b *Blob) ListBlobs(chainID isc.ChainID) (map[hashing.HashValue]uint32, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewListBlobs.Hname(), nil)
 
 	if err != nil {

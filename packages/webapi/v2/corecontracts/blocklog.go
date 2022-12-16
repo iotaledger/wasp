@@ -20,7 +20,7 @@ func NewBlockLog(vmService interfaces.VMService) *BlockLog {
 	}
 }
 
-func (b *BlockLog) GetControlAddresses(chainID *isc.ChainID) (*blocklog.ControlAddresses, error) {
+func (b *BlockLog) GetControlAddresses(chainID isc.ChainID) (*blocklog.ControlAddresses, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewControlAddresses.Hname(), nil)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func handleBlockInfo(info dict.Dict) (*blocklog.BlockInfo, error) {
 	return blockInfo, nil
 }
 
-func (b *BlockLog) GetLatestBlockInfo(chainID *isc.ChainID) (*blocklog.BlockInfo, error) {
+func (b *BlockLog) GetLatestBlockInfo(chainID isc.ChainID) (*blocklog.BlockInfo, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), nil)
 
 	if err != nil {
@@ -83,7 +83,7 @@ func (b *BlockLog) GetLatestBlockInfo(chainID *isc.ChainID) (*blocklog.BlockInfo
 	return handleBlockInfo(ret)
 }
 
-func (b *BlockLog) GetBlockInfo(chainID *isc.ChainID, blockIndex uint32) (*blocklog.BlockInfo, error) {
+func (b *BlockLog) GetBlockInfo(chainID isc.ChainID, blockIndex uint32) (*blocklog.BlockInfo, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -118,7 +118,7 @@ func handleRequestIDs(requestIDsDict dict.Dict) ([]isc.RequestID, error) {
 	return requestIDs, nil
 }
 
-func (b *BlockLog) GetRequestIDsForLatestBlock(chainID *isc.ChainID) ([]isc.RequestID, error) {
+func (b *BlockLog) GetRequestIDsForLatestBlock(chainID isc.ChainID) ([]isc.RequestID, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), nil)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (b *BlockLog) GetRequestIDsForLatestBlock(chainID *isc.ChainID) ([]isc.Requ
 	return handleRequestIDs(ret)
 }
 
-func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {
+func (b *BlockLog) GetRequestIDsForBlock(chainID isc.ChainID, blockIndex uint32) ([]isc.RequestID, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestIDsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -138,7 +138,7 @@ func (b *BlockLog) GetRequestIDsForBlock(chainID *isc.ChainID, blockIndex uint32
 	return handleRequestIDs(ret)
 }
 
-func (b *BlockLog) GetRequestReceipt(chainID *isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
+func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestRecord: requestID,
 	}))
@@ -170,7 +170,7 @@ func (b *BlockLog) GetRequestReceipt(chainID *isc.ChainID, requestID isc.Request
 	return requestReceipt, err
 }
 
-func (b *BlockLog) GetRequestReceiptsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
+func (b *BlockLog) GetRequestReceiptsForBlock(chainID isc.ChainID, blockIndex uint32) ([]*blocklog.RequestReceipt, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceiptsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -206,7 +206,7 @@ func (b *BlockLog) GetRequestReceiptsForBlock(chainID *isc.ChainID, blockIndex u
 	return requestReceipts, nil
 }
 
-func (b *BlockLog) IsRequestProcessed(chainID *isc.ChainID, requestID isc.RequestID) (bool, error) {
+func (b *BlockLog) IsRequestProcessed(chainID isc.ChainID, requestID isc.RequestID) (bool, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestRecord: requestID,
 	}))
@@ -244,7 +244,7 @@ func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
 	return events, nil
 }
 
-func (b *BlockLog) GetEventsForRequest(chainID *isc.ChainID, requestID isc.RequestID) ([]string, error) {
+func (b *BlockLog) GetEventsForRequest(chainID isc.ChainID, requestID isc.RequestID) ([]string, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForRequest.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamRequestRecord: requestID,
 	}))
@@ -255,7 +255,7 @@ func (b *BlockLog) GetEventsForRequest(chainID *isc.ChainID, requestID isc.Reque
 	return eventsFromViewResult(ret)
 }
 
-func (b *BlockLog) GetEventsForBlock(chainID *isc.ChainID, blockIndex uint32) ([]string, error) {
+func (b *BlockLog) GetEventsForBlock(chainID isc.ChainID, blockIndex uint32) ([]string, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForBlock.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamBlockIndex: blockIndex,
 	}))
@@ -266,7 +266,7 @@ func (b *BlockLog) GetEventsForBlock(chainID *isc.ChainID, blockIndex uint32) ([
 	return eventsFromViewResult(ret)
 }
 
-func (b *BlockLog) GetEventsForContract(chainID *isc.ChainID, contractHname isc.Hname) ([]string, error) {
+func (b *BlockLog) GetEventsForContract(chainID isc.ChainID, contractHname isc.Hname) ([]string, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetEventsForContract.Hname(), codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: contractHname,
 	}))

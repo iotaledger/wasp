@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/hive.go/core/configuration"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
@@ -77,6 +78,7 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
+		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
 		PublisherPort               int           `name:"publisherPort"`
@@ -174,6 +176,7 @@ func provide(c *dig.Container) error {
 		v2.Init(
 			Plugin.App().NewLogger("WebAPI/v2"),
 			echoSwagger,
+			deps.AppConfig,
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,
 			deps.UserManager,
@@ -186,14 +189,10 @@ func provide(c *dig.Container) error {
 			func() *dkg.Node {
 				return deps.Node
 			},
-			func() {
-				deps.ShutdownHandler.SelfShutdown("wasp was shutdown via API", false)
-			},
+			deps.ShutdownHandler,
 			deps.NodeConnectionMetrics,
 			ParamsWebAPI.Auth,
 			ParamsWebAPI.NodeOwnerAddresses,
-			deps.APICacheTTL,
-			deps.PublisherPort,
 		)
 
 		return webapiServerResult{

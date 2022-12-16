@@ -135,17 +135,3 @@ func TransactionFromIotaGoTransactionID(transaction *iotago.TransactionID) *Tran
 		TransactionID: transaction.ToHex(),
 	}
 }
-
-type UTXOInput struct {
-	ID string
-}
-
-func UTXOInputFromIotaGoUTXOInput(input *iotago.UTXOInput) *UTXOInput {
-	if input == nil {
-		return nil
-	}
-
-	return &UTXOInput{
-		ID: input.ID().ToHex(),
-	}
-}

@@ -11,21 +11,18 @@ import (
 type RegistryService struct {
 	logger *logger.Logger
 
-	chainsProvider   chains.Provider
-	registryProvider registry.Provider
+	chainsProvider              chains.Provider
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
-func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, registryProvider registry.Provider) interfaces.RegistryService {
+func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
 	return &RegistryService{
-		logger: log,
-
-		chainsProvider:   chainsProvider,
-		registryProvider: registryProvider,
+		logger:                      log,
+		chainsProvider:              chainsProvider,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}
 }
 
-func (c *RegistryService) GetChainRecordByChainID(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	chainInfo, err := c.registryProvider().GetChainRecordByChainID(chainID)
-
-	return chainInfo, err
+func (c *RegistryService) GetChainRecordByChainID(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	return c.chainRecordRegistryProvider.ChainRecord(chainID)
 }

@@ -22,7 +22,7 @@ func NewAccounts(vmService interfaces.VMService) *Accounts {
 	}
 }
 
-func (a *Accounts) GetAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
+func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (a *Accounts) GetAccounts(chainID *isc.ChainID) ([]isc.AgentID, error) {
 	return accountIds, nil
 }
 
-func (a *Accounts) GetTotalAssets(chainID *isc.ChainID) (*isc.FungibleTokens, error) {
+func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.FungibleTokens, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil)
 
 	if err != nil {
@@ -54,7 +54,7 @@ func (a *Accounts) GetTotalAssets(chainID *isc.ChainID) (*isc.FungibleTokens, er
 	return isc.FungibleTokensFromDict(ret)
 }
 
-func (a *Accounts) GetAccountBalance(chainID *isc.ChainID, agentID isc.AgentID) (*isc.FungibleTokens, error) {
+func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (*isc.FungibleTokens, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
@@ -66,7 +66,7 @@ func (a *Accounts) GetAccountBalance(chainID *isc.ChainID, agentID isc.AgentID) 
 	return isc.FungibleTokensFromDict(ret)
 }
 
-func (a *Accounts) GetAccountNFTs(chainID *isc.ChainID, agentID isc.AgentID) ([]iotago.NFTID, error) {
+func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]iotago.NFTID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
@@ -98,7 +98,7 @@ func (a *Accounts) GetAccountNFTs(chainID *isc.ChainID, agentID isc.AgentID) ([]
 	return nftIDs, nil
 }
 
-func (a *Accounts) GetAccountNonce(chainID *isc.ChainID, agentID isc.AgentID) (uint64, error) {
+func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (uint64, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
@@ -116,7 +116,7 @@ func (a *Accounts) GetAccountNonce(chainID *isc.ChainID, agentID isc.AgentID) (u
 	return codec.DecodeUint64(nonce)
 }
 
-func (a *Accounts) GetNFTData(chainID *isc.ChainID, nftID iotago.NFTID) (*isc.NFT, error) {
+func (a *Accounts) GetNFTData(chainID isc.ChainID, nftID iotago.NFTID) (*isc.NFT, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamNFTID: nftID[:],
 	}))
@@ -145,7 +145,7 @@ func parseNativeTokenIDFromBytes(data []byte) (*iotago.NativeTokenID, error) {
 	return ret, nil
 }
 
-func (a *Accounts) GetNativeTokenIDRegistry(chainID *isc.ChainID) ([]*iotago.NativeTokenID, error) {
+func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]*iotago.NativeTokenID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 
 	if err != nil {
@@ -166,7 +166,7 @@ func (a *Accounts) GetNativeTokenIDRegistry(chainID *isc.ChainID) ([]*iotago.Nat
 	return tokenIDs, nil
 }
 
-func (a *Accounts) GetFoundryOutput(chainID *isc.ChainID, serialNumber uint32) (*iotago.FoundryOutput, error) {
+func (a *Accounts) GetFoundryOutput(chainID isc.ChainID, serialNumber uint32) (*iotago.FoundryOutput, error) {
 	res, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamFoundrySN: serialNumber,
 	}))

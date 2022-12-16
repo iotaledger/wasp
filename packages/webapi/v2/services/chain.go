@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -13,12 +11,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	metricspkg "github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	walpkg "github.com/iotaledger/wasp/packages/wal"
+	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
@@ -28,65 +25,62 @@ const MaxTimeout = 30 * time.Second
 type ChainService struct {
 	log *logger.Logger
 
-	governance       *corecontracts.Governance
-	chainsProvider   chains.Provider
-	metrics          *metricspkg.Metrics
-	registryProvider registry.Provider
-	vmService        interfaces.VMService
-	wal              *walpkg.WAL
+	governance                  *corecontracts.Governance
+	chainsProvider              chains.Provider
+	nodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	vmService                   interfaces.VMService
 }
 
-func NewChainService(log *logger.Logger, chainsProvider chains.Provider, metrics *metricspkg.Metrics, registryProvider registry.Provider, vmService interfaces.VMService, wal *walpkg.WAL) interfaces.ChainService {
+func NewChainService(log *logger.Logger, chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
 	return &ChainService{
 		log: log,
 
-		governance:       corecontracts.NewGovernance(vmService),
-		chainsProvider:   chainsProvider,
-		metrics:          metrics,
-		registryProvider: registryProvider,
-		vmService:        vmService,
-		wal:              wal,
+		governance:                  corecontracts.NewGovernance(vmService),
+		chainsProvider:              chainsProvider,
+		nodeConnectionMetrics:       nodeConnectionMetrics,
+		chainRecordRegistryProvider: chainRecordRegistryProvider,
+		vmService:                   vmService,
 	}
 }
 
-func (c *ChainService) ActivateChain(chainID *isc.ChainID) error {
-	chainRecord, err := c.registryProvider().ActivateChainRecord(chainID)
+func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
+	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
 	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
 
-	err = c.chainsProvider().
-		Activate(chainRecord, c.registryProvider, c.metrics, c.wal)
+	err = c.chainsProvider().Activate(chainID)
 
 	return err
 }
 
-func (c *ChainService) DeactivateChain(chainID *isc.ChainID) error {
-	chainRecord, err := c.registryProvider().DeactivateChainRecord(chainID)
+func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
+	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
 	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
 
-	err = c.chainsProvider().Deactivate(chainRecord)
+	err = c.chainsProvider().Deactivate(chainID)
 
 	return err
 }
 
-func (c *ChainService) HasChain(chainID *isc.ChainID) bool {
+func (c *ChainService) HasChain(chainID isc.ChainID) bool {
 	return c.GetChainByID(chainID) != nil
 }
 
-func (c *ChainService) GetChainByID(chainID *isc.ChainID) chainpkg.Chain {
-	chain := c.chainsProvider().Get(chainID, true)
+func (c *ChainService) GetChainByID(chainID isc.ChainID) chainpkg.Chain {
+	chain := c.chainsProvider().Get(chainID)
 
 	return chain
 }
 
-func (c *ChainService) GetEVMChainID(chainID *isc.ChainID) (uint16, error) {
+func (c *ChainService) GetEVMChainID(chainID isc.ChainID) (uint16, error) {
 	ret, err := c.vmService.CallViewByChainID(chainID, evm.Contract.Hname(), evm.FuncGetChainID.Hname(), nil)
 	if err != nil {
 		return 0, err
@@ -95,28 +89,28 @@ func (c *ChainService) GetEVMChainID(chainID *isc.ChainID) (uint16, error) {
 	return codec.DecodeUint16(ret.MustGet(evm.FieldResult))
 }
 
-func (c *ChainService) GetAllChainIDs() ([]*isc.ChainID, error) {
-	records, err := c.registryProvider().GetChainRecords()
+func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
+	records, err := c.chainRecordRegistryProvider.ChainRecords()
 	if err != nil {
 		return nil, err
 	}
 
-	chainIDs := make([]*isc.ChainID, 0, len(records))
+	chainIDs := make([]isc.ChainID, 0, len(records))
 
 	for _, chainRecord := range records {
-		chainIDs = append(chainIDs, &chainRecord.ChainID)
+		chainIDs = append(chainIDs, chainRecord.ChainID())
 	}
 
 	return chainIDs, nil
 }
 
-func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainInfo, error) {
+func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID) (*dto.ChainInfo, error) {
 	governanceChainInfo, err := c.governance.GetChainInfo(chainID)
 	if err != nil {
 		return nil, err
 	}
 
-	chainRecord, err := c.registryProvider().GetChainRecordByChainID(chainID)
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +120,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID *isc.ChainID) (*dto.ChainIn
 	return chainInfo, nil
 }
 
-func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, error) {
+func (c *ChainService) GetContracts(chainID isc.ChainID) (dto.ContractsMap, error) {
 	recs, err := c.vmService.CallViewByChainID(chainID, root.Contract.Hname(), root.ViewGetContractRecords.Hname(), nil)
 	if err != nil {
 		return nil, err
@@ -140,19 +134,18 @@ func (c *ChainService) GetContracts(chainID *isc.ChainID) (dto.ContractsMap, err
 	return contracts, nil
 }
 
-func (c *ChainService) GetState(chainID *isc.ChainID, stateKey []byte) (state []byte, err error) {
+func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {
 	chain := c.chainsProvider().Get(chainID)
 
-	err = optimism.RetryOnStateInvalidated(func() error {
-		var err error
-		state, err = chain.GetStateReader().KVStoreReader().Get(kv.Key(stateKey))
-		return err
-	})
+	latestState, err := chain.GetStateReader().LatestState()
+	if err != nil {
+		return nil, err
+	}
 
-	return state, err
+	return latestState.Get(kv.Key(stateKey))
 }
 
-func (c *ChainService) WaitForRequestProcessed(chainID *isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
+func (c *ChainService) WaitForRequestProcessed(chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
 	chain := c.chainsProvider().Get(chainID)
 
 	if chain == nil {

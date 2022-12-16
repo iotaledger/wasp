@@ -1,8 +1,9 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 func (c *Controller) handleWebSocket(e echo.Context) error {

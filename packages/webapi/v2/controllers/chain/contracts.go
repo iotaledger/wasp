@@ -3,10 +3,10 @@ package chain
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
-
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) getContracts(e echo.Context) error {

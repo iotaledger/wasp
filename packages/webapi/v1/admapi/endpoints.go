@@ -30,7 +30,7 @@ func AddEndpoints(
 	nodeIdentityProvider registry.NodeIdentityProvider,
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
-	shutdown ShutdownFunc,
+	shutdownFunc ShutdownFunc,
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
@@ -43,7 +43,7 @@ func AddEndpoints(
 	}
 
 	authentication.AddAuthentication(adm.EchoGroup(), userManager, nodeIdentityProvider, authConfig, claimValidator)
-	addShutdownEndpoint(adm, shutdown)
+	addShutdownEndpoint(adm, shutdownFunc)
 	addNodeOwnerEndpoints(adm, nodeIdentityProvider, nodeOwnerAddresses)
 	addChainRecordEndpoints(adm, chainRecordRegistryProvider, chainsProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)

@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
-
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
-	"github.com/samber/lo"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 const pubKeyParam = "PublicKey"

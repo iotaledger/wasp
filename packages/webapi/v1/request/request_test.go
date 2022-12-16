@@ -4,9 +4,6 @@ import (
 	"net/http"
 	"testing"
 	"time"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"

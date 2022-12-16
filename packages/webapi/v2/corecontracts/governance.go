@@ -19,7 +19,7 @@ func NewGovernance(vmService interfaces.VMService) *Governance {
 	}
 }
 
-func (g *Governance) GetAllowedStateControllerAddresses(chainID *isc.ChainID) ([]iotago.Address, error) {
+func (g *Governance) GetAllowedStateControllerAddresses(chainID isc.ChainID) ([]iotago.Address, error) {
 	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetAllowedStateControllerAddresses.Hname(), nil)
 
 	if err != nil {
@@ -50,7 +50,7 @@ func (g *Governance) GetAllowedStateControllerAddresses(chainID *isc.ChainID) ([
 	return stateControllerAddresses, nil
 }
 
-func (g *Governance) GetChainOwner(chainID *isc.ChainID) (isc.AgentID, error) {
+func (g *Governance) GetChainOwner(chainID isc.ChainID) (isc.AgentID, error) {
 	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainOwner.Hname(), nil)
 
 	if err != nil {
@@ -70,7 +70,7 @@ func (g *Governance) GetChainOwner(chainID *isc.ChainID) (isc.AgentID, error) {
 	return ownerID, nil
 }
 
-func (g *Governance) GetChainInfo(chainID *isc.ChainID) (*governance.ChainInfo, error) {
+func (g *Governance) GetChainInfo(chainID isc.ChainID) (*governance.ChainInfo, error) {
 	ret, err := g.vmService.CallViewByChainID(chainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Hname(), nil)
 
 	if err != nil {

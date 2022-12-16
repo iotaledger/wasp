@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -38,7 +39,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 	commitmentHash := ""
 
 	if info.L1Commitment != nil {
-		commitmentHash = info.L1Commitment.BlockHash.String()
+		commitmentHash = info.L1Commitment.BlockHash().String()
 	}
 
 	return &BlockInfoResponse{
@@ -49,7 +50,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 		L1CommitmentHash:            commitmentHash,
 		NumOffLedgerRequests:        info.NumOffLedgerRequests,
 		NumSuccessfulRequests:       info.NumSuccessfulRequests,
-		PreviousL1CommitmentHash:    info.PreviousL1Commitment.BlockHash.String(),
+		PreviousL1CommitmentHash:    info.PreviousL1Commitment.BlockHash().String(),
 		Timestamp:                   info.Timestamp,
 		TotalBaseTokensInL2Accounts: info.TotalBaseTokensInL2Accounts,
 		TotalRequests:               info.TotalRequests,
