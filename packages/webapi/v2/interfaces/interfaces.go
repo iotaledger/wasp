@@ -4,20 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type APIController interface {

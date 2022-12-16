@@ -5,16 +5,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {

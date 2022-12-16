@@ -2,12 +2,12 @@ package metrics
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )

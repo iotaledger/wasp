@@ -5,21 +5,17 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
-	"github.com/iotaledger/wasp/packages/parameters"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/params"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-	"github.com/labstack/echo/v4"
+	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 func (c *Controller) getControlAddresses(e echo.Context) error {

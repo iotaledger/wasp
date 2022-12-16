@@ -3,7 +3,6 @@ package gas
 import "golang.org/x/xerrors"
 
 type BurnCode uint16
-
 type BurnFunction func(x uint64) uint64
 
 type BurnCodeRecord struct {

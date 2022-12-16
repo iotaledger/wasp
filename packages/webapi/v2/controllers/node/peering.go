@@ -3,11 +3,10 @@ package node
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 

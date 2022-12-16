@@ -4,14 +4,12 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
-	"github.com/iotaledger/wasp/packages/isc"
-
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 

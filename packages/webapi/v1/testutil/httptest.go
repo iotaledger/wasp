@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
-
 	"github.com/PuerkitoBio/goquery"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 )
 
 func buildRequest(t *testing.T, method string, body interface{}) *http.Request {

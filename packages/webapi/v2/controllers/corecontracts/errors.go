@@ -3,10 +3,10 @@ package corecontracts
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/params"
+	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-	"github.com/labstack/echo/v4"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 type ErrorMessageFormatResponse struct {

@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/wasp/packages/authentication/shared"
-
-	"github.com/labstack/echo/v4"
-
 	"github.com/iotaledger/wasp/packages/users"
 )
 

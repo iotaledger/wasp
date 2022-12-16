@@ -6,18 +6,14 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/peering"
-
-	"github.com/ethereum/go-ethereum/rpc"
-
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 

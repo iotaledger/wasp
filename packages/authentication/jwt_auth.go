@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/iotaledger/wasp/packages/authentication/shared"
 	"github.com/iotaledger/wasp/packages/users"
 )
 

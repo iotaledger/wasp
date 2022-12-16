@@ -3,12 +3,10 @@ package services
 import (
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
-	"github.com/iotaledger/wasp/packages/users"
-
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type UserService struct {

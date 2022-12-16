@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -27,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 

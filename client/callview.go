@@ -3,10 +3,9 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 func (c *WaspClient) CallView(chainID isc.ChainID, hContract isc.Hname, functionName string, args dict.Dict) (dict.Dict, error) {

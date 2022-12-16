@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"net/http"
+
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 // Shutdown shuts down the node

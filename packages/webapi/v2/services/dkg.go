@@ -3,18 +3,14 @@ package services
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
-
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
-
-	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type DKGService struct {

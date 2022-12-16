@@ -1,9 +1,9 @@
 package webapi
 
 import (
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 )

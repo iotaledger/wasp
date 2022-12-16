@@ -11,10 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
-	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
@@ -25,6 +21,9 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup, dkShareRegistryProvider registry.DKShareRegistryProvider, nodeProvider dkg.NodeProvider) {

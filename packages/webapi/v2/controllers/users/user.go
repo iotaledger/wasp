@@ -4,11 +4,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
+	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
-
-	"github.com/labstack/echo/v4"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 func (c *Controller) addUser(e echo.Context) error {

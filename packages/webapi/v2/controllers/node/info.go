@@ -4,13 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/parameters"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
-	"github.com/iotaledger/wasp/packages/wasp"
-
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 func (c *Controller) getConfiguration(e echo.Context) error {

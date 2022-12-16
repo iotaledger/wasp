@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
 	"github.com/stretchr/testify/require"
 
 	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
+	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 func TestMockingOfPtrStructure(t *testing.T) {

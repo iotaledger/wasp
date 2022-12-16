@@ -4,18 +4,17 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"strconv"
-
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 var infoCmd = &cobra.Command{

@@ -4,13 +4,11 @@ import (
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
-
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) setNodeOwner(e echo.Context) error {

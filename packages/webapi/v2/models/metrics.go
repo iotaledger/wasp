@@ -4,9 +4,8 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
-
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
 )
 
 type MetricItem[T interface{}] struct {

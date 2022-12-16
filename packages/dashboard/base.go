@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/hive.go/core/logger"

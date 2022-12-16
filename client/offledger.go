@@ -3,10 +3,9 @@ package client
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
-
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func (c *WaspClient) PostOffLedgerRequest(chainID isc.ChainID, req isc.OffLedgerRequest) error {
