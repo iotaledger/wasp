@@ -124,7 +124,7 @@ type InitChainOptions struct {
 	BypassStardustVM bool
 }
 
-func defaultInitOptions() *InitOptions {
+func DefaultInitOptions() *InitOptions {
 	return &InitOptions{
 		Debug:                    false,
 		PrintStackTrace:          false,
@@ -140,7 +140,7 @@ func New(t TestContext, initOptions ...*InitOptions) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
-	opt := defaultInitOptions()
+	opt := DefaultInitOptions()
 	if len(initOptions) > 0 {
 		opt = initOptions[0]
 	}

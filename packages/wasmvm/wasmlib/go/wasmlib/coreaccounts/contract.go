@@ -60,6 +60,18 @@ type BalanceCall struct {
 	Results ImmutableBalanceResults
 }
 
+type BalanceBaseTokenCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBalanceBaseTokenParams
+	Results ImmutableBalanceBaseTokenResults
+}
+
+type BalanceNativeTokenCall struct {
+	Func    *wasmlib.ScView
+	Params  MutableBalanceNativeTokenParams
+	Results ImmutableBalanceNativeTokenResults
+}
+
 type FoundryOutputCall struct {
 	Func    *wasmlib.ScView
 	Params  MutableFoundryOutputParams
@@ -151,6 +163,20 @@ func (sc Funcs) Balance(ctx wasmlib.ScViewCallContext) *BalanceCall {
 	return f
 }
 
+func (sc Funcs) BalanceBaseToken(ctx wasmlib.ScViewCallContext) *BalanceBaseTokenCall {
+	f := &BalanceBaseTokenCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceBaseToken)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
+func (sc Funcs) BalanceNativeToken(ctx wasmlib.ScViewCallContext) *BalanceNativeTokenCall {
+	f := &BalanceNativeTokenCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceNativeToken)}
+	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	return f
+}
+
 func (sc Funcs) FoundryOutput(ctx wasmlib.ScViewCallContext) *FoundryOutputCall {
 	f := &FoundryOutputCall{Func: wasmlib.NewScView(ctx, HScName, HViewFoundryOutput)}
 	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
@@ -196,6 +222,8 @@ var exportMap = wasmlib.ScExportMap{
 		ViewAccountNFTs,
 		ViewAccounts,
 		ViewBalance,
+		ViewBalanceBaseToken,
+		ViewBalanceNativeToken,
 		ViewFoundryOutput,
 		ViewGetAccountNonce,
 		ViewGetNativeTokenIDRegistry,
@@ -212,6 +240,8 @@ var exportMap = wasmlib.ScExportMap{
 		wasmlib.FuncError,
 	},
 	Views: []wasmlib.ScViewContextFunction{
+		wasmlib.ViewError,
+		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,
 		wasmlib.ViewError,

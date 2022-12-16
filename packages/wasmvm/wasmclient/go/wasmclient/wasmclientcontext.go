@@ -59,6 +59,10 @@ func (s *WasmClientContext) CurrentChainID() wasmtypes.ScChainID {
 	return s.chainID
 }
 
+func (s *WasmClientContext) CurrentSvcClient() IClientService {
+	return s.svcClient
+}
+
 func (s *WasmClientContext) InitFuncCallContext() {
 	_ = wasmhost.Connect(s)
 }

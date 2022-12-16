@@ -116,6 +116,38 @@ export class MutableBalanceParams extends wasmtypes.ScProxy {
     }
 }
 
+export class ImmutableBalanceBaseTokenParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
+    }
+}
+
+export class MutableBalanceBaseTokenParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+    }
+}
+
+export class ImmutableBalanceNativeTokenParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScImmutableAgentID {
+        return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
+    }
+
+    tokenID(): wasmtypes.ScImmutableTokenID {
+        return new wasmtypes.ScImmutableTokenID(this.proxy.root(sc.ParamTokenID));
+    }
+}
+
+export class MutableBalanceNativeTokenParams extends wasmtypes.ScProxy {
+    agentID(): wasmtypes.ScMutableAgentID {
+        return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
+    }
+
+    tokenID(): wasmtypes.ScMutableTokenID {
+        return new wasmtypes.ScMutableTokenID(this.proxy.root(sc.ParamTokenID));
+    }
+}
+
 export class ImmutableFoundryOutputParams extends wasmtypes.ScProxy {
     foundrySN(): wasmtypes.ScImmutableUint32 {
         return new wasmtypes.ScImmutableUint32(this.proxy.root(sc.ParamFoundrySN));
