@@ -67,7 +67,7 @@ gofumpt-list:
 docker-build:
 	docker build \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
-		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
+		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
 		.
 
 deps-versions:
