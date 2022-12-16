@@ -9,7 +9,7 @@ type ParametersPrometheus struct {
 	// Enabled defines whether the prometheus plugin is enabled.
 	Enabled bool `default:"true" usage:"whether the prometheus plugin is enabled"`
 	// defines the bind address on which the Prometheus exporter listens on.
-	BindAddress string `default:"127.0.0.1:2112" usage:"the bind address on which the Prometheus exporter listens on"`
+	BindAddress string `default:"0.0.0.0:2112" usage:"the bind address on which the Prometheus exporter listens on"`
 
 	// NodeMetrics defines whether to include node metrics.
 	NodeMetrics bool `default:"true" usage:"whether to include node metrics"`
