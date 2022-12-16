@@ -27,7 +27,7 @@ import (
 
 const (
 	useDisposable = false
-	useSoloClient = false
+	useSoloClient = true
 )
 
 // to run with docker, set useDisposable to true and run with the following parameters:
