@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.4
-      - name: Install solc
+      - name: Compile solidity contracts
         run: |
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update

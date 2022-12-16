@@ -18,8 +18,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: Install solc
-        run: | 
+      - name: Compile solidity contracts
+        run: |
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
@@ -50,8 +50,8 @@ jobs:
         with:
           go-version: 1.19.4
 
-      - name: Install solc
-        run: | 
+      - name: Compile solidity contracts
+        run: |
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
@@ -128,14 +128,14 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: Install solc
-        run: | 
+      - name: Compile solidity contracts
+        run: |
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
       - name: compile solidity contracts
         run: make compile-solidity
-  
+
       # - name: Generate SC files
       #   run: |
       #     cd contracts/wasm/scripts
