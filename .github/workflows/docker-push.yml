@@ -52,4 +52,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/packages/wasp.VersionHash=${{ github.sha }}"
