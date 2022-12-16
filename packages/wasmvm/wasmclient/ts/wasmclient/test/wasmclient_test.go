@@ -11,14 +11,14 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
-	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
+	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {
 	t.SkipNow()
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
-	e := cluster_tests.SetupWithChain(t)
+	e := clustertests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 

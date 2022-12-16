@@ -8,21 +8,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
-	"github.com/mr-tron/base58"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmclient/go/wasmclient"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	cluster_tests "github.com/iotaledger/wasp/tools/cluster/tests"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
+	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
+	"github.com/mr-tron/base58"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -47,7 +46,7 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
-	e := cluster_tests.SetupWithChain(t)
+	e := clustertests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 

@@ -1,9 +1,8 @@
 package database
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 
 	hivedb "github.com/iotaledger/hive.go/core/database"
 	"github.com/iotaledger/hive.go/core/ioutils"

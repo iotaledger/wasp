@@ -7,8 +7,6 @@ import (
 	"bytes"
 	"errors"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -17,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"golang.org/x/xerrors"
 )
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.

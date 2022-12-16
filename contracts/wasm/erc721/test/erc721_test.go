@@ -6,12 +6,11 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeploy(t *testing.T) {

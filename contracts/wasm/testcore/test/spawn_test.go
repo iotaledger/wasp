@@ -3,12 +3,11 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
+	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 func TestSpawn(t *testing.T) {

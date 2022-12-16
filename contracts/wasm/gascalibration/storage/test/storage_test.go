@@ -7,13 +7,12 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storageimpl"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storage"
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storageimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/stretchr/testify/require"
 )
 
 var force = flag.Bool("force", false, "")
