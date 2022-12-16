@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/stretchr/testify/require"
 )
 
 type SoloBalances struct {

@@ -11,8 +11,8 @@
 package main
 
 import (
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
 	"github.com/iotaledger/wasp/documentation/tutorial-examples/go/solotutorialimpl"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmvmhost/go/wasmvmhost"
 )
 
 func main() {

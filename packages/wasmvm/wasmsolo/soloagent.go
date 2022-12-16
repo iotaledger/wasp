@@ -4,12 +4,13 @@
 package wasmsolo
 
 import (
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	"github.com/stretchr/testify/require"
 )
 
 type SoloAgent struct {

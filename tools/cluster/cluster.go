@@ -19,9 +19,8 @@ import (
 	"text/template"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/samber/lo"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"

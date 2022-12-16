@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
@@ -20,8 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
-	"github.com/mr-tron/base58"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -90,7 +91,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgSeed := cfgWallet["seed"].(string)
 
 	// we'll use the seed keypair to sign requests
-	seedBytes, err := base58.Decode(cfgSeed)
+	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
 
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
