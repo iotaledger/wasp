@@ -20,6 +20,7 @@ jobs:
 
       - name: Install solc
         run: |
+          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
@@ -52,6 +53,7 @@ jobs:
 
       - name: Install solc
         run: |
+          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
@@ -130,6 +132,7 @@ jobs:
 
       - name: Install solc
         run: |
+          sudo apt update 
           sudo add-apt-repository ppa:ethereum/ethereum
           sudo apt-get update
           sudo apt-get install solc
