@@ -15,6 +15,13 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.4
+      - name: Install solc
+        run: |
+          sudo add-apt-repository ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install solc
+      - name: compile solidity contracts
+        run: make compile-solidity
       - name: Run GoReleaser for wasp
         uses: goreleaser/goreleaser-action@v2
         with:
