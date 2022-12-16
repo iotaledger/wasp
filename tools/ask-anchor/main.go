@@ -25,7 +25,7 @@ func main() {
 
 	indexerClient, err := nodeclient.New(APIAddress).Indexer(context.Background())
 	mustNoErr(err)
-	stateOutputID, stateOutput, err := indexerClient.Alias(context.Background(), chainID.AsAliasID())
+	stateOutputID, stateOutput, _, err := indexerClient.Alias(context.Background(), chainID.AsAliasID())
 	mustNoErr(err)
 
 	fmt.Printf("outputID: %v\n", stateOutputID.ToHex())
