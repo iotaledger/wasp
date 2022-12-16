@@ -33,7 +33,7 @@ const (
 // to run with docker, set useDisposable to true and run with the following parameters:
 // -layer1-api="http://localhost:14265" -layer1-faucet="http://localhost:8091"
 
-func setupClient(t *testing.T) (*wasmclient.WasmClientContext, *cryptolib.KeyPair) {
+func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useDisposable {
 		return setupClientDisposable(t)
 	}
@@ -45,7 +45,7 @@ func setupClient(t *testing.T) (*wasmclient.WasmClientContext, *cryptolib.KeyPai
 	return setupClientCluster(t)
 }
 
-func setupClientCluster(t *testing.T) (*wasmclient.WasmClientContext, *cryptolib.KeyPair) {
+func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	e := cluster_tests.SetupWithChain(t)
 	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
@@ -74,7 +74,7 @@ func setupClientCluster(t *testing.T) (*wasmclient.WasmClientContext, *cryptolib
 	return newClient(t, wasmclient.DefaultWasmClientService(), chainID, wallet)
 }
 
-func setupClientDisposable(t solo.TestContext) (*wasmclient.WasmClientContext, *cryptolib.KeyPair) {
+func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	// load config file
 	configBytes, err := os.ReadFile("wasp-cli.json")
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func setupClientDisposable(t solo.TestContext) (*wasmclient.WasmClientContext, *
 	return newClient(t, wasmclient.DefaultWasmClientService(), chain, wallet)
 }
 
-func setupClientSolo(t solo.TestContext) (*wasmclient.WasmClientContext, *cryptolib.KeyPair) {
+func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 	chain := ctx.CurrentChainID().String()
 	wallet := ctx.Chain.OriginatorPrivateKey
@@ -110,15 +110,15 @@ func setupClientSolo(t solo.TestContext) (*wasmclient.WasmClientContext, *crypto
 	return newClient(t, wasmsolo.NewSoloClientService(ctx), chain, wallet)
 }
 
-func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) (*wasmclient.WasmClientContext, *cryptolib.KeyPair) {
+func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
 	svc := wasmclient.NewWasmClientContext(svcClient, chain, testwasmlib.ScName)
 	require.NoError(t, svc.Err)
 	svc.SignRequests(wallet)
-	return svc, wallet
+	return svc
 }
 
 func TestClientEvents(t *testing.T) {
-	svc, _ := setupClient(t)
+	svc := setupClient(t)
 	events := &testwasmlib.TestWasmLibEventHandlers{}
 	name := ""
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
@@ -153,7 +153,7 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 }
 
 func TestClientRandom(t *testing.T) {
-	svc, _ := setupClient(t)
+	svc := setupClient(t)
 	doit := func() {
 		// generate new random value
 		f := testwasmlib.ScFuncs.Random(svc)
@@ -178,7 +178,7 @@ func TestClientRandom(t *testing.T) {
 }
 
 func TestClientArray(t *testing.T) {
-	svc, _ := setupClient(t)
+	svc := setupClient(t)
 
 	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
 	v.Params.Name().SetValue("Bands")
@@ -215,13 +215,12 @@ func TestClientArray(t *testing.T) {
 }
 
 func TestClientAccountBalance(t *testing.T) {
-	svc, wallet := setupClient(t)
+	svc := setupClient(t)
+	wallet := svc.CurrentKeyPair()
 
 	// note: this calls core accounts contract instead of testwasmlib
-	accSvc := wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
-
-	// we'll use the first address in the seed to sign requests
-	accSvc.SignRequests(wallet)
+	svc = wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
+	svc.SignRequests(wallet)
 
 	addr := isc.NewAgentID(wallet.Address())
 	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
