@@ -16,14 +16,12 @@ require (
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1
 	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221120140724-fbc50b20fd91
 	github.com/iotaledger/inx/go v1.0.0-rc.1
-	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221114171602-0b417400c00a
+	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221212191201-0105a0847e96
 	github.com/labstack/echo-contrib v0.13.0
 	github.com/labstack/echo/v4 v4.9.1
 	github.com/libp2p/go-libp2p v0.24.0
-	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.8.0
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/samber/lo v1.36.0
 	github.com/second-state/WasmEdge-go v0.11.2
@@ -132,6 +130,7 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
@@ -152,6 +151,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/petermattis/goid v0.0.0-20221202122410-a449aaf35945 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.38.0 // indirect
