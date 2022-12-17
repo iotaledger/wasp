@@ -544,7 +544,7 @@ func (smT *stateManagerGPA) handleStateManagerTimerTick(now time.Time) gpa.OutMe
 	nextCleanRequestsTime := smT.lastCleanRequestsTime.Add(smT.timers.StateManagerRequestCleaningPeriod)
 	if now.After(nextCleanRequestsTime) {
 		smT.log.Debugf("Input timer tick %v: cleaning requests...", now)
-		newBlockRequestsMap := make(map[state.BlockHash](*blockRequestsWithCommitment)) //nolint:gocritic
+		newBlockRequestsMap := make(map[state.BlockHash]*blockRequestsWithCommitment)
 		for blockHash, blockRequestsWC := range smT.blockRequests {
 			commitment := blockRequestsWC.l1Commitment
 			blockRequests := blockRequestsWC.blockRequests

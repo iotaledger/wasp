@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
-func TestCruelWorld(t *testing.T) { //nolint: gocyclo
+func TestCruelWorld(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -79,14 +79,6 @@ func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 		stateDrafts[i] = bf.GetStateDraft(blocks[i])
 		blockProduced[i] = &atomic.Bool{}
 	}
-	getRandomProducedBlockAIndexFun := func() int {
-		for !blockProduced[0].Load() {
-		}
-		var maxIndex int
-		for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex].Load(); maxIndex++ {
-		}
-		return rand.Intn(maxIndex)
-	}
 
 	// Send blocks to nodes (consensus mock)
 	sendBlockResults := make([]<-chan bool, committeeSize)
@@ -109,7 +101,7 @@ func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 	// Send ConsensusStateProposal requestss
 	consensusStateProposalResult := makeNRequests(consensusStateProposalCount, consensusStateProposalDelay, func(_ int) bool {
 		nodeIndex := rand.Intn(nodeCount)
-		blockIndex := getRandomProducedBlockAIndexFun()
+		blockIndex := getRandomProducedBlockAIndex(blockProduced)
 		t.Logf("Consensus state proposal request for block %v is sent to node %v", blockIndex+1, peerNetIDs[nodeIndex])
 		responseCh := sms[nodeIndex].ConsensusStateProposal(context.Background(), bf.GetAliasOutput(blocks[blockIndex].L1Commitment()))
 		<-responseCh
@@ -119,7 +111,7 @@ func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 	// Send ConsensusDecidedState requests
 	consensusDecidedStateResult := makeNRequests(consensusDecidedStateCount, consensusDecidedStateDelay, func(_ int) bool {
 		nodeIndex := rand.Intn(nodeCount)
-		blockIndex := getRandomProducedBlockAIndexFun()
+		blockIndex := getRandomProducedBlockAIndex(blockProduced)
 		t.Logf("Consensus decided state proposal for block %v is sent to node %v", blockIndex+1, peerNetIDs[nodeIndex])
 		responseCh := sms[nodeIndex].ConsensusDecidedState(context.Background(), bf.GetAliasOutput(blocks[blockIndex].L1Commitment()))
 		state := <-responseCh
@@ -134,8 +126,8 @@ func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 	// Send MempoolStateRequest requests
 	mempoolStateRequestResult := makeNRequests(mempoolStateRequestCount, mempoolStateRequestDelay, func(_ int) bool {
 		nodeIndex := rand.Intn(nodeCount)
-		newBlockIndex := getRandomProducedBlockAIndexFun()
-		for ; newBlockIndex == 0; newBlockIndex = getRandomProducedBlockAIndexFun() {
+		newBlockIndex := getRandomProducedBlockAIndex(blockProduced)
+		for ; newBlockIndex == 0; newBlockIndex = getRandomProducedBlockAIndex(blockProduced) {
 		}
 		oldBlockIndex := rand.Intn(newBlockIndex)
 		t.Logf("Mempool state request for new block %v and old block %v is sent to node %v", newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex])
@@ -176,6 +168,15 @@ func TestCruelWorld(t *testing.T) { //nolint: gocyclo
 	requireTrueForSomeTime(t, consensusStateProposalResult, 10*time.Second)
 	requireTrueForSomeTime(t, consensusDecidedStateResult, 10*time.Second)
 	requireTrueForSomeTime(t, mempoolStateRequestResult, 10*time.Second)
+}
+
+func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
+	for !blockProduced[0].Load() {
+	}
+	var maxIndex int
+	for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex].Load(); maxIndex++ {
+	}
+	return rand.Intn(maxIndex)
 }
 
 func requireTrueForSomeTime(t *testing.T, ch <-chan bool, timeout time.Duration) {
