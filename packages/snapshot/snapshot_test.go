@@ -1,6 +1,7 @@
 package snapshot
 
 import (
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/kvtest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -18,12 +18,6 @@ func Test1(t *testing.T) {
 	db := mapdb.NewMapDB()
 	st := state.InitChainStore(db)
 
-	rndKVStream := kvtest.NewRandStreamIterator(kvtest.RandStreamParams{
-		Seed:       time.Now().UnixNano(),
-		NumKVPairs: 1_000,
-		MaxKey:     48,
-		MaxValue:   128,
-	})
 	tm := util.NewTimer()
 	count := 0
 	totalBytes := 0
@@ -33,13 +27,18 @@ func Test1(t *testing.T) {
 	sd, err := st.NewStateDraft(time.Now(), latest.L1Commitment())
 	require.NoError(t, err)
 
-	err = rndKVStream.Iterate(func(k []byte, v []byte) bool {
+	seed := time.Now().UnixNano()
+	t.Log("seed:", seed)
+	rnd := rand.New(rand.NewSource(seed))
+	for i := 0; i < 1000; i++ {
+		k := randByteSlice(rnd, 4+1, 48) // key is hname + key
+		v := randByteSlice(rnd, 1, 128)
+
 		sd.Set(kv.Key(k), v)
 		count++
 		totalBytes += len(k) + len(v) + 6
-		return true
-	})
-	require.NoError(t, err)
+	}
+
 	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Duration())
 
 	tm = util.NewTimer()
@@ -72,4 +71,11 @@ func Test1(t *testing.T) {
 	require.True(t, chainID.Equals(v.ChainID))
 	require.EqualValues(t, stateidx, v.StateIndex)
 	require.True(t, ts.Equal(v.TimeStamp))
+}
+
+func randByteSlice(rnd *rand.Rand, minLength, maxLength int) []byte {
+	n := rnd.Intn(maxLength-minLength) + minLength
+	b := make([]byte, n)
+	rnd.Read(b)
+	return b
 }
