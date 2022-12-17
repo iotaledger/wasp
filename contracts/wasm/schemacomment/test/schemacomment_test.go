@@ -6,10 +6,10 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacommentimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacomment"
+	"github.com/iotaledger/wasp/contracts/wasm/schemacomment/go/schemacommentimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 

@@ -1,11 +1,11 @@
 package panicutil
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
 
-	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -104,7 +104,7 @@ func CatchAllExcept(f func(), exceptErrors ...error) (err error) {
 				}
 				err = recoveredError
 			} else {
-				err = errors.Errorf("%v", r)
+				err = xerrors.Errorf("%v", r)
 			}
 		}()
 		f()

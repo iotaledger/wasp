@@ -176,6 +176,54 @@ func (s MutableBalanceParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
 }
 
+type ImmutableBalanceBaseTokenParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func NewImmutableBalanceBaseTokenParams() ImmutableBalanceBaseTokenParams {
+	return ImmutableBalanceBaseTokenParams{proxy: wasmlib.NewParamsProxy()}
+}
+
+func (s ImmutableBalanceBaseTokenParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+type MutableBalanceBaseTokenParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBalanceBaseTokenParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+type ImmutableBalanceNativeTokenParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func NewImmutableBalanceNativeTokenParams() ImmutableBalanceNativeTokenParams {
+	return ImmutableBalanceNativeTokenParams{proxy: wasmlib.NewParamsProxy()}
+}
+
+func (s ImmutableBalanceNativeTokenParams) AgentID() wasmtypes.ScImmutableAgentID {
+	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+func (s ImmutableBalanceNativeTokenParams) TokenID() wasmtypes.ScImmutableTokenID {
+	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamTokenID))
+}
+
+type MutableBalanceNativeTokenParams struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s MutableBalanceNativeTokenParams) AgentID() wasmtypes.ScMutableAgentID {
+	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+}
+
+func (s MutableBalanceNativeTokenParams) TokenID() wasmtypes.ScMutableTokenID {
+	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamTokenID))
+}
+
 type ImmutableFoundryOutputParams struct {
 	proxy wasmtypes.Proxy
 }

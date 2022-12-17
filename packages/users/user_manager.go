@@ -2,9 +2,8 @@ package users
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
-
-	"github.com/pkg/errors"
 
 	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"

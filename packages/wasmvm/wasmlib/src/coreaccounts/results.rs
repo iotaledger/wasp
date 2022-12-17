@@ -214,6 +214,62 @@ impl MutableBalanceResults {
 }
 
 #[derive(Clone)]
+pub struct ImmutableBalanceBaseTokenResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableBalanceBaseTokenResults {
+    pub fn balance(&self) -> ScImmutableUint64 {
+        ScImmutableUint64::new(self.proxy.root(RESULT_BALANCE))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableBalanceBaseTokenResults {
+    pub proxy: Proxy,
+}
+
+impl MutableBalanceBaseTokenResults {
+    pub fn new() -> MutableBalanceBaseTokenResults {
+        MutableBalanceBaseTokenResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    pub fn balance(&self) -> ScMutableUint64 {
+        ScMutableUint64::new(self.proxy.root(RESULT_BALANCE))
+    }
+}
+
+#[derive(Clone)]
+pub struct ImmutableBalanceNativeTokenResults {
+    pub proxy: Proxy,
+}
+
+impl ImmutableBalanceNativeTokenResults {
+    pub fn tokens(&self) -> ScImmutableBigInt {
+        ScImmutableBigInt::new(self.proxy.root(RESULT_TOKENS))
+    }
+}
+
+#[derive(Clone)]
+pub struct MutableBalanceNativeTokenResults {
+    pub proxy: Proxy,
+}
+
+impl MutableBalanceNativeTokenResults {
+    pub fn new() -> MutableBalanceNativeTokenResults {
+        MutableBalanceNativeTokenResults {
+            proxy: results_proxy(),
+        }
+    }
+
+    pub fn tokens(&self) -> ScMutableBigInt {
+        ScMutableBigInt::new(self.proxy.root(RESULT_TOKENS))
+    }
+}
+
+#[derive(Clone)]
 pub struct ImmutableFoundryOutputResults {
     pub proxy: Proxy,
 }

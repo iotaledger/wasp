@@ -27,7 +27,7 @@ func NewWasmerVM() WasmVM {
 	return vm
 }
 
-//TODO
+// TODO
 func (vm *WasmerVM) Interrupt() {
 	panic("implement me")
 }

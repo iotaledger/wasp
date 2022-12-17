@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/core/generics/shrinkingmap"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/workerpool"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -36,7 +37,9 @@ const (
 	inxTimeoutBlockMetadata       = 500 * time.Millisecond
 	inxTimeoutSubmitBlock         = 60 * time.Second
 	inxTimeoutPublishTransaction  = 120 * time.Second
-	inxTimeoutIndexerOutputs      = 2 * time.Second
+	inxTimeoutIndexerQuery        = 2 * time.Second
+	inxTimeoutMilestone           = 2 * time.Second
+	inxTimeoutOutput              = 2 * time.Second
 	reattachWorkerPoolQueueSize   = 100
 
 	chainsCleanupThresholdRatio              = 50.0
@@ -77,9 +80,7 @@ func setL1ProtocolParams(protocolParameters *iotago.ProtocolParameters, baseToke
 	})
 }
 
-const defaultTimeout = 1 * time.Minute
-
-func newCtxWithTimeout(ctx context.Context, timeout ...time.Duration) (context.Context, context.CancelFunc) {
+func newCtxWithTimeout(ctx context.Context, defaultTimeout time.Duration, timeout ...time.Duration) (context.Context, context.CancelFunc) {
 	t := defaultTimeout
 	if len(timeout) > 0 {
 		t = timeout[0]
@@ -146,8 +147,8 @@ func (nc *nodeConnection) subscribeToLedgerUpdates() {
 	}
 }
 
-func (nc *nodeConnection) getMilestoneTimestamp(msIndex iotago.MilestoneIndex) (time.Time, error) {
-	ctx, cancel := context.WithTimeout(nc.ctx, 2*time.Second)
+func (nc *nodeConnection) getMilestoneTimestamp(ctx context.Context, msIndex iotago.MilestoneIndex) (time.Time, error) {
+	ctx, cancel := newCtxWithTimeout(ctx, inxTimeoutMilestone)
 	defer cancel()
 
 	milestone, err := nc.nodeBridge.Milestone(ctx, msIndex)
@@ -156,6 +157,37 @@ func (nc *nodeConnection) getMilestoneTimestamp(msIndex iotago.MilestoneIndex) (
 	}
 
 	return time.Unix(int64(milestone.Milestone.Timestamp), 0), nil
+}
+
+func (nc *nodeConnection) outputForOutputID(ctx context.Context, outputID iotago.OutputID) (iotago.Output, error) {
+	ctx, cancel := newCtxWithTimeout(ctx, inxTimeoutOutput)
+	defer cancel()
+
+	resp, err := nc.nodeBridge.Client().ReadOutput(ctx, inx.NewOutputId(outputID))
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.GetPayload().(type) {
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Output:
+		iotaOutput, err := resp.GetOutput().UnwrapOutput(serializer.DeSeriModeNoValidation, nil)
+		if err != nil {
+			return nil, err
+		}
+		return iotaOutput, nil
+
+	//nolint:nosnakecase // grpc uses underscores
+	case *inx.OutputResponse_Spent:
+		iotaOutput, err := resp.GetSpent().GetOutput().UnwrapOutput(serializer.DeSeriModeNoValidation, nil)
+		if err != nil {
+			return nil, err
+		}
+		return iotaOutput, nil
+
+	default:
+		return nil, fmt.Errorf("invalid inx.OutputResponse payload type")
+	}
 }
 
 func (nc *nodeConnection) checkPendingTransactions(ledgerUpdate *ledgerUpdate) {
@@ -214,7 +246,7 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 	// fire milestone events for every chain
 	nc.chainsMap.ForEach(func(_ isc.ChainID, chain *ncChain) bool {
 		// the callbacks have to be fired synchronously, we can't guarantee the order of execution of go routines
-		chain.milestoneHandler(ledgerUpdate.milestoneTimestamp)
+		chain.HandleMilestone(ledgerUpdate.milestoneIndex, ledgerUpdate.milestoneTimestamp)
 		return true
 	})
 
@@ -227,7 +259,7 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 
 		for _, aliasOutputInfo := range aliasOutputsSorted {
 			// the callbacks have to be fired synchronously, we can't guarantee the order of execution of go routines
-			ncChain.aliasOutputHandler(aliasOutputInfo)
+			ncChain.HandleAliasOutput(ledgerUpdate.milestoneIndex, aliasOutputInfo)
 		}
 	}
 
@@ -240,7 +272,7 @@ func (nc *nodeConnection) triggerChainCallbacks(ledgerUpdate *ledgerUpdate) erro
 
 		for _, outputInfo := range outputs {
 			// the callbacks have to be fired synchronously, we can't guarantee the order of execution of go routines
-			ncChain.requestOutputHandler(outputInfo)
+			ncChain.HandleRequestOutput(ledgerUpdate.milestoneIndex, outputInfo)
 		}
 	}
 
@@ -258,7 +290,7 @@ func (nc *nodeConnection) unwrapLedgerUpdate(update *nodebridge.LedgerUpdate) (*
 	var err error
 
 	// we need to get the timestamp of the milestone from the node
-	milestoneTimestamp, err := nc.getMilestoneTimestamp(update.MilestoneIndex)
+	milestoneTimestamp, err := nc.getMilestoneTimestamp(nc.ctx, update.MilestoneIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -508,22 +540,25 @@ func (nc *nodeConnection) AttachChain(
 ) {
 	mergedCtx, mergedCancel := contextutils.MergeContexts(nc.ctx, ctx)
 
-	if err := func() error {
-		// we need to lock until the chain init is done, otherwise there could be race conditions with new ledger updates in parallel
+	chain := func() *ncChain {
+		// we need to lock until the chain init is done,
+		// otherwise there could be race conditions with new ledger updates in parallel
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		chain, err := newNCChain(nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
-		if err != nil {
-			return err
-		}
+		chain := newNCChain(nc, chainID, recvRequestCB, recvAliasOutput, recvMilestone)
+
+		// the chain is added to the map, even if not synchronzied yet,
+		// so we can track all pending ledger updates until the chain is synchronized.
 		nc.chainsMap.Set(chainID, chain)
 		nc.nodeConnectionMetrics.SetRegistered(chainID)
 		nc.LogDebugf("chain registered: %s", chainID)
 
-		return nil
-	}(); err != nil {
-		nc.LogPanicf("registering chain %s failed: %s", chainID, err)
+		return chain
+	}()
+
+	if err := chain.SyncChainStateWithL1(mergedCtx); err != nil {
+		nc.LogPanicf("synchronizing chain state %s failed: %s", chainID, err.Error())
 	}
 
 	// disconnect the chain after the context is done

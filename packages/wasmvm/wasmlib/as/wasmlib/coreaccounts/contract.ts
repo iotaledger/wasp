@@ -99,6 +99,26 @@ export class BalanceCall {
     }
 }
 
+export class BalanceBaseTokenCall {
+    func:    wasmlib.ScView;
+    params:  sc.MutableBalanceBaseTokenParams = new sc.MutableBalanceBaseTokenParams(wasmlib.ScView.nilProxy);
+    results: sc.ImmutableBalanceBaseTokenResults = new sc.ImmutableBalanceBaseTokenResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBalanceBaseToken);
+    }
+}
+
+export class BalanceNativeTokenCall {
+    func:    wasmlib.ScView;
+    params:  sc.MutableBalanceNativeTokenParams = new sc.MutableBalanceNativeTokenParams(wasmlib.ScView.nilProxy);
+    results: sc.ImmutableBalanceNativeTokenResults = new sc.ImmutableBalanceNativeTokenResults(wasmlib.ScView.nilProxy);
+
+    public constructor(ctx: wasmlib.ScViewCallContext) {
+        this.func = new wasmlib.ScView(ctx, sc.HScName, sc.HViewBalanceNativeToken);
+    }
+}
+
 export class FoundryOutputCall {
     func:    wasmlib.ScView;
     params:  sc.MutableFoundryOutputParams = new sc.MutableFoundryOutputParams(wasmlib.ScView.nilProxy);
@@ -204,6 +224,20 @@ export class ScFuncs {
         const f = new BalanceCall(ctx);
         f.params = new sc.MutableBalanceParams(wasmlib.newCallParamsProxy(f.func));
         f.results = new sc.ImmutableBalanceResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    static balanceBaseToken(ctx: wasmlib.ScViewCallContext): BalanceBaseTokenCall {
+        const f = new BalanceBaseTokenCall(ctx);
+        f.params = new sc.MutableBalanceBaseTokenParams(wasmlib.newCallParamsProxy(f.func));
+        f.results = new sc.ImmutableBalanceBaseTokenResults(wasmlib.newCallResultsProxy(f.func));
+        return f;
+    }
+
+    static balanceNativeToken(ctx: wasmlib.ScViewCallContext): BalanceNativeTokenCall {
+        const f = new BalanceNativeTokenCall(ctx);
+        f.params = new sc.MutableBalanceNativeTokenParams(wasmlib.newCallParamsProxy(f.func));
+        f.results = new sc.ImmutableBalanceNativeTokenResults(wasmlib.newCallResultsProxy(f.func));
         return f;
     }
 

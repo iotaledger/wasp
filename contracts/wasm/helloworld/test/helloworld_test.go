@@ -6,10 +6,10 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/helloworld/go/helloworldimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/helloworld/go/helloworld"
+	"github.com/iotaledger/wasp/contracts/wasm/helloworld/go/helloworldimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
