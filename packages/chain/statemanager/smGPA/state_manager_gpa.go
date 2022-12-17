@@ -38,10 +38,6 @@ type stateManagerGPA struct {
 	lastGetBlocksTime       time.Time
 	lastCleanBlockCacheTime time.Time
 	lastCleanRequestsTime   time.Time
-	currentStateIndex       uint32              // Not used in the algorithm; only stores status of the state manager
-	currentL1Commitment     *state.L1Commitment // Not used in the algorithm; only stores status of the state manager
-	stateOutputSeq          blockRequestID
-	lastStateOutputSeq      blockRequestID // Must be strictly monotonic; see handleChainReceiveConfirmedAliasOutput
 	lastBlockRequestID      blockRequestID
 }
 
@@ -69,10 +65,6 @@ func New(chainID isc.ChainID, nr smUtils.NodeRandomiser, wal smGPAUtils.BlockWAL
 		timers:                  timers,
 		lastGetBlocksTime:       time.Time{},
 		lastCleanBlockCacheTime: time.Time{},
-		currentStateIndex:       0,
-		currentL1Commitment:     state.OriginL1Commitment(),
-		stateOutputSeq:          0,
-		lastStateOutputSeq:      0,
 		lastBlockRequestID:      0,
 	}
 
@@ -119,12 +111,11 @@ func (smT *stateManagerGPA) Output() gpa.Output {
 
 func (smT *stateManagerGPA) StatusString() string {
 	return fmt.Sprintf(
-		"State manager is at state index %v, commitment (%s); "+
-			"it is waiting for %v blocks; "+
+		"State manager is waiting for %v blocks; "+
 			"last time blocks were requested from peer nodes: %v (every %v); "+
 			"last time outdated requests were cleared: %v (every %v); "+
 			"last time block cache was cleaned: %v (every %v).",
-		smT.currentStateIndex, smT.currentL1Commitment, len(smT.blockRequests),
+		len(smT.blockRequests),
 		util.TimeOrNever(smT.lastGetBlocksTime), smT.timers.StateManagerGetBlockRetry,
 		util.TimeOrNever(smT.lastCleanRequestsTime), smT.timers.StateManagerRequestCleaningPeriod,
 		util.TimeOrNever(smT.lastCleanBlockCacheTime), smT.timers.BlockCacheBlockCleaningPeriod,
