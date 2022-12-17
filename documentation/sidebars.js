@@ -447,6 +447,11 @@ module.exports = {
         },
         {
             type: 'doc',
+            label: 'Configuration',
+            id: 'configuration',
+        },
+        {
+            type: 'doc',
             label: 'Contribute',
             id: 'contribute',
         },
