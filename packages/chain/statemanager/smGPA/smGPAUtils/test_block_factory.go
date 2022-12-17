@@ -24,9 +24,8 @@ type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
 	chainID             isc.ChainID
-	originOutput        *isc.AliasOutputWithID
 	lastBlockCommitment *state.L1Commitment
-	lastAliasOutput     *isc.AliasOutputWithID
+	aliasOutputs        map[state.BlockHash]*isc.AliasOutputWithID
 }
 
 func NewBlockFactory(t require.TestingT) *BlockFactory {
@@ -47,14 +46,16 @@ func NewBlockFactory(t require.TestingT) *BlockFactory {
 			},
 		},
 	}
+	aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
+	originCommitment := state.OriginL1Commitment()
 	originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
+	aliasOutputs[originCommitment.BlockHash()] = originOutput
 	return &BlockFactory{
 		t:                   t,
 		store:               state.InitChainStore(mapdb.NewMapDB()),
 		chainID:             chainID,
-		originOutput:        originOutput,
 		lastBlockCommitment: state.OriginL1Commitment(),
-		lastAliasOutput:     originOutput,
+		aliasOutputs:        aliasOutputs,
 	}
 }
 
@@ -63,28 +64,25 @@ func (bfT *BlockFactory) GetChainID() isc.ChainID {
 }
 
 func (bfT *BlockFactory) GetOriginOutput() *isc.AliasOutputWithID {
-	return bfT.originOutput
+	return bfT.GetAliasOutput(state.OriginL1Commitment())
 }
 
 func (bfT *BlockFactory) GetBlocks(
 	count,
 	branchingFactor int,
-) ([]state.Block, []*isc.AliasOutputWithID) {
-	blocks, aliasOutpus := bfT.GetBlocksFrom(count, branchingFactor, bfT.lastBlockCommitment, bfT.lastAliasOutput)
+) []state.Block {
+	blocks := bfT.GetBlocksFrom(count, branchingFactor, bfT.lastBlockCommitment)
 	require.Equal(bfT.t, count, len(blocks))
-	require.Equal(bfT.t, count, len(aliasOutpus))
 	bfT.lastBlockCommitment = blocks[count-1].L1Commitment()
-	bfT.lastAliasOutput = aliasOutpus[count-1]
-	return blocks, aliasOutpus
+	return blocks
 }
 
 func (bfT *BlockFactory) GetBlocksFrom(
 	count,
 	branchingFactor int,
 	commitment *state.L1Commitment,
-	aliasOutput *isc.AliasOutputWithID,
 	incrementFactorOpt ...uint64,
-) ([]state.Block, []*isc.AliasOutputWithID) {
+) []state.Block {
 	var incrementFactor uint64
 	if len(incrementFactorOpt) > 0 {
 		incrementFactor = incrementFactorOpt[0]
@@ -95,21 +93,18 @@ func (bfT *BlockFactory) GetBlocksFrom(
 	var err error
 	result[0], err = bfT.store.BlockByTrieRoot(commitment.TrieRoot())
 	require.NoError(bfT.t, err)
-	aliasOutputs := make([]*isc.AliasOutputWithID, len(result))
-	aliasOutputs[0] = aliasOutput
 	for i := 1; i < len(result); i++ {
 		baseIndex := (i + branchingFactor - 2) / branchingFactor
 		increment := uint64(1+i%branchingFactor) * incrementFactor
-		result[i], aliasOutputs[i] = bfT.GetNextBlock(result[baseIndex].L1Commitment(), aliasOutputs[baseIndex], increment)
+		result[i] = bfT.GetNextBlock(result[baseIndex].L1Commitment(), increment)
 	}
-	return result[1:], aliasOutputs[1:]
+	return result[1:]
 }
 
 func (bfT *BlockFactory) GetNextBlock(
 	commitment *state.L1Commitment,
-	consumedAliasOutputWithID *isc.AliasOutputWithID,
 	incrementOpt ...uint64,
-) (state.Block, *isc.AliasOutputWithID) {
+) state.Block {
 	stateDraft, err := bfT.store.NewStateDraft(time.Now(), commitment)
 	require.NoError(bfT.t, err)
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
@@ -127,22 +122,24 @@ func (bfT *BlockFactory) GetNextBlock(
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
 	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
+	newCommitment := block.L1Commitment()
 
-	consumedAliasOutput := consumedAliasOutputWithID.GetAliasOutput()
+	consumedAliasOutput := bfT.GetAliasOutput(commitment).GetAliasOutput()
 	aliasOutput := &iotago.AliasOutput{
 		Amount:         consumedAliasOutput.Amount,
 		NativeTokens:   consumedAliasOutput.NativeTokens,
 		AliasID:        consumedAliasOutput.AliasID,
 		StateIndex:     consumedAliasOutput.StateIndex + 1,
-		StateMetadata:  block.L1Commitment().Bytes(),
+		StateMetadata:  newCommitment.Bytes(),
 		FoundryCounter: consumedAliasOutput.FoundryCounter,
 		Conditions:     consumedAliasOutput.Conditions,
 		Features:       consumedAliasOutput.Features,
 	}
 	aliasOutputID := iotago.OutputIDFromTransactionIDAndIndex(getRandomTxID(bfT.t), 0)
 	aliasOutputWithID := isc.NewAliasOutputWithID(aliasOutput, aliasOutputID)
+	bfT.aliasOutputs[newCommitment.BlockHash()] = aliasOutputWithID
 
-	return block, aliasOutputWithID
+	return block
 }
 
 func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
@@ -155,6 +152,12 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 func (bfT *BlockFactory) GetState(commitment *state.L1Commitment) state.State {
 	result, err := bfT.store.StateByTrieRoot(commitment.TrieRoot())
 	require.NoError(bfT.t, err)
+	return result
+}
+
+func (bfT *BlockFactory) GetAliasOutput(commitment *state.L1Commitment) *isc.AliasOutputWithID {
+	result, ok := bfT.aliasOutputs[commitment.BlockHash()]
+	require.True(bfT.t, ok)
 	return result
 }
 

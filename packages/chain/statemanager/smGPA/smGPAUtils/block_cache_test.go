@@ -17,7 +17,7 @@ func TestBlockCacheSimple(t *testing.T) {
 	defer log.Sync()
 
 	factory := NewBlockFactory(t)
-	blocks, _ := factory.GetBlocks(4, 1)
+	blocks := factory.GetBlocks(4, 1)
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
 	blockCache.AddBlock(blocks[0])
@@ -34,7 +34,7 @@ func TestBlockCacheCleaning(t *testing.T) {
 	defer log.Sync()
 
 	factory := NewBlockFactory(t)
-	blocks, _ := factory.GetBlocks(6, 2)
+	blocks := factory.GetBlocks(6, 2)
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), NewEmptyBlockWAL(), log)
 	require.NoError(t, err)
 	beforeTime := time.Now()
@@ -70,7 +70,7 @@ func TestBlockCacheWAL(t *testing.T) {
 	defer log.Sync()
 
 	factory := NewBlockFactory(t)
-	blocks, _ := factory.GetBlocks(3, 2)
+	blocks := factory.GetBlocks(3, 2)
 	wal := NewMockedBlockWAL()
 	blockCache, err := NewBlockCache(NewDefaultTimeProvider(), wal, log)
 	require.NoError(t, err)

@@ -22,8 +22,8 @@ type StateTracker interface {
 	AwaitRequestReceipt(query *awaitReceiptReq)
 	//
 	// The following 2 functions are only to move the channel receive loop to the main ChainNode thread.
-	ChainNodeAwaitStateMgrCh() <-chan *smInputs.MempoolStateRequestResults
-	ChainNodeStateMgrResponse(*smInputs.MempoolStateRequestResults)
+	ChainNodeAwaitStateMgrCh() <-chan *smInputs.ChainFetchStateDiffResults
+	ChainNodeStateMgrResponse(*smInputs.ChainFetchStateDiffResults)
 }
 
 type StateTrackerStepCB = func(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block)
@@ -36,7 +36,7 @@ type stateTrackerImpl struct {
 	haveAO       *isc.AliasOutputWithID // We have a state ready for this AO.
 	nextAO       *isc.AliasOutputWithID // For this state a query was made, but the response not received yet.
 	nextAOCancel context.CancelFunc     // Cancel for a context used to query for the nextAO state.
-	nextAOWaitCh <-chan *smInputs.MempoolStateRequestResults
+	nextAOWaitCh <-chan *smInputs.ChainFetchStateDiffResults
 	awaitReceipt AwaitReceipt
 }
 
@@ -72,7 +72,7 @@ func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.AliasOutputWithID) {
 	nextAOCtx, nextAOCancel := context.WithCancel(sti.ctx)
 	sti.nextAO = ao
 	sti.nextAOCancel = nextAOCancel
-	sti.nextAOWaitCh = sti.stateMgr.MempoolStateRequest(nextAOCtx, sti.haveAO, sti.nextAO)
+	sti.nextAOWaitCh = sti.stateMgr.ChainFetchStateDiff(nextAOCtx, sti.haveAO, sti.nextAO)
 }
 
 func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
@@ -80,13 +80,13 @@ func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
 }
 
 // To be used in the select loop at the chain node.
-func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *smInputs.MempoolStateRequestResults {
+func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *smInputs.ChainFetchStateDiffResults {
 	return sti.nextAOWaitCh
 }
 
 // This is assumed to be called right after the `ChainNodeAwaitStateMgrCh()`,
 // thus no additional checks are present here.
-func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *smInputs.MempoolStateRequestResults) {
+func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *smInputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()
 	sti.haveLatestCB(results.GetNewState(), sti.haveAO, sti.nextAO, results.GetAdded(), results.GetRemoved())
 	sti.haveAO = sti.nextAO

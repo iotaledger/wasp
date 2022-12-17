@@ -9,7 +9,7 @@ import (
 )
 
 func TestMarshalUnmarshalBlockMessage(t *testing.T) {
-	blocks, _ := smGPAUtils.NewBlockFactory(t).GetBlocks(4, 1)
+	blocks := smGPAUtils.NewBlockFactory(t).GetBlocks(4, 1)
 	for i := range blocks {
 		t.Logf("Checking block %v: %v", i, blocks[i].L1Commitment())
 		marshaled, err := NewBlockMessage(blocks[i], "SOMETHING").MarshalBinary()

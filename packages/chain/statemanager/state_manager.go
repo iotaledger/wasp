@@ -27,16 +27,13 @@ type StateMgr interface {
 	// the state for Next ao and reject blocks in range (commonAO, prevAO]. The StateMgr
 	// can determine relative positions of the corresponding blocks based on their state
 	// indexes.
-	MempoolStateRequest( // TODO: Rename to get rid of the mempool here. Maybe: FetchStateDiff?
+	ChainFetchStateDiff(
 		ctx context.Context,
 		prevAO, nextAO *isc.AliasOutputWithID,
-	) <-chan *smInputs.MempoolStateRequestResults
-	// Invoked by the chain when new confirmed alias output is received.
-	// This event should be used to mark blocks as confirmed.
-	ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) // TODO: Not used anymore, can be removed.
+	) <-chan *smInputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of access nodes has changed.
 	// These nodes should be used to perform block replication.
-	AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
+	ChainAccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
 }
 
 type stateManager struct {
@@ -124,14 +121,16 @@ func New(
 }
 
 // -------------------------------------
-// Implementations for node package
+// Implementations for chain package
 // -------------------------------------
 
-func (smT *stateManager) ReceiveConfirmedAliasOutput(aliasOutput *isc.AliasOutputWithID) {
-	smT.addInput(smInputs.NewChainReceiveConfirmedAliasOutput(aliasOutput))
+func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *smInputs.ChainFetchStateDiffResults {
+	input, resultCh := smInputs.NewChainFetchStateDiff(ctx, prevAO, nextAO)
+	smT.addInput(input)
+	return resultCh
 }
 
-func (smT *stateManager) AccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey) {
+func (smT *stateManager) ChainAccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey) {
 	smT.nodePubKeysPipe.In() <- accessNodePubKeys
 }
 
@@ -156,16 +155,6 @@ func (smT *stateManager) ConsensusDecidedState(ctx context.Context, aliasOutput 
 
 func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan error {
 	input, resultCh := smInputs.NewConsensusBlockProduced(ctx, stateDraft)
-	smT.addInput(input)
-	return resultCh
-}
-
-// -------------------------------------
-// Implementations for mempool.StateMgr
-// -------------------------------------
-
-func (smT *stateManager) MempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) <-chan *smInputs.MempoolStateRequestResults {
-	input, resultCh := smInputs.NewMempoolStateRequest(ctx, prevAO, nextAO)
 	smT.addInput(input)
 	return resultCh
 }
