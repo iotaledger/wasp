@@ -9,7 +9,7 @@
         "sourceMap": true,
         "strict": true,
         "types": ["wasmlib/types", "node", "Promise", "jest"],
-        "lib": ["ES2021"],
+        "lib": ["ES2021", "dom"],
         "target": "ES2021",
         "typeRoots": ["./node_modules/@types"]
     },

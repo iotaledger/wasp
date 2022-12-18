@@ -5,8 +5,36 @@ import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
+import {IClientService} from "./wasmclientservice";
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
+    private eventDone: bool = false;
+    private eventHandlers: wasmlib.IEventHandlers[] = [];
+    private eventReceived: bool = false;
+    private webSocket!: WebSocket;
+
+    public constructor(svcClient: IClientService, chain: string, scName: string) {
+        super(svcClient, chain, scName);
+        this.connectWebSocket();
+    }
+
+    private connectWebSocket(): void {
+        const WebSocket = require('ws');
+        const webSocketUrl = "ws://127.0.0.1:9090/chain/" + this.chainID.toString() + "/ws";
+        // eslint-disable-next-line no-console
+        console.log(`Connecting to Websocket => ${webSocketUrl}`);
+        this.webSocket = new WebSocket(webSocketUrl);
+        this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
+        this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 1000));
+    }
+
+    private handleIncomingMessage(message: MessageEvent<string>): void {
+        // expect vmmsg <chain ID> <contract hname> contract.event|param1|param2|...
+        const msg = message.data.toString().split(' ');
+        if (msg.length != 4 || msg[0] != 'vmmsg') {
+            return;
+        }
+    }
 
     public currentChainID(): wasmlib.ScChainID {
         return this.chainID;
@@ -62,6 +90,17 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
                 return;
             }
         }
+    }
+
+    public waitEvent(): void {
+        this.Err = null;
+        for (let i = 0; i < 100; i++) {
+            if (this.eventReceived) {
+                return;
+            }
+            setTimeout(() => {}, 100);
+        }
+        this.Err = "event wait timeout";
     }
 
     public waitRequest(): void {

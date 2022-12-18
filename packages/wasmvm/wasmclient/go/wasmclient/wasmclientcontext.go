@@ -120,22 +120,23 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 	}
 }
 
-func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) error {
+func (s *WasmClientContext) WaitEvent() {
+	s.Err = nil
+	for i := 0; i < 100; i++ {
+		if s.eventReceived {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	s.Err = errors.New("event wait timeout")
+}
+
+func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	requestID := s.ReqID
 	if len(reqID) == 1 {
 		requestID = reqID[0]
 	}
-	return s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
-}
-
-func (s *WasmClientContext) WaitEvent() error {
-	for i := 0; i < 100; i++ {
-		if s.eventReceived {
-			return nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	return errors.New("event wait timeout")
+	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
 func (s *WasmClientContext) processEvent(msg []string) {

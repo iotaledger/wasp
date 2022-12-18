@@ -9,9 +9,6 @@ import { IClientService } from './';
 export class WasmClientSandbox implements wasmlib.ScHost {
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
-    eventDone: bool = false;
-    eventHandlers: wasmlib.IEventHandlers[] = [];
-    eventReceived: bool = false;
     hrp: string = "";
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
