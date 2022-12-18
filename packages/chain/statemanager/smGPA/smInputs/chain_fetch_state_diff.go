@@ -8,18 +8,18 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-type MempoolStateRequest struct {
+type ChainFetchStateDiff struct {
 	context         context.Context
 	oldStateIndex   uint32
 	newStateIndex   uint32
 	oldL1Commitment *state.L1Commitment
 	newL1Commitment *state.L1Commitment
-	resultCh        chan<- *MempoolStateRequestResults
+	resultCh        chan<- *ChainFetchStateDiffResults
 }
 
-var _ gpa.Input = &MempoolStateRequest{}
+var _ gpa.Input = &ChainFetchStateDiff{}
 
-func NewMempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (*MempoolStateRequest, <-chan *MempoolStateRequestResults) {
+func NewChainFetchStateDiff(ctx context.Context, prevAO, nextAO *isc.AliasOutputWithID) (*ChainFetchStateDiff, <-chan *ChainFetchStateDiffResults) {
 	if prevAO == nil {
 		// Only the current state is needed, if prevAO is unknown.
 		prevAO = nextAO
@@ -32,8 +32,8 @@ func NewMempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutput
 	if err != nil {
 		panic("Cannot make L1 commitment from next alias output")
 	}
-	resultChannel := make(chan *MempoolStateRequestResults, 1)
-	return &MempoolStateRequest{
+	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
+	return &ChainFetchStateDiff{
 		context:         ctx,
 		oldStateIndex:   prevAO.GetStateIndex(),
 		newStateIndex:   nextAO.GetStateIndex(),
@@ -43,38 +43,38 @@ func NewMempoolStateRequest(ctx context.Context, prevAO, nextAO *isc.AliasOutput
 	}, resultChannel
 }
 
-func (msrT *MempoolStateRequest) GetOldStateIndex() uint32 {
+func (msrT *ChainFetchStateDiff) GetOldStateIndex() uint32 {
 	return msrT.oldStateIndex
 }
 
-func (msrT *MempoolStateRequest) GetNewStateIndex() uint32 {
+func (msrT *ChainFetchStateDiff) GetNewStateIndex() uint32 {
 	return msrT.newStateIndex
 }
 
-func (msrT *MempoolStateRequest) GetOldL1Commitment() *state.L1Commitment {
+func (msrT *ChainFetchStateDiff) GetOldL1Commitment() *state.L1Commitment {
 	return msrT.oldL1Commitment
 }
 
-func (msrT *MempoolStateRequest) GetNewL1Commitment() *state.L1Commitment {
+func (msrT *ChainFetchStateDiff) GetNewL1Commitment() *state.L1Commitment {
 	return msrT.newL1Commitment
 }
 
-func (msrT *MempoolStateRequest) IsValid() bool {
+func (msrT *ChainFetchStateDiff) IsValid() bool {
 	return msrT.context.Err() == nil
 }
 
-func (msrT *MempoolStateRequest) Respond(theState *MempoolStateRequestResults) {
+func (msrT *ChainFetchStateDiff) Respond(theState *ChainFetchStateDiffResults) {
 	if msrT.IsValid() && !msrT.IsResultChClosed() {
 		msrT.resultCh <- theState
 		msrT.closeResultCh()
 	}
 }
 
-func (msrT *MempoolStateRequest) IsResultChClosed() bool {
+func (msrT *ChainFetchStateDiff) IsResultChClosed() bool {
 	return msrT.resultCh == nil
 }
 
-func (msrT *MempoolStateRequest) closeResultCh() {
+func (msrT *ChainFetchStateDiff) closeResultCh() {
 	close(msrT.resultCh)
 	msrT.resultCh = nil
 }
