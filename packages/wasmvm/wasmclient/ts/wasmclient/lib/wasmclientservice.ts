@@ -28,22 +28,16 @@ export class WasmClientService implements IClientService {
     }
 
     public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
-        const [res, err] = this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
-        if (err != null) {
-            return [new Uint8Array(0), err];
-        }
-        return [res, null];
+        return this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error] {
         const req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
         const signed = req.sign(keyPair);
+        const reqID = signed.ID();
         const err = this.waspClient.postOffLedgerRequest(chainID, signed);
-        if (err != null) {
-            return [new wasmlib.ScRequestID(), err];
-        }
-        return [signed.ID(), null];
+        return [reqID, err];
     }
 
     public subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error {

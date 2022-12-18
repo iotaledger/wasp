@@ -99,10 +99,11 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 
 	// get last used nonce from accounts core contract
-	agent := isc.NewAgentID(keyPair.Address())
+	iscAgent := isc.NewAgentID(keyPair.Address())
+	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
 	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-	n.Params.AgentID().SetValue(wasmtypes.AgentIDFromBytes(agent.Bytes()))
+	n.Params.AgentID().SetValue(agent)
 	n.Func.Call()
 	s.nonce = n.Results.AccountNonce().Value()
 }

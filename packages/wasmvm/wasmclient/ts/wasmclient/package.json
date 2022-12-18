@@ -33,6 +33,5 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "ts-sync-request": "^1.4.1"
   }
 }

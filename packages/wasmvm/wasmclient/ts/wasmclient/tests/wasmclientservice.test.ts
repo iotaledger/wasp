@@ -1,7 +1,10 @@
-import { WasmClientService } from '../lib/wasmclientservice';
+import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from "testwasmlib";
-import * as syncRequest from 'ts-sync-request';
-import {SyncRequestClient} from "ts-sync-request";
+import {bytesFromString} from "wasmlib";
+import {KeyPair} from "../lib/isc";
+
+const MYCHAIN = "tst1pql4kl8frx2nfe2cvmxshy8jsnq6crnh72jaywuxdrt0xnyylmh5ged3r92";
+const MYSEED = "0x1fcf86092b3f7747335ea6838ed3445d98646b6f2285e7336fbf1a35563803dc";
 
 describe('wasmclient', function () {
 
@@ -21,27 +24,36 @@ describe('wasmclient', function () {
 
     describe('Call web API', function () {
         it('should call web API', () => {
-            // define the URL of the API
-            const API_URL = 'https://sc.testnet.shimmer.network/chains';
+            const svc = new WasmClientService('127.0.0.1:9090', '127.0.0.1:5550');
+            const ctx = new WasmClientContext(svc, MYCHAIN, "testwasmlib");
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
 
-            const client = new SyncRequestClient();
-            client.addHeader('Content-Type', 'application/json')
-            const response = client.get<string>(API_URL);
-            console.log(response);
+            const v = testwasmlib.ScFuncs.getRandom(ctx);
+            v.func.call();
+            expect(ctx.Err == null).toBeTruthy();
+            const rnd = v.results.random().value();
+            expect(rnd != 0n).toBeTruthy();
+        });
+    });
 
-            // // check if the response is successful
-            // if (response.statusCode >= 200 && response.statusCode < 300) {
-            //     // parse the response as JSON
-            //     const data = JSON.parse(response.getBody());
-            //
-            //     // use the data from the API
-            //     console.log(data);
-            // } else {
-            //     // throw an error if the response is not successful
-            //     throw new Error(response.statusMessage);
-            // }
-            // const n = testwasmlib.HScName;
-            // expect(n == testwasmlib.HScName).toBeTruthy();
+    describe('Post web API', function () {
+        it('should post to web API', () => {
+            const svc = new WasmClientService('127.0.0.1:9090', '127.0.0.1:5550');
+            const ctx = new WasmClientContext(svc, MYCHAIN, "testwasmlib");
+            ctx.signRequests(KeyPair.fromSubSeed(bytesFromString(MYSEED), 0n));
+
+            const f = testwasmlib.ScFuncs.random(ctx);
+            f.func.post();
+            expect(ctx.Err == null).toBeTruthy();
+
+            ctx.waitRequest();
+            expect(ctx.Err == null).toBeTruthy();
+
+            const v = testwasmlib.ScFuncs.getRandom(ctx);
+            v.func.call();
+            expect(ctx.Err == null).toBeTruthy();
+            const rnd = v.results.random().value();
+            expect(rnd != 0n).toBeTruthy();
         });
     });
 });

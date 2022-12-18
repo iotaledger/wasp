@@ -1,11 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import { Ed25519Address } from '@iota/iota.js';
-import * as coreaccounts from 'wasmlib/coreaccounts';
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import { WasmClientSandbox } from './wasmclientsandbox';
+import * as coreaccounts from 'wasmlib/coreaccounts';
+import {WasmClientSandbox} from './wasmclientsandbox';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
 
@@ -44,9 +43,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         this.keyPair = keyPair;
 
         // get last used nonce from accounts core contract
-        const address = new Ed25519Address(keyPair.publicKey).toAddress();
-        const addr = wasmlib.addressFromBytes(address);
-        const agent = wasmlib.ScAgentID.fromAddress(addr);
+        const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
         const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);
@@ -67,12 +64,12 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         }
     }
 
-    public waitRequest(reqID: wasmlib.ScRequestID | undefined): isc.Error {
-        let rID = this.ReqID;
-        if (reqID !== undefined) {
-            rID = reqID;
-        }
-        return this.svcClient.waitUntilRequestProcessed(this.chainID, rID, 60);
+    public waitRequest(): void {
+        this.waitRequestID(this.ReqID);
+    }
+
+    public waitRequestID(reqID: wasmlib.ScRequestID): void {
+        this.Err = this.svcClient.waitUntilRequestProcessed(this.chainID, reqID, 60);
     }
 
     public startEventHandlers(): isc.Error {

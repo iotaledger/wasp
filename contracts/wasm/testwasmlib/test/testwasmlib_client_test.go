@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	useDisposable = false
-	useSoloClient = true
+	useDocker     = true
+	useDisposable = true
+	useSoloClient = false
 )
 
 // to run with docker, set useDisposable to true and run with the following parameters:
@@ -98,7 +99,12 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	// we're testing against disposable wasp-cluster, so defaults will do
-	return newClient(t, wasmclient.DefaultWasmClientService(), chain, wallet)
+	service := wasmclient.DefaultWasmClientService()
+	if useDocker {
+		// test against Docker container, make sure to pass the correct args to test (top of file)
+		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
+	}
+	return newClient(t, service, chain, wallet)
 }
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
@@ -115,6 +121,31 @@ func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain st
 	require.NoError(t, svc.Err)
 	svc.SignRequests(wallet)
 	return svc
+}
+
+func TestClientRandom(t *testing.T) {
+	svc := setupClient(t)
+	doit := func() {
+		// generate new random value
+		f := testwasmlib.ScFuncs.Random(svc)
+		f.Func.Post()
+		require.NoError(t, svc.Err)
+
+		err := svc.WaitRequest()
+		require.NoError(t, err)
+
+		// get current random value
+		v := testwasmlib.ScFuncs.GetRandom(svc)
+		v.Func.Call()
+		require.NoError(t, svc.Err)
+		rnd := v.Results.Random().Value()
+		require.GreaterOrEqual(t, rnd, uint64(0))
+		fmt.Println("Random: ", rnd)
+	}
+	doit()
+	doit()
+	doit()
+	doit()
 }
 
 func TestClientEvents(t *testing.T) {
@@ -150,31 +181,6 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 	require.NoError(t, err)
 
 	require.EqualValues(t, param, *name)
-}
-
-func TestClientRandom(t *testing.T) {
-	svc := setupClient(t)
-	doit := func() {
-		// generate new random value
-		f := testwasmlib.ScFuncs.Random(svc)
-		f.Func.Post()
-		require.NoError(t, svc.Err)
-
-		err := svc.WaitRequest()
-		require.NoError(t, err)
-
-		// get current random value
-		v := testwasmlib.ScFuncs.GetRandom(svc)
-		v.Func.Call()
-		require.NoError(t, svc.Err)
-		rnd := v.Results.Random().Value()
-		require.GreaterOrEqual(t, rnd, uint64(0))
-		fmt.Println("Random: ", rnd)
-	}
-	doit()
-	doit()
-	doit()
-	doit()
 }
 
 func TestClientArray(t *testing.T) {

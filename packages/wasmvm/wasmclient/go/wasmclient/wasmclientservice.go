@@ -66,10 +66,8 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	iscAllowance := sc.cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
+	reqID = sc.cvt.ScRequestID(signed.ID())
 	err = sc.waspClient.PostOffLedgerRequest(iscChainID, signed)
-	if err == nil {
-		reqID = sc.cvt.ScRequestID(signed.ID())
-	}
 	return reqID, err
 }
 

@@ -60,19 +60,23 @@ export const FnUtilsHashName          : i32 = -37;
 export const FnUtilsHashSha3          : i32 = -38;
 // @formatter:on
 
+export var traceOn: bool = false;
+
 // Direct logging of text to host log
 export function log(text: string): void {
-    sandbox(FnLog, stringToBytes(text));
+    console.log(text);
 }
 
 // Direct logging of error to host log, followed by panicking out of the Wasm code
 export function panic(text: string): void {
-    sandbox(FnPanic, stringToBytes(text));
+    throw new Error(text);
 }
 
 // Direct conditional logging of debug-level informational text to host log
 export function trace(text: string): void {
-    sandbox(FnTrace, stringToBytes(text));
+    if (traceOn) {
+        console.log(text);
+    }
 }
 
 export function paramsProxy(): Proxy {
