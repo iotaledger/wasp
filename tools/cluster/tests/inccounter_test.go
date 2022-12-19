@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 const (
@@ -34,7 +33,6 @@ const (
 
 type contractWithMessageCounterEnv struct {
 	*contractEnv
-	counter *cluster.MessageCounter
 }
 
 func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contractWithMessageCounterEnv {
@@ -73,7 +71,7 @@ func setupWithContractAndMessageCounter(t *testing.T, nrOfRequests int) *contrac
 	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(chEnv.t, err)
 
-	return &contractWithMessageCounterEnv{contractEnv: cEnv, counter: counter}
+	return &contractWithMessageCounterEnv{contractEnv: cEnv}
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
@@ -89,9 +87,6 @@ func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hna
 	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 60*time.Second)
 	require.NoError(e.t, err)
-	if !e.counter.WaitUntilExpectationsMet() {
-		e.t.Fatal()
-	}
 }
 
 func (e *contractEnv) checkSC(numRequests int) {
@@ -141,9 +136,6 @@ func (e *ChainEnv) checkWasmContractCounter(expected int) {
 func TestIncDeployment(t *testing.T) {
 	e := setupWithContractAndMessageCounter(t, 1)
 
-	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fatal()
-	}
 	e.checkSC(0)
 	e.checkWasmContractCounter(0)
 }
@@ -169,10 +161,6 @@ func testNothing(t *testing.T, numRequests int) {
 		require.Contains(t, receipts[0].ResolvedError, vm.ErrTargetEntryPointNotFound.MessageFormat())
 	}
 
-	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fatal()
-	}
-
 	e.checkSC(numRequests)
 	e.checkWasmContractCounter(0)
 }
@@ -194,10 +182,6 @@ func testIncrement(t *testing.T, numRequests int) {
 		require.NoError(t, err)
 		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
 		require.NoError(t, err)
-	}
-
-	if !e.counter.WaitUntilExpectationsMet() {
-		t.Fatal()
 	}
 
 	e.checkSC(numRequests)
