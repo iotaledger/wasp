@@ -7,21 +7,22 @@
     chainData,
     defaultEvmStores,
   } from "svelte-web3";
+  import { hornetAPI } from "../../store";
 
-  import { Bech32Helper, type IEd25519Address } from "@iota/iota.js";
+  import {
+    SingleNodeClient,
+    Bech32Helper,
+    type IEd25519Address,
+  } from "@iota/iota.js";
 
   import iscAbiAsText from "../../assets/ISCSandbox.abi?raw";
 
-  const waspAddrBinaryFromBech32 = (bech32String: string) => {
-    // Depending on the network, the human readable part can change (tst, rms, ..).
-    // - We need some kind of API that is not the direct Hornet node to fetch it..
-    // - Maybe over some EVM info route?
-    // For this PoC it should be enough to substr the first three chars.
-    let humanReadablePart = bech32String.substring(0, 3);
+  const waspAddrBinaryFromBech32 = async (bech32String: string) => {
+    const protocolInfo = await new SingleNodeClient($hornetAPI).info();
 
     let receiverAddr = Bech32Helper.addressFromBech32(
       bech32String,
-      humanReadablePart
+      protocolInfo.protocol.bech32Hrp
     );
 
     const address: IEd25519Address = receiverAddr as IEd25519Address;
@@ -93,7 +94,7 @@
     let parameters = [
       {
         // Receiver
-        data: waspAddrBinaryFromBech32(addrInput),
+        data: await waspAddrBinaryFromBech32(addrInput),
       },
       {
         // Fungible Tokens

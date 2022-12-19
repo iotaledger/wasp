@@ -11,6 +11,6 @@ export const networkOptions = [
     text: 'Custom settings',
     apiEndpoint: 'http://localhost:14265',
     faucetEndpoint: 'http://localhost:8091',
-    chainAddress: '',
+    chainAddress: 'tst1pz0kc4urqxf4vh6c556gnr6uwmkwz5ye98vucakgafyneed4gft322s3gf0',
   },
 ];
