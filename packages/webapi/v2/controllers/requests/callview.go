@@ -3,6 +3,8 @@ package requests
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/kv/dict"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -34,7 +36,12 @@ func (c *Controller) executeCallView(e echo.Context) error {
 		functionHName = isc.Hn(callViewRequest.FunctionName)
 	}
 
-	result, err := c.vmService.CallViewByChainID(chainID, contractHName, functionHName, callViewRequest.Arguments)
+	args, err := dict.FromJSONDict(callViewRequest.Arguments)
+	if err != nil {
+		return apierrors.InvalidPropertyError("arguments", err)
+	}
+
+	result, err := c.vmService.CallViewByChainID(chainID, contractHName, functionHName, args)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

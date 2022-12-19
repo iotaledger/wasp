@@ -114,7 +114,7 @@ type RequestDetail struct {
 	IsEVM          bool
 	IsOffLedger    bool
 	NFT            *NFTDataResponse
-	Params         dict.Dict
+	Params         dict.JSONDict
 	RequestID      string
 	SenderAccount  string
 	TargetAddress  string
@@ -131,7 +131,7 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 		IsEVM:          isEVM,
 		IsOffLedger:    request.IsOffLedger(),
 		NFT:            MapNFTDataResponse(request.NFT()),
-		Params:         request.Params(),
+		Params:         request.Params().JSONDict(),
 		RequestID:      request.ID().String(),
 		SenderAccount:  request.SenderAccount().String(),
 		TargetAddress:  request.TargetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),

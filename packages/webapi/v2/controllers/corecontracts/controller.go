@@ -224,14 +224,14 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath(0, "blockIndex", "Block Index (uint32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(models.BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfBlock").
 		SetSummary("Get events of a block")
 
 	api.GET("chains/:chainID/core/blocklog/events/block/latest", c.getBlockEvents).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The receipts", mocker.Get(models.EventsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfLatestBlock").
 		SetSummary("Get events of the latest block")
 
@@ -239,9 +239,17 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "requestID", "Request ID (ISCRequestID)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The events", mocker.Get(models.BlockReceiptsResponse{}), nil).
+		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
 		SetOperationId("blocklogGetEventsOfRequest").
 		SetSummary("Get events of a request")
+
+	api.GET("chains/:chainID/core/blocklog/events/contract/:contractHname", c.getRequestEvents).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "contractHname", "Contract (Hname)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusOK, "The events", mocker.Get(models.EventsResponse{}), nil).
+		SetOperationId("blocklogGetEventsOfContract").
+		SetSummary("Get events of a contract")
 }
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {

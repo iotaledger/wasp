@@ -20,5 +20,5 @@ type ContractCallViewRequest struct {
 	FunctionName  string    `swagger:"desc(The function name)"`
 	FunctionHName isc.Hname `swagger:"desc(The function name as HName)"`
 
-	Arguments dict.Dict `swagger:"desc(Encoded arguments to be passed to the function)"`
+	Arguments dict.JSONDict `swagger:"desc(Encoded arguments to be passed to the function)"`
 }
