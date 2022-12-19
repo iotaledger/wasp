@@ -80,8 +80,6 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		return err
 	}
 
-	log.Infof("Chain record saved: ChainID: %s (active: %t)", requestChainRec.ChainID(), requestChainRec.Active)
-
 	// Activate/deactivate the chain accordingly.
 	if requestChainRec.Active {
 		log.Debugw("calling Chains.Activate", "chainID", requestChainRec.ChainID().String())

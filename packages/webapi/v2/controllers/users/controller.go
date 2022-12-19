@@ -5,7 +5,6 @@ import (
 
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -13,14 +12,11 @@ import (
 )
 
 type Controller struct {
-	log *loggerpkg.Logger
-
 	userService interfaces.UserService
 }
 
-func NewUsersController(log *loggerpkg.Logger, userService interfaces.UserService) interfaces.APIController {
+func NewUsersController(userService interfaces.UserService) interfaces.APIController {
 	return &Controller{
-		log:         log,
 		userService: userService,
 	}
 }

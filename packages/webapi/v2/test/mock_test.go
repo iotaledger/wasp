@@ -2,7 +2,6 @@ package test
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -45,7 +44,6 @@ func TestMockingOfChainInfo(t *testing.T) {
 
 	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
-	fmt.Print(mockedChainInfoResponse)
 }
 
 func TestMockingOfCommitteeInfo(t *testing.T) {
@@ -53,8 +51,6 @@ func TestMockingOfCommitteeInfo(t *testing.T) {
 	mock.LoadMockFiles()
 	mockedChainInfoResponse := mock.Get(models.CommitteeInfoResponse{})
 
-	result, err := json.Marshal(mockedChainInfoResponse)
+	_, err := json.Marshal(mockedChainInfoResponse)
 	require.NoError(t, err)
-	fmt.Print(mockedChainInfoResponse)
-	fmt.Print(string(result))
 }

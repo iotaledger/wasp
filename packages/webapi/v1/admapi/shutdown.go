@@ -27,7 +27,6 @@ func addShutdownEndpoint(adm echoswagger.ApiGroup, shutdown ShutdownFunc) {
 // This endpoint is needed for integration tests, because shutting down via an interrupt
 // signal does not work on Windows.
 func (s *shutdownService) handleShutdown(c echo.Context) error {
-	log.Info("Received a shutdown request from WebAPI.")
 	s.shutdownFunc()
 	return c.String(http.StatusOK, "Shutting down...")
 }

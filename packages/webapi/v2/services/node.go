@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -14,16 +13,13 @@ import (
 )
 
 type NodeService struct {
-	logger *logger.Logger
-
 	nodeOwnerAddresses   []string
 	nodeIdentityProvider registry.NodeIdentityProvider
 	shutdownHandler      *shutdown.ShutdownHandler
 }
 
-func NewNodeService(log *logger.Logger, nodeOwnerAddresses []string, nodeIdentityProvider registry.NodeIdentityProvider, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
+func NewNodeService(nodeOwnerAddresses []string, nodeIdentityProvider registry.NodeIdentityProvider, shutdownHandler *shutdown.ShutdownHandler) interfaces.NodeService {
 	return &NodeService{
-		logger:               log,
 		nodeOwnerAddresses:   nodeOwnerAddresses,
 		nodeIdentityProvider: nodeIdentityProvider,
 		shutdownHandler:      shutdownHandler,

@@ -65,26 +65,26 @@ func Init(
 	mocker.LoadMockFiles()
 
 	// -- Add dependency injection here
-	vmService := services.NewVMService(logger, chainsProvider)
-	chainService := services.NewChainService(logger, chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
-	committeeService := services.NewCommitteeService(logger, chainsProvider, networkProvider, dkShareRegistryProvider)
-	registryService := services.NewRegistryService(logger, chainsProvider, chainRecordRegistryProvider)
-	offLedgerService := services.NewOffLedgerService(logger, chainService, networkProvider)
-	metricsService := services.NewMetricsService(logger, chainsProvider)
-	peeringService := services.NewPeeringService(logger, chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(logger, chainService, networkProvider)
-	nodeService := services.NewNodeService(logger, nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler)
-	dkgService := services.NewDKGService(logger, dkShareRegistryProvider, dkgNodeProvider)
-	userService := services.NewUserService(logger, userManager)
+	vmService := services.NewVMService(chainsProvider)
+	chainService := services.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
+	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
+	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
+	offLedgerService := services.NewOffLedgerService(chainService, networkProvider)
+	metricsService := services.NewMetricsService(chainsProvider)
+	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
+	evmService := services.NewEVMService(chainService, networkProvider)
+	nodeService := services.NewNodeService(nodeOwnerAddresses, nodeIdentityProvider, shutdownHandler)
+	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider)
+	userService := services.NewUserService(userManager)
 	// --
 
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, offLedgerService, registryService, vmService),
-		metrics.NewMetricsController(logger, metricsService),
-		node.NewNodeController(logger, config, dkgService, nodeService, peeringService),
-		requests.NewRequestsController(logger, chainService, offLedgerService, peeringService, vmService),
-		users.NewUsersController(logger, userService),
-		corecontracts.NewCoreContractsController(logger, vmService),
+		metrics.NewMetricsController(metricsService),
+		node.NewNodeController(config, dkgService, nodeService, peeringService),
+		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
+		users.NewUsersController(userService),
+		corecontracts.NewCoreContractsController(vmService),
 	}
 
 	loadControllers(server, userManager, nodeIdentityProvider, authConfig, mocker, controllersToLoad)

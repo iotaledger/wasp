@@ -1,7 +1,6 @@
 package services
 
 import (
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -9,17 +8,13 @@ import (
 )
 
 type PeeringService struct {
-	logger *logger.Logger
-
 	chainsProvider        chains.Provider
 	networkProvider       peering.NetworkProvider
 	trustedNetworkManager peering.TrustedNetworkManager
 }
 
-func NewPeeringService(log *logger.Logger, chainsProvider chains.Provider, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
+func NewPeeringService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, trustedNetworkManager peering.TrustedNetworkManager) *PeeringService {
 	return &PeeringService{
-		logger: log,
-
 		chainsProvider:        chainsProvider,
 		networkProvider:       networkProvider,
 		trustedNetworkManager: trustedNetworkManager,
@@ -38,17 +33,11 @@ func (p *PeeringService) GetIdentity() *dto.PeeringNodeIdentity {
 }
 
 func (p *PeeringService) GetRegisteredPeers() *[]dto.PeeringNodeStatus {
-	p.logger.Debug("GetRegisteredPeers")
 	peers := p.networkProvider.PeerStatus()
-	p.logger.Debug("Got peer status")
-
 	peerModels := make([]dto.PeeringNodeStatus, len(peers))
 
 	for k, v := range peers {
-		p.logger.Debug("IsTrustedPeer")
-
 		isTrustedErr := p.trustedNetworkManager.IsTrustedPeer(v.PubKey())
-		p.logger.Debug("IsTrustedPeer done")
 
 		peerModels[k] = dto.PeeringNodeStatus{
 			PublicKey: v.PubKey(),
@@ -82,6 +71,10 @@ func (p *PeeringService) GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error) {
 
 func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error) {
 	identity, err := p.trustedNetworkManager.TrustPeer(publicKey, netID)
+	if err != nil {
+		return nil, err
+	}
+
 	mappedIdentity := &dto.PeeringNodeIdentity{
 		PublicKey: identity.PubKey(),
 		NetID:     identity.NetID,
@@ -93,6 +86,10 @@ func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string)
 
 func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error) {
 	identity, err := p.trustedNetworkManager.DistrustPeer(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
 	mappedIdentity := &dto.PeeringNodeIdentity{
 		PublicKey: identity.PubKey(),
 		NetID:     identity.NetID,

@@ -25,8 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v1/state"
 )
 
-var log *loggerpkg.Logger
-
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
@@ -45,10 +43,8 @@ func Init(
 	apiCacheTTL time.Duration,
 	publisherPort int,
 ) {
-	log = logger
-
 	pub := server.Group("public", "").SetDescription("Public endpoints")
-	addWebSocketEndpoint(pub, log)
+	addWebSocketEndpoint(pub, logger)
 
 	info.AddEndpoints(pub, network, publisherPort)
 	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())
@@ -62,13 +58,11 @@ func Init(
 		chainutil.CheckNonce,
 		network.Self().PubKey(),
 		apiCacheTTL,
-		log,
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
 
 	admapi.AddEndpoints(
-		logger.Named("webapi/adm"),
 		adm,
 		network,
 		tnm,
@@ -83,5 +77,6 @@ func Init(
 		authConfig,
 		nodeOwnerAddresses,
 	)
-	log.Infof("added web api endpoints")
+
+	logger.Infof("added web api endpoints")
 }

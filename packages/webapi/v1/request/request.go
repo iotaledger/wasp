@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -36,7 +35,6 @@ func AddEndpoints(
 	checkNonce checkNonceFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
-	log *logger.Logger,
 ) {
 	instance := &offLedgerReqAPI{
 		getChain:                getChain,
@@ -45,7 +43,6 @@ func AddEndpoints(
 		checkNonce:              checkNonce,
 		requestsCache:           expiringcache.New(cacheTTL),
 		nodePubKey:              nodePubKey,
-		log:                     log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetDeprecated().
@@ -66,7 +63,6 @@ type offLedgerReqAPI struct {
 	checkNonce              checkNonceFn
 	requestsCache           *expiringcache.ExpiringCache
 	nodePubKey              *cryptolib.PublicKey
-	log                     *logger.Logger
 }
 
 func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
@@ -101,7 +97,6 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 
 	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
 	if err != nil {
-		o.log.Errorf("webapi.offledger - check if already processed: %v", err)
 		return httperrors.ServerError("internal error")
 	}
 
@@ -114,7 +109,6 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	// check user has on-chain balance
 	assets, err := o.getAccountAssets(ch, offLedgerReq.SenderAccount())
 	if err != nil {
-		o.log.Errorf("webapi.offledger - account balance: %v", err)
 		return httperrors.ServerError("Unable to get account balance")
 	}
 

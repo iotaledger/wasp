@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -23,8 +22,6 @@ type chainServer struct {
 }
 
 type EVMService struct {
-	log *logger.Logger
-
 	evmBackendMutex sync.Mutex
 	evmChainServers map[isc.ChainID]*chainServer
 
@@ -32,10 +29,8 @@ type EVMService struct {
 	networkProvider peering.NetworkProvider
 }
 
-func NewEVMService(log *logger.Logger, chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.EVMService {
+func NewEVMService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.EVMService {
 	return &EVMService{
-		log: log,
-
 		chainService:    chainService,
 		networkProvider: networkProvider,
 	}
@@ -50,7 +45,6 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	}
 
 	chain := e.chainService.GetChainByID(chainID)
-
 	if chain == nil {
 		return nil, errors.New("chain is invalid")
 	}
@@ -93,7 +87,6 @@ func (e *EVMService) GetRequestID(chainID isc.ChainID, hash string) (*isc.Reques
 
 	txHash := common.HexToHash(hash)
 	reqID, ok := evmServer.backend.RequestIDByTransactionHash(txHash)
-
 	if !ok {
 		return nil, errors.New("request id not found")
 	}

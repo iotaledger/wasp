@@ -1,7 +1,6 @@
 package services
 
 import (
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -9,15 +8,12 @@ import (
 )
 
 type RegistryService struct {
-	logger *logger.Logger
-
 	chainsProvider              chains.Provider
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
-func NewRegistryService(log *logger.Logger, chainsProvider chains.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
+func NewRegistryService(chainsProvider chains.Provider, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) interfaces.RegistryService {
 	return &RegistryService{
-		logger:                      log,
 		chainsProvider:              chainsProvider,
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 	}

@@ -3,7 +3,6 @@ package services
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -14,15 +13,12 @@ import (
 )
 
 type DKGService struct {
-	log *logger.Logger
-
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 	dkgNodeProvider         dkg.NodeProvider
 }
 
-func NewDKGService(log *logger.Logger, dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider) *DKGService {
+func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkgNodeProvider dkg.NodeProvider) *DKGService {
 	return &DKGService{
-		log:                     log,
 		dkShareRegistryProvider: dkShareRegistryProvider,
 		dkgNodeProvider:         dkgNodeProvider,
 	}
@@ -40,6 +36,9 @@ func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKe
 	}
 
 	dkShareInfo, err := d.createDKModel(dkShare)
+	if err != nil {
+		return nil, err
+	}
 
 	return dkShareInfo, err
 }

@@ -6,7 +6,6 @@ package admapi
 import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -17,10 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 )
 
-var log *loggerpkg.Logger
-
 func AddEndpoints(
-	logger *loggerpkg.Logger,
 	adm echoswagger.ApiGroup,
 	network peering.NetworkProvider,
 	tnm peering.TrustedNetworkManager,
@@ -35,8 +31,6 @@ func AddEndpoints(
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
 ) {
-	log = logger
-
 	claimValidator := func(claims *authentication.WaspClaims) bool {
 		// The API will be accessible if the token has an 'API' claim
 		return claims.HasPermission(permissions.API)

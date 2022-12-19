@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -24,8 +23,6 @@ import (
 const MaxTimeout = 30 * time.Second
 
 type ChainService struct {
-	log *logger.Logger
-
 	governance                  *corecontracts.Governance
 	chainsProvider              chains.Provider
 	nodeConnectionMetrics       nodeconnmetrics.NodeConnectionMetrics
@@ -33,10 +30,8 @@ type ChainService struct {
 	vmService                   interfaces.VMService
 }
 
-func NewChainService(log *logger.Logger, chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
+func NewChainService(chainsProvider chains.Provider, nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, vmService interfaces.VMService) interfaces.ChainService {
 	return &ChainService{
-		log: log,
-
 		governance:                  corecontracts.NewGovernance(vmService),
 		chainsProvider:              chainsProvider,
 		nodeConnectionMetrics:       nodeConnectionMetrics,
@@ -51,11 +46,7 @@ func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
 		return err
 	}
 
-	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
-
-	err = c.chainsProvider().Activate(chainID)
-
-	return err
+	return c.chainsProvider().Activate(chainID)
 }
 
 func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
@@ -64,11 +55,7 @@ func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
 		return err
 	}
 
-	c.log.Debugw("calling Chains.Activate", "chainID", chainID.String())
-
-	err = c.chainsProvider().Deactivate(chainID)
-
-	return err
+	return c.chainsProvider().Deactivate(chainID)
 }
 
 func (c *ChainService) HasChain(chainID isc.ChainID) bool {
@@ -76,9 +63,7 @@ func (c *ChainService) HasChain(chainID isc.ChainID) bool {
 }
 
 func (c *ChainService) GetChainByID(chainID isc.ChainID) chainpkg.Chain {
-	chain := c.chainsProvider().Get(chainID)
-
-	return chain
+	return c.chainsProvider().Get(chainID)
 }
 
 func (c *ChainService) GetEVMChainID(chainID isc.ChainID) (uint16, error) {
@@ -154,7 +139,6 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	}
 
 	receipt, vmError, _ := c.vmService.GetReceipt(chainID, requestID)
-
 	if receipt != nil {
 		return receipt, vmError, nil
 	}

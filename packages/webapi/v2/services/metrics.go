@@ -1,7 +1,6 @@
 package services
 
 import (
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/dto"
@@ -10,22 +9,17 @@ import (
 )
 
 type MetricsService struct {
-	log *logger.Logger
-
 	chainProvider chains.Provider
 }
 
-func NewMetricsService(log *logger.Logger, chainProvider chains.Provider) interfaces.MetricsService {
+func NewMetricsService(chainProvider chains.Provider) interfaces.MetricsService {
 	return &MetricsService{
-		log: log,
-
 		chainProvider: chainProvider,
 	}
 }
 
 func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 	chain := c.chainProvider()
-
 	if chain == nil {
 		return nil
 	}
@@ -47,7 +41,6 @@ func (c *MetricsService) GetAllChainsMetrics() *dto.ChainMetrics {
 
 func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics {
 	chain := c.chainProvider().Get(chainID)
-
 	if chain == nil {
 		return nil
 	}
@@ -69,13 +62,11 @@ func (c *MetricsService) GetChainMetrics(chainID isc.ChainID) *dto.ChainMetrics 
 
 func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *models.ConsensusWorkflowMetrics {
 	chain := c.chainProvider().Get(chainID)
-
 	if chain == nil {
 		return nil
 	}
 
 	metrics := chain.GetConsensusWorkflowStatus()
-
 	if metrics == nil {
 		return nil
 	}
@@ -85,13 +76,11 @@ func (c *MetricsService) GetChainConsensusWorkflowMetrics(chainID isc.ChainID) *
 
 func (c *MetricsService) GetChainConsensusPipeMetrics(chainID isc.ChainID) *models.ConsensusPipeMetrics {
 	chain := c.chainProvider().Get(chainID)
-
 	if chain == nil {
 		return nil
 	}
 
 	metrics := chain.GetConsensusPipeMetrics()
-
 	if metrics == nil {
 		return nil
 	}

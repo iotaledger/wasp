@@ -3,7 +3,6 @@ package services
 import (
 	"errors"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,16 +15,13 @@ import (
 )
 
 type CommitteeService struct {
-	log *logger.Logger
-
 	chainsProvider          chains.Provider
 	networkProvider         peering.NetworkProvider
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 }
 
-func NewCommitteeService(log *logger.Logger, chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
+func NewCommitteeService(chainsProvider chains.Provider, networkProvider peering.NetworkProvider, dkShareRegistryProvider registry.DKShareRegistryProvider) interfaces.CommitteeService {
 	return &CommitteeService{
-		log:                     log,
 		chainsProvider:          chainsProvider,
 		networkProvider:         networkProvider,
 		dkShareRegistryProvider: dkShareRegistryProvider,

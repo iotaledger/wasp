@@ -5,7 +5,6 @@ import (
 
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	corecontracts2 "github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -13,21 +12,16 @@ import (
 )
 
 type Controller struct {
-	log *loggerpkg.Logger
-
 	accounts   *corecontracts2.Accounts
 	blob       *corecontracts2.Blob
 	blocklog   *corecontracts2.BlockLog
 	errors     *corecontracts2.Errors
 	governance *corecontracts2.Governance
-
-	vmService interfaces.VMService
+	vmService  interfaces.VMService
 }
 
-func NewCoreContractsController(log *loggerpkg.Logger, vmService interfaces.VMService) interfaces.APIController {
+func NewCoreContractsController(vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
-		log: log,
-
 		accounts:   corecontracts2.NewAccounts(vmService),
 		blob:       corecontracts2.NewBlob(vmService),
 		blocklog:   corecontracts2.NewBlockLog(vmService),

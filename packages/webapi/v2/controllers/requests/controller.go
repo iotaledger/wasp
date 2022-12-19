@@ -5,24 +5,20 @@ import (
 
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type Controller struct {
-	log *loggerpkg.Logger
-
 	chainService     interfaces.ChainService
 	offLedgerService interfaces.OffLedgerService
 	peeringService   interfaces.PeeringService
 	vmService        interfaces.VMService
 }
 
-func NewRequestsController(log *loggerpkg.Logger, chainService interfaces.ChainService, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService, vmService interfaces.VMService) interfaces.APIController {
+func NewRequestsController(chainService interfaces.ChainService, offLedgerService interfaces.OffLedgerService, peeringService interfaces.PeeringService, vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
-		log:              log,
 		chainService:     chainService,
 		offLedgerService: offLedgerService,
 		peeringService:   peeringService,

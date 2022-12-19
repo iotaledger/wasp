@@ -3,22 +3,17 @@ package services
 import (
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
 type UserService struct {
-	logger *logger.Logger
-
 	userManager *users.UserManager
 }
 
-func NewUserService(log *logger.Logger, userManager *users.UserManager) interfaces.UserService {
+func NewUserService(userManager *users.UserManager) interfaces.UserService {
 	return &UserService{
-		logger: log,
-
 		userManager: userManager,
 	}
 }
@@ -49,14 +44,12 @@ func (u *UserService) AddUser(username, password string, permissions []string) e
 		return err
 	}
 
-	err = u.userManager.AddUser(&users.User{
+	return u.userManager.AddUser(&users.User{
 		Name:         username,
 		PasswordHash: passwordHash,
 		PasswordSalt: passwordSalt,
 		Permissions:  permissionsToMap(permissions),
 	})
-
-	return err
 }
 
 func (u *UserService) UpdateUserPassword(username, password string) error {
@@ -65,21 +58,15 @@ func (u *UserService) UpdateUserPassword(username, password string) error {
 		return err
 	}
 
-	err = u.userManager.ChangeUserPassword(username, passwordHash, passwordSalt)
-
-	return err
+	return u.userManager.ChangeUserPassword(username, passwordHash, passwordSalt)
 }
 
 func (u *UserService) UpdateUserPermissions(username string, permissions []string) error {
-	mapPermissions := permissionsToMap(permissions)
-	err := u.userManager.ChangeUserPermissions(username, mapPermissions)
-
-	return err
+	return u.userManager.ChangeUserPermissions(username, permissionsToMap(permissions))
 }
 
 func (u *UserService) DeleteUser(username string) error {
-	err := u.userManager.RemoveUser(username)
-	return err
+	return u.userManager.RemoveUser(username)
 }
 
 func (u *UserService) GetUsers() *[]models.User {

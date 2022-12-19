@@ -6,7 +6,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/configuration"
-	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
@@ -15,18 +14,14 @@ import (
 )
 
 type Controller struct {
-	log *loggerpkg.Logger
-
-	config *configuration.Configuration
-
+	config         *configuration.Configuration
 	dkgService     *services.DKGService
 	nodeService    interfaces.NodeService
 	peeringService interfaces.PeeringService
 }
 
-func NewNodeController(log *loggerpkg.Logger, config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
+func NewNodeController(config *configuration.Configuration, dkgService *services.DKGService, nodeService interfaces.NodeService, peeringService interfaces.PeeringService) interfaces.APIController {
 	return &Controller{
-		log:            log,
 		config:         config,
 		dkgService:     dkgService,
 		nodeService:    nodeService,

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -14,17 +13,13 @@ import (
 )
 
 type OffLedgerService struct {
-	logger *logger.Logger
-
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	requestCache    *expiringcache.ExpiringCache
 }
 
-func NewOffLedgerService(log *logger.Logger, chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.OffLedgerService {
+func NewOffLedgerService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.OffLedgerService {
 	return &OffLedgerService{
-		logger: log,
-
 		chainService:    chainService,
 		networkProvider: networkProvider,
 		requestCache:    expiringcache.New(1337),
