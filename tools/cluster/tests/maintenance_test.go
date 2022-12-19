@@ -16,7 +16,7 @@ import (
 )
 
 func TestMaintenance(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -276,3 +277,31 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 }
 
 // endregion ///////////////////////////////////////////////////////////////
+
+func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
+	quorum := uint16((2*len(committee))/3 + 1)
+
+	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
+
+	addr, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+
+	t.Logf("generated state address: %s", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
+
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+	t.Logf("deployed chainID: %s", chain.ChainID)
+
+	e := &ChainEnv{
+		env:   &env{t: t, Clu: clu},
+		Chain: chain,
+	}
+	tx := e.deployNativeIncCounterSC(0)
+
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+
+	return e
+}

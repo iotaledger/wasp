@@ -78,6 +78,34 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
 	return r.resolveReceipt(c, ch, rec)
+
+	// retCh := make(chan *blocklog.RequestReceipt, 1)
+	// defer close(retCh)
+	// go func() {
+	// 	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
+	// 	select {
+	// 	case retCh <- rec:
+	// 	default:
+	// 		// don't panic
+	// 	}
+	// }()
+
+	// // check if request was already processed
+	// rec, err := r.getReceiptFromBlocklog(ch, reqID)
+	// if err != nil {
+	// 	return err
+	// }
+	// if rec != nil {
+	// 	select {
+	// 	case retCh <- rec:
+	// 	default:
+	// 		// don't panic
+	// 	}
+	// } else {
+	// 	println()
+	// }
+
+	// return r.resolveReceipt(c, ch, <-retCh)
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {
@@ -101,12 +129,18 @@ func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.Requ
 	if err != nil {
 		return nil, httperrors.ServerError("error getting latest chain block index")
 	}
+	if blockIndex == 0 {
+		return nil, nil
+	}
 	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
 		dict.Dict{
 			blocklog.ParamRequestID: reqID.Bytes(),
 		})
 	if err != nil {
 		return nil, httperrors.ServerError("error calling get receipt view")
+	}
+	if ret == nil {
+		return nil, nil // not processed yet
 	}
 	binRec, err := ret.Get(blocklog.ParamRequestRecord)
 	if err != nil {
