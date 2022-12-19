@@ -751,7 +751,7 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	if !util.Same(oldAccessNodes, activeAccessNodes) {
 		cni.log.Infof("Access nodes updated, active=%+v", activeAccessNodes)
 		cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
-		cni.stateMgr.AccessNodesUpdated(activeAccessNodes)
+		cni.stateMgr.ChainAccessNodesUpdated(activeAccessNodes)
 	}
 }
 

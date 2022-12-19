@@ -26,11 +26,16 @@ func TestCruelWorld(t *testing.T) {
 	nodeCount := 15
 	committeeSize := 5
 	blockCount := 50
-	minWaitToProduceBlock := 5 * time.Millisecond
+	minWaitToProduceBlock := 15 * time.Millisecond
 	maxMinWaitsToProduceBlock := 10
-	approveOutputPeriod := 10 * time.Millisecond
-	getBlockPeriod := 35 * time.Millisecond
-	timerTickPeriod := 20 * time.Millisecond
+	getBlockPeriod := 100 * time.Millisecond
+	timerTickPeriod := 35 * time.Millisecond
+	consensusStateProposalDelay := 50 * time.Millisecond
+	consensusStateProposalCount := 50
+	consensusDecidedStateDelay := 50 * time.Millisecond
+	consensusDecidedStateCount := 50
+	mempoolStateRequestDelay := 50 * time.Millisecond
+	mempoolStateRequestCount := 50
 
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(uint16(nodeCount))
 	peerPubKeys := make([]*cryptolib.PublicKey, len(peerIdentities))
@@ -67,79 +72,111 @@ func TestCruelWorld(t *testing.T) {
 		)
 		require.NoError(t, err)
 	}
-	blocks, stateOutputs := bf.GetBlocks(blockCount, 1)
+	blocks := bf.GetBlocks(blockCount, 1)
 	stateDrafts := make([]state.StateDraft, blockCount)
 	blockProduced := make([]*atomic.Bool, blockCount)
-	blockApproved := make([]*atomic.Bool, blockCount)
 	for i := range blocks {
 		stateDrafts[i] = bf.GetStateDraft(blocks[i])
 		blockProduced[i] = &atomic.Bool{}
-		blockApproved[i] = &atomic.Bool{}
 	}
 
 	// Send blocks to nodes (consensus mock)
 	sendBlockResults := make([]<-chan bool, committeeSize)
 	for i := 0; i < committeeSize; i++ {
 		ii := i
-		resultChan := make(chan bool, 1)
-		sendBlockResults[i] = resultChan
-		go func() {
-			for bi := 0; bi < blockCount; bi++ {
-				if blockApproved[bi].Load() {
-					// If block is already approved, then consensus should not be working on it
-					continue
-				}
-
-				t.Logf("Sending block %v to node %s", bi+1, peerNetIDs[ii])
-				err := <-sms[ii].ConsensusProducedBlock(context.Background(), stateDrafts[bi])
-				if err != nil {
-					t.Logf("Sending block %v to node %s FAILED: %v", bi+1, peerNetIDs[ii], err)
-					resultChan <- false
-					return
-				}
-				blockProduced[bi].Store(true)
-				time.Sleep(time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock)
+		sendBlockResults[i] = makeNRequestsVarDelay(blockCount, func() time.Duration {
+			return time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock
+		}, func(bi int) bool {
+			t.Logf("Sending block %v to node %s", bi+1, peerNetIDs[ii])
+			err := <-sms[ii].ConsensusProducedBlock(context.Background(), stateDrafts[bi])
+			if err != nil {
+				t.Logf("Sending block %v to node %s FAILED: %v", bi+1, peerNetIDs[ii], err)
+				return false
 			}
-			resultChan <- true
-		}()
+			blockProduced[bi].Store(true)
+			return true
+		})
 	}
 
-	// Approve blocks (consensus mock)
-	approveOutputResult := make(chan bool, 1)
-	go func() {
-		for bi := 0; bi < blockCount; bi++ {
-			for !blockProduced[bi].Load() {
-				// Wait for block to be produced in some node at least
-			}
+	// Send ConsensusStateProposal requestss
+	consensusStateProposalResult := makeNRequests(consensusStateProposalCount, consensusStateProposalDelay, func(_ int) bool {
+		nodeIndex := rand.Intn(nodeCount)
+		blockIndex := getRandomProducedBlockAIndex(blockProduced)
+		t.Logf("Consensus state proposal request for block %v is sent to node %v", blockIndex+1, peerNetIDs[nodeIndex])
+		responseCh := sms[nodeIndex].ConsensusStateProposal(context.Background(), bf.GetAliasOutput(blocks[blockIndex].L1Commitment()))
+		<-responseCh
+		return true
+	})
 
-			time.Sleep(approveOutputPeriod)
-			t.Logf("Approving alias output %v", bi+1)
-			for i := 0; i < nodeCount; i++ {
-				t.Logf("Approving alias output %v in node %v", bi+1, peerNetIDs[i])
-				sms[i].ReceiveConfirmedAliasOutput(stateOutputs[bi])
-			}
-			blockApproved[bi].Store(true)
+	// Send ConsensusDecidedState requests
+	consensusDecidedStateResult := makeNRequests(consensusDecidedStateCount, consensusDecidedStateDelay, func(_ int) bool {
+		nodeIndex := rand.Intn(nodeCount)
+		blockIndex := getRandomProducedBlockAIndex(blockProduced)
+		t.Logf("Consensus decided state proposal for block %v is sent to node %v", blockIndex+1, peerNetIDs[nodeIndex])
+		responseCh := sms[nodeIndex].ConsensusDecidedState(context.Background(), bf.GetAliasOutput(blocks[blockIndex].L1Commitment()))
+		state := <-responseCh
+		if !blocks[blockIndex].TrieRoot().Equals(state.TrieRoot()) {
+			t.Logf("Consensus decided state proposal for block %v to node %v return wrong state: expected trie root %s, received %s",
+				blockIndex+1, peerNetIDs[nodeIndex], blocks[blockIndex].TrieRoot(), state.TrieRoot())
+			return false
 		}
-		approveOutputResult <- true
-	}()
+		return true
+	})
+
+	// Send MempoolStateRequest requests
+	mempoolStateRequestResult := makeNRequests(mempoolStateRequestCount, mempoolStateRequestDelay, func(_ int) bool {
+		nodeIndex := rand.Intn(nodeCount)
+		newBlockIndex := getRandomProducedBlockAIndex(blockProduced)
+		for ; newBlockIndex == 0; newBlockIndex = getRandomProducedBlockAIndex(blockProduced) {
+		}
+		oldBlockIndex := rand.Intn(newBlockIndex)
+		t.Logf("Mempool state request for new block %v and old block %v is sent to node %v", newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex])
+		oldStateOutput := bf.GetAliasOutput(blocks[oldBlockIndex].L1Commitment())
+		newStateOutput := bf.GetAliasOutput(blocks[newBlockIndex].L1Commitment())
+		responseCh := sms[nodeIndex].(*stateManager).ChainFetchStateDiff(context.Background(), oldStateOutput, newStateOutput)
+		results := <-responseCh
+		if !bf.GetState(blocks[newBlockIndex].L1Commitment()).TrieRoot().Equals(results.GetNewState().TrieRoot()) { // TODO: should compare states instead of trie roots
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong new state: expected trie root %s, received %s",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], blocks[newBlockIndex].TrieRoot(), results.GetNewState().TrieRoot())
+			return false
+		}
+		expectedAddedLength := newBlockIndex - oldBlockIndex
+		if len(results.GetAdded()) != expectedAddedLength {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong size added array: expected %v, received %v elements",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], expectedAddedLength, len(results.GetAdded()))
+			return false
+		}
+		for i := 0; i < len(results.GetAdded()); i++ {
+			if !results.GetAdded()[i].L1Commitment().Equals(blocks[oldBlockIndex+i+1].L1Commitment()) { // TODO: should compare blocks instead of commitments
+				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
+					newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
+				return false
+			}
+		}
+		if len(results.GetRemoved()) > 0 {
+			t.Logf("Mempool state request for new block %v and old block %v to node %v return too large removed array: expected it to be empty, received %v elements",
+				newBlockIndex+1, oldBlockIndex+1, peerNetIDs[nodeIndex], len(results.GetRemoved()))
+			return false
+		}
+		return true
+	})
 
 	// Check results
 	for _, sendBlockResult := range sendBlockResults {
-		requireTrueForSomeTime(t, sendBlockResult, 5*time.Second)
+		requireTrueForSomeTime(t, sendBlockResult, 11*time.Second) // 11s instead of 10s just to avoid linter warning
 	}
-	requireTrueForSomeTime(t, approveOutputResult, 5*time.Second)
-	time.Sleep(15 * time.Second)
-	expectedIndex := blockCount
-	expectedCommitment := blocks[blockCount-1].L1Commitment()
-	for i := 0; i < nodeCount; i++ {
-		t.Logf("Checking state of node %v", i)
-		actualIndex, err := stores[i].LatestBlockIndex()
-		require.NoError(t, err)
-		require.Equal(t, uint32(expectedIndex), actualIndex)
-		actualCommitment, err := stores[i].LatestBlock()
-		require.NoError(t, err)
-		require.True(t, expectedCommitment.Equals(actualCommitment.L1Commitment()))
+	requireTrueForSomeTime(t, consensusStateProposalResult, 10*time.Second)
+	requireTrueForSomeTime(t, consensusDecidedStateResult, 10*time.Second)
+	requireTrueForSomeTime(t, mempoolStateRequestResult, 10*time.Second)
+}
+
+func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
+	for !blockProduced[0].Load() {
 	}
+	var maxIndex int
+	for maxIndex = 0; maxIndex < len(blockProduced) && blockProduced[maxIndex].Load(); maxIndex++ {
+	}
+	return rand.Intn(maxIndex)
 }
 
 func requireTrueForSomeTime(t *testing.T, ch <-chan bool, timeout time.Duration) {
@@ -149,4 +186,23 @@ func requireTrueForSomeTime(t *testing.T, ch <-chan bool, timeout time.Duration)
 	case <-time.After(timeout):
 		t.Fatal("Timeout")
 	}
+}
+
+func makeNRequests(count int, delay time.Duration, makeRequestFun func(int) bool) <-chan bool {
+	return makeNRequestsVarDelay(count, func() time.Duration { return delay }, makeRequestFun)
+}
+
+func makeNRequestsVarDelay(count int, getDelayFun func() time.Duration, makeRequestFun func(int) bool) <-chan bool {
+	responseCh := make(chan bool, 1)
+	go func() {
+		for i := 0; i < count; i++ {
+			if !makeRequestFun(i) {
+				responseCh <- false
+				return
+			}
+			time.Sleep(getDelayFun())
+		}
+		responseCh <- true
+	}()
+	return responseCh
 }
