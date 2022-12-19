@@ -16,7 +16,7 @@ import (
 
 // RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
 // into nodes. In case of success, generated address is returned
-func RunDKG(apiHosts, peerPubKeys []string, threshold, initiatorIndex uint16, timeout ...time.Duration) (iotago.Address, error) {
+func RunDKG(authToken string, apiHosts, peerPubKeys []string, threshold, initiatorIndex uint16, timeout ...time.Duration) (iotago.Address, error) {
 	to := uint32(60 * 1000)
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
@@ -27,7 +27,7 @@ func RunDKG(apiHosts, peerPubKeys []string, threshold, initiatorIndex uint16, ti
 	if int(initiatorIndex) >= len(apiHosts) {
 		return nil, xerrors.New("RunDKG: wrong initiator index")
 	}
-	dkShares, err := client.NewWaspClient(apiHosts[initiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
+	dkShares, err := client.NewWaspClient(apiHosts[initiatorIndex]).WithToken(authToken).DKSharesPost(&model.DKSharesPostRequest{
 		PeerPubKeys: peerPubKeys,
 		Threshold:   threshold,
 		TimeoutMS:   to, // 1 min

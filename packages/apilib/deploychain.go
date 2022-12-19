@@ -36,13 +36,14 @@ type CreateChainParams struct {
 	Prefix               string
 	InitParams           dict.Dict
 	GovernanceController iotago.Address
+	AuthenticationToken  string
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (isc.ChainID, iotago.Address, error) {
 	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
-	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
+	stateControllerAddr, err := RunDKG(par.AuthenticationToken, par.CommitteeAPIHosts, par.CommitteePubKeys, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return isc.ChainID{}, nil, err
 	}
@@ -94,7 +95,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnAccessNodes(par.CommitteeAPIHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.AuthenticationToken, par.CommitteeAPIHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
@@ -104,6 +105,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 
 	// ---------- wait until the request is processed at least in all committee nodes
 	_, err = multiclient.New(par.CommitteeAPIHosts).
+		WithToken(par.AuthenticationToken).
 		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
 	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
@@ -189,8 +191,8 @@ func CreateChainOrigin(
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts []string, chainID isc.ChainID) error {
-	nodes := multiclient.New(apiHosts)
+func ActivateChainOnAccessNodes(authToken string, apiHosts []string, chainID isc.ChainID) error {
+	nodes := multiclient.New(apiHosts).WithToken(authToken)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{}))
 	if err != nil {
