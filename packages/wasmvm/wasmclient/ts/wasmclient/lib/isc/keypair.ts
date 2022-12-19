@@ -15,8 +15,7 @@ export class KeyPair {
             this.privateKey = seed;
             return this;
         }
-        const seedArray = wasmlib.bytesToUint8Array(seed);
-        const keyPair = Ed25519.keyPairFromSeed(seedArray);
+        const keyPair = Ed25519.keyPairFromSeed(seed);
         this.privateKey = keyPair.privateKey;
         this.publicKey = keyPair.publicKey;
     }
