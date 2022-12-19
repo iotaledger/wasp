@@ -329,6 +329,53 @@ func TestBalanceBaseToken(t *testing.T) {
 	require.Equal(t, user1Balance0+transferAmt, user1Balance1)
 }
 
+func TestBalanceNativeToken(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+	require.NoError(t, err)
+	err = foundry.Mint(mintAmount)
+	require.NoError(t, err)
+	tokenID := foundry.TokenID()
+
+	fbal := coreaccounts.ScFuncs.BalanceNativeToken(ctx)
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance0 := fbal.Results.Tokens().Value().Uint64()
+
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance0 := fbal.Results.Tokens().Value().Uint64()
+
+	transferAmt := wasmtypes.NewScBigInt(9)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
+	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, transferAmt)
+	ftrans.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance1 := fbal.Results.Tokens().Value().Uint64()
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance1 := fbal.Results.Tokens().Value().Uint64()
+	require.Equal(t, user0Balance0-transferAmt.Uint64(), user0Balance1)
+	require.Equal(t, user1Balance0+transferAmt.Uint64(), user1Balance1)
+}
+
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
