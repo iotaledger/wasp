@@ -9,9 +9,9 @@ import (
 )
 
 type MetricItem[T interface{}] struct {
-	Messages    uint32
-	Timestamp   time.Time
-	LastMessage T
+	Messages    uint32    `json:"messages"`
+	Timestamp   time.Time `json:"timestamp"`
+	LastMessage T         `json:"lastMessage"`
 }
 
 /*
@@ -34,15 +34,15 @@ type (
 )
 
 type ChainMetrics struct {
-	InAliasOutput                   AliasOutputMetricItem
-	InOnLedgerRequest               OnLedgerRequestMetricItem
-	InOutput                        InOutputMetricItem
-	InStateOutput                   InStateOutputMetricItem
-	InTxInclusionState              TxInclusionStateMsgMetricItem
-	OutPublishGovernanceTransaction TransactionMetricItem
-	OutPullLatestOutput             InterfaceMetricItem
-	OutPullOutputByID               UTXOInputMetricItem
-	OutPullTxInclusionState         TransactionIDMetricItem
+	InAliasOutput                   AliasOutputMetricItem         `json:"inAliasOutput"`
+	InOnLedgerRequest               OnLedgerRequestMetricItem     `json:"inOnLedgerRequest"`
+	InOutput                        InOutputMetricItem            `json:"inOutput"`
+	InStateOutput                   InStateOutputMetricItem       `json:"inStateOutput"`
+	InTxInclusionState              TxInclusionStateMsgMetricItem `json:"inTxInclusionState"`
+	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction"`
+	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput"`
+	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID"`
+	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState"`
 }
 
 func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem[T] {
@@ -116,11 +116,11 @@ func MapConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *Consensus
 }
 
 type ConsensusPipeMetrics struct {
-	EventStateTransitionMsgPipeSize int
-	EventPeerLogIndexMsgPipeSize    int
-	EventACSMsgPipeSize             int
-	EventVMResultMsgPipeSize        int
-	EventTimerMsgPipeSize           int
+	EventStateTransitionMsgPipeSize int `json:"eventStateTransitionMsgPipeSize"`
+	EventPeerLogIndexMsgPipeSize    int `json:"eventPeerLogIndexMsgPipeSize"`
+	EventACSMsgPipeSize             int `json:"eventACSMsgPipeSize"`
+	EventVMResultMsgPipeSize        int `json:"eventVMResultMsgPipeSize"`
+	EventTimerMsgPipeSize           int `json:"eventTimerMsgPipeSize"`
 }
 
 func MapConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {

@@ -8,21 +8,21 @@ import (
 )
 
 type AccountsResponse struct {
-	AccountIDs []string
+	AccountIDs []string `json:"accountIds"`
 }
 
 type AccountListResponse struct {
-	Accounts []string
+	Accounts []string `json:"accounts"`
 }
 
 type NativeToken struct {
-	ID     string
-	Amount string
+	ID     string `json:"id"`
+	Amount string `json:"amount"`
 }
 
 type AssetsResponse struct {
-	BaseTokens uint64
-	Tokens     []*NativeToken
+	BaseTokens uint64         `json:"baseTokens"`
+	Tokens     []*NativeToken `json:"nativeTokens"`
 }
 
 func MapNativeToken(token *iotago.NativeToken) *NativeToken {
@@ -43,18 +43,18 @@ func MapNativeTokens(tokens iotago.NativeTokens) []*NativeToken {
 }
 
 type AccountNFTsResponse struct {
-	NFTIDs []string
+	NFTIDs []string `json:"nftIds"`
 }
 
 type AccountNonceResponse struct {
-	Nonce uint64
+	Nonce uint64 `json:"nonce"`
 }
 
 type NFTDataResponse struct {
-	ID       string
-	Issuer   string
-	Metadata string
-	Owner    string
+	ID       string `json:"id"`
+	Issuer   string `json:"issuer"`
+	Metadata string `json:"metadata"`
+	Owner    string `json:"owner"`
 }
 
 func MapNFTDataResponse(nft *isc.NFT) *NFTDataResponse {
@@ -71,10 +71,10 @@ func MapNFTDataResponse(nft *isc.NFT) *NFTDataResponse {
 }
 
 type NativeTokenIDRegistryResponse struct {
-	NativeTokenRegistryIDs []string
+	NativeTokenRegistryIDs []string `json:"nativeTokenRegistryIds"`
 }
 
 type FoundryOutputResponse struct {
-	FoundryID string
-	Token     AssetsResponse
+	FoundryID string         `json:"foundryId"`
+	Assets    AssetsResponse `json:"assets"`
 }

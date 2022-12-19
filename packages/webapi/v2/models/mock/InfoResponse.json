@@ -1,10 +1,10 @@
 {
-  "Version": "0.3.8",
-  "PublicKey": "0x520c1f0cd3920fbbb8f10fd39c6eb6232c58a6fd47223d162d17150474d566bc",
-  "NetID": "127.0.0.1:4000",
-  "L1Params": {
-    "MaxPayloadSize": 32498,
-    "Protocol": {
+  "version": "0.3.8",
+  "publicKey": "0x520c1f0cd3920fbbb8f10fd39c6eb6232c58a6fd47223d162d17150474d566bc",
+  "netId": "127.0.0.1:4000",
+  "l1Params": {
+    "maxPayloadSize": 32498,
+    "protocol": {
       "version": 2,
       "networkName": "private_tangle1",
       "bech32Hrp": "tst",
@@ -17,13 +17,13 @@
       },
       "tokenSupply": "2779530283277761"
     },
-    "BaseToken": {
-      "Name": "TestCoin",
-      "TickerSymbol": "TEST",
-      "Unit": "TEST",
-      "Subunit": "testies",
-      "Decimals": 6,
-      "UseMetricPrefix": false
+    "baseToken": {
+      "name": "TestCoin",
+      "tickerSymbol": "TEST",
+      "unit": "TEST",
+      "subunit": "testies",
+      "decimals": 6,
+      "useMetricPrefix": false
     }
   }
 }

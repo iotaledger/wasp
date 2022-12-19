@@ -7,8 +7,8 @@ import (
 )
 
 type CommitteeNode struct {
-	AccessAPI string
-	Node      PeeringNodeStatusResponse
+	AccessAPI string                    `json:"accessAPI"`
+	Node      PeeringNodeStatusResponse `json:"node"`
 }
 
 func MapCommitteeNode(status *dto.ChainNodeStatus) CommitteeNode {

@@ -13,25 +13,25 @@ import (
 )
 
 type ControlAddressesResponse struct {
-	GoverningAddress string
-	SinceBlockIndex  uint32
-	StateAddress     string
+	GoverningAddress string `json:"governingAddress"`
+	SinceBlockIndex  uint32 `json:"sinceBlockIndex"`
+	StateAddress     string `json:"stateAddress"`
 }
 
 type BlockInfoResponse struct {
-	AnchorTransactionID         string
-	BlockIndex                  uint32
-	GasBurned                   uint64
-	GasFeeCharged               uint64
-	L1CommitmentHash            string
-	NumOffLedgerRequests        uint16
-	NumSuccessfulRequests       uint16
-	PreviousL1CommitmentHash    string
-	Timestamp                   time.Time
-	TotalBaseTokensInL2Accounts uint64
-	TotalRequests               uint16
-	TotalStorageDeposit         uint64
-	TransactionSubEssenceHash   string
+	AnchorTransactionID         string    `json:"anchorTransactionId"`
+	BlockIndex                  uint32    `json:"blockIndex"`
+	GasBurned                   uint64    `json:"gasBurned"`
+	GasFeeCharged               uint64    `json:"gasFeeCharged"`
+	L1CommitmentHash            string    `json:"l1CommitmentHash"`
+	NumOffLedgerRequests        uint16    `json:"numOffLedgerRequests"`
+	NumSuccessfulRequests       uint16    `json:"numSuccessfulRequests"`
+	PreviousL1CommitmentHash    string    `json:"previousL1CommitmentHash"`
+	Timestamp                   time.Time `json:"timestamp"`
+	TotalBaseTokensInL2Accounts uint64    `json:"totalBaseTokensInL2Accounts"`
+	TotalRequests               uint16    `json:"totalRequests"`
+	TotalStorageDeposit         uint64    `json:"totalStorageDeposit"`
+	TransactionSubEssenceHash   string    `json:"transactionSubEssenceHash"`
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
@@ -60,17 +60,17 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 }
 
 type RequestIDsResponse struct {
-	RequestIDs []string
+	RequestIDs []string `json:"requestIds"`
 }
 
 type BlockReceiptError struct {
-	Hash         string
-	ErrorMessage string
+	Hash         string `json:"hash"`
+	ErrorMessage string `json:"errorMessage"`
 }
 
 type FungibleTokens struct {
-	BaseTokens uint64
-	Tokens     []*NativeToken
+	BaseTokens uint64         `json:"baseTokens"`
+	Tokens     []*NativeToken `json:"nativeTokens"`
 }
 
 func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
@@ -85,8 +85,8 @@ func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
 }
 
 type Allowance struct {
-	FungibleTokens *FungibleTokens
-	NFTs           []string
+	FungibleTokens *FungibleTokens `json:"fungibleTokens"`
+	NFTs           []string        `json:"nfts"`
 }
 
 func MapAllowance(allowance *isc.Allowance) *Allowance {
@@ -107,17 +107,17 @@ func MapAllowance(allowance *isc.Allowance) *Allowance {
 }
 
 type RequestDetail struct {
-	Allowance      *Allowance
-	CallTarget     isc.CallTarget
-	FungibleTokens *FungibleTokens
-	GasGudget      uint64
-	IsEVM          bool
-	IsOffLedger    bool
-	NFT            *NFTDataResponse
-	Params         dict.JSONDict
-	RequestID      string
-	SenderAccount  string
-	TargetAddress  string
+	Allowance      *Allowance       `json:"allowance"`
+	CallTarget     isc.CallTarget   `json:"callTarget"`
+	FungibleTokens *FungibleTokens  `json:"fungibleTokens"`
+	GasGudget      uint64           `json:"gasGudget"`
+	IsEVM          bool             `json:"isEVM"`
+	IsOffLedger    bool             `json:"isOffLedger"`
+	NFT            *NFTDataResponse `json:"nft"`
+	Params         dict.JSONDict    `json:"params"`
+	RequestID      string           `json:"requestId"`
+	SenderAccount  string           `json:"senderAccount"`
+	TargetAddress  string           `json:"targetAddress"`
 }
 
 func MapRequestDetail(request isc.Request) *RequestDetail {
@@ -139,26 +139,26 @@ func MapRequestDetail(request isc.Request) *RequestDetail {
 }
 
 type RequestReceiptResponse struct {
-	BlockIndex    uint32
-	Error         *BlockReceiptError
-	GasBudget     uint64
-	GasBurnLog    *gas.BurnLog
-	GasBurned     uint64
-	GasFeeCharged uint64
-	Request       *RequestDetail
-	RequestIndex  uint16
+	BlockIndex    uint32             `json:"blockIndex"`
+	Error         *BlockReceiptError `json:"error"`
+	GasBudget     uint64             `json:"gasBudget"`
+	GasBurnLog    *gas.BurnLog       `json:"gasBurnLog"`
+	GasBurned     uint64             `json:"gasBurned"`
+	GasFeeCharged uint64             `json:"gasFeeCharged"`
+	Request       *RequestDetail     `json:"request"`
+	RequestIndex  uint16             `json:"requestIndex"`
 }
 
 type BlockReceiptsResponse struct {
-	Receipts []*RequestReceiptResponse
+	Receipts []*RequestReceiptResponse `json:"receipts"`
 }
 
 type RequestProcessedResponse struct {
-	ChainID     string
-	RequestID   string
-	IsProcessed bool
+	ChainID     string `json:"chainId"`
+	RequestID   string `json:"requestId"`
+	IsProcessed bool   `json:"isProcessed"`
 }
 
 type EventsResponse struct {
-	Events []string
+	Events []string `json:"events"`
 }

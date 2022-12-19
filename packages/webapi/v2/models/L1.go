@@ -8,8 +8,8 @@ import (
 )
 
 type Output struct {
-	OutputType iotago.OutputType
-	Bytes      []byte
+	OutputType iotago.OutputType `json:"outputType"`
+	Bytes      []byte            `json:"bytes"`
 }
 
 func OutputFromIotaGoOutput(output iotago.Output) *Output {
@@ -25,10 +25,10 @@ func OutputFromIotaGoOutput(output iotago.Output) *Output {
 }
 
 type OnLedgerRequest struct {
-	ID       string
-	OutputID string
-	Output   *Output
-	Bytes    []byte
+	ID       string  `json:"id"`
+	OutputID string  `json:"outputId"`
+	Output   *Output `json:"output"`
+	Bytes    []byte  `json:"bytes"`
 }
 
 func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
@@ -45,8 +45,8 @@ func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
 }
 
 type InOutput struct {
-	OutputID string
-	Output   *Output
+	OutputID string  `json:"outputId"`
+	Output   *Output `json:"output"`
 }
 
 func InOutputFromISCInOutput(output *nodeconnmetrics.InOutput) *InOutput {
@@ -61,8 +61,8 @@ func InOutputFromISCInOutput(output *nodeconnmetrics.InOutput) *InOutput {
 }
 
 type InStateOutput struct {
-	OutputID string
-	Output   *Output
+	OutputID string  `json:"outputId"`
+	Output   *Output `json:"output"`
 }
 
 func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *InStateOutput {
@@ -77,8 +77,8 @@ func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *I
 }
 
 type StateTransaction struct {
-	StateIndex    uint32
-	TransactionID string
+	StateIndex    uint32 `json:"stateIndex"`
+	TransactionID string `json:"txId"`
 }
 
 func StateTransactionFromISCStateTransaction(transaction *nodeconnmetrics.StateTransaction) *StateTransaction {
@@ -95,8 +95,8 @@ func StateTransactionFromISCStateTransaction(transaction *nodeconnmetrics.StateT
 }
 
 type TxInclusionStateMsg struct {
-	TransactionID string
-	State         string
+	TransactionID string `json:"txId"`
+	State         string `json:"state"`
 }
 
 func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetrics.TxInclusionStateMsg) *TxInclusionStateMsg {
@@ -111,7 +111,7 @@ func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetri
 }
 
 type Transaction struct {
-	TransactionID string
+	TransactionID string `json:"txId"`
 }
 
 func TransactionFromIotaGoTransaction(transaction *iotago.Transaction) *Transaction {

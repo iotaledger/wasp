@@ -8,12 +8,12 @@ import (
 )
 
 type ReceiptError struct {
-	ContractID    isc.Hname
-	ErrorID       uint16
-	ErrorCode     string
-	Message       string
-	MessageFormat string
-	Parameters    []interface{}
+	ContractID    isc.Hname     `json:"contractId"`
+	ErrorID       uint16        `json:"errorId"`
+	ErrorCode     string        `json:"errorCode"`
+	Message       string        `json:"message"`
+	MessageFormat string        `json:"messageFormat"`
+	Parameters    []interface{} `json:"parameters"`
 }
 
 func MapReceiptError(err *isc.VMError) *ReceiptError {

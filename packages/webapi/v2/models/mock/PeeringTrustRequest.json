@@ -1,4 +1,4 @@
 {
-  "NetID":    "localhost:4000",
-  "PublicKey": "0x0000"
+  "netId": "localhost:4000",
+  "publicKey": "0x0000"
 }

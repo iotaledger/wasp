@@ -191,7 +191,7 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 
 	foundryOutputResponse := &models.FoundryOutputResponse{
 		FoundryID: foundryOutputID.ToHex(),
-		Token: models.AssetsResponse{
+		Assets: models.AssetsResponse{
 			BaseTokens: foundryOutput.Amount,
 			Tokens:     models.MapNativeTokens(foundryOutput.NativeTokens),
 		},
