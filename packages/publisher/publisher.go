@@ -2,7 +2,6 @@ package publisher
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -10,11 +9,8 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 var Event = events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -75,49 +71,28 @@ func (p *Publisher) Run(ctx context.Context) {
 func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
 	stateIndex := blockApplied.block.StateIndex()
 	p.log.Debugf("BlockApplied, chainID=%v, stateIndex=%v", blockApplied.chainID.String(), stateIndex)
-	//
-	// Publish notifications on the processed requests.
-	receipts, err := blocklog.RequestReceiptsFromBlock(blockApplied.block)
-	if err != nil {
-		p.log.Warnf("Unable to get receipts from a block: %v", err)
-		return
+
+	eventsCh, errCh := EventsFromBlock(blockApplied.block)
+
+	for {
+		select {
+		case event, ok := <-eventsCh:
+			if !ok {
+				return
+			}
+			p.publish(event.Kind,
+				blockApplied.chainID.String(),
+				event.String(),
+			)
+		case err, ok := <-errCh:
+			if !ok {
+				return
+			}
+			if err != nil {
+				p.log.Error(err.Error())
+			}
+		}
 	}
-	for _, receipt := range receipts {
-		p.publish("request_out",
-			blockApplied.chainID.String(),
-			receipt.Request.ID().String(),
-			strconv.Itoa(int(stateIndex)),
-			strconv.Itoa(len(receipts)),
-		)
-	}
-	//
-	// Publish notifications on the VM events / messages.
-	blocklogStatePartition := subrealm.NewReadOnly(blockApplied.block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
-	events, err := blocklog.GetBlockEventsInternal(blocklogStatePartition, blockApplied.block.StateIndex())
-	if err != nil {
-		p.log.Warnf("Unable to get events from a block: %v", err)
-		return
-	}
-	for _, event := range events {
-		p.publish("vmmsg",
-			blockApplied.chainID.String(),
-			event,
-		)
-	}
-	// TODO: publisher.Publish("state",
-	// 	chainID.String(),
-	// 	strconv.Itoa(int(stateOutput.GetStateIndex())),
-	// 	strconv.Itoa(reqIDsLength),
-	// 	isc.OID(stateOutput.ID()),
-	// 	stateHash.String(),
-	// )
-	// TODO: publisher.Publish("rotate",
-	// 	chainID.String(),
-	// 	strconv.Itoa(int(stateOutput.GetStateIndex())),
-	// 	isc.OID(stateOutput.ID()),
-	// 	stateHash.String(),
-	// )
-	// TODO: publisher.Publish("dismissed_chain", c.chainID.String())
 }
 
 func (p *Publisher) publish(msgType string, parts ...string) {
