@@ -15,7 +15,7 @@ func CompatibilityHTTPErrorHandler(logger *logger.Logger) func(error, echo.Conte
 
 		// Use V1 error handler, if error is a V1 error
 		if _, ok := err.(*httperrors.HTTPError); ok {
-			apierrors.HTTPErrorHandler(err, c)
+			httperrors.HTTPErrorHandler(err, c)
 			return
 		}
 
