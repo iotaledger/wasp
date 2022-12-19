@@ -1,6 +1,8 @@
 package v2
 
 import (
+	"time"
+
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
@@ -60,6 +62,7 @@ func Init(
 	nodeConnectionMetrics nodeconnmetrics.NodeConnectionMetrics,
 	authConfig authentication.AuthConfiguration,
 	nodeOwnerAddresses []string,
+	requestCacheTTL time.Duration,
 ) {
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
@@ -69,7 +72,7 @@ func Init(
 	chainService := services.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
 	registryService := services.NewRegistryService(chainsProvider, chainRecordRegistryProvider)
-	offLedgerService := services.NewOffLedgerService(chainService, networkProvider)
+	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
 	evmService := services.NewEVMService(chainService, networkProvider)

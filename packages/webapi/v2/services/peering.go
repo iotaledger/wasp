@@ -81,7 +81,7 @@ func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string)
 		IsTrusted: true,
 	}
 
-	return mappedIdentity, err
+	return mappedIdentity, nil
 }
 
 func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error) {
@@ -96,7 +96,7 @@ func (p *PeeringService) DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.Peer
 		IsTrusted: false,
 	}
 
-	return mappedIdentity, err
+	return mappedIdentity, nil
 }
 
 func (p *PeeringService) IsPeerTrusted(publicKey *cryptolib.PublicKey) error {

@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/chainutil"
@@ -18,11 +19,11 @@ type OffLedgerService struct {
 	requestCache    *expiringcache.ExpiringCache
 }
 
-func NewOffLedgerService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider) interfaces.OffLedgerService {
+func NewOffLedgerService(chainService interfaces.ChainService, networkProvider peering.NetworkProvider, requestCacheTTL time.Duration) interfaces.OffLedgerService {
 	return &OffLedgerService{
 		chainService:    chainService,
 		networkProvider: networkProvider,
-		requestCache:    expiringcache.New(1337),
+		requestCache:    expiringcache.New(requestCacheTTL),
 	}
 }
 
