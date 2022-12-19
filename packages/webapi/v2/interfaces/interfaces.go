@@ -1,14 +1,18 @@
 package interfaces
 
 import (
+	"context"
 	"net/http"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,7 +37,7 @@ type ChainService interface {
 	GetContracts(chainID isc.ChainID) (dto.ContractsMap, error)
 	GetEVMChainID(chainID isc.ChainID) (uint16, error)
 	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
-	WaitForRequestProcessed(chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
+	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error)
 }
 
 type EVMService interface {
@@ -88,6 +92,7 @@ type UserService interface {
 type VMService interface {
 	CallView(blockIndex uint32, chain chain.Chain, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
 	CallViewByChainID(chainID isc.ChainID, contractName isc.Hname, functionName isc.Hname, params dict.Dict) (dict.Dict, error)
+	ParseReceipt(chain chain.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, *isc.VMError, error)
 	GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (ret *isc.Receipt, vmError *isc.VMError, err error)
 }
 

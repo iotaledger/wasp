@@ -118,9 +118,10 @@ func provide(c *dig.Container) error {
 		}))
 
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			AllowOrigins: []string{"*"},
-			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-			AllowMethods: []string{"*"},
+			AllowOrigins:     []string{"*"},
+			AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+			AllowMethods:     []string{"*"},
+			AllowCredentials: true,
 		}))
 
 		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375

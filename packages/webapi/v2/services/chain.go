@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -145,7 +146,7 @@ func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []b
 	return latestState.Get(kv.Key(stateKey))
 }
 
-func (c *ChainService) WaitForRequestProcessed(chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
+func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, timeout time.Duration) (*isc.Receipt, *isc.VMError, error) {
 	chain := c.chainsProvider().Get(chainID)
 
 	if chain == nil {
@@ -161,34 +162,26 @@ func (c *ChainService) WaitForRequestProcessed(chainID isc.ChainID, requestID is
 		return receipt, vmError, nil
 	}
 
-	// subscribe to event
-	requestProcessed := make(chan bool)
-	attachID := chain.AttachToRequestProcessed(func(rid isc.RequestID) {
-		if rid == requestID {
-			requestProcessed <- true
-		}
-	})
-	defer chain.DetachFromRequestProcessed(attachID)
-
 	adjustedTimeout := timeout
 
 	if timeout > MaxTimeout {
 		adjustedTimeout = MaxTimeout
 	}
 
-	select {
-	case <-requestProcessed:
-		receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
-		if receipt != nil {
-			return receipt, vmError, err
-		}
-		return nil, nil, errors.New("unexpected error, receipt not found after request was processed")
-	case <-time.After(adjustedTimeout):
-		// check again, in case event was triggered just before we subscribed
-		receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
-		if receipt != nil {
-			return receipt, vmError, err
-		}
-		return nil, nil, errors.New("timeout while waiting for request to be processed")
+	timeoutCtx, cancelCtx := context.WithTimeout(ctx, adjustedTimeout)
+	defer cancelCtx()
+	receiptResponse := <-chain.AwaitRequestProcessed(timeoutCtx, requestID, true)
+
+	// If receipt is available, return it
+	if receiptResponse != nil {
+		return c.vmService.ParseReceipt(chain, receiptResponse)
 	}
+
+	// Otherwise, poll it again one last time before failing.
+	receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
+	if receipt != nil {
+		return receipt, vmError, err
+	}
+
+	return nil, nil, errors.New("timeout while waiting for request to be processed")
 }
