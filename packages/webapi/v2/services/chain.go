@@ -153,10 +153,7 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 		return nil, nil, errors.New("chain does not exist")
 	}
 
-	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
-	if err != nil {
-		return nil, vmError, err
-	}
+	receipt, vmError, _ := c.vmService.GetReceipt(chainID, requestID)
 
 	if receipt != nil {
 		return receipt, vmError, nil
@@ -178,7 +175,7 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	}
 
 	// Otherwise, poll it again one last time before failing.
-	receipt, vmError, err = c.vmService.GetReceipt(chainID, requestID)
+	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
 	if receipt != nil {
 		return receipt, vmError, err
 	}

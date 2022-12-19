@@ -1,16 +1,18 @@
 package models
 
 import (
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type ReceiptError struct {
-	ContractID isc.Hname
-	ErrorID    uint16
-	ErrorCode  string
-	Message    string
-	Parameters []interface{}
+	ContractID    isc.Hname
+	ErrorID       uint16
+	ErrorCode     string
+	Message       string
+	MessageFormat string
+	Parameters    []interface{}
 }
 
 func MapReceiptError(err *isc.VMError) *ReceiptError {
@@ -19,16 +21,17 @@ func MapReceiptError(err *isc.VMError) *ReceiptError {
 	}
 
 	return &ReceiptError{
-		ContractID: err.Code().ContractID,
-		ErrorID:    err.Code().ID,
-		ErrorCode:  err.Code().String(),
-		Message:    err.Error(),
-		Parameters: err.Params(),
+		ContractID:    err.Code().ContractID,
+		ErrorID:       err.Code().ID,
+		ErrorCode:     err.Code().String(),
+		Message:       err.Error(),
+		MessageFormat: err.MessageFormat(),
+		Parameters:    err.Params(),
 	}
 }
 
 type ReceiptResponse struct {
-	Request       []byte           `json:"request"`
+	Request       string           `json:"request"`
 	Error         *ReceiptError    `json:"error"`
 	GasBudget     uint64           `json:"gasBudget"`
 	GasBurned     uint64           `json:"gasBurned"`
@@ -39,14 +42,20 @@ type ReceiptResponse struct {
 }
 
 func MapReceiptResponse(receipt *isc.Receipt, resolvedError *isc.VMError) *ReceiptResponse {
+	burnRecords := make([]gas.BurnRecord, 0)
+
+	if receipt.GasBurnLog != nil {
+		burnRecords = append(burnRecords, receipt.GasBurnLog.Records...)
+	}
+
 	return &ReceiptResponse{
-		Request:       receipt.Request,
+		Request:       hexutil.Encode(receipt.Request),
 		Error:         MapReceiptError(resolvedError),
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,
 		GasBudget:     receipt.GasBudget,
 		GasBurned:     receipt.GasBurned,
 		GasFeeCharged: receipt.GasFeeCharged,
-		GasBurnLog:    receipt.GasBurnLog.Records,
+		GasBurnLog:    burnRecords,
 	}
 }

@@ -140,7 +140,7 @@ func (b *BlockLog) GetRequestIDsForBlock(chainID isc.ChainID, blockIndex uint32)
 
 func (b *BlockLog) GetRequestReceipt(chainID isc.ChainID, requestID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(), codec.MakeDict(map[string]interface{}{
-		blocklog.ParamRequestRecord: requestID,
+		blocklog.ParamRequestID: requestID,
 	}))
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func (b *BlockLog) GetRequestReceiptsForBlock(chainID isc.ChainID, blockIndex ui
 
 func (b *BlockLog) IsRequestProcessed(chainID isc.ChainID, requestID isc.RequestID) (bool, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(), codec.MakeDict(map[string]interface{}{
-		blocklog.ParamRequestRecord: requestID,
+		blocklog.ParamRequestID: requestID,
 	}))
 	if err != nil {
 		return false, err
