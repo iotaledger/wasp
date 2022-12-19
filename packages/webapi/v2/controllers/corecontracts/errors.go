@@ -30,7 +30,6 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 	}
 
 	messageFormat, err := c.errors.GetMessageFormat(chainID, contractHname, uint16(errorID))
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

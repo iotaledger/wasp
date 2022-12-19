@@ -11,9 +11,9 @@ import (
 )
 
 type ChainRecord struct {
-	ChainID     ChainIDBech32 `swagger:"desc(ChainID (bech32))"`
-	Active      bool          `swagger:"desc(Whether or not the chain is active)"`
-	AccessNodes []string      `swagger:"desc(list of access nodes public keys, hex encoded)"`
+	ChainID     ChainIDBech32 `json:"chainId" swagger:"desc(ChainID (bech32))"`
+	Active      bool          `json:"active" swagger:"desc(Whether or not the chain is active)"`
+	AccessNodes []string      `json:"accessNodes" swagger:"desc(list of access nodes public keys, hex encoded)"`
 }
 
 func NewChainRecord(rec *registry.ChainRecord) *ChainRecord {

@@ -26,7 +26,6 @@ func (c *Controller) listBlobs(e echo.Context) error {
 	}
 
 	blobList, err := c.blob.ListBlobs(chainID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -63,7 +62,6 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 	fieldKey := e.Param("fieldKey")
 
 	blobValueBytes, err := c.blob.GetBlobValue(chainID, *blobHash, fieldKey)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -91,7 +89,6 @@ func (c *Controller) getBlobInfo(e echo.Context) error {
 	}
 
 	blobInfo, ok, err := c.blob.GetBlobInfo(chainID, *blobHash)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

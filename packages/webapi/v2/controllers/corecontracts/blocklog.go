@@ -50,14 +50,14 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 	if blockIndex == "" {
 		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 	} else {
-		blockIndexNum, err := strconv.ParseUint(e.Param("blockIndex"), 10, 64)
+		var blockIndexNum uint64
+		blockIndexNum, err = strconv.ParseUint(e.Param("blockIndex"), 10, 64)
 		if err != nil {
 			return apierrors.InvalidPropertyError("blockIndex", err)
 		}
 
 		blockInfo, err = c.blocklog.GetBlockInfo(chainID, uint32(blockIndexNum))
 	}
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -79,7 +79,8 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	if blockIndex == "" {
 		requestIDs, err = c.blocklog.GetRequestIDsForLatestBlock(chainID)
 	} else {
-		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
+		var blockIndexNum uint64
+		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
 		if err != nil {
 			return err
 		}
@@ -117,7 +118,6 @@ func MapRequestReceiptResponse(vmService interfaces.VMService, chainID isc.Chain
 		resolved, err := errors.Resolve(receipt.Error, func(contract string, function string, params dict.Dict) (dict.Dict, error) {
 			return vmService.CallViewByChainID(chainID, isc.Hn(contract), isc.Hn(function), params)
 		})
-
 		if err != nil {
 			return nil, err
 		}
@@ -165,21 +165,22 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	blockIndex := e.Param("blockIndex")
 
 	if blockIndex == "" {
-		blockInfo, err := c.blocklog.GetLatestBlockInfo(chainID)
+		var blockInfo *blocklog.BlockInfo
+		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 		if err != nil {
 			return apierrors.ContractExecutionError(err)
 		}
 
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, blockInfo.BlockIndex)
 	} else {
-		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
+		var blockIndexNum uint64
+		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
 		if err != nil {
 			return err
 		}
 
 		receipts, err = c.blocklog.GetRequestReceiptsForBlock(chainID, uint32(blockIndexNum))
 	}
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -235,21 +236,22 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	blockIndex := e.Param("blockIndex")
 
 	if blockIndex == "" {
-		blockInfo, err := c.blocklog.GetLatestBlockInfo(chainID)
+		var blockInfo *blocklog.BlockInfo
+		blockInfo, err = c.blocklog.GetLatestBlockInfo(chainID)
 		if err != nil {
 			return apierrors.ContractExecutionError(err)
 		}
 
 		events, err = c.blocklog.GetEventsForBlock(chainID, blockInfo.BlockIndex)
 	} else {
-		blockIndexNum, err := params.DecodeUInt(e, "blockIndex")
+		var blockIndexNum uint64
+		blockIndexNum, err = params.DecodeUInt(e, "blockIndex")
 		if err != nil {
 			return err
 		}
 
 		events, err = c.blocklog.GetEventsForBlock(chainID, uint32(blockIndexNum))
 	}
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -261,6 +263,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	return e.JSON(http.StatusOK, eventsResponse)
 }
 
+//nolint:unused
 func (c *Controller) getContractEvents(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
@@ -273,7 +276,6 @@ func (c *Controller) getContractEvents(e echo.Context) error {
 	}
 
 	events, err := c.blocklog.GetEventsForContract(chainID, contractHname)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -297,7 +299,6 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 	}
 
 	events, err := c.blocklog.GetEventsForRequest(chainID, *requestID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

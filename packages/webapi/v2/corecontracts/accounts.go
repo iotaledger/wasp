@@ -24,7 +24,6 @@ func NewAccounts(vmService interfaces.VMService) *Accounts {
 
 func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccounts.Hname(), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +32,6 @@ func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 
 	for k := range ret {
 		agentID, err := codec.DecodeAgentID([]byte(k))
-
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +44,6 @@ func (a *Accounts) GetAccounts(chainID isc.ChainID) ([]isc.AgentID, error) {
 
 func (a *Accounts) GetTotalAssets(chainID isc.ChainID) (*isc.FungibleTokens, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewTotalAssets.Hname(), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +55,6 @@ func (a *Accounts) GetAccountBalance(chainID isc.ChainID, agentID isc.AgentID) (
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewBalance.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
-
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +66,6 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewAccountNFTs.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
-
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +73,6 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	nftIDsCollection := collections.NewArray16ReadOnly(ret, accounts.ParamNFTIDs)
 	nftLen, err := nftIDsCollection.Len()
 	nftIDs := make([]iotago.NFTID, 0)
-
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +80,6 @@ func (a *Accounts) GetAccountNFTs(chainID isc.ChainID, agentID isc.AgentID) ([]i
 	for i := uint16(0); i < nftLen; i++ {
 		nftID := iotago.NFTID{}
 		nftIDBytes, err := nftIDsCollection.GetAt(i)
-
 		if err != nil {
 			return nil, err
 		}
@@ -102,13 +95,11 @@ func (a *Accounts) GetAccountNonce(chainID isc.ChainID, agentID isc.AgentID) (ui
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: agentID,
 	}))
-
 	if err != nil {
 		return 0, err
 	}
 
 	nonce, err := ret.Get(accounts.ParamAccountNonce)
-
 	if err != nil {
 		return 0, err
 	}
@@ -120,13 +111,11 @@ func (a *Accounts) GetNFTData(chainID isc.ChainID, nftID iotago.NFTID) (*isc.NFT
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewNFTData.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamNFTID: nftID[:],
 	}))
-
 	if err != nil {
 		return nil, err
 	}
 
 	nftData, err := isc.NFTFromBytes(ret.MustGet(accounts.ParamNFTData))
-
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +136,6 @@ func parseNativeTokenIDFromBytes(data []byte) (*iotago.NativeTokenID, error) {
 
 func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]*iotago.NativeTokenID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +143,6 @@ func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]*iotago.Nati
 	tokenIDs := make([]*iotago.NativeTokenID, len(ret))
 	for k := range ret {
 		parsedTokenID, err := parseNativeTokenIDFromBytes([]byte(k))
-
 		if err != nil {
 			return nil, err
 		}
@@ -170,19 +157,20 @@ func (a *Accounts) GetFoundryOutput(chainID isc.ChainID, serialNumber uint32) (*
 	res, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewFoundryOutput.Hname(), codec.MakeDict(map[string]interface{}{
 		accounts.ParamFoundrySN: serialNumber,
 	}))
-
 	if err != nil {
 		return nil, err
 	}
 
 	outBin, err := res.Get(accounts.ParamFoundryOutputBin)
-
 	if err != nil {
 		return nil, err
 	}
 
 	out := &iotago.FoundryOutput{}
 	_, err = out.Deserialize(outBin, serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }

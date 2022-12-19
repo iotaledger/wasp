@@ -11,8 +11,8 @@ func NewBlobData(data []byte) *BlobData {
 }
 
 type BlobInfo struct {
-	Exists bool      `swagger:"desc(Whether or not the blob exists in the registry)"`
-	Hash   HashValue `swagger:"desc(Hash of the blob)"`
+	Exists bool      `json:"exists" swagger:"desc(Whether or not the blob exists in the registry)"`
+	Hash   HashValue `json:"hash" swagger:"desc(Hash of the blob)"`
 }
 
 func NewBlobInfo(exists bool, hash hashing.HashValue) *BlobInfo {

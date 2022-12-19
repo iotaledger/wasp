@@ -10,7 +10,7 @@ import (
 // PeeringTrustedNode describes single node in the list of trusted peering nodes.
 type PeeringTrustedNode struct {
 	PubKey string `json:"pubKey" swagger:"desc(Public key of the NetID.)"`
-	NetID  string `json:"netID" swagger:"desc(NetID of a peer to trust.)"`
+	NetID  string `json:"netId" swagger:"desc(NetID of a peer to trust.)"`
 }
 
 func NewPeeringTrustedNode(tp *peering.TrustedPeer) *PeeringTrustedNode {

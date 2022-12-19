@@ -4,10 +4,10 @@
 package model
 
 type NodeOwnerCertificateRequest struct {
-	NodePubKey   Bytes   `swagger:"desc(Node pub key. (base64))"`
-	OwnerAddress Address `swagger:"desc(Node owner address. (bech32))"`
+	NodePubKey   Bytes   `json:"nodePubKey" swagger:"desc(Node pub key. (base64))"`
+	OwnerAddress Address `json:"ownerAddress" swagger:"desc(Node owner address. (bech32))"`
 }
 
 type NodeOwnerCertificateResponse struct {
-	Certificate Bytes `swagger:"desc(Certificate stating the ownership. (base64))"`
+	Certificate Bytes `json:"certificate" swagger:"desc(Certificate stating the ownership. (base64))"`
 }

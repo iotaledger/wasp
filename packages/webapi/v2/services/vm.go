@@ -3,16 +3,14 @@ package services
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
-	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
@@ -48,7 +46,6 @@ func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*i
 
 	blocklog := corecontracts.NewBlockLog(v)
 	receipt, err := blocklog.GetRequestReceipt(chainID, requestID)
-
 	if err != nil {
 		return nil, nil, err
 	}

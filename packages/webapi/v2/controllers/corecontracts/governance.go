@@ -11,19 +11,19 @@ import (
 )
 
 type gasFeePolicy struct {
-	GasFeeTokenID     string `swagger:"desc(The gas fee token id. Empty if base token.)"`
-	GasPerToken       uint64 `swagger:"desc(The amount of gas per token.)"`
-	ValidatorFeeShare uint8  `swagger:"desc(The validator fee share.)"`
+	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.)"`
+	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.)"`
+	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.)"`
 }
 
 type GovChainInfoResponse struct {
-	ChainID         string       `swagger:"desc(ChainID (Bech32-encoded).)"`
-	ChainOwnerID    string       `swagger:"desc(The chain owner address (Bech32-encoded).)"`
-	Description     string       `swagger:"desc(The description of the chain.)"`
-	GasFeePolicy    gasFeePolicy `json:"GasFeePolicy"`
-	MaxBlobSize     uint32       `swagger:"desc(The maximum contract blob size.)"`
-	MaxEventSize    uint16       `swagger:"desc(The maximum event size.)"`                   // TODO: Clarify
-	MaxEventsPerReq uint16       `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
+	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).)"`
+	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).)"`
+	Description     string       `json:"description" swagger:"desc(The description of the chain.)"`
+	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
+	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.)"`
+	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.)"`                      // TODO: Clarify
+	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
 func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {
@@ -57,7 +57,6 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	}
 
 	chainInfo, err := c.governance.GetChainInfo(chainID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

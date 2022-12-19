@@ -24,14 +24,12 @@ func (e *Errors) GetMessageFormat(chainID isc.ChainID, contractID isc.Hname, err
 	ret, err := e.vmService.CallViewByChainID(chainID, errors.Contract.Hname(), errors.ViewGetErrorMessageFormat.Hname(), codec.MakeDict(map[string]interface{}{
 		errors.ParamErrorCode: errorCode.Bytes(),
 	}))
-
 	if err != nil {
 		return "", err
 	}
 
 	resultDecoder := kvdecoder.New(ret)
 	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
-
 	if err != nil {
 		return "", err
 	}

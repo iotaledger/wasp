@@ -22,7 +22,6 @@ func (b *Blob) GetBlobInfo(chainID isc.ChainID, blobHash hashing.HashValue) (map
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewGetBlobInfo.Hname(), codec.MakeDict(map[string]interface{}{
 		blob.ParamHash: blobHash[:],
 	}))
-
 	if err != nil {
 		return nil, false, err
 	}
@@ -44,7 +43,6 @@ func (b *Blob) GetBlobValue(chainID isc.ChainID, blobHash hashing.HashValue, key
 		blob.ParamHash:  blobHash[:],
 		blob.ParamField: []byte(key),
 	}))
-
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +52,6 @@ func (b *Blob) GetBlobValue(chainID isc.ChainID, blobHash hashing.HashValue, key
 
 func (b *Blob) ListBlobs(chainID isc.ChainID) (map[hashing.HashValue]uint32, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blob.Contract.Hname(), blob.ViewListBlobs.Hname(), nil)
-
 	if err != nil {
 		return nil, err
 	}

@@ -35,37 +35,37 @@ func MapCommitteeNodes(status []*dto.ChainNodeStatus) []CommitteeNode {
 }
 
 type CommitteeInfoResponse struct {
-	AccessNodes    []CommitteeNode `swagger:"desc(A list of all access nodes and their peering info.)"`
-	Active         bool            `swagger:"desc(Whether or not the chain is active.)"`
-	CandidateNodes []CommitteeNode `swagger:"desc(A list of all candidate nodes and their peering info.)"`
-	ChainID        string          `swagger:"desc(ChainID (Bech32-encoded).)"`
-	CommitteeNodes []CommitteeNode `swagger:"desc(A list of all committee nodes and their peering info.)"`
-	StateAddress   string          `swagger:"desc(State address, if we are part of it.)"`
+	AccessNodes    []CommitteeNode `json:"accessNodes" swagger:"desc(A list of all access nodes and their peering info.)"`
+	Active         bool            `json:"active" swagger:"desc(Whether or not the chain is active.)"`
+	CandidateNodes []CommitteeNode `json:"candidateNodes" swagger:"desc(A list of all candidate nodes and their peering info.)"`
+	ChainID        string          `json:"chainId" swagger:"desc(ChainID (Bech32-encoded).)"`
+	CommitteeNodes []CommitteeNode `json:"committeeNodes" swagger:"desc(A list of all committee nodes and their peering info.)"`
+	StateAddress   string          `json:"stateAddress" swagger:"desc(State address, if we are part of it.)"`
 }
 
 type ContractInfoResponse struct {
-	Description string            `swagger:"desc(The description of the contract.)"`
-	HName       isc.Hname         `swagger:"desc(The id (HName(name)) of the contract.)"`
-	Name        string            `swagger:"desc(The name of the contract.)"`
-	ProgramHash hashing.HashValue `swagger:"desc(The hash of the contract.)"`
+	Description string            `json:"description" swagger:"desc(The description of the contract.)"`
+	HName       isc.Hname         `json:"hName" swagger:"desc(The id (HName(name)) of the contract.)"`
+	Name        string            `json:"name" swagger:"desc(The name of the contract.)"`
+	ProgramHash hashing.HashValue `json:"programHash" swagger:"desc(The hash of the contract.)"`
 }
 
 type gasFeePolicy struct {
-	GasFeeTokenID     string `swagger:"desc(The gas fee token id. Empty if base token.)"`
-	GasPerToken       uint64 `swagger:"desc(The amount of gas per token.)"`
-	ValidatorFeeShare uint8  `swagger:"desc(The validator fee share.)"`
+	GasFeeTokenID     string `json:"gasFeeTokenId" swagger:"desc(The gas fee token id. Empty if base token.)"`
+	GasPerToken       uint64 `json:"gasPerToken" swagger:"desc(The amount of gas per token.)"`
+	ValidatorFeeShare uint8  `json:"validatorFeeShare" swagger:"desc(The validator fee share.)"`
 }
 
 type ChainInfoResponse struct {
-	IsActive        bool         `swagger:"desc(Whether or not the chain is active.)"`
-	ChainID         string       `swagger:"desc(ChainID (Bech32-encoded).)"`
-	EVMChainID      uint16       `swagger:"desc(The EVM chain ID)"`
-	ChainOwnerID    string       `swagger:"desc(The chain owner address (Bech32-encoded).)"`
-	Description     string       `swagger:"desc(The description of the chain.)"`
-	GasFeePolicy    gasFeePolicy `json:"GasFeePolicy"`
-	MaxBlobSize     uint32       `swagger:"desc(The maximum contract blob size.)"`
-	MaxEventSize    uint16       `swagger:"desc(The maximum event size.)"`                   // TODO: Clarify
-	MaxEventsPerReq uint16       `swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
+	IsActive        bool         `json:"isActive" swagger:"desc(Whether or not the chain is active.)"`
+	ChainID         string       `json:"chainID" swagger:"desc(ChainID (Bech32-encoded).)"`
+	EVMChainID      uint16       `json:"evmChainId" swagger:"desc(The EVM chain ID)"`
+	ChainOwnerID    string       `json:"chainOwnerId" swagger:"desc(The chain owner address (Bech32-encoded).)"`
+	Description     string       `json:"description" swagger:"desc(The description of the chain.)"`
+	GasFeePolicy    gasFeePolicy `json:"gasFeePolicy"`
+	MaxBlobSize     uint32       `json:"maxBlobSize" swagger:"desc(The maximum contract blob size.)"`
+	MaxEventSize    uint16       `json:"maxEventSize" swagger:"desc(The maximum event size.)"`                      // TODO: Clarify
+	MaxEventsPerReq uint16       `json:"maxEventsPerReq" swagger:"desc(The maximum amount of events per request.)"` // TODO: Clarify
 }
 
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
@@ -95,5 +95,5 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 }
 
 type RequestIDResponse struct {
-	RequestID string `swagger:"desc(The request ID of the given transaction ID.)"`
+	RequestID string `json:"requestId" swagger:"desc(The request ID of the given transaction ID.)"`
 }

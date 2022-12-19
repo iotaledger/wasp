@@ -17,7 +17,6 @@ func (c *Controller) getAccounts(e echo.Context) error {
 	}
 
 	accounts, err := c.accounts.GetAccounts(chainID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -40,7 +39,6 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 	}
 
 	assets, err := c.accounts.GetTotalAssets(chainID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -65,7 +63,6 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	}
 
 	assets, err := c.accounts.GetAccountBalance(chainID, agentID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -90,7 +87,6 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 	}
 
 	nfts, err := c.accounts.GetAccountNFTs(chainID, agentID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -118,7 +114,6 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 	}
 
 	nonce, err := c.accounts.GetAccountNonce(chainID, agentID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -142,7 +137,6 @@ func (c *Controller) getNFTData(e echo.Context) error {
 	}
 
 	nftData, err := c.accounts.GetNFTData(chainID, *nftID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -159,7 +153,6 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 	}
 
 	registries, err := c.accounts.GetNativeTokenIDRegistry(chainID)
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -187,13 +180,11 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 	}
 
 	foundryOutput, err := c.accounts.GetFoundryOutput(chainID, uint32(serialNumber))
-
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
 
 	foundryOutputID, err := foundryOutput.ID()
-
 	if err != nil {
 		return apierrors.InvalidPropertyError("FoundryOutput.ID", err)
 	}

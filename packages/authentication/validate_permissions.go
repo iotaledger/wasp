@@ -15,13 +15,11 @@ func ValidatePermissions(permissions []string) func(next echo.HandlerFunc) echo.
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
 			auth := e.Get("auth")
-
 			if auth == nil {
 				return e.JSON(http.StatusUnauthorized, ValidationError{Error: "Invalid token"})
 			}
 
 			authContext, ok := auth.(*AuthContext)
-
 			if !ok {
 				return e.JSON(http.StatusUnauthorized, ValidationError{Error: "Invalid token"})
 			}

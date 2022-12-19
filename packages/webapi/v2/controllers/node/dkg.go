@@ -22,7 +22,6 @@ func parsePeerPubKeys(dkgRequestModel models.DKSharesPostRequest) ([]*cryptolib.
 
 	for i, publicKey := range dkgRequestModel.PeerPubKeys {
 		peerPubKey, err := cryptolib.NewPublicKeyFromString(publicKey)
-
 		if err != nil {
 			invalidPeerPubKeys = append(invalidPeerPubKeys, publicKey)
 		}

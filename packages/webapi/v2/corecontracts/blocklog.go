@@ -75,7 +75,6 @@ func handleBlockInfo(info dict.Dict) (*blocklog.BlockInfo, error) {
 
 func (b *BlockLog) GetLatestBlockInfo(chainID isc.ChainID) (*blocklog.BlockInfo, error) {
 	ret, err := b.vmService.CallViewByChainID(chainID, blocklog.Contract.Hname(), blocklog.ViewGetBlockInfo.Hname(), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +225,6 @@ func (b *BlockLog) IsRequestProcessed(chainID isc.ChainID, requestID isc.Request
 func eventsFromViewResult(viewResult dict.Dict) ([]string, error) {
 	eventCollection := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
 	eventCount, err := eventCollection.Len()
-
 	if err != nil {
 		return nil, err
 	}

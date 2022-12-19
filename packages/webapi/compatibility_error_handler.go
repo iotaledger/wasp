@@ -8,16 +8,13 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 )
 
-/*
-CompatibilityHTTPErrorHandler differentiates V1/V2 error types and uses their respective handler functions.
-*/
+// CompatibilityHTTPErrorHandler differentiates V1/V2 error types and uses their respective handler functions.
 func CompatibilityHTTPErrorHandler(logger *logger.Logger) func(error, echo.Context) {
 	return func(err error, c echo.Context) {
-		logger.Errorf("Compatability Error Handler: %v", err)
-		// Use V1 error handler, if error is a V1 error
-		_, ok := err.(*httperrors.HTTPError)
+		logger.Errorf("Compatibility Error Handler: %v", err)
 
-		if ok {
+		// Use V1 error handler, if error is a V1 error
+		if _, ok := err.(*httperrors.HTTPError); ok {
 			apierrors.HTTPErrorHandler(err, c)
 			return
 		}
