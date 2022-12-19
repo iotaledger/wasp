@@ -34,13 +34,13 @@ COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
   --mount=type=cache,target=/root/go/pkg/mod \
-  go build -o /app/wasp -a -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" .
+  go build -o /app/wasp -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
 
 WORKDIR /scratch/tools/wasp-cli
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
   --mount=type=cache,target=/root/go/pkg/mod \
-  go build -o /app/wasp-cli -a -tags=${BUILD_TAGS} -ldflags="${BUILD_LD_FLAGS}" .
+  go build -o /app/wasp-cli -a -tags=${BUILD_TAGS} -ldflags=${BUILD_LD_FLAGS} .
 
 # Wasp build
 FROM gcr.io/distroless/cc

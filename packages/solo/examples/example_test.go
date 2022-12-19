@@ -3,10 +3,11 @@ package examples
 // import (
 // 	"testing"
 
+// 	"github.com/stretchr/testify/require"
+
 // 	"github.com/iotaledger/wasp/packages/isc"
 // 	"github.com/iotaledger/wasp/packages/solo"
 // 	"github.com/iotaledger/wasp/packages/vm/core"
-// 	"github.com/stretchr/testify/require"
 // )
 
 // func TestExample1(t *testing.T) {

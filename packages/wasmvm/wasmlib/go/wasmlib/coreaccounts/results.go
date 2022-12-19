@@ -164,6 +164,46 @@ func (s MutableBalanceResults) Balances() MapTokenIDToMutableBigInt {
 	return MapTokenIDToMutableBigInt(s)
 }
 
+type ImmutableBalanceBaseTokenResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBalanceBaseTokenResults) Balance() wasmtypes.ScImmutableUint64 {
+	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ResultBalance))
+}
+
+type MutableBalanceBaseTokenResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func NewMutableBalanceBaseTokenResults(results *wasmlib.ScDict) MutableBalanceBaseTokenResults {
+	return MutableBalanceBaseTokenResults{proxy: results.AsProxy()}
+}
+
+func (s MutableBalanceBaseTokenResults) Balance() wasmtypes.ScMutableUint64 {
+	return wasmtypes.NewScMutableUint64(s.proxy.Root(ResultBalance))
+}
+
+type ImmutableBalanceNativeTokenResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func (s ImmutableBalanceNativeTokenResults) Tokens() wasmtypes.ScImmutableBigInt {
+	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ResultTokens))
+}
+
+type MutableBalanceNativeTokenResults struct {
+	proxy wasmtypes.Proxy
+}
+
+func NewMutableBalanceNativeTokenResults(results *wasmlib.ScDict) MutableBalanceNativeTokenResults {
+	return MutableBalanceNativeTokenResults{proxy: results.AsProxy()}
+}
+
+func (s MutableBalanceNativeTokenResults) Tokens() wasmtypes.ScMutableBigInt {
+	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ResultTokens))
+}
+
 type ImmutableFoundryOutputResults struct {
 	proxy wasmtypes.Proxy
 }

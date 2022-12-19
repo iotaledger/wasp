@@ -130,9 +130,12 @@ func TestRPCGetTransactionCount(t *testing.T) {
 func TestRPCGetBlockByNumber(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	require.EqualValues(t, 0, env.BlockByNumber(big.NewInt(0)).Number().Uint64())
 	env.deployStorageContract(creator)
+	require.EqualValues(t, 0, env.BlockByNumber(big.NewInt(0)).Number().Uint64())
 	require.EqualValues(t, 1, env.BlockByNumber(big.NewInt(1)).Number().Uint64())
+	require.EqualValues(t, 2, env.BlockByNumber(big.NewInt(2)).Number().Uint64())
+	// latest:
+	require.EqualValues(t, 2, env.BlockByNumber(nil).Number().Uint64())
 }
 
 func TestRPCGetBlockByHash(t *testing.T) {

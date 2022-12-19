@@ -2,12 +2,12 @@ package hashing
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
 	"math/rand"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 

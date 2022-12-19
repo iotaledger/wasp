@@ -1,6 +1,6 @@
 GIT_COMMIT_SHA := $(shell git rev-list -1 HEAD)
 BUILD_TAGS = rocksdb
-BUILD_LD_FLAGS = "-X github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)"
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/packages/wasp.VersionHash=$(GIT_COMMIT_SHA)"
 
 #
 # You can override these e.g. as
@@ -64,10 +64,10 @@ lint:
 gofumpt-list:
 	gofumpt -l ./
 
-docker-build:
-	docker build \
+docker-build: compile-solidity
+	DOCKER_BUILDKIT=1 docker build \
 		--build-arg BUILD_TAGS=${BUILD_TAGS} \
-		--build-arg BUILD_LD_FLAGS='${BUILD_LD_FLAGS}' \
+		--build-arg BUILD_LD_FLAGS=${BUILD_LD_FLAGS} \
 		.
 
 deps-versions:

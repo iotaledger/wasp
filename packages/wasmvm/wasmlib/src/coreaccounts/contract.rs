@@ -61,6 +61,18 @@ pub struct BalanceCall {
     pub results: ImmutableBalanceResults,
 }
 
+pub struct BalanceBaseTokenCall {
+    pub func:    ScView,
+    pub params:  MutableBalanceBaseTokenParams,
+    pub results: ImmutableBalanceBaseTokenResults,
+}
+
+pub struct BalanceNativeTokenCall {
+    pub func:    ScView,
+    pub params:  MutableBalanceNativeTokenParams,
+    pub results: ImmutableBalanceNativeTokenResults,
+}
+
 pub struct FoundryOutputCall {
     pub func:    ScView,
     pub params:  MutableFoundryOutputParams,
@@ -177,6 +189,28 @@ impl ScFuncs {
             func:    ScView::new(HSC_NAME, HVIEW_BALANCE),
             params:  MutableBalanceParams { proxy: Proxy::nil() },
             results: ImmutableBalanceResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn balance_base_token(_ctx: &dyn ScViewCallContext) -> BalanceBaseTokenCall {
+        let mut f = BalanceBaseTokenCall {
+            func:    ScView::new(HSC_NAME, HVIEW_BALANCE_BASE_TOKEN),
+            params:  MutableBalanceBaseTokenParams { proxy: Proxy::nil() },
+            results: ImmutableBalanceBaseTokenResults { proxy: Proxy::nil() },
+        };
+        ScView::link_params(&mut f.params.proxy, &f.func);
+        ScView::link_results(&mut f.results.proxy, &f.func);
+        f
+    }
+
+    pub fn balance_native_token(_ctx: &dyn ScViewCallContext) -> BalanceNativeTokenCall {
+        let mut f = BalanceNativeTokenCall {
+            func:    ScView::new(HSC_NAME, HVIEW_BALANCE_NATIVE_TOKEN),
+            params:  MutableBalanceNativeTokenParams { proxy: Proxy::nil() },
+            results: ImmutableBalanceNativeTokenResults { proxy: Proxy::nil() },
         };
         ScView::link_params(&mut f.params.proxy, &f.func);
         ScView::link_results(&mut f.results.proxy, &f.func);

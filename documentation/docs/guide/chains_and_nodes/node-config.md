@@ -20,6 +20,13 @@ keywords:
 You can configure your node/s using the [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
 configuration file. If you plan to run several nodes in the same host, you will need to adjust the port configuration.
 
+
+:::tip
+
+This page lists and explains the most important config options. A complete list can be found under [Configuration](../../configuration.md)).
+
+::::
+
 ## Hornet
 
 Wasp requires a Hornet node to communicate with the L1 Tangle.

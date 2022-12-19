@@ -18,7 +18,6 @@ services:
       - "--dashboard.auth.scheme=none"
       - "--webapi.auth.scheme=none"
       - "--inx.address=hornet-nest:9029"
-      - "--database.directory=/app/waspdb"
       - "--logger.level=debug"
     container_name: wasp
     depends_on:

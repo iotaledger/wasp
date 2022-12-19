@@ -329,7 +329,7 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 
 func (c *l1client) GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.OutputID, iotago.Output, error) {
 	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
-	outputID, stateOutput, err := c.indexerClient.Alias(ctxWithTimeout, aliasID)
+	outputID, stateOutput, _, err := c.indexerClient.Alias(ctxWithTimeout, aliasID)
 	cancelContext()
 	return *outputID, stateOutput, err
 }

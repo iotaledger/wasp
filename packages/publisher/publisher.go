@@ -10,6 +10,8 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -90,7 +92,8 @@ func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
 	}
 	//
 	// Publish notifications on the VM events / messages.
-	events, err := blocklog.GetBlockEventsInternal(blockApplied.block.MutationsReader(), blockApplied.block.StateIndex())
+	blocklogStatePartition := subrealm.NewReadOnly(blockApplied.block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
+	events, err := blocklog.GetBlockEventsInternal(blocklogStatePartition, blockApplied.block.StateIndex())
 	if err != nil {
 		p.log.Warnf("Unable to get events from a block: %v", err)
 		return

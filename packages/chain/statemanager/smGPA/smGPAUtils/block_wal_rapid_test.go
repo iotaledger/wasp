@@ -11,7 +11,6 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
@@ -20,7 +19,6 @@ import (
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
 	bw                  BlockWAL
 	factory             *BlockFactory
-	ao                  *isc.AliasOutputWithID
 	lastBlockCommitment *state.L1Commitment
 	blocks              map[state.BlockHash]state.Block
 	blocksMoved         []state.BlockHash
@@ -31,7 +29,6 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 func (bwtsmT *blockWALTestSM) Init(t *rapid.T) {
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
-	bwtsmT.ao = bwtsmT.factory.GetOriginOutput()
 	bwtsmT.lastBlockCommitment = state.OriginL1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
 	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
@@ -51,8 +48,7 @@ func (bwtsmT *blockWALTestSM) Check(t *rapid.T) {
 }
 
 func (bwtsmT *blockWALTestSM) WriteBlock(t *rapid.T) {
-	block, aliasOutput := bwtsmT.factory.GetNextBlock(bwtsmT.lastBlockCommitment, bwtsmT.ao)
-	bwtsmT.ao = aliasOutput
+	block := bwtsmT.factory.GetNextBlock(bwtsmT.lastBlockCommitment)
 	bwtsmT.lastBlockCommitment = block.L1Commitment()
 	bwtsmT.blocks[bwtsmT.lastBlockCommitment.BlockHash()] = block
 	err := bwtsmT.bw.Write(block)

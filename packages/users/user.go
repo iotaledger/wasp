@@ -2,8 +2,7 @@ package users
 
 import (
 	"encoding/hex"
-
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"

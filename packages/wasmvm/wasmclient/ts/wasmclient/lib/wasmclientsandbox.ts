@@ -7,23 +7,30 @@ import { panic } from 'wasmlib';
 import { IClientService } from './';
 
 export class WasmClientSandbox implements wasmlib.ScHost {
-    chID: wasmlib.ScChainID;
+    chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
     eventDone: bool = false;
     eventHandlers: wasmlib.IEventHandlers[] = [];
     eventReceived: bool = false;
+    hrp: string = "";
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
-    ReqID: wasmlib.ScRequestID = wasmlib.requestIDFromBytes(new Uint8Array(0));
+    ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
     scName: string;
     scHname: wasmlib.ScHname;
     svcClient: IClientService;
 
-    public constructor(svcClient: IClientService, chainID: wasmlib.ScChainID, scName: string) {
+    public constructor(svcClient: IClientService, chain: string, scName: string) {
         this.svcClient = svcClient;
-        this.chID = chainID;
         this.scName = scName;
         this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(scName));
+        const [hrp, _addr, err] = isc.Codec.bech32Decode(chain);
+        if (err != null) {
+            this.Err = err;
+            return this;
+        }
+        this.hrp = hrp;
+        this.chainID = wasmlib.chainIDFromString(chain);
     }
 
     public exportName(index: i32, name: string) {
@@ -74,8 +81,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
         }
-        const res = this.svcClient.callViewByHname(this.chID, req.contract, req.function, req.params);
-        this.Err = this.svcClient.Err();
+        const [res, err] = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
+        this.Err = err;
         if (this.Err != null) {
             return new Uint8Array(0);
         }
@@ -88,26 +95,31 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return new Uint8Array(0);
         }
         const req = wasmlib.PostRequest.fromBytes(args);
-        if (req.chainID != this.chID) {
+        if (!req.chainID.equals(this.chainID)) {
             this.Err = 'unknown chain id: ' + req.chainID.toString();
             return new Uint8Array(0);
         }
-        if (req.contract != this.scHname) {
+        if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract:' + req.contract.toString();
             return new Uint8Array(0);
         }
         const scAssets = new wasmlib.ScAssets(req.transfer);
         this.nonce++;
-        this.ReqID = this.svcClient.postRequest(this.chID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
-        this.Err = this.svcClient.Err();
+        const [reqId, err] = this.svcClient.postRequest(this.chainID, req.contract, req.function, req.params, scAssets, this.keyPair, this.nonce);
+        this.ReqID = reqId;
+        this.Err = err;
         return new Uint8Array(0);
     }
 
     public fnUtilsBech32Decode(args: Uint8Array): Uint8Array {
         const bech32 = wasmlib.stringFromBytes(args);
-        const addr = isc.Codec.bech32Decode(bech32);
-        if (addr == null) {
-            this.Err = 'Invalid bech32 address encoding';
+        const [hrp, addr, err] = isc.Codec.bech32Decode(bech32);
+        if (err != null) {
+            this.Err = err;
+            return new Uint8Array(0);
+        }
+        if (hrp != this.hrp) {
+            this.Err = "invalid protocol prefix: " + hrp;
             return new Uint8Array(0);
         }
         return addr.toBytes();
@@ -115,7 +127,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     public fnUtilsBech32Encode(args: Uint8Array): Uint8Array {
         const addr = wasmlib.addressFromBytes(args);
-        const bech32 = isc.Codec.bech32Encode(addr);
+        const bech32 = isc.Codec.bech32Encode(this.hrp, addr);
         return wasmlib.stringToBytes(bech32);
     }
 

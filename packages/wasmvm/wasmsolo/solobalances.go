@@ -6,11 +6,11 @@ package wasmsolo
 import (
 	"fmt"
 	"sort"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/solo"
 )
 
 type SoloBalances struct {
@@ -104,7 +104,7 @@ func (bal *SoloBalances) Add(agent *SoloAgent, balance uint64) {
 	bal.accounts[agent.AgentID().String()] += balance
 }
 
-func (bal *SoloBalances) VerifyBalances(t *testing.T) {
+func (bal *SoloBalances) VerifyBalances(t solo.TestContext) {
 	bal.dumpBalances()
 	ctx := bal.ctx
 	require.EqualValues(t, bal.Account, ctx.Balance(ctx.Account()))

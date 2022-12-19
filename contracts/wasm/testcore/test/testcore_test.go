@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
