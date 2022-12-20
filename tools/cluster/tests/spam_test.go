@@ -26,7 +26,7 @@ func TestSpamOnledger(t *testing.T) {
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
 	// env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
-	env := setupAdvancedInccounterTest(t, 1, []int{0})
+	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	// send requests from many different wallets to speed things up
 	numAccounts := 1000
@@ -102,7 +102,7 @@ func TestSpamOffLedger(t *testing.T) {
 	const numRequests = 100_000
 
 	// single wasp node committee, to test if publishing can break state transitions
-	env := setupAdvancedInccounterTest(t, 1, []int{0})
+	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
@@ -180,7 +180,7 @@ func TestSpamOffLedger(t *testing.T) {
 
 func TestSpamCallViewWasm(t *testing.T) {
 	testutil.RunHeavy(t)
-	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

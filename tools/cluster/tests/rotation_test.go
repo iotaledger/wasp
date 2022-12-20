@@ -23,7 +23,7 @@ import (
 )
 
 func TestBasicRotation(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 6, []int{0, 1, 2, 3})
+	env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
 	newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
 	require.NoError(t, err)

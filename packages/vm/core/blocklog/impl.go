@@ -23,7 +23,8 @@ var Processor = Contract.Processor(initialize,
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
-	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
+	SaveNextBlockInfo(ctx.State(), &BlockInfo{
+		BlockIndex:            0,
 		Timestamp:             ctx.Timestamp(),
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
@@ -31,7 +32,6 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		PreviousL1Commitment:  *state.OriginL1Commitment(),
 		L1Commitment:          nil, // not known yet
 	})
-	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -58,9 +58,8 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 // ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
-	data, found, err := getBlockInfoDataInternal(ctx.StateR(), blockIndex)
+	data, err := getBlockInfoBytes(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
 	return dict.Dict{
 		ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		ParamBlockInfo:  data,
@@ -169,7 +168,9 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	events, err := GetBlockEventsInternal(ctx.StateR(), blockIndex)
+	blockInfo, err := GetBlockInfo(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
+	events, err := GetEventsByBlockIndex(ctx.StateR(), blockIndex, blockInfo.TotalRequests)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()

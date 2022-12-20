@@ -17,11 +17,9 @@ import (
 )
 
 // SaveNextBlockInfo appends block info and returns its index
-func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
+func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) {
 	registry := collections.NewArray32(partition, prefixBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
-	ret := registry.MustLen() - 1
-	return ret
 }
 
 // UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
@@ -243,51 +241,8 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 	}
 }
 
-func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
-	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]string, 0)
-	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
-	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		eventIndex := uint16(0)
-		for {
-			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
-			msg, err := events.GetAt(key.Bytes())
-			if err != nil {
-				return nil, err
-			}
-			if msg == nil {
-				break
-			}
-			ret = append(ret, string(msg))
-			eventIndex++
-		}
-	}
-	return ret, nil
-}
-
-func getRequestLogRecordsForBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
-	if blockIndex == 0 {
-		return nil, nil
-	}
-	blockInfoBin, found, err := getBlockInfoDataInternal(partition, blockIndex)
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, nil
-	}
-	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBin)
-	if err != nil {
-		return nil, err
-	}
-	return blockInfo, nil
-}
-
 func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32) ([][]byte, bool, error) {
-	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
+	blockInfo, err := GetBlockInfo(partition, blockIndex)
 	if err != nil || blockInfo == nil {
 		return nil, false, err
 	}
@@ -302,24 +257,8 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 	return ret, true, nil
 }
 
-func getBlockInfoDataInternal(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
-	data, err := collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
-	return data, err == nil, err
-}
-
-func getBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
-	data, ok, err := getBlockInfoDataInternal(partition, blockIndex)
-	if err != nil {
-		return nil, xerrors.Errorf("getBlockInfo: %w", err)
-	}
-	if !ok {
-		return nil, xerrors.Errorf("getBlockInfo: can't find block record #%d", blockIndex)
-	}
-	ret, err := BlockInfoFromBytes(blockIndex, data)
-	if err != nil {
-		return nil, xerrors.Errorf("getBlockInfo: %w", err)
-	}
-	return ret, nil
+func getBlockInfoBytes(partition kv.KVStoreReader, blockIndex uint32) ([]byte, error) {
+	return collections.NewArray32ReadOnly(partition, prefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
@@ -337,7 +276,7 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 }
 
 func GetOutputID(stateR kv.KVStoreReader, stateIndex uint32, outputIndex uint16) (iotago.OutputID, error) {
-	blockInfo, err := getBlockInfo(stateR, stateIndex)
+	blockInfo, err := GetBlockInfo(stateR, stateIndex)
 	if err != nil {
 		return iotago.OutputID{}, err
 	}
