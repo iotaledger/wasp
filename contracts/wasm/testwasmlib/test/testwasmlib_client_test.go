@@ -131,8 +131,8 @@ func TestClientRandom(t *testing.T) {
 		f.Func.Post()
 		require.NoError(t, svc.Err)
 
-		err := svc.WaitRequest()
-		require.NoError(t, err)
+		svc.WaitRequest()
+		require.NoError(t, svc.Err)
 
 		// get current random value
 		v := testwasmlib.ScFuncs.GetRandom(svc)
@@ -173,12 +173,12 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 	f.Func.Post()
 	require.NoError(t, svc.Err)
 
-	err := svc.WaitRequest()
-	require.NoError(t, err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
 
 	// make sure we wait for the event to show up
-	err = svc.WaitEvent()
-	require.NoError(t, err)
+	svc.WaitEvent()
+	require.NoError(t, svc.Err)
 
 	require.EqualValues(t, param, *name)
 }
@@ -197,8 +197,8 @@ func TestClientArray(t *testing.T) {
 	f.Params.Value().SetValue("Dire Straits")
 	f.Func.Post()
 	require.NoError(t, svc.Err)
-	err := svc.WaitRequest()
-	require.NoError(t, err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
 
 	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
 	v.Params.Name().SetValue("Bands")
@@ -210,8 +210,8 @@ func TestClientArray(t *testing.T) {
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, svc.Err)
-	err = svc.WaitRequest()
-	require.NoError(t, err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
 
 	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
 	v.Params.Name().SetValue("Bands")

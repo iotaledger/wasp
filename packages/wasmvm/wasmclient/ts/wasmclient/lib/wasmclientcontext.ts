@@ -7,6 +7,8 @@ import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
 import {IClientService} from "./wasmclientservice";
 
+const WebSocket = require('ws');
+
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventDone: bool = false;
     private eventHandlers: wasmlib.IEventHandlers[] = [];
@@ -15,16 +17,19 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
     public constructor(svcClient: IClientService, chain: string, scName: string) {
         super(svcClient, chain, scName);
-        this.connectWebSocket();
+        //this.connectWebSocket();
     }
 
     private connectWebSocket(): void {
-        const WebSocket = require('ws');
         const webSocketUrl = "ws://127.0.0.1:9090/chain/" + this.chainID.toString() + "/ws";
         // eslint-disable-next-line no-console
         console.log(`Connecting to Websocket => ${webSocketUrl}`);
         this.webSocket = new WebSocket(webSocketUrl);
-        this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
+        this.webSocket.addEventListener('error', console.log);
+        this.webSocket.addEventListener('message', (x) => {
+            console.log(x);
+            this.handleIncomingMessage(x);
+        });
         this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 1000));
     }
 
@@ -34,6 +39,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         if (msg.length != 4 || msg[0] != 'vmmsg') {
             return;
         }
+        this.eventDone = true;
     }
 
     public currentChainID(): wasmlib.ScChainID {
@@ -92,15 +98,26 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         }
     }
 
-    public waitEvent(): void {
+    public waitEvent(callback: () => void): void {
         this.Err = null;
-        for (let i = 0; i < 100; i++) {
+        let counter = 0;
+        const handle = setInterval(() => {
             if (this.eventReceived) {
+                console.log("Event received");
+                clearInterval(handle);
+                callback();
                 return;
             }
-            setTimeout(() => {}, 100);
-        }
-        this.Err = "event wait timeout";
+
+            if (counter >= 100) {
+                clearInterval(handle);
+                this.Err = "event wait timeout";
+                callback();
+                return;
+            }
+
+            counter++;
+        }, 100);
     }
 
     public waitRequest(): void {
