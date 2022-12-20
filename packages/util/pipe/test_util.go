@@ -27,14 +27,14 @@ func alwaysTrueFun(index int) bool {
 	return true
 }
 
-func priorityFunMod2(i interface{}) bool {
-	return priorityFunMod(i, 2)
+func priorityFunMod2(e SimpleHashable) bool {
+	return priorityFunMod(e, 2)
 }
 
-func priorityFunMod3(i interface{}) bool {
-	return priorityFunMod(i, 3)
+func priorityFunMod3(e SimpleHashable) bool {
+	return priorityFunMod(e, 3)
 }
 
-func priorityFunMod(i interface{}, mod SimpleHashable) bool {
-	return i.(SimpleHashable)%mod == 0
+func priorityFunMod(e SimpleHashable, mod SimpleHashable) bool {
+	return e%mod == 0
 }

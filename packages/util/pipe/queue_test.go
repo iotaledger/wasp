@@ -6,53 +6,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testQueueBasicAddLengthPeekRemove(q Queue, elementsToAdd int, add func(index int) int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueBasicAddLengthPeekRemove(q Queue[SimpleHashable], elementsToAdd int, add func(index int) int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		value := add(i)
 		actualAddResult := q.Add(SimpleHashable(value))
-		require.Equalf(t, addResult(i), actualAddResult, "add result of element %d value %d missmatch", i, value)
+		require.Equalf(t, addResult(i), actualAddResult, "add result of element %d value %d mismatch", i, value)
 	}
 	fullLength := q.Length()
-	require.Equalf(t, elementsToRemove, fullLength, "full queue length missmatch")
+	require.Equalf(t, elementsToRemove, fullLength, "full queue length mismatch")
 	for i := 0; i < elementsToRemove; i++ {
 		expected := SimpleHashable(result(i))
-		peekResult := q.Peek().(SimpleHashable)
-		require.Equalf(t, expected, peekResult, "peek %d missmatch", i)
-		removeResult := q.Remove().(SimpleHashable)
-		require.Equalf(t, expected, removeResult, "remove %d missmatch", i)
+		peekResult := q.Peek()
+		require.Equalf(t, expected, peekResult, "peek %d mismatch", i)
+		removeResult := q.Remove()
+		require.Equalf(t, expected, removeResult, "remove %d mismatch", i)
 	}
 	emptyLength := q.Length()
-	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
+	require.Equalf(t, 0, emptyLength, "empty queue length mismatch")
 }
 
 //--
 
 func TestDefaultLimitedPriorityHashQueueSimple(t *testing.T) {
-	testDefaultQueueSimple(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueSimple(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueSimple(t *testing.T) {
-	testPriorityQueueSimple(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueSimple(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitSimple(t *testing.T) {
-	testLimitedQueueNoLimitSimple(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueNoLimitSimple(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueSimple(t *testing.T) {
-	testLimitedQueueSimple(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueSimple(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitSimple(t *testing.T) {
-	testLimitedPriorityQueueNoLimitSimple(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueNoLimitSimple(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueSimple(t *testing.T) {
-	testLimitedPriorityQueueSimple(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueSimple(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueSimple(t *testing.T) {
-	testDefaultQueueSimple(NewHashLimitedPriorityHashQueue(true), t)
+	testDefaultQueueSimple(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueSimple(t *testing.T) {
@@ -75,11 +75,13 @@ func TestLimitedPriorityHashQueueSimple(t *testing.T) {
 	testLimitedPriorityQueueSimple(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitSimple(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueSimple(func(priorityFun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(priorityFun, 15) }, t)
+func testLimitedPriorityQueueNoLimitSimple(makeLimitedPriorityQueueFun func(priorityFun func(e SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
+	testPriorityQueueSimple(func(priorityFun func(e SimpleHashable) bool) Queue[SimpleHashable] {
+		return makeLimitedPriorityQueueFun(priorityFun, 15)
+	}, t)
 }
 
-func testLimitedPriorityQueueSimple(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueSimple(makeLimitedPriorityQueueFun func(priorityFun func(e SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	resultArray := []int{9, 6, 3, 0, 4, 5, 7, 8}
 	limit := len(resultArray)
 	q := makeLimitedPriorityQueueFun(priorityFunMod3, limit)
@@ -89,11 +91,11 @@ func testLimitedPriorityQueueSimple(makeLimitedPriorityQueueFun func(priorityFun
 	testQueueSimple(q, 10, limit, result, t)
 }
 
-func testLimitedQueueNoLimitSimple(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueNoLimitSimple(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueSimple(makeLimitedQueueFun(15), t)
 }
 
-func testLimitedQueueSimple(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueSimple(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 8
 	elementsToAdd := 10
 	indexDiff := elementsToAdd - limit
@@ -104,7 +106,7 @@ func testLimitedQueueSimple(makeLimitedQueueFun func(limit int) Queue, t *testin
 	testQueueSimple(q, elementsToAdd, limit, result, t)
 }
 
-func testPriorityQueueSimple(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueSimple(makePriorityQueueFun func(func(e SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3)
 	resultArray := []int{9, 6, 3, 0, 1, 2, 4, 5, 7, 8}
 	result := func(index int) int {
@@ -114,34 +116,34 @@ func testPriorityQueueSimple(makePriorityQueueFun func(func(i interface{}) bool)
 	testQueueSimple(q, elementsToAdd, elementsToAdd, result, t)
 }
 
-func testDefaultQueueSimple(q Queue, t *testing.T) {
+func testDefaultQueueSimple(q Queue[SimpleHashable], t *testing.T) {
 	elementsToAdd := 10
 	testQueueSimple(q, elementsToAdd, elementsToAdd, identityFunInt, t)
 }
 
-func testQueueSimple(q Queue, elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueSimple(q Queue[SimpleHashable], elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	testQueueBasicAddLengthPeekRemove(q, elementsToAdd, identityFunInt, alwaysTrueFun, elementsToRemove, result, t)
 }
 
 //--
 
 func TestDefaultLimitedPriorityHashQueueTwice(t *testing.T) {
-	testDefaultQueueTwice(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueTwice(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueTwice(t *testing.T) {
-	testPriorityQueueTwice(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueTwice(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testDefaultQueueTwice(NewLimitLimitedPriorityHashQueue(150), t)
+	testDefaultQueueTwice(NewLimitLimitedPriorityHashQueue[SimpleHashable](150), t)
 }
 
 func TestLimitLimitedPriorityHashQueueTwice(t *testing.T) {
 	limit := 80
 	elementsToAddSingle := 50
 	indexDiff := 2*elementsToAddSingle - limit
-	q := NewLimitLimitedPriorityHashQueue(limit)
+	q := NewLimitLimitedPriorityHashQueue[SimpleHashable](limit)
 	resultFun := func(index int) int {
 		return (index + indexDiff) % elementsToAddSingle
 	}
@@ -149,7 +151,7 @@ func TestLimitLimitedPriorityHashQueueTwice(t *testing.T) {
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testPriorityQueueTwice(func(priorityFun func(i interface{}) bool) Queue {
+	testPriorityQueueTwice(func(priorityFun func(i SimpleHashable) bool) Queue[SimpleHashable] {
 		return NewLimitPriorityLimitedPriorityHashQueue(priorityFun, 150)
 	}, t)
 }
@@ -179,15 +181,17 @@ func TestLimitPriorityLimitedPriorityHashQueueTwice(t *testing.T) {
 }
 
 func TestHashLimitedPriorityHashQueueTwice(t *testing.T) {
-	testHashQueueTwice(NewHashLimitedPriorityHashQueue, t)
+	testHashQueueTwice(NewHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueTwice(t *testing.T) {
-	testPriorityHashQueueTwice(NewPriorityHashLimitedPriorityHashQueue, t)
+	testPriorityHashQueueTwice(NewPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitHashLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testHashQueueTwice(func(hashNeeded bool) Queue { return NewLimitHashLimitedPriorityHashQueue(80, hashNeeded) }, t)
+	testHashQueueTwice(func(hashNeeded bool) Queue[SimpleHashable] {
+		return NewLimitHashLimitedPriorityHashQueue[SimpleHashable](80, hashNeeded)
+	}, t)
 }
 
 func TestLimitHashLimitedPriorityHashQueueTwice(t *testing.T) {
@@ -195,12 +199,12 @@ func TestLimitHashLimitedPriorityHashQueueTwice(t *testing.T) {
 	elementsToAddSingle := 50
 	indexDiff := elementsToAddSingle - limit
 	resultFun := func(index int) int { return index + indexDiff }
-	q := NewLimitHashLimitedPriorityHashQueue(limit, true)
+	q := NewLimitHashLimitedPriorityHashQueue[SimpleHashable](limit, true)
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, limit, resultFun, t)
 }
 
 func TestLimitedPriorityHashQueueNoLimitTwice(t *testing.T) {
-	testPriorityHashQueueTwice(func(priorityFun func(i interface{}) bool, hashNeeded bool) Queue {
+	testPriorityHashQueueTwice(func(priorityFun func(i SimpleHashable) bool, hashNeeded bool) Queue[SimpleHashable] {
 		return NewLimitedPriorityHashQueue(priorityFun, 80, hashNeeded)
 	}, t)
 }
@@ -222,14 +226,14 @@ func TestLimitedPriorityHashQueueTwice(t *testing.T) {
 	testQueueTwice(q, elementsToAddSingle, addResultFun, limit, resultFun, t)
 }
 
-func testHashQueueTwice(makeHashQueueFun func(hashNeeded bool) Queue, t *testing.T) {
+func testHashQueueTwice(makeHashQueueFun func(hashNeeded bool) Queue[SimpleHashable], t *testing.T) {
 	q := makeHashQueueFun(true)
 	elementsToAddSingle := 50
 	addResultFun := func(index int) bool { return index < elementsToAddSingle }
 	testQueueTwice(q, elementsToAddSingle, addResultFun, elementsToAddSingle, identityFunInt, t)
 }
 
-func testPriorityHashQueueTwice(makePriorityHashQueueFun func(priorityFun func(i interface{}) bool, hashNeeded bool) Queue, t *testing.T) {
+func testPriorityHashQueueTwice(makePriorityHashQueueFun func(priorityFun func(SimpleHashable) bool, hashNeeded bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityHashQueueFun(priorityFunMod3, true)
 	elementsToAddSingle := 50
 	addResultFun := func(index int) bool { return index < elementsToAddSingle }
@@ -245,7 +249,7 @@ func testPriorityHashQueueTwice(makePriorityHashQueueFun func(priorityFun func(i
 	testQueueTwice(q, elementsToAddSingle, addResultFun, elementsToAddSingle, resultFun, t)
 }
 
-func testPriorityQueueTwice(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueTwice(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3)
 	elementsToAddSingle := 50
 	resultFun := func(index int) int {
@@ -268,13 +272,13 @@ func testPriorityQueueTwice(makePriorityQueueFun func(func(i interface{}) bool) 
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
 }
 
-func testDefaultQueueTwice(q Queue, t *testing.T) {
+func testDefaultQueueTwice(q Queue[SimpleHashable], t *testing.T) {
 	elementsToAddSingle := 50
 	resultFun := func(index int) int { return index % elementsToAddSingle }
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
 }
 
-func testQueueTwice(q Queue, elementsToAddSingle int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueTwice(q Queue[SimpleHashable], elementsToAddSingle int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
 	addFun := func(index int) int {
 		return index % elementsToAddSingle
 	}
@@ -288,8 +292,8 @@ func TestLimitPriorityLimitedPriorityHashQueueOverflow(t *testing.T) {
 	elementsToAddSingle := 50
 	cutOff := elementsToAddSingle / 2
 	cutOffSh := SimpleHashable(cutOff)
-	q := NewLimitPriorityLimitedPriorityHashQueue(func(i interface{}) bool {
-		return i.(SimpleHashable) < cutOffSh
+	q := NewLimitPriorityLimitedPriorityHashQueue(func(e SimpleHashable) bool {
+		return e < cutOffSh
 	}, limit)
 	addResultFun := func(index int) bool {
 		return index < elementsToAddSingle+cutOff
@@ -308,9 +312,8 @@ func TestLimitedPriorityHashQueueOverflow(t *testing.T) {
 	elementsToAddSingle := 50
 	cutOffLow := SimpleHashable(20)
 	cutOffHigh := SimpleHashable(40)
-	q := NewLimitedPriorityHashQueue(func(i interface{}) bool {
-		value := i.(SimpleHashable)
-		return value < cutOffLow || cutOffHigh <= value
+	q := NewLimitedPriorityHashQueue(func(e SimpleHashable) bool {
+		return e < cutOffLow || cutOffHigh <= e
 	}, limit, true)
 	addResultFun := func(index int) bool {
 		return index < elementsToAddSingle
@@ -362,31 +365,31 @@ func TestLimitedPriorityHashQueueDuplicates(t *testing.T) {
 //--
 
 func TestDefaultLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testDefaultQueueAddRemove(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueAddRemove(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testPriorityQueueAddRemove(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueAddRemove(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitAddRemove(t *testing.T) {
-	testLimitedQueueNoLimitAddRemove(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueNoLimitAddRemove(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testLimitedQueueAddRemove(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueAddRemove(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitAddRemove(t *testing.T) {
-	testLimitedPriorityQueueNoLimitAddRemove(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueNoLimitAddRemove(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testLimitedPriorityQueueAddRemove(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueAddRemove(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueAddRemove(t *testing.T) {
-	testDefaultQueueAddRemove(NewHashLimitedPriorityHashQueue(true), t)
+	testDefaultQueueAddRemove(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueAddRemove(t *testing.T) {
@@ -409,11 +412,13 @@ func TestLimitedPriorityHashQueueAddRemove(t *testing.T) {
 	testLimitedPriorityQueueAddRemove(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueAddRemove(func(priorityFun func(i interface{}) bool) Queue { return makeLimitedPriorityQueueFun(priorityFun, 150) }, t)
+func testLimitedPriorityQueueNoLimitAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
+	testPriorityQueueAddRemove(func(priorityFun func(SimpleHashable) bool) Queue[SimpleHashable] {
+		return makeLimitedPriorityQueueFun(priorityFun, 150)
+	}, t)
 }
 
-func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 80
 	q := makeLimitedPriorityQueueFun(priorityFunMod3, limit)
 	result := func(index int) int {
@@ -425,11 +430,11 @@ func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(priority
 	testQueueAddRemove(q, 100, 50, limit, result, t)
 }
 
-func testLimitedQueueNoLimitAddRemove(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueNoLimitAddRemove(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueAddRemove(makeLimitedQueueFun(150), t)
 }
 
-func testLimitedQueueAddRemove(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueAddRemove(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 80
 	elementsToAdd := 100
 	elementsToRemoveAdd := 50
@@ -441,7 +446,7 @@ func testLimitedQueueAddRemove(makeLimitedQueueFun func(limit int) Queue, t *tes
 	testQueueAddRemove(q, elementsToAdd, elementsToRemoveAdd, limit, result, t)
 }
 
-func testPriorityQueueAddRemove(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueAddRemove(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3)
 	result := func(index int) int {
 		if index%2 == 0 {
@@ -453,13 +458,13 @@ func testPriorityQueueAddRemove(makePriorityQueueFun func(func(i interface{}) bo
 	testQueueAddRemove(q, elementsToAdd, 50, elementsToAdd, result, t)
 }
 
-func testDefaultQueueAddRemove(q Queue, t *testing.T) {
+func testDefaultQueueAddRemove(q Queue[SimpleHashable], t *testing.T) {
 	elementsToAdd := 100
 	elementsToRemoveAdd := 50
 	testQueueAddRemove(q, elementsToAdd, elementsToRemoveAdd, elementsToAdd, func(index int) int { return index + elementsToRemoveAdd }, t)
 }
 
-func testQueueAddRemove(q Queue, elementsToAdd, elementsToRemoveAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueAddRemove(q Queue[SimpleHashable], elementsToAdd, elementsToRemoveAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		require.Truef(t, q.Add(SimpleHashable(i)), "failed to add element %d", i)
 	}
@@ -469,47 +474,47 @@ func testQueueAddRemove(q Queue, elementsToAdd, elementsToRemoveAdd, elementsToR
 		require.Truef(t, q.Add(SimpleHashable(add)), "failed to add element %d", add)
 	}
 	fullLength := q.Length()
-	require.Equalf(t, elementsToRemove, fullLength, "full queue length missmatch")
+	require.Equalf(t, elementsToRemove, fullLength, "full queue length mismatch")
 
 	for i := 0; i < elementsToRemove; i++ {
 		expected := SimpleHashable(result(i))
-		peekResult := q.Peek().(SimpleHashable)
-		require.Equalf(t, expected, peekResult, "peek %d missmatch", i)
-		removeResult := q.Remove().(SimpleHashable)
-		require.Equalf(t, expected, removeResult, "remove %d missmatch", i)
+		peekResult := q.Peek()
+		require.Equalf(t, expected, peekResult, "peek %d mismatch", i)
+		removeResult := q.Remove()
+		require.Equalf(t, expected, removeResult, "remove %d mismatch", i)
 	}
 	emptyLength := q.Length()
-	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
+	require.Equalf(t, 0, emptyLength, "empty queue length mismatch")
 }
 
 //--
 
 func TesDefaultLimitedPriorityHashQueueLength(t *testing.T) {
-	testDefaultQueueLength(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueLength(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueLength(t *testing.T) {
-	testPriorityQueueLength(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueLength(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitLength(t *testing.T) {
-	testLimitedQueueNoLimitLength(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueNoLimitLength(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueLength(t *testing.T) {
-	testLimitedQueueLength(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueLength(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitLength(t *testing.T) {
-	testLimitedPriorityQueueNoLimitLength(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueNoLimitLength(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueLength(t *testing.T) {
-	testLimitedPriorityQueueLength(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueLength(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TesHashLimitedPriorityHashQueueLength(t *testing.T) {
-	testDefaultQueueLength(NewHashLimitedPriorityHashQueue(true), t)
+	testDefaultQueueLength(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueLength(t *testing.T) {
@@ -532,42 +537,42 @@ func TestLimitedPriorityHashQueueLength(t *testing.T) {
 	testLimitedPriorityQueueLength(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitLength(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueLength(func(priorityFun func(i interface{}) bool) Queue {
+func testLimitedPriorityQueueNoLimitLength(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
+	testPriorityQueueLength(func(priorityFun func(SimpleHashable) bool) Queue[SimpleHashable] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueLength(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueLength(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod3, limit)
 	testQueueLength(q, 1000, limit, t)
 }
 
-func testLimitedQueueNoLimitLength(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueNoLimitLength(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueLength(makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueLength(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueLength(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 800
 	q := makeLimitedQueueFun(limit)
 	testQueueLength(q, 1000, limit, t)
 }
 
-func testPriorityQueueLength(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueLength(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3)
 	elementsToAdd := 1000
 	testQueueLength(q, elementsToAdd, elementsToAdd, t)
 }
 
-func testDefaultQueueLength(q Queue, t *testing.T) {
+func testDefaultQueueLength(q Queue[SimpleHashable], t *testing.T) {
 	elementsToAdd := 1000
 	testQueueLength(q, elementsToAdd, elementsToAdd, t)
 }
 
-func testQueueLength(q Queue, elementsToRemoveAdd, elementsToRemove int, t *testing.T) {
+func testQueueLength(q Queue[SimpleHashable], elementsToRemoveAdd, elementsToRemove int, t *testing.T) {
 	emptyLength := q.Length()
-	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
+	require.Equalf(t, 0, emptyLength, "empty queue length mismatch")
 
 	for i := 0; i < elementsToRemoveAdd; i++ {
 		require.Truef(t, q.Add(SimpleHashable(i)), "failed to add element %d", i)
@@ -578,43 +583,43 @@ func testQueueLength(q Queue, elementsToRemoveAdd, elementsToRemove int, t *test
 			expected = i + 1
 		}
 		currLength := q.Length()
-		require.Equalf(t, expected, currLength, "adding %d: expected queue length missmatch", i)
+		require.Equalf(t, expected, currLength, "adding %d: expected queue length mismatch", i)
 	}
 	for i := 0; i < elementsToRemove; i++ {
 		q.Remove()
 		currLength := q.Length()
-		require.Equalf(t, elementsToRemove-i-1, currLength, "removing %d: expected queue length missmatch", i)
+		require.Equalf(t, elementsToRemove-i-1, currLength, "removing %d: expected queue length mismatch", i)
 	}
 }
 
 //--
 
 func TestDefaultLimitedPriorityHashQueueGet(t *testing.T) {
-	testDefaultQueueGet(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueGet(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueGet(t *testing.T) {
-	testPriorityQueueGet(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueGet(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitGet(t *testing.T) {
-	testLimitedQueueNoLimitGet(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueNoLimitGet(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueGet(t *testing.T) {
-	testLimitedQueueGet(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueGet(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitGet(t *testing.T) {
-	testLimitedPriorityQueueNoLimitGet(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueNoLimitGet(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueGet(t *testing.T) {
-	testLimitedPriorityQueueGet(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueGet(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueGet(t *testing.T) {
-	testDefaultQueueGet(NewHashLimitedPriorityHashQueue(true), t)
+	testDefaultQueueGet(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGet(t *testing.T) {
@@ -637,13 +642,13 @@ func TestLimitedPriorityHashQueueGet(t *testing.T) {
 	testLimitedPriorityQueueGet(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitGet(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueGet(func(priorityFun func(i interface{}) bool) Queue {
+func testLimitedPriorityQueueNoLimitGet(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
+	testPriorityQueueGet(func(priorityFun func(SimpleHashable) bool) Queue[SimpleHashable] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod2, limit)
 	result := func(iteration int, index int) int {
@@ -658,11 +663,11 @@ func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(priorityFun fu
 	testQueueGet(q, 1000, result, t)
 }
 
-func testLimitedQueueNoLimitGet(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueNoLimitGet(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueGet(makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueGet(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueGet(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 800
 	q := makeLimitedQueueFun(limit)
 	result := func(iteration int, index int) int {
@@ -674,7 +679,7 @@ func testLimitedQueueGet(makeLimitedQueueFun func(limit int) Queue, t *testing.T
 	testQueueGet(q, 1000, result, t)
 }
 
-func testPriorityQueueGet(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueGet(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2)
 	result := func(iteration int, index int) int {
 		if index <= iteration/2 {
@@ -685,18 +690,18 @@ func testPriorityQueueGet(makePriorityQueueFun func(func(i interface{}) bool) Qu
 	testQueueGet(q, 1000, result, t)
 }
 
-func testDefaultQueueGet(q Queue, t *testing.T) {
+func testDefaultQueueGet(q Queue[SimpleHashable], t *testing.T) {
 	testQueueGet(q, 1000, func(iteration int, index int) int { return index }, t)
 }
 
-func testQueueGet(q Queue, elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
+func testQueueGet(q Queue[SimpleHashable], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Get test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
 	for i := 0; i < elementsToAdd; i++ {
 		require.Truef(t, q.Add(SimpleHashable(i)), "failed to add element %d", i)
 		for j := 0; j < q.Length(); j++ {
-			require.Equalf(t, SimpleHashable(result(i, j)), q.Get(j).(SimpleHashable), "iteration %d index %d missmatch", i, j)
+			require.Equalf(t, SimpleHashable(result(i, j)), q.Get(j), "iteration %d index %d mismatch", i, j)
 		}
 	}
 }
@@ -704,31 +709,31 @@ func testQueueGet(q Queue, elementsToAdd int, result func(iteration int, index i
 //--
 
 func TestDefaultLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testDefaultQueueGetNegative(NewDefaultLimitedPriorityHashQueue(), t)
+	testDefaultQueueGetNegative(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testPriorityQueueGetNegative(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueGetNegative(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueNoLimitGetNegative(t *testing.T) {
-	testLimitedQueueNoLimitGetNegative(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueNoLimitGetNegative(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testLimitedQueueGetNegative(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueGetNegative(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueNoLimitGetNegative(t *testing.T) {
-	testLimitedPriorityQueueNoLimitGetNegative(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueNoLimitGetNegative(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testLimitedPriorityQueueGetNegative(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueGetNegative(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueGetNegative(t *testing.T) {
-	testDefaultQueueGetNegative(NewHashLimitedPriorityHashQueue(true), t)
+	testDefaultQueueGetNegative(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGetNegative(t *testing.T) {
@@ -751,13 +756,13 @@ func TestLimitedPriorityHashQueueGetNegative(t *testing.T) {
 	testLimitedPriorityQueueGetNegative(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueNoLimitGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
-	testPriorityQueueGetNegative(func(priorityFun func(i interface{}) bool) Queue {
+func testLimitedPriorityQueueNoLimitGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
+	testPriorityQueueGetNegative(func(priorityFun func(SimpleHashable) bool) Queue[SimpleHashable] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod2, limit)
 	result := func(iteration int, index int) int {
@@ -775,15 +780,15 @@ func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(priori
 	testQueueGetNegative(q, 1000, result, t)
 }
 
-func testLimitedQueueNoLimitGetNegative(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueNoLimitGetNegative(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueGetNegative(makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueGetNegative(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueGetNegative(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testDefaultQueueGetNegative(makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueueGetNegative(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueGetNegative(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2)
 	result := func(iteration int, index int) int {
 		if index >= -(iteration+iteration%2)/2 {
@@ -794,18 +799,18 @@ func testPriorityQueueGetNegative(makePriorityQueueFun func(func(i interface{}) 
 	testQueueGetNegative(q, 1000, result, t)
 }
 
-func testDefaultQueueGetNegative(q Queue, t *testing.T) {
+func testDefaultQueueGetNegative(q Queue[SimpleHashable], t *testing.T) {
 	testQueueGetNegative(q, 1000, func(iteration int, index int) int { return iteration + index + 1 }, t)
 }
 
-func testQueueGetNegative(q Queue, elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
+func testQueueGetNegative(q Queue[SimpleHashable], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping GetNegative test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
 	for i := 0; i < elementsToAdd; i++ {
 		require.Truef(t, q.Add(SimpleHashable(i)), "failed to add element %d", i)
 		for j := -1; j >= -q.Length(); j-- {
-			require.Equalf(t, SimpleHashable(result(i, j)), q.Get(j).(SimpleHashable), "iteration %d index %d missmatch", i, j)
+			require.Equalf(t, SimpleHashable(result(i, j)), q.Get(j), "iteration %d index %d mismatch", i, j)
 		}
 	}
 }
@@ -813,23 +818,23 @@ func testQueueGetNegative(q Queue, elementsToAdd int, result func(iteration int,
 //--
 
 func TestDefaultLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testQueueGetOutOfRangePanics(NewDefaultLimitedPriorityHashQueue(), t)
+	testQueueGetOutOfRangePanics(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testPriorityQueueGetOutOfRangePanics(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueGetOutOfRangePanics(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testLimitedQueueGetOutOfRangePanics(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueGetOutOfRangePanics(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testLimitedPriorityQueueGetOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueGetOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
-	testQueueGetOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	testQueueGetOutOfRangePanics(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
@@ -844,21 +849,21 @@ func TestLimitedPriorityHashQueueGetOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueueGetOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueGetOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueGetOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2, 800)
 	testQueueGetOutOfRangePanics(q, t)
 }
 
-func testLimitedQueueGetOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueGetOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testQueueGetOutOfRangePanics(makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueueGetOutOfRangePanics(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueueGetOutOfRangePanics(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2)
 	testQueueGetOutOfRangePanics(q, t)
 }
 
-func testQueueGetOutOfRangePanics(q Queue, t *testing.T) {
+func testQueueGetOutOfRangePanics(q Queue[SimpleHashable], t *testing.T) {
 	for i := 0; i < 3; i++ {
 		require.Truef(t, q.Add(SimpleHashable(i)), "failed to add element %d", i)
 	}
@@ -869,23 +874,23 @@ func testQueueGetOutOfRangePanics(q Queue, t *testing.T) {
 //--
 
 func TestDefaultLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testQueuePeekOutOfRangePanics(NewDefaultLimitedPriorityHashQueue(), t)
+	testQueuePeekOutOfRangePanics(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testPriorityQueuePeekOutOfRangePanics(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueuePeekOutOfRangePanics(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testLimitedQueuePeekOutOfRangePanics(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueuePeekOutOfRangePanics(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testLimitedPriorityQueuePeekOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueuePeekOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashtLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
-	testQueuePeekOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	testQueuePeekOutOfRangePanics(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
@@ -900,21 +905,21 @@ func TestLimitedPriorityHashQueuePeekOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueuePeekOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueuePeekOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueuePeekOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2, 800)
 	testQueuePeekOutOfRangePanics(q, t)
 }
 
-func testLimitedQueuePeekOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueuePeekOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testQueuePeekOutOfRangePanics(makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueuePeekOutOfRangePanics(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+func testPriorityQueuePeekOutOfRangePanics(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2)
 	testQueuePeekOutOfRangePanics(q, t)
 }
 
-func testQueuePeekOutOfRangePanics(q Queue, t *testing.T) {
+func testQueuePeekOutOfRangePanics(q Queue[SimpleHashable], t *testing.T) {
 	require.Panicsf(t, func() { q.Peek() }, "should panic when peeking empty queue")
 	require.Truef(t, q.Add(SimpleHashable(0)), "failed to add element 0")
 	q.Remove()
@@ -924,23 +929,23 @@ func testQueuePeekOutOfRangePanics(q Queue, t *testing.T) {
 //--
 
 func TestDefaultLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testQueueRemoveOutOfRangePanics(NewDefaultLimitedPriorityHashQueue(), t)
+	testQueueRemoveOutOfRangePanics(NewDefaultLimitedPriorityHashQueue[SimpleHashable](), t)
 }
 
 func TestPriorityLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testPriorityQueueRemoveOutOfRangePanics(NewPriorityLimitedPriorityHashQueue, t)
+	testPriorityQueueRemoveOutOfRangePanics(NewPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testLimitedQueueRemoveOutOfRangePanics(NewLimitLimitedPriorityHashQueue, t)
+	testLimitedQueueRemoveOutOfRangePanics(NewLimitLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestLimitPriorityLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testLimitedPriorityQueueRemoveOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue, t)
+	testLimitedPriorityQueueRemoveOutOfRangePanics(NewLimitPriorityLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
 func TestHashLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
-	testQueueRemoveOutOfRangePanics(NewHashLimitedPriorityHashQueue(true), t)
+	testQueueRemoveOutOfRangePanics(NewHashLimitedPriorityHashQueue[SimpleHashable](true), t)
 }
 
 func TestPriorityHashLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
@@ -955,21 +960,21 @@ func TestLimitedPriorityHashQueueRemoveOutOfRangePanics(t *testing.T) {
 	testLimitedPriorityQueueRemoveOutOfRangePanics(newLimitPriorityHashLimitedPriorityHashQueue, t)
 }
 
-func testLimitedPriorityQueueRemoveOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(i interface{}) bool, limit int) Queue, t *testing.T) {
+func testLimitedPriorityQueueRemoveOutOfRangePanics(makeLimitedPriorityQueueFun func(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2, 800)
 	testQueueRemoveOutOfRangePanics(q, t)
 }
 
-func testLimitedQueueRemoveOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue, t *testing.T) {
+func testLimitedQueueRemoveOutOfRangePanics(makeLimitedQueueFun func(limit int) Queue[SimpleHashable], t *testing.T) {
 	testQueueRemoveOutOfRangePanics(makeLimitedQueueFun(800), t)
-}
 
-func testPriorityQueueRemoveOutOfRangePanics(makePriorityQueueFun func(func(i interface{}) bool) Queue, t *testing.T) {
+}
+func testPriorityQueueRemoveOutOfRangePanics(makePriorityQueueFun func(func(SimpleHashable) bool) Queue[SimpleHashable], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2)
 	testQueueRemoveOutOfRangePanics(q, t)
 }
 
-func testQueueRemoveOutOfRangePanics(q Queue, t *testing.T) {
+func testQueueRemoveOutOfRangePanics(q Queue[SimpleHashable], t *testing.T) {
 	require.Panicsf(t, func() { q.Remove() }, "should panic when removing empty queue")
 	require.Truef(t, q.Add(SimpleHashable(0)), "failed to add element 0")
 	q.Remove()
@@ -978,14 +983,14 @@ func testQueueRemoveOutOfRangePanics(q Queue, t *testing.T) {
 
 //--
 
-func newPriorityHashLimitedPriorityHashQueue(priorityFun func(i interface{}) bool) Queue {
+func newPriorityHashLimitedPriorityHashQueue(priorityFun func(SimpleHashable) bool) Queue[SimpleHashable] {
 	return NewPriorityHashLimitedPriorityHashQueue(priorityFun, true)
 }
 
-func newLimitHashLimitedPriorityHashQueue(limit int) Queue {
-	return NewLimitHashLimitedPriorityHashQueue(limit, true)
+func newLimitHashLimitedPriorityHashQueue(limit int) Queue[SimpleHashable] {
+	return NewLimitHashLimitedPriorityHashQueue[SimpleHashable](limit, true)
 }
 
-func newLimitPriorityHashLimitedPriorityHashQueue(priorityFun func(i interface{}) bool, limit int) Queue {
-	return NewLimitedPriorityHashQueue(priorityFun, limit, true)
+func newLimitPriorityHashLimitedPriorityHashQueue(priorityFun func(SimpleHashable) bool, limit int) Queue[SimpleHashable] {
+	return NewLimitedPriorityHashQueue[SimpleHashable](priorityFun, limit, true)
 }

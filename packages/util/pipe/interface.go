@@ -9,17 +9,17 @@ type Hashable interface {
 	GetHash() hashing.HashValue
 }
 
-type Queue interface {
+type Queue[E Hashable] interface {
 	Length() int
-	Add(elem interface{}) bool
-	Peek() interface{}
-	Get(i int) interface{}
-	Remove() interface{}
+	Add(elem E) bool
+	Peek() E
+	Get(i int) E
+	Remove() E
 }
 
-type Pipe interface {
-	In() chan<- interface{}
-	Out() <-chan interface{}
+type Pipe[E any] interface {
+	In() chan<- E
+	Out() <-chan E
 	Len() int
 	Close()
 }
