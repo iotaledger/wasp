@@ -336,13 +336,13 @@ func (nc *nodeConnection) handleLedgerUpdate(update *nodebridge.LedgerUpdate) er
 		return err
 	}
 
-	// check if pending transactions were affected by the ledger update
-	nc.checkPendingTransactions(ledgerUpdate)
-
 	// trigger the callbacks of all affected chains
 	if err := nc.triggerChainCallbacks(ledgerUpdate); err != nil {
 		return err
 	}
+
+	// check if pending transactions were affected by the ledger update
+	nc.checkPendingTransactions(ledgerUpdate)
 
 	return nil
 }
@@ -512,8 +512,9 @@ func (nc *nodeConnection) PublishTX(
 
 	// transactions are published asynchronously
 	go func() {
-		if err := ncc.publishTX(ctx, tx); err != nil {
-			nc.LogDebug(err.Error)
+		err = ncc.publishTX(ctx, tx)
+		if err != nil {
+			nc.LogDebug(err.Error())
 		}
 
 		// transaction was confirmed if err is nil
