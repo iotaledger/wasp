@@ -32,14 +32,14 @@ func (p *PeeringService) GetIdentity() *dto.PeeringNodeIdentity {
 	}
 }
 
-func (p *PeeringService) GetRegisteredPeers() *[]dto.PeeringNodeStatus {
+func (p *PeeringService) GetRegisteredPeers() []*dto.PeeringNodeStatus {
 	peers := p.networkProvider.PeerStatus()
-	peerModels := make([]dto.PeeringNodeStatus, len(peers))
+	peerModels := make([]*dto.PeeringNodeStatus, len(peers))
 
 	for k, v := range peers {
 		isTrustedErr := p.trustedNetworkManager.IsTrustedPeer(v.PubKey())
 
-		peerModels[k] = dto.PeeringNodeStatus{
+		peerModels[k] = &dto.PeeringNodeStatus{
 			PublicKey: v.PubKey(),
 			NetID:     v.NetID(),
 			IsAlive:   v.IsAlive(),
@@ -48,25 +48,25 @@ func (p *PeeringService) GetRegisteredPeers() *[]dto.PeeringNodeStatus {
 		}
 	}
 
-	return &peerModels
+	return peerModels
 }
 
-func (p *PeeringService) GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error) {
+func (p *PeeringService) GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error) {
 	trustedPeers, err := p.trustedNetworkManager.TrustedPeers()
 	if err != nil {
 		return nil, err
 	}
 
-	peers := make([]dto.PeeringNodeIdentity, len(trustedPeers))
+	peers := make([]*dto.PeeringNodeIdentity, len(trustedPeers))
 	for k, v := range trustedPeers {
-		peers[k] = dto.PeeringNodeIdentity{
+		peers[k] = &dto.PeeringNodeIdentity{
 			PublicKey: v.PubKey(),
 			NetID:     v.NetID,
 			IsTrusted: true,
 		}
 	}
 
-	return &peers, nil
+	return peers, nil
 }
 
 func (p *PeeringService) TrustPeer(publicKey *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error) {

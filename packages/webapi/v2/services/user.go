@@ -69,18 +69,18 @@ func (u *UserService) DeleteUser(username string) error {
 	return u.userManager.RemoveUser(username)
 }
 
-func (u *UserService) GetUsers() *[]models.User {
+func (u *UserService) GetUsers() []*models.User {
 	userList := u.userManager.Users()
-	userModels := make([]models.User, len(userList))
+	userModels := make([]*models.User, len(userList))
 
 	for i, user := range maps.Values(userList) {
-		userModels[i] = models.User{
+		userModels[i] = &models.User{
 			Username:    user.Name,
 			Permissions: permissionsFromMap(user.Permissions),
 		}
 	}
 
-	return &userModels
+	return userModels
 }
 
 func (u *UserService) GetUser(username string) (*models.User, error) {

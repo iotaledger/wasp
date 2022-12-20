@@ -69,8 +69,8 @@ type CommitteeService interface {
 type PeeringService interface {
 	DistrustPeer(publicKey *cryptolib.PublicKey) (*dto.PeeringNodeIdentity, error)
 	GetIdentity() *dto.PeeringNodeIdentity
-	GetRegisteredPeers() *[]dto.PeeringNodeStatus
-	GetTrustedPeers() (*[]dto.PeeringNodeIdentity, error)
+	GetRegisteredPeers() []*dto.PeeringNodeStatus
+	GetTrustedPeers() ([]*dto.PeeringNodeIdentity, error)
 	IsPeerTrusted(publicKey *cryptolib.PublicKey) error
 	TrustPeer(peer *cryptolib.PublicKey, netID string) (*dto.PeeringNodeIdentity, error)
 }
@@ -84,7 +84,7 @@ type UserService interface {
 	AddUser(username string, password string, permissions []string) error
 	DeleteUser(username string) error
 	GetUser(username string) (*models.User, error)
-	GetUsers() *[]models.User
+	GetUsers() []*models.User
 	UpdateUserPassword(username string, password string) error
 	UpdateUserPermissions(username string, permissions []string) error
 }

@@ -12,9 +12,9 @@ import (
 
 func (c *Controller) getRegisteredPeers(e echo.Context) error {
 	peers := c.peeringService.GetRegisteredPeers()
-	peerModels := make([]models.PeeringNodeStatusResponse, len(*peers))
+	peerModels := make([]models.PeeringNodeStatusResponse, len(peers))
 
-	for k, v := range *peers {
+	for k, v := range peers {
 		peerModels[k] = models.PeeringNodeStatusResponse{
 			IsAlive:   v.IsAlive,
 			NetID:     v.NetID,
@@ -33,8 +33,8 @@ func (c *Controller) getTrustedPeers(e echo.Context) error {
 		return apierrors.InternalServerError(err)
 	}
 
-	peerModels := make([]models.PeeringNodeIdentityResponse, len(*peers))
-	for k, v := range *peers {
+	peerModels := make([]models.PeeringNodeIdentityResponse, len(peers))
+	for k, v := range peers {
 		peerModels[k] = models.PeeringNodeIdentityResponse{
 			NetID:     v.NetID,
 			PublicKey: v.PublicKey.String(),
