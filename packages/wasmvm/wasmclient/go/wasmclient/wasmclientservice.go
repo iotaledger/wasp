@@ -72,7 +72,7 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 }
 
 func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) error {
-	return subscribe.Subscribe(sc.eventPort, msg, done, false, "")
+	return subscribe.Subscribe(sc.eventPort, msg, done, false, "vmmsg")
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
