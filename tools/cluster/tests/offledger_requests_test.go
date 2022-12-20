@@ -74,20 +74,10 @@ func TestOffledgerRequest(t *testing.T) {
 func TestOffledgerRequest900KB(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	var err error
-	counter, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_out":         1,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	chClient := chEnv.newWalletWithFunds(0, 0, 0, 1, 2, 3)
 
 	// send big blob off-ledger request via Web API
@@ -135,14 +125,13 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt, 3, addr)
 	require.NoError(t, err)
 
-	e := newChainEnv(t, clu, chain)
+	chEnv := newChainEnv(t, clu, chain)
+	chEnv.deployNativeIncCounterSC()
 
-	e.deployNativeIncCounterSC()
-
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	// use an access node to create the chainClient
-	chClient := e.newWalletWithFunds(5, 0, 2, 4, 5, 7)
+	chClient := chEnv.newWalletWithFunds(5, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err = chClient.PostOffLedgerRequest(
@@ -151,7 +140,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, chEnv.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu.WaspClient(6).CallView(

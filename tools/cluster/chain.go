@@ -195,10 +195,6 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 	return ret, nil
 }
 
-func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
-	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
-}
-
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.ViewGetBlockInfo.Name, nil)
