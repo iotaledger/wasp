@@ -79,17 +79,17 @@ func (e *EVMService) HandleJSONRPC(chainID isc.ChainID, request *http.Request, r
 	return nil
 }
 
-func (e *EVMService) GetRequestID(chainID isc.ChainID, hash string) (*isc.RequestID, error) {
+func (e *EVMService) GetRequestID(chainID isc.ChainID, hash string) (isc.RequestID, error) {
 	evmServer, err := e.getEVMBackend(chainID)
 	if err != nil {
-		return nil, err
+		return isc.RequestID{}, err
 	}
 
 	txHash := common.HexToHash(hash)
 	reqID, ok := evmServer.backend.RequestIDByTransactionHash(txHash)
 	if !ok {
-		return nil, errors.New("request id not found")
+		return isc.RequestID{}, errors.New("request id not found")
 	}
 
-	return &reqID, nil
+	return reqID, nil
 }

@@ -21,7 +21,7 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 		return err
 	}
 
-	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, *requestID, 30*time.Second)
+	receipt, vmError, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, 30*time.Second)
 	if err != nil {
 		return err
 	}

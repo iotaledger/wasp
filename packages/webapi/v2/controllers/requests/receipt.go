@@ -21,7 +21,7 @@ func (c *Controller) getReceipt(e echo.Context) error {
 		return err
 	}
 
-	receipt, vmError, err := c.vmService.GetReceipt(chainID, *requestID)
+	receipt, vmError, err := c.vmService.GetReceipt(chainID, requestID)
 	if err != nil {
 		return apierrors.ReceiptError(err)
 	}

@@ -20,13 +20,13 @@ func DecodeChainID(e echo.Context) (isc.ChainID, error) {
 	return chainID, nil
 }
 
-func DecodeRequestID(e echo.Context) (*isc.RequestID, error) {
+func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
 	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
 	if err != nil {
-		return nil, apierrors.InvalidPropertyError("requestID", err)
+		return isc.RequestID{}, apierrors.InvalidPropertyError("requestID", err)
 	}
 
-	return &requestID, nil
+	return requestID, nil
 }
 
 func DecodeHNameFromHNameString(e echo.Context, key string) (isc.Hname, error) {

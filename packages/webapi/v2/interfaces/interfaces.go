@@ -42,7 +42,7 @@ type ChainService interface {
 
 type EVMService interface {
 	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
-	GetRequestID(chainID isc.ChainID, hash string) (*isc.RequestID, error)
+	GetRequestID(chainID isc.ChainID, hash string) (isc.RequestID, error)
 }
 
 type MetricsService interface {

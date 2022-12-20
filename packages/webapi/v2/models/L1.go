@@ -126,12 +126,12 @@ func TransactionFromIotaGoTransaction(transaction *iotago.Transaction) *Transact
 	}
 }
 
-func TransactionFromIotaGoTransactionID(transaction *iotago.TransactionID) *Transaction {
-	if transaction == nil {
+func TransactionFromIotaGoTransactionID(txID *iotago.TransactionID) *Transaction {
+	if txID == nil {
 		return nil
 	}
 
 	return &Transaction{
-		TransactionID: transaction.ToHex(),
+		TransactionID: txID.ToHex(),
 	}
 }

@@ -142,7 +142,7 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 		return err
 	}
 
-	receipt, err := c.blocklog.GetRequestReceipt(chainID, *requestID)
+	receipt, err := c.blocklog.GetRequestReceipt(chainID, requestID)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -212,7 +212,7 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 		return err
 	}
 
-	requestProcessed, err := c.blocklog.IsRequestProcessed(chainID, *requestID)
+	requestProcessed, err := c.blocklog.IsRequestProcessed(chainID, requestID)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}
@@ -298,7 +298,7 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 		return err
 	}
 
-	events, err := c.blocklog.GetEventsForRequest(chainID, *requestID)
+	events, err := c.blocklog.GetEventsForRequest(chainID, requestID)
 	if err != nil {
 		return apierrors.ContractExecutionError(err)
 	}

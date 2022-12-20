@@ -53,7 +53,7 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 	reqid := vmctx.req.ID()
 	var isProcessed bool
 	vmctx.callCore(blocklog.Contract, func(s kv.KVStore) {
-		isProcessed = blocklog.MustIsRequestProcessed(vmctx.State(), &reqid)
+		isProcessed = blocklog.MustIsRequestProcessed(vmctx.State(), reqid)
 	})
 	if isProcessed {
 		return xerrors.New("already processed")
