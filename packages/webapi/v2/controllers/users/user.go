@@ -17,8 +17,7 @@ func (c *Controller) addUser(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	err := c.userService.AddUser(addUserModel.Username, addUserModel.Password, addUserModel.Permissions)
-	if err != nil {
+	if err := c.userService.AddUser(addUserModel.Username, addUserModel.Password, addUserModel.Permissions); err != nil {
 		return apierrors.InternalServerError(err)
 	}
 
@@ -38,8 +37,7 @@ func (c *Controller) updateUserPassword(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	err := c.userService.UpdateUserPassword(userName, updateUserPasswordModel.Password)
-	if err != nil {
+	if err := c.userService.UpdateUserPassword(userName, updateUserPasswordModel.Password); err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
 
@@ -60,8 +58,7 @@ func (c *Controller) updateUserPermissions(e echo.Context) error {
 	}
 
 	// TODO: Later on, compare the permissions with the permission Wasp actually uses.
-	err := c.userService.UpdateUserPermissions(userName, updateUserPermissionsModel.Permissions)
-	if err != nil {
+	if err := c.userService.UpdateUserPermissions(userName, updateUserPermissionsModel.Permissions); err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
 
@@ -75,8 +72,7 @@ func (c *Controller) deleteUser(e echo.Context) error {
 		return apierrors.InvalidPropertyError("username", errors.New("username is empty"))
 	}
 
-	err := c.userService.DeleteUser(userName)
-	if err != nil {
+	if err := c.userService.DeleteUser(userName); err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}
 
@@ -99,7 +95,5 @@ func (c *Controller) getUser(e echo.Context) error {
 }
 
 func (c *Controller) getUsers(e echo.Context) error {
-	users := c.userService.GetUsers()
-
-	return e.JSON(http.StatusOK, users)
+	return e.JSON(http.StatusOK, c.userService.GetUsers())
 }
