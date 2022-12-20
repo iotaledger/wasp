@@ -93,7 +93,7 @@ func nativeTokenOutputStorageDeposit() uint64 {
 		&addr,
 		&isc.FungibleTokens{
 			BaseTokens: 1,
-			Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
 				Amount: abi.MaxUint256,
 			}},
@@ -111,7 +111,7 @@ func nftOutputStorageDeposit() uint64 {
 		&addr,
 		&isc.FungibleTokens{
 			BaseTokens: 1,
-			Tokens: iotago.NativeTokens{&iotago.NativeToken{
+			NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
 				ID:     iotago.NativeTokenID{},
 				Amount: abi.MaxUint256,
 			}},

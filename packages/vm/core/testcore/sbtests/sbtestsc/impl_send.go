@@ -35,12 +35,12 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(ok, "caller must have L1 address")
 	// claims all base tokens from allowance
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowance(ctx.AllowanceAvailable().Assets.BaseTokens, nil, nil))
-	for _, token := range ctx.AllowanceAvailable().Assets.Tokens {
-		for ctx.AllowanceAvailable().Assets.AmountNativeToken(&token.ID).Cmp(util.Big0) > 0 {
+	for _, nativeToken := range ctx.AllowanceAvailable().Assets.NativeTokens {
+		for ctx.AllowanceAvailable().Assets.AmountNativeToken(&nativeToken.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
-			assets := isc.NewEmptyFungibleTokens().AddNativeTokens(token.ID, 1)
+			assets := isc.NewEmptyFungibleTokens().AddNativeTokens(nativeToken.ID, 1)
 			transfer := isc.NewAllowanceFungibleTokens(assets)
 			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
 			fmt.Printf("%s\n", rem)

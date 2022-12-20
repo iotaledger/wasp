@@ -212,37 +212,37 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 
 // ISCAllowance matches the struct definition in ISCTypes.sol
 type ISCAllowance struct {
-	BaseTokens uint64
-	Tokens     []NativeToken
-	Nfts       []NFTID
+	BaseTokens   uint64
+	NativeTokens []NativeToken
+	NFTs         []NFTID
 }
 
 func WrapISCAllowance(a *isc.Allowance) ISCAllowance {
 	if a == nil {
 		return WrapISCAllowance(isc.NewEmptyAllowance())
 	}
-	tokens := make([]NativeToken, len(a.Assets.Tokens))
-	for i, t := range a.Assets.Tokens {
-		tokens[i] = WrapNativeToken(t)
+	tokens := make([]NativeToken, len(a.Assets.NativeTokens))
+	for i, nativeToken := range a.Assets.NativeTokens {
+		tokens[i] = WrapNativeToken(nativeToken)
 	}
 	nfts := make([]NFTID, len(a.NFTs))
 	for i, id := range a.NFTs {
 		nfts[i] = WrapNFTID(id)
 	}
 	return ISCAllowance{
-		BaseTokens: a.Assets.BaseTokens,
-		Tokens:     tokens,
-		Nfts:       nfts,
+		BaseTokens:   a.Assets.BaseTokens,
+		NativeTokens: tokens,
+		NFTs:         nfts,
 	}
 }
 
 func (a ISCAllowance) Unwrap() *isc.Allowance {
-	tokens := make(iotago.NativeTokens, len(a.Tokens))
-	for i, t := range a.Tokens {
-		tokens[i] = t.Unwrap()
+	tokens := make(iotago.NativeTokens, len(a.NativeTokens))
+	for i, nativeToken := range a.NativeTokens {
+		tokens[i] = nativeToken.Unwrap()
 	}
-	nfts := make([]iotago.NFTID, len(a.Nfts))
-	for i, id := range a.Nfts {
+	nfts := make([]iotago.NFTID, len(a.NFTs))
+	for i, id := range a.NFTs {
 		nfts[i] = id.Unwrap()
 	}
 	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
@@ -276,19 +276,19 @@ func (d ISCDict) Unwrap() dict.Dict {
 }
 
 type ISCFungibleTokens struct {
-	BaseTokens uint64
-	Tokens     []NativeToken
+	BaseTokens   uint64
+	NativeTokens []NativeToken
 }
 
 func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens {
 	ret := ISCFungibleTokens{
-		BaseTokens: fungibleTokens.BaseTokens,
-		Tokens:     make([]NativeToken, len(fungibleTokens.Tokens)),
+		BaseTokens:   fungibleTokens.BaseTokens,
+		NativeTokens: make([]NativeToken, len(fungibleTokens.NativeTokens)),
 	}
 
-	for i, v := range fungibleTokens.Tokens {
-		ret.Tokens[i].ID = WrapNativeTokenID(&v.ID)
-		ret.Tokens[i].Amount = v.Amount
+	for i, nativeToken := range fungibleTokens.NativeTokens {
+		ret.NativeTokens[i].ID = WrapNativeTokenID(&nativeToken.ID)
+		ret.NativeTokens[i].Amount = nativeToken.Amount
 	}
 
 	return ret
@@ -296,17 +296,17 @@ func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens 
 
 func (t ISCFungibleTokens) Unwrap() *isc.FungibleTokens {
 	ret := isc.FungibleTokens{
-		BaseTokens: t.BaseTokens,
-		Tokens:     make(iotago.NativeTokens, len(t.Tokens)),
+		BaseTokens:   t.BaseTokens,
+		NativeTokens: make(iotago.NativeTokens, len(t.NativeTokens)),
 	}
 
-	for i, v := range t.Tokens {
+	for i, nativeToken := range t.NativeTokens {
 		nativeToken := iotago.NativeToken{
-			ID:     v.ID.Unwrap(),
-			Amount: v.Amount,
+			ID:     nativeToken.ID.Unwrap(),
+			Amount: nativeToken.Amount,
 		}
 
-		ret.Tokens[i] = &nativeToken
+		ret.NativeTokens[i] = &nativeToken
 	}
 
 	return &ret

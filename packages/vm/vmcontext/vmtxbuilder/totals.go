@@ -64,13 +64,13 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	for _, out := range txb.consumed {
 		a := out.FungibleTokens()
 		ret.TotalBaseTokensInL2Accounts += a.BaseTokens
-		for _, nt := range a.Tokens {
-			s, ok := ret.NativeTokenBalances[nt.ID]
+		for _, nativeToken := range a.NativeTokens {
+			s, ok := ret.NativeTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			ret.NativeTokenBalances[nt.ID] = s
+			s.Add(s, nativeToken.Amount)
+			ret.NativeTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, f := range txb.invokedFoundries {
@@ -121,13 +121,13 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)
 		ret.SentOutBaseTokens += assets.BaseTokens
-		for _, nt := range assets.Tokens {
-			s, ok := ret.SentOutTokenBalances[nt.ID]
+		for _, nativeToken := range assets.NativeTokens {
+			s, ok := ret.SentOutTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			ret.SentOutTokenBalances[nt.ID] = s
+			s.Add(s, nativeToken.Amount)
+			ret.SentOutTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
@@ -191,15 +191,15 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.
 		panic(xerrors.Errorf("'%s': base tokens L1 (%d) != base tokens L2 (%d): %v",
 			checkpoint, outTotal.TotalBaseTokensInL2Accounts, l2Totals.BaseTokens, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
-	for _, nt := range l2Totals.Tokens {
-		b1, ok := outTotal.NativeTokenBalances[nt.ID]
+	for _, nativeToken := range l2Totals.NativeTokens {
+		b1, ok := outTotal.NativeTokenBalances[nativeToken.ID]
 		if !ok {
 			// checking only those which are in the tx builder
 			continue
 		}
-		if nt.Amount.Cmp(b1) != 0 {
+		if nativeToken.Amount.Cmp(b1) != 0 {
 			panic(xerrors.Errorf("token %s L1 (%d) != L2 (%d): %v",
-				nt.ID.String(), nt.Amount, b1, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
+				nativeToken.ID.String(), nativeToken.Amount, b1, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 		}
 	}
 }

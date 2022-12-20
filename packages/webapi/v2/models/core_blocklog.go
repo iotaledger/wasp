@@ -68,8 +68,8 @@ type BlockReceiptError struct {
 }
 
 type FungibleTokens struct {
-	BaseTokens uint64         `json:"baseTokens"`
-	Tokens     []*NativeToken `json:"nativeTokens"`
+	BaseTokens   uint64         `json:"baseTokens"`
+	NativeTokens []*NativeToken `json:"nativeTokens"`
 }
 
 func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
@@ -78,8 +78,8 @@ func MapFungibleTokens(tokens *isc.FungibleTokens) *FungibleTokens {
 	}
 
 	return &FungibleTokens{
-		BaseTokens: tokens.BaseTokens,
-		Tokens:     MapNativeTokens(tokens.Tokens),
+		BaseTokens:   tokens.BaseTokens,
+		NativeTokens: MapNativeTokens(tokens.NativeTokens),
 	}
 }
 

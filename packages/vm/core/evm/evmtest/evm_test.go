@@ -1368,7 +1368,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	// ensure the gas fees and the tokens moved are the correct ones
 	require.EqualValues(t,
 		uint64(tokensToMoveToEvmAccount)-result.iscReceipt.GasFeeCharged-actualTokensMovedInEVMRequest,
-		env.soloChain.L2Assets(ethAgentID).Tokens[0].Amount.Uint64(),
+		env.soloChain.L2Assets(ethAgentID).NativeTokens[0].Amount.Uint64(),
 	)
 }
 

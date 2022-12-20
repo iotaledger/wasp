@@ -19,8 +19,8 @@ type NativeToken struct {
 }
 
 type AssetsResponse struct {
-	BaseTokens uint64         `json:"baseTokens"`
-	Tokens     []*NativeToken `json:"nativeTokens"`
+	BaseTokens   uint64         `json:"baseTokens"`
+	NativeTokens []*NativeToken `json:"nativeTokens"`
 }
 
 func MapNativeToken(token *iotago.NativeToken) *NativeToken {

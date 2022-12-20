@@ -37,9 +37,9 @@ func TestMarshalling(t *testing.T) {
 	assets2, err := FungibleTokensFromMarshalUtil(marshalutil.New(bytes))
 	require.NoError(t, err)
 	require.Equal(t, assets.BaseTokens, assets2.BaseTokens)
-	require.Equal(t, len(assets.Tokens), len(assets2.Tokens))
+	require.Equal(t, len(assets.NativeTokens), len(assets2.NativeTokens))
 	for i := range tokens {
-		require.Equal(t, assets.Tokens[i], assets2.Tokens[i])
+		require.Equal(t, assets.NativeTokens[i], assets2.NativeTokens[i])
 	}
 }
 
@@ -73,7 +73,7 @@ func TestAssets_SpendBudget(t *testing.T) {
 
 	budget = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
@@ -83,14 +83,14 @@ func TestAssets_SpendBudget(t *testing.T) {
 
 	budget = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	cloneBudget := budget.Clone()
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(10)},
 		},
 	}
@@ -99,20 +99,20 @@ func TestAssets_SpendBudget(t *testing.T) {
 
 	budget = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	expected := &FungibleTokens{
 		BaseTokens: 0,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
@@ -121,13 +121,13 @@ func TestAssets_SpendBudget(t *testing.T) {
 
 	budget = &FungibleTokens{
 		BaseTokens: 10,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			{ID: tokenID1, Amount: big.NewInt(5)},
 		},
 	}

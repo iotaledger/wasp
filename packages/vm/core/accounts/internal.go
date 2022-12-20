@@ -138,17 +138,17 @@ func loadAccountMutations(account *collections.Map, assets *isc.FungibleTokens) 
 	}
 
 	tokenMutations := make(map[iotago.NativeTokenID]tokenBalanceMutation)
-	for _, nt := range assets.Tokens {
-		if nt.Amount.Cmp(util.Big0) < 0 {
+	for _, nativeToken := range assets.NativeTokens {
+		if nativeToken.Amount.Cmp(util.Big0) < 0 {
 			panic(ErrBadAmount)
 		}
 		bal := big.NewInt(0)
-		if v := account.MustGetAt(nt.ID[:]); v != nil {
+		if v := account.MustGetAt(nativeToken.ID[:]); v != nil {
 			bal.SetBytes(v)
 		}
-		tokenMutations[nt.ID] = tokenBalanceMutation{
+		tokenMutations[nativeToken.ID] = tokenBalanceMutation{
 			balance: bal,
-			delta:   nt.Amount,
+			delta:   nativeToken.Amount,
 		}
 	}
 	return fromBaseTokens, addBaseTokens, tokenMutations
@@ -156,7 +156,7 @@ func loadAccountMutations(account *collections.Map, assets *isc.FungibleTokens) 
 
 // CreditToAccount brings new funds to the on chain ledger
 func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.FungibleTokens) {
-	if assets == nil || (assets.BaseTokens == 0 && len(assets.Tokens) == 0) {
+	if assets == nil || (assets.BaseTokens == 0 && len(assets.NativeTokens) == 0) {
 		return
 	}
 	account := getAccount(state, agentID)
@@ -255,14 +255,14 @@ func hasEnoughForAllowance(account *collections.ImmutableMap, allowance *isc.All
 		}
 
 		// check native tokens
-		for _, token := range allowance.Assets.Tokens {
-			v := account.MustGetAt(token.ID[:])
+		for _, nativeToken := range allowance.Assets.NativeTokens {
+			v := account.MustGetAt(nativeToken.ID[:])
 			if v == nil {
 				return false
 			}
 			bal := big.NewInt(0)
 			bal.SetBytes(v)
-			if bal.Cmp(token.Amount) == -1 {
+			if bal.Cmp(nativeToken.Amount) == -1 {
 				return false
 			}
 		}
@@ -371,11 +371,11 @@ func getAccountAssets(account *collections.ImmutableMap) *isc.FungibleTokens {
 		if len(idBytes) != iotago.NativeTokenIDLength {
 			return true // NFT or some other asset that is not a native token
 		}
-		token := iotago.NativeToken{
+		nativeToken := iotago.NativeToken{
 			ID:     isc.MustNativeTokenIDFromBytes(idBytes),
 			Amount: new(big.Int).SetBytes(val),
 		}
-		ret.Tokens = append(ret.Tokens, &token)
+		ret.NativeTokens = append(ret.NativeTokens, &nativeToken)
 		return true
 	})
 	return ret

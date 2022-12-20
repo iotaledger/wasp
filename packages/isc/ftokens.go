@@ -18,22 +18,22 @@ import (
 
 // FungibleTokens is used as assets in the UTXO and as tokens in transfer
 type FungibleTokens struct {
-	BaseTokens uint64              `json:"base"`
-	Tokens     iotago.NativeTokens `json:"nativeTokens"`
+	BaseTokens   uint64              `json:"baseTokens"`
+	NativeTokens iotago.NativeTokens `json:"nativeTokens"`
 }
 
 var BaseTokenID = []byte{}
 
 func NewEmptyFungibleTokens() *FungibleTokens {
 	return &FungibleTokens{
-		Tokens: make([]*iotago.NativeToken, 0),
+		NativeTokens: make([]*iotago.NativeToken, 0),
 	}
 }
 
 func NewFungibleTokens(baseTokens uint64, tokens iotago.NativeTokens) *FungibleTokens {
 	return &FungibleTokens{
-		BaseTokens: baseTokens,
-		Tokens:     tokens,
+		BaseTokens:   baseTokens,
+		NativeTokens: tokens,
 	}
 }
 
@@ -63,7 +63,7 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 			ID:     id,
 			Amount: new(big.Int).SetBytes(val),
 		}
-		ret.Tokens = append(ret.Tokens, token)
+		ret.NativeTokens = append(ret.NativeTokens, token)
 	}
 	return ret, nil
 }
@@ -72,7 +72,7 @@ func FungibleTokensFromNativeTokenSum(baseTokens uint64, tokens iotago.NativeTok
 	ret := NewEmptyFungibleTokens()
 	ret.BaseTokens = baseTokens
 	for id, val := range tokens {
-		ret.Tokens = append(ret.Tokens, &iotago.NativeToken{
+		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{
 			ID:     id,
 			Amount: val,
 		})
@@ -90,8 +90,8 @@ func FungibleTokensFromOutputMap(outs map[iotago.OutputID]iotago.Output) *Fungib
 
 func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
 	ret := &FungibleTokens{
-		BaseTokens: o.Deposit(),
-		Tokens:     o.NativeTokenList().Clone(),
+		BaseTokens:   o.Deposit(),
+		NativeTokens: o.NativeTokenList().Clone(),
 	}
 	return ret
 }
@@ -120,13 +120,13 @@ func (a *FungibleTokens) Clone() *FungibleTokens {
 	}
 
 	return &FungibleTokens{
-		BaseTokens: a.BaseTokens,
-		Tokens:     a.Tokens.Clone(),
+		BaseTokens:   a.BaseTokens,
+		NativeTokens: a.NativeTokens.Clone(),
 	}
 }
 
 func (a *FungibleTokens) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
-	for _, t := range a.Tokens {
+	for _, t := range a.NativeTokens {
 		if t.ID == *tokenID {
 			return t.Amount
 		}
@@ -136,10 +136,10 @@ func (a *FungibleTokens) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.I
 
 func (a *FungibleTokens) String() string {
 	ret := fmt.Sprintf("base tokens: %d", a.BaseTokens)
-	if len(a.Tokens) > 0 {
-		ret += fmt.Sprintf(", tokens (%d):", len(a.Tokens))
+	if len(a.NativeTokens) > 0 {
+		ret += fmt.Sprintf(", tokens (%d):", len(a.NativeTokens))
 	}
-	for _, nt := range a.Tokens {
+	for _, nt := range a.NativeTokens {
 		ret += fmt.Sprintf("\n       %s: %d", nt.ID.String(), nt.Amount)
 	}
 	return ret
@@ -153,7 +153,7 @@ func (a *FungibleTokens) Bytes() []byte {
 
 func (a *FungibleTokens) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.WriteUint64(a.BaseTokens)
-	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
+	tokenBytes, err := serializer.NewSerializer().WriteSliceOfObjects(&a.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, &NativeAssetsSerializationArrayRules, func(err error) error {
 		return fmt.Errorf("unable to serialize alias output native tokens: %w", err)
 	}).Serialize()
 	if err != nil {
@@ -165,7 +165,7 @@ func (a *FungibleTokens) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 
 func FungibleTokensFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FungibleTokens, error) {
 	ret := &FungibleTokens{
-		Tokens: make(iotago.NativeTokens, 0),
+		NativeTokens: make(iotago.NativeTokens, 0),
 	}
 	var err error
 	if ret.BaseTokens, err = mu.ReadUint64(); err != nil {
@@ -180,7 +180,7 @@ func FungibleTokensFromMarshalUtil(mu *marshalutil.MarshalUtil) (*FungibleTokens
 		return nil, err
 	}
 	_, err = serializer.NewDeserializer(tokenBytes).
-		ReadSliceOfObjects(&ret.Tokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, serializer.TypeDenotationNone, &NativeAssetsSerializationArrayRules, func(err error) error {
+		ReadSliceOfObjects(&ret.NativeTokens, serializer.DeSeriModePerformLexicalOrdering, nil, serializer.SeriLengthPrefixTypeAsUint16, serializer.TypeDenotationNone, &NativeAssetsSerializationArrayRules, func(err error) error {
 			return fmt.Errorf("unable to deserialize native tokens for alias output: %w", err)
 		}).Done()
 	if err != nil {
@@ -199,12 +199,12 @@ func (a *FungibleTokens) Equals(b *FungibleTokens) bool {
 	if a.BaseTokens != b.BaseTokens {
 		return false
 	}
-	if len(a.Tokens) != len(b.Tokens) {
+	if len(a.NativeTokens) != len(b.NativeTokens) {
 		return false
 	}
-	bTokensSet := b.Tokens.MustSet()
-	for _, token := range a.Tokens {
-		if token.Amount.Cmp(bTokensSet[token.ID].Amount) != 0 {
+	bTokensSet := b.NativeTokens.MustSet()
+	for _, nativeToken := range a.NativeTokens {
+		if nativeToken.Amount.Cmp(bTokensSet[nativeToken.ID].Amount) != 0 {
 			return false
 		}
 	}
@@ -223,52 +223,52 @@ func (a *FungibleTokens) SpendFromFungibleTokenBudget(toSpend *FungibleTokens) b
 	}
 	if a.Equals(toSpend) {
 		a.BaseTokens = 0
-		a.Tokens = nil
+		a.NativeTokens = nil
 		return true
 	}
 	if a.BaseTokens < toSpend.BaseTokens {
 		return false
 	}
-	targetSet := a.Tokens.Clone().MustSet()
+	targetSet := a.NativeTokens.Clone().MustSet()
 
-	for _, nt := range toSpend.Tokens {
-		curr, ok := targetSet[nt.ID]
-		if !ok || curr.Amount.Cmp(nt.Amount) < 0 {
+	for _, nativeToken := range toSpend.NativeTokens {
+		curr, ok := targetSet[nativeToken.ID]
+		if !ok || curr.Amount.Cmp(nativeToken.Amount) < 0 {
 			return false
 		}
-		curr.Amount.Sub(curr.Amount, nt.Amount)
+		curr.Amount.Sub(curr.Amount, nativeToken.Amount)
 	}
 	// budget is enough
 	a.BaseTokens -= toSpend.BaseTokens
-	a.Tokens = a.Tokens[:0]
-	for _, nt := range targetSet {
-		if util.IsZeroBigInt(nt.Amount) {
+	a.NativeTokens = a.NativeTokens[:0]
+	for _, nativeToken := range targetSet {
+		if util.IsZeroBigInt(nativeToken.Amount) {
 			continue
 		}
-		a.Tokens = append(a.Tokens, nt)
+		a.NativeTokens = append(a.NativeTokens, nativeToken)
 	}
 	return true
 }
 
 func (a *FungibleTokens) Add(b *FungibleTokens) *FungibleTokens {
 	a.BaseTokens += b.BaseTokens
-	resultTokens := a.Tokens.MustSet()
-	for _, token := range b.Tokens {
-		if resultTokens[token.ID] != nil {
-			resultTokens[token.ID].Amount.Add(
-				resultTokens[token.ID].Amount,
-				token.Amount,
+	resultTokens := a.NativeTokens.MustSet()
+	for _, nativeToken := range b.NativeTokens {
+		if resultTokens[nativeToken.ID] != nil {
+			resultTokens[nativeToken.ID].Amount.Add(
+				resultTokens[nativeToken.ID].Amount,
+				nativeToken.Amount,
 			)
 			continue
 		}
-		resultTokens[token.ID] = token
+		resultTokens[nativeToken.ID] = nativeToken
 	}
-	a.Tokens = nativeTokensFromSet(resultTokens)
+	a.NativeTokens = nativeTokensFromSet(resultTokens)
 	return a
 }
 
 func (a *FungibleTokens) IsEmpty() bool {
-	return a == nil || a.BaseTokens == 0 && len(a.Tokens) == 0
+	return a == nil || a.BaseTokens == 0 && len(a.NativeTokens) == 0
 }
 
 func (a *FungibleTokens) AddBaseTokens(amount uint64) *FungibleTokens {
@@ -289,17 +289,17 @@ func (a *FungibleTokens) AddNativeTokens(tokenID iotago.NativeTokenID, amount in
 func (a *FungibleTokens) ToDict() dict.Dict {
 	ret := dict.New()
 	ret.Set(kv.Key(BaseTokenID), new(big.Int).SetUint64(a.BaseTokens).Bytes())
-	for _, token := range a.Tokens {
-		ret.Set(kv.Key(token.ID[:]), token.Amount.Bytes())
+	for _, nativeToken := range a.NativeTokens {
+		ret.Set(kv.Key(nativeToken.ID[:]), nativeToken.Amount.Bytes())
 	}
 	return ret
 }
 
-func nativeTokensFromSet(set iotago.NativeTokensSet) iotago.NativeTokens {
-	ret := make(iotago.NativeTokens, len(set))
+func nativeTokensFromSet(nativeTokenSet iotago.NativeTokensSet) iotago.NativeTokens {
+	ret := make(iotago.NativeTokens, len(nativeTokenSet))
 	i := 0
-	for _, token := range set {
-		ret[i] = token
+	for _, nativeToken := range nativeTokenSet {
+		ret[i] = nativeToken
 		i++
 	}
 	return ret

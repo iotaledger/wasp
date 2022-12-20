@@ -100,7 +100,7 @@ func computeInputsAndRemainder(
 		inputIDs = append(inputIDs, outputID)
 		a := AssetsFromOutput(output)
 		baseTokensIn += a.BaseTokens
-		for _, nativeToken := range a.Tokens {
+		for _, nativeToken := range a.NativeTokens {
 			nativeTokenAmountSum, ok := tokensIn[nativeToken.ID]
 			if !ok {
 				nativeTokenAmountSum = new(big.Int)

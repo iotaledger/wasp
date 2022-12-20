@@ -300,7 +300,7 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
+			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.NativeTokens, tokenID); transferTokens != nil {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -360,10 +360,10 @@ func (vmctx *VMContext) chargeGasFee() {
 	transferToValidator := &isc.FungibleTokens{}
 	transferToOwner := &isc.FungibleTokens{}
 	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
-		transferToValidator.Tokens = iotago.NativeTokens{
+		transferToValidator.NativeTokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
 		}
-		transferToOwner.Tokens = iotago.NativeTokens{
+		transferToOwner.NativeTokens = iotago.NativeTokens{
 			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
 		}
 	} else {

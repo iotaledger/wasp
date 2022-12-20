@@ -66,7 +66,7 @@ var balanceCmd = &cobra.Command{
 		model := &BalanceModel{
 			Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
 			AddressIndex: addressIndex,
-			NativeTokens: balance.Tokens,
+			NativeTokens: balance.NativeTokens,
 			BaseTokens:   balance.BaseTokens,
 			OutputMap:    outs,
 		}

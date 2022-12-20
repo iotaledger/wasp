@@ -165,7 +165,7 @@ func TestHarvest(t *testing.T) {
 	creatorBal1 := ctx.Chain.L2Assets(creatorAgentID)
 	assert.Equal(t, minimumBaseTokensOnCommonAccount+ctx.GasFee, commonAccountBal2.BaseTokens)
 	assert.Equal(t, creatorBal0.BaseTokens+(commonAccountBal1.BaseTokens-commonAccountBal2.BaseTokens)+isc.Million, creatorBal1.BaseTokens)
-	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.Tokens[0].Amount)
+	assert.Equal(t, big.NewInt(int64(transferAmount)), creatorBal1.NativeTokens[0].Amount)
 }
 
 func TestFoundryCreateNew(t *testing.T) {

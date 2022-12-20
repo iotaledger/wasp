@@ -812,7 +812,7 @@ func TestTransferAndHarvest(t *testing.T) {
 	storageDepositCosts := transaction.NewStorageDepositEstimate()
 	commonAssets := v.ch.L2CommonAccountAssets()
 	require.True(t, commonAssets.BaseTokens+storageDepositCosts.AnchorOutput > 10_000)
-	require.EqualValues(t, 0, len(commonAssets.Tokens))
+	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 
 	v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 100)
 
@@ -843,7 +843,7 @@ func TestTransferAndHarvest(t *testing.T) {
 	commonAssets = v.ch.L2CommonAccountAssets()
 	// in the common account should have left minimum plus gas fee from the last request
 	require.EqualValues(t, accounts.MinimumBaseTokensOnCommonAccount+rec.GasFeeCharged, commonAssets.BaseTokens)
-	require.EqualValues(t, 0, len(commonAssets.Tokens))
+	require.EqualValues(t, 0, len(commonAssets.NativeTokens))
 }
 
 func TestFoundryDestroy(t *testing.T) {

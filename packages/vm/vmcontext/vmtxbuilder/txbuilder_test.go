@@ -33,8 +33,8 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 	var assets *isc.FungibleTokens
 	if amountNative > 0 {
 		assets = &isc.FungibleTokens{
-			BaseTokens: 0,
-			Tokens:     iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
+			BaseTokens:   0,
+			NativeTokens: iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
 	}
 	basicOutput := transaction.MakeBasicOutput(
@@ -58,7 +58,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) uint64 {
 	assets := &isc.FungibleTokens{
 		BaseTokens: 0,
-		Tokens: iotago.NativeTokens{
+		NativeTokens: iotago.NativeTokens{
 			&iotago.NativeToken{
 				ID:     tokenID,
 				Amount: new(big.Int).SetUint64(amount),

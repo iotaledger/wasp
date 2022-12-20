@@ -134,8 +134,8 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	txb.addDeltaBaseTokensToTotal(req.Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaBaseTokensStorageDepositAdjustment := int64(0)
-	for _, nt := range req.FungibleTokens().Tokens {
-		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
+	for _, nativeToken := range req.FungibleTokens().NativeTokens {
+		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(&nativeToken.ID, nativeToken.Amount)
 	}
 	if req.NFT() != nil {
 		deltaBaseTokensStorageDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.OutputID())
@@ -164,9 +164,9 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	txb.subDeltaBaseTokensFromTotal(assets.BaseTokens)
 	bi := new(big.Int)
 	baseTokensAdjustmentL2 := int64(0)
-	for _, nt := range assets.Tokens {
-		bi.Neg(nt.Amount)
-		baseTokensAdjustmentL2 += txb.addNativeTokenBalanceDelta(&nt.ID, bi)
+	for _, nativeToken := range assets.NativeTokens {
+		bi.Neg(nativeToken.Amount)
+		baseTokensAdjustmentL2 += txb.addNativeTokenBalanceDelta(&nativeToken.ID, bi)
 	}
 	if nftout, ok := o.(*iotago.NFTOutput); ok {
 		baseTokensAdjustmentL2 += txb.sendNFT(nftout)

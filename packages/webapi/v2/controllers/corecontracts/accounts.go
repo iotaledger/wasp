@@ -44,8 +44,8 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens,
-		Tokens:     models.MapNativeTokens(assets.Tokens),
+		BaseTokens:   assets.BaseTokens,
+		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -68,8 +68,8 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens,
-		Tokens:     models.MapNativeTokens(assets.Tokens),
+		BaseTokens:   assets.BaseTokens,
+		NativeTokens: models.MapNativeTokens(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -192,8 +192,8 @@ func (c *Controller) getFoundryOutput(e echo.Context) error {
 	foundryOutputResponse := &models.FoundryOutputResponse{
 		FoundryID: foundryOutputID.ToHex(),
 		Assets: models.AssetsResponse{
-			BaseTokens: foundryOutput.Amount,
-			Tokens:     models.MapNativeTokens(foundryOutput.NativeTokens),
+			BaseTokens:   foundryOutput.Amount,
+			NativeTokens: models.MapNativeTokens(foundryOutput.NativeTokens),
 		},
 	}
 

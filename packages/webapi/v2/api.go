@@ -64,10 +64,10 @@ func Init(
 	nodeOwnerAddresses []string,
 	requestCacheTTL time.Duration,
 ) {
+	// load mock files to generate correct echo swagger documentation
 	mocker := NewMocker()
 	mocker.LoadMockFiles()
 
-	// -- Add dependency injection here
 	vmService := services.NewVMService(chainsProvider)
 	chainService := services.NewChainService(chainsProvider, nodeConnectionMetrics, chainRecordRegistryProvider, vmService)
 	committeeService := services.NewCommitteeService(chainsProvider, networkProvider, dkShareRegistryProvider)
