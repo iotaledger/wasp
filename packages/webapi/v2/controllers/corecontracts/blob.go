@@ -3,9 +3,9 @@ package corecontracts
 import (
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
@@ -67,7 +67,7 @@ func (c *Controller) getBlobValue(e echo.Context) error {
 	}
 
 	blobValueResponse := &BlobValueResponse{
-		ValueData: hexutil.Encode(blobValueBytes),
+		ValueData: iotago.EncodeHex(blobValueBytes),
 	}
 
 	return e.JSON(http.StatusOK, blobValueResponse)

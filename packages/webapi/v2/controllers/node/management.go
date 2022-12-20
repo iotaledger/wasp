@@ -3,7 +3,6 @@ package node
 import (
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -17,7 +16,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	reqNodePubKeyBytes, err := hexutil.Decode(request.NodePubKey)
+	reqNodePubKeyBytes, err := iotago.DecodeHex(request.NodePubKey)
 	if err != nil {
 		return apierrors.InvalidPropertyError("NodePubKey", err)
 	}
@@ -33,7 +32,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 	}
 
 	response := models.NodeOwnerCertificateResponse{
-		Certificate: hexutil.Encode(certificateBytes),
+		Certificate: iotago.EncodeHex(certificateBytes),
 	}
 
 	return e.JSON(http.StatusOK, response)

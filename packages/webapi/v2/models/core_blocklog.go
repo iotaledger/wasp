@@ -3,8 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -35,7 +34,7 @@ type BlockInfoResponse struct {
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
-	transactionEssenceHash := hexutil.Encode(info.TransactionSubEssenceHash[:])
+	transactionEssenceHash := iotago.EncodeHex(info.TransactionSubEssenceHash[:])
 	commitmentHash := ""
 
 	if info.L1Commitment != nil {

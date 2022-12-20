@@ -3,9 +3,9 @@ package requests
 import (
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
@@ -22,7 +22,7 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 		return apierrors.InvalidPropertyError("ChainID", err)
 	}
 
-	requestDecoded, err := hexutil.Decode(request.Request)
+	requestDecoded, err := iotago.DecodeHex(request.Request)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
 	}

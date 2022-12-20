@@ -1,8 +1,7 @@
 package models
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -50,7 +49,7 @@ func MapReceiptResponse(receipt *isc.Receipt, resolvedError *isc.VMError) *Recei
 	}
 
 	return &ReceiptResponse{
-		Request:       hexutil.Encode(receipt.Request),
+		Request:       iotago.EncodeHex(receipt.Request),
 		Error:         MapReceiptError(resolvedError),
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,

@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -60,7 +59,7 @@ func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
 }
 
 func DecodeNFTID(e echo.Context) (*iotago.NFTID, error) {
-	nftIDBytes, err := hexutil.Decode(e.Param("nftID"))
+	nftIDBytes, err := iotago.DecodeHex(e.Param("nftID"))
 	if err != nil {
 		return nil, apierrors.InvalidPropertyError("nftID", err)
 	}

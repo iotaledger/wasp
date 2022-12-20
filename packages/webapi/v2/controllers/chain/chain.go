@@ -3,9 +3,9 @@ package chain
 import (
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
@@ -93,7 +93,7 @@ func (c *Controller) getState(e echo.Context) error {
 		return err
 	}
 
-	stateKey, err := hexutil.Decode(e.Param("stateKey"))
+	stateKey, err := iotago.DecodeHex(e.Param("stateKey"))
 	if err != nil {
 		return apierrors.InvalidPropertyError("stateKey", err)
 	}
