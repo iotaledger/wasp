@@ -10,10 +10,8 @@ import (
 	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcoreimpl"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
@@ -120,30 +118,10 @@ func chainAccountBalances(ctx *wasmsolo.SoloContext, w bool, chain, total uint64
 	ctx.Chain.AssertL2TotalBaseTokens(total)
 }
 
-// originatorBalanceReducedBy checks the balance of the originator address has
-// reduced by the given amount, taking any extra uploadWasm() into account
-//
-//nolint:unused
-func originatorBalanceReducedBy(ctx *wasmsolo.SoloContext, w bool, minus uint64) {
-	if w {
-		// wasm setup takes 1 more iota than core setup due to uploadWasm()
-		minus++
-	}
-	ctx.Chain.Env.AssertL1BaseTokens(ctx.Chain.OriginatorAddress, utxodb.FundsFromFaucetAmount-minus)
-}
-
 func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnDispatch)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
 	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.Post()
 	require.NoError(t, ctxRoot.Err)
-}
-
-//nolint:unused
-func withdraw(t *testing.T, ctx *wasmsolo.SoloContext, user *wasmsolo.SoloAgent) {
-	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnDispatch)
-	f := coreaccounts.ScFuncs.Withdraw(ctxAcc.Sign(user))
-	f.Func.Post()
-	require.NoError(t, ctxAcc.Err)
 }
