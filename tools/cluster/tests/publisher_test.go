@@ -94,17 +94,11 @@ func TestNanoPublisher(t *testing.T) {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		require.NoError(t, err)
 
-		// ---
-		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
-		require.NoError(t, err)
-		// ---
-
 		reqIDs[i] = req.ID()
 	}
 
 	for i, reqID := range reqIDs {
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 30*time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 10*time.Second)
 		if err != nil {
 			println(i)
 		}
