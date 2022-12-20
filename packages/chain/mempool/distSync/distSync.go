@@ -120,7 +120,7 @@ func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.Out
 }
 
 // In the current algorithm, for sharing a message:
-//   - Just send a message to all the committee nodes.
+//   - Just send a message to all the committee nodes (or access nodes, if committee is not known).
 func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	var publishToNodes []gpa.NodeID
