@@ -101,12 +101,18 @@ func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.Requ
 	if err != nil {
 		return nil, httperrors.ServerError("error getting latest chain block index")
 	}
+	if blockIndex == 0 {
+		return nil, nil
+	}
 	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
 		dict.Dict{
 			blocklog.ParamRequestID: reqID.Bytes(),
 		})
 	if err != nil {
 		return nil, httperrors.ServerError("error calling get receipt view")
+	}
+	if ret == nil {
+		return nil, nil // not processed yet
 	}
 	binRec, err := ret.Get(blocklog.ParamRequestRecord)
 	if err != nil {

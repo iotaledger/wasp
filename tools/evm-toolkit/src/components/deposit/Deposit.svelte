@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { IotaWallet } from './iota_wallet';
-  import { SendFundsTransaction } from './send_funds_transaction';
+  import { IotaWallet } from "./iota_wallet";
+  import { SendFundsTransaction } from "./send_funds_transaction";
 
-  import { toast } from '@zerodevx/svelte-toast'
-  import { networkOptions } from '../../../networks';
+  import { toast } from "@zerodevx/svelte-toast";
+  import { networkOptions } from "../../../networks";
+  import { hornetAPI } from "../../store";
 
   const ChainAddressLength: number = 63;
   const EVMAddressLength: number = 42;
@@ -13,7 +14,7 @@
   let errorMessage: string;
 
   let balance: bigint = BigInt(0);
-  let evmAddress: string = '';
+  let evmAddress: string = "";
 
   $: enableSendFunds =
     evmAddress.length == EVMAddressLength &&
@@ -37,17 +38,17 @@
     let toastId: number;
 
     try {
-      toastId = toast.push('Initializing wallet');
+      toastId = toast.push("Initializing wallet");
       await wallet.initialize();
-      toast.pop(toastId)
+      toast.pop(toastId);
 
-      toastId = toast.push('Requesting funds from the faucet', {
-        duration: 20*2000, // 20 retries, 2s delay each.
+      toastId = toast.push("Requesting funds from the faucet", {
+        duration: 20 * 2000, // 20 retries, 2s delay each.
       });
       balance = await wallet.requestFunds();
-      toast.pop(toastId)
+      toast.pop(toastId);
 
-      toastId = toast.push('Sending funds');
+      toastId = toast.push("Sending funds");
       const transaction = new SendFundsTransaction(wallet);
       await transaction.sendFundsToEVMAddress(
         evmAddress,
@@ -57,9 +58,12 @@
       );
       toast.pop(toastId);
 
-      toast.push('Funds successfully sent! It may take 10-30 seconds to arive.', {
-        duration: 10 * 1000
-      });
+      toast.push(
+        "Funds successfully sent! It may take 10-30 seconds to arive.",
+        {
+          duration: 10 * 1000,
+        }
+      );
     } catch (ex) {
       errorMessage = ex;
       toast.pop(toastId);
@@ -68,6 +72,9 @@
 
     isSendingFunds = false;
   }
+
+  $: selectedNetworkOption.apiEndpoint,
+    hornetAPI.set(selectedNetworkOption.apiEndpoint);
 </script>
 
 <component>
@@ -75,7 +82,7 @@
     <span class="header">Network</span>
     <select bind:value={selectedNetworkOption}>
       {#each networkOptions as network}
-        <option value={network} >
+        <option value={network}>
           {network.text}
         </option>
       {/each}
@@ -125,6 +132,7 @@
     </button>
   </div>
 </component>
+
 <style>
   .error {
     background-color: #9e534a47;

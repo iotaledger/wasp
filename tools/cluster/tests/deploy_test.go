@@ -17,22 +17,11 @@ import (
 func TestDeployChain(t *testing.T) {
 	e := setupWithNoChain(t)
 
-	counter1, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_chain": 0,
-		"state":           0, // TODO: Was 2, is it meaningful to check this?
-		"request_out":     6, // Init + (N=4)*AddAccessNodes + ChangeAccessNodes
-	})
-	require.NoError(t, err)
-	defer counter1.Close()
-
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	if !counter1.WaitUntilExpectationsMet() {
-		t.Fatal()
-	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, isc.NewAgentID(chain.OriginatorAddress()))
@@ -59,7 +48,6 @@ func TestDeployContractOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	tx := chEnv.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
@@ -91,7 +79,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	chEnv.deployNativeIncCounterSC()
 
 	hname := isc.Hn(nativeIncCounterSCName)

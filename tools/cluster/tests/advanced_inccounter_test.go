@@ -13,39 +13,10 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
-
-func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
-	quorum := uint16((2*len(committee))/3 + 1)
-
-	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
-
-	addr, err := clu.RunDKG(committee, quorum)
-	require.NoError(t, err)
-
-	t.Logf("generated state address: %s", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
-
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
-	require.NoError(t, err)
-	t.Logf("deployed chainID: %s", chain.ChainID)
-
-	e := &ChainEnv{
-		env:   &env{t: t, Clu: clu},
-		Chain: chain,
-	}
-	tx := e.deployNativeIncCounterSC(0)
-
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
-
-	return e
-}
 
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
@@ -84,7 +55,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := util.MakeRange(0, numValidatorNodes)
-	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
+	e := setupNativeInccounterTest(t, clusterSize, cmt)
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
@@ -169,7 +140,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	}
 	cmt := util.MakeRange(0, numValidatorNodes-1)
 
-	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
+	e := setupNativeInccounterTest(t, clusterSize, cmt)
 
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -202,7 +173,7 @@ func TestAccessNodesMany(t *testing.T) {
 	const requestsCountProgression = 2
 	const iterationCount = 8
 
-	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes-1))
+	e := setupNativeInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes-1))
 
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

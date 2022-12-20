@@ -59,7 +59,7 @@ export class SendFundsTransaction {
     metadata.writeUInt16LE(1);
     metadata.writeInt8("c".charCodeAt(0))
     metadata.writeUInt32LE(1);
-    metadata.writeUInt8(255);
+    metadata.writeUInt8(1);
 
     /* Write allowance */
     metadata.writeUInt8(0); // Has allowance (255 if no allowance is set)
@@ -150,7 +150,7 @@ export class SendFundsTransaction {
 
     const transactionEssence: ITransactionEssence = {
       type: TRANSACTION_ESSENCE_TYPE,
-      networkId: protocolInfo.networkId,
+      networkId: TransactionHelper.networkIdFromNetworkName(protocolInfo.networkName),
       inputs: [input],
       inputsCommitment,
       outputs: [basicOutput, remainderBasicOutput],
