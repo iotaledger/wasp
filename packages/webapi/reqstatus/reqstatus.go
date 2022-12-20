@@ -78,34 +78,6 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
 	return r.resolveReceipt(c, ch, rec)
-
-	// retCh := make(chan *blocklog.RequestReceipt, 1)
-	// defer close(retCh)
-	// go func() {
-	// 	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
-	// 	select {
-	// 	case retCh <- rec:
-	// 	default:
-	// 		// don't panic
-	// 	}
-	// }()
-
-	// // check if request was already processed
-	// rec, err := r.getReceiptFromBlocklog(ch, reqID)
-	// if err != nil {
-	// 	return err
-	// }
-	// if rec != nil {
-	// 	select {
-	// 	case retCh <- rec:
-	// 	default:
-	// 		// don't panic
-	// 	}
-	// } else {
-	// 	println()
-	// }
-
-	// return r.resolveReceipt(c, ch, <-retCh)
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {

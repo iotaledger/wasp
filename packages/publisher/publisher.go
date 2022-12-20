@@ -2,7 +2,6 @@ package publisher
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/iotaledger/hive.go/core/events"
@@ -71,31 +70,10 @@ func (p *Publisher) Run(ctx context.Context) {
 func (p *Publisher) handleBlockApplied(blockApplied *publisherBlockApplied) {
 	stateIndex := blockApplied.block.StateIndex()
 	p.log.Debugf("BlockApplied, chainID=%v, stateIndex=%v", blockApplied.chainID.String(), stateIndex)
-
-	eventsCh, errCh := EventsFromBlock(blockApplied.block)
-
-	for {
-		select {
-		case event, ok := <-eventsCh:
-			if !ok {
-				return
-			}
-			p.publish(event.Kind,
-				blockApplied.chainID.String(),
-				event.String(),
-			)
-		case err, ok := <-errCh:
-			if !ok {
-				return
-			}
-			if err != nil {
-				p.log.Error(err.Error())
-			}
-		}
-	}
+	PublishBlockEvents(blockApplied, p.publish, p.log)
 }
 
-func (p *Publisher) publish(msgType string, parts ...string) {
-	p.log.Debugf("Publishing %v: %v", msgType, strings.Join(parts, ", "))
-	Event.Trigger(msgType, parts)
+func (p *Publisher) publish(e *ISCEvent) {
+	p.log.Debugf("Publishing %v", e.String())
+	Event.Trigger(e.Kind, []string{e.String()})
 }
