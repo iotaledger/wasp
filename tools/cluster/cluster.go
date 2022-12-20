@@ -716,11 +716,6 @@ func (clu *Cluster) ActiveNodes() []int {
 	return nodes
 }
 
-// TODO deprecate MessageCounter
-func (clu *Cluster) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
-	return NewMessageCounter(clu, clu.Config.AllNodes(), expectations)
-}
-
 func (clu *Cluster) PostTransaction(tx *iotago.Transaction) error {
 	_, err := clu.l1.PostTxAndWaitUntilConfirmation(tx)
 	return err

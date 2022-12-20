@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	inxInitialStateRetries = 3
+	inxInitialStateRetries = 5
 )
 
 type pendingLedgerUpdateType int
@@ -49,12 +49,13 @@ type ncChain struct {
 
 	nodeConn             *nodeConnection
 	chainID              isc.ChainID
-	requestOutputHandler chain.RequestOutputHandler
-	aliasOutputHandler   chain.AliasOutputHandler
-	milestoneHandler     chain.MilestoneHandler
+	requestOutputHandler func(iotago.MilestoneIndex, *isc.OutputInfo)
+	aliasOutputHandler   func(iotago.MilestoneIndex, *isc.OutputInfo)
+	milestoneHandler     func(iotago.MilestoneIndex, time.Time)
 
 	pendingLedgerUpdatesLock sync.Mutex
 	pendingLedgerUpdates     []*pendingLedgerUpdate
+	appliedMilestoneIndex    iotago.MilestoneIndex
 	synchronized             *atomic.Bool
 }
 
@@ -69,12 +70,30 @@ func newNCChain(
 		WrappedLogger:            logger.NewWrappedLogger(nodeConn.Logger()),
 		nodeConn:                 nodeConn,
 		chainID:                  chainID,
-		requestOutputHandler:     requestOutputHandler,
-		aliasOutputHandler:       aliasOutputHandler,
-		milestoneHandler:         milestoneHandler,
+		requestOutputHandler:     nil,
+		aliasOutputHandler:       nil,
+		milestoneHandler:         nil,
 		pendingLedgerUpdatesLock: sync.Mutex{},
 		pendingLedgerUpdates:     make([]*pendingLedgerUpdate, 0),
+		appliedMilestoneIndex:    0,
 		synchronized:             &atomic.Bool{},
+	}
+
+	chain.requestOutputHandler = func(milestoneIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
+		chain.LogDebugf("applying request output: outputID: %s, milestoneIndex: %d, chainID: %s", outputInfo.OutputID.ToHex(), milestoneIndex, chainID)
+		requestOutputHandler(outputInfo)
+	}
+
+	chain.aliasOutputHandler = func(milestoneIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
+		chain.LogDebugf("applying alias output: outputID: %s, milestoneIndex: %d, chainID: %s", outputInfo.OutputID.ToHex(), milestoneIndex, chainID)
+		aliasOutputHandler(outputInfo)
+	}
+
+	chain.milestoneHandler = func(milestoneIndex iotago.MilestoneIndex, milestoneTimestamp time.Time) {
+		// we need to check if the milestones are applied in correct order
+		chain.LogDebugf("applying milestone: milestoneIndex: %d, chainID: %s", milestoneIndex, chainID)
+		chain.applyMilestoneIndex(milestoneIndex)
+		milestoneHandler(milestoneTimestamp)
 	}
 
 	return chain
@@ -121,11 +140,11 @@ func (ncc *ncChain) applyPendingLedgerUpdates(ledgerIndex iotago.MilestoneIndex)
 
 		switch update.Type {
 		case pendingLedgerUpdateTypeRequest:
-			ncc.requestOutputHandler(update.Update.(*isc.OutputInfo))
+			ncc.requestOutputHandler(update.LedgerIndex, update.Update.(*isc.OutputInfo))
 		case pendingLedgerUpdateTypeAlias:
-			ncc.aliasOutputHandler(update.Update.(*isc.OutputInfo))
+			ncc.aliasOutputHandler(update.LedgerIndex, update.Update.(*isc.OutputInfo))
 		case pendingLedgerUpdateTypeMilestone:
-			ncc.milestoneHandler(update.Update.(time.Time))
+			ncc.milestoneHandler(update.LedgerIndex, update.Update.(time.Time))
 		default:
 			panic("unknown pending ledger update type")
 		}
@@ -151,7 +170,7 @@ func (ncc *ncChain) HandleRequestOutput(ledgerIndex iotago.MilestoneIndex, outpu
 		return
 	}
 
-	ncc.requestOutputHandler(outputInfo)
+	ncc.requestOutputHandler(ledgerIndex, outputInfo)
 }
 
 func (ncc *ncChain) HandleAliasOutput(ledgerIndex iotago.MilestoneIndex, outputInfo *isc.OutputInfo) {
@@ -160,7 +179,16 @@ func (ncc *ncChain) HandleAliasOutput(ledgerIndex iotago.MilestoneIndex, outputI
 		return
 	}
 
-	ncc.aliasOutputHandler(outputInfo)
+	ncc.aliasOutputHandler(ledgerIndex, outputInfo)
+}
+
+func (ncc *ncChain) applyMilestoneIndex(milestoneIndex iotago.MilestoneIndex) {
+	if ncc.appliedMilestoneIndex != 0 {
+		if ncc.appliedMilestoneIndex+1 != milestoneIndex {
+			ncc.LogPanicf("wrong milestone index applied (chainID: %s, expected: %d, got: %d)", ncc.chainID, ncc.appliedMilestoneIndex+1, milestoneIndex)
+		}
+	}
+	ncc.appliedMilestoneIndex = milestoneIndex
 }
 
 func (ncc *ncChain) HandleMilestone(milestoneIndex iotago.MilestoneIndex, milestoneTimestamp time.Time) {
@@ -169,7 +197,7 @@ func (ncc *ncChain) HandleMilestone(milestoneIndex iotago.MilestoneIndex, milest
 		return
 	}
 
-	ncc.milestoneHandler(milestoneTimestamp)
+	ncc.milestoneHandler(milestoneIndex, milestoneTimestamp)
 }
 
 func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error {
@@ -187,7 +215,7 @@ func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error
 	// track pending tx before publishing the transaction
 	ncc.nodeConn.addPendingTransaction(pendingTx)
 
-	ncc.LogDebugf("publishing transaction %v (chainID: %s)...", pendingTx.ID().ToHex(), ncc.chainID)
+	ncc.LogDebugf("publishing transaction %s (chainID: %s)...", pendingTx.ID().ToHex(), ncc.chainID)
 
 	// we use the context of the pending transaction to post the transaction. this way
 	// the proof of work will be canceled if the transaction already got confirmed on L1.
@@ -195,6 +223,7 @@ func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error
 	// the given context will be canceled by the pending transaction checks.
 	blockID, err := ncc.nodeConn.doPostTx(ctxWithTimeout, tx)
 	if err != nil && !errors.Is(err, context.Canceled) {
+		ncc.LogDebugf("publishing transaction %s (chainID: %s) failed: %s", pendingTx.ID().ToHex(), ncc.chainID, err.Error())
 		return err
 	}
 
@@ -207,7 +236,12 @@ func (ncc *ncChain) publishTX(ctx context.Context, tx *iotago.Transaction) error
 		pendingTx.SetBlockID(blockID)
 	}
 
-	return pendingTx.WaitUntilConfirmed()
+	if err := pendingTx.WaitUntilConfirmed(); err != nil {
+		ncc.LogDebugf("publishing transaction %s (chainID: %s) failed: %s", pendingTx.ID().ToHex(), ncc.chainID, err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (ncc *ncChain) queryLatestChainStateAliasOutput(ctx context.Context) (iotago.MilestoneIndex, *isc.OutputInfo, error) {
@@ -277,19 +311,25 @@ func (ncc *ncChain) queryChainOutputIDs(ctx context.Context) ([]iotago.OutputID,
 }
 
 func (ncc *ncChain) queryChainState(ctx context.Context) (iotago.MilestoneIndex, time.Time, *isc.OutputInfo, error) {
-	cmi := ncc.nodeConn.nodeBridge.ConfirmedMilestoneIndex()
-
 	ledgerIndexAlias, aliasOutput, err := ncc.queryLatestChainStateAliasOutput(ctx)
 	if err != nil {
 		return 0, time.Time{}, nil, fmt.Errorf("failed to get latest chain state alias output: %w", err)
 	}
 
+	cmi := ncc.nodeConn.nodeBridge.ConfirmedMilestoneIndex()
 	if cmi != ledgerIndexAlias {
-		return 0, time.Time{}, nil, fmt.Errorf("indexer ledger index does not match confirmed milestone index: (%d!=%d)", ledgerIndexAlias, cmi)
+		if cmi > ledgerIndexAlias {
+			// confirmed milestone index is newer than the ledger index of the indexer
+			return 0, time.Time{}, nil, fmt.Errorf("indexer ledger index does not match confirmed milestone index: (%d!=%d)", ledgerIndexAlias, cmi)
+		}
+
+		// cmi seems to be older than the ledger index of the indexer.
+		// this can happen during startup of the node connection.
+		// it is safe to query the node for the timestamp of the ledger index of the indexer instead.
 	}
 
 	// we need to get the timestamp of the milestone from the node
-	milestoneTimestamp, err := ncc.nodeConn.getMilestoneTimestamp(ctx, cmi)
+	milestoneTimestamp, err := ncc.nodeConn.getMilestoneTimestamp(ctx, ledgerIndexAlias)
 	if err != nil {
 		return 0, time.Time{}, nil, fmt.Errorf("failed to get milestone timestamp: %w", err)
 	}
@@ -316,7 +356,8 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 					return 0, time.Time{}, nil, fmt.Errorf("failed to query initial chain state: %w", err)
 				}
 
-				ncc.LogDebugf("failed to query initial chain state: %w, retrying...", err.Error())
+				ncc.LogDebugf("failed to query initial chain state: %s, retrying...", err.Error())
+				time.Sleep(50 * time.Millisecond)
 				continue
 			}
 			return ledgerIndex, milestoneTimestamp, aliasOutput, nil
@@ -332,8 +373,8 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 
 	// we can safely forward the state to the chain.
 	// ledger updates won't be applied in parallel as long as synchronized is not set to true.
-	ncc.milestoneHandler(milestoneTimestamp)
-	ncc.aliasOutputHandler(aliasOutput)
+	ncc.milestoneHandler(ledgerIndex, milestoneTimestamp)
+	ncc.aliasOutputHandler(ledgerIndex, aliasOutput)
 
 	// the indexer returns the outputs in sorted order by timestampBooked,
 	// so we don't miss newly added outputs if the ledgerIndex increases during the query.
@@ -352,7 +393,7 @@ func (ncc *ncChain) SyncChainStateWithL1(ctx context.Context) error {
 		}
 
 		ncc.LogDebugf("received output, chainID: %s, outputID: %s", ncc.chainID, outputID.ToHex())
-		ncc.requestOutputHandler(isc.NewOutputInfo(outputID, output, iotago.TransactionID{}))
+		ncc.requestOutputHandler(ledgerIndex, isc.NewOutputInfo(outputID, output, iotago.TransactionID{}))
 	}
 
 	if err := ncc.applyPendingLedgerUpdates(ledgerIndex); err != nil {

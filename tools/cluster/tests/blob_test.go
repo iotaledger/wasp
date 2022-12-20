@@ -24,8 +24,8 @@ func setupBlobTest(t *testing.T) *ChainEnv {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	chEnv.checkCoreContracts()
+
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)

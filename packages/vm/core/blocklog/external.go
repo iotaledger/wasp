@@ -97,3 +97,39 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 	}
 	return nil, nil
 }
+
+func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) ([]string, error) {
+	ret := make([]string, 0)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
+	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
+		eventIndex := uint16(0)
+		for {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
+			msg, err := events.GetAt(key.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			if msg == nil {
+				break
+			}
+			ret = append(ret, string(msg))
+			eventIndex++
+		}
+	}
+	return ret, nil
+}
+
+func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
+	if blockIndex == 0 {
+		return nil, nil
+	}
+	data, err := getBlockInfoBytes(partition, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	ret, err := BlockInfoFromBytes(blockIndex, data)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}

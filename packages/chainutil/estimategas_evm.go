@@ -22,7 +22,7 @@ import (
 func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error) {
 	vmRunner := runvm.NewVMRunner()
 
-	_, aliasOutput := ch.LatestAliasOutput()
+	aliasOutput, _ := ch.LatestAliasOutput()
 
 	task := &vm.VMTask{
 		Processors: ch.Processors(),

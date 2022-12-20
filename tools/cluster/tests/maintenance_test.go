@@ -16,7 +16,7 @@ import (
 )
 
 func TestMaintenance(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestMaintenance(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err := env.Chain.GetRequestReceipt(notProccessedReq1.ID())
-	require.NoError(t, err)
+	require.Regexp(t, `.*"Code":404.*`, err.Error())
 	require.Nil(t, rec)
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
@@ -99,7 +99,7 @@ func TestMaintenance(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err = env.Chain.GetRequestReceipt(notProccessedReq2.ID())
-	require.NoError(t, err)
+	require.Regexp(t, `.*"Code":404.*`, err.Error())
 	require.Nil(t, rec)
 
 	// assert that block number is still the same
