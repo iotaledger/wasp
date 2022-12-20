@@ -101,6 +101,7 @@ func (dsi *distSyncImpl) StatusString() string {
 }
 
 func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
+	dsi.log.Debugf("handleInputAccessNodes: %v", input)
 	dsi.accessNodes = input.accessNodes
 	dsi.committeeNodes = input.committeeNodes
 	for i := range dsi.committeeNodes { // Ensure access nodes contain the committee nodes.
@@ -122,7 +123,13 @@ func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.Out
 //   - Just send a message to all the committee nodes.
 func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) gpa.OutMessages {
 	msgs := gpa.NoMessages()
-	for _, node := range dsi.committeeNodes {
+	var publishToNodes []gpa.NodeID
+	if len(dsi.committeeNodes) > 0 {
+		publishToNodes = dsi.committeeNodes
+	} else {
+		publishToNodes = dsi.accessNodes
+	}
+	for _, node := range publishToNodes {
 		msgs.Add(newMsgShareRequest(input.request, 0, node))
 	}
 	//
