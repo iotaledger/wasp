@@ -106,17 +106,12 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 		}
 	}
 
-	chainNodes := chain.GetChainNodes()
 	peeringStatus := peeringStatusIncludeSelf(w.network)
-	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
-	for _, n := range chain.GetCandidateNodes() {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(n.NodePubKey)
-		if err != nil {
-			return err
-		}
-		candidateNodes[pubKey.AsKey()] = n
+	candidateNodes, err := getCandidateNodesAccessNodeInfo(chain.GetCandidateNodes())
+	if err != nil {
+		return err
 	}
-
+	chainNodes := chain.GetChainNodes()
 	inChainNodes := make(map[cryptolib.PublicKeyKey]bool)
 
 	//
@@ -220,6 +215,19 @@ func makeCndNodes(
 		cndNodes = append(cndNodes, makeChainNodeStatus(pubKey, peeringStatus, candidateNodes))
 	}
 	return cndNodes, nil
+}
+
+func getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
+	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
+	for _, chainCandidateNode := range chainCandidateNodes {
+		pubKey, err := cryptolib.NewPublicKeyFromBytes(chainCandidateNode.NodePubKey)
+		if err != nil {
+			return nil, err
+		}
+		candidateNodes[pubKey.AsKey()] = chainCandidateNode
+	}
+
+	return candidateNodes, nil
 }
 
 func makeChainNodeStatus(

@@ -3,6 +3,7 @@ package node
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 
@@ -48,7 +49,7 @@ func (c *Controller) generateDKS(e echo.Context) error {
 		return err
 	}
 
-	sharesInfo, err := c.dkgService.GenerateDistributedKey(peerPublicKeys, generateDKSRequest.Threshold, generateDKSRequest.TimeoutMS)
+	sharesInfo, err := c.dkgService.GenerateDistributedKey(peerPublicKeys, generateDKSRequest.Threshold, time.Duration(generateDKSRequest.TimeoutMS)*time.Millisecond)
 	if err != nil {
 		return apierrors.InternalServerError(err)
 	}

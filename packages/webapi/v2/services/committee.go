@@ -45,23 +45,12 @@ func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNode
 		return nil, err
 	}
 
+	peeringStatus := peeringStatusIncludeSelf(c.networkProvider)
+	candidateNodes, err := getCandidateNodesAccessNodeInfo(chain.GetCandidateNodes())
+	if err != nil {
+		return nil, err
+	}
 	chainNodes := chain.GetChainNodes()
-	peeringStatus := make(map[cryptolib.PublicKeyKey]peering.PeerStatusProvider)
-
-	for _, n := range c.networkProvider.PeerStatus() {
-		peeringStatus[n.PubKey().AsKey()] = n
-	}
-
-	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
-
-	for _, n := range chain.GetCandidateNodes() {
-		pubKey, err := cryptolib.NewPublicKeyFromBytes(n.NodePubKey)
-		if err != nil {
-			return nil, err
-		}
-		candidateNodes[pubKey.AsKey()] = n
-	}
-
 	inChainNodes := make(map[cryptolib.PublicKeyKey]bool)
 
 	//
@@ -157,6 +146,19 @@ func getCandidateNodes(
 	return nodes, nil
 }
 
+func getCandidateNodesAccessNodeInfo(chainCandidateNodes []*governance.AccessNodeInfo) (map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo, error) {
+	candidateNodes := make(map[cryptolib.PublicKeyKey]*governance.AccessNodeInfo)
+	for _, chainCandidateNode := range chainCandidateNodes {
+		pubKey, err := cryptolib.NewPublicKeyFromBytes(chainCandidateNode.NodePubKey)
+		if err != nil {
+			return nil, err
+		}
+		candidateNodes[pubKey.AsKey()] = chainCandidateNode
+	}
+
+	return candidateNodes, nil
+}
+
 func makeChainNodeStatus(
 	pubKey *cryptolib.PublicKey,
 	peeringStatus map[cryptolib.PublicKeyKey]peering.PeerStatusProvider,
@@ -181,4 +183,13 @@ func makeChainNodeStatus(
 	}
 
 	return &cns
+}
+
+func peeringStatusIncludeSelf(networkProvider peering.NetworkProvider) map[cryptolib.PublicKeyKey]peering.PeerStatusProvider {
+	peeringStatus := make(map[cryptolib.PublicKeyKey]peering.PeerStatusProvider)
+	for _, n := range networkProvider.PeerStatus() {
+		peeringStatus[n.PubKey().AsKey()] = n
+	}
+	peeringStatus[networkProvider.Self().PubKey().AsKey()] = networkProvider.Self().Status()
+	return peeringStatus
 }

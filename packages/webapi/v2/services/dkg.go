@@ -12,6 +12,11 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v2/models"
 )
 
+const (
+	roundRetry = 1 * time.Second // Retry for Peer <-> Peer communication.
+	stepRetry  = 3 * time.Second // Retry for Initiator -> Peer communication.
+)
+
 type DKGService struct {
 	dkShareRegistryProvider registry.DKShareRegistryProvider
 	dkgNodeProvider         dkg.NodeProvider
@@ -24,12 +29,7 @@ func NewDKGService(dkShareRegistryProvider registry.DKShareRegistryProvider, dkg
 	}
 }
 
-func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeoutInMilliseconds uint32) (*models.DKSharesInfo, error) {
-	const roundRetry = 1 * time.Second // Retry for Peer <-> Peer communication.
-	const stepRetry = 3 * time.Second  // Retry for Initiator -> Peer communication.
-
-	timeout := time.Duration(timeoutInMilliseconds) * time.Millisecond
-
+func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKey, threshold uint16, timeout time.Duration) (*models.DKSharesInfo, error) {
 	dkShare, err := d.dkgNodeProvider().GenerateDistributedKey(peerPublicKeys, threshold, roundRetry, stepRetry, timeout)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (d *DKGService) GenerateDistributedKey(peerPublicKeys []*cryptolib.PublicKe
 		return nil, err
 	}
 
-	return dkShareInfo, err
+	return dkShareInfo, nil
 }
 
 func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesInfo, error) {
@@ -54,7 +54,7 @@ func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesIn
 		return nil, err
 	}
 
-	return dkShareInfo, err
+	return dkShareInfo, nil
 }
 
 func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
@@ -63,28 +63,30 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 		return nil, err
 	}
 
-	pubKeyShares := make([][]byte, len(dkShare.DSSPublicShares()))
-	for i := range dkShare.DSSPublicShares() {
-		publicKeyShare, err := dkShare.DSSPublicShares()[i].MarshalBinary()
+	dssPublicShares := dkShare.DSSPublicShares()
+	pubKeyShares := make([][]byte, len(dssPublicShares))
+	for i := range dssPublicShares {
+		publicKeyShare, err := dssPublicShares[i].MarshalBinary()
 		if err != nil {
 			return nil, err
 		}
 		pubKeyShares[i] = publicKeyShare
 	}
 
-	nodePubKeys := make([][]byte, len(dkShare.GetNodePubKeys()))
-	for i := range dkShare.GetNodePubKeys() {
-		nodePubKeys[i] = dkShare.GetNodePubKeys()[i].AsBytes()
+	nodePubKeys := dkShare.GetNodePubKeys()
+	nodePubKeysBytes := make([][]byte, len(nodePubKeys))
+	for i := range nodePubKeys {
+		nodePubKeysBytes[i] = nodePubKeys[i].AsBytes()
 	}
 
-	dkShareInfo := models.DKSharesInfo{
+	dkShareInfo := &models.DKSharesInfo{
 		Address:      dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
 		PeerIndex:    dkShare.GetIndex(),
-		PeerPubKeys:  nodePubKeys,
+		PeerPubKeys:  nodePubKeysBytes,
 		PubKeyShares: pubKeyShares,
 		SharedPubKey: sharedBinaryPubKey,
 		Threshold:    dkShare.GetT(),
 	}
 
-	return &dkShareInfo, nil
+	return dkShareInfo, nil
 }
