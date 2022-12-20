@@ -6,24 +6,25 @@
     chainId,
     chainData,
     defaultEvmStores,
-  } from 'svelte-web3';
+  } from "svelte-web3";
+  import { hornetAPI } from "../../store";
 
-  import { Bech32Helper, type IEd25519Address } from '@iota/iota.js';
+  import {
+    SingleNodeClient,
+    Bech32Helper,
+    type IEd25519Address,
+  } from "@iota/iota.js";
 
-  import iscAbiAsText from '../../assets/ISC.abi?raw';
+  import iscAbiAsText from "../../assets/ISCSandbox.abi?raw";
 
-  const waspAddrBinaryFromBech32 = (bech32String: string) => {
-    // Depending on the network, the human readable part can change (tst, rms, ..).
-    // - We need some kind of API that is not the direct Hornet node to fetch it..
-    // - Maybe over some EVM info route?
-    // For this PoC it should be enough to substr the first three chars.
-    let humanReadablePart = bech32String.substring(0, 3);
+  const waspAddrBinaryFromBech32 = async (bech32String: string) => {
+    const protocolInfo = await new SingleNodeClient($hornetAPI).info();
 
     let receiverAddr = Bech32Helper.addressFromBech32(
       bech32String,
-      humanReadablePart
+      protocolInfo.protocol.bech32Hrp
     );
-    
+
     const address: IEd25519Address = receiverAddr as IEd25519Address;
 
     let receiverAddrBinary = $web3.utils.hexToBytes(address.pubKeyHash);
@@ -41,7 +42,7 @@
   const gasFee = 300;
   const iscAbi = JSON.parse(iscAbiAsText);
   const iscContractAddress: string =
-    '0x1074000000000000000000000000000000000000';
+    "0x1074000000000000000000000000000000000000";
 
   let chainID;
   let contract;
@@ -51,9 +52,9 @@
   $: formattedBalance = (balance / 1e6).toFixed(2);
   $: formattedAmountToSend = (amountToSend / 1e6).toFixed(2);
   $: canSendFunds = balance > 0 && amountToSend > 0;
-  $: canSetAmountToSend = balance > gasFee+1;
+  $: canSetAmountToSend = balance > gasFee + 1;
 
-  let addrInput = '';
+  let addrInput = "";
 
   async function pollBalance() {
     const addressBalance = await $web3.eth.getBalance(
@@ -86,14 +87,14 @@
 
   async function onWithdrawClick() {
     if (!defaultEvmStores.$selectedAccount) {
-      console.log('no account selected');
+      console.log("no account selected");
       return;
     }
 
     let parameters = [
       {
         // Receiver
-        data: waspAddrBinaryFromBech32(addrInput),
+        data: await waspAddrBinaryFromBech32(addrInput),
       },
       {
         // Fungible Tokens
@@ -130,13 +131,13 @@
     const result = await contract.methods.send(...parameters).send();
     console.log(result);
   }
-
 </script>
+
 <component>
   {#if !$connected}
-  <div class="input_container">
-    <button on:click={connectToWallet}>Connect to Wallet</button>
-  </div>
+    <div class="input_container">
+      <button on:click={connectToWallet}>Connect to Wallet</button>
+    </div>
   {:else}
     <div class="account_container">
       <div class="chain_container">
@@ -147,7 +148,6 @@
         <div>Balance</div>
         <div class="balance">{formattedBalance}Mi</div>
       </div>
-
     </div>
 
     <div class="input_container">
@@ -161,13 +161,21 @@
 
     <div class="input_container">
       <div class="header">
-        Amount to send: {formattedAmountToSend}Mi  
+        Amount to send: {formattedAmountToSend}Mi
       </div>
-      <input type="range" disabled="{!canSetAmountToSend}" min="0" max={balance} bind:value={amountToSend} />
+      <input
+        type="range"
+        disabled={!canSetAmountToSend}
+        min="0"
+        max={balance}
+        bind:value={amountToSend}
+      />
     </div>
 
     <div class="input_container">
-      <button disabled="{!canSendFunds}" on:click={onWithdrawClick}>Withdraw</button><br />
+      <button disabled={!canSendFunds} on:click={onWithdrawClick}
+        >Withdraw</button
+      ><br />
     </div>
   {/if}
 </component>
@@ -179,7 +187,7 @@
     flex-direction: column;
   }
 
-  input[type=range] {
+  input[type="range"] {
     width: 100%;
     padding: 10px 0 0 0;
     margin: 0;
@@ -196,7 +204,8 @@
     text-align: right;
   }
 
-  .balance, .chainid {
+  .balance,
+  .chainid {
     padding-top: 5px;
     font-weight: 800;
     font-size: 32px;
