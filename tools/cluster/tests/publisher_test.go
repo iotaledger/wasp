@@ -11,6 +11,9 @@ import (
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/sub"
 
+	// without this import it won't work, no messages will be received by the client socket...
+	_ "go.nanomsg.org/mangos/v3/transport/all"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -57,7 +60,6 @@ func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
 }
 
 // TODO the TODOs on this test indicate that there is a race condition with the "await request endpoint", needs to be debugged
-
 func TestNanoPublisher(t *testing.T) {
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupNativeInccounterTest(t, 1, []int{0})
@@ -92,17 +94,11 @@ func TestNanoPublisher(t *testing.T) {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		require.NoError(t, err)
 
-		// ---
-		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
-		require.NoError(t, err)
-		// ---
-
 		reqIDs[i] = req.ID()
 	}
 
 	for i, reqID := range reqIDs {
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 30*time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 10*time.Second)
 		if err != nil {
 			println(i)
 		}

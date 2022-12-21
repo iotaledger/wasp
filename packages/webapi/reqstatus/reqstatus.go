@@ -126,6 +126,9 @@ func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.Requ
 }
 
 func resolveReceipt(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt) error {
+	if rec == nil {
+		return httperrors.NotFound("receipt not found")
+	}
 	resolvedReceiptErr, err := chainutil.ResolveError(ch, rec.Error)
 	if err != nil {
 		return httperrors.ServerError("error resolving receipt error")
