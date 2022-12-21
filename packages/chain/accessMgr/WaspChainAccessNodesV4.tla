@@ -133,7 +133,6 @@ sendMaybeAck(m, send) ==
   - ...
 *)
 RecvAccess(n) == \E m \in msgs:
-    \* /\ LC_HaveNext(n, 1)
     /\ m.dst = n
     /\ lClock' = [lClock EXCEPT ![n][n]     = IF @ > m.dst_lc THEN @ ELSE (IF accessForChains(n, m.src) = m.server THEN m.dst_lc ELSE m.dst_lc + 1),
                                 ![n][m.src] = IF @ > m.src_lc THEN @ ELSE m.src_lc]
@@ -144,10 +143,10 @@ RecvAccess(n) == \E m \in msgs:
                                                                ELSE server[n][c] \ {m.src} ]]
        \/ /\ m.src_lc =< lClock[n][m.src]
           /\ UNCHANGED <<server>>
-       \* Update the servers variable if its LC is higher than we got before.
-    /\ \/ m.dst_lc <  lClock[n][n]' /\ sendMaybeAck(m, accessMsgs(n))
-       \/ m.dst_lc >= lClock[n][n]' /\ sendMaybeAck(m, accessMsgs(n)) \* TODO: {}
-       \* If we have out LC increased, send the message back.
+    /\ \/ m.dst_lc < lClock[n][n]'                                         /\ sendMaybeAck(m, accessMsgs(n))
+       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) # m.access /\ sendMaybeAck(m, accessMsgs(n))
+       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) = m.access /\ sendMaybeAck(m, {})
+       \/ m.dst_lc > lClock[n][n]'                                         /\ sendMaybeAck(m, {}) \* NOTE: Impossible.
 
 --------------------------------------------------------------------------------
 Init ==
