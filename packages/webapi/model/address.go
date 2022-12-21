@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -19,16 +20,17 @@ func (a Address) MarshalJSON() ([]byte, error) {
 }
 
 func (a *Address) UnmarshalJSON(b []byte) error {
-	if len(b) <= 2 { // empty string means len(b) == 2 // ("")
-		return nil
-	}
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 	_, _, err := iotago.ParseBech32(s)
+	if err != nil {
+		*a = Address("")
+		return fmt.Errorf("input: %s, %w", s, err)
+	}
 	*a = Address(s)
-	return err
+	return nil
 }
 
 func (a Address) Address() iotago.Address {

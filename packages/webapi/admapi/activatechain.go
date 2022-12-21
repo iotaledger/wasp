@@ -136,10 +136,13 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	res := model.ChainInfo{
 		ChainID:        model.ChainIDBech32(chainID.String()),
 		Active:         chainRecord.Active,
-		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,
 		AccessNodes:    acnNodes,
 		CandidateNodes: cndNodes,
+	}
+	if committeeInfo.Address != nil {
+		stateAddr := model.NewAddress(committeeInfo.Address)
+		res.StateAddress = &stateAddr
 	}
 
 	return c.JSON(http.StatusOK, res)
