@@ -99,8 +99,8 @@ func (h *magicContractViewHandler) GetNativeTokenID(foundrySN uint32) iscmagic.N
 	out := &iotago.FoundryOutput{}
 	_, err := out.Deserialize(r.MustGet(accounts.ParamFoundryOutputBin), serializer.DeSeriModeNoValidation, nil)
 	h.ctx.RequireNoError(err)
-	tokenID := out.MustNativeTokenID()
-	return iscmagic.WrapNativeTokenID(&tokenID)
+	nativeTokenID := out.MustNativeTokenID()
+	return iscmagic.WrapNativeTokenID(nativeTokenID)
 }
 
 // handler for ISCSandbox::getNativeTokenScheme

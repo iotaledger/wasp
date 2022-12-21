@@ -10,6 +10,7 @@ import (
 const Million = uint64(1_000_000)
 
 var emptyOutputID = iotago.OutputID{}
+var emptyNativeTokenID = iotago.NativeTokenID{}
 
 func DecodeOutputID(b []byte, def ...iotago.OutputID) (iotago.OutputID, error) {
 	if len(b) != iotago.OutputIDLength {
@@ -47,4 +48,8 @@ func OutputIDToMarshalUtil(outputID iotago.OutputID, mu *marshalutil.MarshalUtil
 
 func IsEmptyOutputID(outputID iotago.OutputID) bool {
 	return outputID == emptyOutputID
+}
+
+func IsEmptyNativeTokenID(nativeTokenID iotago.NativeTokenID) bool {
+	return nativeTokenID == emptyNativeTokenID
 }

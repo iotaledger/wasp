@@ -44,8 +44,8 @@ type NativeTokenID struct {
 	Data []byte
 }
 
-func WrapNativeTokenID(id *iotago.NativeTokenID) NativeTokenID {
-	return NativeTokenID{Data: id[:]}
+func WrapNativeTokenID(nativeTokenID iotago.NativeTokenID) NativeTokenID {
+	return NativeTokenID{Data: nativeTokenID[:]}
 }
 
 func (a NativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
@@ -64,10 +64,10 @@ type NativeToken struct {
 	Amount *big.Int
 }
 
-func WrapNativeToken(nt *iotago.NativeToken) NativeToken {
+func WrapNativeToken(nativeToken *iotago.NativeToken) NativeToken {
 	return NativeToken{
-		ID:     WrapNativeTokenID(&nt.ID),
-		Amount: nt.Amount,
+		ID:     WrapNativeTokenID(nativeToken.ID),
+		Amount: nativeToken.Amount,
 	}
 }
 
@@ -287,7 +287,7 @@ func WrapISCFungibleTokens(fungibleTokens isc.FungibleTokens) ISCFungibleTokens 
 	}
 
 	for i, nativeToken := range fungibleTokens.NativeTokens {
-		ret.NativeTokens[i].ID = WrapNativeTokenID(&nativeToken.ID)
+		ret.NativeTokens[i].ID = WrapNativeTokenID(nativeToken.ID)
 		ret.NativeTokens[i].Amount = nativeToken.Amount
 	}
 

@@ -32,12 +32,12 @@ func (vmctx *VMContext) restoreTxBuilderSnapshot(snapshot *vmtxbuilder.AnchorTra
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *VMContext) loadNativeTokenOutput(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+func (vmctx *VMContext) loadNativeTokenOutput(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
 	var retOut *iotago.BasicOutput
 	var blockIndex uint32
 	var outputIndex uint16
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, id, vmctx.ChainID())
+		retOut, blockIndex, outputIndex = accounts.GetNativeTokenOutput(s, nativeTokenID, vmctx.ChainID())
 	})
 	if retOut == nil {
 		return nil, iotago.OutputID{}

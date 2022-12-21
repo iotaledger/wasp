@@ -488,7 +488,7 @@ func TestFeeBasic(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
-	require.Nil(t, feePolicy.GasFeeTokenID)
+	require.True(t, isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID))
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
 

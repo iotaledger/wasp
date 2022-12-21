@@ -815,7 +815,7 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	foundrySN, tokenID := env.createFoundry(foundryOwner, supply)
+	foundrySN, nativeTokenID := env.createFoundry(foundryOwner, supply)
 
 	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
 	require.NoError(t, err)
@@ -825,7 +825,7 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.ErrorContains(t, err, "already exists")
 
 	l2Balance := func(agentID isc.AgentID) uint64 {
-		return env.soloChain.L2NativeTokens(agentID, tokenID).Uint64()
+		return env.soloChain.L2NativeTokens(agentID, nativeTokenID).Uint64()
 	}
 
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
@@ -841,7 +841,7 @@ func TestERC20NativeTokens(t *testing.T) {
 		).
 			WithAllowance(isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{
 				&iotago.NativeToken{
-					ID:     *tokenID,
+					ID:     nativeTokenID,
 					Amount: supply,
 				},
 			}))).
@@ -867,7 +867,7 @@ func TestERC20NativeTokens(t *testing.T) {
 	{
 		var id struct{ iscmagic.NativeTokenID }
 		require.NoError(t, erc20.callView("nativeTokenID", nil, &id))
-		require.EqualValues(t, tokenID[:], id.NativeTokenID.Data)
+		require.EqualValues(t, nativeTokenID[:], id.NativeTokenID.Data)
 	}
 	{
 		var name string
@@ -1310,15 +1310,15 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	res, err := env.soloChain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-	customTokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+	nativeTokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
 	require.NoError(t, err)
 
 	err = env.soloChain.MintTokens(foundrySN, big.NewInt(1_000_000), env.soloChain.OriginatorPrivateKey)
 	require.NoError(t, err)
-	env.soloChain.AssertL2NativeTokens(env.soloChain.OriginatorAgentID, &customTokenID, big.NewInt(1_000_000))
+	env.soloChain.AssertL2NativeTokens(env.soloChain.OriginatorAgentID, nativeTokenID, big.NewInt(1_000_000))
 
 	gasFeePolicy := gas.GasFeePolicy{
-		GasFeeTokenID:       &customTokenID,
+		GasFeeTokenID:       nativeTokenID,
 		GasFeeTokenDecimals: customTokenDecimals,
 		GasPerToken:         100,
 		ValidatorFeeShare:   0,
@@ -1339,7 +1339,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	err = env.soloChain.SendFromL2ToL2Account(
 		isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{{
-				ID:     customTokenID,
+				ID:     nativeTokenID,
 				Amount: big.NewInt(tokensToMoveToEvmAccount),
 			}}),
 		),
@@ -1347,7 +1347,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 		env.soloChain.OriginatorPrivateKey,
 	)
 	require.NoError(t, err)
-	env.soloChain.AssertL2NativeTokens(ethAgentID, &customTokenID, big.NewInt(tokensToMoveToEvmAccount))
+	env.soloChain.AssertL2NativeTokens(ethAgentID, nativeTokenID, big.NewInt(tokensToMoveToEvmAccount))
 
 	// try sending funds to `someEthereumAddr` by sending a "value tx" to the isc test contract
 	_, someEthereumAddr := solo.NewEthereumAccount()
@@ -1364,7 +1364,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	}}, "sendTo", someEthereumAddr, amountInEthDecimals)
 	require.NoError(t, err)
 	actualTokensMovedInEVMRequest := uint64(123400) // the last 2 decimal cases will be ignored
-	env.soloChain.AssertL2NativeTokens(someEthereumAgentID, &customTokenID, actualTokensMovedInEVMRequest)
+	env.soloChain.AssertL2NativeTokens(someEthereumAgentID, nativeTokenID, actualTokensMovedInEVMRequest)
 	// ensure the gas fees and the tokens moved are the correct ones
 	require.EqualValues(t,
 		uint64(tokensToMoveToEvmAccount)-result.iscReceipt.GasFeeCharged-actualTokensMovedInEVMRequest,

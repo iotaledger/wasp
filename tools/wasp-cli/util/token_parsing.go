@@ -44,10 +44,10 @@ func ParseFungibleTokens(args []string) *isc.FungibleTokens {
 			continue
 		}
 
-		tokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
+		nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
 		log.Check(err)
 
-		tokens.AddNativeTokens(tokenID, amount)
+		tokens.AddNativeTokens(nativeTokenID, amount)
 	}
 	return tokens
 }

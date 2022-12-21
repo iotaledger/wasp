@@ -9,9 +9,11 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+var emptyNativeTokenID = iotago.NativeTokenID{}
+
 type GasFeePolicy struct {
 	// GasFeeTokenID contains iotago.NativeTokenID used to pay for gas, or nil if base token are used for gas fee
-	GasFeeTokenID *iotago.NativeTokenID
+	GasFeeTokenID iotago.NativeTokenID
 	// GasFeeTokenDecimals the number of decimals in the native token used to pay for gas fees. Only considered if GasFeeTokenID != nil
 	GasFeeTokenDecimals uint32
 
@@ -66,9 +68,9 @@ func (p *GasFeePolicy) AffordableGasBudgetFromAvailableTokens(availableTokens ui
 
 func DefaultGasFeePolicy() *GasFeePolicy {
 	return &GasFeePolicy{
-		GasFeeTokenID:     nil, // default is base token
-		GasPerToken:       100, // each token pays for 100 units of gas
-		ValidatorFeeShare: 0,   // by default all goes to the governor
+		GasFeeTokenID:     iotago.NativeTokenID{}, // default is base token
+		GasPerToken:       100,                    // each token pays for 100 units of gas
+		ValidatorFeeShare: 0,                      // by default all goes to the governor
 		EVMGasRatio:       evmtypes.DefaultGasRatio,
 	}
 }
@@ -94,7 +96,7 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret.GasFeeTokenID = &iotago.NativeTokenID{}
+		ret.GasFeeTokenID = iotago.NativeTokenID{}
 		copy(ret.GasFeeTokenID[:], b)
 		if ret.GasFeeTokenDecimals, err = mu.ReadUint32(); err != nil {
 			return nil, err
@@ -114,8 +116,9 @@ func FeePolicyFromBytes(data []byte) (*GasFeePolicy, error) {
 
 func (p *GasFeePolicy) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteBool(p.GasFeeTokenID != nil)
-	if p.GasFeeTokenID != nil {
+	hasGasFeeToken := p.GasFeeTokenID != emptyNativeTokenID
+	mu.WriteBool(hasGasFeeToken)
+	if hasGasFeeToken {
 		mu.WriteBytes(p.GasFeeTokenID[:])
 		mu.WriteUint32(p.GasFeeTokenDecimals)
 	}

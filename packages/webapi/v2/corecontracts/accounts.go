@@ -123,34 +123,34 @@ func (a *Accounts) GetNFTData(chainID isc.ChainID, nftID iotago.NFTID) (*isc.NFT
 	return nftData, nil
 }
 
-func parseNativeTokenIDFromBytes(data []byte) (*iotago.NativeTokenID, error) {
+func parseNativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 	if len(data) != iotago.NativeTokenIDLength {
-		return nil, errors.New("len(data) != iotago.NativeTokenIDLength")
+		return iotago.NativeTokenID{}, errors.New("len(data) != iotago.NativeTokenIDLength")
 	}
 
-	ret := new(iotago.NativeTokenID)
+	ret := iotago.NativeTokenID{}
 	copy(ret[:], data)
 
 	return ret, nil
 }
 
-func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]*iotago.NativeTokenID, error) {
+func (a *Accounts) GetNativeTokenIDRegistry(chainID isc.ChainID) ([]iotago.NativeTokenID, error) {
 	ret, err := a.vmService.CallViewByChainID(chainID, accounts.Contract.Hname(), accounts.ViewGetNativeTokenIDRegistry.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	tokenIDs := make([]*iotago.NativeTokenID, len(ret))
+	nativeTokenIDs := make([]iotago.NativeTokenID, len(ret))
 	for k := range ret {
 		parsedTokenID, err := parseNativeTokenIDFromBytes([]byte(k))
 		if err != nil {
 			return nil, err
 		}
 
-		tokenIDs = append(tokenIDs, parsedTokenID)
+		nativeTokenIDs = append(nativeTokenIDs, parsedTokenID)
 	}
 
-	return tokenIDs, nil
+	return nativeTokenIDs, nil
 }
 
 func (a *Accounts) GetFoundryOutput(chainID isc.ChainID, serialNumber uint32) (*iotago.FoundryOutput, error) {

@@ -42,10 +42,10 @@ func NewFungibleBaseTokens(amount uint64) *FungibleTokens {
 }
 
 func NewFungibleTokensForGasFee(p *gas.GasFeePolicy, feeAmount uint64) *FungibleTokens {
-	if p.GasFeeTokenID == nil {
+	if IsEmptyNativeTokenID(p.GasFeeTokenID) {
 		return NewFungibleBaseTokens(feeAmount)
 	}
-	return NewEmptyFungibleTokens().AddNativeTokens(*p.GasFeeTokenID, feeAmount)
+	return NewEmptyFungibleTokens().AddNativeTokens(p.GasFeeTokenID, feeAmount)
 }
 
 func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
@@ -100,9 +100,9 @@ func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 	if len(data) != iotago.NativeTokenIDLength {
 		return iotago.NativeTokenID{}, xerrors.New("NativeTokenIDFromBytes: wrong data length")
 	}
-	var tokenID iotago.NativeTokenID
-	copy(tokenID[:], data)
-	return tokenID, nil
+	var nativeTokenID iotago.NativeTokenID
+	copy(nativeTokenID[:], data)
+	return nativeTokenID, nil
 }
 
 func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
@@ -125,9 +125,9 @@ func (a *FungibleTokens) Clone() *FungibleTokens {
 	}
 }
 
-func (a *FungibleTokens) AmountNativeToken(tokenID *iotago.NativeTokenID) *big.Int {
+func (a *FungibleTokens) AmountNativeToken(nativeTokenID iotago.NativeTokenID) *big.Int {
 	for _, t := range a.NativeTokens {
-		if t.ID == *tokenID {
+		if t.ID == nativeTokenID {
 			return t.Amount
 		}
 	}
@@ -276,10 +276,10 @@ func (a *FungibleTokens) AddBaseTokens(amount uint64) *FungibleTokens {
 	return a
 }
 
-func (a *FungibleTokens) AddNativeTokens(tokenID iotago.NativeTokenID, amount interface{}) *FungibleTokens {
+func (a *FungibleTokens) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *FungibleTokens {
 	b := NewFungibleTokens(0, iotago.NativeTokens{
 		&iotago.NativeToken{
-			ID:     tokenID,
+			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
 		},
 	})
@@ -313,9 +313,9 @@ func IsBaseToken(tokenID []byte) bool {
 var NativeAssetsSerializationArrayRules = iotago.NativeTokenArrayRules()
 
 // TODO this could be refactored to use `AmountNativeToken`
-func FindNativeTokenBalance(nts iotago.NativeTokens, id *iotago.NativeTokenID) *big.Int {
+func FindNativeTokenBalance(nts iotago.NativeTokens, nativeTokenID iotago.NativeTokenID) *big.Int {
 	for _, nt := range nts {
-		if nt.ID == *id {
+		if nt.ID == nativeTokenID {
 			return nt.Amount
 		}
 	}

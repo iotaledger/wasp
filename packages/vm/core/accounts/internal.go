@@ -336,17 +336,17 @@ func getBaseTokensBalance(account *collections.ImmutableMap) uint64 {
 }
 
 // GetNativeTokenBalance returns balance or nil if it does not exist
-func GetNativeTokenBalance(state kv.KVStoreReader, agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return getNativeTokenBalance(getAccountR(state, agentID), tokenID)
+func GetNativeTokenBalance(state kv.KVStoreReader, agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+	return getNativeTokenBalance(getAccountR(state, agentID), nativeTokenID)
 }
 
-func GetNativeTokenBalanceTotal(state kv.KVStoreReader, tokenID *iotago.NativeTokenID) *big.Int {
-	return getNativeTokenBalance(getTotalL2AssetsAccountR(state), tokenID)
+func GetNativeTokenBalanceTotal(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID) *big.Int {
+	return getNativeTokenBalance(getTotalL2AssetsAccountR(state), nativeTokenID)
 }
 
-func getNativeTokenBalance(account *collections.ImmutableMap, tokenID *iotago.NativeTokenID) *big.Int {
+func getNativeTokenBalance(account *collections.ImmutableMap, nativeTokenID iotago.NativeTokenID) *big.Int {
 	ret := big.NewInt(0)
-	if v := account.MustGetAt(tokenID[:]); v != nil {
+	if v := account.MustGetAt(nativeTokenID[:]); v != nil {
 		return ret.SetBytes(v)
 	}
 	return ret
@@ -696,7 +696,7 @@ func getNativeTokenOutputMapR(state kv.KVStoreReader) *collections.ImmutableMap 
 	return collections.NewMapReadOnly(state, prefixNativeTokenOutputMap)
 }
 
-// SaveNativeTokenOutput map tokenID -> foundryRec
+// SaveNativeTokenOutput map nativeTokenID -> foundryRec
 func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex uint32, outputIndex uint16) {
 	tokenRec := nativeTokenOutputRec{
 		StorageBaseTokens: out.Amount,
@@ -707,12 +707,12 @@ func SaveNativeTokenOutput(state kv.KVStore, out *iotago.BasicOutput, blockIndex
 	getNativeTokenOutputMap(state).MustSetAt(out.NativeTokens[0].ID[:], tokenRec.Bytes())
 }
 
-func DeleteNativeTokenOutput(state kv.KVStore, tokenID iotago.NativeTokenID) {
-	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
+func DeleteNativeTokenOutput(state kv.KVStore, nativeTokenID iotago.NativeTokenID) {
+	getNativeTokenOutputMap(state).MustDelAt(nativeTokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
-	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
+func GetNativeTokenOutput(state kv.KVStoreReader, nativeTokenID iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
+	data := getNativeTokenOutputMapR(state).MustGetAt(nativeTokenID[:])
 	if data == nil {
 		return nil, 0, 0
 	}
@@ -720,7 +720,7 @@ func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID,
 	ret := &iotago.BasicOutput{
 		Amount: tokenRec.StorageBaseTokens,
 		NativeTokens: iotago.NativeTokens{{
-			ID:     *tokenID,
+			ID:     nativeTokenID,
 			Amount: tokenRec.Amount,
 		}},
 		Conditions: iotago.UnlockConditions{

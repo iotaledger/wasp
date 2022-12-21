@@ -68,13 +68,13 @@ func TestAssets_SpendBudget(t *testing.T) {
 	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
 	require.True(t, budget.Equals(&FungibleTokens{1, nil}))
 
-	tokenID1 := tpkg.RandNativeToken().ID
-	tokenID2 := tpkg.RandNativeToken().ID
+	nativeTokenID1 := tpkg.RandNativeToken().ID
+	nativeTokenID2 := tpkg.RandNativeToken().ID
 
 	budget = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: nativeTokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	toSpend = budget.Clone()
@@ -84,14 +84,14 @@ func TestAssets_SpendBudget(t *testing.T) {
 	budget = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: nativeTokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	cloneBudget := budget.Clone()
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(10)},
+			{ID: nativeTokenID1, Amount: big.NewInt(10)},
 		},
 	}
 	require.False(t, budget.SpendFromFungibleTokenBudget(toSpend))
@@ -100,20 +100,20 @@ func TestAssets_SpendBudget(t *testing.T) {
 	budget = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(5)},
-			{ID: tokenID2, Amount: big.NewInt(1)},
+			{ID: nativeTokenID1, Amount: big.NewInt(5)},
+			{ID: nativeTokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: nativeTokenID1, Amount: big.NewInt(5)},
 		},
 	}
 	expected := &FungibleTokens{
 		BaseTokens: 0,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID2, Amount: big.NewInt(1)},
+			{ID: nativeTokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	require.True(t, budget.SpendFromFungibleTokenBudget(toSpend))
@@ -122,13 +122,13 @@ func TestAssets_SpendBudget(t *testing.T) {
 	budget = &FungibleTokens{
 		BaseTokens: 10,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID2, Amount: big.NewInt(1)},
+			{ID: nativeTokenID2, Amount: big.NewInt(1)},
 		},
 	}
 	toSpend = &FungibleTokens{
 		BaseTokens: 1,
 		NativeTokens: iotago.NativeTokens{
-			{ID: tokenID1, Amount: big.NewInt(5)},
+			{ID: nativeTokenID1, Amount: big.NewInt(5)},
 		},
 	}
 

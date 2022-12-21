@@ -134,20 +134,20 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 		return nil, ErrNotEnoughBaseTokens
 	}
 	// collect all token ids
-	tokenIDs := make(map[iotago.NativeTokenID]bool)
+	nativeTokenIDs := make(map[iotago.NativeTokenID]bool)
 	for id := range inTokens {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range outTokens {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	remBaseTokens := inBaseTokens - outBaseTokens
 	remTokens := make(map[iotago.NativeTokenID]*big.Int)
 
 	// calc remainders by outputs
-	for id := range tokenIDs {
-		bIn, okIn := inTokens[id]
-		bOut, okOut := outTokens[id]
+	for nativeTokenID := range nativeTokenIDs {
+		bIn, okIn := inTokens[nativeTokenID]
+		bOut, okOut := outTokens[nativeTokenID]
 		if !okIn {
 			return nil, ErrNotEnoughNativeTokens
 		}
@@ -161,14 +161,14 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 			// bIn >= bOut
 			s := new(big.Int).Sub(bIn, bOut)
 			if !util.IsZeroBigInt(s) {
-				remTokens[id] = s
+				remTokens[nativeTokenID] = s
 			}
 		case !okIn && okOut:
 			// there's output but no input. Not enough
 			return nil, ErrNotEnoughNativeTokens
 		case okIn && !okOut:
 			// native token is here by accident. All goes to remainder
-			remTokens[id] = new(big.Int).Set(bIn)
+			remTokens[nativeTokenID] = new(big.Int).Set(bIn)
 			if util.IsZeroBigInt(bIn) {
 				panic("bad input")
 			}
@@ -187,9 +187,9 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 			&iotago.AddressUnlockCondition{Address: senderAddress},
 		},
 	}
-	for id, b := range remTokens {
+	for nativeTokenID, b := range remTokens {
 		ret.NativeTokens = append(ret.NativeTokens, &iotago.NativeToken{
-			ID:     id,
+			ID:     nativeTokenID,
 			Amount: b,
 		})
 	}

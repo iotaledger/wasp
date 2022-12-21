@@ -36,7 +36,7 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 	// claims all base tokens from allowance
 	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowance(ctx.AllowanceAvailable().Assets.BaseTokens, nil, nil))
 	for _, nativeToken := range ctx.AllowanceAvailable().Assets.NativeTokens {
-		for ctx.AllowanceAvailable().Assets.AmountNativeToken(&nativeToken.ID).Cmp(util.Big0) > 0 {
+		for ctx.AllowanceAvailable().Assets.AmountNativeToken(nativeToken.ID).Cmp(util.Big0) > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not

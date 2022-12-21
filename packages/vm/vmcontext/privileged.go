@@ -46,11 +46,11 @@ func (vmctx *VMContext) DestroyFoundry(sn uint32) uint64 {
 func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	vmctx.mustBeCalledFromContract(accounts.Contract)
 	out, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
-	tokenID, err := out.NativeTokenID()
+	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
 		panic(xerrors.Errorf("internal: %v", err))
 	}
-	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
+	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
 func (vmctx *VMContext) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {

@@ -434,10 +434,10 @@ func TestWasmTypes(t *testing.T) {
 	checkerString.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	tokenID, err := getTokenID(ctx)
+	nativeTokenID, err := getTokenID(ctx)
 	require.NoError(t, err)
-	scTokenID := ctx.Cvt.ScTokenID(&tokenID)
-	checkTokenID(t, ctx, scTokenID, tokenID)
+	scTokenID := ctx.Cvt.ScTokenID(nativeTokenID)
+	checkTokenID(t, ctx, scTokenID, nativeTokenID)
 
 	nftID, err := getNftID(ctx)
 	require.NoError(t, err)
@@ -455,14 +455,14 @@ func TestWasmTypes(t *testing.T) {
 	checkRequestID(t, ctx, scReq, req)
 }
 
-func getTokenID(ctx *wasmsolo.SoloContext) (tokenID iotago.NativeTokenID, err error) {
+func getTokenID(ctx *wasmsolo.SoloContext) (nativeTokenID iotago.NativeTokenID, err error) {
 	maxSupply := 100
 	fp := ctx.Chain.NewFoundryParams(ctx.Cvt.ToBigInt(maxSupply))
-	_, tokenID, err = fp.CreateFoundry()
+	_, nativeTokenID, err = fp.CreateFoundry()
 	if err != nil {
 		return iotago.NativeTokenID{}, err
 	}
-	return tokenID, nil
+	return nativeTokenID, nil
 }
 
 func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
@@ -565,19 +565,19 @@ func checkNftID(t *testing.T, ctx *wasmsolo.SoloContext, scNftID wasmtypes.ScNft
 }
 
 //nolint:dupl
-func checkTokenID(t *testing.T, ctx *wasmsolo.SoloContext, scTokenID wasmtypes.ScTokenID, tokenID iotago.NativeTokenID) {
-	tokenIDBytes := tokenID[:]
-	tokenIDString := tokenID.String()
+func checkTokenID(t *testing.T, ctx *wasmsolo.SoloContext, scTokenID wasmtypes.ScTokenID, nativeTokenID iotago.NativeTokenID) {
+	nativeTokenIDBytes := nativeTokenID[:]
+	nativeTokenIDString := nativeTokenID.String()
 
 	require.Equal(t, scTokenID, wasmtypes.TokenIDFromString(wasmtypes.TokenIDToString(scTokenID)))
 	require.Equal(t, scTokenID, wasmtypes.TokenIDFromBytes(wasmtypes.TokenIDToBytes(scTokenID)))
-	require.Equal(t, scTokenID.String(), tokenID.String())
-	require.Equal(t, scTokenID.Bytes(), tokenID[:])
+	require.Equal(t, scTokenID.String(), nativeTokenID.String())
+	require.Equal(t, scTokenID.Bytes(), nativeTokenID[:])
 
 	checker := testwasmlib.ScFuncs.CheckTokenID(ctx)
 	checker.Params.ScTokenID().SetValue(scTokenID)
-	checker.Params.TokenIDBytes().SetValue(tokenIDBytes)
-	checker.Params.TokenIDString().SetValue(tokenIDString)
+	checker.Params.TokenIDBytes().SetValue(nativeTokenIDBytes)
+	checker.Params.TokenIDString().SetValue(nativeTokenIDString)
 	checker.Func.Call()
 	require.NoError(t, ctx.Err)
 }

@@ -93,9 +93,9 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 
 	nativeTokensSet, err := actual.NativeTokens.Set()
 	require.NoError(e.t, err)
-	tokenID, err := isc.NativeTokenIDFromBytes(assetID)
+	nativeTokenID, err := isc.NativeTokenIDFromBytes(assetID)
 	require.NoError(e.t, err)
-	return nativeTokensSet[tokenID].Amount.Uint64()
+	return nativeTokensSet[nativeTokenID].Amount.Uint64()
 }
 
 func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expected uint64) {

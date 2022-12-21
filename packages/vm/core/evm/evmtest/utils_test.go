@@ -336,7 +336,7 @@ func (e *soloChainEnv) mintNFTAndSendToL2(to isc.AgentID) *isc.NFT {
 	return nft
 }
 
-func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *big.Int) (uint32, *iotago.FoundryID) {
+func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *big.Int) (uint32, iotago.NativeTokenID) {
 	res, err := e.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
 			accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
@@ -351,13 +351,13 @@ func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *bi
 	)
 	require.NoError(e.t, err)
 	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-	tokenID, err := e.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+	nativeTokenID, err := e.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
 	require.NoError(e.t, err)
 
 	err = e.soloChain.MintTokens(foundrySN, supply, foundryOwner)
 	require.NoError(e.t, err)
 
-	return foundrySN, &tokenID
+	return foundrySN, nativeTokenID
 }
 
 func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, foundrySN uint32, tokenName, tokenTickerSymbol string, tokenDecimals uint8) error {

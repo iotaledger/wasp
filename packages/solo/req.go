@@ -100,13 +100,13 @@ func (r *CallParams) AddAllowanceNativeTokensVect(nativeTokens ...*iotago.Native
 	return r
 }
 
-func (r *CallParams) AddAllowanceNativeTokens(id *iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddAllowanceNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAllowance()
 	}
 	r.allowance.Assets.Add(&isc.FungibleTokens{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
-			ID:     *id,
+			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
 		}},
 	})
@@ -141,10 +141,10 @@ func (r *CallParams) AddNativeTokensVect(nativeTokens ...*iotago.NativeToken) *C
 	})
 }
 
-func (r *CallParams) AddNativeTokens(tokenID *iotago.NativeTokenID, amount interface{}) *CallParams {
+func (r *CallParams) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *CallParams {
 	return r.AddFungibleTokens(&isc.FungibleTokens{
 		NativeTokens: iotago.NativeTokens{&iotago.NativeToken{
-			ID:     *tokenID,
+			ID:     nativeTokenID,
 			Amount: util.ToBigInt(amount),
 		}},
 	})

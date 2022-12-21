@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coregovernance"
@@ -170,9 +170,9 @@ func TestGetFeePolicy(t *testing.T) {
 	fpBin := f.Results.FeePolicyBytes().Value()
 	gfp, err := gas.FeePolicyFromBytes(fpBin)
 	require.NoError(t, err)
-	require.Equal(t, (*iotago.NativeTokenID)(nil), gfp.GasFeeTokenID) // default fee token ID is nil
-	require.Equal(t, uint64(100), gfp.GasPerToken)                    // default gas fee is 100
-	require.Equal(t, uint8(0), gfp.ValidatorFeeShare)                 // default fee share is 0
+	require.True(t, isc.IsEmptyNativeTokenID(gfp.GasFeeTokenID)) // default fee token ID is empty
+	require.Equal(t, uint64(100), gfp.GasPerToken)               // default gas fee is 100
+	require.Equal(t, uint8(0), gfp.ValidatorFeeShare)            // default fee share is 0
 }
 
 func TestGetChainInfo(t *testing.T) {

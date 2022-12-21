@@ -214,46 +214,46 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 			another.TotalBaseTokensInL2Accounts, another.TotalBaseTokensInStorageDeposit, another.SentOutBaseTokens, tOut)
 		return xerrors.Errorf("%v:\n %s\n    !=\n%s", vm.ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
-	tokenIDs := make(map[iotago.NativeTokenID]bool)
+	nativeTokenIDs := make(map[iotago.NativeTokenID]bool)
 	for id := range t.TokenCirculatingSupplies {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range another.TokenCirculatingSupplies {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range t.NativeTokenBalances {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range t.SentOutTokenBalances {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 
 	tokenSupplyDeltas := make(map[iotago.NativeTokenID]*big.Int)
-	for id := range tokenIDs {
-		inSupply, ok := t.TokenCirculatingSupplies[id]
+	for nativeTokenID := range nativeTokenIDs {
+		inSupply, ok := t.TokenCirculatingSupplies[nativeTokenID]
 		if !ok {
 			inSupply = big.NewInt(0)
 		}
-		outSupply, ok := another.TokenCirculatingSupplies[id]
+		outSupply, ok := another.TokenCirculatingSupplies[nativeTokenID]
 		if !ok {
 			outSupply = big.NewInt(0)
 		}
-		tokenSupplyDeltas[id] = big.NewInt(0).Sub(outSupply, inSupply)
+		tokenSupplyDeltas[nativeTokenID] = big.NewInt(0).Sub(outSupply, inSupply)
 	}
-	for id, delta := range tokenSupplyDeltas {
-		begin, ok := t.NativeTokenBalances[id]
+	for nativeTokenIDs, delta := range tokenSupplyDeltas {
+		begin, ok := t.NativeTokenBalances[nativeTokenIDs]
 		if !ok {
 			begin = big.NewInt(0)
 		} else {
 			begin = new(big.Int).Set(begin) // clone
 		}
-		end, ok := another.NativeTokenBalances[id]
+		end, ok := another.NativeTokenBalances[nativeTokenIDs]
 		if !ok {
 			end = big.NewInt(0)
 		} else {
 			end = new(big.Int).Set(end) // clone
 		}
-		sent, ok := another.SentOutTokenBalances[id]
+		sent, ok := another.SentOutTokenBalances[nativeTokenIDs]
 		if !ok {
 			sent = big.NewInt(0)
 		} else {
@@ -263,7 +263,7 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 		end.Add(end, sent)
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
-			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", vm.ErrFatalTxBuilderNotBalanced, id, begin, end)
+			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", vm.ErrFatalTxBuilderNotBalanced, nativeTokenIDs, begin, end)
 		}
 	}
 	return nil

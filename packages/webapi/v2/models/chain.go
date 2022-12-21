@@ -71,7 +71,7 @@ type ChainInfoResponse struct {
 func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfoResponse {
 	gasFeeTokenID := ""
 
-	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 

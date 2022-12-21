@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/params"
@@ -29,7 +30,7 @@ type GovChainInfoResponse struct {
 func MapGovChainInfoResponse(chainInfo *governance.ChainInfo) GovChainInfoResponse {
 	gasFeeTokenID := ""
 
-	if chainInfo.GasFeePolicy.GasFeeTokenID != nil {
+	if !isc.IsEmptyNativeTokenID(chainInfo.GasFeePolicy.GasFeeTokenID) {
 		gasFeeTokenID = chainInfo.GasFeePolicy.GasFeeTokenID.String()
 	}
 
