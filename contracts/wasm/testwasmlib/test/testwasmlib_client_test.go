@@ -27,7 +27,7 @@ import (
 
 const (
 	useDocker     = true
-	useDisposable = false
+	useDisposable = true
 	useSoloClient = false
 )
 

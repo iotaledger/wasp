@@ -7,8 +7,6 @@ import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
 import {IClientService} from "./wasmclientservice";
 
-const WebSocket = require('ws');
-
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventDone: bool = false;
     private eventHandlers: wasmlib.IEventHandlers[] = [];

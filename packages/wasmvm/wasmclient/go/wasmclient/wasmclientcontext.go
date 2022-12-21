@@ -142,14 +142,14 @@ func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 func (s *WasmClientContext) processEvent(msg []string) {
 	fmt.Printf("%s\n", strings.Join(msg, " "))
 
-	if msg[0] != "vmmsg" {
+	if msg[0] != "contract" {
 		// not intended for us
 		return
 	}
 
 	s.eventReceived = true
 
-	params := strings.Split(msg[3], "|")
+	params := strings.Split(msg[6], "|")
 	for i, param := range params {
 		params[i] = unescape(param)
 	}
