@@ -87,6 +87,12 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	if chainRecord == nil {
 		return httperrors.NotFound("")
 	}
+	if !chainRecord.Active {
+		return c.JSON(http.StatusOK, model.ChainInfo{
+			ChainID: model.ChainIDBech32(chainID.String()),
+			Active:  false,
+		})
+	}
 	chain := w.chains().Get(chainID)
 	committeeInfo := chain.GetCommitteeInfo()
 	var dkShare tcrypto.DKShare
