@@ -19,6 +19,9 @@ func (a Address) MarshalJSON() ([]byte, error) {
 }
 
 func (a *Address) UnmarshalJSON(b []byte) error {
+	if len(b) <= 2 { // empty string means len(b) == 2 // ("")
+		return nil
+	}
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
