@@ -27,7 +27,7 @@ import (
 
 const (
 	useDocker     = true
-	useDisposable = true
+	useDisposable = false
 	useSoloClient = false
 )
 
@@ -123,6 +123,62 @@ func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain st
 	return svc
 }
 
+func TestClientAccountBalance(t *testing.T) {
+	svc := setupClient(t)
+	wallet := svc.CurrentKeyPair()
+
+	// note: this calls core accounts contract instead of testwasmlib
+	svc = wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
+	svc.SignRequests(wallet)
+
+	addr := isc.NewAgentID(wallet.Address())
+	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
+
+	bal := coreaccounts.ScFuncs.BalanceBaseToken(svc)
+	bal.Params.AgentID().SetValue(agent)
+	bal.Func.Call()
+	require.NoError(t, svc.Err)
+	balance := bal.Results.Balance()
+	fmt.Printf("Balance: %d\n", balance.Value())
+}
+
+func TestClientArray(t *testing.T) {
+	svc := setupClient(t)
+
+	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
+
+	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
+	f.Params.Name().SetValue("Bands")
+	f.Params.Value().SetValue("Dire Straits")
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
+
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 1, v.Results.Length().Value())
+
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, svc.Err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
+
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
+}
+
 func TestClientRandom(t *testing.T) {
 	svc := setupClient(t)
 	doit := func() {
@@ -181,60 +237,4 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 	require.NoError(t, svc.Err)
 
 	require.EqualValues(t, param, *name)
-}
-
-func TestClientArray(t *testing.T) {
-	svc := setupClient(t)
-
-	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 0, v.Results.Length().Value())
-
-	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
-	f.Params.Name().SetValue("Bands")
-	f.Params.Value().SetValue("Dire Straits")
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-	svc.WaitRequest()
-	require.NoError(t, svc.Err)
-
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 1, v.Results.Length().Value())
-
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
-	c.Params.Name().SetValue("Bands")
-	c.Func.Post()
-	require.NoError(t, svc.Err)
-	svc.WaitRequest()
-	require.NoError(t, svc.Err)
-
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 0, v.Results.Length().Value())
-}
-
-func TestClientAccountBalance(t *testing.T) {
-	svc := setupClient(t)
-	wallet := svc.CurrentKeyPair()
-
-	// note: this calls core accounts contract instead of testwasmlib
-	svc = wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
-	svc.SignRequests(wallet)
-
-	addr := isc.NewAgentID(wallet.Address())
-	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
-
-	bal := coreaccounts.ScFuncs.BalanceBaseToken(svc)
-	bal.Params.AgentID().SetValue(agent)
-	bal.Func.Call()
-	require.NoError(t, svc.Err)
-	balance := bal.Results.Balance()
-	fmt.Printf("Balance: %d\n", balance.Value())
 }

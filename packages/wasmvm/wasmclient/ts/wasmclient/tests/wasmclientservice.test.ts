@@ -5,8 +5,8 @@ import {KeyPair} from "../lib/isc";
 import * as net from "net";
 import {WebSocket} from "ws"
 
-const MYCHAIN = "tst1pql4kl8frx2nfe2cvmxshy8jsnq6crnh72jaywuxdrt0xnyylmh5ged3r92";
-const MYSEED = "0x1fcf86092b3f7747335ea6838ed3445d98646b6f2285e7336fbf1a35563803dc";
+const MYCHAIN = "tst1pqsaz75y2wp66f3qmvez2fv9jtsvgwxgnsytv3uxlzpj9uc2n6zwyahepcw";
+const MYSEED = "0x925d2270b9088c46b91d124b3de2b6731e75aaa1296e75d16130040e505f6d87";
 
 function setupClient() {
     const svc = new WasmClientService('127.0.0.1:9090', '127.0.0.1:5550');
