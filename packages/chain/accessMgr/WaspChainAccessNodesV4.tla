@@ -33,7 +33,8 @@ VARIABLE server     \* Access nodes uses these as servers for their queries.
 VARIABLE lClock     \* Logical clocks for all the nodes in each node.
 VARIABLE reboots    \* Max number of remaining reboots.
 VARIABLE msgs       \* Inflight messages.
-vars == <<active, access, server, lClock, reboots, msgs>>
+VARIABLE msgDup
+vars == <<active, access, server, lClock, reboots, msgs, msgDup>>
 
 LC == 0..MaxLC                                       \* To have bounded model checking only.
 LC_HaveNext(n, count) == lClock[n][n] + count \in LC \* To have bounded model checking only.
@@ -54,6 +55,7 @@ TypeOK ==
     /\ lClock  \in [Nodes -> [Nodes -> LC]]
     /\ reboots \in 0..MaxReboots
     /\ msgs    \subseteq Msgs
+    /\ msgDup  \subseteq Msgs
 
 --------------------------------------------------------------------------------
 (*
@@ -72,6 +74,17 @@ accessMsgs(n) == {[
         server |-> serverForChains(n, dst)'
     ] : dst \in (Nodes \ {n})}
 
+sendAndAck(m, send) ==
+    /\ msgs' = (msgs \ {m}) \cup send
+    /\ msgDup' = msgDup \cup {m}
+
+sendOnly(send) ==
+    /\ msgs' = msgs \cup send
+    /\ UNCHANGED msgDup
+
+noSend == UNCHANGED <<msgs, msgDup>>
+
+
 \* We ignore the chains in access messages that we get, but don't have enabled.
 \* That's to avoid a possibility to fill the memory with fake access notifications.
 \* Therefore after enabling a chain we have to query for access again.
@@ -81,7 +94,7 @@ ChainActivate(n, c) ==
     /\ active' = [active EXCEPT ![n] = @ \cup {c}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1]  \* Config has changed this way.
     /\ UNCHANGED <<access, server, reboots>>
-    /\ msgs' = msgs \cup accessMsgs(n)
+    /\ sendOnly(accessMsgs(n))
 
 ChainDeactivate(n, c) ==
     /\ LC_HaveNext(n, 2)
@@ -90,7 +103,7 @@ ChainDeactivate(n, c) ==
     /\ server' = [access EXCEPT ![n][c] = {}]   \* That's non-persistent info.
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1]  \* Config has changed this way.
     /\ UNCHANGED <<access, reboots>>
-    /\ msgs' = msgs \cup accessMsgs(n)
+    /\ sendOnly(accessMsgs(n))
 
 AccessNodeAdd(n, c, a) ==
     /\ LC_HaveNext(n, 2)
@@ -98,8 +111,8 @@ AccessNodeAdd(n, c, a) ==
     /\ access' = [access EXCEPT ![n][c] = @ \cup {a}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1] \* Config has changed.
     /\ UNCHANGED <<active, server, reboots>>
-    /\ \/ c \in    active[n] /\ msgs' = msgs \cup accessMsgs(n)
-       \/ c \notin active[n] /\ UNCHANGED msgs
+    /\ \/ c \in    active[n] /\ sendOnly(accessMsgs(n))
+       \/ c \notin active[n] /\ noSend
 
 AccessNodeDel(n, c, a) ==
     /\ LC_HaveNext(n, 2)
@@ -107,8 +120,8 @@ AccessNodeDel(n, c, a) ==
     /\ access' = [access EXCEPT ![n][c] = @ \ {a}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1] \* Config has changed.
     /\ UNCHANGED <<active, server, reboots>>
-    /\ \/ c \in    active[n] /\ msgs' = msgs \cup accessMsgs(n)
-       \/ c \notin active[n] /\ UNCHANGED msgs
+    /\ \/ c \in    active[n] /\ sendOnly(accessMsgs(n))
+       \/ c \notin active[n] /\ noSend
 
 Reboot(n) ==
     /\ reboots > 0
@@ -116,15 +129,17 @@ Reboot(n) ==
     /\ server' = [access EXCEPT ![n] = [c \in Chains |-> {}]]                    \* That's non-persistent info.
     /\ lClock' = [lClock EXCEPT ![n] = [m \in Nodes |-> IF n = m THEN 1 ELSE 0]] \* That's non-persistent info.
     /\ UNCHANGED <<active, access>>
-    /\ msgs' = msgs \cup accessMsgs(n)
+    /\ sendOnly(accessMsgs(n))
+
+MsgDuplicate ==
+    \E m \in msgDup :
+        /\ msgs' = msgs \cup {m}
+        /\ UNCHANGED <<active, access, server, lClock, reboots, msgDup>>
 
 --------------------------------------------------------------------------------
 (*
 Handle the messages.
 *)
-sendMaybeAck(m, send) ==
-    \* \/ msgs' = msgs \cup send \* TODO: Either use or remove.
-    \/ msgs' = (msgs \ {m}) \cup send
 
 (*
   - If we get msg.dst_lc > n.lc ----> update our local LC.
@@ -143,10 +158,10 @@ RecvAccess(n) == \E m \in msgs:
                                                                ELSE server[n][c] \ {m.src} ]]
        \/ /\ m.src_lc =< lClock[n][m.src]
           /\ UNCHANGED <<server>>
-    /\ \/ m.dst_lc < lClock[n][n]'                                         /\ sendMaybeAck(m, accessMsgs(n))
-       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) # m.access /\ sendMaybeAck(m, accessMsgs(n))
-       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) = m.access /\ sendMaybeAck(m, {})
-       \/ m.dst_lc > lClock[n][n]'                                         /\ sendMaybeAck(m, {}) \* NOTE: Impossible.
+    /\ \/ m.dst_lc < lClock[n][n]'                                         /\ sendAndAck(m, accessMsgs(n))
+       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) # m.access /\ sendAndAck(m, accessMsgs(n))
+       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) = m.access /\ sendAndAck(m, {})
+       \/ m.dst_lc > lClock[n][n]'                                         /\ sendAndAck(m, {}) \* NOTE: Impossible.
 
 --------------------------------------------------------------------------------
 Init ==
@@ -156,12 +171,14 @@ Init ==
     /\ lClock  = [n \in Nodes |-> [m \in Nodes |-> IF m = n THEN 1 ELSE 0]]
     /\ reboots = MaxReboots
     /\ msgs    = {}
+    /\ msgDup  = {}
 
 Next ==
     \/ \E n \in Nodes: Reboot(n)
     \/ \E n \in Nodes, c \in Chains: ChainActivate(n, c) \/ ChainDeactivate(n, c)
     \/ \E n, a \in Nodes, c \in Chains: AccessNodeAdd(n, c, a) \/ AccessNodeDel(n, c, a)
     \/ \E n \in Nodes: RecvAccess(n)
+  \*\/ MsgDuplicate
 
 Fairness ==
     /\ SF_vars(\E n \in Nodes: RecvAccess(n))
