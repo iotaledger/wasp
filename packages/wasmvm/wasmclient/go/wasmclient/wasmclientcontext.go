@@ -183,8 +183,6 @@ func (s *WasmClientContext) stopEventHandlers() {
 	}
 }
 
-// note that un-escaping needs to be done in a single pass to prevent
-// occurrences of legit "\/" substrings to be turned into "|"
 func unescape(param string) string {
 	i := strings.IndexByte(param, '~')
 	if i < 0 {

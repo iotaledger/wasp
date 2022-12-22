@@ -213,18 +213,21 @@ func TestClientEvents(t *testing.T) {
 	})
 	svc.Register(events)
 
-	testClientEventsParam(t, svc, "Lala", &name)
-	testClientEventsParam(t, svc, "Trala", &name)
-	testClientEventsParam(t, svc, "Bar|Bar", &name)
-	testClientEventsParam(t, svc, "Bar~|~Bar", &name)
-	testClientEventsParam(t, svc, "Tilde~Tilde", &name)
-	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", &name)
+	event := func() string {
+		return name
+	}
+
+	testClientEventsParam(t, svc, "Lala", event)
+	testClientEventsParam(t, svc, "Trala", event)
+	testClientEventsParam(t, svc, "Bar|Bar", event)
+	testClientEventsParam(t, svc, "Bar~|~Bar", event)
+	testClientEventsParam(t, svc, "Tilde~Tilde", event)
+	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", event)
 }
 
-func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, param string, name *string) {
-	// get new triggerEvent interface, pass params, and post the request
+func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, name string, event func() string) {
 	f := testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue(param)
+	f.Params.Name().SetValue(name)
 	f.Params.Address().SetValue(svc.CurrentChainID().Address())
 	f.Func.Post()
 	require.NoError(t, svc.Err)
@@ -232,9 +235,8 @@ func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, para
 	svc.WaitRequest()
 	require.NoError(t, svc.Err)
 
-	// make sure we wait for the event to show up
 	svc.WaitEvent()
 	require.NoError(t, svc.Err)
 
-	require.EqualValues(t, param, *name)
+	require.EqualValues(t, name, event())
 }

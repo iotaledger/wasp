@@ -1,8 +1,7 @@
 import {WasmClientContext, WasmClientService} from '../lib';
 import * as testwasmlib from "testwasmlib";
-import {bytesFromString, hexEncode} from "wasmlib";
+import {bytesFromString} from "wasmlib";
 import {KeyPair} from "../lib/isc";
-import * as net from "net";
 
 var nano = require('nanomsg');
 
@@ -17,215 +16,28 @@ function setupClient() {
     return ctx;
 }
 
-function waitForPortState(socket: net.Socket, state: string, msec: number) : Promise<void> {
-    return new Promise(function (resolve) {
-        setTimeout(function () {
-            if (socket.readyState === state || msec == 0) {
-                resolve();
-            } else {
-                waitForPortState(socket, state, msec - 100).then(resolve);
-            }
-        }, 100);
-    });
-}
+async function testClientEventsParam(ctx: WasmClientContext, name: string, event: () => string) {
+    const f = testwasmlib.ScFuncs.triggerEvent(ctx);
+    f.params.name().setValue(name);
+    f.params.address().setValue(ctx.currentChainID().address());
+    f.func.post();
+    expect(ctx.Err == null).toBeTruthy();
 
-function waitForSocketState(socket: WebSocket, state: number, msec: number) : Promise<void> {
-    return new Promise(function (resolve) {
-        setTimeout(function () {
-            if (socket.readyState === state || msec == 0) {
-                resolve();
-            } else {
-                waitForSocketState(socket, state,msec - 100).then(resolve);
-            }
-        }, 5);
-    });
-}
+    ctx.waitRequest();
+    expect(ctx.Err == null).toBeTruthy();
 
-var message = false;
+    await ctx.waitEvent();
+    expect(ctx.Err == null).toBeTruthy();
 
-function waitForNanoState(msec: number) : Promise<void> {
-    return new Promise(function (resolve) {
-        setTimeout(function () {
-            if (message || msec == 0) {
-                resolve();
-            } else {
-                waitForNanoState(msec - 100).then(resolve);
-            }
-        }, 5);
-    });
+    expect(name == event()).toBeTruthy();
 }
 
 describe('wasmclient unverified', function () {
-    describe('Create nanomsg listener', function () {
-        test('should connect to 127.0.0.1:5550', async () => {
-            console.log('Starting');
-            const ctx = setupClient();
-
-            var sub = nano.socket('sub');
-
-            var addr = 'tcp://127.0.0.1:5550'
-            sub.connect(addr);
-
-            sub.on('error', function (err:any) {
-                console.log('Error: ' + err);
-                sub.close();
-            });
-
-            sub.on('data', function (buf:any) {
-                console.log('Data: ' + buf);
-                const msg = buf.toString().split(' ');
-                if (msg[0] != 'contract') {
-                    return;
-                }
-                message = true;
-                sub.close();
-            });
-
-            sub.on('close', function () {
-                console.log('Close');
-            });
-
-            // await waitForPortState(client, "open", 1000);
-           //  console.log('Wait state: ' + client.readyState);
-
-            // get new triggerEvent interface, pass params, and post the request
-            const f = testwasmlib.ScFuncs.triggerEvent(ctx);
-            f.params.name().setValue("Lala");
-            f.params.address().setValue(ctx.currentChainID().address());
-            f.func.post();
-            expect(ctx.Err == null).toBeTruthy();
-
-            await waitForNanoState(2000);
-
-            console.log('Stopping');
-        });
-    });
-
-    describe('Create TCP listener', function () {
-        test('should connect to 127.0.0.1:5550', async () => {
-            console.log('Starting');
-            const ctx = setupClient();
-
-            const client = net.createConnection(5550, '127.0.0.1', function() {
-                console.log('Connected');
-                console.log('State: ' + client.readyState);
-            });
-
-            client.on('error',function(err: any) {
-                console.log('Error: ' + err);
-                console.log('State: ' + client.readyState);
-            } );
-
-            let msgs = 0;
-            client.on('data', function(data: Uint8Array) {
-                console.log('Received: ' + hexEncode(data));
-                console.log('State: ' + client.readyState);
-                msgs++;
-                if (msgs == 2) {
-                    client.end();
-                }
-            });
-
-            client.on('close', function() {
-                console.log('Connection closed');
-                console.log('State: ' + client.readyState);
-            });
-
-            client.on('end', function() {
-                console.log('Connection ended');
-                console.log('State: ' + client.readyState);
-            });
-            await waitForPortState(client, "open", 1000);
-            console.log('Wait state: ' + client.readyState);
-
-            // get new triggerEvent interface, pass params, and post the request
-            const f = testwasmlib.ScFuncs.triggerEvent(ctx);
-            f.params.name().setValue("Lala");
-            f.params.address().setValue(ctx.currentChainID().address());
-            f.func.post();
-            expect(ctx.Err == null).toBeTruthy();
-
-            await waitForPortState(client, "closed", 2000);
-            console.log('Wait state: ' + client.readyState);
-
-            console.log('Stopping');
-        });
-    });
-
-    describe('Create web socket listener', function () {
-        test('should connect to wasp chain websocket', async () => {
-            console.log('Starting');
-            const webSocketUrl = "ws://127.0.0.1:9090/chain/" + MYCHAIN + "/ws";
-            const webSocket = new WebSocket(webSocketUrl);
-            webSocket.addEventListener('open', () => {
-                console.log("Open");
-            });
-            webSocket.addEventListener('error', (x: any) => {
-                console.log("Error " + x.toString());
-                console.log(x);
-                webSocket.close();
-            });
-            webSocket.addEventListener('message', (x: MessageEvent<any>) => {
-                console.log("Message " + x);
-             });
-            webSocket.addEventListener('close', () => {
-                console.log("Close");
-            });
-            await waitForSocketState(webSocket, webSocket.OPEN, 2000);
-            await waitForSocketState(webSocket, webSocket.CLOSED, 2000);
-            console.log('Stopping');
-       });
-    });
-
-    describe('Event handling', function () {
-        it('should receive events', () => {
-            console.log('Starting');
-            const ctx = setupClient();
-
-            const events = new testwasmlib.TestWasmLibEventHandlers();
-            let name = "";
-            events.onTestWasmLibTest((e) => {
-                name = e.name;
-            })
-            ctx.register(events);
-
-            // get new triggerEvent interface, pass params, and post the request
-            const f = testwasmlib.ScFuncs.triggerEvent(ctx);
-            f.params.name().setValue("Lala");
-            f.params.address().setValue(ctx.currentChainID().address());
-            f.func.post();
-            expect(ctx.Err == null).toBeTruthy();
-
-            ctx.waitRequest();
-            expect(ctx.Err == null).toBeTruthy();
-
-            // make sure we wait for the event to show up
-            ctx.waitEvent(() => {
-                expect(ctx.Err == null).toBeTruthy();
-
-//                expect(name == "Lala").toBeTruthy();
-            });
-        });
-    });
 });
 
 describe('wasmclient verified', function () {
-    describe('Create service', function () {
-        it('should create service', () => {
-            const client = WasmClientService.DefaultWasmClientService();
-            expect(client != null).toBeTruthy();
-        });
-    });
-
-    describe('Create SC func', function () {
-        it('should create SC func', () => {
-            const n = testwasmlib.HScName;
-            expect(n == testwasmlib.HScName).toBeTruthy();
-        });
-    });
-
-    describe('Call web API', function () {
-        it('should call web API', () => {
+    describe('call() view', function () {
+        it('should call through web API', () => {
             const ctx = setupClient();
 
             const v = testwasmlib.ScFuncs.getRandom(ctx);
@@ -237,8 +49,8 @@ describe('wasmclient verified', function () {
         });
     });
 
-    describe('Post web API', function () {
-        it('should post to web API', () => {
+    describe('post() func request', function () {
+        it('should post through web API', () => {
             const ctx = setupClient();
 
             const f = testwasmlib.ScFuncs.random(ctx);
@@ -254,6 +66,33 @@ describe('wasmclient verified', function () {
             const rnd = v.results.random().value();
             console.log("Rnd: " + rnd);
             expect(rnd != 0n).toBeTruthy();
+        });
+    });
+
+    describe('event handling', function () {
+        jest.setTimeout(20000);
+        it('should receive multiple events', async () => {
+            const ctx = setupClient();
+
+            const events = new testwasmlib.TestWasmLibEventHandlers();
+            let name = "";
+            events.onTestWasmLibTest((e) => {
+                console.log(e.name);
+                name = e.name;
+            })
+            ctx.register(events);
+
+            const event = () => name;
+
+            await testClientEventsParam(ctx, "Lala", event);
+            await testClientEventsParam(ctx, "Trala", event);
+            await testClientEventsParam(ctx, "Bar|Bar", event);
+            await testClientEventsParam(ctx, "Bar~|~Bar", event);
+            await testClientEventsParam(ctx, "Tilde~Tilde", event);
+            await testClientEventsParam(ctx, "Tilde~~ Bar~/ Space~_", event);
+
+            ctx.unregister(events);
+            expect(ctx.Err == null).toBeTruthy();
         });
     });
 });
