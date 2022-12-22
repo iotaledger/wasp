@@ -76,8 +76,12 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
-	return r.resolveReceipt(c, ch, rec)
+	select {
+	case rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true):
+		return r.resolveReceipt(c, ch, rec)
+	case <-time.After(req.Timeout):
+		return httperrors.Timeout("Timeout")
+	}
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {
