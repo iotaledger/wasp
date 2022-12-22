@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,18 +20,14 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 )
 
 const (
+	useDisposable = false
 	useDocker     = true
-	useDisposable = true
-	useSoloClient = false
+	useSoloClient = true
 )
-
-// to run with docker, set useDisposable to true and run with the following parameters:
-// -layer1-api="http://localhost:14265" -layer1-faucet="http://localhost:8091"
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 	if useDisposable {
@@ -47,9 +42,9 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
-	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	e := clustertests.SetupWithChain(t)
-	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
+	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 
 	// request funds to the wallet that the wasmclient will use

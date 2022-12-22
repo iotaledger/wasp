@@ -106,6 +106,7 @@ export class FairRouletteService {
   }
 
   private handleIncomingMessage(message: MessageEvent<string>): void {
+    //TODO no longer vmmsg, but we're rewriting this using wasmclient anyway.
     // expect vmmsg <chain ID> <contract hname> contract.event|param1|param2|...
     const msg = message.data.toString().split(' ');
     if (msg.length != 4 || msg[0] != 'vmmsg') {

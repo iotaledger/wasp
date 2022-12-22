@@ -59,7 +59,8 @@ export class WasmClientService implements IClientService {
                 callback(["error", err.toString()]);
             });
             this.eventListener.on('data', function (buf: any) {
-                const msg = buf.toString().split(' ');
+                const txt = buf.toString();
+                const msg = txt.split(' ');
                 if (msg[0] == 'contract') {
                     for (let i = 0; i < self.callbacks.length; i++) {
                         self.callbacks[i](msg);
