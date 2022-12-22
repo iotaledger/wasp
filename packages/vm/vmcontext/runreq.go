@@ -149,7 +149,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	if vmctx.req.IsOffLedger() {
 		vmctx.updateOffLedgerRequestMaxAssumedNonce()
 	}
-	var callErr error
+	var callErr *isc.VMError
 	func() {
 		defer func() {
 			panicErr := vmctx.checkVMPluginPanic(recover())
@@ -185,7 +185,7 @@ func (vmctx *VMContext) callTheContract() (receipt *blocklog.RequestReceipt, cal
 	return receipt, callRet
 }
 
-func (vmctx *VMContext) checkVMPluginPanic(r interface{}) error {
+func (vmctx *VMContext) checkVMPluginPanic(r interface{}) *isc.VMError {
 	if r == nil {
 		return nil
 	}

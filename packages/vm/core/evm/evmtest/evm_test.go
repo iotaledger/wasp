@@ -968,7 +968,7 @@ func TestERC20NativeTokensLongName(t *testing.T) {
 	env := initEVM(t)
 
 	var (
-		tokenName         = strings.Repeat("A", 100_000)
+		tokenName         = strings.Repeat("A", 10_000)
 		tokenTickerSymbol = "ERC20NT"
 		tokenDecimals     = uint8(8)
 	)
