@@ -237,7 +237,6 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	// TODO make this configurable (so that only selected nodes are access nodes)
 	addAccessNodesRequests := make([]*iotago.Transaction, len(accessNodes))
 	for i, a := range accessNodes {
 		tx, err := clu.AddAccessNode(a, chain)

@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -70,10 +72,24 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 
 		// set trust relations between node0 of cluster 2 and all nodes of cluster 1
 		w.Cluster.AddTrustedNode(node0peerInfo)
+		cluster1PubKeys := make([]*cryptolib.PublicKey, len(w.Cluster.AllNodes()))
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
+			// equivalent of "wasp-cli peer info"
 			peerInfo, err := w.Cluster.WaspClient(nodeIndex).GetPeeringSelf()
 			require.NoError(t, err)
+			// TODO change to "wasp-cli peer trust <pubkey> <netID>"
 			w2.Cluster.AddTrustedNode(peerInfo, []int{0})
+			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PubKey)
+			require.NoError(t, err)
+		}
+
+		// TODO the following won't be needed once we have automated the process of linking peers to a chain
+		{
+			cID, err := isc.ChainIDFromString(chainID)
+			require.NoError(t, err)
+			record := registry.NewChainRecord(cID, false, cluster1PubKeys)
+			err = w2.Cluster.WaspClient(0).PutChainRecord(record)
+			require.NoError(t, err)
 		}
 
 		// add node 0 from cluster 2 as an access node in the governance contract
