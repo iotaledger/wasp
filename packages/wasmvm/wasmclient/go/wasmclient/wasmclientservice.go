@@ -66,15 +66,13 @@ func (sc *WasmClientService) PostRequest(chainID wasmtypes.ScChainID, hContract,
 	iscAllowance := sc.cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
 	signed := req.Sign(keyPair)
+	reqID = sc.cvt.ScRequestID(signed.ID())
 	err = sc.waspClient.PostOffLedgerRequest(iscChainID, signed)
-	if err == nil {
-		reqID = sc.cvt.ScRequestID(signed.ID())
-	}
 	return reqID, err
 }
 
 func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) error {
-	return subscribe.Subscribe(sc.eventPort, msg, done, false, "")
+	return subscribe.Subscribe(sc.eventPort, msg, done, false, "contract")
 }
 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {

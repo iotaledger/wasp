@@ -6,7 +6,6 @@ import {concat, hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./
 import {uint16FromBytes, uint16FromString, uint16ToBytes, uint16ToString} from "./scuint16";
 import {Proxy} from "./proxy";
 import {bytesCompare} from "./scbytes";
-import {hashFromBytes, hashToBytes} from "./schash";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -64,7 +63,7 @@ export function requestIDFromString(value: string): ScRequestID {
 }
 
 export function requestIDToString(value: ScRequestID): string {
-    return hexEncode(requestIDToBytes(value));
+    return hexEncode(value.id);
 }
 
 function requestIDFromBytesUnchecked(buf: Uint8Array): ScRequestID {

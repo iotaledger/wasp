@@ -4,6 +4,7 @@
 import * as wasmlib from 'wasmlib';
 import {KeyPair} from "./keypair";
 import {concat} from "wasmlib";
+import {Blake2b} from "@iota/crypto.js";
 
 export class OffLedgerSignatureScheme {
     keyPair: KeyPair;
@@ -23,7 +24,7 @@ export class OffLedgerRequest {
     signatureScheme: OffLedgerSignatureScheme = new OffLedgerSignatureScheme(new KeyPair(new Uint8Array(0)));
     nonce: u64;
     allowance: wasmlib.ScAssets = new wasmlib.ScAssets(new Uint8Array(0));
-    gasBudget: u64 = 0n;
+    gasBudget: u64 = 50_000_000n;
 
     public constructor(chainID: wasmlib.ScChainID, contract: wasmlib.ScHname, entryPoint: wasmlib.ScHname, params: Uint8Array, nonce: u64) {
         this.chainID = chainID;
@@ -48,24 +49,25 @@ export class OffLedgerRequest {
         data = concat(data, this.params);
         data = concat(data, wasmlib.uint64ToBytes(this.nonce));
         data = concat(data, wasmlib.uint64ToBytes(this.gasBudget));
-        const pubKey = wasmlib.bytesFromUint8Array(this.signatureScheme.keyPair.publicKey);
+        const pubKey = this.signatureScheme.keyPair.publicKey;
         oneByte[0] = pubKey.length as u8;
         data = concat(data, oneByte);
         data = concat(data, pubKey);
-        //TODO convert to bytes according to Allowance?
         data = concat(data, this.allowance.toBytes());
         return data;
     }
 
     public ID(): wasmlib.ScRequestID {
-        //TODO
-        return wasmlib.requestIDFromBytes(new Uint8Array(0));
+        // req id is hash of req bytes
+        const reqId = new wasmlib.ScRequestID();
+        reqId.id.set(Blake2b.sum256(this.bytes()), 0);
+        return reqId;
     }
 
     public sign(keyPair: KeyPair): OffLedgerRequest {
         const req = new OffLedgerRequest(this.chainID, this.contract, this.entryPoint, this.params, this.nonce);
         req.signatureScheme = new OffLedgerSignatureScheme(keyPair);
-        req.signatureScheme.signature = keyPair.sign(this.essence());
+        req.signatureScheme.signature = keyPair.sign(req.essence());
         return req;
     }
 
