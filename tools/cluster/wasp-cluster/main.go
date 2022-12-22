@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"strings"
 
-	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/spf13/pflag"
 
 	"github.com/iotaledger/hive.go/core/configuration"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 const cmdName = "wasp-cluster"
