@@ -251,7 +251,7 @@ func TestCallViewGasLimit(t *testing.T) {
 		Data:     callArguments,
 	})
 	_, err = loop.chain.evmChain.CallContract(callMsg, latestBlock)
-	require.Contains(t, err.Error(), "gas limit exceeds maximum allowed")
+	require.Contains(t, err.Error(), "out of gas")
 }
 
 func TestMagicContract(t *testing.T) {
