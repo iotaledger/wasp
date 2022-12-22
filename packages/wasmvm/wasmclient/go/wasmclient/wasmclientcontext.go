@@ -90,7 +90,6 @@ func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
 	return s.startEventHandlers()
 }
 
-// overrides default contract name
 func (s *WasmClientContext) ServiceContractName(contractName string) {
 	s.scHname = wasmtypes.HnameFromBytes(isc.Hn(contractName).Bytes())
 }

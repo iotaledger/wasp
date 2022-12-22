@@ -47,7 +47,6 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
         return this.startEventHandlers();
     }
 
-    // overrides default contract name
     public serviceContractName(contractName: string) {
         this.scHname = wasmlib.hnameFromBytes(isc.Codec.hNameBytes(contractName));
     }

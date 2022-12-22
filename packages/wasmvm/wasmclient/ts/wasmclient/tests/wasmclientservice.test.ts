@@ -16,22 +16,6 @@ function setupClient() {
     return ctx;
 }
 
-async function testClientEventsParam(ctx: WasmClientContext, name: string, event: () => string) {
-    const f = testwasmlib.ScFuncs.triggerEvent(ctx);
-    f.params.name().setValue(name);
-    f.params.address().setValue(ctx.currentChainID().address());
-    f.func.post();
-    expect(ctx.Err == null).toBeTruthy();
-
-    ctx.waitRequest();
-    expect(ctx.Err == null).toBeTruthy();
-
-    await ctx.waitEvent();
-    expect(ctx.Err == null).toBeTruthy();
-
-    expect(name == event()).toBeTruthy();
-}
-
 describe('wasmclient unverified', function () {
 });
 
@@ -96,3 +80,19 @@ describe('wasmclient verified', function () {
         });
     });
 });
+
+async function testClientEventsParam(ctx: WasmClientContext, name: string, event: () => string) {
+    const f = testwasmlib.ScFuncs.triggerEvent(ctx);
+    f.params.name().setValue(name);
+    f.params.address().setValue(ctx.currentChainID().address());
+    f.func.post();
+    expect(ctx.Err == null).toBeTruthy();
+
+    ctx.waitRequest();
+    expect(ctx.Err == null).toBeTruthy();
+
+    await ctx.waitEvent();
+    expect(ctx.Err == null).toBeTruthy();
+
+    expect(name == event()).toBeTruthy();
+}
