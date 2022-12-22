@@ -26,21 +26,21 @@ import (
 )
 
 const (
+	useCluster    = false
 	useDisposable = false
-	useDocker     = true
-	useSoloClient = false
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	if useCluster {
+		return setupClientCluster(t)
+	}
+
 	if useDisposable {
 		return setupClientDisposable(t)
 	}
 
-	if useSoloClient {
-		return setupClientSolo(t)
-	}
-
-	return setupClientCluster(t)
+	// fall back on rudimentary basic testing by using SoloClientService
+	return setupClientSolo(t)
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
@@ -88,6 +88,10 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
 
+	cfgWasp := config["wasp"].(map[string]interface{})
+	cfgWasp0 := cfgWasp["0"].(map[string]interface{})
+	cfgWaspApi0 := cfgWasp0["api"].(string)
+
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
@@ -97,7 +101,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 	// we're testing against disposable wasp-cluster, so defaults will do
 	service := wasmclient.DefaultWasmClientService()
-	if useDocker {
+	if cfgWaspApi0[len(cfgWaspApi0)-6:] != ":19090" {
 		// test against Docker container, make sure to pass the correct args to test (top of file)
 		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
 	}
