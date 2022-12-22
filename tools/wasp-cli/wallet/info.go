@@ -102,7 +102,7 @@ NativeTokens:
 	Base tokens: {{.BaseTokens}}
 
 {{range $i, $out := .NativeTokens}}
-	{{$i.ID}} {{$out.Amount}}
+	{{$out.ID}} {{$out.Amount}}
 {{end}}`
 
 	return log.ParseCLIOutputTemplate(b, balanceTemplate)
