@@ -76,10 +76,16 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
+
+	delay := time.NewTimer(req.Timeout)
 	select {
 	case rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true):
+		if !delay.Stop() {
+			// empty the channel to avoid leak
+			<-delay.C
+		}
 		return r.resolveReceipt(c, ch, rec)
-	case <-time.After(req.Timeout):
+	case <-delay.C:
 		return httperrors.Timeout("Timeout")
 	}
 }
