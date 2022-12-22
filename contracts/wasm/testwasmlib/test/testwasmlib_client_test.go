@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -26,7 +28,7 @@ import (
 const (
 	useDisposable = false
 	useDocker     = true
-	useSoloClient = true
+	useSoloClient = false
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
@@ -42,9 +44,9 @@ func setupClient(t *testing.T) *wasmclient.WasmClientContext {
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
-	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	e := clustertests.SetupWithChain(t)
-	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 
 	// request funds to the wallet that the wasmclient will use

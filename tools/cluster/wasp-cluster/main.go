@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"github.com/spf13/pflag"
 
 	"github.com/iotaledger/hive.go/core/configuration"
@@ -104,6 +106,7 @@ func main() {
 	case "start":
 		flags := pflag.NewFlagSet("start", pflag.ExitOnError)
 		disposable := flags.BoolP("disposable", "d", false, "If set, run a disposable cluster in a temporary directory (no need for init, automatically removed when stopped)")
+		mapDb := flags.BoolP("mapdb", "m", false, "If set, use mapdb instead of rocksdb")
 		flags.AddFlagSet(commonFlags)
 		parseFlags(flags)
 
@@ -113,13 +116,16 @@ func main() {
 			os.Exit(1) //nolint:gocritic
 		}
 
-		var err error
+		if *mapDb {
+			templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+		}
 
 		if !*disposable && l1.PrivtangleEnabled() {
 			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
 			os.Exit(1)
 		}
 
+		var err error
 		dataPath := "."
 		if flags.NArg() == 1 {
 			if *disposable {
