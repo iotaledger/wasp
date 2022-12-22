@@ -217,15 +217,15 @@ func New(
 	consensusStateRegistry cmtLog.ConsensusStateRegistry,
 	blockWAL smGPAUtils.BlockWAL,
 	listener ChainListener,
-	accessNodesForNode []*cryptolib.PublicKey,
+	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (Chain, error) {
 	if listener == nil {
 		listener = NewEmptyChainListener()
 	}
-	if accessNodesForNode == nil {
-		accessNodesForNode = []*cryptolib.PublicKey{}
+	if accessNodesFromNode == nil {
+		accessNodesFromNode = []*cryptolib.PublicKey{}
 	}
 	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
 	cni := &chainNodeImpl{
@@ -251,7 +251,7 @@ func New(
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
 		activeAccessNodes:      nil, // Set bellow.
-		accessNodesFromNode:    accessNodesForNode,
+		accessNodesFromNode:    accessNodesFromNode,
 		accessNodesFromChain:   []*cryptolib.PublicKey{},
 		latestConfirmedAO:      nil,
 		latestActiveAO:         nil,
@@ -278,11 +278,14 @@ func New(
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
 	}
+	// TODO does it make sense to pass itself (own pub key) here?
+	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
+	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
 		ctx,
 		cni.chainID,
 		nodeIdentity.GetPublicKey(),
-		[]*cryptolib.PublicKey{nodeIdentity.GetPublicKey()},
+		peerPubKeys,
 		net,
 		blockWAL,
 		chainStore,

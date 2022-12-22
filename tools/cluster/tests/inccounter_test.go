@@ -272,17 +272,19 @@ func TestIncViewCounter(t *testing.T) {
 	require.EqualValues(t, 1, counter)
 }
 
-func TestIncCounterDelay(t *testing.T) {
+// privtangle tests have accellerate milestones (check `startCoordinator` on `privtangle.go`)
+// right now each milestone is issued each 100ms which means a "1s increase" each 100ms
+func TestIncCounterTimelock(t *testing.T) {
 	e := setupWithContract(t)
 	e.postRequest(incHname, isc.Hn("increment"), 0, nil)
 	e.checkWasmContractCounter(1)
 
 	e.postRequest(incHname, isc.Hn("incrementWithDelay"), 0, map[string]interface{}{
-		varDelay: int32(5), // 5s delay
+		varDelay: int32(5), // 5s delay()
 	})
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(300 * time.Millisecond) // equivalent of 3s
 	e.checkWasmContractCounter(1)
-	time.Sleep(3 * time.Second)
+	time.Sleep(300 * time.Millisecond) // equivalent of 3s
 	e.checkWasmContractCounter(2)
 }

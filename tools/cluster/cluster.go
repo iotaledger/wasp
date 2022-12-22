@@ -50,8 +50,13 @@ type Cluster struct {
 	DataPath         string
 	ValidatorKeyPair *cryptolib.KeyPair // Default identity for validators, chain owners, etc.
 	l1               l1connection.Client
-	waspCmds         []*exec.Cmd
+	waspCmds         []*waspCmd
 	t                *testing.T
+}
+
+type waspCmd struct {
+	cmd        *exec.Cmd
+	logScanner sync.WaitGroup
 }
 
 func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log *logger.Logger) *Cluster {
@@ -69,7 +74,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		Name:             name,
 		Config:           config,
 		ValidatorKeyPair: validatorKp,
-		waspCmds:         make([]*exec.Cmd, len(config.Wasp)),
+		waspCmds:         make([]*waspCmd, len(config.Wasp)),
 		t:                t,
 		l1:               l1connection.NewClient(config.L1, log),
 		DataPath:         dataPath,
@@ -232,7 +237,6 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	// TODO make this configurable (so that only selected nodes are access nodes)
 	addAccessNodesRequests := make([]*iotago.Transaction, len(accessNodes))
 	for i, a := range accessNodes {
 		tx, err := clu.AddAccessNode(a, chain)
@@ -349,7 +353,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
-	return clu.waspCmds[i] != nil
+	return clu.waspCmds[i].cmd != nil
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
@@ -489,19 +493,17 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
-	process := clu.waspCmds[nodeIndex]
-
-	if process == nil {
+	wcmd := clu.waspCmds[nodeIndex]
+	if wcmd == nil {
 		return nil
 	}
 
-	err := process.Process.Kill()
-
-	if err == nil {
-		clu.waspCmds[nodeIndex] = nil
+	if err := wcmd.cmd.Process.Kill(); err != nil {
+		return err
 	}
 
-	return err
+	clu.waspCmds[nodeIndex] = nil
+	return nil
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
@@ -530,9 +532,8 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
 		}
 
-		go func(process *exec.Cmd) {
-			_ = process.Wait()
-
+		go func(cmd *waspCmd) {
+			waitCmd(cmd)
 			// mark process as finished
 			exitedWaitGroup.Done()
 		}(clu.waspCmds[i])
@@ -566,56 +567,39 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	return nil
 }
 
-func (clu *Cluster) startWaspNode(i int, initOk chan<- bool) error {
-	apiURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(clu.Config.APIPort(i)))
-	cmd, err := DoStartWaspNode(
-		clu.NodeDataPath(i),
-		i,
-		apiURL,
-		initOk,
-		clu.t,
-	)
-	if err != nil {
-		return err
-	}
-	clu.waspCmds[i] = cmd
-	return nil
-}
+func (clu *Cluster) startWaspNode(nodeIndex int, initOk chan<- bool) error {
+	wcmd := &waspCmd{}
 
-func DoStartWaspNode(cwd string, nodeIndex int, nodeAPIURL string, initOk chan<- bool, t *testing.T) (*exec.Cmd, error) {
-	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command("wasp", "-c", "config.json")
+	cmd.Dir = clu.NodeDataPath(nodeIndex)
 
 	// force the wasp processes to close if the cluster tests time out
-	if t != nil {
+	if clu.t != nil {
 		util.TerminateCmdWhenTestStops(cmd)
 	}
 
-	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		return err
 	}
 
-	go scanLog(
-		stderrPipe,
-		func(line string) { fmt.Printf("[!%s] %s\n", name, line) },
-	)
-	go scanLog(
-		stdoutPipe,
-		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
-	)
+	name := fmt.Sprintf("wasp %d", nodeIndex)
+	go scanLog(stderrPipe, &wcmd.logScanner, fmt.Sprintf("!%s", name))
+	go scanLog(stdoutPipe, &wcmd.logScanner, fmt.Sprintf(" %s", name))
 
+	nodeAPIURL := fmt.Sprintf("http://localhost:%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)))
 	go waitForAPIReady(initOk, nodeAPIURL)
 
-	return cmd, nil
+	wcmd.cmd = cmd
+	clu.waspCmds[nodeIndex] = wcmd
+	return nil
 }
 
 const pollAPIInterval = 500 * time.Millisecond
@@ -645,13 +629,31 @@ func waitForAPIReady(initOk chan<- bool, apiURL string) {
 	}()
 }
 
-func scanLog(reader io.Reader, hooks ...func(string)) {
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		for _, hook := range hooks {
-			hook(line)
+func scanLog(reader io.Reader, wg *sync.WaitGroup, tag string) {
+	wg.Add(1)
+	defer wg.Done()
+
+	// unlike bufio.Scanner, bufio.Reader supports reading lines of unlimited size
+	br := bufio.NewReader(reader)
+	isLineStart := true
+	for {
+		line, isPrefix, err := br.ReadLine()
+		if err != nil {
+			if err != io.EOF {
+				fmt.Printf("[cluster] error reading output for %s: %v\n", tag, err)
+			}
+			break
 		}
+
+		if isLineStart {
+			fmt.Printf("[%s] ", tag)
+		}
+		fmt.Printf("%s", line)
+		if !isPrefix {
+			fmt.Println()
+		}
+
+		isLineStart = !isPrefix // for next iteration
 	}
 }
 
@@ -668,7 +670,8 @@ func (clu *Cluster) stopNode(nodeIndex int) {
 
 func (clu *Cluster) StopNode(nodeIndex int) {
 	clu.stopNode(nodeIndex)
-	waitCmd(&clu.waspCmds[nodeIndex])
+	waitCmd(clu.waspCmds[nodeIndex])
+	clu.waspCmds[nodeIndex] = nil
 	fmt.Printf("[cluster] Node %d has been shut down\n", nodeIndex)
 }
 
@@ -682,17 +685,17 @@ func (clu *Cluster) Stop() {
 
 func (clu *Cluster) Wait() {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
-		waitCmd(&clu.waspCmds[i])
+		waitCmd(clu.waspCmds[i])
+		clu.waspCmds[i] = nil
 	}
 }
 
-func waitCmd(cmd **exec.Cmd) {
-	if *cmd == nil {
+func waitCmd(wcmd *waspCmd) {
+	if wcmd == nil {
 		return
 	}
-	err := (*cmd).Wait()
-	*cmd = nil
-	if err != nil {
+	wcmd.logScanner.Wait()
+	if err := wcmd.cmd.Wait(); err != nil {
 		fmt.Println(err)
 	}
 }

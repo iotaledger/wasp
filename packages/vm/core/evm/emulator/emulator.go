@@ -4,7 +4,6 @@
 package emulator
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -141,6 +140,10 @@ func (e *EVMEmulator) GasLimit() uint64 {
 	return e.BlockchainDB().GetGasLimit()
 }
 
+func (e *EVMEmulator) GasLimitForViewCalls() uint64 {
+	return 10 * e.GasLimit()
+}
+
 func (e *EVMEmulator) ChainContext() core.ChainContext {
 	return &chainContext{
 		engine: ethash.NewFaker(),
@@ -153,11 +156,9 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, gasBurnEnable func(boo
 	if call.GasPrice == nil {
 		call.GasPrice = big.NewInt(0)
 	}
-	if call.Gas == 0 {
-		call.Gas = e.GasLimit()
-	}
-	if call.Gas > e.GasLimit() {
-		return nil, errors.New("gas limit exceeds maximum allowed")
+	maxGas := e.GasLimitForViewCalls()
+	if call.Gas == 0 || call.Gas > maxGas {
+		call.Gas = maxGas
 	}
 	if call.Value == nil {
 		call.Value = big.NewInt(0)

@@ -193,7 +193,7 @@ func TestWaspCLIContract(t *testing.T) {
 
 func findRequestIDInOutput(out []string) string {
 	for _, line := range out {
-		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
+		m := regexp.MustCompile(`(?m)\(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
 		if len(m) == 0 {
 			continue
 		}
@@ -350,4 +350,33 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	chOut = strings.Fields(out[4])
 	active, _ = strconv.ParseBool(chOut[1])
 	require.True(t, active)
+}
+
+func TestWaspCLILongParam(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.CommitteeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+
+	// create foundry
+	w.Run(
+		"chain", "post-request", "accounts", "foundryCreateNew",
+		"string", "t", "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
+		"-t", "base:1000000",
+	)
+
+	veryLongTokenName := strings.Repeat("A", 100_000)
+	out := w.Run(
+		"chain", "post-request", "-o", "evm", "registerERC20NativeToken",
+		"string", "fs", "uint32", "1",
+		"string", "n", "string", veryLongTokenName,
+		"string", "t", "string", "test_symbol",
+		"string", "d", "uint8", "1",
+	)
+
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	out = w.Run("chain", "request", reqID)
+	require.Contains(t, strings.Join(out, "\n"), "too long")
 }
