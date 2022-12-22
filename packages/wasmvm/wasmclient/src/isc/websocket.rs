@@ -16,15 +16,17 @@ impl Client {
         });
     }
 
-    pub fn subscribe(&self, ch: mpsc::Sender<String>, done: Arc<RwLock<bool>>) {
+    pub fn subscribe(&self, ch: mpsc::Sender<Vec<String>>, done: Arc<RwLock<bool>>) {
         // FIXME should not reconnect every time
         let (mut socket, _) = tungstenite::connect(&self.url).unwrap();
         let read_done = Arc::clone(&done);
         spawn(move || loop {
             match socket.read_message() {
                 Ok(msg) => {
-                    if msg.to_string() != "" {
-                        ch.send(msg.to_string()).unwrap();
+                    let msg_str = msg.to_string();
+                    if msg_str != "" {
+                        let msg_ch: Vec<String> = msg_str.split(" ").map(|s| s.into()).collect();
+                        ch.send(msg_ch).unwrap();
                     }
                 }
                 Err(tungstenite::Error::ConnectionClosed) => {
@@ -81,16 +83,17 @@ mod tests {
             }),
         );
         let client = Client::new(&url).unwrap();
-        let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let lock = Arc::new(RwLock::new(false));
         client.subscribe(tx, lock);
         let mut cnt = 0;
-        for msg in rx.iter() {
-            assert!(msg == format!("{}: cnt: {}", test_msg, cnt));
-            cnt += 1;
+        for msgs in rx.iter() {
+            for msg in msgs {
+                assert!(msg == format!("{}: cnt: {}", test_msg, cnt));
+                cnt += 1;
+            }
         }
     }
-
     #[test]
     fn client_subscribe_stop() {
         let url = "ws://localhost:3013";
@@ -103,13 +106,15 @@ mod tests {
             }),
         );
         let client = Client::new(&url).unwrap();
-        let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let lock = Arc::new(RwLock::new(true));
         let sub_lock = Arc::clone(&lock);
         client.subscribe(tx, sub_lock);
         let mut cnt = 0;
-        for msg in rx.iter() {
-            assert!(msg == format!("{}: cnt: {}", test_msg, cnt));
+        for msgs in rx.iter() {
+            for msg in msgs {
+                assert!(msg == format!("{}: cnt: {}", test_msg, cnt));
+            }
             cnt += 1;
         }
         assert!(cnt == 1);

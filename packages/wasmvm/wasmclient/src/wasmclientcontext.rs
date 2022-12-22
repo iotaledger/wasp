@@ -9,11 +9,17 @@ use std::{
 };
 use wasmlib::*;
 
+const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
+const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
+const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
+const ISC_EVENT_KIND_ERROR: &str = "error";
+
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
+    pub event_received: bool,
     pub key_pair: Option<keypair::KeyPair>,
     pub req_id: ScRequestID,
     pub sc_name: String,
@@ -34,6 +40,7 @@ impl WasmClientContext {
             sc_hname: ScHname::new(sc_name),
             chain_id: chain_id.clone(),
             event_handlers: Vec::new(),
+            event_received: true,
             key_pair: None,
             req_id: request_id_from_bytes(&[]),
             done: Arc::new(RwLock::new(false)),
@@ -102,7 +109,7 @@ impl WasmClientContext {
     }
 
     pub fn start_event_handlers(&'static self) -> errors::Result<()> {
-        let (tx, rx): (mpsc::Sender<String>, mpsc::Receiver<String>) = mpsc::channel();
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let done = Arc::clone(&self.done);
         self.svc_client.subscribe_events(tx, done).unwrap();
 
@@ -116,19 +123,59 @@ impl WasmClientContext {
         *done = true;
     }
 
-    fn process_event(&'static self, rx: mpsc::Receiver<String>) -> errors::Result<()> {
-        for _msg in rx {
+    fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
+        for msg in rx {
             spawn(move || {
-                // FIXME parse the msg
-                for handler in self.event_handlers.iter() {
-                    handler
-                        .as_ref()
-                        .call_handler("topic", &vec!["params".to_string()]); // FIXME use the correct parsed message
+                if msg[0] == ISC_EVENT_KIND_ERROR {
+                    // self.event_received = true;
+                    return Err(msg[1].clone());
                 }
+
+                if msg[0] != ISC_EVENT_KIND_SMART_CONTRACT && msg[1] != self.chain_id.to_string() {
+                    // not intended for us
+                    return Ok(());
+                }
+                let mut params: Vec<String> = msg[6].split("|").map(|s| s.into()).collect();
+                for i in 0..params.len() {
+                    params[i] = self.unescape(&params[i]);
+                }
+                let topic = &params[0].to_string();
+
+                params.remove(0);
+                for handler in self.event_handlers.iter() {
+                    handler.as_ref().call_handler(&topic, &params);
+                }
+
+                // self.event_received = true;
+                return Ok(());
             });
         }
 
+        return Ok(());
+    }
+
+    pub fn wait_event(&self) {
         todo!()
+    }
+
+    fn unescape(&self, _param: &str) -> String {
+        todo!()
+        // const i = param.indexOf("~");
+        // if (i < 0) {
+        //     return param;
+        // }
+
+        // switch (param.charAt(i + 1)) {
+        //     case '~': // escaped escape character
+        //         return param.slice(0, i) + "~" + this.unescape(param.slice(i + 2));
+        //     case '/': // escaped vertical bar
+        //         return param.slice(0, i) + "|" + this.unescape(param.slice(i + 2));
+        //     case '_': // escaped space
+        //         return param.slice(0, i) + " " + this.unescape(param.slice(i + 2));
+        //     default:
+        //         panic("invalid event encoding");
+        // }
+        // return "";
     }
 }
 
@@ -140,6 +187,7 @@ impl Default for WasmClientContext {
             sc_hname: ScHname(0),
             chain_id: chain_id_from_bytes(&[]),
             event_handlers: Vec::new(),
+            event_received: true,
             key_pair: None,
             req_id: request_id_from_bytes(&[]),
             done: Arc::new(RwLock::new(false)),
