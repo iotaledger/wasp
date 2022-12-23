@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package accessMgr
+package amDist
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ const (
 	msgTypeAccess byte = iota
 )
 
-func (ami *accessMgrImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
+func (ami *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
 		return nil, fmt.Errorf("accessMgrImpl::UnmarshalMessage: data to short")
 	}

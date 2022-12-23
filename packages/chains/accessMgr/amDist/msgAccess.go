@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package accessMgr
+package amDist
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -11,9 +11,10 @@ import (
 // Send by a node which has a chain enabled to a node it considers an access node.
 type msgAccess struct {
 	gpa.BasicMessage
-	senderLClock   int
-	receiverLClock int
-	accessToChains []isc.ChainID
+	senderLClock    int
+	receiverLClock  int
+	accessForChains []isc.ChainID
+	serverForChains []isc.ChainID
 }
 
 var _ gpa.Message = &msgAccess{}
@@ -21,13 +22,15 @@ var _ gpa.Message = &msgAccess{}
 func newMsgAccess(
 	recipient gpa.NodeID,
 	senderLClock, receiverLClock int,
-	accessToChains []isc.ChainID,
+	accessForChains []isc.ChainID,
+	serverForChains []isc.ChainID,
 ) gpa.Message {
 	return &msgAccess{
-		BasicMessage:   gpa.NewBasicMessage(recipient),
-		senderLClock:   senderLClock,
-		receiverLClock: receiverLClock,
-		accessToChains: accessToChains,
+		BasicMessage:    gpa.NewBasicMessage(recipient),
+		senderLClock:    senderLClock,
+		receiverLClock:  receiverLClock,
+		accessForChains: accessForChains,
+		serverForChains: serverForChains,
 	}
 }
 

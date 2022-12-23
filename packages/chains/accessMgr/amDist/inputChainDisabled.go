@@ -1,4 +1,4 @@
-package accessMgr
+package amDist
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"

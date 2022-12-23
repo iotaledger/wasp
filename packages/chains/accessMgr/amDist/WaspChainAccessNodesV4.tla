@@ -33,8 +33,7 @@ VARIABLE server     \* Access nodes uses these as servers for their queries.
 VARIABLE lClock     \* Logical clocks for all the nodes in each node.
 VARIABLE reboots    \* Max number of remaining reboots.
 VARIABLE msgs       \* Inflight messages.
-VARIABLE msgDup
-vars == <<active, access, server, lClock, reboots, msgs, msgDup>>
+vars == <<active, access, server, lClock, reboots, msgs>>
 
 LC == 0..MaxLC                                       \* To have bounded model checking only.
 LC_HaveNext(n, count) == lClock[n][n] + count \in LC \* To have bounded model checking only.
@@ -55,7 +54,6 @@ TypeOK ==
     /\ lClock  \in [Nodes -> [Nodes -> LC]]
     /\ reboots \in 0..MaxReboots
     /\ msgs    \subseteq Msgs
-    /\ msgDup  \subseteq Msgs
 
 --------------------------------------------------------------------------------
 (*
@@ -76,13 +74,11 @@ accessMsgs(n) == {[
 
 sendAndAck(m, send) ==
     /\ msgs' = (msgs \ {m}) \cup send
-    /\ msgDup' = msgDup \cup {m}
 
 sendOnly(send) ==
     /\ msgs' = msgs \cup send
-    /\ UNCHANGED msgDup
 
-noSend == UNCHANGED <<msgs, msgDup>>
+noSend == UNCHANGED msgs
 
 
 \* We ignore the chains in access messages that we get, but don't have enabled.
@@ -131,11 +127,6 @@ Reboot(n) ==
     /\ UNCHANGED <<active, access>>
     /\ sendOnly(accessMsgs(n))
 
-MsgDuplicate ==
-    \E m \in msgDup :
-        /\ msgs' = msgs \cup {m}
-        /\ UNCHANGED <<active, access, server, lClock, reboots, msgDup>>
-
 --------------------------------------------------------------------------------
 (*
 Handle the messages.
@@ -171,17 +162,16 @@ Init ==
     /\ lClock  = [n \in Nodes |-> [m \in Nodes |-> IF m = n THEN 1 ELSE 0]]
     /\ reboots = MaxReboots
     /\ msgs    = {}
-    /\ msgDup  = {}
 
 Next ==
     \/ \E n \in Nodes: Reboot(n)
     \/ \E n \in Nodes, c \in Chains: ChainActivate(n, c) \/ ChainDeactivate(n, c)
     \/ \E n, a \in Nodes, c \in Chains: AccessNodeAdd(n, c, a) \/ AccessNodeDel(n, c, a)
     \/ \E n \in Nodes: RecvAccess(n)
-  \*\/ MsgDuplicate
 
 Fairness ==
-    /\ SF_vars(\E n \in Nodes: RecvAccess(n))
+    \A m \in Msgs : SF_vars(m \in msgs => RecvAccess(m.dst)!(m))
+    \* /\ SF_vars(\E n \in Nodes: RecvAccess(n))
 
 Spec == Init /\ [][Next]_vars /\ Fairness
 
