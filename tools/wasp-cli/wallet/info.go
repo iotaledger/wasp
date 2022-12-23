@@ -98,11 +98,11 @@ type BalanceModel struct {
 func (b *BalanceModel) AsText() (string, error) {
 	balanceTemplate := `Address index: {{.AddressIndex}}
 Address: {{.Address}}
-NativeTokens: 
-	Base tokens: {{.BaseTokens}}
 
-{{range $i, $out := .NativeTokens}}
-	{{$out.ID}} {{$out.Amount}}
+Native Assets:
+
+ - base: {{.BaseTokens}}{{range $i, $out := .NativeTokens}}
+ - {{$out.ID}}: {{$out.Amount}}
 {{end}}`
 
 	return log.ParseCLIOutputTemplate(b, balanceTemplate)
