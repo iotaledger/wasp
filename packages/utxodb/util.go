@@ -1,8 +1,9 @@
 package utxodb
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 func GetSingleChainedAliasOutput(tx *iotago.Transaction) (*iotago.AliasOutput, iotago.OutputID, error) {

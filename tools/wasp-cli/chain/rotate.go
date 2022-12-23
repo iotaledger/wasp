@@ -7,13 +7,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/cobra"
 )
 
 var rotateCmd = &cobra.Command{
@@ -30,20 +31,21 @@ var rotateCmd = &cobra.Command{
 
 		kp := wallet.Load().KeyPair
 
-		chainID := *GetCurrentChainID().AsAliasID()
+		aliasID := GetCurrentChainID().AsAliasID()
 
-		chainOutputID, chainOutput, err := l1Client.GetAliasOutput(chainID)
+		chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
 		log.Check(err)
 
 		tx, err := transaction.NewRotateChainStateControllerTx(
-			chainID,
+			aliasID,
 			newStateControllerAddr,
 			chainOutputID,
 			chainOutput,
 			kp,
 		)
 		log.Check(err)
-		err = l1Client.PostTx((tx))
+
+		_, err = l1Client.PostTxAndWaitUntilConfirmation(tx)
 		if err != nil {
 			panic(err)
 		}

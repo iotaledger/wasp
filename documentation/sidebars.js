@@ -56,7 +56,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Calling a Smart Contracts',
+                    label: 'Calling a Smart Contract',
                     id: 'guide/core_concepts/invocation',
                 },
                 {
@@ -230,6 +230,11 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Chain Rotation',
+                    id: 'guide/chains_and_nodes/chain-rotation',
+                },
+                {
+                    type: 'doc',
                     label: 'Testnet',
                     id: 'guide/chains_and_nodes/testnet',
                 },
@@ -240,138 +245,131 @@ module.exports = {
             label: 'Wasm VM',
             items: [
                 {
-                    type: 'category',
-                    label: 'Introduction',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Wasm VM for ISC',
-                            id: 'guide/wasm_vm/intro',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Data Access Proxies',
-                            id: 'guide/wasm_vm/proxies',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'WasmLib Data Types',
-                            id: 'guide/wasm_vm/types',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Function Call Context',
-                            id: 'guide/wasm_vm/context',
-                        },
-                    ]
+                    type: 'doc',
+                    label: 'Wasm VM for ISC',
+                    id: 'guide/wasm_vm/intro',
                 },
                 {
-                    type: 'category',
-                    label: 'Schema tool',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'Smart Contract Schema Tool',
-                            id: 'guide/schema/schema',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Using the Schema Tool',
-                            id: 'guide/schema/usage',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Structured Data Types',
-                            id: 'guide/schema/structs',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Type Definitions',
-                            id: 'guide/schema/typedefs',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Smart Contract State',
-                            id: 'guide/schema/state',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Triggering Events',
-                            id: 'guide/schema/events',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Function Definitions',
-                            id: 'guide/schema/funcs',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Limiting Access',
-                            id: 'guide/schema/access',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Function Parameters',
-                            id: 'guide/schema/params',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Function Results',
-                            id: 'guide/schema/results',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Thunk Functions',
-                            id: 'guide/schema/thunks',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'View-Only Functions',
-                            id: 'guide/schema/views',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Smart Contract Initialization',
-                            id: 'guide/schema/init',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Token Transfers',
-                            id: 'guide/schema/transfers',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Function Descriptors',
-                            id: 'guide/schema/funcdesc',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Calling Functions',
-                            id: 'guide/schema/call',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Posting Asynchronous Requests',
-                            id: 'guide/schema/post',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Testing Smart Contracts',
-                            id: 'guide/schema/test',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Example Tests',
-                            id: 'guide/schema/examples',
-                        },
-                        {
-                            type: 'doc',
-                            label: 'Colored Tokens and Time Locks',
-                            id: 'guide/schema/timelock',
-                        },
-                    ]
+                    type: 'doc',
+                    label: 'Smart Contract Concepts',
+                    id: 'guide/wasm_vm/concepts',
                 },
-            ]
+                 {
+                    type: 'doc',
+                    label: 'Call Context',
+                    id: 'guide/wasm_vm/context',
+                },
+                {
+                    type: 'doc',
+                    label: 'Smart Contract Schema Tool',
+                    id: 'guide/wasm_vm/schema',
+                },
+                {
+                    type: 'doc',
+                    label: 'Using the Schema Tool',
+                    id: 'guide/wasm_vm/usage',
+                },
+                {
+                    type: 'doc',
+                    label: 'Data Access Proxies',
+                    id: 'guide/wasm_vm/proxies',
+                },
+                {
+                    type: 'doc',
+                    label: 'WasmLib Data Types',
+                    id: 'guide/wasm_vm/types',
+                },
+                {
+                    type: 'doc',
+                    label: 'Structured Data Types',
+                    id: 'guide/wasm_vm/structs',
+                },
+                {
+                    type: 'doc',
+                    label: 'Type Definitions',
+                    id: 'guide/wasm_vm/typedefs',
+                },
+                {
+                    type: 'doc',
+                    label: 'Smart Contract State',
+                    id: 'guide/wasm_vm/state',
+                },
+                {
+                    type: 'doc',
+                    label: 'Triggering Events',
+                    id: 'guide/wasm_vm/events',
+                },
+                {
+                    type: 'doc',
+                    label: 'Function Definitions',
+                    id: 'guide/wasm_vm/funcs',
+                },
+                {
+                    type: 'doc',
+                    label: 'Limiting Access',
+                    id: 'guide/wasm_vm/access',
+                },
+                {
+                    type: 'doc',
+                    label: 'Function Parameters',
+                    id: 'guide/wasm_vm/params',
+                },
+                {
+                    type: 'doc',
+                    label: 'Function Results',
+                    id: 'guide/wasm_vm/results',
+                },
+                {
+                    type: 'doc',
+                    label: 'Thunk Functions',
+                    id: 'guide/wasm_vm/thunks',
+                },
+                {
+                    type: 'doc',
+                    label: 'View-Only Functions',
+                    id: 'guide/wasm_vm/views',
+                },
+                {
+                    type: 'doc',
+                    label: 'Smart Contract Initialization',
+                    id: 'guide/wasm_vm/init',
+                },
+                {
+                    type: 'doc',
+                    label: 'Token Transfers',
+                    id: 'guide/wasm_vm/transfers',
+                },
+                {
+                    type: 'doc',
+                    label: 'Function Descriptors',
+                    id: 'guide/wasm_vm/funcdesc',
+                },
+                {
+                    type: 'doc',
+                    label: 'Calling Functions',
+                    id: 'guide/wasm_vm/call',
+                },
+                {
+                    type: 'doc',
+                    label: 'Posting Asynchronous Requests',
+                    id: 'guide/wasm_vm/post',
+                },
+                {
+                    type: 'doc',
+                    label: 'Testing Smart Contracts',
+                    id: 'guide/wasm_vm/test',
+                },
+                {
+                    type: 'doc',
+                    label: 'Example Tests',
+                    id: 'guide/wasm_vm/examples',
+                },
+                {
+                    type: 'doc',
+                    label: 'Colored Tokens and Time Locks',
+                    id: 'guide/wasm_vm/timelock',
+                },
+             ]
         },
         {
             type: 'category',
@@ -384,12 +382,12 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Limitations',
+                    label: 'Compatibility',
                     id: 'guide/evm/compatibility',
                 },
                 {
                     type: 'doc',
-                    label: 'How to use',
+                    label: 'How to Use',
                     id: 'guide/evm/using',
                 },
                 {
@@ -446,6 +444,11 @@ module.exports = {
                     id: 'guide/development_tools/docker_preconfigured',
                 },
             ]
+        },
+        {
+            type: 'doc',
+            label: 'Configuration',
+            id: 'configuration',
         },
         {
             type: 'doc',

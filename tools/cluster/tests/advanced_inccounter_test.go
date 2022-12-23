@@ -8,56 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/stretchr/testify/require"
 )
-
-func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
-	quorum := uint16((2*len(committee))/3 + 1)
-
-	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
-
-	addr, err := clu.RunDKG(committee, quorum)
-	require.NoError(t, err)
-
-	t.Logf("generated state address: %s", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
-
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
-	require.NoError(t, err)
-	t.Logf("deployed chainID: %s", chain.ChainID)
-
-	e := &ChainEnv{
-		env:   &env{t: t, Clu: clu},
-		Chain: chain,
-	}
-	tx := e.deployNativeIncCounterSC(0)
-
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
-
-	return e
-}
-
-func (e *ChainEnv) printBlocks(expected int) {
-	recs, err := e.Chain.GetAllBlockInfoRecordsReverse()
-	require.NoError(e.t, err)
-
-	sum := 0
-	for _, rec := range recs {
-		e.t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-		sum += int(rec.TotalRequests)
-	}
-	e.t.Logf("Total requests processed: %d", sum)
-	require.EqualValues(e.t, expected, sum)
-}
 
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
@@ -65,7 +24,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	}
 	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
 		const numRequests = 8
-		const numValidatorNodes = 4
+		const numValidatorNodes = 3
 		const clusterSize = 10
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
@@ -96,27 +55,24 @@ func TestAccessNodesOnLedger(t *testing.T) {
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := util.MakeRange(0, numValidatorNodes)
-	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
+	e := setupNativeInccounterTest(t, clusterSize, cmt)
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
 
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
-		for i := 0; i < 5 && (err != nil); i++ {
+		var err error
+		for i := 0; i < 5; i++ {
+			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
+			if err == nil {
+				break
+			}
 			fmt.Printf("Error posting request, will retry... %v", err)
 			time.Sleep(100 * time.Millisecond)
-			_, err = client.PostRequest(inccounter.FuncIncCounter.Name)
 		}
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
-
-	e.printBlocks(
-		numRequests + // The actual IncCounter requests.
-			4 + // Initial State + IncCounter SC Deploy + ???
-			clusterSize, // Access node applications.
-	)
+	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.AllNodes(), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
@@ -182,9 +138,9 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	if len(timeout) > 0 {
 		to = timeout[0]
 	}
-	cmt := util.MakeRange(0, numValidatorNodes)
+	cmt := util.MakeRange(0, numValidatorNodes-1)
 
-	e := setupAdvancedInccounterTest(t, clusterSize, cmt)
+	e := setupNativeInccounterTest(t, clusterSize, cmt)
 
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -205,14 +161,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
-
-	e.printBlocks(
-		numRequests + // The actual IncCounter requests.
-			5 + // ???
-			clusterSize, // Access nodes applications.
-	)
-	time.Sleep(10 * time.Second) // five time for the nodes to shutdown properly before running the next test
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
 }
 
 // extreme test
@@ -224,7 +173,7 @@ func TestAccessNodesMany(t *testing.T) {
 	const requestsCountProgression = 2
 	const iterationCount = 8
 
-	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
+	e := setupNativeInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes-1))
 
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -244,9 +193,4 @@ func TestAccessNodesMany(t *testing.T) {
 		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.Clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
-	e.printBlocks(
-		posted + // The actual SC requests.
-			4 + // ???
-			clusterSize, // GOV: Access Node Applications.
-	)
 }

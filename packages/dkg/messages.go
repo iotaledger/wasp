@@ -15,16 +15,17 @@ import (
 	"io"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -77,16 +78,6 @@ const (
 
 var initPeeringID peering.PeeringID
 
-// Checks if that's a Initiator -> PeerNode message.
-func isDkgInitNodeMsg(msgType byte) bool { //nolint:unused,deadcode
-	return msgType == initiatorInitMsgType
-}
-
-// Checks if that's a Initiator <-> PeerProc message.
-func isDkgInitProcMsg(msgType byte) bool { //nolint:unused,deadcode
-	return initiatorMsgBase <= msgType && msgType < initiatorMsgFree
-}
-
 // Check if that's a Initiator -> PeerProc message.
 func isDkgInitProcRecvMsg(msgType byte) bool {
 	return msgType == initiatorStepMsgType || msgType == initiatorDoneMsgType
@@ -121,36 +112,6 @@ func makeDkgRabinMsgType(rabinMsgType byte, kst keySetType, echo bool) byte {
 	}
 	return msgType
 }
-
-// Checks if that's a PeerProc <-> PeerProc message.
-// func isDkgRabinRoundMsg(msgType byte) bool {
-// 	return rabinMsgBase <= msgType && msgType < rabinMsgFree
-// }
-
-// Checks if that's a PeerProc <-> PeerProc echoed / repeated message.
-// func isDkgRabinEchoMsg(msgType byte) bool {
-// 	return rabinEcho <= msgType && msgType < rabinMsgFree-rabinMsgBase+rabinEcho
-// }
-
-// func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
-// 	if isDkgRabinRoundMsg(msgType) {
-// 		return msgType - rabinMsgBase + rabinEcho, nil
-// 	}
-// 	if isDkgRabinEchoMsg(msgType) {
-// 		return msgType, nil
-// 	}
-// 	return msgType, errors.New("round_msg_type_expected")
-// }
-
-// func makeDkgRoundMsg(msgType byte) (byte, error) { //nolint:unused,deadcode
-// 	if isDkgRabinRoundMsg(msgType) {
-// 		return msgType, nil
-// 	}
-// 	if isDkgRabinEchoMsg(msgType) {
-// 		return msgType - rabinEcho + rabinMsgBase, nil
-// 	}
-// 	return msgType, errors.New("round_or_echo_msg_type_expected")
-// }
 
 // All the messages exchanged via the Peering subsystem will implement this.
 type msgByteCoder interface {

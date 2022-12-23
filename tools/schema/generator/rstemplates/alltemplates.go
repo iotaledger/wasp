@@ -8,7 +8,8 @@ import "github.com/iotaledger/wasp/tools/schema/model"
 var config = map[string]string{
 	"language":   "Rust",
 	"extension":  ".rs",
-	"rootFolder": "src",
+	"rootFolder": "rs",
+	"subFolder":  "src",
 	"funcRegexp": `^pub fn (\w+).+$`,
 }
 
@@ -18,15 +19,17 @@ var Templates = []map[string]string{
 	cargoToml,
 	constsRs,
 	contractRs,
+	eventhandlersRs,
 	eventsRs,
 	funcsRs,
-	libRs,
+	mainRs,
 	modRs,
 	paramsRs,
 	proxyRs,
 	resultsRs,
 	stateRs,
 	structsRs,
+	thunksRs,
 	typedefsRs,
 }
 
@@ -105,11 +108,17 @@ use crate::$package::*;
 `,
 	// *******************************
 	"useCrate": `
+
 use crate::*;
 `,
 	// *******************************
 	"useWasmLib": `
+
 use wasmlib::*;
+`,
+	// *******************************
+	"../LICENSE": `
+https://www.apache.org/licenses/LICENSE-2.0
 `,
 	// *******************************
 	"_eventComment": `
@@ -129,7 +138,7 @@ use wasmlib::*;
 `,
 	// *******************************
 	"_funcAccessComment": `
-	$nextLine
+    $nextLine
 `,
 	// *******************************
 	"_structComment": `
@@ -142,5 +151,15 @@ $nextLine
 	// *******************************
 	"_typedefComment": `
 $nextLine
+`,
+	// *******************************
+	"lib.rs": `
+#![allow(unused_imports)]
+
+pub use funcs::*;
+pub use thunks::*;
+
+pub mod funcs;
+pub mod thunks;
 `,
 }

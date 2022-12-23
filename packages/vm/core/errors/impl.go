@@ -43,7 +43,7 @@ func funcRegisterError(ctx isc.Sandbox) dict.Dict {
 func funcGetErrorMessageFormat(ctx isc.SandboxView) dict.Dict {
 	code := codec.MustDecodeVMErrorCode(ctx.Params().MustGet(ParamErrorCode))
 
-	template, err := getErrorMessageFormat(ctx.State(), code)
+	template, err := getErrorMessageFormat(ctx.StateR(), code)
 	ctx.RequireNoError(err)
 
 	return dict.Dict{ParamErrorMessageFormat: codec.EncodeString(template.MessageFormat())}

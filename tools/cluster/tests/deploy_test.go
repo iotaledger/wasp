@@ -4,34 +4,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/stretchr/testify/require"
 )
 
 func TestDeployChain(t *testing.T) {
 	e := setupWithNoChain(t)
-
-	counter1, err := e.Clu.StartMessageCounter(map[string]int{
-		"dismissed_chain": 0,
-		"state":           2,
-		"request_out":     1,
-	})
-	require.NoError(t, err)
-	defer counter1.Close()
 
 	chain, err := e.Clu.DeployDefaultChain()
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
 
-	if !counter1.WaitUntilExpectationsMet() {
-		t.Fatal()
-	}
 	chainID, chainOwnerID := chEnv.getChainInfo()
 	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chainOwnerID, isc.NewAgentID(chain.OriginatorAddress()))
@@ -58,7 +48,6 @@ func TestDeployContractOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	tx := chEnv.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
@@ -90,7 +79,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	chEnv.deployNativeIncCounterSC()
 
 	hname := isc.Hn(nativeIncCounterSCName)

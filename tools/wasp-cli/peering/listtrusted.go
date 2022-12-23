@@ -4,9 +4,10 @@
 package peering
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var listTrustedCmd = &cobra.Command{
@@ -14,7 +15,7 @@ var listTrustedCmd = &cobra.Command{
 	Short: "List trusted wasp nodes.",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		trustedList, err := config.WaspClient().GetPeeringTrustedList()
+		trustedList, err := config.WaspClient(config.MustWaspAPI()).GetPeeringTrustedList()
 		log.Check(err)
 		header := []string{"PubKey", "NetID"}
 		rows := make([][]string, len(trustedList))

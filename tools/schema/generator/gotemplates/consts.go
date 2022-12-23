@@ -6,8 +6,7 @@ package gotemplates
 var constsGo = map[string]string{
 	// *******************************
 	"consts.go": `
-//nolint:revive
-$#emit goPackage
+package $package
 
 $#emit importWasmTypes
 

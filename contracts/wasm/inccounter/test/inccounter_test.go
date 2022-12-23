@@ -8,14 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
+	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounterimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, inccounter.ScName, inccounter.OnLoad)
+	return wasmsolo.NewSoloContext(t, inccounter.ScName, inccounterimpl.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

@@ -3,8 +3,9 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
 )
 
 func TestMainCallsFromFullEP(t *testing.T) {

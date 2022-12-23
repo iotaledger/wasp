@@ -1,10 +1,12 @@
 package wasmsolo
 
 import (
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -12,13 +14,11 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
-	"github.com/pkg/errors"
 )
 
 type SoloClientService struct {
-	ctx   *SoloContext
-	msg   chan []string
-	nonce uint64
+	ctx *SoloContext
+	msg chan []string
 }
 
 var _ wasmclient.IClientService = new(SoloClientService)
@@ -49,7 +49,7 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 	if !iscChainID.Equals(s.ctx.Chain.ChainID) {
 		return nil, errors.New("SoloClientService.CallViewByHname chain ID mismatch")
 	}
-	res, err := s.ctx.Chain.CallViewByHname(iscContract, iscFunction, params)
+	res, err := s.ctx.Chain.CallViewByHname(s.ctx.Chain.LatestBlockIndex(), iscContract, iscFunction, params)
 	if err != nil {
 		return nil, err
 	}
@@ -57,11 +57,12 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 }
 
 func (s *SoloClientService) Event(msg string) {
-	msg = "vmmsg " + s.ctx.CurrentChainID().String() + " 0 " + msg
+	// contract tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk | vm (contract): 89703a45: testwasmlib.test|1671671237|tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk|Lala
+	msg = "contract " + s.ctx.CurrentChainID().String() + " | vm (contract): " + isc.Hn(s.ctx.scName).String() + ": " + msg
 	s.msg <- strings.Split(msg, " ")
 }
 
-func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair) (reqID wasmtypes.ScRequestID, err error) {
+func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, hFunction wasmtypes.ScHname, args []byte, allowance *wasmlib.ScAssets, keyPair *cryptolib.KeyPair, nonce uint64) (reqID wasmtypes.ScRequestID, err error) {
 	iscChainID := s.ctx.Cvt.IscChainID(&chainID)
 	iscContract := s.ctx.Cvt.IscHname(hContract)
 	iscFunction := s.ctx.Cvt.IscHname(hFunction)
@@ -73,11 +74,10 @@ func (s *SoloClientService) PostRequest(chainID wasmtypes.ScChainID, hContract, 
 		return reqID, errors.New("SoloClientService.PostRequest chain ID mismatch")
 	}
 	req := solo.NewCallParamsFromDictByHname(iscContract, iscFunction, params)
-	s.nonce++
-	req.WithNonce(s.nonce)
+	req.WithNonce(nonce)
 	iscAllowance := s.ctx.Cvt.IscAllowance(allowance)
 	req.WithAllowance(iscAllowance)
-	req.WithGasBudget(gas.MaxGasPerCall)
+	req.WithGasBudget(gas.MaxGasPerRequest)
 	_, err = s.ctx.Chain.PostRequestOffLedger(req, keyPair)
 	return reqID, err
 }

@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/iotaledger/wasp/packages/chain"
 )
 
 type ConsensusWorkflowStatus struct {
@@ -29,49 +27,10 @@ type ConsensusWorkflowStatus struct {
 	CurrentStateIndex uint32 `swagger:"desc(Shows current state index of the consensus)"`
 }
 
-func NewConsensusWorkflowStatus(status chain.ConsensusWorkflowStatus) *ConsensusWorkflowStatus {
-	return &ConsensusWorkflowStatus{
-		FlagStateReceived:        status.IsStateReceived(),
-		FlagBatchProposalSent:    status.IsBatchProposalSent(),
-		FlagConsensusBatchKnown:  status.IsConsensusBatchKnown(),
-		FlagVMStarted:            status.IsVMStarted(),
-		FlagVMResultSigned:       status.IsVMResultSigned(),
-		FlagTransactionFinalized: status.IsTransactionFinalized(),
-		FlagTransactionPosted:    status.IsTransactionPosted(),
-		FlagTransactionSeen:      status.IsTransactionSeen(),
-		FlagInProgress:           status.IsInProgress(),
-
-		TimeBatchProposalSent:    status.GetBatchProposalSentTime(),
-		TimeConsensusBatchKnown:  status.GetConsensusBatchKnownTime(),
-		TimeVMStarted:            status.GetVMStartedTime(),
-		TimeVMResultSigned:       status.GetVMResultSignedTime(),
-		TimeTransactionFinalized: status.GetTransactionFinalizedTime(),
-		TimeTransactionPosted:    status.GetTransactionPostedTime(),
-		TimeTransactionSeen:      status.GetTransactionSeenTime(),
-		TimeCompleted:            status.GetCompletedTime(),
-
-		CurrentStateIndex: status.GetCurrentStateIndex(),
-	}
-}
-
 type ConsensusPipeMetrics struct {
 	EventStateTransitionMsgPipeSize int
-	EventSignedResultMsgPipeSize    int
-	EventSignedResultAckMsgPipeSize int
-	EventInclusionStateMsgPipeSize  int
+	EventPeerLogIndexMsgPipeSize    int
 	EventACSMsgPipeSize             int
 	EventVMResultMsgPipeSize        int
 	EventTimerMsgPipeSize           int
-}
-
-func NewConsensusPipeMetrics(pipeMetrics chain.ConsensusPipeMetrics) *ConsensusPipeMetrics {
-	return &ConsensusPipeMetrics{
-		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
-		EventSignedResultMsgPipeSize:    pipeMetrics.GetEventSignedResultMsgPipeSize(),
-		EventSignedResultAckMsgPipeSize: pipeMetrics.GetEventSignedResultAckMsgPipeSize(),
-		EventInclusionStateMsgPipeSize:  pipeMetrics.GetEventInclusionStateMsgPipeSize(),
-		EventACSMsgPipeSize:             pipeMetrics.GetEventACSMsgPipeSize(),
-		EventVMResultMsgPipeSize:        pipeMetrics.GetEventVMResultMsgPipeSize(),
-		EventTimerMsgPipeSize:           pipeMetrics.GetEventTimerMsgPipeSize(),
-	}
 }

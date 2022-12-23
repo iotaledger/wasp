@@ -3,23 +3,40 @@
 
 package model
 
-import "github.com/iotaledger/wasp/packages/registry"
+import (
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/registry"
+)
 
 type ChainRecord struct {
-	ChainID ChainID `swagger:"desc(ChainID (bech32))"`
-	Active  bool    `swagger:"desc(Whether or not the chain is active)"`
+	ChainID     ChainIDBech32 `swagger:"desc(ChainID (bech32))"`
+	Active      bool          `swagger:"desc(Whether or not the chain is active)"`
+	AccessNodes []string      `swagger:"desc(list of access nodes public keys, hex encoded)"`
 }
 
 func NewChainRecord(rec *registry.ChainRecord) *ChainRecord {
+	chainID := rec.ChainID()
 	return &ChainRecord{
-		ChainID: NewChainID(&rec.ChainID),
+		ChainID: NewChainIDBech32(chainID),
 		Active:  rec.Active,
+		AccessNodes: lo.Map(rec.AccessNodes, func(accessNode *cryptolib.PublicKey, _ int) string {
+			return accessNode.String()
+		}),
 	}
 }
 
-func (bd *ChainRecord) Record() *registry.ChainRecord {
-	return &registry.ChainRecord{
-		ChainID: *bd.ChainID.ChainID(),
-		Active:  bd.Active,
+func (bd *ChainRecord) Record() (*registry.ChainRecord, error) {
+	accessNodes := make([]*cryptolib.PublicKey, len(bd.AccessNodes))
+
+	for i, pubKeyStr := range bd.AccessNodes {
+		pubKey, err := cryptolib.NewPublicKeyFromString(pubKeyStr)
+		if err != nil {
+			return nil, err
+		}
+		accessNodes[i] = pubKey
 	}
+	rec := registry.NewChainRecord(bd.ChainID.ChainID(), bd.Active, accessNodes)
+	return rec, nil
 }

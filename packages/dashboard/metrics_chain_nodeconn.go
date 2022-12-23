@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/metrics_chain_nodeconn.tmpl
 var tplMetricsChainNodeconn string
 
-func metricsChainNodeconnBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainNodeconnBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChainNodeconn"),
 		Title: fmt.Sprintf("Metrics: %.8s: Connection to L1", chainID.String()),

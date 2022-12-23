@@ -1,0 +1,56 @@
+@startuml
+struct TrieReader {
+  nodeStore: nodeStore
+  root: Hash
+}
+
+struct nodeStore {
+  trieStore: KVReader
+  valueStore: KVReader
+}
+
+struct nodeData {
+  {field} pathExtension: []byte
+  terminal: tcommitment
+  children: [16]Hash
+  commitment: Hash
+}
+
+struct tcommitment {
+  data: []byte
+  isValue: bool
+}
+
+note right of tcommitment
+  data is either:
+  - value (if len(value) < 63)
+  - hash(value)
+  
+  serialized as [header|data]
+  where header = [isValue (1 bit) | len(data) (7 bits)]
+end note
+
+struct Hash {}
+
+note right of Hash
+  [20]byte hash
+end note
+
+package db <<Database>> {
+  package valueStore <<Database>> {
+  }
+  package trieStore <<Database>> {
+  }
+}
+
+TrieReader *-- nodeStore
+TrieReader *-- Hash: root
+nodeData ..> trieStore: "k=commitment\nv=nodeData.Bytes()"
+nodeData ..> valueStore: "(if !terminal.isValue)\nk=hash(terminal.value)\nv=terminal.value"
+nodeData "1" *-- "1" tcommitment: terminal
+nodeData "1" *-- "1" Hash: commitment
+nodeData "1" *-- "16" Hash: children
+nodeStore ..> nodeData: manages
+nodeStore o--> db
+
+@enduml

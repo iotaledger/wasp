@@ -2,21 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {uintFromString, WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
 
 export const ScUint16Length = 2;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function uint16Decode(dec: wasmtypes.WasmDecoder): u16 {
+export function uint16Decode(dec: WasmDecoder): u16 {
     return dec.vluDecode(16) as u16;
 }
 
-export function uint16Encode(enc: wasmtypes.WasmEncoder, value: u16): void {
-    enc.vluEncode(value as u64);
+export function uint16Encode(enc: WasmEncoder, value: u16): void {
+    enc.vluEncode(value as u32);
 }
 
-export function uint16FromBytes(buf: u8[]): u16 {
+export function uint16FromBytes(buf: Uint8Array): u16 {
     if (buf.length == 0) {
         return 0;
     }
@@ -27,15 +28,15 @@ export function uint16FromBytes(buf: u8[]): u16 {
     return (ret << 8) | buf[0];
 }
 
-export function uint16ToBytes(value: u16): u8[] {
-    return [
-        value as u8,
-        (value >> 8) as u8,
-    ];
+export function uint16ToBytes(value: u16): Uint8Array {
+    const buf = new Uint8Array(ScUint16Length);
+    buf[0] = value as u8;
+    buf[1] = (value >> 8) as u8;
+    return buf;
 }
 
 export function uint16FromString(value: string): u16 {
-    return wasmtypes.uintFromString(value, 16) as u16;
+    return uintFromString(value, 16) as u16;
 }
 
 export function uint16ToString(value: u16): string {
@@ -45,9 +46,9 @@ export function uint16ToString(value: u16): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableUint16 {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

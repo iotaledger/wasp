@@ -6,10 +6,11 @@ package wasmsolo
 import (
 	"fmt"
 	"sort"
-	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/stretchr/testify/require"
+	"github.com/iotaledger/wasp/packages/solo"
 )
 
 type SoloBalances struct {
@@ -64,7 +65,7 @@ func (bal *SoloBalances) dumpBalances() {
 	for _, acc := range accs {
 		l2 := ctx.Chain.L2Assets(acc)
 		addr, ok := isc.AddressFromAgentID(acc)
-		l1 := isc.NewEmptyAssets()
+		l1 := isc.NewEmptyFungibleTokens()
 		if ok {
 			l1 = ctx.Chain.Env.L1Assets(addr)
 		}
@@ -92,6 +93,9 @@ func (bal *SoloBalances) dumpBalances() {
 		}
 	}
 	receipt := ctx.Chain.LastReceipt()
+	if receipt == nil {
+		panic("dumpBalances: missing last receipt")
+	}
 
 	fmt.Printf("%s\nGas: %d, fee %d (from last receipt)\n", txt, receipt.GasBurned, receipt.GasFeeCharged)
 }
@@ -100,7 +104,7 @@ func (bal *SoloBalances) Add(agent *SoloAgent, balance uint64) {
 	bal.accounts[agent.AgentID().String()] += balance
 }
 
-func (bal *SoloBalances) VerifyBalances(t *testing.T) {
+func (bal *SoloBalances) VerifyBalances(t solo.TestContext) {
 	bal.dumpBalances()
 	ctx := bal.ctx
 	require.EqualValues(t, bal.Account, ctx.Balance(ctx.Account()))

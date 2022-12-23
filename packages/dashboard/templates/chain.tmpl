@@ -10,7 +10,7 @@
 		<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <code>{{$chainid}}</code>{{end}}</h2>
 
 		<dl>
-			<dt>ChainID</dt><dd><code>{{(chainidref .Record.ChainID)}}</code></dd>
+			<dt>ChainID</dt><dd><code>{{(chainIDBech32 .Record.ChainID)}}</code></dd>
 			<dt>Active</dt><dd><code>{{.Record.Active}}</code></dd>
 			{{if .Record.Active}}
 				<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $chainInfo.ChainOwnerID)}}</dd>
@@ -132,5 +132,4 @@
 		</div>
 
 	{{end}}
-	{{ template "ws" .ChainID }}
 {{end}}

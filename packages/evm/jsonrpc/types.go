@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 )
@@ -232,6 +234,9 @@ type SendTxArgs struct {
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
+//
+
+//nolint:gocyclo
 func (args *SendTxArgs) setDefaults(e *EthService) error {
 	if args.GasPrice == nil {
 		args.GasPrice = (*hexutil.Big)(evm.GasPrice)
@@ -305,6 +310,9 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 type RPCFilterQuery ethereum.FilterQuery
 
 // UnmarshalJSON sets *args fields with given data.
+//
+
+//nolint:gocyclo
 func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 	type input struct {
 		BlockHash *common.Hash     `json:"blockHash"`
@@ -408,7 +416,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 }
 
 func decodeAddress(s string) (common.Address, error) {
-	b, err := hexutil.Decode(s)
+	b, err := iotago.DecodeHex(s)
 	if err == nil && len(b) != common.AddressLength {
 		err = fmt.Errorf("hex has invalid length %d after decoding; expected %d for address", len(b), common.AddressLength)
 	}
@@ -416,7 +424,7 @@ func decodeAddress(s string) (common.Address, error) {
 }
 
 func decodeTopic(s string) (common.Hash, error) {
-	b, err := hexutil.Decode(s)
+	b, err := iotago.DecodeHex(s)
 	if err == nil && len(b) != common.HashLength {
 		err = fmt.Errorf("hex has invalid length %d after decoding; expected %d for topic", len(b), common.HashLength)
 	}

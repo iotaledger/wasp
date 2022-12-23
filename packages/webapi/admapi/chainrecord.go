@@ -4,23 +4,24 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider) {
+func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) {
 	rnd1 := isc.RandomChainID()
 	example := model.ChainRecord{
-		ChainID: model.NewChainID(rnd1),
+		ChainID: model.NewChainIDBech32(rnd1),
 		Active:  false,
 	}
 
-	s := &chainRecordService{registryProvider}
+	s := &chainRecordService{chainRecordRegistryProvider}
 
 	adm.POST(routes.PutChainRecord(), s.handlePutChainRecord).
 		SetSummary("Create a new chain record").
@@ -37,7 +38,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry
 }
 
 type chainRecordService struct {
-	registry registry.Provider
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 }
 
 func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
@@ -47,24 +48,34 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	reg := s.registry()
-	bd := req.Record()
+	requestChainRec, err := req.Record()
+	if err != nil {
+		return httperrors.BadRequest("Error parsing chain record")
+	}
 
-	bd2, err := reg.GetChainRecordByChainID(&bd.ChainID)
+	storedChainRec, err := s.chainRecordRegistryProvider.ChainRecord(requestChainRec.ChainID())
 	if err != nil {
 		return err
 	}
-	if bd2 != nil {
-		// Make this call idempotent.
-		// Record has no information apart from the ChainID and activation status.
-		// So just keep the existing, if it exists.
-		return c.NoContent(http.StatusCreated)
+	if storedChainRec != nil {
+		_, err = s.chainRecordRegistryProvider.UpdateChainRecord(
+			requestChainRec.ChainID(),
+			func(rec *registry.ChainRecord) bool {
+				rec.AccessNodes = requestChainRec.AccessNodes
+				rec.Active = requestChainRec.Active
+				return true
+			},
+		)
+		if err != nil {
+			return err
+		}
+		return c.NoContent(http.StatusAccepted)
 	}
-	if err := reg.SaveChainRecord(bd); err != nil {
+	if err := s.chainRecordRegistryProvider.AddChainRecord(requestChainRec); err != nil {
 		return err
 	}
 
-	log.Infof("Chain record saved: %s", bd.String())
+	log.Infof("Chain record saved: ChainID: %s (active: %t)", requestChainRec.ChainID(), requestChainRec.Active)
 
 	return c.NoContent(http.StatusCreated)
 }
@@ -74,7 +85,7 @@ func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := s.registry().GetChainRecordByChainID(chainID)
+	bd, err := s.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -85,7 +96,7 @@ func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 }
 
 func (s *chainRecordService) handleGetChainRecordList(c echo.Context) error {
-	lst, err := s.registry().GetChainRecords()
+	lst, err := s.chainRecordRegistryProvider.ChainRecords()
 	if err != nil {
 		return err
 	}

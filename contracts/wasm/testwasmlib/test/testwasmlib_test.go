@@ -11,8 +11,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlib"
+	"github.com/iotaledger/wasp/contracts/wasm/testwasmlib/go/testwasmlibimpl"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -20,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -87,7 +89,7 @@ var (
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlib.OnLoad)
+	return wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {
@@ -412,7 +414,7 @@ func TestWasmTypes(t *testing.T) {
 	checkerBytes.Func.Call()
 	require.NoError(t, ctx.Err)
 
-	hashString := "7c106d42ca17fdbfb03f6b45b91effcef2cff61215a3552dbc1ab8fd46817719"
+	hashString := hashing.HashData([]byte("foobar")).String()
 	hash, err := hashing.HashValueFromHex(hashString)
 	require.NoError(t, err)
 	scHash := wasmtypes.HashFromString(hashString)
@@ -443,7 +445,7 @@ func TestWasmTypes(t *testing.T) {
 	checkNftID(t, ctx, scNftID, nftID)
 
 	blockNum := uint32(3)
-	ctxBlocklog := ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnLoad)
+	ctxBlocklog := ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnDispatch)
 	require.NoError(t, ctxBlocklog.Err)
 	fblocklog := coreblocklog.ScFuncs.GetRequestIDsForBlock(ctxBlocklog)
 	fblocklog.Params.BlockIndex().SetValue(blockNum)

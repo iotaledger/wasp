@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type Assert struct {

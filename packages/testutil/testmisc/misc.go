@@ -1,13 +1,14 @@
 package testmisc
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func RequireErrorToBe(t *testing.T, err error, target interface{}) {

@@ -20,12 +20,12 @@ func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
 	}
 }
 
-func (p *ChainRecordRegistryProvider) SaveChainRecord(chainRecord *registry.ChainRecord) error {
-	p.DB[chainRecord.ChainID] = chainRecord
+func (p *ChainRecordRegistryProvider) AddChainRecord(chainRecord *registry.ChainRecord) error {
+	p.DB[chainRecord.ChainID()] = chainRecord
 	return nil
 }
 
-func (p *ChainRecordRegistryProvider) LoadChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	ret := p.DB[*chainID]
+func (p *ChainRecordRegistryProvider) LoadChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	ret := p.DB[chainID]
 	return ret, nil
 }

@@ -1,18 +1,20 @@
 package isc
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
+	"fmt"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"golang.org/x/xerrors"
 )
 
 const Million = uint64(1_000_000)
 
+var emptyOutputID = iotago.OutputID{}
+
 func DecodeOutputID(b []byte, def ...iotago.OutputID) (iotago.OutputID, error) {
 	if len(b) != iotago.OutputIDLength {
 		if len(def) == 0 {
-			return iotago.OutputID{}, xerrors.Errorf("expected OutputID size %d, got %d bytes",
-				iotago.OutputIDLength, len(b))
+			return iotago.OutputID{}, fmt.Errorf("expected OutputID size %d, got %d bytes", iotago.OutputIDLength, len(b))
 		}
 		return def[0], nil
 	}
@@ -25,18 +27,24 @@ func EncodeOutputID(value iotago.OutputID) []byte {
 	return value[:]
 }
 
-func UTXOInputFromMarshalUtil(mu *marshalutil.MarshalUtil) (*iotago.UTXOInput, error) {
+func OutputIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (iotago.OutputID, error) {
 	data, err := mu.ReadBytes(iotago.OutputIDLength)
 	if err != nil {
-		return nil, err
+		return iotago.OutputID{}, err
 	}
-	id, err := DecodeOutputID(data)
+
+	outputID, err := DecodeOutputID(data)
 	if err != nil {
-		return nil, err
+		return iotago.OutputID{}, err
 	}
-	return id.UTXOInput(), nil
+
+	return outputID, nil
 }
 
-func UTXOInputToMarshalUtil(id *iotago.UTXOInput, mu *marshalutil.MarshalUtil) {
-	mu.WriteBytes(EncodeOutputID(id.ID()))
+func OutputIDToMarshalUtil(outputID iotago.OutputID, mu *marshalutil.MarshalUtil) *marshalutil.MarshalUtil {
+	return mu.WriteBytes(EncodeOutputID(outputID))
+}
+
+func IsEmptyOutputID(outputID iotago.OutputID) bool {
+	return outputID == emptyOutputID
 }

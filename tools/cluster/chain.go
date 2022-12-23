@@ -32,7 +32,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   iotago.Address
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 
 	Cluster *Cluster
 }
@@ -193,10 +193,6 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 		return nil, err
 	}
 	return ret, nil
-}
-
-func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
-	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
 }
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {

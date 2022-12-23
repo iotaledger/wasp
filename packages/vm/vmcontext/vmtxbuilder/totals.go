@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"math/big"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"golang.org/x/xerrors"
 )
 
 type TransactionTotals struct {
@@ -80,8 +81,9 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 				Sub(simpleTokenScheme.MintedTokens, simpleTokenScheme.MeltedTokens)
 		}
 	}
+
 	for _, nft := range txb.nftsIncluded {
-		if nft.input != nil {
+		if !isc.IsEmptyOutputID(nft.outputID) {
 			ret.TotalBaseTokensInStorageDeposit += nft.in.Amount
 		}
 	}

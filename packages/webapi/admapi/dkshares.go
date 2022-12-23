@@ -11,6 +11,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -21,11 +24,9 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, nodeProvider dkg.NodeProvider) {
+func addDKSharesEndpoints(adm echoswagger.ApiGroup, dkShareRegistryProvider registry.DKShareRegistryProvider, nodeProvider dkg.NodeProvider) {
 	requestExample := model.DKSharesPostRequest{
 		PeerPubKeys: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:   3,
@@ -42,8 +43,8 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 	}
 
 	s := &dkSharesService{
-		registry: registryProvider,
-		dkgNode:  nodeProvider,
+		dkShareRegistryProvider: dkShareRegistryProvider,
+		dkgNode:                 nodeProvider,
 	}
 
 	adm.POST(routes.DKSharesPost(), s.handleDKSharesPost).
@@ -52,14 +53,14 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Pr
 		SetSummary("Generate a new distributed key")
 
 	adm.GET(routes.DKSharesGet(":sharedAddress"), s.handleDKSharesGet).
-		AddParamPath("", "sharedAddress", "Address of the DK share (base58)").
+		AddParamPath("", "sharedAddress", "Address of the DK share (hex)").
 		AddResponse(http.StatusOK, "DK shares info", infoExample, nil).
 		SetSummary("Get distributed key properties")
 }
 
 type dkSharesService struct {
-	registry registry.Provider
-	dkgNode  dkg.NodeProvider
+	dkShareRegistryProvider registry.DKShareRegistryProvider
+	dkgNode                 dkg.NodeProvider
 }
 
 func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
@@ -78,7 +79,7 @@ func (s *dkSharesService) handleDKSharesPost(c echo.Context) error {
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]*cryptolib.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			peerPubKey, err := cryptolib.NewPublicKeyFromBase58String(req.PeerPubKeys[i])
+			peerPubKey, err := cryptolib.NewPublicKeyFromString(req.PeerPubKeys[i])
 			if err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
@@ -114,7 +115,7 @@ func (s *dkSharesService) handleDKSharesGet(c echo.Context) error {
 	if _, sharedAddress, err = iotago.ParseBech32(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-	if dkShare, err = s.registry().LoadDKShare(sharedAddress); err != nil {
+	if dkShare, err = s.dkShareRegistryProvider.LoadDKShare(sharedAddress); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	var response *model.DKSharesInfo

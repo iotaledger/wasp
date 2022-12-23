@@ -1,13 +1,12 @@
 #!/bin/bash
-example_name=$1
-node_modules_path=$2
-flag=$3
-
-cd $example_name
+example_path=$1
+flag=$2
+cd $example_path
+example_name=$(basename $example_path) # it is path relative to wasp/contracts/wasm in the meantime
+node_modules_path=$(git rev-parse --show-toplevel)/contracts/wasm/node_modules
 
 if [ ! -f "schema.yaml" ]; then
   echo "schema.yaml not found"
-  cd ..
   exit 1
 fi
 
@@ -17,5 +16,4 @@ echo "Compiling "$example_name"_ts.wasm"
 if [ ! -d "./ts/pkg" ]; then
   mkdir ./ts/pkg
 fi
-npx asc ts/"$example_name"/lib.ts --lib "$node_modules_path" -O --outFile ts/pkg/"$example_name"_ts.wasm
-cd ..
+npx asc ts/main.ts --lib "$node_modules_path" -O --outFile ts/pkg/"$example_name"_ts.wasm

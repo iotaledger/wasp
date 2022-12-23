@@ -11,7 +11,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func Encode(v interface{}) []byte { //nolint:funlen
+//nolint:gocyclo,funlen
+func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
 	case bool:
 		return EncodeBool(vt)
@@ -46,9 +47,9 @@ func Encode(v interface{}) []byte { //nolint:funlen
 	case iotago.Address:
 		return EncodeAddress(vt)
 	case *isc.ChainID:
-		return EncodeChainID(vt)
+		return EncodeChainID(*vt)
 	case isc.ChainID:
-		return EncodeChainID(&vt)
+		return EncodeChainID(vt)
 	case isc.AgentID:
 		return EncodeAgentID(vt)
 	case isc.RequestID:

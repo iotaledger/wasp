@@ -125,12 +125,12 @@ pub trait ScSandbox {
 
     // logs informational text message
     fn log(&self, text: &str) {
-        sandbox(FN_LOG, &string_to_bytes(text));
+        log(text);
     }
 
     // logs error text message and then panics
     fn panic(&self, text: &str) {
-        sandbox(FN_PANIC, &string_to_bytes(text));
+        panic(text);
     }
 
     // retrieve parameters passed to the smart contract function that was called
@@ -157,7 +157,7 @@ pub trait ScSandbox {
 
     // logs debugging trace text message
     fn trace(&self, text: &str) {
-        sandbox(FN_TRACE, &string_to_bytes(text));
+        trace(text);
     }
 
     // access diverse utility functions
@@ -250,7 +250,7 @@ pub trait ScSandboxFunc: ScSandbox {
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
     fn random(&self, max: u64) -> u64 {
         if max == 0 {
-            self.panic("random: max parameter should be non-zero");
+            panic("random: max parameter should be > 0");
         }
         unsafe {
             static mut ENTROPY: Vec<u8> = Vec::new();

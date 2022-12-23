@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Key represents a key in the KVStore, to avoid unnecessary conversions

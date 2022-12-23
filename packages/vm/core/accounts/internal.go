@@ -5,7 +5,9 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"golang.org/x/xerrors"
 )
 
 var (
@@ -160,9 +161,6 @@ func CreditToAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungible
 	}
 	account := getAccount(state, agentID)
 
-	checkLedger(state, "CreditToAccount IN")
-	defer checkLedger(state, "CreditToAccount OUT")
-
 	creditToAccount(account, assets)
 	creditToAccount(getTotalL2AssetsAccount(state), assets)
 	touchAccount(state, account)
@@ -196,9 +194,6 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungibl
 		return
 	}
 	account := getAccount(state, agentID)
-
-	checkLedger(state, "DebitFromAccount IN")
-	defer checkLedger(state, "DebitFromAccount OUT")
 
 	if !debitFromAccount(account, assets) {
 		panic(xerrors.Errorf("debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
@@ -286,9 +281,6 @@ func hasEnoughForAllowance(account *collections.ImmutableMap, allowance *isc.All
 
 // MoveBetweenAccounts moves assets between on-chain accounts. Returns if it was a success (= enough funds in the source)
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) bool {
-	checkLedger(state, "MoveBetweenAccounts.IN")
-	defer checkLedger(state, "MoveBetweenAccounts.OUT")
-
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
@@ -370,7 +362,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 }
 
 func getAccountAssets(account *collections.ImmutableMap) *isc.FungibleTokens {
-	ret := isc.NewEmptyAssets()
+	ret := isc.NewEmptyFungibleTokens()
 	account.MustIterate(func(idBytes []byte, val []byte) bool {
 		if len(idBytes) == 0 {
 			ret.BaseTokens = util.MustUint64From8Bytes(val)
@@ -393,7 +385,7 @@ func getAccountAssets(account *collections.ImmutableMap) *isc.FungibleTokens {
 func GetAccountAssets(state kv.KVStoreReader, agentID isc.AgentID) *isc.FungibleTokens {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
-		return isc.NewEmptyAssets()
+		return isc.NewEmptyFungibleTokens()
 	}
 	return getAccountAssets(account)
 }
@@ -404,7 +396,7 @@ func GetTotalL2Assets(state kv.KVStoreReader) *isc.FungibleTokens {
 
 // calcL2TotalAssets traverses the ledger and sums up all assets
 func calcL2TotalAssets(state kv.KVStoreReader) *isc.FungibleTokens {
-	ret := isc.NewEmptyAssets()
+	ret := isc.NewEmptyFungibleTokens()
 
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := isc.AgentIDFromBytes(key)
@@ -484,7 +476,7 @@ func NFTMapEqual(a, b map[iotago.NFTID]bool) bool {
 	return true
 }
 
-func checkLedger(state kv.KVStore, checkpoint string) {
+func CheckLedger(state kv.KVStoreReader, checkpoint string) {
 	a := GetTotalL2Assets(state)
 	c := calcL2TotalAssets(state)
 	if !a.Equals(c) {
@@ -585,7 +577,7 @@ func DeleteFoundryOutput(state kv.KVStore, sn uint32) {
 }
 
 // GetFoundryOutput returns foundry output, its block number and output index
-func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID *isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
+func GetFoundryOutput(state kv.KVStoreReader, sn uint32, chainID isc.ChainID) (*iotago.FoundryOutput, uint32, uint16) {
 	data := getFoundriesMapR(state).MustGetAt(util.Uint32To4Bytes(sn))
 	if data == nil {
 		return nil, 0, 0
@@ -719,7 +711,7 @@ func DeleteNativeTokenOutput(state kv.KVStore, tokenID iotago.NativeTokenID) {
 	getNativeTokenOutputMap(state).MustDelAt(tokenID[:])
 }
 
-func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID *isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
+func GetNativeTokenOutput(state kv.KVStoreReader, tokenID *iotago.NativeTokenID, chainID isc.ChainID) (*iotago.BasicOutput, uint32, uint16) {
 	data := getNativeTokenOutputMapR(state).MustGetAt(tokenID[:])
 	if data == nil {
 		return nil, 0, 0
@@ -816,7 +808,7 @@ func DeleteNFTOutput(state kv.KVStore, id iotago.NFTID) {
 	getNFTOutputMap(state).MustDelAt(id[:])
 }
 
-func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID *isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
+func GetNFTOutput(state kv.KVStoreReader, id iotago.NFTID, chainID isc.ChainID) (*iotago.NFTOutput, uint32, uint16) {
 	data := getNFTOutputMapR(state).MustGetAt(id[:])
 	if data == nil {
 		return nil, 0, 0

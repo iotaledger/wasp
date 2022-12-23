@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -15,24 +16,54 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/stretchr/testify/require"
 )
+
+func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
+	lo := params.TxGas
+	hi := e.GasLimit()
+	lastOk := uint64(0)
+	var lastErr error
+	for hi >= lo {
+		callMsg.Gas = (lo + hi) / 2
+		res, err := e.CallContract(callMsg, nil)
+		if err != nil {
+			return 0, err
+		}
+		if res.Err != nil {
+			lastErr = res.Err
+			lo = callMsg.Gas + 1
+		} else {
+			lastOk = callMsg.Gas
+			hi = callMsg.Gas - 1
+		}
+	}
+	if lastOk == 0 {
+		if lastErr != nil {
+			return 0, fmt.Errorf("estimateGas failed: %s", lastErr.Error())
+		}
+		return 0, fmt.Errorf("estimateGas failed")
+	}
+	return lastOk, nil
+}
 
 func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte, gasLimit uint64) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	if gasLimit == 0 {
 		var err error
-		gasLimit, err = emu.estimateGas(ethereum.CallMsg{
+		gasLimit, err = estimateGas(ethereum.CallMsg{
 			From:  senderAddress,
 			To:    &receiverAddress,
 			Value: amount,
 			Data:  data,
-		})
+		}, emu)
 		require.NoError(t, err)
 	}
 
@@ -74,8 +105,8 @@ func TestBlockchain(t *testing.T) {
 	}
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
-	emu := NewEVMEmulator(db, 1, nil, getBalance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
+	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
 
 	// some assertions
 	{
@@ -147,12 +178,12 @@ func TestBlockchainPersistence(t *testing.T) {
 	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
 
 	// deploy a contract using one instance of EVMEmulator
 	var contractAddress common.Address
 	func() {
-		emu := NewEVMEmulator(db, 1, nil, getBalance)
+		emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
 		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 		require.NoError(t, err)
 
@@ -168,7 +199,7 @@ func TestBlockchainPersistence(t *testing.T) {
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db, 2, nil, getBalance)
+		emu := NewEVMEmulator(db, 2, nil, getBalance, nil, nil)
 		// check the contract address
 		require.NotEmpty(t, emu.StateDB().GetCode(contractAddress))
 	}
@@ -192,11 +223,11 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	data = append(data, contractBytecode...)
 	data = append(data, constructorArguments...)
 
-	gasLimit, err := emu.estimateGas(ethereum.CallMsg{
+	gasLimit, err := estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
 		Value: txValue,
 		Data:  data,
-	})
+	}, emu)
 	require.NoError(t, err)
 
 	require.NoError(t, err)
@@ -263,8 +294,8 @@ func TestStorageContract(t *testing.T) {
 	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
-	emu := NewEVMEmulator(db, 1, nil, getBalance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
+	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -330,8 +361,8 @@ func TestERC20Contract(t *testing.T) {
 	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
-	emu := NewEVMEmulator(db, 1, nil, getBalance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
+	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -418,8 +449,8 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 	getBalance := func(addr common.Address) *big.Int { return new(big.Int) }
 
 	db := dict.Dict{}
-	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance)
-	emu := NewEVMEmulator(db, 1, nil, getBalance)
+	Init(db, evm.DefaultChainID, evm.BlockKeepAll, evm.BlockGasLimitDefault, 0, genesisAlloc, getBalance, nil, nil)
+	emu := NewEVMEmulator(db, 1, nil, getBalance, nil, nil)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)

@@ -10,47 +10,87 @@
 package peering
 
 import (
-	"bytes"
+	"encoding/json"
 
+	"github.com/iotaledger/hive.go/core/generics/onchangemap"
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util"
 )
+
+type ComparablePubKey struct {
+	pubKey *cryptolib.PublicKey
+}
+
+func NewComparablePubKey(pubKey *cryptolib.PublicKey) *ComparablePubKey {
+	return &ComparablePubKey{
+		pubKey: pubKey,
+	}
+}
+
+func (c *ComparablePubKey) PubKey() *cryptolib.PublicKey {
+	return c.pubKey
+}
+
+func (c *ComparablePubKey) Key() string {
+	return iotago.EncodeHex(c.pubKey.AsBytes())
+}
+
+func (c *ComparablePubKey) String() string {
+	return iotago.EncodeHex(c.pubKey.AsBytes())
+}
 
 // TrustedPeer carries a peer information we use to trust it.
 type TrustedPeer struct {
-	PubKey *cryptolib.PublicKey
-	NetID  string
+	id    *ComparablePubKey
+	NetID string
 }
 
-func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
-	var err error
-	r := bytes.NewBuffer(buf)
-	tp := TrustedPeer{}
-	var keyBytes []byte
-	if keyBytes, err = util.ReadBytes16(r); err != nil {
-		return nil, err
+func NewTrustedPeer(pubKey *cryptolib.PublicKey, netID string) *TrustedPeer {
+	return &TrustedPeer{
+		id:    NewComparablePubKey(pubKey),
+		NetID: netID,
 	}
-	tp.PubKey, err = cryptolib.NewPublicKeyFromBytes(keyBytes)
+}
+
+func (tp *TrustedPeer) ID() *ComparablePubKey {
+	return tp.id
+}
+
+func (tp *TrustedPeer) Clone() onchangemap.Item[string, *ComparablePubKey] {
+	return &TrustedPeer{
+		id:    NewComparablePubKey(tp.PubKey().Clone()),
+		NetID: tp.NetID,
+	}
+}
+
+func (tp *TrustedPeer) PubKey() *cryptolib.PublicKey {
+	return tp.ID().PubKey()
+}
+
+type jsonTrustedPeer struct {
+	PubKey string `json:"publicKey"`
+	NetID  string `json:"netID"`
+}
+
+func (tp *TrustedPeer) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&jsonTrustedPeer{
+		PubKey: tp.PubKey().String(),
+		NetID:  tp.NetID,
+	})
+}
+
+func (tp *TrustedPeer) UnmarshalJSON(bytes []byte) error {
+	j := &jsonTrustedPeer{}
+	if err := json.Unmarshal(bytes, j); err != nil {
+		return err
+	}
+
+	nodePubKey, err := cryptolib.NewPublicKeyFromString(j.PubKey)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if tp.NetID, err = util.ReadString16(r); err != nil {
-		return nil, err
-	}
-	return &tp, nil
-}
 
-func (tp *TrustedPeer) Bytes() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := util.WriteBytes16(&buf, tp.PubKey.AsBytes()); err != nil {
-		return nil, err
-	}
-	if err := util.WriteString16(&buf, tp.NetID); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
+	*tp = *NewTrustedPeer(nodePubKey, j.NetID)
 
-func (tp *TrustedPeer) PubKeyBytes() ([]byte, error) {
-	return tp.PubKey.AsBytes(), nil
+	return nil
 }

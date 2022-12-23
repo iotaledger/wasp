@@ -1,6 +1,7 @@
 package isc
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -32,6 +33,6 @@ func (r Receipt) String() string {
 	ret += fmt.Sprintf("Err: %v\n", r.ResolvedError)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", r.BlockIndex, r.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", r.GasBudget, r.GasBurned, r.GasFeeCharged)
-	ret += fmt.Sprintf("Call data: %s\n", r.Request)
+	ret += fmt.Sprintf("Call data: %s\n", hex.EncodeToString(r.Request))
 	return ret
 }

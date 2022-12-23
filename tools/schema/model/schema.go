@@ -29,6 +29,7 @@ type Struct struct {
 }
 
 type Schema struct {
+	Author        string
 	ContractName  string
 	Copyright     string
 	PackageName   string
@@ -56,6 +57,10 @@ func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.Copyright = schemaDef.Copyright
 	s.PackageName = strings.ToLower(s.ContractName)
 	s.Description = strings.TrimSpace(schemaDef.Description.Val)
+	s.Author = strings.TrimSpace(schemaDef.Author.Val)
+	if s.Author == "" {
+		s.Author = "Eric Hop <eric@iota.org>"
+	}
 
 	err := s.compileEvents(schemaDef)
 	if err != nil {
@@ -315,7 +320,7 @@ func sortedFields(dict FieldMap) []string {
 	for key := range dict {
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool { return strings.ToLower(keys[i]) < strings.ToLower(keys[j]) })
 	return keys
 }
 
@@ -323,7 +328,7 @@ type DefEltList []DefElt
 
 func (l DefEltList) Len() int           { return len(l) }
 func (l DefEltList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-func (l DefEltList) Less(i, j int) bool { return l[i].Val < l[j].Val }
+func (l DefEltList) Less(i, j int) bool { return strings.ToLower(l[i].Val) < strings.ToLower(l[j].Val) }
 
 func sortedKeys(dict DefMap) []DefElt {
 	keys := make(DefEltList, 0)

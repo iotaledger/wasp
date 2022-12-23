@@ -4,9 +4,10 @@
 package testutil
 
 import (
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
-	"golang.org/x/xerrors"
 )
 
 type trustedNetworkManager struct {
@@ -37,7 +38,7 @@ func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey *cryptolib.PublicKey) err
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tnm.data[pubKey.AsKey()] = trustedNetworkDataEntry{pubKey, netID}
-	return &peering.TrustedPeer{PubKey: pubKey, NetID: netID}, nil
+	return peering.NewTrustedPeer(pubKey, netID), nil
 }
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
@@ -50,7 +51,7 @@ func (tnm *trustedNetworkManager) DistrustPeer(pubKey *cryptolib.PublicKey) (*pe
 func (tnm *trustedNetworkManager) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	res := []*peering.TrustedPeer{}
 	for _, v := range tnm.data {
-		res = append(res, &peering.TrustedPeer{PubKey: v.key, NetID: v.netID})
+		res = append(res, peering.NewTrustedPeer(v.key, v.netID))
 	}
 	return res, nil
 }

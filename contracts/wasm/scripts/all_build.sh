@@ -1,6 +1,8 @@
 #!/bin/bash
-bash core_build.sh
-bash go_all.sh -force
-bash ts_all.sh -force
-bash rust_all.sh -force
-bash update_hardcoded.sh
+root_path=$(git rev-parse --show-toplevel)/contracts/wasm/scripts
+bash $root_path/core_build.sh
+bash $root_path/schema_all.sh -force
+bash $root_path/go_all.sh
+bash $root_path/ts_all.sh
+bash $root_path/rust_all.sh
+bash $root_path/update_hardcoded.sh

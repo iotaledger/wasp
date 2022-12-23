@@ -3,21 +3,21 @@ package blocklog
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/state"
-	"golang.org/x/xerrors"
 )
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex uint32) ([]isc.RequestID, error) {
+func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]isc.RequestID, error) {
 	if blockIndex == 0 {
 		return []isc.RequestID{}, nil
 	}
-	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Contract.Hname().Bytes()))
+	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 
 	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
 	if err != nil {
@@ -37,10 +37,18 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 	return ret, nil
 }
 
-// IsRequestProcessed check if reqid is stored in the chain state as processed
-func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *isc.RequestID) (bool, error) {
+func GetRequestReceipt(stateReader kv.KVStoreReader, requestID *isc.RequestID) (*RequestReceipt, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
-	return isRequestProcessedInternal(partition, reqid)
+	return isRequestProcessedInternal(partition, requestID)
+}
+
+// IsRequestProcessed check if requestID is stored in the chain state as processed
+func IsRequestProcessed(stateReader kv.KVStoreReader, requestID *isc.RequestID) (bool, error) {
+	requestReceipt, err := GetRequestReceipt(stateReader, requestID)
+	if err != nil {
+		return false, xerrors.Errorf("cannot get request receipt: %w", err)
+	}
+	return requestReceipt != nil, nil
 }
 
 func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *isc.RequestID) bool {
@@ -88,4 +96,40 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 		}
 	}
 	return nil, nil
+}
+
+func GetEventsByBlockIndex(partition kv.KVStoreReader, blockIndex uint32, totalRequests uint16) ([]string, error) {
+	ret := make([]string, 0)
+	events := collections.NewMapReadOnly(partition, prefixRequestEvents)
+	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
+		eventIndex := uint16(0)
+		for {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
+			msg, err := events.GetAt(key.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			if msg == nil {
+				break
+			}
+			ret = append(ret, string(msg))
+			eventIndex++
+		}
+	}
+	return ret, nil
+}
+
+func GetBlockInfo(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
+	if blockIndex == 0 {
+		return nil, nil
+	}
+	data, err := getBlockInfoBytes(partition, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	ret, err := BlockInfoFromBytes(blockIndex, data)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

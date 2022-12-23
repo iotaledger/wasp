@@ -17,6 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -24,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/stretchr/testify/require"
 )
 
 type soloTestEnv struct {
@@ -36,7 +37,11 @@ type soloTestEnv struct {
 func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain, _, _ := s.NewChainExt(chainOwner, 0, "chain1")
 
@@ -50,11 +55,12 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 
 	return &soloTestEnv{
 		Env: Env{
-			T:              t,
-			Client:         client,
-			RawClient:      rawClient,
-			ChainID:        evm.DefaultChainID,
-			accountManager: accounts,
+			T:                     t,
+			Client:                client,
+			RawClient:             rawClient,
+			ChainID:               evm.DefaultChainID,
+			accountManager:        accounts,
+			NewAccountWithL2Funds: chain.NewEthereumAccountWithL2Funds,
 		},
 		solo:      s,
 		soloChain: chain,
@@ -124,9 +130,12 @@ func TestRPCGetTransactionCount(t *testing.T) {
 func TestRPCGetBlockByNumber(t *testing.T) {
 	env := newSoloTestEnv(t)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
-	require.EqualValues(t, 0, env.BlockByNumber(big.NewInt(0)).Number().Uint64())
 	env.deployStorageContract(creator)
+	require.EqualValues(t, 0, env.BlockByNumber(big.NewInt(0)).Number().Uint64())
 	require.EqualValues(t, 1, env.BlockByNumber(big.NewInt(1)).Number().Uint64())
+	require.EqualValues(t, 2, env.BlockByNumber(big.NewInt(2)).Number().Uint64())
+	// latest:
+	require.EqualValues(t, 2, env.BlockByNumber(nil).Number().Uint64())
 }
 
 func TestRPCGetBlockByHash(t *testing.T) {
@@ -169,11 +178,14 @@ func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
 
 func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
 	env := newSoloTestEnv(t)
-	require.Nil(t, env.TransactionByBlockNumberAndIndex(big.NewInt(3), 0))
+	ret, err := env.TransactionByBlockNumberAndIndex(big.NewInt(3), 0)
+	require.Error(t, err)
+	require.Nil(t, ret, 0)
 	creator, _ := env.soloChain.NewEthereumAccountWithL2Funds()
 	env.deployStorageContract(creator)
 	block := env.BlockByNumber(new(big.Int).SetUint64(env.BlockNumber()))
-	tx := env.TransactionByBlockNumberAndIndex(block.Number(), 0)
+	tx, err := env.TransactionByBlockNumberAndIndex(block.Number(), 0)
+	require.NoError(t, err)
 	require.EqualValues(t, block.Hash(), *tx.BlockHash)
 	require.EqualValues(t, 0, *tx.TransactionIndex)
 }
@@ -345,9 +357,14 @@ func TestRPCCall(t *testing.T) {
 	require.Equal(t, uint32(42), v)
 }
 
+func TestRPCAccessHistoricalState(t *testing.T) {
+	env := newSoloTestEnv(t)
+	env.TestRPCAccessHistoricalState()
+}
+
 func TestRPCGetLogs(t *testing.T) {
 	env := newSoloTestEnv(t)
-	env.TestRPCGetLogs(env.soloChain.NewEthereumAccountWithL2Funds)
+	env.TestRPCGetLogs()
 }
 
 func TestRPCEthChainID(t *testing.T) {
@@ -356,4 +373,29 @@ func TestRPCEthChainID(t *testing.T) {
 	err := env.RawClient.Call(&chainID, "eth_chainId")
 	require.NoError(t, err)
 	require.EqualValues(t, evm.DefaultChainID, chainID)
+}
+
+func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
+	creator, creatorAddress := solo.NewEthereumAccount()
+
+	env := newSoloTestEnv(t)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	nonce := env.NonceAt(creatorAddress)
+	constructorArguments, err := contractABI.Pack("", uint32(42))
+	require.NoError(t, err)
+	data := concatenate(evmtest.StorageContractBytecode, constructorArguments)
+	value := big.NewInt(0)
+	gasLimit := uint64(10_000)
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
+		env.Signer(),
+		creator,
+	)
+	require.NoError(t, err)
+
+	// the tx is rejected before posting to the wasp node
+	err = env.Client.SendTransaction(context.Background(), tx)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "sender doesn't have enough L2 funds to cover tx gas budget")
 }

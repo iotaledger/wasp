@@ -11,15 +11,15 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
 )
 
-func Client(i ...int) *chainclient.Client {
+func Client(apiAddress string) *chainclient.Client {
 	return chainclient.New(
 		config.L1Client(),
-		config.WaspClient(i...),
+		config.WaspClient(apiAddress),
 		GetCurrentChainID(),
 		wallet.Load().KeyPair,
 	)
 }
 
 func SCClient(contractHname isc.Hname, i ...int) *scclient.SCClient {
-	return scclient.New(Client(i...), contractHname)
+	return scclient.New(Client(config.WaspAPI(i...)), contractHname)
 }

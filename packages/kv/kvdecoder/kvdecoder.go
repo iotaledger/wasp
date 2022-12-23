@@ -5,13 +5,14 @@ import (
 	"math/big"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"golang.org/x/xerrors"
 )
 
 type kvdecoder struct {
@@ -200,12 +201,12 @@ func (p *kvdecoder) MustGetAgentID(key kv.Key, def ...isc.AgentID) isc.AgentID {
 	return ret
 }
 
-func (p *kvdecoder) GetChainID(key kv.Key, def ...*isc.ChainID) (*isc.ChainID, error) {
+func (p *kvdecoder) GetChainID(key kv.Key, def ...isc.ChainID) (isc.ChainID, error) {
 	v, err := codec.DecodeChainID(p.MustGet(key), def...)
 	return v, p.wrapError(key, err)
 }
 
-func (p *kvdecoder) MustGetChainID(key kv.Key, def ...*isc.ChainID) *isc.ChainID {
+func (p *kvdecoder) MustGetChainID(key kv.Key, def ...isc.ChainID) isc.ChainID {
 	ret, err := p.GetChainID(key, def...)
 	p.check(err)
 	return ret

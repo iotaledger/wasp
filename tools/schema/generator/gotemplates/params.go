@@ -6,10 +6,9 @@ package gotemplates
 var paramsGo = map[string]string{
 	// *******************************
 	"params.go": `
-//nolint:revive
-$#emit goPackage
+package $package
 
-$#emit importWasmTypes
+$#emit importWasmLibAndWasmTypes
 $#each func paramsFunc
 `,
 	// *******************************
@@ -32,6 +31,14 @@ $#each param proxyContainers
 type $TypeName struct {
 	proxy wasmtypes.Proxy
 }
+$#if mut else paramsImmutConstructor
 $#each param proxyMethods
+`,
+	// *******************************
+	"paramsImmutConstructor": `
+
+func New$TypeName() $TypeName {
+	return $TypeName{proxy: wasmlib.NewParamsProxy()}
+}
 `,
 }

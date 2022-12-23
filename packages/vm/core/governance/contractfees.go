@@ -4,7 +4,7 @@
 package governance
 
 import (
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 // ContractFeesRecord is a structure which contains the fee information for a contract

@@ -8,13 +8,14 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var infoCmd = &cobra.Command{
@@ -22,7 +23,7 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		chainInfo, err := config.WaspClient().GetChainInfo(GetCurrentChainID())
+		chainInfo, err := config.WaspClient(config.MustWaspAPI()).GetChainInfo(GetCurrentChainID())
 		log.Check(err)
 
 		printNodesRowHdr := []string{"PubKey", "NetID", "Alive", "Committee", "Access", "AccessAPI"}

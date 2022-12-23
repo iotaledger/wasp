@@ -1,8 +1,9 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func DecodeAgentID(b []byte, def ...isc.AgentID) (isc.AgentID, error) {

@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/stretchr/testify/require"
 )
 
 // buils a normal tx to post a request to inccounter, optionally adds SDRC
@@ -69,7 +70,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 }
 
 func TestSDRC(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 1, []int{0})
+	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -79,7 +80,7 @@ func TestSDRC(t *testing.T) {
 
 	// // send a request with Storage Deposit Return Unlock
 	txSDRC := buildTX(t, env, addr, keyPair, true)
-	err = env.Clu.L1Client().PostTx(txSDRC)
+	_, err = env.Clu.L1Client().PostTxAndWaitUntilConfirmation(txSDRC)
 	require.NoError(t, err)
 
 	// wait some time and assert that the chain has not processed the request
@@ -94,7 +95,7 @@ func TestSDRC(t *testing.T) {
 
 	// send an equivalent request without StorageDepositReturnUnlockCondition
 	txNormal := buildTX(t, env, addr, keyPair, false)
-	err = env.Clu.L1Client().PostTx(txNormal)
+	_, err = env.Clu.L1Client().PostTxAndWaitUntilConfirmation(txNormal)
 	require.NoError(t, err)
 
 	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, txNormal, 1*time.Minute)

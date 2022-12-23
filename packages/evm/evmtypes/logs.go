@@ -6,12 +6,14 @@ package evmtypes
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 func EncodeLog(log *types.Log, includeDerivedFields bool) []byte {
@@ -98,6 +100,10 @@ func DecodeLogs(b []byte) ([]*types.Log, error) {
 	n, err := m.ReadUint32()
 	if err != nil {
 		return nil, err
+	}
+	if int(n) > len(b) {
+		// using len(b) as an upper bound to prevent DoS attack allocating the array
+		return nil, fmt.Errorf("DecodeLogs: invalid length")
 	}
 	logs := make([]*types.Log, n)
 	for i := uint32(0); i < n; i++ {

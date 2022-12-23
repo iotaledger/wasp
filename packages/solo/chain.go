@@ -5,12 +5,17 @@ package solo
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"os"
+	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/events"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/trie.go/trie"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -20,6 +25,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -28,8 +35,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/stretchr/testify/require"
 )
+
+// solo chain implements Chain interface
+var _ chain.Chain = &Chain{}
 
 // String is string representation for main parameters of the chain
 //
@@ -38,7 +47,9 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "Root commitment: %s\n", trie.RootCommitment(ch.State.TrieNodeStore()))
+	block, err := ch.Store.LatestBlock()
+	require.NoError(ch.Env.T, err)
+	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
 	return buf.String()
 }
@@ -58,11 +69,6 @@ func (ch *Chain) DumpAccounts() string {
 		ret += fmt.Sprintf("%s\n", bals.String())
 	}
 	return ret
-}
-
-// RawState returns state of the chain for assess as raw KVStore
-func (ch *Chain) RawState() kv.KVStore {
-	return ch.VirtualStateAccess().KVStore()
 }
 
 // FindContract is a view call to the 'root' smart contract on the chain.
@@ -244,7 +250,7 @@ func (ch *Chain) DeployWasmContract(keyPair *cryptolib.KeyPair, name, fname stri
 //   - chainID
 //   - agentID of the chain owner
 //   - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (*isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.ViewGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
@@ -397,14 +403,17 @@ func (ch *Chain) IsRequestProcessed(reqID isc.RequestID) bool {
 }
 
 // GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, bool) {
+func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
 	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
+	if ret == nil {
+		return nil, nil
+	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
 	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
 	if err != nil || binRec == nil {
-		return nil, false
+		return nil, err
 	}
 	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 
@@ -412,7 +421,7 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID) (*blocklog.RequestReceip
 	ret1.BlockIndex = resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	ret1.RequestIndex = resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
 
-	return ret1, true
+	return ret1, nil
 }
 
 // GetRequestReceiptsForBlock returns all request log records for a particular block
@@ -421,7 +430,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 
 	var blockIdx uint32
 	if len(blockIndex) == 0 {
-		blockIdx = ch.GetLatestBlockInfo().BlockIndex
+		blockIdx = ch.LatestBlockIndex()
 	} else {
 		blockIdx = blockIndex[0]
 	}
@@ -588,10 +597,76 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...uint64)
 		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
 	}
 	err := ch.TransferAllowanceTo(
-		isc.NewFungibleBaseTokens(amount),
+		isc.NewAllowanceBaseTokens(amount),
 		agentID,
 		true,
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
+}
+
+// AttachToRequestProcessed implements chain.Chain
+func (*Chain) AttachToRequestProcessed(func(isc.RequestID)) (attachID *events.Closure) {
+	panic("unimplemented")
+}
+
+// DetachFromRequestProcessed implements chain.Chain
+func (*Chain) DetachFromRequestProcessed(attachID *events.Closure) {
+	panic("unimplemented")
+}
+
+// ResolveError implements chain.Chain
+func (ch *Chain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
+	return ch.ResolveVMError(e), nil
+}
+
+// ConfigUpdated implements chain.Chain
+func (*Chain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
+// GetConsensusPipeMetrics implements chain.Chain
+func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	panic("unimplemented")
+}
+
+// GetConsensusWorkflowStatus implements chain.Chain
+func (*Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("unimplemented")
+}
+
+// GetNodeConnectionMetrics implements chain.Chain
+func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
+	panic("unimplemented")
+}
+
+func (ch *Chain) GetStore() state.Store {
+	return ch.Store
+}
+
+// GetTimeData implements chain.Chain
+func (*Chain) GetTimeData() time.Time {
+	panic("unimplemented")
+}
+
+// LatestAliasOutput implements chain.Chain
+func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *isc.AliasOutputWithID) {
+	ao := ch.GetAnchorOutput()
+	return ao, ao
+}
+
+// ReceiveOffLedgerRequest implements chain.Chain
+func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
+// AwaitRequestProcessed implements chain.Chain
+func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
+	panic("unimplemented")
+}
+
+func (ch *Chain) LatestBlockIndex() uint32 {
+	i, err := ch.Store.LatestBlockIndex()
+	require.NoError(ch.Env.T, err)
+	return i
 }

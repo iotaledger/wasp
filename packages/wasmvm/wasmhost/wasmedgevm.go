@@ -52,7 +52,7 @@ func (vm *WasmEdgeVM) Instantiate() error {
 	return nil
 }
 
-//TODO
+// TODO
 func (vm *WasmEdgeVM) Interrupt() {
 	panic("implement me")
 }

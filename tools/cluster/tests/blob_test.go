@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/stretchr/testify/require"
 )
 
 func setupBlobTest(t *testing.T) *ChainEnv {
@@ -23,13 +24,12 @@ func setupBlobTest(t *testing.T) *ChainEnv {
 	require.NoError(t, err)
 
 	chEnv := newChainEnv(t, e.Clu, chain)
-
 	chEnv.checkCoreContracts()
+
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
-		require.Greater(t, blockIndex, uint32(2))
-		require.LessOrEqual(t, blockIndex, uint32(5))
+		require.GreaterOrEqual(t, blockIndex, uint32(2))
 	}
 
 	_, myAddress, err := e.Clu.NewKeyPairWithFunds()

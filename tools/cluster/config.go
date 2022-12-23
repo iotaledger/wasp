@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -36,18 +36,18 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 
 type ClusterConfig struct {
 	Wasp []templates.WaspConfigParams
-	L1   nodeconn.L1Config
+	L1   l1connection.Config
 }
 
 func DefaultWaspConfig() WaspConfig {
 	return WaspConfig{
 		NumNodes:           4,
-		FirstAPIPort:       9090,
-		FirstPeeringPort:   4000,
-		FirstNanomsgPort:   5550,
-		FirstDashboardPort: 7000,
-		FirstProfilingPort: 1060,
-		FirstMetricsPort:   2112,
+		FirstAPIPort:       19090,
+		FirstPeeringPort:   14000,
+		FirstNanomsgPort:   15550,
+		FirstDashboardPort: 17000,
+		FirstProfilingPort: 11060,
+		FirstMetricsPort:   12112,
 	}
 }
 
@@ -55,14 +55,13 @@ func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
 }
 
-func NewConfig(waspConfig WaspConfig, l1Config nodeconn.L1Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
+func NewConfig(waspConfig WaspConfig, l1Config l1connection.Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
 	nodesConfigs := make([]templates.WaspConfigParams, waspConfig.NumNodes)
 	for i := 0; i < waspConfig.NumNodes; i++ {
 		// generate template from waspconfigs
 		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
 		// set L1 part of the template
-		nodesConfigs[i].L1APIAddress = l1Config.APIAddress
-		nodesConfigs[i].L1UseRemotePow = l1Config.UseRemotePoW
+		nodesConfigs[i].L1INXAddress = l1Config.INXAddress
 		// modify the template if needed
 		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
 			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])

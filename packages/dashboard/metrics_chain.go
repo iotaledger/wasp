@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 //go:embed templates/metrics_chain.tmpl
 var tplMetricsChain string
 
-func metricsChainBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChain"),
 		Title: fmt.Sprintf("Metrics: %.8s", chainID.String()),

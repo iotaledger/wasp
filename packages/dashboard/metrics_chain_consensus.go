@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/metrics_chain_consensus.tmpl
 var tplMetricsChainConsensus string
 
-func metricsChainConsensusBreadcrumb(e *echo.Echo, chainID *isc.ChainID) Tab {
+func metricsChainConsensusBreadcrumb(e *echo.Echo, chainID isc.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("metricsChainConsensus"),
 		Title: fmt.Sprintf("Metrics: %.8s: Consensus", chainID.String()),

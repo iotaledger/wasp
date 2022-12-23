@@ -49,7 +49,7 @@ by editing the `config.json` files.
 Note: by default `wasp-cluster` configures all nodes to store the database in
 main memory: all data will be lost when the cluster is stopped (remember that
 this tool is used primarily for testing). If you need a persistent database,
-change the `inMemory` setting in all `config.json` files.
+change the `db.engine` setting in all `config.json` files.
 
 ## Start the cluster
 

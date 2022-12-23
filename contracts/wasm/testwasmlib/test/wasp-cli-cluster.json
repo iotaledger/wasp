@@ -1,0 +1,15 @@
+{
+  "chain": "mychain",
+  "chains": {
+    "mychain": "tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk",
+    "testchain": "tst1pp35gh28rf7mnk0zgss52a87zhq7nmctw2ut66j60c77dqzgmtrg7ygxquj"
+  },
+  "wallet": {
+    "seed": "0xa580555e5b84a4b72bbca829b4085a4725941f3b3702525f36862762d76c21f3"
+  },
+  "wasp": {
+    "0": {
+      "api": "http://localhost:19090"
+    }
+  }
+}

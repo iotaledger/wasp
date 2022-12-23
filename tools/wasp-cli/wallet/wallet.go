@@ -1,13 +1,13 @@
 package wallet
 
 import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/mr-tron/base58"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 type WalletConfig struct {
@@ -24,15 +24,21 @@ var initCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		seed := cryptolib.NewSeed()
-		seedString := base58.Encode(seed[:])
+		seedString := iotago.EncodeHex(seed[:])
 		viper.Set("wallet.seed", seedString)
 		log.Check(viper.WriteConfig())
 
-		log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
-		log.Printf("\nIMPORTANT: wasp-cli is alpha phase. The seed is currently being stored " +
-			"in a plain text file which is NOT secure. Do not use this seed to store funds " +
-			"in the mainnet!\n")
-		log.Verbosef("\nSeed: %s\n", seedString)
+		model := &InitModel{
+			ConfigPath: config.ConfigPath,
+		}
+
+		if log.VerboseFlag {
+			verboseOutputs := make(map[string]string)
+			verboseOutputs["Seed"] = seedString
+			model.VerboseOutputs = verboseOutputs
+		}
+
+		log.PrintCLIOutput(model)
 	},
 }
 
@@ -41,7 +47,7 @@ func Load() *Wallet {
 	if seedb58 == "" {
 		log.Fatalf("call `init` first")
 	}
-	seedBytes, err := base58.Decode(seedb58)
+	seedBytes, err := iotago.DecodeHex(seedb58)
 	log.Check(err)
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))
@@ -56,4 +62,22 @@ func (w *Wallet) PrivateKey() *cryptolib.PrivateKey {
 
 func (w *Wallet) Address() iotago.Address {
 	return w.KeyPair.GetPublicKey().AsEd25519Address()
+}
+
+type InitModel struct {
+	ConfigPath     string
+	Message        string
+	VerboseOutputs map[string]string
+}
+
+var _ log.CLIOutput = &InitModel{}
+
+func (i *InitModel) AsText() (string, error) {
+	template := `Initialized wallet seed in {{ .ConfigPath }}
+IMPORTANT: wasp-cli is alpha phase. The seed is currently being stored in a plain text file which is NOT secure. Do not use this seed to store funds in the mainnet
+
+  {{ range $i, $out := .VerboseOutputs }}
+    {{ $i }}: {{ $out}}
+  {{ end }}`
+	return log.ParseCLIOutputTemplate(i, template)
 }

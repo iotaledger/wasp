@@ -1,6 +1,4 @@
 ---
-description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib version of ISC-specific value data types.
-image: /img/logo/WASP_logo_dark.png
 keywords:
 - data types
 - WasmLib
@@ -8,21 +6,35 @@ keywords:
 - proxies
 - map
 - reference
+
+description: The WasmLib provides direct support for the basic value data types that are found in all programming languages, and WasmLib versions of ISC-specific value data types.
+
+image: /img/logo/WASP_logo_dark.png
 ---
+
 # WasmLib Data Types
 
-You will need to manipulate data when creating smart contracts. The WasmLib provides
-direct support for the following value data types:
+You will need to manipulate data with your smart contracts. We distinguish two groups of
+predefined data types that can be used in schema definition files. The WasmLib
+implementations for each supported programming language provide full support for these
+predefined data types. Each predefined data type can be (de)serialized as byte string or
+as human-readable text string.
 
 ## Basic Value Data Types
 
-- `Bool` - boolean value (0 or 1).
+These are mostly simple built-in scalar data types as provided by most programming
+languages. Each integer data type has a clearly defined storage size. The
+[Schema Tool](usage.mdx) will attempt to use the closest matching built-in data type when
+generating code for a specific language.
+
+- `BigInt` - An arbitrary-length unsigned integer.
+- `Bool` - An 8-bit boolean value (0 or 1).
+- `Bytes` - An arbitrary-length byte array.
 - `Int8` - 8-bit signed integer value.
 - `Int16` - 16-bit signed integer value.
 - `Int32` - 32-bit signed integer value.
 - `Int64` - 64-bit signed integer value.
-- `Bytes` - An arbitrary-length byte array.
-- `String` - An UTF-8 encoded string value.
+- `String` - An arbitrary-length UTF-8 encoded string value.
 - `Uint8` - 8-bit unsigned integer value.
 - `Uint16` - 16-bit unsigned integer value.
 - `Uint32` - 32-bit unsigned integer value.
@@ -30,42 +42,39 @@ direct support for the following value data types:
 
 ## ISC-specific Value Data Types
 
-- `Address` - A 33-byte Tangle address.
-- `AgentID` - A 37-byte ISC Agent ID.
-- `ChainID` - A 33-byte ISC Chain ID.
-- `Color` - A 32-byte token color ID.
-- `ContractID` - A 37-byte ISC smart contract ID.
+These are ISC-specific value data types that are needed in the ISC sandbox function calls.
+More detailed explanations about their specific uses can be found in the
+[ISC documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
+. WasmLib provides its own implementations for each of the ISC value data types.
+
+- `Address` - A 33-byte encoded Tangle address.
+- `AgentID` - An ISC Agent ID (Address + Hname).
+- `ChainID` - A 32-byte ISC Chain ID.
 - `Hash` - A 32-byte hash value.
 - `Hname` - A 4-byte unsigned integer hash value derived from a name string.
-- `RequestID` - A 34-byte transaction request ID.
+- `NftID` - A 32-byte ISC NFT ID.
+- `RequestID` - A 34-byte ISC transaction request ID.
+- `TokenID` - A 38-byte ISC token ID.
 
-The first group consists of the basic value data types that are found in all programming
-languages, whereas the second group consists of WasmLib versions of ISC-specific value
-data types. More detailed explanations about their specific uses can be found in the
-[ISC documentation](https://github.com/iotaledger/wasp/blob/develop/documentation/docs/misc/coretypes.md)
-. WasmLib provides its own implementations for each of the ISC value data types. They can
-all be serialized into and deserialized from a byte array. Each value data type can also
-be used as a key in key/value maps.
+## Full Matrix of WasmLib Types
 
-WasmLib implements [value proxies](proxies.mdx#value-proxies) for each value type, as well
-as a set of [container proxies](proxies.mdx#container-proxies),
-[map proxies](proxies.mdx#map-proxies) that allow the value types to be used as key and/or
-stored value and  [array proxies](#array-proxies) for arrays of each of these value types,
-and for arrays of maps.
+WasmLib implements a full set of [value proxies](proxies.mdx#value-proxies) for each
+predefined value type that provide access to data on the ISC host. But there is one aspect
+of this data that we have not considered yet. Some data provided by the host is mutable,
+whereas other data may be immutable. To facilitate this distinction, each value proxy type
+comes in two flavors that reflect this, and make sure that the data can only be used as
+intended.
 
-Another thing to consider is that some data provided by the host is mutable, whereas other
-data may be immutable. To facilitate this distinction, each proxy type comes in two
-flavors that reflect this, and makes sure that the data can only be used as intended.
-The rule is that from an immutable container proxy you can only derive immutable container
-and value proxies. The referenced data can never be changed through immutable proxies.
-Separating these constraints for types into separate proxy types allows the use of
-compile-time type-checking to enforce these constraints. To guard against client code that tries to bypass
-them, the ISC sandbox will also check these constraints at runtime on the host.
-
-## Full Matrix of WasmLib Types (excluding array proxies)
+The rule is that from an immutable container you can only derive immutable container and
+value proxies. The referenced data can never be changed through immutable proxies.
+Separating these constraints for types into separate value proxy types allows the use of
+compile-time type-checking to enforce these constraints. To guard against client code that
+tries to bypass them, the ISC sandbox will also check these constraints at runtime on the
+host.
 
 | ISC type   | WasmLib type      | Mutable proxy           | Immutable proxy           |
 | ---------- | ----------------- | ----------------------- | ------------------------- |
+| BigInt     | Sc**BigInt**      | ScMutable**BigInt**     | ScImmutable**BigInt**     |
 | Bool       | *boolean*         | ScMutable**Bool**       | ScImmutable**Bool**       |
 | Bytes      | *byte array*      | ScMutable**Bytes**      | ScImmutable**Bytes**      |
 | Int8       | *8-bit signed*    | ScMutable**Int8**       | ScImmutable**Int8**       |
@@ -81,42 +90,22 @@ them, the ISC sandbox will also check these constraints at runtime on the host.
 | Address    | Sc**Address**     | ScMutable**Address**    | ScImmutable**Address**    |
 | AgentId    | Sc**AgentId**     | ScMutable**AgentId**    | ScImmutable**AgentId**    |
 | ChainId    | Sc**ChainId**     | ScMutable**ChainId**    | ScImmutable**ChainId**    |
-| Color      | Sc**Color**       | ScMutable**Color**      | ScImmutable**Color**      |
-| Hname      | Sc**Hname**       | ScMutable**Hname**      | ScImmutable**Hname**      |
 | Hash       | Sc**Hash**        | ScMutable**Hash**       | ScImmutable**Hash**       |
-| Map        | Sc**Map**         | ScMutable**Map**        | ScImmutable**Map**        |
+| Hname      | Sc**Hname**       | ScMutable**Hname**      | ScImmutable**Hname**      |
+| NftID      | Sc**NftID**       | ScMutable**NftID**      | ScImmutable**NftID**      |
 | RequestId  | Sc**RequestId**   | ScMutable**RequestId**  | ScImmutable**RequestId**  |
+| TokenID    | Sc**TokenID**     | ScMutable**TokenID**    | ScImmutable**TokenID**    |
 
-The consistent naming makes it easy to remember the type names. Bool, Bytes, String,
-and the integer types are the odd ones out. They are implemented in WasmLib by the
-closest equivalents in the chosen implementation programming language.
+The consistent naming makes it easy to remember the type names. Bool, Bytes, String, and
+the integer types are the odd ones out. They are implemented in WasmLib by the closest
+equivalents in the chosen WasmLib implementation programming language.
 
-## Full Matrix of WasmLib Types for Array Proxies
+The [Schema Tool](usage.mdx) will automatically generate the proper (im)mutable proxies
+from the schema definition. For example, View functions will only be able to access the
+[State](state.mdx) map through immutable proxies. The same goes for the
+[Params](params.mdx) map that was passed into a Func or View, and for the
+[Results](results.mdx) map that was returned from a call to a Func or View.
 
-| ISC type   | Mutable array proxy          | Immutable array proxy          |
-| ---------- | ---------------------------- | ------------------------------ |
-| Bool       | ScMutable**Bool**Array       | ScImmutable**Bool**Array       |
-| Bytes      | ScMutable**Bytes**Array      | ScImmutable**Bytes**Array      |
-| Int8       | ScMutable**Int8**Array       | ScImmutable**Int8**Array       |
-| Int16      | ScMutable**Int16**Array      | ScImmutable**Int16**Array      |
-| Int32      | ScMutable**Int32**Array      | ScImmutable**Int32**Array      |
-| Int64      | ScMutable**Int64**Array      | ScImmutable**Int64**Array      |
-| String     | ScMutable**String**Array     | ScImmutable**String**Array     |
-| Uint8      | ScMutable**Uint8**Array      | ScImmutable**Uint8**Array      |
-| Uint16     | ScMutable**Uint16**Array     | ScImmutable**Uint16**Array     |
-| Uint32     | ScMutable**Uint32**Array     | ScImmutable**Uint32**Array     |
-| Uint64     | ScMutable**Uint64**Array     | ScImmutable**Uint64**Array     |
-|            |                              |                                |
-| Address    | ScMutable**Address**Array    | ScImmutable**Address**Array    |
-| AgentId    | ScMutable**AgentId**Array    | ScImmutable**AgentId**Array    |
-| ChainId    | ScMutable**ChainId**Array    | ScImmutable**ChainId**Array    |
-| Color      | ScMutable**Color**Array      | ScImmutable**Color**Array      |
-| Hname      | ScMutable**Hname**Array      | ScImmutable**Hname**Array      |
-| Hash       | ScMutable**Hash**Array       | ScImmutable**Hash**Array       |
-| Map        | ScMutable**Map**Array        | ScImmutable**Map**Array        |
-| RequestId  | ScMutable**RequestId**Array  | ScImmutable**RequestId**Array  |
 
-Again, consistency in naming makes them easy to remember.
-
-In the next section we will show how the smart contract function call context is
-structured in WasmLib-compatible smart contract code.
+In the next section we will show how use these predefined types to create user-defined
+[Structured Data Types](structs.mdx).

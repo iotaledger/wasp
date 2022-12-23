@@ -1,47 +1,49 @@
 package buffered
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sort"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/mr-tron/base58"
 )
 
-// BufferedKVStoreAccess is a KVStore backed by a given KVStoreReader. Writes are cached in-memory;
+// BufferedKVStore is a KVStore backed by a given KVStoreReader. Writes are cached in-memory;
 // reads are delegated to the backing store for unmodified keys.
-type BufferedKVStoreAccess struct {
+type BufferedKVStore struct {
 	r    kv.KVStoreReader
 	muts *Mutations
 }
 
-func NewBufferedKVStoreAccess(r kv.KVStoreReader) *BufferedKVStoreAccess {
-	return &BufferedKVStoreAccess{
+func NewBufferedKVStore(r kv.KVStoreReader) *BufferedKVStore {
+	return &BufferedKVStore{
 		r:    r,
 		muts: NewMutations(),
 	}
 }
 
-func (b *BufferedKVStoreAccess) Copy() *BufferedKVStoreAccess {
-	return &BufferedKVStoreAccess{
+func NewBufferedKVStoreForMutations(r kv.KVStoreReader, m *Mutations) *BufferedKVStore {
+	return &BufferedKVStore{
+		r:    r,
+		muts: m,
+	}
+}
+
+func (b *BufferedKVStore) Clone() *BufferedKVStore {
+	return &BufferedKVStore{
 		r:    b.r,
 		muts: b.muts.Clone(),
 	}
 }
 
-func (b *BufferedKVStoreAccess) Mutations() *Mutations {
+func (b *BufferedKVStore) Mutations() *Mutations {
 	return b.muts
-}
-
-func (b *BufferedKVStoreAccess) ClearMutations() {
-	b.muts = NewMutations()
 }
 
 // DangerouslyDumpToDict returns a Dict with the whole contents of the
 // backing store + applied mutations.
-func (b *BufferedKVStoreAccess) DangerouslyDumpToDict() dict.Dict {
+func (b *BufferedKVStore) DangerouslyDumpToDict() dict.Dict {
 	ret := dict.New()
 	err := b.Iterate("", func(key kv.Key, value []byte) bool {
 		ret.Set(key, value)
@@ -54,15 +56,14 @@ func (b *BufferedKVStoreAccess) DangerouslyDumpToDict() dict.Dict {
 }
 
 // iterates over all key-value pairs in KVStore
-func (b *BufferedKVStoreAccess) DangerouslyDumpToString() string {
-	ret := "         BufferedKVStoreAccess:\n"
+func (b *BufferedKVStore) DangerouslyDumpToString() string {
+	ret := "         BufferedKVStore:\n"
 	for k, v := range b.DangerouslyDumpToDict() {
 		ret += fmt.Sprintf(
-			"           [%s] 0x%s: 0x%s (base58: %s)\n",
+			"           [%s] %s: %s\n",
 			b.flag(k),
-			slice(hex.EncodeToString([]byte(k))),
-			slice(hex.EncodeToString(v)),
-			slice(base58.Encode(v)),
+			slice(iotago.EncodeHex([]byte(k))),
+			slice(iotago.EncodeHex(v)),
 		)
 	}
 	return ret
@@ -75,22 +76,22 @@ func slice(s string) string {
 	return s
 }
 
-func (b *BufferedKVStoreAccess) flag(k kv.Key) string {
+func (b *BufferedKVStore) flag(k kv.Key) string {
 	if b.muts.Contains(k) {
 		return "+"
 	}
 	return " "
 }
 
-func (b *BufferedKVStoreAccess) Set(key kv.Key, value []byte) {
+func (b *BufferedKVStore) Set(key kv.Key, value []byte) {
 	b.muts.Set(key, value)
 }
 
-func (b *BufferedKVStoreAccess) Del(key kv.Key) {
+func (b *BufferedKVStore) Del(key kv.Key) {
 	b.muts.Del(key)
 }
 
-func (b *BufferedKVStoreAccess) Get(key kv.Key) ([]byte, error) {
+func (b *BufferedKVStore) Get(key kv.Key) ([]byte, error) {
 	v, ok := b.muts.Get(key)
 	if ok {
 		return v, nil
@@ -98,11 +99,11 @@ func (b *BufferedKVStoreAccess) Get(key kv.Key) ([]byte, error) {
 	return b.r.Get(key)
 }
 
-func (b *BufferedKVStoreAccess) MustGet(key kv.Key) []byte {
+func (b *BufferedKVStore) MustGet(key kv.Key) []byte {
 	return kv.MustGet(b, key)
 }
 
-func (b *BufferedKVStoreAccess) Has(key kv.Key) (bool, error) {
+func (b *BufferedKVStore) Has(key kv.Key) (bool, error) {
 	v, ok := b.muts.Get(key)
 	if ok {
 		return v != nil, nil
@@ -110,11 +111,11 @@ func (b *BufferedKVStoreAccess) Has(key kv.Key) (bool, error) {
 	return b.r.Has(key)
 }
 
-func (b *BufferedKVStoreAccess) MustHas(key kv.Key) bool {
+func (b *BufferedKVStore) MustHas(key kv.Key) bool {
 	return kv.MustHas(b, key)
 }
 
-func (b *BufferedKVStoreAccess) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+func (b *BufferedKVStore) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	var err error
 	err2 := b.IterateKeys(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -130,11 +131,11 @@ func (b *BufferedKVStoreAccess) Iterate(prefix kv.Key, f func(key kv.Key, value 
 	return err
 }
 
-func (b *BufferedKVStoreAccess) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+func (b *BufferedKVStore) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
 	kv.MustIterate(b, prefix, f)
 }
 
-func (b *BufferedKVStoreAccess) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+func (b *BufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	for k := range b.muts.Sets {
 		if !k.HasPrefix(prefix) {
 			continue
@@ -151,7 +152,7 @@ func (b *BufferedKVStoreAccess) IterateKeys(prefix kv.Key, f func(key kv.Key) bo
 	})
 }
 
-func (b *BufferedKVStoreAccess) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+func (b *BufferedKVStore) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
 	var err error
 	err2 := b.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -167,11 +168,11 @@ func (b *BufferedKVStoreAccess) IterateSorted(prefix kv.Key, f func(key kv.Key, 
 	return err
 }
 
-func (b *BufferedKVStoreAccess) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+func (b *BufferedKVStore) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
 	kv.MustIterateSorted(b, prefix, f)
 }
 
-func (b *BufferedKVStoreAccess) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+func (b *BufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
 	var keys []kv.Key
 
 	for k := range b.muts.Sets {
@@ -201,10 +202,10 @@ func (b *BufferedKVStoreAccess) IterateKeysSorted(prefix kv.Key, f func(key kv.K
 	return nil
 }
 
-func (b *BufferedKVStoreAccess) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+func (b *BufferedKVStore) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(b, prefix, f)
 }
 
-func (b *BufferedKVStoreAccess) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+func (b *BufferedKVStore) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeysSorted(b, prefix, f)
 }

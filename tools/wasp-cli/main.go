@@ -4,16 +4,18 @@
 package main
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
 	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
@@ -31,6 +33,8 @@ NOTE: this is alpha software, only suitable for testing purposes.`,
 }
 
 func init() {
+	rootCmd.AddCommand(completion.Command(rootCmd.Root().Name()))
+
 	authentication.Init(rootCmd)
 	log.Init(rootCmd)
 	config.Init(rootCmd)

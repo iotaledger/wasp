@@ -1,23 +1,21 @@
 package state
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/chain/chainutil"
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/chainutil"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 type callViewService struct {
@@ -33,7 +31,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.POST(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
 		SetSummary("Call a view function on a contract by name").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -41,7 +39,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.CallViewByName(":chainID", ":contractHname", ":fname"), s.handleCallViewByName).
 		SetSummary("Call a view function on a contract by name").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -49,7 +47,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.POST(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
 		SetSummary("Call a view function on a contract by Hname").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "functionHname", "Function Hname").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -57,7 +55,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.CallViewByHname(":chainID", ":contractHname", ":functionHname"), s.handleCallViewByHname).
 		SetSummary("Call a view function on a contract by Hname").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "functionHname", "Function Hname").
 		AddParamBody(dictExample, "params", "Parameters", false).
@@ -65,7 +63,7 @@ func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 
 	server.GET(routes.StateGet(":chainID", ":key"), s.handleStateGet).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
-		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID").
 		AddParamPath("", "key", "Key (hex-encoded)").
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
@@ -90,7 +88,12 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	ret, err := chainutil.CallView(theChain, contractHname, functionHname, params)
+	// TODO should blockIndex be an optional parameter of this endpoint?
+	latestBlock, err := theChain.GetStateReader().LatestBlockIndex()
+	if err != nil {
+		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
+	}
+	ret, err := chainutil.CallView(latestBlock, theChain, contractHname, functionHname, params)
 	if err != nil {
 		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -117,7 +120,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
 
-	key, err := hex.DecodeString(c.Param("key"))
+	key, err := iotago.DecodeHex(c.Param("key"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("cannot parse hex-encoded key: %+v", c.Param("key")))
 	}
@@ -127,17 +130,15 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	var ret []byte
-	err = optimism.RetryOnStateInvalidated(func() error {
-		var err error
-		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
-		return err
-	})
+	state, err := theChain.GetStateReader().LatestState()
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
-		if errors.Is(err, coreutil.ErrorStateInvalidated) {
-			return httperrors.Conflict(reason)
-		}
+		return httperrors.ServerError(reason)
+	}
+
+	ret, err := state.Get(kv.Key(key))
+	if err != nil {
+		reason := fmt.Sprintf("View call failed: %v", err)
 		return httperrors.ServerError(reason)
 	}
 

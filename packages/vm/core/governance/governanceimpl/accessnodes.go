@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -88,7 +89,7 @@ func changeAccessNodes(ctx isc.Sandbox) dict.Dict {
 			accessNodes.MustDelAt(pubKey)
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.MustSetAt(pubKey, make([]byte, 0))
+			accessNodes.MustSetAt(pubKey, codec.EncodeBool(true))
 			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.MustDelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.MustDelAt(pubKey)
@@ -111,11 +112,11 @@ func getChainNodes(ctx isc.SandboxView) dict.Dict {
 	res := dict.New()
 	ac := collections.NewMap(res, governance.ParamGetChainNodesAccessNodeCandidates)
 	an := collections.NewMap(res, governance.ParamGetChainNodesAccessNodes)
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodeCandidates).MustIterate(func(key, value []byte) bool {
 		ac.MustSetAt(key, value)
 		return true
 	})
-	collections.NewMapReadOnly(ctx.State(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
+	collections.NewMapReadOnly(ctx.StateR(), governance.VarAccessNodes).MustIterate(func(key, value []byte) bool {
 		an.MustSetAt(key, value)
 		return true
 	})

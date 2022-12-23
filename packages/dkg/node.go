@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
+	"go.dedis.ch/kyber/v3/suites"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/sign/eddsa"
-	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 )
 
 type NodeProvider func() *Node
@@ -27,18 +27,18 @@ type NodeProvider func() *Node
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity     *cryptolib.KeyPair               // Keys of the current node.
-	secKey       kyber.Scalar                     // Derived from the identity.
-	pubKey       kyber.Point                      // Derived from the identity.
-	blsSuite     Suite                            // Cryptography to use for the Pairing based operations.
-	edSuite      suites.Suite                     // Cryptography to use for the Ed25519 based operations.
-	netProvider  peering.NetworkProvider          // Network to communicate through.
-	registry     registry.DKShareRegistryProvider // Where to store the generated keys.
-	processes    map[string]*proc                 // Only for introspection.
-	procLock     *sync.RWMutex                    // To guard access to the process pool.
-	initMsgQueue chan *initiatorInitMsgIn         // Incoming events processed async.
-	attachID     interface{}                      // Peering attach ID
-	log          *logger.Logger
+	identity                *cryptolib.KeyPair               // Keys of the current node.
+	secKey                  kyber.Scalar                     // Derived from the identity.
+	pubKey                  kyber.Point                      // Derived from the identity.
+	blsSuite                Suite                            // Cryptography to use for the Pairing based operations.
+	edSuite                 suites.Suite                     // Cryptography to use for the Ed25519 based operations.
+	netProvider             peering.NetworkProvider          // Network to communicate through.
+	dkShareRegistryProvider registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes               map[string]*proc                 // Only for introspection.
+	procLock                *sync.RWMutex                    // To guard access to the process pool.
+	initMsgQueue            chan *initiatorInitMsgIn         // Incoming events processed async.
+	attachID                interface{}                      // Peering attach ID
+	log                     *logger.Logger
 }
 
 // Init creates new node, that can participate in the DKG procedure.
@@ -46,25 +46,25 @@ type Node struct {
 func NewNode(
 	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
-	reg registry.DKShareRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
-	kyberEdDSSA := eddsa.EdDSA{}
-	if err := kyberEdDSSA.UnmarshalBinary(identity.GetPrivateKey().AsBytes()); err != nil {
+	kyberKeyPair, err := identity.GetPrivateKey().AsKyberKeyPair()
+	if err != nil {
 		return nil, err
 	}
 	n := Node{
-		identity:     identity,
-		secKey:       kyberEdDSSA.Secret,
-		pubKey:       kyberEdDSSA.Public,
-		blsSuite:     tcrypto.DefaultBLSSuite(),
-		edSuite:      edwards25519.NewBlakeSHA256Ed25519(),
-		netProvider:  netProvider,
-		registry:     reg,
-		processes:    make(map[string]*proc),
-		procLock:     &sync.RWMutex{},
-		initMsgQueue: make(chan *initiatorInitMsgIn),
-		log:          log,
+		identity:                identity,
+		secKey:                  kyberKeyPair.Private,
+		pubKey:                  kyberKeyPair.Public,
+		blsSuite:                tcrypto.DefaultBLSSuite(),
+		edSuite:                 edwards25519.NewBlakeSHA256Ed25519(),
+		netProvider:             netProvider,
+		dkShareRegistryProvider: dkShareRegistryProvider,
+		processes:               make(map[string]*proc),
+		procLock:                &sync.RWMutex{},
+		initMsgQueue:            make(chan *initiatorInitMsgIn),
+		log:                     log,
 	}
 	n.attachID = netProvider.Attach(&initPeeringID, peering.PeerMessageReceiverDkgInit, n.receiveInitMessage)
 	go n.recvLoop()
@@ -98,7 +98,7 @@ func (n *Node) Close() {
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
 //
-//nolint:funlen,gocritic
+//nolint:funlen,gocritic,gocyclo
 func (n *Node) GenerateDistributedKey(
 	peerPubs []*cryptolib.PublicKey,
 	threshold uint16,
@@ -110,7 +110,7 @@ func (n *Node) GenerateDistributedKey(
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
-	// Some validationfor the parameters.
+	// Some validation for the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}
@@ -250,6 +250,7 @@ func (n *Node) GenerateDistributedKey(
 		edSharedPublic,
 		edPublicShares,
 		n.blsSuite,
+		uint16(deriveBlsThreshold(&initiatorInitMsg{peerPubs: peerPubs})), // TODO: Fix it.
 		blsSharedPublic,
 		blsPublicShares,
 	)

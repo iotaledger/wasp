@@ -3,9 +3,12 @@ package chain
 import (
 	"regexp"
 
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var HTTP404ErrRegexp = regexp.MustCompile(`"Code":404`)
@@ -22,7 +25,7 @@ func activateCmd() *cobra.Command {
 				nodes = getAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				client := Client(nodeIdx)
+				client := Client(config.WaspAPI(nodeIdx))
 				r, err := client.WaspClient.GetChainInfo(chainID)
 
 				if err != nil && !HTTP404ErrRegexp.MatchString(err.Error()) {
@@ -30,14 +33,14 @@ func activateCmd() *cobra.Command {
 				}
 				if r != nil && r.Active {
 					continue
-				} else {
-					log.Check(
-						client.WaspClient.PutChainRecord(&registry.ChainRecord{
-							ChainID: *chainID,
-						}),
-					)
 				}
-				log.Check(client.WaspClient.ActivateChain(chainID))
+				if r == nil {
+					log.Check(
+						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{})),
+					)
+				} else {
+					log.Check(client.WaspClient.ActivateChain(chainID))
+				}
 			}
 		},
 	}
@@ -59,7 +62,7 @@ func deactivateCmd() *cobra.Command {
 				nodes = getAllWaspNodes()
 			}
 			for _, nodeIdx := range nodes {
-				log.Check(Client(nodeIdx).WaspClient.DeactivateChain(chainID))
+				log.Check(Client(config.WaspAPI(nodeIdx)).WaspClient.DeactivateChain(chainID))
 			}
 		},
 	}

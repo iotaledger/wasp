@@ -1,10 +1,10 @@
 package util
 
 import (
-	"encoding/hex"
 	"math/big"
 	"strings"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -12,13 +12,15 @@ import (
 const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
-	ret, err := hex.DecodeString(s)
-	log.Check(err)
+	ret, err := iotago.DecodeHex(s)
+	if err != nil {
+		log.Fatalf("Invalid token id: %s", s)
+	}
 	return ret
 }
 
 func ParseFungibleTokens(args []string) *isc.FungibleTokens {
-	tokens := isc.NewEmptyAssets()
+	tokens := isc.NewEmptyFungibleTokens()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
@@ -27,10 +29,10 @@ func ParseFungibleTokens(args []string) *isc.FungibleTokens {
 		// In the past we would indicate base tokens as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
 		// backward compatible for now and allow both
-		if strings.ToLower(parts[0]) == BaseTokenStr {
-			parts[0] = ""
+		tokenIDBytes := isc.BaseTokenID
+		if strings.ToLower(parts[0]) != BaseTokenStr {
+			tokenIDBytes = TokenIDFromString(parts[0])
 		}
-		tokenIDBytes := TokenIDFromString(parts[0])
 
 		amount, ok := new(big.Int).SetString(parts[1], 10)
 		if !ok {

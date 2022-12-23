@@ -3,18 +3,19 @@ package multiclient
 import (
 	"time"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/isc"
-	"golang.org/x/xerrors"
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes
-func (m *MultiClient) WaitUntilRequestProcessed(chainID *isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
+func (m *MultiClient) WaitUntilRequestProcessed(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
-	m.Timeout = timeout + 10*time.Second
+	m.Timeout = timeout
 
 	var receipt *isc.Receipt
 	var err error
@@ -27,7 +28,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID *isc.ChainID, reqID isc.
 
 // WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
 // but also checks the receipt and return an error if the request was processed with an error
-func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID *isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
+func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID, reqID isc.RequestID, timeout time.Duration) (*isc.Receipt, error) {
 	receipt, err := m.WaitUntilRequestProcessed(chainID, reqID, timeout)
 	if err != nil {
 		return receipt, err
@@ -40,11 +41,11 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID *isc.ChainID
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID *isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
-	m.Timeout = timeout + 10*time.Second
+	m.Timeout = timeout
 	var receipts []*isc.Receipt
 	var err error
 	err = m.Do(func(i int, w *client.WaspClient) error {
@@ -56,7 +57,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID *isc.ChainID, tx *io
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
 // but also checks the receipts and return an error if any of the requests was processed with an error
-func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID *isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.ChainID, tx *iotago.Transaction, timeout time.Duration) ([]*isc.Receipt, error) {
 	receipts, err := m.WaitUntilAllRequestsProcessed(chainID, tx, timeout)
 	if err != nil {
 		return receipts, err

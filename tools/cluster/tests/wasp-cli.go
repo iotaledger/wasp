@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -13,9 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/stretchr/testify/require"
 )
 
 type WaspCLITest struct {
@@ -28,7 +28,7 @@ type WaspCLITest struct {
 func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	clu := newCluster(t, opt...)
 
-	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
+	dir, err := os.MkdirTemp(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)
 	require.NoError(t, err)
 	t.Cleanup(func() {
@@ -51,8 +51,8 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	}
 
 	requestFundstext := w.Run("request-funds")
-	// latest line should print something like: "Request funds for address atoi...: success"
-	expectedRegexp := regexp.MustCompile("Request funds for address (.{64}): success")
+	// regex example: Request funds for address atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx: success
+	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*([a-z]{1,4}1[a-z0-9]{59}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
 	require.Len(t, rs, 2)
 	_, addr, err := iotago.ParseBech32(rs[1])
@@ -91,7 +91,7 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		w.T.Fatal(
+		panic(
 			fmt.Errorf(
 				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
 				strings.Join(args, " "),
@@ -102,7 +102,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
 	outStr = strings.TrimRight(outStr, "\n")
-	return strings.Split(outStr, "\n")
+	outLines := strings.Split(outStr, "\n")
+	w.T.Logf("OUTPUT #lines=%v", len(outLines))
+	for _, outLine := range outLines {
+		w.T.Logf("OUTPUT: %v", outLine)
+	}
+	return outLines
 }
 
 func (w *WaspCLITest) Run(args ...string) []string {

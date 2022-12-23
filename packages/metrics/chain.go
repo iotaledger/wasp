@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type StateManagerMetrics interface {
@@ -22,8 +23,7 @@ type ChainMetrics interface {
 }
 
 type MempoolMetrics interface {
-	CountOffLedgerRequestIn()
-	CountOnLedgerRequestIn()
+	CountRequestIn(isc.Request)
 	CountRequestOut()
 	RecordRequestProcessingTime(isc.RequestID, time.Duration)
 	CountBlocksPerChain()
@@ -36,20 +36,20 @@ type ConsensusMetrics interface {
 
 type chainMetricsObj struct {
 	metrics *Metrics
-	chainID *isc.ChainID
+	chainID isc.ChainID
 }
 
 var (
 	_ ChainMetrics = &chainMetricsObj{}
-	_ ChainMetrics = &defaultChainMetrics{}
+	_ ChainMetrics = &emptyChainMetrics{}
 )
 
-func (c *chainMetricsObj) CountOffLedgerRequestIn() {
-	c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
-}
-
-func (c *chainMetricsObj) CountOnLedgerRequestIn() {
-	c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+func (c *chainMetricsObj) CountRequestIn(req isc.Request) {
+	if req.IsOffLedger() {
+		c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+	} else {
+		c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+	}
 }
 
 func (c *chainMetricsObj) CountRequestOut() {
@@ -92,30 +92,28 @@ func (c *chainMetricsObj) LastSeenStateIndex(stateIndex uint32) {
 	c.metrics.lastSeenStateIndex.With(prometheus.Labels{"chain": c.chainID.String()}).Set(float64(stateIndex))
 }
 
-type defaultChainMetrics struct{}
+type emptyChainMetrics struct{}
 
-func DefaultChainMetrics() ChainMetrics {
-	return &defaultChainMetrics{}
+func EmptyChainMetrics() ChainMetrics {
+	return &emptyChainMetrics{}
 }
 
-func (m *defaultChainMetrics) CountOffLedgerRequestIn() {}
+func (m *emptyChainMetrics) CountRequestIn(_ isc.Request) {}
 
-func (m *defaultChainMetrics) CountOnLedgerRequestIn() {}
+func (m *emptyChainMetrics) CountRequestOut() {}
 
-func (m *defaultChainMetrics) CountRequestOut() {}
+func (m *emptyChainMetrics) CountMessages() {}
 
-func (m *defaultChainMetrics) CountMessages() {}
+func (m *emptyChainMetrics) CurrentStateIndex(stateIndex uint32) {}
 
-func (m *defaultChainMetrics) CurrentStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
 
-func (m *defaultChainMetrics) RecordRequestProcessingTime(_ isc.RequestID, _ time.Duration) {}
+func (m *emptyChainMetrics) RecordVMRunTime(_ time.Duration) {}
 
-func (m *defaultChainMetrics) RecordVMRunTime(_ time.Duration) {}
+func (m *emptyChainMetrics) CountVMRuns() {}
 
-func (m *defaultChainMetrics) CountVMRuns() {}
+func (m *emptyChainMetrics) CountBlocksPerChain() {}
 
-func (m *defaultChainMetrics) CountBlocksPerChain() {}
+func (m *emptyChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
 
-func (m *defaultChainMetrics) RecordBlockSize(_ uint32, _ float64) {}
-
-func (m *defaultChainMetrics) LastSeenStateIndex(stateIndex uint32) {}
+func (m *emptyChainMetrics) LastSeenStateIndex(stateIndex uint32) {}

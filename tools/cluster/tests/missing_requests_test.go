@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMissingRequests(t *testing.T) {
@@ -20,20 +21,20 @@ func TestMissingRequests(t *testing.T) {
 	}
 	clu := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
 	cmt := []int{0, 1, 2, 3}
-	addr, err := clu.RunDKG(cmt, 4)
+	threshold := uint16(4)
+	addr, err := clu.RunDKG(cmt, threshold)
 	require.NoError(t, err)
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt, 4, addr)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt, threshold, addr)
 	require.NoError(t, err)
 	chainID := chain.ChainID
 
-	e := newChainEnv(t, clu, chain)
+	chEnv := newChainEnv(t, clu, chain)
+	chEnv.deployNativeIncCounterSC()
 
-	e.deployNativeIncCounterSC()
+	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
-
-	userWallet, _, err := e.Clu.NewKeyPairWithFunds()
+	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
@@ -65,5 +66,5 @@ func TestMissingRequests(t *testing.T) {
 	//-------
 
 	// expect request to be successful, as node #3 must ask for the missing request from other nodes
-	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, chEnv.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 }

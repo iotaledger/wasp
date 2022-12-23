@@ -1,11 +1,11 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"golang.org/x/xerrors"
 )
 

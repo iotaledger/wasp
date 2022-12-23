@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/chainaccount.tmpl
@@ -17,7 +18,7 @@ var tplChainAccount string
 func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/account/:agentid", d.handleChainAccount)
 	route.Name = "chainAccount"
-	r[route.Path] = d.makeTemplate(e, tplChainAccount, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainAccount)
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
@@ -58,7 +59,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *isc.ChainID
+	ChainID isc.ChainID
 	AgentID isc.AgentID
 
 	Balances *isc.FungibleTokens

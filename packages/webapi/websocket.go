@@ -3,11 +3,12 @@ package webapi
 import (
 	_ "embed"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 )
 
 type webSocketAPI struct {
@@ -16,7 +17,7 @@ type webSocketAPI struct {
 
 func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocketAPI {
 	api := &webSocketAPI{
-		pws: publisherws.New(log, []string{"state", "vmmsg"}),
+		pws: publisherws.New(log, []string{"state", "contract"}),
 	}
 
 	e.GET("/chain/:chainid/ws", api.handleWebSocket)

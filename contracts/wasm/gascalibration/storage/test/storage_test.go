@@ -7,11 +7,13 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storage"
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/storage/go/storageimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 var force = flag.Bool("force", false, "")
@@ -22,7 +24,7 @@ func TestCallF(t *testing.T) {
 	}
 
 	wasmlib.ConnectHost(nil)
-	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storage.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, storage.ScName, storageimpl.OnDispatch)
 	require.NoError(t, ctx.Err)
 
 	results := make(map[uint32]uint64)

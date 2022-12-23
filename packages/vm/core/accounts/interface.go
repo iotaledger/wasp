@@ -1,8 +1,9 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
@@ -18,6 +19,7 @@ var (
 	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
 	ViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
 	ViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
+	ViewAccountFoundries         = coreutil.ViewFunc("accountFoundries")
 	ViewNFTData                  = coreutil.ViewFunc("nftData")
 
 	// Funcs

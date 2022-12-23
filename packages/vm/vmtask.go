@@ -3,11 +3,10 @@ package vm
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -15,7 +14,7 @@ import (
 )
 
 type VMRunner interface {
-	Run(task *VMTask)
+	Run(task *VMTask) error
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
@@ -24,11 +23,10 @@ type VMRunner interface {
 type VMTask struct {
 	// INPUTS:
 
-	ACSSessionID       uint64
 	Processors         *processors.Cache
 	AnchorOutput       *iotago.AliasOutput
 	AnchorOutputID     iotago.OutputID
-	SolidStateBaseline coreutil.StateBaseline
+	Store              state.Store
 	Requests           []isc.Request
 	TimeAssumption     time.Time
 	Entropy            hashing.HashValue
@@ -39,13 +37,12 @@ type VMTask struct {
 
 	// INPUTS_OUTPUTS:
 
-	// VirtualStateAccess is the initial state of the chain, which is also
-	// mutated during the execution of the task
-	VirtualStateAccess state.VirtualStateAccess
-	Log                *logger.Logger
+	Log *logger.Logger
 
 	// OUTPUTS:
 
+	// the uncommitted state resulting from the execution of the requests
+	StateDraft state.StateDraft
 	// RotationAddress is the next address after a rotation, or nil if there is no rotation
 	RotationAddress iotago.Address
 	// TransactionEssence is the transaction essence for the next block,
@@ -55,8 +52,6 @@ type VMTask struct {
 	ResultInputsCommitment []byte
 	// Results contains one result for each non-skipped request
 	Results []*RequestResult
-	// If not nil, VMError is a fatal error that prevented the execution of the task
-	VMError error
 	// If maintenance mode is enabled, only requests to the governance contract will be executed
 	MaintenanceModeEnabled bool
 }

@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -35,6 +36,14 @@ func StorageDepositAssumptionFromBytes(data []byte) (*StorageDepositAssumption, 
 	return ret, nil
 }
 
+func (d *StorageDepositAssumption) Clone() *StorageDepositAssumption {
+	return &StorageDepositAssumption{
+		AnchorOutput:      d.AnchorOutput,
+		NativeTokenOutput: d.NativeTokenOutput,
+		NFTOutput:         d.NFTOutput,
+	}
+}
+
 func (d *StorageDepositAssumption) Bytes() []byte {
 	return marshalutil.New().
 		WriteUint64(d.AnchorOutput).
@@ -63,7 +72,7 @@ func aliasOutputStorageDeposit() uint64 {
 	aliasOutput := &iotago.AliasOutput{
 		AliasID:       iotago.AliasID{},
 		Amount:        1000,
-		StateMetadata: state.OriginL1Commitment().Bytes(),
+		StateMetadata: state.L1CommitmentNil.Bytes(),
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: addr},
 			&iotago.GovernorAddressUnlockCondition{Address: addr},

@@ -53,13 +53,14 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	contractRegistry := collections.NewMap(state, root.StateVarContractRegistry)
 	creator := stateAnchor.Sender
 
-	callerHname, _ := isc.HnameFromAgentID(ctx.Caller())
-	callerAddress, _ := isc.AddressFromAgentID(ctx.Caller())
+	sender := ctx.Request().SenderAccount()
+	senderHname, _ := isc.HnameFromAgentID(sender)
+	senderAddress, _ := isc.AddressFromAgentID(sender)
 	initConditionsCorrect := stateAnchor.IsOrigin &&
 		state.MustGet(root.StateVarStateInitialized) == nil &&
-		callerHname == 0 &&
+		senderHname == 0 &&
 		creator != nil &&
-		creator.Equal(callerAddress) &&
+		creator.Equal(senderAddress) &&
 		contractRegistry.MustLen() == 0
 	ctx.Requiref(initConditionsCorrect, "root.initialize.fail: %v", root.ErrChainInitConditionsFailed)
 
@@ -87,7 +88,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 	storeAndInitCoreContract(ctx, governance.Contract, dict.Dict{
 		governance.ParamChainID: codec.EncodeChainID(ctx.ChainID()),
 		// chain owner is whoever creates origin and sends the 'init' request
-		governance.ParamChainOwner:     ctx.Caller().Bytes(),
+		governance.ParamChainOwner:     sender.Bytes(),
 		governance.ParamDescription:    ctx.Params().MustGet(governance.ParamDescription),
 		governance.ParamFeePolicyBytes: ctx.Params().MustGet(governance.ParamFeePolicyBytes),
 	})
@@ -191,7 +192,7 @@ func requireDeployPermissions(ctx isc.Sandbox) dict.Dict {
 // - ParamData
 func findContract(ctx isc.SandboxView) dict.Dict {
 	hname := ctx.Params().MustGetHname(root.ParamHname)
-	rec := root.FindContract(ctx.State(), hname)
+	rec := root.FindContract(ctx.StateR(), hname)
 	ret := dict.New()
 	found := rec != nil
 	ret.Set(root.ParamContractFound, codec.EncodeBool(found))
@@ -202,7 +203,7 @@ func findContract(ctx isc.SandboxView) dict.Dict {
 }
 
 func getContractRecords(ctx isc.SandboxView) dict.Dict {
-	src := root.GetContractRegistryR(ctx.State())
+	src := root.GetContractRegistryR(ctx.StateR())
 
 	ret := dict.New()
 	dst := collections.NewMap(ret, root.StateVarContractRegistry)

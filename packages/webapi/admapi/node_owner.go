@@ -7,22 +7,25 @@ import (
 	"bytes"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider) {
+func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, nodeIdentityProvider registry.NodeIdentityProvider, nodeOwnerAddresses []string) {
+	nos := &nodeOwnerService{
+		nodeOwnerAddresses: nodeOwnerAddresses,
+	}
 	addCtx := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Set("reg", registryProvider)
+			c.Set("reg", nodeIdentityProvider)
 			return next(c)
 		}
 	}
@@ -33,14 +36,18 @@ func addNodeOwnerEndpoints(adm echoswagger.ApiGroup, registryProvider registry.P
 	resExample := model.NodeOwnerCertificateResponse{
 		Certificate: model.NewBytes([]byte{0, 1, 17, 19}),
 	}
-	adm.POST(routes.AdmNodeOwnerCertificate(), handleAdmNodeOwnerCertificate, addCtx).
+	adm.POST(routes.AdmNodeOwnerCertificate(), nos.handleAdmNodeOwnerCertificate, addCtx).
 		AddParamBody(reqExample, "Request", "Certificate request", true).
 		AddResponse(http.StatusOK, "Generated certificate.", resExample, nil).
 		SetSummary("Provides a certificate, if the node recognizes the owner.")
 }
 
-func handleAdmNodeOwnerCertificate(c echo.Context) error {
-	registryProvider := c.Get("reg").(registry.Provider)
+type nodeOwnerService struct {
+	nodeOwnerAddresses []string
+}
+
+func (n *nodeOwnerService) handleAdmNodeOwnerCertificate(c echo.Context) error {
+	nodeIdentityProvider := c.Get("reg").(registry.NodeIdentityProvider)
 
 	var req model.NodeOwnerCertificateRequest
 	if err := c.Bind(&req); err != nil {
@@ -49,7 +56,7 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 	reqOwnerAddress := req.OwnerAddress.Address()
 	reqNodePubKeyBytes := req.NodePubKey.Bytes()
 
-	nodeIdentity := registryProvider().GetNodeIdentity()
+	nodeIdentity := nodeIdentityProvider.NodeIdentity()
 
 	//
 	// Check, if supplied node PubKey matches.
@@ -59,9 +66,8 @@ func handleAdmNodeOwnerCertificate(c echo.Context) error {
 
 	//
 	// Check, if owner is presented in the configuration.
-	nodeOwnerAddresses := parameters.GetStringSlice(parameters.NodeOwnerAddresses)
 	ownerAuthorized := false
-	for _, nodeOwnerAddressStr := range nodeOwnerAddresses {
+	for _, nodeOwnerAddressStr := range n.nodeOwnerAddresses {
 		_, nodeOwnerAddress, err := iotago.ParseBech32(nodeOwnerAddressStr)
 		if err != nil {
 			continue

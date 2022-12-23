@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 )
 
 func TestHornetStartup(t *testing.T) {
@@ -35,16 +36,11 @@ func TestHornetStartup(t *testing.T) {
 	myAddress := myKeyPair.GetPublicKey().AsEd25519Address()
 
 	nc := nodeclient.New(l1.Config.APIAddress)
-	nodeEvt, err := nc.EventAPI(ctx)
+	_, err := nc.Info(ctx)
 	require.NoError(t, err)
-	require.NoError(t, nodeEvt.Connect(ctx))
-	l1Info, err := nc.Info(ctx)
-	require.NoError(t, err)
-
-	myAddressOutputsCh, _ := nodeEvt.OutputsByUnlockConditionAndAddress(myAddress, l1Info.Protocol.Bech32HRP, nodeclient.UnlockConditionAny)
 
 	log := testlogger.NewSilentLogger(t.Name(), true)
-	client := nodeconn.NewL1Client(l1.Config, log)
+	client := l1connection.NewClient(l1.Config, log)
 
 	initialOutputCount := mustOutputCount(client, myAddress)
 	//
@@ -57,15 +53,12 @@ func TestHornetStartup(t *testing.T) {
 			break
 		}
 	}
-	t.Logf("Waiting for output event...")
-	outs := <-myAddressOutputsCh
-	t.Logf("Waiting for output event, done: %+v", outs)
 
 	//
 	// Check if the TX post works.
-	tx, err := nodeconn.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
+	tx, err := l1connection.MakeSimpleValueTX(client, l1.Config.FaucetKey, myAddress, 500_000)
 	require.NoError(t, err)
-	err = client.PostTx(tx)
+	_, err = client.PostTxAndWaitUntilConfirmation(tx)
 	require.NoError(t, err)
 	for i := 0; ; i++ {
 		t.Logf("Waiting for a TX...")
@@ -74,16 +67,13 @@ func TestHornetStartup(t *testing.T) {
 			break
 		}
 	}
-	t.Logf("Waiting for output event...")
-	outs = <-myAddressOutputsCh
-	t.Logf("Waiting for output event, done: %+v", outs)
 }
 
-func mustOutputCount(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) int {
+func mustOutputCount(client l1connection.Client, myAddress *iotago.Ed25519Address) int {
 	return len(mustOutputMap(client, myAddress))
 }
 
-func mustOutputMap(client nodeconn.L1Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
+func mustOutputMap(client l1connection.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
 		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))

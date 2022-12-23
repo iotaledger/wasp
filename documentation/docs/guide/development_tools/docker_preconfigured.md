@@ -17,17 +17,21 @@ keywords:
 
 This page describes the usage of the preconfigured developer Docker setup.
 
+:::note
+This setup is intended for **local** development only (you will have your own private network/tangle).
+:::
+
 ## Introduction
 
-To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp node with a Hornet based private tangle, ready to run out of the box. 
+To diminish the time spent on configuration and research, we have created a docker-compose setup that ships a pre-configured Wasp node with a Hornet based private tangle, ready to run out of the box.
 
 ## Running the setup
 
-Checkout the project and move to the `devnet` folder
+Checkout the project and move to the `local-setup` folder
 
 ```shell
 git clone https://github.com/iotaledger/wasp.git
-cd wasp/tools/devnet
+cd wasp/tools/local-setup
 ```
 
 :::note
@@ -57,7 +61,7 @@ Besides this, everything should simply work as expected. Faucet requests will be
 
 - Wasp Dashboard (7000) (username: wasp, password: wasp)
 - Wasp API (9090)
-- Hornet Dashboard (8082) (username: admin, password: admin)
+- Hornet Dashboard (8081) (username: admin, password: admin)
 - Hornet API (14265)
 - Faucet API (8091)
 

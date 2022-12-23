@@ -40,7 +40,7 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) dict.Dict {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
 			// depending on the amount of tokens, it will exceed number of outputs or not
-			assets := isc.NewEmptyAssets().AddNativeTokens(token.ID, 1)
+			assets := isc.NewEmptyFungibleTokens().AddNativeTokens(token.ID, 1)
 			transfer := isc.NewAllowanceFungibleTokens(assets)
 			rem := ctx.TransferAllowedFunds(ctx.AccountID(), transfer)
 			fmt.Printf("%s\n", rem)

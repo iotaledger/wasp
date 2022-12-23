@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -11,11 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMaintenance(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
+	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
@@ -90,7 +91,7 @@ func TestMaintenance(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err := env.Chain.GetRequestReceipt(notProccessedReq1.ID())
-	require.NoError(t, err)
+	require.Regexp(t, `.*"Code":404.*`, err.Error())
 	require.Nil(t, rec)
 
 	// calls to non-maintenance endpoints are not processed, even when done by the chain owner
@@ -98,7 +99,7 @@ func TestMaintenance(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(10 * time.Second) // not ideal, but I don't think there is a good way to wait for something that will NOT be processed
 	rec, err = env.Chain.GetRequestReceipt(notProccessedReq2.ID())
-	require.NoError(t, err)
+	require.Regexp(t, `.*"Code":404.*`, err.Error())
 	require.Nil(t, rec)
 
 	// assert that block number is still the same

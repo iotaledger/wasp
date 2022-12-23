@@ -10,24 +10,30 @@ type WaspConfigParams struct {
 	DashboardPort                int
 	PeeringPort                  int
 	NanomsgPort                  int
-	L1APIAddress                 string
-	L1UseRemotePow               bool
+	L1INXAddress                 string
 	ProfilingPort                int
 	MetricsPort                  int
 	OffledgerBroadcastUpToNPeers int
 	OwnerAddress                 string
 }
 
-const WaspConfig = `
+var WaspConfig = `
 {
-  "database": {
-    "inMemory": false,
-    "directory": "waspdb"
+  "app": {
+    "checkForUpdates": true,
+    "shutdown": {
+      "stopGracePeriod": "5m",
+      "log": {
+        "enabled": true,
+        "filePath": "shutdown.log"
+      }
+    }
   },
   "logger": {
     "level": "debug",
-    "disableCaller": false,
-    "disableStacktrace": true,
+    "disableCaller": true,
+    "disableStacktrace": false,
+    "stacktraceLevel": "panic",
     "encoding": "console",
     "outputPaths": [
       "stdout",
@@ -35,57 +41,112 @@ const WaspConfig = `
     ],
     "disableEvents": true
   },
-  "network": {
-    "bindAddress": "0.0.0.0",
-    "externalAddress": "auto"
+  "inx": {
+    "address": "{{.L1INXAddress}}",
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
-  "node": {
-    "disablePlugins": [],
-    "enablePlugins": [],
-    "ownerAddresses": ["{{.OwnerAddress}}"]
+  "db": {
+    "engine": "rocksdb",
+    "chainState": {
+      "path": "waspdb/chains/data"
+    },
+    "debugSkipHealthCheck": false
+  },
+  "p2p": {
+    "identity": {
+      "privateKey": "",
+      "filePath": "waspdb/identity/identity.key"
+    },
+    "db": {
+      "path": "waspdb/p2pstore"
+    }
+  },
+  "registries": {
+    "chains": {
+      "filePath": "waspdb/chains/chain_registry.json"
+    },
+    "dkShares": {
+      "path": "waspdb/dkshares"
+    },
+    "trustedPeers": {
+      "filePath": "waspdb/trusted_peers.json"
+    },
+    "consensusState": {
+      "path": "waspdb/chains/consensus"
+    }
+  },
+  "peering": {
+    "netID": "0.0.0.0:{{.PeeringPort}}",
+    "port": {{.PeeringPort}}
+  },
+  "chains": {
+    "broadcastUpToNPeers": 2,
+    "broadcastInterval": "5s",
+    "apiCacheTTL": "5m",
+    "pullMissingRequestsFromCommittee": true
+  },
+  "rawBlocks": {
+    "enabled": false,
+    "directory": "blocks"
+  },
+  "profiling": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
+  },
+  "prometheus": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
+    "enabled": true,
+    "nodeOwnerAddresses": ["{{.OwnerAddress}}"],
+    "bindAddress": "0.0.0.0:{{.APIPort}}",
+    "debugRequestLoggerEnabled": false,
     "auth": {
-      "scheme": "none"
-    },
-    "bindAddress": "0.0.0.0:{{.APIPort}}"
+      "scheme": "none",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "0.0.0.0"
+        ]
+      }
+    }
   },
-  "dashboard": {
-    "auth": {
-      "scheme": "none"
-    },
-    "bindAddress": "0.0.0.0:{{.DashboardPort}}"
-  },
-  "peering":{
-    "port": {{.PeeringPort}},
-    "netid": "127.0.0.1:{{.PeeringPort}}"
-  },
-  "l1": {
-    "apiAddress": "{{.L1APIAddress}}",
-    "useRemotePow": {{.L1UseRemotePow}}
-  },
-  "nanomsg":{
+  "nanomsg": {
+    "enabled": true,
     "port": {{.NanomsgPort}}
   },
-  "offledger":{
-    "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
-  },
-  "profiling":{
-    "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "writeProfiles": true,
-    "enabled": false
-  },
-  "metrics": {
-    "bindAddress": "0.0.0.0:{{.MetricsPort}}",
-    "enabled": false
-  },
-  "wal": {
-    "directory": "wal",
-    "enabled": true
-  },
-  "debug": {
-    "rawblocksEnabled": false,
-    "rawblocksDirectory": "blocks"
+  "dashboard": {
+    "enabled": true,
+    "bindAddress": "0.0.0.0:{{.DashboardPort}}",
+    "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
+    "auth": {
+      "scheme": "none",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "0.0.0.0"
+        ]
+      }
+    }
   }
-}
-`
+}`

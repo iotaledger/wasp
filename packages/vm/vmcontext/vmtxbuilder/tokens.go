@@ -6,26 +6,33 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
 // nativeTokenBalance represents on-chain account of the specific native token
 type nativeTokenBalance struct {
 	tokenID               iotago.NativeTokenID
-	input                 iotago.UTXOInput // if in != nil
+	outputID              iotago.OutputID // if in != nil, otherwise zeroOutputID
 	storageDepositCharged bool
 	in                    *iotago.BasicOutput // if nil it means output does not exist, this is new account for the token_id
 	out                   *iotago.BasicOutput // current balance of the token_id on the chain
 }
 
-func (n *nativeTokenBalance) clone() *nativeTokenBalance {
+func (n *nativeTokenBalance) Clone() *nativeTokenBalance {
+	tokenID := iotago.FoundryID{}
+	copy(tokenID[:], n.tokenID[:])
+
+	outputID := iotago.OutputID{}
+	copy(outputID[:], n.outputID[:])
+
 	return &nativeTokenBalance{
-		tokenID:               n.tokenID,
-		input:                 n.input,
+		tokenID:               tokenID,
+		outputID:              outputID,
 		storageDepositCharged: n.storageDepositCharged,
 		in:                    cloneInternalBasicOutputOrNil(n.in),
 		out:                   cloneInternalBasicOutputOrNil(n.out),
@@ -195,33 +202,35 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(id *iotago.Nativ
 // ensureNativeTokenBalance makes sure that cached output is in the builder
 // if not, it asks for the in balance by calling the loader function
 // Panics if the call results to exceeded limits
-func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(id *iotago.NativeTokenID) *nativeTokenBalance {
-	if b, ok := txb.balanceNativeTokens[*id]; ok {
-		return b
-	}
-	in, input := txb.loadTokenOutput(id) // output will be nil if no such token id accounted yet
-	if in != nil && txb.InputsAreFull() {
-		panic(vmexceptions.ErrInputLimitExceeded)
-	}
-	if in != nil && txb.outputsAreFull() {
-		panic(vmexceptions.ErrOutputLimitExceeded)
+func (txb *AnchorTransactionBuilder) ensureNativeTokenBalance(nativeTokenID *iotago.NativeTokenID) *nativeTokenBalance {
+	if nativeTokenBalance, exists := txb.balanceNativeTokens[*nativeTokenID]; exists {
+		return nativeTokenBalance
 	}
 
-	var out *iotago.BasicOutput
-	if in == nil {
-		out = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *id)
+	basicOutputIn, outputID := txb.loadNativeTokenOutputFunc(nativeTokenID) // output will be nil if no such token id accounted yet
+	if basicOutputIn != nil {
+		if txb.InputsAreFull() {
+			panic(vmexceptions.ErrInputLimitExceeded)
+		}
+		if txb.outputsAreFull() {
+			panic(vmexceptions.ErrOutputLimitExceeded)
+		}
+	}
+
+	var basicOutputOut *iotago.BasicOutput
+	if basicOutputIn == nil {
+		basicOutputOut = txb.newInternalTokenOutput(txb.anchorOutput.AliasID, *nativeTokenID)
 	} else {
-		out = cloneInternalBasicOutputOrNil(in)
+		basicOutputOut = cloneInternalBasicOutputOrNil(basicOutputIn)
 	}
-	b := &nativeTokenBalance{
-		tokenID:               out.NativeTokens[0].ID,
-		in:                    in,
-		out:                   out,
-		storageDepositCharged: in != nil,
+
+	nativeTokenBalance := &nativeTokenBalance{
+		tokenID:               basicOutputOut.NativeTokens[0].ID,
+		outputID:              outputID,
+		in:                    basicOutputIn,
+		out:                   basicOutputOut,
+		storageDepositCharged: basicOutputIn != nil,
 	}
-	if input != nil {
-		b.input = *input
-	}
-	txb.balanceNativeTokens[*id] = b
-	return b
+	txb.balanceNativeTokens[*nativeTokenID] = nativeTokenBalance
+	return nativeTokenBalance
 }

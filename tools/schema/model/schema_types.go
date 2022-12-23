@@ -5,10 +5,8 @@ package model
 
 import "fmt"
 
-// TODO describe schema details in docs
 type (
 	FieldMap       map[string]*Field
-	FieldMapMap    map[string]FieldMap
 	StringMap      map[string]string
 	StringMapMap   map[string]StringMap
 	DefMap         map[DefElt]*DefElt
@@ -37,6 +35,7 @@ type SchemaDef struct {
 	Copyright   string
 	Name        DefElt
 	Description DefElt
+	Author      DefElt
 	Events      DefMapMap
 	Structs     DefMapMap
 	Typedefs    DefMap

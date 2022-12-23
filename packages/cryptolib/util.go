@@ -5,9 +5,7 @@ import (
 	"fmt"
 )
 
-const (
-	SignatureSize = ed25519.SignatureSize
-)
+const SignatureSize = ed25519.SignatureSize
 
 func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, consumedBytes int, err error) {
 	if len(bytes) < SignatureSize {

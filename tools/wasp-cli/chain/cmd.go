@@ -1,8 +1,9 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var chainCmd = &cobra.Command{

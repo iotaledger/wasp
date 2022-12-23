@@ -8,7 +8,6 @@ var eventsRs = map[string]string{
 	"events.rs": `
 #![allow(dead_code)]
 #![allow(unused_mut)]
-
 $#if core useCrate useWasmLib
 
 $#set TypeName $Package$+Events

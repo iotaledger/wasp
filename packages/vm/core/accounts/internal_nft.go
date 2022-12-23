@@ -3,12 +3,13 @@ package accounts
 import (
 	"fmt"
 
+	"golang.org/x/xerrors"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"golang.org/x/xerrors"
 )
 
 // CreditNFTToAccount credits an NFT to the on chain ledger
@@ -17,9 +18,6 @@ func CreditNFTToAccount(state kv.KVStore, agentID isc.AgentID, nft *isc.NFT) {
 		return
 	}
 	account := getAccount(state, agentID)
-
-	checkLedger(state, "CreditNFTToAccount IN")
-	defer checkLedger(state, "CreditNFTToAccount OUT")
 
 	saveNFTData(state, nft)
 	creditNFTToAccount(state, account, nft.ID, agentID)
@@ -78,9 +76,6 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID)
 		return
 	}
 	account := getAccount(state, agentID)
-
-	checkLedger(state, "DebitNFTFromAccount IN")
-	defer checkLedger(state, "DebitNFTFromAccount OUT")
 
 	if !debitNFTFromAccount(account, id) {
 		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))

@@ -3,13 +3,15 @@ package chain
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/spf13/cobra"
 )
 
 var uploadQuorum int
@@ -23,12 +25,12 @@ var storeBlobCmd = &cobra.Command{
 	Short: "Store a blob in the chain",
 	Args:  cobra.MinimumNArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
-		uploadBlob(util.EncodeParams(args))
+		uploadBlob(util.EncodeParams(args), config.MustWaspAPI())
 	},
 }
 
-func uploadBlob(fieldValues dict.Dict) (hash hashing.HashValue) {
-	hash, _, _, err := Client().UploadBlob(fieldValues)
+func uploadBlob(fieldValues dict.Dict, apiAddress string) (hash hashing.HashValue) {
+	hash, _, _, err := Client(apiAddress).UploadBlob(fieldValues)
 	log.Check(err)
 	log.Printf("uploaded blob to chain -- hash: %s", hash)
 	// TODO print receipt?

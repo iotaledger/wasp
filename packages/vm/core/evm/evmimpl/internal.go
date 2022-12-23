@@ -8,6 +8,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,6 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
@@ -32,7 +37,7 @@ type blockContext struct {
 // requests in the ISC block. The purpose is to create a single Ethereum block
 // for each ISC block.
 func openBlockContext(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
 	ctx.Privileged().SetBlockContext(&blockContext{emu: createEmulator(ctx)})
 	return nil
 }
@@ -40,7 +45,7 @@ func openBlockContext(ctx isc.Sandbox) dict.Dict {
 // closeBlockContext "mints" the Ethereum block after all requests in the ISC
 // block have been processed.
 func closeBlockContext(ctx isc.Sandbox) dict.Dict {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCaller(&isc.NilAgentID{}) // called from ISC VM
 	getBlockContext(ctx).mintBlock()
 	return nil
 }
@@ -83,15 +88,19 @@ func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
 		timestamp(ctx),
 		newMagicContract(ctx),
 		getBalanceFunc(ctx),
+		getSubBalanceFunc(ctx),
+		getAddBalanceFunc(ctx),
 	)
 }
 
 func createEmulatorR(ctx isc.SandboxView) *emulator.EVMEmulator {
 	return emulator.NewEVMEmulator(
-		evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())),
+		evmStateSubrealm(buffered.NewBufferedKVStore(ctx.StateR())),
 		timestamp(ctx),
 		newMagicContractView(ctx),
 		getBalanceFunc(ctx),
+		nil,
+		nil,
 	)
 }
 
@@ -189,7 +198,7 @@ func transactionByBlockNumberAndIndex(ctx isc.SandboxView) (*emulator.EVMEmulato
 func requireLatestBlock(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool, blockNumber uint64) uint64 {
 	current := emu.BlockchainDB().GetNumber()
 	if blockNumber != current {
-		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation")
+		assert.NewAssert(ctx.Log()).Requiref(allowPrevious, "unsupported operation, cannot query previous blocks")
 	}
 	return blockNumber
 }
@@ -203,19 +212,8 @@ func paramBlockNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevi
 	return current
 }
 
-//nolint:unparam
-func paramBlockNumberOrHashAsNumber(ctx isc.SandboxView, emu *emulator.EVMEmulator, allowPrevious bool) uint64 {
-	if ctx.Params().MustHas(evm.FieldBlockHash) {
-		a := assert.NewAssert(ctx.Log())
-		blockHash := common.BytesToHash(ctx.Params().MustGet(evm.FieldBlockHash))
-		header := emu.BlockchainDB().GetHeaderByHash(blockHash)
-		a.Requiref(header != nil, "block not found")
-		return requireLatestBlock(ctx, emu, allowPrevious, header.Number.Uint64())
-	}
-	return paramBlockNumber(ctx, emu, allowPrevious)
-}
-
-func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
+// TODO dropping "customtokens gas fee" might be the way to go
+func getFeePolicy(ctx isc.SandboxBase) *gas.GasFeePolicy {
 	res := ctx.CallView(
 		governance.Contract.Hname(),
 		governance.ViewGetFeePolicy.Hname(),
@@ -223,8 +221,14 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
 	)
 	feePolicy, err := gas.FeePolicyFromBytes(res.MustGet(governance.ParamFeePolicyBytes))
 	ctx.RequireNoError(err)
-	if feePolicy.GasFeeTokenID != nil {
-		return func(addr common.Address) *big.Int {
+	return feePolicy
+}
+
+func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
+	return func(addr common.Address) *big.Int {
+		feePolicy := getFeePolicy(ctx)
+
+		if feePolicy.GasFeeTokenID != nil {
 			res := ctx.CallView(
 				accounts.Contract.Hname(),
 				accounts.ViewBalanceNativeToken.Hname(),
@@ -233,15 +237,57 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.BalanceFunc {
 					accounts.ParamNativeTokenID: feePolicy.GasFeeTokenID[:],
 				},
 			)
-			return new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
+			ret := new(big.Int).SetBytes(res.MustGet(accounts.ParamBalance))
+			return util.CustomTokensDecimalsToEthereumDecimals(ret, feePolicy.GasFeeTokenDecimals)
 		}
-	}
-	return func(addr common.Address) *big.Int {
 		res := ctx.CallView(
 			accounts.Contract.Hname(),
 			accounts.ViewBalanceBaseToken.Hname(),
 			dict.Dict{accounts.ParamAgentID: isc.NewEthereumAddressAgentID(addr).Bytes()},
 		)
-		return new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+		decimals := parameters.L1().BaseToken.Decimals
+		ret := new(big.Int).SetUint64(codec.MustDecodeUint64(res.MustGet(accounts.ParamBalance), 0))
+		return util.CustomTokensDecimalsToEthereumDecimals(ret, decimals)
+	}
+}
+
+func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTokens {
+	decimals := uint32(0)
+	feePolicy := getFeePolicy(ctx)
+	if feePolicy.GasFeeTokenID == nil {
+		decimals = parameters.L1().BaseToken.Decimals
+	} else {
+		decimals = feePolicy.GasFeeTokenDecimals
+	}
+	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
+
+	if feePolicy.GasFeeTokenID == nil {
+		return isc.NewFungibleBaseTokens(amt.Uint64())
+	}
+	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
+		ID:     *feePolicy.GasFeeTokenID,
+		Amount: amt,
+	}})
+}
+
+func getSubBalanceFunc(ctx isc.Sandbox) emulator.SubBalanceFunc {
+	return func(addr common.Address, amount *big.Int) {
+		tokens := fungibleTokensForFeeFromEthereumDecimals(ctx, amount)
+		ctx.Privileged().DebitFromAccount(isc.NewEthereumAddressAgentID(addr), tokens)
+
+		// assert that remaining tokens in the sender's account are enough to pay for the gas budget
+		if !ctx.HasInAccount(
+			ctx.Request().SenderAccount(),
+			ctx.Privileged().TotalGasTokens(),
+		) {
+			panic(vm.ErrNotEnoughTokensLeftForGas)
+		}
+	}
+}
+
+func getAddBalanceFunc(ctx isc.Sandbox) emulator.AddBalanceFunc {
+	return func(addr common.Address, amount *big.Int) {
+		tokens := fungibleTokensForFeeFromEthereumDecimals(ctx, amount)
+		ctx.Privileged().CreditToAccount(isc.NewEthereumAddressAgentID(addr), tokens)
 	}
 }

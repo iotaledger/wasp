@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 const (
@@ -134,11 +135,8 @@ func (u *UtxoDB) addTransaction(tx *iotago.Transaction, isGenesis bool) {
 
 	// add unspent outputs to the ledger
 	for i := range tx.Essence.Outputs {
-		utxo := &iotago.UTXOInput{
-			TransactionID:          txid,
-			TransactionOutputIndex: uint16(i),
-		}
-		u.utxo[utxo.ID()] = struct{}{}
+		outputID := iotago.OutputIDFromTransactionIDAndIndex(txid, uint16(i))
+		u.utxo[outputID] = struct{}{}
 	}
 	// advance clock
 	u.advanceClockBy(u.timeStep)
@@ -235,15 +233,15 @@ func (u *UtxoDB) GetOutput(outID iotago.OutputID) iotago.Output {
 	return u.getOutput(outID)
 }
 
-func (u *UtxoDB) getOutput(outID iotago.OutputID) iotago.Output {
-	tx, ok := u.getTransaction(outID.TransactionID())
+func (u *UtxoDB) getOutput(outputID iotago.OutputID) iotago.Output {
+	tx, ok := u.getTransaction(outputID.TransactionID())
 	if !ok {
 		return nil
 	}
-	if int(outID.Index()) >= len(tx.Essence.Outputs) {
+	if int(outputID.Index()) >= len(tx.Essence.Outputs) {
 		return nil
 	}
-	return tx.Essence.Outputs[outID.Index()]
+	return tx.Essence.Outputs[outputID.Index()]
 }
 
 func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet, error) {
@@ -251,12 +249,12 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 	for _, input := range tx.Essence.Inputs {
 		switch input.Type() {
 		case iotago.InputUTXO:
-			utxo := input.(*iotago.UTXOInput)
-			out := u.getOutput(utxo.ID())
-			if out == nil {
+			outputID := input.(*iotago.UTXOInput).ID()
+			output := u.getOutput(outputID)
+			if output == nil {
 				return nil, xerrors.New("output not found")
 			}
-			inputs[utxo.ID()] = out
+			inputs[outputID] = output
 		case iotago.InputTreasury:
 			panic("TODO")
 		default:
@@ -417,14 +415,14 @@ func (u *UtxoDB) mustGetTransaction(txID iotago.TransactionID) *iotago.Transacti
 	return tx
 }
 
-func getOutputAddress(out iotago.Output, id *iotago.UTXOInput) iotago.Address {
-	switch out := out.(type) {
+func getOutputAddress(out iotago.Output, outputID iotago.OutputID) iotago.Address {
+	switch output := out.(type) {
 	case iotago.TransIndepIdentOutput:
-		return out.Ident()
+		return output.Ident()
 	case iotago.TransDepIdentOutput:
-		aliasID := out.Chain().(iotago.AliasID)
+		aliasID := output.Chain().(iotago.AliasID)
 		if aliasID.Empty() {
-			aliasID = iotago.AliasIDFromOutputID(id.ID())
+			aliasID = iotago.AliasIDFromOutputID(outputID)
 		}
 		return aliasID.ToAddress()
 	default:
@@ -434,10 +432,10 @@ func getOutputAddress(out iotago.Output, id *iotago.UTXOInput) iotago.Address {
 
 func (u *UtxoDB) getUnspentOutputs(addr iotago.Address) iotago.OutputSet {
 	ret := make(iotago.OutputSet)
-	for oid := range u.utxo {
-		out := u.getOutput(oid)
-		if getOutputAddress(out, oid.UTXOInput()).Equal(addr) {
-			ret[oid] = out
+	for outputID := range u.utxo {
+		output := u.getOutput(outputID)
+		if getOutputAddress(output, outputID).Equal(addr) {
+			ret[outputID] = output
 		}
 	}
 	return ret

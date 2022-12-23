@@ -54,14 +54,6 @@ func (vmctx *VMContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.Agent
 	})
 }
 
-func (vmctx *VMContext) totalL2Assets() *isc.FungibleTokens {
-	var ret *isc.FungibleTokens
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetTotalL2Assets(s)
-	})
-	return ret
-}
-
 func (vmctx *VMContext) findContractByHname(contractHname isc.Hname) (ret *root.ContractRecord) {
 	vmctx.callCore(root.Contract, func(s kv.KVStore) {
 		ret = root.FindContract(s, contractHname)
@@ -154,15 +146,14 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.stateDraft.BlockIndex(), vmctx.requestIndex)
 }
 
 func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
-	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
+	return blocklog.NewEventLookupKey(vmctx.stateDraft.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
 }
 
-func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.RequestReceipt {
-	vmctx.Debugf("writeReceiptToBlockLog: %s err: %s", vmctx.req.ID(), errProvided)
+func (vmctx *VMContext) writeReceiptToBlockLog(vmError *isc.VMError) *blocklog.RequestReceipt {
 	receipt := &blocklog.RequestReceipt{
 		Request:       vmctx.req,
 		GasBudget:     vmctx.gasBudgetAdjusted,
@@ -170,15 +161,15 @@ func (vmctx *VMContext) writeReceiptToBlockLog(errProvided error) *blocklog.Requ
 		GasFeeCharged: vmctx.gasFeeCharged,
 	}
 
-	if errProvided != nil {
-		var vmError *isc.VMError
-		if _, ok := errProvided.(*isc.VMError); ok {
-			vmError = errProvided.(*isc.VMError)
-		} else {
-			vmError = coreerrors.ErrUntypedError.Create(errProvided.Error())
+	if vmError != nil {
+		b := vmError.Bytes()
+		if len(b) > isc.VMErrorMessageLimit {
+			vmError = coreerrors.ErrErrorMessageTooLong
 		}
 		receipt.Error = vmError.AsUnresolvedError()
 	}
+
+	vmctx.Debugf("writeReceiptToBlockLog: %s err: %v", vmctx.req.ID(), vmError)
 
 	receipt.GasBurnLog = vmctx.gasBurnLog
 

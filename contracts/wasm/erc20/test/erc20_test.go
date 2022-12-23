@@ -3,12 +3,14 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20"
+	"github.com/iotaledger/wasp/contracts/wasm/erc20/go/erc20impl"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -26,7 +28,7 @@ func setupErc20(t *testing.T) *wasmsolo.SoloContext {
 	init := erc20.ScFuncs.Init(nil)
 	init.Params.Supply().SetValue(utxodb.FundsFromFaucetAmount)
 	init.Params.Creator().SetValue(creator.ScAgentID())
-	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20.OnLoad, init.Func)
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, nil, erc20.ScName, erc20impl.OnDispatch, init.Func)
 	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(corecontracts.All)+1, len(rec))

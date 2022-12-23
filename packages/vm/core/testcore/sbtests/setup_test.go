@@ -4,29 +4,26 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/testcore/go/testcore"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
-	"github.com/stretchr/testify/require"
 )
 
 const (
 	debug         = false
+	forceGoNoWasm = false
 	forceSkipWasm = false
-	forceRustWasm = true
 )
 
 const (
 	ScName           = "testcore"
 	HScName          = isc.Hname(0x370d33ad)
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
-	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/go/pkg/testcore_go.wasm"
-	// WasmFileTestcore = "../../../../../contracts/wasm/testcore/ts/pkg/testcore_ts.wasm"
 )
 
 func init() {
@@ -36,7 +33,6 @@ func init() {
 }
 
 func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
-	// corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{
 		Debug:                    debug,
 		AutoAdjustStorageDeposit: true,
@@ -81,22 +77,23 @@ func deployContract(chain *solo.Chain, user *cryptolib.KeyPair, runWasm bool) er
 		return chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 	}
 
-	if forceRustWasm {
-		// run Rust Wasm version of testcore
-		return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
-	}
+	// enable this code to be able to debug using Go version of Wasm testcore SC
+	//if forceGoNoWasm {
+	//	// run non-Wasm go version of testcore
+	//	wasmhost.GoWasmVM = func() wasmhost.WasmVM {
+	//		return wasmhost.NewWasmGoVM(ScName, testcore.OnDispatch)
+	//	}
+	//	hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
+	//	if err != nil {
+	//		return err
+	//	}
+	//	err = chain.DeployContract(user, ScName, hProg)
+	//	wasmhost.GoWasmVM = nil
+	//	return err
+	//}
 
-	// run non-Wasm go version of testcore
-	wasmhost.GoWasmVM = func() wasmhost.WasmVM {
-		return wasmhost.NewWasmGoVM(ScName, testcore.OnLoad)
-	}
-	hProg, err := chain.UploadWasm(user, []byte("go:"+ScName))
-	if err != nil {
-		return err
-	}
-	err = chain.DeployContract(user, ScName, hProg)
-	wasmhost.GoWasmVM = nil
-	return err
+	// run Rust Wasm version of testcore
+	return chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 }
 
 // WARNING: setupTestSandboxSC will fail if AutoAdjustStorageDeposit is not enabled

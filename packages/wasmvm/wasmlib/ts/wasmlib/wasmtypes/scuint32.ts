@@ -2,44 +2,47 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {uintFromString, WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
 
 export const ScUint32Length = 4;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function uint32Decode(dec: wasmtypes.WasmDecoder): u32 {
+export function uint32Decode(dec: WasmDecoder): u32 {
     return dec.vluDecode(32) as u32;
 }
 
-export function uint32Encode(enc: wasmtypes.WasmEncoder, value: u32): void {
-    enc.vluEncode(value as u64);
+export function uint32Encode(enc: WasmEncoder, value: u32): void {
+    enc.vluEncode(value as u32);
 }
 
-export function uint32FromBytes(buf: u8[]): u32 {
+export function uint32FromBytes(buf: Uint8Array): u32 {
     if (buf.length == 0) {
         return 0;
     }
     if (buf.length != ScUint32Length) {
         panic("invalid Uint32 length");
     }
+    // note: stupidly << 8 can result in a negative number, so use *256 instead
     let ret: u32 = buf[3];
-    ret = (ret << 8) | buf[2];
-    ret = (ret << 8) | buf[1];
-    return (ret << 8) | buf[0];
+    ret = ret * 256 + buf[2];
+    ret = ret * 256 + buf[1];
+    ret = ret * 256 + buf[0];
+    return ret;
 }
 
-export function uint32ToBytes(value: u32): u8[] {
-    return [
-        value as u8,
-        (value >> 8) as u8,
-        (value >> 16) as u8,
-        (value >> 24) as u8,
-    ];
+export function uint32ToBytes(value: u32): Uint8Array {
+    const buf = new Uint8Array(ScUint32Length);
+    buf[0] = value as u8;
+    buf[1] = (value >> 8) as u8;
+    buf[2] = (value >> 16) as u8;
+    buf[3] = (value >> 24) as u8;
+    return buf;
 }
 
 export function uint32FromString(value: string): u32 {
-    return wasmtypes.uintFromString(value, 32) as u32;
+    return uintFromString(value, 32) as u32;
 }
 
 export function uint32ToString(value: u32): string {
@@ -49,9 +52,9 @@ export function uint32ToString(value: u32): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableUint32 {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

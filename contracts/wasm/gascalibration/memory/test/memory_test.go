@@ -7,17 +7,19 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration"
 	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/memory/go/memory"
+	"github.com/iotaledger/wasp/contracts/wasm/gascalibration/memory/go/memoryimpl"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 var force = flag.Bool("force", false, "")
 
 func deployContract(t *testing.T) *wasmsolo.SoloContext {
-	ctx := wasmsolo.NewSoloContext(t, memory.ScName, memory.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, memory.ScName, memoryimpl.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }

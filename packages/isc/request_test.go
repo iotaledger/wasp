@@ -5,12 +5,13 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSerializeRequestData(t *testing.T) {
@@ -40,7 +41,7 @@ func TestSerializeRequestData(t *testing.T) {
 			Allowance:      NewAllowanceBaseTokens(1),
 			GasBudget:      1000,
 		}
-		outputOn := &iotago.BasicOutput{
+		basicOutput := &iotago.BasicOutput{
 			Amount: 123,
 			NativeTokens: iotago.NativeTokens{
 				&iotago.NativeToken{
@@ -56,14 +57,14 @@ func TestSerializeRequestData(t *testing.T) {
 				&iotago.AddressUnlockCondition{Address: sender},
 			},
 		}
-		req, err = OnLedgerFromUTXO(outputOn, &iotago.UTXOInput{})
+		req, err = OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
 		require.NoError(t, err)
 
 		serialized := req.Bytes()
 		req2, err := NewRequestFromMarshalUtil(marshalutil.New(serialized))
 		require.NoError(t, err)
 		chainID := ChainIDFromAddress(sender)
-		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(&chainID, requestMetadata.SenderContract)))
+		require.True(t, req2.SenderAccount().Equals(NewContractAgentID(chainID, requestMetadata.SenderContract)))
 		require.True(t, req2.CallTarget().Equals(NewCallTarget(requestMetadata.TargetContract, requestMetadata.EntryPoint)))
 		require.EqualValues(t, req.ID(), req2.ID())
 		require.True(t, req.SenderAccount().Equals(req2.SenderAccount()))
@@ -80,6 +81,5 @@ func TestRequestIDToFromString(t *testing.T) {
 	require.NotEmpty(t, s)
 	parsedID, err := RequestIDFromString(s)
 	require.NoError(t, err)
-	require.Equal(t, oritinalID.TransactionID, parsedID.TransactionID)
-	require.Equal(t, oritinalID.TransactionOutputIndex, parsedID.TransactionOutputIndex)
+	require.EqualValues(t, oritinalID, parsedID)
 }

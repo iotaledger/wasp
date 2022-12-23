@@ -6,16 +6,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/stretchr/testify/require"
 )
 
 func (e *ChainEnv) checkCoreContracts() {
@@ -28,9 +30,9 @@ func (e *ChainEnv) checkCoreContracts() {
 		ret, err := cl.CallView(governance.ViewGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+		chainID, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 		require.NoError(e.t, err)
-		require.EqualValues(e.t, e.Chain.ChainID, chid)
+		require.EqualValues(e.t, e.Chain.ChainID, chainID)
 
 		aid, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.NoError(e.t, err)
@@ -160,14 +162,14 @@ func (e *ChainEnv) printAccounts(title string) {
 
 func (e *ChainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := isc.NewEmptyAssets()
+	sum := isc.NewEmptyFungibleTokens()
 	for _, bal := range balances {
 		sum.Add(bal)
 	}
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
-func (e *ChainEnv) getChainInfo() (*isc.ChainID, isc.AgentID) {
+func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
 		e.Chain.ChainID, governance.Contract.Hname(), governance.ViewGetChainInfo.Name, nil,
 	)
@@ -252,14 +254,6 @@ func (e *ChainEnv) contractIsDeployed() conditionFn {
 	}
 }
 
-func (e *ChainEnv) balanceOnChainBaseTokensEquals(agentID isc.AgentID, expected uint64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, isc.BaseTokenID, nodeIndex)
-		e.t.Logf("chainEnv::balanceOnChainBaseTokensEquals: node=%v, have=%v, expected=%v", nodeIndex, have, expected)
-		return expected == have
-	}
-}
-
 type conditionFn func(t *testing.T, nodeIndex int) bool
 
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg ...string) {
@@ -283,3 +277,31 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 }
 
 // endregion ///////////////////////////////////////////////////////////////
+
+func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *ChainEnv {
+	quorum := uint16((2*len(committee))/3 + 1)
+
+	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
+
+	addr, err := clu.RunDKG(committee, quorum)
+	require.NoError(t, err)
+
+	t.Logf("generated state address: %s", addr.Bech32(parameters.L1().Protocol.Bech32HRP))
+
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), committee, quorum, addr)
+	require.NoError(t, err)
+	t.Logf("deployed chainID: %s", chain.ChainID)
+
+	e := &ChainEnv{
+		env:   &env{t: t, Clu: clu},
+		Chain: chain,
+	}
+	tx := e.deployNativeIncCounterSC(0)
+
+	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
+
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
+
+	return e
+}

@@ -1,12 +1,13 @@
 #!/bin/bash
-if [ -f "../testcore/pkg/testcore_bg.wasm" ]; then
-    cp ../testcore/pkg/testcore_bg.wasm ../../../packages/vm/core/testcore/sbtests/sbtestsc/
+root_path=$(git rev-parse --show-toplevel)
+contracts_path=$root_path/contracts/wasm
+if [ -f "$contracts_path/testcore/rs/testcorewasm/pkg/testcorewasm_bg.wasm" ]; then
+    cp $contracts_path/testcore/rs/testcorewasm/pkg/testcorewasm_bg.wasm $root_path/packages/vm/core/testcore/sbtests/sbtestsc/testcore_bg.wasm
 fi
-if [ -f "../inccounter/pkg/inccounter_bg.wasm" ]; then
-    cp ../inccounter/pkg/inccounter_bg.wasm ../../../tools/cluster/tests/wasm/
+if [ -f "$contracts_path/inccounter/rs/inccounterwasm/pkg/inccounterwasm_bg.wasm" ]; then
+    cp $contracts_path/inccounter/rs/inccounterwasm/pkg/inccounterwasm_bg.wasm $root_path/tools/cluster/tests/wasm/inccounter_bg.wasm
 fi
 
-cd ../../../documentation/tutorial-examples
-wasm-pack build
-cp pkg/solotutorial_bg.wasm test/
-cd ../../contracts/wasm/scripts
+cd $root_path/documentation/tutorial-examples
+wasm-pack build rs/solotutorialwasm
+cp rs/solotutorialwasm/pkg/solotutorialwasm_bg.wasm test/solotutorial_bg.wasm

@@ -10,9 +10,10 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 )
 
 func buildRequest(t *testing.T, method string, body interface{}) *http.Request {
@@ -111,11 +112,8 @@ func CallHTMLRequestHandler(t *testing.T, e *echo.Echo, handler echo.HandlerFunc
 	doc, err := goquery.NewDocumentFromReader(rec.Body)
 	require.NoError(t, err)
 
-	{
-		h, err := doc.Html()
-		require.NoError(t, err)
-		t.Log(h)
-	}
+	_, err = doc.Html()
+	require.NoError(t, err)
 
 	return doc
 }

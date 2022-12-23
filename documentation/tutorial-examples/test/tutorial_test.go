@@ -3,6 +3,8 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTutorialFirst(t *testing.T) {
@@ -93,8 +94,8 @@ func TestTutorialInvokeSCError(t *testing.T) {
 		WithMaxAffordableGasBudget()
 
 	_, err = chain.PostRequestSync(req, nil)
-	t.Log(err)
 	require.Error(t, err)
+	require.True(t, err.Error() == "WASM: panic in VM: missing mandatory param: str")
 }
 
 func TestTutorialAccounts(t *testing.T) {

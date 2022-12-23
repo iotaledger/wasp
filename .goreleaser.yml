@@ -1,4 +1,4 @@
-# Documentation: http://goreleaser.com
+project_name: wasp
 
 before:
   hooks:
@@ -9,21 +9,13 @@ builds:
     main: ./main.go
     binary: wasp
     flags:
-      - -tags=builtin_static,rocksdb
+      - -tags=rocksdb
     goos:
       - linux
       # Disabled until the grocksdb supports darwin and windows:
       # See: https://github.com/gohornet/grocksdb/commit/0ad7d027aa822e322cd81b2ef7e6696b675472b6
       # - windows
       # - darwin
-    goarch:
-      - amd64
-
-  - id: wasp-cli
-    main: ./tools/wasp-cli/main.go
-    binary: wasp-cli
-    goos:
-      - linux
     goarch:
       - amd64
 
@@ -43,23 +35,6 @@ archives:
     files:
       - README.md
       - config.json
-      - LICENSE
-
-  - id: wasp-cli
-    name_template: "wasp-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    builds:
-      - wasp-cli
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      amd64: x86_64
-    format_overrides:
-      - goos: windows
-        format: zip
-    wrap_in_directory: true
-    files:
-      - tools/wasp-cli/README.md
       - LICENSE
 
 changelog:

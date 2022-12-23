@@ -28,8 +28,8 @@ $#each state proxyMethods
 	// *******************************
 	"stateProxyImmutableFunc": `
 $#set separator $true
-	asImmutable(): sc.Immutable$Package$+State {
-		return new sc.Immutable$Package$+State(this.proxy);
-	}
+    asImmutable(): sc.Immutable$Package$+State {
+        return new sc.Immutable$Package$+State(this.proxy);
+    }
 `,
 }

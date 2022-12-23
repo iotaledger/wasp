@@ -3,8 +3,9 @@ package codec
 import (
 	"bytes"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func DecodeBool(b []byte, def ...bool) (bool, error) {

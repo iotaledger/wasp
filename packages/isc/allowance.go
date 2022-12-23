@@ -3,19 +3,19 @@ package isc
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 type Allowance struct {
-	Assets *FungibleTokens
-	NFTs   []iotago.NFTID
+	Assets *FungibleTokens `json:"tokens"`
+	NFTs   []iotago.NFTID  `json:"nfts"`
 }
 
 func NewEmptyAllowance() *Allowance {
 	return &Allowance{
-		Assets: NewEmptyAssets(),
+		Assets: NewEmptyFungibleTokens(),
 		NFTs:   make([]iotago.NFTID, 0),
 	}
 }
@@ -37,15 +37,19 @@ func NewAllowanceFungibleTokens(ftokens *FungibleTokens) *Allowance {
 	}
 }
 
+// returns nil if nil pointer receiver is cloned
 func (a *Allowance) Clone() *Allowance {
 	if a == nil {
 		return nil
 	}
+
 	nfts := make([]iotago.NFTID, len(a.NFTs))
-	for i, nft := range a.NFTs {
-		id := nft
-		nfts[i] = id
+	for i := range a.NFTs {
+		nftID := iotago.NFTID{}
+		copy(nftID[:], a.NFTs[i][:])
+		nfts[i] = nftID
 	}
+
 	return &Allowance{
 		Assets: a.Assets.Clone(),
 		NFTs:   nfts,
@@ -186,18 +190,20 @@ func (a *Allowance) String() string {
 	return ret
 }
 
-func (a *Allowance) fillEmptyNFTIDs(o iotago.Output, utxoInput *iotago.UTXOInput) *Allowance {
+func (a *Allowance) fillEmptyNFTIDs(output iotago.Output, outputID iotago.OutputID) *Allowance {
 	if a == nil {
 		return nil
 	}
-	nftOut, ok := o.(*iotago.NFTOutput)
+
+	nftOutput, ok := output.(*iotago.NFTOutput)
 	if !ok {
 		return a
 	}
+
 	// see if there is an empty NFTID in allowance (this can happpen if the NTF is minted as a request to the chain)
-	for i, nft := range a.NFTs {
-		if nft.Empty() {
-			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOut, utxoInput.ID())
+	for i, nftID := range a.NFTs {
+		if nftID.Empty() {
+			a.NFTs[i] = util.NFTIDFromNFTOutput(nftOutput, outputID)
 		}
 	}
 	return a

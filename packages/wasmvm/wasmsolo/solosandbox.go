@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"errors"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -15,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
-	"golang.org/x/xerrors"
 )
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -38,6 +39,10 @@ func (s *SoloSandbox) Burn(burnCode gas.BurnCode, par ...uint64) {
 
 func (s *SoloSandbox) Budget() uint64 {
 	panic("implement Budget")
+}
+
+func (s *SoloSandbox) Burned() uint64 {
+	panic("implement Burned")
 }
 
 var (
@@ -69,7 +74,7 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 		default:
 			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
 		}
-		s.ctx.Chain.Log().Infof("stolor error:: %s", s.ctx.Err.Error())
+		s.ctx.Chain.Log().Infof("SoloSandbox error:: %s", s.ctx.Err.Error())
 	}()
 	switch funcNr {
 	case wasmlib.FnCall:
@@ -157,6 +162,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
+	ctx.GasFee = 0
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscHname(req.Contract)
 	if contract != isc.Hn(ctx.scName) {

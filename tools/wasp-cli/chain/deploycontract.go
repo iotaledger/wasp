@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -9,9 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
+	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-	"github.com/spf13/cobra"
 )
 
 var deployContractCmd = &cobra.Command{
@@ -19,6 +21,7 @@ var deployContractCmd = &cobra.Command{
 	Short: "Deploy a contract in the chain",
 	Args:  cobra.MinimumNArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
+		apiAddress := config.MustWaspAPI()
 		vmtype := args[0]
 		name := args[1]
 		description := args[2]
@@ -42,14 +45,13 @@ var deployContractCmd = &cobra.Command{
 				blob.VarFieldProgramDescription: description,
 				blob.VarFieldProgramBinary:      util.ReadFile(filename),
 			})
-			progHash = uploadBlob(blobFieldValues)
+			progHash = uploadBlob(blobFieldValues, apiAddress)
 		}
-
-		deployContract(name, description, progHash, initParams)
+		deployContract(name, description, progHash, initParams, apiAddress)
 	},
 }
 
-func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict, apiAddress string) {
 	util.WithOffLedgerRequest(GetCurrentChainID(), func() (isc.OffLedgerRequest, error) {
 		args := codec.MakeDict(map[string]interface{}{
 			root.ParamName:        name,
@@ -57,7 +59,7 @@ func deployContract(name, description string, progHash hashing.HashValue, initPa
 			root.ParamProgramHash: progHash,
 		})
 		args.Extend(initParams)
-		return Client().PostOffLedgerRequest(
+		return Client(apiAddress).PostOffLedgerRequest(
 			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{

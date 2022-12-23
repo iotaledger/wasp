@@ -13,9 +13,9 @@ import (
 	"io"
 	"math/rand"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // PeeringID is relates peers in different nodes for a particular
@@ -29,8 +29,15 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 	return pid
 }
 
+//nolint:revive
+func PeeringIDFromBytes(src []byte) PeeringID {
+	pid := PeeringID{}
+	copy(pid[:], src)
+	return pid
+}
+
 func (pid *PeeringID) String() string {
-	return base58.Encode(pid[:])
+	return iotago.EncodeHex(pid[:])
 }
 
 func (pid *PeeringID) Read(r io.Reader) error {

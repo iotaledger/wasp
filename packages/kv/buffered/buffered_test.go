@@ -3,10 +3,11 @@ package buffered
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 func TestBufferedKVStore(t *testing.T) {
@@ -20,7 +21,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
+	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
 	v, err = b.Get("cd")
 	assert.NoError(t, err)
@@ -95,7 +96,7 @@ func TestIterateSorted(t *testing.T) {
 
 	realm, err := db.WithRealm([]byte("1"))
 	require.NoError(t, err)
-	b := NewBufferedKVStoreAccess(kv.NewHiveKVStoreReader(realm))
+	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
 	b.Del("246")
 	b.Set("250", []byte("v1250"))

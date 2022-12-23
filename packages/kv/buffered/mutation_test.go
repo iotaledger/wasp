@@ -6,8 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestEmptyMutations(t *testing.T) {
@@ -16,7 +17,7 @@ func TestEmptyMutations(t *testing.T) {
 	assert.EqualValues(t, util.GetHashValue(ms1), util.GetHashValue(ms2))
 }
 
-func TestMutationsMarshaling(t *testing.T) {
+func TestMutationsMarshalling(t *testing.T) {
 	ms := NewMutations()
 	ms.Set("k1", []byte("v1"))
 	ms.Del("k2")

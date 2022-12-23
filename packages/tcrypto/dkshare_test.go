@@ -4,17 +4,19 @@
 package tcrypto
 
 import (
+	"encoding/json"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/random"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func TestMarshaling(t *testing.T) {
+func dkShare(t *testing.T) (DKShare, suites.Suite, *bn256.Suite, *cryptolib.PrivateKey) {
 	edSuite, err := suites.Find("Ed25519")
 	require.NoError(t, err)
 	blsSuite := bn256.NewSuite()
@@ -53,6 +55,7 @@ func TestMarshaling(t *testing.T) {
 		edPts,                                   // edPublicCommits
 		edSuite.Scalar().Pick(randomness),       // edPrivateShare
 		blsSuite,                                // blsSuite
+		4,                                       // blsThreshold
 		blsSuite.G2().Point().Pick(randomness),  // blsSharedPublic
 		rnd1,                                    // blsPublicCommits
 		rnd2,                                    // blsPublicShares
@@ -60,7 +63,30 @@ func TestMarshaling(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodeSecKeys[7])
+	return dks, edSuite, blsSuite, nodeSecKeys[7]
+}
+
+func TestMarshalling(t *testing.T) {
+	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+
+	dksBack, err := DKShareFromBytes(dks.Bytes(), edSuite, blsSuite, nodePrivKey)
 	require.NoError(t, err)
+	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
+}
+
+func TestJSONMarshalling(t *testing.T) {
+	dks, edSuite, blsSuite, nodePrivKey := dkShare(t)
+
+	jsonDKShare, err := json.Marshal(dks)
+	require.NoError(t, err)
+
+	dksBack := &dkShareImpl{
+		edSuite:     edSuite,
+		blsSuite:    blsSuite,
+		nodePrivKey: nodePrivKey,
+	}
+	err = json.Unmarshal(jsonDKShare, dksBack)
+	require.NoError(t, err)
+
 	require.EqualValues(t, dks.Bytes(), dksBack.Bytes())
 }

@@ -15,8 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 const (
@@ -28,8 +29,11 @@ const (
 	PeerMessageReceiverConsensus
 	PeerMessageReceiverCommonSubset
 	PeerMessageReceiverChain
+	PeerMessageReceiverChainDSS
+	PeerMessageReceiverChainCons
 	PeerMessageReceiverDkg
 	PeerMessageReceiverDkgInit
+	PeerMessageReceiverMempool
 )
 
 // NetworkProvider stands for the peer-to-peer network, as seen

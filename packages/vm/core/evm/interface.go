@@ -32,10 +32,9 @@ var (
 	FuncGetStorage                          = coreutil.ViewFunc(evmnames.FuncGetStorage)
 	FuncGetLogs                             = coreutil.ViewFunc(evmnames.FuncGetLogs)
 	FuncGetChainID                          = coreutil.ViewFunc(evmnames.FuncGetChainID)
+	FuncGetCallGasLimit                     = coreutil.ViewFunc(evmnames.FuncGetCallGasLimit)
 
-	// evm SC management
-	FuncSetGasRatio = coreutil.Func(evmnames.FuncSetGasRatio)
-	FuncGetGasRatio = coreutil.ViewFunc(evmnames.FuncGetGasRatio)
+	FuncRegisterERC20NativeToken = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
 
 	// block context
 	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
@@ -55,17 +54,21 @@ const (
 	FieldResult           = evmnames.FieldResult
 	FieldBlockNumber      = evmnames.FieldBlockNumber
 	FieldBlockHash        = evmnames.FieldBlockHash
-	FieldGasRatio         = evmnames.FieldGasRatio
 	FieldBlockGasLimit    = evmnames.FieldBlockGasLimit
 	FieldFilterQuery      = evmnames.FieldFilterQuery
-	FieldBlockKeepAmount  = evmnames.FieldBlockKeepAmount
+	FieldBlockKeepAmount  = evmnames.FieldBlockKeepAmount // int32
+
+	FieldFoundrySN         = evmnames.FieldFoundrySN         // uint32
+	FieldTokenName         = evmnames.FieldTokenName         // string
+	FieldTokenTickerSymbol = evmnames.FieldTokenTickerSymbol // string
+	FieldTokenDecimals     = evmnames.FieldTokenDecimals     // uint8
 )
 
 const (
 	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = uint16(1074) // IOTA -- get it?
 
-	BlockGasLimitDefault = uint64(15000000)
+	BlockGasLimitDefault = uint64(15_000_000)
 
 	BlockKeepAll           = -1
 	BlockKeepAmountDefault = BlockKeepAll

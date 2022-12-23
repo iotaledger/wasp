@@ -6,12 +6,13 @@ package test
 // 	"testing"
 // 	"time"
 
+// 	"github.com/stretchr/testify/require"
+
 // 	"github.com/iotaledger/wasp/packages/kv/codec"
 // 	"github.com/iotaledger/wasp/packages/kv/collections"
 // 	"github.com/iotaledger/wasp/packages/solo"
 // 	"github.com/iotaledger/wasp/packages/vm/core/root"
 // 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-// 	"github.com/stretchr/testify/require"
 // )
 
 // // TODO refactor to use blocklog

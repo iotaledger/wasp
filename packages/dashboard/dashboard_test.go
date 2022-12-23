@@ -1,15 +1,18 @@
 package dashboard
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 func checkProperConversionsToString(t *testing.T, html *goquery.Document) {
@@ -91,6 +94,18 @@ func TestDashboardChainBlock(t *testing.T) {
 		})
 		checkProperConversionsToString(t, html)
 	}
+
+	// post a request that fails
+	_, err := ch.PostRequestSync(solo.NewCallParams("", ""), nil)
+	require.NotEmpty(t, err.Error())
+	receipt := ch.LastReceipt()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlock, "/chain/:chainid/block/:index", map[string]string{
+		"chainid": ch.ChainID.String(),
+		"index":   strconv.Itoa(int(receipt.BlockIndex)),
+	})
+	checkProperConversionsToString(t, html)
+	t.Log(ch.ResolveVMError(receipt.Error).Error())
+	require.Equal(t, ch.ResolveVMError(receipt.Error).Error(), html.Find("#receipt-error-0").Text())
 }
 
 func TestDashboardChainContract(t *testing.T) {

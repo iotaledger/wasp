@@ -7,6 +7,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -18,8 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 type jsonRPCService struct {
@@ -58,7 +59,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 	j.chainServersMutex.Lock()
 	defer j.chainServersMutex.Unlock()
 
-	if j.chainServers[*chainID] == nil {
+	if j.chainServers[chainID] == nil {
 		chain := j.chains().Get(chainID)
 		if chain == nil {
 			return nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %+v", c.Param("chainID")))
@@ -73,7 +74,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 
 		var evmChainID uint16
 		{
-			r, err := backend.ISCCallView(evm.Contract.Name, evm.FuncGetChainID.Name, nil)
+			r, err := backend.ISCCallView(backend.ISCLatestBlockIndex(), evm.Contract.Name, evm.FuncGetChainID.Name, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +84,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 			}
 		}
 
-		j.chainServers[*chainID] = &chainServer{
+		j.chainServers[chainID] = &chainServer{
 			backend: backend,
 			rpc: jsonrpc.NewServer(
 				jsonrpc.NewEVMChain(backend, evmChainID),
@@ -92,7 +93,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 		}
 	}
 
-	return j.chainServers[*chainID], nil
+	return j.chainServers[chainID], nil
 }
 
 func (j *jsonRPCService) handleJSONRPC(c echo.Context) error {

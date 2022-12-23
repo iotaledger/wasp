@@ -3,33 +3,26 @@ package runvm
 import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 type VMRunner struct{}
 
-func (r VMRunner) Run(task *vm.VMTask) {
-	// optimistic read panic catcher for the whole VM task
-	err := panicutil.CatchPanicReturnError(
-		func() { runTask(task) },
-		coreutil.ErrorStateInvalidated,
-	)
+func (r VMRunner) Run(task *vm.VMTask) error {
+	// top exception catcher for all panics
+	// The VM session will be abandoned peacefully
+	err := panicutil.CatchAllButDBError(func() {
+		runTask(task)
+	}, task.Log)
 	if err != nil {
-		switch e := err.(type) {
-		case *isc.VMError:
-			task.VMError = e
-		case error:
-			// May require a different error type here?
-			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
-		default:
-			task.VMError = coreerrors.ErrUntypedError.Create(e.Error())
-		}
-		task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
 	}
+	return err
 }
 
 func NewVMRunner() vm.VMRunner {
@@ -70,6 +63,11 @@ func runTask(task *vm.VMTask) {
 		vmctx.AssertConsistentGasTotals()
 	}
 
+	{
+		accountsState := subrealm.NewReadOnly(task.StateDraft, kv.Key(accounts.Contract.Hname().Bytes()))
+		accounts.CheckLedger(accountsState, "runTask")
+	}
+
 	numProcessed := uint16(len(task.Results))
 
 	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
@@ -97,23 +95,7 @@ func runTask(task *vm.VMTask) {
 	}
 }
 
-// checkTotalAssets asserts if assets on transaction equals assets on ledger
-func checkTotalAssets(essence *iotago.TransactionEssence, lastTotalOnChainAssets *isc.FungibleTokens) {
+// checkTotalAssets asserts if assets on the L1 transaction equals assets on the chain's ledger
+func checkTotalAssets(_ *iotago.TransactionEssence, _ *isc.FungibleTokens) {
 	// TODO implement
-	//var chainOutput *ledgerstate.AliasOutput
-	//for _, o := range essence.Outputs() {
-	//	if out, ok := o.(*ledgerstate.AliasOutput); ok {
-	//		chainOutput = out
-	//	}
-	//}
-	//if chainOutput == nil {
-	//	return xerrors.New("inconsistency: chain output not found")
-	//}
-	//balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
-	//diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
-	//// we expect assets in the chain output and total assets on-chain differs only in the amount of
-	//// anti-dust tokens locked in the output. Otherwise it is inconsistency
-	//if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
-	//	return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
-	//}
 }

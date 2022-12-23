@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -10,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"golang.org/x/xerrors"
 )
 
 // Call implements sandbox logic of the call between contracts on-chain
@@ -82,10 +83,12 @@ func (vmctx *VMContext) getToBeCaller() isc.AgentID {
 		return vmctx.MyAgentID()
 	}
 	if vmctx.req == nil {
+		if vmctx.callerIsVM {
+			return &isc.NilAgentID{} // calling open/close block context
+		}
 		// e.g. saving the anchor ID
 		return vmctx.chainOwnerID
 	}
-	// request context
 	return vmctx.req.SenderAccount()
 }
 

@@ -12,17 +12,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/mr-tron/base58"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
-	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 const (
@@ -44,7 +44,8 @@ type proc struct {
 	node         *Node             // DKG node we are running in.
 	nodeIndex    uint16            // Index of this node.
 	initiatorPub *cryptolib.PublicKey
-	threshold    uint16
+	threshold    uint16                                     // Threshold used for the ED signatures.
+	blsThreshold uint16                                     // Here we must use low threshold.
 	roundRetry   time.Duration                              // Retry period for the Peer <-> Peer communication.
 	netGroup     peering.GroupProvider                      // A group for which the distributed key is generated.
 	dkgImpl      map[keySetType]*rabin_dkg.DistKeyGenerator // The cryptographic implementation to use.
@@ -64,6 +65,9 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	if netGroup, err = node.netProvider.PeerGroup(dkgID, msg.peerPubs); err != nil {
 		return nil, err
 	}
+
+	blsThreshold := deriveBlsThreshold(msg)
+
 	var dkgImpl map[keySetType]*rabin_dkg.DistKeyGenerator
 	if len(msg.peerPubs) >= 2 {
 		// We use real DKG only if N >= 2. Otherwise we just generate key pair, and that's all.
@@ -78,7 +82,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
 			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
-		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
+		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
 			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
@@ -89,6 +93,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		nodeIndex:    netGroup.SelfIndex(),
 		initiatorPub: msg.initiatorPub,
 		threshold:    msg.threshold,
+		blsThreshold: uint16(blsThreshold),
 		roundRetry:   msg.roundRetry,
 		netGroup:     netGroup,
 		dkgImpl:      dkgImpl,
@@ -152,6 +157,21 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	p.attachID = p.netGroup.Attach(peering.PeerMessageReceiverDkg, p.onPeerMessage)
 	stepsStart <- make(multiKeySetMsgs)
 	return &p, nil
+}
+
+// We have to take different thresholds for the BLS.
+// BLS is only used for randomness, thus F+1 is enough.
+// In the consensus, the BLS threshold has to be not bigger than N-2F.
+func deriveBlsThreshold(msg *initiatorInitMsg) int {
+	f := (len(msg.peerPubs) - 1) / 3
+	var blsThreshold int
+	if f > 0 {
+		blsThreshold = f + 1
+	} else {
+		// TODO: Low Threshold don't work with low N for some reason. Find out why and use F+1, i.e. 1.
+		blsThreshold = int(msg.threshold)
+	}
+	return blsThreshold
 }
 
 // Handles a message from a peer and pass it to the main thread.
@@ -253,7 +273,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, kst keySetType, ini
 			return nil, err
 		}
 		p.dkgLock.Unlock()
-		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, base58.Encode(r.Response.SessionID))
+		p.log.Debugf("RabinDKG[%v] DealResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, iotago.EncodeHex(r.Response.SessionID))
 		ourResponses = append(ourResponses, r)
 	}
 	//
@@ -295,10 +315,10 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 		for _, r := range recvResponses[i].responses {
 			p.dkgLock.Lock()
 			var j *rabin_dkg.Justification
-			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, base58.Encode(r.Response.SessionID))
+			p.log.Debugf("RabinDKG[%v] ProcResponse[%v|%v]=%v", p.myPubKey.String(), r.Index, r.Response.Index, iotago.EncodeHex(r.Response.SessionID))
 			if j, err = p.dkgImpl[kst].ProcessResponse(r); err != nil {
 				p.dkgLock.Unlock()
-				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, base58.Encode(r.Response.SessionID))
+				p.log.Errorf("ProcessResponse(%v) -> %+v, resp.SessionID=%v", i, err, iotago.EncodeHex(r.Response.SessionID))
 				return nil, err
 			}
 			p.dkgLock.Unlock()
@@ -501,7 +521,8 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
-func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
+//nolint:gocyclo,funlen
+func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	step byte,
 	initRecv *peering.PeerMessageGroupIn,
 	recvMsgs multiKeySetMsgs,
@@ -519,10 +540,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
 			p.nodePubKeys(),                 // NodePubKeys
 			p.node.edSuite,                  // Ed25519: Suite
 			keyPairE.Public,                 // Ed25519: SharedPublic
-			make([]kyber.Point, 0),          // Ed25519: PublicCommits
+			[]kyber.Point{keyPairE.Public},  // Ed25519: PublicCommits
 			[]kyber.Point{keyPairE.Public},  // Ed25519: PublicShares
 			keyPairE.Private,                // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
+			1,                               // BLS: Threshold
 			keyPairB.Public,                 // BLS: SharedPublic
 			make([]kyber.Point, 0),          // BLS: PublicCommits
 			[]kyber.Point{keyPairB.Public},  // BLS: PublicShares
@@ -600,6 +622,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp( //nolint:funlen
 			publicSharesDSS,                 // Ed25519: PublicShares
 			distKeyShareDSS.PriShare().V,    // Ed25519: PrivateShare
 			p.node.blsSuite,                 // BLS: Suite
+			p.blsThreshold,                  // BLS: Threshold
 			distKeyShareBLS.Public(),        // BLS: SharedPublic
 			distKeyShareBLS.Commits,         // BLS: PublicCommits
 			publicSharesBLS,                 // BLS: PublicShares
@@ -636,7 +659,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering
 		return nil, errors.New("there is no dkShare to commit")
 	}
 	p.dkShare.SetPublicShares(doneMsg.edPubShares, doneMsg.blsPubShares) // Store public shares of all the other peers.
-	if err := p.node.registry.SaveDKShare(p.dkShare); err != nil {
+	if err := p.node.dkShareRegistryProvider.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
 	return makePeerMessage(p.dkgID, peering.PeerMessageReceiverDkg, step, &initiatorStatusMsg{error: nil}), nil
@@ -659,18 +682,18 @@ func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
 
 func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error) {
 	var err error
-	var dssPublicShareBytes []byte
-	if dssPublicShareBytes, err = p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
-		return nil, err
-	}
+	// var dssPublicShareBytes []byte
+	// if dssPublicShareBytes, err = p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
+	// 	return nil, err
+	// }
 	var blsPublicShareBytes []byte
 	if blsPublicShareBytes, err = p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()].MarshalBinary(); err != nil {
 		return nil, err
 	}
-	var dssSignature *dss.PartialSig
-	if dssSignature, err = p.dkShare.DSSSignShare(dssPublicShareBytes); err != nil {
-		return nil, err
-	}
+	// var dssSignature *dss.PartialSig // TODO: we have to add another DKG here to produce a nonce.
+	// if dssSignature, err = p.dkShare.DSSSignShare(dssPublicShareBytes); err != nil {
+	// 	return nil, err
+	// }
 	var blsSignature []byte
 	if blsSignature, err = p.dkShare.BLSSign(blsPublicShareBytes); err != nil {
 		return nil, err
@@ -680,7 +703,7 @@ func (p *proc) makeInitiatorPubShareMsg(step byte) (*initiatorPubShareMsg, error
 		sharedAddress:   p.dkShare.GetAddress(),
 		edSharedPublic:  p.dkShare.DSSSharedPublic(),
 		edPublicShare:   p.dkShare.DSSPublicShares()[*p.dkShare.GetIndex()],
-		edSignature:     dssSignature.Signature,
+		edSignature:     []byte{}, // dssSignature.Signature, // TODO: Restore this.
 		blsSharedPublic: p.dkShare.BLSSharedPublic(),
 		blsPublicShare:  p.dkShare.BLSPublicShares()[*p.dkShare.GetIndex()],
 		blsSignature:    blsSignature,
@@ -765,7 +788,8 @@ func (s *procStep) recv(msg *peering.PeerMessageGroupIn) {
 	s.recvCh <- msg
 }
 
-func (s *procStep) run() { //nolint:funlen, gocyclo
+//nolint:gocyclo,funlen
+func (s *procStep) run() {
 	var err error
 	for {
 		select {

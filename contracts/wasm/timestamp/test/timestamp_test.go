@@ -3,18 +3,20 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/wasm/timestamp/go/timestamp"
-	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/contracts/wasm/timestamp/go/timestamp"
+	"github.com/iotaledger/wasp/contracts/wasm/timestamp/go/timestampimpl"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestampimpl.OnDispatch)
 	require.NoError(t, ctx.ContractExists(timestamp.ScName))
 }
 
 func TestStamp(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestamp.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, timestamp.ScName, timestampimpl.OnDispatch)
 
 	v := timestamp.ScFuncs.GetTimestamp(ctx)
 	v.Func.Call()

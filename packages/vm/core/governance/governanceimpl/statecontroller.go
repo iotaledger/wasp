@@ -68,7 +68,7 @@ func removeAllowedStateControllerAddress(ctx isc.Sandbox) dict.Dict {
 }
 
 func getAllowedStateControllerAddresses(ctx isc.SandboxView) dict.Dict {
-	amap := collections.NewMapReadOnly(ctx.State(), governance.StateVarAllowedStateControllerAddresses)
+	amap := collections.NewMapReadOnly(ctx.StateR(), governance.StateVarAllowedStateControllerAddresses)
 	if amap.MustLen() == 0 {
 		return nil
 	}

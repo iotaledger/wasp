@@ -1,30 +1,26 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmtypes from "./index";
+import {WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
+import {bytesFromUint8Array} from "./scbytes";
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function stringDecode(dec: wasmtypes.WasmDecoder): string {
+export function stringDecode(dec: WasmDecoder): string {
     return stringFromBytes(dec.bytes());
 }
 
-export function stringEncode(enc: wasmtypes.WasmEncoder, value: string): void {
+export function stringEncode(enc: WasmEncoder, value: string): void {
     enc.bytes(stringToBytes(value));
 }
 
-export function stringFromBytes(buf: u8[]): string {
-    return String.UTF8.decodeUnsafe(buf.dataStart, buf.length);
+export function stringFromBytes(buf: Uint8Array): string {
+    return new TextDecoder().decode(buf);
 }
 
-export function stringToBytes(value: string): u8[] {
-    let arrayBuffer = String.UTF8.encode(value);
-    let u8Array = Uint8Array.wrap(arrayBuffer)
-    let ret = new Array<u8>(u8Array.length);
-    for (let i = 0; i < ret.length; i++) {
-        ret[i] = u8Array[i];
-    }
-    return ret;
+export function stringToBytes(value: string): Uint8Array {
+    return new TextEncoder().encode(value);
 }
 
 export function stringFromString(value: string): string {
@@ -38,9 +34,9 @@ export function stringToString(value: string): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableString {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

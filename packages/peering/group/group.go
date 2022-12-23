@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
-	"golang.org/x/xerrors"
 )
 
 const NotInGroup uint16 = 0xFFFF
@@ -104,6 +105,9 @@ func (g *groupImpl) SendMsgBroadcast(msgReceiver, msgType byte, msgData []byte, 
 
 // ExchangeRound sends a message to the specified set of peers and waits for acks.
 // Resends the messages if acks are not received for some time.
+//
+
+//nolint:gocyclo
 func (g *groupImpl) ExchangeRound(
 	peers map[uint16]peering.PeerSender,
 	recvCh chan *peering.PeerMessageIn,

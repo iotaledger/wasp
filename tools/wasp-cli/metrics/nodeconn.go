@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 const maxMessageLen = 80
@@ -18,7 +19,7 @@ var nodeconnMetricsCmd = &cobra.Command{
 	Short: "Show current value of collected metrics of connection to L1",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		if chainAlias == "" {
 			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
 			log.Check(err)
@@ -31,9 +32,9 @@ var nodeconnMetricsCmd = &cobra.Command{
 				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
 			)
 		} else {
-			chid, err := isc.ChainIDFromString(chainAlias)
+			chainID, err := isc.ChainIDFromString(chainAlias)
 			log.Check(err)
-			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chid)
+			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chainID)
 			log.Check(err)
 			printMessagesMetrics(msgsMetrics, [][]string{})
 		}

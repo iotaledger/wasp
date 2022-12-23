@@ -1,0 +1,35 @@
+@startuml
+
+top to bottom direction
+
+map a3c2 {
+  extension => 0x6464 "dd"
+  key => 0x636363646464 "cccddd"
+  terminal => "c"
+}
+map c4cf {
+  extension => 0x6565 "ee"
+  key => 0x636363656565 "ccceee"
+  terminal => hash("c" *  70)
+}
+map a3ac {
+  extension => 0x63636 "cc`"
+  key => 0x6363636 "ccc`"
+  child(4) *--> a3c2
+  child(5) *--> c4cf
+}
+map 7e84 {
+  key => 0x63 "b"
+  terminal => "bb"
+}
+map 6174 {
+  key => 0x6 "`"
+  child(3) *--> a3ac
+  child(2) *--> 7e84
+}
+map deb0 {
+  key => ""
+  child(6) *--> 6174
+}
+
+@enduml

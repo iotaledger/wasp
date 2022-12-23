@@ -3,17 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/nodeconn"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/spf13/pflag"
+
+	"github.com/iotaledger/hive.go/core/configuration"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/util/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/spf13/pflag"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 const cmdName = "wasp-cluster"
@@ -31,7 +33,7 @@ func usage(flags *pflag.FlagSet) {
 	os.Exit(1)
 }
 
-//nolint:funlen
+//nolint:funlen,gocyclo
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
@@ -46,8 +48,11 @@ func main() {
 	commonFlags.IntVarP(&waspConfig.FirstDashboardPort, "first-dashboard-port", "h", waspConfig.FirstDashboardPort, "First wasp dashboard port")
 
 	l1StarterFlags := flag.NewFlagSet("l1", flag.ExitOnError)
-	l1 := l1starter.New(l1StarterFlags)
+	inxStarterFlags := flag.NewFlagSet("inx", flag.ExitOnError)
+	l1 := l1starter.New(l1StarterFlags, inxStarterFlags)
+
 	commonFlags.AddGoFlagSet(l1StarterFlags)
+	commonFlags.AddGoFlagSet(inxStarterFlags)
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
@@ -58,7 +63,12 @@ func main() {
 		check(err)
 	}
 
-	if err := logger.InitGlobalLogger(parameters.Init()); err != nil {
+	cfg := configuration.New()
+	if err := cfg.Set("logger.disableStacktrace", true); err != nil {
+		panic(err)
+	}
+
+	if err := logger.InitGlobalLogger(cfg); err != nil {
 		panic(err)
 	}
 
@@ -89,29 +99,33 @@ func main() {
 			l1.Config,
 		)
 		clusterLogger := logger.NewLogger(cmdName)
-		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
 		err := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger).InitDataPath(*templatesPath, *forceRemove)
 		check(err)
 
 	case "start":
 		flags := pflag.NewFlagSet("start", pflag.ExitOnError)
 		disposable := flags.BoolP("disposable", "d", false, "If set, run a disposable cluster in a temporary directory (no need for init, automatically removed when stopped)")
+		mapDb := flags.BoolP("mapdb", "m", false, "If set, use mapdb instead of rocksdb")
 		flags.AddFlagSet(commonFlags)
 		parseFlags(flags)
 
 		if flags.NArg() > 1 {
 			fmt.Printf("Usage: %s start [path] [options]\n", os.Args[0])
 			flags.PrintDefaults()
-			os.Exit(1) // nolint:gocritic
+			os.Exit(1) //nolint:gocritic
 		}
 
-		var err error
+		if *mapDb {
+			templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+		}
 
 		if !*disposable && l1.PrivtangleEnabled() {
 			fmt.Printf("non-disposable cluster and privtangle are mutually exclusive")
 			os.Exit(1)
 		}
 
+		var err error
 		dataPath := "."
 		if flags.NArg() == 1 {
 			if *disposable {
@@ -119,7 +133,7 @@ func main() {
 			}
 			dataPath = flags.Arg(0)
 		} else if *disposable {
-			dataPath, err = ioutil.TempDir(os.TempDir(), cmdName+"-*")
+			dataPath, err = os.MkdirTemp(os.TempDir(), cmdName+"-*")
 			check(err)
 		}
 
@@ -143,7 +157,7 @@ func main() {
 		}
 
 		clusterLogger := logger.NewLogger(cmdName)
-		nodeconn.NewL1Client(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
+		l1connection.NewClient(clusterConfig.L1, clusterLogger) // indirectly initializes parameters.L1
 		clu := cluster.New(cmdName, clusterConfig, dataPath, nil, clusterLogger)
 
 		if *disposable {

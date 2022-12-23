@@ -45,8 +45,8 @@ func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
 		}
 		iscAssets.Tokens = append(iscAssets.Tokens, token)
 	}
-	for _, nftID := range assets.NftIDs {
-		nft := cvt.IscNFTID(nftID)
+	for nftID := range assets.NftIDs {
+		nft := cvt.IscNFTID(&nftID)
 		iscAllowance.NFTs = append(iscAllowance.NFTs, *nft)
 	}
 	return iscAllowance
@@ -58,9 +58,9 @@ func (cvt WasmConvertor) IscBigInt(amount wasmtypes.ScBigInt) *big.Int {
 	return res
 }
 
-func (cvt WasmConvertor) IscChainID(chainID *wasmtypes.ScChainID) *isc.ChainID {
+func (cvt WasmConvertor) IscChainID(chainID *wasmtypes.ScChainID) isc.ChainID {
 	buf := wasmtypes.ChainIDToBytes(*chainID)
-	iscChainID := new(isc.ChainID)
+	iscChainID := isc.ChainID{}
 	copy(iscChainID[:], buf)
 	return iscChainID
 }
@@ -86,8 +86,7 @@ func (cvt WasmConvertor) IscNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
 func (cvt WasmConvertor) IscRequestID(requestID *wasmtypes.ScRequestID) *isc.RequestID {
 	buf := wasmtypes.RequestIDToBytes(*requestID)
 	iscRequestID := new(isc.RequestID)
-	copy(iscRequestID.TransactionID[:], buf)
-	iscRequestID.TransactionOutputIndex = wasmtypes.Uint16FromBytes(buf[wasmtypes.ScHashLength:])
+	copy(iscRequestID[:], buf)
 	return iscRequestID
 }
 
@@ -125,7 +124,7 @@ func (cvt WasmConvertor) ScBigInt(bigInt *big.Int) wasmtypes.ScBigInt {
 	return wasmtypes.BigIntFromBytes(bigInt.Bytes())
 }
 
-func (cvt WasmConvertor) ScChainID(chainID *isc.ChainID) wasmtypes.ScChainID {
+func (cvt WasmConvertor) ScChainID(chainID isc.ChainID) wasmtypes.ScChainID {
 	return wasmtypes.ChainIDFromBytes(chainID.Bytes())
 }
 

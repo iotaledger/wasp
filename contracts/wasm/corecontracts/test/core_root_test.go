@@ -7,34 +7,38 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblob"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreroot"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func setupRoot(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
 
 func TestDeployContract(t *testing.T) {
-	if *wasmsolo.RsWasm {
-		// will fail because rust blob is already loaded
-		t.SkipNow()
-	}
 	ctxr := setupRoot(t)
 
-	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
+	// first turn off default required deploy permission
+	f := coreroot.ScFuncs.RequireDeployPermissions(ctxr)
+	f.Params.DeployPermissionsEnabled().SetValue(false)
+	f.Func.Post()
+	require.NoError(t, ctxr.Err)
+
+	// now deploy
+	ctxb := ctxr.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctxb.Err)
 	fblob := coreblob.ScFuncs.StoreBlob(ctxb.OffLedger(ctxb.NewSoloAgent()))
 	wasm, err := os.ReadFile("./testdata/testdata.wasm")
 	require.NoError(t, err)
 	fblob.Params.ProgBinary().SetValue(wasm)
-	fblob.Params.VmType().SetValue("wasmtime")
+	fblob.Params.VMType().SetValue("wasmtime")
 	fblob.Func.Post()
 	require.NoError(t, ctxb.Err)
 
@@ -86,7 +90,7 @@ func TestFindContract(t *testing.T) {
 	f.Params.Hname().SetValue(coreroot.HScName)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	require.Equal(t, []byte{0xff}, f.Results.ContractFound().Value())
+	require.True(t, f.Results.ContractFound().Value())
 	require.NotNil(t, f.Results.ContractRecData().Value())
 	rbin := f.Results.ContractRecData().Value()
 	record, err := root.ContractRecordFromBytes(rbin)

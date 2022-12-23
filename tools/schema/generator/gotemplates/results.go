@@ -6,10 +6,9 @@ package gotemplates
 var resultsGo = map[string]string{
 	// *******************************
 	"results.go": `
-//nolint:revive
-$#emit goPackage
+package $package
 
-$#emit importWasmTypes
+$#emit importWasmLibAndWasmTypes
 $#each func resultsFunc
 `,
 	// *******************************
@@ -32,6 +31,14 @@ $#each result proxyContainers
 type $TypeName struct {
 	proxy wasmtypes.Proxy
 }
+$#if mut resultsMutConstructor
 $#each result proxyMethods
+`,
+	// *******************************
+	"resultsMutConstructor": `
+
+func New$TypeName(results *wasmlib.ScDict) $TypeName {
+	return $TypeName{proxy: results.AsProxy()}
+}
 `,
 }

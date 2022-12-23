@@ -6,17 +6,18 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblocklog"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func setupBlockLog(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreblocklog.ScName, coreblocklog.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -132,8 +133,8 @@ func TestGetRequestReceipt(t *testing.T) {
 
 	receipt, err := blocklog.RequestReceiptFromBytes(f.Results.RequestRecord().Value())
 	require.NoError(t, err)
-	soloreceipt, exist := ctx.Chain.GetRequestReceipt(reqs[0])
-	assert.True(t, exist)
+	soloreceipt, err := ctx.Chain.GetRequestReceipt(reqs[0])
+	assert.Nil(t, err)
 
 	// note: this is what ctx.Chain.GetRequestReceipt() does as well,
 	// so we better make sure they are equal before comparing
@@ -176,7 +177,7 @@ func TestIsRequestProcessed(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.Equal(t, ctx.Chain.IsRequestProcessed(reqs[0]), f.Results.RequestProcessed().Value())
 
-	notExistReqID := wasmtypes.RequestIDFromString("0-cc025a91fe7f071a7a53a1db5257d161d666d4aa1606422a3b3553c2b8b904e7")
+	notExistReqID := wasmtypes.RequestIDFromString("0xcc025a91fe7f071a7a53a1db5257d161d666d4aa1606422a3b3553c2b8b904e70000")
 	f.Params.RequestID().SetValue(notExistReqID)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)

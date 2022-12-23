@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/stretchr/testify/require"
 )
 
 func TestBlockInfoLatest(t *testing.T) {
@@ -137,8 +138,8 @@ func TestRequestReceipt(t *testing.T) {
 	require.EqualValues(t, 1, len(reqs))
 	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
 
-	receipt, ok := ch.GetRequestReceipt(reqs[0].ID())
-	require.True(t, ok)
+	receipt, err := ch.GetRequestReceipt(reqs[0].ID())
+	require.Nil(t, err)
 	a := reqs[0].Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
@@ -197,7 +198,7 @@ func TestViewGetRequestReceipt(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
-	receipt, ok := ch.GetRequestReceipt(isc.RequestID{})
+	receipt, err := ch.GetRequestReceipt(isc.RequestID{})
 	require.Nil(t, receipt)
-	require.False(t, ok)
+	require.Nil(t, err)
 }

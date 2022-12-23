@@ -13,25 +13,25 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-// ISCChainID matches the type definition in ISC.sol
+// ISCChainID matches the type definition in ISCTypes.sol
 type ISCChainID [isc.ChainIDLength]byte
 
 func init() {
 	if isc.ChainIDLength != 32 {
-		panic("static check: ChainID length does not match bytes32 in ISC.sol")
+		panic("static check: ChainID length does not match bytes32 in ISCTypes.sol")
 	}
 }
 
-func WrapISCChainID(c *isc.ChainID) (ret ISCChainID) {
+func WrapISCChainID(c isc.ChainID) (ret ISCChainID) {
 	copy(ret[:], c.Bytes())
 	return
 }
 
-func (c ISCChainID) Unwrap() (*isc.ChainID, error) {
+func (c ISCChainID) Unwrap() (isc.ChainID, error) {
 	return isc.ChainIDFromBytes(c[:])
 }
 
-func (c ISCChainID) MustUnwrap() *isc.ChainID {
+func (c ISCChainID) MustUnwrap() isc.ChainID {
 	ret, err := c.Unwrap()
 	if err != nil {
 		panic(err)
@@ -39,7 +39,7 @@ func (c ISCChainID) MustUnwrap() *isc.ChainID {
 	return ret
 }
 
-// NativeTokenID matches the struct definition in ISC.sol
+// NativeTokenID matches the struct definition in ISCTypes.sol
 type NativeTokenID struct {
 	Data []byte
 }
@@ -53,7 +53,12 @@ func (a NativeTokenID) Unwrap() (ret iotago.NativeTokenID) {
 	return
 }
 
-// NativeToken matches the struct definition in ISC.sol
+func (a NativeTokenID) MustUnwrap() (ret iotago.NativeTokenID) {
+	copy(ret[:], a.Data)
+	return
+}
+
+// NativeToken matches the struct definition in ISCTypes.sol
 type NativeToken struct {
 	ID     NativeTokenID
 	Amount *big.Int
@@ -73,7 +78,7 @@ func (nt NativeToken) Unwrap() *iotago.NativeToken {
 	}
 }
 
-// L1Address matches the struct definition in ISC.sol
+// L1Address matches the struct definition in ISCTypes.sol
 type L1Address struct {
 	Data []byte
 }
@@ -98,7 +103,7 @@ func (a L1Address) MustUnwrap() iotago.Address {
 	return ret
 }
 
-// ISCAgentID matches the struct definition in ISC.sol
+// ISCAgentID matches the struct definition in ISCTypes.sol
 type ISCAgentID struct {
 	Data []byte
 }
@@ -119,12 +124,33 @@ func (a ISCAgentID) MustUnwrap() isc.AgentID {
 	return ret
 }
 
-// NFTID matches the type definition in ISC.sol
+// ISCRequestID matches the struct definition in ISCTypes.sol
+type ISCRequestID struct {
+	Data []byte
+}
+
+func WrapISCRequestID(rid isc.RequestID) ISCRequestID {
+	return ISCRequestID{Data: rid.Bytes()}
+}
+
+func (rid ISCRequestID) Unwrap() (isc.RequestID, error) {
+	return isc.RequestIDFromBytes(rid.Data)
+}
+
+func (rid ISCRequestID) MustUnwrap() isc.RequestID {
+	ret, err := rid.Unwrap()
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// NFTID matches the type definition in ISCTypes.sol
 type NFTID [iotago.NFTIDLength]byte
 
 func init() {
 	if iotago.NFTIDLength != 32 {
-		panic("static check: NFTID length does not match bytes32 in ISC.sol")
+		panic("static check: NFTID length does not match bytes32 in ISCTypes.sol")
 	}
 }
 
@@ -133,24 +159,34 @@ func WrapNFTID(c iotago.NFTID) (ret NFTID) {
 	return
 }
 
-func (c NFTID) Unwrap() (ret iotago.NFTID) {
-	copy(ret[:], c[:])
+func (n NFTID) Unwrap() (ret iotago.NFTID) {
+	copy(ret[:], n[:])
 	return
 }
 
-// ISCNFT matches the struct definition in ISC.sol
+// TokenID returns the uint256 tokenID for ERC721
+func (n NFTID) TokenID() *big.Int {
+	return new(big.Int).SetBytes(n[:])
+}
+
+// ISCNFT matches the struct definition in ISCTypes.sol
 type ISCNFT struct {
 	ID       NFTID
 	Issuer   L1Address
 	Metadata []byte
+	Owner    ISCAgentID
 }
 
 func WrapISCNFT(n *isc.NFT) ISCNFT {
-	return ISCNFT{
+	r := ISCNFT{
 		ID:       WrapNFTID(n.ID),
 		Issuer:   WrapL1Address(n.Issuer),
 		Metadata: n.Metadata,
 	}
+	if n.Owner != nil {
+		r.Owner = WrapISCAgentID(n.Owner)
+	}
+	return r
 }
 
 func (n ISCNFT) Unwrap() (*isc.NFT, error) {
@@ -162,6 +198,7 @@ func (n ISCNFT) Unwrap() (*isc.NFT, error) {
 		ID:       n.ID.Unwrap(),
 		Issuer:   issuer,
 		Metadata: n.Metadata,
+		Owner:    n.Owner.MustUnwrap(),
 	}, nil
 }
 
@@ -173,7 +210,7 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 	return ret
 }
 
-// ISCAllowance matches the struct definition in ISC.sol
+// ISCAllowance matches the struct definition in ISCTypes.sol
 type ISCAllowance struct {
 	BaseTokens uint64
 	Tokens     []NativeToken
@@ -211,13 +248,13 @@ func (a ISCAllowance) Unwrap() *isc.Allowance {
 	return isc.NewAllowance(a.BaseTokens, tokens, nfts)
 }
 
-// ISCDictItem matches the struct definition in ISC.sol
+// ISCDictItem matches the struct definition in ISCTypes.sol
 type ISCDictItem struct {
 	Key   []byte
 	Value []byte
 }
 
-// ISCDict matches the struct definition in ISC.sol
+// ISCDict matches the struct definition in ISCTypes.sol
 type ISCDict struct {
 	Items []ISCDictItem
 }
@@ -385,4 +422,11 @@ func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	}
 
 	return ret
+}
+
+type ISCTokenProperties struct {
+	Name         string
+	TickerSymbol string
+	Decimals     uint8
+	TotalSupply  *big.Int
 }

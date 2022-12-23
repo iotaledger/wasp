@@ -4,15 +4,16 @@ import (
 	"time"
 )
 
-type emptyNodeConnectionMessageMetrics struct{}
+type emptyNodeConnectionMessageMetrics[T any] struct{}
 
-var _ NodeConnectionMessageMetrics = &emptyNodeConnectionMessageMetrics{}
-
-func newEmptyNodeConnectionMessageMetrics() NodeConnectionMessageMetrics {
-	return &emptyNodeConnectionMessageMetrics{}
+func newEmptyNodeConnectionMessageMetrics[T any]() NodeConnectionMessageMetrics[T] {
+	return &emptyNodeConnectionMessageMetrics[T]{}
 }
 
-func (ncmmi *emptyNodeConnectionMessageMetrics) CountLastMessage(msg interface{}) {}
-func (ncmmi *emptyNodeConnectionMessageMetrics) GetMessageTotal() uint32          { return 0 }
-func (ncmmi *emptyNodeConnectionMessageMetrics) GetLastEvent() time.Time          { return time.Time{} }
-func (ncmmi *emptyNodeConnectionMessageMetrics) GetLastMessage() interface{}      { return nil }
+func (ncmmi *emptyNodeConnectionMessageMetrics[T]) CountLastMessage(msg T)  {}
+func (ncmmi *emptyNodeConnectionMessageMetrics[T]) GetMessageTotal() uint32 { return 0 }
+func (ncmmi *emptyNodeConnectionMessageMetrics[T]) GetLastEvent() time.Time { return time.Time{} }
+func (ncmmi *emptyNodeConnectionMessageMetrics[T]) GetLastMessage() T {
+	var result T
+	return result
+}

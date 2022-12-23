@@ -6,18 +6,19 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreblob"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 // this is the expected blob hash for key0/val0 key1/val1
-const expectedBlobHash = "5fec3bfc701d80bdf75e337cb3dcb401c2423d15fc17a74d5b644dae143118b1"
+const expectedBlobHash = "0x5fec3bfc701d80bdf75e337cb3dcb401c2423d15fc17a74d5b644dae143118b1"
 
 func setupBlob(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreblob.ScName, coreblob.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -80,7 +81,7 @@ func TestListBlobs(t *testing.T) {
 	fStore.Params.Blobs().GetBytes("key1").SetValue([]byte("_val1"))
 	fStore.Func.Post()
 	require.NoError(t, ctx.Err)
-	expectedHash := "462af4abe5977f4dd985a0a097705925b9fa6c033c9d931c1e2171f710693462"
+	expectedHash := "0x462af4abe5977f4dd985a0a097705925b9fa6c033c9d931c1e2171f710693462"
 	require.Equal(t, expectedHash, fStore.Results.Hash().Value().String())
 
 	fList := coreblob.ScFuncs.ListBlobs(ctx)

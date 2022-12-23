@@ -11,41 +11,41 @@ import (
 )
 
 func PostTransaction(tx *iotago.Transaction) {
-	err := config.L1Client().PostTx(tx)
+	_, err := config.L1Client().PostTxAndWaitUntilConfirmation(tx)
 	log.Check(err)
 }
 
-func WithOffLedgerRequest(chainID *isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
+func WithOffLedgerRequest(chainID isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
-		_, err = config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
+		_, err = config.WaspClient(config.MustWaspAPI()).WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute)
 		log.Check(err)
 	}
 	// TODO print receipt?
 }
 
-func WithSCTransaction(chainID *isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
+func WithSCTransaction(chainID isc.ChainID, f func() (*iotago.Transaction, error), forceWait ...bool) *iotago.Transaction {
 	tx, err := f()
 	log.Check(err)
 	logTx(chainID, tx)
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err := config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
+		_, err := config.WaspClient(config.MustWaspAPI()).WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute)
 		log.Check(err)
 	}
 
 	return tx
 }
 
-func logTx(chainID *isc.ChainID, tx *iotago.Transaction) {
+func logTx(chainID isc.ChainID, tx *iotago.Transaction) {
 	allReqs, err := isc.RequestsInTransaction(tx)
 	log.Check(err)
 	txid, err := tx.ID()
 	log.Check(err)
-	reqs := allReqs[*chainID]
+	reqs := allReqs[chainID]
 	if len(reqs) == 0 {
 		log.Printf("Posted on-ledger transaction %s\n", txid.ToHex())
 	} else {

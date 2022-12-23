@@ -2,11 +2,12 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
-	"encoding/hex"
+
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
+	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/mr-tron/base58"
-	"golang.org/x/xerrors"
 )
 
 type PublicKey struct {
@@ -27,23 +28,12 @@ func NewEmptyPublicKey() *PublicKey {
 	}
 }
 
-// TODO this should be deprecated. just use Hex everywhere
-func NewPublicKeyFromBase58String(s string) (publicKey *PublicKey, err error) {
-	b, err := base58.Decode(s)
-	if err != nil {
-		return publicKey, xerrors.Errorf("failed to parse public key %s from base58 string: %w", s, err)
-	}
-	publicKey, err = NewPublicKeyFromBytes(b)
-	return publicKey, err
-}
-
 func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
-	b, err := hex.DecodeString(s)
+	bytes, err := iotago.DecodeHex(s)
 	if err != nil {
 		return publicKey, xerrors.Errorf("failed to parse public key %s from hex string: %w", s, err)
 	}
-	publicKey, err = NewPublicKeyFromBytes(b)
-	return publicKey, err
+	return NewPublicKeyFromBytes(bytes)
 }
 
 func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
@@ -51,6 +41,12 @@ func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 		return nil, xerrors.Errorf("bytes too short")
 	}
 	return &PublicKey{publicKeyBytes}, nil
+}
+
+func (pkT *PublicKey) Clone() *PublicKey {
+	key := make([]byte, len(pkT.key))
+	copy(key, pkT.key)
+	return &PublicKey{key: key}
 }
 
 func (pkT *PublicKey) AsBytes() []byte {
@@ -66,6 +62,15 @@ func (pkT *PublicKey) AsKey() PublicKeyKey {
 func (pkT *PublicKey) AsEd25519Address() *iotago.Ed25519Address {
 	ret := iotago.Ed25519AddressFromPubKey(pkT.key)
 	return &ret
+}
+
+func (pkT *PublicKey) AsKyberPoint() (kyber.Point, error) {
+	group := new(edwards25519.Curve)
+	point := group.Point()
+	if err := point.UnmarshalBinary(pkT.AsBytes()); err != nil {
+		return nil, err
+	}
+	return point, nil
 }
 
 func (pkT *PublicKey) Equals(other *PublicKey) bool {
@@ -85,5 +90,5 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 }
 
 func (pkT *PublicKey) String() string {
-	return hex.EncodeToString(pkT.key)
+	return iotago.EncodeHex(pkT.key)
 }

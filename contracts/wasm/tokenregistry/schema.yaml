@@ -23,11 +23,11 @@ funcs:
       description: String? # description what minted token represents
       userDefined: String? # any user defined text
   transferOwnership:
-    access: owner # TODO the one who can transfer token ownership
+    access: owner # the one who can transfer token ownership
     params:
       token: TokenID # token of token to transfer ownership of
   updateMetadata:
-    access: owner # TODO the one who can change the token info
+    access: owner # the one who can change the token info
     params:
       token: TokenID # token of token to update metadata for
 views:

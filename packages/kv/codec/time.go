@@ -3,17 +3,10 @@ package codec
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
-
-var zeroUnixNano = time.Time{}.UnixNano()
-
-func init() {
-	if zeroUnixNano != -6795364578871345152 {
-		panic("inconsistency: zeroUnixNano != -6795364578871345152")
-	}
-}
 
 func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	if b == nil {
@@ -32,12 +25,17 @@ func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	return time.Unix(0, nanos), nil
 }
 
-var b8 [8]byte
+func MustDecodeTime(b []byte, def ...time.Time) time.Time {
+	t, err := DecodeTime(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 func EncodeTime(value time.Time) []byte {
-	nanos := value.UnixNano()
-	if nanos == zeroUnixNano {
-		return b8[:]
+	if value.IsZero() {
+		return make([]byte, 8)
 	}
-	return util.Int64To8Bytes(nanos)
+	return util.Int64To8Bytes(value.UnixNano())
 }

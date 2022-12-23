@@ -10,7 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 )
 
 // EncodeReceipt serializes the receipt in RLP format
@@ -76,6 +77,13 @@ func DecodeReceiptFull(receiptBytes []byte) (*types.Receipt, error) {
 
 	if r.GasUsed, err = m.ReadUint64(); err != nil {
 		return nil, err
+	}
+
+	for _, log := range r.Logs {
+		log.TxHash = r.TxHash
+		log.TxIndex = r.TransactionIndex
+		log.BlockHash = r.BlockHash
+		log.BlockNumber = r.BlockNumber.Uint64()
 	}
 
 	return r, nil

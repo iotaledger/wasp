@@ -2,13 +2,11 @@ package isc
 
 import (
 	"bytes"
-	"encoding/hex"
+	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -56,7 +54,7 @@ func NewRequestFromMarshalUtil(mu *marshalutil.MarshalUtil) (Request, error) {
 // region offLedgerRequestData  ////////////////////////////////////////////////////////////////////////////
 
 type offLedgerRequestData struct {
-	chainID         *ChainID
+	chainID         ChainID
 	contract        Hname
 	entryPoint      Hname
 	params          dict.Dict
@@ -104,7 +102,7 @@ func (s *offLedgerSignatureScheme) readSignature(mu *marshalutil.MarshalUtil) er
 	return err
 }
 
-func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
+func NewOffLedgerRequest(chainID ChainID, contract, entryPoint Hname, params dict.Dict, nonce uint64) UnsignedOffLedgerRequest {
 	return &offLedgerRequestData{
 		chainID:    chainID,
 		contract:   contract,
@@ -112,7 +110,7 @@ func NewOffLedgerRequest(chainID *ChainID, contract, entryPoint Hname, params di
 		params:     params,
 		nonce:      nonce,
 		allowance:  NewEmptyAllowance(),
-		gasBudget:  gas.MaxGasPerCall,
+		gasBudget:  gas.MaxGasPerRequest,
 	}
 }
 
@@ -128,7 +126,7 @@ var (
 	_ OffLedgerRequest         = &offLedgerRequestData{}
 )
 
-func (r *offLedgerRequestData) ChainID() *ChainID {
+func (r *offLedgerRequestData) ChainID() ChainID {
 	return r.chainID
 }
 
@@ -325,8 +323,8 @@ func (r *offLedgerRequestData) String() string {
 // region OnLedger ///////////////////////////////////////////////////////////////////
 
 type onLedgerRequestData struct {
-	inputID iotago.UTXOInput
-	output  iotago.Output
+	outputID iotago.OutputID
+	output   iotago.Output
 
 	// the following originate from UTXOMetaData and output, and are created in `NewExtendedOutputData`
 
@@ -335,19 +333,19 @@ type onLedgerRequestData struct {
 	requestMetadata  *RequestMetadata
 }
 
-func OnLedgerFromUTXO(o iotago.Output, id *iotago.UTXOInput) (OnLedgerRequest, error) {
+func OnLedgerFromUTXO(output iotago.Output, outputID iotago.OutputID) (OnLedgerRequest, error) {
 	r := &onLedgerRequestData{}
-	if err := r.readFromUTXO(o, id); err != nil {
+	if err := r.readFromUTXO(output, outputID); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (r *onLedgerRequestData) readFromUTXO(o iotago.Output, id *iotago.UTXOInput) error {
+func (r *onLedgerRequestData) readFromUTXO(output iotago.Output, outputID iotago.OutputID) error {
 	var reqMetadata *RequestMetadata
 	var err error
 
-	fbSet := o.FeatureSet()
+	fbSet := output.FeatureSet()
 
 	reqMetadata, err = RequestMetadataFromFeatureSet(fbSet)
 	if err != nil {
@@ -355,19 +353,19 @@ func (r *onLedgerRequestData) readFromUTXO(o iotago.Output, id *iotago.UTXOInput
 	}
 
 	if reqMetadata != nil {
-		reqMetadata.Allowance.fillEmptyNFTIDs(o, id)
+		reqMetadata.Allowance.fillEmptyNFTIDs(output, outputID)
 	}
 
-	r.output = o
-	r.inputID = *id
+	r.output = output
+	r.outputID = outputID
 	r.featureBlocks = fbSet
-	r.unlockConditions = o.UnlockConditionSet()
+	r.unlockConditions = output.UnlockConditionSet()
 	r.requestMetadata = reqMetadata
 	return nil
 }
 
 func (r *onLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
-	utxoID, err := UTXOInputFromMarshalUtil(mu)
+	outputID, err := OutputIDFromMarshalUtil(mu)
 	if err != nil {
 		return err
 	}
@@ -391,7 +389,20 @@ func (r *onLedgerRequestData) readFromMarshalUtil(mu *marshalutil.MarshalUtil) e
 	if err != nil {
 		return err
 	}
-	return r.readFromUTXO(output, utxoID)
+	return r.readFromUTXO(output, outputID)
+}
+
+func (r *onLedgerRequestData) Clone() OnLedgerRequest {
+	outputID := iotago.OutputID{}
+	copy(outputID[:], r.outputID[:])
+
+	return &onLedgerRequestData{
+		outputID:         outputID,
+		output:           r.output.Clone(),
+		featureBlocks:    r.featureBlocks.Clone(),
+		unlockConditions: util.CloneMap(r.unlockConditions),
+		requestMetadata:  r.requestMetadata.Clone(),
+	}
 }
 
 func (r *onLedgerRequestData) Bytes() []byte {
@@ -406,7 +417,7 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	if err != nil {
 		return
 	}
-	UTXOInputToMarshalUtil(&r.inputID, mu)
+	mu = OutputIDToMarshalUtil(r.outputID, mu)
 	mu.WriteUint16(uint16(len(outputBytes)))
 	mu.WriteBytes(outputBytes)
 	mu.WriteByte(byte(r.output.Type()))
@@ -416,7 +427,7 @@ func (r *onLedgerRequestData) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 var _ Calldata = &onLedgerRequestData{}
 
 func (r *onLedgerRequestData) ID() RequestID {
-	return RequestID(r.inputID)
+	return RequestID(r.outputID)
 }
 
 func (r *onLedgerRequestData) Params() dict.Dict {
@@ -432,8 +443,8 @@ func (r *onLedgerRequestData) SenderAccount() AgentID {
 		if sender.Type() != iotago.AddressAlias {
 			panic("inconsistency: non-alias address cannot have hname != 0")
 		}
-		chid := ChainIDFromAddress(sender.(*iotago.AliasAddress))
-		return NewContractAgentID(&chid, r.requestMetadata.SenderContract)
+		chainID := ChainIDFromAddress(sender.(*iotago.AliasAddress))
+		return NewContractAgentID(chainID, r.requestMetadata.SenderContract)
 	}
 	return NewAgentID(sender)
 }
@@ -472,17 +483,16 @@ func (r *onLedgerRequestData) TargetAddress() iotago.Address {
 }
 
 func (r *onLedgerRequestData) NFT() *NFT {
-	out, ok := r.output.(*iotago.NFTOutput)
+	nftOutput, ok := r.output.(*iotago.NFTOutput)
 	if !ok {
 		return nil
 	}
 
 	ret := &NFT{}
 
-	utxoInput := r.UTXOInput()
-	ret.ID = util.NFTIDFromNFTOutput(out, utxoInput.ID())
+	ret.ID = util.NFTIDFromNFTOutput(nftOutput, r.OutputID())
 
-	for _, featureBlock := range out.ImmutableFeatures {
+	for _, featureBlock := range nftOutput.ImmutableFeatures {
 		if block, ok := featureBlock.(*iotago.IssuerFeature); ok {
 			ret.Issuer = block.Address
 		}
@@ -533,8 +543,8 @@ func (r *onLedgerRequestData) String() string {
 
 var _ OnLedgerRequest = &onLedgerRequestData{}
 
-func (r *onLedgerRequestData) UTXOInput() iotago.UTXOInput {
-	return r.inputID
+func (r *onLedgerRequestData) OutputID() iotago.OutputID {
+	return r.outputID
 }
 
 func (r *onLedgerRequestData) Output() iotago.Output {
@@ -542,14 +552,14 @@ func (r *onLedgerRequestData) Output() iotago.Output {
 }
 
 // IsInternalUTXO if true the output cannot be interpreted as a request
-func (r *onLedgerRequestData) IsInternalUTXO(chinID *ChainID) bool {
+func (r *onLedgerRequestData) IsInternalUTXO(chainID ChainID) bool {
 	if r.output.Type() == iotago.OutputFoundry {
 		return true
 	}
 	if r.SenderAddress() == nil {
 		return false
 	}
-	if !r.SenderAddress().Equal(chinID.AsAddress()) {
+	if !r.SenderAddress().Equal(chainID.AsAddress()) {
 		return false
 	}
 	if r.requestMetadata != nil {
@@ -579,22 +589,75 @@ func (r *onLedgerRequestData) Expiry() (time.Time, iotago.Address) {
 }
 
 func (r *onLedgerRequestData) ReturnAmount() (uint64, bool) {
-	senderBlock := r.unlockConditions.StorageDepositReturn()
-	if senderBlock == nil {
+	storageDepositReturn := r.unlockConditions.StorageDepositReturn()
+	if storageDepositReturn == nil {
 		return 0, false
 	}
-	return senderBlock.Amount, true
+	return storageDepositReturn.Amount, true
 }
 
 // endregion
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID iotago.UTXOInput
+type RequestID iotago.OutputID
 
 const RequestIDDigestLen = 6
 
 const RequestIDSeparator = "-"
+
+type RequestRef struct {
+	ID   RequestID
+	Hash hashing.HashValue
+}
+
+const RequestRefKeyLen = iotago.OutputIDLength + 32
+
+type RequestRefKey [RequestRefKeyLen]byte
+
+func RequestRefFromRequest(req Request) *RequestRef {
+	return &RequestRef{ID: req.ID(), Hash: RequestHash(req)}
+}
+
+func RequestRefsFromRequests(reqs []Request) []*RequestRef {
+	rr := make([]*RequestRef, len(reqs))
+	for i := range rr {
+		rr[i] = RequestRefFromRequest(reqs[i])
+	}
+	return rr
+}
+
+func (rr *RequestRef) AsKey() RequestRefKey {
+	var key RequestRefKey
+	copy(key[:], rr.Bytes())
+	return key
+}
+
+func (rr *RequestRef) IsFor(req Request) bool {
+	if rr.ID != req.ID() {
+		return false
+	}
+	return rr.Hash == RequestHash(req)
+}
+
+func (rr *RequestRef) Bytes() []byte {
+	ret := rr.Hash[:]
+	ret = append(ret, rr.ID.Bytes()...)
+	return ret
+}
+
+func RequestRefFromBytes(data []byte) (*RequestRef, error) {
+	reqID, err := RequestIDFromBytes(data[hashing.HashSize:])
+	if err != nil {
+		return nil, err
+	}
+	ret := &RequestRef{
+		ID: reqID,
+	}
+	copy(ret.Hash[:], data[:hashing.HashSize])
+
+	return ret, nil
+}
 
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
 // within one block, however it may collide globally. Used for quick checking for most requests
@@ -602,24 +665,18 @@ const RequestIDSeparator = "-"
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	return RequestID(iotago.UTXOInput{
-		TransactionID:          txid,
-		TransactionOutputIndex: index,
-	})
+	return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
 }
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
-	var ret RequestID
-	txidData, err := mu.ReadBytes(iotago.TransactionIDLength)
+	outputIDData, err := mu.ReadBytes(iotago.OutputIDLength)
 	if err != nil {
 		return RequestID{}, err
 	}
-	ret.TransactionOutputIndex, err = mu.ReadUint16()
-	if err != nil {
-		return RequestID{}, err
-	}
-	copy(ret.TransactionID[:], txidData)
-	return ret, nil
+
+	outputID := iotago.OutputID{}
+	copy(outputID[:], outputIDData)
+	return RequestID(outputID), nil
 }
 
 func RequestIDFromBytes(data []byte) (RequestID, error) {
@@ -627,70 +684,49 @@ func RequestIDFromBytes(data []byte) (RequestID, error) {
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
-	split := strings.Split(s, RequestIDSeparator)
-	if len(split) != 2 {
-		return ret, fmt.Errorf("error parsing requestID")
-	}
-	txOutputIndex, err := strconv.ParseUint(split[0], 10, 16)
+	data, err := iotago.DecodeHex(s)
 	if err != nil {
-		return ret, err
+		return RequestID{}, err
 	}
-	ret.TransactionOutputIndex = uint16(txOutputIndex)
-	txID, err := hex.DecodeString(split[1])
-	if err != nil {
-		return ret, err
-	}
-	copy(ret.TransactionID[:], txID)
-	return ret, nil
-}
 
-func (rid RequestID) UTXOInput() *iotago.UTXOInput {
-	r := iotago.UTXOInput(rid)
-	return &r
+	if len(data) != iotago.OutputIDLength {
+		return ret, errors.New("error parsing requestID: wrong length")
+	}
+
+	requestID := RequestID{}
+	copy(requestID[:], data)
+	return requestID, nil
 }
 
 func (rid RequestID) OutputID() iotago.OutputID {
-	r := iotago.UTXOInput(rid)
-	return r.ID()
+	return iotago.OutputID(rid)
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
 	ret := RequestLookupDigest{}
-	copy(ret[:RequestIDDigestLen], rid.TransactionID[:RequestIDDigestLen])
-	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.TransactionOutputIndex))
+	copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
+	// last 2 bytes are the outputindex
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], rid[len(rid)-2:])
 	return ret
 }
 
 func (rid RequestID) Bytes() []byte {
 	var buf bytes.Buffer
-	buf.Write(rid.TransactionID[:])
-	buf.Write(util.Uint16To2Bytes(rid.TransactionOutputIndex))
+	buf.Write(rid[:])
 	return buf.Bytes()
 }
 
+func (rid RequestID) Equals(other RequestID) bool {
+	return rid == other
+}
+
 func (rid RequestID) String() string {
-	return OID(rid.UTXOInput())
+	return iotago.EncodeHex(rid[:])
 }
 
 func (rid RequestID) Short() string {
-	oid := rid.UTXOInput()
-	txid := TxID(oid.TransactionID)
-	return fmt.Sprintf("%d%s%s", oid.TransactionOutputIndex, RequestIDSeparator, txid[:6]+"..")
-}
-
-func (rid RequestID) Equals(reqID2 RequestID) bool {
-	if rid.TransactionOutputIndex != reqID2.TransactionOutputIndex {
-		return false
-	}
-	return rid.TransactionID == reqID2.TransactionID
-}
-
-func OID(o *iotago.UTXOInput) string {
-	return fmt.Sprintf("%d%s%s", o.TransactionOutputIndex, RequestIDSeparator, TxID(o.TransactionID))
-}
-
-func TxID(txID iotago.TransactionID) string {
-	return hex.EncodeToString(txID[:])
+	ridString := rid.String()
+	return fmt.Sprintf("%s..%s", ridString[2:6], ridString[len(ridString)-4:])
 }
 
 func ShortRequestIDs(ids []RequestID) []string {
@@ -714,17 +750,17 @@ func ShortRequestIDsFromRequests(reqs []Request) []string {
 // region RequestMetadata //////////////////////////////////////////////////
 
 type RequestMetadata struct {
-	SenderContract Hname
+	SenderContract Hname `json:"senderContract"`
 	// ID of the target smart contract
-	TargetContract Hname
+	TargetContract Hname `json:"targetContract"`
 	// entry point code
-	EntryPoint Hname
+	EntryPoint Hname `json:"entryPoint"`
 	// request arguments
-	Params dict.Dict
+	Params dict.Dict `json:"params"`
 	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Allowance
+	Allowance *Allowance `json:"allowance"`
 	// gas budget
-	GasBudget uint64
+	GasBudget uint64 `json:"gasBudget"`
 }
 
 func RequestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
@@ -739,6 +775,22 @@ func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
 	ret := &RequestMetadata{}
 	err := ret.ReadFromMarshalUtil(marshalutil.New(data))
 	return ret, err
+}
+
+// returns nil if nil pointer receiver is cloned
+func (p *RequestMetadata) Clone() *RequestMetadata {
+	if p == nil {
+		return nil
+	}
+
+	return &RequestMetadata{
+		SenderContract: p.SenderContract,
+		TargetContract: p.TargetContract,
+		EntryPoint:     p.EntryPoint,
+		Params:         p.Params.Clone(),
+		Allowance:      p.Allowance.Clone(),
+		GasBudget:      p.GasBudget,
+	}
 }
 
 func (p *RequestMetadata) Bytes() []byte {

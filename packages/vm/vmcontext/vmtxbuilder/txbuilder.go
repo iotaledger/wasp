@@ -1,31 +1,32 @@
 package vmtxbuilder
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math/big"
+
+	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"golang.org/x/xerrors"
 )
 
-// tokenOutputLoader externally supplied function which loads stored output from the state
+// nativeTokenOutputLoaderFunc externally supplied function which loads stored output from the state
 // Should return nil if does not exist
-type tokenOutputLoader func(*iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput)
+type nativeTokenOutputLoaderFunc func(*iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
 
-// foundryLoader externally supplied function which returns foundry output and id by its serial number
+// foundryLoaderFunc externally supplied function which returns foundry output and id by its serial number
 // Should return nil if foundry does not exist
-type foundryLoader func(uint32) (*iotago.FoundryOutput, *iotago.UTXOInput)
+type foundryLoaderFunc func(uint32) (*iotago.FoundryOutput, iotago.OutputID)
 
 // NFTOutputLoader externally supplied function which returns the stored NFT output from the state
 // Should return nil if NFT is not accounted for
-type NFTOutputLoader func(id iotago.NFTID) (*iotago.NFTOutput, *iotago.UTXOInput)
+type NFTOutputLoader func(id iotago.NFTID) (*iotago.NFTOutput, iotago.OutputID)
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
 // build an essence of the anchor transaction
@@ -39,11 +40,11 @@ type AnchorTransactionBuilder struct {
 	// base tokens which are on-chain. It does not include storage deposits on anchor and on internal outputs
 	totalBaseTokensInL2Accounts uint64
 	// minimum storage deposit assumption for internal outputs. It is used as constants. Assumed real storage deposit cost never grows
-	storageDepositAssumption transaction.StorageDepositAssumption
+	storageDepositAssumption *transaction.StorageDepositAssumption
 	// balance loader for native tokens
-	loadTokenOutput tokenOutputLoader
+	loadNativeTokenOutputFunc nativeTokenOutputLoaderFunc
 	// foundry loader
-	loadFoundry foundryLoader
+	loadFoundryFunc foundryLoaderFunc
 	// NFToutput loader
 	loadNFTOutput NFTOutputLoader
 	// balances of native tokens loaded during the batch run
@@ -60,10 +61,10 @@ type AnchorTransactionBuilder struct {
 func NewAnchorTransactionBuilder(
 	anchorOutput *iotago.AliasOutput,
 	anchorOutputID iotago.OutputID,
-	tokenBalanceLoader tokenOutputLoader,
-	foundryLoader foundryLoader,
+	tokenBalanceLoader nativeTokenOutputLoaderFunc,
+	foundryLoader foundryLoaderFunc,
 	nftLoader NFTOutputLoader,
-	storageDepositAssumptions transaction.StorageDepositAssumption,
+	storageDepositAssumptions *transaction.StorageDepositAssumption,
 ) *AnchorTransactionBuilder {
 	if anchorOutput.Amount < storageDepositAssumptions.AnchorOutput {
 		panic("internal inconsistency")
@@ -73,8 +74,8 @@ func NewAnchorTransactionBuilder(
 		anchorOutputID:              anchorOutputID,
 		totalBaseTokensInL2Accounts: anchorOutput.Amount - storageDepositAssumptions.AnchorOutput,
 		storageDepositAssumption:    storageDepositAssumptions,
-		loadTokenOutput:             tokenBalanceLoader,
-		loadFoundry:                 foundryLoader,
+		loadNativeTokenOutputFunc:   tokenBalanceLoader,
+		loadFoundryFunc:             foundryLoader,
 		loadNFTOutput:               nftLoader,
 		consumed:                    make([]isc.OnLedgerRequest, 0, iotago.MaxInputsCount-1),
 		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
@@ -86,32 +87,22 @@ func NewAnchorTransactionBuilder(
 
 // Clone clones the AnchorTransactionBuilder object. Used to snapshot/recover
 func (txb *AnchorTransactionBuilder) Clone() *AnchorTransactionBuilder {
-	ret := &AnchorTransactionBuilder{
-		anchorOutput:                txb.anchorOutput,
-		anchorOutputID:              txb.anchorOutputID,
-		totalBaseTokensInL2Accounts: txb.totalBaseTokensInL2Accounts,
-		storageDepositAssumption:    txb.storageDepositAssumption,
-		loadTokenOutput:             txb.loadTokenOutput,
-		loadFoundry:                 txb.loadFoundry,
-		consumed:                    make([]isc.OnLedgerRequest, 0, cap(txb.consumed)),
-		balanceNativeTokens:         make(map[iotago.NativeTokenID]*nativeTokenBalance),
-		postedOutputs:               make([]iotago.Output, 0, cap(txb.postedOutputs)),
-		invokedFoundries:            make(map[uint32]*foundryInvoked),
-		nftsIncluded:                make(map[iotago.NFTID]*nftIncluded),
-	}
+	anchorOutputID := iotago.OutputID{}
+	copy(anchorOutputID[:], txb.anchorOutputID[:])
 
-	ret.consumed = append(ret.consumed, txb.consumed...)
-	for k, v := range txb.balanceNativeTokens {
-		ret.balanceNativeTokens[k] = v.clone()
+	return &AnchorTransactionBuilder{
+		anchorOutput:                txb.anchorOutput.Clone().(*iotago.AliasOutput),
+		anchorOutputID:              anchorOutputID,
+		totalBaseTokensInL2Accounts: txb.totalBaseTokensInL2Accounts,
+		storageDepositAssumption:    txb.storageDepositAssumption.Clone(),
+		loadNativeTokenOutputFunc:   txb.loadNativeTokenOutputFunc,
+		loadFoundryFunc:             txb.loadFoundryFunc,
+		consumed:                    util.CloneSlice(txb.consumed),
+		balanceNativeTokens:         util.CloneMap(txb.balanceNativeTokens),
+		postedOutputs:               util.CloneSlice(txb.postedOutputs),
+		invokedFoundries:            util.CloneMap(txb.invokedFoundries),
+		nftsIncluded:                util.CloneMap(txb.nftsIncluded),
 	}
-	for k, v := range txb.invokedFoundries {
-		ret.invokedFoundries[k] = v.clone()
-	}
-	for k, v := range txb.nftsIncluded {
-		ret.nftsIncluded[k] = v.clone()
-	}
-	ret.postedOutputs = append(ret.postedOutputs, txb.postedOutputs...)
-	return ret
 }
 
 // TotalBaseTokensInL2Accounts returns number of on-chain base tokens.
@@ -147,7 +138,7 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
 	}
 	if req.NFT() != nil {
-		deltaBaseTokensStorageDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.UTXOInput())
+		deltaBaseTokensStorageDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.OutputID())
 	}
 	if DebugTxBuilder {
 		txb.MustBalanced("txbuilder.Consume OUT")
@@ -212,51 +203,51 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(l1Commitment *state
 // - then goes inputs of native token UTXOs, sorted by token id
 // - then goes inputs of foundries sorted by serial number
 func (txb *AnchorTransactionBuilder) inputs() (iotago.OutputSet, iotago.OutputIDs) {
-	ids := make(iotago.OutputIDs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
+	outputIDs := make(iotago.OutputIDs, 0, len(txb.consumed)+len(txb.balanceNativeTokens)+len(txb.invokedFoundries))
 	inputs := make(iotago.OutputSet)
 
 	// alias output
-	ids = append(ids, txb.anchorOutputID)
+	outputIDs = append(outputIDs, txb.anchorOutputID)
 	inputs[txb.anchorOutputID] = txb.anchorOutput
 
 	// consumed on-ledger requests
 	for i := range txb.consumed {
-		id := txb.consumed[i].ID().OutputID()
-		ids = append(ids, id)
-		inputs[id] = txb.consumed[i].Output()
+		outputID := txb.consumed[i].ID().OutputID()
+		outputIDs = append(outputIDs, outputID)
+		inputs[outputID] = txb.consumed[i].Output()
 	}
 
 	// internal native token outputs
-	for _, nt := range txb.nativeTokenOutputsSorted() {
-		if nt.requiresInput() {
-			id := nt.input.ID()
-			ids = append(ids, id)
-			inputs[id] = nt.in
+	for _, nativeTokenBalance := range txb.nativeTokenOutputsSorted() {
+		if nativeTokenBalance.requiresInput() {
+			outputID := nativeTokenBalance.outputID
+			outputIDs = append(outputIDs, outputID)
+			inputs[outputID] = nativeTokenBalance.in
 		}
 	}
 
 	// foundries
-	for _, f := range txb.foundriesSorted() {
-		if f.requiresInput() {
-			id := f.input.ID()
-			ids = append(ids, id)
-			inputs[id] = f.in
+	for _, foundry := range txb.foundriesSorted() {
+		if foundry.requiresInput() {
+			outputID := foundry.outputID
+			outputIDs = append(outputIDs, outputID)
+			inputs[outputID] = foundry.in
 		}
 	}
 
 	// nfts
 	for _, nft := range txb.nftsSorted() {
-		if nft.input != nil {
-			id := nft.input.ID()
-			ids = append(ids, id)
-			inputs[id] = nft.in
+		if !isc.IsEmptyOutputID(nft.outputID) {
+			outputID := nft.outputID
+			outputIDs = append(outputIDs, outputID)
+			inputs[outputID] = nft.in
 		}
 	}
 
-	if len(ids) != txb.numInputs() {
-		panic(fmt.Sprintf("AnchorTransactionBuilder.inputs: internal inconsistency. expected: %d actual:%d", len(ids), txb.numInputs()))
+	if len(outputIDs) != txb.numInputs() {
+		panic(fmt.Sprintf("AnchorTransactionBuilder.inputs: internal inconsistency. expected: %d actual:%d", len(outputIDs), txb.numInputs()))
 	}
-	return inputs, ids
+	return inputs, outputIDs
 }
 
 // outputs generates outputs for the transaction essence
@@ -321,7 +312,7 @@ func (txb *AnchorTransactionBuilder) numInputs() int {
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
-		if nft.input != nil {
+		if !isc.IsEmptyOutputID(nft.outputID) {
 			ret++
 		}
 	}
@@ -387,17 +378,13 @@ func (txb *AnchorTransactionBuilder) subDeltaBaseTokensFromTotal(delta uint64) {
 	txb.totalBaseTokensInL2Accounts -= delta
 }
 
-func stringUTXOInput(inp *iotago.UTXOInput) string {
-	return fmt.Sprintf("[%d]%s", inp.TransactionOutputIndex, hex.EncodeToString(inp.TransactionID[:]))
-}
-
 func stringNativeTokenID(id *iotago.NativeTokenID) string {
-	return hex.EncodeToString(id[:])
+	return iotago.EncodeHex(id[:])
 }
 
 func (txb *AnchorTransactionBuilder) String() string {
 	ret := ""
-	ret += fmt.Sprintf("%s\n", stringUTXOInput(txb.anchorOutputID.UTXOInput()))
+	ret += fmt.Sprintf("%s\n", txb.anchorOutputID.ToHex())
 	ret += fmt.Sprintf("in base tokens balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current base tokens balance: %d\n", txb.totalBaseTokensInL2Accounts)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))

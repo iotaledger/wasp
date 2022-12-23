@@ -17,7 +17,7 @@ func viewBalance(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewBalance")
 	aid, err := ctx.Params().GetAgentID(ParamAgentID)
 	ctx.RequireNoError(err)
-	return getAccountBalanceDict(getAccountR(ctx.State(), aid))
+	return getAccountBalanceDict(getAccountR(ctx.StateR(), aid))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
@@ -25,7 +25,7 @@ func viewBalance(ctx isc.SandboxView) dict.Dict {
 // - ParamAgentID
 // Returns: {ParamBalance: uint64}
 func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
-	nTokens := getBaseTokensBalance(getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)))
+	nTokens := getBaseTokensBalance(getAccountR(ctx.StateR(), ctx.Params().MustGetAgentID(ParamAgentID)))
 	return dict.Dict{ParamBalance: codec.EncodeUint64(nTokens)}
 }
 
@@ -37,7 +37,7 @@ func viewBalanceBaseToken(ctx isc.SandboxView) dict.Dict {
 func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 	id := ctx.Params().MustGetNativeTokenID(ParamNativeTokenID)
 	bal := getNativeTokenBalance(
-		getAccountR(ctx.State(), ctx.Params().MustGetAgentID(ParamAgentID)),
+		getAccountR(ctx.StateR(), ctx.Params().MustGetAgentID(ParamAgentID)),
 		&id,
 	)
 	return dict.Dict{ParamBalance: bal.Bytes()}
@@ -46,18 +46,18 @@ func viewBalanceNativeToken(ctx isc.SandboxView) dict.Dict {
 // viewTotalAssets returns total balances controlled by the chain
 func viewTotalAssets(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.State()))
+	return getAccountBalanceDict(getTotalL2AssetsAccountR(ctx.StateR()))
 }
 
 // viewAccounts returns list of all accounts as keys of the ImmutableCodec
 func viewAccounts(ctx isc.SandboxView) dict.Dict {
-	return getAccountsIntern(ctx.State())
+	return getAccountsIntern(ctx.StateR())
 }
 
 // nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 	account := ctx.Params().MustGetAgentID(ParamAgentID)
-	nonce := GetMaxAssumedNonce(ctx.State(), account)
+	nonce := GetMaxAssumedNonce(ctx.StateR(), account)
 	ret := dict.New()
 	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
 	return ret
@@ -65,10 +65,22 @@ func viewGetAccountNonce(ctx isc.SandboxView) dict.Dict {
 
 // viewGetNativeTokenIDRegistry returns all native token ID accounted in the chain
 func viewGetNativeTokenIDRegistry(ctx isc.SandboxView) dict.Dict {
-	mapping := getNativeTokenOutputMapR(ctx.State())
+	mapping := getNativeTokenOutputMapR(ctx.StateR())
 	ret := dict.New()
 	mapping.MustIterate(func(elemKey []byte, value []byte) bool {
 		ret.Set(kv.Key(elemKey), []byte{0xff})
+		return true
+	})
+	return ret
+}
+
+// viewAccountFoundries returns the foundries owned by the given agentID
+func viewAccountFoundries(ctx isc.SandboxView) dict.Dict {
+	account := ctx.Params().MustGetAgentID(ParamAgentID)
+	foundries := getAccountFoundriesR(ctx.StateR(), account)
+	ret := dict.New()
+	foundries.MustIterate(func(k []byte, v []byte) bool {
+		ret.Set(kv.Key(k), v)
 		return true
 	})
 	return ret
@@ -79,7 +91,7 @@ func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewFoundryOutput")
 
 	sn := ctx.Params().MustGetUint32(ParamFoundrySN)
-	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
+	out, _, _ := GetFoundryOutput(ctx.StateR(), sn, ctx.ChainID())
 	ctx.Requiref(out != nil, "foundry #%d does not exist", sn)
 	outBin, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
 	ctx.RequireNoError(err, "internal: error while serializing foundry output")
@@ -92,7 +104,7 @@ func viewFoundryOutput(ctx isc.SandboxView) dict.Dict {
 func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewAccountNFTs")
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
-	nftIDs := getAccountNFTs(getAccountR(ctx.State(), aid))
+	nftIDs := getAccountNFTs(getAccountR(ctx.StateR(), aid))
 
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamNFTIDs)
@@ -111,7 +123,7 @@ func viewNFTData(ctx isc.SandboxView) dict.Dict {
 	}
 	nftID := iotago.NFTID{}
 	copy(nftID[:], nftIDBytes)
-	data := GetNFTData(ctx.State(), nftID)
+	data := GetNFTData(ctx.StateR(), nftID)
 	return dict.Dict{
 		ParamNFTData: data.Bytes(),
 	}

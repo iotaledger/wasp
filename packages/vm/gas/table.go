@@ -4,8 +4,9 @@ import "golang.org/x/xerrors"
 
 const (
 	MaxGasPerBlock         = uint64(1_000_000_000)
-	MaxGasPerCall          = MaxGasPerBlock / 20 // one call cannot be more than 5% of maximum block
-	MaxGasExternalViewCall = MaxGasPerCall
+	MinGasPerRequest       = uint64(10000)
+	MaxGasPerRequest       = MaxGasPerBlock / 20 // one request cannot use more than 5% of maximum block gas
+	MaxGasExternalViewCall = MaxGasPerRequest
 )
 
 const (
@@ -30,8 +31,8 @@ const (
 	BurnCodeUtilsHashingBlake2b
 	BurnCodeUtilsHashingSha3
 	BurnCodeUtilsHashingHname
-	BurnCodeUtilsBase58Encode
-	BurnCodeUtilsBase58Decode
+	BurnCodeUtilsHexEncode
+	BurnCodeUtilsHexDecode
 	BurnCodeUtilsED25519ValidSig
 	BurnCodeUtilsED25519AddrFromPubKey
 	BurnCodeUtilsBLSValidSignature
@@ -65,8 +66,8 @@ var burnTable = BurnTable{
 	BurnCodeUtilsHashingBlake2b:        {"blake2b", constValue(50)},
 	BurnCodeUtilsHashingSha3:           {"sha3", constValue(80)},
 	BurnCodeUtilsHashingHname:          {"hname", constValue(50)},
-	BurnCodeUtilsBase58Encode:          {"base58enc", linear(50)},
-	BurnCodeUtilsBase58Decode:          {"base58dec", linear(5)},
+	BurnCodeUtilsHexEncode:             {"hex encode", linear(50)},
+	BurnCodeUtilsHexDecode:             {"hex decode", linear(5)},
 	BurnCodeUtilsED25519ValidSig:       {"ed25517 valid", constValue(200)},
 	BurnCodeUtilsED25519AddrFromPubKey: {"ed25517 addr", constValue(50)},
 	BurnCodeUtilsBLSValidSignature:     {"bls valid", constValue(2000)},

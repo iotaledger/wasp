@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -18,8 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 type (
@@ -49,7 +49,7 @@ func AddEndpoints(
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("Post an off-ledger request").
-		AddParamPath("", "chainID", "chainID represented in base58").
+		AddParamPath("", "chainID", "chainID").
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
 			"Request",
@@ -125,36 +125,30 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
 	}
 
-	ch.EnqueueOffLedgerRequestMsg(&messages.OffLedgerRequestMsgIn{
-		OffLedgerRequestMsg: messages.OffLedgerRequestMsg{
-			ChainID: ch.ID(),
-			Req:     offLedgerReq,
-		},
-		SenderPubKey: o.nodePubKey,
-	})
+	ch.ReceiveOffLedgerRequest(offLedgerReq, o.nodePubKey)
 
 	return c.NoContent(http.StatusAccepted)
 }
 
-func parseParams(c echo.Context) (chainID *isc.ChainID, req isc.OffLedgerRequest, err error) {
+func parseParams(c echo.Context) (chainID isc.ChainID, req isc.OffLedgerRequest, err error) {
 	chainID, err = isc.ChainIDFromString(c.Param("chainID"))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
+		return isc.ChainID{}, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
 
 	contentType := c.Request().Header.Get("Content-Type")
 	if strings.Contains(strings.ToLower(contentType), "json") {
 		r := new(model.OffLedgerRequestBody)
 		if err = c.Bind(r); err != nil {
-			return nil, nil, httperrors.BadRequest("error parsing request from payload")
+			return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request from payload")
 		}
 		rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(r.Request.Bytes()))
 		if err != nil {
-			return nil, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
+			return isc.ChainID{}, nil, httperrors.BadRequest(fmt.Sprintf("cannot decode off-ledger request: %v", err))
 		}
 		var ok bool
 		if req, ok = rGeneric.(isc.OffLedgerRequest); !ok {
-			return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
+			return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request: off-ledger request is expected")
 		}
 		return chainID, req, err
 	}
@@ -162,15 +156,15 @@ func parseParams(c echo.Context) (chainID *isc.ChainID, req isc.OffLedgerRequest
 	// binary format
 	reqBytes, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return nil, nil, httperrors.BadRequest("error parsing request from payload")
+		return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request from payload")
 	}
 	rGeneric, err := isc.NewRequestFromMarshalUtil(marshalutil.New(reqBytes))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest("error parsing request from payload")
+		return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request from payload")
 	}
 	req, ok := rGeneric.(isc.OffLedgerRequest)
 	if !ok {
-		return nil, nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
+		return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
 	}
 	return chainID, req, err
 }

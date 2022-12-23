@@ -6,10 +6,12 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividend"
+	"github.com/iotaledger/wasp/contracts/wasm/dividend/go/dividendimpl"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func dividendMember(ctx *wasmsolo.SoloContext, agent *wasmsolo.SoloAgent, factor uint64) {
@@ -33,12 +35,12 @@ func dividendGetFactor(ctx *wasmsolo.SoloContext, member *wasmsolo.SoloAgent) ui
 }
 
 func TestDeploy(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 	require.NoError(t, ctx.ContractExists(dividend.ScName))
 }
 
 func TestAddMemberOk(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	dividendMember(ctx, member1, 100)
@@ -46,28 +48,28 @@ func TestAddMemberOk(t *testing.T) {
 }
 
 func TestAddMemberFailMissingAddress(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Factor().SetValue(100)
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "missing mandatory address")
+	require.Contains(t, ctx.Err.Error(), "missing mandatory param: address")
 }
 
 func TestAddMemberFailMissingFactor(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	member := dividend.ScFuncs.Member(ctx)
 	member.Params.Address().SetValue(member1.ScAgentID().Address())
 	member.Func.Post()
 	require.Error(t, ctx.Err)
-	require.Contains(t, ctx.Err.Error(), "missing mandatory factor")
+	require.Contains(t, ctx.Err.Error(), "missing mandatory param: factor")
 }
 
 func TestDivide1Member(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -90,7 +92,7 @@ func TestDivide1Member(t *testing.T) {
 }
 
 func TestDivide2Members(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -125,7 +127,7 @@ func TestDivide2Members(t *testing.T) {
 }
 
 func TestDivide3Members(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
 	bal := ctx.Balances(member1)
@@ -183,29 +185,29 @@ func TestDivide3Members(t *testing.T) {
 }
 
 func TestGetFactor(t *testing.T) {
-	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividend.OnLoad)
+	ctx := wasmsolo.NewSoloContext(t, dividend.ScName, dividendimpl.OnDispatch)
 
 	member1 := ctx.NewSoloAgent()
-	dividendMember(ctx, member1, 25)
+	dividendMember(ctx, member1, 250)
 	require.NoError(t, ctx.Err)
 
 	member2 := ctx.NewSoloAgent()
-	dividendMember(ctx, member2, 50)
+	dividendMember(ctx, member2, 500)
 	require.NoError(t, ctx.Err)
 
 	member3 := ctx.NewSoloAgent()
-	dividendMember(ctx, member3, 75)
+	dividendMember(ctx, member3, 750)
 	require.NoError(t, ctx.Err)
 
 	value := dividendGetFactor(ctx, member3)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 75, value)
+	require.EqualValues(t, 750, value)
 
 	value = dividendGetFactor(ctx, member2)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 50, value)
+	require.EqualValues(t, 500, value)
 
 	value = dividendGetFactor(ctx, member1)
 	require.NoError(t, ctx.Err)
-	require.EqualValues(t, 25, value)
+	require.EqualValues(t, 250, value)
 }

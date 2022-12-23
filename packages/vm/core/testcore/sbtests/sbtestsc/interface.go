@@ -31,6 +31,8 @@ var Processor = Contract.Processor(initialize,
 	FuncGetInt.WithHandler(getInt),
 	FuncGetFibonacci.WithHandler(getFibonacci),
 	FuncGetFibonacciIndirect.WithHandler(getFibonacciIndirect),
+	FuncCalcFibonacciIndirectStoreValue.WithHandler(calcFibonacciIndirectStoreValue),
+	FuncViewCalcFibonacciResult.WithHandler(viewFibResult),
 	FuncIncCounter.WithHandler(incCounter),
 	FuncGetCounter.WithHandler(getCounter),
 	FuncRunRecursion.WithHandler(runRecursion),
@@ -89,14 +91,16 @@ var (
 	// FuncSendToAddress = coreutil.Func("sendToAddress")
 	FuncJustView = coreutil.ViewFunc("justView")
 
-	FuncCallOnChain          = coreutil.Func("callOnChain")
-	FuncSetInt               = coreutil.Func("setInt")
-	FuncGetInt               = coreutil.ViewFunc("getInt")
-	FuncGetFibonacci         = coreutil.ViewFunc("fibonacci")
-	FuncGetFibonacciIndirect = coreutil.ViewFunc("fibonacciIndirect")
-	FuncGetCounter           = coreutil.ViewFunc("getCounter")
-	FuncIncCounter           = coreutil.Func("incCounter")
-	FuncRunRecursion         = coreutil.Func("runRecursion")
+	FuncCallOnChain                     = coreutil.Func("callOnChain")
+	FuncSetInt                          = coreutil.Func("setInt")
+	FuncGetInt                          = coreutil.ViewFunc("getInt")
+	FuncGetFibonacci                    = coreutil.ViewFunc("fibonacci")
+	FuncGetFibonacciIndirect            = coreutil.ViewFunc("fibonacciIndirect")
+	FuncCalcFibonacciIndirectStoreValue = coreutil.Func("calcFibonacciIndirectStoreValue")
+	FuncViewCalcFibonacciResult         = coreutil.ViewFunc("getFibCalcResult")
+	FuncGetCounter                      = coreutil.ViewFunc("getCounter")
+	FuncIncCounter                      = coreutil.Func("incCounter")
+	FuncRunRecursion                    = coreutil.Func("runRecursion")
 
 	FuncPassTypesFull = coreutil.Func("passTypesFull")
 	FuncPassTypesView = coreutil.ViewFunc("passTypesView")

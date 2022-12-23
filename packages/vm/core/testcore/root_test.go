@@ -6,6 +6,8 @@ package testcore
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRootBasic(t *testing.T) {
@@ -131,7 +132,10 @@ func TestDeployDouble(t *testing.T) {
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
 	chain := env.NewChain()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()

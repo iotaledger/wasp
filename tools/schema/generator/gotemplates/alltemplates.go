@@ -20,13 +20,13 @@ var Templates = []map[string]string{
 	eventsGo,
 	eventhandlersGo,
 	funcsGo,
-	libGo,
 	mainGo,
 	paramsGo,
 	proxyGo,
 	resultsGo,
 	stateGo,
 	structsGo,
+	thunksGo,
 	typedefsGo,
 }
 
@@ -65,14 +65,11 @@ import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 import "github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 `,
 	// *******************************
-	"goPackage": `
-package $package
-`,
-	// *******************************
-	"goHeader": `
-$#emit goPackage
-
-$#emit importWasmLib
+	"importWasmLibAndWasmTypes": `
+import (
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
+)
 `,
 	// *******************************
 	"_eventComment": `

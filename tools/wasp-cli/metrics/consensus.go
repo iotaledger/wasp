@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
 )
 
 var timestampNeverConst = time.Time{}
@@ -18,16 +19,16 @@ var consensusMetricsCmd = &cobra.Command{
 	Short: "Show current value of collected metrics of consensus",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient()
+		client := config.WaspClient(config.MustWaspAPI())
 		_, chainAddress, err := iotago.ParseBech32(chainAlias)
 		log.Check(err)
-		chid := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
-		workflowStatus, err := client.GetChainConsensusWorkflowStatus(&chid)
+		chainID := isc.ChainIDFromAddress(chainAddress.(*iotago.AliasAddress))
+		workflowStatus, err := client.GetChainConsensusWorkflowStatus(chainID)
 		log.Check(err)
-		pipeMetrics, err := client.GetChainConsensusPipeMetrics(&chid)
+		pipeMetrics, err := client.GetChainConsensusPipeMetrics(chainID)
 		log.Check(err)
 		header := []string{"Flag name", "Value", "Last time set"}
-		table := make([][]string, 17)
+		table := make([][]string, 15)
 		table[0] = makeWorkflowTableRow("State received", workflowStatus.FlagStateReceived, time.Time{})
 		table[1] = makeWorkflowTableRow("Batch proposal sent", workflowStatus.FlagBatchProposalSent, workflowStatus.TimeBatchProposalSent)
 		table[2] = makeWorkflowTableRow("Consensus on batch reached", workflowStatus.FlagConsensusBatchKnown, workflowStatus.TimeConsensusBatchKnown)
@@ -39,12 +40,9 @@ var consensusMetricsCmd = &cobra.Command{
 		table[8] = makeWorkflowTableRow("Consensus is completed", !(workflowStatus.FlagInProgress), workflowStatus.TimeCompleted)
 		table[9] = makeWorkflowTableRow("Current state index", workflowStatus.CurrentStateIndex, time.Time{})
 		table[10] = makeWorkflowTableRow("Event state transition message pipe size", pipeMetrics.EventStateTransitionMsgPipeSize, time.Time{})
-		table[11] = makeWorkflowTableRow("Event signed result message pipe metrics size", pipeMetrics.EventSignedResultMsgPipeSize, time.Time{})
-		table[12] = makeWorkflowTableRow("Event signed result ack message pipe size", pipeMetrics.EventSignedResultAckMsgPipeSize, time.Time{})
-		table[13] = makeWorkflowTableRow("Event inclusion state message pipe size", pipeMetrics.EventInclusionStateMsgPipeSize, time.Time{})
-		table[14] = makeWorkflowTableRow("Event ACS message pipe size", pipeMetrics.EventACSMsgPipeSize, time.Time{})
-		table[15] = makeWorkflowTableRow("Event VM result message pipe size", pipeMetrics.EventVMResultMsgPipeSize, time.Time{})
-		table[16] = makeWorkflowTableRow("Event timer message pipe size", pipeMetrics.EventTimerMsgPipeSize, time.Time{})
+		table[12] = makeWorkflowTableRow("Event ACS message pipe size", pipeMetrics.EventACSMsgPipeSize, time.Time{})
+		table[13] = makeWorkflowTableRow("Event VM result message pipe size", pipeMetrics.EventVMResultMsgPipeSize, time.Time{})
+		table[14] = makeWorkflowTableRow("Event timer message pipe size", pipeMetrics.EventTimerMsgPipeSize, time.Time{})
 		log.PrintTable(header, table)
 	},
 }

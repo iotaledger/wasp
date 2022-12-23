@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"time"
@@ -72,7 +71,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("Succesfull requests: %d\n", bi.NumSuccessfulRequests)
 	ret += fmt.Sprintf("Prev L1 commitment: %s\n", bi.PreviousL1Commitment.String())
-	ret += fmt.Sprintf("Anchor tx ID: %s\n", hex.EncodeToString(bi.AnchorTransactionID[:]))
+	ret += fmt.Sprintf("Anchor tx ID: %s\n", iotago.EncodeHex(bi.AnchorTransactionID[:]))
 	ret += fmt.Sprintf("Total base tokens in contracts: %d\n", bi.TotalBaseTokensInL2Accounts)
 	ret += fmt.Sprintf("Total base tokens locked in storage deposit: %d\n", bi.TotalStorageDeposit)
 	ret += fmt.Sprintf("Gas burned: %d\n", bi.GasBurned)
@@ -147,12 +146,12 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := bi.PreviousL1Commitment.Read(r); err != nil {
 		return err
 	}
-	var knownStateCommitments bool
-	if err := util.ReadBoolByte(r, &knownStateCommitments); err != nil {
+	var hasL1Commitment bool
+	if err := util.ReadBoolByte(r, &hasL1Commitment); err != nil {
 		return err
 	}
 	bi.L1Commitment = nil
-	if knownStateCommitments {
+	if hasL1Commitment {
 		bi.L1Commitment = &state.L1Commitment{}
 		if err := bi.L1Commitment.Read(r); err != nil {
 			return err

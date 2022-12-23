@@ -21,13 +21,15 @@ type SandboxBase interface {
 	// Params returns the parameters of the current call
 	Params() *Params
 	// ChainID returns the chain ID
-	ChainID() *ChainID
+	ChainID() ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
 	ChainOwnerID() AgentID
 	// Contract returns the Hname of the current contract in the context
 	Contract() Hname
 	// AccountID returns the agentID of the current contract (i.e. chainID + contract hname)
 	AccountID() AgentID
+	// Caller is the agentID of the caller.
+	Caller() AgentID
 	// Timestamp returns the Unix timestamp of the current state in seconds
 	Timestamp() time.Time
 	// Log returns a logger that outputs on the local machine. It includes Panicf method
@@ -37,9 +39,11 @@ type SandboxBase interface {
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
 	// GetNFTInfo returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID iotago.NFTID) NFT // TODO should this also return the owner of the NFT?
+	GetNFTData(nftID iotago.NFTID) NFT
 	// CallView calls another contract. Only calls view entry points
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
+	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
+	StateR() kv.KVStoreReader
 }
 
 type Params struct {
@@ -67,6 +71,8 @@ type Balance interface {
 	BalanceFungibleTokens() *FungibleTokens
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
 	OwnedNFTs() []iotago.NFTID
+	// returns whether a given user owns a given amount of tokens
+	HasInAccount(AgentID, *FungibleTokens) bool
 }
 
 // Sandbox is an interface given to the processor to access the VMContext
@@ -84,8 +90,6 @@ type Sandbox interface {
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
 	Call(target, entryPoint Hname, params dict.Dict, allowance *Allowance) dict.Dict
-	// Caller is the agentID of the caller.
-	Caller() AgentID
 	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
 	DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict)
 	// Event emits an event
@@ -129,10 +133,14 @@ type Privileged interface {
 	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
 	GasBurnEnable(enable bool)
 	MustMoveBetweenAccounts(fromAgentID, toAgentID AgentID, fungibleTokens *FungibleTokens, nfts []iotago.NFTID)
+	DebitFromAccount(AgentID, *FungibleTokens)
+	CreditToAccount(AgentID, *FungibleTokens)
 
 	SubscribeBlockContext(openFunc Hname, closeFunc Hname)
 	SetBlockContext(bctx interface{})
 	BlockContext() interface{}
+	// the amount of tokens available to pay for the gas of the current request
+	TotalGasTokens() *FungibleTokens
 }
 
 // RequestParameters represents parameters of the on-ledger request. The output is build from these parameters
@@ -154,6 +162,7 @@ type RequestParameters struct {
 type Gas interface {
 	Burn(burnCode gas.BurnCode, par ...uint64)
 	Budget() uint64
+	Burned() uint64
 }
 
 // StateAnchor contains properties of the anchor output/transaction in the current context

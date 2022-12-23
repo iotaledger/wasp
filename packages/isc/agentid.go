@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"golang.org/x/xerrors"
 )
 
 type AgentIDKind uint8
@@ -58,8 +59,8 @@ func HnameFromAgentID(a AgentID) (Hname, bool) {
 // otherwise a ContractAgentID with hname = 0.
 func NewAgentID(addr iotago.Address) AgentID {
 	if addr.Type() == iotago.AddressAlias {
-		chid := ChainIDFromAddress(addr.(*iotago.AliasAddress))
-		return NewContractAgentID(&chid, 0)
+		chainID := ChainIDFromAddress(addr.(*iotago.AliasAddress))
+		return NewContractAgentID(chainID, 0)
 	}
 	return &AddressAgentID{a: addr}
 }

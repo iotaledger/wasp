@@ -1,16 +1,16 @@
 package sandbox
 
 import (
-	"github.com/iotaledger/hive.go/crypto/bls"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/sign/bdn"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/mr-tron/base58"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
-	"go.dedis.ch/kyber/v3/sign/bdn"
-	"golang.org/x/xerrors"
 )
 
 type utilImpl struct {
@@ -37,19 +37,19 @@ func (u utilImpl) ED25519() isc.ED25519 {
 }
 
 func (u utilImpl) BLS() isc.BLS {
-	return utilImplBLS{u.gas}
+	return utilImplBLS(u)
 }
 
-// --- isc.Base58 interface
+// --- isc.Hex interface
 
 func (u utilImpl) Decode(s string) ([]byte, error) {
-	u.gas.Burn(gas.BurnCodeUtilsBase58Decode)
-	return base58.Decode(s)
+	u.gas.Burn(gas.BurnCodeUtilsHexDecode)
+	return iotago.DecodeHex(s)
 }
 
 func (u utilImpl) Encode(data []byte) string {
-	u.gas.Burn(gas.BurnCodeUtilsBase58Encode)
-	return base58.Encode(data)
+	u.gas.Burn(gas.BurnCodeUtilsHexEncode)
+	return iotago.EncodeHex(data)
 }
 
 // --- isc.Hashing interface

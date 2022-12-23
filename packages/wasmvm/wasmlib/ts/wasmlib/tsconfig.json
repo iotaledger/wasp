@@ -1,6 +1,16 @@
 {
-  "extends": "assemblyscript/std/assembly.json",
-  "include": [
-    "./*.ts"
-  ]
+    "include": ["./**/*", "tests/**/*"],
+    "exclude": ["node_modules"],
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "module": "CommonJS",
+        "outDir": "./dist/node",
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "strict": true,
+        "types": ["node", "Promise", "jest"],
+        "lib": ["ES2021"],
+        "target": "ES2021",
+        "typeRoots": ["./types", "./node_modules/@types"]
+    },
 }

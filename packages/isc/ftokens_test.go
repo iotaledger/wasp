@@ -4,11 +4,12 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMarshalling(t *testing.T) {

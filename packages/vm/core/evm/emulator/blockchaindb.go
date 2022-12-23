@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -328,6 +329,13 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 	}
 	tx := bc.GetTransactionByBlockNumberAndIndex(blockNumber, i)
 	r.TxHash = tx.Hash()
+	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
+	for _, log := range r.Logs {
+		log.TxHash = r.TxHash
+		log.TxIndex = uint(i)
+		log.BlockHash = r.BlockHash
+		log.BlockNumber = blockNumber
+	}
 	if tx.To() == nil {
 		from, _ := types.Sender(evmutil.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
 		r.ContractAddress = crypto.CreateAddress(from, tx.Nonce())
@@ -340,7 +348,6 @@ func (bc *BlockchainDB) GetReceiptByBlockNumberAndIndex(blockNumber uint64, i ui
 		}
 		r.GasUsed -= prev.CumulativeGasUsed
 	}
-	r.BlockHash = bc.GetBlockHashByBlockNumber(blockNumber)
 	r.BlockNumber = new(big.Int).SetUint64(blockNumber)
 	return r
 }

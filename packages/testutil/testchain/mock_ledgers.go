@@ -4,42 +4,43 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type MockedLedgers struct {
-	ledgers    map[string]*MockedLedger
-	milestones *events.Event
-	log        *logger.Logger
-	mutex      sync.Mutex
+	ledgers              map[string]*MockedLedger
+	milestones           *events.Event
+	pushMilestonesNeeded bool
+	log                  *logger.Logger
+	mutex                sync.Mutex
 }
 
 func NewMockedLedgers(log *logger.Logger) *MockedLedgers {
 	result := &MockedLedgers{
 		ledgers: make(map[string]*MockedLedger),
 		milestones: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(chain.NodeConnectionMilestonesHandlerFun)(params[0].(*nodeclient.MilestoneInfo))
+			handler.(func(*nodebridge.Milestone))(params[0].(*nodebridge.Milestone))
 		}),
 		log: log.Named("mls"),
 	}
+	result.SetPushMilestonesToNodesNeeded(true)
 	go result.pushMilestonesLoop()
 	result.log.Debugf("Mocked ledgers created")
 	return result
 }
 
-func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) *isc.ChainID {
+func (mlT *MockedLedgers) InitLedger(stateAddress iotago.Address) isc.ChainID {
 	ledger, chainID := NewMockedLedger(stateAddress, mlT.log)
 	mlT.ledgers[chainID.Key()] = ledger
 	mlT.log.Debugf("New ledger for chain address %s ID %s created", stateAddress, chainID)
 	return chainID
 }
 
-func (mlT *MockedLedgers) GetLedger(chainID *isc.ChainID) *MockedLedger {
+func (mlT *MockedLedgers) GetLedger(chainID isc.ChainID) *MockedLedger {
 	mlT.mutex.Lock()
 	defer mlT.mutex.Unlock()
 
@@ -50,9 +51,9 @@ func (mlT *MockedLedgers) GetLedger(chainID *isc.ChainID) *MockedLedger {
 	return result
 }
 
-func (mlT *MockedLedgers) AttachMilestones(handler chain.NodeConnectionMilestonesHandlerFun) *events.Closure {
+func (mlT *MockedLedgers) AttachMilestones(handler func(*nodebridge.Milestone)) *events.Closure {
 	closure := events.NewClosure(handler)
-	mlT.milestones.Attach(closure)
+	mlT.milestones.Hook(closure)
 	return closure
 }
 
@@ -64,15 +65,24 @@ func (mlT *MockedLedgers) pushMilestonesLoop() {
 	milestone := uint32(0)
 	for {
 		if milestone%10 == 0 {
-			mlT.log.Debugf("Milestone %v reached", milestone)
+			mlT.log.Debugf("Milestone %v reached, will push to nodes: %v", milestone, mlT.pushMilestonesNeeded)
+		}
+		if mlT.pushMilestonesNeeded {
+			mlT.milestones.Trigger(&nodebridge.Milestone{
+				MilestoneID: [32]byte{},
+				Milestone: &iotago.Milestone{
+					Index:     milestone,
+					Timestamp: uint32(time.Now().Unix()),
+				},
+			})
 		}
 		time.Sleep(100 * time.Millisecond)
-		mlT.milestones.Trigger(&nodeclient.MilestoneInfo{
-			Index:     milestone,
-			Timestamp: uint32(time.Now().Unix()),
-		})
 		milestone++
 	}
+}
+
+func (mlT *MockedLedgers) SetPushMilestonesToNodesNeeded(flag bool) {
+	mlT.pushMilestonesNeeded = flag
 }
 
 func (mlT *MockedLedgers) SetPushOutputToNodesNeeded(flag bool) {

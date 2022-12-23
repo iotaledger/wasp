@@ -5,14 +5,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addChainMetricsEndpoints(adm echoswagger.ApiGroup, chainsProvider chains.Provider) {
@@ -85,9 +86,9 @@ func addChainNodeConnMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetric
 			LastEvent:   time.Now().Add(1 * time.Second),
 			LastMessage: "Last received Milestone message structure",
 		},
-		Registered: []model.ChainID{
-			model.NewChainID(isc.RandomChainID()),
-			model.NewChainID(isc.RandomChainID()),
+		Registered: []model.ChainIDBech32{
+			model.NewChainIDBech32(isc.RandomChainID()),
+			model.NewChainIDBech32(isc.RandomChainID()),
 		},
 	}
 
@@ -135,9 +136,7 @@ func addChainConsensusMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetri
 func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainMetricsService) {
 	example := &model.ConsensusPipeMetrics{
 		EventStateTransitionMsgPipeSize: 0,
-		EventSignedResultMsgPipeSize:    0,
-		EventSignedResultAckMsgPipeSize: 0,
-		EventInclusionStateMsgPipeSize:  0,
+		EventPeerLogIndexMsgPipeSize:    0,
 		EventACSMsgPipeSize:             0,
 		EventVMResultMsgPipeSize:        0,
 		EventTimerMsgPipeSize:           0,
@@ -145,7 +144,7 @@ func addChainConcensusPipeMetricsEndpoints(adm echoswagger.ApiGroup, cms *chainM
 
 	adm.GET(routes.GetChainConsensusPipeMetrics(":chainID"), cms.handleGetChainConsensusPipeMetrics).
 		SetSummary("Get consensus pipe metrics").
-		AddParamPath("", "chainID", "CHAINid (base58)").
+		AddParamPath("", "chainID", "chainID").
 		AddResponse(http.StatusOK, "Chain consensus pipe metrics", example, nil).
 		AddResponse(http.StatusNotFound, "Chain consensus hasn't been created", nil, nil)
 }
@@ -185,9 +184,29 @@ func (cssT *chainMetricsService) handleGetChainConsensusWorkflowStatus(c echo.Co
 	if status == nil {
 		return c.NoContent(http.StatusNotFound)
 	}
-	statusModel := model.NewConsensusWorkflowStatus(status)
 
-	return c.JSON(http.StatusOK, statusModel)
+	return c.JSON(http.StatusOK, &model.ConsensusWorkflowStatus{
+		FlagStateReceived:        status.IsStateReceived(),
+		FlagBatchProposalSent:    status.IsBatchProposalSent(),
+		FlagConsensusBatchKnown:  status.IsConsensusBatchKnown(),
+		FlagVMStarted:            status.IsVMStarted(),
+		FlagVMResultSigned:       status.IsVMResultSigned(),
+		FlagTransactionFinalized: status.IsTransactionFinalized(),
+		FlagTransactionPosted:    status.IsTransactionPosted(),
+		FlagTransactionSeen:      status.IsTransactionSeen(),
+		FlagInProgress:           status.IsInProgress(),
+
+		TimeBatchProposalSent:    status.GetBatchProposalSentTime(),
+		TimeConsensusBatchKnown:  status.GetConsensusBatchKnownTime(),
+		TimeVMStarted:            status.GetVMStartedTime(),
+		TimeVMResultSigned:       status.GetVMResultSignedTime(),
+		TimeTransactionFinalized: status.GetTransactionFinalizedTime(),
+		TimeTransactionPosted:    status.GetTransactionPostedTime(),
+		TimeTransactionSeen:      status.GetTransactionSeenTime(),
+		TimeCompleted:            status.GetCompletedTime(),
+
+		CurrentStateIndex: status.GetCurrentStateIndex(),
+	})
 }
 
 func (cssT *chainMetricsService) handleGetChainConsensusPipeMetrics(c echo.Context) error {
@@ -199,8 +218,13 @@ func (cssT *chainMetricsService) handleGetChainConsensusPipeMetrics(c echo.Conte
 	if pipeMetrics == nil {
 		return c.NoContent(http.StatusNotFound)
 	}
-	pipeMetricsModel := model.NewConsensusPipeMetrics(pipeMetrics)
-	return c.JSON(http.StatusOK, pipeMetricsModel)
+	return c.JSON(http.StatusOK, &model.ConsensusPipeMetrics{
+		EventStateTransitionMsgPipeSize: pipeMetrics.GetEventStateTransitionMsgPipeSize(),
+		EventPeerLogIndexMsgPipeSize:    pipeMetrics.GetEventPeerLogIndexMsgPipeSize(),
+		EventACSMsgPipeSize:             pipeMetrics.GetEventACSMsgPipeSize(),
+		EventVMResultMsgPipeSize:        pipeMetrics.GetEventVMResultMsgPipeSize(),
+		EventTimerMsgPipeSize:           pipeMetrics.GetEventTimerMsgPipeSize(),
+	})
 }
 
 func (cssT *chainMetricsService) getChain(c echo.Context) (chain.Chain, error) {

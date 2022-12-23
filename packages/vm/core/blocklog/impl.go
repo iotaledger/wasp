@@ -23,7 +23,8 @@ var Processor = Contract.Processor(initialize,
 )
 
 func initialize(ctx isc.Sandbox) dict.Dict {
-	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
+	SaveNextBlockInfo(ctx.State(), &BlockInfo{
+		BlockIndex:            0,
 		Timestamp:             ctx.Timestamp(),
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
@@ -31,7 +32,6 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 		PreviousL1Commitment:  *state.OriginL1Commitment(),
 		L1Commitment:          nil, // not known yet
 	})
-	ctx.Requiref(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	// storing hname as a terminal value of the contract's state root.
 	// This way we will be able to retrieve commitment to the contract's state
 	ctx.State().Set("", ctx.Contract().Bytes())
@@ -41,7 +41,7 @@ func initialize(ctx isc.Sandbox) dict.Dict {
 }
 
 func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
-	registry := collections.NewArray32ReadOnly(ctx.State(), prefixControlAddresses)
+	registry := collections.NewArray32ReadOnly(ctx.StateR(), prefixControlAddresses)
 	l := registry.MustLen()
 	ctx.Requiref(l > 0, "inconsistency: unknown control addresses")
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
@@ -58,9 +58,8 @@ func viewControlAddresses(ctx isc.SandboxView) dict.Dict {
 // ParamBlockIndex - index of the block (defaults to the latest block)
 func viewGetBlockInfo(ctx isc.SandboxView) dict.Dict {
 	blockIndex := getBlockIndexParams(ctx)
-	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
+	data, err := getBlockInfoBytes(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
-	ctx.Requiref(found, "not found")
 	return dict.Dict{
 		ParamBlockIndex: codec.EncodeUint32(blockIndex),
 		ParamBlockInfo:  data,
@@ -78,7 +77,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
 
@@ -94,7 +93,7 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewGetRequestReceipt(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	res, err := GetRequestRecordDataByRequestID(ctx.State(), requestID)
+	res, err := GetRequestRecordDataByRequestID(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 	if res == nil {
 		return nil
@@ -117,7 +116,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.StateR(), blockIndex)
 	ctx.RequireNoError(err)
 	ctx.Requiref(found, "not found")
 
@@ -132,10 +131,10 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
+	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
 	ctx.RequireNoError(err)
 	ret := dict.New()
-	if seen {
+	if requestReceipt != nil {
 		ret.Set(ParamRequestProcessed, codec.EncodeBool(true))
 	}
 	return ret
@@ -147,7 +146,7 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 
-	events, err := getRequestEventsInternal(ctx.State(), &requestID)
+	events, err := getRequestEventsInternal(ctx.StateR(), &requestID)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()
@@ -169,7 +168,9 @@ func viewGetEventsForBlock(ctx isc.SandboxView) dict.Dict {
 		return nil
 	}
 
-	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
+	blockInfo, err := GetBlockInfo(ctx.StateR(), blockIndex)
+	ctx.RequireNoError(err)
+	events, err := GetEventsByBlockIndex(ctx.StateR(), blockIndex, blockInfo.TotalRequests)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()
@@ -189,7 +190,7 @@ func viewGetEventsForContract(ctx isc.SandboxView) dict.Dict {
 	contract := ctx.Params().MustGetHname(ParamContractHname)
 	fromBlock := ctx.Params().MustGetUint32(ParamFromBlock, 0)
 	toBlock := ctx.Params().MustGetUint32(ParamToBlock, math.MaxUint32)
-	events, err := getSmartContractEventsInternal(ctx.State(), contract, fromBlock, toBlock)
+	events, err := getSmartContractEventsInternal(ctx.StateR(), contract, fromBlock, toBlock)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()

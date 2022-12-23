@@ -1,16 +1,17 @@
 package hashing
 
 import (
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
 	"math/rand"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 const HashSize = 32
@@ -28,7 +29,7 @@ func (h HashValue) String() string {
 }
 
 func (h HashValue) Hex() string {
-	return hex.EncodeToString(h[:])
+	return iotago.EncodeHex(h[:])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {
@@ -59,7 +60,7 @@ func HashValueFromBytes(b []byte) (HashValue, error) {
 }
 
 func HashValueFromHex(s string) (HashValue, error) {
-	b, err := hex.DecodeString(s)
+	b, err := iotago.DecodeHex(s)
 	if err != nil {
 		return NilHash, err
 	}

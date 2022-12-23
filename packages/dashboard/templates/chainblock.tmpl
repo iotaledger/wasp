@@ -7,10 +7,10 @@
 		<dl>
 			<dt>Timestamp</dt><dd><code>{{ formatTimestamp .Block.Timestamp }}</code></dd>
 			{{ if .Block.L1Commitment }}
-				<dt>State commitment</dt><dd><code>{{ .Block.L1Commitment.StateCommitment }}</code></dd>
+				<dt>Trie root</dt><dd><code>{{ .Block.L1Commitment.TrieRoot }}</code></dd>
 				<dt>Block hash</dt><dd><code>{{ .Block.L1Commitment.BlockHash }}</code></dd>
 			{{ end }}
-			<dt>Previous state commitment</dt><dd><code>{{ .Block.PreviousL1Commitment.StateCommitment }}</code></dd>
+			<dt>Previous trie root</dt><dd><code>{{ .Block.PreviousL1Commitment.TrieRoot }}</code></dd>
 			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousL1Commitment.BlockHash }}</code></dd>
 			<dt>Anchor transaction ID</dt><dd><code>{{ .Block.AnchorTransactionID.ToHex }}</code></dd>
 			<dt>Total base tokens in L2 accounts</dt><dd><code>{{ .Block.TotalBaseTokensInL2Accounts }}</code></dd>
@@ -22,6 +22,7 @@
 
 	<div class="card fluid">
 		<h3 class="section">Requests</h3>
+		{{$resolvedErrors := .ResolvedErrors}}
 		{{range $i, $receipt := .Receipts}}
 			{{ $req := $receipt.Request }}
 			<div class="section">
@@ -30,7 +31,7 @@
 				<dt>ID</dt><dd><code>{{ $req.ID }}</code></dd>
 				<dt>Type</dt><dd>{{ if $req.IsOffLedger -}} off-ledger {{- else -}} on-ledger {{- end }}</dd>
 				{{ if $receipt.Error }}
-					<dt>Error</dt><dd><code>{{ $receipt.Error }}</code></dd>
+					<dt>Error</dt><dd><code id="receipt-error-{{$i}}">{{ (index $resolvedErrors $i) }}</code></dd>
 				{{ end }}
 				<dt>Sender</dt><dd>{{template "agentid" (args $chainid $req.SenderAccount)}}</dd>
 				<dt>Contract Hname</dt><dd><code>{{$req.CallTarget.Contract}}</code></dd>
@@ -135,5 +136,4 @@
 			</div>
 		</div>
 	</div>
-	{{ template "ws" $chainid }}
 {{end}}

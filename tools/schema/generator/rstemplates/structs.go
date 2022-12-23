@@ -8,7 +8,6 @@ var structsRs = map[string]string{
 	"structs.rs": `
 #![allow(dead_code)]
 #![allow(unused_imports)]
-
 $#if core useCrate useWasmLib
 $#each structs structType
 `,
@@ -51,7 +50,7 @@ $#each fldComment _structFieldComment
 `,
 	// *******************************
 	"structEncode": `
-		$fld_type$+_encode(&mut enc, $fldRef$+self.$fld_name);
+        $fld_type$+_encode(&mut enc, $fldRef$+self.$fld_name);
 `,
 	// *******************************
 	"structMethods": `

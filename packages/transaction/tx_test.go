@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/utxodb"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCreateOrigin(t *testing.T) {
@@ -20,7 +21,7 @@ func TestCreateOrigin(t *testing.T) {
 	var userKey *cryptolib.KeyPair
 	var userAddr, stateAddr *iotago.Ed25519Address
 	var err error
-	var chainID *isc.ChainID
+	var chainID isc.ChainID
 	var originTxID iotago.TransactionID
 
 	initTest := func() {
@@ -85,7 +86,7 @@ func TestCreateOrigin(t *testing.T) {
 		anchor, _, err := GetAnchorFromTransaction(originTx)
 		require.NoError(t, err)
 		require.True(t, anchor.IsOrigin)
-		require.EqualValues(t, *chainID, anchor.ChainID)
+		require.EqualValues(t, chainID, anchor.ChainID)
 		require.EqualValues(t, 0, anchor.StateIndex)
 		require.True(t, stateAddr.Equal(anchor.StateController))
 		require.True(t, stateAddr.Equal(anchor.GovernanceController))
@@ -123,8 +124,8 @@ func TestConsumeRequest(t *testing.T) {
 	stateControllerAddr := stateControllerKeyPair.GetPublicKey().AsEd25519Address()
 	addrKeys := stateController.AddressKeysForEd25519Address(stateControllerAddr)
 
-	aliasOut1ID := tpkg.RandOutputID(0)
-	aliasOut1 := &iotago.AliasOutput{
+	aliasOutput1ID := tpkg.RandOutputID(0)
+	aliasOutput1 := &iotago.AliasOutput{
 		Amount:     1337,
 		AliasID:    tpkg.RandAliasAddress().AliasID(),
 		StateIndex: 1,
@@ -133,20 +134,20 @@ func TestConsumeRequest(t *testing.T) {
 			&iotago.GovernorAddressUnlockCondition{Address: stateControllerAddr},
 		},
 	}
-	aliasOut1Inp := tpkg.RandUTXOInput()
+	aliasOutput1UTXOInput := tpkg.RandUTXOInput()
 
 	reqID := tpkg.RandOutputID(1)
-	req := &iotago.BasicOutput{
+	request := &iotago.BasicOutput{
 		Amount: 1337,
 		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: aliasOut1.AliasID.ToAddress()},
+			&iotago.AddressUnlockCondition{Address: aliasOutput1.AliasID.ToAddress()},
 		},
 	}
-	reqInp := tpkg.RandUTXOInput()
+	requestUTXOInput := tpkg.RandUTXOInput()
 
 	aliasOut2 := &iotago.AliasOutput{
 		Amount:     1337 * 2,
-		AliasID:    aliasOut1.AliasID,
+		AliasID:    aliasOutput1.AliasID,
 		StateIndex: 2,
 		Conditions: iotago.UnlockConditions{
 			&iotago.StateControllerAddressUnlockCondition{Address: stateControllerAddr},
@@ -155,12 +156,12 @@ func TestConsumeRequest(t *testing.T) {
 	}
 	essence := &iotago.TransactionEssence{
 		NetworkID: tpkg.TestNetworkID,
-		Inputs:    iotago.Inputs{aliasOut1Inp, reqInp},
+		Inputs:    iotago.Inputs{aliasOutput1UTXOInput, requestUTXOInput},
 		Outputs:   iotago.Outputs{aliasOut2},
 	}
 	sigs, err := essence.Sign(
-		iotago.OutputIDs{aliasOut1ID, reqID}.
-			OrderedSet(iotago.OutputSet{aliasOut1ID: aliasOut1, reqID: req}).
+		iotago.OutputIDs{aliasOutput1ID, reqID}.
+			OrderedSet(iotago.OutputSet{aliasOutput1ID: aliasOutput1, reqID: request}).
 			MustCommitment(),
 		addrKeys,
 	)
@@ -179,8 +180,8 @@ func TestConsumeRequest(t *testing.T) {
 		},
 	}
 	outset := iotago.OutputSet{
-		aliasOut1Inp.ID(): aliasOut1,
-		reqInp.ID():       req,
+		aliasOutput1UTXOInput.ID(): aliasOutput1,
+		requestUTXOInput.ID():      request,
 	}
 
 	err = tx.SemanticallyValidate(semValCtx, outset)

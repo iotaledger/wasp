@@ -4,12 +4,15 @@
 package testlogger
 
 import (
-	"testing"
-
-	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/hive.go/core/logger"
 )
+
+type TestingT interface { // Interface so there's no need to pass the concrete type
+	Name() string
+}
 
 // NewLogger produces a logger adjusted for test cases.
 func NewSimple(debug bool) *logger.Logger {
@@ -28,7 +31,7 @@ func NewSimple(debug bool) *logger.Logger {
 }
 
 // NewLogger produces a logger adjusted for test cases.
-func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
+func NewLogger(t TestingT, timeLayout ...string) *logger.Logger {
 	return NewNamedLogger(t.Name(), timeLayout...)
 }
 

@@ -6,13 +6,14 @@ import (
 	"path"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 )
 
 type ConsoleReportParams struct {
@@ -20,7 +21,7 @@ type ConsoleReportParams struct {
 	StatsEveryKVPairs int
 }
 
-func FileName(chainID *isc.ChainID, stateIndex uint32) string {
+func FileName(chainID isc.ChainID, stateIndex uint32) string {
 	return fmt.Sprintf("%s.%d.snapshot", chainID, stateIndex)
 }
 
@@ -58,7 +59,7 @@ func WriteKVToStream(store kv.KVIterator, stream kv.StreamWriter, p ...ConsoleRe
 	return nil
 }
 
-func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleReportParams) error {
+func WriteSnapshot(sr state.State, dir string, p ...ConsoleReportParams) error {
 	par := ConsoleReportParams{
 		Console:           io.Discard,
 		StatsEveryKVPairs: 100,
@@ -66,18 +67,9 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	if len(p) > 0 {
 		par = p[0]
 	}
-	chainID, err := ordr.ChainID()
-	if err != nil {
-		return err
-	}
-	stateIndex, err := ordr.BlockIndex()
-	if err != nil {
-		return err
-	}
-	timestamp, err := ordr.Timestamp()
-	if err != nil {
-		return err
-	}
+	chainID := sr.ChainID()
+	stateIndex := sr.BlockIndex()
+	timestamp := sr.Timestamp()
 	fmt.Fprintf(par.Console, "[WriteSnapshot] chainID:     %s\n", chainID)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] state index: %d\n", stateIndex)
 	fmt.Fprintf(par.Console, "[WriteSnapshot] timestamp: %v\n", timestamp)
@@ -91,7 +83,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 	defer fstream.File.Close()
 
 	fmt.Printf("[WriteSnapshot] writing to file ")
-	if err := WriteKVToStream(ordr.KVStoreReader(), fstream, par); err != nil {
+	if err := WriteKVToStream(sr, fstream, par); err != nil {
 		return err
 	}
 	tKV, tBytes := fstream.Stats()
@@ -101,7 +93,7 @@ func WriteSnapshot(ordr state.OptimisticStateReader, dir string, p ...ConsoleRep
 
 type FileProperties struct {
 	FileName   string
-	ChainID    *isc.ChainID
+	ChainID    isc.ChainID
 	StateIndex uint32
 	TimeStamp  time.Time
 	NumRecords int
@@ -115,7 +107,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 	var errR error
 
 	err := rdr.Iterate(func(k, v []byte) bool {
-		if len(k) == 0 {
+		if kv.Key(k) == state.KeyChainID {
 			if chainIDFound {
 				errR = xerrors.New("duplicate record with chainID")
 				return false
@@ -178,4 +170,8 @@ func ScanFile(fname string) (*FileProperties, error) {
 	}
 	ret.FileName = fname
 	return ret, nil
+}
+
+func BlockFileName(chainid string, index uint32, h state.BlockHash) string {
+	return fmt.Sprintf("%08d.%s.%s.mut", index, h.String(), chainid)
 }

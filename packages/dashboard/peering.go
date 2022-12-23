@@ -7,8 +7,9 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 //go:embed templates/peering.tmpl

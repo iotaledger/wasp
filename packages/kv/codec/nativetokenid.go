@@ -1,8 +1,9 @@
 package codec
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"golang.org/x/xerrors"
+
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 func DecodeNativeTokenID(b []byte, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error) {

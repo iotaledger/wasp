@@ -1,32 +1,44 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import * as wasmtypes from "./wasmtypes"
 import {ScDict} from "./dict";
+import {ScTokenID, tokenIDDecode, tokenIDEncode, tokenIDFromBytes} from "./wasmtypes/sctokenid";
+import {uint64Decode, uint64Encode} from "./wasmtypes/scuint64";
+import {bigIntDecode, bigIntEncode, ScBigInt} from "./wasmtypes/scbigint";
+import {nftIDDecode, nftIDEncode, ScNftID} from "./wasmtypes/scnftid";
+import {WasmDecoder, WasmEncoder} from "./wasmtypes/codec";
+import {uint16Decode, uint16Encode} from "./wasmtypes/scuint16";
+import {boolDecode, boolEncode} from "./wasmtypes/scbool";
 
 export class ScAssets {
-    baseTokens: u64 = 0;
-    nftIDs: wasmtypes.ScNftID[] = [];
-    tokens: Map<string, wasmtypes.ScBigInt> = new Map();
+    baseTokens: u64 = 0n;
+    nftIDs: Set<ScNftID> = new Set();
+    tokens: Map<string, ScBigInt> = new Map();
 
-    public constructor(buf: u8[]) {
-        if (buf.length == 0) {
+    public constructor(buf: Uint8Array | null) {
+        if (buf === null || buf.length == 0) {
             return this;
         }
-        const dec = new wasmtypes.WasmDecoder(buf);
-        this.baseTokens = wasmtypes.uint64Decode(dec);
+        
+        const dec = new WasmDecoder(buf);
+        const empty = boolDecode(dec);
+        if (empty) {
+            return this;
+        }
 
-        let size = wasmtypes.uint32Decode(dec);
-        for (let i: u32 = 0; i < size; i++) {
-            const tokenID = wasmtypes.tokenIDDecode(dec);
-            const amount = wasmtypes.bigIntDecode(dec);
+        this.baseTokens = uint64Decode(dec);
+
+        let size = uint16Decode(dec);
+        for (let i: u16 = 0; i < size; i++) {
+            const tokenID = tokenIDDecode(dec);
+            const amount = bigIntDecode(dec);
             this.tokens.set(ScDict.toKey(tokenID.id), amount);
         }
 
-        size = wasmtypes.uint32Decode(dec);
-        for (let i: u32 = 0; i < size; i++) {
-            const nftID = wasmtypes.nftIDDecode(dec);
-            this.nftIDs.push(nftID)
+        size = uint16Decode(dec);
+        for (let i: u16 = 0; i < size; i++) {
+            const nftID = nftIDDecode(dec);
+            this.nftIDs.add(nftID)
         }
     }
 
@@ -35,46 +47,53 @@ export class ScAssets {
     }
 
     public isEmpty(): bool {
-        if (this.baseTokens != 0) {
+        if (this.baseTokens != 0n) {
             return false;
         }
-        const values = this.tokens.values();
+        const values = [...this.tokens.values()];
         for (let i = 0; i < values.length; i++) {
             if (!values[i].isZero()) {
                 return false;
             }
         }
-        return this.nftIDs.length == 0;
+        return this.nftIDs.size == 0;
     }
-    
-    public toBytes(): u8[] {
-        const enc = new wasmtypes.WasmEncoder();
-        wasmtypes.uint64Encode(enc, this.baseTokens);
 
-        let tokenIDs = this.tokenIDs();
-        wasmtypes.uint32Encode(enc, tokenIDs.length as u32);
-        for (let i = 0; i < tokenIDs.length; i++) {
-            const tokenID = tokenIDs[i]
-            wasmtypes.tokenIDEncode(enc, tokenID);
-            const mapKey = ScDict.toKey(tokenID.id);
-            const amount = this.tokens.get(mapKey);
-            wasmtypes.bigIntEncode(enc, amount);
+    public toBytes(): Uint8Array {
+        const enc = new WasmEncoder();
+        const empty = this.isEmpty();
+        boolEncode(enc, empty);
+        if (empty) {
+            return enc.buf()
         }
 
-        wasmtypes.uint32Encode(enc, this.nftIDs.length as u32);
-        for (let i = 0; i < this.nftIDs.length; i++) {
-            const nftID = this.nftIDs[i]
-            wasmtypes.nftIDEncode(enc, nftID);
+        uint64Encode(enc, this.baseTokens);
+
+        let tokenIDs = this.tokenIDs();
+        uint16Encode(enc, tokenIDs.length as u16);
+        for (let i = 0; i < tokenIDs.length; i++) {
+            const tokenID = tokenIDs[i]
+            tokenIDEncode(enc, tokenID);
+            const mapKey = ScDict.toKey(tokenID.id);
+            const amount = this.tokens.get(mapKey)!;
+            bigIntEncode(enc, amount);
+        }
+
+        uint16Encode(enc, this.nftIDs.size as u16);
+        let arr = [...this.nftIDs.values()];
+        for (let i = 0; i < arr.length; i++) {
+            let nftID = arr[i];
+            nftIDEncode(enc, nftID);
         }
         return enc.buf()
     }
-    
-    public tokenIDs(): wasmtypes.ScTokenID[] {
-        let tokenIDs: wasmtypes.ScTokenID[] = [];
-        const keys = this.tokens.keys().sort();
+
+    public tokenIDs(): ScTokenID[] {
+        let tokenIDs: ScTokenID[] = [];
+        const keys = [...this.tokens.keys()].sort();
         for (let i = 0; i < keys.length; i++) {
             const keyBytes = ScDict.fromKey(keys[i]);
-            const tokenID = wasmtypes.tokenIDFromBytes(keyBytes);
+            const tokenID = tokenIDFromBytes(keyBytes);
             tokenIDs.push(tokenID);
         }
         return tokenIDs;
@@ -88,12 +107,12 @@ export class ScBalances {
         this.assets = assets;
     }
 
-    public balance(tokenID: wasmtypes.ScTokenID): wasmtypes.ScBigInt {
+    public balance(tokenID: ScTokenID): ScBigInt {
         const mapKey = ScDict.toKey(tokenID.id);
         if (!this.assets.tokens.has(mapKey)) {
-            return new wasmtypes.ScBigInt();
+            return new ScBigInt();
         }
-        return this.assets.tokens.get(mapKey);
+        return this.assets.tokens.get(mapKey)!;
     }
 
     public baseTokens(): u64 {
@@ -104,22 +123,22 @@ export class ScBalances {
         return this.assets.isEmpty();
     }
 
-    public nftIDs(): wasmtypes.ScNftID[] {
+    public nftIDs(): Set<ScNftID> {
         return this.assets.nftIDs;
     }
 
-    public toBytes(): u8[] {
+    public toBytes(): Uint8Array {
         return this.assets.toBytes();
     }
 
-    public tokenIDs(): wasmtypes.ScTokenID[] {
+    public tokenIDs(): ScTokenID[] {
         return this.assets.tokenIDs();
     }
 }
 
-export class ScTransfer extends ScBalances{
+export class ScTransfer extends ScBalances {
     public constructor() {
-        super(new ScAssets([]));
+        super(new ScAssets(null));
     }
 
     public static fromBalances(balances: ScBalances): ScTransfer {
@@ -129,10 +148,9 @@ export class ScTransfer extends ScBalances{
             const tokenID = tokenIDs[i];
             transfer.set(tokenID, balances.balance(tokenID));
         }
-        const nftIDs = balances.nftIDs();
+        const nftIDs = [...balances.nftIDs().values()];
         for (let i = 0; i < nftIDs.length; i++) {
-            const nftID = nftIDs[i];
-            transfer.addNFT(nftID);
+            transfer.addNFT(nftIDs[i]);
         }
         return transfer;
     }
@@ -143,23 +161,23 @@ export class ScTransfer extends ScBalances{
         return transfer;
     }
 
-    public static nft(nftID: wasmtypes.ScNftID): ScTransfer {
+    public static nft(nftID: ScNftID): ScTransfer {
         const transfer = new ScTransfer();
         transfer.addNFT(nftID);
         return transfer;
     }
 
-    public static tokens(tokenID: wasmtypes.ScTokenID, amount: wasmtypes.ScBigInt): ScTransfer {
+    public static tokens(tokenID: ScTokenID, amount: ScBigInt): ScTransfer {
         const transfer = new ScTransfer();
         transfer.set(tokenID, amount);
         return transfer;
     }
 
-    public addNFT(nftID: wasmtypes.ScNftID): void {
-        this.assets.nftIDs.push(nftID);
+    public addNFT(nftID: ScNftID): void {
+        this.assets.nftIDs.add(nftID);
     }
 
-    public set(tokenID: wasmtypes.ScTokenID, amount: wasmtypes.ScBigInt): void {
+    public set(tokenID: ScTokenID, amount: ScBigInt): void {
         const mapKey = ScDict.toKey(tokenID.id);
         this.assets.tokens.set(mapKey, amount);
     }

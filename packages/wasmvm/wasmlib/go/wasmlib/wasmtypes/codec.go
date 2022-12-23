@@ -91,16 +91,14 @@ func (d *WasmDecoder) VliDecode(bits int) int64 {
 
 		// next group of 7 bits
 		b = d.Byte()
-		value |= int64(b&0x7f) << s
+		value += int64(b&0x7f) << s
 	}
 
-	if sign == 0 {
-		// positive, sign bits are already zero
-		return value
+	// value was encoded as absolute value
+	if sign != 0 {
+		return -value
 	}
-
-	// negative, extend sign bits
-	return value | (int64(-1) << s)
+	return value
 }
 
 // VluDecode: Variable Length Unsigned decoder, uses ULEB128
@@ -118,7 +116,7 @@ func (d *WasmDecoder) VluDecode(bits int) uint64 {
 
 		// next group of 7 bits
 		b = d.Byte()
-		value |= uint64(b&0x7f) << s
+		value += uint64(b&0x7f) << s
 	}
 	return value
 }
@@ -167,19 +165,18 @@ func (e *WasmEncoder) VliEncode(value int64) *WasmEncoder {
 
 	// first group: 6 bits of data plus sign bit
 	// bit 6 encodes 0 as positive and 1 as negative
-	b := byte(value) & 0x3f
-	value >>= 6
-
-	finalValue := int64(0)
+	sign := byte(0x00)
 	if value < 0 {
-		// 1st byte encodes 1 as negative in bit 6
-		b |= 0x40
-		// negative value, start with all high bits set to 1
-		finalValue = -1
+		sign = 0x40
+		// encode absolute value
+		value = -value
 	}
 
+	b := byte(value)&0x3f | sign
+	value >>= 6
+
 	// keep shifting until all bits are done
-	for value != finalValue {
+	for value != 0 {
 		// emit with continuation bit
 		e.buf = append(e.buf, b|0x80)
 

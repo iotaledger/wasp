@@ -1,20 +1,25 @@
 package log
 
 import (
-	"encoding/hex"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
+	"text/template"
 
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/hive.go/core/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 var (
 	VerboseFlag bool
 	DebugFlag   bool
+	JSONFlag    bool
 
 	hiveLogger *logger.Logger
 )
@@ -22,6 +27,7 @@ var (
 func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose")
 	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "debug")
+	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "json output")
 }
 
 func HiveLogger() *logger.Logger {
@@ -33,6 +39,7 @@ func HiveLogger() *logger.Logger {
 			DisableEvents:     true,
 			DisableCaller:     true,
 			DisableStacktrace: true,
+			StacktraceLevel:   "panic",
 		}
 		if DebugFlag {
 			loggerCfg.Level = "debug"
@@ -72,9 +79,62 @@ func Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+func DefaultJSONFormatter(i interface{}) ([]byte, error) {
+	return json.MarshalIndent(i, "", "  ")
+}
+
+type CLIOutput interface {
+	AsText() (string, error)
+}
+
+type ExtendedCLIOutput interface {
+	CLIOutput
+	AsJSON() (string, error)
+}
+
+type ErrorModel struct {
+	Error string
+}
+
+func (b *ErrorModel) AsText() (string, error) {
+	return b.Error, nil
+}
+
+func GetCLIOutputText(outputModel CLIOutput) (string, error) {
+	if JSONFlag {
+		if output, ok := outputModel.(ExtendedCLIOutput); ok {
+			return output.AsJSON()
+		}
+
+		jsonOutput, err := DefaultJSONFormatter(outputModel)
+		return string(jsonOutput), err
+	}
+
+	return outputModel.AsText()
+}
+
+func ParseCLIOutputTemplate(output CLIOutput, templateDefinition string) (string, error) {
+	tpl := template.Must(template.New("clioutput").Parse(templateDefinition))
+	var result bytes.Buffer
+	err := tpl.Execute(&result, output)
+	if err != nil {
+		return "", err
+	}
+
+	return result.String(), nil
+}
+
+func PrintCLIOutput(output CLIOutput) {
+	outputText, err := GetCLIOutputText(output)
+	Check(err)
+	Printf("%s\n", outputText)
+}
+
 func Check(err error) {
 	if err != nil {
-		Fatalf(err.Error())
+		errorModel := &ErrorModel{err.Error()}
+		message, _ := GetCLIOutputText(errorModel)
+		Fatalf("%v", message)
 	}
 }
 
@@ -128,7 +188,7 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		for k, v := range node {
 			tree = append(tree, TreeItem{
 				K: fmt.Sprintf("%q", string(k)),
-				V: fmt.Sprintf("0x%s", hex.EncodeToString(v)),
+				V: fmt.Sprintf("0x%s", iotago.EncodeHex(v)),
 			})
 		}
 		PrintTree(tree, tab, tabwidth)

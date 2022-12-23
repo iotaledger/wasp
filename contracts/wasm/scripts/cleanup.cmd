@@ -1,29 +1,14 @@
+@echo off
+if "%1"=="" call cleanup_all.cmd
+if "%1"=="" goto :xit2
+cd %1
+if not exist schema.yaml goto :xit
+schema -go -rs -ts -clean
+if exist ts\%1impl\tsconfig.json del ts\%1impl\tsconfig.json
+if exist rs\%1impl\Cargo.lock del rs\%1impl\Cargo.lock
+if exist rs\%1impl\Cargo.toml del rs\%1impl\Cargo.toml
+if exist rs\%1impl\README.md del rs\%1impl\README.md
+if exist rs\%1impl\LICENSE del rs\%1impl\LICENSE
+:xit
 cd ..
-del /s consts.*
-del /s contract.*
-del /s keys.*
-del /s lib.*
-del /s params.*
-del /s results.*
-del /s state.*
-del /s typedefs.*
-del /s types.*
-del /s /q target\*.*
-
-rem careful not to delete all, this could fuck up gascalibration
-for /d %%f in (*.) do del %%f\go\main.go
-
-rem careful not to delete all, this could fuck up fairroulette frontend
-for /d %%f in (*.) do del %%f\ts\%%f\index.ts
-for /d %%f in (*.) do del %%f\ts\%%f\tsconfig.json
-
-for /d %%f in (*.) do del /s /q %%f\pkg\*.*
-for /d %%f in (*.) do del /s /q %%f\ts\pkg\*.*
-
-cd gascalibration
-for /d %%f in (*.) do del %%f\go\main.go
-for /d %%f in (*.) do del %%f\ts\%%f\index.ts
-for /d %%f in (*.) do del %%f\ts\%%f\tsconfig.json
-for /d %%f in (*.) do del /s /q %%f\pkg\*.*
-for /d %%f in (*.) do del /s /q %%f\ts\pkg\*.*
-cd scripts
+:xit2

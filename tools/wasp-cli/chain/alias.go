@@ -1,11 +1,12 @@
 package chain
 
 import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var chainAlias string
@@ -33,8 +34,8 @@ func AddChainAlias(chainAlias, id string) {
 	SetCurrentChain(chainAlias)
 }
 
-func GetCurrentChainID() *isc.ChainID {
-	chid, err := isc.ChainIDFromString(viper.GetString("chains." + GetChainAlias()))
+func GetCurrentChainID() isc.ChainID {
+	chainID, err := isc.ChainIDFromString(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
-	return chid
+	return chainID
 }

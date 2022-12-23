@@ -2,13 +2,13 @@ package authentication
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
-
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -18,25 +18,24 @@ const (
 	AuthNone        = "none"
 )
 
-type AuthConfiguration struct {
-	Scheme    string `koanf:"scheme"`
-	AddRoutes bool   `koanf:"addRoutes"`
-
-	JWTConfig         JWTAuthConfiguration         `koanf:"jwt"`
-	BasicAuthConfig   BasicAuthConfiguration       `koanf:"basic"`
-	IPWhitelistConfig IPWhiteListAuthConfiguration `koanf:"ip"`
-}
-
 type JWTAuthConfiguration struct {
-	DurationHours int `koanf:"durationHours"`
+	Duration time.Duration `default:"24h" usage:"jwt token lifetime"`
 }
 
 type BasicAuthConfiguration struct {
-	UserName string `koanf:"username"`
+	Username string `default:"wasp" usage:"the username which grants access to the service"`
 }
 
 type IPWhiteListAuthConfiguration struct {
-	IPWhiteList []string `koanf:"whitelist"`
+	Whitelist []string `default:"0.0.0.0" usage:"a list of ips that are allowed to access the service"`
+}
+
+type AuthConfiguration struct {
+	Scheme string `default:"ip" usage:"selects which authentication to choose"`
+
+	JWTConfig         JWTAuthConfiguration         `name:"jwt" usage:"defines the jwt configuration"`
+	BasicAuthConfig   BasicAuthConfiguration       `name:"basic" usage:"defines the basic auth configuration"`
+	IPWhitelistConfig IPWhiteListAuthConfiguration `name:"ip" usage:"defines the whitelist configuration"`
 }
 
 type WebAPI interface {
@@ -62,42 +61,40 @@ func AddNoneAuth(webAPI WebAPI) {
 	webAPI.Use(noneFunc)
 }
 
-func AddAuthentication(webAPI WebAPI, registryProvider registry.Provider, configSectionPath string, claimValidator ClaimValidator) {
-	var config AuthConfiguration
+func AddAuthentication(
+	webAPI WebAPI,
+	userManager *users.UserManager,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	authConfig AuthConfiguration,
+	claimValidator ClaimValidator,
+) {
+	addAuthContext(webAPI, authConfig)
 
-	if err := parameters.GetStruct(configSectionPath, &config); err != nil {
-		return
-	}
-
-	userMap := users.All()
-
-	addAuthContext(webAPI, config)
-
-	switch config.Scheme {
+	switch authConfig.Scheme {
 	case AuthBasic:
-		AddBasicAuth(webAPI, userMap)
+		AddBasicAuth(webAPI, userManager)
 	case AuthJWT:
-		nodeIdentity := registryProvider().GetNodeIdentity()
+		nodeIdentity := nodeIdentityProvider.NodeIdentity()
 
 		privateKey := nodeIdentity.GetPrivateKey().AsBytes()
 
 		// The primary claim is the one mandatory claim that gives access to api/webapi/alike
-		jwtAuth := AddJWTAuth(webAPI, config.JWTConfig, privateKey, userMap, claimValidator)
+		jwtAuth := AddJWTAuth(webAPI, authConfig.JWTConfig, privateKey, userManager, claimValidator)
 
-		authHandler := &AuthHandler{Jwt: jwtAuth, Users: userMap}
+		authHandler := &AuthHandler{Jwt: jwtAuth, UserManager: userManager}
 		webAPI.POST(shared.AuthRoute(), authHandler.CrossAPIAuthHandler)
 
 	case AuthIPWhitelist:
-		AddIPWhiteListAuth(webAPI, config.IPWhitelistConfig)
+		AddIPWhiteListAuth(webAPI, authConfig.IPWhitelistConfig)
 
 	case AuthNone:
 		AddNoneAuth(webAPI)
 
 	default:
-		panic(fmt.Sprintf("Unknown auth scheme %s", config.Scheme))
+		panic(fmt.Sprintf("Unknown auth scheme %s", authConfig.Scheme))
 	}
 
-	addAuthenticationStatus(webAPI, config)
+	addAuthenticationStatus(webAPI, authConfig)
 }
 
 func addAuthContext(webAPI WebAPI, config AuthConfiguration) {

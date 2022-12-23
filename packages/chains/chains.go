@@ -4,187 +4,260 @@
 package chains
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/hive.go/core/generics/event"
+	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/chainimpl"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/chain/cmtLog"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/wal"
-	"golang.org/x/xerrors"
 )
 
-type Provider func() *Chains
+type Provider func() *Chains // TODO: Use DI instead of that.
 
-func (chains Provider) ChainProvider() func(chainID *isc.ChainID) chain.Chain {
-	return func(chainID *isc.ChainID) chain.Chain {
+func (chains Provider) ChainProvider() func(chainID isc.ChainID) chain.Chain {
+	return func(chainID isc.ChainID) chain.Chain {
 		return chains().Get(chainID)
 	}
 }
 
-type ChainProvider func(chainID *isc.ChainID) chain.Chain
+type ChainProvider func(chainID isc.ChainID) chain.Chain
 
 type Chains struct {
-	mutex                            sync.RWMutex
+	ctx                              context.Context
 	log                              *logger.Logger
-	allChains                        map[isc.ChainID]chain.Chain
-	nodeConn                         chain.NodeConnection
+	nodeConnection                   chain.NodeConnection
 	processorConfig                  *processors.Config
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
 	networkProvider                  peering.NetworkProvider
-	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
+	chainStateStoreProvider          database.ChainStateKVStoreProvider
+	rawBlocksEnabled                 bool
+	rawBlocksDir                     string
+
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	dkShareRegistryProvider     registry.DKShareRegistryProvider
+	nodeIdentityProvider        registry.NodeIdentityProvider
+	consensusStateRegistry      cmtLog.ConsensusStateRegistry
+	chainListener               chain.ChainListener
+
+	mutex     sync.RWMutex
+	allChains map[isc.ChainID]*activeChain
+}
+
+type activeChain struct {
+	chain      chain.Chain
+	cancelFunc context.CancelFunc
 }
 
 func New(
 	log *logger.Logger,
+	nodeConnection chain.NodeConnection,
 	processorConfig *processors.Config,
-	offledgerBroadcastUpToNPeers int,
-	offledgerBroadcastInterval time.Duration,
-	pullMissingRequestsFromCommittee bool,
+	offledgerBroadcastUpToNPeers int, // TODO: Unused for now.
+	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
+	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	networkProvider peering.NetworkProvider,
-	getOrCreateKVStore dbmanager.ChainKVStoreProvider,
+	chainStateStoreProvider database.ChainStateKVStoreProvider,
+	rawBlocksEnabled bool,
+	rawBlocksDir string,
+	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
+	dkShareRegistryProvider registry.DKShareRegistryProvider,
+	nodeIdentityProvider registry.NodeIdentityProvider,
+	consensusStateRegistry cmtLog.ConsensusStateRegistry,
+	chainListener chain.ChainListener,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
-		allChains:                        make(map[isc.ChainID]chain.Chain),
+		allChains:                        map[isc.ChainID]*activeChain{},
+		nodeConnection:                   nodeConnection,
 		processorConfig:                  processorConfig,
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		networkProvider:                  networkProvider,
-		getOrCreateKVStore:               getOrCreateKVStore,
+		chainStateStoreProvider:          chainStateStoreProvider,
+		rawBlocksEnabled:                 rawBlocksEnabled,
+		rawBlocksDir:                     rawBlocksDir,
+		chainRecordRegistryProvider:      chainRecordRegistryProvider,
+		dkShareRegistryProvider:          dkShareRegistryProvider,
+		nodeIdentityProvider:             nodeIdentityProvider,
+		chainListener:                    chainListener,
+		consensusStateRegistry:           consensusStateRegistry,
 	}
 	return ret
 }
 
-func (c *Chains) Dismiss() {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+func (c *Chains) Run(ctx context.Context) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	for _, ch := range c.allChains {
-		ch.Dismiss("shutdown")
+	if c.ctx != nil {
+		return errors.New("chains already running")
 	}
-	c.allChains = make(map[isc.ChainID]chain.Chain)
+	c.ctx = ctx
+
+	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
+		c.mutex.RLock()
+		defer c.mutex.RUnlock()
+		if chain, ok := c.allChains[event.ChainRecord.ChainID()]; ok {
+			chain.chain.ConfigUpdated(event.ChainRecord.AccessNodes)
+		}
+	}))
+
+	return c.activateAllFromRegistry() //nolint:contextcheck
 }
 
-func (c *Chains) SetNodeConn(nodeConn chain.NodeConnection) {
-	if c.nodeConn != nil {
-		c.log.Panicf("Chains: node conn already set")
-	}
-	c.nodeConn = nodeConn
-}
+func (c *Chains) activateAllFromRegistry() error {
+	var innerErr error
+	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
+		chainID := chainRecord.ChainID()
+		if err := c.activateWithoutLocking(chainID); err != nil {
+			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
+			return false
+		}
 
-func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
-	chainRecords, err := registryProvider().GetChainRecords()
-	if err != nil {
+		return true
+	}); err != nil {
 		return err
 	}
 
-	astr := make([]string, len(chainRecords))
-	for i := range astr {
-		astr[i] = chainRecords[i].ChainID.String()[:10] + ".."
-	}
-	c.log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
+	return innerErr
+}
 
-	for _, chr := range chainRecords {
-		if chr.Active {
-			if err := c.Activate(chr, registryProvider, allMetrics, w); err != nil {
-				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
-			}
+// activateWithoutLocking activates a chain in the node.
+func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
+	if c.ctx == nil {
+		return xerrors.Errorf("run chains first")
+	}
+	//
+	// Check, maybe it is already running.
+	if _, ok := c.allChains[chainID]; ok {
+		c.log.Debugf("Chain %v is already activated", chainID.String())
+		return nil
+	}
+	//
+	// Activate the chain in the persistent store, if it is not activated yet.
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	if err != nil {
+		return xerrors.Errorf("cannot get chain record for %v: %w", chainID, err)
+	}
+	if !chainRecord.Active {
+		if _, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err != nil {
+			return xerrors.Errorf("cannot activate chain: %w", err)
 		}
 	}
-	return nil
-}
-
-// Activate activates chain on the Wasp node:
-// - creates chain object
-// - insert it into the runtime registry
-// - subscribes for related transactions in the L1 node
-func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics, w *wal.WAL) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	if !chr.Active {
-		return xerrors.Errorf("cannot activate chain for deactivated chain record")
-	}
-	ret, ok := c.allChains[chr.ChainID]
-	if ok && !ret.IsDismissed() {
-		c.log.Debugf("chain is already active: %s", chr.ChainID.String())
-		return nil
-	}
-	// create new chain object
-	defaultRegistry := registryProvider()
-	chainKVStore := c.getOrCreateKVStore(&chr.ChainID)
-	chainMetrics := allMetrics.NewChainMetrics(&chr.ChainID)
-	chainWAL, err := w.NewChainWAL(&chr.ChainID)
+	//
+	// Load or initialize new chain store.
+	chainKVStore, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
-		c.log.Debugf("Error creating wal object: %v", err)
-		chainWAL = wal.NewDefault()
+		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
-	newChain := chainimpl.NewChain(
-		&chr.ChainID,
-		c.log,
-		c.nodeConn,
-		chainKVStore,
-		c.networkProvider,
-		defaultRegistry,
+	chainStore := state.NewStore(chainKVStore)
+	chainState, err := chainStore.LatestState()
+	if err != nil {
+		chainStore = state.InitChainStore(chainKVStore)
+	} else {
+		chainIDInState, errChainID := chainState.Has(state.KeyChainID)
+		if errChainID != nil || !chainIDInState {
+			chainStore = state.InitChainStore(chainKVStore)
+		}
+	}
+
+	var chainWAL smGPAUtils.BlockWAL
+	if c.rawBlocksEnabled {
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
+		if err != nil {
+			panic(xerrors.Errorf("cannot create WAL: %w", err))
+		}
+	} else {
+		chainWAL = smGPAUtils.NewEmptyBlockWAL()
+	}
+
+	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	newChain, err := chain.New(
+		chainCtx,
+		chainID,
+		chainStore,
+		c.nodeConnection,
+		c.nodeIdentityProvider.NodeIdentity(),
 		c.processorConfig,
-		c.offledgerBroadcastUpToNPeers,
-		c.offledgerBroadcastInterval,
-		c.pullMissingRequestsFromCommittee,
-		chainMetrics,
+		c.dkShareRegistryProvider,
+		c.consensusStateRegistry,
 		chainWAL,
+		c.chainListener,
+		chainRecord.AccessNodes,
+		c.networkProvider,
+		c.log,
 	)
-	if newChain == nil {
-		return xerrors.New("Chains.Activate: failed to create chain object")
+	if err != nil {
+		chainCancel()
+		return xerrors.Errorf("Chains.Activate: failed to create chain object: %w", err)
 	}
-	c.allChains[chr.ChainID] = newChain
-	c.log.Infof("activated chain: %s", chr.ChainID.String())
+	c.allChains[chainID] = &activeChain{
+		chain:      newChain,
+		cancelFunc: chainCancel,
+	}
+
+	c.log.Infof("activated chain: %s", chainID.String())
 	return nil
 }
 
-// Deactivate deactivates chain in the node
-func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
+// Activate activates a chain in the node.
+func (c *Chains) Activate(chainID isc.ChainID) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	ch, ok := c.allChains[chr.ChainID]
-	if !ok || ch.IsDismissed() {
-		c.log.Debugf("chain is not active: %s", chr.ChainID.String())
+	return c.activateWithoutLocking(chainID)
+}
+
+// Deactivate a chain in the node.
+func (c *Chains) Deactivate(chainID isc.ChainID) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID); err != nil {
+		return xerrors.Errorf("cannot deactivate chain %v: %w", chainID, err)
+	}
+
+	ch, ok := c.allChains[chainID]
+	if !ok {
+		c.log.Debugf("chain is not active: %s", chainID.String())
 		return nil
 	}
-	ch.Dismiss("deactivate")
-	c.nodeConn.UnregisterChain(&chr.ChainID)
-	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
+	ch.cancelFunc()
+	delete(c.allChains, chainID)
+	c.log.Debugf("chain has been deactivated: %s", chainID.String())
 	return nil
 }
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *isc.ChainID, includeDeactivated ...bool) chain.Chain {
+func (c *Chains) Get(chainID isc.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
-	ret, ok := c.allChains[*chainID]
-
-	if len(includeDeactivated) > 0 && includeDeactivated[0] {
-		return ret
-	}
-	if ok && ret.IsDismissed() {
+	ret, ok := c.allChains[chainID]
+	if !ok {
 		return nil
 	}
-	return ret
+	return ret.chain
 }
 
 func (c *Chains) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
-	return c.nodeConn.GetMetrics()
+	return c.nodeConnection.GetMetrics()
 }

@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -24,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/stretchr/testify/require"
 )
 
 const BaseTokensDepositFee = 100
@@ -138,12 +138,6 @@ func TestFoundries(t *testing.T) {
 	initTest := func() {
 		env = solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 		ch, _, _ = env.NewChainExt(nil, 10*isc.Million, "chain1")
-		defer func(log *logger.Logger) {
-			err := log.Sync()
-			if err != nil {
-			}
-		}(ch.Log())
-
 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 		senderAgentID = isc.NewAgentID(senderAddr)
 
@@ -718,7 +712,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)
@@ -730,6 +724,21 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.printBalances("AFTER DESTROY")
+
+		// sent the last 50 tokens to an evm account
+		_, someEthereumAddr := solo.NewEthereumAccount()
+		someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
+
+		err = v.ch.TransferAllowanceTo(
+			isc.NewAllowanceFungibleTokens(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50)),
+			someEthereumAgentID,
+			true,
+			v.user,
+		)
+		require.NoError(t, err)
+		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 1)
+		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 0)
+		v.ch.AssertL2NativeTokens(someEthereumAgentID, v.tokenID, 50)
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		v := initWithdrawTest(t, 2*isc.Million)
@@ -742,7 +751,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 1), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 1), v.user)
 		require.NoError(t, err)
 		v.printBalances("AFTER DEPOSIT 1")
 
@@ -783,7 +792,7 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 100)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 0)
 
-		err = v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddNativeTokens(*v.tokenID, 50), v.user)
+		err = v.ch.DepositAssetsToL2(isc.NewEmptyFungibleTokens().AddNativeTokens(*v.tokenID, 50), v.user)
 		require.NoError(t, err)
 		v.env.AssertL1NativeTokens(v.userAddr, v.tokenID, 50)
 		v.ch.AssertL2NativeTokens(v.userAgentID, v.tokenID, 50)
@@ -978,7 +987,7 @@ func TestMintedTokensBurn(t *testing.T) {
 				Amount:         OneMi,
 				NativeTokens:   nil,
 				AliasID:        aliasIdent1.AliasID(),
-				StateIndex:     1,
+				StateIndex:     2,
 				StateMetadata:  nil,
 				FoundryCounter: 1,
 				Conditions: iotago.UnlockConditions{
@@ -1194,4 +1203,25 @@ func TestAllowanceNotEnoughFunds(t *testing.T) {
 		receipt := ch.LastReceipt()
 		require.EqualValues(t, gas.DefaultGasFeePolicy().MinFee(), receipt.GasFeeCharged)
 	}
+}
+
+func TestDepositWithNoGasBudget(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	senderWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	ch := env.NewChain()
+
+	// try to deposit with 0 gas budget
+	_, err := ch.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
+			WithFungibleTokens(isc.NewFungibleBaseTokens(2*isc.Million)).
+			WithGasBudget(0),
+		senderWallet,
+	)
+	require.NoError(t, err)
+
+	rec := ch.LastReceipt()
+	// request should succeed, while using gas > 0, the gasBudget should be correct in the receipt
+	require.Nil(t, rec.Error)
+	require.NotZero(t, rec.GasBurned)
+	require.EqualValues(t, gas.MinGasPerRequest, rec.GasBudget)
 }

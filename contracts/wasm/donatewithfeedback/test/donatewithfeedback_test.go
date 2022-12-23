@@ -6,14 +6,16 @@ package test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/contracts/wasm/donatewithfeedback/go/donatewithfeedback"
+	"github.com/iotaledger/wasp/contracts/wasm/donatewithfeedback/go/donatewithfeedbackimpl"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/require"
 )
 
 func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, donatewithfeedback.ScName, donatewithfeedback.OnLoad)
+	return wasmsolo.NewSoloContext(t, donatewithfeedback.ScName, donatewithfeedbackimpl.OnDispatch)
 }
 
 func TestDeploy(t *testing.T) {

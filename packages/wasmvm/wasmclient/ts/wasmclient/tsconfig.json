@@ -1,0 +1,16 @@
+{
+    "include": ["lib/**/*", "tests/**/*"],
+    "exclude": ["node_modules"],
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "module": "CommonJS",
+        "outDir": "./dist/node",
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "strict": true,
+        "types": ["wasmlib/types", "node", "Promise", "jest"],
+        "lib": ["ES2021", "DOM"],
+        "target": "ES2021",
+        "typeRoots": ["./node_modules/@types"]
+    },
+}

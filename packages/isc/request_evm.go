@@ -6,7 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/hive.go/marshalutil"
+
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -16,14 +17,14 @@ import (
 )
 
 type evmOffLedgerRequest struct {
-	chainID *ChainID
+	chainID ChainID
 	tx      *types.Transaction
 	sender  *EthereumAddressAgentID // not serialized
 }
 
 var _ OffLedgerRequest = &evmOffLedgerRequest{}
 
-func NewEVMOffLedgerRequest(chainID *ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
+func NewEVMOffLedgerRequest(chainID ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
 	sender, err := evmutil.GetSender(tx)
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (r *evmOffLedgerRequest) Params() dict.Dict {
 }
 
 func (r *evmOffLedgerRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyAssets()
+	return NewEmptyFungibleTokens()
 }
 
 func (r *evmOffLedgerRequest) GasBudget() (gas uint64, isEVM bool) {
@@ -124,7 +125,7 @@ func (r *evmOffLedgerRequest) String() string {
 	return fmt.Sprintf("evmOffLedgerRequest(%s)", r.ID())
 }
 
-func (r *evmOffLedgerRequest) ChainID() *ChainID {
+func (r *evmOffLedgerRequest) ChainID() ChainID {
 	return r.chainID
 }
 
@@ -143,14 +144,16 @@ func (r *evmOffLedgerRequest) VerifySignature() error {
 	return nil
 }
 
+// ----------------------------------------------------------------
+
 type evmOffLedgerEstimateGasRequest struct {
-	chainID *ChainID
+	chainID ChainID
 	callMsg ethereum.CallMsg
 }
 
 var _ OffLedgerRequest = &evmOffLedgerEstimateGasRequest{}
 
-func NewEVMOffLedgerEstimateGasRequest(chainID *ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
+func NewEVMOffLedgerEstimateGasRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
 	return &evmOffLedgerEstimateGasRequest{
 		chainID: chainID,
 		callMsg: callMsg,
@@ -201,10 +204,13 @@ func (r *evmOffLedgerEstimateGasRequest) Params() dict.Dict {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) FungibleTokens() *FungibleTokens {
-	return NewEmptyAssets()
+	return NewEmptyFungibleTokens()
 }
 
 func (r *evmOffLedgerEstimateGasRequest) GasBudget() (gas uint64, isEVM bool) {
+	if r.callMsg.Gas > 0 {
+		return r.callMsg.Gas, true
+	}
 	// see VMContext::calculateAffordableGasBudget() when EstimateGasMode == true
 	return math.MaxUint64, false
 }
@@ -239,7 +245,7 @@ func (r *evmOffLedgerEstimateGasRequest) String() string {
 	return fmt.Sprintf("evmOffLedgerEstimateGasRequest(%s)", r.ID())
 }
 
-func (r *evmOffLedgerEstimateGasRequest) ChainID() *ChainID {
+func (r *evmOffLedgerEstimateGasRequest) ChainID() ChainID {
 	return r.chainID
 }
 

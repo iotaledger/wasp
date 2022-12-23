@@ -7,7 +7,6 @@ package jsonrpc
 
 import (
 	"fmt"
-	"math/big"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum"
@@ -18,10 +17,11 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 type EthService struct {
@@ -42,7 +42,7 @@ func (e *EthService) resolveError(err error) error {
 		return nil
 	}
 	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
-		resolvedErr, resolveErr := errors.Resolve(vmError, e.evmChain.ViewCaller())
+		resolvedErr, resolveErr := errors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestBlockIndex()))
 		if resolveErr != nil {
 			return xerrors.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
 		}
@@ -127,18 +127,6 @@ func (e *EthService) GetBalance(address common.Address, blockNumberOrHash rpc.Bl
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
-	{
-		// FIXME: https://github.com/iotaledger/wasp/issues/1120
-		// adjusting the decimals so that Metamask shows the correct value
-		const metamaskDecimals = 18
-		decimals := int64(e.evmChain.BaseToken().Decimals)
-		if decimals > metamaskDecimals {
-			panic("base token decimals is too large")
-		}
-		exp := big.NewInt(10)
-		exp.Exp(exp, big.NewInt(metamaskDecimals-decimals), nil)
-		bal = bal.Mul(bal, exp)
-	}
 	return (*hexutil.Big)(bal), nil
 }
 
@@ -158,7 +146,7 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 	if r == nil {
 		return nil, nil
 	}
-	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) // nolint:dogsled
+	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) //nolint:dogsled
 	if err != nil {
 		return nil, e.resolveError(err)
 	}
@@ -221,8 +209,12 @@ func (e *EthService) Accounts() []common.Address {
 	return e.accounts.Addresses()
 }
 
+// expressed in wei
+// 1 Ether =
+// 1_000_000_000 Gwei
+// 1_000_000_000_000_000_000 wei
 func (e *EthService) GasPrice() *hexutil.Big {
-	return (*hexutil.Big)(big.NewInt(0))
+	return (*hexutil.Big)(e.evmChain.GasPrice())
 }
 
 func (e *EthService) Mining() bool {

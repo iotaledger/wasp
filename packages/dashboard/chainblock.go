@@ -6,13 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/labstack/echo/v4"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 //go:embed templates/chainblock.tmpl
@@ -21,7 +23,7 @@ var tplChainBlock string
 func (d *Dashboard) initChainBlock(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/block/:index", d.handleChainBlock)
 	route.Name = "chainBlock"
-	r[route.Path] = d.makeTemplate(e, tplChainBlock, tplWebSocket)
+	r[route.Path] = d.makeTemplate(e, tplChainBlock)
 }
 
 func (d *Dashboard) handleChainBlock(c echo.Context) error {
@@ -79,12 +81,22 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 		}
 		arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
 		result.Receipts = make([]*blocklog.RequestReceipt, arr.MustLen())
+		result.ResolvedErrors = make([]string, arr.MustLen())
 		for i := uint16(0); i < arr.MustLen(); i++ {
 			receipt, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 			if err != nil {
 				return err
 			}
 			result.Receipts[i] = receipt
+			if receipt.Error != nil {
+				resolved, err := errors.Resolve(receipt.Error, func(c string, f string, params dict.Dict) (dict.Dict, error) {
+					return d.wasp.CallView(chainID, c, f, params)
+				})
+				if err != nil {
+					return err
+				}
+				result.ResolvedErrors[i] = resolved.Error()
+			}
 		}
 	}
 
@@ -107,10 +119,11 @@ func (d *Dashboard) handleChainBlock(c echo.Context) error {
 
 type ChainBlockTemplateParams struct {
 	BaseTemplateParams
-	ChainID          *isc.ChainID
+	ChainID          isc.ChainID
 	Index            uint32
 	LatestBlockIndex uint32
 	Block            *blocklog.BlockInfo
 	Receipts         []*blocklog.RequestReceipt
+	ResolvedErrors   []string
 	Events           []string
 }

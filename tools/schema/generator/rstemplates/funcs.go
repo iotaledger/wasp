@@ -6,9 +6,8 @@ package rstemplates
 var funcsRs = map[string]string{
 	// *******************************
 	"funcs.rs": `
-use wasmlib::*;
-
-use crate::*;
+$#emit useWasmLib
+$#emit useCrate
 $#each func funcSignature
 `,
 	// *******************************

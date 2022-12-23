@@ -1,16 +1,14 @@
 #!/bin/bash
-node_modules_path="../node_modules"
-cd ..
+contracts_path=$(git rev-parse --show-toplevel)/contracts/wasm
+cd $contracts_path
 for dir in ./*; do
- if [ -d "$dir" ]; then
-    bash scripts/ts_build.sh "$dir" "$node_modules_path" $1
+  if [ -d "$dir" ]; then
+    bash scripts/ts_build.sh "$dir" $1
   fi
 done
-cd gascalibration
-node_modules_path="../../node_modules"
+cd $contracts_path/gascalibration
 for dir in ./*; do
- if [ -d "$dir" ]; then
-    bash ../scripts/ts_build.sh "$dir" "$node_modules_path" $1
+  if [ -d "$dir" ]; then
+    bash ../scripts/ts_build.sh "$dir" $1
   fi
 done
-cd ../scripts

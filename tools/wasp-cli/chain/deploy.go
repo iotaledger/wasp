@@ -4,8 +4,12 @@
 package chain
 
 import (
+	"math"
 	"os"
 	"strconv"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -19,8 +23,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func getAllWaspNodes() []int {
@@ -34,11 +36,16 @@ func getAllWaspNodes() []int {
 }
 
 func defaultQuorum(n int) int {
-	quorum := 3 * n / 4
+	quorum := int(math.Ceil(3 * float64(n) / 4))
 	if quorum < 1 {
 		quorum = 1
 	}
 	return quorum
+}
+
+func isEnoughQuorum(n, t int) (bool, int) {
+	maxF := (n - 1) / 3
+	return t >= (n - maxF), maxF
 }
 
 func deployCmd() *cobra.Command {
@@ -63,6 +70,10 @@ func deployCmd() *cobra.Command {
 			}
 			if quorum == 0 {
 				quorum = defaultQuorum(len(committee))
+			}
+
+			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
+				log.Fatalf("quorum needs to be bigger than 1/3 of committee size")
 			}
 
 			committeePubKeys := make([]string, 0)
@@ -98,7 +109,6 @@ func deployCmd() *cobra.Command {
 					root.ParamEVM(evm.FieldGenesisAlloc):    evmtypes.EncodeGenesisAlloc(evmParams.getGenesis(nil)),
 					root.ParamEVM(evm.FieldBlockGasLimit):   codec.EncodeUint64(evmParams.BlockGasLimit),
 					root.ParamEVM(evm.FieldBlockKeepAmount): codec.EncodeInt32(evmParams.BlockKeepAmount),
-					root.ParamEVM(evm.FieldGasRatio):        codec.EncodeRatio32(evmParams.GasRatio),
 				},
 			})
 			log.Check(err)

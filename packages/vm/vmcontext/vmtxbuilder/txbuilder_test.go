@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
@@ -18,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext/vmexceptions"
-	"github.com/stretchr/testify/require"
 )
 
 func rndAliasID() (ret iotago.AliasID) {
@@ -36,7 +37,7 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 			Tokens:     iotago.NativeTokens{{ID: id, Amount: big.NewInt(int64(amountNative))}},
 		}
 	}
-	out := transaction.MakeBasicOutput(
+	basicOutput := transaction.MakeBasicOutput(
 		txb.anchorOutput.AliasID.ToAddress(),
 		nil,
 		assets,
@@ -44,14 +45,14 @@ func consumeUTXO(t *testing.T, txb *AnchorTransactionBuilder, id iotago.NativeTo
 		isc.SendOptions{},
 	)
 	if len(addBaseTokensToStorageDepositMinimum) > 0 {
-		out.Amount += addBaseTokensToStorageDepositMinimum[0]
+		basicOutput.Amount += addBaseTokensToStorageDepositMinimum[0]
 	}
-	reqData, err := isc.OnLedgerFromUTXO(out, &iotago.UTXOInput{})
+	reqData, err := isc.OnLedgerFromUTXO(basicOutput, iotago.OutputID{})
 	require.NoError(t, err)
 	txb.Consume(reqData)
 	_, _, err = txb.Totals()
 	require.NoError(t, err)
-	return out.Deposit()
+	return basicOutput.Deposit()
 }
 
 func addOutput(txb *AnchorTransactionBuilder, amount uint64, tokenID iotago.NativeTokenID) uint64 {
@@ -107,16 +108,16 @@ func TestTxBuilderBasic(t *testing.T) {
 	}
 	anchorID := tpkg.RandOutputIDs(1)[0]
 	tokenID := testiotago.RandNativeTokenID()
-	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
-		return nil, &iotago.UTXOInput{}
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+		return nil, iotago.OutputID{}
 	}
 	t.Run("1", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
-			return nil, nil
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+			return nil, iotago.OutputID{}
 		},
 			nil,
 			nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		totals, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -137,12 +138,12 @@ func TestTxBuilderBasic(t *testing.T) {
 		t.Logf("essence bytes len = %d", len(essenceBytes))
 	})
 	t.Run("2", func(t *testing.T) {
-		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
-			return nil, nil
+		txb := NewAnchorTransactionBuilder(anchor, anchorID, func(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+			return nil, iotago.OutputID{}
 		},
 			nil,
 			nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		txb.addDeltaBaseTokensToTotal(42)
 		require.EqualValues(t, int(initialTotalBaseTokens-txb.storageDepositAssumption.AnchorOutput+42), int(txb.totalBaseTokensInL2Accounts))
@@ -152,7 +153,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	t.Run("3", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(
 			anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -178,7 +179,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		txb := NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		_, _, err := txb.Totals()
 		require.NoError(t, err)
@@ -230,41 +231,37 @@ func TestTxBuilderConsistency(t *testing.T) {
 	anchorID := tpkg.RandOutputIDs(1)[0]
 
 	var nativeTokenIDs []iotago.NativeTokenID
-	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
-	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
-		return nil, &iotago.UTXOInput{}
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+		return nil, iotago.OutputID{}
 	}
 
 	var txb *AnchorTransactionBuilder
 	var amounts map[int]uint64
 
 	initialBalance := new(big.Int)
-	balanceLoaderWithInitialBalance := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
+	balanceLoaderWithInitialBalance := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
 		for _, id1 := range nativeTokenIDs {
 			if *id == id1 {
 				ret := txb.newInternalTokenOutput(aliasID, *id)
 				ret.NativeTokens[0].Amount = new(big.Int).Set(initialBalance)
-				return ret, &iotago.UTXOInput{}
+				return ret, iotago.OutputID{}
 			}
 		}
-		return nil, &iotago.UTXOInput{}
+		return nil, iotago.OutputID{}
 	}
 
 	var numTokenIDs int
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
-		utxoInputsNativeTokens = make([]iotago.UTXOInput, 0)
-
 		for i := 0; i < numTokenIDs; i++ {
 			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
-			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
 		}
 	}
 	runConsume := func(numRun int, amountNative uint64, addBaseTokensToStorageDepositMinimum ...uint64) {
@@ -292,7 +289,7 @@ func TestTxBuilderConsistency(t *testing.T) {
 	}
 	runCreateBuilderAndConsumeRandomly := func(numRun int, amount uint64) {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 		amounts = make(map[int]uint64)
 
@@ -631,7 +628,7 @@ func TestStorageDeposit(t *testing.T) {
 		require.EqualValues(t, d.NativeTokenOutput, d1.NativeTokenOutput)
 	})
 	t.Run("adjusts the output amount to the correct storage deposit when needed", func(t *testing.T) {
-		assets := isc.NewEmptyAssets()
+		assets := isc.NewEmptyFungibleTokens()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},
@@ -680,10 +677,9 @@ func TestFoundries(t *testing.T) {
 	anchorID := tpkg.RandOutputIDs(1)[0]
 
 	var nativeTokenIDs []iotago.NativeTokenID
-	var utxoInputsNativeTokens []iotago.UTXOInput
 	// all token accounts initially are empty
-	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, *iotago.UTXOInput) {
-		return nil, &iotago.UTXOInput{}
+	balanceLoader := func(_ *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+		return nil, iotago.OutputID{}
 	}
 	var txb *AnchorTransactionBuilder
 
@@ -691,15 +687,13 @@ func TestFoundries(t *testing.T) {
 
 	initTest := func() {
 		txb = NewAnchorTransactionBuilder(anchor, anchorID, balanceLoader, nil, nil,
-			*transaction.NewStorageDepositEstimate(),
+			transaction.NewStorageDepositEstimate(),
 		)
 
 		nativeTokenIDs = make([]iotago.NativeTokenID, 0)
-		utxoInputsNativeTokens = make([]iotago.UTXOInput, 0)
 
 		for i := 0; i < numTokenIDs; i++ {
 			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
-			utxoInputsNativeTokens = append(utxoInputsNativeTokens, testiotago.RandUTXOInput())
 		}
 	}
 	createNFoundries := func(n int) {
@@ -749,7 +743,7 @@ func TestSerDe(t *testing.T) {
 			Allowance:      isc.NewEmptyAllowance(),
 			GasBudget:      0,
 		}
-		assets := isc.NewEmptyAssets()
+		assets := isc.NewEmptyFungibleTokens()
 		out := transaction.MakeBasicOutput(
 			&iotago.Ed25519Address{},
 			&iotago.Ed25519Address{1, 2, 3},

@@ -10,6 +10,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -34,6 +35,11 @@ func (s *SandboxBase) AccountID() isc.AgentID {
 	return s.Ctx.AccountID()
 }
 
+func (s *SandboxBase) Caller() isc.AgentID {
+	s.Ctx.GasBurn(gas.BurnCodeGetCallerData)
+	return s.Ctx.Caller()
+}
+
 func (s *SandboxBase) BalanceBaseTokens() uint64 {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetBaseTokensBalance(s.AccountID())
@@ -54,12 +60,18 @@ func (s *SandboxBase) OwnedNFTs() []iotago.NFTID {
 	return s.Ctx.GetAccountNFTs(s.AccountID())
 }
 
+func (s *SandboxBase) HasInAccount(agentID isc.AgentID, tokens *isc.FungibleTokens) bool {
+	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
+	accountAssets := s.Ctx.GetAssets(agentID)
+	return accountAssets.SpendFromFungibleTokenBudget(tokens)
+}
+
 func (s *SandboxBase) GetNFTData(nftID iotago.NFTID) isc.NFT {
 	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
 	return s.Ctx.GetNFTData(nftID)
 }
 
-func (s *SandboxBase) ChainID() *isc.ChainID {
+func (s *SandboxBase) ChainID() isc.ChainID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ChainID()
 }
@@ -97,6 +109,10 @@ func (s *SandboxBase) Gas() isc.Gas {
 	return s
 }
 
+func (s *SandboxBase) Burned() uint64 {
+	return s.Ctx.GasBurned()
+}
+
 func (s *SandboxBase) Burn(burnCode gas.BurnCode, par ...uint64) {
 	s.Ctx.GasBurn(burnCode, par...)
 }
@@ -120,4 +136,8 @@ func (s *SandboxBase) CallView(contractHname, entryPoint isc.Hname, params dict.
 		params = make(dict.Dict)
 	}
 	return s.Ctx.Call(contractHname, entryPoint, params, nil)
+}
+
+func (s *SandboxBase) StateR() kv.KVStoreReader {
+	return s.Ctx.StateReader()
 }

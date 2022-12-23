@@ -1,0 +1,43 @@
+# Documentation: http://goreleaser.com
+
+project_name: wasp-cli
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: wasp-cli
+    main: ./main.go
+    binary: wasp-cli
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+archives:
+  - id: wasp-cli
+    name_template: "wasp-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    builds:
+      - wasp-cli
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      amd64: x86_64
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: true
+    files:
+      - README.md
+
+changelog:
+  skip: true
+
+release:
+  prerelease: auto
+  name_template: "{{.ProjectName}}-{{.Version}}"
+  github:
+    owner: iotaledger
+    name: wasp

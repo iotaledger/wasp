@@ -1,11 +1,19 @@
 {
-  "database": {
-    "directory": "waspdb"
+  "app": {
+    "checkForUpdates": true,
+    "shutdown": {
+      "stopGracePeriod": "5m",
+      "log": {
+        "enabled": true,
+        "filePath": "shutdown.log"
+      }
+    }
   },
   "logger": {
     "level": "debug",
     "disableCaller": false,
-    "disableStacktrace": true,
+    "disableStacktrace": false,
+    "stacktraceLevel": "panic",
     "encoding": "console",
     "outputPaths": [
       "stdout",
@@ -13,37 +21,112 @@
     ],
     "disableEvents": true
   },
-  "network": {
-    "bindAddress": "0.0.0.0",
-    "externalAddress": "auto"
+  "inx": {
+    "address": "localhost:9029",
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": ""
   },
-  "node": {
-    "disablePlugins": [],
-    "enablePlugins": ["metrics"]
+  "db": {
+    "engine": "rocksdb",
+    "chainState": {
+      "path": "waspdb/chains/data"
+    },
+    "debugSkipHealthCheck": false
+  },
+  "p2p": {
+    "identity": {
+      "privateKey": "",
+      "filePath": "waspdb/identity/identity.key"
+    },
+    "db": {
+      "path": "waspdb/p2pstore"
+    }
+  },
+  "registries": {
+    "chains": {
+      "filePath": "waspdb/chains/chain_registry.json"
+    },
+    "dkShares": {
+      "path": "waspdb/dkshares"
+    },
+    "trustedPeers": {
+      "filePath": "waspdb/trusted_peers.json"
+    },
+    "consensusState": {
+      "path": "waspdb/chains/consensus"
+    }
+  },
+  "peering": {
+    "netID": "0.0.0.0:4000",
+    "port": 4000
+  },
+  "chains": {
+    "broadcastUpToNPeers": 2,
+    "broadcastInterval": "5s",
+    "apiCacheTTL": "5m",
+    "pullMissingRequestsFromCommittee": true
+  },
+  "rawBlocks": {
+    "enabled": false,
+    "directory": "blocks"
+  },
+  "profiling": {
+    "enabled": false,
+    "bindAddress": "localhost:6060"
+  },
+  "prometheus": {
+    "enabled": true,
+    "bindAddress": "127.0.0.1:2112",
+    "nodeMetrics": true,
+    "nodeConnMetrics": true,
+    "blockWALMetrics": true,
+    "restAPIMetrics": true,
+    "goMetrics": true,
+    "processMetrics": true,
+    "promhttpMetrics": true
   },
   "webapi": {
-    "bindAddress": ":9090"
-  },
-  "dashboard": {
+    "enabled": true,
+    "nodeOwnerAddresses": [],
+    "bindAddress": "127.0.0.1:9090",
+    "debugRequestLoggerEnabled": false,
     "auth": {
-      "scheme": "basic",
-      "username": "wasp",
-      "password": "wasp"
-    },
-    "bindAddress": ":7000"
+      "scheme": "jwt",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      }
+    }
   },
-  "peering":{
-    "port": 4000,
-    "netid": ":4000"
-  },
-  "nodeconn": {
-    "address": "49.12.73.71:5001"
-  },
-  "nanomsg":{
+  "nanomsg": {
+    "enabled": true,
     "port": 5550
   },
-  "metrics": {
-    "bindAddress": ":2112",
-    "enabled": true
+  "dashboard": {
+    "enabled": true,
+    "bindAddress": "127.0.0.1:7000",
+    "exploreAddressURL": "",
+    "debugRequestLoggerEnabled": false,
+    "auth": {
+      "scheme": "basic",
+      "jwt": {
+        "duration": "24h"
+      },
+      "basic": {
+        "username": "wasp"
+      },
+      "ip": {
+        "whitelist": [
+          "127.0.0.1"
+        ]
+      }
+    }
   }
 }

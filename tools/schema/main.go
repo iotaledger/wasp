@@ -5,8 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -14,23 +12,25 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/iotaledger/wasp/tools/schema/generator"
 	"github.com/iotaledger/wasp/tools/schema/model"
 	wasp_yaml "github.com/iotaledger/wasp/tools/schema/model/yaml"
-	"gopkg.in/yaml.v3"
 )
 
 var (
+	flagClean = flag.Bool("clean", false, "clean up (re-)generated files")
 	flagCore  = flag.Bool("core", false, "generate core contract interface")
 	flagForce = flag.Bool("force", false, "force code generation")
 	flagGo    = flag.Bool("go", false, "generate Go code")
 	flagInit  = flag.String("init", "", "generate new schema file for smart contract named <string>")
-	flagRust  = flag.Bool("rust", false, "generate Rust code")
+	flagRust  = flag.Bool("rs", false, "generate Rust code")
 	flagTs    = flag.Bool("ts", false, "generate TypScript code")
-	flagType  = flag.String("type", "yaml", "type of schema file that will be generated. Values(yaml,json)")
 )
 
 func init() {
@@ -49,9 +49,6 @@ func main() {
 	}
 
 	file, err := os.Open("schema.yaml")
-	if err != nil {
-		file, err = os.Open("schema.json")
-	}
 	if err == nil {
 		defer file.Close()
 		if *flagInit != "" {
@@ -130,11 +127,11 @@ func generateSchema(file *os.File) error {
 		}
 	}
 
-	// XXX: Preserve line number until here
-	// XXX: comments are still preserved during generation
+	// Preserve line number until here
+	// comments are still preserved during generation
 	if *flagGo {
 		g := generator.NewGoGenerator(s)
-		err = g.Generate()
+		err = g.Generate(g, *flagClean)
 		if err != nil {
 			return err
 		}
@@ -142,24 +139,37 @@ func generateSchema(file *os.File) error {
 
 	if *flagRust {
 		g := generator.NewRustGenerator(s)
-		err = g.Generate()
+		err = g.Generate(g, *flagClean)
 		if err != nil {
 			return err
 		}
 	}
 
 	if *flagTs {
-		g := generator.NewTypeScriptGenerator(s)
-		err = g.Generate()
+		g := generator.NewTypeScriptGenerator(s, "ts")
+		err = g.Generate(g, *flagClean)
 		if err != nil {
 			return err
 		}
+		if s.CoreContracts {
+			// note that we have a separate WasmLib for AssemblyScript
+			// core contracts are identical except for package.json
+			g = generator.NewTypeScriptGenerator(s, "as")
+			err = g.Generate(g, *flagClean)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	return nil
 }
 
 func generateSchemaNew() error {
-	// TODO make sure name is valid: no path characters
+	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
+	if !r.MatchString(*flagInit) {
+		return fmt.Errorf("name contains path characters")
+	}
 	name := *flagInit
 	fmt.Println("initializing " + name)
 
@@ -176,6 +186,7 @@ func generateSchemaNew() error {
 	schemaDef := &model.SchemaDef{}
 	schemaDef.Name = model.DefElt{Val: name}
 	schemaDef.Description = model.DefElt{Val: name + " description"}
+	schemaDef.Author = model.DefElt{Val: "Eric Hop <eric@iota.org>"}
 	schemaDef.Structs = make(model.DefMapMap)
 	schemaDef.Events = make(model.DefMapMap)
 	schemaDef.Typedefs = make(model.DefMap)
@@ -201,36 +212,14 @@ func generateSchemaNew() error {
 	viewGetOwner.Results = make(model.DefMap)
 	viewGetOwner.Results[defMapKey] = &model.DefElt{Val: "AgentID // current owner of this smart contract"}
 	schemaDef.Views[model.DefElt{Val: "getOwner"}] = viewGetOwner
-	switch *flagType {
-	case "json":
-		return WriteJSONSchema(schemaDef)
-	case "yaml":
-		return WriteYAMLSchema(schemaDef)
-	}
-	return errors.New("invalid schema type: " + *flagType)
+	return WriteYAMLSchema(schemaDef)
 }
 
 func loadSchema(file *os.File) (s *model.Schema, err error) {
 	fmt.Println("loading " + file.Name())
-	schemaDef := &model.SchemaDef{}
-	switch filepath.Ext(file.Name()) {
-	case ".json":
-		var jsonSchemaDef model.JSONSchemaDef
-		err = json.NewDecoder(file).Decode(&jsonSchemaDef)
-		schemaDef = jsonSchemaDef.ToSchemaDef()
-		if err == nil && *flagType == "convert" {
-			err = WriteYAMLSchema(schemaDef)
-		}
-	case ".yaml":
-		fileByteArray, _ := io.ReadAll(file)
-		schemaDef = model.NewSchemaDef()
-		err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
-		if err == nil && *flagType == "convert" {
-			err = WriteJSONSchema(schemaDef)
-		}
-	default:
-		err = errors.New("unexpected file type: " + file.Name())
-	}
+	fileByteArray, _ := io.ReadAll(file)
+	schemaDef := model.NewSchemaDef()
+	err = wasp_yaml.Unmarshal(fileByteArray, schemaDef)
 	if err != nil {
 		return nil, err
 	}
@@ -241,28 +230,6 @@ func loadSchema(file *os.File) (s *model.Schema, err error) {
 		return nil, err
 	}
 	return s, nil
-}
-
-func WriteJSONSchema(schemaDef *model.SchemaDef) error {
-	file, err := os.Create("schema.json")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	b, err := json.Marshal(schemaDef.ToRawSchemaDef())
-	if err != nil {
-		return err
-	}
-
-	var out bytes.Buffer
-	err = json.Indent(&out, b, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	_, err = out.WriteTo(file)
-	return err
 }
 
 func WriteYAMLSchema(schemaDef *model.SchemaDef) error {

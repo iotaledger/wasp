@@ -3,15 +3,15 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"time"
 
-	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/pkg/errors"
 )
 
 //////////////////// byte \\\\\\\\\\\\\\\\\\\\
@@ -328,20 +328,58 @@ func ReadBoolByte(r io.Reader, cond *bool) error {
 	if err != nil {
 		return err
 	}
-	*cond = b[0] == 0xFF
-	if !*cond && b[0] != 0x00 {
+	if (b[0] & 0xfe) != 0x00 {
 		return errors.New("ReadBoolByte: unexpected value")
 	}
+	*cond = b[0] == 1
 	return nil
 }
 
 func WriteBoolByte(w io.Writer, cond bool) error {
 	var b [1]byte
 	if cond {
-		b[0] = 0xFF
+		b[0] = 1
 	}
 	_, err := w.Write(b[:])
 	return err
+}
+
+///////////// []int as a bit vector \\\\\\\\\\\\\
+
+func WriteIntsAsBits(w io.Writer, ints []int) error {
+	max := 0
+	for _, b := range ints {
+		if max < b {
+			max = b
+		}
+	}
+	size := max/8 + 1
+	data := make([]byte, size)
+	for _, b := range ints {
+		var bitMask byte = 1
+		bitMask <<= b % 8
+		bytePos := b / 8
+		data[bytePos] |= bitMask
+	}
+	return WriteBytes16(w, data)
+}
+
+func ReadIntsAsBits(r io.Reader) ([]int, error) {
+	data, err := ReadBytes16(r)
+	if err != nil {
+		return nil, err
+	}
+	ints := []int{}
+	for bytePos := range data {
+		var bitMask byte = 1
+		for i := 0; i < 8; i++ {
+			if data[bytePos]&bitMask != 0 {
+				ints = append(ints, bytePos*8+i)
+			}
+			bitMask <<= 1
+		}
+	}
+	return ints, nil
 }
 
 //////////////////// time \\\\\\\\\\\\\\\\\\\\
@@ -441,22 +479,21 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	return WriteBytes16(w, bin)
 }
 
-func ReadOutputID(r io.Reader) (*iotago.UTXOInput, error) {
-	var realOid iotago.OutputID
-	n, err := r.Read(realOid[:])
+func ReadOutputID(r io.Reader) (iotago.OutputID, error) {
+	var outputID iotago.OutputID
+	n, err := r.Read(outputID[:])
 	if err != nil {
-		return nil, err
+		return iotago.OutputID{}, err
 	}
 	if n != iotago.OutputIDLength {
-		return nil, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
+		return iotago.OutputID{}, fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
 			n, iotago.OutputIDLength)
 	}
-	return realOid.UTXOInput(), nil
+	return outputID, nil
 }
 
-func WriteOutputID(w io.Writer, oid *iotago.UTXOInput) error {
-	realOid := oid.ID()
-	n, err := w.Write(realOid[:])
+func WriteOutputID(w io.Writer, outputID iotago.OutputID) error {
+	n, err := w.Write(outputID[:])
 	if n != iotago.OutputIDLength {
 		return fmt.Errorf("error while writing output ID: written %v bytes, expected %v bytes",
 			n, iotago.OutputIDLength)

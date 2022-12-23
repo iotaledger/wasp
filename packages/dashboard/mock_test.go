@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"testing"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/labstack/echo/v4"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -17,17 +18,15 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/labstack/echo/v4"
-	"golang.org/x/xerrors"
 )
 
 // waspServicesMock is a mock implementation of the WaspServices interface
 type waspServicesMock struct {
 	solo   *solo.Solo
-	chains map[[iotago.AliasIDLength]byte]*solo.Chain
+	chains map[isc.ChainID]*solo.Chain
 }
 
-var _ WaspServices = &waspServicesMock{}
+var _ WaspServicesInterface = &waspServicesMock{}
 
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
@@ -79,7 +78,7 @@ func (w *waspServicesMock) MyNetworkID() string {
 	return "127.0.0.1:4000"
 }
 
-func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
+func (w *waspServicesMock) ChainRecords() ([]*registry.ChainRecord, error) {
 	var ret []*registry.ChainRecord
 	for _, ch := range w.chains {
 		chr, err := w.GetChainRecord(ch.ChainID)
@@ -91,33 +90,22 @@ func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 	return ret, nil
 }
 
-func (w *waspServicesMock) GetChainRecord(chainID *isc.ChainID) (*registry.ChainRecord, error) {
-	return &registry.ChainRecord{
-		ChainID: *chainID,
-		Active:  true,
-	}, nil
+func (w *waspServicesMock) GetChainRecord(chainID isc.ChainID) (*registry.ChainRecord, error) {
+	return registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}), nil
 }
 
-func (w *waspServicesMock) CallView(chainID *isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
-	ch, ok := w.chains[*chainID]
+func (w *waspServicesMock) CallView(chainID isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
+	ch, ok := w.chains[chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
 	}
 	return ch.CallView(scName, fname, args)
 }
 
-func (w *waspServicesMock) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.CommitteeInfo, error) {
-	_, ok := w.chains[*chainID]
+func (w *waspServicesMock) GetChainCommitteeInfo(chainID isc.ChainID) (*chain.CommitteeInfo, error) {
+	_, ok := w.chains[chainID]
 	if !ok {
 		return nil, xerrors.Errorf("chain not found")
-	}
-	pubKey0, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
-	if err != nil {
-		return nil, err
-	}
-	pubKey1, err := cryptolib.NewPublicKeyFromBase58String("AaKwV3ezdM8DcGKwJ6eRaJ2946D1yghqfpBDatGip1dX")
-	if err != nil {
-		return nil, err
 	}
 
 	address := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()
@@ -131,20 +119,20 @@ func (w *waspServicesMock) GetChainCommitteeInfo(chainID *isc.ChainID) (*chain.C
 			{
 				Index:     0,
 				NetID:     "localhost:2000",
-				PubKey:    pubKey0,
+				PubKey:    cryptolib.NewKeyPair().GetPublicKey(),
 				Connected: true,
 			},
 			{
 				Index:     1,
 				NetID:     "localhost:2001",
-				PubKey:    pubKey1,
+				PubKey:    cryptolib.NewKeyPair().GetPublicKey(),
 				Connected: true,
 			},
 		},
 	}, nil
 }
 
-func (w *waspServicesMock) GetChainNodeConnectionMetrics(*isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
+func (w *waspServicesMock) GetChainNodeConnectionMetrics(isc.ChainID) (nodeconnmetrics.NodeConnectionMessagesMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -152,11 +140,11 @@ func (w *waspServicesMock) GetNodeConnectionMetrics() (nodeconnmetrics.NodeConne
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID *isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
+func (w *waspServicesMock) GetChainConsensusWorkflowStatus(chainID isc.ChainID) (chain.ConsensusWorkflowStatus, error) {
 	panic("Not implemented")
 }
 
-func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID *isc.ChainID) (chain.ConsensusPipeMetrics, error) {
+func (w *waspServicesMock) GetChainConsensusPipeMetrics(chainID isc.ChainID) (chain.ConsensusPipeMetrics, error) {
 	panic("Not implemented")
 }
 
@@ -170,18 +158,22 @@ type dashboardTestEnv struct {
 func (e *dashboardTestEnv) newChain() *solo.Chain {
 	kp, _ := e.solo.NewKeyPairWithFunds()
 	ch, _, _ := e.solo.NewChainExt(kp, 0, fmt.Sprintf("mock chain %d", len(e.wasp.chains)))
-	e.wasp.chains[*ch.ChainID] = ch
+	e.wasp.chains[ch.ChainID] = ch
 	return ch
 }
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true})
+	s := solo.New(t, &solo.InitOptions{
+		AutoAdjustStorageDeposit: true,
+		Debug:                    true,
+		PrintStackTrace:          true,
+	})
 	w := &waspServicesMock{
 		solo:   s,
-		chains: make(map[[iotago.AliasIDLength]byte]*solo.Chain),
+		chains: make(map[isc.ChainID]*solo.Chain),
 	}
-	d := Init(e, w, testlogger.NewLogger(t))
+	d := New(testlogger.NewLogger(t), e, w)
 	return &dashboardTestEnv{
 		wasp:      w,
 		echo:      e,

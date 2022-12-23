@@ -8,6 +8,9 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,8 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -27,7 +28,7 @@ const (
 
 func setupAccounts(t *testing.T) *wasmsolo.SoloContext {
 	ctx := setup(t)
-	ctx = ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnLoad)
+	ctx = ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnDispatch)
 	require.NoError(t, ctx.Err)
 	return ctx
 }
@@ -292,6 +293,89 @@ func TestBalance(t *testing.T) {
 	assert.Equal(t, mintAmount.Sub(transferTokenAmount), balance)
 }
 
+func TestBalanceBaseToken(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
+
+	fbal := coreaccounts.ScFuncs.BalanceBaseToken(ctx)
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance0 := fbal.Results.Balance().Value()
+
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance0 := fbal.Results.Balance().Value()
+
+	transferAmt := uint64(9)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
+	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
+	transfer := wasmlib.NewScTransferBaseTokens(transferAmt)
+	ftrans.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+	gasFee := ctx.GasFee
+
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance1 := fbal.Results.Balance().Value()
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance1 := fbal.Results.Balance().Value()
+	require.Equal(t, user0Balance0+1*isc.Million-transferAmt-gasFee, user0Balance1)
+	require.Equal(t, user1Balance0+transferAmt, user1Balance1)
+}
+
+func TestBalanceNativeToken(t *testing.T) {
+	ctx := setupAccounts(t)
+	user0 := ctx.NewSoloAgent()
+	user1 := ctx.NewSoloAgent()
+
+	mintAmount := wasmtypes.NewScBigInt(1000)
+	foundry, err := ctx.NewSoloFoundry(mintAmount, user0)
+	require.NoError(t, err)
+	err = foundry.Mint(mintAmount)
+	require.NoError(t, err)
+	tokenID := foundry.TokenID()
+
+	fbal := coreaccounts.ScFuncs.BalanceNativeToken(ctx)
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance0 := fbal.Results.Tokens().Value().Uint64()
+
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance0 := fbal.Results.Tokens().Value().Uint64()
+
+	transferAmt := wasmtypes.NewScBigInt(9)
+	ftrans := coreaccounts.ScFuncs.TransferAllowanceTo(ctx.Sign(user0))
+	ftrans.Params.AgentID().SetValue(user1.ScAgentID())
+	transfer := wasmlib.NewScTransfer()
+	transfer.Set(&tokenID, transferAmt)
+	ftrans.Func.Allowance(transfer).Post()
+	require.NoError(t, ctx.Err)
+
+	fbal.Params.AgentID().SetValue(user0.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user0Balance1 := fbal.Results.Tokens().Value().Uint64()
+	fbal.Params.AgentID().SetValue(user1.ScAgentID())
+	fbal.Params.TokenID().SetValue(tokenID)
+	fbal.Func.Call()
+	require.NoError(t, ctx.Err)
+	user1Balance1 := fbal.Results.Tokens().Value().Uint64()
+	require.Equal(t, user0Balance0-transferAmt.Uint64(), user0Balance1)
+	require.Equal(t, user1Balance0+transferAmt.Uint64(), user1Balance1)
+}
+
 func TestTotalAssets(t *testing.T) {
 	ctx := setupAccounts(t)
 	user0 := ctx.NewSoloAgent()
@@ -336,12 +420,10 @@ func TestAccounts(t *testing.T) {
 	f := coreaccounts.ScFuncs.Accounts(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	exist0 := f.Results.AllAccounts().GetBool(user0.ScAgentID()).Value()
-	assert.True(t, exist0)
-	exist1 := f.Results.AllAccounts().GetBool(user1.ScAgentID()).Value()
-	assert.True(t, exist1)
-	exist2 := f.Results.AllAccounts().GetBool(ctx.NewSoloAgent().ScAgentID()).Value()
-	assert.False(t, exist2)
+	allAccounts := f.Results.AllAccounts()
+	assert.True(t, allAccounts.GetBytes(user0.ScAgentID()).Exists())
+	assert.True(t, allAccounts.GetBytes(user1.ScAgentID()).Exists())
+	assert.False(t, allAccounts.GetBytes(ctx.NewSoloAgent().ScAgentID()).Exists())
 }
 
 func TestGetAccountNonce(t *testing.T) {
@@ -385,13 +467,10 @@ func TestGetNativeTokenIDRegistry(t *testing.T) {
 	f := coreaccounts.ScFuncs.GetNativeTokenIDRegistry(ctx)
 	f.Func.Call()
 	require.NoError(t, ctx.Err)
-	exist0 := f.Results.Mapping().GetBool(tokenID0).Value()
-	assert.True(t, exist0)
-	exist1 := f.Results.Mapping().GetBool(tokenID1).Value()
-	assert.True(t, exist1)
+	assert.True(t, f.Results.Mapping().GetBytes(tokenID0).Exists())
+	assert.True(t, f.Results.Mapping().GetBytes(tokenID1).Exists())
 	notExistTokenID := wasmtypes.TokenIDFromString("0x08f824508968d585ede1d154d34ba0d966ee03c928670fb85bd72e2924f67137890100000000")
-	exist2 := f.Results.Mapping().GetBool(notExistTokenID).Value()
-	assert.False(t, exist2)
+	assert.False(t, f.Results.Mapping().GetBytes(notExistTokenID).Exists())
 }
 
 func TestFoundryOutput(t *testing.T) {
@@ -428,6 +507,7 @@ func TestAccountNFTs(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	require.True(t, ctx.Chain.Env.HasL1NFT(userAddr, ctx.Cvt.IscNFTID(&nftID)))
@@ -451,6 +531,7 @@ func TestNFTData(t *testing.T) {
 	ctx := setupAccounts(t)
 	user := ctx.NewSoloAgent()
 	nftID := ctx.MintNFT(user, []byte(nftMetadata))
+	require.NoError(t, ctx.Err)
 	userAddr, _ := isc.AddressFromAgentID(user.AgentID())
 
 	iscNFTID := ctx.Cvt.IscNFTID(&nftID)

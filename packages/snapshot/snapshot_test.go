@@ -1,79 +1,81 @@
 package snapshot
 
 import (
+	"math/rand"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/kvtest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func Test1(t *testing.T) {
 	db := mapdb.NewMapDB()
-	chainID := testmisc.RandChainID()
-	st, err := state.CreateOriginState(db, chainID)
-	require.NoError(t, err)
+	st := state.InitChainStore(db)
 
-	rndKVStream := kvtest.NewRandStreamIterator(kvtest.RandStreamParams{
-		Seed:       time.Now().UnixNano(),
-		NumKVPairs: 1_000_000,
-		MaxKey:     48,
-		MaxValue:   128,
-	})
 	tm := util.NewTimer()
 	count := 0
 	totalBytes := 0
-	err = rndKVStream.Iterate(func(k []byte, v []byte) bool {
-		st.KVStore().Set(kv.Key(k), v)
+
+	latest, err := st.LatestBlock()
+	require.NoError(t, err)
+	sd, err := st.NewStateDraft(time.Now(), latest.L1Commitment())
+	require.NoError(t, err)
+
+	seed := time.Now().UnixNano()
+	t.Log("seed:", seed)
+	rnd := rand.New(rand.NewSource(seed))
+	for i := 0; i < 1000; i++ {
+		k := randByteSlice(rnd, 4+1, 48) // key is hname + key
+		v := randByteSlice(rnd, 1, 128)
+
+		sd.Set(kv.Key(k), v)
 		count++
 		totalBytes += len(k) + len(v) + 6
-		return true
-	})
+	}
+
 	t.Logf("write %d kv pairs, %d Mbytes, to in-memory state took %v", count, totalBytes/(1024*1024), tm.Duration())
 
-	require.NoError(t, err)
-	upd := state.NewStateUpdateWithBlockLogValues(1, time.Now(), state.RandL1Commitment())
-	st.ApplyStateUpdate(upd)
-
 	tm = util.NewTimer()
-	err = st.Save()
+	block := st.Commit(sd)
+	err = st.SetLatest(block.TrieRoot())
+	require.NoError(t, err)
 	t.Logf("commit and save state to in-memory db took %v", tm.Duration())
 
+	rdr, err := st.LatestState()
 	require.NoError(t, err)
 
-	glb := coreutil.NewChainStateSync()
-	glb.SetSolidIndex(0)
-	ordr := state.NewOptimisticStateReader(db, glb)
-	ordr.SetBaseline()
+	chainID := rdr.ChainID()
+	stateidx := rdr.BlockIndex()
+	ts := rdr.Timestamp()
 
-	chid, err := ordr.ChainID()
-	require.NoError(t, err)
-	stateidx, err := ordr.BlockIndex()
-	require.NoError(t, err)
-	ts, err := ordr.Timestamp()
-	require.NoError(t, err)
-
-	fname := FileName(chid, stateidx)
+	fname := FileName(chainID, stateidx)
 	t.Logf("file: %s", fname)
 
 	tm = util.NewTimer()
-	err = WriteSnapshot(ordr, "", ConsoleReportParams{
+	err = WriteSnapshot(rdr, "", ConsoleReportParams{
 		Console:           os.Stdout,
 		StatsEveryKVPairs: 1_000_000,
 	})
 	require.NoError(t, err)
 	t.Logf("write snapshot took %v", tm.Duration())
+	defer os.Remove(fname)
 
 	v, err := ScanFile(fname)
 	require.NoError(t, err)
-	require.True(t, chid.Equals(v.ChainID))
+	require.True(t, chainID.Equals(v.ChainID))
 	require.EqualValues(t, stateidx, v.StateIndex)
 	require.True(t, ts.Equal(v.TimeStamp))
+}
+
+func randByteSlice(rnd *rand.Rand, minLength, maxLength int) []byte {
+	n := rnd.Intn(maxLength-minLength) + minLength
+	b := make([]byte, n)
+	rnd.Read(b)
+	return b
 }

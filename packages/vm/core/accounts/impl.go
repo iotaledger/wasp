@@ -25,6 +25,7 @@ var Processor = Contract.Processor(initialize,
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccountFoundries.WithHandler(viewAccountFoundries),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
@@ -91,9 +92,6 @@ const ConstDepositFeeTmp = 1 * isc.Million
 // The caller explicitly specify the funds to withdraw via the allowance in the request
 // Btw: the whole code of entry point is generic, i.e. not specific to the accounts TODO use this feature
 func withdraw(ctx isc.Sandbox) dict.Dict {
-	state := ctx.State()
-	checkLedger(state, "accounts.withdraw.begin")
-
 	ctx.Requiref(!ctx.AllowanceAvailable().IsEmpty(), "Allowance can't be empty in 'accounts.withdraw'")
 
 	callerAddress, ok := isc.AddressFromAgentID(ctx.Caller())
@@ -170,8 +168,6 @@ func harvest(ctx isc.Sandbox) dict.Dict {
 	ctx.RequireCallerIsChainOwner()
 
 	state := ctx.State()
-	checkLedger(state, "accounts.harvest.begin")
-	defer checkLedger(state, "accounts.harvest.exit")
 
 	bottomBaseTokens := ctx.Params().MustGetUint64(ParamForceMinimumBaseTokens, MinimumBaseTokensOnCommonAccount)
 	if bottomBaseTokens > MinimumBaseTokensOnCommonAccount {
@@ -259,7 +255,7 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	// accrue change on the caller's account
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var storageDepositAdjustment int64
-	if deltaAssets := isc.NewEmptyAssets().AddNativeTokens(tokenID, delta); destroy {
+	if deltaAssets := isc.NewEmptyFungibleTokens().AddNativeTokens(tokenID, delta); destroy {
 		// take tokens to destroy from allowance
 		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{

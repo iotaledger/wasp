@@ -2,21 +2,22 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {panic} from "../sandbox";
-import * as wasmtypes from "./index";
+import {intFromString, WasmDecoder, WasmEncoder} from "./codec";
+import {Proxy} from "./proxy";
 
 export const ScInt32Length = 4;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-export function int32Decode(dec: wasmtypes.WasmDecoder): i32 {
+export function int32Decode(dec: WasmDecoder): i32 {
     return dec.vliDecode(32) as i32;
 }
 
-export function int32Encode(enc: wasmtypes.WasmEncoder, value: i32): void {
-    enc.vliEncode(value as i64);
+export function int32Encode(enc: WasmEncoder, value: i32): void {
+    enc.vliEncode(value as i32);
 }
 
-export function int32FromBytes(buf: u8[]): i32 {
+export function int32FromBytes(buf: Uint8Array): i32 {
     if (buf.length == 0) {
         return 0;
     }
@@ -24,22 +25,24 @@ export function int32FromBytes(buf: u8[]): i32 {
         panic("invalid Int32 length");
     }
     let ret: i32 = buf[3];
+    ret = (ret & 0x80) ? ret - 0x100 : ret;
     ret = (ret << 8) | buf[2];
     ret = (ret << 8) | buf[1];
-    return (ret << 8) | buf[0];
+    ret = (ret << 8) | buf[0];
+    return ret;
 }
 
-export function int32ToBytes(value: i32): u8[] {
-    return [
-        value as u8,
-        (value >> 8) as u8,
-        (value >> 16) as u8,
-        (value >> 24) as u8,
-    ];
+export function int32ToBytes(value: i32): Uint8Array {
+    const buf = new Uint8Array(ScInt32Length);
+    buf[0] = value as u8;
+    buf[1] = (value >> 8) as u8;
+    buf[2] = (value >> 16) as u8;
+    buf[3] = (value >> 24) as u8;
+    return buf;
 }
 
 export function int32FromString(value: string): i32 {
-    return wasmtypes.intFromString(value, 32) as i32;
+    return intFromString(value, 32) as i32;
 }
 
 export function int32ToString(value: i32): string {
@@ -49,9 +52,9 @@ export function int32ToString(value: i32): string {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export class ScImmutableInt32 {
-    proxy: wasmtypes.Proxy;
+    proxy: Proxy;
 
-    constructor(proxy: wasmtypes.Proxy) {
+    constructor(proxy: Proxy) {
         this.proxy = proxy;
     }
 

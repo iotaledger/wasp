@@ -1,0 +1,10 @@
+{
+  "name": "coreaccounts",
+  "version": "1.0.0",
+  "description": "Interface library for: Chain account ledger contract",
+  "main": "index.ts",
+  "author": "Eric Hop <eric@iota.org>",
+  "license": "Apache-2.0",
+  "dependencies": {
+  }
+}
