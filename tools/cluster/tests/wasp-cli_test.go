@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -133,6 +136,56 @@ func TestWaspCLIDeposit(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.Run("chain", "deposit", eth.String(), "base:1000000")
 		checkBalance(t, w.Run("chain", "balance", eth.String()), 1000000-100) //-100 for the fee
+	})
+
+	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
+		_, eth := newEthereumAccount()
+		// create foundry
+		tokenScheme := codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+			MintedTokens:  big.NewInt(10), // TODO this is not 0, where do these tokens go to? they don't show up in the wasp-cli balances...
+			MeltedTokens:  big.NewInt(0),
+			MaximumSupply: big.NewInt(1000),
+		})
+		out := w.PostRequestGetReceipt(
+			"accounts", accounts.FuncFoundryCreateNew.Name,
+			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme), "-l", "base:1000000",
+			"-t", "base:100000000",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// mint 1 native token
+		// TODO we know its the first foundry to be created by the chain, so SN must be 1,
+		// but there is NO WAY to obtain the SN, this is a design flaw that must be fixed.
+		foundrySN := "1"
+		out = w.PostRequestGetReceipt(
+			"accounts", accounts.FuncFoundryModifySupply.Name,
+			"string", accounts.ParamFoundrySN, "uint32", foundrySN,
+			"string", accounts.ParamSupplyDeltaAbs, "bigint", "1",
+			"string", accounts.ParamDestroyTokens, "bool", "false",
+			"-l", "base:1000000",
+			"--off-ledger",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// withdraw this token to the wasp-cli L1 address
+		out = w.Run("chain", "balance")
+		tokenID := strings.Split(out[4], " ")[0]
+
+		out = w.PostRequestGetReceipt(
+			"accounts", accounts.FuncWithdraw.Name,
+			"-l", fmt.Sprintf("base:1000000, %s:1", tokenID),
+			"--off-ledger",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// deposit the native token to the chain
+		w.Run(
+			"chain", "deposit", eth.String(),
+			fmt.Sprintf("base:100000, %s:1", tokenID),
+			"--adjust-storage-deposit",
+		)
+		out = w.Run("chain", "balance", eth.String())
+		require.Contains(t, strings.Join(out, ""), tokenID)
 	})
 }
 
@@ -360,8 +413,8 @@ func TestWaspCLILongParam(t *testing.T) {
 
 	// create foundry
 	w.Run(
-		"chain", "post-request", "accounts", "foundryCreateNew",
-		"string", "t", "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
+		"chain", "post-request", "accounts", accounts.FuncFoundryCreateNew.Name,
+		"string", accounts.ParamTokenScheme, "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
 		"-t", "base:1000000",
 	)
 

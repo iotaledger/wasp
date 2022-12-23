@@ -101,48 +101,59 @@ func getTokensForRequestFee() *isc.Allowance {
 	}}))
 }
 
-var depositCmd = &cobra.Command{
-	Use:   "deposit [<agentid>] <token-id>:<amount> [<token-id>:amount ...]",
-	Short: "Deposit L1 funds into the given (default: your) L2 account",
-	Args:  cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		if strings.Contains(args[0], ":") {
-			// deposit to own agentID
-			tokens := util.ParseFungibleTokens(args)
-			util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-				return SCClient(accounts.Contract.Hname()).PostRequest(
-					accounts.FuncDeposit.Name,
-					chainclient.PostRequestParams{
-						Transfer: tokens,
-					},
-				)
-			})
-		} else {
-			// deposit to some other agentID
-			agentID, err := isc.NewAgentIDFromString(args[0])
-			log.Check(err)
-			tokens := util.ParseFungibleTokens(args[1:])
+func depositCmd() *cobra.Command {
+	var adjustStorageDeposit bool
 
-			// calculate the correct allowance (funds to send - gas fee)
-			allowance := isc.NewAllowanceFungibleTokens(tokens.Clone())
-			ok := allowance.SpendFromBudget(getTokensForRequestFee())
-			if !ok {
-				panic("not enough tokens for allowance + fee")
-			}
-
-			util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
-				return SCClient(accounts.Contract.Hname()).PostRequest(
-					accounts.FuncTransferAllowanceTo.Name,
-					chainclient.PostRequestParams{
-						Args: dict.Dict{
-							accounts.ParamAgentID:          agentID.Bytes(),
-							accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+	cmd := &cobra.Command{
+		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
+		Short: "Deposit L1 funds into the given (default: your) L2 account",
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if strings.Contains(args[0], ":") {
+				// deposit to own agentID
+				tokens := util.ParseFungibleTokens(args)
+				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+					return SCClient(accounts.Contract.Hname()).PostRequest(
+						accounts.FuncDeposit.Name,
+						chainclient.PostRequestParams{
+							Transfer:                 tokens,
+							AutoAdjustStorageDeposit: adjustStorageDeposit,
 						},
-						Transfer:  tokens,
-						Allowance: allowance,
-					},
-				)
-			})
-		}
-	},
+					)
+				})
+			} else {
+				// deposit to some other agentID
+				agentID, err := isc.NewAgentIDFromString(args[0])
+				log.Check(err)
+				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
+				tokens := util.ParseFungibleTokens(tokensStr)
+
+				// calculate the correct allowance (funds to send - gas fee)
+				allowance := isc.NewAllowanceFungibleTokens(tokens.Clone())
+				ok := allowance.SpendFromBudget(getTokensForRequestFee())
+				if !ok {
+					panic("not enough tokens for allowance + fee")
+				}
+
+				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
+					return SCClient(accounts.Contract.Hname()).PostRequest(
+						accounts.FuncTransferAllowanceTo.Name,
+						chainclient.PostRequestParams{
+							Args: dict.Dict{
+								accounts.ParamAgentID:          agentID.Bytes(),
+								accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+							},
+							Transfer:                 tokens,
+							Allowance:                allowance,
+							AutoAdjustStorageDeposit: adjustStorageDeposit,
+						},
+					)
+				})
+			}
+		},
+	}
+
+	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+
+	return cmd
 }
