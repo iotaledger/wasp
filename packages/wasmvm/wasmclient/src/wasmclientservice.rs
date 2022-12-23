@@ -26,7 +26,7 @@ pub trait IClientService {
     ) -> errors::Result<ScRequestID>;
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<String>,
+        tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()>;
     fn wait_until_request_processed(
@@ -93,7 +93,7 @@ impl IClientService for WasmClientService {
 
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<String>,
+        tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
         self.websocket.clone().unwrap().subscribe(tx, done); // TODO remove clone

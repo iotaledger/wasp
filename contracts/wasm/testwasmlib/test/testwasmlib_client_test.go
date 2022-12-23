@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,31 +21,32 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/coreaccounts"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
+	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clustertests "github.com/iotaledger/wasp/tools/cluster/tests"
 )
 
 const (
+	useCluster    = false
 	useDisposable = false
-	useDocker     = true
-	useSoloClient = true
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	if useCluster {
+		return setupClientCluster(t)
+	}
+
 	if useDisposable {
 		return setupClientDisposable(t)
 	}
 
-	if useSoloClient {
-		return setupClientSolo(t)
-	}
-
-	return setupClientCluster(t)
+	// fall back on rudimentary basic testing by using SoloClientService
+	return setupClientSolo(t)
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
-	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "rocksdb", "mapdb")
 	e := clustertests.SetupWithChain(t)
-	//templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
+	templates.WaspConfig = strings.ReplaceAll(templates.WaspConfig, "mapdb", "rocksdb")
 	wallet := cryptolib.NewKeyPair()
 
 	// request funds to the wallet that the wasmclient will use
@@ -86,6 +88,10 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
 
+	cfgWasp := config["wasp"].(map[string]interface{})
+	cfgWasp0 := cfgWasp["0"].(map[string]interface{})
+	cfgWaspApi0 := cfgWasp0["api"].(string)
+
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
@@ -95,7 +101,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 	// we're testing against disposable wasp-cluster, so defaults will do
 	service := wasmclient.DefaultWasmClientService()
-	if useDocker {
+	if cfgWaspApi0[len(cfgWaspApi0)-6:] != ":19090" {
 		// test against Docker container, make sure to pass the correct args to test (top of file)
 		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
 	}
