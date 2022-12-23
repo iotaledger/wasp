@@ -127,13 +127,7 @@ func depositCmd() *cobra.Command {
 				log.Check(err)
 				tokensStr := strings.Split(strings.Join(args[1:], ""), ",")
 				tokens := util.ParseFungibleTokens(tokensStr)
-
-				// calculate the correct allowance (funds to send - gas fee)
 				allowance := isc.NewAllowanceFungibleTokens(tokens.Clone())
-				ok := allowance.SpendFromBudget(getTokensForRequestFee())
-				if !ok {
-					panic("not enough tokens for allowance + fee")
-				}
 
 				util.WithSCTransaction(GetCurrentChainID(), func() (*iotago.Transaction, error) {
 					return SCClient(accounts.Contract.Hname()).PostRequest(

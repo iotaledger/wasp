@@ -153,14 +153,14 @@ func TestWaspCLIDeposit(t *testing.T) {
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
-		// mint 1 native token
+		// mint 2 native tokens
 		// TODO we know its the first foundry to be created by the chain, so SN must be 1,
 		// but there is NO WAY to obtain the SN, this is a design flaw that must be fixed.
 		foundrySN := "1"
 		out = w.PostRequestGetReceipt(
 			"accounts", accounts.FuncFoundryModifySupply.Name,
 			"string", accounts.ParamFoundrySN, "uint32", foundrySN,
-			"string", accounts.ParamSupplyDeltaAbs, "bigint", "1",
+			"string", accounts.ParamSupplyDeltaAbs, "bigint", "2",
 			"string", accounts.ParamDestroyTokens, "bool", "false",
 			"-l", "base:1000000",
 			"--off-ledger",
@@ -169,23 +169,40 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 		// withdraw this token to the wasp-cli L1 address
 		out = w.Run("chain", "balance")
-		tokenID := strings.Split(out[4], " ")[0]
+		tokenID := ""
+		for _, line := range out {
+			if strings.Contains(line, "0x") {
+				tokenID = strings.Split(line, " ")[0]
+			}
+		}
 
 		out = w.PostRequestGetReceipt(
 			"accounts", accounts.FuncWithdraw.Name,
-			"-l", fmt.Sprintf("base:1000000, %s:1", tokenID),
+			"-l", fmt.Sprintf("base:1000000, %s:2", tokenID),
 			"--off-ledger",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
 
-		// deposit the native token to the chain
+		// deposit the native token to the chain (to an ethereum account)
 		w.Run(
 			"chain", "deposit", eth.String(),
-			fmt.Sprintf("base:100000, %s:1", tokenID),
+			fmt.Sprintf("%s:1", tokenID),
 			"--adjust-storage-deposit",
 		)
 		out = w.Run("chain", "balance", eth.String())
 		require.Contains(t, strings.Join(out, ""), tokenID)
+
+		// deposit the native token to the chain (to the cli account)
+		w.Run(
+			"chain", "deposit",
+			fmt.Sprintf("%s:1", tokenID),
+			"--adjust-storage-deposit",
+		)
+		out = w.Run("chain", "balance")
+		require.Contains(t, strings.Join(out, ""), tokenID)
+		// no token balance on L1
+		out = w.Run("balance")
+		require.NotContains(t, strings.Join(out, ""), tokenID)
 	})
 }
 
