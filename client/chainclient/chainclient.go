@@ -39,12 +39,13 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer  *isc.FungibleTokens
-	Args      dict.Dict
-	Nonce     uint64
-	NFT       *isc.NFT
-	Allowance *isc.Allowance
-	GasBudget *uint64
+	Transfer                 *isc.FungibleTokens
+	Args                     dict.Dict
+	Nonce                    uint64
+	NFT                      *isc.NFT
+	Allowance                *isc.Allowance
+	GasBudget                *uint64
+	AutoAdjustStorageDeposit bool
 }
 
 func defaultParams(params ...PostRequestParams) PostRequestParams {
@@ -128,7 +129,7 @@ func (c *Client) post1RequestWithOutputs(
 			Request: &isc.RequestParameters{
 				TargetAddress:                 c.ChainID.AsAddress(),
 				FungibleTokens:                par.Transfer,
-				AdjustToMinimumStorageDeposit: false,
+				AdjustToMinimumStorageDeposit: par.AutoAdjustStorageDeposit,
 				Metadata: &isc.SendMetadata{
 					TargetContract: contractHname,
 					EntryPoint:     entryPoint,
