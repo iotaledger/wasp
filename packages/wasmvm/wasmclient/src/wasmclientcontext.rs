@@ -158,24 +158,20 @@ impl WasmClientContext {
         todo!()
     }
 
-    fn unescape(&self, _param: &str) -> String {
-        todo!()
-        // const i = param.indexOf("~");
-        // if (i < 0) {
-        //     return param;
-        // }
-
-        // switch (param.charAt(i + 1)) {
-        //     case '~': // escaped escape character
-        //         return param.slice(0, i) + "~" + this.unescape(param.slice(i + 2));
-        //     case '/': // escaped vertical bar
-        //         return param.slice(0, i) + "|" + this.unescape(param.slice(i + 2));
-        //     case '_': // escaped space
-        //         return param.slice(0, i) + " " + this.unescape(param.slice(i + 2));
-        //     default:
-        //         panic("invalid event encoding");
-        // }
-        // return "";
+    fn unescape(&self, param: &str) -> String {
+        let idx = match param.find("~") {
+            Some(idx) => idx,
+            None => return String::from(param),
+        };
+        match param.chars().nth(idx + 1).unwrap() {
+            // escaped escape character
+            '~' => param[0..idx].to_string() + "~" + &self.unescape(&param[idx + 2..]),
+            // escaped vertical bar
+            '/' => param[0..idx].to_string() + "|" + &self.unescape(&param[idx + 2..]),
+            // escaped space
+            '_' => param[0..idx].to_string() + " " + &self.unescape(&param[idx + 2..]),
+            _ => panic!("invalid event encoding"),
+        }
     }
 }
 
@@ -228,4 +224,16 @@ mod tests {
 
     #[test]
     fn test_call_view_by_hname() {}
+
+    #[test]
+    fn test_unescape() {
+        let ctx = WasmClientContext::default();
+        let res = ctx.unescape(r"before~~/after");
+        println!("res: {}", res);
+        assert!(res == "before~/after");
+        let res = ctx.unescape(r"before~/after");
+        assert!(res == "before|after");
+        let res = ctx.unescape(r"before~_after");
+        assert!(res == "before after");
+    }
 }
