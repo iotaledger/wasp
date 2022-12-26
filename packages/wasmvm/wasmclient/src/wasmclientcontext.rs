@@ -19,7 +19,7 @@ const ISC_EVENT_KIND_ERROR: &str = "error";
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
-    pub event_received: bool,
+    pub event_received: Arc<RwLock<bool>>,
     pub key_pair: Option<keypair::KeyPair>,
     pub req_id: ScRequestID,
     pub sc_name: String,
@@ -40,7 +40,7 @@ impl WasmClientContext {
             sc_hname: ScHname::new(sc_name),
             chain_id: chain_id.clone(),
             event_handlers: Vec::new(),
-            event_received: true,
+            event_received: Arc::new(RwLock::new(false)),
             key_pair: None,
             req_id: request_id_from_bytes(&[]),
             done: Arc::new(RwLock::new(false)),
@@ -126,8 +126,10 @@ impl WasmClientContext {
     fn process_event(&'static self, rx: mpsc::Receiver<Vec<String>>) -> errors::Result<()> {
         for msg in rx {
             spawn(move || {
+                let l = self.event_received.clone();
                 if msg[0] == ISC_EVENT_KIND_ERROR {
-                    // self.event_received = true;
+                    let mut received = l.write().unwrap();
+                    *received = true;
                     return Err(msg[1].clone());
                 }
 
@@ -146,7 +148,8 @@ impl WasmClientContext {
                     handler.as_ref().call_handler(&topic, &params);
                 }
 
-                // self.event_received = true;
+                let mut received = l.write().unwrap();
+                *received = true;
                 return Ok(());
             });
         }
@@ -154,8 +157,14 @@ impl WasmClientContext {
         return Ok(());
     }
 
-    pub fn wait_event(&self) {
-        todo!()
+    pub fn wait_event(&self) -> errors::Result<()> {
+        for _ in 0..100 {
+            if *self.event_received.read().unwrap() {
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        return Err(String::from("event wait timeout"));
     }
 
     fn unescape(&self, param: &str) -> String {
@@ -183,10 +192,10 @@ impl Default for WasmClientContext {
             sc_hname: ScHname(0),
             chain_id: chain_id_from_bytes(&[]),
             event_handlers: Vec::new(),
-            event_received: true,
+            event_received: Arc::default(),
             key_pair: None,
             req_id: request_id_from_bytes(&[]),
-            done: Arc::new(RwLock::new(false)),
+            done: Arc::default(),
         }
     }
 }
