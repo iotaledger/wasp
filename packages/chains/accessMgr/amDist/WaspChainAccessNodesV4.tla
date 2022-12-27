@@ -38,13 +38,15 @@ vars == <<active, access, server, lClock, reboots, msgs>>
 LC == 0..MaxLC                                       \* To have bounded model checking only.
 LC_HaveNext(n, count) == lClock[n][n] + count \in LC \* To have bounded model checking only.
 
+ChainsHash == [hash: SUBSET Chains]
+
 Msgs == [
     src: Nodes,            \* Sender.
     dst: Nodes,            \* Receiver.
     src_lc: LC,            \* Sender's logical clock, represents the version of the chains field.
     dst_lc: LC,            \* Last known logical clock of the destination node.
     access: SUBSET Chains, \* Access to these chains is granted by src to dst.
-    server: SUBSET Chains  \* The src got this set of chains with dst_lc.
+    server: ChainsHash     \* The src got this set of chains with dst_lc.
 ]
 
 TypeOK ==
@@ -54,6 +56,8 @@ TypeOK ==
     /\ lClock  \in [Nodes -> [Nodes -> LC]]
     /\ reboots \in 0..MaxReboots
     /\ msgs    \subseteq Msgs
+
+H(chains) == [hash |-> chains]
 
 --------------------------------------------------------------------------------
 (*
@@ -69,7 +73,7 @@ accessMsgs(n) == {[
         src_lc |-> lClock'[n][n],
         dst_lc |-> lClock'[n][dst],
         access |-> accessForChains(n, dst)',
-        server |-> serverForChains(n, dst)'
+        server |-> H(serverForChains(n, dst)')
     ] : dst \in (Nodes \ {n})}
 
 sendAndAck(m, send) ==
@@ -85,7 +89,7 @@ noSend == UNCHANGED msgs
 \* That's to avoid a possibility to fill the memory with fake access notifications.
 \* Therefore after enabling a chain we have to query for access again.
 ChainActivate(n, c) ==
-    /\ LC_HaveNext(n, 2)
+    /\ LC_HaveNext(n, MaxReboots+1)
     /\ c \notin active[n]
     /\ active' = [active EXCEPT ![n] = @ \cup {c}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1]  \* Config has changed this way.
@@ -93,16 +97,15 @@ ChainActivate(n, c) ==
     /\ sendOnly(accessMsgs(n))
 
 ChainDeactivate(n, c) ==
-    /\ LC_HaveNext(n, 2)
+    /\ LC_HaveNext(n, MaxReboots+1)
     /\ c \in active[n]
     /\ active' = [active EXCEPT ![n] = @ \ {c}]
-    /\ server' = [access EXCEPT ![n][c] = {}]   \* That's non-persistent info.
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1]  \* Config has changed this way.
-    /\ UNCHANGED <<access, reboots>>
+    /\ UNCHANGED <<access, server, reboots>>
     /\ sendOnly(accessMsgs(n))
 
 AccessNodeAdd(n, c, a) ==
-    /\ LC_HaveNext(n, 2)
+    /\ LC_HaveNext(n, MaxReboots+1)
     /\ a \notin access[n][c]
     /\ access' = [access EXCEPT ![n][c] = @ \cup {a}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1] \* Config has changed.
@@ -111,7 +114,7 @@ AccessNodeAdd(n, c, a) ==
        \/ c \notin active[n] /\ noSend
 
 AccessNodeDel(n, c, a) ==
-    /\ LC_HaveNext(n, 2)
+    /\ LC_HaveNext(n, MaxReboots+1)
     /\ a \in access[n][c]
     /\ access' = [access EXCEPT ![n][c] = @ \ {a}]
     /\ lClock' = [lClock EXCEPT ![n][n] = @+1] \* Config has changed.
@@ -122,7 +125,7 @@ AccessNodeDel(n, c, a) ==
 Reboot(n) ==
     /\ reboots > 0
     /\ reboots' = reboots - 1
-    /\ server' = [access EXCEPT ![n] = [c \in Chains |-> {}]]                    \* That's non-persistent info.
+    /\ server' = [server EXCEPT ![n] = [c \in Chains |-> {}]]                    \* That's non-persistent info.
     /\ lClock' = [lClock EXCEPT ![n] = [m \in Nodes |-> IF n = m THEN 1 ELSE 0]] \* That's non-persistent info.
     /\ UNCHANGED <<active, access>>
     /\ sendOnly(accessMsgs(n))
@@ -132,27 +135,25 @@ Reboot(n) ==
 Handle the messages.
 *)
 
-(*
-  - If we get msg.dst_lc > n.lc ----> update our local LC.
-  -    additionally, if msg.servers != accessTo.., m.lc++
-  - ...
-  - ...
-*)
+Max(a, b) == IF a > b THEN a ELSE b
+ChainsUpdByMsg(n, m) == [c \in Chains |-> IF c \in m.access
+                                          THEN server[n][c] \cup {m.src}
+                                          ELSE server[n][c] \ {m.src} ]
 RecvAccess(n) == \E m \in msgs:
     /\ m.dst = n
-    /\ lClock' = [lClock EXCEPT ![n][n]     = IF @ > m.dst_lc THEN @ ELSE (IF accessForChains(n, m.src) = m.server THEN m.dst_lc ELSE m.dst_lc + 1),
-                                ![n][m.src] = IF @ > m.src_lc THEN @ ELSE m.src_lc]
+    /\ lClock' = [lClock EXCEPT
+        ![n][n]     = Max(@, IF H(accessForChains(n, m.src)) = m.server THEN m.dst_lc ELSE m.dst_lc + 1),
+        ![n][m.src] = Max(@, m.src_lc)]
+    /\ IF m.src_lc > lClock[n][m.src]
+       THEN server' = [server EXCEPT ![n] = ChainsUpdByMsg(n, m)]
+       ELSE UNCHANGED server
     /\ UNCHANGED <<active, access, reboots>>
-    /\ \/ /\ m.src_lc > lClock[n][m.src] \* Update the servers, if message not outdated.
-          /\ server' = [server EXCEPT ![n] = [c \in Chains |-> IF c \in m.access
-                                                               THEN server[n][c] \cup {m.src}
-                                                               ELSE server[n][c] \ {m.src} ]]
-       \/ /\ m.src_lc =< lClock[n][m.src]
-          /\ UNCHANGED <<server>>
-    /\ \/ m.dst_lc < lClock[n][n]'                                         /\ sendAndAck(m, accessMsgs(n))
-       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) # m.access /\ sendAndAck(m, accessMsgs(n))
-       \/ m.dst_lc = lClock[n][n]' /\ serverForChains(n, m.src) = m.access /\ sendAndAck(m, {})
-       \/ m.dst_lc > lClock[n][n]'                                         /\ sendAndAck(m, {}) \* NOTE: Impossible.
+    /\ IF /\ m.access = serverForChains(n, m.src)    \* Peer's info hasn't changed, so we don't need to ack it.
+          /\ m.server = H(accessForChains(n, m.src)) \* Our info echoed, so that was an ack.
+          /\ m.src_lc >= lClock[n][m.src]            \* Peer's clock is not outdated, we don't need to push it forward.
+          /\ m.dst_lc <= lClock[n][n]                \* And the echoed clock don't exceed our clock, so we don't need to push it.
+       THEN sendAndAck(m, {})
+       ELSE sendAndAck(m, accessMsgs(n))
 
 --------------------------------------------------------------------------------
 Init ==
@@ -170,8 +171,7 @@ Next ==
     \/ \E n \in Nodes: RecvAccess(n)
 
 Fairness ==
-    \A m \in Msgs : SF_vars(m \in msgs => RecvAccess(m.dst)!(m))
-    \* /\ SF_vars(\E n \in Nodes: RecvAccess(n))
+    /\ SF_vars(\E n \in Nodes: RecvAccess(n))
 
 Spec == Init /\ [][Next]_vars /\ Fairness
 
