@@ -2,14 +2,15 @@
 (*
 In this specification, we model a chain's management of access nodes.
 Each node can add several nodes as access nodes.
-That means it will accept queries from the access nodes and act as a server.
+That means it will accept queries from the access nodes and act as a server for them.
 However, the access nodes have no information from their configuration
 on what nodes consider them access nodes.
 A protocol described here lets the access nodes know which
 nodes will act as servers (accept the queries).
 
   - Nodes not related to a chain should get no information on the chains it runs.
-  - TODO: ...
+  - The information on servers should be transient to avoid state de-synchronization.
+  - The algorithm should work in the asynchronous setting.
 
 NOTE: A node has to track its logical clock for each peer independently, to
 cope with byzantine nodes. They can send high LCs to overflow the receiver.
@@ -18,8 +19,8 @@ overflow can only impact the communication with the byzantine node (which
 makes no harm for the system as a whole). This is not modelled in this spec.
 *)
 EXTENDS Naturals
-CONSTANT Nodes
-CONSTANT Chains
+CONSTANT Nodes       \* A set of nodes (|Nodes|=2 is enough).
+CONSTANT Chains      \* A set of chains.
 CONSTANT MaxLC       \* To have model checking finite.
 CONSTANT MaxReboots  \* To have liveness to pass.
 ASSUME assms ==
@@ -43,7 +44,7 @@ ChainsHash == [hash: SUBSET Chains]
 Msgs == [
     src: Nodes,            \* Sender.
     dst: Nodes,            \* Receiver.
-    src_lc: LC,            \* Sender's logical clock, represents the version of the chains field.
+    src_lc: LC,            \* Sender's logical clock, represents the version of the access field.
     dst_lc: LC,            \* Last known logical clock of the destination node.
     access: SUBSET Chains, \* Access to these chains is granted by src to dst.
     server: ChainsHash     \* The src got this set of chains with dst_lc.

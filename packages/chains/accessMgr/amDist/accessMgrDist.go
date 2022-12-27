@@ -290,7 +290,18 @@ func (amn *accessMgrNode) revokeAccess(chainID isc.ChainID) gpa.OutMessages {
 }
 
 func (amn *accessMgrNode) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
-	oldServer := amn.serverFor.AsSlice() // TODO: Don;t understand.
+	// This has to be checked before updating the state.
+	// > IF /\ m.access = serverForChains(n, m.src)    \* Peer's info hasn't changed, so we don't need to ack it.
+	// >    /\ m.server = H(accessForChains(n, m.src)) \* Our info echoed, so that was an ack.
+	// >    /\ m.src_lc >= lClock[n][m.src]            \* Peer's clock is not outdated, we don't need to push it forward.
+	// >    /\ m.dst_lc <= lClock[n][n]                \* And the echoed clock don't exceed our clock, so we don't need to push it.
+	// > THEN sendAndAck(m, {})
+	// > ELSE sendAndAck(m, accessMsgs(n))
+	sendDone := true &&
+		util.Same(msg.accessForChains, amn.serverFor.AsSlice()) &&
+		util.Same(msg.serverForChains, amn.accessFor.AsSlice()) &&
+		msg.senderLClock >= amn.peerLC &&
+		msg.receiverLClock <= amn.ourLC
 	//
 	// Update serverFor and peerLC.
 	if msg.senderLClock > amn.peerLC {
@@ -309,7 +320,7 @@ func (amn *accessMgrNode) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	}
 	//
 	// Send message back, if needed.
-	if msg.receiverLClock < amn.ourLC || (msg.receiverLClock == amn.ourLC && !util.Same(msg.accessForChains, oldServer)) { // TODO: ...
+	if !sendDone {
 		return gpa.NoMessages().Add(
 			newMsgAccess(msg.Sender(), amn.ourLC, amn.peerLC, amn.accessFor.AsSlice(), amn.serverFor.AsSlice()),
 		)

@@ -709,5 +709,5 @@ func nodeIDsFromPubKeys(pubKeys []*cryptolib.PublicKey) []gpa.NodeID {
 }
 
 func nodeIDFromPubKey(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID("N#" + pubKey.String()[:6])
+	return gpa.NodeID("N#" + pubKey.String()[2:10])
 }
