@@ -141,9 +141,8 @@ impl WasmClientContext {
                 for i in 0..params.len() {
                     params[i] = self.unescape(&params[i]);
                 }
-                let topic = &params[0].to_string();
+                let topic = params.remove(0);
 
-                params.remove(0);
                 for handler in self.event_handlers.iter() {
                     handler.as_ref().call_handler(&topic, &params);
                 }
