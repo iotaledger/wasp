@@ -7,7 +7,7 @@
 //   - ChainActivate  -- first reception of inputAccessNodes.
 //   - ChainDeactivate -- inputChainDisabled.
 //   - AccessNodeAdd -- inputAccessNodes, then compare with info we had before.
-//   - AccessNodeDel --  inputAccessNodes, then compare with info we had before.
+//   - AccessNodeDel -- inputAccessNodes, then compare with info we had before.
 //   - Reboot -- inputTrustedNodes.
 package amDist
 
@@ -44,7 +44,7 @@ var _ gpa.GPA = &accessMgrDist{}
 
 func NewAccessMgr(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
-	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey),
+	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
 	dismissPeerCB func(*cryptolib.PublicKey),
 	log *logger.Logger,
 ) AccessMgr {
@@ -104,8 +104,12 @@ func (amd *accessMgrDist) StatusString() string {
 
 // > Notify all the trusted access nodes, that we will not serve the requests anymore.
 func (amd *accessMgrDist) handleInputChainDisabled(input *inputChainDisabled) gpa.OutMessages {
-	msgs := gpa.NoMessages()
+	if _, ok := amd.chains[input.chainID]; !ok {
+		return nil // Already disabled.
+	}
+	amd.chains[input.chainID].Disabled()
 	delete(amd.chains, input.chainID)
+	msgs := gpa.NoMessages()
 	for _, node := range amd.nodes {
 		msgs.AddAll(node.SetChainAccess(input.chainID, false))
 	}
@@ -121,7 +125,13 @@ func (amd *accessMgrDist) handleInputAccessNodes(input *inputAccessNodes) gpa.Ou
 	// Update the info from the chain perspective.
 	chain, ok := amd.chains[input.chainID]
 	if !ok {
-		chain = newAccessMgrChain(input.chainID, amd.pubKeyToNodeID, amd.serversUpdatedCB)
+		initialServers := []*cryptolib.PublicKey{}
+		for _, node := range amd.nodes {
+			if node.serverFor.Has(input.chainID) {
+				initialServers = append(initialServers, node.pubKey)
+			}
+		}
+		chain = newAccessMgrChain(input.chainID, amd.pubKeyToNodeID, initialServers, amd.serversUpdatedCB)
 		amd.chains[input.chainID] = chain
 	}
 	chain.AccessGrantedFor(input.accessNodes)
@@ -161,6 +171,10 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 		if _, ok := trustedIndex[nodeID]; ok {
 			continue
 		}
+		for _, chain := range amd.chains {
+			chain.MarkAsServerFor(node.pubKey, false)
+			msgs.AddAll(node.SetChainAccess(chain.chainID, false))
+		}
 		delete(amd.nodes, nodeID)
 		amd.dismissPeerCB(node.pubKey)
 	}
@@ -175,7 +189,7 @@ func (amd *accessMgrDist) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	msgs := node.handleMsgAccess(msg)
 
 	for chainID, chain := range amd.chains {
-		chain.MarkAsServerFor(node.pubKey, node.accessFor.Has(chainID))
+		chain.MarkAsServerFor(node.pubKey, node.serverFor.Has(chainID))
 	}
 
 	return msgs
@@ -194,15 +208,22 @@ type accessMgrChain struct {
 func newAccessMgrChain(
 	chainID isc.ChainID,
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
+	initialServers []*cryptolib.PublicKey,
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey),
 ) *accessMgrChain {
-	return &accessMgrChain{
+	amc := &accessMgrChain{
 		chainID:          chainID,
 		access:           map[gpa.NodeID]*cryptolib.PublicKey{},
 		server:           map[gpa.NodeID]*cryptolib.PublicKey{},
 		pubKeyToNodeID:   pubKeyToNodeID,
 		serversUpdatedCB: serversUpdatedCB,
 	}
+	for i := range initialServers {
+		nodeID := pubKeyToNodeID(initialServers[i])
+		amc.server[nodeID] = initialServers[i]
+	}
+	amc.serversUpdatedCB(amc.chainID, lo.Values(amc.server))
+	return amc
 }
 
 func (amc *accessMgrChain) AccessGrantedFor(accessPubKeys []*cryptolib.PublicKey) {
@@ -229,6 +250,13 @@ func (amc *accessMgrChain) MarkAsServerFor(nodePubKey *cryptolib.PublicKey, gran
 func (amc *accessMgrChain) IsAccessGrantedFor(nodeID gpa.NodeID) bool {
 	_, ok := amc.access[nodeID]
 	return ok
+}
+
+func (amc *accessMgrChain) Disabled() {
+	if len(amc.server) == 0 {
+		return
+	}
+	amc.serversUpdatedCB(amc.chainID, []*cryptolib.PublicKey{})
 }
 
 ////////////////////////////////////////////////////////////////////////////////

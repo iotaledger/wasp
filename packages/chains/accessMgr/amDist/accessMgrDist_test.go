@@ -52,9 +52,10 @@ func testBasic(t *testing.T, n int) {
 	}
 	tc.RunAll()
 	for nid := range nodes {
-		// require.Same(t, nodePubs, servers[nid])
-
-		require.True(t, util.Same(nodePubs, servers[nid]), "should be same: %v, %v", nodePubs, servers[nid])
+		require.True(t,
+			util.Same(nodePubs, servers[nid]),
+			"should be same: %v, %v", nodePubs, servers[nid],
+		)
 	}
 }
 
