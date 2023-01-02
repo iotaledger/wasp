@@ -34,6 +34,7 @@ const (
 	PeerMessageReceiverDkg
 	PeerMessageReceiverDkgInit
 	PeerMessageReceiverMempool
+	PeerMessageReceiverAccessMgr
 )
 
 // NetworkProvider stands for the peer-to-peer network, as seen
