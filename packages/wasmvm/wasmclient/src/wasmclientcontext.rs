@@ -182,7 +182,9 @@ impl WasmClientContext {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        return Err(String::from("event wait timeout"));
+        let err_msg = String::from("event wait timeout");
+        self.err(&err_msg, "");
+        return Err(err_msg);
     }
 
     fn unescape(&self, param: &str) -> String {
@@ -200,7 +202,7 @@ impl WasmClientContext {
             _ => panic!("invalid event encoding"),
         }
     }
-    fn err(&self, current_layer_msg: &str, e: &str) {
+    pub fn err(&self, current_layer_msg: &str, e: &str) {
         let mut err = self.error.write().unwrap();
         *err = Err(current_layer_msg.to_string() + e);
         drop(err);
