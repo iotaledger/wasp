@@ -31,9 +31,9 @@ type StateMgr interface {
 		ctx context.Context,
 		prevAO, nextAO *isc.AliasOutputWithID,
 	) <-chan *smInputs.ChainFetchStateDiffResults
-	// Invoked by the chain when a set of access nodes has changed.
+	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
-	ChainAccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey)
+	ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey)
 }
 
 type stateManager struct {
@@ -130,8 +130,8 @@ func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAO, nextAO
 	return resultCh
 }
 
-func (smT *stateManager) ChainAccessNodesUpdated(accessNodePubKeys []*cryptolib.PublicKey) {
-	smT.nodePubKeysPipe.In() <- accessNodePubKeys
+func (smT *stateManager) ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey) {
+	smT.nodePubKeysPipe.In() <- serverNodePubKeys
 }
 
 // -------------------------------------

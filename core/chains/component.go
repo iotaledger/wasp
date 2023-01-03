@@ -66,7 +66,8 @@ func provide(c *dig.Container) error {
 
 		NodeConnection              chain.NodeConnection
 		ProcessorsConfig            *processors.Config
-		NetworkProvider             peering.NetworkProvider `name:"networkProvider"`
+		NetworkProvider             peering.NetworkProvider       `name:"networkProvider"`
+		TrustedNetworkManager       peering.TrustedNetworkManager `name:"trustedNetworkManager"`
 		ChainStateDatabaseManager   *database.ChainStateDatabaseManager
 		ChainRecordRegistryProvider registry.ChainRecordRegistryProvider
 		DKShareRegistryProvider     registry.DKShareRegistryProvider
@@ -92,6 +93,7 @@ func provide(c *dig.Container) error {
 				ParamsChains.BroadcastInterval,
 				ParamsChains.PullMissingRequestsFromCommittee,
 				deps.NetworkProvider,
+				deps.TrustedNetworkManager,
 				deps.ChainStateDatabaseManager.ChainStateKVStore,
 				ParamsRawBlocks.Enabled,
 				ParamsRawBlocks.Directory,
@@ -116,6 +118,7 @@ func run() error {
 		}
 
 		<-ctx.Done()
+		deps.Chains.Close()
 	}, daemon.PriorityChains)
 	if err != nil {
 		CoreComponent.LogError(err)

@@ -60,6 +60,10 @@ type TrustedNetworkManager interface {
 	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*TrustedPeer, error)
 	TrustedPeers() ([]*TrustedPeer, error)
+	// The following has to register a callback receiving updates to a set of trusted peers.
+	// Upon subscription the initial set of peers has to be passed without waiting for updates.
+	// The function returns a cancel func.The context is used to cancel the subscription.
+	TrustedPeersListener(callback func([]*TrustedPeer)) context.CancelFunc
 }
 
 // GroupProvider stands for a subset of a peer-to-peer network

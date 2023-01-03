@@ -74,6 +74,11 @@ func (*MockChain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
+// ConfigUpdated implements chain.Chain
+func (*MockChain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
 // GetConsensusPipeMetrics implements chain.Chain
 func (*MockChain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("unimplemented")

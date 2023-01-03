@@ -59,7 +59,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	//
 	// Setup the committee for all nodes.
 	for _, nid := range nodeIDs {
-		tc.WithInput(nid, distSync.NewInputAccessNodes(cmtNodes, cmtNodes))
+		tc.WithInput(nid, distSync.NewInputServerNodes(cmtNodes, cmtNodes))
 	}
 	//
 	// Send a request to a single node.

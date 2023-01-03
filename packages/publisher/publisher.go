@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -48,6 +49,18 @@ func NewPublisher(log *logger.Logger) *Publisher {
 // NOTE: Do not block the caller!
 func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block) {
 	p.blockAppliedPipe.In() <- &publisherBlockApplied{chainID: chainID, block: block}
+}
+
+// Implements the chain.ChainListener interface.
+// NOTE: Do not block the caller!
+func (p *Publisher) AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
+	// We don't need this event.
+}
+
+// Implements the chain.ChainListener interface.
+// NOTE: Do not block the caller!
+func (p *Publisher) ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey) {
+	// We don't need this event.
 }
 
 // This is called by the component to run this.

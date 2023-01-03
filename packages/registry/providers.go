@@ -4,6 +4,8 @@
 package registry
 
 import (
+	"context"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -38,4 +40,5 @@ type TrustedPeersRegistryProvider interface {
 	TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error)
 	DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error)
 	TrustedPeers() ([]*peering.TrustedPeer, error)
+	TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc
 }

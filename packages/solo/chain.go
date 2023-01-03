@@ -625,6 +625,11 @@ func (*Chain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 
+// ConfigUpdated implements chain.Chain
+func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
 // GetConsensusPipeMetrics implements chain.Chain
 func (*Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
 	panic("unimplemented")

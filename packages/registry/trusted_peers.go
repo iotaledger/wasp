@@ -4,10 +4,12 @@
 package registry
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/generics/onchangemap"
 	"github.com/iotaledger/hive.go/core/ioutils"
@@ -21,7 +23,8 @@ type jsonTrustedPeers struct {
 }
 
 type TrustedPeersRegistryImpl struct {
-	onChangeMap *onchangemap.OnChangeMap[string, *peering.ComparablePubKey, *peering.TrustedPeer]
+	onChangeMap  *onchangemap.OnChangeMap[string, *peering.ComparablePubKey, *peering.TrustedPeer]
+	changeEvents *event.Event[[]*peering.TrustedPeer]
 
 	filePath string
 }
@@ -31,11 +34,12 @@ var _ TrustedPeersRegistryProvider = &TrustedPeersRegistryImpl{}
 // NewTrustedPeersRegistryImpl creates new instance of the trusted peers registry implementation.
 func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, error) {
 	registry := &TrustedPeersRegistryImpl{
-		filePath: filePath,
+		filePath:     filePath,
+		changeEvents: event.New[[]*peering.TrustedPeer](),
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
-		onchangemap.WithChangedCallback[string, *peering.ComparablePubKey](registry.writeTrustedPeersJSON),
+		onchangemap.WithChangedCallback[string, *peering.ComparablePubKey](registry.trustedPeersUpdated),
 	)
 
 	// load TrustedPeers on startup
@@ -66,6 +70,11 @@ func (p *TrustedPeersRegistryImpl) loadTrustedPeersJSON() error {
 	}
 
 	return nil
+}
+
+func (p *TrustedPeersRegistryImpl) trustedPeersUpdated(trustedPeers []*peering.TrustedPeer) error {
+	p.changeEvents.Trigger(trustedPeers)
+	return p.writeTrustedPeersJSON(trustedPeers)
 }
 
 func (p *TrustedPeersRegistryImpl) writeTrustedPeersJSON(trustedPeers []*peering.TrustedPeer) error {
@@ -124,4 +133,15 @@ func (p *TrustedPeersRegistryImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*p
 
 func (p *TrustedPeersRegistryImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return lo.Values(p.onChangeMap.All()), nil
+}
+
+func (p *TrustedPeersRegistryImpl) mustTrustedPeers() []*peering.TrustedPeer {
+	return lo.Values(p.onChangeMap.All())
+}
+
+func (p *TrustedPeersRegistryImpl) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
+	callback(p.mustTrustedPeers())
+	closure := event.NewClosure(callback)
+	p.changeEvents.Attach(closure)
+	return func() { p.changeEvents.Detach(closure) }
 }
