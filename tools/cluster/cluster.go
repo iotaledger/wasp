@@ -353,7 +353,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
-	return clu.waspCmds[i].cmd != nil
+	return clu.waspCmds[i] != nil && clu.waspCmds[i].cmd != nil
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
