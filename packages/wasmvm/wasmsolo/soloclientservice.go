@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -56,7 +57,8 @@ func (s *SoloClientService) CallViewByHname(chainID wasmtypes.ScChainID, hContra
 }
 
 func (s *SoloClientService) Event(msg string) {
-	msg = "vmmsg " + s.ctx.CurrentChainID().String() + " 0 " + msg
+	// contract tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk | vm (contract): 89703a45: testwasmlib.test|1671671237|tst1pqqf4qxh2w9x7rz2z4qqcvd0y8n22axsx82gqzmncvtsjqzwmhnjs438rhk|Lala
+	msg = "contract " + s.ctx.CurrentChainID().String() + " | vm (contract): " + isc.Hn(s.ctx.scName).String() + ": " + msg
 	s.msg <- strings.Split(msg, " ")
 }
 

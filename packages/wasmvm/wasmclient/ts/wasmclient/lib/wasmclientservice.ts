@@ -3,20 +3,30 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
+import {Socket} from "nanomsg";
+
+const nano = require('nanomsg');
 
 export interface IClientService {
     callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error];
 
     postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error];
 
-    subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error;
+    subscribeEvents(who: any, callback: (msg: string[]) => void): isc.Error;
+
+    unsubscribeEvents(who: any): void;
 
     waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): isc.Error;
 }
 
+type ClientCallBack = (msg: string[]) => void;
+
 export class WasmClientService implements IClientService {
-    waspClient: isc.WaspClient;
-    eventPort: string;
+    private callbacks: ClientCallBack[] = [];
+    private eventPort: string;
+    private eventListener: Socket = nano.socket('sub');
+    private subscribers: any[] = [];
+    private waspClient: isc.WaspClient;
 
     public constructor(waspAPI: string, eventPort: string) {
         this.waspClient = new isc.WaspClient(waspAPI);
@@ -28,28 +38,51 @@ export class WasmClientService implements IClientService {
     }
 
     public callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error] {
-        const [res, err] = this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
-        if (err != null) {
-            return [new Uint8Array(0), err];
-        }
-        return [res, null];
+        return this.waspClient.callViewByHname(chainID, hContract, hFunction, args);
     }
 
     public postRequest(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array, allowance: wasmlib.ScAssets, keyPair: isc.KeyPair, nonce: u64): [wasmlib.ScRequestID, isc.Error] {
         const req = new isc.OffLedgerRequest(chainID, hContract, hFunction, args, nonce);
         req.withAllowance(allowance);
         const signed = req.sign(keyPair);
+        const reqID = signed.ID();
         const err = this.waspClient.postOffLedgerRequest(chainID, signed);
-        if (err != null) {
-            return [new wasmlib.ScRequestID(), err];
-        }
-        return [signed.ID(), null];
+        return [reqID, err];
     }
 
-    public subscribeEvents(msg: /* chan */ string[], done: /* chan */ bool): isc.Error {
-        //TODO
-        // return subscribe.Subscribe(this.eventPort, msg, done, false, "");
+    public subscribeEvents(who: any, callback: (msg: string[]) => void): isc.Error {
+        const self = this;
+        this.callbacks.push(callback);
+        this.subscribers.push(who);
+        if (this.subscribers.length == 1) {
+            this.eventListener.on('error', function (err: any) {
+                callback(["error", err.toString()]);
+            });
+            this.eventListener.on('data', function (buf: any) {
+                const txt = buf.toString();
+                const msg = txt.split(' ');
+                if (msg[0] == 'contract') {
+                    for (let i = 0; i < self.callbacks.length; i++) {
+                        self.callbacks[i](msg);
+                    }
+                }
+            });
+            this.eventListener.connect("tcp://" + this.eventPort);
+        }
         return null;
+    }
+
+    public unsubscribeEvents(who: any): void {
+        for (let i = 0; i < this.subscribers.length; i++) {
+            if (this.subscribers[i] === who) {
+                this.subscribers.splice(i, 1);
+                this.callbacks.splice(i, 1);
+                if (this.subscribers.length == 0) {
+                    this.eventListener.close();
+                }
+                return;
+            }
+        }
     }
 
     public waitUntilRequestProcessed(chainID: wasmlib.ScChainID, reqID: wasmlib.ScRequestID, timeout: u32): isc.Error {

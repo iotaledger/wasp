@@ -33,12 +33,14 @@ func activateCmd() *cobra.Command {
 				}
 				if r != nil && r.Active {
 					continue
-				} else {
+				}
+				if r == nil {
 					log.Check(
 						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{})),
 					)
+				} else {
+					log.Check(client.WaspClient.ActivateChain(chainID))
 				}
-				log.Check(client.WaspClient.ActivateChain(chainID))
 			}
 		},
 	}

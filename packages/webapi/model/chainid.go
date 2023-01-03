@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -23,8 +24,12 @@ func (ch *ChainIDBech32) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	_, err := isc.ChainIDFromString(s)
+	if err != nil {
+		*ch = ChainIDBech32("")
+		return fmt.Errorf("input: %s, %w", s, err)
+	}
 	*ch = ChainIDBech32(s)
-	return err
+	return nil
 }
 
 func (ch ChainIDBech32) ChainID() isc.ChainID {

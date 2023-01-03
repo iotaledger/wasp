@@ -87,6 +87,12 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	if chainRecord == nil {
 		return httperrors.NotFound("")
 	}
+	if !chainRecord.Active {
+		return c.JSON(http.StatusOK, model.ChainInfo{
+			ChainID: model.ChainIDBech32(chainID.String()),
+			Active:  false,
+		})
+	}
 	chain := w.chains().Get(chainID)
 	committeeInfo := chain.GetCommitteeInfo()
 	var dkShare tcrypto.DKShare
@@ -130,10 +136,13 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	res := model.ChainInfo{
 		ChainID:        model.ChainIDBech32(chainID.String()),
 		Active:         chainRecord.Active,
-		StateAddress:   model.NewAddress(committeeInfo.Address),
 		CommitteeNodes: cmtNodes,
 		AccessNodes:    acnNodes,
 		CandidateNodes: cndNodes,
+	}
+	if committeeInfo.Address != nil {
+		stateAddr := model.NewAddress(committeeInfo.Address)
+		res.StateAddress = &stateAddr
 	}
 
 	return c.JSON(http.StatusOK, res)

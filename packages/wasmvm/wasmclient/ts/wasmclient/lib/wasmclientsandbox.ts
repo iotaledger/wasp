@@ -9,9 +9,6 @@ import { IClientService } from './';
 export class WasmClientSandbox implements wasmlib.ScHost {
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
-    eventDone: bool = false;
-    eventHandlers: wasmlib.IEventHandlers[] = [];
-    eventReceived: bool = false;
     hrp: string = "";
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
@@ -30,6 +27,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return this;
         }
         this.hrp = hrp;
+        wasmlib.connectHost(this);
         this.chainID = wasmlib.chainIDFromString(chain);
     }
 
@@ -42,6 +40,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
         switch (funcNr) {
             case wasmlib.FnCall:
                 return this.fnCall(args);
+            case wasmlib.FnChainID:
+                return this.chainID.toBytes();
             case wasmlib.FnPost:
                 return this.fnPost(args);
             case wasmlib.FnUtilsBech32Decode:
@@ -77,15 +77,12 @@ export class WasmClientSandbox implements wasmlib.ScHost {
 
     public fnCall(args: Uint8Array): Uint8Array {
         const req = wasmlib.CallRequest.fromBytes(args);
-        if (req.contract != this.scHname) {
+        if (!req.contract.equals(this.scHname)) {
             this.Err = 'unknown contract: ' + req.contract.toString();
             return new Uint8Array(0);
         }
         const [res, err] = this.svcClient.callViewByHname(this.chainID, req.contract, req.function, req.params);
         this.Err = err;
-        if (this.Err != null) {
-            return new Uint8Array(0);
-        }
         return res;
     }
 

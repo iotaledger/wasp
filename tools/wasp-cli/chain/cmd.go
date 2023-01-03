@@ -28,7 +28,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(deployContractCmd)
 	chainCmd.AddCommand(listAccountsCmd)
 	chainCmd.AddCommand(balanceCmd)
-	chainCmd.AddCommand(depositCmd)
+	chainCmd.AddCommand(depositCmd())
 	chainCmd.AddCommand(listBlobsCmd)
 	chainCmd.AddCommand(storeBlobCmd)
 	chainCmd.AddCommand(showBlobCmd)

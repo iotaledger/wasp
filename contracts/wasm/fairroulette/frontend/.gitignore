@@ -5,3 +5,5 @@
 config.dev.js
 
 .vercel
+
+src/***/*.js
