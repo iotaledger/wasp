@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub use crate::*;
+pub use codec::*;
 pub use reqwest::*;
 pub use std::time::*;
 pub use wasmlib::*;
@@ -28,7 +29,7 @@ impl WaspClient {
         function_hname: &ScHname,
         args: &ScDict,
         optimistic_read_timeout: Option<Duration>,
-    ) -> errors::Result<()> {
+    ) -> errors::Result<Vec<u8>> {
         let deadline = match optimistic_read_timeout {
             Some(duration) => duration,
             None => DEFAULT_OPTIMISTIC_READ_TIMEOUT,
@@ -45,9 +46,34 @@ impl WaspClient {
             .timeout(deadline)
             .build()
             .unwrap();
-        let _ = client.post(url).body(args.to_bytes()).send();
+        let res = client.post(url).body(args.to_bytes()).send();
 
-        Ok(())
+        match res {
+            Ok(v) => match v.status() {
+                reqwest::StatusCode::OK => {
+                    match v.json::<JsonResponse>() {
+                        Ok(json_obj) => {
+                            return Ok(codec::json_decode(json_obj));
+                        }
+                        Err(e) => {
+                            return Err(format!("parse post response failed: {}", e.to_string()));
+                        }
+                    };
+                }
+                failed_status_code => {
+                    let status_code = failed_status_code.as_u16();
+                    match v.text() {
+                        Ok(err_msg) => {
+                            return Err(format!("{status_code}: {err_msg}"));
+                        }
+                        Err(e) => return Err(e.to_string()),
+                    }
+                }
+            },
+            Err(e) => {
+                return Err(format!("post request failed: {}", e.to_string()));
+            }
+        }
     }
     pub fn post_offledger_request(
         &self,
@@ -56,8 +82,26 @@ impl WaspClient {
     ) -> errors::Result<()> {
         let url = format!("{}/chain/{}/request", self.base_url, chain_id.to_string());
         let client = reqwest::blocking::Client::new();
-        let _ = client.post(url).body(req.to_bytes()).send();
-        Ok(())
+        let res = client.post(url).body(req.to_bytes()).send();
+        match res {
+            Ok(v) => match v.status() {
+                reqwest::StatusCode::OK => {
+                    return Ok(());
+                }
+                failed_status_code => {
+                    let status_code = failed_status_code.as_u16();
+                    match v.text() {
+                        Ok(err_msg) => {
+                            return Err(format!("{status_code}: {err_msg}"));
+                        }
+                        Err(e) => return Err(e.to_string()),
+                    }
+                }
+            },
+            Err(e) => {
+                return Err(format!("request failed: {}", e.to_string()));
+            }
+        }
     }
     pub fn wait_until_request_processed(
         &self,
@@ -75,8 +119,26 @@ impl WaspClient {
             .timeout(timeout)
             .build()
             .unwrap();
-        let _ = client.get(url).send();
-        Ok(())
+        let res = client.get(url).send();
+        match res {
+            Ok(v) => match v.status() {
+                reqwest::StatusCode::OK => {
+                    return Ok(());
+                }
+                failed_status_code => {
+                    let status_code = failed_status_code.as_u16();
+                    match v.text() {
+                        Ok(err_msg) => {
+                            return Err(format!("{status_code}: {err_msg}"));
+                        }
+                        Err(e) => return Err(e.to_string()),
+                    }
+                }
+            },
+            Err(e) => {
+                return Err(format!("request failed: {}", e.to_string()));
+            }
+        }
     }
 }
 
