@@ -18,14 +18,17 @@ const ISC_EVENT_KIND_ERROR: &str = "error";
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
+    pub error: Arc<RwLock<errors::Result<()>>>,
+    event_done: Arc<RwLock<bool>>, // Set `done` to true to close the ongoing `subscribe()`
     pub event_handlers: Vec<Box<dyn IEventHandlers>>,
     pub event_received: Arc<RwLock<bool>>,
+    pub hrp: String,
     pub key_pair: Option<keypair::KeyPair>,
+    pub nonce: Arc<RwLock<u64>>,
     pub req_id: ScRequestID,
     pub sc_name: String,
     pub sc_hname: ScHname,
     pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
-    pub done: Arc<RwLock<bool>>,       // Send true, or drop() to close the ongoing `subscribe()`
 }
 
 impl WasmClientContext {
@@ -34,16 +37,28 @@ impl WasmClientContext {
         chain_id: &wasmlib::ScChainID,
         sc_name: &str,
     ) -> WasmClientContext {
+        let (hrp, _data, _v) = match bech32::decode(sc_name) {
+            Ok(vals) => vals,
+            Err(e) => {
+                let ctx = WasmClientContext::default();
+                ctx.err("WasmClientContext init err: ", &e.to_string());
+                return ctx;
+            }
+        };
+
         WasmClientContext {
-            svc_client: svc_client.clone(),
-            sc_name: sc_name.to_string(),
-            sc_hname: ScHname::new(sc_name),
             chain_id: chain_id.clone(),
+            error: Arc::new(RwLock::new(Ok(()))),
+            event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
             event_received: Arc::new(RwLock::new(false)),
+            hrp: hrp.to_string(),
             key_pair: None,
+            nonce: Arc::new(RwLock::new(0)),
             req_id: request_id_from_bytes(&[]),
-            done: Arc::new(RwLock::new(false)),
+            sc_name: sc_name.to_string(),
+            sc_hname: ScHname::new(sc_name),
+            svc_client: svc_client.clone(),
         }
     }
 
@@ -95,22 +110,26 @@ impl WasmClientContext {
         }
     }
 
-    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) -> errors::Result<()> {
+    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) {
         let r_id;
         match req_id {
             Some(id) => r_id = id,
             None => r_id = &self.req_id,
         }
-        return self.svc_client.wait_until_request_processed(
+        let res = self.svc_client.wait_until_request_processed(
             &self.chain_id,
             &r_id,
             std::time::Duration::new(60, 0),
         );
+        match res {
+            Ok(_) => (),
+            Err(e) => self.err("WasmClientContext init err: ", &e),
+        };
     }
 
     pub fn start_event_handlers(&'static self) -> errors::Result<()> {
         let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
-        let done = Arc::clone(&self.done);
+        let done = Arc::clone(&self.event_done);
         self.svc_client.subscribe_events(tx, done).unwrap();
 
         self.process_event(rx).unwrap();
@@ -119,7 +138,7 @@ impl WasmClientContext {
     }
 
     pub fn stop_event_handlers(&self) {
-        let mut done = self.done.write().unwrap();
+        let mut done = self.event_done.write().unwrap();
         *done = true;
     }
 
@@ -163,7 +182,9 @@ impl WasmClientContext {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        return Err(String::from("event wait timeout"));
+        let err_msg = String::from("event wait timeout");
+        self.err(&err_msg, "");
+        return Err(err_msg);
     }
 
     fn unescape(&self, param: &str) -> String {
@@ -181,20 +202,28 @@ impl WasmClientContext {
             _ => panic!("invalid event encoding"),
         }
     }
+    pub fn err(&self, current_layer_msg: &str, e: &str) {
+        let mut err = self.error.write().unwrap();
+        *err = Err(current_layer_msg.to_string() + e);
+        drop(err);
+    }
 }
 
 impl Default for WasmClientContext {
     fn default() -> WasmClientContext {
         WasmClientContext {
-            svc_client: WasmClientService::default(),
-            sc_name: String::new(),
-            sc_hname: ScHname(0),
             chain_id: chain_id_from_bytes(&[]),
+            error: Arc::new(RwLock::new(Ok(()))),
+            event_done: Arc::default(),
             event_handlers: Vec::new(),
             event_received: Arc::default(),
+            hrp: String::from(""),
             key_pair: None,
+            nonce: Arc::new(RwLock::new(0)),
             req_id: request_id_from_bytes(&[]),
-            done: Arc::default(),
+            sc_name: String::new(),
+            sc_hname: ScHname(0),
+            svc_client: WasmClientService::default(),
         }
     }
 }
