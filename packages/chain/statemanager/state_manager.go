@@ -260,7 +260,12 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 			MsgType:     constMsgTypeStm,
 			MsgData:     msgData,
 		}
-		smT.net.SendMsgByPubKey(smT.nodeIDToPubKey[msg.Recipient()], pm)
+		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
+		if !ok {
+			smT.log.Debugf("Dropping outgoing message, because NodeID=%v it is not in the NodeList.", msg.Recipient())
+			return
+		}
+		smT.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }
 
