@@ -73,8 +73,7 @@ func New(
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
-	smLog := log.Named("sm")
-	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), smLog)
+	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), log)
 	var timers smGPA.StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -82,13 +81,13 @@ func New(
 		timers = smGPA.NewStateManagerTimers()
 	}
 
-	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, smLog, timers)
+	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, log, timers)
 	if err != nil {
-		smLog.Errorf("Failed to create state manager GPA: %v", err)
+		log.Errorf("Failed to create state manager GPA: %v", err)
 		return nil, err
 	}
 	result := &stateManager{
-		log:             smLog,
+		log:             log,
 		chainID:         chainID,
 		stateManagerGPA: stateManagerGPA,
 		nodeRandomiser:  nr,

@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -80,15 +78,6 @@ func TestWaspCLIExternalRotation(t *testing.T) {
 			// TODO change to "wasp-cli peer trust <pubkey> <netID>"
 			w2.Cluster.AddTrustedNode(peerInfo, []int{0})
 			cluster1PubKeys[nodeIndex], err = cryptolib.NewPublicKeyFromString(peerInfo.PubKey)
-			require.NoError(t, err)
-		}
-
-		// TODO the following won't be needed once we have automated the process of linking peers to a chain
-		{
-			cID, err := isc.ChainIDFromString(chainID)
-			require.NoError(t, err)
-			record := registry.NewChainRecord(cID, false, cluster1PubKeys)
-			err = w2.Cluster.WaspClient(0).PutChainRecord(record)
 			require.NoError(t, err)
 		}
 

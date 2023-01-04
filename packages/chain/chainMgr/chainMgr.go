@@ -309,10 +309,12 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	})
 	//
 	// >     Update AccessNodes.
-	newAccessNodes := governance.NewStateAccess(input.nextState).GetAccessNodes()
-	if !util.Same(newAccessNodes, cmi.activeAccessNodes) {
-		cmi.activeAccessNodesCB(newAccessNodes)
-		cmi.activeAccessNodes = newAccessNodes
+	if input.nextState != nil { // It is nil in the case of self-governed rotation.
+		newAccessNodes := governance.NewStateAccess(input.nextState).GetAccessNodes()
+		if !util.Same(newAccessNodes, cmi.activeAccessNodes) {
+			cmi.activeAccessNodesCB(newAccessNodes)
+			cmi.activeAccessNodes = newAccessNodes
+		}
 	}
 	//
 	return msgs
@@ -400,8 +402,13 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 	}
 	committeeAddress := output.GetBaseAliasOutput().GetStateAddress()
 	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(committeeAddress)
+	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
+		// Rotated to other nodes, so we don't need to start the next consensus.
+		cmi.needConsensus = nil
+		return
+	}
 	if err != nil {
-		panic(xerrors.Errorf("cannot load DKShare for %v", committeeAddress))
+		panic(xerrors.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", committeeAddress, err))
 	}
 	cmi.needConsensus = &NeedConsensus{
 		CommitteeAddr:   cli.committeeAddr,
@@ -468,7 +475,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		return nil, nil, ErrNotInCommittee
 	}
 	if err != nil {
-		return nil, nil, xerrors.Errorf("cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
+		return nil, nil, xerrors.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
 	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.log)

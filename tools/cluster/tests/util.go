@@ -297,6 +297,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *
 		Chain: chain,
 	}
 	tx := e.deployNativeIncCounterSC(0)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - deployNativeIncCounterSC")
 
 	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 

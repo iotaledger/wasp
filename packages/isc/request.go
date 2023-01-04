@@ -1,6 +1,7 @@
 package isc
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
@@ -81,6 +82,18 @@ func TakeRequestIDs(reqs ...Request) []RequestID {
 		ret[i] = reqs[i].ID()
 	}
 	return ret
+}
+
+func MustLogRequestsInTransaction(tx *iotago.Transaction, log func(msg string, args ...interface{}), prefix string) {
+	txReqs, err := RequestsInTransaction(tx)
+	if err != nil {
+		panic(fmt.Errorf("cannot extract requests from TX: %w", err))
+	}
+	for chainID, chainReqs := range txReqs {
+		for i, req := range chainReqs {
+			log("%v, ChainID=%v, Req[%v]=%v", prefix, chainID.ShortString(), i, req.String())
+		}
+	}
 }
 
 // RequestsInTransaction parses the transaction and extracts those outputs which are interpreted as a request to a chain

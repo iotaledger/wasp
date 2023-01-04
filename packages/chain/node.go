@@ -301,7 +301,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
-		log.Named("SM"),
+		cni.log.Named("SM"),
 	)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
@@ -311,7 +311,7 @@ func New(
 		chainID,
 		nodeIdentity,
 		net,
-		log.Named("MP"),
+		cni.log.Named("MP"),
 		chainMetrics,
 		cni.listener,
 	)
@@ -675,7 +675,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
-				cni.log.Named(fmt.Sprintf("C%v", logIndexCopy)),
+				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
 			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
 				cancelFunc: consGrCancel,

@@ -273,6 +273,7 @@ func (c *consImpl) AsGPA() gpa.GPA {
 func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
 	case *inputProposal:
+		c.log.Debugf("received %v", input.String())
 		return gpa.NoMessages().
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
@@ -382,6 +383,11 @@ func (c *consImpl) uponSMDecidedStateReceived(chainState state.State) gpa.OutMes
 }
 
 func (c *consImpl) uponSMSaveProducedBlockInputsReady(producedBlock state.StateDraft) gpa.OutMessages {
+	if producedBlock == nil {
+		// Don't have a block to save in the case of self-governed rotation.
+		// So mark it as saved immediately.
+		return c.subSM.BlockSaved()
+	}
 	c.output.NeedStateMgrSaveBlock = producedBlock
 	return nil
 }
@@ -528,23 +534,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 		c.term.haveOutputProduced()
 		return nil
 	}
-	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
-	if err != nil {
-		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
-	}
-	return gpa.NoMessages().
-		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.VMResultReceived(vmResult)).
-		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
-}
 
-////////////////////////////////////////////////////////////////////////////////
-// TX
-
-// Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.OutMessages {
-	var resultTxEssence *iotago.TransactionEssence
-	var resultState state.StateDraft
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
 		essence, err := rotate.MakeRotateStateControllerTransaction(
@@ -560,15 +550,27 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 			c.term.haveOutputProduced()
 			return nil
 		}
-		resultTxEssence = essence
-		resultState = nil
-	} else {
-		if vmResult.ResultTransactionEssence == nil {
-			c.log.Warnf("cannot create state TX, failed to get TX essence: nil")
-		}
-		resultTxEssence = vmResult.ResultTransactionEssence
-		resultState = vmResult.StateDraft
+		vmResult.ResultTransactionEssence = essence
+		vmResult.StateDraft = nil
 	}
+
+	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
+	if err != nil {
+		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
+	}
+	return gpa.NoMessages().
+		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
+		AddAll(c.subTX.VMResultReceived(vmResult)).
+		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// TX
+
+// Everything is ready for the output TX, produce it.
+func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.OutMessages {
+	resultTxEssence := vmResult.ResultTransactionEssence
+	resultState := vmResult.StateDraft
 	publicKey := c.dkShare.GetSharedPublic()
 	var signatureArray [ed25519.SignatureSize]byte
 	copy(signatureArray[:], signature)

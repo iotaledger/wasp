@@ -35,6 +35,7 @@ func TestBasicRotation(t *testing.T) {
 
 	// check the chain works
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
@@ -51,6 +52,7 @@ func TestBasicRotation(t *testing.T) {
 			},
 		},
 	)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
@@ -63,8 +65,9 @@ func TestBasicRotation(t *testing.T) {
 			},
 		},
 	)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
 	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second) // TODO: XXX
 	require.NoError(t, err)
 
 	stateController, err := env.callGetStateController(0)
@@ -73,6 +76,7 @@ func TestBasicRotation(t *testing.T) {
 
 	// check the chain still works
 	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)

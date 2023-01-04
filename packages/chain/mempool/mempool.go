@@ -460,9 +460,11 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
 	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
+		mpi.log.Debugf("handleConsensusProposals, have to wait for chain head to become %v", recv.aliasOutput)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
+	mpi.log.Debugf("handleConsensusProposals, already have the chain head %v", recv.aliasOutput)
 	mpi.handleConsensusProposalsForChainHead(recv)
 }
 
@@ -617,6 +619,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
+	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
 		// TODO: For IOTA 2.0: Maybe re-read the state from L1 (when reorgs will become possible).
@@ -650,7 +653,9 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Cleanup processed requests, if that's the first time we received the state.
 	if mpi.chainHeadState == nil {
+		mpi.log.Debugf("Cleanup processed requests based on the received state...")
 		mpi.tryCleanupProcessed(req.st)
+		mpi.log.Debugf("Cleanup processed requests based on the received state... Done")
 	}
 	//
 	// Record the head state.
@@ -738,9 +743,9 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 }
 
 func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
-	mpi.onLedgerPool.Filter(unprocessedPredicate[isc.OnLedgerRequest](chainState))
-	mpi.offLedgerPool.Filter(unprocessedPredicate[isc.OffLedgerRequest](chainState))
-	mpi.timePool.Filter(unprocessedPredicate[isc.Request](chainState))
+	mpi.onLedgerPool.Filter(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
+	mpi.offLedgerPool.Filter(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
+	mpi.timePool.Filter(unprocessedPredicate[isc.Request](chainState, mpi.log))
 }
 
 func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
@@ -777,10 +782,16 @@ func (mpi *mempoolImpl) pubKeyAsNodeIDMap(nodePubKey *cryptolib.PublicKey, _ int
 }
 
 // Have to have it as a separate function to be able to use type params.
-func unprocessedPredicate[V isc.Request](chainState state.State) func(V, time.Time) bool {
+func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Logger) func(V, time.Time) bool {
 	return func(request V, ts time.Time) bool {
 		requestID := request.ID()
-		if processed, err := blocklog.IsRequestProcessed(chainState, &requestID); err != nil && processed {
+		processed, err := blocklog.IsRequestProcessed(chainState, &requestID)
+		if err != nil {
+			log.Debugf("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
+			return false
+		}
+		if processed {
+			log.Debugf("Request already processed %v at state.TrieRoot=%v", requestID, chainState.TrieRoot())
 			return false
 		}
 		return true
