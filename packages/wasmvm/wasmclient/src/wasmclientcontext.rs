@@ -25,7 +25,7 @@ pub struct WasmClientContext {
     pub hrp: String,
     pub key_pair: Option<keypair::KeyPair>,
     pub nonce: Arc<RwLock<u64>>,
-    pub req_id: ScRequestID,
+    pub req_id: Arc<RwLock<ScRequestID>>,
     pub sc_name: String,
     pub sc_hname: ScHname,
     pub svc_client: WasmClientService, //TODO Maybe  use 'dyn IClientService' for 'svc_client' instead of a struct
@@ -55,7 +55,7 @@ impl WasmClientContext {
             hrp: hrp.to_string(),
             key_pair: None,
             nonce: Arc::new(RwLock::new(0)),
-            req_id: request_id_from_bytes(&[]),
+            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
             sc_hname: ScHname::new(sc_name),
             svc_client: svc_client.clone(),
@@ -112,19 +112,23 @@ impl WasmClientContext {
 
     pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) {
         let r_id;
+        let binding;
         match req_id {
             Some(id) => r_id = id,
-            None => r_id = &self.req_id,
-        }
+            None => {
+                binding = self.req_id.read().unwrap().to_owned();
+                r_id = &binding;
+            }
+        };
         let res = self.svc_client.wait_until_request_processed(
             &self.chain_id,
             &r_id,
             std::time::Duration::new(60, 0),
         );
-        match res {
-            Ok(_) => (),
-            Err(e) => self.err("WasmClientContext init err: ", &e),
-        };
+
+        if let Err(e) = res {
+            self.err("WasmClientContext init err: ", &e)
+        }
     }
 
     pub fn start_event_handlers(&'static self) -> errors::Result<()> {
@@ -220,7 +224,7 @@ impl Default for WasmClientContext {
             hrp: String::from(""),
             key_pair: None,
             nonce: Arc::new(RwLock::new(0)),
-            req_id: request_id_from_bytes(&[]),
+            req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: String::new(),
             sc_hname: ScHname(0),
             svc_client: WasmClientService::default(),
@@ -253,7 +257,7 @@ mod tests {
         assert!(ctx.chain_id == chain_id);
         assert!(ctx.event_handlers.len() == 0);
         // assert!(ctx.key_pair == None);
-        assert!(ctx.req_id == wasmlib::request_id_from_bytes(&[]));
+        assert!(*ctx.req_id.read().unwrap() == wasmlib::request_id_from_bytes(&[]));
     }
 
     #[test]
