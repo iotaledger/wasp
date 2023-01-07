@@ -8,7 +8,7 @@ var funcsTs = map[string]string{
 	"funcs.ts": `
 $#emit importWasmLib
 $#emit importWasmTypes
-$#emit importSc
+import * as sc from "../$package/index";
 $#each func funcSignature
 `,
 	// *******************************

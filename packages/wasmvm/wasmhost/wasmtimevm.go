@@ -191,7 +191,7 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(vm.store, index)
-		vm.store.GC()
+		// vm.store.GC()
 		return err
 	})
 }

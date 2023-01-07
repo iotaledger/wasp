@@ -317,18 +317,18 @@ func (ctx *SoloContext) EnqueueRequest() {
 
 func (ctx *SoloContext) existFile(lang string) string {
 	fileName := ctx.scName + "_" + lang + ".wasm"
-
-	// first check for new file in build path
-	pathName := "../" + lang + "/pkg/" + fileName
+	pathName := "../../" + ctx.scName + "/" + lang + "/pkg/" + fileName
 	if lang == "bg" {
-		pathName = "../rs/" + ctx.scName + "wasm/pkg/" + ctx.scName + "wasm_bg.wasm"
+		pathName = "../../" + ctx.scName + "/rs/" + ctx.scName + "wasm/pkg/" + ctx.scName + "wasm_bg.wasm"
 	}
+
+	// first check for new file in common build path
 	exists, _ := util.ExistsFilePath(pathName)
 	if exists {
 		return pathName
 	}
 
-	// check for file in current folder
+	// then check for file in current folder
 	exists, _ = util.ExistsFilePath(fileName)
 	if exists {
 		return fileName
