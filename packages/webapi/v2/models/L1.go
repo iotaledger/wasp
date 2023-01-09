@@ -115,6 +115,10 @@ type Transaction struct {
 	TransactionID string `json:"txId"`
 }
 
+type OutputID struct {
+	OutputID string `json:"outputId"`
+}
+
 func TransactionFromIotaGoTransaction(transaction *iotago.Transaction) *Transaction {
 	if transaction == nil {
 		return nil
@@ -134,5 +138,11 @@ func TransactionFromIotaGoTransactionID(txID *iotago.TransactionID) *Transaction
 
 	return &Transaction{
 		TransactionID: txID.ToHex(),
+	}
+}
+
+func OutputIDFromIotaGoOutputID(outputID iotago.OutputID) *OutputID {
+	return &OutputID{
+		OutputID: outputID.ToHex(),
 	}
 }
