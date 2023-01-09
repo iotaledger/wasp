@@ -119,7 +119,7 @@ func provide(c *dig.Container) error {
 
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins:     []string{"*"},
-			AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+			AllowHeaders:     []string{"*"},
 			AllowMethods:     []string{"*"},
 			AllowCredentials: true,
 		}))
