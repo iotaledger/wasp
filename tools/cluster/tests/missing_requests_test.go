@@ -52,12 +52,6 @@ func TestMissingRequests(t *testing.T) {
 	err = clu.WaspClient(1).PostOffLedgerRequest(chainID, req)
 	require.NoError(t, err)
 
-	// TODO try to send to only 2 nodes
-	err = clu.WaspClient(2).PostOffLedgerRequest(chainID, req)
-	require.NoError(t, err)
-	// err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req)
-	// require.NoError(t, err)
-
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
 	req2 := isc.NewOffLedgerRequest(chainID, isc.Hn("foo"), isc.Hn("bar"), nil, 1).Sign(userWallet)

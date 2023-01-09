@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -41,7 +39,7 @@ func (c *WaspClient) WithToken(token string) *WaspClient {
 func processResponse(res *http.Response, decodeTo interface{}) error {
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return xerrors.Errorf("unable to read response body: %w", err)
+		return fmt.Errorf("unable to read response body: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -68,7 +66,7 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 		var err error
 		data, err = json.Marshal(reqObj)
 		if err != nil {
-			return xerrors.Errorf("json.Marshal: %w", err)
+			return fmt.Errorf("json.Marshal: %w", err)
 		}
 	}
 
@@ -81,7 +79,7 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 		return bytes.NewReader(data)
 	}())
 	if err != nil {
-		return xerrors.Errorf("http.NewRequest [%s %s]: %w", method, url, err)
+		return fmt.Errorf("http.NewRequest [%s %s]: %w", method, url, err)
 	}
 
 	if data != nil {
@@ -95,13 +93,13 @@ func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error 
 	// make the request
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		return xerrors.Errorf("%s %s: %w", method, url, err)
+		return fmt.Errorf("%s %s: %w", method, url, err)
 	}
 
 	// write response into response object
 	err = processResponse(res, resObj)
 	if err != nil {
-		return xerrors.Errorf("%s %s: %w", method, url, err)
+		return fmt.Errorf("%s %s: %w", method, url, err)
 	}
 	return nil
 }

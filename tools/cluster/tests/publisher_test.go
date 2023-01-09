@@ -108,7 +108,6 @@ func TestNanoPublisher(t *testing.T) {
 	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted")
 
 	// assert all clients received the correct number of messages
-	// TODO these are not testing anything....
 	for _, client := range nanoClients {
 		assertMessages(t, client.messages, numRequests)
 	}
