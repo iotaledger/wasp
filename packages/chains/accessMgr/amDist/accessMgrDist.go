@@ -35,7 +35,7 @@ type accessMgrDist struct {
 	nodes            map[gpa.NodeID]*accessMgrNode             // State for each peer.
 	chains           map[isc.ChainID]*accessMgrChain           // State for each chain.
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID     // Convert PubKeys to NodeIDs.
-	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey) // Called when a set fo servers has changed for a chain.
+	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey) // Called when a set of servers has changed for a chain.
 	dismissPeerCB    func(*cryptolib.PublicKey)                // To stop redelivery at the upper layer.
 	log              *logger.Logger
 }
