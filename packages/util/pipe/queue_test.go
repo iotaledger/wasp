@@ -969,8 +969,8 @@ func testLimitedPriorityQueueRemoveOutOfRangePanics[E IntBased](factory Factory[
 
 func testLimitedQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testQueueRemoveOutOfRangePanics(factory, makeLimitedQueueFun(800), t)
-
 }
+
 func testPriorityQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	testQueueRemoveOutOfRangePanics(factory, q, t)
