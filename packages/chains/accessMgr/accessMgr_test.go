@@ -95,14 +95,15 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	}
 	//
 	// Wait for everyone to get the server nodes.
-	for {
+	for done := false; !done; {
+		time.Sleep(100 * time.Millisecond)
+		done = true
 		for i := range nodeServers {
 			if !util.Same(nodeServers[i], peerPubKeys) {
 				t.Logf("Wait for node %v", i)
-				time.Sleep(100 * time.Millisecond)
-				continue
+				done = false
+				break
 			}
 		}
-		break
 	}
 }

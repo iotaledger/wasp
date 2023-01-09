@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
-	github.com/bytecodealliance/wasmtime-go v1.0.0
+	github.com/bytecodealliance/wasmtime-go/v3 v3.0.2
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20221222103313-daad49c58a06

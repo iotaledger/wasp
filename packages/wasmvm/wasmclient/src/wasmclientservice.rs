@@ -55,15 +55,13 @@ impl IClientService for WasmClientService {
     ) -> errors::Result<Vec<u8>> {
         let params = ScDict::from_bytes(args)?;
 
-        let _ = self.client.call_view_by_hname(
+        return self.client.call_view_by_hname(
             chain_id,
             contract_hname,
             function_hname,
             &params,
             None,
-        )?;
-
-        return Ok(Vec::new());
+        );
     }
 
     fn post_request(
