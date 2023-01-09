@@ -6,11 +6,11 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-type IntBased interface {
+type IntConvertable interface {
 	AsInt() int
 }
 
-type Factory[E IntBased] interface {
+type Factory[E IntConvertable] interface {
 	Create(int) E
 }
 
@@ -19,9 +19,9 @@ type SimpleHashable int
 type SimpleNothashable int
 
 var (
-	_ Hashable = SimpleHashable(0)
-	_ IntBased = SimpleHashable(0)
-	_ IntBased = SimpleNothashable(0)
+	_ Hashable       = SimpleHashable(0)
+	_ IntConvertable = SimpleHashable(0)
+	_ IntConvertable = SimpleNothashable(0)
 )
 
 func (sh SimpleHashable) GetHash() hashing.HashValue {
@@ -63,14 +63,14 @@ func alwaysTrueFun(index int) bool {
 	return true
 }
 
-func priorityFunMod2[E IntBased](e E) bool {
+func priorityFunMod2[E IntConvertable](e E) bool {
 	return priorityFunMod(e, 2)
 }
 
-func priorityFunMod3[E IntBased](e E) bool {
+func priorityFunMod3[E IntConvertable](e E) bool {
 	return priorityFunMod(e, 3)
 }
 
-func priorityFunMod[E IntBased](e E, mod int) bool {
+func priorityFunMod[E IntConvertable](e E, mod int) bool {
 	return e.AsInt()%mod == 0
 }

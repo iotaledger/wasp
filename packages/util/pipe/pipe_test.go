@@ -56,13 +56,13 @@ func TestLimitPriorityHashInfinitePipeWriteReadLen(t *testing.T) {
 	testLimitedPriorityPipeWriteReadLen(NewSimpleHashableFactory(), NewLimitPriorityHashInfinitePipe[SimpleHashable], t)
 }
 
-func testLimitedPriorityPipeNoLimitWriteReadLen[E IntBased](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
+func testLimitedPriorityPipeNoLimitWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
 	testPriorityPipeWriteReadLen(factory, func(priorityFun func(E) bool) Pipe[E] {
 		return makeLimitedPriorityPipeFun(priorityFun, 1200)
 	}, t)
 }
 
-func testLimitedPriorityPipeWriteReadLen[E IntBased](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
+func testLimitedPriorityPipeWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
 	limit := 800
 	p := makeLimitedPriorityPipeFun(priorityFunMod3[E], limit)
 	result := func(index int) int {
@@ -77,11 +77,11 @@ func testLimitedPriorityPipeWriteReadLen[E IntBased](factory Factory[E], makeLim
 	testPipeWriteReadLen(factory, p, 1000, limit, result, t)
 }
 
-func testLimitedPipeNoLimitWriteReadLen[E IntBased](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
+func testLimitedPipeNoLimitWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
 	testDefaultPipeWriteReadLen(factory, makeLimitedPipeFun(1200), 1000, identityFunInt, t)
 }
 
-func testLimitedPipeWriteReadLen[E IntBased](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
+func testLimitedPipeWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
 	limit := 800
 	elementsToAdd := 1000
 	indexDiff := elementsToAdd - limit
@@ -91,7 +91,7 @@ func testLimitedPipeWriteReadLen[E IntBased](factory Factory[E], makeLimitedPipe
 	testPipeWriteReadLen(factory, makeLimitedPipeFun(limit), elementsToAdd, limit, result, t)
 }
 
-func testPriorityPipeWriteReadLen[E IntBased](factory Factory[E], makePriorityPipeFun func(func(E) bool) Pipe[E], t *testing.T) {
+func testPriorityPipeWriteReadLen[E IntConvertable](factory Factory[E], makePriorityPipeFun func(func(E) bool) Pipe[E], t *testing.T) {
 	p := makePriorityPipeFun(priorityFunMod3[E])
 	result := func(index int) int {
 		if index <= 333 {
@@ -105,11 +105,11 @@ func testPriorityPipeWriteReadLen[E IntBased](factory Factory[E], makePriorityPi
 	testDefaultPipeWriteReadLen(factory, p, 1000, result, t)
 }
 
-func testDefaultPipeWriteReadLen[E IntBased](factory Factory[E], p Pipe[E], elementsToWrite int, result func(index int) int, t *testing.T) {
+func testDefaultPipeWriteReadLen[E IntConvertable](factory Factory[E], p Pipe[E], elementsToWrite int, result func(index int) int, t *testing.T) {
 	testPipeWriteReadLen(factory, p, elementsToWrite, elementsToWrite, result, t)
 }
 
-func testPipeWriteReadLen[E IntBased](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result func(index int) int, t *testing.T) {
+func testPipeWriteReadLen[E IntConvertable](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToWrite; i++ {
 		p.In() <- factory.Create(i)
 	}
@@ -176,37 +176,37 @@ func TestLimitPriorityHashInfinitePipeConcurrentWriteReadLen(t *testing.T) {
 	testLimitedPriorityPipeConcurrentWriteReadLen(NewSimpleHashableFactory(), NewLimitPriorityHashInfinitePipe[SimpleHashable], t)
 }
 
-func testLimitedPriorityPipeNoLimitConcurrentWriteReadLen[E IntBased](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
+func testLimitedPriorityPipeNoLimitConcurrentWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
 	testPriorityPipeConcurrentWriteReadLen(factory, func(priorityFun func(E) bool) Pipe[E] {
 		return makeLimitedPriorityPipeFun(priorityFun, 1200)
 	}, t)
 }
 
-func testLimitedPriorityPipeConcurrentWriteReadLen[E IntBased](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
+func testLimitedPriorityPipeConcurrentWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPriorityPipeFun func(priorityFun func(E) bool, limit int) Pipe[E], t *testing.T) {
 	limit := 800
 	ch := makeLimitedPriorityPipeFun(priorityFunMod3[E], limit)
 	testPipeConcurrentWriteReadLen(factory, ch, 1000, limit, nil, t)
 }
 
-func testLimitedPipeNoLimitConcurrentWriteReadLen[E IntBased](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
+func testLimitedPipeNoLimitConcurrentWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
 	result := identityFunInt
 	testDefaultPipeConcurrentWriteReadLen(factory, makeLimitedPipeFun(1200), 1000, &result, t)
 }
 
-func testLimitedPipeConcurrentWriteReadLen[E IntBased](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
+func testLimitedPipeConcurrentWriteReadLen[E IntConvertable](factory Factory[E], makeLimitedPipeFun func(limit int) Pipe[E], t *testing.T) {
 	testPipeConcurrentWriteReadLen(factory, makeLimitedPipeFun(800), 1000, 800, nil, t)
 }
 
-func testPriorityPipeConcurrentWriteReadLen[E IntBased](factory Factory[E], makePriorityPipeFun func(func(E) bool) Pipe[E], t *testing.T) {
+func testPriorityPipeConcurrentWriteReadLen[E IntConvertable](factory Factory[E], makePriorityPipeFun func(func(E) bool) Pipe[E], t *testing.T) {
 	ch := makePriorityPipeFun(priorityFunMod3[E])
 	testDefaultPipeConcurrentWriteReadLen(factory, ch, 1000, nil, t)
 }
 
-func testDefaultPipeConcurrentWriteReadLen[E IntBased](factory Factory[E], p Pipe[E], elementsToWrite int, result *func(index int) int, t *testing.T) {
+func testDefaultPipeConcurrentWriteReadLen[E IntConvertable](factory Factory[E], p Pipe[E], elementsToWrite int, result *func(index int) int, t *testing.T) {
 	testPipeConcurrentWriteReadLen(factory, p, elementsToWrite, elementsToWrite, result, t)
 }
 
-func testPipeConcurrentWriteReadLen[E IntBased](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result *func(index int) int, t *testing.T) {
+func testPipeConcurrentWriteReadLen[E IntConvertable](factory Factory[E], p Pipe[E], elementsToWrite, elementsToRead int, result *func(index int) int, t *testing.T) {
 	var wg sync.WaitGroup
 	written := 0
 	read := 0

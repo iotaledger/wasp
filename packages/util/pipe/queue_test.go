@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testQueueBasicAddLengthPeekRemove[E IntBased](factory Factory[E], q Queue[E], elementsToAdd int, add func(index int) int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueBasicAddLengthPeekRemove[E IntConvertable](factory Factory[E], q Queue[E], elementsToAdd int, add func(index int) int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		value := factory.Create(add(i))
 		actualAddResult := q.Add(value)
@@ -75,13 +75,13 @@ func TestLimitPriorityHashLimitedPriorityHashQueueSimple(t *testing.T) {
 	testLimitedPriorityQueueSimple(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueNoLimitSimple[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(e E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueNoLimitSimple[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(e E) bool, limit int) Queue[E], t *testing.T) {
 	testPriorityQueueSimple(factory, func(priorityFun func(e E) bool) Queue[E] {
 		return makeLimitedPriorityQueueFun(priorityFun, 15)
 	}, t)
 }
 
-func testLimitedPriorityQueueSimple[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(e E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueSimple[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(e E) bool, limit int) Queue[E], t *testing.T) {
 	resultArray := []int{9, 6, 3, 0, 4, 5, 7, 8}
 	limit := len(resultArray)
 	q := makeLimitedPriorityQueueFun(priorityFunMod3[E], limit)
@@ -91,11 +91,11 @@ func testLimitedPriorityQueueSimple[E IntBased](factory Factory[E], makeLimitedP
 	testQueueSimple(factory, q, 10, limit, result, t)
 }
 
-func testLimitedQueueNoLimitSimple[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueNoLimitSimple[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueSimple(factory, makeLimitedQueueFun(15), t)
 }
 
-func testLimitedQueueSimple[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueSimple[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	limit := 8
 	elementsToAdd := 10
 	indexDiff := elementsToAdd - limit
@@ -106,7 +106,7 @@ func testLimitedQueueSimple[E IntBased](factory Factory[E], makeLimitedQueueFun 
 	testQueueSimple(factory, q, elementsToAdd, limit, result, t)
 }
 
-func testPriorityQueueSimple[E IntBased](factory Factory[E], makePriorityQueueFun func(func(e E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueSimple[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(e E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3[E])
 	resultArray := []int{9, 6, 3, 0, 1, 2, 4, 5, 7, 8}
 	result := func(index int) int {
@@ -116,12 +116,12 @@ func testPriorityQueueSimple[E IntBased](factory Factory[E], makePriorityQueueFu
 	testQueueSimple(factory, q, elementsToAdd, elementsToAdd, result, t)
 }
 
-func testDefaultQueueSimple[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueSimple[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	elementsToAdd := 10
 	testQueueSimple(factory, q, elementsToAdd, elementsToAdd, identityFunInt, t)
 }
 
-func testQueueSimple[E IntBased](factory Factory[E], q Queue[E], elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueSimple[E IntConvertable](factory Factory[E], q Queue[E], elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	testQueueBasicAddLengthPeekRemove(factory, q, elementsToAdd, identityFunInt, alwaysTrueFun, elementsToRemove, result, t)
 }
 
@@ -233,7 +233,7 @@ func testHashQueueTwice(makeHashQueueFun func() Queue[SimpleHashable], t *testin
 	testQueueTwice(NewSimpleHashableFactory(), q, elementsToAddSingle, addResultFun, elementsToAddSingle, identityFunInt, t)
 }
 
-func testPriorityHashQueueTwice[E IntBased](factory Factory[E], makePriorityHashQueueFun func(priorityFun func(E) bool) Queue[E], t *testing.T) {
+func testPriorityHashQueueTwice[E IntConvertable](factory Factory[E], makePriorityHashQueueFun func(priorityFun func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityHashQueueFun(priorityFunMod3[E])
 	elementsToAddSingle := 50
 	addResultFun := func(index int) bool { return index < elementsToAddSingle }
@@ -249,7 +249,7 @@ func testPriorityHashQueueTwice[E IntBased](factory Factory[E], makePriorityHash
 	testQueueTwice(factory, q, elementsToAddSingle, addResultFun, elementsToAddSingle, resultFun, t)
 }
 
-func testPriorityQueueTwice[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueTwice[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3[E])
 	elementsToAddSingle := 50
 	resultFun := func(index int) int {
@@ -272,13 +272,13 @@ func testPriorityQueueTwice[E IntBased](factory Factory[E], makePriorityQueueFun
 	testQueueTwice(factory, q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
 }
 
-func testDefaultQueueTwice[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueTwice[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	elementsToAddSingle := 50
 	resultFun := func(index int) int { return index % elementsToAddSingle }
 	testQueueTwice(factory, q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
 }
 
-func testQueueTwice[E IntBased](factory Factory[E], q Queue[E], elementsToAddSingle int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueTwice[E IntConvertable](factory Factory[E], q Queue[E], elementsToAddSingle int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
 	addFun := func(index int) int {
 		return index % elementsToAddSingle
 	}
@@ -414,13 +414,13 @@ func TestLimitPriorityHashLimitedPriorityHashQueueAddRemove(t *testing.T) {
 	testLimitedPriorityQueueAddRemove(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueNoLimitAddRemove[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueNoLimitAddRemove[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	testPriorityQueueAddRemove(factory, func(priorityFun func(E) bool) Queue[E] {
 		return makeLimitedPriorityQueueFun(priorityFun, 150)
 	}, t)
 }
 
-func testLimitedPriorityQueueAddRemove[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueAddRemove[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	limit := 80
 	q := makeLimitedPriorityQueueFun(priorityFunMod3[E], limit)
 	result := func(index int) int {
@@ -432,11 +432,11 @@ func testLimitedPriorityQueueAddRemove[E IntBased](factory Factory[E], makeLimit
 	testQueueAddRemove(factory, q, 100, 50, limit, result, t)
 }
 
-func testLimitedQueueNoLimitAddRemove[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueNoLimitAddRemove[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueAddRemove(factory, makeLimitedQueueFun(150), t)
 }
 
-func testLimitedQueueAddRemove[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueAddRemove[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	limit := 80
 	elementsToAdd := 100
 	elementsToRemoveAdd := 50
@@ -448,7 +448,7 @@ func testLimitedQueueAddRemove[E IntBased](factory Factory[E], makeLimitedQueueF
 	testQueueAddRemove(factory, q, elementsToAdd, elementsToRemoveAdd, limit, result, t)
 }
 
-func testPriorityQueueAddRemove[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueAddRemove[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3[E])
 	result := func(index int) int {
 		if index%2 == 0 {
@@ -460,13 +460,13 @@ func testPriorityQueueAddRemove[E IntBased](factory Factory[E], makePriorityQueu
 	testQueueAddRemove(factory, q, elementsToAdd, 50, elementsToAdd, result, t)
 }
 
-func testDefaultQueueAddRemove[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueAddRemove[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	elementsToAdd := 100
 	elementsToRemoveAdd := 50
 	testQueueAddRemove(factory, q, elementsToAdd, elementsToRemoveAdd, elementsToAdd, func(index int) int { return index + elementsToRemoveAdd }, t)
 }
 
-func testQueueAddRemove[E IntBased](factory Factory[E], q Queue[E], elementsToAdd, elementsToRemoveAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueAddRemove[E IntConvertable](factory Factory[E], q Queue[E], elementsToAdd, elementsToRemoveAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		require.Truef(t, q.Add(factory.Create(i)), "failed to add element %d", i)
 	}
@@ -539,40 +539,40 @@ func TestLimitPriorityHashLimitedPriorityHashQueueLength(t *testing.T) {
 	testLimitedPriorityQueueLength(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueNoLimitLength[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueNoLimitLength[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	testPriorityQueueLength(factory, func(priorityFun func(E) bool) Queue[E] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueLength[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueLength[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod3[E], limit)
 	testQueueLength(factory, q, 1000, limit, t)
 }
 
-func testLimitedQueueNoLimitLength[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueNoLimitLength[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueLength(factory, makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueLength[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueLength[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	limit := 800
 	q := makeLimitedQueueFun(limit)
 	testQueueLength(factory, q, 1000, limit, t)
 }
 
-func testPriorityQueueLength[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueLength[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod3[E])
 	elementsToAdd := 1000
 	testQueueLength(factory, q, elementsToAdd, elementsToAdd, t)
 }
 
-func testDefaultQueueLength[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueLength[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	elementsToAdd := 1000
 	testQueueLength(factory, q, elementsToAdd, elementsToAdd, t)
 }
 
-func testQueueLength[E IntBased](factory Factory[E], q Queue[E], elementsToRemoveAdd, elementsToRemove int, t *testing.T) {
+func testQueueLength[E IntConvertable](factory Factory[E], q Queue[E], elementsToRemoveAdd, elementsToRemove int, t *testing.T) {
 	emptyLength := q.Length()
 	require.Equalf(t, 0, emptyLength, "empty queue length mismatch")
 
@@ -644,13 +644,13 @@ func TestLimitPriorityHashLimitedPriorityHashQueueGet(t *testing.T) {
 	testLimitedPriorityQueueGet(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueNoLimitGet[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueNoLimitGet[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	testPriorityQueueGet(factory, func(priorityFun func(E) bool) Queue[E] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueGet[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueGet[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod2[E], limit)
 	result := func(iteration int, index int) int {
@@ -665,11 +665,11 @@ func testLimitedPriorityQueueGet[E IntBased](factory Factory[E], makeLimitedPrio
 	testQueueGet(factory, q, 1000, result, t)
 }
 
-func testLimitedQueueNoLimitGet[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueNoLimitGet[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueGet(factory, makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueGet[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueGet[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	limit := 800
 	q := makeLimitedQueueFun(limit)
 	result := func(iteration int, index int) int {
@@ -681,7 +681,7 @@ func testLimitedQueueGet[E IntBased](factory Factory[E], makeLimitedQueueFun fun
 	testQueueGet(factory, q, 1000, result, t)
 }
 
-func testPriorityQueueGet[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueGet[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	result := func(iteration int, index int) int {
 		if index <= iteration/2 {
@@ -692,11 +692,11 @@ func testPriorityQueueGet[E IntBased](factory Factory[E], makePriorityQueueFun f
 	testQueueGet(factory, q, 1000, result, t)
 }
 
-func testDefaultQueueGet[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueGet[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	testQueueGet(factory, q, 1000, func(iteration int, index int) int { return index }, t)
 }
 
-func testQueueGet[E IntBased](factory Factory[E], q Queue[E], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
+func testQueueGet[E IntConvertable](factory Factory[E], q Queue[E], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping Get test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
@@ -758,13 +758,13 @@ func TestLimitPriorityHashLimitedPriorityHashQueueGetNegative(t *testing.T) {
 	testLimitedPriorityQueueGetNegative(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueNoLimitGetNegative[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueNoLimitGetNegative[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	testPriorityQueueGetNegative(factory, func(priorityFun func(E) bool) Queue[E] {
 		return makeLimitedPriorityQueueFun(priorityFun, 1500)
 	}, t)
 }
 
-func testLimitedPriorityQueueGetNegative[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueGetNegative[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	limit := 800
 	q := makeLimitedPriorityQueueFun(priorityFunMod2[E], limit)
 	result := func(iteration int, index int) int {
@@ -782,15 +782,15 @@ func testLimitedPriorityQueueGetNegative[E IntBased](factory Factory[E], makeLim
 	testQueueGetNegative(factory, q, 1000, result, t)
 }
 
-func testLimitedQueueNoLimitGetNegative[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueNoLimitGetNegative[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueGetNegative(factory, makeLimitedQueueFun(1500), t)
 }
 
-func testLimitedQueueGetNegative[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueGetNegative[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testDefaultQueueGetNegative(factory, makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueueGetNegative[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueGetNegative[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	result := func(iteration int, index int) int {
 		if index >= -(iteration+iteration%2)/2 {
@@ -801,11 +801,11 @@ func testPriorityQueueGetNegative[E IntBased](factory Factory[E], makePriorityQu
 	testQueueGetNegative(factory, q, 1000, result, t)
 }
 
-func testDefaultQueueGetNegative[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testDefaultQueueGetNegative[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	testQueueGetNegative(factory, q, 1000, func(iteration int, index int) int { return iteration + index + 1 }, t)
 }
 
-func testQueueGetNegative[E IntBased](factory Factory[E], q Queue[E], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
+func testQueueGetNegative[E IntConvertable](factory Factory[E], q Queue[E], elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping GetNegative test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
@@ -851,21 +851,21 @@ func TestLimitPriorityHashLimitedPriorityHashQueueGetOutOfRangePanics(t *testing
 	testLimitedPriorityQueueGetOutOfRangePanics(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueGetOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueGetOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2[E], 800)
 	testQueueGetOutOfRangePanics(factory, q, t)
 }
 
-func testLimitedQueueGetOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueGetOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testQueueGetOutOfRangePanics(factory, makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueueGetOutOfRangePanics[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueGetOutOfRangePanics[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	testQueueGetOutOfRangePanics(factory, q, t)
 }
 
-func testQueueGetOutOfRangePanics[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testQueueGetOutOfRangePanics[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	for i := 0; i < 3; i++ {
 		require.Truef(t, q.Add(factory.Create(i)), "failed to add element %d", i)
 	}
@@ -907,21 +907,21 @@ func TestLimitPriorityHashLimitedPriorityHashQueuePeekOutOfRangePanics(t *testin
 	testLimitedPriorityQueuePeekOutOfRangePanics(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueuePeekOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueuePeekOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2[E], 800)
 	testQueuePeekOutOfRangePanics(factory, q, t)
 }
 
-func testLimitedQueuePeekOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueuePeekOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testQueuePeekOutOfRangePanics(factory, makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueuePeekOutOfRangePanics[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueuePeekOutOfRangePanics[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	testQueuePeekOutOfRangePanics(factory, q, t)
 }
 
-func testQueuePeekOutOfRangePanics[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testQueuePeekOutOfRangePanics[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	require.Panicsf(t, func() { q.Peek() }, "should panic when peeking empty queue")
 	require.Truef(t, q.Add(factory.Create(0)), "failed to add element 0")
 	q.Remove()
@@ -962,21 +962,21 @@ func TestLimitPriorityHashLimitedPriorityHashQueueRemoveOutOfRangePanics(t *test
 	testLimitedPriorityQueueRemoveOutOfRangePanics(NewSimpleHashableFactory(), NewLimitPriorityHashLimitedPriorityHashQueue[SimpleHashable], t)
 }
 
-func testLimitedPriorityQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
+func testLimitedPriorityQueueRemoveOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedPriorityQueueFun func(priorityFun func(E) bool, limit int) Queue[E], t *testing.T) {
 	q := makeLimitedPriorityQueueFun(priorityFunMod2[E], 800)
 	testQueueRemoveOutOfRangePanics(factory, q, t)
 }
 
-func testLimitedQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
+func testLimitedQueueRemoveOutOfRangePanics[E IntConvertable](factory Factory[E], makeLimitedQueueFun func(limit int) Queue[E], t *testing.T) {
 	testQueueRemoveOutOfRangePanics(factory, makeLimitedQueueFun(800), t)
 }
 
-func testPriorityQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
+func testPriorityQueueRemoveOutOfRangePanics[E IntConvertable](factory Factory[E], makePriorityQueueFun func(func(E) bool) Queue[E], t *testing.T) {
 	q := makePriorityQueueFun(priorityFunMod2[E])
 	testQueueRemoveOutOfRangePanics(factory, q, t)
 }
 
-func testQueueRemoveOutOfRangePanics[E IntBased](factory Factory[E], q Queue[E], t *testing.T) {
+func testQueueRemoveOutOfRangePanics[E IntConvertable](factory Factory[E], q Queue[E], t *testing.T) {
 	require.Panicsf(t, func() { q.Remove() }, "should panic when removing empty queue")
 	require.Truef(t, q.Add(factory.Create(0)), "failed to add element 0")
 	q.Remove()
