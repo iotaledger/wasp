@@ -51,9 +51,9 @@ contract ERC20NativeTokens {
     function transfer(address receiver, uint256 numTokens) public returns (bool) {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAllowance memory assets;
-        assets.tokens = new NativeToken[](1);
-        assets.tokens[0].ID = nativeTokenID();
-        assets.tokens[0].amount = numTokens;
+        assets.nativeTokens = new NativeToken[](1);
+        assets.nativeTokens[0].ID = nativeTokenID();
+        assets.nativeTokens[0].amount = numTokens;
         __iscPrivileged.moveBetweenAccounts(msg.sender, receiver, assets);
         emit Transfer(msg.sender, receiver, numTokens);
         return true;
@@ -62,9 +62,9 @@ contract ERC20NativeTokens {
     function approve(address delegate, uint256 numTokens) public returns (bool) {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAllowance memory assets;
-        assets.tokens = new NativeToken[](1);
-        assets.tokens[0].ID = nativeTokenID();
-        assets.tokens[0].amount = numTokens;
+        assets.nativeTokens = new NativeToken[](1);
+        assets.nativeTokens[0].ID = nativeTokenID();
+        assets.nativeTokens[0].amount = numTokens;
         __iscPrivileged.addToAllowance(msg.sender, delegate, assets);
         emit Approval(msg.sender, delegate, numTokens);
         return true;
@@ -73,9 +73,9 @@ contract ERC20NativeTokens {
     function allowance(address owner, address delegate) public view returns (uint) {
         ISCAllowance memory assets = __iscSandbox.getAllowance(owner, delegate);
         NativeTokenID memory myID = nativeTokenID();
-        for (uint i = 0; i < assets.tokens.length; i++) {
-            if (bytesEqual(assets.tokens[i].ID.data, myID.data))
-                return assets.tokens[i].amount;
+        for (uint i = 0; i < assets.nativeTokens.length; i++) {
+            if (bytesEqual(assets.nativeTokens[i].ID.data, myID.data))
+                return assets.nativeTokens[i].amount;
         }
         return 0;
     }
@@ -91,9 +91,9 @@ contract ERC20NativeTokens {
     function transferFrom(address owner, address buyer, uint256 numTokens) public returns (bool) {
         require(numTokens <= MAX_UINT64, "amount is too large");
         ISCAllowance memory assets;
-        assets.tokens = new NativeToken[](1);
-        assets.tokens[0].ID = nativeTokenID();
-        assets.tokens[0].amount = numTokens;
+        assets.nativeTokens = new NativeToken[](1);
+        assets.nativeTokens[0].ID = nativeTokenID();
+        assets.nativeTokens[0].amount = numTokens;
         __iscPrivileged.moveAllowedFunds(owner, msg.sender, assets);
         if (buyer != msg.sender) {
             __iscPrivileged.moveBetweenAccounts(msg.sender, buyer, assets);

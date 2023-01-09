@@ -61,7 +61,7 @@
 				{{$tokens := $req.FungibleTokens}}
 				<dl>
 					<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
-					{{range $_, $t := $tokens.Tokens}}
+					{{range $_, $t := $tokens.NativeTokens}}
 						<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
 					{{end}}
 				</dl>
@@ -85,7 +85,7 @@
 					{{$tokens := $allowance.Assets}}
 					{{if $tokens}}
 						<dt>BaseTokens</dt><dd><code>{{$tokens.BaseTokens}}</code></dd>
-						{{range $_, $t := $tokens.Tokens}}
+						{{range $_, $t := $tokens.NativeTokens}}
 							<dt><code>{{ $t.ID }}</code></dt><dd><code>{{ $t.Amount }}</code></dd>
 						{{end}}
 					{{end}}
