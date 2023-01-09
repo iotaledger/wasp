@@ -472,7 +472,7 @@ func (n *netImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return n.trusted.TrustedPeers()
 }
 
-// TrustedPeers implements the peering.TrustedNetworkManager interface.
+// TrustedPeersListener implements the peering.TrustedNetworkManager interface.
 func (n *netImpl) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
 	return n.trusted.TrustedPeersListener(callback)
 }
