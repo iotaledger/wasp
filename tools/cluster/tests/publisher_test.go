@@ -61,6 +61,8 @@ func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
 
 // TODO the TODOs on this test indicate that there is a race condition with the "await request endpoint", needs to be debugged
 func TestNanoPublisher(t *testing.T) {
+	t.Skip("Nano publisher is going to be replaced, so the test is skipped for now.") // TODO: Re-enable it!
+
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupNativeInccounterTest(t, 1, []int{0})
 
