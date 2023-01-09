@@ -76,8 +76,18 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-	rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true)
-	return r.resolveReceipt(c, ch, rec)
+
+	delay := time.NewTimer(req.Timeout)
+	select {
+	case rec := <-ch.AwaitRequestProcessed(c.Request().Context(), reqID, true):
+		if !delay.Stop() {
+			// empty the channel to avoid leak
+			<-delay.C
+		}
+		return r.resolveReceipt(c, ch, rec)
+	case <-delay.C:
+		return httperrors.Timeout("Timeout")
+	}
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestID, error) {
@@ -101,12 +111,18 @@ func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.Requ
 	if err != nil {
 		return nil, httperrors.ServerError("error getting latest chain block index")
 	}
+	if blockIndex == 0 {
+		return nil, nil
+	}
 	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
 		dict.Dict{
 			blocklog.ParamRequestID: reqID.Bytes(),
 		})
 	if err != nil {
 		return nil, httperrors.ServerError("error calling get receipt view")
+	}
+	if ret == nil {
+		return nil, nil // not processed yet
 	}
 	binRec, err := ret.Get(blocklog.ParamRequestRecord)
 	if err != nil {
@@ -120,6 +136,9 @@ func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.Requ
 }
 
 func resolveReceipt(c echo.Context, ch chain.Chain, rec *blocklog.RequestReceipt) error {
+	if rec == nil {
+		return httperrors.NotFound("receipt not found")
+	}
 	resolvedReceiptErr, err := chainutil.ResolveError(ch, rec.Error)
 	if err != nil {
 		return httperrors.ServerError("error resolving receipt error")

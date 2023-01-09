@@ -113,6 +113,7 @@ func provide(c *dig.Container) error {
 			AllowMethods: []string{"*"},
 		}))
 
+		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375
 		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 			ErrorMessage: "request timeout exceeded",
 			Timeout:      1 * time.Minute,

@@ -11,9 +11,10 @@ services:
       - "${HOST:-127.0.0.1}:9029:9029/tcp"
     stop_grace_period: 5m
   wasp:
-    build:
-      context: ../../
-      dockerfile: Dockerfile
+    image: iotaledger/wasp:latest 
+    # build:
+    #   context: ../../
+    #   dockerfile: Dockerfile
     command:
       - "--dashboard.auth.scheme=none"
       - "--webapi.auth.scheme=none"

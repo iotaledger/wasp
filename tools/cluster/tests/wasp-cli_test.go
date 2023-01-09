@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -134,6 +137,73 @@ func TestWaspCLIDeposit(t *testing.T) {
 		w.Run("chain", "deposit", eth.String(), "base:1000000")
 		checkBalance(t, w.Run("chain", "balance", eth.String()), 1000000-100) //-100 for the fee
 	})
+
+	t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
+		_, eth := newEthereumAccount()
+		// create foundry
+		tokenScheme := codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
+			MintedTokens:  big.NewInt(10), // TODO this is not 0, where do these tokens go to? they don't show up in the wasp-cli balances...
+			MeltedTokens:  big.NewInt(0),
+			MaximumSupply: big.NewInt(1000),
+		})
+		out := w.PostRequestGetReceipt(
+			"accounts", accounts.FuncFoundryCreateNew.Name,
+			"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme), "-l", "base:1000000",
+			"-t", "base:100000000",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// mint 2 native tokens
+		// TODO we know its the first foundry to be created by the chain, so SN must be 1,
+		// but there is NO WAY to obtain the SN, this is a design flaw that must be fixed.
+		foundrySN := "1"
+		out = w.PostRequestGetReceipt(
+			"accounts", accounts.FuncFoundryModifySupply.Name,
+			"string", accounts.ParamFoundrySN, "uint32", foundrySN,
+			"string", accounts.ParamSupplyDeltaAbs, "bigint", "2",
+			"string", accounts.ParamDestroyTokens, "bool", "false",
+			"-l", "base:1000000",
+			"--off-ledger",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// withdraw this token to the wasp-cli L1 address
+		out = w.Run("chain", "balance")
+		tokenID := ""
+		for _, line := range out {
+			if strings.Contains(line, "0x") {
+				tokenID = strings.Split(line, " ")[0]
+			}
+		}
+
+		out = w.PostRequestGetReceipt(
+			"accounts", accounts.FuncWithdraw.Name,
+			"-l", fmt.Sprintf("base:1000000, %s:2", tokenID),
+			"--off-ledger",
+		)
+		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		// deposit the native token to the chain (to an ethereum account)
+		w.Run(
+			"chain", "deposit", eth.String(),
+			fmt.Sprintf("%s:1", tokenID),
+			"--adjust-storage-deposit",
+		)
+		out = w.Run("chain", "balance", eth.String())
+		require.Contains(t, strings.Join(out, ""), tokenID)
+
+		// deposit the native token to the chain (to the cli account)
+		w.Run(
+			"chain", "deposit",
+			fmt.Sprintf("%s:1", tokenID),
+			"--adjust-storage-deposit",
+		)
+		out = w.Run("chain", "balance")
+		require.Contains(t, strings.Join(out, ""), tokenID)
+		// no token balance on L1
+		out = w.Run("balance")
+		require.NotContains(t, strings.Join(out, ""), tokenID)
+	})
 }
 
 func TestWaspCLIContract(t *testing.T) {
@@ -193,7 +263,7 @@ func TestWaspCLIContract(t *testing.T) {
 
 func findRequestIDInOutput(out []string) string {
 	for _, line := range out {
-		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
+		m := regexp.MustCompile(`(?m)\(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
 		if len(m) == 0 {
 			continue
 		}
@@ -350,4 +420,33 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 	chOut = strings.Fields(out[4])
 	active, _ = strconv.ParseBool(chOut[1])
 	require.True(t, active)
+}
+
+func TestWaspCLILongParam(t *testing.T) {
+	w := newWaspCLITest(t)
+
+	committee, quorum := w.CommitteeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+
+	// create foundry
+	w.Run(
+		"chain", "post-request", "accounts", accounts.FuncFoundryCreateNew.Name,
+		"string", accounts.ParamTokenScheme, "bytes", "0x00d107000000000000000000000000000000000000000000000000000000000000d207000000000000000000000000000000000000000000000000000000000000d30700000000000000000000000000000000000000000000000000000000000000", "-l", "base:1000000",
+		"-t", "base:1000000",
+	)
+
+	veryLongTokenName := strings.Repeat("A", 100_000)
+	out := w.Run(
+		"chain", "post-request", "-o", "evm", "registerERC20NativeToken",
+		"string", "fs", "uint32", "1",
+		"string", "n", "string", veryLongTokenName,
+		"string", "t", "string", "test_symbol",
+		"string", "d", "uint8", "1",
+	)
+
+	reqID := findRequestIDInOutput(out)
+	require.NotEmpty(t, reqID)
+
+	out = w.Run("chain", "request", reqID)
+	require.Contains(t, strings.Join(out, "\n"), "too long")
 }

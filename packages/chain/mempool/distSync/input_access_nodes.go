@@ -4,6 +4,10 @@
 package distSync
 
 import (
+	"strings"
+
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -14,4 +18,12 @@ type inputAccessNodes struct {
 
 func NewInputAccessNodes(accessNodes, committeeNodes []gpa.NodeID) gpa.Input {
 	return &inputAccessNodes{accessNodes: accessNodes, committeeNodes: committeeNodes}
+}
+
+func (inp *inputAccessNodes) String() string {
+	str := "accessNodes: "
+	str += strings.Join(lo.Map(inp.accessNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	str += " committeeNodes: "
+	str += strings.Join(lo.Map(inp.committeeNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	return str
 }

@@ -10,7 +10,7 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestReboot(t *testing.T) {
-	e := setupAdvancedInccounterTest(t, 3, []int{0, 1, 2})
+	e := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 	client := e.createNewClient()
 
 	_, err := client.PostRequest(inccounter.FuncIncCounter.Name)

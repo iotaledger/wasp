@@ -45,7 +45,7 @@ export class ScView {
     resultsProxy: Proxy | null;
 
     constructor(ctx: ScViewCallContext, hContract: ScHname, hFunction: ScHname) {
-        this.hContract = hContract;
+        this.hContract = ctx.initViewCallContext(hContract);
         this.hFunction = hFunction;
         this.params = ScView.nilParams;
         this.resultsProxy = null;
@@ -137,15 +137,13 @@ export class ScFunc extends ScView {
         req.function = this.hFunction;
         req.params = this.params.toBytes();
         let allowance = this.allowanceAssets;
-        if (allowance === null) {
-            allowance = new ScTransfer();
+        if (allowance !== null) {
+            req.allowance = allowance.toBytes();
         }
-        req.allowance = allowance.toBytes();
         let transfer = this.transferAssets;
-        if (transfer === null) {
-            transfer = new ScTransfer();
-        }
-        req.transfer = transfer.toBytes();
+        if (transfer !== null) {
+            req.transfer = transfer.toBytes();
+         }
         req.delay = this.delaySeconds;
         const res = sandbox(FnPost, req.bytes());
         if (this.resultsProxy) {

@@ -29,13 +29,12 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 	chainID := chain.ChainID
 
-	e := newChainEnv(t, clu, chain)
+	chEnv := newChainEnv(t, clu, chain)
+	chEnv.deployNativeIncCounterSC()
 
-	e.deployNativeIncCounterSC()
+	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
-
-	userWallet, _, err := e.Clu.NewKeyPairWithFunds()
+	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
@@ -67,5 +66,5 @@ func TestMissingRequests(t *testing.T) {
 	//-------
 
 	// expect request to be successful, as node #3 must ask for the missing request from other nodes
-	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, chEnv.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 }

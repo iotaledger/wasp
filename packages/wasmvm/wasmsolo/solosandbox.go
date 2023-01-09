@@ -162,6 +162,7 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 
 func (s *SoloSandbox) fnCall(args []byte) []byte {
 	ctx := s.ctx
+	ctx.GasFee = 0
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscHname(req.Contract)
 	if contract != isc.Hn(ctx.scName) {

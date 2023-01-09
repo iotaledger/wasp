@@ -26,7 +26,7 @@ pub trait IClientService {
     ) -> errors::Result<ScRequestID>;
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<String>,
+        tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()>;
     fn wait_until_request_processed(
@@ -55,15 +55,13 @@ impl IClientService for WasmClientService {
     ) -> errors::Result<Vec<u8>> {
         let params = ScDict::from_bytes(args)?;
 
-        let _ = self.client.call_view_by_hname(
+        return self.client.call_view_by_hname(
             chain_id,
             contract_hname,
             function_hname,
             &params,
             None,
-        )?;
-
-        return Ok(Vec::new());
+        );
     }
 
     fn post_request(
@@ -93,7 +91,7 @@ impl IClientService for WasmClientService {
 
     fn subscribe_events(
         &self,
-        tx: mpsc::Sender<String>,
+        tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
         self.websocket.clone().unwrap().subscribe(tx, done); // TODO remove clone

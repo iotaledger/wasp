@@ -70,7 +70,7 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 }
 
 func TestSDRC(t *testing.T) {
-	env := setupAdvancedInccounterTest(t, 1, []int{0})
+	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

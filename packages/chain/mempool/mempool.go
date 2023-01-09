@@ -389,6 +389,7 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) {
 }
 
 func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest) bool {
+	mpi.log.Debugf("trying to add to mempool, requestID: %s", request.ID().String())
 	if mpi.chainHeadState != nil {
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
@@ -407,6 +408,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	if !mpi.offLedgerPool.Has(isc.RequestRefFromRequest(request)) {
 		mpi.offLedgerPool.Add(request)
 		mpi.metrics.CountRequestIn(request)
+		mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
 		return true
 	}
 	return false
@@ -615,6 +617,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 		for _, receipt := range blockReceipts {
 			mpi.metrics.CountRequestOut()
 			mpi.tryRemoveRequest(receipt.Request)
+			mpi.log.Debugf("removed from mempool: %s", receipt.Request.ID().String())
 		}
 	}
 	//

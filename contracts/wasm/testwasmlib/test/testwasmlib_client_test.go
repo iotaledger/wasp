@@ -26,23 +26,21 @@ import (
 )
 
 const (
+	useCluster    = false
 	useDisposable = false
-	useSoloClient = true
 )
 
-// to run with docker, set useDisposable to true and run with the following parameters:
-// -layer1-api="http://localhost:14265" -layer1-faucet="http://localhost:8091"
-
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
+	if useCluster {
+		return setupClientCluster(t)
+	}
+
 	if useDisposable {
 		return setupClientDisposable(t)
 	}
 
-	if useSoloClient {
-		return setupClientSolo(t)
-	}
-
-	return setupClientCluster(t)
+	// fall back on rudimentary basic testing by using SoloClientService
+	return setupClientSolo(t)
 }
 
 func setupClientCluster(t *testing.T) *wasmclient.WasmClientContext {
@@ -90,6 +88,10 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	cfgWallet := config["wallet"].(map[string]interface{})
 	cfgSeed := cfgWallet["seed"].(string)
 
+	cfgWasp := config["wasp"].(map[string]interface{})
+	cfgWasp0 := cfgWasp["0"].(map[string]interface{})
+	cfgWaspApi0 := cfgWasp0["api"].(string)
+
 	// we'll use the seed keypair to sign requests
 	seedBytes, err := iotago.DecodeHex(cfgSeed)
 	require.NoError(t, err)
@@ -98,7 +100,12 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 	wallet := cryptolib.NewKeyPairFromSeed(seed.SubSeed(0))
 
 	// we're testing against disposable wasp-cluster, so defaults will do
-	return newClient(t, wasmclient.DefaultWasmClientService(), chain, wallet)
+	service := wasmclient.DefaultWasmClientService()
+	if cfgWaspApi0[len(cfgWaspApi0)-6:] != ":19090" {
+		// test against Docker container, make sure to pass the correct args to test (top of file)
+		service = wasmclient.NewWasmClientService("127.0.0.1:9090", "127.0.0.1:5550")
+	}
+	return newClient(t, service, chain, wallet)
 }
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
@@ -115,103 +122,6 @@ func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain st
 	require.NoError(t, svc.Err)
 	svc.SignRequests(wallet)
 	return svc
-}
-
-func TestClientEvents(t *testing.T) {
-	svc := setupClient(t)
-	events := &testwasmlib.TestWasmLibEventHandlers{}
-	name := ""
-	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
-		name = e.Name
-	})
-	svc.Register(events)
-
-	testClientEventsParam(t, svc, "Lala", &name)
-	testClientEventsParam(t, svc, "Trala", &name)
-	testClientEventsParam(t, svc, "Bar|Bar", &name)
-	testClientEventsParam(t, svc, "Bar~|~Bar", &name)
-	testClientEventsParam(t, svc, "Tilde~Tilde", &name)
-	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", &name)
-}
-
-func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, param string, name *string) {
-	// get new triggerEvent interface, pass params, and post the request
-	f := testwasmlib.ScFuncs.TriggerEvent(svc)
-	f.Params.Name().SetValue(param)
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-
-	err := svc.WaitRequest()
-	require.NoError(t, err)
-
-	// make sure we wait for the event to show up
-	err = svc.WaitEvent()
-	require.NoError(t, err)
-
-	require.EqualValues(t, param, *name)
-}
-
-func TestClientRandom(t *testing.T) {
-	svc := setupClient(t)
-	doit := func() {
-		// generate new random value
-		f := testwasmlib.ScFuncs.Random(svc)
-		f.Func.Post()
-		require.NoError(t, svc.Err)
-
-		err := svc.WaitRequest()
-		require.NoError(t, err)
-
-		// get current random value
-		v := testwasmlib.ScFuncs.GetRandom(svc)
-		v.Func.Call()
-		require.NoError(t, svc.Err)
-		rnd := v.Results.Random().Value()
-		require.GreaterOrEqual(t, rnd, uint64(0))
-		fmt.Println("Random: ", rnd)
-	}
-	doit()
-	doit()
-	doit()
-	doit()
-}
-
-func TestClientArray(t *testing.T) {
-	svc := setupClient(t)
-
-	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 0, v.Results.Length().Value())
-
-	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
-	f.Params.Name().SetValue("Bands")
-	f.Params.Value().SetValue("Dire Straits")
-	f.Func.Post()
-	require.NoError(t, svc.Err)
-	err := svc.WaitRequest()
-	require.NoError(t, err)
-
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 1, v.Results.Length().Value())
-
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
-	c.Params.Name().SetValue("Bands")
-	c.Func.Post()
-	require.NoError(t, svc.Err)
-	err = svc.WaitRequest()
-	require.NoError(t, err)
-
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
-	v.Params.Name().SetValue("Bands")
-	v.Func.Call()
-	require.NoError(t, svc.Err)
-	require.EqualValues(t, 0, v.Results.Length().Value())
 }
 
 func TestClientAccountBalance(t *testing.T) {
@@ -231,4 +141,103 @@ func TestClientAccountBalance(t *testing.T) {
 	require.NoError(t, svc.Err)
 	balance := bal.Results.Balance()
 	fmt.Printf("Balance: %d\n", balance.Value())
+}
+
+func TestClientArray(t *testing.T) {
+	svc := setupClient(t)
+
+	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
+
+	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
+	f.Params.Name().SetValue("Bands")
+	f.Params.Value().SetValue("Dire Straits")
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
+
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 1, v.Results.Length().Value())
+
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, svc.Err)
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
+
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v.Params.Name().SetValue("Bands")
+	v.Func.Call()
+	require.NoError(t, svc.Err)
+	require.EqualValues(t, 0, v.Results.Length().Value())
+}
+
+func TestClientRandom(t *testing.T) {
+	svc := setupClient(t)
+	doit := func() {
+		// generate new random value
+		f := testwasmlib.ScFuncs.Random(svc)
+		f.Func.Post()
+		require.NoError(t, svc.Err)
+
+		svc.WaitRequest()
+		require.NoError(t, svc.Err)
+
+		// get current random value
+		v := testwasmlib.ScFuncs.GetRandom(svc)
+		v.Func.Call()
+		require.NoError(t, svc.Err)
+		rnd := v.Results.Random().Value()
+		require.GreaterOrEqual(t, rnd, uint64(0))
+		fmt.Println("Random: ", rnd)
+	}
+	doit()
+	doit()
+	doit()
+	doit()
+}
+
+func TestClientEvents(t *testing.T) {
+	svc := setupClient(t)
+	events := &testwasmlib.TestWasmLibEventHandlers{}
+	name := ""
+	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
+		name = e.Name
+	})
+	svc.Register(events)
+
+	event := func() string {
+		return name
+	}
+
+	testClientEventsParam(t, svc, "Lala", event)
+	testClientEventsParam(t, svc, "Trala", event)
+	testClientEventsParam(t, svc, "Bar|Bar", event)
+	testClientEventsParam(t, svc, "Bar~|~Bar", event)
+	testClientEventsParam(t, svc, "Tilde~Tilde", event)
+	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", event)
+}
+
+func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, name string, event func() string) {
+	f := testwasmlib.ScFuncs.TriggerEvent(svc)
+	f.Params.Name().SetValue(name)
+	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Func.Post()
+	require.NoError(t, svc.Err)
+
+	svc.WaitRequest()
+	require.NoError(t, svc.Err)
+
+	svc.WaitEvent()
+	require.NoError(t, svc.Err)
+
+	require.EqualValues(t, name, event())
 }

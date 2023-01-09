@@ -4,6 +4,8 @@
 package wasmclient
 
 import (
+	"errors"
+
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -78,6 +80,10 @@ func (s *WasmClientContext) fnCall(args []byte) []byte {
 }
 
 func (s *WasmClientContext) fnPost(args []byte) []byte {
+	if s.keyPair == nil {
+		s.Err = errors.New("missing key pair")
+		return nil
+	}
 	req := wasmrequests.NewPostRequestFromBytes(args)
 	if req.ChainID != s.chainID {
 		s.Err = xerrors.Errorf("unknown chain id: %s", req.ChainID.String())

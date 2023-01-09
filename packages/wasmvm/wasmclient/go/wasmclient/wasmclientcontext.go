@@ -90,7 +90,6 @@ func (s *WasmClientContext) Register(handler wasmlib.IEventHandlers) error {
 	return s.startEventHandlers()
 }
 
-// overrides default contract name
 func (s *WasmClientContext) ServiceContractName(contractName string) {
 	s.scHname = wasmtypes.HnameFromBytes(isc.Hn(contractName).Bytes())
 }
@@ -99,10 +98,11 @@ func (s *WasmClientContext) SignRequests(keyPair *cryptolib.KeyPair) {
 	s.keyPair = keyPair
 
 	// get last used nonce from accounts core contract
-	agent := isc.NewAgentID(keyPair.Address())
+	iscAgent := isc.NewAgentID(keyPair.Address())
+	agent := wasmtypes.AgentIDFromBytes(iscAgent.Bytes())
 	ctx := NewWasmClientContext(s.svcClient, s.chainID.String(), coreaccounts.ScName)
 	n := coreaccounts.ScFuncs.GetAccountNonce(ctx)
-	n.Params.AgentID().SetValue(wasmtypes.AgentIDFromBytes(agent.Bytes()))
+	n.Params.AgentID().SetValue(agent)
 	n.Func.Call()
 	s.nonce = n.Results.AccountNonce().Value()
 }
@@ -119,35 +119,36 @@ func (s *WasmClientContext) Unregister(handler wasmlib.IEventHandlers) {
 	}
 }
 
-func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) error {
+func (s *WasmClientContext) WaitEvent() {
+	s.Err = nil
+	for i := 0; i < 100; i++ {
+		if s.eventReceived {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	s.Err = errors.New("event wait timeout")
+}
+
+func (s *WasmClientContext) WaitRequest(reqID ...wasmtypes.ScRequestID) {
 	requestID := s.ReqID
 	if len(reqID) == 1 {
 		requestID = reqID[0]
 	}
-	return s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
-}
-
-func (s *WasmClientContext) WaitEvent() error {
-	for i := 0; i < 100; i++ {
-		if s.eventReceived {
-			return nil
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	return errors.New("event wait timeout")
+	s.Err = s.svcClient.WaitUntilRequestProcessed(s.chainID, requestID, 1*time.Minute)
 }
 
 func (s *WasmClientContext) processEvent(msg []string) {
 	fmt.Printf("%s\n", strings.Join(msg, " "))
 
-	if msg[0] != "vmmsg" {
+	if msg[0] != "contract" {
 		// not intended for us
 		return
 	}
 
 	s.eventReceived = true
 
-	params := strings.Split(msg[3], "|")
+	params := strings.Split(msg[6], "|")
 	for i, param := range params {
 		params[i] = unescape(param)
 	}
@@ -181,8 +182,6 @@ func (s *WasmClientContext) stopEventHandlers() {
 	}
 }
 
-// note that un-escaping needs to be done in a single pass to prevent
-// occurrences of legit "\/" substrings to be turned into "|"
 func unescape(param string) string {
 	i := strings.IndexByte(param, '~')
 	if i < 0 {

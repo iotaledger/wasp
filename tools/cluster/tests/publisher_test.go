@@ -2,12 +2,17 @@ package tests
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/sub"
+
+	// without this import it won't work, no messages will be received by the client socket...
+	_ "go.nanomsg.org/mangos/v3/transport/all"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -38,9 +43,26 @@ func (c *nanoClientTest) start(t *testing.T, url string) {
 	}
 }
 
+func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
+	inccounterEventRegx := regexp.MustCompile(`.*incCounter: counter = (\d+)$`)
+	counter := 1
+	for _, msg := range messages {
+		rs := inccounterEventRegx.FindStringSubmatch(msg)
+		if len(rs) == 0 {
+			continue
+		}
+		counterFromEvent, err := strconv.ParseInt(rs[1], 10, 64)
+		require.NoError(t, err)
+		require.EqualValues(t, counter, counterFromEvent)
+		counter++
+	}
+	require.EqualValues(t, expectedFinalCounter, counter-1)
+}
+
+// TODO the TODOs on this test indicate that there is a race condition with the "await request endpoint", needs to be debugged
 func TestNanoPublisher(t *testing.T) {
 	// single wasp node committee, to test if publishing can break state transitions
-	env := setupAdvancedInccounterTest(t, 1, []int{0})
+	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
 	nanoClients := make([]nanoClientTest, 10)
@@ -70,33 +92,42 @@ func TestNanoPublisher(t *testing.T) {
 	reqIDs := make([]isc.RequestID, numRequests)
 	for i := 0; i < numRequests; i++ {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
-		reqIDs[i] = req.ID()
 		require.NoError(t, err)
+
+		reqIDs[i] = req.ID()
 	}
 
-	for _, reqID := range reqIDs {
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 30*time.Second)
+	for i, reqID := range reqIDs {
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 10*time.Second)
+		if err != nil {
+			println(i)
+		}
 		require.NoError(t, err)
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted")
 
 	// assert all clients received the correct number of messages
+	// TODO these are not testing anything....
 	for _, client := range nanoClients {
-		println(len(client.messages))
+		assertMessages(t, client.messages, numRequests)
 	}
 
 	// send 100 requests
-
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
+		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
 		require.NoError(t, err)
+
+		// ---
+		// TODO shouldn't be needed
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
+		require.NoError(t, err)
+		// ---
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests*2)), util.MakeRange(0, 1), 60*time.Second, "requests counted")
 
-	time.Sleep(10 * time.Second)
 	for _, client := range nanoClients {
-		println(len(client.messages))
+		assertMessages(t, client.messages, numRequests*2)
 	}
 }
