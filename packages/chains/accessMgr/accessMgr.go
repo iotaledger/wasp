@@ -23,16 +23,16 @@ type AccessMgr interface {
 }
 
 type accessMgrImpl struct {
-	dist                gpa.AckHandler
-	dismissPeerBuf      []*cryptolib.PublicKey
-	reqTrustedNodesPipe pipe.Pipe
-	reqChainAccessNodes pipe.Pipe
-	reqChainDismissed   pipe.Pipe
-	netRecvPipe         pipe.Pipe
-	netPeeringID        peering.PeeringID
-	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
-	net                 peering.NetworkProvider
-	log                 *logger.Logger
+	dist                    gpa.AckHandler
+	dismissPeerBuf          []*cryptolib.PublicKey
+	reqTrustedNodesPipe     pipe.Pipe
+	reqChainAccessNodesPipe pipe.Pipe
+	reqChainDismissedPipe   pipe.Pipe
+	netRecvPipe             pipe.Pipe
+	netPeeringID            peering.PeeringID
+	netPeerPubs             map[gpa.NodeID]*cryptolib.PublicKey
+	net                     peering.NetworkProvider
+	log                     *logger.Logger
 }
 
 type reqTrustedNodes struct {
@@ -66,15 +66,15 @@ func New(
 ) AccessMgr {
 	netPeeringID := peering.PeeringIDFromBytes([]byte("AccessMgr"))
 	ami := &accessMgrImpl{
-		dismissPeerBuf:      []*cryptolib.PublicKey{},
-		reqTrustedNodesPipe: pipe.NewDefaultInfinitePipe(),
-		reqChainAccessNodes: pipe.NewDefaultInfinitePipe(),
-		reqChainDismissed:   pipe.NewDefaultInfinitePipe(),
-		netRecvPipe:         pipe.NewDefaultInfinitePipe(),
-		netPeeringID:        netPeeringID,
-		netPeerPubs:         map[gpa.NodeID]*cryptolib.PublicKey{},
-		net:                 net,
-		log:                 log,
+		dismissPeerBuf:          []*cryptolib.PublicKey{},
+		reqTrustedNodesPipe:     pipe.NewDefaultInfinitePipe(),
+		reqChainAccessNodesPipe: pipe.NewDefaultInfinitePipe(),
+		reqChainDismissedPipe:   pipe.NewDefaultInfinitePipe(),
+		netRecvPipe:             pipe.NewDefaultInfinitePipe(),
+		netPeeringID:            netPeeringID,
+		netPeerPubs:             map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                     net,
+		log:                     log,
 	}
 	me := ami.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandler(
@@ -102,12 +102,12 @@ func (ami *accessMgrImpl) TrustedNodes(trusted []*cryptolib.PublicKey) {
 
 // Implements the AccessMgr interface.
 func (ami *accessMgrImpl) ChainAccessNodes(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
-	ami.reqChainAccessNodes.In() <- &reqChainAccessNodes{chainID: chainID, accessNodes: accessNodes}
+	ami.reqChainAccessNodesPipe.In() <- &reqChainAccessNodes{chainID: chainID, accessNodes: accessNodes}
 }
 
 // Implements the AccessMgr interface.
 func (ami *accessMgrImpl) ChainDismissed(chainID isc.ChainID) {
-	ami.reqChainDismissed.In() <- &reqChainDismissed{chainID: chainID}
+	ami.reqChainDismissedPipe.In() <- &reqChainDismissed{chainID: chainID}
 }
 
 // A callback for amDist.
@@ -118,8 +118,8 @@ func (ami *accessMgrImpl) dismissPeerCB(peerPubKey *cryptolib.PublicKey) {
 
 func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
 	reqTrustedNodesOutCh := ami.reqTrustedNodesPipe.Out()
-	reqChainAccessNodesOutCh := ami.reqChainAccessNodes.Out()
-	reqChainDismissedOutCh := ami.reqChainDismissed.Out()
+	reqChainAccessNodesPipeOutCh := ami.reqChainAccessNodesPipe.Out()
+	reqChainDismissedPipeOutCh := ami.reqChainDismissedPipe.Out()
 	netRecvPipeOutCh := ami.netRecvPipe.Out()
 	debugTicker := time.NewTicker(distDebugTick)
 	timeTicker := time.NewTicker(distTimeTick)
@@ -131,15 +131,15 @@ func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
 				continue
 			}
 			ami.handleReqTrustedNodes(recv.(*reqTrustedNodes))
-		case recv, ok := <-reqChainAccessNodesOutCh:
+		case recv, ok := <-reqChainAccessNodesPipeOutCh:
 			if !ok {
-				reqChainAccessNodesOutCh = nil
+				reqChainAccessNodesPipeOutCh = nil
 				continue
 			}
 			ami.handleReqChainAccessNodes(recv.(*reqChainAccessNodes))
-		case recv, ok := <-reqChainDismissedOutCh:
+		case recv, ok := <-reqChainDismissedPipeOutCh:
 			if !ok {
-				reqChainDismissedOutCh = nil
+				reqChainDismissedPipeOutCh = nil
 				continue
 			}
 			ami.handleReqChainDismissed(recv.(*reqChainDismissed))
