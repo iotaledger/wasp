@@ -4,16 +4,40 @@
 // package gpa stands for generic pure (distributed) algorithm.
 package gpa
 
-import "encoding"
+import (
+	"encoding"
+	"strings"
 
-type NodeID string
+	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+)
+
+type NodeID [32]byte
+
+func NodeIDFromPublicKey(pubKey *cryptolib.PublicKey) NodeID {
+	nodeId := NodeID{}
+	copy(nodeId[:], pubKey.AsBytes())
+	return nodeId
+}
+
+func NodeIDsFromPublicKeys(pubKeys []*cryptolib.PublicKey) []NodeID {
+	ret := make([]NodeID, len(pubKeys))
+	for i := range pubKeys {
+		ret[i] = NodeIDFromPublicKey(pubKeys[i])
+	}
+	return ret
+}
 
 func (niT NodeID) Equals(other NodeID) bool {
 	return niT == other
 }
 
 func (niT NodeID) String() string {
-	return string(niT)
+	return iotago.EncodeHex(niT[:])
+}
+
+func (niT NodeID) ShortString() string {
+	return strings.TrimPrefix(iotago.EncodeHex(niT[:6]), "0x")
 }
 
 type Message interface {

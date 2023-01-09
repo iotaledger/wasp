@@ -4,6 +4,7 @@
 package gpa
 
 import (
+	"bytes"
 	"math/rand"
 	"sort"
 )
@@ -247,11 +248,14 @@ func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []Messa
 
 func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
 	logFunc("TC[%p] Status, |inputs|=%v, inputsCh=%v, |msgs|=%v, msgsCh=%v", tc, tc.inputCount, tc.inputCh != nil, len(tc.msgs), tc.msgCh != nil)
-	keys := []string{}
+	keys := []NodeID{}
 	for nid := range tc.nodes {
-		keys = append(keys, string(nid))
+		keys = append(keys, nid)
 	}
-	sort.Strings(keys) // Print them sorted.
+	// Print them sorted.
+	sort.Slice(keys, func(i, j int) bool {
+		return bytes.Compare(keys[i][:], keys[j][:]) < 0
+	})
 	for _, nidStr := range keys {
 		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[NodeID(nidStr)].StatusString())
 	}

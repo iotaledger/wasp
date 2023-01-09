@@ -29,7 +29,7 @@ func TestDSS(t *testing.T) {
 	f := 1
 	rand.Seed(time.Now().UnixNano())
 	suite := tcrypto.DefaultEd25519Suite()
-	nodeIDs := gpa.MakeTestNodeIDs("node", n)
+	nodeIDs := gpa.MakeTestNodeIDs(n)
 	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
 	nodePKs := map[gpa.NodeID]kyber.Point{}
 	for i := range nodeIDs {

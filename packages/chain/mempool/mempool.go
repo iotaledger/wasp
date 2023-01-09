@@ -764,7 +764,7 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := mpi.netPeerPubs[nodeID]; !ok {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}

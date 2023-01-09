@@ -4,16 +4,30 @@
 package gpa
 
 import (
-	"fmt"
+	"encoding/binary"
 	"math/rand"
 )
 
-func MakeTestNodeIDs(prefix string, n int) []NodeID {
+func MakeTestNodeIDFromIndex(index int) NodeID {
+	nodeID := NodeID{}
+
+	indexBytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(indexBytes, uint64(index))
+	copy(nodeID[:8], indexBytes)
+
+	return nodeID
+}
+
+func MakeTestNodeIDs(n int) []NodeID {
 	nodeIDs := make([]NodeID, n)
 	for i := range nodeIDs {
-		nodeIDs[i] = NodeID(fmt.Sprintf("%s-%03d", prefix, i))
+		nodeIDs[i] = MakeTestNodeIDFromIndex(i)
 	}
 	return nodeIDs
+}
+
+func RandomTestNodeID() NodeID {
+	return MakeTestNodeIDFromIndex(rand.Int())
 }
 
 func ShuffleNodeIDs(nodeIDs []NodeID) []NodeID {

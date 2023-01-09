@@ -145,15 +145,15 @@ func testBasic(t *testing.T, n, f int) {
 	chainStates := map[gpa.NodeID]state.Store{}
 	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
 	procCache := processors.MustNew(procConfig)
-	nodeIDs := nodeIDsFromPubKeys(testpeers.PublicKeys(peerIdentities))
+	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(string(nid))
+		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		chainStates[nid] = state.InitChainStore(mapdb.NewMapDB())
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -302,7 +302,7 @@ func testChained(t *testing.T, n, f, b int) {
 	// Node Identities, shared key and ledger.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
-	nodeIDs := nodeIDsFromPubKeys(testpeers.PublicKeys(peerIdentities))
+	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Create the accounts.
@@ -460,11 +460,11 @@ func newTestConsInst(
 	consInstID := []byte(fmt.Sprintf("testConsInst-%v", stateIndex))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(string(nid))
+		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, nodeIDFromPubKey, nodeLog).AsGPA()
+		nodes[nid] = cons.New(chainID, nodeStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, nodeLog).AsGPA()
 	}
 	tci := &testConsInst{
 		t:                                t,
@@ -695,19 +695,4 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 	if !tci.compInputClosed.Swap(true) {
 		close(tci.compInputPipe)
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Helper functions.
-
-func nodeIDsFromPubKeys(pubKeys []*cryptolib.PublicKey) []gpa.NodeID {
-	ret := make([]gpa.NodeID, len(pubKeys))
-	for i := range pubKeys {
-		ret[i] = nodeIDFromPubKey(pubKeys[i])
-	}
-	return ret
-}
-
-func nodeIDFromPubKey(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID("N#" + pubKey.String()[2:10])
 }

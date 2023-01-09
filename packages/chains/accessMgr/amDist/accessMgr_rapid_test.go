@@ -51,7 +51,7 @@ func (sm *accessMgrSM) init(t *rapid.T, nodeCount, chainCount int) {
 		sm.log = testlogger.NewLogger(t)
 		_, sm.nodeKeys = testpeers.SetupKeys(uint16(nodeCount))
 		sm.nodePubs = testpeers.PublicKeys(sm.nodeKeys)
-		sm.nodeIDs = nodeIDsFromPubKeys(sm.nodePubs)
+		sm.nodeIDs = gpa.NodeIDsFromPublicKeys(sm.nodePubs)
 		sm.chainIDs = make([]isc.ChainID, chainCount)
 		for i := range sm.chainIDs {
 			sm.chainIDs[i] = isc.RandomChainID([]byte{byte(i)})
@@ -75,13 +75,13 @@ func (sm *accessMgrSM) init(t *rapid.T, nodeCount, chainCount int) {
 		}
 		nidCopy := nid
 		sm.nodes[nid] = amDist.NewAccessMgr(
-			nodeIDFromPubKey,
+			gpa.NodeIDFromPublicKey,
 			func(chainID isc.ChainID, servers []*cryptolib.PublicKey) {
 				t.Logf("serversUpdatedCB: nodeID=%v, chainID=%v, servers=%v", nidCopy, chainID, servers)
 				sm.servers[nidCopy][chainID] = servers
 			},
 			func(pk *cryptolib.PublicKey) {},
-			sm.log.Named(string(nid)),
+			sm.log.Named(nid.ShortString()),
 		).AsGPA()
 	}
 	sm.tc = gpa.NewTestContext(sm.nodes)
@@ -128,13 +128,13 @@ func (sm *accessMgrSM) Reboot(t *rapid.T) {
 	//
 	// Just recreate a node.
 	sm.nodes[nodeID] = amDist.NewAccessMgr(
-		nodeIDFromPubKey,
+		gpa.NodeIDFromPublicKey,
 		func(chainID isc.ChainID, servers []*cryptolib.PublicKey) {
 			t.Logf("serversUpdatedCB: nodeID=%v, chainID=%v, servers=%v", nodeID, chainID, servers)
 			sm.servers[nodeID][chainID] = servers
 		},
 		func(pk *cryptolib.PublicKey) {},
-		sm.log.Named(string(nodeID)),
+		sm.log.Named(nodeID.ShortString()),
 	).AsGPA()
 	//
 	// Re-initialize all the persistent info: access information, active chains, trusted nodes.
@@ -151,11 +151,11 @@ func (sm *accessMgrSM) Reboot(t *rapid.T) {
 
 func (sm *accessMgrSM) Check(t *rapid.T) {
 	for _, nodePub := range sm.nodePubs {
-		nodeID := nodeIDFromPubKey(nodePub)
+		nodeID := gpa.NodeIDFromPublicKey(nodePub)
 		for _, chainID := range sm.chainIDs {
 			shouldBeServers := []*cryptolib.PublicKey{}
 			for _, peerPub := range sm.nodePubs {
-				peerID := nodeIDFromPubKey(peerPub)
+				peerID := gpa.NodeIDFromPublicKey(peerPub)
 				if sm.mActive[nodeID][chainID] &&
 					sm.mActive[peerID][chainID] &&
 					lo.Contains(sm.mTrusted[peerID], nodePub) &&

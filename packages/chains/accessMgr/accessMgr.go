@@ -226,7 +226,7 @@ func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 func (ami *accessMgrImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := ami.netPeerPubs[nodeID]; !ok {
 		ami.netPeerPubs[nodeID] = pubKey
 	}
