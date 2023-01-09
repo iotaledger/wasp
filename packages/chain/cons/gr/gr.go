@@ -109,7 +109,7 @@ type ConsGr struct {
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTask
 	vmAsked                     bool
-	netRecvPipe                 pipe.Pipe
+	netRecvPipe                 pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID                peering.PeeringID
 	netPeerPubs                 map[gpa.NodeID]*cryptolib.PublicKey
 	netDisconnect               func()
@@ -154,7 +154,7 @@ func New(
 		mempool:           mempool,
 		stateMgr:          stateMgr,
 		vm:                NewVMAsync(),
-		netRecvPipe:       pipe.NewDefaultInfinitePipe(),
+		netRecvPipe:       pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:      netPeeringID,
 		netPeerPubs:       netPeerPubs,
 		netDisconnect:     nil, // Set bellow.
@@ -213,7 +213,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				netRecvPipeOutCh = nil
 				continue
 			}
-			cgr.handleNetMessage(recv.(*peering.PeerMessageIn))
+			cgr.handleNetMessage(recv)
 		case inp, ok := <-cgr.inputCh:
 			if !ok {
 				cgr.inputCh = nil

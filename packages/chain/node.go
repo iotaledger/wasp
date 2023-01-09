@@ -139,12 +139,12 @@ type chainNodeImpl struct {
 	nodeConn            NodeConnection
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
-	recvAliasOutputPipe pipe.Pipe
-	recvTxPublishedPipe pipe.Pipe
-	recvMilestonePipe   pipe.Pipe
+	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
+	recvTxPublishedPipe pipe.Pipe[*txPublished]
+	recvMilestonePipe   pipe.Pipe[time.Time]
 	consensusInsts      map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst // Running consensus instances.
-	consOutputPipe      pipe.Pipe
-	consRecoverPipe     pipe.Pipe
+	consOutputPipe      pipe.Pipe[*consOutput]
+	consRecoverPipe     pipe.Pipe[*consRecover]
 	publishingTXes      map[iotago.TransactionID]context.CancelFunc // TX'es now being published.
 	procCache           *processors.Cache                           // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
@@ -165,7 +165,7 @@ type chainNodeImpl struct {
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
 	//
 	// Infrastructure.
-	netRecvPipe  pipe.Pipe
+	netRecvPipe  pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID peering.PeeringID
 	netPeerPubs  map[gpa.NodeID]*cryptolib.PublicKey
 	net          peering.NetworkProvider
@@ -233,12 +233,12 @@ func New(
 		chainID:                chainID,
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
-		recvAliasOutputPipe:    pipe.NewDefaultInfinitePipe(),
-		recvTxPublishedPipe:    pipe.NewDefaultInfinitePipe(),
-		recvMilestonePipe:      pipe.NewDefaultInfinitePipe(),
+		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
+		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
+		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
 		consensusInsts:         map[iotago.Ed25519Address]map[cmtLog.LogIndex]*consensusInst{},
-		consOutputPipe:         pipe.NewDefaultInfinitePipe(),
-		consRecoverPipe:        pipe.NewDefaultInfinitePipe(),
+		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
+		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         map[iotago.TransactionID]context.CancelFunc{},
 		procCache:              processors.MustNew(processorConfig),
 		configUpdatedCh:        make(chan *configUpdate, 1),
@@ -255,7 +255,7 @@ func New(
 		accessNodesFromChain:   []*cryptolib.PublicKey{},
 		latestConfirmedAO:      nil,
 		latestActiveAO:         nil,
-		netRecvPipe:            pipe.NewDefaultInfinitePipe(),
+		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                    net,
@@ -381,36 +381,36 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				recvTxPublishedPipeOutCh = nil
 				continue
 			}
-			cni.handleTxPublished(ctx, txPublishResult.(*txPublished))
+			cni.handleTxPublished(ctx, txPublishResult)
 		case aliasOutput, ok := <-recvAliasOutputPipeOutCh:
 			if !ok {
 				recvAliasOutputPipeOutCh = nil
 				continue
 			}
-			cni.handleAliasOutput(ctx, aliasOutput.(*isc.AliasOutputWithID))
+			cni.handleAliasOutput(ctx, aliasOutput)
 		case timestamp, ok := <-recvMilestonePipeOutCh:
 			if !ok {
 				recvMilestonePipeOutCh = nil
 			}
-			cni.handleMilestoneTimestamp(timestamp.(time.Time))
+			cni.handleMilestoneTimestamp(timestamp)
 		case recv, ok := <-netRecvPipeOutCh:
 			if !ok {
 				netRecvPipeOutCh = nil
 				continue
 			}
-			cni.handleNetMessage(ctx, recv.(*peering.PeerMessageIn))
+			cni.handleNetMessage(ctx, recv)
 		case recv, ok := <-consOutputPipeOutCh:
 			if !ok {
 				consOutputPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusOutput(ctx, recv.(*consOutput))
+			cni.handleConsensusOutput(ctx, recv)
 		case recv, ok := <-consRecoverPipeOutCh:
 			if !ok {
 				consRecoverPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusRecover(ctx, recv.(*consRecover))
+			cni.handleConsensusRecover(ctx, recv)
 		case cfg, ok := <-cni.configUpdatedCh:
 			if !ok {
 				cni.configUpdatedCh = nil
