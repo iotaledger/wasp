@@ -4,7 +4,7 @@ package pipe
 // sent by the sender and returns them to the receiver whenever it is ready,
 // without blocking the sender process. Depending on the backing queue, the pipe
 // might have other characteristics.
-type InfinitePipe[E Hashable] struct {
+type InfinitePipe[E any] struct {
 	input  chan E
 	output chan E
 	length chan int
@@ -13,39 +13,39 @@ type InfinitePipe[E Hashable] struct {
 
 var _ Pipe[Hashable] = &InfinitePipe[Hashable]{}
 
-func NewDefaultInfinitePipe[E Hashable]() Pipe[E] {
-	return newInfinitePipe(NewDefaultLimitedPriorityHashQueue[E]())
+func NewInfinitePipe[E any]() Pipe[E] {
+	return newInfinitePipe(NewLimitedPriorityHashQueue[E]())
 }
 
-func NewPriorityInfinitePipe[E Hashable](priorityFun func(E) bool) Pipe[E] {
+func NewPriorityInfinitePipe[E any](priorityFun func(E) bool) Pipe[E] {
 	return newInfinitePipe(NewPriorityLimitedPriorityHashQueue(priorityFun))
 }
 
-func NewLimitInfinitePipe[E Hashable](limit int) Pipe[E] {
+func NewLimitInfinitePipe[E any](limit int) Pipe[E] {
 	return newInfinitePipe(NewLimitLimitedPriorityHashQueue[E](limit))
 }
 
-func NewLimitPriorityInfinitePipe[E Hashable](priorityFun func(E) bool, limit int) Pipe[E] {
+func NewLimitPriorityInfinitePipe[E any](priorityFun func(E) bool, limit int) Pipe[E] {
 	return newInfinitePipe(NewLimitPriorityLimitedPriorityHashQueue(priorityFun, limit))
 }
 
 func NewHashInfinitePipe[E Hashable]() Pipe[E] {
-	return newInfinitePipe(NewHashLimitedPriorityHashQueue[E](true))
+	return newInfinitePipe(NewHashLimitedPriorityHashQueue[E]())
 }
 
 func NewPriorityHashInfinitePipe[E Hashable](priorityFun func(E) bool) Pipe[E] {
-	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(priorityFun, true))
+	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(priorityFun))
 }
 
 func NewLimitHashInfinitePipe[E Hashable](limit int) Pipe[E] {
-	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue[E](limit, true))
+	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue[E](limit))
 }
 
-func NewInfinitePipe[E Hashable](priorityFun func(E) bool, limit int) Pipe[E] {
-	return newInfinitePipe(NewLimitedPriorityHashQueue(priorityFun, limit, true))
+func NewLimitPriorityHashInfinitePipe[E Hashable](priorityFun func(E) bool, limit int) Pipe[E] {
+	return newInfinitePipe(NewLimitPriorityHashLimitedPriorityHashQueue(priorityFun, limit))
 }
 
-func newInfinitePipe[E Hashable](queue Queue[E]) *InfinitePipe[E] {
+func newInfinitePipe[E any](queue Queue[E]) *InfinitePipe[E] {
 	ch := &InfinitePipe[E]{
 		input:  make(chan E),
 		output: make(chan E),

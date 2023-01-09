@@ -9,7 +9,7 @@ type Hashable interface {
 	GetHash() hashing.HashValue
 }
 
-type Queue[E Hashable] interface {
+type Queue[E any] interface {
 	Length() int
 	Add(elem E) bool
 	Peek() E

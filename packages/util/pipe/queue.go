@@ -4,7 +4,7 @@ import "github.com/iotaledger/wasp/packages/hashing"
 
 // LimitedPriorityHashQueue is a queue, which can prioritize elements,
 // limit its growth and reject already included elements.
-type LimitedPriorityHashQueue[E Hashable] struct {
+type LimitedPriorityHashQueue[E any] struct {
 	buf         []E
 	head        int
 	pend        int
@@ -19,35 +19,39 @@ var _ Queue[Hashable] = &LimitedPriorityHashQueue[Hashable]{}
 
 const Infinity = 0
 
-func NewDefaultLimitedPriorityHashQueue[E Hashable]() Queue[E] {
-	return NewHashLimitedPriorityHashQueue[E](false)
+func NewLimitedPriorityHashQueue[E any]() Queue[E] {
+	return NewLimitLimitedPriorityHashQueue[E](Infinity)
 }
 
-func NewPriorityLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool) Queue[E] {
-	return NewPriorityHashLimitedPriorityHashQueue(priorityFun, false)
+func NewPriorityLimitedPriorityHashQueue[E any](priorityFun func(E) bool) Queue[E] {
+	return NewLimitPriorityLimitedPriorityHashQueue(priorityFun, Infinity)
 }
 
-func NewLimitLimitedPriorityHashQueue[E Hashable](limit int) Queue[E] {
-	return NewLimitHashLimitedPriorityHashQueue[E](limit, false)
+func NewLimitLimitedPriorityHashQueue[E any](limit int) Queue[E] {
+	return NewLimitPriorityLimitedPriorityHashQueue[E](NoPriority[E], limit)
 }
 
-func NewLimitPriorityLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool, limit int) Queue[E] {
-	return NewLimitedPriorityHashQueue(priorityFun, limit, false)
+func NewLimitPriorityLimitedPriorityHashQueue[E any](priorityFun func(E) bool, limit int) Queue[E] {
+	return newLimitedPriorityHashQueue(priorityFun, limit, false)
 }
 
-func NewHashLimitedPriorityHashQueue[E Hashable](hashNeeded bool) Queue[E] {
-	return NewLimitHashLimitedPriorityHashQueue[E](Infinity, hashNeeded)
+func NewHashLimitedPriorityHashQueue[E Hashable]() Queue[E] {
+	return NewLimitHashLimitedPriorityHashQueue[E](Infinity)
 }
 
-func NewPriorityHashLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool, hashNeeded bool) Queue[E] {
-	return NewLimitedPriorityHashQueue(priorityFun, Infinity, hashNeeded)
+func NewPriorityHashLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool) Queue[E] {
+	return NewLimitPriorityHashLimitedPriorityHashQueue(priorityFun, Infinity)
 }
 
-func NewLimitHashLimitedPriorityHashQueue[E Hashable](limit int, hashNeeded bool) Queue[E] {
-	return NewLimitedPriorityHashQueue(func(E) bool { return false }, limit, hashNeeded)
+func NewLimitHashLimitedPriorityHashQueue[E Hashable](limit int) Queue[E] {
+	return NewLimitPriorityHashLimitedPriorityHashQueue(NoPriority[E], limit)
 }
 
-func NewLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool, limit int, hashNeeded bool) Queue[E] {
+func NewLimitPriorityHashLimitedPriorityHashQueue[E Hashable](priorityFun func(E) bool, limit int) Queue[E] {
+	return newLimitedPriorityHashQueue(priorityFun, limit, true)
+}
+
+func newLimitedPriorityHashQueue[E any](priorityFun func(E) bool, limit int, hashNeeded bool) Queue[E] {
 	var initBufSize int
 	if (limit != Infinity) && (limit < minQueueLen) {
 		initBufSize = limit
@@ -129,9 +133,15 @@ func (q *LimitedPriorityHashQueue[E]) resize() {
 
 //nolint:gocyclo
 func (q *LimitedPriorityHashQueue[E]) Add(elem E) bool {
+	var elemHashable Hashable
 	var elemHash hashing.HashValue
+	var ok bool
 	if q.hashMap != nil {
-		elemHash = elem.GetHash()
+		elemHashable, ok = any(elem).(Hashable)
+		if !ok {
+			panic("Adding not hashable element")
+		}
+		elemHash = elemHashable.GetHash()
 		contains, ok := (*q.hashMap)[elemHash]
 		if ok && contains {
 			// duplicate element; ignoring
@@ -254,7 +264,13 @@ func (q *LimitedPriorityHashQueue[E]) Remove() E {
 		q.resize()
 	}
 	if q.hashMap != nil {
-		delete(*q.hashMap, ret.GetHash())
+		retHashable, ok := any(ret).(Hashable)
+		if !ok {
+			panic("Removing not hashable element")
+		}
+		delete(*q.hashMap, retHashable.GetHash())
 	}
 	return ret
 }
+
+func NoPriority[E any](E) bool { return false }
