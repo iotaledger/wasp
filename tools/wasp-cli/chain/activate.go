@@ -36,11 +36,11 @@ func activateCmd() *cobra.Command {
 				}
 				if r == nil {
 					log.Check(
-						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{})),
+						// TODO: Activate cain on PutChain. Then the `ActivateChain` can be put to the 'else` block.`
+						client.WaspClient.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{})),
 					)
-				} else {
-					log.Check(client.WaspClient.ActivateChain(chainID))
 				}
+				log.Check(client.WaspClient.ActivateChain(chainID))
 			}
 		},
 	}

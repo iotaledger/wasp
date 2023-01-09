@@ -144,6 +144,7 @@ func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 // -------------------------------------
 
 func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *state.L1Commitment) gpa.OutMessages {
+	// TODO: [KP] Only accept queries from access nodes.
 	smT.log.Debugf("Message GetBlock %s received from peer %s", commitment, from)
 	block := smT.getBlock(commitment)
 	if block == nil {

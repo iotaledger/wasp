@@ -262,9 +262,9 @@ func New(
 		activeCommitteeDKShare: nil,
 		activeCommitteeNodes:   []*cryptolib.PublicKey{},
 		activeAccessNodes:      nil, // Set bellow.
-		accessNodesFromNode:    accessNodesFromNode,
-		accessNodesFromChain:   []*cryptolib.PublicKey{},
-		serverNodes:            []*cryptolib.PublicKey{},
+		accessNodesFromNode:    nil, // Set bellow.
+		accessNodesFromChain:   nil, // Set bellow.
+		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
 		latestActiveAO:         nil,
 		netRecvPipe:            pipe.NewDefaultInfinitePipe(),
@@ -274,7 +274,6 @@ func New(
 		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
-	cni.deriveActiveAccessNodes()
 	//
 	// Create sub-components.
 	chainMetrics := metrics.EmptyChainMetrics()
@@ -320,6 +319,11 @@ func New(
 	cni.mempool = mempool
 	cni.stateTrackerAct = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerActCB)
 	cni.stateTrackerCnf = NewStateTracker(ctx, stateMgr, cni.handleStateTrackerCnfCB)
+	cni.updateAccessNodes(func() {
+		cni.accessNodesFromNode = accessNodesFromNode
+		cni.accessNodesFromChain = []*cryptolib.PublicKey{}
+	})
+	cni.updateServerNodes([]*cryptolib.PublicKey{})
 	//
 	// Connect to the peering network.
 	netRecvPipeInCh := cni.netRecvPipe.In()
@@ -493,6 +497,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 	if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 		panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
 	}
+	cni.log.Debugf("Latest state set to index=%v, trieRoot=%v", till.GetStateIndex(), l1Commitment.TrieRoot())
 }
 
 func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*cryptolib.PublicKey) {
@@ -775,12 +780,14 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	oldAccessNodes := cni.activeAccessNodes
 	update()
 	cni.deriveActiveAccessNodes()
+	serverNodes := cni.serverNodes
 	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()
-	if !util.Same(oldAccessNodes, activeAccessNodes) {
+	if oldAccessNodes == nil || !util.Same(oldAccessNodes, activeAccessNodes) {
 		cni.log.Infof("Access nodes updated, active=%+v", activeAccessNodes)
 		cni.mempool.AccessNodesUpdated(activeCommitteeNodes, activeAccessNodes)
+		cni.stateMgr.ChainNodesUpdated(serverNodes, activeAccessNodes, activeCommitteeNodes)
 		cni.listener.AccessNodesUpdated(cni.chainID, activeAccessNodes)
 	}
 }
@@ -789,12 +796,13 @@ func (cni chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
 	cni.accessLock.Lock()
 	oldServerNodes := cni.serverNodes
 	cni.serverNodes = serverNodes //nolint:staticcheck
+	activeAccessNodes := cni.activeAccessNodes
 	activeCommitteeNodes := cni.activeCommitteeNodes
 	cni.accessLock.Unlock()
-	if !util.Same(oldServerNodes, serverNodes) {
+	if oldServerNodes == nil || !util.Same(oldServerNodes, serverNodes) {
 		cni.log.Infof("Server nodes updated, servers=%+v", serverNodes)
 		cni.mempool.ServerNodesUpdated(activeCommitteeNodes, serverNodes)
-		cni.stateMgr.ChainServerNodesUpdated(serverNodes)
+		cni.stateMgr.ChainNodesUpdated(serverNodes, activeAccessNodes, activeCommitteeNodes)
 		cni.listener.ServerNodesUpdated(cni.chainID, serverNodes)
 	}
 }

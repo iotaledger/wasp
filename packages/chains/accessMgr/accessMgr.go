@@ -166,14 +166,17 @@ func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
 }
 
 func (ami *accessMgrImpl) handleReqTrustedNodes(recv *reqTrustedNodes) {
+	ami.log.Debugf("handleReqTrustedNodes: trusted=%v", recv.trusted)
 	ami.sendMessages(ami.dist.Input(amDist.NewInputTrustedNodes(recv.trusted)))
 }
 
 func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
+	ami.log.Debugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
 	ami.sendMessages(ami.dist.Input(amDist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
 }
 
 func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
+	ami.log.Debugf("handleReqChainDismissed: chainID=%v", recv.chainID)
 	ami.sendMessages(ami.dist.Input(amDist.NewInputChainDisabled(recv.chainID)))
 }
 

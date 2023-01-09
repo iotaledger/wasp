@@ -1,13 +1,8 @@
-//
-//
-//
-//
-//
-//
-
 package smUtils
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -38,12 +33,9 @@ func NewNodeRandomiserNoInit(me gpa.NodeID, log *logger.Logger) NodeRandomiser {
 }
 
 func (nrT *nodeRandomiser) init(allNodeIDs []gpa.NodeID) {
-	nrT.nodeIDs = make([]gpa.NodeID, 0, len(allNodeIDs)-1)
-	for _, nodeID := range allNodeIDs {
-		if nodeID != nrT.me { // Do not include self to the permutation.
-			nrT.nodeIDs = append(nrT.nodeIDs, nodeID)
-		}
-	}
+	nrT.nodeIDs = lo.Filter(allNodeIDs, func(nodeID gpa.NodeID, index int) bool {
+		return nodeID != nrT.me // Do not include self to the permutation.
+	})
 	var err error
 	nrT.permutation, err = util.NewPermutation16(uint16(len(nrT.nodeIDs)))
 	if err != nil {

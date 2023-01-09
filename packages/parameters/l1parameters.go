@@ -34,7 +34,7 @@ const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.UInt64ByteSize // Nonce
 
 var (
-	l1ParamsMutex = sync.RWMutex{}
+	l1ParamsMutex = &sync.RWMutex{}
 	l1Params      *L1Params
 
 	L1ForTesting = &L1Params{
@@ -74,6 +74,10 @@ func isTestContext() bool {
 func L1() *L1Params {
 	l1ParamsMutex.Lock()
 	defer l1ParamsMutex.Unlock()
+	return L1NoLock()
+}
+
+func L1NoLock() *L1Params {
 	if l1Params == nil {
 		if isTestContext() {
 			l1Params = L1ForTesting

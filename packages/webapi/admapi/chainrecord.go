@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -14,14 +15,14 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider) {
+func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvider registry.ChainRecordRegistryProvider, chainsProvider chains.Provider) {
 	rnd1 := isc.RandomChainID()
 	example := model.ChainRecord{
 		ChainID: model.NewChainIDBech32(rnd1),
 		Active:  false,
 	}
 
-	s := &chainRecordService{chainRecordRegistryProvider}
+	s := &chainRecordService{chainRecordRegistryProvider, chainsProvider}
 
 	adm.POST(routes.PutChainRecord(), s.handlePutChainRecord).
 		SetSummary("Create a new chain record").
@@ -39,6 +40,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup, chainRecordRegistryProvid
 
 type chainRecordService struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
+	chainsProvider              chains.Provider
 }
 
 func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
@@ -76,6 +78,21 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	}
 
 	log.Infof("Chain record saved: ChainID: %s (active: %t)", requestChainRec.ChainID(), requestChainRec.Active)
+
+	// Activate/deactivate the chain accordingly.
+	// if requestChainRec.Active {
+	// 	log.Debugw("calling Chains.Activate", "chainID", requestChainRec.ChainID().String())
+	// 	if err := s.chainsProvider().Activate(requestChainRec.ChainID()); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// TODO: Tests start failing if this is added. Maybe we have to review the tests.
+	// else {
+	// 	log.Debugw("calling Chains.Deactivate", "chainID", requestChainRec.ChainID().String())
+	// 	if err := s.chainsProvider().Deactivate(requestChainRec.ChainID()); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return c.NoContent(http.StatusCreated)
 }

@@ -33,7 +33,13 @@ type StateMgr interface {
 	) <-chan *smInputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
-	ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey)
+	ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey)
+}
+
+type reqChainNodesUpdated struct {
+	serverNodes    []*cryptolib.PublicKey
+	accessNodes    []*cryptolib.PublicKey
+	committeeNodes []*cryptolib.PublicKey
 }
 
 type stateManager struct {
@@ -99,7 +105,11 @@ func New(
 		timers:          timers,
 		ctx:             ctx,
 	}
-	result.handleNodePublicKeys(peerPubKeys)
+	result.handleNodePublicKeys(&reqChainNodesUpdated{
+		serverNodes:    peerPubKeys,
+		accessNodes:    []*cryptolib.PublicKey{},
+		committeeNodes: []*cryptolib.PublicKey{},
+	})
 
 	attachID := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
@@ -129,8 +139,12 @@ func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAO, nextAO
 	return resultCh
 }
 
-func (smT *stateManager) ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey) {
-	smT.nodePubKeysPipe.In() <- serverNodePubKeys
+func (smT *stateManager) ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey) {
+	smT.nodePubKeysPipe.In() <- &reqChainNodesUpdated{
+		serverNodes:    serverNodes,
+		accessNodes:    accessNodes,
+		committeeNodes: committeeNodes,
+	}
 }
 
 // -------------------------------------
@@ -191,7 +205,7 @@ func (smT *stateManager) run() {
 			}
 		case msg, ok := <-nodePubKeysPipeCh:
 			if ok {
-				smT.handleNodePublicKeys(msg.([]*cryptolib.PublicKey))
+				smT.handleNodePublicKeys(msg.(*reqChainNodesUpdated))
 			} else {
 				nodePubKeysPipeCh = nil
 			}
@@ -225,13 +239,31 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 	smT.sendMessages(outMsgs)
 }
 
-func (smT *stateManager) handleNodePublicKeys(peerPubKeys []*cryptolib.PublicKey) {
-	smT.nodeIDToPubKey = make(map[gpa.NodeID]*cryptolib.PublicKey)
-	peerNodeIDs := make([]gpa.NodeID, len(peerPubKeys))
-	for i := range peerPubKeys {
-		peerNodeIDs[i] = pubKeyAsNodeID(peerPubKeys[i])
-		smT.nodeIDToPubKey[peerNodeIDs[i]] = peerPubKeys[i]
+func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
+	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
+	peerNodeIDs := []gpa.NodeID{}
+	for _, pubKey := range req.serverNodes {
+		nodeID := pubKeyAsNodeID(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			peerNodeIDs = append(peerNodeIDs, nodeID)
+		}
 	}
+	for _, pubKey := range req.accessNodes {
+		nodeID := pubKeyAsNodeID(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			// Don't use access nodes for queries.
+		}
+	}
+	for _, pubKey := range req.committeeNodes {
+		nodeID := pubKeyAsNodeID(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			peerNodeIDs = append(peerNodeIDs, nodeID)
+		}
+	}
+
 	smT.log.Infof("Updating list of nodeIDs: [%v]",
 		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
 			return acc + " " + string(item)

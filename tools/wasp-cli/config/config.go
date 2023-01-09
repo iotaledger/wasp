@@ -85,7 +85,7 @@ func refreshL1ParamsFromNode() {
 		log.Printf("Getting L1 params from node at %s...\n", L1APIAddress())
 	}
 	L1Client() // this will call parameters.InitL1()
-	Set(l1ParamsKey, parameters.L1())
+	Set(l1ParamsKey, parameters.L1NoLock())
 	Set(l1ParamsTimestampKey, time.Now())
 }
 
