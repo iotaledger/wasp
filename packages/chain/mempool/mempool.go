@@ -194,7 +194,7 @@ func New(
 	metrics metrics.MempoolMetrics,
 	listener ChainListener,
 ) Mempool {
-	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
