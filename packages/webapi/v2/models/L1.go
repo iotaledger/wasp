@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/iotaledger/hive.go/core/typeutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,7 +14,7 @@ type Output struct {
 }
 
 func OutputFromIotaGoOutput(output iotago.Output) *Output {
-	if output == nil {
+	if typeutils.IsInterfaceNil(output) {
 		return nil
 	}
 
@@ -32,7 +33,7 @@ type OnLedgerRequest struct {
 }
 
 func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
-	if request == nil {
+	if typeutils.IsInterfaceNil(request) {
 		return nil
 	}
 
