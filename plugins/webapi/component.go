@@ -102,8 +102,8 @@ func provide(c *dig.Container) error {
 			nil,
 			ParamsWebAPI.DebugRequestLoggerEnabled,
 		)
-		e.Server.ReadTimeout = 5 * time.Second
-		e.Server.WriteTimeout = 10 * time.Second
+		e.Server.ReadTimeout = 20 * time.Second
+		e.Server.WriteTimeout = 30 * time.Second
 
 		e.HidePort = true
 		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
