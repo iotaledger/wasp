@@ -50,3 +50,14 @@ func DecodeSliceHexBinaryMarshaled[M encoding.BinaryUnmarshaler](dataHex []strin
 
 	return nil
 }
+
+// Mostly for logging.
+func PrefixHex(data []byte, prefixLen int) string {
+	if data == nil {
+		return "<nil>"
+	}
+	if len(data) <= prefixLen {
+		return iotago.EncodeHex(data)
+	}
+	return iotago.EncodeHex(data[0:prefixLen]) + "..."
+}
