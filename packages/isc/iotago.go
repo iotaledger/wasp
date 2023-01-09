@@ -9,8 +9,10 @@ import (
 
 const Million = uint64(1_000_000)
 
-var emptyOutputID = iotago.OutputID{}
-var emptyNativeTokenID = iotago.NativeTokenID{}
+var (
+	emptyOutputID      = iotago.OutputID{}
+	emptyNativeTokenID = iotago.NativeTokenID{}
+)
 
 func DecodeOutputID(b []byte, def ...iotago.OutputID) (iotago.OutputID, error) {
 	if len(b) != iotago.OutputIDLength {
