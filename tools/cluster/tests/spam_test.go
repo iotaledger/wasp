@@ -173,7 +173,7 @@ func TestSpamOffLedger(t *testing.T) {
 	require.NoError(t, err)
 	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)
-	require.Regexp(t, "counter = 100000", events[len(events)-1])
+	require.Regexp(t, fmt.Sprintf("counter = %d", numRequests), events[len(events)-1])
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
 }
