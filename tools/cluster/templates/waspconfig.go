@@ -94,6 +94,9 @@ var WaspConfig = `
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}"
   },
+  "profilingRecorder": {
+    "enabled": false
+  }, 
   "prometheus": {
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",

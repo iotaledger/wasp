@@ -15,4 +15,5 @@ const (
 	PriorityPublisher
 	PriorityNanoMsg
 	PriorityDashboard
+	PriorityProfilingRecorder
 )
