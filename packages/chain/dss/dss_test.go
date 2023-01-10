@@ -29,7 +29,7 @@ func TestBasic(t *testing.T) {
 	test := func(tt *testing.T, n, f int) {
 		//
 		// Setup keys and node names.
-		nodeIDs := gpa.MakeTestNodeIDs("node", n)
+		nodeIDs := gpa.MakeTestNodeIDs(n)
 		nodeSKs := map[gpa.NodeID]kyber.Scalar{}
 		nodePKs := map[gpa.NodeID]kyber.Point{}
 		for i := range nodeIDs {

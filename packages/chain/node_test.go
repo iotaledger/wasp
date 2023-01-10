@@ -398,6 +398,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.log.Named(fmt.Sprintf("N#%v", i)),
 		)
 		require.NoError(t, err)
+		te.nodes[i].ServersUpdated(te.peerPubKeys)
 	}
 	te.log = te.log.Named("TC")
 	return te

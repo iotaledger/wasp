@@ -59,7 +59,7 @@ func genericTest(
 	secretToShare := suite.Scalar().Pick(suite.RandomStream())
 	//
 	// Setup keys and node names.
-	nodeIDs := gpa.MakeTestNodeIDs("node", n)
+	nodeIDs := gpa.MakeTestNodeIDs(n)
 	nodeSKs := map[gpa.NodeID]kyber.Scalar{}
 	nodePKs := map[gpa.NodeID]kyber.Point{}
 	for i := range nodeIDs {
@@ -77,7 +77,7 @@ func genericTest(
 	faulty := nodeIDs[:silentNodes]
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for _, nid := range nodeIDs {
-		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.Named(string(nid)))
+		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.Named(nid.ShortString()))
 		if isNodeInList(nid, faulty) {
 			nodes[nid] = &silentNode{nested: nodes[nid]}
 		}

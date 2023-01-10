@@ -17,7 +17,7 @@ import (
 // Single node network. 8 blocks are sent to state manager. The result is checked
 // by sending consensus requests, which force the access of the blocks.
 func TestBasic(t *testing.T) {
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	nodeIDs := gpa.MakeTestNodeIDs(1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
 
@@ -35,7 +35,7 @@ func TestBasic(t *testing.T) {
 // which force the access (and retrieval) of the blocks. For successful retrieval,
 // several timer events are required for nodes to try to request blocks from peers.
 func TestManyNodes(t *testing.T) {
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 10)
+	nodeIDs := gpa.MakeTestNodeIDs(10)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
@@ -97,7 +97,7 @@ func TestFull(t *testing.T) {
 	iterationCount := 3
 	maxRetriesPerIteration := 100
 
-	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
+	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
@@ -175,7 +175,7 @@ func TestMempoolRequest(t *testing.T) {
 	branchSize := 5
 	maxRetries := 100
 
-	nodeIDs := gpa.MakeTestNodeIDs("Node", nodeCount)
+	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
@@ -202,7 +202,7 @@ func TestMempoolRequest(t *testing.T) {
 //  2. A ChainFetchStateDiff request is sent for block 1 as a new block
 //     and block 0 as an old block.
 func TestMempoolRequestFirstStep(t *testing.T) {
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	nodeIDs := gpa.MakeTestNodeIDs(1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
 
@@ -224,7 +224,7 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 	batchSize := 10
 	middleBlock := 4
 
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	nodeIDs := gpa.MakeTestNodeIDs(1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
 
@@ -249,7 +249,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	batchSize := 10
 	branchSize := 8
 
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	nodeIDs := gpa.MakeTestNodeIDs(1)
 	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
 	defer env.finalize()
 
@@ -268,7 +268,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 // Single node network. Checks if block cache is cleaned via state manager
 // timer events.
 func TestBlockCacheCleaningAuto(t *testing.T) {
-	nodeIDs := gpa.MakeTestNodeIDs("Node", 1)
+	nodeIDs := gpa.MakeTestNodeIDs(1)
 	smTimers := NewStateManagerTimers()
 	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
 	smTimers.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond

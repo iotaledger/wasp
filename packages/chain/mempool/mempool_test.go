@@ -96,10 +96,10 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(chainInitReq.(isc.OnLedgerRequest))
 	}
-	t.Logf("AccessNodesUpdated")
+	t.Logf("ServerNodesUpdated")
 	tangleTime := time.Now()
 	for _, node := range te.mempools {
-		node.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		node.TangleTimeUpdated(tangleTime)
 	}
 	t.Logf("TrackNewChainHead")
@@ -247,7 +247,7 @@ func testTimeLock(t *testing.T, n, f int, reliable bool) { //nolint: gocyclo
 	}
 	for i, mp := range te.mempools {
 		mp.TangleTimeUpdated(start)
-		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		mp.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	//
@@ -363,7 +363,7 @@ func testExpiration(t *testing.T, n, f int, reliable bool) {
 	}
 	for i, mp := range te.mempools {
 		mp.TangleTimeUpdated(start)
-		mp.AccessNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		mp.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		mp.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
 	//

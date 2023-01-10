@@ -7,6 +7,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -41,11 +42,5 @@ func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 		}
 		return m, nil
 	}
-	var logData []byte
-	if len(data) <= 20 {
-		logData = data
-	} else {
-		logData = data[0:20]
-	}
-	return nil, xerrors.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %w", msgType, logData)
+	return nil, xerrors.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %w", msgType, util.PrefixHex(data, 20))
 }

@@ -4,7 +4,7 @@
 // A mempool basically does these functions:
 //   - Provide a proposed set of requests (refs) for the consensus.
 //   - Provide a set of requests for a TX as decided by the consensus.
-//   - Share Off-Ledger requests between the committee and the access nodes.
+//   - Share Off-Ledger requests between the committee and the server nodes.
 //
 // When the consensus asks for a proposal set, the mempool has to determine,
 // if a reorg or a rollback has happened and adjust the request set accordingly.
@@ -46,6 +46,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -96,8 +97,9 @@ type Mempool interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest)
 	// Invoked by the ChainMgr when a time of a tangle changes.
 	TangleTimeUpdated(tangleTime time.Time)
-	// Invoked by the chain when a set of access nodes has changed.
+	// Invoked by the chain when a set of server nodes has changed.
 	// These nodes should be used to disseminate the off-ledger requests.
+	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 }
 
@@ -125,6 +127,8 @@ type mempoolImpl struct {
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
+	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
+	serverNodes                    []*cryptolib.PublicKey
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
@@ -151,10 +155,16 @@ const (
 	msgTypeMempool byte = iota
 )
 
+type reqServerNodesUpdated struct {
+	committeePubKeys  []*cryptolib.PublicKey
+	serverNodePubKeys []*cryptolib.PublicKey
+}
+
 type reqAccessNodesUpdated struct {
 	committeePubKeys  []*cryptolib.PublicKey
 	accessNodePubKeys []*cryptolib.PublicKey
 }
+
 type reqConsensusProposals struct {
 	ctx         context.Context
 	aliasOutput *isc.AliasOutputWithID
@@ -184,7 +194,7 @@ func New(
 	metrics metrics.MempoolMetrics,
 	listener ChainListener,
 ) Mempool {
-	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
@@ -193,6 +203,8 @@ func New(
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq),
 		offLedgerPool:                  NewTypedPool[isc.OffLedgerRequest](waitReq),
 		chainHeadAO:                    nil,
+		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
+		serverNodes:                    []*cryptolib.PublicKey{},
 		accessNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqAccessNodesUpdated](),
 		accessNodes:                    []*cryptolib.PublicKey{},
 		committeeNodes:                 []*cryptolib.PublicKey{},
@@ -247,6 +259,10 @@ func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
 }
 
+func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
+	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{committeePubKeys, serverNodePubKeys}
+}
+
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
 	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
 }
@@ -274,6 +290,7 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 }
 
 func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint: gocyclo
+	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
 	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
@@ -287,6 +304,12 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 	rePublishTicker := time.NewTicker(distShareRePublishTick)
 	for {
 		select {
+		case recv, ok := <-serverNodesUpdatedPipeOutCh:
+			if !ok {
+				serverNodesUpdatedPipeOutCh = nil
+				break
+			}
+			mpi.handleServerNodesUpdated(recv)
 		case recv, ok := <-accessNodesUpdatedPipeOutCh:
 			if !ok {
 				accessNodesUpdatedPipeOutCh = nil
@@ -342,7 +365,8 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 		case <-rePublishTicker.C:
 			mpi.handleRePublishTimeTick()
 		case <-ctx.Done():
-			// mpi.accessNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
+			// mpi.serverNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
+			// mpi.accessNodesUpdatedPipe.Close()
 			// mpi.reqConsensusProposalsPipe.Close()
 			// mpi.reqConsensusRequestsPipe.Close()
 			// mpi.reqReceiveOnLedgerRequestPipe.Close()
@@ -414,19 +438,22 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	return false
 }
 
+func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
+	mpi.serverNodes = recv.serverNodePubKeys
+	mpi.committeeNodes = recv.committeePubKeys
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputServerNodes(
+		lo.Map(mpi.serverNodes, mpi.pubKeyAsNodeIDMap),
+		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
+	)))
+}
+
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 	mpi.accessNodes = recv.accessNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	//
-	accessNodeIDs := make([]gpa.NodeID, len(mpi.accessNodes))
-	for i, nodePubKey := range mpi.accessNodes {
-		accessNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
-	}
-	committeeNodeIDs := make([]gpa.NodeID, len(mpi.committeeNodes))
-	for i, nodePubKey := range mpi.committeeNodes {
-		committeeNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
-	}
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(accessNodeIDs, committeeNodeIDs)))
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(
+		lo.Map(mpi.accessNodes, mpi.pubKeyAsNodeIDMap),
+		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
+	)))
 }
 
 // This implementation only tracks a single branch. So, we will only respond
@@ -737,11 +764,16 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := mpi.netPeerPubs[nodeID]; !ok {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}
 	return nodeID
+}
+
+// To use with lo.Map.
+func (mpi *mempoolImpl) pubKeyAsNodeIDMap(nodePubKey *cryptolib.PublicKey, _ int) gpa.NodeID {
+	return mpi.pubKeyAsNodeID(nodePubKey)
 }
 
 // Have to have it as a separate function to be able to use type params.

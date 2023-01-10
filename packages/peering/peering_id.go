@@ -16,6 +16,7 @@ import (
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 // PeeringID is relates peers in different nodes for a particular
@@ -29,10 +30,11 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 	return pid
 }
 
-//nolint:revive
-func PeeringIDFromBytes(src []byte) PeeringID {
+// HashPeeringIDFromBytes generates a PeeringID by concatenating all the given data and hash with Blake2b 256.
+func HashPeeringIDFromBytes(src []byte, additional ...[]byte) PeeringID {
+	hashed := hashing.HashDataBlake2b(append([][]byte{src}, additional...)...)
 	pid := PeeringID{}
-	copy(pid[:], src)
+	copy(pid[:], hashed[:])
 	return pid
 }
 

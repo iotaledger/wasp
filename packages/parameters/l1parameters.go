@@ -3,6 +3,7 @@ package parameters
 import (
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -33,7 +34,8 @@ const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.UInt64ByteSize // Nonce
 
 var (
-	l1Params *L1Params
+	l1ParamsMutex = sync.RWMutex{}
+	l1Params      *L1Params
 
 	L1ForTesting = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
@@ -70,6 +72,8 @@ func isTestContext() bool {
 }
 
 func L1() *L1Params {
+	l1ParamsMutex.Lock()
+	defer l1ParamsMutex.Unlock()
 	if l1Params == nil {
 		if isTestContext() {
 			l1Params = L1ForTesting

@@ -7,6 +7,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -26,7 +27,7 @@ func (d *dssImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 
 func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: data to short")
+		return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: data too short")
 	}
 	switch data[0] {
 	case msgTypePartialSig:
@@ -42,11 +43,5 @@ func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 		}
 		return m, nil
 	}
-	var logData []byte
-	if len(data) <= 20 {
-		logData = data
-	} else {
-		logData = data[0:20]
-	}
-	return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: cannot parse message starting with: %v", logData)
+	return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
 }

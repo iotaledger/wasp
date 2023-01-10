@@ -13,7 +13,7 @@ import (
 func TestOwnHandler(t *testing.T) {
 	t.Parallel()
 	n := 10
-	nodeIDs := MakeTestNodeIDs("node", n)
+	nodeIDs := MakeTestNodeIDs(n)
 	nodes := map[NodeID]GPA{}
 	inputs := map[NodeID]Input{}
 	for _, nid := range nodeIDs {

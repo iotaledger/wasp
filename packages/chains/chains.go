@@ -13,10 +13,13 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/generics/event"
+	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/chains/accessMgr"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -45,6 +48,8 @@ type Chains struct {
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
 	networkProvider                  peering.NetworkProvider
+	trustedNetworkManager            peering.TrustedNetworkManager
+	trustedNetworkListenerCancel     context.CancelFunc
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
 	rawBlocksEnabled                 bool
 	rawBlocksDir                     string
@@ -57,6 +62,7 @@ type Chains struct {
 
 	mutex     sync.RWMutex
 	allChains map[isc.ChainID]*activeChain
+	accessMgr accessMgr.AccessMgr
 }
 
 type activeChain struct {
@@ -72,6 +78,7 @@ func New(
 	offledgerBroadcastInterval time.Duration, // TODO: Unused for now.
 	pullMissingRequestsFromCommittee bool, // TODO: Unused for now.
 	networkProvider peering.NetworkProvider,
+	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
 	rawBlocksEnabled bool,
 	rawBlocksDir string,
@@ -90,15 +97,17 @@ func New(
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		networkProvider:                  networkProvider,
+		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
 		rawBlocksEnabled:                 rawBlocksEnabled,
 		rawBlocksDir:                     rawBlocksDir,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
-		chainListener:                    chainListener,
+		chainListener:                    nil, // See bellow.
 		consensusStateRegistry:           consensusStateRegistry,
 	}
+	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
 }
 
@@ -111,6 +120,9 @@ func (c *Chains) Run(ctx context.Context) error {
 	}
 	c.ctx = ctx
 
+	c.accessMgr = accessMgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.Named("AM"))
+	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
+
 	c.chainRecordRegistryProvider.Events().ChainRecordModified.Attach(event.NewClosure(func(event *registry.ChainRecordModifiedEvent) {
 		c.mutex.RLock()
 		defer c.mutex.RUnlock()
@@ -120,6 +132,32 @@ func (c *Chains) Run(ctx context.Context) error {
 	}))
 
 	return c.activateAllFromRegistry() //nolint:contextcheck
+}
+
+func (c *Chains) Close() {
+	if c.trustedNetworkListenerCancel != nil {
+		c.trustedNetworkListenerCancel()
+		c.trustedNetworkListenerCancel = nil
+	}
+}
+
+func (c *Chains) trustedPeersUpdatedCB(trustedPeers []*peering.TrustedPeer) {
+	trustedPubKeys := lo.Map(trustedPeers, func(tp *peering.TrustedPeer) *cryptolib.PublicKey { return tp.PubKey() })
+	c.accessMgr.TrustedNodes(trustedPubKeys)
+}
+
+func (c *Chains) chainServersUpdatedCB(chainID isc.ChainID, servers []*cryptolib.PublicKey) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+	ch, ok := c.allChains[chainID]
+	if !ok {
+		return
+	}
+	ch.chain.ServersUpdated(servers)
+}
+
+func (c *Chains) chainAccessUpdatedCB(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
+	c.accessMgr.ChainAccessNodes(chainID, accessNodes)
 }
 
 func (c *Chains) activateAllFromRegistry() error {
@@ -240,6 +278,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 		return nil
 	}
 	ch.cancelFunc()
+	c.accessMgr.ChainDismissed(chainID)
 	delete(c.allChains, chainID)
 	c.log.Debugf("chain has been deactivated: %s", chainID.String())
 	return nil
