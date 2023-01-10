@@ -16,7 +16,6 @@ import (
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -80,10 +79,10 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 			}
 		}
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
-			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
+			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
-			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
+			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
 	p := proc{

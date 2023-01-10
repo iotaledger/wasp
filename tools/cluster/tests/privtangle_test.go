@@ -5,11 +5,11 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -76,7 +76,7 @@ func mustOutputCount(client l1connection.Client, myAddress *iotago.Ed25519Addres
 func mustOutputMap(client l1connection.Client, myAddress *iotago.Ed25519Address) map[iotago.OutputID]iotago.Output {
 	outs, err := client.OutputMap(myAddress)
 	if err != nil {
-		panic(xerrors.Errorf("unable to get outputs as a map: %w", err))
+		panic(fmt.Errorf("unable to get outputs as a map: %w", err))
 	}
 	return outs
 }

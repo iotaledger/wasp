@@ -1,7 +1,7 @@
 package chainclient
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -16,17 +16,17 @@ func (c *Client) CheckRequestResult(reqID isc.RequestID) error {
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})
 	if err != nil {
-		return xerrors.Errorf("Could not fetch receipt for request: %w", err)
+		return fmt.Errorf("Could not fetch receipt for request: %w", err)
 	}
 	if !ret.MustHas(blocklog.ParamRequestRecord) {
-		return xerrors.Errorf("Could not fetch receipt for request: not found in blocklog")
+		return fmt.Errorf("Could not fetch receipt for request: not found in blocklog")
 	}
 	req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 	if err != nil {
-		return xerrors.Errorf("Could not decode receipt for request: %w", err)
+		return fmt.Errorf("Could not decode receipt for request: %w", err)
 	}
 	if req.Error != nil {
-		return xerrors.Errorf("The request was rejected: %v", req.Error)
+		return fmt.Errorf("The request was rejected: %v", req.Error)
 	}
 	return nil
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -90,7 +88,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	}
 	vmtype, binary, err := getBinary(progHash)
 	if err != nil {
-		return nil, xerrors.Errorf("internal error: can't get the binary for the program: %w", err)
+		return nil, fmt.Errorf("internal error: can't get the binary for the program: %w", err)
 	}
 	if err := cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
@@ -98,7 +96,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
-	return nil, xerrors.Errorf("internal error: can't get the deployed processor")
+	return nil, fmt.Errorf("internal error: can't get the deployed processor")
 }
 
 // RemoveProcessor deletes processor from cache

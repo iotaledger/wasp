@@ -1,10 +1,9 @@
 package vmcontext
 
 import (
+	"errors"
 	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,7 +28,7 @@ const (
 func (vmctx *VMContext) earlyCheckReasonToSkip() error {
 	if vmctx.task.AnchorOutput.StateIndex == 0 {
 		if len(vmctx.task.AnchorOutput.NativeTokens) > 0 {
-			return xerrors.New("can't init chain with native assets on the origin alias output")
+			return errors.New("can't init chain with native assets on the origin alias output")
 		}
 	} else {
 		if len(vmctx.task.AnchorOutput.NativeTokens) > 0 {
@@ -56,7 +55,7 @@ func (vmctx *VMContext) checkReasonRequestProcessed() error {
 		isProcessed = blocklog.MustIsRequestProcessed(vmctx.State(), reqid)
 	})
 	if isProcessed {
-		return xerrors.New("already processed")
+		return errors.New("already processed")
 	}
 	return nil
 }
@@ -115,7 +114,7 @@ func (vmctx *VMContext) checkReasonToSkipOnLedger() error {
 func (vmctx *VMContext) checkInternalOutput() error {
 	// internal outputs are used for internal accounting of assets inside the chain. They are not interpreted as requests
 	if vmctx.req.(isc.OnLedgerRequest).IsInternalUTXO(vmctx.ChainID()) {
-		return xerrors.New("it is an internal output")
+		return errors.New("it is an internal output")
 	}
 	return nil
 }
@@ -126,7 +125,7 @@ func (vmctx *VMContext) checkReasonTimeLock() error {
 	timeLock := vmctx.req.(isc.OnLedgerRequest).Features().TimeLock()
 	if !timeLock.IsZero() {
 		if vmctx.finalStateTimestamp.Before(timeLock) {
-			return xerrors.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
+			return fmt.Errorf("can't be consumed due to lock until %v", vmctx.finalStateTimestamp)
 		}
 	}
 	return nil
@@ -146,7 +145,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	windowTo := vmctx.finalStateTimestamp.Add(ExpiryUnlockSafetyWindowDuration)
 
 	if expiry.After(windowFrom) && expiry.Before(windowTo) {
-		return xerrors.Errorf("can't be consumed in the expire safety window close to %v", expiry)
+		return fmt.Errorf("can't be consumed in the expire safety window close to %v", expiry)
 	}
 
 	// General unlock validation
@@ -157,7 +156,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 	})
 
 	if !unlockable {
-		return xerrors.Errorf("can't be consumed, expiry: %v", expiry)
+		return fmt.Errorf("can't be consumed, expiry: %v", expiry)
 	}
 
 	return nil
@@ -166,7 +165,7 @@ func (vmctx *VMContext) checkReasonExpiry() error {
 // checkReasonReturnAmount skipping anything with return amounts in this version. There's no risk to lose funds
 func (vmctx *VMContext) checkReasonReturnAmount() error {
 	if _, ok := vmctx.req.(isc.OnLedgerRequest).Features().ReturnAmount(); ok {
-		return xerrors.New("return amount feature not supported in this version")
+		return errors.New("return amount feature not supported in this version")
 	}
 	return nil
 }

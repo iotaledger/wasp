@@ -7,8 +7,6 @@ import (
 	"io"
 	"math"
 
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -76,7 +74,7 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	if !digestExists {
 		// new digest, most common
@@ -85,26 +83,26 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 		// existing digest (should happen not often)
 		bin, err := lookupTable.GetAt(digest[:])
 		if err != nil {
-			return xerrors.Errorf("SaveRequestReceipt: %w", err)
+			return fmt.Errorf("SaveRequestReceipt: %w", err)
 		}
 		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
-			return xerrors.Errorf("SaveRequestReceipt: %w", err)
+			return fmt.Errorf("SaveRequestReceipt: %w", err)
 		}
 	}
 	for i := range lst {
 		if lst[i] == key {
 			// already in list. Not normal
-			return xerrors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
+			return errors.New("SaveRequestReceipt: inconsistency: duplicate lookup key")
 		}
 	}
 	lst = append(lst, key)
 	if err := lookupTable.SetAt(digest[:], lst.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	// save the record. Key is a LookupKey
 	data := rec.Bytes()
 	if err = collections.NewMap(partition, prefixRequestReceipts).SetAt(key.Bytes(), data); err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }
@@ -112,17 +110,17 @@ func SaveRequestReceipt(partition kv.KVStore, rec *RequestReceipt, key RequestLo
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract isc.Hname) error {
 	text := fmt.Sprintf("%s: %s", contract.String(), msg)
 	if err := collections.NewMap(partition, prefixRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	scLut := collections.NewMap(partition, prefixSmartContractEventsLookup)
 	entries, err := scLut.GetAt(contract.Bytes())
 	if err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	entries = append(entries, key.Bytes()...)
 	err = scLut.SetAt(contract.Bytes(), entries)
 	if err != nil {
-		return xerrors.Errorf("SaveRequestReceipt: %w", err)
+		return fmt.Errorf("SaveRequestReceipt: %w", err)
 	}
 	return nil
 }
@@ -152,11 +150,11 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
-			return nil, xerrors.Errorf("records.GetAt(lookupKey.Bytes()) returned: %w", err)
+			return nil, fmt.Errorf("records.GetAt(lookupKey.Bytes()) returned: %w", err)
 		}
 		rec, err := RequestReceiptFromBytes(recBytes)
 		if err != nil {
-			return nil, xerrors.Errorf("RequestReceiptFromBytes returned: %w", err)
+			return nil, fmt.Errorf("RequestReceiptFromBytes returned: %w", err)
 		}
 		if rec.Request.ID().Equals(reqID) {
 			rec.BlockIndex = lookupKey.BlockIndex()
@@ -171,11 +169,11 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 func isRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot mustGetLookupKeyListFromReqID: %w", err)
+		return nil, fmt.Errorf("cannot mustGetLookupKeyListFromReqID: %w", err)
 	}
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot getCorrectRecordFromLookupKeyList: %w", err)
+		return nil, fmt.Errorf("cannot getCorrectRecordFromLookupKeyList: %w", err)
 	}
 	return record, nil
 }
@@ -221,7 +219,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 	for {
 		key, err := EventLookupKeyFromBytes(keysBuf)
 		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, xerrors.Errorf("getSmartContractEventsIntern unable to parse key. %v", err)
+			return nil, fmt.Errorf("getSmartContractEventsIntern unable to parse key. %v", err)
 		}
 		if key == nil { // no more events
 			return ret, nil
@@ -235,7 +233,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 		}
 		event, err := events.GetAt(key.Bytes())
 		if err != nil {
-			return nil, xerrors.Errorf("getSmartContractEventsIntern unable to get event by key. %v", err)
+			return nil, fmt.Errorf("getSmartContractEventsIntern unable to get event by key. %v", err)
 		}
 		ret = append(ret, string(event))
 	}

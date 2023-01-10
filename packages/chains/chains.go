@@ -10,8 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/hive.go/core/generics/lo"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -180,7 +178,7 @@ func (c *Chains) activateAllFromRegistry() error {
 // activateWithoutLocking activates a chain in the node.
 func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
-		return xerrors.Errorf("run chains first")
+		return fmt.Errorf("run chains first")
 	}
 	//
 	// Check, maybe it is already running.
@@ -192,11 +190,11 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	// Activate the chain in the persistent store, if it is not activated yet.
 	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
 	if err != nil {
-		return xerrors.Errorf("cannot get chain record for %v: %w", chainID, err)
+		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
 	}
 	if !chainRecord.Active {
 		if _, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err != nil {
-			return xerrors.Errorf("cannot activate chain: %w", err)
+			return fmt.Errorf("cannot activate chain: %w", err)
 		}
 	}
 	//
@@ -220,7 +218,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.rawBlocksEnabled {
 		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
-			panic(xerrors.Errorf("cannot create WAL: %w", err))
+			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
 	} else {
 		chainWAL = smGPAUtils.NewEmptyBlockWAL()
@@ -244,7 +242,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	)
 	if err != nil {
 		chainCancel()
-		return xerrors.Errorf("Chains.Activate: failed to create chain object: %w", err)
+		return fmt.Errorf("Chains.Activate: failed to create chain object: %w", err)
 	}
 	c.allChains[chainID] = &activeChain{
 		chain:      newChain,
@@ -269,7 +267,7 @@ func (c *Chains) Deactivate(chainID isc.ChainID) error {
 	defer c.mutex.Unlock()
 
 	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID); err != nil {
-		return xerrors.Errorf("cannot deactivate chain %v: %w", chainID, err)
+		return fmt.Errorf("cannot deactivate chain %v: %w", chainID, err)
 	}
 
 	ch, ok := c.allChains[chainID]

@@ -7,9 +7,8 @@
 package solo
 
 import (
+	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -72,7 +71,7 @@ func (mi *mempoolImpl) RequestBatchProposal() []isc.Request {
 		case isc.OffLedgerRequest:
 			batch = append(batch, request)
 		default:
-			panic(xerrors.Errorf("unexpected request type %T: %+v", request, request))
+			panic(fmt.Errorf("unexpected request type %T: %+v", request, request))
 		}
 	}
 	return batch

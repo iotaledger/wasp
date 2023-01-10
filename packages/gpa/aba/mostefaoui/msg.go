@@ -4,7 +4,7 @@
 package mostefaoui
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -19,7 +19,7 @@ const (
 // Implements the gpa.GPA interface.
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("data to short")
+		return nil, fmt.Errorf("data to short")
 	}
 	msgType := data[0]
 	switch msgType {
@@ -38,9 +38,9 @@ func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	case msgTypeWrapped:
 		m, err := a.msgWrapper.UnmarshalMessage(data)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal Wrapped msg: %w", err)
+			return nil, fmt.Errorf("cannot unmarshal Wrapped msg: %w", err)
 		}
 		return m, nil
 	}
-	return nil, xerrors.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %w", msgType, util.PrefixHex(data, 20))
+	return nil, fmt.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %w", msgType, util.PrefixHex(data, 20))
 }

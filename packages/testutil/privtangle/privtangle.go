@@ -20,7 +20,6 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/iota.go/v3/nodeclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -75,7 +74,7 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 	pt.logf("Starting in baseDir=%s with basePort=%d, nodeCount=%d ...", baseDir, basePort, nodeCount)
 
 	if err := os.MkdirAll(pt.BaseDir, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", pt.BaseDir, err))
+		panic(fmt.Errorf("Unable to create dir %v: %w", pt.BaseDir, err))
 	}
 
 	pt.generateSnapshot()
@@ -110,12 +109,12 @@ func Start(ctx context.Context, baseDir string, basePort, nodeCount int, logfunc
 func (pt *PrivTangle) generateSnapshot() {
 	snapshotPath := filepath.Join(pt.BaseDir, pt.SnapshotInit)
 	if err := os.RemoveAll(snapshotPath); err != nil {
-		panic(xerrors.Errorf("Unable to remove old snapshot: %w", err))
+		panic(fmt.Errorf("Unable to remove old snapshot: %w", err))
 	}
 
 	jsonConfigPath := filepath.Join(pt.BaseDir, "protocol_parameters.json")
 	if err := os.WriteFile(jsonConfigPath, []byte(protocolParameters), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+		panic(fmt.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
 	}
 
 	snapGenArgs := []string{
@@ -126,7 +125,7 @@ func (pt *PrivTangle) generateSnapshot() {
 	}
 	snapGen := exec.CommandContext(pt.ctx, "hornet", snapGenArgs...)
 	if snapGenOut, err := snapGen.Output(); err != nil {
-		panic(xerrors.Errorf("Unable to run snap-gen %s ==> %s: %w", snapGen.String(), snapGenOut, err))
+		panic(fmt.Errorf("Unable to run snap-gen %s ==> %s: %w", snapGen.String(), snapGenOut, err))
 	}
 }
 
@@ -140,27 +139,27 @@ func (pt *PrivTangle) startNode(i int) {
 	nodePathSnapDelta := fmt.Sprintf("%s/delta_snapshot.bin", nodePathSnapshots)
 
 	if err := os.RemoveAll(nodePath); err != nil {
-		panic(xerrors.Errorf("Unable to delete dir %v: %w", nodePath, err))
+		panic(fmt.Errorf("Unable to delete dir %v: %w", nodePath, err))
 	}
 	if err := os.MkdirAll(nodePath, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", nodePath, err))
+		panic(fmt.Errorf("Unable to create dir %v: %w", nodePath, err))
 	}
 	if err := os.MkdirAll(filepath.Join(nodePath, nodePathDB), 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", nodePathDB, err))
+		panic(fmt.Errorf("Unable to create dir %v: %w", nodePathDB, err))
 	}
 	if err := os.MkdirAll(filepath.Join(nodePath, nodePathSnapshots), 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", nodePathSnapshots, err))
+		panic(fmt.Errorf("Unable to create dir %v: %w", nodePathSnapshots, err))
 	}
 	if err := os.WriteFile(filepath.Join(nodePath, pt.ConfigFile), []byte(pt.configFileContent()), 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
+		panic(fmt.Errorf("Unable to create %s: %w", pt.ConfigFile, err))
 	}
 
 	snapContents, err := os.ReadFile(filepath.Join(pt.BaseDir, pt.SnapshotInit))
 	if err != nil {
-		panic(xerrors.Errorf("Unable to read initial snapshot : %w", err))
+		panic(fmt.Errorf("Unable to read initial snapshot : %w", err))
 	}
 	if err := os.WriteFile(filepath.Join(nodePath, nodePathSnapFull), snapContents, 0o600); err != nil {
-		panic(xerrors.Errorf("Unable to copy the initial snapshot : %w", err))
+		panic(fmt.Errorf("Unable to copy the initial snapshot : %w", err))
 	}
 
 	args := []string{
@@ -192,7 +191,7 @@ func (pt *PrivTangle) startNode(i int) {
 	writeOutputToFiles(nodePath, hornetCmd)
 
 	if err := hornetCmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start hornet node[%d]: %w", i, err))
+		panic(fmt.Errorf("Cannot start hornet node[%d]: %w", i, err))
 	}
 }
 
@@ -237,7 +236,7 @@ func (pt *PrivTangle) startIndexer(i int) *exec.Cmd {
 func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) *exec.Cmd {
 	path := filepath.Join(pt.BaseDir, fmt.Sprintf("node-%d", i), plugin)
 	if err := os.MkdirAll(path, 0o755); err != nil {
-		panic(xerrors.Errorf("Unable to create dir %v: %w", path, err))
+		panic(fmt.Errorf("Unable to create dir %v: %w", path, err))
 	}
 
 	cmd := exec.CommandContext(pt.ctx, plugin, args...)
@@ -250,7 +249,7 @@ func (pt *PrivTangle) startINXPlugin(i int, plugin string, args, env []string) *
 	util.TerminateCmdWhenTestStops(cmd)
 
 	if err := cmd.Start(); err != nil {
-		panic(xerrors.Errorf("Cannot start %s [%d]: %w", plugin, i, err))
+		panic(fmt.Errorf("Cannot start %s [%d]: %w", plugin, i, err))
 	}
 	return cmd
 }
@@ -259,15 +258,15 @@ func (pt *PrivTangle) Stop() {
 	pt.logf("Stopping...")
 	for i, c := range pt.NodeCommands {
 		if err := c.Process.Signal(os.Interrupt); err != nil {
-			panic(xerrors.Errorf("Unable to send INT signal to Hornet node [%d]: %w", i, err))
+			panic(fmt.Errorf("Unable to send INT signal to Hornet node [%d]: %w", i, err))
 		}
 	}
 	for i, c := range pt.NodeCommands {
 		if err := c.Wait(); err != nil {
-			panic(xerrors.Errorf("Failed while waiting for a HORNET node [%d]: %w", i, err))
+			panic(fmt.Errorf("Failed while waiting for a HORNET node [%d]: %w", i, err))
 		}
 		if !c.ProcessState.Success() {
-			panic(xerrors.Errorf("Hornet node [%d] failed: %w", i, c.ProcessState.String()))
+			panic(fmt.Errorf("Hornet node [%d] failed: %w", i, c.ProcessState.String()))
 		}
 	}
 	pt.logf("Stopping... Done")
@@ -412,12 +411,12 @@ func (pt *PrivTangle) queryFaucetInfo() error {
 	faucetURL := fmt.Sprintf("http://localhost:%d/api/info", pt.NodePortFaucet(0))
 	httpReq, err := http.NewRequestWithContext(pt.ctx, http.MethodGet, faucetURL, http.NoBody)
 	if err != nil {
-		return xerrors.Errorf("unable to create request: %w", err)
+		return fmt.Errorf("unable to create request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		return xerrors.Errorf("unable to call faucet info endpoint: %w", err)
+		return fmt.Errorf("unable to call faucet info endpoint: %w", err)
 	}
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -442,11 +441,11 @@ func (pt *PrivTangle) NodeMultiAddr(i int) string {
 	stdPrivKey := pt.NodeKeyPairs[i].GetPrivateKey().AsStdKey()
 	lppPrivKey, _, err := crypto.KeyPairFromStdKey(&stdPrivKey)
 	if err != nil {
-		panic(xerrors.Errorf("Unable to convert privKey to the standard priv key."))
+		panic(fmt.Errorf("Unable to convert privKey to the standard priv key."))
 	}
 	tmpNode, err := libp2p.New(libp2p.Identity(lppPrivKey))
 	if err != nil {
-		panic(xerrors.Errorf("Unable to create temporary p2p node: %v", err))
+		panic(fmt.Errorf("Unable to create temporary p2p node: %v", err))
 	}
 	peerIdentity := tmpNode.ID().String()
 	return fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/p2p/%s", pt.NodePortPeering(i), peerIdentity)
@@ -522,11 +521,11 @@ func (pt *PrivTangle) L1Config(i ...int) l1connection.Config {
 func writeOutputToFiles(path string, cmd *exec.Cmd) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET [path: %s]: %w", path, err))
+		panic(fmt.Errorf("Unable to get stdout for HORNET [path: %s]: %w", path, err))
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		panic(xerrors.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
+		panic(fmt.Errorf("Unable to get stdout for HORNET[path: %s]: %w", path, err))
 	}
 	outFilePath := filepath.Join(path, "stdout.log")
 	outFile, err := os.Create(outFilePath)
@@ -543,7 +542,7 @@ func writeOutputToFiles(path string, cmd *exec.Cmd) {
 		func(line string) {
 			_, err := errFile.WriteString(fmt.Sprintln(line))
 			if err != nil {
-				panic(xerrors.Errorf("error writing to file %s: %w", errFilePath, err))
+				panic(fmt.Errorf("error writing to file %s: %w", errFilePath, err))
 			}
 		},
 	)
@@ -552,7 +551,7 @@ func writeOutputToFiles(path string, cmd *exec.Cmd) {
 		func(line string) {
 			_, err := outFile.WriteString(fmt.Sprintln(line))
 			if err != nil {
-				panic(xerrors.Errorf("error writing to file %s: %w", outFilePath, err))
+				panic(fmt.Errorf("error writing to file %s: %w", outFilePath, err))
 			}
 		},
 	)

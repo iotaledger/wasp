@@ -1,9 +1,10 @@
 package sandbox
 
 import (
+	"fmt"
+
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign/bdn"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/crypto/bls"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -111,14 +112,14 @@ func (u utilImplBLS) AddressFromPublicKey(pubKeyBin []byte) (iotago.Address, err
 	// u.gas.Burn(gas.UtilsBLSAddressFromPublicKey)
 	// pubKey := suite.G2().Point()
 	// if err := pubKey.UnmarshalBinary(pubKeyBin); err != nil {
-	// 	return nil, xerrors.Errorf("BLSUtil: wrong public key bytes")
+	// 	return nil, fmt.Errorf("BLSUtil: wrong public key bytes")
 	// }
 	// return iotago.NewBLSAddress(pubKeyBin), nil
 }
 
 func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byte, []byte, error) {
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
-		return nil, nil, xerrors.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
+		return nil, nil, fmt.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
 	}
 	u.gas.Burn(gas.BurnCodeUtilsBLSAggregateBLS1P, uint64(len(sigsBin)))
 
@@ -126,18 +127,18 @@ func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byt
 	for i := range pubKeysBin {
 		pubKey, _, err := bls.PublicKeyFromBytes(pubKeysBin[i])
 		if err != nil {
-			return nil, nil, xerrors.Errorf("BLSUtil: wrong public key bytes: %v", err)
+			return nil, nil, fmt.Errorf("BLSUtil: wrong public key bytes: %v", err)
 		}
 		sig, _, err := bls.SignatureFromBytes(sigsBin[i])
 		if err != nil {
-			return nil, nil, xerrors.Errorf("BLSUtil: wrong signature bytes: %v", err)
+			return nil, nil, fmt.Errorf("BLSUtil: wrong signature bytes: %v", err)
 		}
 		sigPubKey[i] = bls.NewSignatureWithPublicKey(pubKey, sig)
 	}
 
 	aggregatedSignature, err := bls.AggregateSignatures(sigPubKey...)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("BLSUtil: fialed aggregate signatures: %v", err)
+		return nil, nil, fmt.Errorf("BLSUtil: fialed aggregate signatures: %v", err)
 	}
 
 	return aggregatedSignature.PublicKey.Bytes(), aggregatedSignature.Signature.Bytes(), nil

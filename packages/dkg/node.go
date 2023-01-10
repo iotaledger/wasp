@@ -12,7 +12,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -267,7 +266,7 @@ func (n *Node) GenerateDistributedKey(
 		// 		pubShareResponses[i].edSignature,
 		// 	)
 		// 	if err != nil {
-		// 		return nil, xerrors.Errorf("failed to verify DSS signature: %w", err)
+		// 		return nil, fmt.Errorf("failed to verify DSS signature: %w", err)
 		// 	}
 		// }
 		{ // Verify the BLS key signatures.
@@ -281,7 +280,7 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[i].blsSignature,
 			)
 			if err != nil {
-				return nil, xerrors.Errorf("failed to verify BLS signature: %w", err)
+				return nil, fmt.Errorf("failed to verify BLS signature: %w", err)
 			}
 		}
 	}

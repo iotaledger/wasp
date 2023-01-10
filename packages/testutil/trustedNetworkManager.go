@@ -5,8 +5,7 @@ package testutil
 
 import (
 	"context"
-
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -37,7 +36,7 @@ func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey *cryptolib.PublicKey) err
 	if _, ok := tnm.data[pubKey.AsKey()]; ok {
 		return nil
 	}
-	return xerrors.New("not trusted")
+	return errors.New("not trusted")
 }
 
 // TrustPeer implements the peering.TrustedNetworkManager interface.

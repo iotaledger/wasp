@@ -5,8 +5,7 @@ package acss
 
 import (
 	"bytes"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -62,7 +61,7 @@ func (m *msgImplicateRecover) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if t != msgTypeImplicateRecover {
-		return xerrors.Errorf("unexpected msgType: %v in acss.msgImplicateRecover", t)
+		return fmt.Errorf("unexpected msgType: %v in acss.msgImplicateRecover", t)
 	}
 	k, err := util.ReadByte(r)
 	if err != nil {

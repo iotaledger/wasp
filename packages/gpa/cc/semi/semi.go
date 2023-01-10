@@ -9,8 +9,6 @@ package semi
 import (
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -28,7 +26,7 @@ func New(index int, target gpa.GPA) gpa.GPA {
 
 func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
-		panic(xerrors.Errorf("input must be nil"))
+		panic(fmt.Errorf("input must be nil"))
 	}
 	mod5 := cc.index % 5
 	if mod5 < 2 {

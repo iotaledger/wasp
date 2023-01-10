@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"golang.org/x/exp/slices"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -82,7 +81,7 @@ func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputTimeTick:
 		return dsi.handleInputTimeTick()
 	}
-	panic(xerrors.Errorf("unexpected input type %T: %+v", input, input))
+	panic(fmt.Errorf("unexpected input type %T: %+v", input, input))
 }
 
 func (dsi *distSyncImpl) Message(msg gpa.Message) gpa.OutMessages {

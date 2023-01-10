@@ -5,8 +5,7 @@ package gpa
 
 import (
 	"bytes"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -57,10 +56,10 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	r := bytes.NewReader(data)
 	msgType, err := util.ReadByte(r)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot decode MsgWrapper::msgType: %w", msgType)
+		return nil, fmt.Errorf("cannot decode MsgWrapper::msgType: %w", msgType)
 	}
 	if msgType != w.msgType {
-		return nil, xerrors.Errorf("invalid MsgWrapper::msgType, got %v, expected %v", msgType, w.msgType)
+		return nil, fmt.Errorf("invalid MsgWrapper::msgType, got %v, expected %v", msgType, w.msgType)
 	}
 	subsystem, err := util.ReadByte(r)
 	if err != nil {

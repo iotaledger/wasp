@@ -1,7 +1,7 @@
 package isc
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -36,12 +36,12 @@ func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	chainID, err := ChainIDFromString(addrPart)
 	if err != nil {
-		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+		return nil, fmt.Errorf("NewAgentIDFromString: %v", err)
 	}
 
 	h, err := HnameFromString(hnamePart)
 	if err != nil {
-		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
+		return nil, fmt.Errorf("NewAgentIDFromString: %v", err)
 	}
 	return NewContractAgentID(chainID, h), nil
 }

@@ -6,11 +6,10 @@ package isc
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -99,7 +98,7 @@ func (hn *Hname) Read(r io.Reader) error {
 		return err
 	}
 	if n != HnameLength {
-		return xerrors.New("wrong data length")
+		return errors.New("wrong data length")
 	}
 	t := binary.LittleEndian.Uint32(b[:])
 	*hn = Hname(t)

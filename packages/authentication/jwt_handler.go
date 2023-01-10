@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/basicauth"
 	"github.com/iotaledger/wasp/packages/authentication/shared"
@@ -33,16 +32,16 @@ func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 	request := &shared.LoginRequest{}
 
 	if err := c.Bind(request); err != nil {
-		return "", xerrors.Errorf("Invalid form data")
+		return "", fmt.Errorf("Invalid form data")
 	}
 
 	user, err := a.UserManager.User(request.Username)
 	if err != nil {
-		return "", xerrors.Errorf("Invalid credentials")
+		return "", fmt.Errorf("Invalid credentials")
 	}
 
 	if !a.validateLogin(user, request.Password) {
-		return "", xerrors.Errorf("Invalid credentials")
+		return "", fmt.Errorf("Invalid credentials")
 	}
 
 	claims := &WaspClaims{
@@ -51,7 +50,7 @@ func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 
 	token, err := a.Jwt.IssueJWT(request.Username, claims)
 	if err != nil {
-		return "", xerrors.Errorf("Unable to login")
+		return "", fmt.Errorf("Unable to login")
 	}
 
 	return token, nil
@@ -102,5 +101,5 @@ func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 		return a.handleFormAuthRequest(c, token, errorResult)
 	}
 
-	return xerrors.Errorf("Invalid login request")
+	return fmt.Errorf("Invalid login request")
 }

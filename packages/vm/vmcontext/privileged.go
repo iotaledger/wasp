@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -48,7 +46,7 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	out, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
-		panic(xerrors.Errorf("internal: %v", err))
+		panic(fmt.Errorf("internal: %v", err))
 	}
 	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }

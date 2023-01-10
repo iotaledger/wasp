@@ -38,7 +38,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -128,7 +127,7 @@ func (n *nonceDKGImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputAgreementResult:
 		return n.handleAgreementResult(input)
 	}
-	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
+	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
 func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
@@ -138,10 +137,10 @@ func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgWrapperACSS:
 			return n.handleACSSMessage(msgT)
 		default:
-			panic(xerrors.Errorf("unexpected message: %+v", msg))
+			panic(fmt.Errorf("unexpected message: %+v", msg))
 		}
 	default:
-		panic(xerrors.Errorf("unexpected message: %+v", msg))
+		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
 }
 
@@ -168,7 +167,7 @@ func (n *nonceDKGImpl) tryHandleACSSTermination(acssIndex int, msgs gpa.OutMessa
 	if out != nil && n.st[acssIndex] == nil {
 		acssOutput, ok := out.(*acss.Output)
 		if !ok {
-			panic(xerrors.Errorf("acss output wrong type: %+v", out))
+			panic(fmt.Errorf("acss output wrong type: %+v", out))
 		}
 		msgs.AddAll(n.handleACSSOutput(acssIndex, acssOutput.PriShare, acssOutput.Commits))
 	}
@@ -203,7 +202,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 	}
 
 	if len(input.proposals) < n.n-n.f {
-		panic(xerrors.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(input.proposals), n.n, n.f))
+		panic(fmt.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(input.proposals), n.n, n.f))
 	}
 	voteCounts := make([]int, n.n)
 	for _, proposal := range input.proposals {
@@ -231,7 +230,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 		}
 	}
 	if len(agreedT) < n.f+1 {
-		panic(xerrors.Errorf("len(agreedT) < f+1, that should not happen, len=%v, f=%v", len(agreedT), n.f))
+		panic(fmt.Errorf("len(agreedT) < f+1, that should not happen, len=%v, f=%v", len(agreedT), n.f))
 	}
 	n.agreedT = agreedT
 	return n.tryMakeFinalOutput()

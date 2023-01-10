@@ -6,7 +6,6 @@ import (
 
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/util/key"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -58,7 +57,7 @@ func (pkT *PrivateKey) AsStdKey() ed25519.PrivateKey {
 func (pkT *PrivateKey) AsKyberKeyPair() (*key.Pair, error) {
 	keyPair := eddsa.EdDSA{}
 	if err := keyPair.UnmarshalBinary(pkT.AsBytes()); err != nil {
-		return nil, xerrors.Errorf("cannot convert node priv key to kyber: %w", err)
+		return nil, fmt.Errorf("cannot convert node priv key to kyber: %w", err)
 	}
 	return &key.Pair{Public: keyPair.Public, Private: keyPair.Secret}, nil
 }

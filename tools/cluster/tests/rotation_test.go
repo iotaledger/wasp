@@ -1,12 +1,12 @@
 package tests
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -329,7 +329,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		return err
 	}
 	if !result {
-		return xerrors.New(fmt.Sprintf("Timeout waiting state controller change to %s in node %v", addr, nodeIndex))
+		return errors.New(fmt.Sprintf("Timeout waiting state controller change to %s in node %v", addr, nodeIndex))
 	}
 	return nil
 }
