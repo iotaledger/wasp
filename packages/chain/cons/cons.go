@@ -544,7 +544,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 			identity.ID{},
 		)
 		if err != nil {
-			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %v", err)
+			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
@@ -555,7 +555,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 
 	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
 	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
+		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).

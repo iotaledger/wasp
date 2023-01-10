@@ -36,12 +36,12 @@ func contractAgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (AgentID, error
 func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 	chainID, err := ChainIDFromString(addrPart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %v", err)
+		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
 	}
 
 	h, err := HnameFromString(hnamePart)
 	if err != nil {
-		return nil, fmt.Errorf("NewAgentIDFromString: %v", err)
+		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
 	}
 	return NewContractAgentID(chainID, h), nil
 }

@@ -178,7 +178,7 @@ func (c *Chains) activateAllFromRegistry() error {
 // activateWithoutLocking activates a chain in the node.
 func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 	if c.ctx == nil {
-		return fmt.Errorf("run chains first")
+		return errors.New("run chains first")
 	}
 	//
 	// Check, maybe it is already running.

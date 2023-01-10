@@ -46,7 +46,7 @@ func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	out, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
 	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
-		panic(fmt.Errorf("internal: %v", err))
+		panic(fmt.Errorf("internal: %w", err))
 	}
 	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }

@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -17,7 +18,7 @@ func checkLength(d []byte, mustLen int, typeName string) error {
 func DecodeInt8(b []byte, def ...int8) (int8, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -43,7 +44,7 @@ func EncodeInt8(value int8) []byte {
 func DecodeUint8(b []byte, def ...uint8) (uint8, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -68,7 +69,7 @@ func EncodeUint8(value uint8) []byte {
 func DecodeInt16(b []byte, def ...int16) (int16, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -94,7 +95,7 @@ func EncodeInt16(value int16) []byte {
 func DecodeUint16(b []byte, def ...uint16) (uint16, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -119,7 +120,7 @@ func EncodeUint16(value uint16) []byte {
 func DecodeInt32(b []byte, def ...int32) (int32, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -145,7 +146,7 @@ func EncodeInt32(value int32) []byte {
 func DecodeUint32(b []byte, def ...uint32) (uint32, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -170,7 +171,7 @@ func EncodeUint32(value uint32) []byte {
 func DecodeInt64(b []byte, def ...int64) (int64, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -196,7 +197,7 @@ func EncodeInt64(value int64) []byte {
 func DecodeUint64(b []byte, def ...uint64) (uint64, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
@@ -221,7 +222,7 @@ func EncodeUint64(value uint64) []byte {
 func DecodeBigIntAbs(b []byte, def ...*big.Int) (*big.Int, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return nil, fmt.Errorf("cannot decode nil bytes")
+			return nil, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

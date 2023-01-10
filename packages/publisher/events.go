@@ -46,7 +46,7 @@ func PublishBlockEvents(blockApplied *publisherBlockApplied, publish func(*ISCEv
 	blocklogStatePartition := subrealm.NewReadOnly(block.MutationsReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 	blockInfo, err := blocklog.GetBlockInfo(blocklogStatePartition, blockIndex)
 	if err != nil {
-		log.Errorf("Unable to get blockInfo for blockIndex %d: %w", blockIndex, err)
+		log.Errorf("unable to get blockInfo for blockIndex %d: %w", blockIndex, err)
 	}
 	publish(&ISCEvent{
 		Kind:   ISCEventKindNewBlock,
@@ -61,7 +61,7 @@ func PublishBlockEvents(blockApplied *publisherBlockApplied, publish func(*ISCEv
 	// Publish receipts of processed requests.
 	receipts, err := blocklog.RequestReceiptsFromBlock(block)
 	if err != nil {
-		log.Errorf("Unable to get receipts from a block: %w", err)
+		log.Errorf("unable to get receipts from a block: %w", err)
 	} else {
 		for _, receipt := range receipts {
 			publish(&ISCEvent{
@@ -78,7 +78,7 @@ func PublishBlockEvents(blockApplied *publisherBlockApplied, publish func(*ISCEv
 	// Publish contract-issued events.
 	events, err := blocklog.GetEventsByBlockIndex(blocklogStatePartition, blockIndex, blockInfo.TotalRequests)
 	if err != nil {
-		log.Errorf("Unable to get events from a block: %w", err)
+		log.Errorf("unable to get events from a block: %w", err)
 	} else {
 		for _, event := range events {
 			publish(&ISCEvent{

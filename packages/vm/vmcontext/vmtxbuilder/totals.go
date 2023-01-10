@@ -176,14 +176,14 @@ func (txb *AnchorTransactionBuilder) MustBalanced(checkpoint string) {
 	ins, outs, err := txb.Totals()
 	if err != nil {
 		fmt.Printf("================= MustBalanced [%s]: %v \ninTotals: %v\noutTotals: %v\n", err, checkpoint, ins, outs)
-		panic(fmt.Errorf("[%s] %v: %v ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
+		panic(fmt.Errorf("[%s] %v: %w ", checkpoint, vm.ErrFatalTxBuilderNotBalanced, err))
 	}
 }
 
 func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.FungibleTokens, checkpoint string) {
 	_, outTotal, err := txb.Totals()
 	if err != nil {
-		panic(fmt.Errorf("%v: %v", vm.ErrFatalTxBuilderNotBalanced, err))
+		panic(fmt.Errorf("%v: %w", vm.ErrFatalTxBuilderNotBalanced, err))
 	}
 	if outTotal.TotalBaseTokensInL2Accounts != l2Totals.BaseTokens {
 		panic(fmt.Errorf("'%s': base tokens L1 (%d) != base tokens L2 (%d): %v",

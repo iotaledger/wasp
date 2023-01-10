@@ -4,7 +4,7 @@
 package evmtypes
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -16,7 +16,7 @@ func EncodeChainID(chainID uint16) []byte {
 func DecodeChainID(b []byte, def ...uint16) (uint16, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

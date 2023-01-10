@@ -1,7 +1,7 @@
 package errors
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -115,5 +115,5 @@ func (e *StateErrorCollectionReader) Get(errorID uint16) (*isc.VMErrorTemplate, 
 }
 
 func (e *StateErrorCollectionReader) Register(messageFormat string) (*isc.VMErrorTemplate, error) {
-	return nil, fmt.Errorf("Registering in read only maps is unsupported")
+	return nil, errors.New("registering in read only maps is unsupported")
 }

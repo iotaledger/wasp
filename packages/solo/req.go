@@ -5,7 +5,6 @@ package solo
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"time"
 
@@ -231,7 +230,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 	L1BaseTokens := ch.Env.L1BaseTokens(keyPair.Address())
 	if L1BaseTokens == 0 {
-		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any base tokens on L1")
+		return nil, errors.New("PostRequestSync - Signer doesn't own any base tokens on L1")
 	}
 	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)

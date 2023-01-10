@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -79,7 +80,7 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 	for i := range lookupKeyList {
 		recBin, found := getRequestRecordDataByRef(stateReader, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
 		if !found {
-			return nil, fmt.Errorf("inconsistency: request log record wasn't found by exact reference")
+			return nil, errors.New("inconsistency: request log record wasn't found by exact reference")
 		}
 		rec, err := RequestReceiptFromBytes(recBin)
 		if err != nil {

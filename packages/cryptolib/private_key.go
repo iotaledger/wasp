@@ -2,6 +2,7 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
+	"errors"
 	"fmt"
 
 	"go.dedis.ch/kyber/v3/sign/eddsa"
@@ -22,7 +23,7 @@ func NewPrivateKey() *PrivateKey {
 
 func NewPrivateKeyFromBytes(privateKeyBytes []byte) (*PrivateKey, error) {
 	if len(privateKeyBytes) < PrivateKeySize {
-		return nil, fmt.Errorf("bytes too short")
+		return nil, errors.New("bytes too short")
 	}
 	return &PrivateKey{privateKeyBytes}, nil
 }

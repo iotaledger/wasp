@@ -200,7 +200,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		if d.dssSigner.EnoughPartialSig() {
 			sig, err := d.dssSigner.Signature()
 			if err != nil {
-				d.log.Errorf("Unable to aggregate the signature: %v", err)
+				d.log.Errorf("unable to aggregate the signature: %v", err)
 				return msgs
 			}
 			d.signature = sig
@@ -235,7 +235,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 
 	sig, err := d.dssSigner.Signature()
 	if err != nil {
-		d.log.Errorf("Unable to aggregate the signature: %v", err)
+		d.log.Errorf("unable to aggregate the signature: %v", err)
 	}
 	d.signature = sig
 	return nil

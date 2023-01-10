@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -32,16 +33,16 @@ func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 	request := &shared.LoginRequest{}
 
 	if err := c.Bind(request); err != nil {
-		return "", fmt.Errorf("Invalid form data")
+		return "", errors.New("invalid form data")
 	}
 
 	user, err := a.UserManager.User(request.Username)
 	if err != nil {
-		return "", fmt.Errorf("Invalid credentials")
+		return "", errors.New("invalid credentials")
 	}
 
 	if !a.validateLogin(user, request.Password) {
-		return "", fmt.Errorf("Invalid credentials")
+		return "", errors.New("invalid credentials")
 	}
 
 	claims := &WaspClaims{
@@ -50,7 +51,7 @@ func (a *AuthHandler) stageAuthRequest(c echo.Context) (string, error) {
 
 	token, err := a.Jwt.IssueJWT(request.Username, claims)
 	if err != nil {
-		return "", fmt.Errorf("Unable to login")
+		return "", errors.New("unable to login")
 	}
 
 	return token, nil
@@ -101,5 +102,5 @@ func (a *AuthHandler) CrossAPIAuthHandler(c echo.Context) error {
 		return a.handleFormAuthRequest(c, token, errorResult)
 	}
 
-	return fmt.Errorf("Invalid login request")
+	return errors.New("invalid login request")
 }

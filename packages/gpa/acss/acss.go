@@ -83,6 +83,7 @@
 package acss
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -195,10 +196,10 @@ func New(
 // It can be provided by the dealer only.
 func (a *acssImpl) Input(input gpa.Input) gpa.OutMessages {
 	if a.me != a.dealer {
-		panic(fmt.Errorf("only dealer can initiate the sharing"))
+		panic(errors.New("only dealer can initiate the sharing"))
 	}
 	if input == nil {
-		panic(fmt.Errorf("we expect kyber.Scalar as input"))
+		panic(errors.New("we expect kyber.Scalar as input"))
 	}
 	return a.handleInput(input.(kyber.Scalar))
 }
@@ -294,7 +295,7 @@ func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) gpa.OutMessages {
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
 	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, rbcOutput.data)
 	if err != nil {
-		panic(fmt.Errorf("cannot unmarshal msgRBCCEPayload.data"))
+		panic(errors.New("cannot unmarshal msgRBCCEPayload.data"))
 	}
 	a.rbcOut = deal
 	msgs := a.handleImplicateRecoverPending(gpa.NoMessages())
@@ -541,7 +542,7 @@ func (a *acssImpl) StatusString() string {
 
 func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("data to short")
+		return nil, errors.New("data to short")
 	}
 	msgType := data[0]
 	switch msgType {

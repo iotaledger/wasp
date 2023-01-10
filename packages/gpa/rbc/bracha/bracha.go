@@ -43,6 +43,7 @@
 package bracha
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -98,10 +99,10 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 //	03: send ⟨PROPOSE, 𝑀⟩ to all
 func (r *rbc) Input(input gpa.Input) gpa.OutMessages {
 	if r.broadcaster != r.me {
-		panic(fmt.Errorf("only broadcaster is allowed to take an input"))
+		panic(errors.New("only broadcaster is allowed to take an input"))
 	}
 	if r.proposeSent {
-		panic(fmt.Errorf("input can only be supplied once"))
+		panic(errors.New("input can only be supplied once"))
 	}
 	inputVal := input.([]byte)
 	msgs := r.sendToAll(msgBrachaTypePropose, inputVal)

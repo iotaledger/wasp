@@ -4,6 +4,7 @@
 package dss
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -27,7 +28,7 @@ func (d *dssImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 
 func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("dssImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("dssImpl::UnmarshalMessage: data too short")
 	}
 	switch data[0] {
 	case msgTypePartialSig:

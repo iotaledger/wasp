@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -9,7 +9,7 @@ import (
 func DecodeHname(b []byte, def ...isc.Hname) (isc.Hname, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return 0, fmt.Errorf("cannot decode nil bytes")
+			return 0, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

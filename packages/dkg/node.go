@@ -76,7 +76,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
 	if peerMsg.MsgType != initiatorInitMsgType {
-		panic(fmt.Errorf("Wrong type of DKG init message: %v", peerMsg.MsgType))
+		panic(fmt.Errorf("wrong type of DKG init message: %v", peerMsg.MsgType))
 	}
 	msg := &initiatorInitMsg{}
 	if err := msg.fromBytes(peerMsg.MsgData); err != nil {
@@ -142,7 +142,7 @@ func (n *Node) GenerateDistributedKey(
 			}
 			nPub := n.PubKey()
 			if nPub == nil {
-				return nil, fmt.Errorf("Have no public key for %v", n.NetID())
+				return nil, fmt.Errorf("have no public key for %v", n.NetID())
 			}
 			peerPubs[i] = nPub
 		}
@@ -214,13 +214,13 @@ func (n *Node) GenerateDistributedKey(
 	blsPublicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
 		if !sharedAddress.Equal(pubShareResponses[i].sharedAddress) {
-			return nil, fmt.Errorf("nodes generated different addresses")
+			return nil, errors.New("nodes generated different addresses")
 		}
 		if !edSharedPublic.Equal(pubShareResponses[i].edSharedPublic) {
-			return nil, fmt.Errorf("nodes generated different Ed25519 shared public keys")
+			return nil, errors.New("nodes generated different Ed25519 shared public keys")
 		}
 		if !blsSharedPublic.Equal(pubShareResponses[i].blsSharedPublic) {
-			return nil, fmt.Errorf("nodes generated different BLS shared public keys")
+			return nil, errors.New("nodes generated different BLS shared public keys")
 		}
 		edPublicShares[i] = pubShareResponses[i].edPublicShare
 		blsPublicShares[i] = pubShareResponses[i].blsPublicShare

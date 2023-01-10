@@ -2,6 +2,7 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
+	"errors"
 	"fmt"
 
 	"go.dedis.ch/kyber/v3"
@@ -38,7 +39,7 @@ func NewPublicKeyFromString(s string) (publicKey *PublicKey, err error) {
 
 func NewPublicKeyFromBytes(publicKeyBytes []byte) (*PublicKey, error) {
 	if len(publicKeyBytes) < PublicKeySize {
-		return nil, fmt.Errorf("bytes too short")
+		return nil, errors.New("bytes too short")
 	}
 	return &PublicKey{publicKeyBytes}, nil
 }

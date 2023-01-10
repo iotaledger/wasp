@@ -1,7 +1,7 @@
 package testchain
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/iotaledger/hive.go/core/events"
@@ -124,7 +124,7 @@ func (mlT *MockedLedger) PublishTransaction(tx *iotago.Transaction) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("Publishing transaction not allowed")
+	return errors.New("publishing transaction not allowed")
 }
 
 func (mlT *MockedLedger) PullLatestOutput(nodeID string) {

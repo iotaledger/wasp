@@ -658,7 +658,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 		if len(requests) == len(out.NeedMempoolRequests) {
 			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputMempoolRequests(requests)}
 		} else {
-			tci.t.Errorf("We have to sync between mempools, should not happen in this test.")
+			tci.t.Error("we have to sync between mempools, should not happen in this test")
 		}
 		tci.handledNeedMempoolRequests[nodeID] = true
 	}
@@ -669,7 +669,7 @@ func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, o
 		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
 			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.baseState)}
 		} else {
-			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")
+			tci.t.Error("we have to sync between state managers, should not happen in this test")
 		}
 		tci.handledNeedStateMgrDecidedState[nodeID] = true
 	}

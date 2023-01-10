@@ -198,7 +198,7 @@ func (p *peer) Await(timeout time.Duration) error {
 	if p.trusted {
 		return nil
 	}
-	return errors.New("Peer not trusted.")
+	return errors.New("peer not trusted")
 }
 
 // IsInbound implements peering.PeerStatusProvider.

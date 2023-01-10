@@ -256,7 +256,7 @@ func (r *offLedgerRequestData) WithAllowance(allowance *Allowance) UnsignedOffLe
 // VerifySignature verifies essence signature
 func (r *offLedgerRequestData) VerifySignature() error {
 	if !r.signatureScheme.publicKey.Verify(r.essenceBytes(), r.signatureScheme.signature) {
-		return fmt.Errorf("invalid signature")
+		return errors.New("invalid signature")
 	}
 	return nil
 }

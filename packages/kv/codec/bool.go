@@ -2,7 +2,7 @@ package codec
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -10,7 +10,7 @@ import (
 func DecodeBool(b []byte, def ...bool) (bool, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return false, fmt.Errorf("cannot decode nil bytes")
+			return false, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

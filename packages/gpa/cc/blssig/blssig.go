@@ -15,6 +15,7 @@
 package blssig
 
 import (
+	"errors"
 	"fmt"
 
 	"go.dedis.ch/kyber/v3/pairing"
@@ -70,7 +71,7 @@ func New(
 
 func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
-		panic(fmt.Errorf("input must be nil"))
+		panic(errors.New("input must be nil"))
 	}
 	if _, ok := cc.sigShares[cc.me]; ok {
 		// Only consider the first input.
@@ -78,7 +79,7 @@ func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	}
 	sigShare, err := tbls.Sign(cc.suite, cc.priShare, cc.sid)
 	if err != nil {
-		panic(fmt.Errorf("cannot sign a sid: %v", err))
+		panic(fmt.Errorf("cannot sign a sid: %w", err))
 	}
 	cc.sigShares[cc.me] = sigShare
 	if cc.n == 1 {

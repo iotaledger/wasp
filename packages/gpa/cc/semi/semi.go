@@ -7,6 +7,7 @@
 package semi
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -26,7 +27,7 @@ func New(index int, target gpa.GPA) gpa.GPA {
 
 func (cc *ccSemi) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
-		panic(fmt.Errorf("input must be nil"))
+		panic(errors.New("input must be nil"))
 	}
 	mod5 := cc.index % 5
 	if mod5 < 2 {

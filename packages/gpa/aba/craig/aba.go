@@ -5,7 +5,7 @@
 package craig
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -35,5 +35,5 @@ func (a *abaImpl) StatusString() string {
 }
 
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return nil, fmt.Errorf("not implemented") // TODO: XXX: Impl.
+	return nil, errors.New("not implemented") // TODO: XXX: Impl.
 }

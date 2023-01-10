@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -96,7 +97,7 @@ func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, 
 	if proc, ok := cps.processors[progHash]; ok {
 		return proc, nil
 	}
-	return nil, fmt.Errorf("internal error: can't get the deployed processor")
+	return nil, errors.New("internal error: can't get the deployed processor")
 }
 
 // RemoveProcessor deletes processor from cache

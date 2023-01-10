@@ -219,7 +219,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 	for {
 		key, err := EventLookupKeyFromBytes(keysBuf)
 		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, fmt.Errorf("getSmartContractEventsIntern unable to parse key. %v", err)
+			return nil, fmt.Errorf("getSmartContractEventsIntern unable to parse key. %w", err)
 		}
 		if key == nil { // no more events
 			return ret, nil
@@ -233,7 +233,7 @@ func getSmartContractEventsInternal(partition kv.KVStoreReader, contract isc.Hna
 		}
 		event, err := events.GetAt(key.Bytes())
 		if err != nil {
-			return nil, fmt.Errorf("getSmartContractEventsIntern unable to get event by key. %v", err)
+			return nil, fmt.Errorf("getSmartContractEventsIntern unable to get event by key. %w", err)
 		}
 		ret = append(ret, string(event))
 	}

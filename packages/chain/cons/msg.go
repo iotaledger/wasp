@@ -4,6 +4,7 @@
 package cons
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -17,7 +18,7 @@ const (
 
 func (c *consImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("consImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("consImpl::UnmarshalMessage: data too short")
 	}
 	switch data[0] {
 	case msgTypeBLSShare:

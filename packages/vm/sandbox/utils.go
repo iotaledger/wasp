@@ -1,6 +1,7 @@
 package sandbox
 
 import (
+	"errors"
 	"fmt"
 
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -112,14 +113,14 @@ func (u utilImplBLS) AddressFromPublicKey(pubKeyBin []byte) (iotago.Address, err
 	// u.gas.Burn(gas.UtilsBLSAddressFromPublicKey)
 	// pubKey := suite.G2().Point()
 	// if err := pubKey.UnmarshalBinary(pubKeyBin); err != nil {
-	// 	return nil, fmt.Errorf("BLSUtil: wrong public key bytes")
+	// 	return nil, errors.New("BLSUtil: wrong public key bytes")
 	// }
 	// return iotago.NewBLSAddress(pubKeyBin), nil
 }
 
 func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byte, []byte, error) {
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
-		return nil, nil, fmt.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
+		return nil, nil, errors.New("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
 	}
 	u.gas.Burn(gas.BurnCodeUtilsBLSAggregateBLS1P, uint64(len(sigsBin)))
 
@@ -127,18 +128,18 @@ func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byt
 	for i := range pubKeysBin {
 		pubKey, _, err := bls.PublicKeyFromBytes(pubKeysBin[i])
 		if err != nil {
-			return nil, nil, fmt.Errorf("BLSUtil: wrong public key bytes: %v", err)
+			return nil, nil, fmt.Errorf("BLSUtil: wrong public key bytes: %w", err)
 		}
 		sig, _, err := bls.SignatureFromBytes(sigsBin[i])
 		if err != nil {
-			return nil, nil, fmt.Errorf("BLSUtil: wrong signature bytes: %v", err)
+			return nil, nil, fmt.Errorf("BLSUtil: wrong signature bytes: %w", err)
 		}
 		sigPubKey[i] = bls.NewSignatureWithPublicKey(pubKey, sig)
 	}
 
 	aggregatedSignature, err := bls.AggregateSignatures(sigPubKey...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("BLSUtil: fialed aggregate signatures: %v", err)
+		return nil, nil, fmt.Errorf("BLSUtil: failed to aggregate signatures: %w", err)
 	}
 
 	return aggregatedSignature.PublicKey.Bytes(), aggregatedSignature.Signature.Bytes(), nil

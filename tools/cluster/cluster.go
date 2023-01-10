@@ -421,7 +421,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("Data path %s does not exist", dataPath)
+		return fmt.Errorf("data path %s does not exist", dataPath)
 	}
 
 	if err := clu.start(); err != nil {
@@ -453,7 +453,7 @@ func (clu *Cluster) start() error {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
-			return fmt.Errorf("Timeout starting wasp nodes\n")
+			return errors.New("timeout starting wasp nodes")
 		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes in %v\n", len(clu.Config.Wasp), time.Since(start))
@@ -533,7 +533,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 				return nil
 			}
 		case <-time.After(5 * time.Second):
-			return fmt.Errorf("Timeout starting wasp nodes\n")
+			return errors.New("timeout starting wasp nodes")
 		}
 	}
 	return nil

@@ -1,6 +1,7 @@
 package chainclient
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,17 +17,17 @@ func (c *Client) CheckRequestResult(reqID isc.RequestID) error {
 		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 	})
 	if err != nil {
-		return fmt.Errorf("Could not fetch receipt for request: %w", err)
+		return fmt.Errorf("could not fetch receipt for request: %w", err)
 	}
 	if !ret.MustHas(blocklog.ParamRequestRecord) {
-		return fmt.Errorf("Could not fetch receipt for request: not found in blocklog")
+		return errors.New("could not fetch receipt for request: not found in blocklog")
 	}
 	req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 	if err != nil {
-		return fmt.Errorf("Could not decode receipt for request: %w", err)
+		return fmt.Errorf("could not decode receipt for request: %w", err)
 	}
 	if req.Error != nil {
-		return fmt.Errorf("The request was rejected: %v", req.Error)
+		return fmt.Errorf("the request was rejected: %v", req.Error)
 	}
 	return nil
 }

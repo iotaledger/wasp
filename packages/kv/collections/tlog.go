@@ -228,7 +228,7 @@ func (l *ImmutableTimestampedLog) getRecordAtIndex(idx uint32) (*TimestampedLogR
 
 func ParseRawLogRecord(raw []byte) (*TimestampedLogRecord, error) {
 	if len(raw) < 8 {
-		return nil, fmt.Errorf("ParseRawLogRecord: wrong bytes")
+		return nil, errors.New("ParseRawLogRecord: wrong bytes")
 	}
 	return &TimestampedLogRecord{
 		Timestamp: int64(util.MustUint64From8Bytes(raw[:8])),
@@ -360,14 +360,14 @@ func (l *ImmutableTimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) 
 		return 0, false, err
 	}
 	if fromIdx >= n || toIdx >= n {
-		return 0, false, fmt.Errorf("TimestampedLog.findLowerIdx: wrong arguments: %d, %d, %d", ts, fromIdx, toIdx)
+		return 0, false, fmt.Errorf("findLowerIdx: wrong arguments: %d, %d, %d", ts, fromIdx, toIdx)
 	}
 	r, err := l.getRecordAtIndex(fromIdx)
 	if err != nil {
 		return 0, false, err
 	}
 	if r == nil {
-		panic(fmt.Errorf("TimestampedLog.findLowerIdx: r == nil: args: %d, %d, %d", ts, fromIdx, toIdx))
+		panic(fmt.Errorf("findLowerIdx: r == nil: args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	lowerTs := r.Timestamp
 	switch {
@@ -377,14 +377,14 @@ func (l *ImmutableTimestampedLog) findLowerIdx(ts int64, fromIdx, toIdx uint32) 
 		return 0, false, nil
 	}
 	if !(ts > lowerTs && fromIdx < toIdx) {
-		panic(fmt.Errorf("TimestampedLog.findLowerIdx: assertion failed: ts > lowerTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))
+		panic(fmt.Errorf("findLowerIdx: assertion failed: ts > lowerTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	r, err = l.getRecordAtIndex(toIdx)
 	if err != nil {
 		return 0, false, err
 	}
 	if r == nil {
-		panic(fmt.Errorf("TimestampedLog.findLowerIdx: assertion failed: r == nil: args: %d, %d, %d", ts, fromIdx, toIdx))
+		panic(fmt.Errorf("findLowerIdx: assertion failed: r == nil: args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	upperTs := r.Timestamp
 	if ts > upperTs {
@@ -417,7 +417,7 @@ func (l *ImmutableTimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) 
 		return 0, false, err
 	}
 	if fromIdx >= n || toIdx >= n {
-		panic(fmt.Errorf("TimestampedLog.findLowerIdx: assertion failed: fromIdx >= l.Len() || toIdx >= l.Len(): args: %d, %d, %d", ts, fromIdx, toIdx))
+		panic(fmt.Errorf("findLowerIdx: assertion failed: fromIdx >= l.Len() || toIdx >= l.Len(): args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	r, err := l.getRecordAtIndex(toIdx)
 	if err != nil {
@@ -434,7 +434,7 @@ func (l *ImmutableTimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) 
 		return 0, false, nil
 	}
 	if !(ts < upperTs && fromIdx < toIdx) {
-		panic(fmt.Errorf("TimestampedLog.findUpperIdx: assertion failed: ts < upperTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))
+		panic(fmt.Errorf("findUpperIdx: assertion failed: ts < upperTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))
 	}
 	r, err = l.getRecordAtIndex(fromIdx)
 	if err != nil {

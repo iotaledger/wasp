@@ -4,6 +4,7 @@
 package cmtLog
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -20,7 +21,7 @@ func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 
 func UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("cmtLogImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("cmtLogImpl::UnmarshalMessage: data too short")
 	}
 	if data[0] == msgTypeNextLogIndex {
 		m := &msgNextLogIndex{}

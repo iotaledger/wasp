@@ -58,16 +58,16 @@ func NewAccessNodeInfoFromBytes(pubKey, value []byte) (*AccessNodeInfo, error) {
 	r := bytes.NewReader(value)
 	a.NodePubKey = pubKey // NodePubKey stored as a map key.
 	if a.ValidatorAddr, err = util.ReadBytes16(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ValidatorAddr: %v", err)
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.ValidatorAddr: %w", err)
 	}
 	if a.Certificate, err = util.ReadBytes16(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.Certificate: %v", err)
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.Certificate: %w", err)
 	}
 	if err := util.ReadBoolByte(r, &a.ForCommittee); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %v", err)
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.ForCommittee: %w", err)
 	}
 	if a.AccessAPI, err = util.ReadString16(r); err != nil {
-		return nil, fmt.Errorf("failed to read AccessNodeInfo.AccessAPI: %v", err)
+		return nil, fmt.Errorf("failed to read AccessNodeInfo.AccessAPI: %w", err)
 	}
 	return &a, nil
 }
@@ -87,7 +87,7 @@ func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessN
 		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %v", accErr)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %v", err)
+		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", err)
 	}
 	return res, nil
 }
@@ -96,16 +96,16 @@ func (a *AccessNodeInfo) Bytes() []byte {
 	w := bytes.Buffer{}
 	// NodePubKey stored as a map key.
 	if err := util.WriteBytes16(&w, a.ValidatorAddr); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.ValidatorAddr: %v", err))
+		panic(fmt.Errorf("failed to write AccessNodeInfo.ValidatorAddr: %w", err))
 	}
 	if err := util.WriteBytes16(&w, a.Certificate); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.Certificate: %v", err))
+		panic(fmt.Errorf("failed to write AccessNodeInfo.Certificate: %w", err))
 	}
 	if err := util.WriteBoolByte(&w, a.ForCommittee); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.ForCommittee: %v", err))
+		panic(fmt.Errorf("failed to write AccessNodeInfo.ForCommittee: %w", err))
 	}
 	if err := util.WriteString16(&w, a.AccessAPI); err != nil {
-		panic(fmt.Errorf("failed to write AccessNodeInfo.AccessAPI: %v", err))
+		panic(fmt.Errorf("failed to write AccessNodeInfo.AccessAPI: %w", err))
 	}
 	return w.Bytes()
 }
@@ -191,7 +191,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	ac.MustIterate(func(pubKey, value []byte) bool {
 		ani, err := NewAccessNodeInfoFromBytes(pubKey, value)
 		if err != nil {
-			panic(fmt.Errorf("unable to decode access node info: %v", err))
+			panic(fmt.Errorf("unable to decode access node info: %w", err))
 		}
 		res.AccessNodeCandidates = append(res.AccessNodeCandidates, ani)
 		return true
@@ -201,7 +201,7 @@ func NewGetChainNodesResponseFromDict(d dict.Dict) *GetChainNodesResponse {
 	an.MustIterate(func(pubKeyBin, value []byte) bool {
 		publicKey, err := cryptolib.NewPublicKeyFromBytes(pubKeyBin)
 		if err != nil {
-			panic(fmt.Errorf("unable to decode public key: %v", err))
+			panic(fmt.Errorf("unable to decode public key: %w", err))
 		}
 		res.AccessNodes = append(res.AccessNodes, publicKey)
 		return true

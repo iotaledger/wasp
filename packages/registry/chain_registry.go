@@ -177,7 +177,7 @@ func NewChainRecordRegistryImpl(filePath string) (*ChainRecordRegistryImpl, erro
 
 	// load chain records on startup
 	if err := registry.loadChainRecordsJSON(); err != nil {
-		return nil, fmt.Errorf("unable to read chain records configuration (%s): %s", filePath, err)
+		return nil, fmt.Errorf("unable to read chain records configuration (%s): %w", filePath, err)
 	}
 
 	registry.onChangeMap.CallbacksEnabled(true)

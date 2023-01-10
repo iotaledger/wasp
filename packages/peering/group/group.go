@@ -44,7 +44,7 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peer
 		}
 	}
 	if !selfFound {
-		return nil, fmt.Errorf("group must involve the current node")
+		return nil, errors.New("group must involve the current node")
 	}
 	return &groupImpl{
 		netProvider: netProvider,
@@ -237,7 +237,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 	attachID := g.netProvider.Attach(&g.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		idx, err := g.PeerIndexByPubKey(recv.SenderPubKey)
 		if idx == NotInGroup {
-			err = fmt.Errorf("sender does not belong to the group")
+			err = errors.New("sender does not belong to the group")
 		}
 		if err != nil {
 			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",

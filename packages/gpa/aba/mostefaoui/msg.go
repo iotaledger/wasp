@@ -4,6 +4,7 @@
 package mostefaoui
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -19,7 +20,7 @@ const (
 // Implements the gpa.GPA interface.
 func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("data to short")
+		return nil, errors.New("data to short")
 	}
 	msgType := data[0]
 	switch msgType {
@@ -42,5 +43,5 @@ func (a *abaImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 		}
 		return m, nil
 	}
-	return nil, fmt.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %w", msgType, util.PrefixHex(data, 20))
+	return nil, fmt.Errorf("abaImpl::UnmarshalMessage: unexpected msgType: %v, message starts with: %s", msgType, util.PrefixHex(data, 20))
 }

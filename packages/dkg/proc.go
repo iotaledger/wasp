@@ -302,7 +302,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	for i := range prevMsgs {
 		peerResponseMsg := rabinResponseMsg{}
 		if err = peerResponseMsg.fromBytes(prevMsgs[i].MsgData); err != nil {
-			err = fmt.Errorf("Response: decoding failed: %v", err)
+			err = fmt.Errorf("Response: decoding failed: %w", err)
 			return nil, err
 		}
 		recvResponses[i] = &peerResponseMsg
@@ -353,7 +353,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	for i := range prevMsgs {
 		peerJustificationMsg := rabinJustificationMsg{}
 		if err = peerJustificationMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err != nil {
-			return nil, fmt.Errorf("Justification: decoding failed: %v", err)
+			return nil, fmt.Errorf("Justification: decoding failed: %w", err)
 		}
 		recvJustifications[i] = &peerJustificationMsg
 	}
@@ -364,7 +364,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		for _, j := range recvJustifications[i].justifications {
 			if err = p.dkgImpl[kst].ProcessJustification(j); err != nil {
 				p.dkgLock.Unlock()
-				return nil, fmt.Errorf("Justification: processing failed: %v", err)
+				return nil, fmt.Errorf("Justification: processing failed: %w", err)
 			}
 		}
 	}
@@ -376,7 +376,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	p.dkgImpl[kst].SetTimeout()
 	if !p.dkgImpl[kst].Certified() {
 		p.dkgLock.Unlock()
-		return nil, fmt.Errorf("node not certified")
+		return nil, errors.New("node not certified")
 	}
 	p.dkgLock.Unlock()
 	thisInQual := p.nodeInQUAL(kst, p.nodeIndex)
@@ -385,7 +385,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		p.dkgLock.Lock()
 		if ourSecretCommits, err = p.dkgImpl[kst].SecretCommits(); err != nil {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("SecretCommits: generation failed: %v", err)
+			return nil, fmt.Errorf("SecretCommits: generation failed: %w", err)
 		}
 		p.dkgLock.Unlock()
 	}
@@ -584,11 +584,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		p.dkgLock.Lock()
 		if !p.dkgImpl[keySetTypeEd25519].Finished() {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("DKG procedure is not finished")
+			return nil, errors.New("DKG procedure is not finished")
 		}
 		if !p.dkgImpl[keySetTypeBLS].Finished() {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("DKG procedure is not finished")
+			return nil, errors.New("DKG procedure is not finished")
 		}
 		var distKeyShareDSS *rabin_dkg.DistKeyShare
 		var distKeyShareBLS *rabin_dkg.DistKeyShare

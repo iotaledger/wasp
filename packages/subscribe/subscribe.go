@@ -22,7 +22,7 @@ func Subscribe(host string, messages chan<- []string, done <-chan bool, keepTryi
 				time.Sleep(200 * time.Millisecond)
 				continue
 			} else {
-				return fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
+				return fmt.Errorf("can't dial on sub socket %s: %w", host, err)
 			}
 		}
 		break

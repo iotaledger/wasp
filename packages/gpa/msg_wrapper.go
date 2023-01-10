@@ -56,7 +56,7 @@ func (w *MsgWrapper) UnmarshalMessage(data []byte) (Message, error) {
 	r := bytes.NewReader(data)
 	msgType, err := util.ReadByte(r)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode MsgWrapper::msgType: %w", msgType)
+		return nil, fmt.Errorf("cannot decode MsgWrapper::msgType: %v", msgType)
 	}
 	if msgType != w.msgType {
 		return nil, fmt.Errorf("invalid MsgWrapper::msgType, got %v, expected %v", msgType, w.msgType)

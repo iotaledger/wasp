@@ -27,7 +27,7 @@ func NewRocksDB(path string) (*rocksdb.RocksDB, error) {
 func newDatabaseRocksDB(path string, autoFlush bool) (*Database, error) {
 	rocksDatabase, err := NewRocksDB(path)
 	if err != nil {
-		return nil, fmt.Errorf("rocksdb database initialization failed: %s", err)
+		return nil, fmt.Errorf("rocksdb database initialization failed: %w", err)
 	}
 
 	store := rocksdb.New(rocksDatabase)

@@ -26,7 +26,7 @@ func (r Ratio32) Bytes() []byte {
 
 func Ratio32FromBytes(bytes []byte) (Ratio32, error) {
 	if len(bytes) != 8 {
-		return Ratio32{}, fmt.Errorf("expected bytes length = 8")
+		return Ratio32{}, errors.New("expected bytes length = 8")
 	}
 	a, err := Uint32From4Bytes(bytes[:4])
 	if err != nil {

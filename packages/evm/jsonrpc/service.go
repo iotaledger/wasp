@@ -240,7 +240,7 @@ func (e *EthService) GetCompilers() []string {
 func (e *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
 	account := e.accounts.Get(addr)
 	if account == nil {
-		return nil, errors.New("Account is not unlocked")
+		return nil, errors.New("account is not unlocked")
 	}
 
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
@@ -281,7 +281,7 @@ func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
 func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	account := e.accounts.Get(args.From)
 	if account == nil {
-		return nil, errors.New("Account is not unlocked")
+		return nil, errors.New("account is not unlocked")
 	}
 	if err := args.setDefaults(e); err != nil {
 		return nil, err

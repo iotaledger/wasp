@@ -4,7 +4,7 @@
 package yaml
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
 )
@@ -12,7 +12,7 @@ import (
 func Unmarshal(in []byte, def *model.SchemaDef) error {
 	root := Parse(in)
 	if root == nil {
-		return fmt.Errorf("failed to parse input yaml file")
+		return errors.New("failed to parse input yaml file")
 	}
 	return Convert(root, def)
 }

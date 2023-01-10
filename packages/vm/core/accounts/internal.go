@@ -822,7 +822,7 @@ func GetStorageDepositAssumptions(state kv.KVStoreReader) *transaction.StorageDe
 	bin := state.MustGet(kv.Key(stateVarMinimumStorageDepositAssumptionsBin))
 	ret, err := transaction.StorageDepositAssumptionFromBytes(bin)
 	if err != nil {
-		panic(fmt.Errorf("GetStorageDepositAssumptions: internal: %v", err))
+		panic(fmt.Errorf("GetStorageDepositAssumptions: internal: %w", err))
 	}
 	return ret
 }

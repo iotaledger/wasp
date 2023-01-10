@@ -8,6 +8,7 @@ package tcrypto
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -561,7 +562,7 @@ func (s *dkShareImpl) DSSRecoverMasterSignature(sigShares []*dss.PartialSig, dat
 		}
 	}
 	if !signer.EnoughPartialSig() {
-		return nil, fmt.Errorf("not enough partial signatures")
+		return nil, errors.New("not enough partial signatures")
 	}
 	aggregatedSig, err := signer.Signature()
 	if err != nil {

@@ -5,6 +5,7 @@ package emulator
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -48,7 +49,7 @@ func estimateGas(callMsg ethereum.CallMsg, e *EVMEmulator) (uint64, error) {
 		if lastErr != nil {
 			return 0, fmt.Errorf("estimateGas failed: %s", lastErr.Error())
 		}
-		return 0, fmt.Errorf("estimateGas failed")
+		return 0, errors.New("estimateGas failed")
 	}
 	return lastOk, nil
 }

@@ -4,6 +4,7 @@ package l1connection
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,7 +70,7 @@ func NewClient(config Config, log *logger.Logger, timeout ...time.Duration) Clie
 
 	indexerClient, err := nodeAPIClient.Indexer(ctxWithTimeout)
 	if err != nil {
-		panic(fmt.Errorf("failed to get nodeclient indexer: %v", err))
+		panic(fmt.Errorf("failed to get nodeclient indexer: %w", err))
 	}
 
 	return &l1client{
@@ -204,7 +205,7 @@ func (c *l1client) waitUntilBlockConfirmed(ctx context.Context, block *iotago.Bl
 
 	checkContext := func() error {
 		if err = ctx.Err(); err != nil {
-			return fmt.Errorf("failed to wait for block confimation within timeout: %s", err)
+			return fmt.Errorf("failed to wait for block confimation within timeout: %w", err)
 		}
 
 		return nil
@@ -375,7 +376,7 @@ func (c *l1client) FaucetRequestHTTP(addr iotago.Address, timeout ...time.Durati
 	for {
 		select {
 		case <-ctxWithTimeout.Done():
-			return fmt.Errorf("faucet request timed-out while waiting for funds to be available")
+			return errors.New("faucet request timed-out while waiting for funds to be available")
 		case <-time.After(1 * time.Second):
 			newOutputs, err := c.OutputMap(addr)
 			if err != nil {

@@ -4,6 +4,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -19,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -38,7 +39,7 @@ func (e *EVMChain) Signer() types.Signer {
 	return evmutil.Signer(big.NewInt(int64(e.chainID)))
 }
 
-func (e *EVMChain) ViewCaller(iscBlockIndex uint32) errors.ViewCaller {
+func (e *EVMChain) ViewCaller(iscBlockIndex uint32) vmerrors.ViewCaller {
 	return func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return e.backend.ISCCallView(iscBlockIndex, contractName, funcName, params)
 	}
@@ -83,7 +84,7 @@ func (e *EVMChain) GasFeePolicy() (*gas.GasFeePolicy, error) {
 
 func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if tx.ChainId().Uint64() != uint64(e.chainID) {
-		return fmt.Errorf("Chain ID mismatch")
+		return errors.New("chain ID mismatch")
 	}
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
