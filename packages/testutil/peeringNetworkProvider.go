@@ -6,9 +6,8 @@ package testutil
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -74,7 +73,7 @@ func (p *PeeringNetwork) nodeByPubKey(nodePubKey *cryptolib.PublicKey) *peeringN
 func (p *PeeringNetwork) Close() error {
 	for _, n := range p.nodes {
 		if err := n.Close(); err != nil {
-			return xerrors.Errorf("failed to close test peering node: %w", err)
+			return fmt.Errorf("failed to close test peering node: %w", err)
 		}
 	}
 	p.behavior.Close()

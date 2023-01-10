@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -139,7 +137,7 @@ func Concat(fragments ...interface{}) []byte {
 		case interface{ Bytes() []byte }:
 			buf.Write(v.Bytes())
 		default:
-			panic(xerrors.Errorf("Concat: unknown key fragment type %T", v))
+			panic(fmt.Errorf("Concat: unknown key fragment type %T", v))
 		}
 	}
 	return buf.Bytes()

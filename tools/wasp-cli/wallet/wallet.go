@@ -45,7 +45,7 @@ var initCmd = &cobra.Command{
 func Load() *Wallet {
 	seedHex := viper.GetString("wallet.seed")
 	if seedHex == "" {
-		log.Fatalf("call `init` first")
+		log.Fatal("call `init` first")
 	}
 	seedBytes, err := iotago.DecodeHex(seedHex)
 	log.Check(err)

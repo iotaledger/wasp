@@ -1,12 +1,11 @@
 package snapshot
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"path"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -109,7 +108,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 	err := rdr.Iterate(func(k, v []byte) bool {
 		if kv.Key(k) == state.KeyChainID {
 			if chainIDFound {
-				errR = xerrors.New("duplicate record with chainID")
+				errR = errors.New("duplicate record with chainID")
 				return false
 			}
 			if ret.ChainID, errR = isc.ChainIDFromBytes(v); errR != nil {
@@ -119,7 +118,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 		}
 		if string(k) == coreutil.StatePrefixBlockIndex {
 			if stateIndexFound {
-				errR = xerrors.New("duplicate record with state index")
+				errR = errors.New("duplicate record with state index")
 				return false
 			}
 			if ret.StateIndex, errR = util.Uint32From4Bytes(v); errR != nil {
@@ -129,7 +128,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 		}
 		if string(k) == coreutil.StatePrefixTimestamp {
 			if timestampFound {
-				errR = xerrors.New("duplicate record with timestamp")
+				errR = errors.New("duplicate record with timestamp")
 				return false
 			}
 			if ret.TimeStamp, errR = codec.DecodeTime(v); errR != nil {
@@ -138,7 +137,7 @@ func Scan(rdr kv.StreamIterator) (*FileProperties, error) {
 			timestampFound = true
 		}
 		if len(v) == 0 {
-			errR = xerrors.New("empty value encountered")
+			errR = errors.New("empty value encountered")
 			return false
 		}
 		ret.NumRecords++

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -129,7 +130,7 @@ func main() {
 		dataPath := "."
 		if flags.NArg() == 1 {
 			if *disposable {
-				check(fmt.Errorf("[path] and -d are mutually exclusive"))
+				check(errors.New("[path] and -d are mutually exclusive"))
 			}
 			dataPath = flags.Arg(0)
 		} else if *disposable {

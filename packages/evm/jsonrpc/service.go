@@ -6,6 +6,7 @@
 package jsonrpc
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -18,10 +19,9 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/crypto/sha3"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 )
 
 type EthService struct {
@@ -42,9 +42,9 @@ func (e *EthService) resolveError(err error) error {
 		return nil
 	}
 	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
-		resolvedErr, resolveErr := errors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestBlockIndex()))
+		resolvedErr, resolveErr := vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestBlockIndex()))
 		if resolveErr != nil {
-			return xerrors.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
+			return fmt.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
 		}
 		return resolvedErr.AsGoError()
 	}
@@ -240,7 +240,7 @@ func (e *EthService) GetCompilers() []string {
 func (e *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
 	account := e.accounts.Get(addr)
 	if account == nil {
-		return nil, xerrors.New("Account is not unlocked")
+		return nil, errors.New("account is not unlocked")
 	}
 
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
@@ -281,7 +281,7 @@ func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
 func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	account := e.accounts.Get(args.From)
 	if account == nil {
-		return nil, xerrors.New("Account is not unlocked")
+		return nil, errors.New("account is not unlocked")
 	}
 	if err := args.setDefaults(e); err != nil {
 		return nil, err

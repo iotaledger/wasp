@@ -12,7 +12,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -77,7 +76,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 			peerMsg.MsgReceiver, peerMsg.MsgType))
 	}
 	if peerMsg.MsgType != initiatorInitMsgType {
-		panic(fmt.Errorf("Wrong type of DKG init message: %v", peerMsg.MsgType))
+		panic(fmt.Errorf("wrong type of DKG init message: %v", peerMsg.MsgType))
 	}
 	msg := &initiatorInitMsg{}
 	if err := msg.fromBytes(peerMsg.MsgData); err != nil {
@@ -143,7 +142,7 @@ func (n *Node) GenerateDistributedKey(
 			}
 			nPub := n.PubKey()
 			if nPub == nil {
-				return nil, fmt.Errorf("Have no public key for %v", n.NetID())
+				return nil, fmt.Errorf("have no public key for %v", n.NetID())
 			}
 			peerPubs[i] = nPub
 		}
@@ -215,13 +214,13 @@ func (n *Node) GenerateDistributedKey(
 	blsPublicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
 		if !sharedAddress.Equal(pubShareResponses[i].sharedAddress) {
-			return nil, fmt.Errorf("nodes generated different addresses")
+			return nil, errors.New("nodes generated different addresses")
 		}
 		if !edSharedPublic.Equal(pubShareResponses[i].edSharedPublic) {
-			return nil, fmt.Errorf("nodes generated different Ed25519 shared public keys")
+			return nil, errors.New("nodes generated different Ed25519 shared public keys")
 		}
 		if !blsSharedPublic.Equal(pubShareResponses[i].blsSharedPublic) {
-			return nil, fmt.Errorf("nodes generated different BLS shared public keys")
+			return nil, errors.New("nodes generated different BLS shared public keys")
 		}
 		edPublicShares[i] = pubShareResponses[i].edPublicShare
 		blsPublicShares[i] = pubShareResponses[i].blsPublicShare
@@ -267,7 +266,7 @@ func (n *Node) GenerateDistributedKey(
 		// 		pubShareResponses[i].edSignature,
 		// 	)
 		// 	if err != nil {
-		// 		return nil, xerrors.Errorf("failed to verify DSS signature: %w", err)
+		// 		return nil, fmt.Errorf("failed to verify DSS signature: %w", err)
 		// 	}
 		// }
 		{ // Verify the BLS key signatures.
@@ -281,7 +280,7 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[i].blsSignature,
 			)
 			if err != nil {
-				return nil, xerrors.Errorf("failed to verify BLS signature: %w", err)
+				return nil, fmt.Errorf("failed to verify BLS signature: %w", err)
 			}
 		}
 	}

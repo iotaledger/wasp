@@ -16,7 +16,7 @@ func UserNotFoundError(username string) *HTTPError {
 }
 
 func BodyIsEmptyError() *HTTPError {
-	return InvalidPropertyError("body", errors.New("A valid body is required"))
+	return InvalidPropertyError("body", errors.New("a valid body is required"))
 }
 
 func InvalidPeerPublicKeys(invalidPeerPubKeys []string) *HTTPError {

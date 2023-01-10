@@ -1,9 +1,8 @@
 package blocklog
 
 import (
+	"errors"
 	"fmt"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -46,7 +45,7 @@ func GetRequestReceipt(stateReader kv.KVStoreReader, requestID isc.RequestID) (*
 func IsRequestProcessed(stateReader kv.KVStoreReader, requestID isc.RequestID) (bool, error) {
 	requestReceipt, err := GetRequestReceipt(stateReader, requestID)
 	if err != nil {
-		return false, xerrors.Errorf("cannot get request receipt: %w", err)
+		return false, fmt.Errorf("cannot get request receipt: %w", err)
 	}
 	return requestReceipt != nil, nil
 }
@@ -81,7 +80,7 @@ func GetRequestRecordDataByRequestID(stateReader kv.KVStoreReader, reqID isc.Req
 	for i := range lookupKeyList {
 		recBin, found := getRequestRecordDataByRef(stateReader, lookupKeyList[i].BlockIndex(), lookupKeyList[i].RequestIndex())
 		if !found {
-			return nil, xerrors.Errorf("inconsistency: request log record wasn't found by exact reference")
+			return nil, errors.New("inconsistency: request log record wasn't found by exact reference")
 		}
 		rec, err := RequestReceiptFromBytes(recBin)
 		if err != nil {

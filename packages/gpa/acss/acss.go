@@ -83,13 +83,13 @@
 package acss
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -180,11 +180,11 @@ func New(
 	a.msgWrapper = gpa.NewMsgWrapper(msgTypeWrapped, func(subsystem byte, index int) (gpa.GPA, error) {
 		if subsystem == subsystemRBC {
 			if index != 0 {
-				return nil, xerrors.Errorf("unknown rbc index: %v", index)
+				return nil, fmt.Errorf("unknown rbc index: %v", index)
 			}
 			return a.rbc, nil
 		}
-		return nil, xerrors.Errorf("unknown subsystem: %v", subsystem)
+		return nil, fmt.Errorf("unknown subsystem: %v", subsystem)
 	})
 	if a.myIdx = a.peerIndex(me); a.myIdx == -1 {
 		panic("i'm not in the peer list")
@@ -196,10 +196,10 @@ func New(
 // It can be provided by the dealer only.
 func (a *acssImpl) Input(input gpa.Input) gpa.OutMessages {
 	if a.me != a.dealer {
-		panic(xerrors.Errorf("only dealer can initiate the sharing"))
+		panic(errors.New("only dealer can initiate the sharing"))
 	}
 	if input == nil {
-		panic(xerrors.Errorf("we expect kyber.Scalar as input"))
+		panic(errors.New("we expect kyber.Scalar as input"))
 	}
 	return a.handleInput(input.(kyber.Scalar))
 }
@@ -212,7 +212,7 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemRBC:
 			return a.handleRBCMessage(m)
 		default:
-			panic(xerrors.Errorf("unexpected wrapped message: %+v", m))
+			panic(fmt.Errorf("unexpected wrapped message: %+v", m))
 		}
 	case *msgVote:
 		switch m.kind {
@@ -221,12 +221,12 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgVoteREADY:
 			return a.handleVoteREADY(m)
 		default:
-			panic(xerrors.Errorf("unexpected vote message: %+v", m))
+			panic(fmt.Errorf("unexpected vote message: %+v", m))
 		}
 	case *msgImplicateRecover:
 		return a.handleImplicateRecoverReceived(m)
 	default:
-		panic(xerrors.Errorf("unexpected message: %+v", msg))
+		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
 }
 
@@ -251,7 +251,7 @@ func (a *acssImpl) handleInput(secretToShare kyber.Scalar) gpa.OutMessages {
 	// > RBC(C||E)
 	rbcCEPayloadBytes, err := (&msgRBCCEPayload{suite: a.suite, data: data}).MarshalBinary()
 	if err != nil {
-		panic(xerrors.Errorf("cannot serialize msg_rbc_ce: %w", err))
+		panic(fmt.Errorf("cannot serialize msg_rbc_ce: %w", err))
 	}
 	msgs := a.msgWrapper.WrapMessages(subsystemRBC, 0, a.rbc.Input(rbcCEPayloadBytes))
 	return a.tryHandleRBCTermination(false, msgs)
@@ -272,7 +272,7 @@ func (a *acssImpl) tryHandleRBCTermination(wasOut bool, msgs gpa.OutMessages) gp
 		// Send the result for self as a message (maybe the code will look nicer this way).
 		outParsed := &msgRBCCEPayload{suite: a.suite}
 		if err := outParsed.UnmarshalBinary(out.([]byte)); err != nil {
-			panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
+			panic(fmt.Errorf("cannot unmarshal msgRBCCEPayload: %w", err))
 		}
 		msgs.AddAll(a.handleRBCOutput(outParsed))
 	}
@@ -295,7 +295,7 @@ func (a *acssImpl) handleRBCOutput(rbcOutput *msgRBCCEPayload) gpa.OutMessages {
 	// Store the broadcast result and process pending IMPLICATE/RECOVER messages, if any.
 	deal, err := crypto.DealUnmarshalBinary(a.suite, a.n, rbcOutput.data)
 	if err != nil {
-		panic(xerrors.Errorf("cannot unmarshal msgRBCCEPayload.data"))
+		panic(errors.New("cannot unmarshal msgRBCCEPayload.data"))
 	}
 	a.rbcOut = deal
 	msgs := a.handleImplicateRecoverPending(gpa.NoMessages())
@@ -355,7 +355,7 @@ func (a *acssImpl) handleImplicateRecoverReceived(m *msgImplicateRecover) gpa.Ou
 	case msgImplicateRecoverKindRECOVER:
 		return a.handleRecover(m)
 	default:
-		panic(xerrors.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
+		panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
 	}
 }
 
@@ -383,7 +383,7 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMe
 		case msgImplicateRecoverKindRECOVER:
 			msgs.AddAll(a.handleRecover(m))
 		default:
-			panic(xerrors.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
+			panic(fmt.Errorf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m))
 		}
 	}
 	a.pendingIRMsgs = postponedIRMsgs
@@ -423,7 +423,7 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) gpa.OutMessages {
 	_, err = crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, secret)
 	if err == nil {
 		// if we are able to decrypt the share, the implication is not correct
-		a.log.Warnf("encrypted share is valid")
+		a.log.Warn("encrypted share is valid")
 		return nil
 	}
 	//
@@ -458,7 +458,7 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) gpa.OutMessages {
 
 	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, m.data)
 	if err != nil {
-		a.log.Warnf("invalid secret revealed")
+		a.log.Warn("invalid secret revealed")
 		return nil
 	}
 	a.recoverRecv[m.sender] = peerSecret
@@ -542,7 +542,7 @@ func (a *acssImpl) StatusString() string {
 
 func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("data to short")
+		return nil, errors.New("data to short")
 	}
 	msgType := data[0]
 	switch msgType {
@@ -561,5 +561,5 @@ func (a *acssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	case msgTypeWrapped:
 		return a.msgWrapper.UnmarshalMessage(data)
 	}
-	return nil, xerrors.Errorf("unexpected msgType: %v in acssImpl", msgType)
+	return nil, fmt.Errorf("unexpected msgType: %v in acssImpl", msgType)
 }

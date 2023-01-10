@@ -4,9 +4,8 @@
 package bp
 
 import (
+	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -50,37 +49,37 @@ func batchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	var err error
 	ret.nodeIndex, err = mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	if ret.baseAliasOutput, err = isc.NewAliasOutputWithIDFromMarshalUtil(mu); err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	if ret.dssIndexProposal, err = util.NewFixedSizeBitVectorFromMarshalUtil(mu); err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	ret.timeData, err = mu.ReadTime()
 	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	ret.feeDestination, err = isc.AgentIDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	requestCount, err := mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf(errFmt, err)
+		return nil, fmt.Errorf(errFmt, err)
 	}
 	ret.requestRefs = make([]*isc.RequestRef, requestCount)
 	for i := range ret.requestRefs {
 		ret.requestRefs[i] = &isc.RequestRef{}
 		ret.requestRefs[i].ID, err = isc.RequestIDFromMarshalUtil(mu)
 		if err != nil {
-			return nil, xerrors.Errorf(errFmt, err)
+			return nil, fmt.Errorf(errFmt, err)
 		}
 		hashBytes, err := mu.ReadBytes(32)
 		copy(ret.requestRefs[i].Hash[:], hashBytes)
 		if err != nil {
-			return nil, xerrors.Errorf(errFmt, err)
+			return nil, fmt.Errorf(errFmt, err)
 		}
 	}
 	return ret, nil

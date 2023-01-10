@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -30,7 +31,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -146,7 +147,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
+		err = errors.New("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)
@@ -356,14 +357,14 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 }
 
 func (ch *Chain) GetErrorMessageFormat(code isc.VMErrorCode) (string, error) {
-	ret, err := ch.CallView(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
-		errors.ParamErrorCode, code.Bytes(),
+	ret, err := ch.CallView(vmerrors.Contract.Name, vmerrors.ViewGetErrorMessageFormat.Name,
+		vmerrors.ParamErrorCode, code.Bytes(),
 	)
 	if err != nil {
 		return "", err
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
+	messageFormat, err := resultDecoder.GetString(vmerrors.ParamErrorMessageFormat)
 
 	require.NoError(ch.Env.T, err)
 	return messageFormat, nil

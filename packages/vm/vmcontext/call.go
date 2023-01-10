@@ -1,7 +1,7 @@
 package vmcontext
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -34,7 +34,7 @@ func (vmctx *VMContext) callProgram(targetContract, epCode isc.Hname, params dic
 	// prevent calling 'init' not from root contract or not while initializing root
 	if epCode == isc.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
-			panic(xerrors.Errorf("%v: target=(%s, %s)",
+			panic(fmt.Errorf("%v: target=(%s, %s)",
 				vm.ErrRepeatingInitCall, vmctx.req.CallTarget().Contract, epCode))
 		}
 	}

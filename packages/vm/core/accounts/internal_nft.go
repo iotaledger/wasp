@@ -3,8 +3,6 @@ package accounts
 import (
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -78,7 +76,7 @@ func DebitNFTFromAccount(state kv.KVStore, agentID isc.AgentID, id iotago.NFTID)
 	account := getAccount(state, agentID)
 
 	if !debitNFTFromAccount(account, id) {
-		panic(xerrors.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
+		panic(fmt.Errorf(" debit NFT from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, id.String()))
 	}
 
 	deleteNFTData(state, id)

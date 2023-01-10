@@ -4,7 +4,7 @@
 package isc
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -24,4 +24,4 @@ type VMProcessorEntryPoint interface {
 	IsView() bool
 }
 
-var ErrWrongTypeEntryPoint = xerrors.New("wrong type of the entry point")
+var ErrWrongTypeEntryPoint = errors.New("wrong type of the entry point")

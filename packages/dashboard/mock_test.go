@@ -4,11 +4,11 @@
 package dashboard
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -97,7 +97,7 @@ func (w *waspServicesMock) GetChainRecord(chainID isc.ChainID) (*registry.ChainR
 func (w *waspServicesMock) CallView(chainID isc.ChainID, scName, fname string, args dict.Dict) (dict.Dict, error) {
 	ch, ok := w.chains[chainID]
 	if !ok {
-		return nil, xerrors.Errorf("chain not found")
+		return nil, errors.New("chain not found")
 	}
 	return ch.CallView(scName, fname, args)
 }
@@ -105,7 +105,7 @@ func (w *waspServicesMock) CallView(chainID isc.ChainID, scName, fname string, a
 func (w *waspServicesMock) GetChainCommitteeInfo(chainID isc.ChainID) (*chain.CommitteeInfo, error) {
 	_, ok := w.chains[chainID]
 	if !ok {
-		return nil, xerrors.Errorf("chain not found")
+		return nil, errors.New("chain not found")
 	}
 
 	address := cryptolib.NewKeyPair().GetPublicKey().AsEd25519Address()

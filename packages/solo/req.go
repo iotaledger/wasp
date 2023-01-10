@@ -4,12 +4,11 @@
 package solo
 
 import (
-	"fmt"
+	"errors"
 	"math"
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -22,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
@@ -231,7 +230,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 	L1BaseTokens := ch.Env.L1BaseTokens(keyPair.Address())
 	if L1BaseTokens == 0 {
-		return nil, fmt.Errorf("PostRequestSync - Signer doesn't own any base tokens on L1")
+		return nil, errors.New("PostRequestSync - Signer doesn't own any base tokens on L1")
 	}
 	addr := keyPair.Address()
 	allOuts, allOutIDs := ch.Env.utxoDB.GetUnspentOutputs(addr)
@@ -266,7 +265,7 @@ func (ch *Chain) createRequestTx(req *CallParams, keyPair *cryptolib.KeyPair) (*
 	}
 
 	if tx.Essence.Outputs[0].Deposit() == 0 {
-		return nil, xerrors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
+		return nil, errors.New("createRequestTx: amount == 0. Consider: solo.InitOptions{AutoAdjustStorageDeposit: true}")
 	}
 	return tx, err
 }
@@ -369,7 +368,7 @@ func (ch *Chain) PostRequestSyncExt(req *CallParams, keyPair *cryptolib.KeyPair)
 	require.NoError(ch.Env.T, err)
 	results := ch.RunRequestsSync(reqs, "post")
 	if len(results) == 0 {
-		return nil, nil, nil, xerrors.New("request has been skipped")
+		return nil, nil, nil, errors.New("request has been skipped")
 	}
 	res := results[0]
 	return tx, res.Receipt, res.Return, nil
@@ -427,7 +426,7 @@ func (ch *Chain) EstimateNeededStorageDeposit(req *CallParams, keyPair *cryptoli
 }
 
 func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
-	resolved, err := errors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
+	resolved, err := vmerrors.Resolve(e, func(contractName string, funcName string, params dict.Dict) (dict.Dict, error) {
 		return ch.CallView(contractName, funcName, params)
 	})
 	require.NoError(ch.Env.T, err)
@@ -455,7 +454,7 @@ func (ch *Chain) CallViewByHname(blockIndex uint32, hContract, hFunction isc.Hna
 
 func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	if ch.bypassStardustVM {
-		return nil, xerrors.New("Solo: StardustVM context expected")
+		return nil, errors.New("Solo: StardustVM context expected")
 	}
 	ch.Log().Debugf("callView: %s::%s", hContract.String(), hFunction.String())
 

@@ -2,11 +2,11 @@ package vmtxbuilder
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util"
@@ -170,11 +170,11 @@ func (txb *AnchorTransactionBuilder) addNativeTokenBalanceDelta(nativeTokenID io
 	nt := txb.ensureNativeTokenBalance(nativeTokenID)
 	tmp := new(big.Int).Add(nt.getOutValue(), delta)
 	if tmp.Sign() < 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
+		panic(fmt.Errorf("addNativeTokenBalanceDelta (id: %s, delta: %d): %v",
 			nativeTokenID, delta, vm.ErrNotEnoughNativeAssetBalance))
 	}
 	if tmp.Cmp(abi.MaxUint256) > 0 {
-		panic(xerrors.Errorf("addNativeTokenBalanceDelta: %v", vm.ErrOverflow))
+		panic(fmt.Errorf("addNativeTokenBalanceDelta: %v", vm.ErrOverflow))
 	}
 	nt.setOutValue(tmp)
 	switch {

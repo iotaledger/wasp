@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -157,7 +155,7 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(o)
 	if o.Deposit() < storageDeposit {
-		panic(xerrors.Errorf("%v: available %d < required %d base tokens",
+		panic(fmt.Errorf("%v: available %d < required %d base tokens",
 			transaction.ErrNotEnoughBaseTokensForStorageDeposit, o.Deposit(), storageDeposit))
 	}
 	assets := transaction.AssetsFromOutput(o)
@@ -361,7 +359,7 @@ func (txb *AnchorTransactionBuilder) addDeltaBaseTokensToTotal(delta uint64) {
 	// safe arithmetics
 	n := txb.totalBaseTokensInL2Accounts + delta
 	if n+txb.storageDepositAssumption.AnchorOutput < txb.totalBaseTokensInL2Accounts {
-		panic(xerrors.Errorf("addDeltaBaseTokensToTotal: %w", vm.ErrOverflow))
+		panic(fmt.Errorf("addDeltaBaseTokensToTotal: %w", vm.ErrOverflow))
 	}
 	txb.totalBaseTokensInL2Accounts = n
 }

@@ -44,10 +44,10 @@ package mempool
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
@@ -418,7 +418,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
-			panic(xerrors.Errorf(
+			panic(fmt.Errorf(
 				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
 				requestID,
 				mpi.chainHeadState,
@@ -557,7 +557,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	if mpi.chainHeadState != nil {
 		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
-			panic(xerrors.Errorf("cannot check if request was processed: %w", err))
+			panic(fmt.Errorf("cannot check if request was processed: %w", err))
 		}
 		if processed {
 			return
@@ -603,7 +603,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 			mpi.offLedgerPool.Add(req)
 			mpi.metrics.CountRequestIn(req)
 		default:
-			panic(xerrors.Errorf("unexpected request type: %T, %+v", req, req))
+			panic(fmt.Errorf("unexpected request type: %T, %+v", req, req))
 		}
 	}
 	//
@@ -629,7 +629,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	for _, block := range req.removed {
 		blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
 		if err != nil {
-			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
+			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		for _, receipt := range blockReceipts {
 			mpi.tryReAddRequest(receipt.Request)
@@ -640,7 +640,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	for _, block := range req.added {
 		blockReceipts, err := blocklog.RequestReceiptsFromBlock(block)
 		if err != nil {
-			panic(xerrors.Errorf("cannot extract receipts from block: %w", err))
+			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		mpi.metrics.CountBlocksPerChain()
 		mpi.listener.BlockApplied(mpi.chainID, block)
@@ -727,7 +727,7 @@ func (mpi *mempoolImpl) tryReAddRequest(req isc.Request) {
 	case isc.OffLedgerRequest:
 		mpi.offLedgerPool.Add(req)
 	default:
-		panic(xerrors.Errorf("unexpected request type: %T", req))
+		panic(fmt.Errorf("unexpected request type: %T", req))
 	}
 }
 

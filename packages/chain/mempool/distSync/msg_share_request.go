@@ -4,7 +4,7 @@
 package distSync
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -34,10 +34,10 @@ func (msg *msgShareRequest) MarshalBinary() (data []byte, err error) {
 
 func (msg *msgShareRequest) UnmarshalBinary(data []byte) (err error) {
 	if len(data) < 2 {
-		return xerrors.Errorf("cannot parse a message, data to short, len=%v", len(data))
+		return fmt.Errorf("cannot parse a message, data to short, len=%v", len(data))
 	}
 	if data[0] != msgTypeShareRequest {
-		return xerrors.Errorf("cannot parse a message, unexpected msgType=%v", data[0])
+		return fmt.Errorf("cannot parse a message, unexpected msgType=%v", data[0])
 	}
 	msg.ttl = data[1]
 	msg.request, err = isc.NewRequestFromBytes(data[2:])

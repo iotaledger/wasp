@@ -4,7 +4,8 @@
 package dss
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -18,30 +19,30 @@ const (
 func (d *dssImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == subsystemDKG {
 		if index != 0 {
-			return nil, xerrors.Errorf("unexpected DKG index: %v", index)
+			return nil, fmt.Errorf("unexpected DKG index: %v", index)
 		}
 		return d.dkg, nil
 	}
-	return nil, xerrors.Errorf("unexpected subsystem: %v", subsystem)
+	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
 func (d *dssImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("dssImpl::UnmarshalMessage: data too short")
 	}
 	switch data[0] {
 	case msgTypePartialSig:
 		m := &msgPartialSig{suite: d.suite}
 		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal msgPartialSig: %w", err)
+			return nil, fmt.Errorf("cannot unmarshal msgPartialSig: %w", err)
 		}
 		return m, nil
 	case msgTypeWrapped:
 		m, err := d.msgWrapper.UnmarshalMessage(data)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal Wrapped msg: %w", err)
+			return nil, fmt.Errorf("cannot unmarshal Wrapped msg: %w", err)
 		}
 		return m, nil
 	}
-	return nil, xerrors.Errorf("dssImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
+	return nil, fmt.Errorf("dssImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
 }

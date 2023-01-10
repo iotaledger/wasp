@@ -397,7 +397,7 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 			Data:     callData,
 		})
 		if err != nil {
-			return opt, fmt.Errorf("error estimating gas limit %v", e.chain.resolveError(err).Error())
+			return opt, fmt.Errorf("error estimating gas limit: %w", e.chain.resolveError(err))
 		}
 	}
 	return opt, nil

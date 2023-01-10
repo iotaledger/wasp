@@ -103,7 +103,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 	require.NoError(t, err)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
-	t.Logf("Block cache was restarted")
+	t.Log("Block cache was restarted")
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) invariantAllBlocksInCacheDifferent(t *rapid.T) {
