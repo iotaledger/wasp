@@ -64,7 +64,7 @@ func getChainState(ch chain.ChainCore, b *BlockIndexOrTrieRoot) (state.State, er
 	if b.TrieRoot != nil {
 		state, err := ch.GetStateReader().StateByTrieRoot(*b.TrieRoot)
 		if err != nil {
-			return nil, fmt.Errorf("cannot get a state with TrieRoot=%s for ChainID=%v: %w", (*b.TrieRoot).String(), ch.ID(), err)
+			return nil, fmt.Errorf("cannot get a state with TrieRoot=%s for ChainID=%v: %w", b.TrieRoot.String(), ch.ID(), err)
 		}
 		return state, nil
 	}

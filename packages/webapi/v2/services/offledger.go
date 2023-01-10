@@ -6,10 +6,16 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
-	"github.com/iotaledger/wasp/packages/chainutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
@@ -71,32 +77,42 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return fmt.Errorf("Unknown chain: %s", chainID.String())
 	}
 
-	alreadyProcessed, err := chainutil.HasRequestBeenProcessed(chain, reqID)
-	if err != nil {
-		return fmt.Errorf("internal error")
-	}
-
-	defer c.requestCache.Set(reqID, true)
-
-	if alreadyProcessed {
-		return fmt.Errorf("request already processed")
-	}
-
-	// check user has on-chain balance
-	assets, err := chainutil.GetAccountBalance(chain, request.SenderAccount())
-	if err != nil {
-		return fmt.Errorf("Unable to get account balance")
-	}
-
-	if assets.IsEmpty() {
-		return fmt.Errorf("No balance on account %s", request.SenderAccount().String())
-	}
-
-	if err := chainutil.CheckNonce(chain, request); err != nil {
-		return fmt.Errorf("invalid nonce, %v", err)
+	if err := ShouldBeProcessed(chain, request); err != nil {
+		return err
 	}
 
 	chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey())
 
+	return nil
+}
+
+// implemented this way so we can re-use the same state, and avoid the overhead of calling views
+// TODO exported just to be used by V1 API until that gets deprecated at once.
+func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
+	state, err := ch.GetStateReader().LatestState()
+	if err != nil {
+		return httperrors.ServerError("unable to get latest state")
+	}
+
+	// query blocklog contract
+	blocklogPartition := subrealm.NewReadOnly(state, kv.Key(blocklog.Contract.Hname().Bytes()))
+	receipt, err := blocklog.IsRequestProcessedInternal(blocklogPartition, req.ID())
+	if err != nil {
+		return httperrors.ServerError("unable to get request receipt from block state")
+	}
+	if receipt != nil {
+		return httperrors.BadRequest("request already processed")
+	}
+
+	// query accounts contract
+	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
+	// check user has on-chain balance
+	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", req.SenderAccount().String()))
+	}
+	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
+	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
+	}
 	return nil
 }

@@ -15,15 +15,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
 type (
@@ -38,7 +34,7 @@ func AddEndpoints(
 ) {
 	instance := &offLedgerReqAPI{
 		getChain:          getChain,
-		shouldBeProcessed: shouldBeProcessed,
+		shouldBeProcessed: services.ShouldBeProcessed,
 		requestsCache:     expiringcache.New(cacheTTL),
 		nodePubKey:        nodePubKey,
 	}
@@ -139,34 +135,4 @@ func parseParams(c echo.Context) (chainID isc.ChainID, req isc.OffLedgerRequest,
 		return isc.ChainID{}, nil, httperrors.BadRequest("error parsing request: off-ledger request expected")
 	}
 	return chainID, req, err
-}
-
-// implemented this way so we can re-use the same state, and avoid the overhead of calling views
-func shouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	state, err := ch.GetStateReader().LatestState()
-	if err != nil {
-		return httperrors.ServerError("unable to get latest state")
-	}
-
-	// query blocklog contract
-	blocklogPartition := subrealm.NewReadOnly(state, kv.Key(blocklog.Contract.Hname().Bytes()))
-	receipt, err := blocklog.IsRequestProcessedInternal(blocklogPartition, req.ID())
-	if err != nil {
-		return httperrors.ServerError("unable to get request receipt from block state")
-	}
-	if receipt != nil {
-		return httperrors.BadRequest("request already processed")
-	}
-
-	// query accounts contract
-	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
-	// check user has on-chain balance
-	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", req.SenderAccount().String()))
-	}
-	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
-	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
-	}
-	return nil
 }

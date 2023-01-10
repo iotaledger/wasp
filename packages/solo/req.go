@@ -464,7 +464,8 @@ func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunc
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, nil)
+	b := &viewcontext.BlockIndexOrTrieRoot{BlockIndex: blockIndex}
+	vmctx, err := viewcontext.New(ch, b)
 	if err != nil {
 		return nil, err
 	}
