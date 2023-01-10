@@ -72,7 +72,7 @@ func deployCmd() *cobra.Command {
 			}
 
 			if ok, _ := isEnoughQuorum(len(committee), quorum); !ok {
-				log.Fatalf("quorum needs to be bigger than 1/3 of committee size")
+				log.Fatal("quorum needs to be bigger than 1/3 of committee size")
 			}
 
 			committeePubKeys := make([]string, 0)

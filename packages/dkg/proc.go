@@ -207,9 +207,9 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 			}
 			if p.node.dropProcess(p) {
 				if done {
-					p.log.Debugf("Deleting completed DkgProc.")
+					p.log.Debug("Deleting completed DkgProc.")
 				} else {
-					p.log.Warnf("Deleting non-completed a DkgProc on timeout.")
+					p.log.Warn("Deleting non-completed a DkgProc on timeout.")
 				}
 			}
 			return

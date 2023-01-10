@@ -143,7 +143,7 @@ func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
 			mlT.log.Panicf("Pulling latest output: no output handler for node id %v", nodeID)
 		}
 	} else {
-		mlT.log.Errorf("Pulling latest output not allowed")
+		mlT.log.Error("Pulling latest output not allowed")
 	}
 }
 

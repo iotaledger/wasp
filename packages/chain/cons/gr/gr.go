@@ -281,7 +281,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			}
 			cgr.recoverCB()
 			cgr.recoverCB = nil
-			cgr.log.Warnf("Recovery timeout reached.")
+			cgr.log.Warn("Recovery timeout reached.")
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)

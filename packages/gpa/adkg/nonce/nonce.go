@@ -207,7 +207,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 	voteCounts := make([]int, n.n)
 	for _, proposal := range input.proposals {
 		if len(proposal) < n.f+1 {
-			n.log.Warnf("len(proposal) < f+1, that should not happen")
+			n.log.Warn("len(proposal) < f+1, that should not happen")
 			continue
 		}
 		for i := range proposal {
@@ -215,7 +215,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 			for j := range proposal {
 				if i != j && proposal[i] == proposal[j] {
 					duplicatesFound = true
-					n.log.Warnf("msgAgreementResult with duplicate votes")
+					n.log.Warn("msgAgreementResult with duplicate votes")
 				}
 			}
 			if !duplicatesFound {

@@ -82,7 +82,7 @@ func DecryptShare(g kyber.Group, deal *Deal, index int, secret []byte) (*share.P
 	aead := newAEAD(secret, salt, contextInfo(index))
 	v := g.Scalar()
 	if err := decryptScalar(v, aead, deal.Shares[index]); err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrDecryptionFailed, err)
+		return nil, fmt.Errorf("%w: %s", ErrDecryptionFailed, err.Error())
 	}
 	s := &share.PriShare{I: index, V: v}
 	if !share.NewPubPoly(g, nil, deal.Commits).Check(s) {

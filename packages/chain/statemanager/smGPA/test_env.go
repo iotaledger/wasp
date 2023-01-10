@@ -192,9 +192,9 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *smInputs
 					require.True(teT.t, expectedCommitment.Equals(receivedCommitment))
 				}
 			}
-			teT.t.Logf("Checking added blocks...")
+			teT.t.Log("Checking added blocks...")
 			requireEqualsFun(expectedNewBlocks, cfsdr.GetAdded())
-			teT.t.Logf("Checking removed blocks...")
+			teT.t.Log("Checking removed blocks...")
 			requireEqualsFun(expectedOldBlocks, cfsdr.GetRemoved())
 			return true
 		default:

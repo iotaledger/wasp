@@ -47,7 +47,7 @@ func TestHornetStartup(t *testing.T) {
 	// Check if faucet requests are working.
 	client.RequestFunds(myAddress)
 	for i := 0; ; i++ {
-		t.Logf("Waiting for a TX...")
+		t.Log("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
 		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break
@@ -61,7 +61,7 @@ func TestHornetStartup(t *testing.T) {
 	_, err = client.PostTxAndWaitUntilConfirmation(tx)
 	require.NoError(t, err)
 	for i := 0; ; i++ {
-		t.Logf("Waiting for a TX...")
+		t.Log("Waiting for a TX...")
 		time.Sleep(100 * time.Millisecond)
 		if initialOutputCount != mustOutputCount(client, myAddress) {
 			break

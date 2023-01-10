@@ -165,7 +165,7 @@ func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
 	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), NewBlockWALMetrics())
 	require.NoError(t, err)
-	t.Logf("Block WAL restarted")
+	t.Log("Block WAL restarted")
 }
 
 func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {

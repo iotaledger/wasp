@@ -217,7 +217,7 @@ func TestRotationFromSingle(t *testing.T) {
 	case incCounterResult := <-incCounterResultChan:
 		require.NoError(t, incCounterResult)
 	case <-time.After(20 * time.Second):
-		t.Fatalf("Timeout waiting incCounterResult")
+		t.Fatal("Timeout waiting incCounterResult")
 	}
 
 	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 30*time.Second)

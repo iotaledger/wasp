@@ -423,7 +423,7 @@ func (a *acssImpl) handleImplicate(m *msgImplicateRecover) gpa.OutMessages {
 	_, err = crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, secret)
 	if err == nil {
 		// if we are able to decrypt the share, the implication is not correct
-		a.log.Warnf("encrypted share is valid")
+		a.log.Warn("encrypted share is valid")
 		return nil
 	}
 	//
@@ -458,7 +458,7 @@ func (a *acssImpl) handleRecover(m *msgImplicateRecover) gpa.OutMessages {
 
 	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, m.data)
 	if err != nil {
-		a.log.Warnf("invalid secret revealed")
+		a.log.Warn("invalid secret revealed")
 		return nil
 	}
 	a.recoverRecv[m.sender] = peerSecret

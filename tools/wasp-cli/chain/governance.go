@@ -21,7 +21,7 @@ func changeAccessNodesCmd() *cobra.Command {
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args)%2 != 0 {
-				log.Fatalf("wrong number of arguments")
+				log.Fatal("wrong number of arguments")
 			}
 			pars := governance.NewChangeAccessNodesRequest()
 			for i := 1; i < len(args); i += 2 {

@@ -16,7 +16,7 @@ func GetChainAlias() string {
 		chainAlias = viper.GetString("chain")
 	}
 	if chainAlias == "" {
-		log.Fatalf("No current chain. Call `chain deploy --chain=<alias>` or `set chain <alias>`")
+		log.Fatal("No current chain. Call `chain deploy --chain=<alias>` or `set chain <alias>`")
 	}
 	return chainAlias
 }

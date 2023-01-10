@@ -268,10 +268,10 @@ func (tnc *testNodeConn) PublishTX(
 	callback chain.TxPostHandler,
 ) error {
 	if tnc.chainID.Empty() {
-		tnc.t.Errorf("NodeConn::PublishTX before attach.")
+		tnc.t.Error("NodeConn::PublishTX before attach.")
 	}
 	if !tnc.chainID.Equals(chainID) {
-		tnc.t.Errorf("unexpected chain id")
+		tnc.t.Error("unexpected chain id")
 	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)
@@ -295,7 +295,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvMilestone chain.MilestoneHandler,
 ) {
 	if !tnc.chainID.Empty() {
-		tnc.t.Errorf("duplicate attach")
+		tnc.t.Error("duplicate attach")
 	}
 	tnc.chainID = chainID
 	tnc.recvRequestCB = recvRequestCB

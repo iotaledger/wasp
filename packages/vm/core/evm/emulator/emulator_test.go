@@ -270,7 +270,7 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		require.NoError(t, err)
 		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments, gasLimit)
 		t.Logf("callFn %s Status: %d", name, receipt.Status)
-		t.Logf("Logs:")
+		t.Log("Logs:")
 		for _, log := range receipt.Logs {
 			t.Logf("  - %s %x", log.Address, log.Data)
 			ev, err := contractABI.EventByID(log.Topics[0])

@@ -84,7 +84,7 @@ func NewAccessNodeInfoListFromMap(infoMap *collections.ImmutableMap) ([]*AccessN
 		return true
 	})
 	if accErr != nil {
-		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %v", accErr)
+		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", accErr)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to iterate over AccessNodeInfo list: %w", err)
