@@ -82,12 +82,10 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 
 	// Activate/deactivate the chain accordingly.
 	if requestChainRec.Active {
-		log.Debugw("calling Chains.Activate", "chainID", requestChainRec.ChainID().String())
 		if err := s.chainsProvider().Activate(requestChainRec.ChainID()); err != nil {
 			return err
 		}
 	} else {
-		log.Debugw("calling Chains.Deactivate", "chainID", requestChainRec.ChainID().String())
 		if err := s.chainsProvider().Deactivate(requestChainRec.ChainID()); err != nil {
 			return err
 		}
