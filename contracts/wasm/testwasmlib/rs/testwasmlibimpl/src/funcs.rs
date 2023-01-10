@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use wasmlib::*;
+use erc721::*;
 use testwasmlib::*;
 use crate::*;
 
@@ -121,6 +122,13 @@ pub fn func_take_balance(ctx: &ScFuncContext, f: &TakeBalanceContext) {
 pub fn func_trigger_event(_ctx: &ScFuncContext, f: &TriggerEventContext) {
     f.events
         .test(&f.params.address().value(), &f.params.name().value());
+}
+
+pub fn func_verify_erc721(ctx: &ScFuncContext, f: &VerifyErc721Context) {
+    let token_hash = f.params.token_hash().value();
+    let oo = erc721::ScFuncs::owner_of(ctx);
+    oo.params.token_id().set_value(&token_hash);
+    oo.func.call();
 }
 
 pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {

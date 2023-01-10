@@ -8,17 +8,13 @@ use crate::*;
 #[derive(Clone)]
 pub struct ScAssets {
     base_tokens: u64,
+    native_tokens: BTreeMap<Vec<u8>, ScBigInt>,
     nft_ids: HashSet<ScNftID>,
-    tokens: BTreeMap<Vec<u8>, ScBigInt>,
 }
 
 impl ScAssets {
     pub fn new(buf: &[u8]) -> ScAssets {
-        let mut assets = ScAssets {
-            base_tokens: 0,
-            nft_ids: HashSet::new(),
-            tokens: BTreeMap::new(),
-        };
+        let mut assets = ScAssets::new_base_tokens(0);
         if buf.len() == 0 {
             return assets;
         }
@@ -35,7 +31,7 @@ impl ScAssets {
         for _i in 0..size {
             let token_id = token_id_decode(&mut dec);
             let amount = big_int_decode(&mut dec);
-            assets.tokens.insert(token_id.to_bytes(), amount);
+            assets.native_tokens.insert(token_id.to_bytes(), amount);
         }
 
         let size = uint16_decode(&mut dec);
@@ -49,8 +45,8 @@ impl ScAssets {
     pub fn new_base_tokens(base_token_num: u64) -> ScAssets {
         return ScAssets {
             base_tokens: base_token_num,
+            native_tokens: BTreeMap::new(),
             nft_ids: HashSet::new(),
-            tokens: BTreeMap::new(),
         };
     }
 
@@ -64,7 +60,7 @@ impl ScAssets {
         if self.base_tokens != 0 {
             return false;
         }
-        for (_key, val) in self.tokens.iter() {
+        for (_key, val) in self.native_tokens.iter() {
             if !val.is_zero() {
                 return false;
             }
@@ -82,8 +78,8 @@ impl ScAssets {
 
         uint64_encode(&mut enc, self.base_tokens);
 
-        uint16_encode(&mut enc, self.tokens.len() as u16);
-        for (token_id, amount) in self.tokens.iter() {
+        uint16_encode(&mut enc, self.native_tokens.len() as u16);
+        for (token_id, amount) in self.native_tokens.iter() {
             enc.fixed_bytes(token_id, SC_TOKEN_ID_LENGTH);
             big_int_encode(&mut enc, amount);
         }
@@ -97,7 +93,7 @@ impl ScAssets {
 
     pub fn token_ids(&self) -> Vec<ScTokenID> {
         let mut tokens: Vec<ScTokenID> = Vec::new();
-        for (key, _val) in self.tokens.iter() {
+        for (key, _val) in self.native_tokens.iter() {
             tokens.push(token_id_from_bytes(key));
         }
         tokens
@@ -118,10 +114,10 @@ impl ScBalances {
 
     pub fn balance(&self, token: &ScTokenID) -> ScBigInt {
         let key = token.to_bytes();
-        if !self.assets.tokens.contains_key(&key) {
+        if !self.assets.native_tokens.contains_key(&key) {
             return ScBigInt::new();
         }
-        self.assets.tokens.get(&key).unwrap().clone()
+        self.assets.native_tokens.get(&key).unwrap().clone()
     }
 
     pub fn base_tokens(&self) -> u64 {
@@ -197,7 +193,7 @@ impl ScTransfer {
     pub fn set(&mut self, token: &ScTokenID, amount: &ScBigInt) {
         self.balances
             .assets
-            .tokens
+            .native_tokens
             .insert(token.to_bytes(), amount.clone());
     }
 }
