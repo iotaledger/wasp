@@ -787,7 +787,7 @@ func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Log
 		requestID := request.ID()
 		processed, err := blocklog.IsRequestProcessed(chainState, &requestID)
 		if err != nil {
-			log.Debugf("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
+			log.Warn("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
 			return false
 		}
 		if processed {
