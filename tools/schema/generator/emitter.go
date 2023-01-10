@@ -37,6 +37,7 @@ const (
 	KeyStruct    = "struct"
 	KeyStructs   = "structs"
 	KeyThis      = "this"
+	KeyTrue      = "true"
 	KeyTypeDef   = "typedef"
 	KeyTypeDefs  = "typedefs"
 	KeyView      = "view"
@@ -386,10 +387,11 @@ func (g *GenBase) fieldIsTypeDef() bool {
 
 func (g *GenBase) setCommonKeys() {
 	g.keys["false"] = ""
-	g.keys["true"] = "true"
+	g.keys[KeyTrue] = KeyTrue
 	g.keys["nil"] = ""
 	g.keys["space"] = " "
 	g.keys["package"] = g.s.PackageName
+	g.keys["package"+g.s.PackageName] = KeyTrue
 	g.keys["Package"] = g.s.ContractName
 	g.setMultiKeyValues("pkgName", g.s.ContractName)
 	g.keys["module"] = moduleName + strings.Replace(moduleCwd[len(modulePath):], "\\", "/", -1)
@@ -412,7 +414,7 @@ func (g *GenBase) setFieldKeys(pad bool, maxCamelLength, maxSnakeLength int) {
 
 	isArray := ""
 	if g.currentField.Array {
-		isArray = "true"
+		isArray = KeyTrue
 	}
 	g.keys["fldIsArray"] = isArray
 	g.keys["fldIsMap"] = g.currentField.MapKey
