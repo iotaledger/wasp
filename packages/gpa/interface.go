@@ -6,13 +6,15 @@ package gpa
 
 import (
 	"encoding"
-	"strings"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type NodeID [32]byte
+
+var _ util.ShortStringable = NodeID{}
 
 func NodeIDFromPublicKey(pubKey *cryptolib.PublicKey) NodeID {
 	nodeID := NodeID{}
@@ -37,7 +39,7 @@ func (niT NodeID) String() string {
 }
 
 func (niT NodeID) ShortString() string {
-	return strings.TrimPrefix(iotago.EncodeHex(niT[:8]), "0x")
+	return iotago.EncodeHex(niT[:4]) // 4 bytes - 8 hexadecimal digits
 }
 
 type Message interface {

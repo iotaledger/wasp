@@ -145,20 +145,22 @@ func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 
 func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *state.L1Commitment) gpa.OutMessages {
 	// TODO: [KP] Only accept queries from access nodes.
-	smT.log.Debugf("Message GetBlock %s received from peer %s", commitment, from)
+	fromLog := from.ShortString()
+	smT.log.Debugf("Message GetBlock %s received from peer %s", commitment, fromLog)
 	block := smT.getBlock(commitment)
 	if block == nil {
-		smT.log.Debugf("Message GetBlock %s: block not found, peer %s request ignored", commitment, from)
+		smT.log.Debugf("Message GetBlock %s: block not found, peer %s request ignored", commitment, fromLog)
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Message GetBlock %s: block found, sending it to peer %s", commitment, from)
+	smT.log.Debugf("Message GetBlock %s: block found, sending it to peer %s", commitment, fromLog)
 	return gpa.NoMessages().Add(smMessages.NewBlockMessage(block, from))
 }
 
 func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) gpa.OutMessages {
 	blockCommitment := block.L1Commitment()
 	blockHash := blockCommitment.BlockHash()
-	smT.log.Debugf("Message Block %s received from peer %s", blockCommitment, from)
+	fromLog := from.ShortString()
+	smT.log.Debugf("Message Block %s received from peer %s", blockCommitment, fromLog)
 	requestsWC, ok := smT.blockRequests[blockHash]
 	if !ok {
 		smT.log.Debugf("Message Block %s: block is not needed, ignoring it", blockCommitment)
@@ -179,7 +181,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	if err != nil {
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Message Block %s from peer %s handled", blockCommitment, from)
+	smT.log.Debugf("Message Block %s from peer %s handled", blockCommitment, fromLog)
 	return messages
 }
 
@@ -505,7 +507,7 @@ func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
 func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Commitment) gpa.OutMessages {
 	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(numberOfNodesToRequestBlockFromConst)
-	smT.log.Debugf("Requesting block %s from %v random nodes %v", commitment, numberOfNodesToRequestBlockFromConst, nodeIDs)
+	smT.log.Debugf("Requesting block %s from %v random nodes %s", commitment, numberOfNodesToRequestBlockFromConst, util.SliceShortString(nodeIDs))
 	response := gpa.NoMessages()
 	for _, nodeID := range nodeIDs {
 		response.Add(smMessages.NewGetBlockMessage(commitment, nodeID))

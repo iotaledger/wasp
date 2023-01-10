@@ -47,7 +47,7 @@ func TestManyNodes(t *testing.T) {
 	// Nodes are checked sequentially
 	lastCommitment := blocks[7].L1Commitment()
 	for i := 1; i < len(nodeIDs); i++ {
-		env.t.Logf("Sequential: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeIDs[i])
+		env.t.Logf("Sequential: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeIDs[i].ShortString())
 		require.True(env.t, env.sendAndEnsureCompletedConsensusStateProposal(lastCommitment, nodeIDs[i], 100, smTimers.StateManagerGetBlockRetry))
 		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeIDs[i], 8, smTimers.StateManagerGetBlockRetry))
 	}
@@ -62,7 +62,7 @@ func TestManyNodes(t *testing.T) {
 	}
 	env.tc.WithInputs(cspInputs).RunAll()
 	for nodeID, cspRespChan := range cspRespChans {
-		env.t.Logf("Parallel: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeID)
+		env.t.Logf("Parallel: waiting for blocks ending with %s to be available on node %s...", lastCommitment, nodeID.ShortString())
 		require.True(env.t, env.ensureCompletedConsensusStateProposal(cspRespChan, 10, smTimers.StateManagerGetBlockRetry))
 	}
 	cdsInputs := make(map[gpa.NodeID]gpa.Input)
@@ -73,7 +73,7 @@ func TestManyNodes(t *testing.T) {
 	}
 	env.tc.WithInputs(cdsInputs).RunAll()
 	for nodeID, cdsRespChan := range cdsRespChans {
-		env.t.Logf("Parallel: waiting for state %s on node %s", lastCommitment, nodeID)
+		env.t.Logf("Parallel: waiting for state %s on node %s", lastCommitment, nodeID.ShortString())
 		require.True(env.t, env.ensureCompletedConsensusDecidedState(cdsRespChan, lastCommitment, 16, smTimers.StateManagerGetBlockRetry))
 	}
 }
@@ -112,7 +112,7 @@ func TestFull(t *testing.T) {
 		for _, nodeID := range nodeIDs {
 			randCommitment := blocks[rand.Intn(iterationSize-1)].L1Commitment() // Do not pick the last state/blocks
 			t.Logf("Iteration %v: sending ConsensusDecidedState for commitment %s to node %s",
-				i, randCommitment, nodeID)
+				i, randCommitment, nodeID.ShortString())
 			require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(randCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
 		}
 		return blocks
@@ -132,7 +132,7 @@ func TestFull(t *testing.T) {
 		}
 	}
 	for _, nodeID := range nodeIDs {
-		t.Logf("Sending ConsensusDecidedState for last original commitment %s to node %s", lastCommitment, nodeID)
+		t.Logf("Sending ConsensusDecidedState for last original commitment %s to node %s", lastCommitment, nodeID.ShortString())
 		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
 	}
 	oldCommitment := lastCommitment
@@ -147,14 +147,14 @@ func TestFull(t *testing.T) {
 		newBlocks = append(newBlocks, blocks...)
 	}
 	for _, nodeID := range nodeIDs {
-		t.Logf("Sending ConsensusDecidedState for last branch commitment %s to node %s", lastCommitment, nodeID)
+		t.Logf("Sending ConsensusDecidedState for last branch commitment %s to node %s", lastCommitment, nodeID.ShortString())
 		require.True(env.t, env.sendAndEnsureCompletedConsensusDecidedState(lastCommitment, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
 	}
 	newCommitment := lastCommitment
 
 	// ChainFetchStateDiff request
 	for _, nodeID := range env.nodeIDs {
-		env.t.Logf("Requesting state for Mempool from node %s", nodeID)
+		env.t.Logf("Requesting state for Mempool from node %s", nodeID.ShortString())
 		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, newBlocks, nodeID, maxRetriesPerIteration, smTimers.StateManagerGetBlockRetry))
 	}
 }
@@ -192,7 +192,7 @@ func TestMempoolRequest(t *testing.T) {
 	newCommitment := branchBlocks[len(branchBlocks)-1].L1Commitment()
 	oldBlocks := mainBlocks[branchIndex+1:]
 	for _, nodeID := range nodeIDs[1:] {
-		env.t.Logf("Sending ChainFetchStateDiff for old commitment %s and new commitment %s to node %s", oldCommitment, newCommitment, nodeID)
+		env.t.Logf("Sending ChainFetchStateDiff for old commitment %s and new commitment %s to node %s", oldCommitment, newCommitment, nodeID.ShortString())
 		require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, branchBlocks, nodeID, maxRetries, smTimers.StateManagerGetBlockRetry))
 	}
 }

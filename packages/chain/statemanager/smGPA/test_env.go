@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type testEnv struct {
@@ -42,7 +43,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 	timers.TimeProvider = smGPAUtils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
-		smLog := log.Named(nodeID.String())
+		smLog := log.Named(nodeID.ShortString())
 		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun()
 		store := state.InitChainStore(mapdb.NewMapDB())
@@ -69,7 +70,7 @@ func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, 
 	// needed to commit this block. This is ensured by consensus.
 	require.True(teT.t, teT.sendAndEnsureCompletedConsensusStateProposal(blocks[0].PreviousL1Commitment(), nodeID, 100, timeStep))
 	for i := range blocks {
-		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID)
+		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID.ShortString())
 		teT.sendAndEnsureCompletedConsensusBlockProduced(blocks[i], nodeID, 100, timeStep)
 	}
 }
@@ -219,7 +220,7 @@ func (teT *testEnv) ensureTrue(title string, predicate func() bool, maxTimeItera
 func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
 	now := teT.timeProvider.GetNow().Add(delay)
 	teT.timeProvider.SetNow(now)
-	teT.t.Logf("Time %v is sent to nodes %v", now, teT.nodeIDs)
+	teT.t.Logf("Time %v is sent to nodes %s", now, util.SliceShortString(teT.nodeIDs))
 	teT.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
 		return smInputs.NewStateManagerTimerTick(now)
 	})

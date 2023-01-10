@@ -11,9 +11,9 @@ import (
 func MakeTestNodeIDFromIndex(index int) NodeID {
 	nodeID := NodeID{}
 
-	indexBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(indexBytes, uint64(index))
-	copy(nodeID[:8], indexBytes)
+	indexBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(indexBytes, uint32(index))
+	copy(nodeID[:4], indexBytes)
 
 	return nodeID
 }
