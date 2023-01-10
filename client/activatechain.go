@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 // ActivateChain sends a request to activate a chain in the wasp node

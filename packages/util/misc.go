@@ -42,7 +42,7 @@ func IsSubset(sub, super []string) bool {
 	return true
 }
 
-// MakeRange returns slice with a range of elements starting from to up to from-1, inclusive
+// MakeRange returns slice with a range of elements starting from to up to-1, inclusive
 func MakeRange(from, to int) []int {
 	a := make([]int, to-from)
 	for i := range a {

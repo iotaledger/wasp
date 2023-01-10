@@ -85,18 +85,18 @@ func (vmctx *VMContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *is
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokenBalance(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetNativeTokenBalance(s, agentID, tokenID)
+		ret = accounts.GetNativeTokenBalance(s, agentID, nativeTokenID)
 	})
 	return ret
 }
 
-func (vmctx *VMContext) GetNativeTokenBalanceTotal(tokenID *iotago.NativeTokenID) *big.Int {
+func (vmctx *VMContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTokenID) *big.Int {
 	var ret *big.Int
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetNativeTokenBalanceTotal(s, tokenID)
+		ret = accounts.GetNativeTokenBalanceTotal(s, nativeTokenID)
 	})
 	return ret
 }
@@ -131,14 +131,14 @@ func (vmctx *VMContext) GetSenderTokenBalanceForFees() uint64 {
 	if sender == nil {
 		return 0
 	}
-	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
 		// base tokens are used as gas tokens
 		return vmctx.GetBaseTokensBalance(sender)
 	}
 	// native tokens are used for gas fee
-	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, tokenID)
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(sender, nativeTokenID)
 	if tokensAvailableBig.IsUint64() {
 		return tokensAvailableBig.Uint64()
 	}

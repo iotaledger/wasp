@@ -91,7 +91,7 @@
     "bindAddress": "0.0.0.0:9090",
     "debugRequestLoggerEnabled": false,
     "auth": {
-      "scheme": "none",
+      "scheme": "jwt",
       "jwt": {
         "duration": "24h"
       },

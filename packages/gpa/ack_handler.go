@@ -29,6 +29,7 @@ type ackHandler struct {
 
 type AckHandler interface {
 	GPA
+	DismissPeer(peerID NodeID) // To avoid resending messages to dead peers.
 	MakeTickInput(time.Time) Input
 	NestedMessage(msg Message) OutMessages
 	NestedCall(c func(GPA) OutMessages) OutMessages
@@ -45,6 +46,12 @@ func NewAckHandler(me NodeID, nested GPA, resendPeriod time.Duration) AckHandler
 		sentUnacked:  map[NodeID]map[int]*ackHandlerBatch{},
 		recvAcksIn:   map[NodeID]map[int]*int{},
 	}
+}
+
+func (a *ackHandler) DismissPeer(peerID NodeID) {
+	delete(a.counters, peerID)
+	delete(a.sentUnacked, peerID)
+	delete(a.recvAcksIn, peerID)
 }
 
 func (a *ackHandler) MakeTickInput(timestamp time.Time) Input {

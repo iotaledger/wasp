@@ -91,12 +91,12 @@ func getTokensForRequestFee() *isc.Allowance {
 	gasPolicy, err := client.GetGasFeePolicy(GetCurrentChainID())
 	log.Check(err)
 	amount := gas.MinGasPerRequest / gasPolicy.GasPerToken
-	if gasPolicy.GasFeeTokenID == nil || isc.IsBaseToken((*gasPolicy.GasFeeTokenID)[:]) {
+	if isc.IsEmptyNativeTokenID(gasPolicy.GasFeeTokenID) || isc.IsBaseToken(gasPolicy.GasFeeTokenID[:]) {
 		return isc.NewAllowanceBaseTokens(amount)
 	}
 
 	return isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{{
-		ID:     *gasPolicy.GasFeeTokenID,
+		ID:     gasPolicy.GasFeeTokenID,
 		Amount: new(big.Int).SetUint64(amount),
 	}}))
 }

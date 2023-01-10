@@ -66,7 +66,7 @@ type Balance interface {
 	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
 	BalanceBaseTokens() uint64
 	// BalanceNativeToken returns number of native token or nil if it is empty
-	BalanceNativeToken(id *iotago.NativeTokenID) *big.Int
+	BalanceNativeToken(iotago.NativeTokenID) *big.Int
 	// BalanceFungibleTokens returns all fungible tokens: base tokens and native tokens
 	BalanceFungibleTokens() *FungibleTokens
 	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract

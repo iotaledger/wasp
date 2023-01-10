@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/hive.go/core/app/core/shutdown"
 	"github.com/iotaledger/hive.go/core/app/plugins/profiling"
 	"github.com/iotaledger/inx-app/core/inx"
-
 	"github.com/iotaledger/wasp/core/chains"
 	"github.com/iotaledger/wasp/core/database"
 	"github.com/iotaledger/wasp/core/dkg"
@@ -21,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/core/wasmtimevm"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/plugins/dashboard"
+	"github.com/iotaledger/wasp/plugins/profilingrecorder"
 	"github.com/iotaledger/wasp/plugins/prometheus"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -47,6 +47,7 @@ func App() *app.App {
 		}...),
 		app.WithPlugins([]*app.Plugin{
 			profiling.Plugin,
+			profilingrecorder.Plugin,
 			prometheus.Plugin,
 			webapi.Plugin,
 			publishernano.Plugin,

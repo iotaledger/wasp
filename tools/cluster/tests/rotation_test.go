@@ -35,6 +35,7 @@ func TestBasicRotation(t *testing.T) {
 
 	// check the chain works
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
@@ -51,6 +52,7 @@ func TestBasicRotation(t *testing.T) {
 			},
 		},
 	)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
@@ -64,6 +66,7 @@ func TestBasicRotation(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
 
@@ -73,6 +76,7 @@ func TestBasicRotation(t *testing.T) {
 
 	// check the chain still works
 	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 20*time.Second)
 	require.NoError(t, err)
@@ -213,8 +217,8 @@ func TestRotationFromSingle(t *testing.T) {
 	select {
 	case incCounterResult := <-incCounterResultChan:
 		require.NoError(t, incCounterResult)
-	case <-time.After(10 * time.Second):
-		t.Fatal()
+	case <-time.After(20 * time.Second):
+		t.Fatalf("Timeout waiting incCounterResult")
 	}
 
 	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 30*time.Second)

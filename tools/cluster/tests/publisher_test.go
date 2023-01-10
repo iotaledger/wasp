@@ -44,6 +44,10 @@ func (c *nanoClientTest) start(t *testing.T, url string) {
 }
 
 func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
+	t.Logf("assertMessages: |messages|=%v, expectedFinalCounter=%v", len(messages), expectedFinalCounter)
+	for i, m := range messages {
+		t.Logf("assertMessages: messages[%v]=%v", i, m)
+	}
 	inccounterEventRegx := regexp.MustCompile(`.*incCounter: counter = (\d+)$`)
 	counter := 1
 	for _, msg := range messages {
@@ -105,10 +109,9 @@ func TestNanoPublisher(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted")
+	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted - A")
 
-	// assert all clients received the correct number of messages
-	// TODO these are not testing anything....
+	// assert all clients received the correct number of messages, in the correct order.
 	for _, client := range nanoClients {
 		assertMessages(t, client.messages, numRequests)
 	}
@@ -125,8 +128,9 @@ func TestNanoPublisher(t *testing.T) {
 		// ---
 	}
 
-	waitUntil(t, env.counterEquals(int64(numRequests*2)), util.MakeRange(0, 1), 60*time.Second, "requests counted")
+	waitUntil(t, env.counterEquals(int64(numRequests*2)), util.MakeRange(0, 1), 60*time.Second, "requests counted - B")
 
+	// assert all clients received the correct number of messages, in the correct order.
 	for _, client := range nanoClients {
 		assertMessages(t, client.messages, numRequests*2)
 	}

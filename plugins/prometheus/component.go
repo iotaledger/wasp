@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/dig"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"

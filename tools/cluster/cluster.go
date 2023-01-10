@@ -19,7 +19,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/samber/lo"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -32,14 +31,13 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -171,7 +169,7 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	}
 
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
-	return apilib.RunDKG(apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
+	return apilib.RunDKG("", apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -230,8 +228,9 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
-	accessNodes, _ := lo.Difference(allPeers, committeeNodes)
-	return chain, clu.addAllAccessNodes(chain, accessNodes)
+	// After a rotation other nodes can become access nodes,
+	// so we make all of the nodes possible access nodes.
+	return chain, clu.addAllAccessNodes(chain, allPeers)
 }
 
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
@@ -281,31 +280,6 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		return err
 	}
 
-	// add the committee nodes to the chainRecord of the access nodes (so they know where to send messages to)
-	// TODO this might be deprecated once we automate the process of linking peers to a chain
-	{
-		cmtNodesPubKeys := make([]*cryptolib.PublicKey, len(chain.CommitteeNodes))
-		for i, nodeIndex := range chain.CommitteeNodes {
-			nodeInfo, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
-			if err != nil {
-				return err
-			}
-			cmtNodesPubKeys[i], err = cryptolib.NewPublicKeyFromString(nodeInfo.PubKey)
-			if err != nil {
-				return err
-			}
-		}
-
-		for _, a := range accessNodes {
-			waspClient := clu.WaspClient(a)
-			record := registry.NewChainRecord(chain.ChainID, true, cmtNodesPubKeys)
-			err = waspClient.PutChainRecord(record)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -314,7 +288,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
 	accessNodePeering, err := waspClient.GetPeeringSelf()
@@ -353,7 +327,7 @@ func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 }
 
 func (clu *Cluster) IsNodeUp(i int) bool {
-	return clu.waspCmds[i].cmd != nil
+	return clu.waspCmds[i] != nil && clu.waspCmds[i].cmd != nil
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {

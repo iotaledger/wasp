@@ -38,12 +38,12 @@ func (cvt WasmConvertor) IscAgentID(scAgentID *wasmtypes.ScAgentID) isc.AgentID 
 func (cvt WasmConvertor) IscAllowance(assets *wasmlib.ScAssets) *isc.Allowance {
 	iscAllowance := isc.NewAllowanceBaseTokens(assets.BaseTokens)
 	iscAssets := iscAllowance.Assets
-	for tokenID, amount := range assets.Tokens {
-		token := &iotago.NativeToken{
-			ID:     *cvt.IscTokenID(&tokenID),
+	for tokenID, amount := range assets.NativeTokens {
+		nativeToken := &iotago.NativeToken{
+			ID:     cvt.IscTokenID(&tokenID),
 			Amount: cvt.IscBigInt(amount),
 		}
-		iscAssets.Tokens = append(iscAssets.Tokens, token)
+		iscAssets.NativeTokens = append(iscAssets.NativeTokens, nativeToken)
 	}
 	for nftID := range assets.NftIDs {
 		nft := cvt.IscNFTID(&nftID)
@@ -83,16 +83,16 @@ func (cvt WasmConvertor) IscNFTID(nftID *wasmtypes.ScNftID) *iotago.NFTID {
 	return iscNFTID
 }
 
-func (cvt WasmConvertor) IscRequestID(requestID *wasmtypes.ScRequestID) *isc.RequestID {
+func (cvt WasmConvertor) IscRequestID(requestID *wasmtypes.ScRequestID) isc.RequestID {
 	buf := wasmtypes.RequestIDToBytes(*requestID)
-	iscRequestID := new(isc.RequestID)
+	iscRequestID := isc.RequestID{}
 	copy(iscRequestID[:], buf)
 	return iscRequestID
 }
 
-func (cvt WasmConvertor) IscTokenID(tokenID *wasmtypes.ScTokenID) *iotago.NativeTokenID {
+func (cvt WasmConvertor) IscTokenID(tokenID *wasmtypes.ScTokenID) iotago.NativeTokenID {
 	buf := wasmtypes.TokenIDToBytes(*tokenID)
-	iscTokenID := new(iotago.NativeTokenID)
+	iscTokenID := iotago.NativeTokenID{}
 	copy(iscTokenID[:], buf)
 	return iscTokenID
 }
@@ -109,8 +109,8 @@ func (cvt WasmConvertor) ScAgentID(agentID isc.AgentID) wasmtypes.ScAgentID {
 
 func (cvt WasmConvertor) ScBalances(allowance *isc.Allowance) *wasmlib.ScBalances {
 	transfer := wasmlib.NewScTransferBaseTokens(allowance.Assets.BaseTokens)
-	for _, token := range allowance.Assets.Tokens {
-		tokenID := cvt.ScTokenID(&token.ID)
+	for _, token := range allowance.Assets.NativeTokens {
+		tokenID := cvt.ScTokenID(token.ID)
 		transfer.Set(&tokenID, cvt.ScBigInt(token.Amount))
 	}
 	for _, nft := range allowance.NFTs {
@@ -144,8 +144,8 @@ func (cvt WasmConvertor) ScRequestID(requestID isc.RequestID) wasmtypes.ScReques
 	return wasmtypes.RequestIDFromBytes(requestID.Bytes())
 }
 
-func (cvt WasmConvertor) ScTokenID(tokenID *iotago.NativeTokenID) wasmtypes.ScTokenID {
-	return wasmtypes.TokenIDFromBytes(tokenID[:])
+func (cvt WasmConvertor) ScTokenID(nativeTokenID iotago.NativeTokenID) wasmtypes.ScTokenID {
+	return wasmtypes.TokenIDFromBytes(nativeTokenID[:])
 }
 
 func (cvt WasmConvertor) ToBigInt(amount interface{}) *big.Int {

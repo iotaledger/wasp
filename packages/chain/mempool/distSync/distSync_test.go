@@ -29,7 +29,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	recv := map[gpa.NodeID]isc.Request{}
-	nodeIDs := gpa.MakeTestNodeIDs("ds", n)
+	nodeIDs := gpa.MakeTestNodeIDs(n)
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for _, nid := range nodeIDs {
 		thisNodeID := nid
@@ -59,7 +59,7 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	//
 	// Setup the committee for all nodes.
 	for _, nid := range nodeIDs {
-		tc.WithInput(nid, distSync.NewInputAccessNodes(cmtNodes, cmtNodes))
+		tc.WithInput(nid, distSync.NewInputServerNodes(cmtNodes, cmtNodes))
 	}
 	//
 	// Send a request to a single node.

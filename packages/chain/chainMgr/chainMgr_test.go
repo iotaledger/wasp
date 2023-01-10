@@ -64,7 +64,7 @@ func testBasic(t *testing.T, n, f int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	nodeIDs := make([]gpa.NodeID, len(peerIdentities))
 	for i, pid := range peerIdentities {
-		nodeIDs[i] = pubKeyAsNodeID(pid.GetPublicKey())
+		nodeIDs[i] = gpa.NodeIDFromPublicKey(pid.GetPublicKey())
 	}
 	cmtAddrA, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	cmtAddrB, dkRegs := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, dkRegs)
@@ -80,7 +80,7 @@ func testBasic(t *testing.T, n, f int) {
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
-		cm, err := chainMgr.New(nid, chainID, consensusStateRegistry, dkRegs[i], pubKeyAsNodeID, func(pk []*cryptolib.PublicKey) {}, log.Named(string(nid)[:6]))
+		cm, err := chainMgr.New(nid, chainID, consensusStateRegistry, dkRegs[i], gpa.NodeIDFromPublicKey, func(pk []*cryptolib.PublicKey) {}, log.Named(nid.ShortString()))
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
 	}
@@ -177,8 +177,4 @@ func testBasic(t *testing.T, n, f int) {
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrB, &out.NeedConsensus().CommitteeAddr)
 	}
-}
-
-func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
 }

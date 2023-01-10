@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm"
-
 	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/execution"
@@ -47,11 +46,11 @@ func (vmctx *VMContext) DestroyFoundry(sn uint32) uint64 {
 func (vmctx *VMContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	vmctx.mustBeCalledFromContract(accounts.Contract)
 	out, _, _ := accounts.GetFoundryOutput(vmctx.State(), sn, vmctx.ChainID())
-	tokenID, err := out.NativeTokenID()
+	nativeTokenID, err := out.NativeTokenID()
 	if err != nil {
 		panic(xerrors.Errorf("internal: %v", err))
 	}
-	return vmctx.txbuilder.ModifyNativeTokenSupply(&tokenID, delta)
+	return vmctx.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
 func (vmctx *VMContext) SubscribeBlockContext(openFunc, closeFunc isc.Hname) {

@@ -91,11 +91,11 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, assetID []byte, nodeIn
 		return actual.BaseTokens
 	}
 
-	tokenSet, err := actual.Tokens.Set()
+	nativeTokensSet, err := actual.NativeTokens.Set()
 	require.NoError(e.t, err)
-	tokenID, err := isc.NativeTokenIDFromBytes(assetID)
+	nativeTokenID, err := isc.NativeTokenIDFromBytes(assetID)
 	require.NoError(e.t, err)
-	return tokenSet[tokenID].Amount.Uint64()
+	return nativeTokensSet[nativeTokenID].Amount.Uint64()
 }
 
 func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, assetID []byte, expected uint64) {
@@ -297,6 +297,7 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *
 		Chain: chain,
 	}
 	tx := e.deployNativeIncCounterSC(0)
+	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - deployNativeIncCounterSC")
 
 	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 

@@ -54,8 +54,8 @@ func NewTransferTransaction(params NewTransferTransactionParams) (*iotago.Transa
 	sumTokensOut = addNativeTokens(sumTokensOut, output)
 
 	tokenMap := map[iotago.NativeTokenID]*big.Int{}
-	for _, token := range params.FungibleTokens.Tokens {
-		tokenMap[token.ID] = token.Amount
+	for _, nativeToken := range params.FungibleTokens.NativeTokens {
+		tokenMap[nativeToken.ID] = nativeToken.Amount
 	}
 
 	inputIDs, remainder, err := computeInputsAndRemainder(params.SenderAddress,

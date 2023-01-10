@@ -4,7 +4,7 @@
 // A mempool basically does these functions:
 //   - Provide a proposed set of requests (refs) for the consensus.
 //   - Provide a set of requests for a TX as decided by the consensus.
-//   - Share Off-Ledger requests between the committee and the access nodes.
+//   - Share Off-Ledger requests between the committee and the server nodes.
 //
 // When the consensus asks for a proposal set, the mempool has to determine,
 // if a reorg or a rollback has happened and adjust the request set accordingly.
@@ -46,6 +46,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -96,8 +97,9 @@ type Mempool interface {
 	ReceiveOffLedgerRequest(request isc.OffLedgerRequest)
 	// Invoked by the ChainMgr when a time of a tangle changes.
 	TangleTimeUpdated(tangleTime time.Time)
-	// Invoked by the chain when a set of access nodes has changed.
+	// Invoked by the chain when a set of server nodes has changed.
 	// These nodes should be used to disseminate the off-ledger requests.
+	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 }
 
@@ -125,6 +127,8 @@ type mempoolImpl struct {
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
+	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
+	serverNodes                    []*cryptolib.PublicKey
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
@@ -151,10 +155,16 @@ const (
 	msgTypeMempool byte = iota
 )
 
+type reqServerNodesUpdated struct {
+	committeePubKeys  []*cryptolib.PublicKey
+	serverNodePubKeys []*cryptolib.PublicKey
+}
+
 type reqAccessNodesUpdated struct {
 	committeePubKeys  []*cryptolib.PublicKey
 	accessNodePubKeys []*cryptolib.PublicKey
 }
+
 type reqConsensusProposals struct {
 	ctx         context.Context
 	aliasOutput *isc.AliasOutputWithID
@@ -184,7 +194,7 @@ func New(
 	metrics metrics.MempoolMetrics,
 	listener ChainListener,
 ) Mempool {
-	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
@@ -193,6 +203,8 @@ func New(
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq),
 		offLedgerPool:                  NewTypedPool[isc.OffLedgerRequest](waitReq),
 		chainHeadAO:                    nil,
+		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
+		serverNodes:                    []*cryptolib.PublicKey{},
 		accessNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqAccessNodesUpdated](),
 		accessNodes:                    []*cryptolib.PublicKey{},
 		committeeNodes:                 []*cryptolib.PublicKey{},
@@ -247,6 +259,10 @@ func (mpi *mempoolImpl) ReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.reqReceiveOffLedgerRequestPipe.In() <- request
 }
 
+func (mpi *mempoolImpl) ServerNodesUpdated(committeePubKeys, serverNodePubKeys []*cryptolib.PublicKey) {
+	mpi.serverNodesUpdatedPipe.In() <- &reqServerNodesUpdated{committeePubKeys, serverNodePubKeys}
+}
+
 func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys []*cryptolib.PublicKey) {
 	mpi.accessNodesUpdatedPipe.In() <- &reqAccessNodesUpdated{committeePubKeys, accessNodePubKeys}
 }
@@ -274,6 +290,7 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 }
 
 func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //nolint: gocyclo
+	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
 	reqConsensusProposalsPipeOutCh := mpi.reqConsensusProposalsPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
@@ -287,6 +304,12 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 	rePublishTicker := time.NewTicker(distShareRePublishTick)
 	for {
 		select {
+		case recv, ok := <-serverNodesUpdatedPipeOutCh:
+			if !ok {
+				serverNodesUpdatedPipeOutCh = nil
+				break
+			}
+			mpi.handleServerNodesUpdated(recv)
 		case recv, ok := <-accessNodesUpdatedPipeOutCh:
 			if !ok {
 				accessNodesUpdatedPipeOutCh = nil
@@ -342,7 +365,8 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 		case <-rePublishTicker.C:
 			mpi.handleRePublishTimeTick()
 		case <-ctx.Done():
-			// mpi.accessNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
+			// mpi.serverNodesUpdatedPipe.Close() // TODO: Causes panic: send on closed channel
+			// mpi.accessNodesUpdatedPipe.Close()
 			// mpi.reqConsensusProposalsPipe.Close()
 			// mpi.reqConsensusRequestsPipe.Close()
 			// mpi.reqReceiveOnLedgerRequestPipe.Close()
@@ -369,7 +393,7 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 	}
 	if mpi.chainHeadState != nil {
 		requestID := requestRef.ID
-		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &requestID)
+		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, requestID)
 		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
 			return receipt.Request
 		}
@@ -392,7 +416,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", request.ID().String())
 	if mpi.chainHeadState != nil {
 		requestID := request.ID()
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(xerrors.Errorf(
 				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
@@ -414,28 +438,33 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	return false
 }
 
+func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
+	mpi.serverNodes = recv.serverNodePubKeys
+	mpi.committeeNodes = recv.committeePubKeys
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputServerNodes(
+		lo.Map(mpi.serverNodes, mpi.pubKeyAsNodeIDMap),
+		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
+	)))
+}
+
 func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 	mpi.accessNodes = recv.accessNodePubKeys
 	mpi.committeeNodes = recv.committeePubKeys
-	//
-	accessNodeIDs := make([]gpa.NodeID, len(mpi.accessNodes))
-	for i, nodePubKey := range mpi.accessNodes {
-		accessNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
-	}
-	committeeNodeIDs := make([]gpa.NodeID, len(mpi.committeeNodes))
-	for i, nodePubKey := range mpi.committeeNodes {
-		committeeNodeIDs[i] = mpi.pubKeyAsNodeID(nodePubKey)
-	}
-	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(accessNodeIDs, committeeNodeIDs)))
+	mpi.sendMessages(mpi.distSync.Input(distSync.NewInputAccessNodes(
+		lo.Map(mpi.accessNodes, mpi.pubKeyAsNodeIDMap),
+		lo.Map(mpi.committeeNodes, mpi.pubKeyAsNodeIDMap),
+	)))
 }
 
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposals(recv *reqConsensusProposals) {
 	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(mpi.chainHeadAO) {
+		mpi.log.Debugf("handleConsensusProposals, have to wait for chain head to become %v", recv.aliasOutput)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
+	mpi.log.Debugf("handleConsensusProposals, already have the chain head %v", recv.aliasOutput)
 	mpi.handleConsensusProposalsForChainHead(recv)
 }
 
@@ -526,7 +555,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	//
 	// Maybe it has been processed before?
 	if mpi.chainHeadState != nil {
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(xerrors.Errorf("cannot check if request was processed: %w", err))
 		}
@@ -590,6 +619,7 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
+	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
 		// TODO: For IOTA 2.0: Maybe re-read the state from L1 (when reorgs will become possible).
@@ -623,7 +653,9 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Cleanup processed requests, if that's the first time we received the state.
 	if mpi.chainHeadState == nil {
+		mpi.log.Debugf("Cleanup processed requests based on the received state...")
 		mpi.tryCleanupProcessed(req.st)
+		mpi.log.Debugf("Cleanup processed requests based on the received state... Done")
 	}
 	//
 	// Record the head state.
@@ -711,9 +743,9 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 }
 
 func (mpi *mempoolImpl) tryCleanupProcessed(chainState state.State) {
-	mpi.onLedgerPool.Filter(unprocessedPredicate[isc.OnLedgerRequest](chainState))
-	mpi.offLedgerPool.Filter(unprocessedPredicate[isc.OffLedgerRequest](chainState))
-	mpi.timePool.Filter(unprocessedPredicate[isc.Request](chainState))
+	mpi.onLedgerPool.Filter(unprocessedPredicate[isc.OnLedgerRequest](chainState, mpi.log))
+	mpi.offLedgerPool.Filter(unprocessedPredicate[isc.OffLedgerRequest](chainState, mpi.log))
+	mpi.timePool.Filter(unprocessedPredicate[isc.Request](chainState, mpi.log))
 }
 
 func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
@@ -737,20 +769,34 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := mpi.netPeerPubs[nodeID]; !ok {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}
 	return nodeID
 }
 
+// To use with lo.Map.
+func (mpi *mempoolImpl) pubKeyAsNodeIDMap(nodePubKey *cryptolib.PublicKey, _ int) gpa.NodeID {
+	return mpi.pubKeyAsNodeID(nodePubKey)
+}
+
 // Have to have it as a separate function to be able to use type params.
-func unprocessedPredicate[V isc.Request](chainState state.State) func(V, time.Time) bool {
+func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Logger) func(V, time.Time) bool {
 	return func(request V, ts time.Time) bool {
 		requestID := request.ID()
-		if processed, err := blocklog.IsRequestProcessed(chainState, &requestID); err != nil && processed {
+
+		processed, err := blocklog.IsRequestProcessed(chainState, requestID)
+		if err != nil {
+			log.Warn("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
 			return false
 		}
+
+		if processed {
+			log.Debugf("Request already processed %v at state.TrieRoot=%v", requestID, chainState.TrieRoot())
+			return false
+		}
+
 		return true
 	}
 }

@@ -36,7 +36,7 @@
         {{if gt .BaseTokens 0}}
             <dt>BaseTokens</dt><dd>{{ .BaseTokens }}</dd>
         {{end}}
-		{{range $_, $token := .Tokens}}
+		{{range $_, $token := .NativeTokens}}
 			<dt><code>{{ $token.ID }}</code></dt>
 			<dd>{{ $token.Amount }}</dd>
 		{{end}}

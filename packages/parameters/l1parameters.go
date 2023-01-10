@@ -3,6 +3,7 @@ package parameters
 import (
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -11,18 +12,18 @@ import (
 
 // L1Params describes parameters coming from the L1Params node
 type L1Params struct {
-	MaxPayloadSize int
-	Protocol       *iotago.ProtocolParameters
-	BaseToken      *BaseToken
+	MaxPayloadSize int                        `json:"maxPayloadSize"`
+	Protocol       *iotago.ProtocolParameters `json:"protocol"`
+	BaseToken      *BaseToken                 `json:"baseToken"`
 }
 
 type BaseToken struct {
-	Name            string
-	TickerSymbol    string
-	Unit            string
-	Subunit         string
-	Decimals        uint32
-	UseMetricPrefix bool
+	Name            string `json:"name"`
+	TickerSymbol    string `json:"tickerSymbol"`
+	Unit            string `json:"unit"`
+	Subunit         string `json:"subunit"`
+	Decimals        uint32 `json:"decimals"`
+	UseMetricPrefix bool   `json:"useMetricPrefix"`
 }
 
 const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
@@ -33,7 +34,8 @@ const MaxPayloadSize = iotago.BlockBinSerializedMaxSize - // BlockSizeMax
 	serializer.UInt64ByteSize // Nonce
 
 var (
-	l1Params *L1Params
+	l1ParamsMutex = &sync.RWMutex{}
+	l1Params      *L1Params
 
 	L1ForTesting = &L1Params{
 		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
@@ -70,6 +72,12 @@ func isTestContext() bool {
 }
 
 func L1() *L1Params {
+	l1ParamsMutex.Lock()
+	defer l1ParamsMutex.Unlock()
+	return L1NoLock()
+}
+
+func L1NoLock() *L1Params {
 	if l1Params == nil {
 		if isTestContext() {
 			l1Params = L1ForTesting

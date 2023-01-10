@@ -18,7 +18,7 @@ import (
 func TestBasic(t *testing.T) {
 	test := func(tt *testing.T, n, f int) {
 		tt.Parallel()
-		nodeIDs := gpa.MakeTestNodeIDs("node", n)
+		nodeIDs := gpa.MakeTestNodeIDs(n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
 		nodes := map[gpa.NodeID]gpa.GPA{}
@@ -44,7 +44,7 @@ func TestBasic(t *testing.T) {
 func TestWithSilent(t *testing.T) {
 	test := func(tt *testing.T, n, f int) {
 		tt.Parallel()
-		nodeIDs := gpa.ShuffleNodeIDs(gpa.MakeTestNodeIDs("node", n))
+		nodeIDs := gpa.ShuffleNodeIDs(gpa.MakeTestNodeIDs(n))
 		faulty := nodeIDs[0:f]
 		fair := nodeIDs[f:]
 		require.Len(t, faulty, f)
@@ -78,7 +78,7 @@ func TestPredicate(t *testing.T) {
 	pFalse := func(b []byte) bool { return false }
 	test := func(tt *testing.T, n, f int) {
 		tt.Parallel()
-		nodeIDs := gpa.MakeTestNodeIDs("node", n)
+		nodeIDs := gpa.MakeTestNodeIDs(n)
 		leader := nodeIDs[rand.Intn(len(nodeIDs))]
 		input := []byte("something important to broadcast")
 		nodes := map[gpa.NodeID]gpa.GPA{}

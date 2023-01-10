@@ -18,9 +18,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, tokenID *iotago.NativeTokenID, bal interface{}) {
+func (ch *Chain) AssertL2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID, bal interface{}) {
 	bals := ch.L2Assets(agentID)
-	actualTokenBalance := bals.AmountNativeToken(tokenID)
+	actualTokenBalance := bals.AmountNativeToken(nativeTokenID)
 	expected := util.ToBigInt(bal)
 	require.Truef(ch.Env.T,
 		expected.Cmp(actualTokenBalance) == 0,
@@ -67,9 +67,9 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 }
 
-func (ch *Chain) AssertL2TotalNativeTokens(tokenID *iotago.NativeTokenID, bal interface{}) {
+func (ch *Chain) AssertL2TotalNativeTokens(nativeTokenID iotago.NativeTokenID, bal interface{}) {
 	bals := ch.L2TotalAssets()
-	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(tokenID)) == 0)
+	require.True(ch.Env.T, util.ToBigInt(bal).Cmp(bals.AmountNativeToken(nativeTokenID)) == 0)
 }
 
 func (ch *Chain) AssertL2TotalBaseTokens(bal uint64) {
@@ -98,8 +98,8 @@ func (env *Solo) AssertL1BaseTokens(addr iotago.Address, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.L1BaseTokens(addr)))
 }
 
-func (env *Solo) AssertL1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID, expected interface{}) {
-	require.True(env.T, env.L1NativeTokens(addr, tokenID).Cmp(util.ToBigInt(expected)) == 0)
+func (env *Solo) AssertL1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID, expected interface{}) {
+	require.True(env.T, env.L1NativeTokens(addr, nativeTokenID).Cmp(util.ToBigInt(expected)) == 0)
 }
 
 func (env *Solo) HasL1NFT(addr iotago.Address, id *iotago.NFTID) bool {

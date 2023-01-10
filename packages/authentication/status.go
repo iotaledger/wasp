@@ -3,9 +3,9 @@ package authentication
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-
 	"github.com/labstack/echo/v4"
+
+	"github.com/iotaledger/wasp/packages/authentication/shared"
 )
 
 type StatusWebAPIModel struct {

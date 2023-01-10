@@ -64,13 +64,13 @@ func (txb *AnchorTransactionBuilder) sumInputs() *TransactionTotals {
 	for _, out := range txb.consumed {
 		a := out.FungibleTokens()
 		ret.TotalBaseTokensInL2Accounts += a.BaseTokens
-		for _, nt := range a.Tokens {
-			s, ok := ret.NativeTokenBalances[nt.ID]
+		for _, nativeToken := range a.NativeTokens {
+			s, ok := ret.NativeTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			ret.NativeTokenBalances[nt.ID] = s
+			s.Add(s, nativeToken.Amount)
+			ret.NativeTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, f := range txb.invokedFoundries {
@@ -121,13 +121,13 @@ func (txb *AnchorTransactionBuilder) sumOutputs() *TransactionTotals {
 	for _, o := range txb.postedOutputs {
 		assets := transaction.AssetsFromOutput(o)
 		ret.SentOutBaseTokens += assets.BaseTokens
-		for _, nt := range assets.Tokens {
-			s, ok := ret.SentOutTokenBalances[nt.ID]
+		for _, nativeToken := range assets.NativeTokens {
+			s, ok := ret.SentOutTokenBalances[nativeToken.ID]
 			if !ok {
 				s = new(big.Int)
 			}
-			s.Add(s, nt.Amount)
-			ret.SentOutTokenBalances[nt.ID] = s
+			s.Add(s, nativeToken.Amount)
+			ret.SentOutTokenBalances[nativeToken.ID] = s
 		}
 	}
 	for _, nft := range txb.nftsIncluded {
@@ -191,15 +191,15 @@ func (txb *AnchorTransactionBuilder) AssertConsistentWithL2Totals(l2Totals *isc.
 		panic(xerrors.Errorf("'%s': base tokens L1 (%d) != base tokens L2 (%d): %v",
 			checkpoint, outTotal.TotalBaseTokensInL2Accounts, l2Totals.BaseTokens, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 	}
-	for _, nt := range l2Totals.Tokens {
-		b1, ok := outTotal.NativeTokenBalances[nt.ID]
+	for _, nativeToken := range l2Totals.NativeTokens {
+		b1, ok := outTotal.NativeTokenBalances[nativeToken.ID]
 		if !ok {
 			// checking only those which are in the tx builder
 			continue
 		}
-		if nt.Amount.Cmp(b1) != 0 {
+		if nativeToken.Amount.Cmp(b1) != 0 {
 			panic(xerrors.Errorf("token %s L1 (%d) != L2 (%d): %v",
-				nt.ID.String(), nt.Amount, b1, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
+				nativeToken.ID.String(), nativeToken.Amount, b1, vm.ErrInconsistentL2LedgerWithL1TxBuilder))
 		}
 	}
 }
@@ -214,46 +214,46 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 			another.TotalBaseTokensInL2Accounts, another.TotalBaseTokensInStorageDeposit, another.SentOutBaseTokens, tOut)
 		return xerrors.Errorf("%v:\n %s\n    !=\n%s", vm.ErrFatalTxBuilderNotBalanced, msgIn, msgOut)
 	}
-	tokenIDs := make(map[iotago.NativeTokenID]bool)
+	nativeTokenIDs := make(map[iotago.NativeTokenID]bool)
 	for id := range t.TokenCirculatingSupplies {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range another.TokenCirculatingSupplies {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range t.NativeTokenBalances {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 	for id := range t.SentOutTokenBalances {
-		tokenIDs[id] = true
+		nativeTokenIDs[id] = true
 	}
 
 	tokenSupplyDeltas := make(map[iotago.NativeTokenID]*big.Int)
-	for id := range tokenIDs {
-		inSupply, ok := t.TokenCirculatingSupplies[id]
+	for nativeTokenID := range nativeTokenIDs {
+		inSupply, ok := t.TokenCirculatingSupplies[nativeTokenID]
 		if !ok {
 			inSupply = big.NewInt(0)
 		}
-		outSupply, ok := another.TokenCirculatingSupplies[id]
+		outSupply, ok := another.TokenCirculatingSupplies[nativeTokenID]
 		if !ok {
 			outSupply = big.NewInt(0)
 		}
-		tokenSupplyDeltas[id] = big.NewInt(0).Sub(outSupply, inSupply)
+		tokenSupplyDeltas[nativeTokenID] = big.NewInt(0).Sub(outSupply, inSupply)
 	}
-	for id, delta := range tokenSupplyDeltas {
-		begin, ok := t.NativeTokenBalances[id]
+	for nativeTokenIDs, delta := range tokenSupplyDeltas {
+		begin, ok := t.NativeTokenBalances[nativeTokenIDs]
 		if !ok {
 			begin = big.NewInt(0)
 		} else {
 			begin = new(big.Int).Set(begin) // clone
 		}
-		end, ok := another.NativeTokenBalances[id]
+		end, ok := another.NativeTokenBalances[nativeTokenIDs]
 		if !ok {
 			end = big.NewInt(0)
 		} else {
 			end = new(big.Int).Set(end) // clone
 		}
-		sent, ok := another.SentOutTokenBalances[id]
+		sent, ok := another.SentOutTokenBalances[nativeTokenIDs]
 		if !ok {
 			sent = big.NewInt(0)
 		} else {
@@ -263,7 +263,7 @@ func (t *TransactionTotals) BalancedWith(another *TransactionTotals) error {
 		end.Add(end, sent)
 		begin.Add(begin, delta)
 		if begin.Cmp(end) != 0 {
-			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", vm.ErrFatalTxBuilderNotBalanced, id, begin, end)
+			return xerrors.Errorf("%v: token %s not balanced: in (%d) != out (%d)", vm.ErrFatalTxBuilderNotBalanced, nativeTokenIDs, begin, end)
 		}
 	}
 	return nil

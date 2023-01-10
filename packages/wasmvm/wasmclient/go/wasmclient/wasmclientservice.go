@@ -78,6 +78,6 @@ func (sc *WasmClientService) SubscribeEvents(msg chan []string, done chan bool) 
 func (sc *WasmClientService) WaitUntilRequestProcessed(chainID wasmtypes.ScChainID, reqID wasmtypes.ScRequestID, timeout time.Duration) error {
 	iscChainID := sc.cvt.IscChainID(&chainID)
 	iscReqID := sc.cvt.IscRequestID(&reqID)
-	_, err := sc.waspClient.WaitUntilRequestProcessed(iscChainID, *iscReqID, timeout)
+	_, err := sc.waspClient.WaitUntilRequestProcessed(iscChainID, iscReqID, timeout)
 	return err
 }

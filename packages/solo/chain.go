@@ -452,7 +452,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	return ret
 }
 
-// GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
+// GetRequestIDsForBlock returns the list of requestIDs settled in a particular block
 func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []isc.RequestID {
 	res, err := ch.CallView(blocklog.Contract.Name, blocklog.ViewGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
@@ -622,6 +622,11 @@ func (ch *Chain) ResolveError(e *isc.UnresolvedVMError) (*isc.VMError, error) {
 
 // ConfigUpdated implements chain.Chain
 func (*Chain) ConfigUpdated(accessNodes []*cryptolib.PublicKey) {
+	panic("unimplemented")
+}
+
+// ServersUpdated implements chain.Chain
+func (*Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	panic("unimplemented")
 }
 

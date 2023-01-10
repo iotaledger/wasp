@@ -6,8 +6,8 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 func (c *WaspClient) GetPeeringSelf() (*model.PeeringTrustedNode, error) {

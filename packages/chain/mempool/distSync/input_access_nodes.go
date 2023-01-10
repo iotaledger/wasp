@@ -22,8 +22,8 @@ func NewInputAccessNodes(accessNodes, committeeNodes []gpa.NodeID) gpa.Input {
 
 func (inp *inputAccessNodes) String() string {
 	str := "accessNodes: "
-	str += strings.Join(lo.Map(inp.accessNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	str += strings.Join(lo.Map(inp.accessNodes, func(nodeID gpa.NodeID, idx int) string { return nodeID.ShortString() }), ",")
 	str += " committeeNodes: "
-	str += strings.Join(lo.Map(inp.committeeNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	str += strings.Join(lo.Map(inp.committeeNodes, func(nodeID gpa.NodeID, idx int) string { return nodeID.ShortString() }), ",")
 	return str
 }

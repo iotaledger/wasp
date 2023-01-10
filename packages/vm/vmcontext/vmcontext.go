@@ -132,8 +132,8 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 		ret.storageDepositAssumptions = transaction.NewStorageDepositEstimate()
 	}
 
-	nativeTokenBalanceLoader := func(id *iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
-		return ret.loadNativeTokenOutput(id)
+	nativeTokenBalanceLoader := func(nativeTokenID iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID) {
+		return ret.loadNativeTokenOutput(nativeTokenID)
 	}
 	foundryLoader := func(serNum uint32) (*iotago.FoundryOutput, iotago.OutputID) {
 		return ret.loadFoundry(serNum)

@@ -7,6 +7,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -19,7 +20,7 @@ func (cl *cmtLogImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 
 func UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("cmtLogImpl::UnmarshalMessage: data to short")
+		return nil, xerrors.Errorf("cmtLogImpl::UnmarshalMessage: data too short")
 	}
 	if data[0] == msgTypeNextLogIndex {
 		m := &msgNextLogIndex{}
@@ -28,11 +29,5 @@ func UnmarshalMessage(data []byte) (gpa.Message, error) {
 		}
 		return m, nil
 	}
-	var logData []byte
-	if len(data) <= 20 {
-		logData = data
-	} else {
-		logData = data[0:20]
-	}
-	return nil, xerrors.Errorf("cmtLogImpl::UnmarshalMessage: cannot parse message starting with: %v", logData)
+	return nil, xerrors.Errorf("cmtLogImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
 }

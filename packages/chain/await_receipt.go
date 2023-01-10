@@ -36,7 +36,7 @@ func NewAwaitReceipt(cleanupEvery int) AwaitReceipt {
 
 func (ari *awaitReceiptImpl) Await(query *awaitReceiptReq) {
 	if ari.state != nil {
-		receipt, err := blocklog.GetRequestReceipt(ari.state, &query.requestID)
+		receipt, err := blocklog.GetRequestReceipt(ari.state, query.requestID)
 		if err != nil {
 			panic(fmt.Errorf("cannot read recept from state: %w", err))
 		}
@@ -66,7 +66,7 @@ func (ari *awaitReceiptImpl) ConsiderState(state state.State, addedBlocks []stat
 
 func (ari *awaitReceiptImpl) respondByState(state state.State) {
 	for reqID, reqAwaits := range ari.queries {
-		receipt, err := blocklog.GetRequestReceipt(state, &reqID)
+		receipt, err := blocklog.GetRequestReceipt(state, reqID)
 		if err != nil {
 			panic(fmt.Errorf("cannot read recept from state: %w", err))
 		}

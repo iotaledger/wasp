@@ -80,7 +80,7 @@ struct ISCDict {
 // A collection of fungible tokens (base tokens + native tokens)
 struct ISCFungibleTokens {
     uint64 baseTokens;
-    NativeToken[] tokens;
+    NativeToken[] nativeTokens;
 }
 
 // Parameters for building an on-ledger request
@@ -97,7 +97,7 @@ struct ISCSendMetadata  {
 // the callee's L2 account.
 struct ISCAllowance {
     uint64 baseTokens;
-    NativeToken[] tokens;
+    NativeToken[] nativeTokens;
     NFTID[] nfts;
 }
 

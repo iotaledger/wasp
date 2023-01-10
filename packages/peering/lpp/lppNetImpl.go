@@ -472,6 +472,11 @@ func (n *netImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
 	return n.trusted.TrustedPeers()
 }
 
+// TrustedPeersListener implements the peering.TrustedNetworkManager interface.
+func (n *netImpl) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
+	return n.trusted.TrustedPeersListener(callback)
+}
+
 func (n *netImpl) usePeer(remotePubKey *cryptolib.PublicKey) (peering.PeerSender, error) {
 	if remotePubKey.Equals(n.nodeKeyPair.GetPublicKey()) {
 		return n, nil

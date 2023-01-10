@@ -30,7 +30,7 @@ type SyncSM interface {
 type syncSMImpl struct {
 	//
 	// Query for a proposal.
-	ProposedBaseAliasOutput         *isc.AliasOutputWithID
+	proposedBaseAliasOutput         *isc.AliasOutputWithID
 	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
 	stateProposalReceived           bool
 	stateProposalReceivedCB         func(proposedAliasOutput *isc.AliasOutputWithID) gpa.OutMessages
@@ -42,7 +42,8 @@ type syncSMImpl struct {
 	decidedStateReceivedCB         func(chainState state.State) gpa.OutMessages
 	//
 	// Save the produced block.
-	producedBlock                  state.StateDraft
+	producedBlock                  state.StateDraft // In the case of rotation the block will be nil.
+	producedBlockReceived          bool
 	saveProducedBlockInputsReadyCB func(producedBlock state.StateDraft) gpa.OutMessages
 	saveProducedBlockDone          bool
 	saveProducedBlockDoneCB        func() gpa.OutMessages
@@ -67,11 +68,11 @@ func NewSyncSM(
 }
 
 func (sub *syncSMImpl) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
-	if sub.ProposedBaseAliasOutput != nil {
+	if sub.proposedBaseAliasOutput != nil {
 		return nil
 	}
-	sub.ProposedBaseAliasOutput = baseAliasOutput
-	return sub.stateProposalQueryInputsReadyCB(sub.ProposedBaseAliasOutput)
+	sub.proposedBaseAliasOutput = baseAliasOutput
+	return sub.stateProposalQueryInputsReadyCB(sub.proposedBaseAliasOutput)
 }
 
 func (sub *syncSMImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
@@ -79,7 +80,7 @@ func (sub *syncSMImpl) StateProposalConfirmedByStateMgr() gpa.OutMessages {
 		return nil
 	}
 	sub.stateProposalReceived = true
-	return sub.stateProposalReceivedCB(sub.ProposedBaseAliasOutput)
+	return sub.stateProposalReceivedCB(sub.proposedBaseAliasOutput)
 }
 
 func (sub *syncSMImpl) DecidedVirtualStateNeeded(decidedBaseAliasOutput *isc.AliasOutputWithID) gpa.OutMessages {
@@ -101,10 +102,11 @@ func (sub *syncSMImpl) DecidedVirtualStateReceived(
 }
 
 func (sub *syncSMImpl) BlockProduced(block state.StateDraft) gpa.OutMessages {
-	if sub.producedBlock != nil {
+	if sub.producedBlockReceived {
 		return nil
 	}
 	sub.producedBlock = block
+	sub.producedBlockReceived = true
 	return sub.saveProducedBlockInputsReadyCB(sub.producedBlock)
 }
 
@@ -124,7 +126,7 @@ func (sub *syncSMImpl) String() string {
 	}
 	if sub.stateProposalReceived {
 		str += "/proposal=OK"
-	} else if sub.ProposedBaseAliasOutput == nil {
+	} else if sub.proposedBaseAliasOutput == nil {
 		str += "/proposal=WAIT[params: baseAliasOutput]"
 	} else {
 		str += "/proposal=WAIT[RespFromStateMgr]"

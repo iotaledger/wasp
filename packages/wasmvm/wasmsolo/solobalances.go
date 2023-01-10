@@ -74,21 +74,21 @@ func (bal *SoloBalances) dumpBalances() {
 		if hname == 0 {
 			txt += fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 		}
-		for _, token := range l2.Tokens {
-			txt += fmt.Sprintf("\n\tL2: %10d", token.Amount)
+		for _, nativeToken := range l2.NativeTokens {
+			txt += fmt.Sprintf("\n\tL2: %10d", nativeToken.Amount)
 			tokTxt := ",\t           "
 			if hname == 0 {
-				for i := range l1.Tokens {
-					if *l1.Tokens[i] == *token {
-						l1.Tokens = append(l1.Tokens[:i], l1.Tokens[i+1:]...)
+				for i := range l1.NativeTokens {
+					if *l1.NativeTokens[i] == *nativeToken {
+						l1.NativeTokens = append(l1.NativeTokens[:i], l1.NativeTokens[i+1:]...)
 						tokTxt = fmt.Sprintf(",\tL1: %10d", l1.BaseTokens)
 						break
 					}
 				}
 			}
-			txt += fmt.Sprintf("%s,\t%s", tokTxt, token.ID.String())
+			txt += fmt.Sprintf("%s,\t%s", tokTxt, nativeToken.ID.String())
 		}
-		for _, token := range l1.Tokens {
+		for _, token := range l1.NativeTokens {
 			txt += fmt.Sprintf("\n\tL2: %10d,\tL1: %10d,\t%s", 0, l1.BaseTokens, token.ID.String())
 		}
 	}

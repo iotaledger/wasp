@@ -28,13 +28,14 @@ const (
 //
 // For querying a message:
 //   - First ask all the committee for the message.
-//   - If response not received, ask random subsets of access nodes.
+//   - If response not received, ask random subsets of server nodes.
 //
 // TODO: For the future releases: Implement proper dissemination algorithm.
 type distSyncImpl struct {
 	me                gpa.NodeID
-	accessNodes       []gpa.NodeID
-	committeeNodes    []gpa.NodeID // Subset of accessNodes
+	serverNodes       []gpa.NodeID // Should be used to push and query for requests.
+	accessNodes       []gpa.NodeID // Maybe is not needed? Lets keep it until the redesign.
+	committeeNodes    []gpa.NodeID // Subset of serverNodes and accessNodes.
 	requestNeededCB   func(*isc.RequestRef) isc.Request
 	requestReceivedCB func(isc.Request)
 	nodeCountToShare  int // Number of nodes to share a request per iteration.
@@ -55,6 +56,7 @@ func New(
 ) gpa.GPA {
 	return &distSyncImpl{
 		me:                me,
+		serverNodes:       []gpa.NodeID{},
 		accessNodes:       []gpa.NodeID{},
 		committeeNodes:    []gpa.NodeID{},
 		requestNeededCB:   requestNeededCB,
@@ -69,6 +71,8 @@ func New(
 
 func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
+	case *inputServerNodes:
+		return dsi.handleInputServerNodes(input)
 	case *inputAccessNodes:
 		return dsi.handleInputAccessNodes(input)
 	case *inputPublishRequest:
@@ -100,15 +104,32 @@ func (dsi *distSyncImpl) StatusString() string {
 	return fmt.Sprintf("{MP, neededReqs=%v, nodeCountToShare=%v}", len(dsi.needed), dsi.nodeCountToShare)
 }
 
+func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.OutMessages {
+	dsi.log.Debugf("handleInputServerNodes: %v", input)
+	dsi.handleCommitteeNodes(input.committeeNodes)
+	dsi.serverNodes = input.serverNodes
+	for i := range dsi.committeeNodes { // Ensure server nodes contain the committee nodes.
+		if slices.Index(dsi.serverNodes, dsi.committeeNodes[i]) == -1 {
+			dsi.serverNodes = append(dsi.serverNodes, dsi.committeeNodes[i])
+		}
+	}
+	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
+}
+
 func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
 	dsi.log.Debugf("handleInputAccessNodes: %v", input)
+	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.accessNodes = input.accessNodes
-	dsi.committeeNodes = input.committeeNodes
 	for i := range dsi.committeeNodes { // Ensure access nodes contain the committee nodes.
 		if slices.Index(dsi.accessNodes, dsi.committeeNodes[i]) == -1 {
 			dsi.accessNodes = append(dsi.accessNodes, dsi.committeeNodes[i])
 		}
 	}
+	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
+}
+
+func (dsi *distSyncImpl) handleCommitteeNodes(committeeNodes []gpa.NodeID) {
+	dsi.committeeNodes = committeeNodes
 	dsi.nodeCountToShare = (len(dsi.committeeNodes)-1)/3 + 1 // F+1
 	if dsi.nodeCountToShare < 2 {
 		dsi.nodeCountToShare = 2
@@ -116,18 +137,17 @@ func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.Out
 	if dsi.nodeCountToShare > len(dsi.committeeNodes) {
 		dsi.nodeCountToShare = len(dsi.committeeNodes)
 	}
-	return dsi.handleInputTimeTick() // Re-send requests if node set has changed.
 }
 
 // In the current algorithm, for sharing a message:
-//   - Just send a message to all the committee nodes.
+//   - Just send a message to all the committee nodes (or server nodes, if committee is not known).
 func (dsi *distSyncImpl) handleInputPublishRequest(input *inputPublishRequest) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	var publishToNodes []gpa.NodeID
 	if len(dsi.committeeNodes) > 0 {
 		publishToNodes = dsi.committeeNodes
 	} else {
-		publishToNodes = dsi.accessNodes
+		publishToNodes = dsi.serverNodes
 	}
 	for _, node := range publishToNodes {
 		msgs.Add(newMsgShareRequest(input.request, 0, node))
@@ -159,12 +179,12 @@ func (dsi *distSyncImpl) handleInputRequestNeeded(input *inputRequestNeeded) gpa
 
 // For querying a message:
 //   - ...
-//   - If response not received, ask random subsets of access nodes.
+//   - If response not received, ask random subsets of server nodes.
 func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	if len(dsi.needed) == 0 {
 		return nil
 	}
-	nodeCount := len(dsi.accessNodes)
+	nodeCount := len(dsi.serverNodes)
 	if nodeCount == 0 {
 		return nil
 	}
@@ -172,7 +192,7 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 	nodePerm := dsi.rnd.Perm(nodeCount)
 	counter := 0
 	for _, reqRef := range dsi.needed { // Access is randomized.
-		msgs.Add(newMsgMissingRequest(reqRef, dsi.accessNodes[nodePerm[counter%nodeCount]]))
+		msgs.Add(newMsgMissingRequest(reqRef, dsi.serverNodes[nodePerm[counter%nodeCount]]))
 		counter++
 		if counter > dsi.maxMsgsPerTick {
 			break

@@ -31,6 +31,14 @@ func New(hosts []string, httpClient ...func() http.Client) *MultiClient {
 	return m
 }
 
+func (m *MultiClient) WithToken(token string) *MultiClient {
+	for _, v := range m.nodes {
+		v.WithToken(token)
+	}
+
+	return m
+}
+
 func (m *MultiClient) Len() int {
 	return len(m.nodes)
 }

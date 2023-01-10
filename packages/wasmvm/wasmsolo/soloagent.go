@@ -37,19 +37,21 @@ func (a *SoloAgent) AgentID() isc.AgentID {
 	return a.agentID
 }
 
-func (a *SoloAgent) Balance(tokenID ...wasmtypes.ScTokenID) uint64 {
+// The optional nativeTokenID parameter can be used to retrieve the balance for the specific token.
+// When nativeTokenID is omitted, the base tokens balance is assumed.
+func (a *SoloAgent) Balance(nativeTokenID ...wasmtypes.ScTokenID) uint64 {
 	address, _ := isc.AddressFromAgentID(a.agentID)
 	if address == nil {
 		require.Fail(a.Env.T, "agent is not a L1 address")
 	}
-	switch len(tokenID) {
+	switch len(nativeTokenID) {
 	case 0:
 		return a.Env.L1BaseTokens(address)
 	case 1:
-		token := a.Cvt.IscTokenID(&tokenID[0])
+		token := a.Cvt.IscTokenID(&nativeTokenID[0])
 		return a.Env.L1NativeTokens(address, token).Uint64()
 	default:
-		require.Fail(a.Env.T, "too many tokenID arguments")
+		require.Fail(a.Env.T, "too many nativeTokenID arguments")
 		return 0
 	}
 }

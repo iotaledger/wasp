@@ -43,11 +43,11 @@ var initCmd = &cobra.Command{
 }
 
 func Load() *Wallet {
-	seedb58 := viper.GetString("wallet.seed")
-	if seedb58 == "" {
+	seedHex := viper.GetString("wallet.seed")
+	if seedHex == "" {
 		log.Fatalf("call `init` first")
 	}
-	seedBytes, err := iotago.DecodeHex(seedb58)
+	seedBytes, err := iotago.DecodeHex(seedHex)
 	log.Check(err)
 	seed := cryptolib.NewSeedFromBytes(seedBytes)
 	kp := cryptolib.NewKeyPairFromSeed(seed.SubSeed(uint64(addressIndex)))

@@ -131,7 +131,7 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView) dict.Dict {
 
 func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
-	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), &requestID)
+	requestReceipt, err := isRequestProcessedInternal(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 	ret := dict.New()
 	if requestReceipt != nil {
@@ -146,7 +146,7 @@ func viewIsRequestProcessed(ctx isc.SandboxView) dict.Dict {
 func viewGetEventsForRequest(ctx isc.SandboxView) dict.Dict {
 	requestID := ctx.Params().MustGetRequestID(ParamRequestID)
 
-	events, err := getRequestEventsInternal(ctx.StateR(), &requestID)
+	events, err := getRequestEventsInternal(ctx.StateR(), requestID)
 	ctx.RequireNoError(err)
 
 	ret := dict.New()

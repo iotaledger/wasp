@@ -249,18 +249,18 @@ func foundryModifySupply(ctx isc.Sandbox) dict.Dict {
 	ctx.Requiref(HasFoundry(ctx.State(), ctx.Caller(), sn), "foundry #%d is not controlled by the caller", sn)
 
 	out, _, _ := GetFoundryOutput(ctx.State(), sn, ctx.ChainID())
-	tokenID, err := out.NativeTokenID()
+	nativeTokenID, err := out.NativeTokenID()
 	ctx.RequireNoError(err, "internal")
 
 	// accrue change on the caller's account
 	// update native tokens on L2 ledger and transit foundry UTXO
 	var storageDepositAdjustment int64
-	if deltaAssets := isc.NewEmptyFungibleTokens().AddNativeTokens(tokenID, delta); destroy {
+	if deltaAssets := isc.NewEmptyFungibleTokens().AddNativeTokens(nativeTokenID, delta); destroy {
 		// take tokens to destroy from allowance
 		ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{
 				&iotago.NativeToken{
-					ID:     tokenID,
+					ID:     nativeTokenID,
 					Amount: delta,
 				},
 			}),

@@ -57,13 +57,13 @@ func testBasic(t *testing.T, n, f int) {
 	committeeAddress, committeeKeyShares := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	//
 	// Construct the algorithm nodes.
-	gpaNodeIDs := pubKeysAsNodeIDs(peerPubKeys)
+	gpaNodeIDs := gpa.NodeIDsFromPublicKeys(peerPubKeys)
 	gpaNodes := map[gpa.NodeID]gpa.GPA{}
 	for i := range gpaNodeIDs {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, pubKeyAsNodeID, log)
+		cmtLogInst, err := cmtLog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, log)
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
@@ -140,16 +140,4 @@ func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddre
 		},
 	}
 	return isc.NewAliasOutputWithID(aliasOutput, outputID)
-}
-
-func pubKeysAsNodeIDs(pubKeys []*cryptolib.PublicKey) []gpa.NodeID {
-	nodeIDs := make([]gpa.NodeID, len(pubKeys))
-	for i := range nodeIDs {
-		nodeIDs[i] = pubKeyAsNodeID(pubKeys[i])
-	}
-	return nodeIDs
-}
-
-func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
 }

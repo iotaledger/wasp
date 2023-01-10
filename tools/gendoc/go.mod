@@ -10,7 +10,7 @@ replace (
 
 require (
 	github.com/iotaledger/hive.go/apputils v1.0.0-beta.3
-	github.com/iotaledger/hive.go/core v1.0.0-rc.1.0.20221209181400-d370d3bb54c5
+	github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20221222103313-daad49c58a06
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
 )
 
@@ -21,7 +21,8 @@ require (
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
-	github.com/bytecodealliance/wasmtime-go v1.0.0 // indirect
+	github.com/bygui86/multi-profile/v2 v2.1.0 // indirect
+	github.com/bytecodealliance/wasmtime-go/v3 v3.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.9.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
@@ -69,7 +70,7 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20221128103803-fcdb79760195 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
-	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221120140724-fbc50b20fd91 // indirect
+	github.com/iotaledger/inx-app v1.0.0-rc.1.0.20221221131720-68540749c7a1 // indirect
 	github.com/iotaledger/inx/go v1.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221212191201-0105a0847e96 // indirect

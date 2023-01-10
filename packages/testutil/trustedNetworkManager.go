@@ -4,14 +4,18 @@
 package testutil
 
 import (
+	"context"
+
 	"golang.org/x/xerrors"
 
+	"github.com/iotaledger/hive.go/core/generics/event"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 )
 
 type trustedNetworkManager struct {
-	data map[cryptolib.PublicKeyKey]trustedNetworkDataEntry
+	data         map[cryptolib.PublicKeyKey]trustedNetworkDataEntry
+	changeEvents *event.Event[[]*peering.TrustedPeer]
 }
 
 type trustedNetworkDataEntry struct {
@@ -23,7 +27,8 @@ var _ peering.TrustedNetworkManager = &trustedNetworkManager{}
 
 func NewTrustedNetworkManager() peering.TrustedNetworkManager {
 	return &trustedNetworkManager{
-		data: map[cryptolib.PublicKeyKey]trustedNetworkDataEntry{},
+		data:         map[cryptolib.PublicKeyKey]trustedNetworkDataEntry{},
+		changeEvents: event.New[[]*peering.TrustedPeer](),
 	}
 }
 
@@ -38,20 +43,33 @@ func (tnm *trustedNetworkManager) IsTrustedPeer(pubKey *cryptolib.PublicKey) err
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering.TrustedPeer, error) {
 	tnm.data[pubKey.AsKey()] = trustedNetworkDataEntry{pubKey, netID}
+	tnm.changeEvents.Trigger(tnm.mustTrustedPeers())
 	return peering.NewTrustedPeer(pubKey, netID), nil
 }
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	delete(tnm.data, pubKey.AsKey())
+	tnm.changeEvents.Trigger(tnm.mustTrustedPeers())
 	return nil, nil
 }
 
 // TrustedPeers implements the peering.TrustedNetworkManager interface.
 func (tnm *trustedNetworkManager) TrustedPeers() ([]*peering.TrustedPeer, error) {
+	return tnm.mustTrustedPeers(), nil
+}
+
+func (tnm *trustedNetworkManager) mustTrustedPeers() []*peering.TrustedPeer {
 	res := []*peering.TrustedPeer{}
 	for _, v := range tnm.data {
 		res = append(res, peering.NewTrustedPeer(v.key, v.netID))
 	}
-	return res, nil
+	return res
+}
+
+func (tnm *trustedNetworkManager) TrustedPeersListener(callback func([]*peering.TrustedPeer)) context.CancelFunc {
+	callback(tnm.mustTrustedPeers())
+	closure := event.NewClosure(callback)
+	tnm.changeEvents.Attach(closure)
+	return func() { tnm.changeEvents.Detach(closure) }
 }

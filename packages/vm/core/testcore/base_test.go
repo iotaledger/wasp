@@ -41,7 +41,7 @@ func TestInitLoad(t *testing.T) {
 	storageDepositCosts := transaction.NewStorageDepositEstimate()
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t, 10_000-storageDepositCosts.AnchorOutput, cassets.BaseTokens)
-	require.EqualValues(t, 0, len(cassets.Tokens))
+	require.EqualValues(t, 0, len(cassets.NativeTokens))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
 	require.True(t, cassets.BaseTokens >= accounts.MinimumBaseTokensOnCommonAccount)
@@ -94,7 +94,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	// check total on chain assets
 	totalAssets := ch.L2TotalAssets()
 	// no native tokens expected
-	require.EqualValues(t, 0, len(totalAssets.Tokens))
+	require.EqualValues(t, 0, len(totalAssets.NativeTokens))
 	// what spent all goes to the alias output
 	require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
 	// total base tokens on L2 must be equal to alias output base tokens - storage deposit
@@ -488,7 +488,7 @@ func TestFeeBasic(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
-	require.Nil(t, feePolicy.GasFeeTokenID)
+	require.True(t, isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID))
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
 
