@@ -139,7 +139,7 @@ func (w *chainWebAPI) handleGetChainInfo(c echo.Context) error {
 	}
 	if committeeInfo.Address != nil {
 		stateAddr := model.NewAddress(committeeInfo.Address)
-		res.StateAddress = stateAddr
+		res.StateAddress = &stateAddr
 	}
 
 	return c.JSON(http.StatusOK, res)
