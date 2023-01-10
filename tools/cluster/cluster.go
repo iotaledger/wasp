@@ -280,30 +280,6 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		return err
 	}
 
-	// add the committee nodes to the chainRecord of the access nodes (so they know where to send messages to)
-	// TODO: XXX: this might be deprecated once we automate the process of linking peers to a chain
-	// {
-	// 	cmtNodesPubKeys := make([]*cryptolib.PublicKey, len(chain.CommitteeNodes))
-	// 	for i, nodeIndex := range chain.CommitteeNodes {
-	// 		nodeInfo, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 		cmtNodesPubKeys[i], err = cryptolib.NewPublicKeyFromString(nodeInfo.PubKey)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// 	for _, a := range accessNodes {
-	// 		waspClient := clu.WaspClient(a)
-	// 		record := registry.NewChainRecord(chain.ChainID, true, cmtNodesPubKeys)
-	// 		err = waspClient.PutChainRecord(record)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
 	return nil
 }
 
