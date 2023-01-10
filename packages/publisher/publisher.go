@@ -24,7 +24,7 @@ var Event = events.NewEvent(func(handler interface{}, params ...interface{}) {
 // Publisher
 
 type Publisher struct {
-	blockAppliedPipe pipe.Pipe
+	blockAppliedPipe pipe.Pipe[*publisherBlockApplied]
 	mutex            *sync.RWMutex
 	log              *logger.Logger
 }
@@ -38,7 +38,7 @@ type publisherBlockApplied struct {
 
 func NewPublisher(log *logger.Logger) *Publisher {
 	p := &Publisher{
-		blockAppliedPipe: pipe.NewDefaultInfinitePipe(),
+		blockAppliedPipe: pipe.NewInfinitePipe[*publisherBlockApplied](),
 		mutex:            &sync.RWMutex{},
 		log:              log,
 	}
@@ -73,7 +73,7 @@ func (p *Publisher) Run(ctx context.Context) {
 				blockAppliedPipeOutCh = nil
 				continue
 			}
-			p.handleBlockApplied(blockAppliedUntyped.(*publisherBlockApplied))
+			p.handleBlockApplied(blockAppliedUntyped)
 		case <-ctx.Done():
 			return
 		}

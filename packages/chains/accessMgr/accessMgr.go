@@ -25,10 +25,10 @@ type AccessMgr interface {
 type accessMgrImpl struct {
 	dist                    gpa.AckHandler
 	dismissPeerBuf          []*cryptolib.PublicKey
-	reqTrustedNodesPipe     pipe.Pipe
-	reqChainAccessNodesPipe pipe.Pipe
-	reqChainDismissedPipe   pipe.Pipe
-	netRecvPipe             pipe.Pipe
+	reqTrustedNodesPipe     pipe.Pipe[*reqTrustedNodes]
+	reqChainAccessNodesPipe pipe.Pipe[*reqChainAccessNodes]
+	reqChainDismissedPipe   pipe.Pipe[*reqChainDismissed]
+	netRecvPipe             pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID            peering.PeeringID
 	netPeerPubs             map[gpa.NodeID]*cryptolib.PublicKey
 	net                     peering.NetworkProvider
@@ -71,10 +71,10 @@ func New(
 	netPeeringID := peering.HashPeeringIDFromBytes([]byte("AccessManager")) // AccessManager
 	ami := &accessMgrImpl{
 		dismissPeerBuf:          []*cryptolib.PublicKey{},
-		reqTrustedNodesPipe:     pipe.NewDefaultInfinitePipe(),
-		reqChainAccessNodesPipe: pipe.NewDefaultInfinitePipe(),
-		reqChainDismissedPipe:   pipe.NewDefaultInfinitePipe(),
-		netRecvPipe:             pipe.NewDefaultInfinitePipe(),
+		reqTrustedNodesPipe:     pipe.NewInfinitePipe[*reqTrustedNodes](),
+		reqChainAccessNodesPipe: pipe.NewInfinitePipe[*reqChainAccessNodes](),
+		reqChainDismissedPipe:   pipe.NewInfinitePipe[*reqChainDismissed](),
+		netRecvPipe:             pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:            netPeeringID,
 		netPeerPubs:             map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                     net,
@@ -134,25 +134,25 @@ func (ami *accessMgrImpl) run(ctx context.Context, netAttachID interface{}) {
 				reqTrustedNodesOutCh = nil
 				continue
 			}
-			ami.handleReqTrustedNodes(recv.(*reqTrustedNodes))
+			ami.handleReqTrustedNodes(recv)
 		case recv, ok := <-reqChainAccessNodesPipeOutCh:
 			if !ok {
 				reqChainAccessNodesPipeOutCh = nil
 				continue
 			}
-			ami.handleReqChainAccessNodes(recv.(*reqChainAccessNodes))
+			ami.handleReqChainAccessNodes(recv)
 		case recv, ok := <-reqChainDismissedPipeOutCh:
 			if !ok {
 				reqChainDismissedPipeOutCh = nil
 				continue
 			}
-			ami.handleReqChainDismissed(recv.(*reqChainDismissed))
+			ami.handleReqChainDismissed(recv)
 		case recv, ok := <-netRecvPipeOutCh:
 			if !ok {
 				netRecvPipeOutCh = nil
 				continue
 			}
-			ami.handleNetMessage(recv.(*peering.PeerMessageIn))
+			ami.handleNetMessage(recv)
 		case <-debugTicker.C:
 			ami.handleDistDebugTick()
 		case timestamp := <-timeTicker.C:

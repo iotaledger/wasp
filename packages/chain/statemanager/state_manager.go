@@ -41,9 +41,9 @@ type stateManager struct {
 	stateManagerGPA gpa.GPA
 	nodeRandomiser  smUtils.NodeRandomiser
 	nodeIDToPubKey  map[gpa.NodeID]*cryptolib.PublicKey
-	inputPipe       pipe.Pipe
-	messagePipe     pipe.Pipe
-	nodePubKeysPipe pipe.Pipe
+	inputPipe       pipe.Pipe[gpa.Input]
+	messagePipe     pipe.Pipe[*peering.PeerMessageIn]
+	nodePubKeysPipe pipe.Pipe[[]*cryptolib.PublicKey]
 	net             peering.NetworkProvider
 	netPeeringID    peering.PeeringID
 	timers          smGPA.StateManagerTimers
@@ -91,9 +91,9 @@ func New(
 		chainID:         chainID,
 		stateManagerGPA: stateManagerGPA,
 		nodeRandomiser:  nr,
-		inputPipe:       pipe.NewDefaultInfinitePipe(),
-		messagePipe:     pipe.NewDefaultInfinitePipe(),
-		nodePubKeysPipe: pipe.NewDefaultInfinitePipe(),
+		inputPipe:       pipe.NewInfinitePipe[gpa.Input](),
+		messagePipe:     pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		nodePubKeysPipe: pipe.NewInfinitePipe[[]*cryptolib.PublicKey](),
 		net:             net,
 		netPeeringID:    peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
 		timers:          timers,
@@ -179,19 +179,19 @@ func (smT *stateManager) run() {
 		select {
 		case input, ok := <-inputPipeCh:
 			if ok {
-				smT.handleInput(input.(gpa.Input))
+				smT.handleInput(input)
 			} else {
 				inputPipeCh = nil
 			}
 		case msg, ok := <-messagePipeCh:
 			if ok {
-				smT.handleMessage(msg.(*peering.PeerMessageIn))
+				smT.handleMessage(msg)
 			} else {
 				messagePipeCh = nil
 			}
 		case msg, ok := <-nodePubKeysPipeCh:
 			if ok {
-				smT.handleNodePublicKeys(msg.([]*cryptolib.PublicKey))
+				smT.handleNodePublicKeys(msg)
 			} else {
 				nodePubKeysPipeCh = nil
 			}

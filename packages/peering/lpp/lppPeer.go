@@ -28,8 +28,8 @@ type peer struct {
 	remotePubKey *cryptolib.PublicKey
 	remoteLppID  libp2ppeer.ID
 	accessLock   *sync.RWMutex
-	sendPipe     pipe.Pipe
-	recvPipe     pipe.Pipe
+	sendPipe     pipe.Pipe[*peering.PeerMessageNet]
+	recvPipe     pipe.Pipe[*peering.PeerMessageNet]
 	lastMsgSent  time.Time
 	lastMsgRecv  time.Time
 	numUsers     int
@@ -42,7 +42,7 @@ var _ peering.PeerSender = &peer{}
 
 func newPeer(remoteNetID string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
 	log := n.log.Named("peer:" + remoteNetID)
-	messagePriorityFun := func(msg interface{}) bool {
+	messagePriorityFun := func(msg *peering.PeerMessageNet) bool {
 		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
 	}
@@ -51,8 +51,8 @@ func newPeer(remoteNetID string, remotePubKey *cryptolib.PublicKey, remoteLppID 
 		remotePubKey: remotePubKey,
 		remoteLppID:  remoteLppID,
 		accessLock:   &sync.RWMutex{},
-		sendPipe:     pipe.NewInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
-		recvPipe:     pipe.NewInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
+		sendPipe:     pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
+		recvPipe:     pipe.NewLimitPriorityHashInfinitePipe(messagePriorityFun, maxPeerMsgBuffer),
 		lastMsgSent:  time.Time{},
 		lastMsgRecv:  time.Time{},
 		numUsers:     0,
@@ -140,16 +140,13 @@ func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
 
 func (p *peer) sendLoop() {
 	for msg := range p.sendPipe.Out() {
-		p.sendMsgDirect(msg.(*peering.PeerMessageNet))
+		p.sendMsgDirect(msg)
 	}
 }
 
 func (p *peer) recvLoop() {
 	for msg := range p.recvPipe.Out() {
-		peerMsg, ok := msg.(*peering.PeerMessageNet)
-		if ok {
-			p.net.triggerRecvEvents(p.PubKey(), peerMsg)
-		}
+		p.net.triggerRecvEvents(p.PubKey(), msg)
 	}
 }
 
