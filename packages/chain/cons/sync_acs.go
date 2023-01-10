@@ -8,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -98,7 +96,7 @@ func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
 	}
 	acsOutput, ok := output.(*acs.Output)
 	if !ok {
-		panic(xerrors.Errorf("acs returned unexpected output: %v", output))
+		panic(fmt.Errorf("acs returned unexpected output: %v", output))
 	}
 	if !sub.terminated && acsOutput.Terminated {
 		sub.terminated = true

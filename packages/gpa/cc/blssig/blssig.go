@@ -15,13 +15,13 @@
 package blssig
 
 import (
+	"errors"
 	"fmt"
 
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/tbls"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -71,7 +71,7 @@ func New(
 
 func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	if input != nil {
-		panic(xerrors.Errorf("input must be nil"))
+		panic(errors.New("input must be nil"))
 	}
 	if _, ok := cc.sigShares[cc.me]; ok {
 		// Only consider the first input.
@@ -79,7 +79,7 @@ func (cc *ccImpl) Input(input gpa.Input) gpa.OutMessages {
 	}
 	sigShare, err := tbls.Sign(cc.suite, cc.priShare, cc.sid)
 	if err != nil {
-		panic(xerrors.Errorf("cannot sign a sid: %v", err))
+		panic(fmt.Errorf("cannot sign a sid: %w", err))
 	}
 	cc.sigShares[cc.me] = sigShare
 	if cc.n == 1 {
@@ -104,7 +104,7 @@ func (cc *ccImpl) Message(msg gpa.Message) gpa.OutMessages {
 	}
 	shareMsg, ok := msg.(*msgSigShare)
 	if !ok {
-		panic(xerrors.Errorf("unexpected message: %+v", msg))
+		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
 	if _, ok := cc.sigShares[shareMsg.sender]; ok {
 		// Drop a duplicate.
@@ -150,7 +150,7 @@ func (cc *ccImpl) StatusString() string {
 func (cc *ccImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	msg := &msgSigShare{}
 	if err := msg.UnmarshalBinary(data); err != nil {
-		return nil, xerrors.Errorf("cannot unmarshal msgSigShare: %w", err)
+		return nil, fmt.Errorf("cannot unmarshal msgSigShare: %w", err)
 	}
 	return msg, nil
 }

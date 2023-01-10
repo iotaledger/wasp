@@ -4,7 +4,7 @@
 package yaml
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/iotaledger/wasp/tools/schema/model"
@@ -57,7 +57,7 @@ func Convert(root *Node, def *model.SchemaDef) error {
 		case KeyViews:
 			views = key.ToFuncDefMap()
 		default:
-			return fmt.Errorf("unsupported key")
+			return errors.New("unsupported key")
 		}
 	}
 	def.Name = name

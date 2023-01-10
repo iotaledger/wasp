@@ -6,7 +6,7 @@ package iscmagic
 import (
 	"bytes"
 	_ "embed"
-	"fmt"
+	"errors"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -38,10 +38,10 @@ func ERC20NativeTokensFoundrySN(addr common.Address) (uint32, error) {
 		return 0, err
 	}
 	if kind != addressKindERC20NativeTokens {
-		return 0, fmt.Errorf("ERC20NativeTokensFoundrySN: invalid address kind")
+		return 0, errors.New("ERC20NativeTokensFoundrySN: invalid address kind")
 	}
 	if !allZero(payload[4:]) {
-		return 0, fmt.Errorf("ERC20NativeTokensFoundrySN: invalid address format")
+		return 0, errors.New("ERC20NativeTokensFoundrySN: invalid address format")
 	}
 	return codec.MustDecodeUint32(payload[0:4]), nil
 }
@@ -59,11 +59,11 @@ func packMagicAddress(kind addressKind, payload []byte) common.Address {
 
 func unpackMagicAddress(addr common.Address) (addressKind, []byte, error) {
 	if !bytes.Equal(addr[0:2], AddressPrefix) {
-		return 0, nil, fmt.Errorf("unpackMagicAddress: expected magic address prefix")
+		return 0, nil, errors.New("unpackMagicAddress: expected magic address prefix")
 	}
 	kind := addressKind(addr[2])
 	if kind >= addressKindInvalid {
-		return 0, nil, fmt.Errorf("unpackMagicAddress: unknown address kind")
+		return 0, nil, errors.New("unpackMagicAddress: unknown address kind")
 	}
 	payload := addr[3:]
 	return kind, payload, nil

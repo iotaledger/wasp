@@ -44,7 +44,7 @@ func NewTrustedPeersRegistryImpl(filePath string) (*TrustedPeersRegistryImpl, er
 
 	// load TrustedPeers on startup
 	if err := registry.loadTrustedPeersJSON(); err != nil {
-		return nil, fmt.Errorf("unable to read TrustedPeers configuration (%s): %s", filePath, err)
+		return nil, fmt.Errorf("unable to read TrustedPeers configuration (%s): %w", filePath, err)
 	}
 
 	registry.onChangeMap.CallbacksEnabled(true)
@@ -65,7 +65,7 @@ func (p *TrustedPeersRegistryImpl) loadTrustedPeersJSON() error {
 
 	for _, trustedPeer := range tmpTrustedPeers.TrustedPeers {
 		if _, err := p.TrustPeer(trustedPeer.PubKey(), trustedPeer.NetID); err != nil {
-			return fmt.Errorf("unable to add trusted peer (%s): %s", p.filePath, err)
+			return fmt.Errorf("unable to add trusted peer (%s): %w", p.filePath, err)
 		}
 	}
 

@@ -7,10 +7,10 @@ package consGR
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -182,7 +182,7 @@ func New(
 func (cgr *ConsGr) Input(baseAliasOutput *isc.AliasOutputWithID, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := cgr.inputReceived.Swap(true)
 	if wasReceivedBefore {
-		panic(xerrors.Errorf("duplicate input: %v", baseAliasOutput))
+		panic(fmt.Errorf("duplicate input: %v", baseAliasOutput))
 	}
 	inp := &input{
 		baseAliasOutput: baseAliasOutput,
@@ -258,7 +258,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 				continue
 			}
 			if err != nil {
-				panic(xerrors.Errorf("cannot save produced block: %w", err))
+				panic(fmt.Errorf("cannot save produced block: %w", err))
 			}
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved())
 		case resp, ok := <-cgr.vmRespCh:
@@ -281,7 +281,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo
 			}
 			cgr.recoverCB()
 			cgr.recoverCB = nil
-			cgr.log.Warnf("Recovery timeout reached.")
+			cgr.log.Warn("Recovery timeout reached.")
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
@@ -360,7 +360,7 @@ func (cgr *ConsGr) provideOutput(output *cons.Output) {
 	case cons.Completed:
 		cgr.outputCB(&Output{Status: output.Status, TX: output.ResultTransaction, NextState: output.ResultState})
 	default:
-		panic(xerrors.Errorf("unexpected cons.Output.Status=%v", output.Status))
+		panic(fmt.Errorf("unexpected cons.Output.Status=%v", output.Status))
 	}
 }
 

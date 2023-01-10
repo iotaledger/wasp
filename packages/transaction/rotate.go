@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"errors"
 	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -47,7 +48,7 @@ func NewRotateChainStateControllerTx(
 			// found the condition to alter
 			c, ok := newChainOutput.Conditions[i].(*iotago.StateControllerAddressUnlockCondition)
 			if !ok {
-				return nil, fmt.Errorf("Unexpected error trying to get StateControllerAddressUnlockCondition")
+				return nil, errors.New("unexpected error trying to get StateControllerAddressUnlockCondition")
 			}
 			c.Address = newStateController
 			newChainOutput.Conditions[i] = c.Clone()

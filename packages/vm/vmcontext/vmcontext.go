@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -80,7 +81,7 @@ func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency. It is a bit redundant double check
 	if len(task.Requests) == 0 {
 		// should never happen
-		panic(fmt.Errorf("CreateVMContext.invalid params: must be at least 1 request"))
+		panic(errors.New("CreateVMContext.invalid params: must be at least 1 request"))
 	}
 	l1Commitment, err := state.L1CommitmentFromBytes(task.AnchorOutput.StateMetadata)
 	if err != nil {

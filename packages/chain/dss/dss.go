@@ -28,7 +28,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -118,7 +117,7 @@ func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputDecided:
 		return d.handleDecided(input)
 	}
-	panic(xerrors.Errorf("unexpected input: %T: %+v", input, input))
+	panic(fmt.Errorf("unexpected input: %T: %+v", input, input))
 }
 
 // Handle the messages.
@@ -131,9 +130,9 @@ func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
 			return d.tryHandleDkgOutput(msgs)
 		}
-		panic(xerrors.Errorf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped()))
+		panic(fmt.Errorf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped()))
 	default:
-		panic(xerrors.Errorf("unknown message %T: %v", msg, msg))
+		panic(fmt.Errorf("unknown message %T: %v", msg, msg))
 	}
 }
 
@@ -201,7 +200,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		if d.dssSigner.EnoughPartialSig() {
 			sig, err := d.dssSigner.Signature()
 			if err != nil {
-				d.log.Errorf("Unable to aggregate the signature: %v", err)
+				d.log.Errorf("unable to aggregate the signature: %v", err)
 				return msgs
 			}
 			d.signature = sig
@@ -236,7 +235,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 
 	sig, err := d.dssSigner.Signature()
 	if err != nil {
-		d.log.Errorf("Unable to aggregate the signature: %v", err)
+		d.log.Errorf("unable to aggregate the signature: %v", err)
 	}
 	d.signature = sig
 	return nil

@@ -43,9 +43,8 @@
 package bracha
 
 import (
+	"errors"
 	"fmt"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -100,10 +99,10 @@ func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, 
 //	03: send ⟨PROPOSE, 𝑀⟩ to all
 func (r *rbc) Input(input gpa.Input) gpa.OutMessages {
 	if r.broadcaster != r.me {
-		panic(xerrors.Errorf("only broadcaster is allowed to take an input"))
+		panic(errors.New("only broadcaster is allowed to take an input"))
 	}
 	if r.proposeSent {
-		panic(xerrors.Errorf("input can only be supplied once"))
+		panic(errors.New("input can only be supplied once"))
 	}
 	inputVal := input.([]byte)
 	msgs := r.sendToAll(msgBrachaTypePropose, inputVal)
@@ -126,10 +125,10 @@ func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 		case msgBrachaTypeReady:
 			return r.handleReady(msgT)
 		default:
-			panic(xerrors.Errorf("unexpected message: %+v", msgT))
+			panic(fmt.Errorf("unexpected message: %+v", msgT))
 		}
 	default:
-		panic(xerrors.Errorf("unexpected message: %+v", msg))
+		panic(fmt.Errorf("unexpected message: %+v", msg))
 	}
 }
 
@@ -270,7 +269,7 @@ func (r *rbc) StatusString() string {
 func (r *rbc) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	m := &msgBracha{}
 	if err := m.UnmarshalBinary(data); err != nil {
-		return nil, xerrors.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
+		return nil, fmt.Errorf("cannot unmarshal RBC:msgBracha message: %w", err)
 	}
 	return m, nil
 }

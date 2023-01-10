@@ -105,7 +105,7 @@ func New(ctx context.Context, log *logger.Logger, nodeBridge *nodebridge.NodeBri
 
 	indexerClient, err := nodeBridge.Indexer(ctxIndexer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get nodeclient indexer: %v", err)
+		return nil, fmt.Errorf("failed to get nodeclient indexer: %w", err)
 	}
 
 	nc := &nodeConnection{
@@ -186,7 +186,7 @@ func (nc *nodeConnection) outputForOutputID(ctx context.Context, outputID iotago
 		return iotaOutput, nil
 
 	default:
-		return nil, fmt.Errorf("invalid inx.OutputResponse payload type")
+		return nil, errors.New("invalid inx.OutputResponse payload type")
 	}
 }
 

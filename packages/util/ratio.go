@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"golang.org/x/xerrors"
 )
 
 // Ratio32 represents a ratio (a:b) between two quantities, expressed as two uint32 values.
@@ -28,7 +26,7 @@ func (r Ratio32) Bytes() []byte {
 
 func Ratio32FromBytes(bytes []byte) (Ratio32, error) {
 	if len(bytes) != 8 {
-		return Ratio32{}, xerrors.Errorf("expected bytes length = 8")
+		return Ratio32{}, errors.New("expected bytes length = 8")
 	}
 	a, err := Uint32From4Bytes(bytes[:4])
 	if err != nil {

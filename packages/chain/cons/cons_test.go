@@ -158,7 +158,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc := gpa.NewTestContext(nodes)
 	//
 	// Provide inputs.
-	t.Logf("############ Provide Inputs.")
+	t.Log("############ Provide Inputs.")
 	now := time.Now()
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for _, nid := range nodeIDs {
@@ -168,7 +168,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("After Inputs", t.Logf)
 	//
 	// Provide SM and MP responses on proposals (and time data).
-	t.Logf("############ Provide TimeData and Proposals from SM/MP.")
+	t.Log("############ Provide TimeData and Proposals from SM/MP.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Running, out.Status)
@@ -182,7 +182,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)
 	//
 	// Provide Decided data from SM and MP.
-	t.Logf("############ Provide Decided Data from SM/MP.")
+	t.Log("############ Provide Decided Data from SM/MP.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Running, out.Status)
@@ -201,7 +201,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.PrintAllStatusStrings("After MP/SM data", t.Logf)
 	//
 	// Provide Decided data from SM and MP.
-	t.Logf("############ Run VM, validate the result.")
+	t.Log("############ Run VM, validate the result.")
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Running, out.Status)
@@ -217,7 +217,7 @@ func testBasic(t *testing.T, n, f int) {
 	tc.RunAll()
 	//
 	// Provide Decided data from SM and MP.
-	t.Logf("############ After VM the VM Run.")
+	t.Log("############ After VM the VM Run.")
 	tc.PrintAllStatusStrings("After VM the VM Run", t.Logf)
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
@@ -231,7 +231,7 @@ func testBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved())
 	}
 	tc.RunAll()
-	t.Logf("############ All should be done now.")
+	t.Log("############ All should be done now.")
 	tc.PrintAllStatusStrings("All done.", t.Logf)
 	for nid, node := range nodes {
 		out := node.Output().(*cons.Output)
@@ -374,7 +374,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
-		t.Logf("Going to provide inputs.")
+		t.Log("Going to provide inputs.")
 		originL1Commitment, err := state.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
@@ -386,16 +386,16 @@ func testChained(t *testing.T, n, f, b int) {
 		})
 	}
 	// Wait for all the instances to output.
-	t.Logf("Waiting for DONE for the last in the chain.")
+	t.Log("Waiting for DONE for the last in the chain.")
 	doneVals := map[gpa.NodeID]*testInstInput{}
 	for nid, doneCH := range doneCHs {
 		doneVals[nid] = <-doneCH
 	}
-	t.Logf("Waiting for all instances to terminate.")
+	t.Log("Waiting for all instances to terminate.")
 	for _, tci := range testChainInsts {
 		<-tci.tcTerminated
 	}
-	t.Logf("Done, last block was output and all instances terminated.")
+	t.Log("Done, last block was output and all instances terminated.")
 	for _, doneVal := range doneVals {
 		require.Equal(t, int64(incTotal), inccounter.NewStateAccess(doneVal.baseState).GetCounter())
 	}
@@ -658,7 +658,7 @@ func (tci *testConsInst) tryHandledNeedMempoolRequests(nodeID gpa.NodeID, out *c
 		if len(requests) == len(out.NeedMempoolRequests) {
 			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputMempoolRequests(requests)}
 		} else {
-			tci.t.Errorf("We have to sync between mempools, should not happen in this test.")
+			tci.t.Error("we have to sync between mempools, should not happen in this test")
 		}
 		tci.handledNeedMempoolRequests[nodeID] = true
 	}
@@ -669,7 +669,7 @@ func (tci *testConsInst) tryHandledNeedStateMgrDecidedState(nodeID gpa.NodeID, o
 		if out.NeedStateMgrDecidedState.OutputID() == inp.baseAliasOutput.OutputID() {
 			tci.compInputPipe <- map[gpa.NodeID]gpa.Input{nodeID: cons.NewInputStateMgrDecidedVirtualState(inp.baseState)}
 		} else {
-			tci.t.Errorf("We have to sync between state managers, should not happen in this test.")
+			tci.t.Error("we have to sync between state managers, should not happen in this test")
 		}
 		tci.handledNeedStateMgrDecidedState[nodeID] = true
 	}

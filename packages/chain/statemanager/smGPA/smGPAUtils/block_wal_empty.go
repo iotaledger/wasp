@@ -1,7 +1,7 @@
 package smGPAUtils
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -15,5 +15,5 @@ func NewEmptyBlockWAL() BlockWAL                     { return &emptyBlockWAL{} }
 func (*emptyBlockWAL) Write(state.Block) error       { return nil }
 func (*emptyBlockWAL) Contains(state.BlockHash) bool { return false }
 func (*emptyBlockWAL) Read(state.BlockHash) (state.Block, error) {
-	return nil, fmt.Errorf("Default WAL contains no elements")
+	return nil, errors.New("default WAL contains no elements")
 }

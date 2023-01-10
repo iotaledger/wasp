@@ -1,10 +1,9 @@
 package transaction
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -13,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-var ErrNoAliasOutputAtIndex0 = xerrors.New("origin AliasOutput not found at index 0")
+var ErrNoAliasOutputAtIndex0 = errors.New("origin AliasOutput not found at index 0")
 
 // GetAnchorFromTransaction analyzes the output at index 0 and extracts anchor information. Otherwise error
 func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago.AliasOutput, error) {
@@ -23,7 +22,7 @@ func GetAnchorFromTransaction(tx *iotago.Transaction) (*isc.StateAnchor, *iotago
 	}
 	txid, err := tx.ID()
 	if err != nil {
-		return nil, anchorOutput, xerrors.Errorf("GetAnchorFromTransaction: %w", err)
+		return nil, anchorOutput, fmt.Errorf("GetAnchorFromTransaction: %w", err)
 	}
 	aliasID := anchorOutput.AliasID
 	isOrigin := false
@@ -74,7 +73,7 @@ func computeInputsAndRemainder(
 	for _, outputID := range unspentOutputIDs {
 		output, ok := unspentOutputs[outputID]
 		if !ok {
-			return nil, nil, xerrors.New("computeInputsAndRemainder: outputID is not in the set ")
+			return nil, nil, errors.New("computeInputsAndRemainder: outputID is not in the set ")
 		}
 		if nftOutput, ok := output.(*iotago.NFTOutput); ok {
 			nftID := util.NFTIDFromNFTOutput(nftOutput, outputID)
@@ -195,7 +194,7 @@ func computeRemainderOutput(senderAddress iotago.Address, inBaseTokens, outBaseT
 	}
 	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(ret)
 	if ret.Amount < storageDeposit {
-		return nil, xerrors.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForStorageDeposit, storageDeposit)
+		return nil, fmt.Errorf("%v: needed at least %d", ErrNotEnoughBaseTokensForStorageDeposit, storageDeposit)
 	}
 	return ret, nil
 }

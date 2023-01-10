@@ -50,50 +50,50 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	reqID := request.ID()
 
 	if c.requestCache.Get(reqID) != nil {
-		return fmt.Errorf("request already processed")
+		return errors.New("request already processed")
 	}
 
 	// check req signature
 	if err := request.VerifySignature(); err != nil {
 		c.requestCache.Set(reqID, true)
-		return fmt.Errorf("could not verify: %s", err.Error())
+		return fmt.Errorf("could not verify: %w", err)
 	}
 
 	// check req is for the correct chain
 	if !request.ChainID().Equals(chainID) {
 		// do not add to cache, it can still be sent to the correct chain
-		return fmt.Errorf("Request is for a different chain")
+		return errors.New("request is for a different chain")
 	}
 
 	// check chain exists
 	chain := c.chainService.GetChainByID(chainID)
 	if chain == nil {
-		return fmt.Errorf("Unknown chain: %s", chainID.String())
+		return fmt.Errorf("unknown chain: %s", chainID.String())
 	}
 
 	alreadyProcessed, err := chainutil.HasRequestBeenProcessed(chain, reqID)
 	if err != nil {
-		return fmt.Errorf("internal error")
+		return errors.New("internal error")
 	}
 
 	defer c.requestCache.Set(reqID, true)
 
 	if alreadyProcessed {
-		return fmt.Errorf("request already processed")
+		return errors.New("request already processed")
 	}
 
 	// check user has on-chain balance
 	assets, err := chainutil.GetAccountBalance(chain, request.SenderAccount())
 	if err != nil {
-		return fmt.Errorf("Unable to get account balance")
+		return errors.New("unable to get account balance")
 	}
 
 	if assets.IsEmpty() {
-		return fmt.Errorf("No balance on account %s", request.SenderAccount().String())
+		return fmt.Errorf("no balance on account %s", request.SenderAccount().String())
 	}
 
 	if err := chainutil.CheckNonce(chain, request); err != nil {
-		return fmt.Errorf("invalid nonce, %v", err)
+		return fmt.Errorf("invalid nonce, %w", err)
 	}
 
 	chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey())

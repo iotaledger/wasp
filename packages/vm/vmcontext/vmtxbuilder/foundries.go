@@ -1,10 +1,9 @@
 package vmtxbuilder
 
 import (
+	"fmt"
 	"math/big"
 	"sort"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -69,7 +68,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotag
 	}
 	// check if the loaded foundry matches the nativeTokenID
 	if nativeTokenID != f.in.MustNativeTokenID() {
-		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
+		panic(fmt.Errorf("%v: requested token ID: %s, foundry token id: %s",
 			vm.ErrCantModifySupplyOfTheToken, nativeTokenID.String(), f.in.MustNativeTokenID().String()))
 	}
 

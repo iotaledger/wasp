@@ -1,6 +1,6 @@
 package gas
 
-import "golang.org/x/xerrors"
+import "fmt"
 
 const (
 	MaxGasPerBlock         = uint64(1_000_000_000)
@@ -97,7 +97,7 @@ func (c BurnCode) Cost(p ...uint64) uint64 {
 	if r, ok := burnTable[c]; ok {
 		return r.BurnFunction(x)
 	}
-	panic(xerrors.Errorf("%v: %d", ErrUnknownBurnCode, c))
+	panic(fmt.Errorf("%v: %d", ErrUnknownBurnCode, c))
 }
 
 func linear(a uint64) BurnFunction {

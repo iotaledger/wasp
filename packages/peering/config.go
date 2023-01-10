@@ -4,11 +4,10 @@
 package peering
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
-
-	"golang.org/x/xerrors"
 )
 
 // Check, if NetID is of proper format.
@@ -18,14 +17,14 @@ func CheckNetID(netID string) error {
 		return err
 	}
 	if sHost == "" {
-		return xerrors.New("netID: host part missing")
+		return errors.New("netID: host part missing")
 	}
 	port, err := strconv.Atoi(sPort)
 	if err != nil {
 		return err
 	}
 	if port == 0 {
-		return xerrors.New("netID: invalid port")
+		return errors.New("netID: invalid port")
 	}
 	return nil
 }

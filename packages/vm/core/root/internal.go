@@ -1,9 +1,8 @@
 package root
 
 import (
+	"fmt"
 	"sort"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,7 +28,7 @@ func FindContract(state kv.KVStoreReader, hname isc.Hname) *ContractRecord {
 	if retBin != nil {
 		ret, err := ContractRecordFromBytes(retBin)
 		if err != nil {
-			panic(xerrors.Errorf("FindContract: %w", err))
+			panic(fmt.Errorf("FindContract: %w", err))
 		}
 		return ret
 	}

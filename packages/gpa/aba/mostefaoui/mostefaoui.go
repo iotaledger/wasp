@@ -71,8 +71,6 @@ package mostefaoui
 import (
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -150,11 +148,11 @@ func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int)
 func (a *abaImpl) selectSubsystem(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == subsystemCC {
 		if index > a.round+10 {
-			return nil, xerrors.Errorf("cc round=%v to far in future, our round=%v", index, a.round)
+			return nil, fmt.Errorf("cc round=%v to far in future, our round=%v", index, a.round)
 		}
 		return a.ccInst(index), nil
 	}
-	return nil, xerrors.Errorf("unexpected subsystem=%v, index=%v", subsystem, index)
+	return nil, fmt.Errorf("unexpected subsystem=%v, index=%v", subsystem, index)
 }
 
 // Creates and returns a CC instance for a particular round.
@@ -181,10 +179,10 @@ func (a *abaImpl) AsGPA() gpa.GPA {
 // >   follows in consecutive epochs, with increasing labels r:
 func (a *abaImpl) Input(input gpa.Input) gpa.OutMessages {
 	if a.round != -1 {
-		panic(xerrors.Errorf("duplicate input to BBA: %v", input))
+		panic(fmt.Errorf("duplicate input to BBA: %v", input))
 	}
 	if _, ok := input.(bool); !ok {
-		panic(xerrors.Errorf("input for BBA has to be bool, received %T=%+v", input, input))
+		panic(fmt.Errorf("input for BBA has to be bool, received %T=%+v", input, input))
 	}
 	return a.startRound(0, input.(bool))
 }

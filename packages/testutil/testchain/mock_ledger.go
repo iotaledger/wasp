@@ -1,7 +1,7 @@
 package testchain
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/iotaledger/hive.go/core/events"
@@ -124,7 +124,7 @@ func (mlT *MockedLedger) PublishTransaction(tx *iotago.Transaction) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("Publishing transaction not allowed")
+	return errors.New("publishing transaction not allowed")
 }
 
 func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
@@ -143,7 +143,7 @@ func (mlT *MockedLedger) PullLatestOutput(nodeID string) {
 			mlT.log.Panicf("Pulling latest output: no output handler for node id %v", nodeID)
 		}
 	} else {
-		mlT.log.Errorf("Pulling latest output not allowed")
+		mlT.log.Error("Pulling latest output not allowed")
 	}
 }
 

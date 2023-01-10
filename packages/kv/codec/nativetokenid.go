@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -9,7 +9,7 @@ import (
 func DecodeNativeTokenID(b []byte, def ...iotago.NativeTokenID) (iotago.NativeTokenID, error) {
 	if len(b) != iotago.NativeTokenIDLength {
 		if len(def) == 0 {
-			return iotago.NativeTokenID{}, xerrors.Errorf("wrong data length")
+			return iotago.NativeTokenID{}, errors.New("wrong data length")
 		}
 		return def[0], nil
 	}

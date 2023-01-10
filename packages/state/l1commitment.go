@@ -2,12 +2,12 @@ package state
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
 
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -58,7 +58,7 @@ func (bh BlockHash) Equals(e2 util.Equatable) bool {
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {
 	if len(data) != l1CommitmentSize {
-		return nil, xerrors.New("L1CommitmentFromBytes: wrong data length")
+		return nil, errors.New("L1CommitmentFromBytes: wrong data length")
 	}
 	ret := L1Commitment{}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {

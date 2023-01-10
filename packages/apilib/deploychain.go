@@ -9,8 +9,6 @@ import (
 	"math/rand"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -85,12 +83,12 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 	txID, err := initRequestTx.ID()
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", txID.ToHex())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
@@ -99,7 +97,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.String(), err)
-		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.String())
 
@@ -109,7 +107,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr, govControllerAddr i
 		WaitUntilAllRequestsProcessedSuccessfully(chainID, initRequestTx, 30*time.Second)
 	if err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
-		return isc.ChainID{}, xerrors.Errorf("DeployChain: %w", err)
+		return isc.ChainID{}, fmt.Errorf("DeployChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
@@ -139,7 +137,7 @@ func CreateChainOrigin(
 	// ----------- request owner address' outputs from the ledger
 	utxoMap, err := layer1Client.OutputMap(originatorAddr)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ----------- create origin transaction
@@ -152,18 +150,18 @@ func CreateChainOrigin(
 		utxoIDsFromUtxoMap(utxoMap),
 	)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ------------- post origin transaction and wait for confirmation
 	_, err = layer1Client.PostTxAndWaitUntilConfirmation(originTx)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	utxoMap, err = layer1Client.OutputMap(originatorAddr)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// NOTE: whoever send first init request, is an owner of the chain
@@ -177,13 +175,13 @@ func CreateChainOrigin(
 		initParams,
 	)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	// ---------- post root init request transaction and wait for confirmation
 	_, err = layer1Client.PostTxAndWaitUntilConfirmation(reqTx)
 	if err != nil {
-		return isc.ChainID{}, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
+		return isc.ChainID{}, nil, fmt.Errorf("CreateChainOrigin: %w", err)
 	}
 
 	return chainID, reqTx, nil
@@ -196,12 +194,12 @@ func ActivateChainOnAccessNodes(authToken string, apiHosts []string, chainID isc
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(registry.NewChainRecord(chainID, false, []*cryptolib.PublicKey{}))
 	if err != nil {
-		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
+		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
 	// ------------- activate chain
 	err = nodes.ActivateChain(chainID)
 	if err != nil {
-		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
+		return fmt.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
 	return nil
 }

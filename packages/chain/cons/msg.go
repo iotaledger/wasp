@@ -4,7 +4,8 @@
 package cons
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -17,21 +18,21 @@ const (
 
 func (c *consImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, xerrors.Errorf("consImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("consImpl::UnmarshalMessage: data too short")
 	}
 	switch data[0] {
 	case msgTypeBLSShare:
 		m := &msgBLSPartialSig{blsSuite: c.blsSuite}
 		if err := m.UnmarshalBinary(data); err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal msgBLSPartialSig: %w", err)
+			return nil, fmt.Errorf("cannot unmarshal msgBLSPartialSig: %w", err)
 		}
 		return m, nil
 	case msgTypeWrapped:
 		m, err := c.msgWrapper.UnmarshalMessage(data)
 		if err != nil {
-			return nil, xerrors.Errorf("cannot unmarshal Wrapped msg: %w", err)
+			return nil, fmt.Errorf("cannot unmarshal Wrapped msg: %w", err)
 		}
 		return m, nil
 	}
-	return nil, xerrors.Errorf("consImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
+	return nil, fmt.Errorf("consImpl::UnmarshalMessage: cannot parse message starting with: %v", util.PrefixHex(data, 20))
 }

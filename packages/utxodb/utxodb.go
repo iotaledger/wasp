@@ -1,12 +1,11 @@
 package utxodb
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sync"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -252,7 +251,7 @@ func (u *UtxoDB) getTransactionInputs(tx *iotago.Transaction) (iotago.OutputSet,
 			outputID := input.(*iotago.UTXOInput).ID()
 			output := u.getOutput(outputID)
 			if output == nil {
-				return nil, xerrors.New("output not found")
+				return nil, errors.New("output not found")
 			}
 			inputs[outputID] = output
 		case iotago.InputTreasury:
@@ -272,11 +271,11 @@ func (u *UtxoDB) validateTransaction(tx *iotago.Transaction) error {
 
 	inputs, err := u.getTransactionInputs(tx)
 	if err != nil {
-		return xerrors.Errorf("validateTransaction: %w", err)
+		return fmt.Errorf("validateTransaction: %w", err)
 	}
 	for outID := range inputs {
 		if _, ok := u.utxo[outID]; !ok {
-			return xerrors.New("referenced output is not unspent")
+			return errors.New("referenced output is not unspent")
 		}
 	}
 

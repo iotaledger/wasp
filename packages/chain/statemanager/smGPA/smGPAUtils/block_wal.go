@@ -41,18 +41,18 @@ func (bwT *blockWAL) Write(block state.Block) error {
 	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
 		bwT.metrics.failedWrites.Inc()
-		return fmt.Errorf("Openning file %s for writing failed: %w", fileName, err)
+		return fmt.Errorf("openning file %s for writing failed: %w", fileName, err)
 	}
 	defer f.Close()
 	blockBytes := block.Bytes()
 	n, err := f.Write(blockBytes)
 	if err != nil {
 		bwT.metrics.failedReads.Inc()
-		return fmt.Errorf("Writing block data to file %s failed: %w", fileName, err)
+		return fmt.Errorf("writing block data to file %s failed: %w", fileName, err)
 	}
 	if len(blockBytes) != n {
 		bwT.metrics.failedReads.Inc()
-		return fmt.Errorf("Only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
+		return fmt.Errorf("only %v of total %v bytes of block were written to file %s", n, len(blockBytes), fileName)
 	}
 	bwT.metrics.segments.Inc()
 	return nil
@@ -69,28 +69,28 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 	f, err := os.OpenFile(filePath, os.O_RDONLY, 0o666)
 	if err != nil {
 		bwT.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Opening file %s for reading failed: %w", fileName, err)
+		return nil, fmt.Errorf("opening file %s for reading failed: %w", fileName, err)
 	}
 	defer f.Close()
 	stat, err := f.Stat()
 	if err != nil {
 		bwT.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Reading file %s information failed: %w", fileName, err)
+		return nil, fmt.Errorf("reading file %s information failed: %w", fileName, err)
 	}
 	blockBytes := make([]byte, stat.Size())
 	n, err := bufio.NewReader(f).Read(blockBytes)
 	if err != nil {
 		bwT.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Reading file %s failed: %w", fileName, err)
+		return nil, fmt.Errorf("reading file %s failed: %w", fileName, err)
 	}
 	if int64(n) != stat.Size() {
 		bwT.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Only %v of total %v bytes of file %s were read", n, stat.Size(), fileName)
+		return nil, fmt.Errorf("only %v of total %v bytes of file %s were read", n, stat.Size(), fileName)
 	}
 	block, err := state.BlockFromBytes(blockBytes)
 	if err != nil {
 		bwT.metrics.failedReads.Inc()
-		return nil, fmt.Errorf("Error parsing block from bytes read from file %s: %w", fileName, err)
+		return nil, fmt.Errorf("error parsing block from bytes read from file %s: %w", fileName, err)
 	}
 	return block, nil
 }

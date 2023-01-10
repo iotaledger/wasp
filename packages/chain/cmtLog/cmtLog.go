@@ -73,8 +73,6 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -159,7 +157,7 @@ func New(
 	state, err := consensusStateRegistry.Get(chainID, cmtAddr)
 	if err != nil {
 		if !errors.Is(err, ErrCmtLogStateNotFound) {
-			return nil, xerrors.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
+			return nil, fmt.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
 		}
 		prevLI = NilLogIndex()
 	} else {
@@ -179,7 +177,7 @@ func New(
 	n := len(nodeIDs)
 	f := n - int(dkShare.GetT())
 	if f > (n-1)/3 {
-		panic(xerrors.Errorf("invalid f=%v for n=%v", n, f))
+		panic(fmt.Errorf("invalid f=%v for n=%v", n, f))
 	}
 	minLogIndex := prevLI.Next()
 	cl := &cmtLogImpl{
@@ -220,7 +218,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputSuspend:
 		return cl.handleInputSuspend()
 	}
-	panic(xerrors.Errorf("unexpected input %T: %+v", input, input))
+	panic(fmt.Errorf("unexpected input %T: %+v", input, input))
 }
 
 // Implements the gpa.GPA interface.
@@ -374,7 +372,7 @@ func (cl *cmtLogImpl) tryProposeConsensus() {
 		// same consensus after the restart.
 		if err := cl.consensusStateRegistry.Set(cl.chainID, cl.cmtAddr, &State{LogIndex: logIndex}); err != nil {
 			// Nothing to do, if we cannot persist this.
-			panic(xerrors.Errorf("cannot persist the cmtLog state: %w", err))
+			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
 		//
 		// Start the consensus (ask the upper layer to start it).

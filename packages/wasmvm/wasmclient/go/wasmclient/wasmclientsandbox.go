@@ -5,8 +5,7 @@ package wasmclient
 
 import (
 	"errors"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -68,7 +67,7 @@ func (s *WasmClientContext) StateSet(key, value []byte) {
 func (s *WasmClientContext) fnCall(args []byte) []byte {
 	req := wasmrequests.NewCallRequestFromBytes(args)
 	if req.Contract != s.scHname {
-		s.Err = xerrors.Errorf("unknown contract: %s", req.Contract.String())
+		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
 	res, err := s.svcClient.CallViewByHname(s.chainID, req.Contract, req.Function, req.Params)
@@ -86,11 +85,11 @@ func (s *WasmClientContext) fnPost(args []byte) []byte {
 	}
 	req := wasmrequests.NewPostRequestFromBytes(args)
 	if req.ChainID != s.chainID {
-		s.Err = xerrors.Errorf("unknown chain id: %s", req.ChainID.String())
+		s.Err = fmt.Errorf("unknown chain id: %s", req.ChainID.String())
 		return nil
 	}
 	if req.Contract != s.scHname {
-		s.Err = xerrors.Errorf("unknown contract: %s", req.Contract.String())
+		s.Err = fmt.Errorf("unknown contract: %s", req.Contract.String())
 		return nil
 	}
 	scAssets := wasmlib.NewScAssets(req.Transfer)
@@ -107,7 +106,7 @@ func (s *WasmClientContext) fnUtilsBech32Decode(args []byte) []byte {
 		return nil
 	}
 	if string(hrp) != s.hrp {
-		s.Err = xerrors.Errorf("invalid protocol prefix: %s", string(hrp))
+		s.Err = fmt.Errorf("invalid protocol prefix: %s", string(hrp))
 		return nil
 	}
 	var cvt wasmhost.WasmConvertor

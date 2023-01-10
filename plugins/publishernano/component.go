@@ -56,7 +56,7 @@ func run() error {
 	port := ParamsPublisher.Port
 	socket, err := openSocket(port)
 	if err != nil {
-		Plugin.LogErrorf("failed to initialize publisher: %v", err)
+		Plugin.LogErrorf("failed to initialize publisher: %w", err)
 		return err
 	}
 	Plugin.LogInfof("nanomsg publisher is running on port %d", port)
@@ -68,7 +68,7 @@ func run() error {
 				if socket != nil {
 					err := socket.Send(msg)
 					if err != nil {
-						Plugin.LogErrorf("Failed to publish message: %v", err)
+						Plugin.LogErrorf("failed to publish message: %w", err)
 					}
 				}
 			case <-ctx.Done():

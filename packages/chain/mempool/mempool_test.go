@@ -88,37 +88,37 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	chainInitReq := chainInitReqs[0]
 	//
 	offLedgerReq := isc.NewOffLedgerRequest(isc.RandomChainID(), isc.Hn("foo"), isc.Hn("bar"), dict.New(), 0).Sign(te.governor)
-	t.Logf("Sending off-ledger request")
+	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq)
 	te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq) // Check for duplicate receives.
-	t.Logf("Sending on-ledger request")
+	t.Log("Sending on-ledger request")
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(chainInitReq.(isc.OnLedgerRequest))
 	}
-	t.Logf("ServerNodesUpdated")
+	t.Log("ServerNodesUpdated")
 	tangleTime := time.Now()
 	for _, node := range te.mempools {
 		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
 		node.TangleTimeUpdated(tangleTime)
 	}
-	t.Logf("TrackNewChainHead")
+	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
 		node.TrackNewChainHead(te.stateForAO(i, te.originAO), nil, te.originAO, []state.Block{}, []state.Block{})
 	}
-	t.Logf("Ask for proposals")
+	t.Log("Ask for proposals")
 	proposals := make([]<-chan []*isc.RequestRef, len(te.mempools))
 	for i, node := range te.mempools {
 		proposals[i] = node.ConsensusProposalsAsync(te.ctx, te.originAO)
 	}
-	t.Logf("Wait for proposals and ask for decided requests")
+	t.Log("Wait for proposals and ask for decided requests")
 	decided := make([]<-chan []isc.Request, len(te.mempools))
 	for i, node := range te.mempools {
 		proposal := <-proposals[i]
 		require.True(t, len(proposal) == 1 || len(proposal) == 2)
 		decided[i] = node.ConsensusRequestsAsync(te.ctx, isc.RequestRefsFromRequests([]isc.Request{chainInitReq, offLedgerReq}))
 	}
-	t.Logf("Wait for decided requests")
+	t.Log("Wait for decided requests")
 	for i := range te.mempools {
 		nodeDecidedReqs := <-decided[i]
 		require.Len(t, nodeDecidedReqs, 2)

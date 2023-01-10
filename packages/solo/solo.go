@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -591,5 +592,5 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		}
 	}
 
-	return nil, nil, fmt.Errorf("NFT output not found in resulting tx")
+	return nil, nil, errors.New("NFT output not found in resulting tx")
 }

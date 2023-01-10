@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"golang.org/x/exp/slices"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -287,7 +286,7 @@ func New(
 		cni.log.Named("CM"),
 	)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
+		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
 	}
 	// TODO does it make sense to pass itself (own pub key) here?
 	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
@@ -303,7 +302,7 @@ func New(
 		cni.log.Named("SM"),
 	)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
+		return nil, fmt.Errorf("cannot create stateMgr: %w", err)
 	}
 	mempool := mempool.New(
 		ctx,
@@ -604,7 +603,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	case cons.Completed:
 		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
 		if err != nil {
-			panic(xerrors.Errorf("cannot extract next AliasOutput from TX: %w", err))
+			panic(fmt.Errorf("cannot extract next AliasOutput from TX: %w", err))
 		}
 		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 		chainMgrInput = chainMgr.NewInputConsensusOutputDone(

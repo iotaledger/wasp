@@ -73,7 +73,7 @@ func ValueFromString(vtype, s string) []byte {
 	case "bigint":
 		n, ok := new(big.Int).SetString(s, 10)
 		if !ok {
-			log.Fatalf("error converting to bigint")
+			log.Fatal("error converting to bigint")
 		}
 		return n.Bytes()
 	case "requestid":
@@ -196,7 +196,7 @@ func ValueToString(vtype string, v []byte) string {
 func EncodeParams(params []string) dict.Dict {
 	d := dict.New()
 	if len(params)%4 != 0 {
-		log.Fatalf("Params format: <type> <key> <type> <value> ...")
+		log.Fatal("Params format: <type> <key> <type> <value> ...")
 	}
 	for i := 0; i < len(params)/4; i++ {
 		ktype := params[i*4]

@@ -7,7 +7,6 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 )
 
 // ImplicateLen returns the length of Implicate in bytes.
@@ -81,16 +80,16 @@ func dleqProof(suite suites.Suite, G kyber.Point, H kyber.Point, secret kyber.Sc
 	// challenge hash
 	h := sha512.New()
 	if _, err := P1.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal P1: %w", err))
+		panic(fmt.Errorf("cannot marshal P1: %w", err))
 	}
 	if _, err := P2.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal P2: %w", err))
+		panic(fmt.Errorf("cannot marshal P2: %w", err))
 	}
 	if _, err := R1.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal R1: %w", err))
+		panic(fmt.Errorf("cannot marshal R1: %w", err))
 	}
 	if _, err := R2.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal R2: %w", err))
+		panic(fmt.Errorf("cannot marshal R2: %w", err))
 	}
 	c := suite.Scalar().SetBytes(h.Sum(nil))
 
@@ -105,16 +104,16 @@ func dleqVerify(g kyber.Group, G kyber.Point, H kyber.Point, P1 kyber.Point, P2 
 	// challenge hash
 	h := sha512.New()
 	if _, err := P1.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal P1: %w", err))
+		panic(fmt.Errorf("cannot marshal P1: %w", err))
 	}
 	if _, err := P2.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal P2: %w", err))
+		panic(fmt.Errorf("cannot marshal P2: %w", err))
 	}
 	if _, err := R1.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal R1: %w", err))
+		panic(fmt.Errorf("cannot marshal R1: %w", err))
 	}
 	if _, err := R2.MarshalTo(h); err != nil {
-		panic(xerrors.Errorf("cannot marshal R2: %w", err))
+		panic(fmt.Errorf("cannot marshal R2: %w", err))
 	}
 	c := g.Scalar().SetBytes(h.Sum(nil))
 
