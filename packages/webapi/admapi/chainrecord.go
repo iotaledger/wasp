@@ -80,19 +80,17 @@ func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	log.Infof("Chain record saved: ChainID: %s (active: %t)", requestChainRec.ChainID(), requestChainRec.Active)
 
 	// Activate/deactivate the chain accordingly.
-	// if requestChainRec.Active {
-	// 	log.Debugw("calling Chains.Activate", "chainID", requestChainRec.ChainID().String())
-	// 	if err := s.chainsProvider().Activate(requestChainRec.ChainID()); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// TODO: Tests start failing if this is added. Maybe we have to review the tests.
-	// else {
-	// 	log.Debugw("calling Chains.Deactivate", "chainID", requestChainRec.ChainID().String())
-	// 	if err := s.chainsProvider().Deactivate(requestChainRec.ChainID()); err != nil {
-	// 		return err
-	// 	}
-	// }
+	if requestChainRec.Active {
+		log.Debugw("calling Chains.Activate", "chainID", requestChainRec.ChainID().String())
+		if err := s.chainsProvider().Activate(requestChainRec.ChainID()); err != nil {
+			return err
+		}
+	} else {
+		log.Debugw("calling Chains.Deactivate", "chainID", requestChainRec.ChainID().String())
+		if err := s.chainsProvider().Deactivate(requestChainRec.ChainID()); err != nil {
+			return err
+		}
+	}
 
 	return c.NoContent(http.StatusCreated)
 }
