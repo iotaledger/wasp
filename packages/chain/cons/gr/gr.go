@@ -137,9 +137,9 @@ func New(
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
 	netPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
 	for _, peerPubKey := range dkShare.GetNodePubKeys() {
-		netPeerPubs[pubKeyAsNodeID(peerPubKey)] = peerPubKey
+		netPeerPubs[gpa.NodeIDFromPublicKey(peerPubKey)] = peerPubKey
 	}
-	me := pubKeyAsNodeID(myNodeIdentity.GetPublicKey())
+	me := gpa.NodeIDFromPublicKey(myNodeIdentity.GetPublicKey())
 	cgr := &ConsGr{
 		me:                me,
 		consInst:          nil, // Set bellow.
@@ -160,7 +160,7 @@ func New(
 		ctx:               ctx,
 		log:               log,
 	}
-	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], gpa.NodeIDFromPublicKey, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()
@@ -311,7 +311,7 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 		cgr.log.Warnf("cannot parse message: %v", err)
 		return
 	}
-	msg.SetSender(pubKeyAsNodeID(recv.SenderPubKey))
+	msg.SetSender(gpa.NodeIDFromPublicKey(recv.SenderPubKey))
 	outMsgs := cgr.consInst.Message(msg)
 	cgr.sendMessages(outMsgs)
 	cgr.tryHandleOutput()
@@ -382,8 +382,4 @@ func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
 		}
 		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[m.Recipient()], pm)
 	})
-}
-
-func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
 }

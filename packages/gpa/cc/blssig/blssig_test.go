@@ -41,7 +41,7 @@ func TestSilent(t *testing.T) {
 func testBasic(t *testing.T, nodeCount, threshold, silent int) {
 	log := testlogger.NewLogger(t)
 	suite := tcrypto.DefaultBLSSuite()
-	nodeIDs := gpa.MakeTestNodeIDs("cc", nodeCount)
+	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	_, commits, priShares := testpeers.MakeSharedSecret(suite, nodeCount, threshold)
 	for i, ni := range nodeIDs {

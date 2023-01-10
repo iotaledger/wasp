@@ -44,13 +44,13 @@ func testBasic(t *testing.T, n, f, silent int) {
 	_, commits, priShares := testpeers.MakeSharedSecret(suite, n, ccThreshold)
 	//
 	// Create the nodes.
-	nodeIDs := gpa.MakeTestNodeIDs("acs", n)
+	nodeIDs := gpa.MakeTestNodeIDs(n)
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
 		if i >= n-silent {
 			nodes[nid] = gpa.MakeTestSilentNode()
 		} else {
-			nodeLog := log.Named(string(nid))
+			nodeLog := log.Named(nid.ShortString())
 			ii := i
 			makeCCInstFun := func(nodeID gpa.NodeID, round int) gpa.GPA {
 				sid := fmt.Sprintf("%s-%v", nodeID, round)

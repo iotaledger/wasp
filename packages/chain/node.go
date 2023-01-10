@@ -800,7 +800,7 @@ func (cni chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) {
 }
 
 func (cni *chainNodeImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := cni.netPeerPubs[nodeID]; !ok {
 		cni.netPeerPubs[nodeID] = pubKey
 	}

@@ -73,7 +73,7 @@ func New(
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
 	smLog := log.Named("sm")
-	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), smLog)
+	nr := smUtils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
 	var timers smGPA.StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -220,7 +220,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 		smT.log.Warnf("Parsing message failed: %v", err)
 		return
 	}
-	msg.SetSender(pubKeyAsNodeID(peerMsg.SenderPubKey))
+	msg.SetSender(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey))
 	outMsgs := smT.stateManagerGPA.Message(msg)
 	smT.sendMessages(outMsgs)
 }
@@ -229,12 +229,12 @@ func (smT *stateManager) handleNodePublicKeys(peerPubKeys []*cryptolib.PublicKey
 	smT.nodeIDToPubKey = make(map[gpa.NodeID]*cryptolib.PublicKey)
 	peerNodeIDs := make([]gpa.NodeID, len(peerPubKeys))
 	for i := range peerPubKeys {
-		peerNodeIDs[i] = pubKeyAsNodeID(peerPubKeys[i])
+		peerNodeIDs[i] = gpa.NodeIDFromPublicKey(peerPubKeys[i])
 		smT.nodeIDToPubKey[peerNodeIDs[i]] = peerPubKeys[i]
 	}
 	smT.log.Infof("Updating list of nodeIDs: [%v]",
 		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
-			return acc + " " + string(item)
+			return acc + " " + item.ShortString()
 		}, ""),
 	)
 	smT.nodeRandomiser.UpdateNodeIDs(peerNodeIDs)
@@ -262,8 +262,4 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		}
 		smT.net.SendMsgByPubKey(smT.nodeIDToPubKey[msg.Recipient()], pm)
 	})
-}
-
-func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
 }

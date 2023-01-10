@@ -22,7 +22,7 @@ func NewGetBlockMessage(commitment *state.L1Commitment, to gpa.NodeID) *GetBlock
 }
 
 func NewEmptyGetBlockMessage() *GetBlockMessage { // `UnmarshalBinary` must be called afterwards
-	return NewGetBlockMessage(&state.L1Commitment{}, "UNKNOWN")
+	return NewGetBlockMessage(&state.L1Commitment{}, gpa.NodeID{})
 }
 
 func (gbmT *GetBlockMessage) MarshalBinary() (data []byte, err error) {

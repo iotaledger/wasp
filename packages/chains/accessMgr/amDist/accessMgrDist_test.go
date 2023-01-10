@@ -28,7 +28,7 @@ func testBasic(t *testing.T, n int) {
 	log := testlogger.NewLogger(t)
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	nodePubs := testpeers.PublicKeys(peerIdentities)
-	nodeIDs := nodeIDsFromPubKeys(nodePubs)
+	nodeIDs := gpa.NodeIDsFromPublicKeys(nodePubs)
 	chainID := isc.RandomChainID()
 
 	servers := map[gpa.NodeID][]*cryptolib.PublicKey{}
@@ -36,7 +36,7 @@ func testBasic(t *testing.T, n int) {
 	for i, nid := range nodeIDs {
 		nidCopy := nid
 		nodes[nid] = amDist.NewAccessMgr(
-			nodeIDFromPubKey,
+			gpa.NodeIDFromPublicKey,
 			func(ci isc.ChainID, pks []*cryptolib.PublicKey) {
 				servers[nidCopy] = pks
 			},
@@ -57,19 +57,4 @@ func testBasic(t *testing.T, n int) {
 			"should be same: %v, %v", nodePubs, servers[nid],
 		)
 	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Helper functions.
-
-func nodeIDsFromPubKeys(pubKeys []*cryptolib.PublicKey) []gpa.NodeID {
-	ret := make([]gpa.NodeID, len(pubKeys))
-	for i := range pubKeys {
-		ret[i] = nodeIDFromPubKey(pubKeys[i])
-	}
-	return ret
-}
-
-func nodeIDFromPubKey(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID("N#" + pubKey.String()[2:10])
 }
