@@ -97,7 +97,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	require.NoError(t, err)
 
-	sn, tokenID, err := ch.NewFoundryParams(100).
+	sn, nativeTokenID, err := ch.NewFoundryParams(100).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func testSplitTokensFail(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	// this will FAIL because it will result in 100 outputs in the single call
-	allowance := isc.NewAllowanceBaseTokens(100*isc.Million).AddNativeTokens(tokenID, 100)
+	allowance := isc.NewAllowanceBaseTokens(100*isc.Million).AddNativeTokens(nativeTokenID, 100)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(200 * isc.Million).
@@ -127,7 +127,7 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	amountMintedTokens := int64(100)
-	sn, tokenID, err := ch.NewFoundryParams(amountMintedTokens).
+	sn, nativeTokenID, err := ch.NewFoundryParams(amountMintedTokens).
 		WithUser(wallet).
 		CreateFoundry()
 	require.NoError(t, err)
@@ -135,15 +135,15 @@ func testSplitTokensSuccess(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	amountTokensToSend := int64(3)
-	allowance := isc.NewAllowanceBaseTokens(2*isc.Million).AddNativeTokens(tokenID, amountTokensToSend)
+	allowance := isc.NewAllowanceBaseTokens(2*isc.Million).AddNativeTokens(nativeTokenID, amountTokensToSend)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSplitFundsNativeTokens.Name).
 		AddAllowance(allowance).
 		AddBaseTokens(2 * isc.Million).
 		WithGasBudget(math.MaxUint64)
 	_, err = ch.PostRequestSync(req, wallet)
 	require.NoError(t, err)
-	require.Equal(t, ch.L2NativeTokens(agentID, &tokenID).Int64(), amountMintedTokens-amountTokensToSend)
-	require.Equal(t, ch.Env.L1NativeTokens(addr, &tokenID).Int64(), amountTokensToSend)
+	require.Equal(t, ch.L2NativeTokens(agentID, nativeTokenID).Int64(), amountMintedTokens-amountTokensToSend)
+	require.Equal(t, ch.Env.L1NativeTokens(addr, nativeTokenID).Int64(), amountTokensToSend)
 }
 
 func TestPingBaseTokens1(t *testing.T) { run2(t, testPingBaseTokens1) }

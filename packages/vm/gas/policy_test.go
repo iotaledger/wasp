@@ -18,7 +18,7 @@ func TestFeePolicySerde(t *testing.T) {
 	require.EqualValues(t, feePolicy.GasPerToken, feePolicyBack.GasPerToken)
 
 	feePolicy = &GasFeePolicy{
-		GasFeeTokenID:     &tpkg.RandNativeToken().ID,
+		GasFeeTokenID:     tpkg.RandNativeToken().ID,
 		GasPerToken:       uint64(100),
 		ValidatorFeeShare: 10,
 	}

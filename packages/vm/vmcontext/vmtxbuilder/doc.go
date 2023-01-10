@@ -10,7 +10,7 @@
 // When txbuilder is unable to maintain consistent state, it panics. The following panic code are possible:
 // - ErrProtocolExceptionInputLimitExceeded when maximum number of inputs in the transaction is exceeded
 // - ErrProtocolExceptionOutputLimitExceeded when maximum number of outputs in the transaction is exceeded
-// - ErrProtocolExceptionNumberOfNativeTokensLimitExceeded when number of total different tokenIDs is exceeded
+// - ErrProtocolExceptionNumberOfNativeTokensLimitExceeded when number of total different nativeTokenIDs is exceeded
 // - ErrProtocolExceptionNotEnoughFundsForInternalStorageDeposit when total number of base tokens available is not enough for storage deposit of the new internal output
 // - ErrNotEnoughBaseTokensBalance attempt to debit more base tokens than possible
 // - ErrNotEnoughNativeAssetBalance attempt to debit more native tokens than possible

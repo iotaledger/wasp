@@ -255,20 +255,20 @@ func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
-// The optional tokenID parameter can be used to retrieve the balance for the specific token.
-// When tokenID is omitted, the base tokens balance is assumed.
-func (ctx *SoloContext) Balance(agent *SoloAgent, tokenID ...wasmtypes.ScTokenID) uint64 {
+// The optional nativeTokenID parameter can be used to retrieve the balance for the specific token.
+// When nativeTokenID is omitted, the base tokens balance is assumed.
+func (ctx *SoloContext) Balance(agent *SoloAgent, nativeTokenID ...wasmtypes.ScTokenID) uint64 {
 	account := agent.AgentID()
-	switch len(tokenID) {
+	switch len(nativeTokenID) {
 	case 0:
 		baseTokens := ctx.Chain.L2BaseTokens(account)
 		return baseTokens
 	case 1:
-		token := ctx.Cvt.IscTokenID(&tokenID[0])
+		token := ctx.Cvt.IscTokenID(&nativeTokenID[0])
 		tokens := ctx.Chain.L2NativeTokens(account, token).Uint64()
 		return tokens
 	default:
-		require.Fail(ctx.Chain.Env.T, "too many tokenID arguments")
+		require.Fail(ctx.Chain.Env.T, "too many nativeTokenID arguments")
 		return 0
 	}
 }

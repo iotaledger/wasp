@@ -60,17 +60,17 @@ func (txb *AnchorTransactionBuilder) CreateNewFoundry(
 
 // ModifyNativeTokenSupply inflates the supply is delta > 0, shrinks if delta < 0
 // returns adjustment of the storage deposit.
-func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.NativeTokenID, delta *big.Int) int64 {
+func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(nativeTokenID iotago.NativeTokenID, delta *big.Int) int64 {
 	txb.MustBalanced("ModifyNativeTokenSupply: IN")
-	sn := tokenID.FoundrySerialNumber()
+	sn := nativeTokenID.FoundrySerialNumber()
 	f := txb.ensureFoundry(sn)
 	if f == nil {
 		panic(vm.ErrFoundryDoesNotExist)
 	}
-	// check if the loaded foundry matches the tokenID
-	if *tokenID != f.in.MustNativeTokenID() {
+	// check if the loaded foundry matches the nativeTokenID
+	if nativeTokenID != f.in.MustNativeTokenID() {
 		panic(xerrors.Errorf("%v: requested token ID: %s, foundry token id: %s",
-			vm.ErrCantModifySupplyOfTheToken, tokenID.String(), f.in.MustNativeTokenID().String()))
+			vm.ErrCantModifySupplyOfTheToken, nativeTokenID.String(), f.in.MustNativeTokenID().String()))
 	}
 
 	defer txb.mustCheckTotalNativeTokensExceeded()
@@ -90,7 +90,7 @@ func (txb *AnchorTransactionBuilder) ModifyNativeTokenSupply(tokenID *iotago.Nat
 		panic(vm.ErrNativeTokenSupplyOutOffBounds)
 	}
 	// accrue/adjust this token balance in the internal outputs
-	adjustment := txb.addNativeTokenBalanceDelta(tokenID, delta)
+	adjustment := txb.addNativeTokenBalanceDelta(nativeTokenID, delta)
 	// update the supply and foundry record in the builder
 	simpleTokenScheme.MintedTokens = newMinted
 	simpleTokenScheme.MeltedTokens = newMelted

@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 func (c *WaspClient) RequestIDByEVMTransactionHash(chainID isc.ChainID, txHash common.Hash) (isc.RequestID, error) {

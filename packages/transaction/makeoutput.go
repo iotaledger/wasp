@@ -53,7 +53,7 @@ func MakeBasicOutput(
 	}
 	out := &iotago.BasicOutput{
 		Amount:       assets.BaseTokens,
-		NativeTokens: assets.Tokens,
+		NativeTokens: assets.NativeTokens,
 		Conditions: iotago.UnlockConditions{
 			&iotago.AddressUnlockCondition{Address: targetAddress},
 		},
@@ -134,7 +134,7 @@ func NftOutputFromBasicOutput(o *iotago.BasicOutput, nft *isc.NFT) *iotago.NFTOu
 
 func AssetsFromOutput(o iotago.Output) *isc.FungibleTokens {
 	return &isc.FungibleTokens{
-		BaseTokens: o.Deposit(),
-		Tokens:     o.NativeTokenList(),
+		BaseTokens:   o.Deposit(),
+		NativeTokens: o.NativeTokenList(),
 	}
 }

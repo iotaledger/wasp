@@ -6,16 +6,16 @@ package chain
 import (
 	"strconv"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
-
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 var infoCmd = &cobra.Command{
@@ -75,7 +75,7 @@ var infoCmd = &cobra.Command{
 
 			if govInfo.GasFeePolicy != nil {
 				gasFeeToken := util.BaseTokenStr
-				if govInfo.GasFeePolicy.GasFeeTokenID != nil {
+				if !isc.IsEmptyNativeTokenID(govInfo.GasFeePolicy.GasFeeTokenID) {
 					gasFeeToken = govInfo.GasFeePolicy.GasFeeTokenID.String()
 				}
 				log.Printf("Gas fee: 1 %s = %d gas units\n", gasFeeToken, govInfo.GasFeePolicy.GasPerToken)

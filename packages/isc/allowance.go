@@ -162,8 +162,8 @@ func (a *Allowance) AddBaseTokens(amount uint64) *Allowance {
 	return a
 }
 
-func (a *Allowance) AddNativeTokens(tokenID iotago.NativeTokenID, amount interface{}) *Allowance {
-	a.Assets.AddNativeTokens(tokenID, amount)
+func (a *Allowance) AddNativeTokens(nativeTokenID iotago.NativeTokenID, amount interface{}) *Allowance {
+	a.Assets.AddNativeTokens(nativeTokenID, amount)
 	return a
 }
 

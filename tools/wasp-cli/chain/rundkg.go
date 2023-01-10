@@ -43,7 +43,7 @@ func runDKGCmd() *cobra.Command {
 			}
 
 			dkgInitiatorIndex := uint16(rand.Intn(len(committee)))
-			stateControllerAddr, err := apilib.RunDKG(config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
+			stateControllerAddr, err := apilib.RunDKG(config.GetToken(), config.CommitteeAPI(committee), committeePubKeys, uint16(quorum), dkgInitiatorIndex)
 			log.Check(err)
 
 			fmt.Fprintf(os.Stdout, "DKG successful, address: %s", stateControllerAddr.Bech32(parameters.L1().Protocol.Bech32HRP))

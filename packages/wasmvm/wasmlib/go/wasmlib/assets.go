@@ -12,9 +12,9 @@ import (
 type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
-	BaseTokens uint64
-	NftIDs     map[wasmtypes.ScNftID]bool
-	Tokens     TokenAmounts
+	BaseTokens   uint64
+	NftIDs       map[wasmtypes.ScNftID]bool
+	NativeTokens TokenAmounts
 }
 
 func NewScAssets(buf []byte) *ScAssets {
@@ -33,10 +33,10 @@ func NewScAssets(buf []byte) *ScAssets {
 
 	size := wasmtypes.Uint16Decode(dec)
 	if size > 0 {
-		assets.Tokens = make(TokenAmounts, size)
+		assets.NativeTokens = make(TokenAmounts, size)
 		for ; size > 0; size-- {
 			tokenID := wasmtypes.TokenIDDecode(dec)
-			assets.Tokens[tokenID] = wasmtypes.BigIntDecode(dec)
+			assets.NativeTokens[tokenID] = wasmtypes.BigIntDecode(dec)
 		}
 	}
 
@@ -69,10 +69,10 @@ func (a *ScAssets) Bytes() []byte {
 
 	wasmtypes.Uint64Encode(enc, a.BaseTokens)
 
-	wasmtypes.Uint16Encode(enc, uint16(len(a.Tokens)))
+	wasmtypes.Uint16Encode(enc, uint16(len(a.NativeTokens)))
 	for _, tokenID := range a.TokenIDs() {
 		wasmtypes.TokenIDEncode(enc, *tokenID)
-		wasmtypes.BigIntEncode(enc, a.Tokens[*tokenID])
+		wasmtypes.BigIntEncode(enc, a.NativeTokens[*tokenID])
 	}
 
 	wasmtypes.Uint16Encode(enc, uint16(len(a.NftIDs)))
@@ -86,7 +86,7 @@ func (a *ScAssets) IsEmpty() bool {
 	if a.BaseTokens != 0 {
 		return false
 	}
-	for _, val := range a.Tokens {
+	for _, val := range a.NativeTokens {
 		if !val.IsZero() {
 			return false
 		}
@@ -95,8 +95,8 @@ func (a *ScAssets) IsEmpty() bool {
 }
 
 func (a *ScAssets) TokenIDs() []*wasmtypes.ScTokenID {
-	tokenIDs := make([]*wasmtypes.ScTokenID, 0, len(a.Tokens))
-	for key := range a.Tokens {
+	tokenIDs := make([]*wasmtypes.ScTokenID, 0, len(a.NativeTokens))
+	for key := range a.NativeTokens {
 		// need a local copy to avoid referencing the single key var multiple times
 		tokenID := key
 		tokenIDs = append(tokenIDs, &tokenID)
@@ -112,10 +112,10 @@ type ScBalances struct {
 }
 
 func (b *ScBalances) Balance(tokenID *wasmtypes.ScTokenID) wasmtypes.ScBigInt {
-	if len(b.assets.Tokens) == 0 {
+	if len(b.assets.NativeTokens) == 0 {
 		return wasmtypes.NewScBigInt()
 	}
-	return b.assets.Tokens[*tokenID]
+	return b.assets.NativeTokens[*tokenID]
 }
 
 func (b *ScBalances) Bytes() []byte {
@@ -202,8 +202,8 @@ func (t *ScTransfer) Bytes() []byte {
 // set the specified tokenID amount in the transfers object
 // note that this will overwrite any previous amount for the specified tokenID
 func (t *ScTransfer) Set(tokenID *wasmtypes.ScTokenID, amount wasmtypes.ScBigInt) {
-	if t.assets.Tokens == nil {
-		t.assets.Tokens = make(TokenAmounts)
+	if t.assets.NativeTokens == nil {
+		t.assets.NativeTokens = make(TokenAmounts)
 	}
-	t.assets.Tokens[*tokenID] = amount
+	t.assets.NativeTokens[*tokenID] = amount
 }

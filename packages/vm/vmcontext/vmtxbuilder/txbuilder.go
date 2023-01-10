@@ -18,7 +18,7 @@ import (
 
 // nativeTokenOutputLoaderFunc externally supplied function which loads stored output from the state
 // Should return nil if does not exist
-type nativeTokenOutputLoaderFunc func(*iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
+type nativeTokenOutputLoaderFunc func(iotago.NativeTokenID) (*iotago.BasicOutput, iotago.OutputID)
 
 // foundryLoaderFunc externally supplied function which returns foundry output and id by its serial number
 // Should return nil if foundry does not exist
@@ -134,8 +134,8 @@ func (txb *AnchorTransactionBuilder) Consume(req isc.OnLedgerRequest) int64 {
 	txb.addDeltaBaseTokensToTotal(req.Output().Deposit())
 	// then we add all arriving native tokens to corresponding internal outputs
 	deltaBaseTokensStorageDepositAdjustment := int64(0)
-	for _, nt := range req.FungibleTokens().Tokens {
-		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(&nt.ID, nt.Amount)
+	for _, nativeToken := range req.FungibleTokens().NativeTokens {
+		deltaBaseTokensStorageDepositAdjustment += txb.addNativeTokenBalanceDelta(nativeToken.ID, nativeToken.Amount)
 	}
 	if req.NFT() != nil {
 		deltaBaseTokensStorageDepositAdjustment += txb.consumeNFT(req.Output().(*iotago.NFTOutput), req.OutputID())
@@ -164,9 +164,9 @@ func (txb *AnchorTransactionBuilder) AddOutput(o iotago.Output) int64 {
 	txb.subDeltaBaseTokensFromTotal(assets.BaseTokens)
 	bi := new(big.Int)
 	baseTokensAdjustmentL2 := int64(0)
-	for _, nt := range assets.Tokens {
-		bi.Neg(nt.Amount)
-		baseTokensAdjustmentL2 += txb.addNativeTokenBalanceDelta(&nt.ID, bi)
+	for _, nativeToken := range assets.NativeTokens {
+		bi.Neg(nativeToken.Amount)
+		baseTokensAdjustmentL2 += txb.addNativeTokenBalanceDelta(nativeToken.ID, bi)
 	}
 	if nftout, ok := o.(*iotago.NFTOutput); ok {
 		baseTokensAdjustmentL2 += txb.sendNFT(nftout)
@@ -378,8 +378,8 @@ func (txb *AnchorTransactionBuilder) subDeltaBaseTokensFromTotal(delta uint64) {
 	txb.totalBaseTokensInL2Accounts -= delta
 }
 
-func stringNativeTokenID(id *iotago.NativeTokenID) string {
-	return iotago.EncodeHex(id[:])
+func stringNativeTokenID(nativeTokenID iotago.NativeTokenID) string {
+	return iotago.EncodeHex(nativeTokenID[:])
 }
 
 func (txb *AnchorTransactionBuilder) String() string {
@@ -388,14 +388,14 @@ func (txb *AnchorTransactionBuilder) String() string {
 	ret += fmt.Sprintf("in base tokens balance: %d\n", txb.anchorOutput.Amount)
 	ret += fmt.Sprintf("current base tokens balance: %d\n", txb.totalBaseTokensInL2Accounts)
 	ret += fmt.Sprintf("Native tokens (%d):\n", len(txb.balanceNativeTokens))
-	for id, ntb := range txb.balanceNativeTokens {
+	for nativeTokenID, ntb := range txb.balanceNativeTokens {
 		initial := "0"
 		if ntb.in != nil {
 			initial = ntb.getOutValue().String()
 		}
 		current := ntb.getOutValue().String()
 		ret += fmt.Sprintf("      %s: %s --> %s, storage deposit charged: %v\n",
-			stringNativeTokenID(&id), initial, current, ntb.storageDepositCharged)
+			stringNativeTokenID(nativeTokenID), initial, current, ntb.storageDepositCharged)
 	}
 	ret += fmt.Sprintf("consumed inputs (%d):\n", len(txb.consumed))
 	//for _, inp := range txb.consumed {

@@ -5,10 +5,9 @@ import (
 	"regexp"
 	"time"
 
-	"go.uber.org/zap"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/params"
+	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"

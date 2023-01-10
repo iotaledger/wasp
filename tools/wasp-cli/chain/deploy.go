@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/viper"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -78,7 +77,7 @@ func deployCmd() *cobra.Command {
 
 			committeePubKeys := make([]string, 0)
 			for _, api := range config.CommitteeAPI(committee) {
-				peerInfo, err := client.NewWaspClient(api).GetPeeringSelf()
+				peerInfo, err := config.WaspClient(api).GetPeeringSelf()
 				log.Check(err)
 				committeePubKeys = append(committeePubKeys, peerInfo.PubKey)
 			}
@@ -95,6 +94,7 @@ func deployCmd() *cobra.Command {
 			}
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
+				AuthenticationToken:  config.GetToken(),
 				Layer1Client:         l1Client,
 				CommitteeAPIHosts:    config.CommitteeAPI(committee),
 				CommitteePubKeys:     committeePubKeys,

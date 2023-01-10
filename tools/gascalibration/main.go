@@ -6,14 +6,14 @@ import (
 	"path"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/wasp"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-
 	"github.com/spf13/cobra"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
+
+	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 var (

@@ -526,9 +526,9 @@ func (env *Solo) L1NFTs(addr iotago.Address) map[iotago.OutputID]*iotago.NFTOutp
 }
 
 // L1NativeTokens returns number of native tokens contained in the given address on the UTXODB ledger
-func (env *Solo) L1NativeTokens(addr iotago.Address, tokenID *iotago.NativeTokenID) *big.Int {
+func (env *Solo) L1NativeTokens(addr iotago.Address, nativeTokenID iotago.NativeTokenID) *big.Int {
 	assets := env.L1Assets(addr)
-	return assets.AmountNativeToken(tokenID)
+	return assets.AmountNativeToken(nativeTokenID)
 }
 
 func (env *Solo) L1BaseTokens(addr iotago.Address) uint64 {

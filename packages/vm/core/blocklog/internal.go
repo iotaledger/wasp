@@ -127,7 +127,7 @@ func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract is
 	return nil
 }
 
-func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *isc.RequestID) (RequestLookupKeyList, error) {
+func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID isc.RequestID) (RequestLookupKeyList, error) {
 	lookupTable := collections.NewMapReadOnly(partition, prefixRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
@@ -147,7 +147,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *isc.Reques
 }
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
-func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *isc.RequestID) (*RequestReceipt, error) {
+func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID isc.RequestID) (*RequestReceipt, error) {
 	records := collections.NewMapReadOnly(partition, prefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
@@ -158,7 +158,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 		if err != nil {
 			return nil, xerrors.Errorf("RequestReceiptFromBytes returned: %w", err)
 		}
-		if rec.Request.ID().Equals(*reqID) {
+		if rec.Request.ID().Equals(reqID) {
 			rec.BlockIndex = lookupKey.BlockIndex()
 			rec.RequestIndex = lookupKey.RequestIndex()
 			return rec, nil
@@ -168,7 +168,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 }
 
 // isRequestProcessedInternal does quick lookup to check if it wasn't seen yet
-func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *isc.RequestID) (*RequestReceipt, error) {
+func isRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return nil, xerrors.Errorf("cannot mustGetLookupKeyListFromReqID: %w", err)
@@ -180,7 +180,7 @@ func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *isc.RequestID
 	return record, nil
 }
 
-func getRequestEventsInternal(partition kv.KVStoreReader, reqID *isc.RequestID) ([]string, error) {
+func getRequestEventsInternal(partition kv.KVStoreReader, reqID isc.RequestID) ([]string, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return nil, err

@@ -13,8 +13,8 @@ func AuthInfoRoute() string {
 }
 
 type AuthInfoModel struct {
-	Scheme  string `swagger:"desc(Authentication scheme (jwt, basic, ip))"`
-	AuthURL string `swagger:"desc(JWT only)"`
+	Scheme  string `json:"scheme" swagger:"desc(Authentication scheme (jwt, basic, ip))"`
+	AuthURL string `json:"authURL" swagger:"desc(JWT only)"`
 }
 
 type LoginRequest struct {

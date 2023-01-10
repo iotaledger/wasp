@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
+	"github.com/iotaledger/hive.go/core/configuration"
 	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/daemon"
@@ -24,7 +25,8 @@ import (
 	"github.com/iotaledger/wasp/packages/users"
 	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
+	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
 )
 
 func init() {
@@ -71,10 +73,12 @@ func initConfigPars(c *dig.Container) error {
 	return nil
 }
 
+//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
+		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
 		PublisherPort               int           `name:"publisherPort"`
@@ -107,11 +111,17 @@ func provide(c *dig.Container) error {
 		e.Server.WriteTimeout = ParamsWebAPI.WriteTimeout
 
 		e.HidePort = true
-		e.HTTPErrorHandler = httperrors.HTTPErrorHandler
+		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger())
+
+		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+		}))
+
 		e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-			AllowOrigins: []string{"*"},
-			AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-			AllowMethods: []string{"*"},
+			AllowOrigins:     []string{"*"},
+			AllowHeaders:     []string{"*"},
+			AllowMethods:     []string{"*"},
+			AllowCredentials: true,
 		}))
 
 		// TODO using this middleware hides the stack trace https://github.com/golang/go/issues/27375
@@ -126,8 +136,21 @@ func provide(c *dig.Container) error {
 			Version:     wasp.Version,
 		})
 
-		webapi.Init(
-			Plugin.App().NewLogger("WebAPI"),
+		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
+			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
+			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
+			SetScheme("http", "https")
+
+		echoSwagger.SetRequestContentType(echo.MIMEApplicationJSON)
+		echoSwagger.SetResponseContentType(echo.MIMEApplicationJSON)
+
+		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
+			SetExternalDocs("Find out more about Wasp", "https://wiki.iota.org/smart-contracts/overview").
+			SetUI(echoswagger.UISetting{DetachSpec: false, HideTop: false}).
+			SetScheme("http", "https")
+
+		v1.Init(
+			Plugin.App().NewLogger("WebAPI/v1"),
 			echoSwagger,
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,
@@ -149,6 +172,29 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.NodeOwnerAddresses,
 			deps.APICacheTTL,
 			deps.PublisherPort,
+		)
+
+		v2.Init(
+			Plugin.App().NewLogger("WebAPI/v2"),
+			echoSwagger,
+			deps.AppConfig,
+			deps.NetworkProvider,
+			deps.TrustedNetworkManager,
+			deps.UserManager,
+			deps.ChainRecordRegistryProvider,
+			deps.DKShareRegistryProvider,
+			deps.NodeIdentityProvider,
+			func() *chains.Chains {
+				return deps.Chains
+			},
+			func() *dkg.Node {
+				return deps.Node
+			},
+			deps.ShutdownHandler,
+			deps.NodeConnectionMetrics,
+			ParamsWebAPI.Auth,
+			ParamsWebAPI.NodeOwnerAddresses,
+			deps.APICacheTTL,
 		)
 
 		return webapiServerResult{

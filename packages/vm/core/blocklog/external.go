@@ -37,13 +37,13 @@ func GetRequestIDsForBlock(stateReader kv.KVStoreReader, blockIndex uint32) ([]i
 	return ret, nil
 }
 
-func GetRequestReceipt(stateReader kv.KVStoreReader, requestID *isc.RequestID) (*RequestReceipt, error) {
+func GetRequestReceipt(stateReader kv.KVStoreReader, requestID isc.RequestID) (*RequestReceipt, error) {
 	partition := subrealm.NewReadOnly(stateReader, kv.Key(Contract.Hname().Bytes()))
 	return isRequestProcessedInternal(partition, requestID)
 }
 
 // IsRequestProcessed check if requestID is stored in the chain state as processed
-func IsRequestProcessed(stateReader kv.KVStoreReader, requestID *isc.RequestID) (bool, error) {
+func IsRequestProcessed(stateReader kv.KVStoreReader, requestID isc.RequestID) (bool, error) {
 	requestReceipt, err := GetRequestReceipt(stateReader, requestID)
 	if err != nil {
 		return false, xerrors.Errorf("cannot get request receipt: %w", err)
@@ -51,7 +51,7 @@ func IsRequestProcessed(stateReader kv.KVStoreReader, requestID *isc.RequestID) 
 	return requestReceipt != nil, nil
 }
 
-func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid *isc.RequestID) bool {
+func MustIsRequestProcessed(stateReader kv.KVStoreReader, reqid isc.RequestID) bool {
 	ret, err := IsRequestProcessed(stateReader, reqid)
 	if err != nil {
 		panic(err)

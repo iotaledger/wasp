@@ -93,8 +93,8 @@ func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.NFTID {
 	return ret
 }
 
-func (ch *Chain) L2NativeTokens(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2Assets(agentID).AmountNativeToken(tokenID)
+func (ch *Chain) L2NativeTokens(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
+	return ch.L2Assets(agentID).AmountNativeToken(nativeTokenID)
 }
 
 func (ch *Chain) L2CommonAccountAssets() *isc.FungibleTokens {
@@ -105,8 +105,8 @@ func (ch *Chain) L2CommonAccountBaseTokens() uint64 {
 	return ch.L2Assets(ch.CommonAccount()).BaseTokens
 }
 
-func (ch *Chain) L2CommonAccountNativeTokens(tokenID *iotago.NativeTokenID) *big.Int {
-	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(tokenID)
+func (ch *Chain) L2CommonAccountNativeTokens(nativeTokenID iotago.NativeTokenID) *big.Int {
+	return ch.L2Assets(ch.CommonAccount()).AmountNativeToken(nativeTokenID)
 }
 
 // L2TotalAssets return total sum of ftokens contained in the on-chain accounts
@@ -121,19 +121,19 @@ func (ch *Chain) L2TotalBaseTokens() uint64 {
 	return ch.L2TotalAssets().BaseTokens
 }
 
-func mustNativeTokenIDFromBytes(data []byte) *iotago.NativeTokenID {
+func mustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 	if len(data) != iotago.NativeTokenIDLength {
 		panic("len(data) != iotago.NativeTokenIDLength")
 	}
-	ret := new(iotago.NativeTokenID)
+	ret := iotago.NativeTokenID{}
 	copy(ret[:], data)
 	return ret
 }
 
-func (ch *Chain) GetOnChainTokenIDs() []*iotago.NativeTokenID {
+func (ch *Chain) GetOnChainTokenIDs() []iotago.NativeTokenID {
 	res, err := ch.CallView(accounts.Contract.Name, accounts.ViewGetNativeTokenIDRegistry.Name)
 	require.NoError(ch.Env.T, err)
-	ret := make([]*iotago.NativeTokenID, 0, len(res))
+	ret := make([]iotago.NativeTokenID, 0, len(res))
 	for k := range res {
 		ret = append(ret, mustNativeTokenIDFromBytes([]byte(k)))
 	}
@@ -226,8 +226,8 @@ func (fp *foundryParams) CreateFoundry() (uint32, iotago.NativeTokenID, error) {
 	}
 	resDeco := kvdecoder.New(res)
 	retSN := resDeco.MustGetUint32(accounts.ParamFoundrySN)
-	tokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
-	return retSN, tokenID, err
+	nativeTokenID, err := fp.ch.GetNativeTokenIDByFoundrySN(retSN)
+	return retSN, nativeTokenID, err
 }
 
 func toFoundrySN(foundry interface{}) uint32 {
@@ -270,16 +270,16 @@ func (ch *Chain) MintTokens(foundry, amount interface{}, user *cryptolib.KeyPair
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account
-func (ch *Chain) DestroyTokensOnL2(tokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyTokensOnL2(nativeTokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(tokenID),
+		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
 	).WithAllowance(
 		isc.NewAllowanceFungibleTokens(
 			isc.NewFungibleTokens(0, iotago.NativeTokens{
 				&iotago.NativeToken{
-					ID:     tokenID,
+					ID:     nativeTokenID,
 					Amount: util.ToBigInt(amount),
 				},
 			}),
@@ -294,14 +294,14 @@ func (ch *Chain) DestroyTokensOnL2(tokenID iotago.NativeTokenID, amount interfac
 }
 
 // DestroyTokensOnL1 sends tokens as ftokens and destroys in the same transaction
-func (ch *Chain) DestroyTokensOnL1(tokenID *iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
+func (ch *Chain) DestroyTokensOnL1(nativeTokenID iotago.NativeTokenID, amount interface{}, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncFoundryModifySupply.Name,
-		accounts.ParamFoundrySN, toFoundrySN(tokenID),
+		accounts.ParamFoundrySN, toFoundrySN(nativeTokenID),
 		accounts.ParamSupplyDeltaAbs, util.ToBigInt(amount),
 		accounts.ParamDestroyTokens, true,
 	).WithGasBudget(DestroyTokensGasBudgetBaseTokens).AddBaseTokens(1000)
-	req.AddNativeTokens(tokenID, amount)
-	req.AddAllowanceNativeTokens(tokenID, amount)
+	req.AddNativeTokens(nativeTokenID, amount)
+	req.AddAllowanceNativeTokens(nativeTokenID, amount)
 	if user == nil {
 		user = ch.OriginatorPrivateKey
 	}

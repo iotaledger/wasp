@@ -393,7 +393,7 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 	}
 	if mpi.chainHeadState != nil {
 		requestID := requestRef.ID
-		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, &requestID)
+		receipt, err := blocklog.GetRequestReceipt(mpi.chainHeadState, requestID)
 		if err == nil && receipt != nil && receipt.Request.IsOffLedger() {
 			return receipt.Request
 		}
@@ -416,7 +416,7 @@ func (mpi *mempoolImpl) addOffLedgerRequestIfUnseen(request isc.OffLedgerRequest
 	mpi.log.Debugf("trying to add to mempool, requestID: %s", request.ID().String())
 	if mpi.chainHeadState != nil {
 		requestID := request.ID()
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(xerrors.Errorf(
 				"cannot check if request.ID=%v is processed in the blocklog at state=%v: %w",
@@ -555,7 +555,7 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 	//
 	// Maybe it has been processed before?
 	if mpi.chainHeadState != nil {
-		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, &requestID)
+		processed, err := blocklog.IsRequestProcessed(mpi.chainHeadState, requestID)
 		if err != nil {
 			panic(xerrors.Errorf("cannot check if request was processed: %w", err))
 		}
@@ -785,15 +785,18 @@ func (mpi *mempoolImpl) pubKeyAsNodeIDMap(nodePubKey *cryptolib.PublicKey, _ int
 func unprocessedPredicate[V isc.Request](chainState state.State, log *logger.Logger) func(V, time.Time) bool {
 	return func(request V, ts time.Time) bool {
 		requestID := request.ID()
-		processed, err := blocklog.IsRequestProcessed(chainState, &requestID)
+
+		processed, err := blocklog.IsRequestProcessed(chainState, requestID)
 		if err != nil {
 			log.Warn("Cannot check if request %v is processed at state.TrieRoot=%v, err=%v", requestID, chainState.TrieRoot(), err)
 			return false
 		}
+
 		if processed {
 			log.Debugf("Request already processed %v at state.TrieRoot=%v", requestID, chainState.TrieRoot())
 			return false
 		}
+
 		return true
 	}
 }

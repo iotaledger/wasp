@@ -131,11 +131,11 @@ func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) uint64 {
 	return accounts.GetBaseTokensBalance(ctx.contractStateReader(accounts.Contract.Hname()), agentID)
 }
 
-func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, tokenID *iotago.NativeTokenID) *big.Int {
+func (ctx *ViewContext) GetNativeTokenBalance(agentID isc.AgentID, nativeTokenID iotago.NativeTokenID) *big.Int {
 	return accounts.GetNativeTokenBalance(
 		ctx.contractStateReader(accounts.Contract.Hname()),
 		agentID,
-		tokenID)
+		nativeTokenID)
 }
 
 func (ctx *ViewContext) Call(targetContract, epCode isc.Hname, params dict.Dict, _ *isc.Allowance) dict.Dict {

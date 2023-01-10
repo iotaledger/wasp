@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 )
 
 // WaspClient allows to make requests to the Wasp web API.
@@ -31,7 +31,9 @@ func NewWaspClient(baseURL string, httpClient ...http.Client) *WaspClient {
 }
 
 func (c *WaspClient) WithToken(token string) *WaspClient {
-	c.token = token
+	if len(token) > 0 {
+		c.token = token
+	}
 
 	return c
 }

@@ -228,7 +228,7 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
 	return func(addr common.Address) *big.Int {
 		feePolicy := getFeePolicy(ctx)
 
-		if feePolicy.GasFeeTokenID != nil {
+		if !isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
 			res := ctx.CallView(
 				accounts.Contract.Hname(),
 				accounts.ViewBalanceNativeToken.Hname(),
@@ -254,18 +254,18 @@ func getBalanceFunc(ctx isc.SandboxBase) emulator.GetBalanceFunc {
 func fungibleTokensForFeeFromEthereumDecimals(ctx isc.SandboxBase, amount *big.Int) *isc.FungibleTokens {
 	decimals := uint32(0)
 	feePolicy := getFeePolicy(ctx)
-	if feePolicy.GasFeeTokenID == nil {
+	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
 		decimals = parameters.L1().BaseToken.Decimals
 	} else {
 		decimals = feePolicy.GasFeeTokenDecimals
 	}
 	amt := util.EthereumDecimalsToCustomTokenDecimals(amount, decimals)
 
-	if feePolicy.GasFeeTokenID == nil {
+	if isc.IsEmptyNativeTokenID(feePolicy.GasFeeTokenID) {
 		return isc.NewFungibleBaseTokens(amt.Uint64())
 	}
 	return isc.NewFungibleTokens(0, iotago.NativeTokens{&iotago.NativeToken{
-		ID:     *feePolicy.GasFeeTokenID,
+		ID:     feePolicy.GasFeeTokenID,
 		Amount: amt,
 	}})
 }

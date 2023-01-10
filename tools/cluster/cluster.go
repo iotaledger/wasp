@@ -36,8 +36,8 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/model"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -169,7 +169,7 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	}
 
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
-	return apilib.RunDKG(apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
+	return apilib.RunDKG("", apiHosts, peerPubKeys, threshold, dkgInitiatorIndex, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
@@ -288,7 +288,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes(clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
 	accessNodePeering, err := waspClient.GetPeeringSelf()

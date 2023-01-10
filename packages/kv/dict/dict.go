@@ -297,8 +297,8 @@ type JSONDict struct {
 
 // Item is a JSON-compatible representation of a single key-value pair
 type Item struct {
-	Key   string `swagger:"desc(key (hex-encoded))"`
-	Value string `swagger:"desc(value (hex-encoded))"`
+	Key   string `json:"key" swagger:"desc(key (hex-encoded))"`
+	Value string `json:"value" swagger:"desc(value (hex-encoded))"`
 }
 
 // JSONDict returns a JSON-compatible representation of the Dict
@@ -309,6 +309,29 @@ func (d Dict) JSONDict() JSONDict {
 		j.Items[i].Value = iotago.EncodeHex(d[k])
 	}
 	return j
+}
+
+// FromJSONDict returns a dict based off an JSONDict
+func FromJSONDict(jsonDict JSONDict) (Dict, error) {
+	j := Dict{}
+
+	if jsonDict.Items != nil {
+		for _, k := range jsonDict.Items {
+			key, err := iotago.DecodeHex(k.Key)
+			if err != nil {
+				return nil, err
+			}
+
+			value, err := iotago.DecodeHex(k.Value)
+			if err != nil {
+				return nil, err
+			}
+
+			j.Set(kv.Key(key), value)
+		}
+	}
+
+	return j, nil
 }
 
 func (d Dict) MarshalJSON() ([]byte, error) {

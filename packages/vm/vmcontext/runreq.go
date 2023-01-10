@@ -280,7 +280,7 @@ func (vmctx *VMContext) calculateAffordableGasBudget() uint64 {
 func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 	var tokensGuaranteed uint64
 
-	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID == nil {
+	if isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
 		// base tokens are used as gas tokens
 		tokensGuaranteed = vmctx.GetBaseTokensBalance(vmctx.req.SenderAccount())
 		// safely subtract the allowed from the sender to the target
@@ -294,13 +294,13 @@ func (vmctx *VMContext) calcGuaranteedFeeTokens() uint64 {
 		return tokensGuaranteed
 	}
 	// native tokens are used for gas fee
-	tokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
+	nativeTokenID := vmctx.chainInfo.GasFeePolicy.GasFeeTokenID
 	// to pay for gas chain is configured to use some native token, not base tokens
-	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), tokenID)
+	tokensAvailableBig := vmctx.GetNativeTokenBalance(vmctx.req.SenderAccount(), nativeTokenID)
 	if tokensAvailableBig != nil {
 		// safely subtract the transfer from the sender to the target
 		if transfer := vmctx.req.Allowance(); transfer != nil {
-			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.Tokens, tokenID); transferTokens != nil {
+			if transferTokens := isc.FindNativeTokenBalance(transfer.Assets.NativeTokens, nativeTokenID); transferTokens != nil {
 				if tokensAvailableBig.Cmp(transferTokens) < 0 {
 					tokensAvailableBig.SetUint64(0)
 				} else {
@@ -359,12 +359,12 @@ func (vmctx *VMContext) chargeGasFee() {
 
 	transferToValidator := &isc.FungibleTokens{}
 	transferToOwner := &isc.FungibleTokens{}
-	if vmctx.chainInfo.GasFeePolicy.GasFeeTokenID != nil {
-		transferToValidator.Tokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
+	if !isc.IsEmptyNativeTokenID(vmctx.chainInfo.GasFeePolicy.GasFeeTokenID) {
+		transferToValidator.NativeTokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToValidator))},
 		}
-		transferToOwner.Tokens = iotago.NativeTokens{
-			&iotago.NativeToken{ID: *vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
+		transferToOwner.NativeTokens = iotago.NativeTokens{
+			&iotago.NativeToken{ID: vmctx.chainInfo.GasFeePolicy.GasFeeTokenID, Amount: big.NewInt(int64(sendToOwner))},
 		}
 	} else {
 		transferToValidator.BaseTokens = sendToValidator

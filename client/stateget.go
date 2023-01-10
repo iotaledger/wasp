@@ -5,7 +5,7 @@ import (
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
 // StateGet fetches the raw value associated with the given key in the chain state
