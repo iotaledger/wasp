@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/chains/accessMgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -93,9 +95,15 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	for _, am := range accessMgrs {
 		am.ChainAccessNodes(chainID, peerPubKeys)
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
 	//
 	// Wait for everyone to get the server nodes.
 	for done := false; !done; {
+		require.NoError(t, ctx.Err(), "timeout: wait for everyone to get the server nodes")
+
 		time.Sleep(100 * time.Millisecond)
 		done = true
 		for i := range nodeServers {

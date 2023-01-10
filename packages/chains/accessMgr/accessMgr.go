@@ -52,9 +52,12 @@ var _ AccessMgr = &accessMgrImpl{}
 
 const (
 	msgTypeAccessMgr byte = iota
-	resendPeriod          = 3 * time.Second
-	distDebugTick         = 10 * time.Second
-	distTimeTick          = 1 * time.Second
+)
+
+const (
+	resendPeriod  = 3 * time.Second
+	distDebugTick = 10 * time.Second
+	distTimeTick  = 1 * time.Second
 )
 
 func New(
