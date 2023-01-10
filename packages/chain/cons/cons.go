@@ -185,7 +185,7 @@ func New(
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
 		binary.BigEndian.PutUint32(roundBin[:], uint32(round))
-		sid := hashing.HashDataBlake2b(instID, []byte(nodeID), roundBin[:]).Bytes()
+		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
 		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, log)
 		return semi.New(round, realCC)
 	}

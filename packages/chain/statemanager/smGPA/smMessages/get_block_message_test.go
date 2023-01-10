@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smGPA/smGPAUtils"
+	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
@@ -13,7 +14,7 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 	for i := range blocks {
 		commitment := blocks[i].L1Commitment()
 		t.Logf("Checking block %v: %v", i, commitment)
-		marshaled, err := NewGetBlockMessage(commitment, "SOMETHING").MarshalBinary()
+		marshaled, err := NewGetBlockMessage(commitment, gpa.RandomTestNodeID()).MarshalBinary()
 		require.NoError(t, err)
 		unmarshaled := NewEmptyGetBlockMessage()
 		err = unmarshaled.UnmarshalBinary(marshaled)

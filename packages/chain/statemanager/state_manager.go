@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -48,9 +47,9 @@ type stateManager struct {
 	stateManagerGPA gpa.GPA
 	nodeRandomiser  smUtils.NodeRandomiser
 	nodeIDToPubKey  map[gpa.NodeID]*cryptolib.PublicKey
-	inputPipe       pipe.Pipe
-	messagePipe     pipe.Pipe
-	nodePubKeysPipe pipe.Pipe
+	inputPipe       pipe.Pipe[gpa.Input]
+	messagePipe     pipe.Pipe[*peering.PeerMessageIn]
+	nodePubKeysPipe pipe.Pipe[*reqChainNodesUpdated]
 	net             peering.NetworkProvider
 	netPeeringID    peering.PeeringID
 	timers          smGPA.StateManagerTimers
@@ -79,7 +78,7 @@ func New(
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
-	nr := smUtils.NewNodeRandomiserNoInit(pubKeyAsNodeID(me), log)
+	nr := smUtils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
 	var timers smGPA.StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -97,11 +96,11 @@ func New(
 		chainID:         chainID,
 		stateManagerGPA: stateManagerGPA,
 		nodeRandomiser:  nr,
-		inputPipe:       pipe.NewDefaultInfinitePipe(),
-		messagePipe:     pipe.NewDefaultInfinitePipe(),
-		nodePubKeysPipe: pipe.NewDefaultInfinitePipe(),
+		inputPipe:       pipe.NewInfinitePipe[gpa.Input](),
+		messagePipe:     pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		nodePubKeysPipe: pipe.NewInfinitePipe[*reqChainNodesUpdated](),
 		net:             net,
-		netPeeringID:    peering.PeeringIDFromBytes(hashing.HashDataBlake2b(chainID.Bytes(), []byte("STM")).Bytes()),
+		netPeeringID:    peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
 		timers:          timers,
 		ctx:             ctx,
 	}
@@ -193,19 +192,19 @@ func (smT *stateManager) run() {
 		select {
 		case input, ok := <-inputPipeCh:
 			if ok {
-				smT.handleInput(input.(gpa.Input))
+				smT.handleInput(input)
 			} else {
 				inputPipeCh = nil
 			}
 		case msg, ok := <-messagePipeCh:
 			if ok {
-				smT.handleMessage(msg.(*peering.PeerMessageIn))
+				smT.handleMessage(msg)
 			} else {
 				messagePipeCh = nil
 			}
 		case msg, ok := <-nodePubKeysPipeCh:
 			if ok {
-				smT.handleNodePublicKeys(msg.(*reqChainNodesUpdated))
+				smT.handleNodePublicKeys(msg)
 			} else {
 				nodePubKeysPipeCh = nil
 			}
@@ -234,7 +233,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 		smT.log.Warnf("Parsing message failed: %v", err)
 		return
 	}
-	msg.SetSender(pubKeyAsNodeID(peerMsg.SenderPubKey))
+	msg.SetSender(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey))
 	outMsgs := smT.stateManagerGPA.Message(msg)
 	smT.sendMessages(outMsgs)
 }
@@ -243,21 +242,21 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
 	peerNodeIDs := []gpa.NodeID{}
 	for _, pubKey := range req.serverNodes {
-		nodeID := pubKeyAsNodeID(pubKey)
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
 		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
 			smT.nodeIDToPubKey[nodeID] = pubKey
 			peerNodeIDs = append(peerNodeIDs, nodeID)
 		}
 	}
 	for _, pubKey := range req.accessNodes {
-		nodeID := pubKeyAsNodeID(pubKey)
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
 		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
 			smT.nodeIDToPubKey[nodeID] = pubKey
 			// Don't use access nodes for queries.
 		}
 	}
 	for _, pubKey := range req.committeeNodes {
-		nodeID := pubKeyAsNodeID(pubKey)
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
 		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
 			smT.nodeIDToPubKey[nodeID] = pubKey
 			peerNodeIDs = append(peerNodeIDs, nodeID)
@@ -266,7 +265,7 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 
 	smT.log.Infof("Updating list of nodeIDs: [%v]",
 		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
-			return acc + " " + string(item)
+			return acc + " " + item.ShortString()
 		}, ""),
 	)
 	smT.nodeRandomiser.UpdateNodeIDs(peerNodeIDs)
@@ -299,8 +298,4 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		}
 		smT.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
-}
-
-func pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	return gpa.NodeID(pubKey.String())
 }

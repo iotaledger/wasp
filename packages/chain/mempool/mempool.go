@@ -127,20 +127,20 @@ type mempoolImpl struct {
 	distSync                       gpa.GPA
 	chainHeadAO                    *isc.AliasOutputWithID
 	chainHeadState                 state.State
-	serverNodesUpdatedPipe         pipe.Pipe
+	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
 	serverNodes                    []*cryptolib.PublicKey
-	accessNodesUpdatedPipe         pipe.Pipe
+	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposals
-	reqConsensusProposalsPipe      pipe.Pipe
-	reqConsensusRequestsPipe       pipe.Pipe
-	reqReceiveOnLedgerRequestPipe  pipe.Pipe
-	reqReceiveOffLedgerRequestPipe pipe.Pipe
-	reqTangleTimeUpdatedPipe       pipe.Pipe
-	reqTrackNewChainHeadPipe       pipe.Pipe
-	netRecvPipe                    pipe.Pipe
+	reqConsensusProposalsPipe      pipe.Pipe[*reqConsensusProposals]
+	reqConsensusRequestsPipe       pipe.Pipe[*reqConsensusRequests]
+	reqReceiveOnLedgerRequestPipe  pipe.Pipe[isc.OnLedgerRequest]
+	reqReceiveOffLedgerRequestPipe pipe.Pipe[isc.OffLedgerRequest]
+	reqTangleTimeUpdatedPipe       pipe.Pipe[time.Time]
+	reqTrackNewChainHeadPipe       pipe.Pipe[*reqTrackNewChainHead]
+	netRecvPipe                    pipe.Pipe[*peering.PeerMessageIn]
 	netPeeringID                   peering.PeeringID
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
@@ -194,7 +194,7 @@ func New(
 	metrics metrics.MempoolMetrics,
 	listener ChainListener,
 ) Mempool {
-	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("Mempool")...))
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("Mempool")) // ChainID × Mempool
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
 	mpi := &mempoolImpl{
 		chainID:                        chainID,
@@ -203,20 +203,20 @@ func New(
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](waitReq),
 		offLedgerPool:                  NewTypedPool[isc.OffLedgerRequest](waitReq),
 		chainHeadAO:                    nil,
-		serverNodesUpdatedPipe:         pipe.NewDefaultInfinitePipe(),
+		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
-		accessNodesUpdatedPipe:         pipe.NewDefaultInfinitePipe(),
+		accessNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqAccessNodesUpdated](),
 		accessNodes:                    []*cryptolib.PublicKey{},
 		committeeNodes:                 []*cryptolib.PublicKey{},
 		waitReq:                        waitReq,
 		waitChainHead:                  []*reqConsensusProposals{},
-		reqConsensusProposalsPipe:      pipe.NewDefaultInfinitePipe(),
-		reqConsensusRequestsPipe:       pipe.NewDefaultInfinitePipe(),
-		reqReceiveOnLedgerRequestPipe:  pipe.NewDefaultInfinitePipe(),
-		reqReceiveOffLedgerRequestPipe: pipe.NewDefaultInfinitePipe(),
-		reqTangleTimeUpdatedPipe:       pipe.NewDefaultInfinitePipe(),
-		reqTrackNewChainHeadPipe:       pipe.NewDefaultInfinitePipe(),
-		netRecvPipe:                    pipe.NewDefaultInfinitePipe(),
+		reqConsensusProposalsPipe:      pipe.NewInfinitePipe[*reqConsensusProposals](),
+		reqConsensusRequestsPipe:       pipe.NewInfinitePipe[*reqConsensusRequests](),
+		reqReceiveOnLedgerRequestPipe:  pipe.NewInfinitePipe[isc.OnLedgerRequest](),
+		reqReceiveOffLedgerRequestPipe: pipe.NewInfinitePipe[isc.OffLedgerRequest](),
+		reqTangleTimeUpdatedPipe:       pipe.NewInfinitePipe[time.Time](),
+		reqTrackNewChainHeadPipe:       pipe.NewInfinitePipe[*reqTrackNewChainHead](),
+		netRecvPipe:                    pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:                   netPeeringID,
 		netPeerPubs:                    map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                            net,
@@ -309,55 +309,55 @@ func (mpi *mempoolImpl) run(ctx context.Context, netAttachID interface{}) { //no
 				serverNodesUpdatedPipeOutCh = nil
 				break
 			}
-			mpi.handleServerNodesUpdated(recv.(*reqServerNodesUpdated))
+			mpi.handleServerNodesUpdated(recv)
 		case recv, ok := <-accessNodesUpdatedPipeOutCh:
 			if !ok {
 				accessNodesUpdatedPipeOutCh = nil
 				break
 			}
-			mpi.handleAccessNodesUpdated(recv.(*reqAccessNodesUpdated))
+			mpi.handleAccessNodesUpdated(recv)
 		case recv, ok := <-reqConsensusProposalsPipeOutCh:
 			if !ok {
 				reqConsensusProposalsPipeOutCh = nil
 				break
 			}
-			mpi.handleConsensusProposals(recv.(*reqConsensusProposals))
+			mpi.handleConsensusProposals(recv)
 		case recv, ok := <-reqConsensusRequestsPipeOutCh:
 			if !ok {
 				reqConsensusRequestsPipeOutCh = nil
 				break
 			}
-			mpi.handleConsensusRequests(recv.(*reqConsensusRequests))
+			mpi.handleConsensusRequests(recv)
 		case recv, ok := <-reqReceiveOnLedgerRequestPipeOutCh:
 			if !ok {
 				reqReceiveOnLedgerRequestPipeOutCh = nil
 				break
 			}
-			mpi.handleReceiveOnLedgerRequest(recv.(isc.OnLedgerRequest))
+			mpi.handleReceiveOnLedgerRequest(recv)
 		case recv, ok := <-reqReceiveOffLedgerRequestPipeOutCh:
 			if !ok {
 				reqReceiveOffLedgerRequestPipeOutCh = nil
 				break
 			}
-			mpi.handleReceiveOffLedgerRequest(recv.(isc.OffLedgerRequest))
+			mpi.handleReceiveOffLedgerRequest(recv)
 		case recv, ok := <-reqTangleTimeUpdatedPipeOutCh:
 			if !ok {
 				reqTangleTimeUpdatedPipeOutCh = nil
 				break
 			}
-			mpi.handleTangleTimeUpdated(recv.(time.Time))
+			mpi.handleTangleTimeUpdated(recv)
 		case recv, ok := <-reqTrackNewChainHeadPipeOutCh:
 			if !ok {
 				reqTrackNewChainHeadPipeOutCh = nil
 				break
 			}
-			mpi.handleTrackNewChainHead(recv.(*reqTrackNewChainHead))
+			mpi.handleTrackNewChainHead(recv)
 		case recv, ok := <-netRecvPipeOutCh:
 			if !ok {
 				netRecvPipeOutCh = nil
 				continue
 			}
-			mpi.handleNetMessage(recv.(*peering.PeerMessageIn))
+			mpi.handleNetMessage(recv)
 		case <-debugTicker.C:
 			mpi.handleDistSyncDebugTick()
 		case <-timeTicker.C:
@@ -769,7 +769,7 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 }
 
 func (mpi *mempoolImpl) pubKeyAsNodeID(pubKey *cryptolib.PublicKey) gpa.NodeID {
-	nodeID := gpa.NodeID(pubKey.String())
+	nodeID := gpa.NodeIDFromPublicKey(pubKey)
 	if _, ok := mpi.netPeerPubs[nodeID]; !ok {
 		mpi.netPeerPubs[nodeID] = pubKey
 	}

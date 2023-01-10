@@ -22,8 +22,8 @@ func NewInputServerNodes(serverNodes, committeeNodes []gpa.NodeID) gpa.Input {
 
 func (inp *inputServerNodes) String() string {
 	str := "serverNodes: "
-	str += strings.Join(lo.Map(inp.serverNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	str += strings.Join(lo.Map(inp.serverNodes, func(nodeID gpa.NodeID, idx int) string { return nodeID.ShortString() }), ",")
 	str += " committeeNodes: "
-	str += strings.Join(lo.Map(inp.committeeNodes, func(nodeID gpa.NodeID, idx int) string { return string(nodeID) }), ",")
+	str += strings.Join(lo.Map(inp.committeeNodes, func(nodeID gpa.NodeID, idx int) string { return nodeID.ShortString() }), ",")
 	return str
 }
