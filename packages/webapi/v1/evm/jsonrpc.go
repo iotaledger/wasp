@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -71,7 +72,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 
 		nodePubKey := j.nodePubKey()
 		if nodePubKey == nil {
-			return nil, fmt.Errorf("node is not authenticated")
+			return nil, errors.New("node is not authenticated")
 		}
 
 		backend := jsonrpc.NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)

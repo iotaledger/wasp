@@ -1,6 +1,7 @@
 package isc
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -136,10 +137,10 @@ func (r *evmOffLedgerRequest) Nonce() uint64 {
 func (r *evmOffLedgerRequest) VerifySignature() error {
 	sender, err := evmutil.GetSender(r.tx)
 	if err != nil {
-		return fmt.Errorf("cannot verify Ethereum tx sender: %v", err)
+		return fmt.Errorf("cannot verify Ethereum tx sender: %w", err)
 	}
 	if sender != r.sender.EthAddress() {
-		return fmt.Errorf("sender mismatch in EVM off-ledger request")
+		return errors.New("sender mismatch in EVM off-ledger request")
 	}
 	return nil
 }
@@ -254,5 +255,5 @@ func (r *evmOffLedgerEstimateGasRequest) Nonce() uint64 {
 }
 
 func (r *evmOffLedgerEstimateGasRequest) VerifySignature() error {
-	return fmt.Errorf("evmOffLedgerEstimateGasRequest should never be used to send regular requests")
+	return errors.New("evmOffLedgerEstimateGasRequest should never be used to send regular requests")
 }

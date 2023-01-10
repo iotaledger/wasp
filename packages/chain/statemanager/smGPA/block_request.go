@@ -57,7 +57,7 @@ func newBlockRequestFromConsensusDecidedState(input *smInputs.ConsensusDecidedSt
 	result.respondFun = func(obtainStateFun obtainStateFun) {
 		state, err := obtainStateFun()
 		if err != nil {
-			result.log.Errorf("Error obtaining state: %v", err)
+			result.log.Errorf("error obtaining state: %w", err)
 			return
 		}
 		input.Respond(state)

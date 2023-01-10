@@ -6,8 +6,7 @@ package mostefaoui
 import (
 	"bytes"
 	"encoding"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -60,7 +59,7 @@ func (m *msgDone) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if msgType != msgTypeDone {
-		return xerrors.Errorf("expected msgTypeDone, got %v", msgType)
+		return fmt.Errorf("expected msgTypeDone, got %v", msgType)
 	}
 	var round uint16
 	if err := util.ReadUint16(r, &round); err != nil {

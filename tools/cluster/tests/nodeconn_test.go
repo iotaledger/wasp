@@ -75,7 +75,7 @@ func TestNodeConn(t *testing.T) {
 		testutil.NewPeeringNetReliable(networkLog),
 		networkLog,
 	)
-	t.Logf("Peering network created.")
+	t.Log("Peering network created.")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -141,7 +141,7 @@ func TestNodeConn(t *testing.T) {
 	err = client.RequestFunds(chainID.AsAddress())
 	require.NoError(t, err)
 
-	t.Logf("Waiting for outputs posted via tangle...")
+	t.Log("Waiting for outputs posted via tangle...")
 	oid := <-chainOICh
 	t.Logf("Waiting for outputs posted via tangle... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
 
@@ -158,7 +158,7 @@ func TestNodeConn(t *testing.T) {
 		cancelPublish()
 	})
 
-	t.Logf("Waiting for outputs posted via nodeConn...")
+	t.Log("Waiting for outputs posted via nodeConn...")
 	oid = <-chainOICh
 	t.Logf("Waiting for outputs posted via nodeConn... Done, have %v=%v", oid.ToHex(), chainOuts[oid])
 

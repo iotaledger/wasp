@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -92,7 +91,7 @@ func getNFTStateR(state kv.KVStoreReader) *collections.ImmutableMap {
 func GetMaxAssumedNonce(state kv.KVStoreReader, callerAgentID isc.AgentID) uint64 {
 	nonce, err := codec.DecodeUint64(state.MustGet(nonceKey(callerAgentID)), 0)
 	if err != nil {
-		panic(xerrors.Errorf("GetMaxAssumedNonce: %w", err))
+		panic(fmt.Errorf("GetMaxAssumedNonce: %w", err))
 	}
 	return nonce
 }
@@ -196,7 +195,7 @@ func DebitFromAccount(state kv.KVStore, agentID isc.AgentID, assets *isc.Fungibl
 	account := getAccount(state, agentID)
 
 	if !debitFromAccount(account, assets) {
-		panic(xerrors.Errorf("debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
+		panic(fmt.Errorf("debit from %s: %v\nassets: %s", agentID, ErrNotEnoughFunds, assets))
 	}
 	if !debitFromAccount(getTotalL2AssetsAccount(state), assets) {
 		panic("debitFromAccount: inconsistent ledger state")
@@ -310,7 +309,7 @@ func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, f
 
 func MustMoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID isc.AgentID, fungibleTokens *isc.FungibleTokens, nfts []iotago.NFTID) {
 	if !MoveBetweenAccounts(state, fromAgentID, toAgentID, fungibleTokens, nfts) {
-		panic(xerrors.Errorf(" agentID: %s. %v. fungibleTokens: %s, nfts: %s", fromAgentID, ErrNotEnoughFunds, fungibleTokens, nfts))
+		panic(fmt.Errorf(" agentID: %s. %v. fungibleTokens: %s, nfts: %s", fromAgentID, ErrNotEnoughFunds, fungibleTokens, nfts))
 	}
 }
 
@@ -401,7 +400,7 @@ func calcL2TotalAssets(state kv.KVStoreReader) *isc.FungibleTokens {
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := isc.AgentIDFromBytes(key)
 		if err != nil {
-			panic(xerrors.Errorf("calcL2TotalAssets: %w", err))
+			panic(fmt.Errorf("calcL2TotalAssets: %w", err))
 		}
 		accBalances := getAccountAssets(getAccountR(state, agentID))
 		ret.Add(accBalances)
@@ -450,7 +449,7 @@ func calcL2TotalNFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := isc.AgentIDFromBytes(key)
 		if err != nil {
-			panic(xerrors.Errorf("calcL2TotalAssets: %w", err))
+			panic(fmt.Errorf("calcL2TotalAssets: %w", err))
 		}
 		accNFTs := getAccountNFTs(getAccountR(state, agentID))
 		for _, nft := range accNFTs {
@@ -823,7 +822,7 @@ func GetStorageDepositAssumptions(state kv.KVStoreReader) *transaction.StorageDe
 	bin := state.MustGet(kv.Key(stateVarMinimumStorageDepositAssumptionsBin))
 	ret, err := transaction.StorageDepositAssumptionFromBytes(bin)
 	if err != nil {
-		panic(xerrors.Errorf("GetStorageDepositAssumptions: internal: %v", err))
+		panic(fmt.Errorf("GetStorageDepositAssumptions: internal: %w", err))
 	}
 	return ret
 }

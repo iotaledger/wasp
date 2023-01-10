@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -177,7 +176,7 @@ func TestRotationFromSingle(t *testing.T) {
 	go func() {
 		keyPair, _, err := clu.NewKeyPairWithFunds()
 		if err != nil {
-			incCounterResultChan <- fmt.Errorf("Failed to create a key pair: %v", err)
+			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err)
 			return
 		}
 		myClient := chain.SCClient(nativeIncCounterSCHname, keyPair)
@@ -185,7 +184,7 @@ func TestRotationFromSingle(t *testing.T) {
 			t.Logf("Posting inccounter request number %v", i)
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 			if err != nil {
-				incCounterResultChan <- fmt.Errorf("Failed to post inccounter request number %v: %v", i, err)
+				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err)
 				return
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -218,7 +217,7 @@ func TestRotationFromSingle(t *testing.T) {
 	case incCounterResult := <-incCounterResultChan:
 		require.NoError(t, incCounterResult)
 	case <-time.After(20 * time.Second):
-		t.Fatalf("Timeout waiting incCounterResult")
+		t.Fatal("Timeout waiting incCounterResult")
 	}
 
 	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 30*time.Second)
@@ -320,7 +319,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		var a iotago.Address
 		a, err = e.callGetStateController(nodeIndex)
 		if err != nil {
-			e.t.Logf("Error received while waiting state controller change to %s in node %v", addr, nodeIndex)
+			e.t.Logf("Error received while waiting state controller change to %s in node %d", addr, nodeIndex)
 			return false
 		}
 		return a.Equal(addr)
@@ -329,7 +328,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr iotago.Address, timeo
 		return err
 	}
 	if !result {
-		return xerrors.New(fmt.Sprintf("Timeout waiting state controller change to %s in node %v", addr, nodeIndex))
+		return fmt.Errorf("timeout waiting state controller change to %s in node %d", addr, nodeIndex)
 	}
 	return nil
 }
@@ -352,7 +351,7 @@ func (e *ChainEnv) callGetStateController(nodeIndex int) (iotago.Address, error)
 func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr iotago.Address) error {
 	for _, i := range e.Chain.AllPeers {
 		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
-			return fmt.Errorf("State controller address %s is not allowed in node %v", addr, i)
+			return fmt.Errorf("state controller address %s is not allowed in node %d", addr, i)
 		}
 	}
 	return nil

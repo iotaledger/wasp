@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -10,12 +10,12 @@ import (
 func DecodeAddress(b []byte, def ...iotago.Address) (iotago.Address, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return nil, xerrors.Errorf("cannot decode nil bytes")
+			return nil, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}
 	if len(b) == 0 {
-		return nil, xerrors.Errorf("cannot decode address from empty byte slice")
+		return nil, errors.New("cannot decode address from empty byte slice")
 	}
 	typeByte := b[0]
 	addr, err := iotago.AddressSelector(uint32(typeByte))

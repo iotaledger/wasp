@@ -144,7 +144,7 @@ func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, erro
 
 	// load chain records on startup
 	if err := registry.loadConsensusStateJSONsFromFolder(); err != nil {
-		return nil, fmt.Errorf("unable to read chain records configuration (%s): %s", folderPath, err)
+		return nil, fmt.Errorf("unable to read chain records configuration (%s): %w", folderPath, err)
 	}
 
 	registry.onChangeMap.CallbacksEnabled(true)

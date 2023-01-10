@@ -31,7 +31,7 @@ func (bmT *BlockMessage) MarshalBinary() (data []byte, err error) {
 
 func (bmT *BlockMessage) UnmarshalBinary(data []byte) error {
 	if data[0] != MsgTypeBlockMessage {
-		return fmt.Errorf("Error creating block message from bytes: wrong message type %v", data[0])
+		return fmt.Errorf("error creating block message from bytes: wrong message type %v", data[0])
 	}
 	var err error
 	bmT.block, err = state.BlockFromBytes(data[1:])

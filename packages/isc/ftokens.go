@@ -2,10 +2,9 @@ package isc
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/big"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -57,7 +56,7 @@ func FungibleTokensFromDict(d dict.Dict) (*FungibleTokens, error) {
 		}
 		id, err := NativeTokenIDFromBytes([]byte(key))
 		if err != nil {
-			return nil, xerrors.Errorf("FungibleTokensFromDict: %w", err)
+			return nil, fmt.Errorf("FungibleTokensFromDict: %w", err)
 		}
 		token := &iotago.NativeToken{
 			ID:     id,
@@ -98,7 +97,7 @@ func FungibleTokensFromOutput(o iotago.Output) *FungibleTokens {
 
 func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 	if len(data) != iotago.NativeTokenIDLength {
-		return iotago.NativeTokenID{}, xerrors.New("NativeTokenIDFromBytes: wrong data length")
+		return iotago.NativeTokenID{}, errors.New("NativeTokenIDFromBytes: wrong data length")
 	}
 	var nativeTokenID iotago.NativeTokenID
 	copy(nativeTokenID[:], data)
@@ -108,7 +107,7 @@ func NativeTokenIDFromBytes(data []byte) (iotago.NativeTokenID, error) {
 func MustNativeTokenIDFromBytes(data []byte) iotago.NativeTokenID {
 	ret, err := NativeTokenIDFromBytes(data)
 	if err != nil {
-		panic(xerrors.Errorf("MustNativeTokenIDFromBytes: %w", err))
+		panic(fmt.Errorf("MustNativeTokenIDFromBytes: %w", err))
 	}
 	return ret
 }

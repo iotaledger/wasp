@@ -31,7 +31,7 @@ var deployContractCmd = &cobra.Command{
 
 		switch vmtype {
 		case vmtypes.Core:
-			log.Fatalf("cannot manually deploy core contracts")
+			log.Fatal("cannot manually deploy core contracts")
 
 		case vmtypes.Native:
 			var err error

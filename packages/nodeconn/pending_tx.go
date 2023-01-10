@@ -118,7 +118,7 @@ func (tx *pendingTransaction) WaitUntilConfirmed() error {
 	}
 
 	if !tx.Confirmed() {
-		return fmt.Errorf("context was canceled but transaction was not confirmed: %s, error: %s", tx.transactionID.ToHex(), tx.ctx.Err())
+		return fmt.Errorf("context was canceled but transaction was not confirmed: %s, error: %w", tx.transactionID.ToHex(), tx.ctx.Err())
 	}
 
 	// transaction was confirmed

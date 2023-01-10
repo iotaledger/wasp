@@ -1,9 +1,8 @@
 package codec
 
 import (
+	"errors"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -11,7 +10,7 @@ import (
 func DecodeTime(b []byte, def ...time.Time) (time.Time, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return time.Time{}, xerrors.Errorf("cannot decode nil bytes")
+			return time.Time{}, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

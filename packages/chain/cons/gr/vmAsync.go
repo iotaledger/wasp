@@ -5,8 +5,7 @@ package consGR
 
 import (
 	"context"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -29,7 +28,7 @@ func (vma *vmAsync) ConsensusRunTask(ctx context.Context, task *vm.VMTask) <-cha
 
 func (vma *vmAsync) run(task *vm.VMTask, respCh chan *vm.VMTask) {
 	if err := vma.runner.Run(task); err != nil {
-		panic(xerrors.Errorf("error running the VM:  %w", err))
+		panic(fmt.Errorf("error running the VM:  %w", err))
 	}
 	respCh <- task
 }

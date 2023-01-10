@@ -41,7 +41,7 @@ func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (
 
 	// load DKShares on startup
 	if err := registry.loadDKSharesJSONFromFolder(nodePrivKey); err != nil {
-		return nil, fmt.Errorf("unable to read DKShares configuration (%s): %s", folderPath, err)
+		return nil, fmt.Errorf("unable to read DKShares configuration (%s): %w", folderPath, err)
 	}
 
 	registry.onChangeMap.CallbacksEnabled(true)

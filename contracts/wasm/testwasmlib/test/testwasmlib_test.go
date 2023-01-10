@@ -4,6 +4,7 @@
 package test
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -511,7 +512,7 @@ func getNftID(ctx *wasmsolo.SoloContext) (iotago.NFTID, error) {
 	agent := ctx.NewSoloAgent()
 	addr, ok := isc.AddressFromAgentID(agent.AgentID())
 	if !ok {
-		return iotago.NFTID{}, fmt.Errorf("can't get address from AgentID")
+		return iotago.NFTID{}, errors.New("can't get address from AgentID")
 	}
 	_, nftInfo, err := ctx.Chain.Env.MintNFTL1(agent.Pair, addr, []byte("test data"))
 	if err != nil {

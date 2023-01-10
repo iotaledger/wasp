@@ -16,7 +16,6 @@ import (
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/suites"
 	"go.dedis.ch/kyber/v3/util/key"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -80,10 +79,10 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 			}
 		}
 		if dkgImpl[keySetTypeEd25519], err = rabin_dkg.NewDistKeyGenerator(node.edSuite, node.edSuite, node.secKey, kyberPeerPubs, int(msg.threshold)); err != nil {
-			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
+			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 		if dkgImpl[keySetTypeBLS], err = rabin_dkg.NewDistKeyGenerator(node.blsSuite, node.edSuite, node.secKey, kyberPeerPubs, blsThreshold); err != nil {
-			return nil, xerrors.Errorf("failed to instantiate DistKeyGenerator: %w", err)
+			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
 	p := proc{
@@ -208,9 +207,9 @@ func (p *proc) processLoop(timeout time.Duration, doneCh chan multiKeySetMsgs) {
 			}
 			if p.node.dropProcess(p) {
 				if done {
-					p.log.Debugf("Deleting completed DkgProc.")
+					p.log.Debug("Deleting completed DkgProc.")
 				} else {
-					p.log.Warnf("Deleting non-completed a DkgProc on timeout.")
+					p.log.Warn("Deleting non-completed a DkgProc on timeout.")
 				}
 			}
 			return
@@ -303,7 +302,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	for i := range prevMsgs {
 		peerResponseMsg := rabinResponseMsg{}
 		if err = peerResponseMsg.fromBytes(prevMsgs[i].MsgData); err != nil {
-			err = fmt.Errorf("Response: decoding failed: %v", err)
+			err = fmt.Errorf("Response: decoding failed: %w", err)
 			return nil, err
 		}
 		recvResponses[i] = &peerResponseMsg
@@ -354,7 +353,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	for i := range prevMsgs {
 		peerJustificationMsg := rabinJustificationMsg{}
 		if err = peerJustificationMsg.fromBytes(prevMsgs[i].MsgData, p.keySetSuite(kst)); err != nil {
-			return nil, fmt.Errorf("Justification: decoding failed: %v", err)
+			return nil, fmt.Errorf("Justification: decoding failed: %w", err)
 		}
 		recvJustifications[i] = &peerJustificationMsg
 	}
@@ -365,7 +364,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		for _, j := range recvJustifications[i].justifications {
 			if err = p.dkgImpl[kst].ProcessJustification(j); err != nil {
 				p.dkgLock.Unlock()
-				return nil, fmt.Errorf("Justification: processing failed: %v", err)
+				return nil, fmt.Errorf("Justification: processing failed: %w", err)
 			}
 		}
 	}
@@ -377,7 +376,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	p.dkgImpl[kst].SetTimeout()
 	if !p.dkgImpl[kst].Certified() {
 		p.dkgLock.Unlock()
-		return nil, fmt.Errorf("node not certified")
+		return nil, errors.New("node not certified")
 	}
 	p.dkgLock.Unlock()
 	thisInQual := p.nodeInQUAL(kst, p.nodeIndex)
@@ -386,7 +385,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		p.dkgLock.Lock()
 		if ourSecretCommits, err = p.dkgImpl[kst].SecretCommits(); err != nil {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("SecretCommits: generation failed: %v", err)
+			return nil, fmt.Errorf("SecretCommits: generation failed: %w", err)
 		}
 		p.dkgLock.Unlock()
 	}
@@ -585,11 +584,11 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		p.dkgLock.Lock()
 		if !p.dkgImpl[keySetTypeEd25519].Finished() {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("DKG procedure is not finished")
+			return nil, errors.New("DKG procedure is not finished")
 		}
 		if !p.dkgImpl[keySetTypeBLS].Finished() {
 			p.dkgLock.Unlock()
-			return nil, fmt.Errorf("DKG procedure is not finished")
+			return nil, errors.New("DKG procedure is not finished")
 		}
 		var distKeyShareDSS *rabin_dkg.DistKeyShare
 		var distKeyShareBLS *rabin_dkg.DistKeyShare

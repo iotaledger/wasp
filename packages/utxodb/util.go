@@ -1,7 +1,7 @@
 package utxodb
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -26,7 +26,7 @@ func GetSingleChainedAliasOutput(tx *iotago.Transaction) (*iotago.AliasOutput, i
 	if count == 0 {
 		return nil, iotago.OutputID{}, nil
 	} else if count > 1 {
-		return nil, iotago.OutputID{}, xerrors.New("more than one chained output was found")
+		return nil, iotago.OutputID{}, errors.New("more than one chained output was found")
 	}
 	return rOutput, rID, nil
 }

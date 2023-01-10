@@ -24,7 +24,7 @@ func ParseFungibleTokens(args []string) *isc.FungibleTokens {
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
-			log.Fatalf("fungible tokens syntax: <token-id>:<amount>, <token-id:amount>... -- Example: base:100")
+			log.Fatal("fungible tokens syntax: <token-id>:<amount>, <token-id:amount>... -- Example: base:100")
 		}
 		// In the past we would indicate base tokens as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
@@ -36,7 +36,7 @@ func ParseFungibleTokens(args []string) *isc.FungibleTokens {
 
 		amount, ok := new(big.Int).SetString(parts[1], 10)
 		if !ok {
-			log.Fatalf("error parsing token amount")
+			log.Fatal("error parsing token amount")
 		}
 
 		if isc.IsBaseToken(tokenIDBytes) {

@@ -5,8 +5,7 @@ package acss
 
 import (
 	"bytes"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
@@ -54,7 +53,7 @@ func (m *msgVote) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	if t != msgTypeVote {
-		return xerrors.Errorf("unexpected msgType: %v in acss.msgVote", t)
+		return fmt.Errorf("unexpected msgType: %v in acss.msgVote", t)
 	}
 	k, err := util.ReadByte(r)
 	if err != nil {

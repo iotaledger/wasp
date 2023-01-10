@@ -6,8 +6,6 @@ import (
 	"os"
 	"runtime/debug"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/kv"
 )
@@ -53,7 +51,7 @@ func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err err
 			case error:
 				err = err1
 			default:
-				err = xerrors.Errorf("%s%v", s, err1)
+				err = fmt.Errorf("%s%v", s, err1)
 			}
 			log.Debugf("%s%v", s, err)
 			log.Debugf(string(debug.Stack()))
@@ -72,7 +70,7 @@ func CatchPanic(f func()) (err error) {
 			}
 			var ok bool
 			if err, ok = r.(error); !ok {
-				err = xerrors.Errorf("%v", r)
+				err = fmt.Errorf("%v", r)
 			}
 			if os.Getenv("DEBUG") != "" {
 				fmt.Println(string(debug.Stack()))
@@ -104,7 +102,7 @@ func CatchAllExcept(f func(), exceptErrors ...error) (err error) {
 				}
 				err = recoveredError
 			} else {
-				err = xerrors.Errorf("%v", r)
+				err = fmt.Errorf("%v", r)
 			}
 		}()
 		f()

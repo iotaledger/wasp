@@ -5,8 +5,6 @@ import (
 	"math/big"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -44,7 +42,7 @@ func (p *kvdecoder) wrapError(key kv.Key, err error) error {
 	if err == nil {
 		return nil
 	}
-	return xerrors.Errorf("cannot decode key '%s': %w", key, err)
+	return fmt.Errorf("cannot decode key '%s': %w", key, err)
 }
 
 func (p *kvdecoder) GetInt16(key kv.Key, def ...int16) (int16, error) {

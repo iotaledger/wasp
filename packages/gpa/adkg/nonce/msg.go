@@ -4,7 +4,7 @@
 package nonce
 
 import (
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -12,11 +12,11 @@ import (
 func (n *nonceDKGImpl) subsystemFunc(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == msgWrapperACSS {
 		if index < 0 || index >= len(n.acss) {
-			return nil, xerrors.Errorf("unexpected acss index: %v", index)
+			return nil, fmt.Errorf("unexpected acss index: %v", index)
 		}
 		return n.acss[index], nil
 	}
-	return nil, xerrors.Errorf("unexpected subsystem: %v", subsystem)
+	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
 func (n *nonceDKGImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {

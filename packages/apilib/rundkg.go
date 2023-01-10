@@ -4,10 +4,10 @@
 package apilib
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -25,7 +25,7 @@ func RunDKG(authToken string, apiHosts, peerPubKeys []string, threshold, initiat
 		}
 	}
 	if int(initiatorIndex) >= len(apiHosts) {
-		return nil, xerrors.New("RunDKG: wrong initiator index")
+		return nil, errors.New("RunDKG: wrong initiator index")
 	}
 	dkShares, err := client.NewWaspClient(apiHosts[initiatorIndex]).WithToken(authToken).DKSharesPost(&model.DKSharesPostRequest{
 		PeerPubKeys: peerPubKeys,
@@ -37,7 +37,7 @@ func RunDKG(authToken string, apiHosts, peerPubKeys []string, threshold, initiat
 	}
 	_, addr, err := iotago.ParseBech32(dkShares.Address)
 	if err != nil {
-		return nil, xerrors.Errorf("RunDKG: invalid address returned from DKG: %w", err)
+		return nil, fmt.Errorf("RunDKG: invalid address returned from DKG: %w", err)
 	}
 
 	return addr, nil

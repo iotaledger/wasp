@@ -75,8 +75,6 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/cmtLog"
@@ -211,7 +209,7 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgCL, ok := msg.(*msgCmtLog)
 	if !ok {
-		panic(xerrors.Errorf("unexpected message %T: %+v", msg, msg))
+		panic(fmt.Errorf("unexpected message %T: %+v", msg, msg))
 	}
 	return cmi.handleMsgCmtLog(msgCL)
 }
@@ -408,7 +406,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		return
 	}
 	if err != nil {
-		panic(xerrors.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", committeeAddress, err))
+		panic(fmt.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", committeeAddress, err))
 	}
 	cmi.needConsensus = &NeedConsensus{
 		CommitteeAddr:   cli.committeeAddr,
@@ -475,12 +473,12 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr iotago.Ed25519Address) (*cmt
 		return nil, nil, ErrNotInCommittee
 	}
 	if err != nil {
-		return nil, nil, xerrors.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
+		return nil, nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
 	clInst, err := cmtLog.New(cmi.me, cmi.chainID, dkShare, cmi.consensusStateRegistry, cmi.nodeIDFromPubKey, cmi.log)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
+		return nil, nil, fmt.Errorf("cannot create cmtLog for committeeAddress=%v: %w", committeeAddr, err)
 	}
 	clGPA := clInst.AsGPA()
 	cli := &cmtLogInst{

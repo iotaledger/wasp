@@ -1,6 +1,7 @@
 package chainutil
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -42,7 +43,7 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 		return nil, err
 	}
 	if len(task.Results) == 0 {
-		return nil, fmt.Errorf("request was skipped")
+		return nil, errors.New("request was skipped")
 	}
 	return task.Results[0], nil
 }
@@ -88,7 +89,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 			}
 			vmerr, resolvingErr := ResolveError(ch, res.Receipt.Error)
 			if resolvingErr != nil {
-				panic(fmt.Errorf("error resolving vmerror %v", resolvingErr))
+				panic(fmt.Errorf("error resolving vmerror %w", resolvingErr))
 			}
 			if evmErrorsRegex.Match([]byte(vmerr.Error())) {
 				// increase gas

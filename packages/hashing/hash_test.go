@@ -25,10 +25,10 @@ func TestHashValueFromString(t *testing.T) {
 	h1 := HashStrings("test string")
 	h2, e := HashValueFromHex(h1.String())
 	if e != nil {
-		t.Fatalf("error occurs")
+		t.Fatal("error occurs")
 	}
 	if h2 != h1 {
-		t.Fatalf("error occurs")
+		t.Fatal("error occurs")
 	}
 }
 
@@ -36,7 +36,7 @@ func TestHashData(t *testing.T) {
 	bytes := []byte{0, 1, 2, 3}
 	h := HashData(bytes)
 	if reflect.TypeOf(NilHash) != reflect.TypeOf(h) {
-		t.Fatalf("failed to hash bytes array")
+		t.Fatal("failed to hash bytes array")
 	}
 }
 

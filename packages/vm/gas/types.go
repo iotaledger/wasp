@@ -1,6 +1,6 @@
 package gas
 
-import "golang.org/x/xerrors"
+import "errors"
 
 type BurnCode uint16
 
@@ -13,7 +13,7 @@ type BurnCodeRecord struct {
 
 type BurnTable map[BurnCode]BurnCodeRecord
 
-var ErrUnknownBurnCode = xerrors.New("unknown gas burn code")
+var ErrUnknownBurnCode = errors.New("unknown gas burn code")
 
 func (c BurnCode) Name() string {
 	r, ok := burnTable[c]
