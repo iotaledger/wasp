@@ -15,9 +15,9 @@ import (
 type NodeID [32]byte
 
 func NodeIDFromPublicKey(pubKey *cryptolib.PublicKey) NodeID {
-	nodeId := NodeID{}
-	copy(nodeId[:], pubKey.AsBytes())
-	return nodeId
+	nodeID := NodeID{}
+	copy(nodeID[:], pubKey.AsBytes())
+	return nodeID
 }
 
 func NodeIDsFromPublicKeys(pubKeys []*cryptolib.PublicKey) []NodeID {
@@ -37,7 +37,7 @@ func (niT NodeID) String() string {
 }
 
 func (niT NodeID) ShortString() string {
-	return strings.TrimPrefix(iotago.EncodeHex(niT[:6]), "0x")
+	return strings.TrimPrefix(iotago.EncodeHex(niT[:8]), "0x")
 }
 
 type Message interface {

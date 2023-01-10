@@ -257,6 +257,6 @@ func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format 
 		return bytes.Compare(keys[i][:], keys[j][:]) < 0
 	})
 	for _, nidStr := range keys {
-		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[NodeID(nidStr)].StatusString())
+		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[nidStr].StatusString())
 	}
 }

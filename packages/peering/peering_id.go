@@ -31,8 +31,6 @@ func RandomPeeringID(seed ...[]byte) PeeringID {
 }
 
 // HashPeeringIDFromBytes generates a PeeringID by concatenating all the given data and hash with Blake2b 256.
-//
-//nolint:revive
 func HashPeeringIDFromBytes(src []byte, additional ...[]byte) PeeringID {
 	hashed := hashing.HashDataBlake2b(append([][]byte{src}, additional...)...)
 	pid := PeeringID{}
