@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -135,8 +134,7 @@ func New(
 	log *logger.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()
-	consInstID := hashing.HashDataBlake2b(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // Chain × Committee × LogIndex
-	netPeeringID := peering.PeeringIDFromBytes(consInstID.Bytes())
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
 	netPeerPubs := map[gpa.NodeID]*cryptolib.PublicKey{}
 	for _, peerPubKey := range dkShare.GetNodePubKeys() {
 		netPeerPubs[pubKeyAsNodeID(peerPubKey)] = peerPubKey
@@ -162,7 +160,7 @@ func New(
 		ctx:               ctx,
 		log:               log,
 	}
-	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, consInstID.Bytes(), pubKeyAsNodeID, log).AsGPA()
+	constInstRaw := cons.New(chainID, chainStore, me, myNodeIdentity.GetPrivateKey(), dkShare, procCache, netPeeringID[:], pubKeyAsNodeID, log).AsGPA()
 	cgr.consInst = gpa.NewAckHandler(me, constInstRaw, redeliveryPeriod)
 
 	netRecvPipeInCh := cgr.netRecvPipe.In()

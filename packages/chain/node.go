@@ -237,7 +237,7 @@ func New(
 	if accessNodesFromNode == nil {
 		accessNodesFromNode = []*cryptolib.PublicKey{}
 	}
-	netPeeringID := peering.PeeringIDFromBytes(append(chainID.Bytes(), []byte("ChainMgr")...))
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("ChainManager")) // ChainID × ChainManager
 	cni := &chainNodeImpl{
 		nodeIdentity:           nodeIdentity,
 		chainID:                chainID,

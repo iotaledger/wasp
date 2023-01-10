@@ -67,7 +67,8 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) AccessMgr {
-	netPeeringID := peering.PeeringIDFromBytes([]byte("AccessMgr"))
+	// there is only one AccessMgr per Wasp node, so the identifier is a constant.
+	netPeeringID := peering.HashPeeringIDFromBytes([]byte("AccessManager")) // AccessManager
 	ami := &accessMgrImpl{
 		dismissPeerBuf:          []*cryptolib.PublicKey{},
 		reqTrustedNodesPipe:     pipe.NewDefaultInfinitePipe(),

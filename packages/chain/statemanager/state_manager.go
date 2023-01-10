@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/smUtils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -96,7 +95,7 @@ func New(
 		messagePipe:     pipe.NewDefaultInfinitePipe(),
 		nodePubKeysPipe: pipe.NewDefaultInfinitePipe(),
 		net:             net,
-		netPeeringID:    peering.PeeringIDFromBytes(hashing.HashDataBlake2b(chainID.Bytes(), []byte("STM")).Bytes()),
+		netPeeringID:    peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
 		timers:          timers,
 		ctx:             ctx,
 	}
