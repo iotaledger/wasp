@@ -101,7 +101,8 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestDeployErc721Too(t *testing.T) {
-	*wasmsolo.RsWasm = true
+	//NOTE: when trying to crash a node using WasmTime we need to run some Wasm code
+	//*wasmsolo.RsWasm = true
 	ctx := setupTest(t)
 	require.NoError(t, ctx.Err)
 	require.NoError(t, ctx.ContractExists(testwasmlib.ScName))
@@ -127,7 +128,7 @@ func TestDeployErc721Too(t *testing.T) {
 	require.NoError(t, ctxErc721.Err)
 	require.EqualValues(t, oo.Results.Owner().Value(), ctxErc721.ChainOwnerID())
 
-	// TODO: this post() can bring a node down when reactivating the commented out line
+	// NOTE: this post() can bring a node down when reactivating the commented out line
 	// in WasmTimeVM.RunScFunction() because it triggers a Rust panic() in the WasmTime code.
 	// We need to find out how to catch such an error from within Go.
 	// Note that this post() triggers a call() to an Erc721 view, which then triggers the
