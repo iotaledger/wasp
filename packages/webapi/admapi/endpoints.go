@@ -45,7 +45,7 @@ func AddEndpoints(
 	authentication.AddAuthentication(adm.EchoGroup(), userManager, nodeIdentityProvider, authConfig, claimValidator)
 	addShutdownEndpoint(adm, shutdown)
 	addNodeOwnerEndpoints(adm, nodeIdentityProvider, nodeOwnerAddresses)
-	addChainRecordEndpoints(adm, chainRecordRegistryProvider)
+	addChainRecordEndpoints(adm, chainRecordRegistryProvider, chainsProvider)
 	addChainMetricsEndpoints(adm, chainsProvider)
 	addChainEndpoints(adm, &chainWebAPI{
 		chainRecordRegistryProvider: chainRecordRegistryProvider,

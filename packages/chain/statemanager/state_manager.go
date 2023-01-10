@@ -32,7 +32,13 @@ type StateMgr interface {
 	) <-chan *smInputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
-	ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey)
+	ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey)
+}
+
+type reqChainNodesUpdated struct {
+	serverNodes    []*cryptolib.PublicKey
+	accessNodes    []*cryptolib.PublicKey
+	committeeNodes []*cryptolib.PublicKey
 }
 
 type stateManager struct {
@@ -43,7 +49,7 @@ type stateManager struct {
 	nodeIDToPubKey  map[gpa.NodeID]*cryptolib.PublicKey
 	inputPipe       pipe.Pipe[gpa.Input]
 	messagePipe     pipe.Pipe[*peering.PeerMessageIn]
-	nodePubKeysPipe pipe.Pipe[[]*cryptolib.PublicKey]
+	nodePubKeysPipe pipe.Pipe[*reqChainNodesUpdated]
 	net             peering.NetworkProvider
 	netPeeringID    peering.PeeringID
 	timers          smGPA.StateManagerTimers
@@ -72,8 +78,7 @@ func New(
 	log *logger.Logger,
 	timersOpt ...smGPA.StateManagerTimers,
 ) (StateMgr, error) {
-	smLog := log.Named("sm")
-	nr := smUtils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
+	nr := smUtils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), log)
 	var timers smGPA.StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -81,25 +86,29 @@ func New(
 		timers = smGPA.NewStateManagerTimers()
 	}
 
-	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, smLog, timers)
+	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, log, timers)
 	if err != nil {
-		smLog.Errorf("Failed to create state manager GPA: %v", err)
+		log.Errorf("Failed to create state manager GPA: %v", err)
 		return nil, err
 	}
 	result := &stateManager{
-		log:             smLog,
+		log:             log,
 		chainID:         chainID,
 		stateManagerGPA: stateManagerGPA,
 		nodeRandomiser:  nr,
 		inputPipe:       pipe.NewInfinitePipe[gpa.Input](),
 		messagePipe:     pipe.NewInfinitePipe[*peering.PeerMessageIn](),
-		nodePubKeysPipe: pipe.NewInfinitePipe[[]*cryptolib.PublicKey](),
+		nodePubKeysPipe: pipe.NewInfinitePipe[*reqChainNodesUpdated](),
 		net:             net,
 		netPeeringID:    peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("StateManager")), // ChainID × StateManager
 		timers:          timers,
 		ctx:             ctx,
 	}
-	result.handleNodePublicKeys(peerPubKeys)
+	result.handleNodePublicKeys(&reqChainNodesUpdated{
+		serverNodes:    peerPubKeys,
+		accessNodes:    []*cryptolib.PublicKey{},
+		committeeNodes: []*cryptolib.PublicKey{},
+	})
 
 	attachID := result.net.Attach(&result.netPeeringID, peering.PeerMessageReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
@@ -129,8 +138,12 @@ func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAO, nextAO
 	return resultCh
 }
 
-func (smT *stateManager) ChainServerNodesUpdated(serverNodePubKeys []*cryptolib.PublicKey) {
-	smT.nodePubKeysPipe.In() <- serverNodePubKeys
+func (smT *stateManager) ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey) {
+	smT.nodePubKeysPipe.In() <- &reqChainNodesUpdated{
+		serverNodes:    serverNodes,
+		accessNodes:    accessNodes,
+		committeeNodes: committeeNodes,
+	}
 }
 
 // -------------------------------------
@@ -225,13 +238,31 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 	smT.sendMessages(outMsgs)
 }
 
-func (smT *stateManager) handleNodePublicKeys(peerPubKeys []*cryptolib.PublicKey) {
-	smT.nodeIDToPubKey = make(map[gpa.NodeID]*cryptolib.PublicKey)
-	peerNodeIDs := make([]gpa.NodeID, len(peerPubKeys))
-	for i := range peerPubKeys {
-		peerNodeIDs[i] = gpa.NodeIDFromPublicKey(peerPubKeys[i])
-		smT.nodeIDToPubKey[peerNodeIDs[i]] = peerPubKeys[i]
+func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
+	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
+	peerNodeIDs := []gpa.NodeID{}
+	for _, pubKey := range req.serverNodes {
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			peerNodeIDs = append(peerNodeIDs, nodeID)
+		}
 	}
+	for _, pubKey := range req.accessNodes {
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			// Don't use access nodes for queries.
+		}
+	}
+	for _, pubKey := range req.committeeNodes {
+		nodeID := gpa.NodeIDFromPublicKey(pubKey)
+		if _, ok := smT.nodeIDToPubKey[nodeID]; !ok {
+			smT.nodeIDToPubKey[nodeID] = pubKey
+			peerNodeIDs = append(peerNodeIDs, nodeID)
+		}
+	}
+
 	smT.log.Infof("Updating list of nodeIDs: [%v]",
 		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
 			return acc + " " + item.ShortString()
@@ -260,6 +291,11 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 			MsgType:     constMsgTypeStm,
 			MsgData:     msgData,
 		}
-		smT.net.SendMsgByPubKey(smT.nodeIDToPubKey[msg.Recipient()], pm)
+		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
+		if !ok {
+			smT.log.Debugf("Dropping outgoing message, because NodeID=%v it is not in the NodeList.", msg.Recipient())
+			return
+		}
+		smT.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }

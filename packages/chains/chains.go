@@ -240,7 +240,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		c.chainListener,
 		chainRecord.AccessNodes,
 		c.networkProvider,
-		c.log,
+		c.log.Named(chainID.ShortString()),
 	)
 	if err != nil {
 		chainCancel()

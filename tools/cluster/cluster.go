@@ -19,7 +19,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/samber/lo"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
@@ -32,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/l1connection"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -230,8 +228,9 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	chain.StateAddress = stateAddr
 	chain.ChainID = chainID
 
-	accessNodes, _ := lo.Difference(allPeers, committeeNodes)
-	return chain, clu.addAllAccessNodes(chain, accessNodes)
+	// After a rotation other nodes can become access nodes,
+	// so we make all of the nodes possible access nodes.
+	return chain, clu.addAllAccessNodes(chain, allPeers)
 }
 
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
@@ -279,31 +278,6 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return err
-	}
-
-	// add the committee nodes to the chainRecord of the access nodes (so they know where to send messages to)
-	// TODO this might be deprecated once we automate the process of linking peers to a chain
-	{
-		cmtNodesPubKeys := make([]*cryptolib.PublicKey, len(chain.CommitteeNodes))
-		for i, nodeIndex := range chain.CommitteeNodes {
-			nodeInfo, err := clu.WaspClient(nodeIndex).GetPeeringSelf()
-			if err != nil {
-				return err
-			}
-			cmtNodesPubKeys[i], err = cryptolib.NewPublicKeyFromString(nodeInfo.PubKey)
-			if err != nil {
-				return err
-			}
-		}
-
-		for _, a := range accessNodes {
-			waspClient := clu.WaspClient(a)
-			record := registry.NewChainRecord(chain.ChainID, true, cmtNodesPubKeys)
-			err = waspClient.PutChainRecord(record)
-			if err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil

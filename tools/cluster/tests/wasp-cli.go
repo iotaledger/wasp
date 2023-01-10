@@ -40,17 +40,17 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
-	w.Run("init")
+	w.MustRun("init")
 
-	w.Run("set", "l1.apiAddress", clu.Config.L1.APIAddress)
-	w.Run("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
+	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIAddress)
+	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetAddress)
 	for _, node := range clu.Config.AllNodes() {
-		w.Run("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
-		w.Run("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
-		w.Run("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
+		w.MustRun("set", fmt.Sprintf("wasp.%d.api", node), clu.Config.APIHost(node))
+		w.MustRun("set", fmt.Sprintf("wasp.%d.nanomsg", node), clu.Config.NanomsgHost(node))
+		w.MustRun("set", fmt.Sprintf("wasp.%d.peering", node), clu.Config.PeeringHost(node))
 	}
 
-	requestFundstext := w.Run("request-funds")
+	requestFundstext := w.MustRun("request-funds")
 	// regex example: Request funds for address atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx: success
 	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*([a-z]{1,4}1[a-z0-9]{59}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
@@ -71,7 +71,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	return w
 }
 
-func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
+func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error) {
 	// -w: wait for requests
 	// -d: debug output
 	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...) //nolint:gosec
@@ -91,13 +91,11 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		panic(
-			fmt.Errorf(
-				"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
-				strings.Join(args, " "),
-				err,
-				outStr+errStr,
-			),
+		return nil, fmt.Errorf(
+			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
+			strings.Join(args, " "),
+			err,
+			outStr+errStr,
 		)
 	}
 	outStr = strings.Replace(outStr, "\r", "", -1)
@@ -107,17 +105,25 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 	for _, outLine := range outLines {
 		w.T.Logf("OUTPUT: %v", outLine)
 	}
-	return outLines
+	return outLines, nil
 }
 
-func (w *WaspCLITest) Run(args ...string) []string {
+func (w *WaspCLITest) Run(args ...string) ([]string, error) {
 	return w.runCmd(args, nil)
+}
+
+func (w *WaspCLITest) MustRun(args ...string) []string {
+	lines, err := w.Run(args...)
+	if err != nil {
+		panic(err)
+	}
+	return lines
 }
 
 func (w *WaspCLITest) PostRequestGetReceipt(args ...string) []string {
 	runArgs := []string{"chain", "post-request", "-s"}
 	runArgs = append(runArgs, args...)
-	out := w.Run(runArgs...)
+	out := w.MustRun(runArgs...)
 	return w.GetReceiptFromRunPostRequestOutput(out)
 }
 
@@ -125,13 +131,21 @@ func (w *WaspCLITest) GetReceiptFromRunPostRequestOutput(out []string) []string 
 	r := regexp.MustCompile(`(.*)\(check result with:\s*wasp-cli (.*)\).*$`).
 		FindStringSubmatch(strings.Join(out, ""))
 	command := r[2]
-	return w.Run(strings.Split(command, " ")...)
+	return w.MustRun(strings.Split(command, " ")...)
 }
 
-func (w *WaspCLITest) Pipe(in []string, args ...string) []string {
+func (w *WaspCLITest) Pipe(in []string, args ...string) ([]string, error) {
 	return w.runCmd(args, func(cmd *exec.Cmd) {
 		cmd.Stdin = bytes.NewReader([]byte(strings.Join(in, "\n")))
 	})
+}
+
+func (w *WaspCLITest) MustPipe(in []string, args ...string) []string {
+	lines, err := w.Pipe(in, args...)
+	if err != nil {
+		panic(err)
+	}
+	return lines
 }
 
 // CopyFile copies the given file into the temp directory
@@ -164,7 +178,7 @@ func (w *WaspCLITest) CommitteeConfig() (string, string) {
 }
 
 func (w *WaspCLITest) Address() iotago.Address {
-	out := w.Run("address")
+	out := w.MustRun("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	_, addr, err := iotago.ParseBech32(s)
 	require.NoError(w.T, err)
