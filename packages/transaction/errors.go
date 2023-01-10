@@ -1,9 +1,9 @@
 package transaction
 
-import "golang.org/x/xerrors"
+import "fmt"
 
 var (
-	ErrNotEnoughBaseTokens                  = xerrors.New("not enough base tokens")
-	ErrNotEnoughBaseTokensForStorageDeposit = xerrors.New("not enough base tokens for storage deposit")
-	ErrNotEnoughNativeTokens                = xerrors.New("not enough native tokens")
+	ErrNotEnoughBaseTokens                  = fmt.Errorf("not enough base tokens")
+	ErrNotEnoughBaseTokensForStorageDeposit = fmt.Errorf("not enough base tokens for storage deposit")
+	ErrNotEnoughNativeTokens                = fmt.Errorf("not enough native tokens")
 )
