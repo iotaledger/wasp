@@ -12,8 +12,8 @@ import {boolDecode, boolEncode} from "./wasmtypes/scbool";
 
 export class ScAssets {
     baseTokens: u64 = 0n;
+    nativeTokens: Map<string, ScBigInt> = new Map();
     nftIDs: Set<ScNftID> = new Set();
-    tokens: Map<string, ScBigInt> = new Map();
 
     public constructor(buf: Uint8Array | null) {
         if (buf === null || buf.length == 0) {
@@ -32,7 +32,7 @@ export class ScAssets {
         for (let i: u16 = 0; i < size; i++) {
             const tokenID = tokenIDDecode(dec);
             const amount = bigIntDecode(dec);
-            this.tokens.set(ScDict.toKey(tokenID.id), amount);
+            this.nativeTokens.set(ScDict.toKey(tokenID.id), amount);
         }
 
         size = uint16Decode(dec);
@@ -50,7 +50,7 @@ export class ScAssets {
         if (this.baseTokens != 0n) {
             return false;
         }
-        const values = [...this.tokens.values()];
+        const values = [...this.nativeTokens.values()];
         for (let i = 0; i < values.length; i++) {
             if (!values[i].isZero()) {
                 return false;
@@ -75,7 +75,7 @@ export class ScAssets {
             const tokenID = tokenIDs[i]
             tokenIDEncode(enc, tokenID);
             const mapKey = ScDict.toKey(tokenID.id);
-            const amount = this.tokens.get(mapKey)!;
+            const amount = this.nativeTokens.get(mapKey)!;
             bigIntEncode(enc, amount);
         }
 
@@ -90,7 +90,7 @@ export class ScAssets {
 
     public tokenIDs(): ScTokenID[] {
         let tokenIDs: ScTokenID[] = [];
-        const keys = [...this.tokens.keys()].sort();
+        const keys = [...this.nativeTokens.keys()].sort();
         for (let i = 0; i < keys.length; i++) {
             const keyBytes = ScDict.fromKey(keys[i]);
             const tokenID = tokenIDFromBytes(keyBytes);
@@ -109,10 +109,10 @@ export class ScBalances {
 
     public balance(tokenID: ScTokenID): ScBigInt {
         const mapKey = ScDict.toKey(tokenID.id);
-        if (!this.assets.tokens.has(mapKey)) {
+        if (!this.assets.nativeTokens.has(mapKey)) {
             return new ScBigInt();
         }
-        return this.assets.tokens.get(mapKey)!;
+        return this.assets.nativeTokens.get(mapKey)!;
     }
 
     public baseTokens(): u64 {
@@ -179,6 +179,6 @@ export class ScTransfer extends ScBalances {
 
     public set(tokenID: ScTokenID, amount: ScBigInt): void {
         const mapKey = ScDict.toKey(tokenID.id);
-        this.assets.tokens.set(mapKey, amount);
+        this.assets.nativeTokens.set(mapKey, amount);
     }
 }
