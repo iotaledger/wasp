@@ -201,6 +201,10 @@ funcs:
       name: String
       address: Address
 
+  verifyErc721:
+    params:
+      tokenHash: Hash
+
 # ##################################
 
 views:

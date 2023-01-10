@@ -4,6 +4,7 @@
 import * as wasmlib from "wasmlib"
 import * as wasmtypes from "wasmlib/wasmtypes";
 import * as coreblocklog from "wasmlib/coreblocklog"
+import * as erc721 from "../../../erc721/ts/erc721";
 import * as sc from "../testwasmlib/index";
 
 export function funcParamTypes(ctx: wasmlib.ScFuncContext, f: sc.ParamTypesContext): void {
@@ -89,6 +90,13 @@ export function funcTakeBalance(ctx: wasmlib.ScFuncContext, f: sc.TakeBalanceCon
 
 export function funcTriggerEvent(ctx: wasmlib.ScFuncContext, f: sc.TriggerEventContext): void {
     f.events.test(f.params.address().value(), f.params.name().value());
+}
+
+export function funcVerifyErc721(ctx: wasmlib.ScFuncContext, f: sc.VerifyErc721Context): void {
+    let tokenHash = f.params.tokenHash().value();
+    let oo = erc721.ScFuncs.ownerOf(ctx);
+    oo.params.tokenID().setValue(tokenHash);
+    oo.func.call();
 }
 
 export function viewBlockRecord(ctx: wasmlib.ScViewContext, f: sc.BlockRecordContext): void {

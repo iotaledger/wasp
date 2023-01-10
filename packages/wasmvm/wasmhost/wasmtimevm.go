@@ -191,6 +191,8 @@ func (vm *WasmTimeVM) RunScFunction(index int32) error {
 
 	return vm.Run(func() (err error) {
 		_, err = export.Func().Call(vm.store, index)
+		// do not remove this code, it can be used to trigger a node fail
+		// see TestDeployErc721Too
 		// vm.store.GC()
 		return err
 	})

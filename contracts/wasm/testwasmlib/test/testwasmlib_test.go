@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721"
+	"github.com/iotaledger/wasp/contracts/wasm/erc721/go/erc721impl"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -94,7 +96,46 @@ func setupTest(t *testing.T) *wasmsolo.SoloContext {
 
 func TestDeploy(t *testing.T) {
 	ctx := setupTest(t)
+	require.NoError(t, ctx.Err)
 	require.NoError(t, ctx.ContractExists(testwasmlib.ScName))
+}
+
+func TestDeployErc721Too(t *testing.T) {
+	*wasmsolo.RsWasm = true
+	ctx := setupTest(t)
+	require.NoError(t, ctx.Err)
+	require.NoError(t, ctx.ContractExists(testwasmlib.ScName))
+
+	init := erc721.ScFuncs.Init(nil)
+	init.Params.Name().SetValue("Name")
+	init.Params.Symbol().SetValue("Symbol")
+
+	ctxErc721 := wasmsolo.NewSoloContextForChain(t, ctx.Chain, nil, erc721.ScName, erc721impl.OnDispatch, init.Func)
+	require.NoError(t, ctxErc721.Err)
+	require.NoError(t, ctxErc721.ContractExists(erc721.ScName))
+
+	mint := erc721.ScFuncs.Mint(ctxErc721)
+	tokenID := wasmtypes.HashFromString("0xd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab37")
+	mint.Params.TokenID().SetValue(tokenID)
+	mint.Params.TokenURI().SetValue("information about the token")
+	mint.Func.Post()
+	require.NoError(t, ctxErc721.Err)
+
+	oo := erc721.ScFuncs.OwnerOf(ctxErc721)
+	oo.Params.TokenID().SetValue(tokenID)
+	oo.Func.Call()
+	require.NoError(t, ctxErc721.Err)
+	require.EqualValues(t, oo.Results.Owner().Value(), ctxErc721.ChainOwnerID())
+
+	// TODO: this post() can bring a node down when reactivating the commented out line
+	// in WasmTimeVM.RunScFunction() because it triggers a Rust panic() in the WasmTime code.
+	// We need to find out how to catch such an error from within Go.
+	// Note that this post() triggers a call() to an Erc721 view, which then triggers the
+	// Rust panic() after returning from the call.
+	f := testwasmlib.ScFuncs.VerifyErc721(ctx)
+	f.Params.TokenHash().SetValue(tokenID)
+	f.Func.Post()
+	require.NoError(t, ctx.Err)
 }
 
 func TestNoParams(t *testing.T) {
