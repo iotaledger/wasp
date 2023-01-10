@@ -11,7 +11,6 @@ import (
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -53,9 +52,6 @@ func Init(
 	request.AddEndpoints(
 		pub,
 		chainsProvider.ChainProvider(),
-		chainutil.GetAccountBalance,
-		chainutil.HasRequestBeenProcessed,
-		chainutil.CheckNonce,
 		network.Self().PubKey(),
 		apiCacheTTL,
 	)

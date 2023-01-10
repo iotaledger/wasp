@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
@@ -65,5 +66,6 @@ func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functio
 }
 
 func (v *VMService) CallView(blockIndex uint32, chain chainpkg.Chain, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(blockIndex, chain, contractName, functionName, params)
+	b := &viewcontext.BlockIndexOrTrieRoot{BlockIndex: blockIndex}
+	return chainutil.CallView(chain, b, contractName, functionName, params)
 }

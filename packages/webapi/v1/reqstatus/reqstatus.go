@@ -109,14 +109,7 @@ func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.Chain, isc.RequestI
 }
 
 func getReceiptFromBlocklog(ch chain.Chain, reqID isc.RequestID) (*blocklog.RequestReceipt, error) {
-	blockIndex, err := ch.GetStateReader().LatestBlockIndex()
-	if err != nil {
-		return nil, httperrors.ServerError("error getting latest chain block index")
-	}
-	if blockIndex == 0 {
-		return nil, nil
-	}
-	ret, err := chainutil.CallView(blockIndex, ch, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
+	ret, err := chainutil.CallView(ch, nil, blocklog.Contract.Hname(), blocklog.ViewGetRequestReceipt.Hname(),
 		dict.Dict{
 			blocklog.ParamRequestID: reqID.Bytes(),
 		})

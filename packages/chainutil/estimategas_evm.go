@@ -59,7 +59,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		gasCap uint64
 	)
 
-	ret, err := CallView(latestBlockIndex(ch), ch, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
+	ret, err := CallView(ch, nil, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
 	if err != nil {
 		return 0, err
 	}

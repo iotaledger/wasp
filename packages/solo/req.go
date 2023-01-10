@@ -464,7 +464,7 @@ func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunc
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, blockIndex)
+	vmctx, err := viewcontext.New(ch, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -478,7 +478,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	vmctx, err := viewcontext.New(ch, nil)
 	require.NoError(ch.Env.T, err)
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
@@ -492,7 +492,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	vmctx, err := viewcontext.New(ch, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -530,7 +530,7 @@ func (ch *Chain) GetRootCommitment() trie.Hash {
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	vmctx, err := viewcontext.New(ch, nil)
 	if err != nil {
 		return nil, err
 	}

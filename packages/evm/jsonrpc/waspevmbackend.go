@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
 type WaspEVMBackend struct {
@@ -97,8 +98,7 @@ func (b *WaspEVMBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
-	currentBlockIndex := b.ISCLatestBlockIndex()
-	res, err := chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
+	res, err := chainutil.CallView(b.chain, nil, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
 	}
@@ -106,7 +106,7 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}
-	res, err = chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
+	res, err = chainutil.CallView(b.chain, nil, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
 	}
@@ -125,7 +125,8 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 }
 
 func (b *WaspEVMBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(iscBlockIndex, b.chain, isc.Hn(scName), isc.Hn(funName), args)
+	bi := &viewcontext.BlockIndexOrTrieRoot{BlockIndex: iscBlockIndex}
+	return chainutil.CallView(b.chain, bi, isc.Hn(scName), isc.Hn(funName), args)
 }
 
 func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
