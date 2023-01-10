@@ -332,11 +332,7 @@ func (g *GenBase) emitIf(line string) {
 	case KeyView:
 		condition = g.keys["kind"] == KeyView
 	default:
-		key, ok := g.keys[parts[1]]
-		if !ok {
-			g.error(line)
-			return
-		}
+		key := g.keys[parts[1]]
 		condition = key != ""
 	}
 
