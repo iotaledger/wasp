@@ -45,7 +45,7 @@ func (*MockChain) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("unimplemented")
 }
 
-// GetStateReader implements chain.Chain
+// Store implements chain.Chain
 func (*MockChain) Store() state.Store {
 	panic("unimplemented")
 }
