@@ -141,7 +141,7 @@ func (b *WaspEVMBackend) ISCLatestState() state.State {
 	return latestState
 }
 
-// ISCLatestState implements jsonrpc.ChainBackend
+// ISCStateByBlockIndex implements jsonrpc.ChainBackend
 func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
 	latestState, err := b.chain.LatestState(chain.LatestState)
 	if err != nil {
