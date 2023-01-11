@@ -216,28 +216,11 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
 		smT.log.Panicf("Input block produced on state %s: state, on which this block is produced, is not yet in the store", commitment)
 	}
-	var block state.Block
-	var blockCommitment *state.L1Commitment
-	// Commit block; if it fails, assume it is already committed and simply extract it from the store
-	// Extracting may happen if the node is slow and has `ConsensusBlockProduced` event on state index `n`, but the current state index of
-	// the chain is larger and the node has already received some request for some state index larger than `n`. This may result in state
-	// manager of the node waiting for block index `n` while `ConsensusBlockProduced` state index `n` request arrives.
-	func() {
-		defer func() {
-			if r := recover(); r != nil {
-				smT.log.Warnf("Input block produced on state %s: failed to commit the state draft to the store, assuming it is already committed",
-					commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-				block = smT.store.ExtractBlock(input.GetStateDraft())
-				blockCommitment = block.L1Commitment()
-				smT.log.Debugf("Input block produced on state %s: block %s extracted from the store for state draft index %v",
-					commitment, blockCommitment, input.GetStateDraft().BlockIndex())
-			}
-		}()
-		block = smT.store.Commit(input.GetStateDraft())
-		blockCommitment = block.L1Commitment()
-		smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
-			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-	}()
+	// NOTE: committing already committed block is allowed (see `TestDoubleCommit` test in `packages/state/state_test.go`)
+	block := smT.store.Commit(input.GetStateDraft())
+	blockCommitment := block.L1Commitment()
+	smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
+		commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
 	smT.blockCache.AddBlock(block)
 	input.Respond(nil)
 	requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
@@ -251,7 +234,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.Consens
 		}
 		smT.log.Debugf("Input block produced on state %s: completing %v requests",
 			commitment, len(requestsWC.blockRequests))
-		err := smT.completeRequests(requests)
+		err := smT.completeRequests(blockCommitment, requests)
 		if err != nil {
 			smT.log.Errorf("Input block produced on state %s: failed completing %v: %v",
 				commitment, len(requestsWC.blockRequests), err)
@@ -470,14 +453,17 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 		commitment = block.PreviousL1Commitment()
 	}
 	smT.log.Debugf("Tracing block %s chain: tracing completed, completing %v requests", initCommitment, len(requests))
-	err := smT.completeRequests(requests)
+	err := smT.completeRequests(nil, requests)
 	smT.log.Debugf("Tracing block %s chain done, err=%v", initCommitment, err)
 	return nil, err // No messages to send
 }
 
-func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
+func (smT *stateManagerGPA) completeRequests(alreadyCommittedL1C *state.L1Commitment, requests []blockRequest) error {
 	smT.log.Debugf("Completing %v requests: committing blocks...", len(requests))
 	committedBlocks := make(map[state.BlockHash]bool)
+	if alreadyCommittedL1C != nil {
+		committedBlocks[alreadyCommittedL1C.BlockHash()] = true
+	}
 	for _, request := range requests {
 		smT.log.Debugf("Completing %v requests: committing blocks of %s request %v", len(requests), request.getType(), request.getID())
 		blockChain := request.getBlockChain()
@@ -487,10 +473,6 @@ func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
 			_, ok := committedBlocks[blockCommitment.BlockHash()]
 			if ok {
 				smT.log.Debugf("Completing %v requests: block %s is already committed, skipping", len(requests), blockCommitment)
-			} else if smT.store.HasTrieRoot(blockCommitment.TrieRoot()) {
-				smT.log.Debugf("Completing %v requests: block %s is already committed, probably on completion of ConsensusProducedBlock request, skipping",
-					len(requests), blockCommitment)
-				committedBlocks[blockCommitment.BlockHash()] = true
 			} else {
 				smT.log.Debugf("Completing %v requests: committing block %s...", len(requests), blockCommitment)
 				var stateDraft state.StateDraft
