@@ -25,6 +25,7 @@ type testEnv struct {
 	nodeIDs      []gpa.NodeID
 	timeProvider smGPAUtils.TimeProvider
 	sms          map[gpa.NodeID]gpa.GPA
+	stores       map[gpa.NodeID]state.Store
 	tc           *gpa.TestContext
 	log          *logger.Logger
 }
@@ -34,6 +35,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 	chainID := bf.GetChainID()
 	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
 	sms := make(map[gpa.NodeID]gpa.GPA)
+	stores := make(map[gpa.NodeID]state.Store)
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -47,6 +49,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun()
 		store := state.InitChainStore(mapdb.NewMapDB())
+		stores[nodeID] = store
 		sms[nodeID], err = New(chainID, nr, wal, store, smLog, timers)
 		require.NoError(t, err)
 	}
@@ -56,6 +59,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 		nodeIDs:      nodeIDs,
 		timeProvider: timers.TimeProvider,
 		sms:          sms,
+		stores:       stores,
 		tc:           gpa.NewTestContext(sms),
 		log:          log,
 	}
@@ -206,13 +210,36 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *smInputs
 
 // --------
 
+func (teT *testEnv) ensureStoreContainsBlocksNoWait(nodeID gpa.NodeID, blocks []state.Block) bool {
+	return teT.ensureTrue("store to contain blocks", func() bool {
+		for _, block := range blocks {
+			commitment := block.L1Commitment()
+			teT.t.Logf("Checking block %s on node %s...", commitment, nodeID.ShortString())
+			store, ok := teT.stores[nodeID]
+			require.True(teT.t, ok)
+			if store.HasTrieRoot(commitment.TrieRoot()) {
+				teT.t.Logf("Node %s contains block %s", nodeID.ShortString(), commitment)
+			} else {
+				teT.t.Logf("Node %s does not contain block %s", nodeID.ShortString(), commitment)
+				return false
+			}
+		}
+		return true
+	}, 1, 0*time.Second)
+}
+
+// --------
+
 func (teT *testEnv) ensureTrue(title string, predicate func() bool, maxTimeIterations int, timeStep time.Duration) bool {
-	for i := 0; i < maxTimeIterations; i++ {
+	if predicate() {
+		return true
+	}
+	for i := 1; i < maxTimeIterations; i++ {
 		teT.t.Logf("Waiting for %s iteration %v", title, i)
+		teT.sendTimerTickToNodes(timeStep)
 		if predicate() {
 			return true
 		}
-		teT.sendTimerTickToNodes(timeStep)
 	}
 	return false
 }
