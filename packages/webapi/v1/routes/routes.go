@@ -119,12 +119,8 @@ func AdmNodeOwnerCertificate() string {
 	return "/adm/node/owner/certificate"
 }
 
-func AdmAddAccessNode(chainIDBech32 string, pubKey string) string {
-	return "/adm/chain/" + chainIDBech32 + "/access-node/add/" + pubKey
-}
-
-func AdmRemoveAccessNode(chainIDBech32 string, pubKey string) string {
-	return "/adm/chain/" + chainIDBech32 + "/access-node/remove/" + pubKey
+func AdmAccessNode(chainIDBech32 string, pubKey string) string {
+	return "/adm/chain/" + chainIDBech32 + "/access-node/" + pubKey
 }
 
 func Shutdown() string {

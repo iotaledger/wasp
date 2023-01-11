@@ -25,12 +25,12 @@ func addAccessNodesEndpoints(
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 		networkMgr:                  tnm,
 	}
-	adm.PUT(routes.AdmAddAccessNode(":chainID", ":pubKey"), a.handleAddAccessNode).
+	adm.PUT(routes.AdmAccessNode(":chainID", ":pubKey"), a.handleAddAccessNode).
 		AddParamPath("", "chainID", "ChainID (bech32))").
 		AddParamPath("", "pubKey", "PublicKey (hex string)").
 		SetSummary("Add an access node to a chain")
 
-	adm.DELETE(routes.AdmRemoveAccessNode(":chainID", ":pubKey"), a.handleRemoveAccessNode).
+	adm.DELETE(routes.AdmAccessNode(":chainID", ":pubKey"), a.handleRemoveAccessNode).
 		AddParamPath("", "chainID", "ChainID (bech32))").
 		AddParamPath("", "pubKey", "PublicKey (hex string)").
 		SetSummary("Remove an access node from a chain")

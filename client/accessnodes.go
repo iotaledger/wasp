@@ -11,9 +11,9 @@ import (
 )
 
 func (c *WaspClient) AddAccessNode(chainID isc.ChainID, pubKey string) error {
-	return c.do(http.MethodPut, routes.AdmAddAccessNode(chainID.String(), pubKey), nil, nil)
+	return c.do(http.MethodPut, routes.AdmAccessNode(chainID.String(), pubKey), nil, nil)
 }
 
 func (c *WaspClient) RemoveAccessNode(chainID isc.ChainID, pubKey string) error {
-	return c.do(http.MethodDelete, routes.AdmRemoveAccessNode(chainID.String(), pubKey), nil, nil)
+	return c.do(http.MethodDelete, routes.AdmAccessNode(chainID.String(), pubKey), nil, nil)
 }
