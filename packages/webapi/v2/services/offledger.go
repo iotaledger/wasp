@@ -98,12 +98,11 @@ func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 		return httperrors.ServerError("unable to get latest state")
 	}
 	// query blocklog contract
-	blocklogPartition := subrealm.NewReadOnly(state, kv.Key(blocklog.Contract.Hname().Bytes()))
-	receipt, err := blocklog.IsRequestProcessedInternal(blocklogPartition, req.ID())
+	processed, err := blocklog.IsRequestProcessed(state, req.ID())
 	if err != nil {
 		return httperrors.ServerError("unable to get request receipt from block state")
 	}
-	if receipt != nil {
+	if processed {
 		return httperrors.BadRequest("request already processed")
 	}
 

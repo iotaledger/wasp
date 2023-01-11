@@ -165,8 +165,8 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 	return nil, nil
 }
 
-// IsRequestProcessedInternal does quick lookup to check if it wasn't seen yet
-func IsRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
+// isRequestProcessedInternal does quick lookup to check if it wasn't seen yet
+func isRequestProcessedInternal(partition kv.KVStoreReader, reqID isc.RequestID) (*RequestReceipt, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return nil, fmt.Errorf("cannot mustGetLookupKeyListFromReqID: %w", err)
