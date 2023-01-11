@@ -124,7 +124,7 @@ func (c *ChainService) GetContracts(chainID isc.ChainID) (dto.ContractsMap, erro
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {
 	ch := c.chainsProvider().Get(chainID)
 
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ func GetAccountBalance(ch chain.ChainCore, agentID isc.AgentID) (*isc.FungibleTo
 }
 
 func mustLatestState(ch chain.ChainCore) state.State {
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		panic(err)
 	}

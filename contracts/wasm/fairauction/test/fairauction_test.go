@@ -85,7 +85,7 @@ func TestGetAuctionInfo(t *testing.T) {
 	require.EqualValues(t, fairauctionimpl.OwnerMarginDefault, info.Results.OwnerMargin().Value())
 
 	// expect timestamp should have difference less than 1 second to the `auction.WhenStarted`
-	state, err := ctx.Chain.LatestState(chain.LatestState)
+	state, err := ctx.Chain.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(t, err)
 	require.InDelta(t, uint64(state.Timestamp().UnixNano()), info.Results.WhenStarted().Value(), float64(1*time.Second.Nanoseconds()))
 

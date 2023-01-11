@@ -51,7 +51,7 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
-	latestState, err := b.Chain.LatestState(chain.LatestState)
+	latestState, err := b.Chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		panic(err)
 	}

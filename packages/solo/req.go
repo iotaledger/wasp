@@ -439,7 +439,7 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +482,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(ch, latestState)
 	require.NoError(ch.Env.T, err)
@@ -498,7 +498,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(ch, latestState)
 	if err != nil {
@@ -538,7 +538,7 @@ func (ch *Chain) GetRootCommitment() trie.Hash {
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(ch, latestState)
 	if err != nil {

@@ -93,7 +93,7 @@ func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	// if err != nil {
 	// 	return httperrors.ServerError("unable to get latest state")
 	// }
-	state, err := ch.LatestState(chain.LatestState)
+	state, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return httperrors.ServerError("unable to get latest state")
 	}

@@ -58,7 +58,7 @@ func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functio
 	}
 
 	// TODO: should blockIndex be an optional parameter of this endpoint?
-	latestState, err := ch.LatestState(chain.LatestState)
+	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, errors.New("error getting latest chain state")
 	}

@@ -95,7 +95,7 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 	// TODO should blockIndex be an optional parameter of this endpoint?
-	latestState, err := theChain.LatestState(chain.LatestState)
+	latestState, err := theChain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -136,7 +136,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	state, err := theChain.LatestState(chain.LatestState)
+	state, err := theChain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
 		return httperrors.ServerError(reason)

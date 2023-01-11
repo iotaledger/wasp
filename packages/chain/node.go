@@ -858,7 +858,7 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 	latestConfirmedState := cni.latestConfirmedState
 	cni.accessLock.RUnlock()
 	switch freshness {
-	case LatestState:
+	case ActiveOrCommittedState:
 		if latestActiveState != nil {
 			return latestActiveState, nil
 		}

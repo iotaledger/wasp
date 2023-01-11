@@ -25,9 +25,9 @@ type NodeConnection interface {
 type StateFreshness byte
 
 const (
-	LatestState    StateFreshness = iota // ActiveState, if exist; Confirmed state otherwise.
-	ActiveState                          // The state the chain build next TX on, can be ahead of ConfirmedState.
-	ConfirmedState                       // The state confirmed on L1.
+	ActiveOrCommittedState StateFreshness = iota // ActiveState, if exist; Confirmed state otherwise.
+	ActiveState                                  // The state the chain build next TX on, can be ahead of ConfirmedState.
+	ConfirmedState                               // The state confirmed on L1.
 )
 
 type ChainCore interface {
