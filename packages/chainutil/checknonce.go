@@ -5,12 +5,13 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
 func CheckNonce(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	res, err := CallView(latestBlockIndex(ch), ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(),
+	res, err := CallView(mustLatestState(ch), ch, accounts.Contract.Hname(), accounts.ViewGetAccountNonce.Hname(),
 		dict.Dict{
 			accounts.ParamAgentID: codec.Encode(req.SenderAccount()),
 		})
@@ -21,10 +22,10 @@ func CheckNonce(ch chain.ChainCore, req isc.OffLedgerRequest) error {
 	return vmcontext.CheckNonce(req, nonce)
 }
 
-func latestBlockIndex(ch chain.ChainCore) uint32 {
-	latestBlockIndex, err := ch.GetStateReader().LatestBlockIndex()
+func mustLatestState(ch chain.ChainCore) state.State {
+	latestState, err := ch.LatestState(chain.LatestState)
 	if err != nil {
 		panic(err)
 	}
-	return latestBlockIndex
+	return latestState
 }

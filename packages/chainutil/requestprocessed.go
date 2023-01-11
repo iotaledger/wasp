@@ -9,7 +9,7 @@ import (
 )
 
 func HasRequestBeenProcessed(ch chain.ChainCore, reqID isc.RequestID) (bool, error) {
-	res, err := CallView(latestBlockIndex(ch), ch, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(),
+	res, err := CallView(mustLatestState(ch), ch, blocklog.Contract.Hname(), blocklog.ViewIsRequestProcessed.Hname(),
 		dict.Dict{
 			blocklog.ParamRequestID: reqID.Bytes(),
 		})

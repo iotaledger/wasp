@@ -42,7 +42,7 @@ func (e *EthService) resolveError(err error) error {
 		return nil
 	}
 	if vmError, ok := err.(*isc.UnresolvedVMError); ok {
-		resolvedErr, resolveErr := vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestBlockIndex()))
+		resolvedErr, resolveErr := vmerrors.Resolve(vmError, e.evmChain.ViewCaller(e.evmChain.backend.ISCLatestState()))
 		if resolveErr != nil {
 			return fmt.Errorf("could not resolve VMError %w: %v", vmError, resolveErr)
 		}

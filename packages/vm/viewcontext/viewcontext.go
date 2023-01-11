@@ -1,7 +1,6 @@
 package viewcontext
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
@@ -47,15 +46,11 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-func New(ch chain.ChainCore, blockIndex uint32) (*ViewContext, error) {
-	state, err := ch.GetStateReader().StateByIndex(blockIndex)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", blockIndex, ch.ID(), err)
-	}
+func New(ch chain.ChainCore, latestState state.State) (*ViewContext, error) {
 	chainID := ch.ID()
 	return &ViewContext{
 		processors:     ch.Processors(),
-		stateReader:    state,
+		stateReader:    latestState,
 		chainID:        chainID,
 		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnEnabled: true,

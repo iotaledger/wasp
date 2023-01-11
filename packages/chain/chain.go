@@ -22,6 +22,14 @@ type NodeConnection interface {
 	Run(ctx context.Context)
 }
 
+type StateFreshness byte
+
+const (
+	LatestState    StateFreshness = iota // ActiveState, if exist; Confirmed state otherwise.
+	ActiveState                          // The state the chain build next TX on, can be ahead of ConfirmedState.
+	ConfirmedState                       // The state confirmed on L1.
+)
+
 type ChainCore interface {
 	ID() isc.ChainID
 	// Returns the current latest confirmed alias output and the active one.
@@ -29,8 +37,9 @@ type ChainCore interface {
 	// Both values can be nil, if the node haven't received an output from
 	// L1 yet (after a restart or a chain activation).
 	LatestAliasOutput() (confirmed, active *isc.AliasOutputWithID)
+	LatestState(freshness StateFreshness) (state.State, error)
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
-	GetStateReader() state.Store      // TODO: Rename to GetStore.
+	Store() state.Store               // Use LatestState whenever possible. That will work faster.
 	Processors() *processors.Cache
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.

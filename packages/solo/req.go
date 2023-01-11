@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -438,21 +439,25 @@ func (ch *Chain) ResolveVMError(e *isc.UnresolvedVMError) *isc.VMError {
 // 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
 // accepted by the 'codec' package
 func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
-	return ch.CallViewAtBlockIndex(ch.LatestBlockIndex(), scName, funName, params...)
+	latestState, err := ch.LatestState(chain.LatestState)
+	if err != nil {
+		return nil, err
+	}
+	return ch.CallViewAtState(latestState, scName, funName, params...)
 }
 
-func (ch *Chain) CallViewAtBlockIndex(blockIndex uint32, scName, funName string, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewAtState(chainState state.State, scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log().Debugf("callView: %s::%s", scName, funName)
-	return ch.CallViewByHnameAtBlockIndex(blockIndex, isc.Hn(scName), isc.Hn(funName), params...)
+	return ch.CallViewByHnameAtState(chainState, isc.Hn(scName), isc.Hn(funName), params...)
 }
 
-func (ch *Chain) CallViewByHname(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
-	i, err := ch.Store.LatestBlockIndex()
+func (ch *Chain) CallViewByHname(hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+	latestState, err := ch.store.LatestState()
 	require.NoError(ch.Env.T, err)
-	return ch.CallViewByHnameAtBlockIndex(i, hContract, hFunction, params...)
+	return ch.CallViewByHnameAtState(latestState, hContract, hFunction, params...)
 }
 
-func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
+func (ch *Chain) CallViewByHnameAtState(chainState state.State, hContract, hFunction isc.Hname, params ...interface{}) (dict.Dict, error) {
 	if ch.bypassStardustVM {
 		return nil, errors.New("Solo: StardustVM context expected")
 	}
@@ -463,7 +468,7 @@ func (ch *Chain) CallViewByHnameAtBlockIndex(blockIndex uint32, hContract, hFunc
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, blockIndex)
+	vmctx, err := viewcontext.New(ch, chainState)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +482,9 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	latestState, err := ch.LatestState(chain.LatestState)
+	require.NoError(ch.Env.T, err)
+	vmctx, err := viewcontext.New(ch, latestState)
 	require.NoError(ch.Env.T, err)
 	ret, err := vmctx.GetMerkleProof(key)
 	require.NoError(ch.Env.T, err)
@@ -491,7 +498,9 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	latestState, err := ch.LatestState(chain.LatestState)
+	require.NoError(ch.Env.T, err)
+	vmctx, err := viewcontext.New(ch, latestState)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -522,14 +531,16 @@ func (ch *Chain) GetL1Commitment() *state.L1Commitment {
 
 // GetRootCommitment returns the root commitment of the latest state index
 func (ch *Chain) GetRootCommitment() trie.Hash {
-	block, err := ch.Store.LatestBlock()
+	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	return block.TrieRoot()
 }
 
 // GetContractStateCommitment returns commitment to the state of the specific contract, if possible
 func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
-	vmctx, err := viewcontext.New(ch, ch.LatestBlockIndex())
+	latestState, err := ch.LatestState(chain.LatestState)
+	require.NoError(ch.Env.T, err)
+	vmctx, err := viewcontext.New(ch, latestState)
 	if err != nil {
 		return nil, err
 	}

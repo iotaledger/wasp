@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -121,9 +122,9 @@ func (c *ChainService) GetContracts(chainID isc.ChainID) (dto.ContractsMap, erro
 }
 
 func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {
-	chain := c.chainsProvider().Get(chainID)
+	ch := c.chainsProvider().Get(chainID)
 
-	latestState, err := chain.GetStateReader().LatestState()
+	latestState, err := ch.LatestState(chain.LatestState)
 	if err != nil {
 		return nil, err
 	}
