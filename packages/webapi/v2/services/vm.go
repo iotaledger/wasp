@@ -3,7 +3,6 @@ package services
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
@@ -58,7 +57,7 @@ func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functio
 	}
 
 	// TODO: should blockIndex be an optional parameter of this endpoint?
-	latestState, err := ch.LatestState(chain.ActiveOrCommittedState)
+	latestState, err := ch.LatestState(chainpkg.ActiveOrCommittedState)
 	if err != nil {
 		return nil, errors.New("error getting latest chain state")
 	}

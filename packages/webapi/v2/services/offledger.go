@@ -89,10 +89,6 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 // implemented this way so we can re-use the same state, and avoid the overhead of calling views
 // TODO exported just to be used by V1 API until that gets deprecated at once.
 func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	// state, err := ch.GetStateReader().LatestState()
-	// if err != nil {
-	// 	return httperrors.ServerError("unable to get latest state")
-	// }
 	state, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return httperrors.ServerError("unable to get latest state")
