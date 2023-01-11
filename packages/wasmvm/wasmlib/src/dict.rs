@@ -4,8 +4,8 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
-use crate::*;
 use crate::host::*;
+use crate::*;
 
 pub struct ScImmutableDict {
     dict: ScDict,
@@ -103,8 +103,22 @@ impl ScDict {
         }
     }
 
-    pub fn from_bytes(_input: &[u8]) -> Result<ScDict, String> {
-        return Err("not impl".to_string());
+    pub fn from_bytes(buf: &[u8]) -> Result<ScDict, String> {
+        let dict = ScDict::new(&[]);
+        if buf.len() != 0 {
+            let mut dec = WasmDecoder::new(buf);
+            let size = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
+            for _ in 0..size {
+                let key_buf = dec.fixed_bytes(SC_UINT16_LENGTH);
+                let key_len = uint16_from_bytes(&key_buf);
+                let key = dec.fixed_bytes(key_len as usize);
+                let val_buf = dec.fixed_bytes(SC_UINT32_LENGTH);
+                let val_len = uint32_from_bytes(&val_buf);
+                let val = dec.fixed_bytes(val_len as usize);
+                dict.set(&key, &val);
+            }
+        }
+        return Ok(dict);
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
