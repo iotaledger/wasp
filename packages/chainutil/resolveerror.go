@@ -7,7 +7,7 @@ import (
 )
 
 func ResolveError(ch chain.ChainCore, e *isc.UnresolvedVMError) (*isc.VMError, error) {
-	s, err := ch.GetStateReader().LatestState()
+	s, err := ch.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}

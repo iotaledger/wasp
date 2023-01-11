@@ -6,10 +6,16 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
-	"github.com/iotaledger/wasp/packages/chainutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
 
@@ -52,10 +58,10 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	if c.requestCache.Get(reqID) != nil {
 		return errors.New("request already processed")
 	}
+	c.requestCache.Set(reqID, true)
 
 	// check req signature
 	if err := request.VerifySignature(); err != nil {
-		c.requestCache.Set(reqID, true)
 		return fmt.Errorf("could not verify: %w", err)
 	}
 
@@ -71,32 +77,40 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return fmt.Errorf("unknown chain: %s", chainID.String())
 	}
 
-	alreadyProcessed, err := chainutil.HasRequestBeenProcessed(chain, reqID)
-	if err != nil {
-		return errors.New("internal error")
-	}
-
-	defer c.requestCache.Set(reqID, true)
-
-	if alreadyProcessed {
-		return errors.New("request already processed")
-	}
-
-	// check user has on-chain balance
-	assets, err := chainutil.GetAccountBalance(chain, request.SenderAccount())
-	if err != nil {
-		return errors.New("unable to get account balance")
-	}
-
-	if assets.IsEmpty() {
-		return fmt.Errorf("no balance on account %s", request.SenderAccount().String())
-	}
-
-	if err := chainutil.CheckNonce(chain, request); err != nil {
-		return fmt.Errorf("invalid nonce, %w", err)
+	if err := ShouldBeProcessed(chain, request); err != nil {
+		return err
 	}
 
 	chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey())
 
+	return nil
+}
+
+// implemented this way so we can re-use the same state, and avoid the overhead of calling views
+// TODO exported just to be used by V1 API until that gets deprecated at once.
+func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
+	state, err := ch.LatestState(chain.ActiveOrCommittedState)
+	if err != nil {
+		return httperrors.ServerError("unable to get latest state")
+	}
+	// query blocklog contract
+	processed, err := blocklog.IsRequestProcessed(state, req.ID())
+	if err != nil {
+		return httperrors.ServerError("unable to get request receipt from block state")
+	}
+	if processed {
+		return httperrors.BadRequest("request already processed")
+	}
+
+	// query accounts contract
+	accountsPartition := subrealm.NewReadOnly(state, kv.Key(accounts.Contract.Hname().Bytes()))
+	// check user has on-chain balance
+	if !accounts.AccountExists(accountsPartition, req.SenderAccount()) {
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", req.SenderAccount().String()))
+	}
+	accountNonce := accounts.GetMaxAssumedNonce(accountsPartition, req.SenderAccount())
+	if err := vmcontext.CheckNonce(req, accountNonce); err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
+	}
 	return nil
 }

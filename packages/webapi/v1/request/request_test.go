@@ -9,23 +9,16 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	util "github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 	"github.com/iotaledger/wasp/packages/webapi/v1/testutil"
 )
 
-func getAccountBalanceMocked(_ chain.ChainCore, _ isc.AgentID) (*isc.FungibleTokens, error) {
-	return isc.NewFungibleBaseTokens(100), nil
-}
-
-func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
-	return func(_ chain.ChainCore, _ isc.RequestID) (bool, error) {
-		return ret, nil
+func shouldBeProcessedMocked(ret error) shouldBeProcessedFn {
+	return func(_ chain.ChainCore, _ isc.OffLedgerRequest) error {
+		return ret
 	}
-}
-
-func checkNonceMocked(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	return nil
 }
 
 func newMockedAPI() *offLedgerReqAPI {
@@ -33,10 +26,8 @@ func newMockedAPI() *offLedgerReqAPI {
 		getChain: func(chainID isc.ChainID) chain.Chain {
 			return &testutil.MockChain{}
 		},
-		getAccountAssets:        getAccountBalanceMocked,
-		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
-		checkNonce:              checkNonceMocked,
-		requestsCache:           expiringcache.New(10 * time.Second),
+		shouldBeProcessed: shouldBeProcessedMocked(nil),
+		requestsCache:     expiringcache.New(10 * time.Second),
 	}
 }
 
@@ -69,7 +60,7 @@ func TestNewRequestBinary(t *testing.T) {
 
 func TestRequestAlreadyProcessed(t *testing.T) {
 	instance := newMockedAPI()
-	instance.hasRequestBeenProcessed = hasRequestBeenProcessedMocked(true)
+	instance.shouldBeProcessed = shouldBeProcessedMocked(httperrors.BadRequest(""))
 
 	chainID := isc.RandomChainID()
 	body := util.DummyOffledgerRequest(chainID).Bytes()

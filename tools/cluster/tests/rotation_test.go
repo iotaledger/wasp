@@ -71,7 +71,7 @@ func TestBasicRotation(t *testing.T) {
 
 	stateController, err := env.callGetStateController(0)
 	require.NoError(t, err)
-	require.True(t, stateController.Equal(newCmtAddr))
+	require.True(t, stateController.Equal(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
 
 	// check the chain still works
 	tx, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)

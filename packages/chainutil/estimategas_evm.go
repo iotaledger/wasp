@@ -29,7 +29,7 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 
 		AnchorOutput:         aliasOutput.GetAliasOutput(),
 		AnchorOutputID:       aliasOutput.OutputID(),
-		Store:                ch.GetStateReader(),
+		Store:                ch.Store(),
 		Requests:             []isc.Request{req},
 		TimeAssumption:       time.Now(),
 		Entropy:              hashing.RandomHash(nil),
@@ -60,7 +60,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		gasCap uint64
 	)
 
-	ret, err := CallView(latestBlockIndex(ch), ch, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
+	ret, err := CallView(mustLatestState(ch), ch, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
 	if err != nil {
 		return 0, err
 	}

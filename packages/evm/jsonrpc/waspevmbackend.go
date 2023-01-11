@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -54,8 +55,7 @@ func (b *WaspEVMBackend) RequestIDByTransactionHash(txHash common.Hash) (isc.Req
 
 func (b *WaspEVMBackend) EVMGasRatio() (util.Ratio32, error) {
 	// TODO: Cache the gas ratio?
-	currentBlockIndex := b.ISCLatestBlockIndex()
-	ret, err := b.ISCCallView(currentBlockIndex, governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
+	ret, err := b.ISCCallView(b.ISCLatestState(), governance.Contract.Name, governance.ViewGetEVMGasRatio.Name, nil)
 	if err != nil {
 		return util.Ratio32{}, err
 	}
@@ -97,8 +97,8 @@ func (b *WaspEVMBackend) EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error
 }
 
 func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
-	currentBlockIndex := b.ISCLatestBlockIndex()
-	res, err := chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
+	latestState := b.ISCLatestState()
+	res, err := chainutil.CallView(latestState, b.chain, governance.Contract.Hname(), governance.ViewGetFeePolicy.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call gasFeePolicy view: %s ", err.Error()))
 	}
@@ -106,7 +106,7 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't decode fee policy: %s ", err.Error()))
 	}
-	res, err = chainutil.CallView(currentBlockIndex, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
+	res, err = chainutil.CallView(latestState, b.chain, governance.Contract.Hname(), governance.ViewGetEVMGasRatio.Hname(), nil)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't call getGasRatio view: %s ", err.Error()))
 	}
@@ -124,19 +124,31 @@ func (b *WaspEVMBackend) EVMGasPrice() *big.Int {
 	return price
 }
 
-func (b *WaspEVMBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return chainutil.CallView(iscBlockIndex, b.chain, isc.Hn(scName), isc.Hn(funName), args)
+func (b *WaspEVMBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {
+	return chainutil.CallView(chainState, b.chain, isc.Hn(scName), isc.Hn(funName), args)
 }
 
 func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
 	return b.baseToken
 }
 
-// ISCLatestBlockIndex implements jsonrpc.ChainBackend
-func (b *WaspEVMBackend) ISCLatestBlockIndex() uint32 {
-	currentBlockIndex, err := b.chain.GetStateReader().LatestBlockIndex()
+// ISCLatestState implements jsonrpc.ChainBackend
+func (b *WaspEVMBackend) ISCLatestState() state.State {
+	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
 		panic(fmt.Sprintf("couldn't get latest block index: %s ", err.Error()))
 	}
-	return currentBlockIndex
+	return latestState
+}
+
+// ISCStateByBlockIndex implements jsonrpc.ChainBackend
+func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
+	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get latest state: %s", err.Error())
+	}
+	if latestState.BlockIndex() == blockIndex {
+		return latestState, nil
+	}
+	return b.chain.Store().StateByIndex(blockIndex)
 }
