@@ -1,7 +1,6 @@
 package viewcontext
 
 import (
-	"fmt"
 	"math/big"
 	"time"
 
@@ -47,43 +46,11 @@ type ViewContext struct {
 
 var _ execution.WaspContext = &ViewContext{}
 
-// BlockIndexOrTrieRoot wraps an optional block index or TrieRoot, if both are defined TrieRoot will be used
-type BlockIndexOrTrieRoot struct {
-	BlockIndex uint32
-	TrieRoot   *trie.Hash
-}
-
-func getChainState(ch chain.ChainCore, b *BlockIndexOrTrieRoot) (state.State, error) {
-	if b == nil {
-		latestState, err := ch.GetStateReader().LatestState()
-		if err != nil {
-			return nil, fmt.Errorf("cannot get latest block for ChainID=%v: %w", ch.ID(), err)
-		}
-		return latestState, nil
-	}
-	if b.TrieRoot != nil {
-		state, err := ch.GetStateReader().StateByTrieRoot(*b.TrieRoot)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get a state with TrieRoot=%s for ChainID=%v: %w", b.TrieRoot.String(), ch.ID(), err)
-		}
-		return state, nil
-	}
-	state, err := ch.GetStateReader().StateByIndex(b.BlockIndex)
-	if err != nil {
-		return nil, fmt.Errorf("cannot get a state with Index=%v for ChainID=%v: %w", b.BlockIndex, ch.ID(), err)
-	}
-	return state, nil
-}
-
-func New(ch chain.ChainCore, b *BlockIndexOrTrieRoot) (*ViewContext, error) {
-	state, err := getChainState(ch, b)
-	if err != nil {
-		return nil, err
-	}
+func New(ch chain.ChainCore, latestState state.State) (*ViewContext, error) {
 	chainID := ch.ID()
 	return &ViewContext{
 		processors:     ch.Processors(),
-		stateReader:    state,
+		stateReader:    latestState,
 		chainID:        chainID,
 		log:            ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		gasBurnEnabled: true,

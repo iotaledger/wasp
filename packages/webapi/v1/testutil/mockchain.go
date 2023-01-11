@@ -25,6 +25,11 @@ func (*MockChain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active 
 	panic("unimplemented")
 }
 
+// LatestState implements chain.Chain
+func (*MockChain) LatestState(freshness chain.StateFreshness) (state.State, error) {
+	panic("unimplemented")
+}
+
 // GetCandidateNodes implements chain.Chain
 func (*MockChain) GetCandidateNodes() []*governance.AccessNodeInfo {
 	panic("unimplemented")
@@ -41,7 +46,7 @@ func (*MockChain) GetCommitteeInfo() *chain.CommitteeInfo {
 }
 
 // GetStateReader implements chain.Chain
-func (*MockChain) GetStateReader() state.Store {
+func (*MockChain) Store() state.Store {
 	panic("unimplemented")
 }
 

@@ -59,7 +59,6 @@ import (
 
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/identity"
 	"github.com/iotaledger/hive.go/core/logger"
@@ -172,14 +171,14 @@ func New(
 		nodeIDs[i] = nodeIDFromPubKey(dkShareNodePubKeys[i])
 		nodePKs[nodeIDs[i]], err = dkShareNodePubKeys[i].AsKyberPoint()
 		if err != nil {
-			panic(xerrors.Errorf("cannot convert nodePK[%v] to kyber.Point: %w", i, err))
+			panic(fmt.Errorf("cannot convert nodePK[%v] to kyber.Point: %w", i, err))
 		}
 	}
 
 	f := len(dkShareNodePubKeys) - int(dkShare.GetT())
 	myKyberKeys, err := mySK.AsKyberKeyPair()
 	if err != nil {
-		panic(xerrors.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
+		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
 	longTermDKS := dkShare.DSSSecretShare()
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
@@ -253,17 +252,17 @@ func New(
 func (c *consImpl) msgWrapperFunc(subsystem byte, index int) (gpa.GPA, error) {
 	if subsystem == subsystemTypeDSS {
 		if index != 0 {
-			return nil, xerrors.Errorf("unexpected DSS index: %v", index)
+			return nil, fmt.Errorf("unexpected DSS index: %v", index)
 		}
 		return c.dss.AsGPA(), nil
 	}
 	if subsystem == subsystemTypeACS {
 		if index != 0 {
-			return nil, xerrors.Errorf("unexpected ACS index: %v", index)
+			return nil, fmt.Errorf("unexpected ACS index: %v", index)
 		}
 		return c.acs.AsGPA(), nil
 	}
-	return nil, xerrors.Errorf("unexpected subsystem: %v", subsystem)
+	return nil, fmt.Errorf("unexpected subsystem: %v", subsystem)
 }
 
 func (c *consImpl) AsGPA() gpa.GPA {
@@ -293,7 +292,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputVMResult:
 		return c.subVM.VMResultReceived(input.task)
 	}
-	panic(xerrors.Errorf("unexpected input: %v", input))
+	panic(fmt.Errorf("unexpected input: %v", input))
 }
 
 // Implements the gpa.GPA interface.
@@ -315,9 +314,9 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemTypeDSS:
 			return msgs.AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
 		}
-		panic(xerrors.Errorf("unexpected subsystem after check: %+v", msg))
+		panic(fmt.Errorf("unexpected subsystem after check: %+v", msg))
 	}
-	panic(xerrors.Errorf("unexpected message: %v", msg))
+	panic(fmt.Errorf("unexpected message: %v", msg))
 }
 
 func (c *consImpl) Output() gpa.Output {
@@ -403,7 +402,7 @@ func (c *consImpl) uponSMSaveProducedBlockDone() gpa.OutMessages {
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
 	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
 	if err != nil {
-		panic(xerrors.Errorf("cannot provide input to DSS: %w", err))
+		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
@@ -418,7 +417,7 @@ func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.No
 	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
-		panic(xerrors.Errorf("cannot provide inputs for signing: %w", err))
+		panic(fmt.Errorf("cannot provide inputs for signing: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
@@ -443,7 +442,7 @@ func (c *consImpl) uponACSInputsReceived(baseAliasOutput *isc.AliasOutputWithID,
 	)
 	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
 	if err != nil {
-		panic(xerrors.Errorf("cannot provide input to the ACS: %w", err))
+		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(subMsgs).
@@ -479,7 +478,7 @@ func (c *consImpl) uponACSTerminated() {
 func (c *consImpl) uponRNDInputsReady(dataToSign []byte) gpa.OutMessages {
 	sigShare, err := c.dkShare.BLSSignShare(dataToSign)
 	if err != nil {
-		panic(xerrors.Errorf("cannot sign share for randomness: %w", err))
+		panic(fmt.Errorf("cannot sign share for randomness: %w", err))
 	}
 	msgs := gpa.NoMessages()
 	for _, nid := range c.nodeIDs {
@@ -545,7 +544,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 			identity.ID{},
 		)
 		if err != nil {
-			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %v", err)
+			c.log.Warnf("cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped
 			c.term.haveOutputProduced()
 			return nil
@@ -556,7 +555,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTask) gpa.OutMessages {
 
 	signingMsg, err := vmResult.ResultTransactionEssence.SigningMessage()
 	if err != nil {
-		panic(xerrors.Errorf("uponVMOutputReceived: cannot obtain signing message: %v", err))
+		panic(fmt.Errorf("uponVMOutputReceived: cannot obtain signing message: %w", err))
 	}
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
@@ -584,7 +583,7 @@ func (c *consImpl) uponTXInputsReady(vmResult *vm.VMTask, signature []byte) gpa.
 	}
 	chained, err := transaction.GetAliasOutput(tx, c.chainID.AsAddress())
 	if err != nil {
-		panic(xerrors.Errorf("cannot get AliasOutput from produced TX: %w", err))
+		panic(fmt.Errorf("cannot get AliasOutput from produced TX: %w", err))
 	}
 	c.output.ResultTransaction = tx
 	c.output.ResultNextAliasOutput = chained

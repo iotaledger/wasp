@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -26,12 +27,12 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainContract(c echo.Context) error {
 	chainID, err := isc.ChainIDFromString(c.Param("chainid"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("chainid: %v", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("chainid: %w", err))
 	}
 
 	hname, err := isc.HnameFromString(c.Param("hname"))
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("hname: %v", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("hname: %w", err))
 	}
 
 	result := &ChainContractTemplateParams{
@@ -48,21 +49,21 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		root.ParamHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {
-		return fmt.Errorf("call view failed: %v", err)
+		return fmt.Errorf("call view failed: %w", err)
 	}
 	if r[root.ParamContractRecData] == nil {
-		return fmt.Errorf("contract not found")
+		return errors.New("contract not found")
 	}
 	result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
 	if err != nil {
-		return fmt.Errorf("cannot decode contract record: %v", err)
+		return fmt.Errorf("cannot decode contract record: %w", err)
 	}
 
 	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.ViewGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: codec.EncodeHname(hname),
 	}))
 	if err != nil {
-		return fmt.Errorf("call view failed: %v", err)
+		return fmt.Errorf("call view failed: %w", err)
 	}
 
 	recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)

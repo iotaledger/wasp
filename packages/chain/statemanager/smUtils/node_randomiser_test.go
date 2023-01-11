@@ -84,7 +84,7 @@ func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsT
 			}
 		}
 	}
-	t.Logf("Checking if all nodeIDs were returned...")
+	t.Log("Checking if all nodeIDs were returned...")
 	for i := range nodeIDs {
 		_, ok := nodeIDFounds[nodeIDs[i]]
 		if nodeIDs[i].Equals(me) {
@@ -95,7 +95,7 @@ func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsT
 			require.True(t, ok)
 		}
 	}
-	t.Logf("Checking if all returned nodeIDs are correct...")
+	t.Log("Checking if all returned nodeIDs are correct...")
 	containsFun := func(ni gpa.NodeID) bool {
 		for i := range nodeIDs {
 			if ni.Equals(nodeIDs[i]) {

@@ -1,11 +1,11 @@
 package codec
 
-import "golang.org/x/xerrors"
+import "errors"
 
 func DecodeString(b []byte, def ...string) (string, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return "", xerrors.Errorf("cannot decode nil bytes")
+			return "", errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

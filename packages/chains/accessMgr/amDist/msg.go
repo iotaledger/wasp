@@ -4,6 +4,7 @@
 package amDist
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -16,7 +17,7 @@ const (
 
 func (ami *accessMgrDist) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("accessMgrImpl::UnmarshalMessage: data too short")
+		return nil, errors.New("accessMgrImpl::UnmarshalMessage: data too short")
 	}
 	if data[0] == msgTypeAccess {
 		m := &msgAccess{}

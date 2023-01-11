@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -168,7 +169,7 @@ func generateSchema(file *os.File) error {
 func generateSchemaNew() error {
 	r := regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]+$")
 	if !r.MatchString(*flagInit) {
-		return fmt.Errorf("name contains path characters")
+		return errors.New("name contains path characters")
 	}
 	name := *flagInit
 	fmt.Println("initializing " + name)

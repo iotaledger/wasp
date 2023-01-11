@@ -11,13 +11,15 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
 	EVMEstimateGas(callMsg ethereum.CallMsg) (uint64, error)
-	ISCCallView(iscBlockIndex uint32, scName string, funName string, args dict.Dict) (dict.Dict, error)
-	ISCLatestBlockIndex() uint32
+	ISCCallView(chainState state.State, scName string, funName string, args dict.Dict) (dict.Dict, error)
+	ISCLatestState() state.State
+	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	EVMGasPrice() *big.Int
 	BaseToken() *parameters.BaseToken
 }

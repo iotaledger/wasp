@@ -70,7 +70,16 @@ func addNL(s string) string {
 	return s
 }
 
-func Fatalf(format string, args ...interface{}) {
+func Fatal(args ...any) {
+	s := fmt.Sprint(args...)
+	if DebugFlag {
+		panic(s)
+	}
+	Printf("error: " + addNL(s))
+	os.Exit(1)
+}
+
+func Fatalf(format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
 	if DebugFlag {
 		panic(s)

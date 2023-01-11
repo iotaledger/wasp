@@ -13,8 +13,8 @@ type TokenAmounts map[wasmtypes.ScTokenID]wasmtypes.ScBigInt
 
 type ScAssets struct {
 	BaseTokens   uint64
-	NftIDs       map[wasmtypes.ScNftID]bool
 	NativeTokens TokenAmounts
+	NftIDs       map[wasmtypes.ScNftID]bool
 }
 
 func NewScAssets(buf []byte) *ScAssets {

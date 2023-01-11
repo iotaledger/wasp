@@ -31,12 +31,12 @@ func (gbmT *GetBlockMessage) MarshalBinary() (data []byte, err error) {
 
 func (gbmT *GetBlockMessage) UnmarshalBinary(data []byte) error {
 	if data[0] != MsgTypeGetBlockMessage {
-		return fmt.Errorf("Error creating get block message from bytes: wrong message type %v", data[0])
+		return fmt.Errorf("error creating get block message from bytes: wrong message type %v", data[0])
 	}
 	var err error
 	gbmT.commitment, err = state.L1CommitmentFromBytes(data[1:])
 	if err != nil {
-		return fmt.Errorf("Error creating get block message from bytes: %v", err)
+		return fmt.Errorf("error creating get block message from bytes: %w", err)
 	}
 	return nil
 }

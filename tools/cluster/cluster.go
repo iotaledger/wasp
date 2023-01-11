@@ -19,8 +19,6 @@ import (
 	"text/template"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -198,7 +196,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 
 	err := clu.RequestFunds(address)
 	if err != nil {
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return nil, fmt.Errorf("DeployChain: %w", err)
 	}
 
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
@@ -222,7 +220,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		Prefix:            "[cluster] ",
 	}, stateAddr, stateAddr)
 	if err != nil {
-		return nil, xerrors.Errorf("DeployChain: %w", err)
+		return nil, fmt.Errorf("DeployChain: %w", err)
 	}
 
 	chain.StateAddress = stateAddr
@@ -250,7 +248,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
 		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second); err != nil {
-			return xerrors.Errorf("WaitAddAccessNode: %w", err)
+			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
 
@@ -362,7 +360,7 @@ func (clu *Cluster) InitDataPath(templatesPath string, removeExisting bool) erro
 	}
 	if exists {
 		if !removeExisting {
-			return xerrors.Errorf("%s directory exists", clu.DataPath)
+			return fmt.Errorf("%s directory exists", clu.DataPath)
 		}
 		err = os.RemoveAll(clu.DataPath)
 		if err != nil {
@@ -423,7 +421,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return err
 	}
 	if !exists {
-		return xerrors.Errorf("Data path %s does not exist", dataPath)
+		return fmt.Errorf("data path %s does not exist", dataPath)
 	}
 
 	if err := clu.start(); err != nil {
@@ -455,7 +453,7 @@ func (clu *Cluster) start() error {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
-			return xerrors.Errorf("Timeout starting wasp nodes\n")
+			return errors.New("timeout starting wasp nodes")
 		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes in %v\n", len(clu.Config.Wasp), time.Since(start))
@@ -464,7 +462,7 @@ func (clu *Cluster) start() error {
 
 func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
-		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
 	wcmd := clu.waspCmds[nodeIndex]
@@ -486,7 +484,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 	// send stop commands
 	for _, i := range nodeIndex {
 		if i >= waspNodesCount {
-			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
+			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
 		}
 		clu.stopNode(i)
 	}
@@ -503,7 +501,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 
 	for _, i := range nodeIndex {
 		if i >= waspNodesCount {
-			return xerrors.Errorf("[cluster] Wasp node with index %d not found", i)
+			return fmt.Errorf("[cluster] Wasp node with index %d not found", i)
 		}
 
 		go func(cmd *waspCmd) {
@@ -535,7 +533,7 @@ func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
 				return nil
 			}
 		case <-time.After(5 * time.Second):
-			return xerrors.Errorf("Timeout starting wasp nodes\n")
+			return errors.New("timeout starting wasp nodes")
 		}
 	}
 	return nil

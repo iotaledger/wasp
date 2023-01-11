@@ -11,11 +11,10 @@ package peering
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -154,11 +153,11 @@ type PeerStatusProvider interface {
 func ParseNetID(netID string) (string, int, error) {
 	parts := strings.Split(netID, ":")
 	if len(parts) != 2 {
-		return "", 0, xerrors.Errorf("invalid NetID: %v", netID)
+		return "", 0, fmt.Errorf("invalid NetID: %v", netID)
 	}
 	port, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return "", 0, xerrors.Errorf("invalid port in NetID: %v", netID)
+		return "", 0, fmt.Errorf("invalid port in NetID: %v", netID)
 	}
 	return parts[0], port, nil
 }

@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -15,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -204,11 +204,11 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction, gasBurnEnable func(
 
 	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return nil, nil, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, nil, fmt.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.StateDB().GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return nil, nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, nil, fmt.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)

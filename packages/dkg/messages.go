@@ -19,7 +19,6 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -424,7 +423,7 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	for i := range m.edPubShares {
 		m.edPubShares[i] = m.edSuite.Point()
 		if err = util.ReadMarshaled(r, m.edPubShares[i]); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
+			return fmt.Errorf("failed to unmarshal initiatorDoneMsg.edPubShares: %w", err)
 		}
 	}
 	//
@@ -436,7 +435,7 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	for i := range m.blsPubShares {
 		m.blsPubShares[i] = m.blsSuite.Point()
 		if err = util.ReadMarshaled(r, m.blsPubShares[i]); err != nil {
-			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.blsPubShares: %w", err)
+			return fmt.Errorf("failed to unmarshal initiatorDoneMsg.blsPubShares: %w", err)
 		}
 	}
 	return nil
@@ -541,11 +540,11 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	// Ed25519 part.
 	m.edSharedPublic = m.edSuite.Point()
 	if err = util.ReadMarshaled(r, m.edSharedPublic); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
+		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.edSharedPublic: %w", err)
 	}
 	m.edPublicShare = m.edSuite.Point()
 	if err = util.ReadMarshaled(r, m.edPublicShare); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
+		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.edPublicShare: %w", err)
 	}
 	if m.edSignature, err = util.ReadBytes16(r); err != nil {
 		return err
@@ -554,11 +553,11 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	// BLS part.
 	m.blsSharedPublic = m.blsSuite.Point()
 	if err = util.ReadMarshaled(r, m.blsSharedPublic); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
+		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.blsSharedPublic: %w", err)
 	}
 	m.blsPublicShare = m.blsSuite.Point()
 	if err = util.ReadMarshaled(r, m.blsPublicShare); err != nil {
-		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
+		return fmt.Errorf("failed to unmarshal initiatorPubShareMsg.blsPublicShare: %w", err)
 	}
 	if m.blsSignature, err = util.ReadBytes16(r); err != nil {
 		return err

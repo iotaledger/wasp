@@ -118,83 +118,83 @@ func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 }
 
 func newClient(t solo.TestContext, svcClient wasmclient.IClientService, chain string, wallet *cryptolib.KeyPair) *wasmclient.WasmClientContext {
-	svc := wasmclient.NewWasmClientContext(svcClient, chain, testwasmlib.ScName)
-	require.NoError(t, svc.Err)
-	svc.SignRequests(wallet)
-	return svc
+	ctx := wasmclient.NewWasmClientContext(svcClient, chain, testwasmlib.ScName)
+	require.NoError(t, ctx.Err)
+	ctx.SignRequests(wallet)
+	return ctx
 }
 
 func TestClientAccountBalance(t *testing.T) {
-	svc := setupClient(t)
-	wallet := svc.CurrentKeyPair()
+	ctx := setupClient(t)
+	wallet := ctx.CurrentKeyPair()
 
 	// note: this calls core accounts contract instead of testwasmlib
-	svc = wasmclient.NewWasmClientContext(svc.CurrentSvcClient(), svc.CurrentChainID().String(), coreaccounts.ScName)
-	svc.SignRequests(wallet)
+	ctx = wasmclient.NewWasmClientContext(ctx.CurrentSvcClient(), ctx.CurrentChainID().String(), coreaccounts.ScName)
+	ctx.SignRequests(wallet)
 
 	addr := isc.NewAgentID(wallet.Address())
 	agent := wasmtypes.AgentIDFromBytes(addr.Bytes())
 
-	bal := coreaccounts.ScFuncs.BalanceBaseToken(svc)
+	bal := coreaccounts.ScFuncs.BalanceBaseToken(ctx)
 	bal.Params.AgentID().SetValue(agent)
 	bal.Func.Call()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
 	balance := bal.Results.Balance()
 	fmt.Printf("Balance: %d\n", balance.Value())
 }
 
 func TestClientArray(t *testing.T) {
-	svc := setupClient(t)
+	ctx := setupClient(t)
 
-	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 0, v.Results.Length().Value())
 
-	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(svc)
+	f := testwasmlib.ScFuncs.StringMapOfStringArrayAppend(ctx)
 	f.Params.Name().SetValue("Bands")
 	f.Params.Value().SetValue("Dire Straits")
 	f.Func.Post()
-	require.NoError(t, svc.Err)
-	svc.WaitRequest()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
 
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(svc)
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
-	require.NoError(t, svc.Err)
-	svc.WaitRequest()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
 
-	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(svc)
+	v = testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 0, v.Results.Length().Value())
 }
 
 func TestClientRandom(t *testing.T) {
-	svc := setupClient(t)
+	ctx := setupClient(t)
 	doit := func() {
 		// generate new random value
-		f := testwasmlib.ScFuncs.Random(svc)
+		f := testwasmlib.ScFuncs.Random(ctx)
 		f.Func.Post()
-		require.NoError(t, svc.Err)
+		require.NoError(t, ctx.Err)
 
-		svc.WaitRequest()
-		require.NoError(t, svc.Err)
+		ctx.WaitRequest()
+		require.NoError(t, ctx.Err)
 
 		// get current random value
-		v := testwasmlib.ScFuncs.GetRandom(svc)
+		v := testwasmlib.ScFuncs.GetRandom(ctx)
 		v.Func.Call()
-		require.NoError(t, svc.Err)
+		require.NoError(t, ctx.Err)
 		rnd := v.Results.Random().Value()
 		require.GreaterOrEqual(t, rnd, uint64(0))
 		fmt.Println("Random: ", rnd)
@@ -206,38 +206,38 @@ func TestClientRandom(t *testing.T) {
 }
 
 func TestClientEvents(t *testing.T) {
-	svc := setupClient(t)
+	ctx := setupClient(t)
 	events := &testwasmlib.TestWasmLibEventHandlers{}
 	name := ""
 	events.OnTestWasmLibTest(func(e *testwasmlib.EventTest) {
 		name = e.Name
 	})
-	svc.Register(events)
+	ctx.Register(events)
 
 	event := func() string {
 		return name
 	}
 
-	testClientEventsParam(t, svc, "Lala", event)
-	testClientEventsParam(t, svc, "Trala", event)
-	testClientEventsParam(t, svc, "Bar|Bar", event)
-	testClientEventsParam(t, svc, "Bar~|~Bar", event)
-	testClientEventsParam(t, svc, "Tilde~Tilde", event)
-	testClientEventsParam(t, svc, "Tilde~~ Bar~/ Space~_", event)
+	testClientEventsParam(t, ctx, "Lala", event)
+	testClientEventsParam(t, ctx, "Trala", event)
+	testClientEventsParam(t, ctx, "Bar|Bar", event)
+	testClientEventsParam(t, ctx, "Bar~|~Bar", event)
+	testClientEventsParam(t, ctx, "Tilde~Tilde", event)
+	testClientEventsParam(t, ctx, "Tilde~~ Bar~/ Space~_", event)
 }
 
-func testClientEventsParam(t *testing.T, svc *wasmclient.WasmClientContext, name string, event func() string) {
-	f := testwasmlib.ScFuncs.TriggerEvent(svc)
+func testClientEventsParam(t *testing.T, ctx *wasmclient.WasmClientContext, name string, event func() string) {
+	f := testwasmlib.ScFuncs.TriggerEvent(ctx)
 	f.Params.Name().SetValue(name)
-	f.Params.Address().SetValue(svc.CurrentChainID().Address())
+	f.Params.Address().SetValue(ctx.CurrentChainID().Address())
 	f.Func.Post()
-	require.NoError(t, svc.Err)
+	require.NoError(t, ctx.Err)
 
-	svc.WaitRequest()
-	require.NoError(t, svc.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
 
-	svc.WaitEvent()
-	require.NoError(t, svc.Err)
+	ctx.WaitEvent()
+	require.NoError(t, ctx.Err)
 
 	require.EqualValues(t, name, event())
 }

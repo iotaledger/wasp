@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -13,7 +13,7 @@ func EncodeRatio32(r util.Ratio32) []byte {
 func DecodeRatio32(b []byte, def ...util.Ratio32) (util.Ratio32, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return util.Ratio32{}, xerrors.Errorf("cannot decode nil bytes")
+			return util.Ratio32{}, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

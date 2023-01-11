@@ -2,7 +2,7 @@ package micropay
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -76,7 +76,7 @@ func (p *Payment) Read(r io.Reader) error {
 		return err
 	}
 	if len(p.SignatureShort) != cryptolib.SignatureSize {
-		return fmt.Errorf("wrong public key bytes")
+		return errors.New("wrong public key bytes")
 	}
 	return nil
 }

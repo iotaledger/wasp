@@ -124,7 +124,7 @@ func (smT *stateManagerGPA) StatusString() string {
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	if len(data) < 1 {
-		return nil, fmt.Errorf("Error unmarshalling message: slice of length %v is too short", data)
+		return nil, fmt.Errorf("error unmarshalling message: slice of length %d is too short", len(data))
 	}
 	var message gpa.Message
 	switch data[0] {
@@ -133,7 +133,7 @@ func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	case smMessages.MsgTypeGetBlockMessage:
 		message = smMessages.NewEmptyGetBlockMessage()
 	default:
-		return nil, fmt.Errorf("Error unmarshalling message: message type %v unknown", data[0])
+		return nil, fmt.Errorf("error unmarshalling message: message type %v unknown", data[0])
 	}
 	err := message.UnmarshalBinary(data)
 	return message, err
@@ -478,7 +478,7 @@ func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
 				var err error
 				stateDraft, err = smT.store.NewEmptyStateDraft(previousCommitment)
 				if err != nil {
-					return fmt.Errorf("Completing %v requests: error creating empty state draft to store block %s: %v",
+					return fmt.Errorf("completing %d requests: error creating empty state draft to store block %s: %w",
 						len(requests), blockCommitment, err)
 				}
 				block.Mutations().ApplyTo(stateDraft)

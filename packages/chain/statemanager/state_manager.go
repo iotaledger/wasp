@@ -88,7 +88,7 @@ func New(
 
 	stateManagerGPA, err := smGPA.New(chainID, nr, wal, store, log, timers)
 	if err != nil {
-		log.Errorf("Failed to create state manager GPA: %v", err)
+		log.Errorf("failed to create state manager GPA: %w", err)
 		return nil, err
 	}
 	result := &stateManager{

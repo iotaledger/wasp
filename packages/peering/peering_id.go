@@ -10,10 +10,9 @@
 package peering
 
 import (
+	"fmt"
 	"io"
 	"math/rand"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -44,14 +43,14 @@ func (pid *PeeringID) String() string {
 
 func (pid *PeeringID) Read(r io.Reader) error {
 	if n, err := r.Read(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
-		return xerrors.Errorf("error while parsing PeeringID (err=%v)", err)
+		return fmt.Errorf("error while parsing PeeringID (err=%w)", err)
 	}
 	return nil
 }
 
 func (pid *PeeringID) Write(w io.Writer) error {
 	if n, err := w.Write(pid[:]); err != nil || n != iotago.Ed25519AddressBytesLength {
-		return xerrors.Errorf("error while serializing PeeringID (err=%v)", err)
+		return fmt.Errorf("error while serializing PeeringID (err=%w)", err)
 	}
 	return nil
 }

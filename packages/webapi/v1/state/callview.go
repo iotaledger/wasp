@@ -9,6 +9,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -94,7 +95,11 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 	// TODO should blockIndex be an optional parameter of this endpoint?
-	ret, err := chainutil.CallView(theChain, nil, contractHname, functionHname, params)
+	latestState, err := theChain.LatestState(chain.LatestState)
+	if err != nil {
+		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
+	}
+	ret, err := chainutil.CallView(latestState, theChain, contractHname, functionHname, params)
 	if err != nil {
 		return httperrors.ServerError(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -131,7 +136,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	state, err := theChain.GetStateReader().LatestState()
+	state, err := theChain.LatestState(chain.LatestState)
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
 		return httperrors.ServerError(reason)

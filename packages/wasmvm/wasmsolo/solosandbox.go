@@ -6,8 +6,7 @@ package wasmsolo
 import (
 	"bytes"
 	"errors"
-
-	"golang.org/x/xerrors"
+	"fmt"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -72,7 +71,7 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 		case string:
 			s.ctx.Err = errors.New(errType)
 		default:
-			s.ctx.Err = xerrors.Errorf("RunScFunction: %v", errType)
+			s.ctx.Err = fmt.Errorf("RunScFunction: %v", errType)
 		}
 		s.ctx.Chain.Log().Infof("SoloSandbox error:: %s", s.ctx.Err.Error())
 	}()

@@ -69,7 +69,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTask 
 		AnchorOutputID:     anchorOutput.OutputID(),
 		Requests:           reqs,
 		TimeAssumption:     ch.Env.GlobalTime(),
-		Store:              ch.Store,
+		Store:              ch.store,
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
@@ -137,8 +137,8 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request, trace string) (results []
 }
 
 func (ch *Chain) settleStateTransition(stateTx *iotago.Transaction, reqids []isc.RequestID, stateDraft state.StateDraft) {
-	block := ch.Store.Commit(stateDraft)
-	err := ch.Store.SetLatest(block.TrieRoot())
+	block := ch.store.Commit(stateDraft)
+	err := ch.store.SetLatest(block.TrieRoot())
 	if err != nil {
 		panic(err)
 	}

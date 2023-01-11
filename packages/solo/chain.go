@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -30,7 +31,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -47,7 +48,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	block, err := ch.Store.LatestBlock()
+	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
@@ -146,7 +147,7 @@ func (ch *Chain) UploadBlob(user *cryptolib.KeyPair, params ...interface{}) (ret
 	}
 	resBin := res.MustGet(blob.ParamHash)
 	if resBin == nil {
-		err = fmt.Errorf("internal error: no hash returned")
+		err = errors.New("internal error: no hash returned")
 		return
 	}
 	ret, err = codec.DecodeHashValue(resBin)
@@ -356,14 +357,14 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 }
 
 func (ch *Chain) GetErrorMessageFormat(code isc.VMErrorCode) (string, error) {
-	ret, err := ch.CallView(errors.Contract.Name, errors.ViewGetErrorMessageFormat.Name,
-		errors.ParamErrorCode, code.Bytes(),
+	ret, err := ch.CallView(vmerrors.Contract.Name, vmerrors.ViewGetErrorMessageFormat.Name,
+		vmerrors.ParamErrorCode, code.Bytes(),
 	)
 	if err != nil {
 		return "", err
 	}
 	resultDecoder := kvdecoder.New(ret, ch.Log())
-	messageFormat, err := resultDecoder.GetString(errors.ParamErrorMessageFormat)
+	messageFormat, err := resultDecoder.GetString(vmerrors.ParamErrorMessageFormat)
 
 	require.NoError(ch.Env.T, err)
 	return messageFormat, nil
@@ -645,8 +646,9 @@ func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("unimplemented")
 }
 
-func (ch *Chain) GetStore() state.Store {
-	return ch.Store
+// Store implements chain.Chain
+func (ch *Chain) Store() state.Store {
+	return ch.store
 }
 
 // GetTimeData implements chain.Chain
@@ -660,6 +662,23 @@ func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *
 	return ao, ao
 }
 
+// LatestState implements chain.Chain
+func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error) {
+	ao := ch.GetAnchorOutput()
+	if ao == nil {
+		return ch.store.LatestState()
+	}
+	l1c, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
+	st, err := ch.store.StateByTrieRoot(l1c.TrieRoot())
+	if err != nil {
+		panic(err)
+	}
+	return st, nil
+}
+
 // ReceiveOffLedgerRequest implements chain.Chain
 func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 	panic("unimplemented")
@@ -671,7 +690,7 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	i, err := ch.Store.LatestBlockIndex()
+	i, err := ch.store.LatestBlockIndex()
 	require.NoError(ch.Env.T, err)
 	return i
 }

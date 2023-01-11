@@ -4,9 +4,8 @@
 package gpa
 
 import (
+	"errors"
 	"fmt"
-
-	"golang.org/x/xerrors"
 )
 
 // A protocol for testing infrastructure.
@@ -34,7 +33,7 @@ func (tr *testRound) Input(input Input) OutMessages {
 func (tr *testRound) Message(msg Message) OutMessages {
 	from := msg.(*testRoundMsg).sender
 	if tr.received[from] {
-		panic(xerrors.Errorf("duplicate message"))
+		panic(errors.New("duplicate message"))
 	}
 	tr.received[from] = true
 	return nil
@@ -53,7 +52,7 @@ func (tr *testRound) StatusString() string {
 }
 
 func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
-	panic(xerrors.Errorf("not implemented"))
+	panic(errors.New("not implemented"))
 }
 
 type testRoundMsg struct {
@@ -70,9 +69,9 @@ func (m *testRoundMsg) SetSender(sender NodeID) {
 }
 
 func (m *testRoundMsg) MarshalBinary() ([]byte, error) {
-	panic(xerrors.Errorf("should be not used"))
+	panic(errors.New("should be not used"))
 }
 
 func (m *testRoundMsg) UnmarshalBinary(data []byte) error {
-	panic(xerrors.Errorf("should be not used"))
+	panic(errors.New("should be not used"))
 }

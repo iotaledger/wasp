@@ -6,8 +6,6 @@ import (
 	"io"
 	"math"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -43,26 +41,26 @@ func RequestReceiptFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	var err error
 
 	if ret.GasBudget, err = mu.ReadUint64(); err != nil {
-		return nil, xerrors.Errorf("cannot read GasBudget: %w", err)
+		return nil, fmt.Errorf("cannot read GasBudget: %w", err)
 	}
 	if ret.GasBurned, err = mu.ReadUint64(); err != nil {
-		return nil, xerrors.Errorf("cannot read GasBurned: %w", err)
+		return nil, fmt.Errorf("cannot read GasBurned: %w", err)
 	}
 	if ret.GasFeeCharged, err = mu.ReadUint64(); err != nil {
-		return nil, xerrors.Errorf("cannot read GasFeeCharged: %w", err)
+		return nil, fmt.Errorf("cannot read GasFeeCharged: %w", err)
 	}
 	if ret.Request, err = isc.NewRequestFromMarshalUtil(mu); err != nil {
-		return nil, xerrors.Errorf("cannot read Request: %w", err)
+		return nil, fmt.Errorf("cannot read Request: %w", err)
 	}
 
 	if isError, err := mu.ReadBool(); err != nil {
-		return nil, xerrors.Errorf("cannot read isError: %w", err)
+		return nil, fmt.Errorf("cannot read isError: %w", err)
 	} else if !isError {
 		return ret, nil
 	}
 
 	if ret.Error, err = isc.UnresolvedVMErrorFromMarshalUtil(mu); err != nil {
-		return nil, xerrors.Errorf("cannot read Error: %w", err)
+		return nil, fmt.Errorf("cannot read Error: %w", err)
 	}
 
 	return ret, nil
@@ -75,7 +73,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 	kvStore.MustIterate(kv.Key(prefixRequestReceipts+"."), func(key kv.Key, value []byte) bool { // TODO: Nicer way to construct the key?
 		receipt, err := RequestReceiptFromBytes(value)
 		if err != nil {
-			respErr = xerrors.Errorf("cannot deserialize requestReceipt: %w", err)
+			respErr = fmt.Errorf("cannot deserialize requestReceipt: %w", err)
 			return true
 		}
 		receipts = append(receipts, receipt)

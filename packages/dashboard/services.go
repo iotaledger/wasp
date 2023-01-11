@@ -152,7 +152,11 @@ func (w *WaspServices) CallView(chainID isc.ChainID, scName, funName string, par
 	if ch == nil {
 		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
-	vctx, err := viewcontext.New(ch, nil)
+	latestState, err := ch.LatestState(chain.LatestState)
+	if err != nil {
+		return nil, err
+	}
+	vctx, err := viewcontext.New(ch, latestState)
 	if err != nil {
 		return nil, err
 	}

@@ -2,14 +2,14 @@ package cryptolib
 
 import (
 	"crypto/ed25519"
-	"fmt"
+	"errors"
 )
 
 const SignatureSize = ed25519.SignatureSize
 
 func SignatureFromBytes(bytes []byte) (result [SignatureSize]byte, consumedBytes int, err error) {
 	if len(bytes) < SignatureSize {
-		err = fmt.Errorf("bytes too short")
+		err = errors.New("bytes too short")
 		return
 	}
 

@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -9,7 +9,7 @@ import (
 func DecodeVMErrorCode(b []byte, def ...isc.VMErrorCode) (isc.VMErrorCode, error) {
 	if b == nil {
 		if len(def) == 0 {
-			return isc.VMErrorCode{}, xerrors.Errorf("cannot decode nil bytes")
+			return isc.VMErrorCode{}, errors.New("cannot decode nil bytes")
 		}
 		return def[0], nil
 	}

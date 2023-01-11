@@ -36,15 +36,15 @@ func TestDomainProvider(t *testing.T) {
 	doneCh1 := make(chan bool)
 	doneCh2 := make(chan bool)
 	nodes[0].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		t.Logf("0 received")
+		t.Log("0 received")
 		doneCh0 <- true
 	})
 	nodes[1].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		t.Logf("1 received")
+		t.Log("1 received")
 		doneCh1 <- true
 	})
 	nodes[2].Attach(&peeringID, receiver, func(recv *peering.PeerMessageIn) {
-		t.Logf("2 received")
+		t.Log("2 received")
 		doneCh2 <- true
 	})
 	//

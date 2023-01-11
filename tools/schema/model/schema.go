@@ -4,6 +4,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -52,7 +53,7 @@ func NewSchema() *Schema {
 func (s *Schema) Compile(schemaDef *SchemaDef) error {
 	s.ContractName = strings.TrimSpace(schemaDef.Name.Val)
 	if s.ContractName == "" {
-		return fmt.Errorf("missing contract name")
+		return errors.New("missing contract name")
 	}
 	s.Copyright = schemaDef.Copyright
 	s.PackageName = strings.ToLower(s.ContractName)

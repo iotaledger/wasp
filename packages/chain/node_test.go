@@ -161,7 +161,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	for i, node := range te.nodes {
 		for {
-			latestState, err := node.GetStateReader().LatestState()
+			latestState, err := node.LatestState(chain.LatestState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
 			te.log.Debugf("Counter[node=%v]=%v", i, cnt)
@@ -268,10 +268,10 @@ func (tnc *testNodeConn) PublishTX(
 	callback chain.TxPostHandler,
 ) error {
 	if tnc.chainID.Empty() {
-		tnc.t.Errorf("NodeConn::PublishTX before attach.")
+		tnc.t.Error("NodeConn::PublishTX before attach.")
 	}
 	if !tnc.chainID.Equals(chainID) {
-		tnc.t.Errorf("unexpected chain id")
+		tnc.t.Error("unexpected chain id")
 	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)
@@ -295,7 +295,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvMilestone chain.MilestoneHandler,
 ) {
 	if !tnc.chainID.Empty() {
-		tnc.t.Errorf("duplicate attach")
+		tnc.t.Error("duplicate attach")
 	}
 	tnc.chainID = chainID
 	tnc.recvRequestCB = recvRequestCB

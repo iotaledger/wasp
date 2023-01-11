@@ -3,13 +3,14 @@ package services
 import (
 	"errors"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/packages/webapi/v2/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
 )
@@ -36,8 +37,8 @@ func (v *VMService) ParseReceipt(chain chainpkg.Chain, receipt *blocklog.Request
 }
 
 func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*isc.Receipt, *isc.VMError, error) {
-	chain := v.chainsProvider().Get(chainID)
-	if chain == nil {
+	ch := v.chainsProvider().Get(chainID)
+	if ch == nil {
 		return nil, nil, errors.New("chain does not exist")
 	}
 
@@ -47,25 +48,23 @@ func (v *VMService) GetReceipt(chainID isc.ChainID, requestID isc.RequestID) (*i
 		return nil, nil, err
 	}
 
-	return v.ParseReceipt(chain, receipt)
+	return v.ParseReceipt(ch, receipt)
 }
 
 func (v *VMService) CallViewByChainID(chainID isc.ChainID, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
-	chain := v.chainsProvider().Get(chainID)
-	if chain == nil {
+	ch := v.chainsProvider().Get(chainID)
+	if ch == nil {
 		return nil, errors.New("chain not found")
 	}
 
 	// TODO: should blockIndex be an optional parameter of this endpoint?
-	blockIndex, err := chain.GetStateReader().LatestBlockIndex()
+	latestState, err := ch.LatestState(chain.LatestState)
 	if err != nil {
-		return nil, errors.New("error getting latest chain block index")
+		return nil, errors.New("error getting latest chain state")
 	}
-
-	return v.CallView(blockIndex, chain, contractName, functionName, params)
+	return v.CallView(latestState, ch, contractName, functionName, params)
 }
 
-func (v *VMService) CallView(blockIndex uint32, chain chainpkg.Chain, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
-	b := &viewcontext.BlockIndexOrTrieRoot{BlockIndex: blockIndex}
-	return chainutil.CallView(chain, b, contractName, functionName, params)
+func (v *VMService) CallView(chainState state.State, chain chainpkg.Chain, contractName, functionName isc.Hname, params dict.Dict) (dict.Dict, error) {
+	return chainutil.CallView(chainState, chain, contractName, functionName, params)
 }

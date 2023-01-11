@@ -56,25 +56,25 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	reqID := request.ID()
 
 	if c.requestCache.Get(reqID) != nil {
-		return fmt.Errorf("request already processed")
+		return errors.New("request already processed")
 	}
 
 	// check req signature
 	if err := request.VerifySignature(); err != nil {
 		c.requestCache.Set(reqID, true)
-		return fmt.Errorf("could not verify: %s", err.Error())
+		return fmt.Errorf("could not verify: %w", err)
 	}
 
 	// check req is for the correct chain
 	if !request.ChainID().Equals(chainID) {
 		// do not add to cache, it can still be sent to the correct chain
-		return fmt.Errorf("Request is for a different chain")
+		return errors.New("request is for a different chain")
 	}
 
 	// check chain exists
 	chain := c.chainService.GetChainByID(chainID)
 	if chain == nil {
-		return fmt.Errorf("Unknown chain: %s", chainID.String())
+		return fmt.Errorf("unknown chain: %s", chainID.String())
 	}
 
 	if err := ShouldBeProcessed(chain, request); err != nil {
@@ -89,11 +89,14 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 // implemented this way so we can re-use the same state, and avoid the overhead of calling views
 // TODO exported just to be used by V1 API until that gets deprecated at once.
 func ShouldBeProcessed(ch chain.ChainCore, req isc.OffLedgerRequest) error {
-	state, err := ch.GetStateReader().LatestState()
+	// state, err := ch.GetStateReader().LatestState()
+	// if err != nil {
+	// 	return httperrors.ServerError("unable to get latest state")
+	// }
+	state, err := ch.LatestState(chain.LatestState)
 	if err != nil {
 		return httperrors.ServerError("unable to get latest state")
 	}
-
 	// query blocklog contract
 	blocklogPartition := subrealm.NewReadOnly(state, kv.Key(blocklog.Contract.Hname().Bytes()))
 	receipt, err := blocklog.IsRequestProcessedInternal(blocklogPartition, req.ID())

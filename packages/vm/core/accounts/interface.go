@@ -1,7 +1,7 @@
 package accounts
 
 import (
-	"golang.org/x/xerrors"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
@@ -76,4 +76,4 @@ const (
 	ParamNativeTokenID                = "N"
 )
 
-var ErrStorageDepositAssumptionsWrong = xerrors.New("'storage deposit assumptions' parameter not specified or wrong")
+var ErrStorageDepositAssumptionsWrong = errors.New("'storage deposit assumptions' parameter not specified or wrong")

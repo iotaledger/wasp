@@ -353,7 +353,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 				if strAddr, ok := addr.(string); ok {
 					addr, err := decodeAddress(strAddr)
 					if err != nil {
-						return fmt.Errorf("invalid address at index %d: %v", i, err)
+						return fmt.Errorf("invalid address at index %d: %w", i, err)
 					}
 					q.Addresses = append(q.Addresses, addr)
 				} else {
@@ -363,7 +363,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 		case string:
 			addr, err := decodeAddress(rawAddr)
 			if err != nil {
-				return fmt.Errorf("invalid address: %v", err)
+				return fmt.Errorf("invalid address: %w", err)
 			}
 			q.Addresses = []common.Address{addr}
 		default:
@@ -403,11 +403,11 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 						}
 						q.Topics[i] = append(q.Topics[i], parsed)
 					} else {
-						return fmt.Errorf("invalid topic(s)")
+						return errors.New("invalid topic(s)")
 					}
 				}
 			default:
-				return fmt.Errorf("invalid topic(s)")
+				return errors.New("invalid topic(s)")
 			}
 		}
 	}

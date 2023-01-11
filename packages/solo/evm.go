@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -44,12 +46,20 @@ func (b *jsonRPCSoloBackend) EVMGasPrice() *big.Int {
 	return big.NewInt(0)
 }
 
-func (b *jsonRPCSoloBackend) ISCCallView(iscBlockIndex uint32, scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return b.Chain.CallViewAtBlockIndex(iscBlockIndex, scName, funName, args)
+func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, scName, funName string, args dict.Dict) (dict.Dict, error) {
+	return b.Chain.CallViewAtState(chainState, scName, funName, args)
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestBlockIndex() uint32 {
-	return b.Chain.LatestBlockIndex()
+func (b *jsonRPCSoloBackend) ISCLatestState() state.State {
+	latestState, err := b.Chain.LatestState(chain.LatestState)
+	if err != nil {
+		panic(err)
+	}
+	return latestState
+}
+
+func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
+	return b.Chain.store.StateByIndex(blockIndex)
 }
 
 func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {

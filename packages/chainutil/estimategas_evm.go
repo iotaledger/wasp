@@ -1,6 +1,7 @@
 package chainutil
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -28,7 +29,7 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 
 		AnchorOutput:         aliasOutput.GetAliasOutput(),
 		AnchorOutputID:       aliasOutput.OutputID(),
-		Store:                ch.GetStateReader(),
+		Store:                ch.Store(),
 		Requests:             []isc.Request{req},
 		TimeAssumption:       time.Now(),
 		Entropy:              hashing.RandomHash(nil),
@@ -42,7 +43,7 @@ func executeIscVM(ch chain.ChainCore, req isc.Request) (*vm.RequestResult, error
 		return nil, err
 	}
 	if len(task.Results) == 0 {
-		return nil, fmt.Errorf("request was skipped")
+		return nil, errors.New("request was skipped")
 	}
 	return task.Results[0], nil
 }
@@ -59,7 +60,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 		gasCap uint64
 	)
 
-	ret, err := CallView(ch, nil, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
+	ret, err := CallView(mustLatestState(ch), ch, evm.Contract.Hname(), evm.FuncGetCallGasLimit.Hname(), nil)
 	if err != nil {
 		return 0, err
 	}
@@ -88,7 +89,7 @@ func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
 			}
 			vmerr, resolvingErr := ResolveError(ch, res.Receipt.Error)
 			if resolvingErr != nil {
-				panic(fmt.Errorf("error resolving vmerror %v", resolvingErr))
+				panic(fmt.Errorf("error resolving vmerror %w", resolvingErr))
 			}
 			if evmErrorsRegex.Match([]byte(vmerr.Error())) {
 				// increase gas

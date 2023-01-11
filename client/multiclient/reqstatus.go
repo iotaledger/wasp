@@ -1,9 +1,8 @@
 package multiclient
 
 import (
+	"fmt"
 	"time"
-
-	"golang.org/x/xerrors"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/client"
@@ -34,7 +33,7 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(chainID isc.ChainID,
 		return receipt, err
 	}
 	if receipt.ResolvedError != "" {
-		return receipt, xerrors.Errorf("request processed with an error: %s", receipt.ResolvedError)
+		return receipt, fmt.Errorf("request processed with an error: %s", receipt.ResolvedError)
 	}
 	return receipt, nil
 }
@@ -64,7 +63,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(chainID isc.Chai
 	}
 	for i, receipt := range receipts {
 		if receipt.ResolvedError != "" {
-			return receipts, xerrors.Errorf("error found on receipt #%d: %s", i, receipt.ResolvedError)
+			return receipts, fmt.Errorf("error found on receipt #%d: %s", i, receipt.ResolvedError)
 		}
 	}
 	return receipts, nil

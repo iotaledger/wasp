@@ -4,10 +4,9 @@
 package isc
 
 import (
+	"errors"
 	"fmt"
 	"strings"
-
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -103,7 +102,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 			addrPart = parts[1]
 			hnamePart = parts[0]
 		default:
-			return nil, xerrors.New("NewAgentIDFromString: wrong format")
+			return nil, errors.New("NewAgentIDFromString: wrong format")
 		}
 	}
 
@@ -116,7 +115,7 @@ func NewAgentIDFromString(s string) (AgentID, error) {
 	if strings.HasPrefix(addrPart, "0x") {
 		return ethAgentIDFromString(s)
 	}
-	return nil, xerrors.New("NewAgentIDFromString: wrong format")
+	return nil, errors.New("NewAgentIDFromString: wrong format")
 }
 
 // NewRandomAgentID creates random AgentID

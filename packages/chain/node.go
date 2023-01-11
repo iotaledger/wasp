@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"golang.org/x/exp/slices"
-	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -168,7 +167,9 @@ type chainNodeImpl struct {
 	accessNodesFromChain   []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the ActiveAO).
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
+	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
+	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	//
 	// Infrastructure.
 	netRecvPipe  pipe.Pipe[*peering.PeerMessageIn]
@@ -266,7 +267,9 @@ func New(
 		accessNodesFromChain:   nil, // Set bellow.
 		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
+		latestConfirmedState:   nil,
 		latestActiveAO:         nil,
+		latestActiveState:      nil,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -287,7 +290,7 @@ func New(
 		cni.log.Named("CM"),
 	)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot create chainMgr: %w", err)
+		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
 	}
 	// TODO does it make sense to pass itself (own pub key) here?
 	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
@@ -303,7 +306,7 @@ func New(
 		cni.log.Named("SM"),
 	)
 	if err != nil {
-		return nil, xerrors.Errorf("cannot create stateMgr: %w", err)
+		return nil, fmt.Errorf("cannot create stateMgr: %w", err)
 	}
 	mempool := mempool.New(
 		ctx,
@@ -481,6 +484,9 @@ func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.accessLock.Lock()
+	cni.latestActiveState = st
+	cni.accessLock.Unlock()
 	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
 }
 
@@ -490,6 +496,9 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.accessLock.Lock()
+	cni.latestConfirmedState = st
+	cni.accessLock.Unlock()
 	l1Commitment, err := state.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
@@ -604,7 +613,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	case cons.Completed:
 		stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(out.output.TX)
 		if err != nil {
-			panic(xerrors.Errorf("cannot extract next AliasOutput from TX: %w", err))
+			panic(fmt.Errorf("cannot extract next AliasOutput from TX: %w", err))
 		}
 		nextAO := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 		chainMgrInput = chainMgr.NewInputConsensusOutputDone(
@@ -822,7 +831,7 @@ func (cni *chainNodeImpl) ID() isc.ChainID {
 	return cni.chainID
 }
 
-func (cni *chainNodeImpl) GetStateReader() state.Store {
+func (cni *chainNodeImpl) Store() state.Store {
 	return cni.chainStore
 }
 
@@ -838,6 +847,35 @@ func (cni *chainNodeImpl) LatestAliasOutput() (confirmed, active *isc.AliasOutpu
 	cni.accessLock.RLock()
 	defer cni.accessLock.RUnlock()
 	return cni.latestConfirmedAO, cni.latestActiveAO
+}
+
+func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
+	cni.accessLock.RLock()
+	latestActiveState := cni.latestActiveState
+	latestConfirmedState := cni.latestConfirmedState
+	cni.accessLock.RUnlock()
+	switch freshness {
+	case LatestState:
+		if latestActiveState != nil {
+			return latestActiveState, nil
+		}
+		if latestConfirmedState != nil {
+			return latestConfirmedState, nil
+		}
+		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
+		return cni.chainStore.LatestState()
+	case ActiveState:
+		if latestActiveState == nil {
+			return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
+		}
+		return latestActiveState, nil
+	case ConfirmedState:
+		if latestConfirmedState == nil {
+			return nil, fmt.Errorf("chain %v has no confirmed state", cni.chainID)
+		}
+		return latestConfirmedState, nil
+	}
+	panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
 }
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {

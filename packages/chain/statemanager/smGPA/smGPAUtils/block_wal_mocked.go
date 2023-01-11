@@ -1,7 +1,7 @@
 package smGPAUtils
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -32,5 +32,5 @@ func (mbwT *mockedBlockWAL) Read(blockHash state.BlockHash) (state.Block, error)
 	if ok {
 		return block, nil
 	}
-	return nil, fmt.Errorf("Not found")
+	return nil, errors.New("not found")
 }

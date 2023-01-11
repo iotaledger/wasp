@@ -6,7 +6,7 @@ package evmtypes
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
+	"errors"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -103,7 +103,7 @@ func DecodeLogs(b []byte) ([]*types.Log, error) {
 	}
 	if int(n) > len(b) {
 		// using len(b) as an upper bound to prevent DoS attack allocating the array
-		return nil, fmt.Errorf("DecodeLogs: invalid length")
+		return nil, errors.New("DecodeLogs: invalid length")
 	}
 	logs := make([]*types.Log, n)
 	for i := uint32(0); i < n; i++ {

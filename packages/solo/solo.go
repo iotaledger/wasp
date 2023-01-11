@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -89,7 +90,7 @@ type Chain struct {
 	ValidatorFeeTarget isc.AgentID
 
 	// Store is where the chain data (blocks, state) is stored
-	Store state.Store
+	store state.Store
 	// Log is the named logger of the chain
 	log *logger.Logger
 	// instance of VM
@@ -292,7 +293,7 @@ func (env *Solo) NewChainExt(chainOriginator *cryptolib.KeyPair, initBaseTokens 
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      originatorAgentID,
 		ValidatorFeeTarget:     originatorAgentID,
-		Store:                  store,
+		store:                  store,
 		bypassStardustVM:       bypassStardustVM,
 		vmRunner:               vmRunner,
 		proc:                   processors.MustNew(env.processorConfig),
@@ -484,10 +485,6 @@ func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("unimplemented")
 }
 
-func (ch *Chain) GetStateReader() state.Store {
-	return ch.Store
-}
-
 func (ch *Chain) ID() isc.ChainID {
 	return ch.ChainID
 }
@@ -591,5 +588,5 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 		}
 	}
 
-	return nil, nil, fmt.Errorf("NFT output not found in resulting tx")
+	return nil, nil, errors.New("NFT output not found in resulting tx")
 }
