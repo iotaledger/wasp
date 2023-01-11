@@ -19,9 +19,11 @@ type SimpleHashable int
 type SimpleNothashable int
 
 var (
-	_ Hashable       = SimpleHashable(0)
-	_ IntConvertable = SimpleHashable(0)
-	_ IntConvertable = SimpleNothashable(0)
+	_ Hashable                   = SimpleHashable(0)
+	_ IntConvertable             = SimpleHashable(0)
+	_ IntConvertable             = SimpleNothashable(0)
+	_ Factory[SimpleHashable]    = &SimpleHashableFactory{}
+	_ Factory[SimpleNothashable] = &SimpleNothashableFactory{}
 )
 
 func (sh SimpleHashable) GetHash() hashing.HashValue {
