@@ -53,7 +53,7 @@ impl IClientService for WasmClientService {
         function_hname: &ScHname,
         args: &[u8],
     ) -> errors::Result<Vec<u8>> {
-        let params = ScDict::from_bytes(args)?;
+        let params = ScDict::new(args);
 
         return self.client.call_view_by_hname(
             chain_id,
@@ -74,7 +74,7 @@ impl IClientService for WasmClientService {
         key_pair: &keypair::KeyPair,
         nonce: u64,
     ) -> errors::Result<ScRequestID> {
-        let params = ScDict::from_bytes(args)?;
+        let params = ScDict::new(args);
         let mut req: offledgerrequest::OffLedgerRequestData =
             offledgerrequest::OffLedgerRequest::new(
                 chain_id,
