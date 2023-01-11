@@ -180,7 +180,7 @@ func New(
 	if err != nil {
 		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
-	longTermDKS := dkShare.DSSSecretShare()
+	longTermDKS := dkShare.DSS()
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
 		binary.BigEndian.PutUint32(roundBin[:], uint32(round))

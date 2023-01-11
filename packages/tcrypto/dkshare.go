@@ -28,27 +28,56 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// secretShare is an implementation for dss.DistKeyShare.
-type secretShare struct {
+// secretShareImpl is an implementation for SecretShare.
+type secretShareImpl struct {
 	priShare    *share.PriShare
 	commitments []kyber.Point
+	threshold   int
 }
 
-func (d *secretShare) Clone() SecretShare {
-	return &secretShare{
-		priShare: &share.PriShare{
-			I: d.priShare.I,
-			V: d.priShare.V.Clone(),
-		},
-		commitments: util.CloneSlice(d.commitments),
+var _ SecretShare = &secretShareImpl{}
+
+func NewDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, threshold int) SecretShare {
+	return newDistKeyShare(priShare, commitments, threshold)
+}
+
+func newDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, threshold int) *secretShareImpl {
+	return &secretShareImpl{
+		priShare:    priShare,
+		commitments: commitments,
+		threshold:   threshold,
 	}
 }
 
-func (d *secretShare) PriShare() *share.PriShare {
+func (d *secretShareImpl) NodeCount() int {
+	return len(d.commitments)
+}
+
+// F = N - T.
+func (d *secretShareImpl) MaxFaulty() int {
+	return d.NodeCount() - d.Threshold()
+}
+
+func (d *secretShareImpl) Threshold() int {
+	return d.threshold
+}
+
+func (d *secretShareImpl) Clone() *secretShareImpl {
+	return newDistKeyShare(
+		&share.PriShare{
+			I: d.priShare.I,
+			V: d.priShare.V.Clone(),
+		},
+		util.CloneSlice(d.commitments),
+		d.threshold,
+	)
+}
+
+func (d *secretShareImpl) PriShare() *share.PriShare {
 	return d.priShare
 }
 
-func (d *secretShare) Commitments() []kyber.Point {
+func (d *secretShareImpl) Commitments() []kyber.Point {
 	return d.commitments
 }
 
@@ -577,18 +606,19 @@ func (s *dkShareImpl) DSSVerifyMasterSignature(data, signature []byte) error {
 	return dss.Verify(s.edSharedPublic, data, signature)
 }
 
-func (s *dkShareImpl) DSSSecretShare() SecretShare {
-	return &secretShare{
-		priShare: &share.PriShare{
+func (s *dkShareImpl) DSS() SecretShare {
+	return newDistKeyShare( // TODO: Use a singe instance.
+		&share.PriShare{
 			I: int(*s.index),
 			V: s.edPrivateShare.Clone(),
 		},
-		commitments: util.CloneSlice(s.edPublicCommits),
-	}
+		util.CloneSlice(s.edPublicCommits),
+		int(s.t),
+	)
 }
 
 func (s *dkShareImpl) makeSigner(data []byte, nonce SecretShare) (*dss.DSS, error) {
-	priKeyDKS := s.DSSSecretShare()
+	priKeyDKS := s.DSS()
 	nodeKyberKeyPair, err := s.nodePrivKey.AsKyberKeyPair()
 	if err != nil {
 		return nil, fmt.Errorf("cannot convert node priv key to kyber scalar: %w", err)
@@ -726,7 +756,7 @@ type jsonDKShares struct {
 	BLS          *jsonKeyShares   `json:"bls"`
 }
 
-func DecodeHexKyperPoint(group kyber.Group, dataHex string) (kyber.Point, error) {
+func DecodeHexKyberPoint(group kyber.Group, dataHex string) (kyber.Point, error) {
 	point := group.Point()
 	if err := util.DecodeHexBinaryMarshaled(dataHex, point); err != nil {
 		return nil, err
@@ -735,7 +765,7 @@ func DecodeHexKyperPoint(group kyber.Group, dataHex string) (kyber.Point, error)
 	return point, nil
 }
 
-func DecodeHexKyperScalar(group kyber.Group, dataHex string) (kyber.Scalar, error) {
+func DecodeHexKyberScalar(group kyber.Group, dataHex string) (kyber.Scalar, error) {
 	scalar := group.Scalar()
 	if err := util.DecodeHexBinaryMarshaled(dataHex, scalar); err != nil {
 		return nil, err
@@ -744,11 +774,11 @@ func DecodeHexKyperScalar(group kyber.Group, dataHex string) (kyber.Scalar, erro
 	return scalar, nil
 }
 
-func DecodeHexKyperPoints(group kyber.Group, dataHex []string) ([]kyber.Point, error) {
+func DecodeHexKyberPoints(group kyber.Group, dataHex []string) ([]kyber.Point, error) {
 	results := make([]kyber.Point, len(dataHex))
 
 	for i, hex := range dataHex {
-		point, err := DecodeHexKyperPoint(group, hex)
+		point, err := DecodeHexKyberPoint(group, hex)
 		if err != nil {
 			return nil, err
 		}
@@ -860,42 +890,42 @@ func (s *dkShareImpl) UnmarshalJSON(bytes []byte) error {
 		s.nodePubKeys[i] = nodePubKey
 	}
 
-	s.edSharedPublic, err = DecodeHexKyperPoint(s.edSuite, j.Ed25519.SharedPublic)
+	s.edSharedPublic, err = DecodeHexKyberPoint(s.edSuite, j.Ed25519.SharedPublic)
 	if err != nil {
 		return err
 	}
 
-	s.edPublicCommits, err = DecodeHexKyperPoints(s.edSuite, j.Ed25519.PublicCommits)
+	s.edPublicCommits, err = DecodeHexKyberPoints(s.edSuite, j.Ed25519.PublicCommits)
 	if err != nil {
 		return err
 	}
 
-	s.edPublicShares, err = DecodeHexKyperPoints(s.edSuite, j.Ed25519.PublicShares)
+	s.edPublicShares, err = DecodeHexKyberPoints(s.edSuite, j.Ed25519.PublicShares)
 	if err != nil {
 		return err
 	}
 
-	s.edPrivateShare, err = DecodeHexKyperScalar(s.edSuite, j.Ed25519.PrivateShare)
+	s.edPrivateShare, err = DecodeHexKyberScalar(s.edSuite, j.Ed25519.PrivateShare)
 	if err != nil {
 		return err
 	}
 
-	s.blsSharedPublic, err = DecodeHexKyperPoint(s.blsSuite.G2(), j.BLS.SharedPublic)
+	s.blsSharedPublic, err = DecodeHexKyberPoint(s.blsSuite.G2(), j.BLS.SharedPublic)
 	if err != nil {
 		return err
 	}
 
-	s.blsPublicCommits, err = DecodeHexKyperPoints(s.blsSuite.G2(), j.BLS.PublicCommits)
+	s.blsPublicCommits, err = DecodeHexKyberPoints(s.blsSuite.G2(), j.BLS.PublicCommits)
 	if err != nil {
 		return err
 	}
 
-	s.blsPublicShares, err = DecodeHexKyperPoints(s.blsSuite.G2(), j.BLS.PublicShares)
+	s.blsPublicShares, err = DecodeHexKyberPoints(s.blsSuite.G2(), j.BLS.PublicShares)
 	if err != nil {
 		return err
 	}
 
-	s.blsPrivateShare, err = DecodeHexKyperScalar(s.blsSuite.G2(), j.BLS.PrivateShare)
+	s.blsPrivateShare, err = DecodeHexKyberScalar(s.blsSuite.G2(), j.BLS.PrivateShare)
 	if err != nil {
 		return err
 	}

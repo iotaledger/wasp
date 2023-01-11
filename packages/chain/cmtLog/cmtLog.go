@@ -175,7 +175,7 @@ func New(
 	//
 	// Construct the object.
 	n := len(nodeIDs)
-	f := n - int(dkShare.GetT())
+	f := dkShare.DSS().MaxFaulty()
 	if f > (n-1)/3 {
 		panic(fmt.Errorf("invalid f=%v for n=%v", n, f))
 	}

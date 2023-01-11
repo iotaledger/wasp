@@ -45,10 +45,11 @@ import (
 )
 
 type Output struct {
-	Indexes  []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
-	PubKey   kyber.Point     // The common/aggregated public key of the key set.
-	PriShare *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
-	Commits  []kyber.Point   // Commitments for the final key shares.
+	Indexes   []int           // Indexes used to construct the final key (exactly f+1 for the intermediate output).
+	PubKey    kyber.Point     // The common/aggregated public key of the key set.
+	PriShare  *share.PriShare // Final key share (can be nil until consensus is completed in the case of aggrExt==true).
+	Commits   []kyber.Point   // Commitments for the final key shares.
+	Threshold int
 }
 
 type nonceDKGImpl struct {
@@ -263,10 +264,11 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() gpa.OutMessages {
 	}
 	_, sumCommit := sumCommitPoly.Info()
 	n.output = &Output{
-		Indexes:  n.agreedT,
-		PubKey:   sumCommit[0],
-		PriShare: &share.PriShare{I: n.myIdx, V: sum},
-		Commits:  sumCommit,
+		Indexes:   n.agreedT,
+		PubKey:    sumCommit[0],
+		PriShare:  &share.PriShare{I: n.myIdx, V: sum},
+		Commits:   sumCommit,
+		Threshold: n.n - n.f,
 	}
 	return nil
 }

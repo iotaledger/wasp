@@ -17,7 +17,6 @@ import (
 	kyberDSS "go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -57,7 +56,7 @@ func makeDistKeyShares(suite suites.Suite, nodeIDs []gpa.NodeID, f int) (kyber.S
 	pubKey := commits[0]
 	dks := map[gpa.NodeID]kyberDSS.DistKeyShare{}
 	for i, n := range nodeIDs {
-		dks[n] = dss.NewSecretShare(priShares[i], commits)
+		dks[n] = tcrypto.NewDistKeyShare(priShares[i], commits, len(nodeIDs)-f)
 	}
 	return secKey, pubKey, dks
 }
