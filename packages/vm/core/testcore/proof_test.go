@@ -21,7 +21,7 @@ func TestProofs(t *testing.T) {
 
 		proof := ch.GetMerkleProofRaw([]byte(state.KeyChainID))
 		l1Commitment := ch.GetL1Commitment()
-		st, err := ch.Store.LatestState()
+		st, err := ch.Store().LatestState()
 		require.NoError(t, err)
 		require.EqualValues(t, ch.ChainID[:], st.ChainID().Bytes())
 		err = proof.ValidateValue(l1Commitment.TrieRoot(), ch.ChainID[:])
@@ -73,7 +73,7 @@ func TestProofs(t *testing.T) {
 		require.NoError(t, err)
 
 		pastL1Commitment := ch.GetL1Commitment()
-		pastBlockIndex, err := ch.Store.LatestBlockIndex()
+		pastBlockIndex, err := ch.Store().LatestBlockIndex()
 		require.NoError(t, err)
 
 		_, err = ch.UploadBlobFromFile(nil, randomFile, "file")
@@ -99,7 +99,7 @@ func TestProofs(t *testing.T) {
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 
-		pastBlockIndex, err := ch.Store.LatestBlockIndex()
+		pastBlockIndex, err := ch.Store().LatestBlockIndex()
 		require.NoError(t, err)
 		pastL1Commitment := ch.GetL1Commitment()
 

@@ -167,7 +167,9 @@ type chainNodeImpl struct {
 	accessNodesFromChain   []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the ActiveAO).
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
 	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
+	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
 	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
+	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	//
 	// Infrastructure.
 	netRecvPipe  pipe.Pipe[*peering.PeerMessageIn]
@@ -265,7 +267,9 @@ func New(
 		accessNodesFromChain:   nil, // Set bellow.
 		serverNodes:            nil, // Set bellow.
 		latestConfirmedAO:      nil,
+		latestConfirmedState:   nil,
 		latestActiveAO:         nil,
+		latestActiveState:      nil,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -480,6 +484,9 @@ func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.accessLock.Lock()
+	cni.latestActiveState = st
+	cni.accessLock.Unlock()
 	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
 }
 
@@ -489,6 +496,9 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.accessLock.Lock()
+	cni.latestConfirmedState = st
+	cni.accessLock.Unlock()
 	l1Commitment, err := state.L1CommitmentFromAliasOutput(till.GetAliasOutput())
 	if err != nil {
 		panic(fmt.Errorf("cannot get L1Commitment from alias output: %w", err))
@@ -594,6 +604,9 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	cni.accessLock.Lock()
 	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
 	cni.latestActiveAO = output.LatestActiveAliasOutput()
+	if cni.latestActiveAO == nil {
+		cni.latestActiveState = nil
+	}
 	cni.accessLock.Unlock()
 }
 
@@ -821,7 +834,7 @@ func (cni *chainNodeImpl) ID() isc.ChainID {
 	return cni.chainID
 }
 
-func (cni *chainNodeImpl) GetStateReader() state.Store {
+func (cni *chainNodeImpl) Store() state.Store {
 	return cni.chainStore
 }
 
@@ -837,6 +850,37 @@ func (cni *chainNodeImpl) LatestAliasOutput() (confirmed, active *isc.AliasOutpu
 	cni.accessLock.RLock()
 	defer cni.accessLock.RUnlock()
 	return cni.latestConfirmedAO, cni.latestActiveAO
+}
+
+func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {
+	cni.accessLock.RLock()
+	latestActiveState := cni.latestActiveState
+	latestConfirmedState := cni.latestConfirmedState
+	cni.accessLock.RUnlock()
+	switch freshness {
+	case ActiveOrCommittedState:
+		if latestActiveState != nil {
+			return latestActiveState, nil
+		}
+		if latestConfirmedState != nil {
+			return latestConfirmedState, nil
+		}
+		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
+		return cni.chainStore.LatestState()
+	case ConfirmedState:
+		if latestConfirmedState != nil {
+			return latestConfirmedState, nil
+		}
+		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
+		return cni.chainStore.LatestState()
+	case ActiveState:
+		if latestActiveState != nil {
+			return latestActiveState, nil
+		}
+		return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
+	default:
+		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
+	}
 }
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {

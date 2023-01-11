@@ -19,30 +19,24 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v1/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
+	"github.com/iotaledger/wasp/packages/webapi/v2/services"
 )
 
 type (
-	getAccountAssetsFn        func(ch chain.ChainCore, agentID isc.AgentID) (*isc.FungibleTokens, error)
-	hasRequestBeenProcessedFn func(ch chain.ChainCore, reqID isc.RequestID) (bool, error)
-	checkNonceFn              func(ch chain.ChainCore, req isc.OffLedgerRequest) error
+	shouldBeProcessedFn func(ch chain.ChainCore, req isc.OffLedgerRequest) error
 )
 
 func AddEndpoints(
 	server echoswagger.ApiRouter,
 	getChain chains.ChainProvider,
-	getChainBalance getAccountAssetsFn,
-	hasRequestBeenProcessed hasRequestBeenProcessedFn,
-	checkNonce checkNonceFn,
 	nodePubKey *cryptolib.PublicKey,
 	cacheTTL time.Duration,
 ) {
 	instance := &offLedgerReqAPI{
-		getChain:                getChain,
-		getAccountAssets:        getChainBalance,
-		hasRequestBeenProcessed: hasRequestBeenProcessed,
-		checkNonce:              checkNonce,
-		requestsCache:           expiringcache.New(cacheTTL),
-		nodePubKey:              nodePubKey,
+		getChain:          getChain,
+		shouldBeProcessed: services.ShouldBeProcessed,
+		requestsCache:     expiringcache.New(cacheTTL),
+		nodePubKey:        nodePubKey,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetDeprecated().
@@ -57,34 +51,33 @@ func AddEndpoints(
 }
 
 type offLedgerReqAPI struct {
-	getChain                chains.ChainProvider
-	getAccountAssets        getAccountAssetsFn
-	hasRequestBeenProcessed hasRequestBeenProcessedFn
-	checkNonce              checkNonceFn
-	requestsCache           *expiringcache.ExpiringCache
-	nodePubKey              *cryptolib.PublicKey
+	getChain          chains.ChainProvider
+	shouldBeProcessed shouldBeProcessedFn
+	requestsCache     *expiringcache.ExpiringCache
+	nodePubKey        *cryptolib.PublicKey
 }
 
 func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
-	chainID, offLedgerReq, err := parseParams(c)
+	chainID, req, err := parseParams(c)
 	if err != nil {
 		return err
 	}
 
-	reqID := offLedgerReq.ID()
+	reqID := req.ID()
 
 	if o.requestsCache.Get(reqID) != nil {
 		return httperrors.BadRequest("request already processed")
 	}
+	o.requestsCache.Set(reqID, true)
 
 	// check req signature
-	if err := offLedgerReq.VerifySignature(); err != nil {
+	if err := req.VerifySignature(); err != nil {
 		o.requestsCache.Set(reqID, true)
 		return httperrors.BadRequest(fmt.Sprintf("could not verify: %s", err.Error()))
 	}
 
 	// check req is for the correct chain
-	if !offLedgerReq.ChainID().Equals(chainID) {
+	if !req.ChainID().Equals(chainID) {
 		// do not add to cache, it can still be sent to the correct chain
 		return httperrors.BadRequest("Request is for a different chain")
 	}
@@ -95,32 +88,12 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Unknown chain: %s", chainID.String()))
 	}
 
-	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
+	err = o.shouldBeProcessed(ch, req)
 	if err != nil {
-		return httperrors.ServerError("internal error")
+		return err
 	}
 
-	defer o.requestsCache.Set(reqID, true)
-
-	if alreadyProcessed {
-		return httperrors.BadRequest("request already processed")
-	}
-
-	// check user has on-chain balance
-	assets, err := o.getAccountAssets(ch, offLedgerReq.SenderAccount())
-	if err != nil {
-		return httperrors.ServerError("Unable to get account balance")
-	}
-
-	if assets.IsEmpty() {
-		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().String()))
-	}
-
-	if err := o.checkNonce(ch, offLedgerReq); err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("invalid nonce, %v", err))
-	}
-
-	ch.ReceiveOffLedgerRequest(offLedgerReq, o.nodePubKey)
+	ch.ReceiveOffLedgerRequest(req, o.nodePubKey)
 
 	return c.NoContent(http.StatusAccepted)
 }

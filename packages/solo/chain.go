@@ -48,7 +48,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	block, err := ch.Store.LatestBlock()
+	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(&buf, "Root commitment: %s\n", block.TrieRoot())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GenesisAddress())
@@ -646,8 +646,9 @@ func (*Chain) GetNodeConnectionMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	panic("unimplemented")
 }
 
-func (ch *Chain) GetStore() state.Store {
-	return ch.Store
+// Store implements chain.Chain
+func (ch *Chain) Store() state.Store {
+	return ch.store
 }
 
 // GetTimeData implements chain.Chain
@@ -661,6 +662,23 @@ func (ch *Chain) LatestAliasOutput() (confirmed *isc.AliasOutputWithID, active *
 	return ao, ao
 }
 
+// LatestState implements chain.Chain
+func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error) {
+	ao := ch.GetAnchorOutput()
+	if ao == nil {
+		return ch.store.LatestState()
+	}
+	l1c, err := state.L1CommitmentFromAliasOutput(ao.GetAliasOutput())
+	if err != nil {
+		panic(err)
+	}
+	st, err := ch.store.StateByTrieRoot(l1c.TrieRoot())
+	if err != nil {
+		panic(err)
+	}
+	return st, nil
+}
+
 // ReceiveOffLedgerRequest implements chain.Chain
 func (*Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) {
 	panic("unimplemented")
@@ -672,7 +690,7 @@ func (*Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID
 }
 
 func (ch *Chain) LatestBlockIndex() uint32 {
-	i, err := ch.Store.LatestBlockIndex()
+	i, err := ch.store.LatestBlockIndex()
 	require.NoError(ch.Env.T, err)
 	return i
 }

@@ -161,7 +161,7 @@ func testBasic(t *testing.T, n, f int, reliable bool) {
 	}
 	for i, node := range te.nodes {
 		for {
-			latestState, err := node.GetStateReader().LatestState()
+			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
 			te.log.Debugf("Counter[node=%v]=%v", i, cnt)

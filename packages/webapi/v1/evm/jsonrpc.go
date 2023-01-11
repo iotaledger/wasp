@@ -79,7 +79,7 @@ func (j *jsonRPCService) getChainServer(c echo.Context) (*chainServer, error) {
 
 		var evmChainID uint16
 		{
-			r, err := backend.ISCCallView(backend.ISCLatestBlockIndex(), evm.Contract.Name, evm.FuncGetChainID.Name, nil)
+			r, err := backend.ISCCallView(backend.ISCLatestState(), evm.Contract.Name, evm.FuncGetChainID.Name, nil)
 			if err != nil {
 				return nil, err
 			}
