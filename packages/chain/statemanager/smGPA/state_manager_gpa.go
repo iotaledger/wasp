@@ -213,38 +213,52 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusD
 func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.ConsensusBlockProduced) gpa.OutMessages {
 	commitment := input.GetStateDraft().BaseL1Commitment()
 	smT.log.Debugf("Input block produced on state %s received...", commitment)
-	request := smT.createBlockRequestLocal(commitment, func(_ obtainStateFun) {
-		smT.log.Debugf("Input block produced on state %s: all blocks to commit state draft index %v are in store, producing block",
-			commitment, input.GetStateDraft().BlockIndex())
-		block := smT.store.ExtractBlock(input.GetStateDraft())
-		blockCommitment := block.L1Commitment()
-		smT.log.Debugf("Input block produced on state %s: state draft index %v produced block %s",
-			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-		smT.blockCache.AddBlock(block)
-		input.Respond(nil)
-		requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
-		if ok {
-			requests := requestsWC.blockRequests
-			smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
-				commitment, len(requestsWC.blockRequests))
-			delete(smT.blockRequests, blockCommitment.BlockHash())
-			for _, request := range requests {
-				request.blockAvailable(block)
+	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
+		smT.log.Panicf("Input block produced on state %s: state, on which this block is produced, is not yet in the store", commitment)
+	}
+	var block state.Block
+	var blockCommitment *state.L1Commitment
+	// Commit block; if it fails, assume it is already committed and simply extract it from the store
+	// Extracting may happen if the node is slow and has `ConsensusBlockProduced` event on state index `n`, but the current state index of
+	// the chain is larger and the node has already received some request for some state index larger than `n`. This may result in state
+	// manager of the node waiting for block index `n` while `ConsensusBlockProduced` state index `n` request arrives.
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				smT.log.Warnf("Input block produced on state %s: failed to commit the state draft to the store, assuming it is already committed",
+					commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
+				block = smT.store.ExtractBlock(input.GetStateDraft())
+				blockCommitment = block.L1Commitment()
+				smT.log.Debugf("Input block produced on state %s: block %s extracted from the store for state draft index %v",
+					commitment, blockCommitment, input.GetStateDraft().BlockIndex())
 			}
-			smT.log.Debugf("Input block produced on state %s: completing %v requests",
-				commitment, len(requestsWC.blockRequests))
-			err := smT.completeRequests(requests)
-			smT.log.Debugf("Input block produced on state %s: %v requests completed, err=%v",
+		}()
+		block = smT.store.Commit(input.GetStateDraft())
+		blockCommitment = block.L1Commitment()
+		smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
+			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
+	}()
+	smT.blockCache.AddBlock(block)
+	input.Respond(nil)
+	requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
+	if ok {
+		requests := requestsWC.blockRequests
+		smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
+			commitment, len(requestsWC.blockRequests))
+		delete(smT.blockRequests, blockCommitment.BlockHash())
+		for _, request := range requests {
+			request.blockAvailable(block)
+		}
+		smT.log.Debugf("Input block produced on state %s: completing %v requests",
+			commitment, len(requestsWC.blockRequests))
+		err := smT.completeRequests(requests)
+		if err != nil {
+			smT.log.Errorf("Input block produced on state %s: failed completing %v: %v",
 				commitment, len(requestsWC.blockRequests), err)
 		}
-	})
-	messages, err := smT.traceBlockChainByRequest(request)
-	if err != nil {
-		smT.log.Debugf("Input block produced on state %s failed tracing block chain: %v", commitment, err)
-		input.Respond(err)
 	}
 	smT.log.Debugf("Input block produced on state %s handled", commitment)
-	return messages
+	return nil // No messages to send
 }
 
 func (smT *stateManagerGPA) handleChainFetchStateDiff(input *smInputs.ChainFetchStateDiff) gpa.OutMessages { //nolint:funlen
@@ -473,6 +487,10 @@ func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
 			_, ok := committedBlocks[blockCommitment.BlockHash()]
 			if ok {
 				smT.log.Debugf("Completing %v requests: block %s is already committed, skipping", len(requests), blockCommitment)
+			} else if smT.store.HasTrieRoot(blockCommitment.TrieRoot()) {
+				smT.log.Debugf("Completing %v requests: block %s is already committed, probably on completion of ConsensusProducedBlock request, skipping",
+					len(requests), blockCommitment)
+				committedBlocks[blockCommitment.BlockHash()] = true
 			} else {
 				smT.log.Debugf("Completing %v requests: committing block %s...", len(requests), blockCommitment)
 				var stateDraft state.StateDraft
