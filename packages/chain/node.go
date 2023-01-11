@@ -867,18 +867,20 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 		}
 		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
 		return cni.chainStore.LatestState()
-	case ActiveState:
-		if latestActiveState == nil {
-			return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
-		}
-		return latestActiveState, nil
 	case ConfirmedState:
-		if latestConfirmedState == nil {
-			return nil, fmt.Errorf("chain %v has no confirmed state", cni.chainID)
+		if latestConfirmedState != nil {
+			return latestConfirmedState, nil
 		}
-		return latestConfirmedState, nil
+		cni.log.Warn("Have no state, but someone asks for it, will query the state.")
+		return cni.chainStore.LatestState()
+	case ActiveState:
+		if latestActiveState != nil {
+			return latestActiveState, nil
+		}
+		return nil, fmt.Errorf("chain %v has no active state", cni.chainID)
+	default:
+		panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
 	}
-	panic(fmt.Errorf("Unexpected StateFreshness: %v", freshness))
 }
 
 func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
