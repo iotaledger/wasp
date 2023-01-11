@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 type DSS interface {
@@ -56,7 +57,7 @@ type dssImpl struct {
 	nodeIDs                  []gpa.NodeID
 	nodePKs                  map[gpa.NodeID]kyber.Point
 	f                        int
-	longTermSecretShare      dss.DistKeyShare
+	longTermSecretShare      tcrypto.SecretShare
 	dkg                      gpa.GPA
 	dkgOutIndexes            []int                // Intermediate DKG output.
 	dkgDecidedIndexProposals map[gpa.NodeID][]int // ACS decision.
@@ -78,7 +79,7 @@ func New(
 	f int,
 	me gpa.NodeID,
 	mySK kyber.Scalar,
-	longTermSecretShare dss.DistKeyShare,
+	longTermSecretShare tcrypto.SecretShare,
 	log *logger.Logger,
 ) DSS {
 	d := &dssImpl{
@@ -155,13 +156,14 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		d.dkgOutIndexes = dkgOut.(*nonce.Output).Indexes
 	}
 	if d.dkgOutNonce == nil && dkgOut != nil && dkgOut.(*nonce.Output).PriShare != nil {
-		d.dkgOutNonce = &SecretShare{
-			share:   dkgOut.(*nonce.Output).PriShare,
-			commits: dkgOut.(*nonce.Output).Commits,
-		}
+		d.dkgOutNonce = tcrypto.NewDistKeyShare(
+			dkgOut.(*nonce.Output).PriShare,
+			dkgOut.(*nonce.Output).Commits,
+			dkgOut.(*nonce.Output).Threshold,
+		)
 		//
 		// Create a partial signature.
-		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, len(d.nodeIDs)-d.f) // TODO: XXX: d.f+1
+		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, d.longTermSecretShare.Threshold())
 		if err != nil {
 			d.log.Error("Failed to create DSS Signer: %v", err)
 			return msgs

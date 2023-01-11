@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 // For tests only.
@@ -26,14 +27,16 @@ func MakeTestDistributedKey(
 	nodePKs map[gpa.NodeID]kyber.Point,
 	f int,
 	log *logger.Logger,
-) (kyber.Point, map[gpa.NodeID]dss.DistKeyShare) {
+) (kyber.Point, map[gpa.NodeID]tcrypto.SecretShare) {
 	n := len(nodeIDs)
+	threshold := n - f
 	if n == 1 {
 		// We don't need to make secret sharing for a single node.
+		require.Equal(t, 0, f)
 		sk := suite.Scalar().Pick(suite.RandomStream())
 		pk := suite.Point().Mul(sk, nil)
-		dkss := map[gpa.NodeID]dss.DistKeyShare{
-			nodeIDs[0]: &dks{share: &share.PriShare{I: 0, V: sk}, commits: []kyber.Point{pk}},
+		dkss := map[gpa.NodeID]tcrypto.SecretShare{
+			nodeIDs[0]: tcrypto.NewDistKeyShare(&share.PriShare{I: 0, V: sk}, []kyber.Point{pk}, threshold),
 		}
 		return pk, dkss
 	}
@@ -51,7 +54,7 @@ func MakeTestDistributedKey(
 		inputs[nid] = nonce.NewInputStart() // Input is only a signal here.
 	}
 	tc.WithInputs(inputs).WithInputProbability(0.01)
-	tc.RunUntil(tc.NumberOfOutputsPredicate(n - f))
+	tc.RunUntil(tc.NumberOfOutputsPredicate(threshold))
 	//
 	// Check the INTERMEDIATE result.
 	intermediateOutputs := map[gpa.NodeID]*nonce.Output{}
@@ -63,11 +66,11 @@ func MakeTestDistributedKey(
 		intermediateOutput := nodeOutput.(*nonce.Output)
 		require.NotNil(t, intermediateOutput)
 		require.NotNil(t, intermediateOutput.Indexes)
-		require.Len(t, intermediateOutput.Indexes, n-f)
+		require.Len(t, intermediateOutput.Indexes, threshold)
 		require.Nil(t, intermediateOutput.PriShare)
 		intermediateOutputs[nid] = intermediateOutput
 	}
-	require.Len(t, intermediateOutputs, n-f)
+	require.Len(t, intermediateOutputs, threshold)
 	//
 	// Emulate the agreement.
 	decidedProposals := map[gpa.NodeID][]int{}
@@ -84,14 +87,15 @@ func MakeTestDistributedKey(
 	//
 	// Check the FINAL result.
 	var pubKey kyber.Point
-	dkss := map[gpa.NodeID]dss.DistKeyShare{}
+	dkss := map[gpa.NodeID]tcrypto.SecretShare{}
 	for nid, n := range nodes {
 		o := n.Output()
 		require.NotNil(t, o)
 		require.NotNil(t, o.(*nonce.Output).PubKey)
 		require.NotNil(t, o.(*nonce.Output).PriShare)
 		require.NotNil(t, o.(*nonce.Output).Commits)
-		dkss[nid] = &dks{share: o.(*nonce.Output).PriShare, commits: o.(*nonce.Output).Commits}
+		require.Equal(t, threshold, o.(*nonce.Output).Threshold)
+		dkss[nid] = tcrypto.NewDistKeyShare(o.(*nonce.Output).PriShare, o.(*nonce.Output).Commits, threshold)
 		if pubKey == nil {
 			pubKey = o.(*nonce.Output).Commits[0]
 		}
@@ -120,8 +124,9 @@ func VerifyPriShares(
 		for j := range nodePKArray {
 			nodePKArray[j] = nodePKs[nodeIDs[j]]
 		}
-		long := &dks{share: priShares[nodeIDs[i]], commits: commits} // We use long key for nonce as well. Insecure, but OK for this test.
-		signer, err := dss.NewDSS(suite, nodeSKs[nodeIDs[i]], nodePKArray, long, long, messageToSign, f+1)
+		threshold := n - f
+		long := tcrypto.NewDistKeyShare(priShares[nodeIDs[i]], commits, threshold) // We use long key for nonce as well. Insecure, but OK for this test.
+		signer, err := dss.NewDSS(suite, nodeSKs[nodeIDs[i]], nodePKArray, long, long, messageToSign, threshold)
 		require.NoError(t, err)
 		signers[i] = signer
 		partSigs[i], err = signer.PartialSig()
@@ -141,17 +146,4 @@ func VerifyPriShares(
 		require.NoError(t, err)
 		require.NoError(t, dss.Verify(longPubKey, messageToSign, sig))
 	}
-}
-
-type dks struct {
-	share   *share.PriShare
-	commits []kyber.Point
-}
-
-func (s *dks) PriShare() *share.PriShare {
-	return s.share
-}
-
-func (s *dks) Commitments() []kyber.Point {
-	return s.commits
 }

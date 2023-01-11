@@ -19,9 +19,13 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// It also covers the dss.SecretShare.
 type SecretShare interface {
 	PriShare() *share.PriShare
 	Commitments() []kyber.Point
+	NodeCount() int // N -- Total number of parties.
+	MaxFaulty() int // F -- Maximal number of faulty nodes.
+	Threshold() int // T -- Minimal number of participants to recover a secret, T = N - F.
 }
 
 // DKShare stands for the information stored on
@@ -47,7 +51,7 @@ type DKShare interface {
 	DSSVerifySigShare(data []byte, sigshare *dss.PartialSig) error
 	DSSRecoverMasterSignature(sigShares []*dss.PartialSig, data []byte, nonce SecretShare) ([]byte, error)
 	DSSVerifyMasterSignature(data, signature []byte) error
-	DSSSecretShare() SecretShare
+	DSS() SecretShare
 	//
 	// BLS based crypto (for randomness only.)
 	BLSThreshold() uint16
