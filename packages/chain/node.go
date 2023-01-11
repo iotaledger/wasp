@@ -604,6 +604,9 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	cni.accessLock.Lock()
 	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
 	cni.latestActiveAO = output.LatestActiveAliasOutput()
+	if cni.latestActiveAO == nil {
+		cni.latestActiveState = nil
+	}
 	cni.accessLock.Unlock()
 }
 
