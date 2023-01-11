@@ -16,8 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
-const pubKeyParam = "PublicKey"
-
 func addAccessNodesEndpoints(
 	adm echoswagger.ApiGroup,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
@@ -27,14 +25,14 @@ func addAccessNodesEndpoints(
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
 		networkMgr:                  tnm,
 	}
-	adm.POST(routes.AdmAddAccessNode(":chainID"), a.handleAddAccessNode).
+	adm.PUT(routes.AdmAddAccessNode(":chainID", ":pubKey"), a.handleAddAccessNode).
 		AddParamPath("", "chainID", "ChainID (bech32))").
-		AddParamPath("", pubKeyParam, "PublicKey (hex string)").
+		AddParamPath("", "pubKey", "PublicKey (hex string)").
 		SetSummary("Add an access node to a chain")
 
-	adm.POST(routes.AdmRemoveAccessNode(":chainID"), a.handleRemoveAccessNode).
+	adm.DELETE(routes.AdmRemoveAccessNode(":chainID", ":pubKey"), a.handleRemoveAccessNode).
 		AddParamPath("", "chainID", "ChainID (bech32))").
-		AddParamPath("", pubKeyParam, "PublicKey (hex string)").
+		AddParamPath("", "pubKey", "PublicKey (hex string)").
 		SetSummary("Remove an access node from a chain")
 }
 
@@ -44,7 +42,7 @@ type accessNodesService struct {
 }
 
 func paramsPubKey(c echo.Context) (*cryptolib.PublicKey, error) {
-	return cryptolib.NewPublicKeyFromString(c.Param(pubKeyParam))
+	return cryptolib.NewPublicKeyFromString(c.Param("pubKey"))
 }
 
 func (a *accessNodesService) handleAddAccessNode(c echo.Context) error {
