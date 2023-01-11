@@ -58,10 +58,10 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 	if c.requestCache.Get(reqID) != nil {
 		return errors.New("request already processed")
 	}
+	c.requestCache.Set(reqID, true)
 
 	// check req signature
 	if err := request.VerifySignature(); err != nil {
-		c.requestCache.Set(reqID, true)
 		return fmt.Errorf("could not verify: %w", err)
 	}
 
