@@ -9,7 +9,7 @@ use crate::*;
 #[derive(Clone)]
 pub struct Proxy {
     key: Vec<u8>,
-    pub kv_store: Rc<ScDict>,
+    pub(crate) kv_store: Rc<ScDict>,
 }
 
 impl Proxy {

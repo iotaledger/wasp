@@ -57,6 +57,6 @@ fn view_get_string_thunk(ctx: &ScViewContext) {
         state:   ImmutableSoloTutorialState::new(),
     };
     view_get_string(ctx, &f);
-    ctx.results(&f.results.proxy.kv_store);
+    ctx.results(&f.results.proxy);
     ctx.log("solotutorial.viewGetString ok");
 }

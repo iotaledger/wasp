@@ -146,8 +146,8 @@ pub trait ScSandbox {
         }
     }
 
-    fn results(&self, results: &ScDict) {
-        sandbox(FN_RESULTS, &results.to_bytes());
+    fn results(&self, results: &Proxy) {
+        sandbox(FN_RESULTS, &results.kv_store.to_bytes());
     }
 
     // deterministic time stamp fixed at the moment of calling the smart contract

@@ -136,7 +136,7 @@ $#if view ImmutablePackageStateInit
 `,
 	// *******************************
 	"returnResultDict": `
-    ctx.results(&f.results.proxy.kv_store);
+    ctx.results(&f.results.proxy);
 `,
 	// *******************************
 	"requireMandatory": `
