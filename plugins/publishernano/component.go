@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
@@ -88,7 +87,7 @@ func run() error {
 		msg := msgType + " " + strings.Join(parts, " ")
 		select {
 		case messages <- []byte(msg):
-		case <-time.After(1 * time.Second):
+		default:
 			Plugin.LogWarnf("Failed to publish message: [%s]", msg)
 		}
 	}))
