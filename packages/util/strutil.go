@@ -27,3 +27,18 @@ func TimeOrNever2(t time.Time, never string) string {
 func TimeOrNever(t time.Time) string {
 	return TimeOrNever2(t, "never")
 }
+
+type ShortStringable interface {
+	ShortString() string
+}
+
+func SliceShortString[E ShortStringable](slice []E) string {
+	if len(slice) == 0 {
+		return "[]"
+	}
+	result := "[" + slice[0].ShortString()
+	for i := 1; i < len(slice); i++ {
+		result += "; " + slice[i].ShortString()
+	}
+	return result + "]"
+}

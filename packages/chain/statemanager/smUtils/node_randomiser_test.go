@@ -74,12 +74,12 @@ func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsT
 		require.Equal(t, nodeIDsGot, len(randomNodeIDs))
 		for j := range randomNodeIDs {
 			nodeIDFounds[randomNodeIDs[j]] = true
-			t.Logf("\tComparing nodeID %v, id %v with me...", j, randomNodeIDs[j])
+			t.Logf("\tComparing nodeID %v, id %s with me...", j, randomNodeIDs[j].ShortString())
 			require.False(t, randomNodeIDs[j].Equals(me))
-			t.Logf("\tComparing nodeIDs %v, id %v...", j, randomNodeIDs[j])
+			t.Logf("\tComparing nodeIDs %v, id %s...", j, randomNodeIDs[j].ShortString())
 			for k := range randomNodeIDs[j+1:] {
 				kk := k + j + 1
-				t.Logf("\t\t and %v, id %v", kk, randomNodeIDs[kk])
+				t.Logf("\t\t and %v, id %s", kk, randomNodeIDs[kk].ShortString())
 				require.False(t, randomNodeIDs[j].Equals(randomNodeIDs[kk]))
 			}
 		}
@@ -88,10 +88,10 @@ func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsT
 	for i := range nodeIDs {
 		_, ok := nodeIDFounds[nodeIDs[i]]
 		if nodeIDs[i].Equals(me) {
-			t.Logf("\tMe nodeID %v should not be returned", nodeIDs[i])
+			t.Logf("\tMe nodeID %s should not be returned", nodeIDs[i].ShortString())
 			require.False(t, ok)
 		} else {
-			t.Logf("\tNodeID %v should be at least once", nodeIDs[i])
+			t.Logf("\tNodeID %s should be at least once", nodeIDs[i].ShortString())
 			require.True(t, ok)
 		}
 	}
@@ -105,7 +105,7 @@ func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsT
 		return false
 	}
 	for nodeID := range nodeIDFounds {
-		t.Logf("\tNodeID %v", nodeID)
+		t.Logf("\tNodeID %s", nodeID.ShortString())
 		require.True(t, containsFun(nodeID))
 	}
 }

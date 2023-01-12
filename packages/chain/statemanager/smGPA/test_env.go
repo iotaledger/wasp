@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 type testEnv struct {
@@ -24,6 +25,7 @@ type testEnv struct {
 	nodeIDs      []gpa.NodeID
 	timeProvider smGPAUtils.TimeProvider
 	sms          map[gpa.NodeID]gpa.GPA
+	stores       map[gpa.NodeID]state.Store
 	tc           *gpa.TestContext
 	log          *logger.Logger
 }
@@ -33,6 +35,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 	chainID := bf.GetChainID()
 	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())
 	sms := make(map[gpa.NodeID]gpa.GPA)
+	stores := make(map[gpa.NodeID]state.Store)
 	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -42,10 +45,11 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 	timers.TimeProvider = smGPAUtils.NewArtifficialTimeProvider()
 	for _, nodeID := range nodeIDs {
 		var err error
-		smLog := log.Named(nodeID.String())
+		smLog := log.Named(nodeID.ShortString())
 		nr := smUtils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun()
 		store := state.InitChainStore(mapdb.NewMapDB())
+		stores[nodeID] = store
 		sms[nodeID], err = New(chainID, nr, wal, store, smLog, timers)
 		require.NoError(t, err)
 	}
@@ -55,6 +59,7 @@ func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUti
 		nodeIDs:      nodeIDs,
 		timeProvider: timers.TimeProvider,
 		sms:          sms,
+		stores:       stores,
 		tc:           gpa.NewTestContext(sms),
 		log:          log,
 	}
@@ -69,7 +74,7 @@ func (teT *testEnv) sendBlocksToNode(nodeID gpa.NodeID, timeStep time.Duration, 
 	// needed to commit this block. This is ensured by consensus.
 	require.True(teT.t, teT.sendAndEnsureCompletedConsensusStateProposal(blocks[0].PreviousL1Commitment(), nodeID, 100, timeStep))
 	for i := range blocks {
-		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID)
+		teT.t.Logf("Supplying block %s to node %s", blocks[i].L1Commitment(), nodeID.ShortString())
 		teT.sendAndEnsureCompletedConsensusBlockProduced(blocks[i], nodeID, 100, timeStep)
 	}
 }
@@ -205,13 +210,36 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *smInputs
 
 // --------
 
+func (teT *testEnv) ensureStoreContainsBlocksNoWait(nodeID gpa.NodeID, blocks []state.Block) bool {
+	return teT.ensureTrue("store to contain blocks", func() bool {
+		for _, block := range blocks {
+			commitment := block.L1Commitment()
+			teT.t.Logf("Checking block %s on node %s...", commitment, nodeID.ShortString())
+			store, ok := teT.stores[nodeID]
+			require.True(teT.t, ok)
+			if store.HasTrieRoot(commitment.TrieRoot()) {
+				teT.t.Logf("Node %s contains block %s", nodeID.ShortString(), commitment)
+			} else {
+				teT.t.Logf("Node %s does not contain block %s", nodeID.ShortString(), commitment)
+				return false
+			}
+		}
+		return true
+	}, 1, 0*time.Second)
+}
+
+// --------
+
 func (teT *testEnv) ensureTrue(title string, predicate func() bool, maxTimeIterations int, timeStep time.Duration) bool {
-	for i := 0; i < maxTimeIterations; i++ {
+	if predicate() {
+		return true
+	}
+	for i := 1; i < maxTimeIterations; i++ {
 		teT.t.Logf("Waiting for %s iteration %v", title, i)
+		teT.sendTimerTickToNodes(timeStep)
 		if predicate() {
 			return true
 		}
-		teT.sendTimerTickToNodes(timeStep)
 	}
 	return false
 }
@@ -219,7 +247,7 @@ func (teT *testEnv) ensureTrue(title string, predicate func() bool, maxTimeItera
 func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
 	now := teT.timeProvider.GetNow().Add(delay)
 	teT.timeProvider.SetNow(now)
-	teT.t.Logf("Time %v is sent to nodes %v", now, teT.nodeIDs)
+	teT.t.Logf("Time %v is sent to nodes %s", now, util.SliceShortString(teT.nodeIDs))
 	teT.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
 		return smInputs.NewStateManagerTimerTick(now)
 	})

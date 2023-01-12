@@ -232,3 +232,23 @@ func TestProof(t *testing.T) {
 		})
 	}
 }
+
+func TestDoubleCommit(t *testing.T) {
+	db := mapdb.NewMapDB()
+	cs := mustChainStore{InitChainStore(db)}
+	keyChanged := kv.Key("k")
+	for i := 1; i < 10; i++ {
+		now := time.Now()
+		latestCommitment := cs.LatestBlock().L1Commitment()
+		newValue := []byte(fmt.Sprintf("a%d", i))
+		d1 := cs.NewStateDraft(now, latestCommitment)
+		d1.Set(keyChanged, newValue)
+		block1 := cs.Commit(d1)
+		d2 := cs.NewStateDraft(now, latestCommitment)
+		d2.Set(keyChanged, newValue)
+		block2 := cs.Commit(d2)
+		require.Equal(t, block1.L1Commitment(), block2.L1Commitment())
+		err := cs.SetLatest(block1.TrieRoot())
+		require.NoError(t, err)
+	}
+}

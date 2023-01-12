@@ -145,20 +145,22 @@ func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 
 func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *state.L1Commitment) gpa.OutMessages {
 	// TODO: [KP] Only accept queries from access nodes.
-	smT.log.Debugf("Message GetBlock %s received from peer %s", commitment, from)
+	fromLog := from.ShortString()
+	smT.log.Debugf("Message GetBlock %s received from peer %s", commitment, fromLog)
 	block := smT.getBlock(commitment)
 	if block == nil {
-		smT.log.Debugf("Message GetBlock %s: block not found, peer %s request ignored", commitment, from)
+		smT.log.Debugf("Message GetBlock %s: block not found, peer %s request ignored", commitment, fromLog)
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Message GetBlock %s: block found, sending it to peer %s", commitment, from)
+	smT.log.Debugf("Message GetBlock %s: block found, sending it to peer %s", commitment, fromLog)
 	return gpa.NoMessages().Add(smMessages.NewBlockMessage(block, from))
 }
 
 func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) gpa.OutMessages {
 	blockCommitment := block.L1Commitment()
 	blockHash := blockCommitment.BlockHash()
-	smT.log.Debugf("Message Block %s received from peer %s", blockCommitment, from)
+	fromLog := from.ShortString()
+	smT.log.Debugf("Message Block %s received from peer %s", blockCommitment, fromLog)
 	requestsWC, ok := smT.blockRequests[blockHash]
 	if !ok {
 		smT.log.Debugf("Message Block %s: block is not needed, ignoring it", blockCommitment)
@@ -179,7 +181,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	if err != nil {
 		return nil // No messages to send
 	}
-	smT.log.Debugf("Message Block %s from peer %s handled", blockCommitment, from)
+	smT.log.Debugf("Message Block %s from peer %s handled", blockCommitment, fromLog)
 	return messages
 }
 
@@ -211,38 +213,35 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *smInputs.ConsensusD
 func (smT *stateManagerGPA) handleConsensusBlockProduced(input *smInputs.ConsensusBlockProduced) gpa.OutMessages {
 	commitment := input.GetStateDraft().BaseL1Commitment()
 	smT.log.Debugf("Input block produced on state %s received...", commitment)
-	request := smT.createBlockRequestLocal(commitment, func(_ obtainStateFun) {
-		smT.log.Debugf("Input block produced on state %s: all blocks to commit state draft index %v are in store, producing block",
-			commitment, input.GetStateDraft().BlockIndex())
-		block := smT.store.ExtractBlock(input.GetStateDraft())
-		blockCommitment := block.L1Commitment()
-		smT.log.Debugf("Input block produced on state %s: state draft index %v produced block %s",
-			commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
-		smT.blockCache.AddBlock(block)
-		input.Respond(nil)
-		requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
-		if ok {
-			requests := requestsWC.blockRequests
-			smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
-				commitment, len(requestsWC.blockRequests))
-			delete(smT.blockRequests, blockCommitment.BlockHash())
-			for _, request := range requests {
-				request.blockAvailable(block)
-			}
-			smT.log.Debugf("Input block produced on state %s: completing %v requests",
-				commitment, len(requestsWC.blockRequests))
-			err := smT.completeRequests(requests)
-			smT.log.Debugf("Input block produced on state %s: %v requests completed, err=%v",
+	if !smT.store.HasTrieRoot(commitment.TrieRoot()) {
+		smT.log.Panicf("Input block produced on state %s: state, on which this block is produced, is not yet in the store", commitment)
+	}
+	// NOTE: committing already committed block is allowed (see `TestDoubleCommit` test in `packages/state/state_test.go`)
+	block := smT.store.Commit(input.GetStateDraft())
+	blockCommitment := block.L1Commitment()
+	smT.log.Debugf("Input block produced on state %s: state draft index %v has been committed to the store, resulting block %s",
+		commitment, input.GetStateDraft().BlockIndex(), blockCommitment)
+	smT.blockCache.AddBlock(block)
+	input.Respond(nil)
+	requestsWC, ok := smT.blockRequests[blockCommitment.BlockHash()]
+	if ok {
+		requests := requestsWC.blockRequests
+		smT.log.Debugf("Input block produced on state %s: sending block %s to %v requests, waiting for it",
+			commitment, len(requestsWC.blockRequests))
+		delete(smT.blockRequests, blockCommitment.BlockHash())
+		for _, request := range requests {
+			request.blockAvailable(block)
+		}
+		smT.log.Debugf("Input block produced on state %s: completing %v requests",
+			commitment, len(requestsWC.blockRequests))
+		err := smT.completeRequests(blockCommitment, requests)
+		if err != nil {
+			smT.log.Errorf("Input block produced on state %s: failed completing %v: %v",
 				commitment, len(requestsWC.blockRequests), err)
 		}
-	})
-	messages, err := smT.traceBlockChainByRequest(request)
-	if err != nil {
-		smT.log.Debugf("Input block produced on state %s failed tracing block chain: %v", commitment, err)
-		input.Respond(err)
 	}
 	smT.log.Debugf("Input block produced on state %s handled", commitment)
-	return messages
+	return nil // No messages to send
 }
 
 func (smT *stateManagerGPA) handleChainFetchStateDiff(input *smInputs.ChainFetchStateDiff) gpa.OutMessages { //nolint:funlen
@@ -454,14 +453,17 @@ func (smT *stateManagerGPA) traceBlockChain(initCommitment *state.L1Commitment, 
 		commitment = block.PreviousL1Commitment()
 	}
 	smT.log.Debugf("Tracing block %s chain: tracing completed, completing %v requests", initCommitment, len(requests))
-	err := smT.completeRequests(requests)
+	err := smT.completeRequests(nil, requests)
 	smT.log.Debugf("Tracing block %s chain done, err=%v", initCommitment, err)
 	return nil, err // No messages to send
 }
 
-func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
+func (smT *stateManagerGPA) completeRequests(alreadyCommittedL1C *state.L1Commitment, requests []blockRequest) error {
 	smT.log.Debugf("Completing %v requests: committing blocks...", len(requests))
 	committedBlocks := make(map[state.BlockHash]bool)
+	if alreadyCommittedL1C != nil {
+		committedBlocks[alreadyCommittedL1C.BlockHash()] = true
+	}
 	for _, request := range requests {
 		smT.log.Debugf("Completing %v requests: committing blocks of %s request %v", len(requests), request.getType(), request.getID())
 		blockChain := request.getBlockChain()
@@ -505,7 +507,7 @@ func (smT *stateManagerGPA) completeRequests(requests []blockRequest) error {
 // Make `numberOfNodesToRequestBlockFromConst` messages to random peers
 func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Commitment) gpa.OutMessages {
 	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(numberOfNodesToRequestBlockFromConst)
-	smT.log.Debugf("Requesting block %s from %v random nodes %v", commitment, numberOfNodesToRequestBlockFromConst, nodeIDs)
+	smT.log.Debugf("Requesting block %s from %v random nodes %s", commitment, numberOfNodesToRequestBlockFromConst, util.SliceShortString(nodeIDs))
 	response := gpa.NoMessages()
 	for _, nodeID := range nodeIDs {
 		response.Add(smMessages.NewGetBlockMessage(commitment, nodeID))
