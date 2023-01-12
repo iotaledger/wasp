@@ -114,6 +114,14 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 	return ret
 }
 
+func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
+	aid := ctx.Params().MustGetAgentID(ParamAgentID)
+	nftIDs := getAccountNFTs(getAccountR(ctx.StateR(), aid))
+	return dict.Dict{
+		ParamNFTAmount: codec.EncodeUint32(uint32(len(nftIDs))),
+	}
+}
+
 // viewNFTData returns the NFT data for a given NFTID
 func viewNFTData(ctx isc.SandboxView) dict.Dict {
 	ctx.Log().Debugf("accounts.viewNFTData")

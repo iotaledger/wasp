@@ -17,6 +17,10 @@ struct L1Address {
     bytes data;
 }
 
+uint8 constant L1AddressTypeEd25519 = 0;
+uint8 constant L1AddressTypeAlias = 8;
+uint8 constant L1AddressTypeNFT = 16;
+
 // An IOTA native token ID
 struct NativeTokenID {
     bytes data;
@@ -60,6 +64,11 @@ type ISCChainID is bytes32;
 struct ISCAgentID {
     bytes data;
 }
+
+uint8 constant ISCAgentIDKindNil = 0;
+uint8 constant ISCAgentIDKindAddress = 1;
+uint8 constant ISCAgentIDKindContract = 2;
+uint8 constant ISCAgentIDKindEthereumAddress = 3;
 
 // An ISC request ID
 struct ISCRequestID {
@@ -122,13 +131,15 @@ struct ISCTokenProperties {
 }
 
 library ISCTypes {
-    uint8 constant AgentIDKindEthereumAddress = 3;
+    function L1AddressType(L1Address memory addr) internal pure returns (uint8) {
+        return uint8(addr.data[0]);
+    }
 
     function newEthereumAgentID(address addr) internal pure returns (ISCAgentID memory) {
         bytes memory addrBytes = abi.encodePacked(addr);
         ISCAgentID memory r;
         r.data = new bytes(1+addrBytes.length);
-        r.data[0] = bytes1(AgentIDKindEthereumAddress);
+        r.data[0] = bytes1(ISCAgentIDKindEthereumAddress);
         for (uint i = 0; i < addrBytes.length; i++) {
             r.data[i+1] = addrBytes[i];
         }
@@ -136,7 +147,7 @@ library ISCTypes {
     }
 
     function isEthereum(ISCAgentID memory a) internal pure returns (bool) {
-        return uint8(a.data[0]) == AgentIDKindEthereumAddress;
+        return uint8(a.data[0]) == ISCAgentIDKindEthereumAddress;
     }
 
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
@@ -147,5 +158,19 @@ library ISCTypes {
 
     function asNFTID(uint256 tokenID) internal pure returns (NFTID) {
         return NFTID.wrap(bytes32(tokenID));
+    }
+
+    function isInCollection(ISCNFT memory nft, NFTID collectionId) internal pure returns (bool) {
+        if (L1AddressType(nft.issuer) != L1AddressTypeNFT) {
+            return false;
+        }
+        require(nft.issuer.data.length == 33);
+        for (uint i = 0; i < 32; i++) {
+            bytes1 b = bytes1(NFTID.unwrap(collectionId) >> (32-i-1));
+            if (b != nft.issuer.data[i+1]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

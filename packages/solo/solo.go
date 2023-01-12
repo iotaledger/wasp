@@ -547,17 +547,29 @@ type NFTMintedInfo struct {
 	NFTID    iotago.NFTID
 }
 
-// MintNFTL1 mints an NFT with the `issuer` account and sends it to a `target` account.
-// base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account
+// MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
+// Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
 func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, immutableMetadata []byte) (*isc.NFT, *NFTMintedInfo, error) {
+	nfts, infos, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
+	if err != nil {
+		return nil, nil, err
+	}
+	return nfts[0], infos[0], nil
+}
+
+// MintNFTsL1 mints NFTs with the `issuer` account and sends it to a `target` account.
+// If collection is not nil, all minted NFTs will belong to the given collection.
+// Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
+func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collection *iotago.NFTOutput, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
-	tx, err := transaction.NewMintNFTTransaction(transaction.MintNFTTransactionParams{
+	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTTransactionParams{
 		IssuerKeyPair:     issuer,
+		Collection:        collection,
 		Target:            target,
+		ImmutableMetadata: immutableMetadata,
 		UnspentOutputs:    allOuts,
 		UnspentOutputIDs:  allOutIDs,
-		ImmutableMetadata: immutableMetadata,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -571,22 +583,27 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 	if err != nil {
 		return nil, nil, err
 	}
+
+	var nfts []*isc.NFT
+	var infos []*NFTMintedInfo
 	for id, out := range outSet {
-		// we know that the tx will only produce 1 NFT output
 		if _, ok := out.(*iotago.NFTOutput); ok {
 			info := &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
 				NFTID:    iotago.NFTIDFromOutputID(id),
 			}
-			iscNFT := &isc.NFT{
+			nft := &isc.NFT{
 				ID:       info.NFTID,
 				Issuer:   issuer.Address(),
-				Metadata: immutableMetadata,
+				Metadata: immutableMetadata[len(nfts)],
 			}
-			return iscNFT, info, nil
+			nfts = append(nfts, nft)
+			infos = append(infos, info)
 		}
 	}
-
-	return nil, nil, errors.New("NFT output not found in resulting tx")
+	if len(nfts) != len(immutableMetadata) || len(infos) != len(immutableMetadata) {
+		return nil, nil, errors.New("NFT output not found in resulting tx")
+	}
+	return nfts, infos, nil
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -27,10 +26,8 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -307,57 +304,6 @@ func (e *soloChainEnv) deployContract(creator *ecdsa.PrivateKey, abiJSON string,
 		address:       crypto.CreateAddress(creatorAddress, nonce),
 		abi:           contractABI,
 	}
-}
-
-func (e *soloChainEnv) mintNFTAndSendToL2(to isc.AgentID) *isc.NFT {
-	issuerWallet, issuerAddress := e.solo.NewKeyPairWithFunds()
-	metadata := []byte("foobar")
-	nft, _, err := e.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-	require.NoError(e.t, err)
-
-	_, err = e.soloChain.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-			dict.Dict{
-				accounts.ParamAgentID:          codec.EncodeAgentID(to),
-				accounts.ParamForceOpenAccount: codec.EncodeBool(true),
-			},
-		).
-			WithNFT(nft).
-			WithAllowance(isc.NewAllowance(0, nil, []iotago.NFTID{nft.ID})).
-			AddBaseTokens(1*isc.Million). // for storage deposit
-			WithMaxAffordableGasBudget(),
-		issuerWallet,
-	)
-	require.NoError(e.t, err)
-
-	require.Equal(e.t, []iotago.NFTID{nft.ID}, e.soloChain.L2NFTs(to))
-
-	return nft
-}
-
-func (e *soloChainEnv) createFoundry(foundryOwner *cryptolib.KeyPair, supply *big.Int) (uint32, iotago.NativeTokenID) {
-	res, err := e.soloChain.PostRequestSync(
-		solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-			accounts.ParamTokenScheme, codec.EncodeTokenScheme(&iotago.SimpleTokenScheme{
-				MaximumSupply: supply,
-				MintedTokens:  util.Big0,
-				MeltedTokens:  util.Big0,
-			}),
-		).
-			WithMaxAffordableGasBudget().
-			WithAllowance(isc.NewAllowanceBaseTokens(1*isc.Million)), // for storage deposit
-		foundryOwner,
-	)
-	require.NoError(e.t, err)
-	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-	nativeTokenID, err := e.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
-	require.NoError(e.t, err)
-
-	err = e.soloChain.MintTokens(foundrySN, supply, foundryOwner)
-	require.NoError(e.t, err)
-
-	return foundrySN, nativeTokenID
 }
 
 func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, foundrySN uint32, tokenName, tokenTickerSymbol string, tokenDecimals uint8) error {

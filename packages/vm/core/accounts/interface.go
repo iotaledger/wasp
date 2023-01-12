@@ -19,6 +19,7 @@ var (
 	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
 	ViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
 	ViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
+	ViewAccountNFTAmount         = coreutil.ViewFunc("accountNFTAmount")
 	ViewAccountFoundries         = coreutil.ViewFunc("accountFoundries")
 	ViewNFTData                  = coreutil.ViewFunc("nftData")
 
@@ -69,6 +70,7 @@ const (
 	ParamDestroyTokens                = "y"
 	ParamStorageDepositAssumptionsBin = "u"
 	ParamForceOpenAccount             = "c"
+	ParamNFTAmount                    = "A"
 	ParamNFTIDs                       = "i"
 	ParamNFTID                        = "z"
 	ParamNFTData                      = "e"

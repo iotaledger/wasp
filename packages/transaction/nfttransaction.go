@@ -8,31 +8,46 @@ import (
 
 type MintNFTTransactionParams struct {
 	IssuerKeyPair     *cryptolib.KeyPair
+	Collection        *iotago.NFTOutput
 	Target            iotago.Address
+	ImmutableMetadata [][]byte
 	UnspentOutputs    iotago.OutputSet
 	UnspentOutputIDs  iotago.OutputIDs
-	ImmutableMetadata []byte
 }
 
-func NewMintNFTTransaction(par MintNFTTransactionParams) (*iotago.Transaction, error) {
-	issuerAddress := par.IssuerKeyPair.Address()
+func NewMintNFTsTransaction(par MintNFTTransactionParams) (*iotago.Transaction, error) {
+	senderAddress := par.IssuerKeyPair.Address()
 
-	out := &iotago.NFTOutput{
-		NFTID: iotago.NFTID{},
-		Conditions: iotago.UnlockConditions{
-			&iotago.AddressUnlockCondition{Address: par.Target},
-		},
-		ImmutableFeatures: iotago.Features{
-			&iotago.IssuerFeature{Address: issuerAddress},
-			&iotago.MetadataFeature{Data: par.ImmutableMetadata},
-		},
+	var issuerAddress iotago.Address = senderAddress
+	var nftsOut map[iotago.NFTID]bool
+	if par.Collection != nil {
+		issuerAddress = par.Collection.NFTID.ToAddress()
+		nftsOut[par.Collection.NFTID] = true
 	}
-	storageDeposit := parameters.L1().Protocol.RentStructure.MinRent(out)
-	out.Amount = storageDeposit
 
-	outputs := iotago.Outputs{out}
+	storageDeposit := uint64(0)
+	var outputs iotago.Outputs
 
-	inputIDs, remainder, err := computeInputsAndRemainder(issuerAddress, storageDeposit, nil, nil, par.UnspentOutputs, par.UnspentOutputIDs)
+	for _, immutableMetadata := range par.ImmutableMetadata {
+		out := &iotago.NFTOutput{
+			NFTID: iotago.NFTID{},
+			Conditions: iotago.UnlockConditions{
+				&iotago.AddressUnlockCondition{Address: par.Target},
+			},
+			ImmutableFeatures: iotago.Features{
+				&iotago.IssuerFeature{Address: issuerAddress},
+				&iotago.MetadataFeature{Data: immutableMetadata},
+			},
+		}
+
+		d := parameters.L1().Protocol.RentStructure.MinRent(out)
+		out.Amount = d
+		storageDeposit += d
+
+		outputs = append(outputs, out)
+	}
+
+	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, storageDeposit, nil, nftsOut, par.UnspentOutputs, par.UnspentOutputIDs)
 	if err != nil {
 		return nil, err
 	}

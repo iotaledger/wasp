@@ -8,8 +8,8 @@ import "@iscmagic/ISCSandbox.sol";
 import "@iscmagic/ISCAccounts.sol";
 import "@iscmagic/ISCPrivileged.sol";
 
-// The ERC721 contract for ISC L2 NFTs.
-contract ERC721NFTs { // is ERC721, ERC165
+// The ERC721 contract for the "global" collection of ISC L2 NFTs.
+contract ERC721NFTs { // is IERC721, IERC165
     using ISCTypes for ISCAgentID;
     using ISCTypes for uint256;
 
@@ -24,14 +24,12 @@ contract ERC721NFTs { // is ERC721, ERC165
 
     function balanceOf(address owner) public view returns (uint256) {
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(owner);
-        return __iscAccounts.getL2NFTs(ownerAgentID).length;
+        return __iscAccounts.getL2NFTAmount(ownerAgentID);
     }
 
     function ownerOf(uint256 tokenId) public view returns (address) {
         ISCNFT memory nft = __iscSandbox.getNFTData(tokenId.asNFTID());
-        if (!nft.owner.isEthereum()) {
-            return address(0);
-        }
+        require(nft.owner.isEthereum());
         return nft.owner.ethAddress();
     }
 

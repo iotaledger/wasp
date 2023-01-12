@@ -42,3 +42,12 @@ func (h *magicContractViewHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscm
 	}
 	return ret
 }
+
+// handler for ISCAccounts::getL2NFTAmount
+func (h *magicContractViewHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *big.Int {
+	r := h.ctx.CallView(accounts.Contract.Hname(), accounts.ViewAccountNFTAmount.Hname(), dict.Dict{
+		accounts.ParamAgentID: codec.EncodeAgentID(agentID.MustUnwrap()),
+	})
+	n := codec.MustDecodeUint32(r[accounts.ParamNFTAmount])
+	return big.NewInt(int64(n))
+}

@@ -25,6 +25,7 @@ var Processor = Contract.Processor(initialize,
 
 	// views
 	ViewAccountNFTs.WithHandler(viewAccountNFTs),
+	ViewAccountNFTAmount.WithHandler(viewAccountNFTAmount),
 	ViewAccountFoundries.WithHandler(viewAccountFoundries),
 	ViewAccounts.WithHandler(viewAccounts),
 	ViewBalance.WithHandler(viewBalance),
