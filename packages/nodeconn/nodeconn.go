@@ -364,9 +364,29 @@ func (nc *nodeConnection) GetMetrics() nodeconnmetrics.NodeConnectionMetrics {
 	return nc.nodeConnectionMetrics
 }
 
-func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction) (iotago.BlockID, error) {
+func (nc *nodeConnection) doPostTx(ctx context.Context, tx *iotago.Transaction, tipsAdditional ...iotago.BlockID) (iotago.BlockID, error) {
+	var parents iotago.BlockIDs
+
+	// if no tips are given, we use empty parents, the node will do the tipselection in that case.
+	// if tips are given, we should have at least BlockMaxParents/2 parents to have a healthy tangle.
+	if len(tipsAdditional) > 0 {
+		// add the tips to parents we want to reference.
+		parents = append(parents, tipsAdditional...)
+
+		if len(parents) < (iotago.BlockMaxParents / 2) {
+			// not enough tips for a healthy tangle, request more from the node
+			tips, err := nc.nodeBridge.RequestTips(ctx, uint32((iotago.BlockMaxParents/2)-len(parents)), false)
+			if err != nil {
+				return iotago.EmptyBlockID(), fmt.Errorf("failed to fetch tips: %w", err)
+			}
+
+			parents = append(parents, tips...)
+		}
+	}
+
 	// Build a Block and post it.
 	block, err := builder.NewBlockBuilder().
+		Parents(parents).
 		Payload(tx).
 		Build()
 	if err != nil {
