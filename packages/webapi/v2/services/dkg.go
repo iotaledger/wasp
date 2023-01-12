@@ -80,12 +80,12 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 	}
 
 	dkShareInfo := &models.DKSharesInfo{
-		Address:      dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
-		PeerIndex:    dkShare.GetIndex(),
-		PeerPubKeys:  nodePubKeysBytes,
-		PubKeyShares: pubKeyShares,
-		SharedPubKey: sharedBinaryPubKey,
-		Threshold:    dkShare.GetT(),
+		Address:        dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		PeerIndex:      dkShare.GetIndex(),
+		PeerPublicKeys: nodePubKeysBytes,
+		PubKeyShares:   pubKeyShares,
+		SharedPubKey:   sharedBinaryPubKey,
+		Threshold:      dkShare.GetT(),
 	}
 
 	return dkShareInfo, nil

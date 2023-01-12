@@ -4,6 +4,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -18,6 +20,14 @@ func DecodeChainID(e echo.Context) (isc.ChainID, error) {
 		return isc.ChainID{}, apierrors.InvalidPropertyError("chainID", err)
 	}
 	return chainID, nil
+}
+
+func DecodePublicKey(e echo.Context) (*cryptolib.PublicKey, error) {
+	publicKey, err := cryptolib.NewPublicKeyFromString(e.Param("publicKey"))
+	if err != nil {
+		return nil, apierrors.InvalidPropertyError("publicKey", err)
+	}
+	return publicKey, nil
 }
 
 func DecodeRequestID(e echo.Context) (isc.RequestID, error) {

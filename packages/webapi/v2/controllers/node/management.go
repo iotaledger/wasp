@@ -3,6 +3,8 @@ package node
 import (
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -16,9 +18,14 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	reqNodePubKeyBytes, err := iotago.DecodeHex(request.NodePubKey)
+	reqPublicKeyBytes, err := iotago.DecodeHex(request.PublicKey)
 	if err != nil {
-		return apierrors.InvalidPropertyError("NodePubKey", err)
+		return apierrors.InvalidPropertyError("PublicKey", err)
+	}
+
+	reqPublicKey, err := cryptolib.NewPublicKeyFromBytes(reqPublicKeyBytes)
+	if err != nil {
+		return apierrors.InvalidPropertyError("PublicKey", err)
 	}
 
 	_, reqOwnerAddress, err := iotago.ParseBech32(request.OwnerAddress)
@@ -26,7 +33,7 @@ func (c *Controller) setNodeOwner(e echo.Context) error {
 		return apierrors.InvalidPropertyError("OwnerAddress", err)
 	}
 
-	certificateBytes, err := c.nodeService.SetNodeOwnerCertificate(reqNodePubKeyBytes, reqOwnerAddress)
+	certificateBytes, err := c.nodeService.SetNodeOwnerCertificate(reqPublicKey, reqOwnerAddress)
 	if err != nil {
 		return err
 	}
