@@ -13,149 +13,149 @@ import (
 )
 
 type ImmutableDeployContractParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableDeployContractParams() ImmutableDeployContractParams {
-	return ImmutableDeployContractParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableDeployContractParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // default 'N/A'
 func (s ImmutableDeployContractParams) Description() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamDescription))
 }
 
 func (s ImmutableDeployContractParams) Name() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamName))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamName))
 }
 
 // TODO variable init params for deployed contract
 func (s ImmutableDeployContractParams) ProgramHash() wasmtypes.ScImmutableHash {
-	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamProgramHash))
+	return wasmtypes.NewScImmutableHash(s.Proxy.Root(ParamProgramHash))
 }
 
 type MutableDeployContractParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // default 'N/A'
 func (s MutableDeployContractParams) Description() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamDescription))
 }
 
 func (s MutableDeployContractParams) Name() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamName))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamName))
 }
 
 // TODO variable init params for deployed contract
 func (s MutableDeployContractParams) ProgramHash() wasmtypes.ScMutableHash {
-	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamProgramHash))
+	return wasmtypes.NewScMutableHash(s.Proxy.Root(ParamProgramHash))
 }
 
 type ImmutableGrantDeployPermissionParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableGrantDeployPermissionParams() ImmutableGrantDeployPermissionParams {
-	return ImmutableGrantDeployPermissionParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableGrantDeployPermissionParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableGrantDeployPermissionParams) Deployer() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDeployer))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamDeployer))
 }
 
 type MutableGrantDeployPermissionParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableGrantDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamDeployer))
 }
 
 type ImmutableRequireDeployPermissionsParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableRequireDeployPermissionsParams() ImmutableRequireDeployPermissionsParams {
-	return ImmutableRequireDeployPermissionsParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableRequireDeployPermissionsParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamDeployPermissionsEnabled))
 }
 
 type MutableRequireDeployPermissionsParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableRequireDeployPermissionsParams) DeployPermissionsEnabled() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamDeployPermissionsEnabled))
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamDeployPermissionsEnabled))
 }
 
 type ImmutableRevokeDeployPermissionParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableRevokeDeployPermissionParams() ImmutableRevokeDeployPermissionParams {
-	return ImmutableRevokeDeployPermissionParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableRevokeDeployPermissionParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamDeployer))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamDeployer))
 }
 
 type MutableRevokeDeployPermissionParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableRevokeDeployPermissionParams) Deployer() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamDeployer))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamDeployer))
 }
 
 type ImmutableSubscribeBlockContextParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableSubscribeBlockContextParams() ImmutableSubscribeBlockContextParams {
-	return ImmutableSubscribeBlockContextParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableSubscribeBlockContextParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamCloseFunc))
+	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamCloseFunc))
 }
 
 func (s ImmutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamOpenFunc))
+	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamOpenFunc))
 }
 
 type MutableSubscribeBlockContextParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableSubscribeBlockContextParams) CloseFunc() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamCloseFunc))
+	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamCloseFunc))
 }
 
 func (s MutableSubscribeBlockContextParams) OpenFunc() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamOpenFunc))
+	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamOpenFunc))
 }
 
 type ImmutableFindContractParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableFindContractParams() ImmutableFindContractParams {
-	return ImmutableFindContractParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableFindContractParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableFindContractParams) Hname() wasmtypes.ScImmutableHname {
-	return wasmtypes.NewScImmutableHname(s.proxy.Root(ParamHname))
+	return wasmtypes.NewScImmutableHname(s.Proxy.Root(ParamHname))
 }
 
 type MutableFindContractParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableFindContractParams) Hname() wasmtypes.ScMutableHname {
-	return wasmtypes.NewScMutableHname(s.proxy.Root(ParamHname))
+	return wasmtypes.NewScMutableHname(s.Proxy.Root(ParamHname))
 }

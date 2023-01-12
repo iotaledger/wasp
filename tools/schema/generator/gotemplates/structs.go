@@ -54,31 +54,31 @@ $#each fldComment _structFieldComment
 	"structMethods": `
 
 type $mut$StrName struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 $#if mut structMethodDelete
 
 func (o $mut$StrName) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 $#if mut structMethodSetValue
 
 func (o $mut$StrName) Value() *$StrName {
-	return New$StrName$+FromBytes(o.proxy.Get())
+	return New$StrName$+FromBytes(o.Proxy.Get())
 }
 `,
 	// *******************************
 	"structMethodDelete": `
 
 func (o $mut$StrName) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 `,
 	// *******************************
 	"structMethodSetValue": `
 
 func (o $mut$StrName) SetValue(value *$StrName) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 `,
 }

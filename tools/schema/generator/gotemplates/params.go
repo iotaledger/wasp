@@ -29,7 +29,7 @@ $#set TypeName $mut$FuncName$+Params
 $#each param proxyContainers
 
 type $TypeName struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 $#if mut else paramsImmutConstructor
 $#each param proxyMethods
@@ -38,7 +38,7 @@ $#each param proxyMethods
 	"paramsImmutConstructor": `
 
 func New$TypeName() $TypeName {
-	return $TypeName{proxy: wasmlib.NewParamsProxy()}
+	return $TypeName{Proxy: wasmlib.NewParamsProxy()}
 }
 `,
 }

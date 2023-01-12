@@ -52,12 +52,11 @@ type GetStringContext struct {
 
 func viewGetStringThunk(ctx wasmlib.ScViewContext) {
 	ctx.Log("solotutorial.viewGetString")
-	results := wasmlib.NewScDict()
 	f := &GetStringContext{
-		Results: solotutorial.NewMutableGetStringResults(results),
+		Results: solotutorial.NewMutableGetStringResults(),
 		State:   solotutorial.NewImmutableSoloTutorialState(),
 	}
 	viewGetString(ctx, f)
-	ctx.Results(results)
+	ctx.Results(f.Results.Proxy)
 	ctx.Log("solotutorial.viewGetString ok")
 }

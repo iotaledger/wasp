@@ -13,273 +13,273 @@ import (
 )
 
 type ImmutableFoundryCreateNewParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableFoundryCreateNewParams() ImmutableFoundryCreateNewParams {
-	return ImmutableFoundryCreateNewParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableFoundryCreateNewParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamTokenScheme))
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamTokenScheme))
 }
 
 type MutableFoundryCreateNewParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableFoundryCreateNewParams) TokenScheme() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamTokenScheme))
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamTokenScheme))
 }
 
 type ImmutableFoundryDestroyParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableFoundryDestroyParams() ImmutableFoundryDestroyParams {
-	return ImmutableFoundryDestroyParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableFoundryDestroyParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableFoundryDestroyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 type MutableFoundryDestroyParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableFoundryDestroyParams) FoundrySN() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 type ImmutableFoundryModifySupplyParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableFoundryModifySupplyParams() ImmutableFoundryModifySupplyParams {
-	return ImmutableFoundryModifySupplyParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableFoundryModifySupplyParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamDestroyTokens))
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamDestroyTokens))
 }
 
 func (s ImmutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 func (s ImmutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScImmutableBigInt {
-	return wasmtypes.NewScImmutableBigInt(s.proxy.Root(ParamSupplyDeltaAbs))
+	return wasmtypes.NewScImmutableBigInt(s.Proxy.Root(ParamSupplyDeltaAbs))
 }
 
 type MutableFoundryModifySupplyParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableFoundryModifySupplyParams) DestroyTokens() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamDestroyTokens))
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamDestroyTokens))
 }
 
 func (s MutableFoundryModifySupplyParams) FoundrySN() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 func (s MutableFoundryModifySupplyParams) SupplyDeltaAbs() wasmtypes.ScMutableBigInt {
-	return wasmtypes.NewScMutableBigInt(s.proxy.Root(ParamSupplyDeltaAbs))
+	return wasmtypes.NewScMutableBigInt(s.Proxy.Root(ParamSupplyDeltaAbs))
 }
 
 type ImmutableHarvestParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableHarvestParams() ImmutableHarvestParams {
-	return ImmutableHarvestParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableHarvestParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScImmutableUint64 {
-	return wasmtypes.NewScImmutableUint64(s.proxy.Root(ParamForceMinimumBaseTokens))
+	return wasmtypes.NewScImmutableUint64(s.Proxy.Root(ParamForceMinimumBaseTokens))
 }
 
 type MutableHarvestParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableHarvestParams) ForceMinimumBaseTokens() wasmtypes.ScMutableUint64 {
-	return wasmtypes.NewScMutableUint64(s.proxy.Root(ParamForceMinimumBaseTokens))
+	return wasmtypes.NewScMutableUint64(s.Proxy.Root(ParamForceMinimumBaseTokens))
 }
 
 type ImmutableTransferAllowanceToParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableTransferAllowanceToParams() ImmutableTransferAllowanceToParams {
-	return ImmutableTransferAllowanceToParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableTransferAllowanceToParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableTransferAllowanceToParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 func (s ImmutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.proxy.Root(ParamForceOpenAccount))
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamForceOpenAccount))
 }
 
 type MutableTransferAllowanceToParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableTransferAllowanceToParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 func (s MutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.proxy.Root(ParamForceOpenAccount))
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamForceOpenAccount))
 }
 
 type ImmutableAccountNFTsParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableAccountNFTsParams() ImmutableAccountNFTsParams {
-	return ImmutableAccountNFTsParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableAccountNFTsParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableAccountNFTsParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type MutableAccountNFTsParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableAccountNFTsParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type ImmutableBalanceParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableBalanceParams() ImmutableBalanceParams {
-	return ImmutableBalanceParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableBalanceParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableBalanceParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type MutableBalanceParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableBalanceParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type ImmutableBalanceBaseTokenParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableBalanceBaseTokenParams() ImmutableBalanceBaseTokenParams {
-	return ImmutableBalanceBaseTokenParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableBalanceBaseTokenParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableBalanceBaseTokenParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type MutableBalanceBaseTokenParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableBalanceBaseTokenParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type ImmutableBalanceNativeTokenParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableBalanceNativeTokenParams() ImmutableBalanceNativeTokenParams {
-	return ImmutableBalanceNativeTokenParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableBalanceNativeTokenParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableBalanceNativeTokenParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 func (s ImmutableBalanceNativeTokenParams) TokenID() wasmtypes.ScImmutableTokenID {
-	return wasmtypes.NewScImmutableTokenID(s.proxy.Root(ParamTokenID))
+	return wasmtypes.NewScImmutableTokenID(s.Proxy.Root(ParamTokenID))
 }
 
 type MutableBalanceNativeTokenParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableBalanceNativeTokenParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 func (s MutableBalanceNativeTokenParams) TokenID() wasmtypes.ScMutableTokenID {
-	return wasmtypes.NewScMutableTokenID(s.proxy.Root(ParamTokenID))
+	return wasmtypes.NewScMutableTokenID(s.Proxy.Root(ParamTokenID))
 }
 
 type ImmutableFoundryOutputParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableFoundryOutputParams() ImmutableFoundryOutputParams {
-	return ImmutableFoundryOutputParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableFoundryOutputParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableFoundryOutputParams) FoundrySN() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 type MutableFoundryOutputParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableFoundryOutputParams) FoundrySN() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ParamFoundrySN))
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ParamFoundrySN))
 }
 
 type ImmutableGetAccountNonceParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableGetAccountNonceParams() ImmutableGetAccountNonceParams {
-	return ImmutableGetAccountNonceParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableGetAccountNonceParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableGetAccountNonceParams) AgentID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type MutableGetAccountNonceParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableGetAccountNonceParams) AgentID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ParamAgentID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
 type ImmutableNftDataParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableNftDataParams() ImmutableNftDataParams {
-	return ImmutableNftDataParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableNftDataParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableNftDataParams) NftID() wasmtypes.ScImmutableNftID {
-	return wasmtypes.NewScImmutableNftID(s.proxy.Root(ParamNftID))
+	return wasmtypes.NewScImmutableNftID(s.Proxy.Root(ParamNftID))
 }
 
 type MutableNftDataParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableNftDataParams) NftID() wasmtypes.ScMutableNftID {
-	return wasmtypes.NewScMutableNftID(s.proxy.Root(ParamNftID))
+	return wasmtypes.NewScMutableNftID(s.Proxy.Root(ParamNftID))
 }

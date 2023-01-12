@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bech32::*;
+use serde::{Deserialize, Serialize};
 use wasmlib::*;
+pub use wasmtypes::*;
+
 const BECH32_PREFIX: &'static str = "smr";
 
 pub fn bech32_decode(input: &str) -> Result<ScAddress, String> {
@@ -25,4 +28,60 @@ pub fn hname_bytes(name: &str) -> Vec<u8> {
         slice = &hash[4..8];
     }
     return slice.to_vec();
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonItem {
+    key: String,
+    value: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonRequest {
+    items: Vec<JsonItem>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonResponse {
+    items: Vec<JsonItem>,
+    message: String,
+    status_code: u16,
+}
+
+pub fn json_decode(dict: JsonResponse) -> Vec<u8> {
+    let mut enc = WasmEncoder::new();
+    let items_num = dict.items.len();
+    enc.fixed_bytes(&uint32_to_bytes(items_num as u32), SC_UINT32_LENGTH);
+    for i in 0..items_num {
+        let item = dict.items[i].clone();
+        let key = hex_decode(&item.key);
+        let val = hex_decode(&item.value);
+        enc.fixed_bytes(&uint16_to_bytes(key.len() as u16), SC_UINT16_LENGTH);
+        enc.fixed_bytes(&key, key.len());
+        enc.fixed_bytes(&uint32_to_bytes(val.len() as u32), SC_UINT32_LENGTH);
+        enc.fixed_bytes(&val, val.len());
+    }
+    return enc.buf();
+}
+
+pub fn json_encode(buf: &[u8]) -> JsonRequest {
+    let mut dec = WasmDecoder::new(buf);
+    let items_num = uint32_from_bytes(&dec.fixed_bytes(SC_UINT32_LENGTH));
+    let mut dict = JsonRequest {
+        items: Vec::with_capacity(items_num as usize),
+    };
+    for _ in 0..items_num {
+        let key_buf = dec.fixed_bytes(SC_UINT16_LENGTH);
+        let key_len = uint16_from_bytes(&key_buf);
+        let key = dec.fixed_bytes(key_len as usize);
+        let val_buf = dec.fixed_bytes(SC_UINT32_LENGTH);
+        let val_len = uint32_from_bytes(&val_buf);
+        let val = dec.fixed_bytes(val_len as usize);
+        let item = JsonItem {
+            key: hex_encode(&key),
+            value: hex_encode(&val),
+        };
+        dict.items.push(item);
+    }
+    return dict;
 }

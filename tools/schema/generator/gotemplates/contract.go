@@ -95,11 +95,11 @@ $#if result initResults
 `,
 	// *******************************
 	"initParams": `
-	f.Params.proxy = wasmlib.NewCallParamsProxy($thisView)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy($thisView)
 `,
 	// *******************************
 	"initResults": `
-	wasmlib.NewCallResultsProxy($thisView, &f.Results.proxy)
+	wasmlib.NewCallResultsProxy($thisView, &f.Results.Proxy)
 `,
 	// *******************************
 	"initSimple": `

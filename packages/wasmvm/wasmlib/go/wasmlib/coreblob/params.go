@@ -13,19 +13,19 @@ import (
 )
 
 type MapStringToImmutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapStringToImmutableBytes) GetBytes(key string) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
+	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type ImmutableStoreBlobParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableStoreBlobParams() ImmutableStoreBlobParams {
-	return ImmutableStoreBlobParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableStoreBlobParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // set of named blobs
@@ -35,33 +35,33 @@ func (s ImmutableStoreBlobParams) Blobs() MapStringToImmutableBytes {
 
 // description of progBinary
 func (s ImmutableStoreBlobParams) Description() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamDescription))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamDescription))
 }
 
 // smart contract program binary code
 func (s ImmutableStoreBlobParams) ProgBinary() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ParamProgBinary))
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ParamProgBinary))
 }
 
 // VM type that must be used to run progBinary
 func (s ImmutableStoreBlobParams) VMType() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamVMType))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamVMType))
 }
 
 type MapStringToMutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapStringToMutableBytes) Clear() {
-	m.proxy.ClearMap()
+	m.Proxy.ClearMap()
 }
 
 func (m MapStringToMutableBytes) GetBytes(key string) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.StringToBytes(key)))
+	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.StringToBytes(key)))
 }
 
 type MutableStoreBlobParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // set of named blobs
@@ -71,69 +71,69 @@ func (s MutableStoreBlobParams) Blobs() MapStringToMutableBytes {
 
 // description of progBinary
 func (s MutableStoreBlobParams) Description() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamDescription))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamDescription))
 }
 
 // smart contract program binary code
 func (s MutableStoreBlobParams) ProgBinary() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ParamProgBinary))
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ParamProgBinary))
 }
 
 // VM type that must be used to run progBinary
 func (s MutableStoreBlobParams) VMType() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamVMType))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamVMType))
 }
 
 type ImmutableGetBlobFieldParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableGetBlobFieldParams() ImmutableGetBlobFieldParams {
-	return ImmutableGetBlobFieldParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableGetBlobFieldParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // blob name
 func (s ImmutableGetBlobFieldParams) Field() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamField))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamField))
 }
 
 // blob set
 func (s ImmutableGetBlobFieldParams) Hash() wasmtypes.ScImmutableHash {
-	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
+	return wasmtypes.NewScImmutableHash(s.Proxy.Root(ParamHash))
 }
 
 type MutableGetBlobFieldParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // blob name
 func (s MutableGetBlobFieldParams) Field() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamField))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamField))
 }
 
 // blob set
 func (s MutableGetBlobFieldParams) Hash() wasmtypes.ScMutableHash {
-	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
+	return wasmtypes.NewScMutableHash(s.Proxy.Root(ParamHash))
 }
 
 type ImmutableGetBlobInfoParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableGetBlobInfoParams() ImmutableGetBlobInfoParams {
-	return ImmutableGetBlobInfoParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableGetBlobInfoParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 // blob set
 func (s ImmutableGetBlobInfoParams) Hash() wasmtypes.ScImmutableHash {
-	return wasmtypes.NewScImmutableHash(s.proxy.Root(ParamHash))
+	return wasmtypes.NewScImmutableHash(s.Proxy.Root(ParamHash))
 }
 
 type MutableGetBlobInfoParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // blob set
 func (s MutableGetBlobInfoParams) Hash() wasmtypes.ScMutableHash {
-	return wasmtypes.NewScMutableHash(s.proxy.Root(ParamHash))
+	return wasmtypes.NewScMutableHash(s.Proxy.Root(ParamHash))
 }

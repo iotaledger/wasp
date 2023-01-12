@@ -21,6 +21,10 @@ type ScState struct {
 	ScImmutableState
 }
 
+func (d ScState) Bytes() []byte {
+	panic("ScState.Bytes: cannot encode state")
+}
+
 var _ wasmtypes.IKvStore = ScState{}
 
 func (d ScState) Delete(key []byte) {

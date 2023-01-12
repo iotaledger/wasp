@@ -6,6 +6,7 @@ package wasmtypes
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type IKvStore interface {
+	Bytes() []byte
 	Delete(key []byte)
 	Exists(key []byte) bool
 	Get(key []byte) []byte
@@ -27,6 +28,10 @@ func (p Proxy) Append() Proxy {
 	length := p.Length()
 	p.expand(length + 1)
 	return p.element(length)
+}
+
+func (p Proxy) Bytes() []byte {
+	return p.kvStore.Bytes()
 }
 
 // ClearArray clears an array by deleting all elements

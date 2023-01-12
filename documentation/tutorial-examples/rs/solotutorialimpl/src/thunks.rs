@@ -31,14 +31,14 @@ pub fn on_dispatch(index: i32) {
 
 pub struct StoreStringContext {
     pub params: ImmutableStoreStringParams,
-    pub state: MutableSoloTutorialState,
+    pub state:  MutableSoloTutorialState,
 }
 
 fn func_store_string_thunk(ctx: &ScFuncContext) {
     ctx.log("solotutorial.funcStoreString");
     let f = StoreStringContext {
         params: ImmutableStoreStringParams::new(),
-        state: MutableSoloTutorialState::new(),
+        state:  MutableSoloTutorialState::new(),
     };
     ctx.require(f.params.str().exists(), "missing mandatory param: str");
     func_store_string(ctx, &f);
@@ -47,14 +47,14 @@ fn func_store_string_thunk(ctx: &ScFuncContext) {
 
 pub struct GetStringContext {
     pub results: MutableGetStringResults,
-    pub state: ImmutableSoloTutorialState,
+    pub state:   ImmutableSoloTutorialState,
 }
 
 fn view_get_string_thunk(ctx: &ScViewContext) {
     ctx.log("solotutorial.viewGetString");
     let f = GetStringContext {
         results: MutableGetStringResults::new(),
-        state: ImmutableSoloTutorialState::new(),
+        state:   ImmutableSoloTutorialState::new(),
     };
     view_get_string(ctx, &f);
     ctx.results(&f.results.proxy.kv_store);

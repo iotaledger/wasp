@@ -13,73 +13,73 @@ import (
 )
 
 type ImmutableFindContractResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableFindContractResults) ContractFound() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.proxy.Root(ResultContractFound))
+	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ResultContractFound))
 }
 
 // encoded contract record
 func (s ImmutableFindContractResults) ContractRecData() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultContractRecData))
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultContractRecData))
 }
 
 type MutableFindContractResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableFindContractResults(results *wasmlib.ScDict) MutableFindContractResults {
-	return MutableFindContractResults{proxy: results.AsProxy()}
+func NewMutableFindContractResults() MutableFindContractResults {
+	return MutableFindContractResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableFindContractResults) ContractFound() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.proxy.Root(ResultContractFound))
+	return wasmtypes.NewScMutableBool(s.Proxy.Root(ResultContractFound))
 }
 
 // encoded contract record
 func (s MutableFindContractResults) ContractRecData() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultContractRecData))
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultContractRecData))
 }
 
 type MapHnameToImmutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapHnameToImmutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.HnameToBytes(key)))
+	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.HnameToBytes(key)))
 }
 
 type ImmutableGetContractRecordsResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // contract records
 func (s ImmutableGetContractRecordsResults) ContractRegistry() MapHnameToImmutableBytes {
-	return MapHnameToImmutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
+	return MapHnameToImmutableBytes{Proxy: s.Proxy.Root(ResultContractRegistry)}
 }
 
 type MapHnameToMutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapHnameToMutableBytes) Clear() {
-	m.proxy.ClearMap()
+	m.Proxy.ClearMap()
 }
 
 func (m MapHnameToMutableBytes) GetBytes(key wasmtypes.ScHname) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.HnameToBytes(key)))
+	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.HnameToBytes(key)))
 }
 
 type MutableGetContractRecordsResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetContractRecordsResults(results *wasmlib.ScDict) MutableGetContractRecordsResults {
-	return MutableGetContractRecordsResults{proxy: results.AsProxy()}
+func NewMutableGetContractRecordsResults() MutableGetContractRecordsResults {
+	return MutableGetContractRecordsResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 // contract records
 func (s MutableGetContractRecordsResults) ContractRegistry() MapHnameToMutableBytes {
-	return MapHnameToMutableBytes{proxy: s.proxy.Root(ResultContractRegistry)}
+	return MapHnameToMutableBytes{Proxy: s.Proxy.Root(ResultContractRegistry)}
 }
