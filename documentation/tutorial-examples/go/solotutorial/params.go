@@ -13,21 +13,21 @@ import (
 )
 
 type ImmutableStoreStringParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableStoreStringParams() ImmutableStoreStringParams {
-	return ImmutableStoreStringParams{proxy: wasmlib.NewParamsProxy()}
+	return ImmutableStoreStringParams{Proxy: wasmlib.NewParamsProxy()}
 }
 
 func (s ImmutableStoreStringParams) Str() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ParamStr))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ParamStr))
 }
 
 type MutableStoreStringParams struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s MutableStoreStringParams) Str() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ParamStr))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ParamStr))
 }

@@ -68,7 +68,6 @@ $#if state PackageState
 
 func $kind$FuncName$+Thunk(ctx wasmlib.Sc$Kind$+Context) {
 	ctx.Log("$package.$kind$FuncName")
-$#if result initResultDict
 	f := &$FuncName$+Context{
 $#if param ImmutableFuncNameParamsInit
 $#if result MutableFuncNameResultsInit
@@ -77,13 +76,9 @@ $#if state PackageStateInit
 $#emit accessCheck
 $#each mandatory requireMandatory
 	$kind$FuncName(ctx, f)
-$#if result returnResultDict
+$#if result returnResultProxy
 	ctx.Log("$package.$kind$FuncName ok")
 }
-`,
-	// *******************************
-	"initResultDict": `
-	results := wasmlib.NewScDict()
 `,
 	// *******************************
 	"PackageEvents": `
@@ -107,7 +102,7 @@ $#if events PackageEventsExist
 `,
 	// *******************************
 	"MutableFuncNameResultsInit": `
-		Results: $package.NewMutable$FuncName$+Results(results),
+		Results: $package.NewMutable$FuncName$+Results(),
 `,
 	// *******************************
 	"PackageState": `
@@ -136,8 +131,8 @@ $#if view ImmutablePackageStateInit
 		State:$salign $package.NewImmutable$Package$+State(),
 `,
 	// *******************************
-	"returnResultDict": `
-	ctx.Results(results)
+	"returnResultProxy": `
+	ctx.Results(f.Results.Proxy)
 `,
 	// *******************************
 	"requireMandatory": `

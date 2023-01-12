@@ -38,35 +38,35 @@ func (o *CallRequest) Bytes() []byte {
 }
 
 type ImmutableCallRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o ImmutableCallRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o ImmutableCallRequest) Value() *CallRequest {
-	return NewCallRequestFromBytes(o.proxy.Get())
+	return NewCallRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableCallRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o MutableCallRequest) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 
 func (o MutableCallRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o MutableCallRequest) SetValue(value *CallRequest) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 
 func (o MutableCallRequest) Value() *CallRequest {
-	return NewCallRequestFromBytes(o.proxy.Get())
+	return NewCallRequestFromBytes(o.Proxy.Get())
 }
 
 type DeployRequest struct {
@@ -97,35 +97,35 @@ func (o *DeployRequest) Bytes() []byte {
 }
 
 type ImmutableDeployRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o ImmutableDeployRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o ImmutableDeployRequest) Value() *DeployRequest {
-	return NewDeployRequestFromBytes(o.proxy.Get())
+	return NewDeployRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableDeployRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o MutableDeployRequest) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 
 func (o MutableDeployRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o MutableDeployRequest) SetValue(value *DeployRequest) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 
 func (o MutableDeployRequest) Value() *DeployRequest {
-	return NewDeployRequestFromBytes(o.proxy.Get())
+	return NewDeployRequestFromBytes(o.Proxy.Get())
 }
 
 type PostRequest struct {
@@ -167,35 +167,35 @@ func (o *PostRequest) Bytes() []byte {
 }
 
 type ImmutablePostRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o ImmutablePostRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o ImmutablePostRequest) Value() *PostRequest {
-	return NewPostRequestFromBytes(o.proxy.Get())
+	return NewPostRequestFromBytes(o.Proxy.Get())
 }
 
 type MutablePostRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o MutablePostRequest) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 
 func (o MutablePostRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o MutablePostRequest) SetValue(value *PostRequest) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 
 func (o MutablePostRequest) Value() *PostRequest {
-	return NewPostRequestFromBytes(o.proxy.Get())
+	return NewPostRequestFromBytes(o.Proxy.Get())
 }
 
 type SendRequest struct {
@@ -220,35 +220,35 @@ func (o *SendRequest) Bytes() []byte {
 }
 
 type ImmutableSendRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o ImmutableSendRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o ImmutableSendRequest) Value() *SendRequest {
-	return NewSendRequestFromBytes(o.proxy.Get())
+	return NewSendRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableSendRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o MutableSendRequest) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 
 func (o MutableSendRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o MutableSendRequest) SetValue(value *SendRequest) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 
 func (o MutableSendRequest) Value() *SendRequest {
-	return NewSendRequestFromBytes(o.proxy.Get())
+	return NewSendRequestFromBytes(o.Proxy.Get())
 }
 
 type TransferRequest struct {
@@ -276,33 +276,33 @@ func (o *TransferRequest) Bytes() []byte {
 }
 
 type ImmutableTransferRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o ImmutableTransferRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o ImmutableTransferRequest) Value() *TransferRequest {
-	return NewTransferRequestFromBytes(o.proxy.Get())
+	return NewTransferRequestFromBytes(o.Proxy.Get())
 }
 
 type MutableTransferRequest struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (o MutableTransferRequest) Delete() {
-	o.proxy.Delete()
+	o.Proxy.Delete()
 }
 
 func (o MutableTransferRequest) Exists() bool {
-	return o.proxy.Exists()
+	return o.Proxy.Exists()
 }
 
 func (o MutableTransferRequest) SetValue(value *TransferRequest) {
-	o.proxy.Set(value.Bytes())
+	o.Proxy.Set(value.Bytes())
 }
 
 func (o MutableTransferRequest) Value() *TransferRequest {
-	return NewTransferRequestFromBytes(o.proxy.Get())
+	return NewTransferRequestFromBytes(o.Proxy.Get())
 }

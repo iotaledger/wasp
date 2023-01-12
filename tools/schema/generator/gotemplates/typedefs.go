@@ -39,12 +39,12 @@ $#if exist else typedefProxyArrayNew
 	"typedefProxyArrayNew": `
 
 type $proxy struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 $#if mut typedefProxyArrayMut
 
 func (a $proxy) Length() uint32 {
-	return a.proxy.Length()
+	return a.Proxy.Length()
 }
 $#if basetype typedefProxyArrayNewBaseType typedefProxyArrayNewOtherType
 $#set exist $proxy
@@ -54,35 +54,35 @@ $#set exist $proxy
 $#if basetype typedefProxyArrayAppendBaseType typedefProxyArrayAppendOtherType
 
 func (a $proxy) Clear() {
-	a.proxy.ClearArray()
+	a.Proxy.ClearArray()
 }
 `,
 	// *******************************
 	"typedefProxyArrayAppendBaseType": `
 
 func (a $proxy) Append$FldType() wasmtypes.Sc$mut$FldType {
-	return wasmtypes.NewSc$mut$FldType(a.proxy.Append())
+	return wasmtypes.NewSc$mut$FldType(a.Proxy.Append())
 }
 `,
 	// *******************************
 	"typedefProxyArrayAppendOtherType": `
 
 func (a $proxy) Append$FldType() $mut$FldType {
-	return $mut$FldType{proxy: a.proxy.Append()}
+	return $mut$FldType{Proxy: a.Proxy.Append()}
 }
 `,
 	// *******************************
 	"typedefProxyArrayNewBaseType": `
 
 func (a $proxy) Get$FldType(index uint32) wasmtypes.Sc$mut$FldType {
-	return wasmtypes.NewSc$mut$FldType(a.proxy.Index(index))
+	return wasmtypes.NewSc$mut$FldType(a.Proxy.Index(index))
 }
 `,
 	// *******************************
 	"typedefProxyArrayNewOtherType": `
 
 func (a $proxy) Get$FldType(index uint32) $mut$FldType {
-	return $mut$FldType{proxy: a.proxy.Index(index)}
+	return $mut$FldType{Proxy: a.Proxy.Index(index)}
 }
 `,
 	// *******************************
@@ -94,7 +94,7 @@ $#if exist else typedefProxyMapNew
 	"typedefProxyMapNew": `
 
 type $proxy struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 $#if mut typedefProxyMapMut
 $#if basetype typedefProxyMapNewBaseType typedefProxyMapNewOtherType
@@ -104,21 +104,21 @@ $#set exist $proxy
 	"typedefProxyMapMut": `
 
 func (m $proxy) Clear() {
-	m.proxy.ClearMap()
+	m.Proxy.ClearMap()
 }
 `,
 	// *******************************
 	"typedefProxyMapNewBaseType": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) wasmtypes.Sc$mut$FldType {
-	return wasmtypes.NewSc$mut$FldType(m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key)))
+	return wasmtypes.NewSc$mut$FldType(m.Proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key)))
 }
 `,
 	// *******************************
 	"typedefProxyMapNewOtherType": `
 
 func (m $proxy) Get$FldType(key $fldKeyLangType) $mut$FldType {
-	return $mut$FldType{proxy: m.proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key))}
+	return $mut$FldType{Proxy: m.Proxy.Key(wasmtypes.$FldMapKey$+ToBytes(key))}
 }
 `,
 }

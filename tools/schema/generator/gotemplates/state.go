@@ -21,11 +21,11 @@ $#set TypeName $mut$Package$+State
 $#each state proxyContainers
 
 type $TypeName struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func New$TypeName() $TypeName {
-	return $TypeName{proxy: wasmlib.NewStateProxy()}
+	return $TypeName{Proxy: wasmlib.NewStateProxy()}
 }
 $#if mut stateProxyImmutableFunc
 $#each state proxyMethods

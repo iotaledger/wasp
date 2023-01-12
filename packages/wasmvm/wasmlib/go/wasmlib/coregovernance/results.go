@@ -13,231 +13,231 @@ import (
 )
 
 type ArrayOfImmutableAddress struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (a ArrayOfImmutableAddress) Length() uint32 {
-	return a.proxy.Length()
+	return a.Proxy.Length()
 }
 
 func (a ArrayOfImmutableAddress) GetAddress(index uint32) wasmtypes.ScImmutableAddress {
-	return wasmtypes.NewScImmutableAddress(a.proxy.Index(index))
+	return wasmtypes.NewScImmutableAddress(a.Proxy.Index(index))
 }
 
 type ImmutableGetAllowedStateControllerAddressesResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 // native contract, so this is an Array16
 func (s ImmutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfImmutableAddress {
-	return ArrayOfImmutableAddress{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
+	return ArrayOfImmutableAddress{Proxy: s.Proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
 type ArrayOfMutableAddress struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (a ArrayOfMutableAddress) AppendAddress() wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(a.proxy.Append())
+	return wasmtypes.NewScMutableAddress(a.Proxy.Append())
 }
 
 func (a ArrayOfMutableAddress) Clear() {
-	a.proxy.ClearArray()
+	a.Proxy.ClearArray()
 }
 
 func (a ArrayOfMutableAddress) Length() uint32 {
-	return a.proxy.Length()
+	return a.Proxy.Length()
 }
 
 func (a ArrayOfMutableAddress) GetAddress(index uint32) wasmtypes.ScMutableAddress {
-	return wasmtypes.NewScMutableAddress(a.proxy.Index(index))
+	return wasmtypes.NewScMutableAddress(a.Proxy.Index(index))
 }
 
 type MutableGetAllowedStateControllerAddressesResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetAllowedStateControllerAddressesResults(results *wasmlib.ScDict) MutableGetAllowedStateControllerAddressesResults {
-	return MutableGetAllowedStateControllerAddressesResults{proxy: results.AsProxy()}
+func NewMutableGetAllowedStateControllerAddressesResults() MutableGetAllowedStateControllerAddressesResults {
+	return MutableGetAllowedStateControllerAddressesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 // native contract, so this is an Array16
 func (s MutableGetAllowedStateControllerAddressesResults) AllowedStateControllerAddresses() ArrayOfMutableAddress {
-	return ArrayOfMutableAddress{proxy: s.proxy.Root(ResultAllowedStateControllerAddresses)}
+	return ArrayOfMutableAddress{Proxy: s.Proxy.Root(ResultAllowedStateControllerAddresses)}
 }
 
 type ImmutableGetChainInfoResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetChainInfoResults) ChainID() wasmtypes.ScImmutableChainID {
-	return wasmtypes.NewScImmutableChainID(s.proxy.Root(ResultChainID))
+	return wasmtypes.NewScImmutableChainID(s.Proxy.Root(ResultChainID))
 }
 
 func (s ImmutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwnerID))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
 func (s ImmutableGetChainInfoResults) Description() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultDescription))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultDescription))
 }
 
 func (s ImmutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
 }
 
 func (s ImmutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultMaxBlobSize))
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultMaxBlobSize))
 }
 
 func (s ImmutableGetChainInfoResults) MaxEventSize() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultMaxEventSize))
+	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ResultMaxEventSize))
 }
 
 func (s ImmutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScImmutableUint16 {
-	return wasmtypes.NewScImmutableUint16(s.proxy.Root(ResultMaxEventsPerReq))
+	return wasmtypes.NewScImmutableUint16(s.Proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MutableGetChainInfoResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetChainInfoResults(results *wasmlib.ScDict) MutableGetChainInfoResults {
-	return MutableGetChainInfoResults{proxy: results.AsProxy()}
+func NewMutableGetChainInfoResults() MutableGetChainInfoResults {
+	return MutableGetChainInfoResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetChainInfoResults) ChainID() wasmtypes.ScMutableChainID {
-	return wasmtypes.NewScMutableChainID(s.proxy.Root(ResultChainID))
+	return wasmtypes.NewScMutableChainID(s.Proxy.Root(ResultChainID))
 }
 
 func (s MutableGetChainInfoResults) ChainOwnerID() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwnerID))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwnerID))
 }
 
 func (s MutableGetChainInfoResults) Description() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ResultDescription))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultDescription))
 }
 
 func (s MutableGetChainInfoResults) GasFeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultGasFeePolicyBytes))
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultGasFeePolicyBytes))
 }
 
 func (s MutableGetChainInfoResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultMaxBlobSize))
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultMaxBlobSize))
 }
 
 func (s MutableGetChainInfoResults) MaxEventSize() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultMaxEventSize))
+	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ResultMaxEventSize))
 }
 
 func (s MutableGetChainInfoResults) MaxEventsPerReq() wasmtypes.ScMutableUint16 {
-	return wasmtypes.NewScMutableUint16(s.proxy.Root(ResultMaxEventsPerReq))
+	return wasmtypes.NewScMutableUint16(s.Proxy.Root(ResultMaxEventsPerReq))
 }
 
 type MapBytesToImmutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapBytesToImmutableBytes) GetBytes(key []byte) wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+	return wasmtypes.NewScImmutableBytes(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
 }
 
 type ImmutableGetChainNodesResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetChainNodesResults) AccessNodeCandidates() MapBytesToImmutableBytes {
-	return MapBytesToImmutableBytes{proxy: s.proxy.Root(ResultAccessNodeCandidates)}
+	return MapBytesToImmutableBytes{Proxy: s.Proxy.Root(ResultAccessNodeCandidates)}
 }
 
 func (s ImmutableGetChainNodesResults) AccessNodes() MapBytesToImmutableBytes {
-	return MapBytesToImmutableBytes{proxy: s.proxy.Root(ResultAccessNodes)}
+	return MapBytesToImmutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
 
 type MapBytesToMutableBytes struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (m MapBytesToMutableBytes) Clear() {
-	m.proxy.ClearMap()
+	m.Proxy.ClearMap()
 }
 
 func (m MapBytesToMutableBytes) GetBytes(key []byte) wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(m.proxy.Key(wasmtypes.BytesToBytes(key)))
+	return wasmtypes.NewScMutableBytes(m.Proxy.Key(wasmtypes.BytesToBytes(key)))
 }
 
 type MutableGetChainNodesResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetChainNodesResults(results *wasmlib.ScDict) MutableGetChainNodesResults {
-	return MutableGetChainNodesResults{proxy: results.AsProxy()}
+func NewMutableGetChainNodesResults() MutableGetChainNodesResults {
+	return MutableGetChainNodesResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetChainNodesResults) AccessNodeCandidates() MapBytesToMutableBytes {
-	return MapBytesToMutableBytes{proxy: s.proxy.Root(ResultAccessNodeCandidates)}
+	return MapBytesToMutableBytes{Proxy: s.Proxy.Root(ResultAccessNodeCandidates)}
 }
 
 func (s MutableGetChainNodesResults) AccessNodes() MapBytesToMutableBytes {
-	return MapBytesToMutableBytes{proxy: s.proxy.Root(ResultAccessNodes)}
+	return MapBytesToMutableBytes{Proxy: s.Proxy.Root(ResultAccessNodes)}
 }
 
 type ImmutableGetChainOwnerResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetChainOwnerResults) ChainOwner() wasmtypes.ScImmutableAgentID {
-	return wasmtypes.NewScImmutableAgentID(s.proxy.Root(ResultChainOwner))
+	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ResultChainOwner))
 }
 
 type MutableGetChainOwnerResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetChainOwnerResults(results *wasmlib.ScDict) MutableGetChainOwnerResults {
-	return MutableGetChainOwnerResults{proxy: results.AsProxy()}
+func NewMutableGetChainOwnerResults() MutableGetChainOwnerResults {
+	return MutableGetChainOwnerResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetChainOwnerResults) ChainOwner() wasmtypes.ScMutableAgentID {
-	return wasmtypes.NewScMutableAgentID(s.proxy.Root(ResultChainOwner))
+	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ResultChainOwner))
 }
 
 type ImmutableGetFeePolicyResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScImmutableBytes {
-	return wasmtypes.NewScImmutableBytes(s.proxy.Root(ResultFeePolicyBytes))
+	return wasmtypes.NewScImmutableBytes(s.Proxy.Root(ResultFeePolicyBytes))
 }
 
 type MutableGetFeePolicyResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetFeePolicyResults(results *wasmlib.ScDict) MutableGetFeePolicyResults {
-	return MutableGetFeePolicyResults{proxy: results.AsProxy()}
+func NewMutableGetFeePolicyResults() MutableGetFeePolicyResults {
+	return MutableGetFeePolicyResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetFeePolicyResults) FeePolicyBytes() wasmtypes.ScMutableBytes {
-	return wasmtypes.NewScMutableBytes(s.proxy.Root(ResultFeePolicyBytes))
+	return wasmtypes.NewScMutableBytes(s.Proxy.Root(ResultFeePolicyBytes))
 }
 
 type ImmutableGetMaxBlobSizeResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScImmutableUint32 {
-	return wasmtypes.NewScImmutableUint32(s.proxy.Root(ResultMaxBlobSize))
+	return wasmtypes.NewScImmutableUint32(s.Proxy.Root(ResultMaxBlobSize))
 }
 
 type MutableGetMaxBlobSizeResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetMaxBlobSizeResults(results *wasmlib.ScDict) MutableGetMaxBlobSizeResults {
-	return MutableGetMaxBlobSizeResults{proxy: results.AsProxy()}
+func NewMutableGetMaxBlobSizeResults() MutableGetMaxBlobSizeResults {
+	return MutableGetMaxBlobSizeResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetMaxBlobSizeResults) MaxBlobSize() wasmtypes.ScMutableUint32 {
-	return wasmtypes.NewScMutableUint32(s.proxy.Root(ResultMaxBlobSize))
+	return wasmtypes.NewScMutableUint32(s.Proxy.Root(ResultMaxBlobSize))
 }

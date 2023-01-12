@@ -13,21 +13,21 @@ import (
 )
 
 type ImmutableGetStringResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func (s ImmutableGetStringResults) Str() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(ResultStr))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(ResultStr))
 }
 
 type MutableGetStringResults struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
-func NewMutableGetStringResults(results *wasmlib.ScDict) MutableGetStringResults {
-	return MutableGetStringResults{proxy: results.AsProxy()}
+func NewMutableGetStringResults() MutableGetStringResults {
+	return MutableGetStringResults{Proxy: wasmlib.NewResultsProxy()}
 }
 
 func (s MutableGetStringResults) Str() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(ResultStr))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(ResultStr))
 }

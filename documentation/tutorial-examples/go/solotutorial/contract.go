@@ -25,12 +25,12 @@ var ScFuncs Funcs
 
 func (sc Funcs) StoreString(ctx wasmlib.ScFuncCallContext) *StoreStringCall {
 	f := &StoreStringCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncStoreString)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(&f.Func.ScView)
 	return f
 }
 
 func (sc Funcs) GetString(ctx wasmlib.ScViewCallContext) *GetStringCall {
 	f := &GetStringCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetString)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }

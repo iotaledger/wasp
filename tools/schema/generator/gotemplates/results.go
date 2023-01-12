@@ -29,7 +29,7 @@ $#set TypeName $mut$FuncName$+Results
 $#each result proxyContainers
 
 type $TypeName struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 $#if mut resultsMutConstructor
 $#each result proxyMethods
@@ -37,8 +37,8 @@ $#each result proxyMethods
 	// *******************************
 	"resultsMutConstructor": `
 
-func New$TypeName(results *wasmlib.ScDict) $TypeName {
-	return $TypeName{proxy: results.AsProxy()}
+func New$TypeName() $TypeName {
+	return $TypeName{Proxy: wasmlib.NewResultsProxy()}
 }
 `,
 }

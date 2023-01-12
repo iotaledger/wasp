@@ -68,63 +68,63 @@ var ScFuncs Funcs
 
 func (sc Funcs) ControlAddresses(ctx wasmlib.ScViewCallContext) *ControlAddressesCall {
 	f := &ControlAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewControlAddresses)}
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetBlockInfo(ctx wasmlib.ScViewCallContext) *GetBlockInfoCall {
 	f := &GetBlockInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetBlockInfo)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetEventsForBlock(ctx wasmlib.ScViewCallContext) *GetEventsForBlockCall {
 	f := &GetEventsForBlockCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEventsForBlock)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetEventsForContract(ctx wasmlib.ScViewCallContext) *GetEventsForContractCall {
 	f := &GetEventsForContractCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEventsForContract)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetEventsForRequest(ctx wasmlib.ScViewCallContext) *GetEventsForRequestCall {
 	f := &GetEventsForRequestCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetEventsForRequest)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetRequestIDsForBlock(ctx wasmlib.ScViewCallContext) *GetRequestIDsForBlockCall {
 	f := &GetRequestIDsForBlockCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRequestIDsForBlock)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetRequestReceipt(ctx wasmlib.ScViewCallContext) *GetRequestReceiptCall {
 	f := &GetRequestReceiptCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRequestReceipt)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) GetRequestReceiptsForBlock(ctx wasmlib.ScViewCallContext) *GetRequestReceiptsForBlockCall {
 	f := &GetRequestReceiptsForBlockCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetRequestReceiptsForBlock)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 
 func (sc Funcs) IsRequestProcessed(ctx wasmlib.ScViewCallContext) *IsRequestProcessedCall {
 	f := &IsRequestProcessedCall{Func: wasmlib.NewScView(ctx, HScName, HViewIsRequestProcessed)}
-	f.Params.proxy = wasmlib.NewCallParamsProxy(f.Func)
-	wasmlib.NewCallResultsProxy(f.Func, &f.Results.proxy)
+	f.Params.Proxy = wasmlib.NewCallParamsProxy(f.Func)
+	wasmlib.NewCallResultsProxy(f.Func, &f.Results.Proxy)
 	return f
 }
 

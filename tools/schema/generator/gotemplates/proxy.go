@@ -26,7 +26,7 @@ $#if basetype proxyBaseType proxyOtherType
 	// *******************************
 	"proxyArray": `
 func (s $TypeName) $FldName() ArrayOf$mut$FldType {
-	return ArrayOf$mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
+	return ArrayOf$mut$FldType{Proxy: s.Proxy.Root($Kind$FldName)}
 }
 `,
 	// *******************************
@@ -42,19 +42,19 @@ func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
 	// *******************************
 	"proxyMapOther": `
 func (s $TypeName) $FldName() Map$FldMapKey$+To$mut$FldType {
-	return Map$FldMapKey$+To$mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
+	return Map$FldMapKey$+To$mut$FldType{Proxy: s.Proxy.Root($Kind$FldName)}
 }
 `,
 	// *******************************
 	"proxyBaseType": `
 func (s $TypeName) $FldName() wasmtypes.Sc$mut$FldType {
-	return wasmtypes.NewSc$mut$FldType(s.proxy.Root($Kind$FldName))
+	return wasmtypes.NewSc$mut$FldType(s.Proxy.Root($Kind$FldName))
 }
 `,
 	// *******************************
 	"proxyOtherType": `
 func (s $TypeName) $FldName() $mut$FldType {
-	return $mut$FldType{proxy: s.proxy.Root($Kind$FldName)}
+	return $mut$FldType{Proxy: s.Proxy.Root($Kind$FldName)}
 }
 `,
 }

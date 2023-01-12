@@ -13,23 +13,23 @@ import (
 )
 
 type ImmutableSoloTutorialState struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewImmutableSoloTutorialState() ImmutableSoloTutorialState {
-	return ImmutableSoloTutorialState{proxy: wasmlib.NewStateProxy()}
+	return ImmutableSoloTutorialState{Proxy: wasmlib.NewStateProxy()}
 }
 
 func (s ImmutableSoloTutorialState) Str() wasmtypes.ScImmutableString {
-	return wasmtypes.NewScImmutableString(s.proxy.Root(StateStr))
+	return wasmtypes.NewScImmutableString(s.Proxy.Root(StateStr))
 }
 
 type MutableSoloTutorialState struct {
-	proxy wasmtypes.Proxy
+	Proxy wasmtypes.Proxy
 }
 
 func NewMutableSoloTutorialState() MutableSoloTutorialState {
-	return MutableSoloTutorialState{proxy: wasmlib.NewStateProxy()}
+	return MutableSoloTutorialState{Proxy: wasmlib.NewStateProxy()}
 }
 
 func (s MutableSoloTutorialState) AsImmutable() ImmutableSoloTutorialState {
@@ -37,5 +37,5 @@ func (s MutableSoloTutorialState) AsImmutable() ImmutableSoloTutorialState {
 }
 
 func (s MutableSoloTutorialState) Str() wasmtypes.ScMutableString {
-	return wasmtypes.NewScMutableString(s.proxy.Root(StateStr))
+	return wasmtypes.NewScMutableString(s.Proxy.Root(StateStr))
 }

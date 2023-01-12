@@ -69,6 +69,10 @@ func NewParamsProxy() wasmtypes.Proxy {
 	return wasmtypes.NewProxy(NewScDictFromBytes(Sandbox(FnParams, nil)))
 }
 
+func NewResultsProxy() wasmtypes.Proxy {
+	return NewScDict().AsProxy()
+}
+
 // retrieve the agent id of this contract account
 func (s ScSandbox) AccountID() wasmtypes.ScAgentID {
 	return wasmtypes.AgentIDFromBytes(Sandbox(FnAccountID, nil))
@@ -137,7 +141,7 @@ func (s ScSandbox) Require(cond bool, msg string) {
 	}
 }
 
-func (s ScSandbox) Results(results *ScDict) {
+func (s ScSandbox) Results(results wasmtypes.Proxy) {
 	Sandbox(FnResults, results.Bytes())
 }
 
