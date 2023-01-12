@@ -293,16 +293,10 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
 	e := &ChainEnv{
-		env:   &env{t: t, Clu: clu},
+		t:     t,
+		Clu:   clu,
 		Chain: chain,
 	}
-	tx := e.deployNativeIncCounterSC(0)
-	isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - deployNativeIncCounterSC")
-
-	waitUntil(t, e.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
-
+	e.deployNativeIncCounterSC(0)
 	return e
 }

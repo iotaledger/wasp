@@ -16,9 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func TestMaintenance(t *testing.T) {
-	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
-
+// executed in cluster_test.go
+func testMaintenance(t *testing.T, env *ChainEnv) {
+	env.deployNativeIncCounterSC(0)
 	ownerWallet, ownerAddr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	ownerAgentID := isc.NewAgentID(ownerAddr)
