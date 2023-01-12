@@ -101,8 +101,12 @@ func TestNanoPublisher(t *testing.T) {
 		reqIDs[i] = req.ID()
 	}
 
+	timeEnd := time.Now().Add(30 * time.Second)
 	for i, reqID := range reqIDs {
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, 10*time.Second)
+		durationLeft := time.Until(timeEnd)
+		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
+
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, durationLeft)
 		if err != nil {
 			println(i)
 		}
@@ -116,14 +120,17 @@ func TestNanoPublisher(t *testing.T) {
 		assertMessages(t, client.messages, numRequests)
 	}
 
-	// send 100 requests
+	timeEnd = time.Now().Add(30 * time.Second)
 	for i := 0; i < numRequests; i++ {
+		durationLeft := time.Until(timeEnd)
+		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
+
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
 		require.NoError(t, err)
 
 		// ---
 		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), durationLeft)
 		require.NoError(t, err)
 		// ---
 	}
