@@ -40,8 +40,14 @@ export function funcEndlessLoop(ctx: wasmlib.ScFuncContext, f: sc.EndlessLoopCon
 }
 
 export function funcIncrement(ctx: wasmlib.ScFuncContext, f: sc.IncrementContext): void {
+    let incValue: i64 = 1;
+    let param = f.params.counter();
+    if (param.exists()) {
+        incValue = param.value()
+    }
+
     let counter = f.state.counter();
-    counter.setValue(counter.value() + 1);
+    counter.setValue(counter.value() + incValue);
 }
 
 export function funcIncrementWithDelay(ctx: wasmlib.ScFuncContext, f: sc.IncrementWithDelayContext): void {

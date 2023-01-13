@@ -48,8 +48,14 @@ func funcEndlessLoop(_ wasmlib.ScFuncContext, _ *EndlessLoopContext) {
 }
 
 func funcIncrement(_ wasmlib.ScFuncContext, f *IncrementContext) {
+	incValue := int64(1)
+	param := f.Params.Counter()
+	if param.Exists() {
+		incValue = param.Value()
+	}
+
 	counter := f.State.Counter()
-	counter.SetValue(counter.Value() + 1)
+	counter.SetValue(counter.Value() + incValue)
 }
 
 func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayContext) {

@@ -9,7 +9,9 @@ funcs:
   callIncrement: {}
   callIncrementRecurse5x: {}
   endlessLoop: {}
-  increment: {}
+  increment:
+    params:
+      counter: Int64? # value to add to counter,default is 1
   incrementWithDelay:
     params:
       delay: Uint32 # delay in seconds
