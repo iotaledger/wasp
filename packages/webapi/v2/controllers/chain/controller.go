@@ -111,7 +111,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")
 
-	adminAPI.POST("chains/:chainID/access-node/:publicKey", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
+	adminAPI.PUT("chains/:chainID/access-node/:publicKey", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "publicKey", "Nodes public key (Hex)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
