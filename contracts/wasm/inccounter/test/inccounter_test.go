@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/contracts/wasm/inccounter/go/inccounter"
@@ -16,8 +17,10 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmsolo"
 )
 
-func setupTest(t *testing.T) *wasmsolo.SoloContext {
-	return wasmsolo.NewSoloContext(t, inccounter.ScName, inccounterimpl.OnDispatch)
+func setupTest(t *testing.T, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
+	ctx := wasmsolo.NewSoloContext(t, inccounter.ScName, inccounterimpl.OnDispatch, init...)
+	require.NoError(t, ctx.Err)
+	return ctx
 }
 
 func TestDeploy(t *testing.T) {
@@ -25,10 +28,18 @@ func TestDeploy(t *testing.T) {
 	require.NoError(t, ctx.ContractExists(inccounter.ScName))
 }
 
-func TestStateAfterDeploy(t *testing.T) {
+func TestStateAfterDeployIsEmpty(t *testing.T) {
 	ctx := setupTest(t)
 
 	checkStateCounter(t, ctx, nil)
+}
+
+func TestStateAfterDeployWithInitValue(t *testing.T) {
+	init := inccounter.ScFuncs.Init(nil)
+	init.Params.Counter().SetValue(1234)
+	ctx := setupTest(t, init.Func)
+
+	checkStateCounter(t, ctx, 1234)
 }
 
 func TestIncrementOnce(t *testing.T) {
@@ -41,6 +52,31 @@ func TestIncrementOnce(t *testing.T) {
 	checkStateCounter(t, ctx, 1)
 }
 
+func TestIncrementOnceAfterInitWithValue(t *testing.T) {
+	init := inccounter.ScFuncs.Init(nil)
+	init.Params.Counter().SetValue(12345)
+	ctx := setupTest(t, init.Func)
+
+	increment := inccounter.ScFuncs.Increment(ctx)
+	increment.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	checkStateCounter(t, ctx, 12346)
+}
+
+func TestIncrementOnceWithParam(t *testing.T) {
+	init := inccounter.ScFuncs.Init(nil)
+	init.Params.Counter().SetValue(321)
+	ctx := setupTest(t, init.Func)
+
+	increment := inccounter.ScFuncs.Increment(ctx)
+	increment.Params.Counter().SetValue(3)
+	increment.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	checkStateCounter(t, ctx, 324)
+}
+
 func TestIncrementTwice(t *testing.T) {
 	ctx := setupTest(t)
 
@@ -51,6 +87,19 @@ func TestIncrementTwice(t *testing.T) {
 	increment = inccounter.ScFuncs.Increment(ctx)
 	increment.Func.Post()
 	require.NoError(t, ctx.Err)
+
+	checkStateCounter(t, ctx, 2)
+}
+
+func TestIncrementRepeatOnce(t *testing.T) {
+	ctx := setupTest(t)
+
+	repeatMany := inccounter.ScFuncs.RepeatMany(ctx)
+	repeatMany.Params.NumRepeats().SetValue(1)
+	repeatMany.Func.Post()
+	require.NoError(t, ctx.Err)
+
+	require.True(t, ctx.WaitForPendingRequests(1))
 
 	checkStateCounter(t, ctx, 2)
 }

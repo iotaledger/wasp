@@ -39,8 +39,14 @@ pub fn func_endless_loop(_ctx: &ScFuncContext, _f: &EndlessLoopContext) {
 }
 
 pub fn func_increment(_ctx: &ScFuncContext, f: &IncrementContext) {
+    let mut inc_value :i64 = 1;
+    let param = f.params.counter();
+    if param.exists() {
+        inc_value = param.value()
+    }
+
     let counter = f.state.counter();
-    counter.set_value(counter.value() + 1);
+    counter.set_value(counter.value() + inc_value);
 }
 
 pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
