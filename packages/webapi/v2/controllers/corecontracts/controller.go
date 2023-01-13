@@ -127,7 +127,7 @@ func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker inte
 func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	api.GET("chains/:chainID/core/errors/:contractHname/message/:errorID", c.getErrorMessageFormat).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
-		AddParamPath("", "contractHname", "Contract (Hname)").
+		AddParamPath("", "contractHname", "Contract (Hname as Hex)").
 		AddParamPath("", "errorID", "Error Id (uint16)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The error message format", mocker.Get(ErrorMessageFormatResponse{}), nil).
@@ -237,7 +237,7 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 		SetOperationId("blocklogGetEventsOfRequest").
 		SetSummary("Get events of a request")
 
-	api.GET("chains/:chainID/core/blocklog/events/contract/:contractHname", c.getRequestEvents).
+	api.GET("chains/:chainID/core/blocklog/events/contract/:contractHname", c.getContractEvents).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "contractHname", "Contract (Hname)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
