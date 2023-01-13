@@ -34,9 +34,7 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 		return err
 	}
 
-	err = c.nodeService.AddAccessNode(chainID, publicKey)
-
-	if err != nil {
+	if err := c.nodeService.AddAccessNode(chainID, publicKey); err != nil {
 		if errors.Is(err, interfaces.ErrPeerNotFound) {
 			return apierrors.PeerNotFoundError(publicKey)
 		}
@@ -53,8 +51,7 @@ func (c *Controller) removeAccessNode(e echo.Context) error {
 		return err
 	}
 
-	err = c.nodeService.DeleteAccessNode(chainID, publicKey)
-	if err != nil {
+	if err := c.nodeService.DeleteAccessNode(chainID, publicKey); err != nil {
 		return err
 	}
 
