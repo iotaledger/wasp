@@ -29,19 +29,13 @@ func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
 	return requestID, nil
 }
 
-func DecodeHNameFromHNameString(e echo.Context, key string) (isc.Hname, error) {
-	hname, err := isc.HnameFromString(e.Param(key))
+func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error) {
+	hname, err := isc.HnameFromHexString(e.Param(key))
 	if err != nil {
 		return 0, apierrors.InvalidPropertyError(key, err)
 	}
 
 	return hname, nil
-}
-
-func DecodeHNameFromNameString(e echo.Context, key string) isc.Hname {
-	hname := isc.Hn(e.Param(key))
-
-	return hname
 }
 
 func DecodeAgentID(e echo.Context) (isc.AgentID, error) {

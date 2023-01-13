@@ -1,44 +1,44 @@
 [
   {
-    "description": "Block log contract",
-    "hName": 4114149163,
-    "name": "blocklog",
-    "programHash": "0x2bef38f5290ea6e3536c03ba43fcac9d4a0bc8d8a526dd1bc372f69bb2c31d11"
-  },
-  {
-    "description": "Blob Contract",
-    "hName": 4254186595,
-    "name": "blob",
-    "programHash": "0x63bc91fd719fd0f6512718baf3e7ba714c0de5414b356fcb6b85873a7a4e4cc2"
-  },
-  {
-    "description": "Governance contract",
-    "hName": 399478943,
-    "name": "governance",
-    "programHash": "0x9f90cf1762f86ebbf26408d7a77fd3534ae5619c937acbd6b7e4acabba38f7c4"
-  },
-  {
-    "description": "Errors contract",
-    "hName": 2402978739,
-    "name": "errors",
-    "programHash": "0xb38b3a8f7a7cb169b9869f1b660e328df63941f4f078d284a0058140375ec7fc"
-  },
-  {
     "description": "EVM contract",
-    "hName": 130745025,
+    "hName": "07cb02c1",
     "name": "evm",
     "programHash": "0xc102cb078eb7a8c59b65c3682c878e3189cc696b86098d8c5883d08d0d215a87"
   },
   {
     "description": "Chain account ledger contract",
-    "hName": 1011572226,
+    "hName": "3c4b5e02",
     "name": "accounts",
     "programHash": "0x025e4b3c87f1f80eb3546e161b33e93c27a1d420c4863df7b75932c523f131dc"
   },
   {
     "description": "Root Contract",
-    "hName": 3468646664,
+    "hName": "cebf5908",
     "name": "root",
     "programHash": "0x0859bfce1a66bbe4957a79502cf103eb1cd38dae4bde771cd4a2f0ffe7b0ad49"
+  },
+  {
+    "description": "Block log contract",
+    "hName": "f538ef2b",
+    "name": "blocklog",
+    "programHash": "0x2bef38f5290ea6e3536c03ba43fcac9d4a0bc8d8a526dd1bc372f69bb2c31d11"
+  },
+  {
+    "description": "Blob Contract",
+    "hName": "fd91bc63",
+    "name": "blob",
+    "programHash": "0x63bc91fd719fd0f6512718baf3e7ba714c0de5414b356fcb6b85873a7a4e4cc2"
+  },
+  {
+    "description": "Governance contract",
+    "hName": "17cf909f",
+    "name": "governance",
+    "programHash": "0x9f90cf1762f86ebbf26408d7a77fd3534ae5619c937acbd6b7e4acabba38f7c4"
+  },
+  {
+    "description": "Errors contract",
+    "hName": "8f3a8bb3",
+    "name": "errors",
+    "programHash": "0xb38b3a8f7a7cb169b9869f1b660e328df63941f4f078d284a0058140375ec7fc"
   }
 ]
