@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
+import {panic} from '../sandbox';
 import {
     addressFromBytes,
     addressFromString,
@@ -13,11 +13,11 @@ import {
     ScAddressEthLength,
     ScLengthAlias,
     ScLengthEd25519
-} from "./scaddress";
-import {chainIDFromBytes, ScChainIDLength} from "./scchainid";
-import {hnameFromBytes, hnameFromString, hnameToBytes, hnameToString, ScHname, ScHnameLength} from "./schname";
-import {concat, WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+} from './scaddress';
+import {chainIDFromBytes, ScChainIDLength} from './scchainid';
+import {hnameFromBytes, hnameFromString, hnameToBytes, hnameToString, ScHname, ScHnameLength} from './schname';
+import {concat, WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -25,7 +25,7 @@ export const ScAgentIDNil: u8 = 0;
 export const ScAgentIDAddress: u8 = 1;
 export const ScAgentIDContract: u8 = 2;
 export const ScAgentIDEthereum: u8 = 3;
-const nilAgentIDString: string = "-";
+const nilAgentIDString = '-';
 
 export class ScAgentID {
     kind: u8;
@@ -79,12 +79,12 @@ export class ScAgentID {
 
     // convert to byte array representation
     public toBytes(): Uint8Array {
-        return agentIDToBytes(this)
+        return agentIDToBytes(this);
     }
 
     // human-readable string representation
     public toString(): string {
-        return agentIDToString(this)
+        return agentIDToString(this);
     }
 }
 
@@ -106,31 +106,31 @@ export function agentIDFromBytes(buf: Uint8Array | null): ScAgentID {
     }
     switch (buf[0]) {
         case ScAgentIDAddress: {
-            buf = buf.subarray(1)
+            buf = buf.subarray(1);
             if (buf.length != ScLengthAlias && buf.length != ScLengthEd25519) {
-                panic("invalid AgentID length: address agentID");
+                panic('invalid AgentID length: address agentID');
             }
             return ScAgentID.fromAddress(addressFromBytes(buf));
         }
         case ScAgentIDContract: {
-            buf = buf.subarray(1)
+            buf = buf.subarray(1);
             if (buf.length != ScChainIDLength + ScHnameLength) {
-                panic("invalid AgentID length: contract agentID");
+                panic('invalid AgentID length: contract agentID');
             }
             const chainID = chainIDFromBytes(buf.subarray(0, ScChainIDLength));
             const hname = hnameFromBytes(buf.subarray(ScChainIDLength));
             return new ScAgentID(chainID.address(), hname);
         }
         case ScAgentIDEthereum:
-            buf = buf.subarray(1)
+            buf = buf.subarray(1);
             if (buf.length != ScAddressEthLength) {
-                panic("invalid AgentID length: Eth agentID");
+                panic('invalid AgentID length: Eth agentID');
             }
             return ScAgentID.fromAddress(addressFromBytes(buf));
         case ScAgentIDNil:
             break;
         default: {
-            panic("AgentIDFromBytes: invalid AgentID type");
+            panic('AgentIDFromBytes: invalid AgentID type');
             break;
         }
     }
@@ -149,11 +149,11 @@ export function agentIDToBytes(value: ScAgentID): Uint8Array {
             return concat(buf, hnameToBytes(value._hname));
         }
         case ScAgentIDEthereum:
-            return concat(buf, addressToBytes(value._address))
+            return concat(buf, addressToBytes(value._address));
         case ScAgentIDNil:
             return buf;
         default: {
-            panic("AgentIDToBytes: invalid AgentID type");
+            panic('AgentIDToBytes: invalid AgentID type');
             break;
         }
     }
@@ -165,14 +165,14 @@ export function agentIDFromString(value: string): ScAgentID {
         return agentIDFromBytes(null);
     }
 
-    const parts = value.split("@");
+    const parts = value.split('@');
     switch (parts.length) {
         case 1:
             return ScAgentID.fromAddress(addressFromString(parts[0]));
         case 2:
             return new ScAgentID(addressFromString(parts[1]), hnameFromString(parts[0]));
         default:
-            panic("invalid AgentID string");
+            panic('invalid AgentID string');
             return agentIDFromBytes(null);
     }
 }
@@ -180,17 +180,17 @@ export function agentIDFromString(value: string): ScAgentID {
 export function agentIDToString(value: ScAgentID): string {
     switch (value.kind) {
         case ScAgentIDAddress:
-            return addressToString(value.address())
+            return addressToString(value.address());
         case ScAgentIDContract: {
-            return hnameToString(value.hname()) + "@" + addressToString(value.address())
+            return hnameToString(value.hname()) + '@' + addressToString(value.address());
         }
         case ScAgentIDEthereum:
-            return addressToString(value.address())
+            return addressToString(value.address());
         case ScAgentIDNil:
             return nilAgentIDString;
         default: {
-            panic("AgentIDToString: invalid AgentID type");
-            return "";
+            panic('AgentIDToString: invalid AgentID type');
+            return '';
         }
     }
 }

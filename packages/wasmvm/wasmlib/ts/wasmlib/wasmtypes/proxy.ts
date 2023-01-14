@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {uint32Decode, uint32Encode} from "./scuint32";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {stringToBytes} from "./scstring";
+import {panic} from '../sandbox';
+import {uint32Decode, uint32Encode} from './scuint32';
+import {WasmDecoder, WasmEncoder} from './codec';
+import {stringToBytes} from './scstring';
 
 export interface IKvStore {
     delete(key: Uint8Array): void;
@@ -69,33 +69,33 @@ export class Proxy {
     }
 
     delete(): void {
-        //log(this.id.toString() + ".delete(" + keya(this._key) + ")");
+        //log(this.id.toString() + '.delete(' + keya(this._key) + ')');
         this.kvStore.delete(this._key);
     }
 
     protected element(index: u32): Proxy {
-        let enc = new WasmEncoder();
+        const enc = new WasmEncoder();
         uint32Encode(enc, index);
         // 0x23 is '#'
         return this.sub(0x23, enc.buf());
     }
 
     exists(): bool {
-        //log(this.id.toString() + ".exists(" + keya(this._key) + ")");
+        //log(this.id.toString() + '.exists(' + keya(this._key) + ')');
         return this.kvStore.exists(this._key);
     }
 
     //TODO have a Grow function that grows an array?
     protected expand(length: u32): void {
         // update the length counter
-        let enc = new WasmEncoder();
+        const enc = new WasmEncoder();
         uint32Encode(enc, length);
         this.set(enc.buf());
     }
 
     get(): Uint8Array {
         const buf = this.kvStore.get(this._key);
-        //log(this.id.toString() + ".get(" + keya(this._key) + ") = " + vala(buf));
+        //log(this.id.toString() + '.get(' + keya(this._key) + ') = ' + vala(buf));
         return buf;
     }
 
@@ -104,9 +104,9 @@ export class Proxy {
         const size = this.length();
         if (index >= size) {
             if (index == size) {
-                panic("invalid index: use append");
+                panic('invalid index: use append');
             }
-            panic("invalid index");
+            panic('invalid index');
         }
         return this.element(index);
     }
@@ -121,11 +121,11 @@ export class Proxy {
     // Never try to access an index >= Length()
     public length(): u32 {
         // get the length counter
-        let buf = this.get();
+        const buf = this.get();
         if (buf.length == 0) {
             return 0;
         }
-        const dec = new WasmDecoder(buf)
+        const dec = new WasmDecoder(buf);
         return uint32Decode(dec);
     }
 
@@ -136,7 +136,7 @@ export class Proxy {
     }
 
     set(value: Uint8Array): void {
-        //log(this.id.toString() + ".set(" + keya(this._key) + ") = " + vala(value));
+        //log(this.id.toString() + '.set(' + keya(this._key) + ') = ' + vala(value));
         this.kvStore.set(this._key, value);
     }
 
@@ -151,7 +151,7 @@ export class Proxy {
         const subKey = new Uint8Array(this._key.length + 1 + key.length);
         subKey.set(this._key);
         subKey[this._key.length] = sep;
-        subKey.set(key, this._key.length+1)
+        subKey.set(key, this._key.length + 1);
         return this.proxy(this.kvStore, subKey);
     }
 }

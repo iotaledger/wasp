@@ -23,7 +23,7 @@ $#each eventComment _eventComment
     $evtName($endFunc
 $#each event eventParam
 $#if event eventEndFunc2
-        const evt = new wasmlib.EventEncoder("$package.$evtName");
+        const evt = new wasmlib.EventEncoder('$package.$evtName');
 $#each event eventEmit
         evt.emit();
     }

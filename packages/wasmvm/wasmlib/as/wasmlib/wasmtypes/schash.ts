@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
+import {panic} from '../sandbox';
+import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -43,7 +43,7 @@ export function hashFromBytes(buf: Uint8Array | null): ScHash {
         return new ScHash();
     }
     if (buf.length != ScHashLength) {
-        panic("invalid Hash length");
+        panic('invalid Hash length');
     }
     return hashFromBytesUnchecked(buf);
 }
@@ -61,7 +61,7 @@ export function hashToString(value: ScHash): string {
 }
 
 function hashFromBytesUnchecked(buf: Uint8Array): ScHash {
-    let o = new ScHash();
+    const o = new ScHash();
     o.id = buf.slice(0);
     return o;
 }

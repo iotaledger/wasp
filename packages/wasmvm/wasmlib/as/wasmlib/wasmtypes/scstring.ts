@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesFromUint8Array} from "./scbytes";
+import {WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
+import {bytesFromUint8Array} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -20,8 +20,8 @@ export function stringFromBytes(buf: Uint8Array): string {
 }
 
 export function stringToBytes(value: string): Uint8Array {
-    let arrayBuffer = String.UTF8.encode(value);
-    let u8Array = Uint8Array.wrap(arrayBuffer)
+    const arrayBuffer = String.UTF8.encode(value);
+    const u8Array = Uint8Array.wrap(arrayBuffer);
     return bytesFromUint8Array(u8Array);
 }
 

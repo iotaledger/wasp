@@ -69,7 +69,7 @@ var TypeDependent = model.StringMapMap{
 		"Int64":     "0",
 		"NftID":     "new wasmtypes.ScNftID()",
 		"RequestID": "new wasmtypes.ScRequestID()",
-		"String":    "\"\"",
+		"String":    "''",
 		"TokenID":   "new wasmtypes.ScTokenID()",
 		"Uint8":     "0",
 		"Uint16":    "0",
@@ -87,21 +87,21 @@ $#set wasmlib wasmlib
 	"importWasmLib": `
 $#set wasmlib ../index
 $#if core else setWasmLib
-import * as wasmlib from "$wasmlib";
+import * as wasmlib from '$wasmlib';
 `,
 	// *******************************
 	"importWasmTypes": `
 $#set wasmlib ..
 $#if core else setWasmLib
-import * as wasmtypes from "$wasmlib/wasmtypes";
+import * as wasmtypes from '$wasmlib/wasmtypes';
 `,
 	// *******************************
 	"importWasmVMHost": `
-import * as wasmvmhost from "wasmvmhost";
+import * as wasmvmhost from 'wasmvmhost';
 `,
 	// *******************************
 	"importSc": `
-import * as sc from "./index";
+import * as sc from './index';
 `,
 	// *******************************
 	"tsconfig.json": `

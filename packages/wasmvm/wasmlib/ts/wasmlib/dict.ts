@@ -1,17 +1,17 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {log} from "./sandbox";
-import {IKvStore, Proxy} from "./wasmtypes/proxy";
-import {ScUint32Length, uint32FromBytes, uint32ToBytes} from "./wasmtypes/scuint32";
-import {stringFromBytes} from "./wasmtypes/scstring";
-import {WasmDecoder, WasmEncoder} from "./wasmtypes/codec";
-import {ScUint16Length, uint16FromBytes, uint16ToBytes} from "./wasmtypes/scuint16";
+import {log} from './sandbox';
+import {IKvStore, Proxy} from './wasmtypes/proxy';
+import {ScUint32Length, uint32FromBytes, uint32ToBytes} from './wasmtypes/scuint32';
+import {stringFromBytes} from './wasmtypes/scstring';
+import {WasmDecoder, WasmEncoder} from './wasmtypes/codec';
+import {ScUint16Length, uint16FromBytes, uint16ToBytes} from './wasmtypes/scuint16';
 
 // returns a hex string representing the byte buffer
 function hex(buf: Uint8Array): string {
-    const hexa = "0123456789abcdef";
-    let res = "";
+    const hexa = '0123456789abcdef';
+    let res = '';
     for (let i = 0; i < buf.length; i++) {
         const b = buf[i];
         res += hexa.charAt(b >> 4) + hexa.charAt(b & 0x0f);
@@ -39,7 +39,7 @@ export class ScDict implements IKvStore {
     dict: Map<string, Uint8Array> = new Map();
 
     static toKey(buf: Uint8Array): string {
-        let key = "";
+        let key = '';
         for (let i = 0; i < buf.length; i++) {
             key += String.fromCharCode((buf[i] >> 4) + 0x40, (buf[i] & 0x0f) + 0x40);
         }
@@ -47,7 +47,7 @@ export class ScDict implements IKvStore {
     }
 
     static fromKey(key: string): Uint8Array {
-        let buf = new Uint8Array(key.length / 2);
+        const buf = new Uint8Array(key.length / 2);
         for (let i = 0; i < key.length; i += 2) {
             const b1 = key.charCodeAt(i) as u8;
             const b2 = key.charCodeAt(i + 1) as u8;
@@ -77,36 +77,36 @@ export class ScDict implements IKvStore {
     }
 
     delete(key: Uint8Array): void {
-        // this.dump("delete");
-        // log("dict.delete(" + keya(key) + ")");
+        // this.dump('delete');
+        // log('dict.delete(' + keya(key) + ')');
         this.dict.delete(ScDict.toKey(key));
-        // this.dump("Delete")
+        // this.dump('Delete')
     }
 
     protected dump(which: string): void {
         const keys = [...this.dict.keys()];
         for (let i = 0; i < keys.length; i++) {
-            log("dict." + which + "." + i.toString() + "." + keya(ScDict.fromKey(keys[i])) + " = " + vala(this.dict.get(keys[i])!));
+            log('dict.' + which + '.' + i.toString() + '.' + keya(ScDict.fromKey(keys[i])) + ' = ' + vala(this.dict.get(keys[i])!));
         }
     }
 
     exists(key: Uint8Array): bool {
         const mapKey = ScDict.toKey(key);
         const ret = this.dict.has(mapKey);
-        // this.dump("exists");
-        // log("dict.exists(" + keya(key) + ") = " + ret.toString());
+        // this.dump('exists');
+        // log('dict.exists(' + keya(key) + ') = ' + ret.toString());
         return ret;
     }
 
     get(key: Uint8Array): Uint8Array {
-        // this.dump("get")
+        // this.dump('get')
         const mapKey = ScDict.toKey(key);
         if (!this.dict.has(mapKey)) {
-            // log("dict.get(" + keya(key) + ") = null");
+            // log('dict.get(' + keya(key) + ') = null');
             return new Uint8Array(0);
         }
         const value = this.dict.get(mapKey)!;
-        // log("dict.get(" + keya(key) + ") = " + vala(value));
+        // log('dict.get(' + keya(key) + ') = ' + vala(value));
         return value;
     }
 
@@ -115,10 +115,10 @@ export class ScDict implements IKvStore {
     }
 
     set(key: Uint8Array, value: Uint8Array): void {
-        // this.dump("set")
-        // log("dict.set(" + keya(key) + ", " + vala(value) + ")");
+        // this.dump('set')
+        // log('dict.set(' + keya(key) + ', ' + vala(value) + ')');
         this.dict.set(ScDict.toKey(key), value);
-        // this.dump("Set")
+        // this.dump('Set')
     }
 
     public toBytes(): Uint8Array {
@@ -131,7 +131,7 @@ export class ScDict implements IKvStore {
         for (let i = 0; i < keys.length; i++) {
             const k = keys[i];
             const key = ScDict.fromKey(k);
-            let val = this.dict.get(k)!;
+            const val = this.dict.get(k)!;
             enc.fixedBytes(uint16ToBytes(key.length as u16), ScUint16Length);
             enc.fixedBytes(key, key.length as u32);
             enc.fixedBytes(uint32ToBytes(val.length as u32), ScUint32Length);

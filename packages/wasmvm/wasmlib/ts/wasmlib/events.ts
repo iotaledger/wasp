@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {ScFuncContext} from "./context";
-import {uint64FromString, uint64ToString} from "./wasmtypes/scuint64";
+import {ScFuncContext} from './context';
+import {uint64FromString, uint64ToString} from './wasmtypes/scuint64';
 
 export interface IEventHandlers {
     callHandler(topic: string, params: string[]): void;
@@ -13,7 +13,7 @@ export class EventEncoder {
 
     constructor(eventName: string) {
         this.event = eventName;
-        let timestamp = new ScFuncContext().timestamp();
+        const timestamp = new ScFuncContext().timestamp();
         // convert nanoseconds to seconds
         this.encode(uint64ToString(timestamp / 1_000_000_000n));
     }
@@ -23,10 +23,10 @@ export class EventEncoder {
     }
 
     encode(value: string): void {
-        value = value.replaceAll("~", "~~")
-        value = value.replaceAll("|", "~/")
-        value = value.replaceAll(" ", "~_")
-        this.event += "|" + value;
+        value = value.replaceAll('~', '~~');
+        value = value.replaceAll('|', '~/');
+        value = value.replaceAll(' ', '~_');
+        this.event += '|' + value;
     }
 }
 

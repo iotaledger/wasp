@@ -1,9 +1,9 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {intFromString, WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import {panic} from '../sandbox';
+import {intFromString, WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 export const ScInt16Length = 2;
 
@@ -22,9 +22,9 @@ export function int16FromBytes(buf: Uint8Array): i16 {
         return 0;
     }
     if (buf.length != ScInt16Length) {
-        panic("invalid Int16 length");
+        panic('invalid Int16 length');
     }
-    let ret: i16 = buf[1];
+    const ret: i16 = buf[1];
     return (ret << 8) | buf[0];
 }
 

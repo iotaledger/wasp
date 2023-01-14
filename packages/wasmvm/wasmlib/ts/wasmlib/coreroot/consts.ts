@@ -5,32 +5,32 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
-export const ScName        = "root";
-export const ScDescription = "Root Contract";
+export const ScName        = 'root';
+export const ScDescription = 'Root Contract';
 export const HScName       = new wasmtypes.ScHname(0xcebf5908);
 
-export const ParamCloseFunc                = "bcc";
-export const ParamDeployer                 = "dp";
-export const ParamDeployPermissionsEnabled = "de";
-export const ParamDescription              = "ds";
-export const ParamHname                    = "hn";
-export const ParamName                     = "nm";
-export const ParamOpenFunc                 = "bco";
-export const ParamProgramHash              = "ph";
+export const ParamCloseFunc                = 'bcc';
+export const ParamDeployer                 = 'dp';
+export const ParamDeployPermissionsEnabled = 'de';
+export const ParamDescription              = 'ds';
+export const ParamHname                    = 'hn';
+export const ParamName                     = 'nm';
+export const ParamOpenFunc                 = 'bco';
+export const ParamProgramHash              = 'ph';
 
-export const ResultContractFound    = "cf";
-export const ResultContractRecData  = "dt";
-export const ResultContractRegistry = "r";
+export const ResultContractFound    = 'cf';
+export const ResultContractRecData  = 'dt';
+export const ResultContractRegistry = 'r';
 
-export const FuncDeployContract           = "deployContract";
-export const FuncGrantDeployPermission    = "grantDeployPermission";
-export const FuncRequireDeployPermissions = "requireDeployPermissions";
-export const FuncRevokeDeployPermission   = "revokeDeployPermission";
-export const FuncSubscribeBlockContext    = "subscribeBlockContext";
-export const ViewFindContract             = "findContract";
-export const ViewGetContractRecords       = "getContractRecords";
+export const FuncDeployContract           = 'deployContract';
+export const FuncGrantDeployPermission    = 'grantDeployPermission';
+export const FuncRequireDeployPermissions = 'requireDeployPermissions';
+export const FuncRevokeDeployPermission   = 'revokeDeployPermission';
+export const FuncSubscribeBlockContext    = 'subscribeBlockContext';
+export const ViewFindContract             = 'findContract';
+export const ViewGetContractRecords       = 'getContractRecords';
 
 export const HFuncDeployContract           = new wasmtypes.ScHname(0x28232c27);
 export const HFuncGrantDeployPermission    = new wasmtypes.ScHname(0xf440263a);

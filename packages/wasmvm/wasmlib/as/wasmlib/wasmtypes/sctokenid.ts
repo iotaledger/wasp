@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
+import {panic} from '../sandbox';
+import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -43,7 +43,7 @@ export function tokenIDFromBytes(buf: Uint8Array | null): ScTokenID {
         return new ScTokenID();
     }
     if (buf.length != ScTokenIDLength) {
-        panic("invalid TokenID length");
+        panic('invalid TokenID length');
     }
     return tokenIDFromBytesUnchecked(buf);
 }
@@ -61,7 +61,7 @@ export function tokenIDToString(value: ScTokenID): string {
 }
 
 function tokenIDFromBytesUnchecked(buf: Uint8Array): ScTokenID {
-    let o = new ScTokenID();
+    const o = new ScTokenID();
     o.id = buf.slice(0);
     return o;
 }

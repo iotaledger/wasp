@@ -1,9 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesFromUint8Array} from "./scbytes";
+import {WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 

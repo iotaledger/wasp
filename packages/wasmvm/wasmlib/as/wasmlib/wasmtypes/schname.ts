@@ -1,13 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {sandbox} from "../host";
-import {FnUtilsHashName, panic} from "../sandbox";
-import {uint32FromBytes, uint32ToBytes} from "./scuint32";
-import {stringToBytes} from "./scstring";
-import {bytesCompare} from "./scbytes";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import {sandbox} from '../host';
+import {FnUtilsHashName, panic} from '../sandbox';
+import {uint32FromBytes, uint32ToBytes} from './scuint32';
+import {stringToBytes} from './scstring';
+import {bytesCompare} from './scbytes';
+import {WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -35,7 +35,7 @@ export class ScHname {
 
     // human-readable string representation
     public toString(): string {
-        return hnameToString(this)
+        return hnameToString(this);
     }
 }
 
@@ -54,7 +54,7 @@ export function hnameFromBytes(buf: Uint8Array): ScHname {
         return new ScHname(0);
     }
     if (buf.length != ScHnameLength) {
-        panic("invalid Hname length");
+        panic('invalid Hname length');
     }
     return hnameFromBytesUnchecked(buf);
 }
@@ -65,18 +65,18 @@ export function hnameToBytes(value: ScHname): Uint8Array {
 
 export function hnameFromString(value: string): ScHname {
     if (value.length > 8) {
-        panic("invalid Hname string");
+        panic('invalid Hname string');
     }
     return new ScHname(parseInt(value, 16) as u32);
 }
 
 export function hnameToString(value: ScHname): string {
     const res = uint32FromBytes(value.id).toString(16);
-    return "0000000".slice(0, 8 - res.length) + res;
+    return '0000000'.slice(0, 8 - res.length) + res;
 }
 
 function hnameFromBytesUnchecked(buf: Uint8Array): ScHname {
-    let o = new ScHname(0);
+    const o = new ScHname(0);
     o.id = buf.slice(0);
     return o;
 }

@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
+import {panic} from '../sandbox';
+import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -43,7 +43,7 @@ export function nftIDFromBytes(buf: Uint8Array | null): ScNftID {
         return new ScNftID();
     }
     if (buf.length != ScNftIDLength) {
-        panic("invalid NftID length");
+        panic('invalid NftID length');
     }
     return nftIDFromBytesUnchecked(buf);
 }
@@ -61,7 +61,7 @@ export function nftIDToString(value: ScNftID): string {
 }
 
 function nftIDFromBytesUnchecked(buf: Uint8Array): ScNftID {
-    let o = new ScNftID();
+    const o = new ScNftID();
     o.id = buf.slice(0);
     return o;
 }

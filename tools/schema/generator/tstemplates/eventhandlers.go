@@ -32,7 +32,7 @@ $#each events eventClass
 `,
 	// *******************************
 	"eventHandler": `
-        this.$pkgName$+Handlers.set("$package.$evtName", (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg)));
+        this.$pkgName$+Handlers.set('$package.$evtName', (evt: $PkgName$+EventHandlers, msg: string[]) => evt.$evtName(new Event$EvtName(msg)));
 `,
 	// *******************************
 	"eventHandlerMember": `
