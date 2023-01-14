@@ -1,13 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import {panic} from '../sandbox';
+import {WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 export const ScBoolLength = 1;
-export const ScBoolFalse = 0x00
-export const ScBoolTrue = 0x01
+export const ScBoolFalse = 0x00;
+export const ScBoolTrue = 0x01;
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -24,13 +24,13 @@ export function boolFromBytes(buf: Uint8Array): bool {
         return false;
     }
     if (buf.length != ScBoolLength) {
-        panic("invalid Bool length");
+        panic('invalid Bool length');
     }
     if (buf[0] == ScBoolFalse) {
         return false;
     }
     if (buf[0] != ScBoolTrue) {
-        panic("invalid Bool value");
+        panic('invalid Bool value');
     }
     return true;
 }
@@ -42,18 +42,18 @@ export function boolToBytes(value: bool): Uint8Array {
 }
 
 export function boolFromString(value: string): bool {
-    if (value == "0") {
+    if (value == '0') {
         return false;
     }
-    if (value == "1") {
+    if (value == '1') {
         return true;
     }
-    panic("invalid bool string");
+    panic('invalid bool string');
     return false;
 }
 
 export function boolToString(value: bool): string {
-    return value ? "1" : "0";
+    return value ? '1' : '0';
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

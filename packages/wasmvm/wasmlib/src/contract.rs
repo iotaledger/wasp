@@ -9,11 +9,11 @@ use crate::*;
 use crate::host::*;
 
 pub trait ScFuncCallContext {
-    fn can_call_func(&self);
+    fn init_func_call_context(&self);
 }
 
 pub trait ScViewCallContext {
-    fn can_call_view(&self);
+    fn init_view_call_context(&self, h_contract: ScHname) -> ScHname;
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\

@@ -5,8 +5,8 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
-import * as sc from "./index";
+import * as wasmtypes from '../wasmtypes';
+import * as sc from './index';
 
 export class ImmutableControlAddressesResults extends wasmtypes.ScProxy {
     // the addresses have been set as state controller address or governing address since the following block index

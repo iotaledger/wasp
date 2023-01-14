@@ -5,53 +5,53 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
-export const ScName        = "governance";
-export const ScDescription = "Governance contract";
+export const ScName        = 'governance';
+export const ScDescription = 'Governance contract';
 export const HScName       = new wasmtypes.ScHname(0x17cf909f);
 
-export const ParamAccessNodeInfoAccessAPI    = "ia";
-export const ParamAccessNodeInfoCertificate  = "ic";
-export const ParamAccessNodeInfoForCommittee = "i";
-export const ParamAccessNodeInfoPubKey       = "ip";
-export const ParamChainOwner                 = "o";
-export const ParamChangeAccessNodesActions   = "n";
-export const ParamFeePolicyBytes             = "g";
-export const ParamMaxBlobSize                = "mb";
-export const ParamMaxEventSize               = "ms";
-export const ParamMaxEventsPerReq            = "mr";
-export const ParamStateControllerAddress     = "S";
+export const ParamAccessNodeInfoAccessAPI    = 'ia';
+export const ParamAccessNodeInfoCertificate  = 'ic';
+export const ParamAccessNodeInfoForCommittee = 'i';
+export const ParamAccessNodeInfoPubKey       = 'ip';
+export const ParamChainOwner                 = 'o';
+export const ParamChangeAccessNodesActions   = 'n';
+export const ParamFeePolicyBytes             = 'g';
+export const ParamMaxBlobSize                = 'mb';
+export const ParamMaxEventSize               = 'ms';
+export const ParamMaxEventsPerReq            = 'mr';
+export const ParamStateControllerAddress     = 'S';
 
-export const ResultAccessNodeCandidates            = "ac";
-export const ResultAccessNodes                     = "an";
-export const ResultAllowedStateControllerAddresses = "a";
-export const ResultChainID                         = "c";
-export const ResultChainOwner                      = "o";
-export const ResultChainOwnerID                    = "o";
-export const ResultDescription                     = "d";
-export const ResultFeePolicyBytes                  = "g";
-export const ResultGasFeePolicyBytes               = "g";
-export const ResultMaxBlobSize                     = "mb";
-export const ResultMaxEventSize                    = "me";
-export const ResultMaxEventsPerReq                 = "mr";
+export const ResultAccessNodeCandidates            = 'ac';
+export const ResultAccessNodes                     = 'an';
+export const ResultAllowedStateControllerAddresses = 'a';
+export const ResultChainID                         = 'c';
+export const ResultChainOwner                      = 'o';
+export const ResultChainOwnerID                    = 'o';
+export const ResultDescription                     = 'd';
+export const ResultFeePolicyBytes                  = 'g';
+export const ResultGasFeePolicyBytes               = 'g';
+export const ResultMaxBlobSize                     = 'mb';
+export const ResultMaxEventSize                    = 'me';
+export const ResultMaxEventsPerReq                 = 'mr';
 
-export const FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress";
-export const FuncAddCandidateNode                    = "addCandidateNode";
-export const FuncChangeAccessNodes                   = "changeAccessNodes";
-export const FuncClaimChainOwnership                 = "claimChainOwnership";
-export const FuncDelegateChainOwnership              = "delegateChainOwnership";
-export const FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress";
-export const FuncRevokeAccessNode                    = "revokeAccessNode";
-export const FuncRotateStateController               = "rotateStateController";
-export const FuncSetChainInfo                        = "setChainInfo";
-export const FuncSetFeePolicy                        = "setFeePolicy";
-export const ViewGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses";
-export const ViewGetChainInfo                        = "getChainInfo";
-export const ViewGetChainNodes                       = "getChainNodes";
-export const ViewGetChainOwner                       = "getChainOwner";
-export const ViewGetFeePolicy                        = "getFeePolicy";
-export const ViewGetMaxBlobSize                      = "getMaxBlobSize";
+export const FuncAddAllowedStateControllerAddress    = 'addAllowedStateControllerAddress';
+export const FuncAddCandidateNode                    = 'addCandidateNode';
+export const FuncChangeAccessNodes                   = 'changeAccessNodes';
+export const FuncClaimChainOwnership                 = 'claimChainOwnership';
+export const FuncDelegateChainOwnership              = 'delegateChainOwnership';
+export const FuncRemoveAllowedStateControllerAddress = 'removeAllowedStateControllerAddress';
+export const FuncRevokeAccessNode                    = 'revokeAccessNode';
+export const FuncRotateStateController               = 'rotateStateController';
+export const FuncSetChainInfo                        = 'setChainInfo';
+export const FuncSetFeePolicy                        = 'setFeePolicy';
+export const ViewGetAllowedStateControllerAddresses  = 'getAllowedStateControllerAddresses';
+export const ViewGetChainInfo                        = 'getChainInfo';
+export const ViewGetChainNodes                       = 'getChainNodes';
+export const ViewGetChainOwner                       = 'getChainOwner';
+export const ViewGetFeePolicy                        = 'getFeePolicy';
+export const ViewGetMaxBlobSize                      = 'getMaxBlobSize';
 
 export const HFuncAddAllowedStateControllerAddress    = new wasmtypes.ScHname(0x9469d567);
 export const HFuncAddCandidateNode                    = new wasmtypes.ScHname(0xb745b382);

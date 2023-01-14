@@ -1,10 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {uintFromString64, WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
-import {uint32FromBytes} from "./scuint32";
+import {panic} from '../sandbox';
+import {uintFromString64, WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
+import {uint32FromBytes} from './scuint32';
 
 export const ScUint64Length = 8;
 
@@ -23,7 +23,7 @@ export function uint64FromBytes(buf: Uint8Array): u64 {
         return 0n;
     }
     if (buf.length != ScUint64Length) {
-        panic("invalid Uint64 length");
+        panic('invalid Uint64 length');
     }
     // let ret: u64 = buf[7];
     // ret = (ret << 8) | buf[6];
@@ -40,8 +40,8 @@ export function uint64FromBytes(buf: Uint8Array): u64 {
 
 export function uint64ToBytes(value: u64): Uint8Array {
     const buf = new Uint8Array(ScUint64Length);
-    const u32low = Number(value % 0x100000000n)
-    const u32High = Number(value / 0x100000000n % 0x100000000n)
+    const u32low = Number(value % 0x100000000n);
+    const u32High = Number(value / 0x100000000n % 0x100000000n);
     buf[0] = u32low as u8;
     buf[1] = (u32low >> 8) as u8;
     buf[2] = (u32low >> 16) as u8;

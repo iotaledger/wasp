@@ -5,37 +5,37 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
-export const ScName        = "blocklog";
-export const ScDescription = "Block log contract";
+export const ScName        = 'blocklog';
+export const ScDescription = 'Block log contract';
 export const HScName       = new wasmtypes.ScHname(0xf538ef2b);
 
-export const ParamBlockIndex    = "n";
-export const ParamContractHname = "h";
-export const ParamFromBlock     = "f";
-export const ParamRequestID     = "u";
-export const ParamToBlock       = "t";
+export const ParamBlockIndex    = 'n';
+export const ParamContractHname = 'h';
+export const ParamFromBlock     = 'f';
+export const ParamRequestID     = 'u';
+export const ParamToBlock       = 't';
 
-export const ResultBlockIndex             = "n";
-export const ResultBlockInfo              = "i";
-export const ResultEvent                  = "e";
-export const ResultGoverningAddress       = "g";
-export const ResultRequestID              = "u";
-export const ResultRequestIndex           = "r";
-export const ResultRequestProcessed       = "p";
-export const ResultRequestRecord          = "d";
-export const ResultStateControllerAddress = "s";
+export const ResultBlockIndex             = 'n';
+export const ResultBlockInfo              = 'i';
+export const ResultEvent                  = 'e';
+export const ResultGoverningAddress       = 'g';
+export const ResultRequestID              = 'u';
+export const ResultRequestIndex           = 'r';
+export const ResultRequestProcessed       = 'p';
+export const ResultRequestRecord          = 'd';
+export const ResultStateControllerAddress = 's';
 
-export const ViewControlAddresses           = "controlAddresses";
-export const ViewGetBlockInfo               = "getBlockInfo";
-export const ViewGetEventsForBlock          = "getEventsForBlock";
-export const ViewGetEventsForContract       = "getEventsForContract";
-export const ViewGetEventsForRequest        = "getEventsForRequest";
-export const ViewGetRequestIDsForBlock      = "getRequestIDsForBlock";
-export const ViewGetRequestReceipt          = "getRequestReceipt";
-export const ViewGetRequestReceiptsForBlock = "getRequestReceiptsForBlock";
-export const ViewIsRequestProcessed         = "isRequestProcessed";
+export const ViewControlAddresses           = 'controlAddresses';
+export const ViewGetBlockInfo               = 'getBlockInfo';
+export const ViewGetEventsForBlock          = 'getEventsForBlock';
+export const ViewGetEventsForContract       = 'getEventsForContract';
+export const ViewGetEventsForRequest        = 'getEventsForRequest';
+export const ViewGetRequestIDsForBlock      = 'getRequestIDsForBlock';
+export const ViewGetRequestReceipt          = 'getRequestReceipt';
+export const ViewGetRequestReceiptsForBlock = 'getRequestReceiptsForBlock';
+export const ViewIsRequestProcessed         = 'isRequestProcessed';
 
 export const HViewControlAddresses           = new wasmtypes.ScHname(0x796bd223);
 export const HViewGetBlockInfo               = new wasmtypes.ScHname(0xbe89f9b3);

@@ -8,8 +8,8 @@ var constsTs = map[string]string{
 	"consts.ts": `
 $#emit importWasmTypes
 
-export const ScName        = "$scName";
-export const ScDescription = "$scDesc";
+export const ScName        = '$scName';
+export const ScDescription = '$scDesc';
 export const HScName       = new wasmtypes.ScHname(0x$hscName);
 $#if params constParams
 $#if results constResults
@@ -43,11 +43,11 @@ $#each func constHFunc
 `,
 	// *******************************
 	"constField": `
-export const $constPrefix$FldName$fldPad = "$fldAlias";
+export const $constPrefix$FldName$fldPad = '$fldAlias';
 `,
 	// *******************************
 	"constFunc": `
-export const $Kind$FuncName$funcPad = "$funcName";
+export const $Kind$FuncName$funcPad = '$funcName';
 `,
 	// *******************************
 	"constHFunc": `

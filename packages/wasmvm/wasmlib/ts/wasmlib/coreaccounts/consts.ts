@@ -5,51 +5,51 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
-export const ScName        = "accounts";
-export const ScDescription = "Chain account ledger contract";
+export const ScName        = 'accounts';
+export const ScDescription = 'Chain account ledger contract';
 export const HScName       = new wasmtypes.ScHname(0x3c4b5e02);
 
-export const ParamAgentID                = "a";
-export const ParamDestroyTokens          = "y";
-export const ParamForceMinimumBaseTokens = "f";
-export const ParamForceOpenAccount       = "c";
-export const ParamFoundrySN              = "s";
-export const ParamNftID                  = "z";
-export const ParamSupplyDeltaAbs         = "d";
-export const ParamTokenID                = "N";
-export const ParamTokenScheme            = "t";
+export const ParamAgentID                = 'a';
+export const ParamDestroyTokens          = 'y';
+export const ParamForceMinimumBaseTokens = 'f';
+export const ParamForceOpenAccount       = 'c';
+export const ParamFoundrySN              = 's';
+export const ParamNftID                  = 'z';
+export const ParamSupplyDeltaAbs         = 'd';
+export const ParamTokenID                = 'N';
+export const ParamTokenScheme            = 't';
 
-export const ResultAccountNonce     = "n";
-export const ResultAllAccounts      = "this";
-export const ResultAssets           = "this";
-export const ResultBalance          = "B";
-export const ResultBalances         = "this";
-export const ResultFoundryOutputBin = "b";
-export const ResultFoundrySN        = "s";
-export const ResultMapping          = "this";
-export const ResultNftData          = "e";
-export const ResultNftIDs           = "i";
-export const ResultTokens           = "B";
+export const ResultAccountNonce     = 'n';
+export const ResultAllAccounts      = 'this';
+export const ResultAssets           = 'this';
+export const ResultBalance          = 'B';
+export const ResultBalances         = 'this';
+export const ResultFoundryOutputBin = 'b';
+export const ResultFoundrySN        = 's';
+export const ResultMapping          = 'this';
+export const ResultNftData          = 'e';
+export const ResultNftIDs           = 'i';
+export const ResultTokens           = 'B';
 
-export const FuncDeposit                  = "deposit";
-export const FuncFoundryCreateNew         = "foundryCreateNew";
-export const FuncFoundryDestroy           = "foundryDestroy";
-export const FuncFoundryModifySupply      = "foundryModifySupply";
-export const FuncHarvest                  = "harvest";
-export const FuncTransferAllowanceTo      = "transferAllowanceTo";
-export const FuncWithdraw                 = "withdraw";
-export const ViewAccountNFTs              = "accountNFTs";
-export const ViewAccounts                 = "accounts";
-export const ViewBalance                  = "balance";
-export const ViewBalanceBaseToken         = "balanceBaseToken";
-export const ViewBalanceNativeToken       = "balanceNativeToken";
-export const ViewFoundryOutput            = "foundryOutput";
-export const ViewGetAccountNonce          = "getAccountNonce";
-export const ViewGetNativeTokenIDRegistry = "getNativeTokenIDRegistry";
-export const ViewNftData                  = "nftData";
-export const ViewTotalAssets              = "totalAssets";
+export const FuncDeposit                  = 'deposit';
+export const FuncFoundryCreateNew         = 'foundryCreateNew';
+export const FuncFoundryDestroy           = 'foundryDestroy';
+export const FuncFoundryModifySupply      = 'foundryModifySupply';
+export const FuncHarvest                  = 'harvest';
+export const FuncTransferAllowanceTo      = 'transferAllowanceTo';
+export const FuncWithdraw                 = 'withdraw';
+export const ViewAccountNFTs              = 'accountNFTs';
+export const ViewAccounts                 = 'accounts';
+export const ViewBalance                  = 'balance';
+export const ViewBalanceBaseToken         = 'balanceBaseToken';
+export const ViewBalanceNativeToken       = 'balanceNativeToken';
+export const ViewFoundryOutput            = 'foundryOutput';
+export const ViewGetAccountNonce          = 'getAccountNonce';
+export const ViewGetNativeTokenIDRegistry = 'getNativeTokenIDRegistry';
+export const ViewNftData                  = 'nftData';
+export const ViewTotalAssets              = 'totalAssets';
 
 export const HFuncDeposit                  = new wasmtypes.ScHname(0xbdc9102d);
 export const HFuncFoundryCreateNew         = new wasmtypes.ScHname(0x41822f5f);

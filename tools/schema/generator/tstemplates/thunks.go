@@ -7,8 +7,8 @@ var thunksTs = map[string]string{
 	// *******************************
 	"thunks.ts": `
 $#emit importWasmLib
-import * as sc from "../$package/index";
-import * as impl from "./index"
+import * as sc from '../$package/index';
+import * as impl from './index'
 
 const exportMap = new wasmlib.ScExportMap(
     [
@@ -50,14 +50,14 @@ $#if view libExportViewThunk
 	"libThunk": `
 
 function $kind$FuncName$+Thunk(ctx: wasmlib.Sc$Kind$+Context): void {
-    ctx.log("$package.$kind$FuncName");
+    ctx.log('$package.$kind$FuncName');
     let f = new sc.$FuncName$+Context();
 $#if result initResultsDict
 $#emit accessCheck
 $#each mandatory requireMandatory
     impl.$kind$FuncName(ctx, f);
 $#if result returnResultDict
-    ctx.log("$package.$kind$FuncName ok");
+    ctx.log('$package.$kind$FuncName ok');
 }
 `,
 	// *******************************
@@ -71,7 +71,7 @@ $#if result returnResultDict
 `,
 	// *******************************
 	"requireMandatory": `
-    ctx.require(f.params.$fldName().exists(), "missing mandatory param: $fldName");
+    ctx.require(f.params.$fldName().exists(), 'missing mandatory param: $fldName');
 `,
 	// *******************************
 	"accessCheck": `
@@ -87,7 +87,7 @@ $#set accessFinalize accessDone
 	"caseAccessself": `
 
 $#each funcAccessComment _funcAccessComment
-    ctx.require(ctx.caller().equals(ctx.accountID()), "no permission");
+    ctx.require(ctx.caller().equals(ctx.accountID()), 'no permission');
 
 $#set accessFinalize accessDone
 `,
@@ -95,7 +95,7 @@ $#set accessFinalize accessDone
 	"caseAccesschain": `
 
 $#each funcAccessComment _funcAccessComment
-    ctx.require(ctx.caller().equals(ctx.chainOwnerID()), "no permission");
+    ctx.require(ctx.caller().equals(ctx.chainOwnerID()), 'no permission');
 
 $#set accessFinalize accessDone
 `,
@@ -104,8 +104,8 @@ $#set accessFinalize accessDone
 
 $#each funcAccessComment _funcAccessComment
     const access = f.state.$funcAccess();
-    ctx.require(access.exists(), "access not set: $funcAccess");
-    ctx.require(ctx.caller().equals(access.value()), "no permission");
+    ctx.require(access.exists(), 'access not set: $funcAccess');
+    ctx.require(ctx.caller().equals(access.value()), 'no permission');
 
 `,
 	// *******************************

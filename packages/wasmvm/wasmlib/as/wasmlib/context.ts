@@ -3,10 +3,10 @@
 
 // encapsulates standard host entities into a simple interface
 
-import {ScFuncCallContext, ScViewCallContext} from "./contract";
-import {ScSandboxFunc, ScSandboxView} from "./sandbox";
-import {ScChainID} from "./wasmtypes/scchainid";
-import {ScHname} from "./wasmtypes/schname";
+import {ScFuncCallContext, ScViewCallContext} from './contract';
+import {ScSandboxFunc, ScSandboxView} from './sandbox';
+import {ScChainID} from './wasmtypes/scchainid';
+import {ScHname} from './wasmtypes/schname';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
