@@ -18,7 +18,7 @@ import (
 
 const inccounterName = "inc"
 
-func (e *ChainEnv) deployInccounter42() *isc.ContractAgentID {
+func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	hname := isc.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Contract.ProgramHash
@@ -112,16 +112,15 @@ func (e *ChainEnv) waitUntilCounterEquals(hname isc.Hname, expected int64, durat
 	}
 }
 
-func TestPostDeployInccounter(t *testing.T) {
-	e := SetupWithChain(t)
-	contractID := e.deployInccounter42()
+// executed in cluster_test.go
+func testPostDeployInccounter(t *testing.T, e *ChainEnv) {
+	contractID := deployInccounter42(e)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 }
 
-func TestPost1Request(t *testing.T) {
-	e := SetupWithChain(t)
-
-	contractID := e.deployInccounter42()
+// executed in cluster_test.go
+func testPost1Request(t *testing.T, e *ChainEnv) {
+	contractID := deployInccounter42(e)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
@@ -138,10 +137,9 @@ func TestPost1Request(t *testing.T) {
 	e.expectCounter(contractID.Hname(), 43)
 }
 
-func TestPost3Recursive(t *testing.T) {
-	e := SetupWithChain(t)
-
-	contractID := e.deployInccounter42()
+// executed in cluster_test.go
+func testPost3Recursive(t *testing.T, e *ChainEnv) {
+	contractID := deployInccounter42(e)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
@@ -164,10 +162,9 @@ func TestPost3Recursive(t *testing.T) {
 	e.waitUntilCounterEquals(contractID.Hname(), 43+3, 10*time.Second)
 }
 
-func TestPost5Requests(t *testing.T) {
-	e := SetupWithChain(t)
-
-	contractID := e.deployInccounter42()
+// executed in cluster_test.go
+func testPost5Requests(t *testing.T, e *ChainEnv) {
+	contractID := deployInccounter42(e)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
@@ -194,10 +191,9 @@ func TestPost5Requests(t *testing.T) {
 	e.checkLedger()
 }
 
-func TestPost5AsyncRequests(t *testing.T) {
-	e := SetupWithChain(t)
-
-	contractID := e.deployInccounter42()
+// executed in cluster_test.go
+func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
+	contractID := deployInccounter42(e)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()

@@ -16,23 +16,21 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-type env struct {
-	t   *testing.T
-	Clu *cluster.Cluster
-}
-
-func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *env {
-	return &env{t: t, Clu: newCluster(t, opt...)}
+// TODO remove this?
+func setupWithNoChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
+	return &ChainEnv{t: t, Clu: newCluster(t, opt...)}
 }
 
 type ChainEnv struct {
-	*env
+	t     *testing.T
+	Clu   *cluster.Cluster
 	Chain *cluster.Chain
 }
 
 func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *ChainEnv {
 	return &ChainEnv{
-		env:   &env{t: t, Clu: clu},
+		t:     t,
+		Clu:   clu,
 		Chain: chain,
 	}
 }
@@ -68,7 +66,7 @@ func (e *ChainEnv) createNewClient() *scclient.SCClient {
 	require.NoError(e.t, err)
 	retries := 0
 	for {
-		outs, err := e.env.Clu.L1Client().OutputMap(addr)
+		outs, err := e.Clu.L1Client().OutputMap(addr)
 		require.NoError(e.t, err)
 		if len(outs) > 0 {
 			break
