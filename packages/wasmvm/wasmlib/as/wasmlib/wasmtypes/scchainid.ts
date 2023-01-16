@@ -1,11 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {addressFromBytes, addressFromString, addressToString, ScAddress, ScAddressAlias} from "./scaddress";
-import {bytesCompare} from "./scbytes";
+import {panic} from '../sandbox';
+import {WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {addressFromBytes, addressFromString, addressToString, ScAddress, ScAddressAlias} from './scaddress';
+import {bytesCompare} from './scbytes';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -32,7 +32,7 @@ export class ScChainID {
 
     // human-readable string representation
     public toString(): string {
-        return chainIDToString(this)
+        return chainIDToString(this);
     }
 }
 
@@ -51,7 +51,7 @@ export function chainIDFromBytes(buf: Uint8Array | null): ScChainID {
         return new ScChainID();
     }
     if (buf.length != ScChainIDLength) {
-        panic("invalid ChainID length");
+        panic('invalid ChainID length');
     }
     return chainIDFromBytesUnchecked(buf);
 }
@@ -63,7 +63,7 @@ export function chainIDToBytes(value: ScChainID): Uint8Array {
 export function chainIDFromString(value: string): ScChainID {
     const addr = addressFromString(value);
     if (addr.id[0] != ScAddressAlias) {
-        panic("invalid ChainID address type");
+        panic('invalid ChainID address type');
     }
     return chainIDFromBytes(addr.id.slice(1));
 }
@@ -73,7 +73,7 @@ export function chainIDToString(value: ScChainID): string {
 }
 
 function chainIDFromBytesUnchecked(buf: Uint8Array): ScChainID {
-    let o = new ScChainID();
+    const o = new ScChainID();
     o.id = buf.slice(0);
     return o;
 }

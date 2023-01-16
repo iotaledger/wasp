@@ -1,19 +1,19 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {ScSandboxUtils} from "../sandboxutils";
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {bytesCompare} from "./scbytes";
-import {ScAgentID} from "./scagentid";
+import {panic} from '../sandbox';
+import {ScSandboxUtils} from '../sandboxutils';
+import {hexDecode, hexEncode, WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {bytesCompare} from './scbytes';
+import {ScAgentID} from './scagentid';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 export const ScAddressAlias: u8 = 8;
 export const ScAddressEd25519: u8 = 0;
 export const ScAddressNFT: u8 = 16;
-export const ScAddressEth: u8 = 32
+export const ScAddressEth: u8 = 32;
 
 export const ScLengthAlias = 33;
 export const ScLengthEd25519 = 33;
@@ -49,13 +49,13 @@ export class ScAddress {
 
 // TODO address type-dependent encoding/decoding?
 export function addressDecode(dec: WasmDecoder): ScAddress {
-    let addr = new ScAddress();
+    const addr = new ScAddress();
     addr.id = dec.fixedBytes(ScAddressLength);
     return addr;
 }
 
 export function addressEncode(enc: WasmEncoder, value: ScAddress): void {
-    enc.fixedBytes(value.id, ScAddressLength)
+    enc.fixedBytes(value.id, ScAddressLength);
 }
 
 export function addressFromBytes(buf: Uint8Array | null): ScAddress {
@@ -66,31 +66,31 @@ export function addressFromBytes(buf: Uint8Array | null): ScAddress {
     switch (buf[0]) {
         case ScAddressAlias:
             if (buf.length != ScLengthAlias) {
-                panic("invalid Address length: Alias");
+                panic('invalid Address length: Alias');
             }
             break;
         case ScAddressEd25519:
             if (buf.length != ScLengthEd25519) {
-                panic("invalid Address length: Ed25519");
+                panic('invalid Address length: Ed25519');
             }
             break;
         case ScAddressNFT:
             if (buf.length != ScLengthNFT) {
-                panic("invalid Address length: NFT");
+                panic('invalid Address length: NFT');
             }
             break;
         case ScAddressEth:
             if (buf.length != ScAddressEthLength) {
-                panic("invalid Address length: Eth");
+                panic('invalid Address length: Eth');
             }
             break;
         default:
-            panic("invalid Address type")
+            panic('invalid Address type');
     }
     for (let i = 0; i < buf.length; i++) {
         addr.id[i] = buf[i];
     }
-    return addr
+    return addr;
 }
 
 export function addressToBytes(value: ScAddress): Uint8Array {
@@ -104,15 +104,15 @@ export function addressToBytes(value: ScAddress): Uint8Array {
         case ScAddressEth:
             return value.id.slice(0, ScAddressEthLength);
         default:
-            panic("unexpected Address type")
+            panic('unexpected Address type');
     }
     return new Uint8Array(0);
 }
 
 export function addressFromString(value: string): ScAddress {
-    if (value.indexOf("0x") == 0) {
+    if (value.indexOf('0x') == 0) {
         const hexBytes = hexDecode(value);
-        const b = new Uint8Array(hexBytes.length + 1)
+        const b = new Uint8Array(hexBytes.length + 1);
         b[0] = ScAddressEth;
         b.set(hexBytes, 1);
         return addressFromBytes(b);

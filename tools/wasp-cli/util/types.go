@@ -51,7 +51,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return hash.Bytes()
 	case "hname":
-		hn, err := isc.HnameFromString(s)
+		hn, err := isc.HnameFromHexString(s)
 		log.Check(err)
 		return hn.Bytes()
 	case "int8":

@@ -19,7 +19,7 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 		return err
 	}
 
-	contractHname, err := params.DecodeHNameFromHNameString(e, "contractHname")
+	contractHname, err := params.DecodeHNameFromHNameHexString(e, "contractHname")
 	if err != nil {
 		return err
 	}

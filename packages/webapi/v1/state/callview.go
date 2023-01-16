@@ -79,7 +79,7 @@ func (s *callViewService) handleCallView(c echo.Context, functionHname isc.Hname
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
-	contractHname, err := isc.HnameFromString(c.Param("contractHname"))
+	contractHname, err := isc.HnameFromHexString(c.Param("contractHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
 	}
@@ -113,7 +113,7 @@ func (s *callViewService) handleCallViewByName(c echo.Context) error {
 }
 
 func (s *callViewService) handleCallViewByHname(c echo.Context) error {
-	functionHname, err := isc.HnameFromString(c.Param("functionHname"))
+	functionHname, err := isc.HnameFromHexString(c.Param("functionHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid function ID: %+v", c.Param("functionHname")))
 	}

@@ -1,8 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {hexDecode, hexEncode, WasmDecoder, WasmEncoder} from "./codec";
-import {Proxy} from "./proxy";
+import {hexDecode, hexEncode, WasmDecoder, WasmEncoder} from './codec';
+import {Proxy} from './proxy';
 
 export function bytesCompare(lhs: Uint8Array, rhs: Uint8Array): i32 {
     const size = (lhs.length < rhs.length) ? lhs.length : rhs.length;

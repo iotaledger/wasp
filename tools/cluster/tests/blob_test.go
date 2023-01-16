@@ -10,37 +10,10 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
-
-func setupBlobTest(t *testing.T) *ChainEnv {
-	e := setupWithNoChain(t)
-
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, e.Clu, chain)
-	chEnv.checkCoreContracts()
-
-	for _, i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
-		require.NoError(t, err)
-		require.GreaterOrEqual(t, blockIndex, uint32(2))
-	}
-
-	_, myAddress, err := e.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-
-	if !e.Clu.AssertAddressBalances(myAddress,
-		isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount)) {
-		t.Fatal()
-	}
-	return chEnv
-}
 
 func (e *ChainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
 	ret, err := e.Chain.Cluster.WaspClient(0).CallView(
@@ -70,14 +43,10 @@ func (e *ChainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) [
 	return ret
 }
 
-func TestBlobDeployChain(t *testing.T) {
-	e := setupBlobTest(t)
+// executed in cluster_test.go
+func testBlobStoreSmallBlob(t *testing.T, e *ChainEnv) {
 	ret := e.getBlobInfo(hashing.NilHash)
 	require.Len(t, ret, 0)
-}
-
-func TestBlobStoreSmallBlob(t *testing.T) {
-	e := setupBlobTest(t)
 
 	description := "testing the blob"
 	fv := codec.MakeDict(map[string]interface{}{
@@ -111,9 +80,8 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	require.EqualValues(t, []byte(description), retBin)
 }
 
-func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
-	e := setupBlobTest(t)
-
+// executed in cluster_test.go
+func testBlobStoreManyBlobsNoEncoding(t *testing.T, e *ChainEnv) {
 	var err error
 	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))

@@ -25,8 +25,15 @@ func (c *Controller) executeCallView(e echo.Context) error {
 	}
 
 	// Get contract and function. The request model supports HName and common string names. HNames are preferred.
-	contractHName := callViewRequest.ContractHName
-	functionHName := callViewRequest.FunctionHName
+	contractHName, err := isc.HnameFromHexString(callViewRequest.ContractHName)
+	if err != nil {
+		return apierrors.InvalidPropertyError("contractHName", err)
+	}
+
+	functionHName, err := isc.HnameFromHexString(callViewRequest.FunctionHName)
+	if err != nil {
+		return apierrors.InvalidPropertyError("functionHName", err)
+	}
 
 	if contractHName == 0 {
 		contractHName = isc.Hn(callViewRequest.ContractName)

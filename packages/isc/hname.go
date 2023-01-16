@@ -65,7 +65,7 @@ func (hn Hname) String() string {
 	return fmt.Sprintf("%08x", int(hn))
 }
 
-func HnameFromString(s string) (Hname, error) {
+func HnameFromHexString(s string) (Hname, error) {
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
 		return 0, fmt.Errorf("cannot parse hname: %w", err)

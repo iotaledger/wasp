@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {sandbox} from "./host";
+import {sandbox} from './host';
 import {
     FnUtilsBech32Decode,
     FnUtilsBech32Encode,
@@ -13,14 +13,14 @@ import {
     FnUtilsHashBlake2b,
     FnUtilsHashName,
     FnUtilsHashSha3
-} from "./sandbox";
-import {boolFromBytes} from "./wasmtypes/scbool";
-import {hashFromBytes, ScHash} from "./wasmtypes/schash";
-import {WasmDecoder, WasmEncoder} from "./wasmtypes/codec";
-import {addressFromBytes, addressToBytes, ScAddress} from "./wasmtypes/scaddress";
-import {stringFromBytes, stringToBytes} from "./wasmtypes/scstring";
-import {uint32Encode} from "./wasmtypes/scuint32";
-import {hnameFromBytes, ScHname} from "./wasmtypes/schname";
+} from './sandbox';
+import {boolFromBytes} from './wasmtypes/scbool';
+import {hashFromBytes, ScHash} from './wasmtypes/schash';
+import {WasmDecoder, WasmEncoder} from './wasmtypes/codec';
+import {addressFromBytes, addressToBytes, ScAddress} from './wasmtypes/scaddress';
+import {stringFromBytes, stringToBytes} from './wasmtypes/scstring';
+import {uint32Encode} from './wasmtypes/scuint32';
+import {hnameFromBytes, ScHname} from './wasmtypes/schname';
 
 export class ScSandboxUtils {
     // decodes the specified bech32-encoded string value to its original bytes

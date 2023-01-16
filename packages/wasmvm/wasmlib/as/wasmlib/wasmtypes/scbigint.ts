@@ -1,11 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {panic} from "../sandbox";
-import {ScUint64Length, uint64FromBytes, uint64FromString, uint64ToBytes, uint64ToString} from "./scuint64";
-import {WasmDecoder, WasmEncoder, zeroes} from "./codec";
-import {Proxy} from "./proxy";
-import {uint16FromBytes} from "./scuint16";
+import {panic} from '../sandbox';
+import {ScUint64Length, uint64FromBytes, uint64FromString, uint64ToBytes, uint64ToString} from './scuint64';
+import {WasmDecoder, WasmEncoder, zeroes} from './codec';
+import {Proxy} from './proxy';
+import {uint16FromBytes} from './scuint16';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
@@ -86,7 +86,7 @@ export class ScBigInt {
 
     public divMod(rhs: ScBigInt): ScBigInt[] {
         if (rhs.isZero()) {
-            panic("divide by zero");
+            panic('divide by zero');
         }
         const cmp = this.cmp(rhs);
         if (cmp <= 0) {
@@ -139,7 +139,7 @@ export class ScBigInt {
         // ultimately converge the quotient to the actual value of lhs / rhs
 
         // determine the initial guess for the quotient
-        let bufLen = lhsLen - rhsLen;
+        const bufLen = lhsLen - rhsLen;
         const buf = new Uint8Array(bufLen);
         const lhs16 = uint16FromBytes(this.bytes.slice(lhsLen - 2));
         const rhs16 = rhs.bytes[rhsLen - 1] as u16;
@@ -279,12 +279,12 @@ export class ScBigInt {
             return ScBigInt.normalize(this.bytes);
         }
 
-        let whole_bytes = shift32 >> 3;
-        let shift = (shift32 & 0x07) as u16;
+        const whole_bytes = shift32 >> 3;
+        const shift = (shift32 & 0x07) as u16;
 
-        let lhs_len = this.bytes.length;
+        const lhs_len = this.bytes.length;
         let buf_len = lhs_len + whole_bytes + 1;
-        let buf = new Uint8Array(buf_len);
+        const buf = new Uint8Array(buf_len);
         let word: u16 = 0;
         for (let i = lhs_len; i > 0; i--) {
             word = (word << 8) + (this.bytes[i - 1] as u16);
@@ -300,17 +300,17 @@ export class ScBigInt {
             return ScBigInt.normalize(this.bytes);
         }
 
-        let whole_bytes = shift32 >> 3;
-        let shift = (shift32 & 0x07) as u16;
+        const whole_bytes = shift32 >> 3;
+        const shift = (shift32 & 0x07) as u16;
 
-        let lhs_len = this.bytes.length;
+        const lhs_len = this.bytes.length;
         if (whole_bytes >= (lhs_len as u32)) {
             return ScBigInt.zero;
         }
 
-        let buf_len = lhs_len - whole_bytes;
-        let buf = new Uint8Array(buf_len);
-        let bytes = this.bytes.slice(whole_bytes);
+        const buf_len = lhs_len - whole_bytes;
+        const buf = new Uint8Array(buf_len);
+        const bytes = this.bytes.slice(whole_bytes);
         let word = (bytes[0] as u16) << 8;
         for (let i = 1; i < buf_len; i++) {
             word = (word >> 8) + ((bytes[i] as u16) << 8);
@@ -324,7 +324,7 @@ export class ScBigInt {
         const cmp = this.cmp(rhs);
         if (cmp <= 0) {
             if (cmp < 0) {
-                panic("subtraction underflow");
+                panic('subtraction underflow');
             }
             return ScBigInt.zero;
         }
@@ -359,7 +359,7 @@ export class ScBigInt {
     public uint64(): u64 {
         const uintLen = this.bytes.length;
         if (uintLen > ScUint64Length) {
-            panic("value exceeds Uint64");
+            panic('value exceeds Uint64');
         }
         const buf = new Uint8Array(ScUint64Length);
         buf.set(this.bytes);
@@ -401,7 +401,7 @@ export function bigIntFromString(value: string): ScBigInt {
     const digits = value.length - 18;
     const lhs = bigIntFromString(value.slice(0, digits));
     const rhs = bigIntFromString(value.slice(digits));
-    return lhs.mul(quintillion).add(rhs)
+    return lhs.mul(quintillion).add(rhs);
 }
 
 export function bigIntToString(value: ScBigInt): string {
@@ -410,14 +410,14 @@ export function bigIntToString(value: ScBigInt): string {
     }
     const divMod = value.divMod(quintillion);
     const digits = uint64ToString(divMod[1].uint64());
-    const zeroes = "000000000000000000".slice(18 - digits.length);
+    const zeroes = '000000000000000000'.slice(18 - digits.length);
     return bigIntToString(divMod[0]) + zeroes + digits;
 }
 
 // Stupid big.Int uses BigEndian byte encoding, so our external byte encoding should
 // reflect this by reverse()-ing the byte order in BigIntFromBytes and BigIntToBytes
 function reverse(bytes: Uint8Array): Uint8Array {
-    let n = bytes.length;
+    const n = bytes.length;
     const buf = new Uint8Array(n);
     for (let i = 0; i < n; i++) {
         buf[n - 1 - i] = bytes[i];

@@ -35,27 +35,21 @@ type contractWithMessageCounterEnv struct {
 	*contractEnv
 }
 
-func setupWithContract(t *testing.T) *contractWithMessageCounterEnv {
-	clu := newCluster(t)
-
-	chain, err := clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, clu, chain)
-	cEnv := chEnv.deployWasmContract(incName, incDescription, nil)
+func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
+	cEnv := env.deployWasmContract(incName, incDescription, nil)
 
 	// deposit funds onto the contract account, so it can post a L1 request
-	contractAgentID := isc.NewContractAgentID(chEnv.Chain.ChainID, incHname)
-	tx, err := chEnv.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
+	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, incHname)
+	tx, err := env.NewChainClient().Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewFungibleBaseTokens(1_500_000),
 		Args: map[kv.Key][]byte{
 			accounts.ParamAgentID: codec.EncodeAgentID(contractAgentID),
 		},
 		Allowance: isc.NewAllowanceBaseTokens(1_000_000),
 	})
-	require.NoError(chEnv.t, err)
-	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(chEnv.t, err)
+	require.NoError(env.t, err)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, 30*time.Second)
+	require.NoError(env.t, err)
 
 	return &contractWithMessageCounterEnv{contractEnv: cEnv}
 }
@@ -119,24 +113,11 @@ func (e *ChainEnv) checkWasmContractCounter(expected int) {
 	}
 }
 
-func TestIncDeployment(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
-	e.checkSC(0)
-	e.checkWasmContractCounter(0)
-}
-
-func TestIncNothing(t *testing.T) {
-	testNothing(t, 2)
-}
-
-func TestInc5xNothing(t *testing.T) {
-	testNothing(t, 6)
-}
-
-func testNothing(t *testing.T, numRequests int) {
-	e := setupWithContract(t)
-
+	numRequests := 6
 	entryPoint := isc.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.NewChainClient().Post1Request(incHname, entryPoint)
@@ -151,16 +132,11 @@ func testNothing(t *testing.T, numRequests int) {
 	e.checkWasmContractCounter(0)
 }
 
-func TestIncIncrement(t *testing.T) {
-	testIncrement(t, 1)
-}
+// executed in cluster_test.go
+func testIncrement(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
-func TestInc5xIncrement(t *testing.T) {
-	testIncrement(t, 5)
-}
-
-func testIncrement(t *testing.T, numRequests int) {
-	e := setupWithContract(t)
+	numRequests := 5
 
 	entryPoint := isc.Hn("increment")
 	for i := 0; i < numRequests; i++ {
@@ -174,8 +150,9 @@ func testIncrement(t *testing.T, numRequests int) {
 	e.checkWasmContractCounter(numRequests)
 }
 
-func TestIncrementWithTransfer(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncrementWithTransfer(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
@@ -183,8 +160,9 @@ func TestIncrementWithTransfer(t *testing.T) {
 	e.checkWasmContractCounter(1)
 }
 
-func TestIncCallIncrement1(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncCallIncrement1(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
 	entryPoint := isc.Hn("callIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -192,8 +170,9 @@ func TestIncCallIncrement1(t *testing.T) {
 	e.checkWasmContractCounter(2)
 }
 
-func TestIncCallIncrement2Recurse5x(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncCallIncrement2Recurse5x(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
 	entryPoint := isc.Hn("callIncrementRecurse5x")
 	e.postRequest(incHname, entryPoint, 1_000, nil)
@@ -201,8 +180,9 @@ func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	e.checkWasmContractCounter(6)
 }
 
-func TestIncPostIncrement(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncPostIncrement(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 
 	entryPoint := isc.Hn("postIncrement")
 	e.postRequest(incHname, entryPoint, 1, nil)
@@ -210,9 +190,10 @@ func TestIncPostIncrement(t *testing.T) {
 	e.waitUntilCounterEquals(incHname, 2, 30*time.Second)
 }
 
-func TestIncRepeatManyIncrement(t *testing.T) {
+// executed in cluster_test.go
+func testIncRepeatManyIncrement(t *testing.T, env *ChainEnv) {
 	const numRepeats = 5
-	e := setupWithContract(t)
+	e := setupContract(env)
 
 	entryPoint := isc.Hn("repeatMany")
 	e.postRequest(incHname, entryPoint, numRepeats, map[string]interface{}{
@@ -236,29 +217,33 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	}
 }
 
-func TestIncLocalStateInternalCall(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncLocalStateInternalCall(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 	entryPoint := isc.Hn("localStateInternalCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkWasmContractCounter(2)
 }
 
-func TestIncLocalStateSandboxCall(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncLocalStateSandboxCall(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 	entryPoint := isc.Hn("localStateSandboxCall")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkWasmContractCounter(0)
 }
 
-func TestIncLocalStatePost(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncLocalStatePost(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 	entryPoint := isc.Hn("localStatePost")
 	e.postRequest(incHname, entryPoint, 3, nil)
 	e.checkWasmContractCounter(0)
 }
 
-func TestIncViewCounter(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncViewCounter(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 	entryPoint := isc.Hn("increment")
 	e.postRequest(incHname, entryPoint, 0, nil)
 	e.checkWasmContractCounter(1)
@@ -274,8 +259,9 @@ func TestIncViewCounter(t *testing.T) {
 
 // privtangle tests have accellerate milestones (check `startCoordinator` on `privtangle.go`)
 // right now each milestone is issued each 100ms which means a "1s increase" each 100ms
-func TestIncCounterTimelock(t *testing.T) {
-	e := setupWithContract(t)
+// executed in cluster_test.go
+func testIncCounterTimelock(t *testing.T, env *ChainEnv) {
+	e := setupContract(env)
 	e.postRequest(incHname, isc.Hn("increment"), 0, nil)
 	e.checkWasmContractCounter(1)
 

@@ -5,6 +5,6 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-export * from "./consts";
-export * from "./contract";
-export * from "./structs";
+export * from './consts';
+export * from './contract';
+export * from './structs';

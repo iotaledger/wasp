@@ -47,7 +47,7 @@ func TestHname(t *testing.T) {
 	require.EqualValues(t, hn1, hn1back)
 
 	s := hn1.String()
-	hn1back, err = HnameFromString(s)
+	hn1back, err = HnameFromHexString(s)
 	require.NoError(t, err)
 	require.EqualValues(t, hn1, hn1back)
 }

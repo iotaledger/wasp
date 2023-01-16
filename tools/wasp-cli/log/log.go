@@ -3,7 +3,9 @@ package log
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/client"
 	"os"
 	"strings"
 	"text/tabwriter"
@@ -141,6 +143,10 @@ func PrintCLIOutput(output CLIOutput) {
 
 func Check(err error) {
 	if err != nil {
+		if errors.Is(err, client.ErrNotAuthorized) {
+			err = errors.New("unauthorized request: are you logged in? (wasp-cli login)")
+		}
+
 		errorModel := &ErrorModel{err.Error()}
 		message, _ := GetCLIOutputText(errorModel)
 		Fatalf("%v", message)

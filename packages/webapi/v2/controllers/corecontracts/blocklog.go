@@ -263,14 +263,13 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	return e.JSON(http.StatusOK, eventsResponse)
 }
 
-//nolint:unused
 func (c *Controller) getContractEvents(e echo.Context) error {
 	chainID, err := params.DecodeChainID(e)
 	if err != nil {
 		return err
 	}
 
-	contractHname, err := params.DecodeHNameFromHNameString(e, "contractHname")
+	contractHname, err := params.DecodeHNameFromHNameHexString(e, "contractHname")
 	if err != nil {
 		return err
 	}

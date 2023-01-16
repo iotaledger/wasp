@@ -16,11 +16,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func TestBasicAccounts(t *testing.T) {
-	e := setupWithNoChain(t)
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-	newChainEnv(t, e.Clu, chain).testBasicAccounts()
+// executed in cluster_test.go
+func testBasicAccounts(t *testing.T, env *ChainEnv) {
+	testAccounts(env)
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
@@ -32,7 +30,8 @@ func TestBasicAccountsNLow(t *testing.T) {
 		}
 		chain, err := e.Clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
-		newChainEnv(tt, e.Clu, chain).testBasicAccounts()
+		env := newChainEnv(tt, e.Clu, chain)
+		testAccounts(env)
 	}
 	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
 	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
@@ -40,7 +39,7 @@ func TestBasicAccountsNLow(t *testing.T) {
 	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
-func (e *ChainEnv) testBasicAccounts() {
+func testAccounts(e *ChainEnv) {
 	hname := isc.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
@@ -108,18 +107,12 @@ func (e *ChainEnv) testBasicAccounts() {
 	e.checkBalanceOnChain(incCounterAgentID, isc.BaseTokenID, 0)
 }
 
-func TestBasic2Accounts(t *testing.T) {
-	e := setupWithNoChain(t)
-
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, e.Clu, chain)
-
+// executed in cluster_test.go
+func testBasic2Accounts(t *testing.T, env *ChainEnv) {
+	chain := env.Chain
 	hname := isc.Hn(nativeIncCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Contract.ProgramHash
-	require.NoError(t, err)
 
 	tx, err := chain.DeployContract(nativeIncCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
@@ -128,9 +121,9 @@ func TestBasic2Accounts(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, 30*time.Second)
-	require.NoError(e.t, err)
+	require.NoError(env.t, err)
 
-	chEnv.checkCoreContracts()
+	env.checkCoreContracts()
 
 	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
@@ -155,13 +148,13 @@ func TestBasic2Accounts(t *testing.T) {
 	originatorSigScheme := chain.OriginatorKeyPair
 	originatorAddress := chain.OriginatorAddress()
 
-	chEnv.checkLedger()
+	env.checkLedger()
 
-	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
+	myWallet, myAddress, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	transferBaseTokens := 1 * isc.Million
-	myWalletClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, myWallet)
+	myWalletClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
 	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
@@ -169,23 +162,23 @@ func TestBasic2Accounts(t *testing.T) {
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
-	chEnv.checkLedger()
+	env.checkLedger()
 
 	for _, i := range chain.CommitteeNodes {
 		counterValue, err := chain.GetCounterValue(hname, i)
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
 	}
-	if !e.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
+	if !env.Clu.AssertAddressBalances(myAddress, isc.NewFungibleBaseTokens(utxodb.FundsFromFaucetAmount-transferBaseTokens)) {
 		t.Fatal()
 	}
 
-	chEnv.printAccounts("withdraw before")
+	env.printAccounts("withdraw before")
 
 	// withdraw back 500 base tokens to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Bech32(parameters.L1().Protocol.Bech32HRP))
-	origL1Balance := e.Clu.AddressBalances(originatorAddress).BaseTokens
-	originatorClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens
+	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	allowanceBaseTokens := uint64(800_000)
 	req2, err := originatorClient.PostOffLedgerRequest(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname(),
 		chainclient.PostRequestParams{
@@ -197,9 +190,9 @@ func TestBasic2Accounts(t *testing.T) {
 	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), 30*time.Second)
 	require.NoError(t, err)
 
-	chEnv.checkLedger()
+	env.checkLedger()
 
-	chEnv.printAccounts("withdraw after")
+	env.printAccounts("withdraw after")
 
-	require.Equal(t, e.Clu.AddressBalances(originatorAddress).BaseTokens, origL1Balance+allowanceBaseTokens)
+	require.Equal(t, env.Clu.AddressBalances(originatorAddress).BaseTokens, origL1Balance+allowanceBaseTokens)
 }

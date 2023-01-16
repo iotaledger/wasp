@@ -5,8 +5,8 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
-import * as sc from "./index";
+import * as wasmtypes from '../wasmtypes';
+import * as sc from './index';
 
 export class ImmutableAddAllowedStateControllerAddressParams extends wasmtypes.ScProxy {
     stateControllerAddress(): wasmtypes.ScImmutableAddress {

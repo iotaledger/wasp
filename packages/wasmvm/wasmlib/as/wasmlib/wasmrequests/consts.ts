@@ -5,8 +5,8 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
-export const ScName        = "requests";
-export const ScDescription = "WasmLib request structures";
+export const ScName        = 'requests';
+export const ScDescription = 'WasmLib request structures';
 export const HScName       = new wasmtypes.ScHname(0x98e19453);

@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {ScTransfer} from "./assets";
-import {ScDict} from "./dict";
-import {sandbox} from "./host";
-import {FnCall, FnPost, panic, ScSandbox} from "./sandbox";
-import {CallRequest, PostRequest} from "./wasmrequests";
-import {ScChainID} from "./wasmtypes/scchainid";
-import {Proxy} from "./wasmtypes/proxy";
-import {ScHname} from "./wasmtypes/schname";
+import {ScTransfer} from './assets';
+import {ScDict} from './dict';
+import {sandbox} from './host';
+import {FnCall, FnPost, panic, ScSandbox} from './sandbox';
+import {CallRequest, PostRequest} from './wasmrequests';
+import {ScChainID} from './wasmtypes/scchainid';
+import {Proxy} from './wasmtypes/proxy';
+import {ScHname} from './wasmtypes/schname';
 
 // base contract objects
 
@@ -30,7 +30,7 @@ export function newCallParamsProxy(v: ScView): Proxy {
 export function newCallResultsProxy(v: ScView): Proxy {
     const proxy = new ScDict(null).asProxy();
     v.resultsProxy = proxy;
-    return proxy
+    return proxy;
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -85,7 +85,7 @@ export class ScInitFunc extends ScView {
     }
 
     call(): void {
-        return panic("cannot call init");
+        return panic('cannot call init');
     }
 }
 
@@ -111,12 +111,12 @@ export class ScFunc extends ScView {
 
     call(): void {
         if (this.transferAssets != null) {
-            panic("cannot transfer assets in a call");
-            return
+            panic('cannot transfer assets in a call');
+            return;
         }
         if (this.delaySeconds != 0) {
-            panic("cannot delay a call");
-            return
+            panic('cannot delay a call');
+            return;
         }
         this.callWithAllowance(this.allowanceAssets);
     }
@@ -136,14 +136,14 @@ export class ScFunc extends ScView {
         req.contract = this.hContract;
         req.function = this.hFunction;
         req.params = this.params.toBytes();
-        let allowance = this.allowanceAssets;
+        const allowance = this.allowanceAssets;
         if (allowance !== null) {
             req.allowance = allowance.toBytes();
         }
-        let transfer = this.transferAssets;
+        const transfer = this.transferAssets;
         if (transfer !== null) {
             req.transfer = transfer.toBytes();
-         }
+        }
         req.delay = this.delaySeconds;
         const res = sandbox(FnPost, req.bytes());
         if (this.resultsProxy) {
