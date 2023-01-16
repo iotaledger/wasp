@@ -18,6 +18,7 @@ type Controller struct {
 
 	chainService     interfaces.ChainService
 	evmService       interfaces.EVMService
+	nodeService      interfaces.NodeService
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
@@ -26,12 +27,13 @@ type Controller struct {
 	webSocketHandler *publisherws.PublisherWebSocket
 }
 
-func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, committeeService interfaces.CommitteeService, evmService interfaces.EVMService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
+func NewChainController(log *loggerpkg.Logger, chainService interfaces.ChainService, committeeService interfaces.CommitteeService, evmService interfaces.EVMService, nodeService interfaces.NodeService, offLedgerService interfaces.OffLedgerService, registryService interfaces.RegistryService, vmService interfaces.VMService) interfaces.APIController {
 	return &Controller{
 		log:              log,
 		chainService:     chainService,
 		evmService:       evmService,
 		committeeService: committeeService,
+		nodeService:      nodeService,
 		offLedgerService: offLedgerService,
 		registryService:  registryService,
 		vmService:        vmService,
@@ -108,4 +110,20 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		AddResponse(http.StatusOK, "A list of all available contracts", mocker.Get([]models.ContractInfoResponse{}), nil).
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")
+
+	adminAPI.PUT("chains/:chainID/access-node/:publicKey", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "publicKey", "Nodes public key (Hex)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusCreated, "Access node was successfully added", nil, nil).
+		SetSummary("Configure a trusted node to be an access node.").
+		SetOperationId("addAccessNode")
+
+	adminAPI.DELETE("chains/:chainID/access-node/:publicKey", c.removeAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
+		AddParamPath("", "chainID", "ChainID (Bech32)").
+		AddParamPath("", "publicKey", "Nodes public key (Hex)").
+		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
+		AddResponse(http.StatusOK, "Access node was successfully removed", nil, nil).
+		SetSummary("Remove an access node.").
+		SetOperationId("removeAccessNode")
 }
