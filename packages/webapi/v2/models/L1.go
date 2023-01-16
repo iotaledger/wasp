@@ -9,8 +9,8 @@ import (
 )
 
 type Output struct {
-	OutputType iotago.OutputType `json:"outputType"`
-	Bytes      []byte            `json:"bytes"`
+	OutputType iotago.OutputType `json:"outputType" swagger:"desc(The output type)"`
+	Raw        string            `json:"raw" swagger:"desc(The raw data of the request)"`
 }
 
 func OutputFromIotaGoOutput(output iotago.Output) *Output {
@@ -21,15 +21,15 @@ func OutputFromIotaGoOutput(output iotago.Output) *Output {
 	bytes, _ := output.Serialize(serializer.DeSeriModeNoValidation, nil)
 	return &Output{
 		OutputType: output.Type(),
-		Bytes:      bytes,
+		Raw:        iotago.EncodeHex(bytes),
 	}
 }
 
 type OnLedgerRequest struct {
-	ID       string  `json:"id"`
-	OutputID string  `json:"outputId"`
-	Output   *Output `json:"output"`
-	Bytes    []byte  `json:"bytes"`
+	ID       string  `json:"id" swagger:"desc(The request ID)"`
+	OutputID string  `json:"outputId" swagger:"desc(The output ID)"`
+	Output   *Output `json:"output" swagger:"desc(The parsed output)"`
+	Raw      string  `json:"raw" swagger:"desc(The raw data of the request (Hex))"`
 }
 
 func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
@@ -41,13 +41,13 @@ func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
 		ID:       request.ID().String(),
 		OutputID: request.ID().OutputID().ToHex(),
 		Output:   OutputFromIotaGoOutput(request.Output()),
-		Bytes:    request.Bytes(),
+		Raw:      iotago.EncodeHex(request.Bytes()),
 	}
 }
 
 type InOutput struct {
-	OutputID string  `json:"outputId"`
-	Output   *Output `json:"output"`
+	OutputID string  `json:"outputId" swagger:"desc(The output ID)"`
+	Output   *Output `json:"output" swagger:"desc(The parsed output)"`
 }
 
 func InOutputFromISCInOutput(output *nodeconnmetrics.InOutput) *InOutput {
@@ -62,8 +62,8 @@ func InOutputFromISCInOutput(output *nodeconnmetrics.InOutput) *InOutput {
 }
 
 type InStateOutput struct {
-	OutputID string  `json:"outputId"`
-	Output   *Output `json:"output"`
+	OutputID string  `json:"outputId" swagger:"desc(The output ID)"`
+	Output   *Output `json:"output" swagger:"desc(The parsed output)"`
 }
 
 func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *InStateOutput {
@@ -78,8 +78,8 @@ func InStateOutputFromISCInStateOutput(output *nodeconnmetrics.InStateOutput) *I
 }
 
 type StateTransaction struct {
-	StateIndex    uint32 `json:"stateIndex"`
-	TransactionID string `json:"txId"`
+	StateIndex    uint32 `json:"stateIndex" swagger:"desc(The state index)"`
+	TransactionID string `json:"txId" swagger:"desc(The transaction ID)"`
 }
 
 func StateTransactionFromISCStateTransaction(transaction *nodeconnmetrics.StateTransaction) *StateTransaction {
@@ -96,8 +96,8 @@ func StateTransactionFromISCStateTransaction(transaction *nodeconnmetrics.StateT
 }
 
 type TxInclusionStateMsg struct {
-	TransactionID string `json:"txId"`
-	State         string `json:"state"`
+	TransactionID string `json:"txId" swagger:"desc(The transaction ID)"`
+	State         string `json:"state" swagger:"desc(The inclusion state)"`
 }
 
 func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetrics.TxInclusionStateMsg) *TxInclusionStateMsg {
@@ -112,11 +112,11 @@ func TxInclusionStateMsgFromISCTxInclusionStateMsg(inclusionState *nodeconnmetri
 }
 
 type Transaction struct {
-	TransactionID string `json:"txId"`
+	TransactionID string `json:"txId" swagger:"desc(The transaction ID)"`
 }
 
 type OutputID struct {
-	OutputID string `json:"outputId"`
+	OutputID string `json:"outputId" swagger:"desc(The output ID)"`
 }
 
 func TransactionFromIotaGoTransaction(transaction *iotago.Transaction) *Transaction {
