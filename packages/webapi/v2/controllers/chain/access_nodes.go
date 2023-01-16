@@ -4,14 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/webapi/v2/params"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
+	"github.com/iotaledger/wasp/packages/webapi/v2/params"
 )
 
 func decodeAccessNodeRequest(e echo.Context) (isc.ChainID, *cryptolib.PublicKey, error) {

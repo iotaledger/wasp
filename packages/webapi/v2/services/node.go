@@ -6,12 +6,11 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/webapi/v2/interfaces"
