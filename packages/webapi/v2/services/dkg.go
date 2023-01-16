@@ -58,7 +58,7 @@ func (d *DKGService) GetShares(sharedAddress iotago.Address) (*models.DKSharesIn
 }
 
 func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInfo, error) {
-	sharedBinaryPubKey, err := dkShare.DSSSharedPublic().MarshalBinary()
+	publicKey, err := dkShare.DSSSharedPublic().MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
@@ -70,21 +70,22 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 		if err != nil {
 			return nil, err
 		}
+
 		pubKeySharesHex[i] = iotago.EncodeHex(publicKeyShare)
 	}
 
-	nodePubKeys := dkShare.GetNodePubKeys()
-	nodePubKeysHex := make([]string, len(nodePubKeys))
-	for i := range nodePubKeys {
-		nodePubKeysHex[i] = nodePubKeys[i].String()
+	peerIdentities := dkShare.GetNodePubKeys()
+	peerIdentitiesHex := make([]string, len(peerIdentities))
+	for i := range peerIdentities {
+		peerIdentitiesHex[i] = peerIdentities[i].String()
 	}
 
 	dkShareInfo := &models.DKSharesInfo{
 		Address:         dkShare.GetAddress().Bech32(parameters.L1().Protocol.Bech32HRP),
+		PeerIdentities:  peerIdentitiesHex,
 		PeerIndex:       dkShare.GetIndex(),
-		PeerPublicKeys:  nodePubKeysHex,
+		PublicKey:       iotago.EncodeHex(publicKey),
 		PublicKeyShares: pubKeySharesHex,
-		SharedPublicKey: iotago.EncodeHex(sharedBinaryPubKey),
 		Threshold:       dkShare.GetT(),
 	}
 

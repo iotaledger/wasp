@@ -14,14 +14,14 @@ import (
 )
 
 func parsePeerPublicKeys(dkgRequestModel models.DKSharesPostRequest) ([]*cryptolib.PublicKey, error) {
-	if dkgRequestModel.PeerPublicKeys == nil || len(dkgRequestModel.PeerPublicKeys) == 0 {
+	if dkgRequestModel.PeerIdentities == nil || len(dkgRequestModel.PeerIdentities) == 0 {
 		return nil, apierrors.InvalidPropertyError("PeerPublicKeys", errors.New("PeerPublicKeys are mandatory"))
 	}
 
-	peerPublicKeys := make([]*cryptolib.PublicKey, len(dkgRequestModel.PeerPublicKeys))
+	peerPublicKeys := make([]*cryptolib.PublicKey, len(dkgRequestModel.PeerIdentities))
 	invalidPeerPublicKeys := make([]string, 0)
 
-	for i, publicKey := range dkgRequestModel.PeerPublicKeys {
+	for i, publicKey := range dkgRequestModel.PeerIdentities {
 		peerPubKey, err := cryptolib.NewPublicKeyFromString(publicKey)
 		if err != nil {
 			invalidPeerPublicKeys = append(invalidPeerPublicKeys, publicKey)
