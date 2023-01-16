@@ -10,7 +10,7 @@ import (
 
 type Output struct {
 	OutputType iotago.OutputType `json:"outputType" swagger:"desc(The output type)"`
-	Raw        string            `json:"raw" swagger:"desc(The raw data of the request)"`
+	Raw        string            `json:"raw" swagger:"desc(The raw data of the output (Hex))"`
 }
 
 func OutputFromIotaGoOutput(output iotago.Output) *Output {
