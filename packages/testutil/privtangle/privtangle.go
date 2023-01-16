@@ -31,10 +31,10 @@ import (
 
 // ===== Wasp dependencies ===== // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 // requires hornet, and inx plugins binaries to be in PATH
-// https://github.com/iotaledger/hornet (b3b0153)
-// https://github.com/iotaledger/inx-indexer (3b84047)
-// https://github.com/iotaledger/inx-coordinator (5c0f794)
-// https://github.com/iotaledger/inx-faucet (0cb51d2) (requires `git submodule update --init --recursive` before building )
+// https://github.com/iotaledger/hornet (v2.0.0-rc.4)
+// https://github.com/iotaledger/inx-indexer (v1.0.0-rc.3)
+// https://github.com/iotaledger/inx-coordinator (v1.0.0-rc.3)
+// https://github.com/iotaledger/inx-faucet (v1.0.0-rc.1) (requires `git submodule update --init --recursive` before building )
 // ============================= // DO NOT DELETE THIS LINE! It is needed for `make deps-versions` command
 
 type LogFunc func(format string, args ...interface{})
