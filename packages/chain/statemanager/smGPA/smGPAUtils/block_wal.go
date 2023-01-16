@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -17,6 +18,8 @@ type blockWAL struct {
 	dir     string
 	metrics *BlockWALMetrics
 }
+
+const constFileSuffix = ".blk"
 
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
@@ -95,6 +98,39 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 	return block, nil
 }
 
+func (bwT *blockWAL) Contents() []state.BlockHash {
+	result := []state.BlockHash{}
+	folder, err := os.Open(bwT.dir)
+	if err != nil {
+		bwT.LogWarnf("Cannot open wal folder to fetch its contents: %w", err)
+		return result
+	}
+	files, err := folder.ReadDir(0)
+	if err != nil {
+		bwT.LogWarnf("Cannot read contents of wal folder: %w", err)
+		return result
+	}
+	for _, file := range files {
+		fileName := file.Name()
+		if file.IsDir() {
+			bwT.LogWarnf("Wal folder file %s is a subfolder; ignoring it", fileName)
+			continue
+		}
+		if !strings.HasSuffix(fileName, constFileSuffix) {
+			bwT.LogWarnf("Wal folder file %s does not has expected suffix %s; ignoring it", fileName, constFileSuffix)
+			continue
+		}
+		blockHashString := fileName[:len(fileName)-len(constFileSuffix)]
+		blockHash, err := state.BlockHashFromString(blockHashString)
+		if err != nil {
+			bwT.LogWarnf("Wal folder file %s is not named after block hash: %w", fileName, err)
+			continue
+		}
+		result = append(result, blockHash)
+	}
+	return result
+}
+
 func fileName(blockHash state.BlockHash) string {
-	return blockHash.String() + ".blk"
+	return blockHash.String() + constFileSuffix
 }

@@ -34,3 +34,13 @@ func (mbwT *mockedBlockWAL) Read(blockHash state.BlockHash) (state.Block, error)
 	}
 	return nil, errors.New("not found")
 }
+
+func (mbwT *mockedBlockWAL) Contents() []state.BlockHash {
+	result := make([]state.BlockHash, len(mbwT.walContents))
+	i := 0
+	for blockHash := range mbwT.walContents {
+		result[i] = blockHash
+		i++
+	}
+	return result
+}

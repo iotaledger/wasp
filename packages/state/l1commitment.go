@@ -37,6 +37,19 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 	return
 }
 
+func BlockHashFromString(blockHashString string) (BlockHash, error) {
+	result := BlockHash{}
+	slice, err := iotago.DecodeHex(blockHashString)
+	if err != nil {
+		return result, fmt.Errorf("Error decoding block hash from string %s: %w", blockHashString, err)
+	}
+	if len(slice) != BlockHashSize {
+		return result, fmt.Errorf("Error decoding block hash from string %s: %v bytes obtained; expected %v bytes", blockHashString, len(slice), BlockHashSize)
+	}
+	copy(result[:], slice)
+	return result, nil
+}
+
 func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		trieRoot:  c,
