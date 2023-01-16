@@ -42,14 +42,18 @@ func (c *WaspClient) WithToken(token string) *WaspClient {
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("unable to read response body: %w", err)
+	if res == nil || res.Body == nil {
+		return errors.New("unable to read response body")
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusUnauthorized {
 		return ErrNotAuthorized
+	}
+
+	resBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
