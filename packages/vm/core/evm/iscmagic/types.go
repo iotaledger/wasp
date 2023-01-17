@@ -216,7 +216,7 @@ type IRC27NFTMetadata struct {
 	Standard string
 	Version  string
 	MimeType string
-	Uri      string
+	Uri      string //nolint:revive // false positive
 	Name     string
 }
 

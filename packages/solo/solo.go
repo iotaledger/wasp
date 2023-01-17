@@ -592,7 +592,7 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, co
 	var nfts []*isc.NFT
 	var infos []*NFTMintedInfo
 	for id, out := range outSet {
-		if out, ok := out.(*iotago.NFTOutput); ok {
+		if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
 			nftID := util.NFTIDFromNFTOutput(out, id)
 			info := &NFTMintedInfo{
 				OutputID: id,
