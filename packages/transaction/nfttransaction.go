@@ -4,32 +4,49 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
-type MintNFTTransactionParams struct {
-	IssuerKeyPair     *cryptolib.KeyPair
-	Collection        *iotago.NFTOutput
-	Target            iotago.Address
-	ImmutableMetadata [][]byte
-	UnspentOutputs    iotago.OutputSet
-	UnspentOutputIDs  iotago.OutputIDs
+type MintNFTsTransactionParams struct {
+	IssuerKeyPair      *cryptolib.KeyPair
+	CollectionOutputID *iotago.OutputID
+	Target             iotago.Address
+	ImmutableMetadata  [][]byte
+	UnspentOutputs     iotago.OutputSet
+	UnspentOutputIDs   iotago.OutputIDs
 }
 
-func NewMintNFTsTransaction(par MintNFTTransactionParams) (*iotago.Transaction, error) {
+func NewMintNFTsTransaction(par MintNFTsTransactionParams) (*iotago.Transaction, error) {
 	senderAddress := par.IssuerKeyPair.Address()
-
-	var issuerAddress iotago.Address = senderAddress
-	var nftsOut map[iotago.NFTID]bool
-	if par.Collection != nil {
-		issuerAddress = par.Collection.NFTID.ToAddress()
-		nftsOut[par.Collection.NFTID] = true
-	}
 
 	storageDeposit := uint64(0)
 	var outputs iotago.Outputs
 
+	var issuerAddress iotago.Address = senderAddress
+	nftsOut := make(map[iotago.NFTID]bool)
+
+	addOutput := func(out *iotago.NFTOutput) {
+		d := parameters.L1().Protocol.RentStructure.MinRent(out)
+		out.Amount = d
+		storageDeposit += d
+
+		outputs = append(outputs, out)
+	}
+
+	if par.CollectionOutputID != nil {
+		collectionOutputID := *par.CollectionOutputID
+		collectionOutput := par.UnspentOutputs[*par.CollectionOutputID].(*iotago.NFTOutput)
+		collectionID := util.NFTIDFromNFTOutput(collectionOutput, collectionOutputID)
+		issuerAddress = collectionID.ToAddress()
+		nftsOut[collectionID] = true
+
+		out := collectionOutput.Clone().(*iotago.NFTOutput)
+		out.NFTID = collectionID
+		addOutput(out)
+	}
+
 	for _, immutableMetadata := range par.ImmutableMetadata {
-		out := &iotago.NFTOutput{
+		addOutput(&iotago.NFTOutput{
 			NFTID: iotago.NFTID{},
 			Conditions: iotago.UnlockConditions{
 				&iotago.AddressUnlockCondition{Address: par.Target},
@@ -38,13 +55,7 @@ func NewMintNFTsTransaction(par MintNFTTransactionParams) (*iotago.Transaction, 
 				&iotago.IssuerFeature{Address: issuerAddress},
 				&iotago.MetadataFeature{Data: immutableMetadata},
 			},
-		}
-
-		d := parameters.L1().Protocol.RentStructure.MinRent(out)
-		out.Amount = d
-		storageDeposit += d
-
-		outputs = append(outputs, out)
+		})
 	}
 
 	inputIDs, remainder, err := computeInputsAndRemainder(senderAddress, storageDeposit, nil, nftsOut, par.UnspentOutputs, par.UnspentOutputIDs)

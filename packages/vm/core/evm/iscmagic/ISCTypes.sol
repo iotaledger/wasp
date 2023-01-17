@@ -164,10 +164,10 @@ library ISCTypes {
         if (L1AddressType(nft.issuer) != L1AddressTypeNFT) {
             return false;
         }
-        require(nft.issuer.data.length == 33);
+        assert(nft.issuer.data.length == 33);
+        bytes memory collectionIdBytes = abi.encodePacked(collectionId);
         for (uint i = 0; i < 32; i++) {
-            bytes1 b = bytes1(NFTID.unwrap(collectionId) >> (32-i-1));
-            if (b != nft.issuer.data[i+1]) {
+            if (collectionIdBytes[i] != nft.issuer.data[i+1]) {
                 return false;
             }
         }

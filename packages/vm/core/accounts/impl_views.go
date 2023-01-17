@@ -116,7 +116,30 @@ func viewAccountNFTs(ctx isc.SandboxView) dict.Dict {
 
 func viewAccountNFTAmount(ctx isc.SandboxView) dict.Dict {
 	aid := ctx.Params().MustGetAgentID(ParamAgentID)
+	// TODO: find a way to get the amount without fetching all the IDs
 	nftIDs := getAccountNFTs(getAccountR(ctx.StateR(), aid))
+	return dict.Dict{
+		ParamNFTAmount: codec.EncodeUint32(uint32(len(nftIDs))),
+	}
+}
+
+func viewAccountNFTsInCollection(ctx isc.SandboxView) dict.Dict {
+	aid := ctx.Params().MustGetAgentID(ParamAgentID)
+	collectionID := codec.MustDecodeNFTID(ctx.Params().MustGet(ParamCollectionID))
+	nftIDs := getAccountNFTsInCollection(ctx.StateR(), getAccountR(ctx.StateR(), aid), collectionID)
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamNFTIDs)
+	for _, nftID := range nftIDs {
+		arr.MustPush(nftID[:])
+	}
+	return ret
+}
+
+func viewAccountNFTAmountInCollection(ctx isc.SandboxView) dict.Dict {
+	aid := ctx.Params().MustGetAgentID(ParamAgentID)
+	collectionID := codec.MustDecodeNFTID(ctx.Params().MustGet(ParamCollectionID))
+	// TODO: find a way to get the amount without fetching all the IDs
+	nftIDs := getAccountNFTsInCollection(ctx.StateR(), getAccountR(ctx.StateR(), aid), collectionID)
 	return dict.Dict{
 		ParamNFTAmount: codec.EncodeUint32(uint32(len(nftIDs))),
 	}

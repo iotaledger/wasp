@@ -27,3 +27,12 @@ func StorageEncodeShortString(s string) (ret common.Hash) {
 	copy(ret[:], s)
 	return
 }
+
+// StorageEncodeBytes32 encodes a bytes32 value according to the storage spec.
+func StorageEncodeBytes32(b []byte) (ret common.Hash) {
+	if len(b) != 32 {
+		panic("expected len(b) == 32")
+	}
+	copy(ret[:], b)
+	return
+}

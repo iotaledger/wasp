@@ -581,24 +581,65 @@ func TestERC721NFTs(t *testing.T) {
 	}
 }
 
-/*
 func TestERC721NFTCollection(t *testing.T) {
 	env := initEVM(t)
+
+	collectionOwner, collectionOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(collectionOwnerAddr)/2, collectionOwner)
+	require.NoError(t, err)
+
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	collection := env.mintNFTAndSendToL2(ethAgentID)
-	nft := env.mintNFTAndSendToL2(ethAgentID, collection)
+	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, []byte("collection"))
+	require.NoError(t, err)
+
+	nfts, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID, [][]byte{
+		[]byte("nft1"),
+		[]byte("nft2"),
+	})
+	require.NoError(t, err)
+
+	require.Len(t, nfts, 3)
+	for _, nft := range nfts {
+		require.True(t, env.solo.HasL1NFT(collectionOwnerAddr, &nft.ID))
+	}
+
+	// deposit all nfts on L2
+	nfts = func(allNFTs []*isc.NFT) []*isc.NFT {
+		var nfts []*isc.NFT
+		for _, nft := range allNFTs {
+			if nft.ID == collection.ID {
+				// the collection NFT to the owner
+				env.soloChain.MustDepositNFT(nft, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
+			} else {
+				// others to ethAgentID
+				env.soloChain.MustDepositNFT(nft, ethAgentID, collectionOwner)
+				nfts = append(nfts, nft)
+			}
+		}
+		return nfts
+	}(nfts)
+	require.Len(t, nfts, 2)
+
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.NoError(t, err)
+
+	// should not allow to register again
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.ErrorContains(t, err, "already exists")
+
+	erc721 := env.ERC721NFTCollection(ethKey, collection.ID)
 
 	{
 		var n *big.Int
 		erc721.callView("balanceOf", []any{ethAddr}, &n)
-		require.EqualValues(t, 1, n.Uint64())
+		require.EqualValues(t, 2, n.Uint64())
 	}
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
 		require.EqualValues(t, ethAddr, a)
 	}
 
@@ -608,38 +649,37 @@ func TestERC721NFTCollection(t *testing.T) {
 		_, err := erc721.callFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
-		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
 		require.Error(t, err)
 	}
 
-	_, err := erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 
 	_, err = erc721.callFn([]ethCallOptions{{
 		sender: receiverKey,
-	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
 		var zero common.Address
 		require.EqualValues(t, zero, a)
 	}
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 }
-*/
 
 func TestISCCall(t *testing.T) {
 	env := initEVM(t, inccounter.Processor)

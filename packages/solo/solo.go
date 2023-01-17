@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -31,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -557,19 +557,24 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 	return nfts[0], infos[0], nil
 }
 
-// MintNFTsL1 mints NFTs with the `issuer` account and sends it to a `target` account.
-// If collection is not nil, all minted NFTs will belong to the given collection.
+// MintNFTsL1 mints len(immutableMetadata) NFTs with the `issuer` account and sends them
+// to a `target` account.
+//
+// If collectionOutputID is not nil, it must be an outputID of an NFTOutput owned by the issuer.
+// All minted NFTs will belong to the given collection.
+// See: https://github.com/Kami-Labs/tips/blob/main/tips/TIP-0027/tip-0027.md
+//
 // Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collection *iotago.NFTOutput, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
+func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
 	allOuts, allOutIDs := env.utxoDB.GetUnspentOutputs(issuer.Address())
 
-	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTTransactionParams{
-		IssuerKeyPair:     issuer,
-		Collection:        collection,
-		Target:            target,
-		ImmutableMetadata: immutableMetadata,
-		UnspentOutputs:    allOuts,
-		UnspentOutputIDs:  allOutIDs,
+	tx, err := transaction.NewMintNFTsTransaction(transaction.MintNFTsTransactionParams{
+		IssuerKeyPair:      issuer,
+		CollectionOutputID: collectionOutputID,
+		Target:             target,
+		ImmutableMetadata:  immutableMetadata,
+		UnspentOutputs:     allOuts,
+		UnspentOutputIDs:   allOutIDs,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -587,23 +592,21 @@ func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, co
 	var nfts []*isc.NFT
 	var infos []*NFTMintedInfo
 	for id, out := range outSet {
-		if _, ok := out.(*iotago.NFTOutput); ok {
+		if out, ok := out.(*iotago.NFTOutput); ok {
+			nftID := util.NFTIDFromNFTOutput(out, id)
 			info := &NFTMintedInfo{
 				OutputID: id,
 				Output:   out,
-				NFTID:    iotago.NFTIDFromOutputID(id),
+				NFTID:    nftID,
 			}
 			nft := &isc.NFT{
 				ID:       info.NFTID,
-				Issuer:   issuer.Address(),
-				Metadata: immutableMetadata[len(nfts)],
+				Issuer:   out.ImmutableFeatureSet().IssuerFeature().Address,
+				Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
 			}
 			nfts = append(nfts, nft)
 			infos = append(infos, info)
 		}
-	}
-	if len(nfts) != len(immutableMetadata) || len(infos) != len(immutableMetadata) {
-		return nil, nil, errors.New("NFT output not found in resulting tx")
 	}
 	return nfts, infos, nil
 }

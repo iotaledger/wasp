@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
+	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -240,6 +241,19 @@ func (e *soloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *iscContractI
 	}
 }
 
+func (e *soloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.NFTID) *iscContractInstance {
+	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
+	require.NoError(e.t, err)
+	return &iscContractInstance{
+		evmContractInstance: &evmContractInstance{
+			chain:         e,
+			defaultSender: defaultSender,
+			address:       iscmagic.ERC721NFTCollectionAddress(collectionID),
+			abi:           erc721NFTCollectionABI,
+		},
+	}
+}
+
 func (e *soloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
 	return &iscTestContractInstance{e.deployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
@@ -313,6 +327,13 @@ func (e *soloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair,
 		evm.FieldTokenTickerSymbol: codec.EncodeString(tokenTickerSymbol),
 		evm.FieldTokenDecimals:     codec.EncodeUint8(tokenDecimals),
 	}).WithMaxAffordableGasBudget(), foundryOwner)
+	return err
+}
+
+func (e *soloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.NFTID) error {
+	_, err := e.soloChain.PostRequestOffLedger(solo.NewCallParams(evm.Contract.Name, evm.FuncRegisterERC721NFTCollection.Name, dict.Dict{
+		evm.FieldNFTCollectionID: codec.EncodeNFTID(collectionID),
+	}).WithMaxAffordableGasBudget(), collectionOwner)
 	return err
 }
 
