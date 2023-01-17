@@ -9,11 +9,6 @@ use std::{
 };
 use wasmlib::*;
 
-const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
-const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
-const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
-const ISC_EVENT_KIND_ERROR: &str = "error";
-
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
 pub struct WasmClientContext {
@@ -150,13 +145,15 @@ impl WasmClientContext {
         for msg in rx {
             spawn(move || {
                 let l = self.event_received.clone();
-                if msg[0] == ISC_EVENT_KIND_ERROR {
+                if msg[0] == isc::waspclient::ISC_EVENT_KIND_ERROR {
                     let mut received = l.write().unwrap();
                     *received = true;
                     return Err(msg[1].clone());
                 }
 
-                if msg[0] != ISC_EVENT_KIND_SMART_CONTRACT && msg[1] != self.chain_id.to_string() {
+                if msg[0] != isc::waspclient::ISC_EVENT_KIND_SMART_CONTRACT
+                    && msg[1] != self.chain_id.to_string()
+                {
                     // not intended for us
                     return Ok(());
                 }
