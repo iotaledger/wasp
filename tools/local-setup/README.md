@@ -42,6 +42,12 @@ The nodes will then be reachable under these ports:
 
 To configure a new wasp-cli you can use the following commands:
 
+:::note
+
+You can either use a wasp-cli installed on your system, or use the one built-in to the wasp docker container by doing: `docker exec  wasp /app/wasp-cli init`
+
+:::
+
 ```shell
 wasp-cli init
 wasp-cli set l1.apiaddress http://localhost:14265
