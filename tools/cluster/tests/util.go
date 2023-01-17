@@ -292,6 +292,13 @@ func setupNativeInccounterTest(t *testing.T, clusterSize int, committee []int) *
 	require.NoError(t, err)
 	t.Logf("deployed chainID: %s", chain.ChainID)
 
+	// // ------ TODO why does this make the test fail?
+	// err = clu.WaspClient(0).DeactivateChain(chain.ChainID)
+	// require.NoError(t, err)
+	// err = clu.WaspClient(0).ActivateChain(chain.ChainID)
+	// require.NoError(t, err)
+	// //-------
+
 	e := &ChainEnv{
 		t:     t,
 		Clu:   clu,

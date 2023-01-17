@@ -286,9 +286,10 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // to consider it as an access node.
 func (clu *Cluster) AddAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
-	if err := apilib.ActivateChainOnAccessNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
+	if err := apilib.ActivateChainOnNodes("", clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
 	}
+
 	accessNodePeering, err := waspClient.GetPeeringSelf()
 	if err != nil {
 		return nil, err
