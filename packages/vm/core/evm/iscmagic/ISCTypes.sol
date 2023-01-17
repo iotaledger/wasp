@@ -51,6 +51,20 @@ struct ISCNFT {
     ISCAgentID owner;
 }
 
+struct IRC27NFTMetadata {
+    string standard;
+    string version;
+    string mimeType;
+    string uri;
+    string name;
+}
+
+// Information about an on-chain IRC27 NFT
+struct IRC27NFT {
+    ISCNFT nft;
+    IRC27NFTMetadata metadata;
+}
+
 // An ISC transaction ID
 type ISCTransactionID is bytes32;
 

@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -207,8 +208,8 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 		return collection
 	}()
 
-	// TODO: don't require ownership, extract metadata instead
-	ctx.Requiref(collection.Owner.Equals(ctx.Caller()), "NFT collection is not owned by caller")
+	metadata, err := transaction.IRC27NFTMetadataFromBytes(collection.Metadata)
+	ctx.RequireNoError(err, "cannot decode IRC27 collection NFT metadata")
 
 	// deploy the contract to the EVM state
 	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
@@ -219,6 +220,9 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 	evmState.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
 	// see ERC721NFTCollection_storage.json
 	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeBytes32(collectionID[:]))
+	for k, v := range solidity.StorageEncodeString(1, metadata.Name) {
+		evmState.SetState(addr, k, v)
+	}
 
 	addToPrivileged(ctx, addr)
 

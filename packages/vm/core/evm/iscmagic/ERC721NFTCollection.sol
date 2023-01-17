@@ -16,6 +16,7 @@ contract ERC721NFTCollection { // is IERC721Metadata, IERC721, IERC165
     using ISCTypes for ISCNFT;
 
     NFTID _collectionId;
+    string _collectionName; // extracted from the IRC27 metadata
 
     // Mapping from token ID to approved address
     mapping (uint256 => address) private _tokenApprovals;
@@ -131,15 +132,17 @@ contract ERC721NFTCollection { // is IERC721Metadata, IERC721, IERC165
     // IERC721Metadata
 
     function name() external view returns (string memory) {
-        revert("TODO");
+        return _collectionName;
     }
 
-    function symbol() external view returns (string memory) {
-        revert("TODO");
+    function symbol() external pure returns (string memory) {
+        return ""; // not defined in IRC27
     }
 
     function tokenURI(uint256 tokenId) external view returns (string memory) {
-        revert("TODO");
+        IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
+        require(nft.nft.isInCollection(_collectionId));
+        return nft.metadata.uri;
     }
 }
 

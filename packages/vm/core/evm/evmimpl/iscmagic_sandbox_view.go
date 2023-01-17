@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -32,6 +33,17 @@ func (h *magicContractViewHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 func (h *magicContractViewHandler) GetNFTData(nftID iscmagic.NFTID) iscmagic.ISCNFT {
 	nft := h.ctx.GetNFTData(nftID.Unwrap())
 	return iscmagic.WrapISCNFT(&nft)
+}
+
+// handler for ISCSandbox::getIRC27NFTData
+func (h *magicContractViewHandler) GetIRC27NFTData(nftID iscmagic.NFTID) iscmagic.IRC27NFT {
+	nft := h.ctx.GetNFTData(nftID.Unwrap())
+	metadata, err := transaction.IRC27NFTMetadataFromBytes(nft.Metadata)
+	h.ctx.RequireNoError(err)
+	return iscmagic.IRC27NFT{
+		Nft:      iscmagic.WrapISCNFT(&nft),
+		Metadata: iscmagic.WrapIRC27NFTMetadata(metadata),
+	}
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds

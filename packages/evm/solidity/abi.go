@@ -2,8 +2,10 @@ package solidity
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // StorageSlot returns the key for the given storage slot #.
@@ -19,12 +21,43 @@ func StorageEncodeUint8(n uint8) (ret common.Hash) {
 }
 
 // StorageEncodeShortString encodes a short string according to the storage spec.
-func StorageEncodeShortString(s string) (ret common.Hash) {
+func StorageEncodeShortString(s string) common.Hash {
 	if len(s) > 31 {
 		panic(fmt.Sprintf("string is too long: %q...", s[:8]))
 	}
-	ret[len(ret)-1] = uint8(len(s) * 2)
+	ret := StorageEncodeUint8(uint8(len(s) * 2))
 	copy(ret[:], s)
+	return ret
+}
+
+// StorageEncodeString encodes a string according to the storage spec.
+func StorageEncodeString(slotNumber uint8, s string) (ret map[common.Hash]common.Hash) {
+	mainSlot := StorageSlot(slotNumber)
+	ret = make(map[common.Hash]common.Hash)
+	if len(s) <= 31 {
+		ret[mainSlot] = StorageEncodeShortString(s)
+		return
+	}
+
+	ret[mainSlot] = common.BigToHash(big.NewInt(int64(len(s)*2) + 1))
+
+	i := 0
+	for len(s) > 0 {
+		var chunk common.Hash
+		copy(chunk[:], s)
+
+		// compute slot offset = keccak(slotNumber) + i
+		slot := crypto.Keccak256Hash(common.BigToHash(big.NewInt(int64(slotNumber))).Bytes()).Big()
+		slot = slot.Add(slot, big.NewInt(int64(i)))
+		ret[common.BigToHash(slot)] = chunk
+
+		if len(s) > 32 {
+			s = s[32:]
+		} else {
+			s = ""
+		}
+		i++
+	}
 	return
 }
 

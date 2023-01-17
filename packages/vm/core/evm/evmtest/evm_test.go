@@ -30,6 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -591,36 +592,63 @@ func TestERC721NFTCollection(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, []byte("collection"))
+	collectionMetadata := transaction.NewIRC27NFTMetadata(
+		"text/html",
+		"https://my-awesome-nft-project.com",
+		"a string that is longer than 32 bytes",
+	)
+
+	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
 	require.NoError(t, err)
 
-	nfts, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID, [][]byte{
-		[]byte("nft1"),
-		[]byte("nft2"),
-	})
+	nftMetadatas := []*transaction.IRC27NFTMetadata{
+		transaction.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/1.json",
+			"nft1",
+		),
+		transaction.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/2.json",
+			"nft2",
+		),
+	}
+	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
+		lo.Map(nftMetadatas, func(item *transaction.IRC27NFTMetadata, index int) []byte {
+			return item.MustBytes()
+		}),
+	)
 	require.NoError(t, err)
 
-	require.Len(t, nfts, 3)
-	for _, nft := range nfts {
+	require.Len(t, allNFTs, 3)
+	for _, nft := range allNFTs {
 		require.True(t, env.solo.HasL1NFT(collectionOwnerAddr, &nft.ID))
 	}
 
 	// deposit all nfts on L2
-	nfts = func(allNFTs []*isc.NFT) []*isc.NFT {
+	nfts := func() []*isc.NFT {
 		var nfts []*isc.NFT
 		for _, nft := range allNFTs {
 			if nft.ID == collection.ID {
-				// the collection NFT to the owner
+				// the collection NFT in the owner's account
 				env.soloChain.MustDepositNFT(nft, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
 			} else {
-				// others to ethAgentID
+				// others in ethAgentID's account
 				env.soloChain.MustDepositNFT(nft, ethAgentID, collectionOwner)
 				nfts = append(nfts, nft)
 			}
 		}
 		return nfts
-	}(nfts)
+	}()
 	require.Len(t, nfts, 2)
+
+	// minted NFTs are in random order; find the first one in nftMetadatas
+	nft, ok := lo.Find(nfts, func(item *isc.NFT) bool {
+		metadata, err := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
+		require.NoError(t, err)
+		return metadata.URI == nftMetadatas[0].URI
+	})
+	require.True(t, ok)
 
 	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
 	require.NoError(t, err)
@@ -639,7 +667,7 @@ func TestERC721NFTCollection(t *testing.T) {
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
 		require.EqualValues(t, ethAddr, a)
 	}
 
@@ -649,35 +677,47 @@ func TestERC721NFTCollection(t *testing.T) {
 		_, err := erc721.callFn([]ethCallOptions{{
 			sender:   receiverKey,
 			gasLimit: 100_000, // skip estimate gas (which will fail)
-		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
+		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
 		require.Error(t, err)
 	}
 
-	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
+	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
 		require.EqualValues(t, receiverAddr, a)
 	}
 
 	_, err = erc721.callFn([]ethCallOptions{{
 		sender: receiverKey,
-	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nfts[0].ID).TokenID())
+	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
 	require.NoError(t, err)
 
 	{
 		var a common.Address
-		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
 		var zero common.Address
 		require.EqualValues(t, zero, a)
 	}
 
 	{
 		var a common.Address
-		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nfts[0].ID).TokenID()}, &a)
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
 		require.EqualValues(t, receiverAddr, a)
+	}
+
+	{
+		var name string
+		erc721.callView("name", nil, &name)
+		require.EqualValues(t, collectionMetadata.Name, name)
+	}
+
+	{
+		var uri string
+		erc721.callView("tokenURI", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &uri)
+		require.EqualValues(t, nftMetadatas[0].URI, uri)
 	}
 }
 
