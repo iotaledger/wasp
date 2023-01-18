@@ -9,7 +9,7 @@ import "@iscmagic/ISCAccounts.sol";
 import "@iscmagic/ISCPrivileged.sol";
 
 // The ERC721 contract for a L2 collection of ISC NFTs, as defined in IRC27:
-// https://github.com/Kami-Labs/tips/blob/main/tips/TIP-0027/tip-0027.md
+// https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
 contract ERC721NFTCollection { // is IERC721Metadata, IERC721, IERC165
     using ISCTypes for ISCAgentID;
     using ISCTypes for uint256;

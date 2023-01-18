@@ -562,7 +562,7 @@ func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target iotago.Address, imm
 //
 // If collectionOutputID is not nil, it must be an outputID of an NFTOutput owned by the issuer.
 // All minted NFTs will belong to the given collection.
-// See: https://github.com/Kami-Labs/tips/blob/main/tips/TIP-0027/tip-0027.md
+// See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
 //
 // Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
 func (env *Solo) MintNFTsL1(issuer *cryptolib.KeyPair, target iotago.Address, collectionOutputID *iotago.OutputID, immutableMetadata [][]byte) ([]*isc.NFT, []*NFTMintedInfo, error) {
