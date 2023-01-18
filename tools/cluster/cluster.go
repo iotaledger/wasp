@@ -334,7 +334,7 @@ func (clu *Cluster) MultiClient() *multiclient.MultiClient {
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
+	return client.NewWaspClient(clu.Config.APIHost(nodeIndex)).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) NodeDataPath(i int) string {
