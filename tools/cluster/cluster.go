@@ -480,7 +480,7 @@ func (clu *Cluster) KillNodeProcess(nodeIndex int) error {
 }
 
 func (clu *Cluster) RestartNodes(nodeIndex ...int) error {
-	waspNodesCount := len(clu.waspCmds)
+	waspNodesCount := len(nodeIndex)
 
 	// send stop commands
 	for _, i := range nodeIndex {
