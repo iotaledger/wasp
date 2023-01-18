@@ -27,7 +27,7 @@ import (
 )
 
 func App() *app.App {
-	return app.New(wasp.Name, wasp.Version+"+"+wasp.VersionHash,
+	return app.New(wasp.Name, wasp.Version,
 		app.WithVersionCheck("iotaledger", "wasp"),
 		app.WithInitComponent(InitComponent),
 		app.WithCoreComponents([]*app.CoreComponent{
