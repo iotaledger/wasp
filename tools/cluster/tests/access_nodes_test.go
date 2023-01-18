@@ -16,9 +16,11 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
-func TestPermitionlessAccessNode(t *testing.T) {
-	// setup a test with a single node
-	env := setupNativeInccounterTest(t, 1, []int{0})
+// executed in cluster_test.go
+func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
+	// deploy the inccounter for the test to use
+	// TODO change to deploy the wasm inccounter instead
+	env.deployNativeIncCounterSC(0)
 
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
@@ -41,6 +43,8 @@ func TestPermitionlessAccessNode(t *testing.T) {
 			return configParams
 		},
 	})
+	// remove this cluster when the test ends
+	t.Cleanup(clu2.Stop)
 
 	nodeClient := env.Clu.WaspClient(0)
 	accessNodeClient := clu2.WaspClient(0)

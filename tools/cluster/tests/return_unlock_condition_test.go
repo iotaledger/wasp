@@ -69,9 +69,9 @@ func buildTX(t *testing.T, env *ChainEnv, addr iotago.Address, keyPair *cryptoli
 	return tx
 }
 
-func TestSDRC(t *testing.T) {
-	env := setupNativeInccounterTest(t, 1, []int{0})
-
+// executed in cluster_test.go
+func testSDRUC(t *testing.T, env *ChainEnv) {
+	env.deployNativeIncCounterSC(0)
 	keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/webapi/v1/model"
 )
+
+var ErrNotAuthorized = errors.New("unauthorized request rejected")
 
 // WaspClient allows to make requests to the Wasp web API.
 type WaspClient struct {
@@ -39,11 +42,19 @@ func (c *WaspClient) WithToken(token string) *WaspClient {
 }
 
 func processResponse(res *http.Response, decodeTo interface{}) error {
+	if res == nil || res.Body == nil {
+		return errors.New("unable to read response body")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusUnauthorized {
+		return ErrNotAuthorized
+	}
+
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return fmt.Errorf("unable to read response body: %w", err)
 	}
-	defer res.Body.Close()
 
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		if decodeTo != nil {

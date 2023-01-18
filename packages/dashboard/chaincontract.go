@@ -30,7 +30,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("chainid: %w", err))
 	}
 
-	hname, err := isc.HnameFromString(c.Param("hname"))
+	hname, err := isc.HnameFromHexString(c.Param("hname"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("hname: %w", err))
 	}

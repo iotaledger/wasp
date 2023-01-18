@@ -22,25 +22,10 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
-		const numRequests = 8
-		const numValidatorNodes = 3
-		const clusterSize = 10
-		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	})
-
 	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
 		const numRequests = 100
 		const numValidatorNodes = 4
 		const clusterSize = 10
-		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
-	})
-
-	t.Run("cluster=15, N=4, req=200", func(t *testing.T) {
-		testutil.RunHeavy(t)
-		const numRequests = 200
-		const numValidatorNodes = 4
-		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 
@@ -80,46 +65,11 @@ func TestAccessNodesOffLedger(t *testing.T) {
 		t.SkipNow()
 	}
 
-	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
-		const waitFor = 20 * time.Second
-		const numRequests = 8
-		const numValidatorNodes = 4
-		const clusterSize = 6
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
 	t.Run("cluster=10,N=4,req=50", func(t *testing.T) {
 		const waitFor = 20 * time.Second
 		const numRequests = 50
 		const numValidatorNodes = 4
 		const clusterSize = 10
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
-	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
-		testutil.RunHeavy(t)
-		const waitFor = 120 * time.Second
-		const numRequests = 1000
-		const numValidatorNodes = 6
-		const clusterSize = 10
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
-	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
-		testutil.RunHeavy(t)
-		const waitFor = 120 * time.Second
-		const numRequests = 1000
-		const numValidatorNodes = 6
-		const clusterSize = 15
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
-	})
-
-	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
-		testutil.RunHeavy(t)
-		const waitFor = 180 * time.Second
-		const numRequests = 8
-		const numValidatorNodes = 15
-		const clusterSize = 30
 		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
 	})
 

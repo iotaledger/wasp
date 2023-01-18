@@ -1,20 +1,20 @@
 import * as wasmlib from '../index';
 
 function vliCheck(i: i64) {
-    let enc = new wasmlib.WasmEncoder();
+    const enc = new wasmlib.WasmEncoder();
     wasmlib.int64Encode(enc, i);
-    let buf = enc.buf();
-    let dec = new wasmlib.WasmDecoder(buf);
-    let v = wasmlib.int64Decode(dec);
+    const buf = enc.buf();
+    const dec = new wasmlib.WasmDecoder(buf);
+    const v = wasmlib.int64Decode(dec);
     expect(i == v).toBeTruthy();
 }
 
 function vluCheck(i: u64) {
-    let enc = new wasmlib.WasmEncoder();
+    const enc = new wasmlib.WasmEncoder();
     wasmlib.uint64Encode(enc, i);
-    let buf = enc.buf();
-    let dec = new wasmlib.WasmDecoder(buf);
-    let v = wasmlib.uint64Decode(dec);
+    const buf = enc.buf();
+    const dec = new wasmlib.WasmDecoder(buf);
+    const v = wasmlib.uint64Decode(dec);
     expect(i == v).toBeTruthy();
 }
 
@@ -90,9 +90,9 @@ function checkUint64(testValue: u64) {
 
 describe('conversions', function () {
     it('string conversion', () => {
-        checkString("");
-        checkString("?");
-        checkString("Some weird test string");
+        checkString('');
+        checkString('?');
+        checkString('Some weird test string');
     });
     it('hash conversion', () => {
         const hash = new wasmlib.ScHash();

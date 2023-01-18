@@ -97,12 +97,8 @@ func TestRotation(t *testing.T) {
 	t.Logf("chainID: %s", chain.ChainID)
 
 	chEnv := newChainEnv(t, clu, chain)
-	tx := chEnv.deployNativeIncCounterSC(0)
+	chEnv.deployNativeIncCounterSC(0)
 
-	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-
-	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
-	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
 
 	keyPair, _, err := clu.NewKeyPairWithFunds()
@@ -119,7 +115,7 @@ func TestRotation(t *testing.T) {
 
 	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 15*time.Second)
 	require.NoError(t, err)
@@ -164,11 +160,8 @@ func TestRotationFromSingle(t *testing.T) {
 	t.Logf("chainID: %s", chain.ChainID)
 
 	chEnv := newChainEnv(t, clu, chain)
-	tx := chEnv.deployNativeIncCounterSC(0)
+	chEnv.deployNativeIncCounterSC(0)
 
-	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
-
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
 	incCounterResultChan := make(chan error)
@@ -197,7 +190,7 @@ func TestRotationFromSingle(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, rotation2.Address).WithBaseTokens(1 * isc.Million)
-	tx, err = govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 	require.NoError(t, err)
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
@@ -276,11 +269,7 @@ func TestRotationMany(t *testing.T) {
 		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
 
-	tx := chEnv.deployNativeIncCounterSC(0)
-
-	waitUntil(t, chEnv.contractIsDeployed(), chEnv.Clu.Config.AllNodes(), 30*time.Second)
-	_, err = chEnv.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, waitTimeout)
-	require.NoError(t, err)
+	chEnv.deployNativeIncCounterSC(0)
 
 	keyPair, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

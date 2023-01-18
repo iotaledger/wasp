@@ -14,45 +14,34 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func TestDeployChain(t *testing.T) {
-	e := setupWithNoChain(t)
-
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, e.Clu, chain)
-
-	chainID, chainOwnerID := chEnv.getChainInfo()
-	require.EqualValues(t, chainID, chain.ChainID)
-	require.EqualValues(t, chainOwnerID, isc.NewAgentID(chain.OriginatorAddress()))
+// executed in cluster_test.go
+func testDeployChain(t *testing.T, env *ChainEnv) {
+	chainID, chainOwnerID := env.getChainInfo()
+	require.EqualValues(t, chainID, env.Chain.ChainID)
+	require.EqualValues(t, chainOwnerID, isc.NewAgentID(env.Chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	chEnv.checkCoreContracts()
-	chEnv.checkRootsOutside()
-	for _, i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
+	env.checkCoreContracts()
+	env.checkRootsOutside()
+	for _, i := range env.Chain.CommitteeNodes {
+		blockIndex, err := env.Chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.Greater(t, blockIndex, uint32(1))
 
-		contractRegistry, err := chain.ContractRegistry(i)
+		contractRegistry, err := env.Chain.ContractRegistry(i)
 		require.NoError(t, err)
 		require.EqualValues(t, len(corecontracts.All), len(contractRegistry))
 	}
 }
 
-func TestDeployContractOnly(t *testing.T) {
-	e := setupWithNoChain(t)
-
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, e.Clu, chain)
-	tx := chEnv.deployNativeIncCounterSC()
+// executed in cluster_test.go
+func testDeployContractOnly(t *testing.T, env *ChainEnv) {
+	env.deployNativeIncCounterSC()
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
+	ret, err := env.Chain.Cluster.WaspClient(0).CallView(
+		env.Chain.ChainID, root.Contract.Hname(), root.ViewFindContract.Name,
 		dict.Dict{
 			root.ParamHname: isc.Hn(nativeIncCounterSCName).Bytes(),
 		})
@@ -62,24 +51,11 @@ func TestDeployContractOnly(t *testing.T) {
 	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(t, err)
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
-
-	{
-		txID, err := tx.ID()
-		require.NoError(t, err)
-		rec, err := chain.GetRequestReceipt(isc.NewRequestID(txID, 0))
-		require.NoError(t, err)
-		require.Nil(t, rec.Error)
-	}
 }
 
-func TestDeployContractAndSpawn(t *testing.T) {
-	e := setupWithNoChain(t)
-
-	chain, err := e.Clu.DeployDefaultChain()
-	require.NoError(t, err)
-
-	chEnv := newChainEnv(t, e.Clu, chain)
-	chEnv.deployNativeIncCounterSC()
+// executed in cluster_test.go
+func testDeployContractAndSpawn(t *testing.T, env *ChainEnv) {
+	env.deployNativeIncCounterSC()
 
 	hname := isc.Hn(nativeIncCounterSCName)
 
@@ -91,20 +67,20 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
 	).WithBaseTokens(100)
-	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
+	tx, err := env.Chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	require.NoError(t, err)
 
-	receipts, err := chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	receipts, err := env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	require.Len(t, receipts, 1)
 
-	chEnv.checkCoreContracts()
-	for _, i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
+	env.checkCoreContracts()
+	for _, i := range env.Chain.CommitteeNodes {
+		blockIndex, err := env.Chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.Greater(t, blockIndex, uint32(2))
 
-		contractRegistry, err := chain.ContractRegistry(i)
+		contractRegistry, err := env.Chain.ContractRegistry(i)
 		require.NoError(t, err)
 		require.EqualValues(t, len(corecontracts.All)+2, len(contractRegistry))
 
@@ -112,7 +88,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, dscrNew, cr.Description)
 		require.EqualValues(t, nameNew, cr.Name)
 
-		counterValue, err := chain.GetCounterValue(hname, i)
+		counterValue, err := env.Chain.GetCounterValue(hname, i)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
 	}

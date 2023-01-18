@@ -45,9 +45,6 @@ func (c *nanoClientTest) start(t *testing.T, url string) {
 
 func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
 	t.Logf("assertMessages: |messages|=%v, expectedFinalCounter=%v", len(messages), expectedFinalCounter)
-	for i, m := range messages {
-		t.Logf("assertMessages: messages[%v]=%v", i, m)
-	}
 	inccounterEventRegx := regexp.MustCompile(`.*incCounter: counter = (\d+)$`)
 	counter := 1
 	for _, msg := range messages {
@@ -64,10 +61,9 @@ func assertMessages(t *testing.T, messages []string, expectedFinalCounter int) {
 }
 
 // TODO the TODOs on this test indicate that there is a race condition with the "await request endpoint", needs to be debugged
-func TestNanoPublisher(t *testing.T) {
-	// single wasp node committee, to test if publishing can break state transitions
-	env := setupNativeInccounterTest(t, 1, []int{0})
-
+// executed in cluster_test.go
+func testNanoPublisher(t *testing.T, env *ChainEnv) {
+	env.deployNativeIncCounterSC(0)
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
 	nanoClients := make([]nanoClientTest, 10)
 	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", env.Clu.Config.NanomsgPort(0))
@@ -98,19 +94,13 @@ func TestNanoPublisher(t *testing.T) {
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		require.NoError(t, err)
 
-		reqIDs[i] = req.ID()
-	}
-
-	timeEnd := time.Now().Add(30 * time.Second)
-	for i, reqID := range reqIDs {
-		durationLeft := time.Until(timeEnd)
-		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
-
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, reqID, durationLeft)
-		if err != nil {
-			println(i)
-		}
+		// ---
+		// TODO shouldn't be needed
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
 		require.NoError(t, err)
+		// ---
+
+		reqIDs[i] = req.ID()
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), util.MakeRange(0, 1), 60*time.Second, "requests counted - A")
@@ -120,17 +110,13 @@ func TestNanoPublisher(t *testing.T) {
 		assertMessages(t, client.messages, numRequests)
 	}
 
-	timeEnd = time.Now().Add(30 * time.Second)
 	for i := 0; i < numRequests; i++ {
-		durationLeft := time.Until(timeEnd)
-		require.True(t, durationLeft > 0, "WaitUntilRequestProcessedSuccessfully time exceeded")
-
 		req, err := myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 101)})
 		require.NoError(t, err)
 
 		// ---
 		// TODO shouldn't be needed
-		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), durationLeft)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), 30*time.Second)
 		require.NoError(t, err)
 		// ---
 	}

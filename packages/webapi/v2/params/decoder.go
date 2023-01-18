@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/v2/apierrors"
@@ -20,6 +21,14 @@ func DecodeChainID(e echo.Context) (isc.ChainID, error) {
 	return chainID, nil
 }
 
+func DecodePublicKey(e echo.Context) (*cryptolib.PublicKey, error) {
+	publicKey, err := cryptolib.NewPublicKeyFromString(e.Param("publicKey"))
+	if err != nil {
+		return nil, apierrors.InvalidPropertyError("publicKey", err)
+	}
+	return publicKey, nil
+}
+
 func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
 	requestID, err := isc.RequestIDFromString(e.Param("requestID"))
 	if err != nil {
@@ -29,19 +38,13 @@ func DecodeRequestID(e echo.Context) (isc.RequestID, error) {
 	return requestID, nil
 }
 
-func DecodeHNameFromHNameString(e echo.Context, key string) (isc.Hname, error) {
-	hname, err := isc.HnameFromString(e.Param(key))
+func DecodeHNameFromHNameHexString(e echo.Context, key string) (isc.Hname, error) {
+	hname, err := isc.HnameFromHexString(e.Param(key))
 	if err != nil {
 		return 0, apierrors.InvalidPropertyError(key, err)
 	}
 
 	return hname, nil
-}
-
-func DecodeHNameFromNameString(e echo.Context, key string) isc.Hname {
-	hname := isc.Hn(e.Param(key))
-
-	return hname
 }
 
 func DecodeAgentID(e echo.Context) (isc.AgentID, error) {

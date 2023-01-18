@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -15,7 +14,8 @@ const nativeIncCounterSCName = "NativeIncCounter"
 
 var nativeIncCounterSCHname = isc.Hn(nativeIncCounterSCName)
 
-func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transaction {
+// TODO deprecate, or refactor to use the WASM-based inccounter
+func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) {
 	counterStartValue := 42
 	if len(initCounter) > 0 {
 		counterStartValue = initCounter[0]
@@ -70,6 +70,6 @@ func (e *ChainEnv) deployNativeIncCounterSC(initCounter ...int) *iotago.Transact
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, counterStartValue, counterValue)
 	}
-
-	return tx
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, 10*time.Second)
+	require.NoError(e.t, err)
 }

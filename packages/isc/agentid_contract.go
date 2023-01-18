@@ -39,7 +39,7 @@ func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
 		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
 	}
 
-	h, err := HnameFromString(hnamePart)
+	h, err := HnameFromHexString(hnamePart)
 	if err != nil {
 		return nil, fmt.Errorf("NewAgentIDFromString: %w", err)
 	}

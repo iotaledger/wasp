@@ -6,13 +6,13 @@ package tstemplates
 var indexTs = map[string]string{
 	// *******************************
 	"indexImpl.ts": `
-export * from "./funcs";
-export * from "./thunks";
+export * from './funcs';
+export * from './thunks';
 `,
 	// *******************************
 	"index.ts": `
-export * from "./consts";
-export * from "./contract";
+export * from './consts';
+export * from './contract';
 $#set moduleName events
 $#if events exportModule
 $#set moduleName eventhandlers
@@ -30,6 +30,6 @@ $#if typedefs exportModule
 `,
 	// *******************************
 	"exportModule": `
-export * from "./$moduleName";
+export * from './$moduleName';
 `,
 }

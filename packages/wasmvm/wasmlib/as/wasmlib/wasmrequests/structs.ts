@@ -5,7 +5,7 @@
 // >>>> DO NOT CHANGE THIS FILE! <<<<
 // Change the schema definition file instead
 
-import * as wasmtypes from "../wasmtypes";
+import * as wasmtypes from '../wasmtypes';
 
 export class CallRequest {
     // caller assets that the call is allowed to access
@@ -66,8 +66,8 @@ export class MutableCallRequest extends wasmtypes.ScProxy {
 }
 
 export class DeployRequest {
-    description : string = "";
-    name        : string = "";
+    description : string = '';
+    name        : string = '';
     params      : Uint8Array = new Uint8Array(0);
     progHash    : wasmtypes.ScHash = new wasmtypes.ScHash();
 

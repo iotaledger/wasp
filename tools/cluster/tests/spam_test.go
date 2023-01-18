@@ -21,12 +21,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 )
 
-func TestSpamOnledger(t *testing.T) {
+// executed in cluster_test.go
+func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
-	// env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
-	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	// send requests from many different wallets to speed things up
 	numAccounts := 1000
@@ -93,16 +92,13 @@ func TestSpamOnledger(t *testing.T) {
 	println(events)
 }
 
-// !! WARNING !! - this test should only be run with `database.inMemory` set to `false`. Otherwise it is WAY slower, and will probably time out or take a LONG time
-func TestSpamOffLedger(t *testing.T) {
+// executed in cluster_test.go
+func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
 
 	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
 	const maxParallelRequests = 700
 	const numRequests = 100_000
-
-	// single wasp node committee, to test if publishing can break state transitions
-	env := setupNativeInccounterTest(t, 1, []int{0})
 
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
@@ -178,9 +174,9 @@ func TestSpamOffLedger(t *testing.T) {
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
 }
 
-func TestSpamCallViewWasm(t *testing.T) {
+// executed in cluster_test.go
+func testSpamCallViewWasm(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 
 	wallet, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)

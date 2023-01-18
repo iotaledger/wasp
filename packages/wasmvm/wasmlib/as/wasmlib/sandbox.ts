@@ -1,23 +1,23 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-import {ScAssets, ScBalances, ScTransfer} from "./assets";
-import {ScDict, ScImmutableDict} from "./dict";
-import {sandbox} from "./host";
-import {ScSandboxUtils} from "./sandboxutils";
-import {ScImmutableState, ScState} from "./state";
-import {ScFunc} from "./contract";
-import {CallRequest, DeployRequest, PostRequest, SendRequest, TransferRequest} from "./wasmrequests";
-import {requestIDFromBytes, ScRequestID} from "./wasmtypes/screquestid";
-import {ScTokenID} from "./wasmtypes/sctokenid";
-import {chainIDFromBytes, ScChainID} from "./wasmtypes/scchainid";
-import {hashFromBytes, ScHash} from "./wasmtypes/schash";
-import {agentIDFromBytes, ScAgentID} from "./wasmtypes/scagentid";
-import {ScAddress} from "./wasmtypes/scaddress";
-import {Proxy} from "./wasmtypes/proxy";
-import {hnameFromBytes, ScHname} from "./wasmtypes/schname";
-import {uint64FromBytes} from "./wasmtypes/scuint64";
-import {stringToBytes} from "./wasmtypes/scstring";
+import {ScAssets, ScBalances, ScTransfer} from './assets';
+import {ScDict, ScImmutableDict} from './dict';
+import {sandbox} from './host';
+import {ScSandboxUtils} from './sandboxutils';
+import {ScImmutableState, ScState} from './state';
+import {ScFunc} from './contract';
+import {CallRequest, DeployRequest, PostRequest, SendRequest, TransferRequest} from './wasmrequests';
+import {requestIDFromBytes, ScRequestID} from './wasmtypes/screquestid';
+import {ScTokenID} from './wasmtypes/sctokenid';
+import {chainIDFromBytes, ScChainID} from './wasmtypes/scchainid';
+import {hashFromBytes, ScHash} from './wasmtypes/schash';
+import {agentIDFromBytes, ScAgentID} from './wasmtypes/scagentid';
+import {ScAddress} from './wasmtypes/scaddress';
+import {Proxy} from './wasmtypes/proxy';
+import {hnameFromBytes, ScHname} from './wasmtypes/schname';
+import {uint64FromBytes} from './wasmtypes/scuint64';
+import {stringToBytes} from './wasmtypes/scstring';
 
 // @formatter:off
 export const FnAccountID              : i32 = -1;
@@ -190,7 +190,7 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     //public blockContext(construct func(sandbox: ScSandbox) interface{}, onClose func(interface{})): interface{} {
-    //	panic("implement me")
+    //	panic('implement me')
     //}
 
     // calls a smart contract function
@@ -266,7 +266,7 @@ export class ScSandboxFunc extends ScSandbox {
     // generates a random value from 0 to max (exclusive: max) using a deterministic RNG
     public random(max: u64): u64 {
         if (max == 0) {
-            this.panic("random: max parameter should be > 0");
+            this.panic('random: max parameter should be > 0');
         }
 
         // note that entropy gets reset for every request
@@ -280,7 +280,7 @@ export class ScSandboxFunc extends ScSandbox {
             ScSandboxFunc.entropy = this.utility().hashBlake2b(ScSandboxFunc.entropy).toBytes();
             ScSandboxFunc.offset = 0;
         }
-        let rnd = uint64FromBytes(ScSandboxFunc.entropy.slice(ScSandboxFunc.offset, ScSandboxFunc.offset + 8)) % max;
+        const rnd = uint64FromBytes(ScSandboxFunc.entropy.slice(ScSandboxFunc.offset, ScSandboxFunc.offset + 8)) % max;
         ScSandboxFunc.offset += 8;
         return rnd;
     }
@@ -290,7 +290,7 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     //public request(): ScRequest {
-    //	panic("implement me")
+    //	panic('implement me')
     //}
 
     // retrieve the request id of this transaction
@@ -317,7 +317,7 @@ export class ScSandboxFunc extends ScSandbox {
     }
 
     //public stateAnchor(): interface{} {
-    //	panic("implement me")
+    //	panic('implement me')
     //}
 
     // TransferAllowed transfers allowed assets from caller to the specified account
