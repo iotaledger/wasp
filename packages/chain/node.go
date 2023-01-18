@@ -52,8 +52,8 @@ import (
 
 const (
 	recoveryTimeout          time.Duration = 15 * time.Minute // TODO: Make it configurable?
-	redeliveryPeriod         time.Duration = 3 * time.Second  // TODO: Make it configurable?
-	printStatusPeriod        time.Duration = 10 * time.Second // TODO: Make it configurable?
+	redeliveryPeriod         time.Duration = 1 * time.Second  // TODO: Make it configurable?
+	printStatusPeriod        time.Duration = 3 * time.Second  // TODO: Make it configurable?
 	consensusInstsInAdvance  int           = 3                // TODO: Make it configurable?
 	awaitReceiptCleanupEvery int           = 100              // TODO: Make it configurable?
 
@@ -232,6 +232,7 @@ func New(
 	net peering.NetworkProvider,
 	log *logger.Logger,
 ) (Chain, error) {
+	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
 		listener = NewEmptyChainListener()
 	}
@@ -340,6 +341,7 @@ func New(
 	//
 	// Attach to the L1.
 	recvRequestCB := func(outputInfo *isc.OutputInfo) {
+		log.Debugf("recvRequestCB[%p], %v", cni, outputInfo.OutputID.ToHex())
 		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
 		if err != nil {
 			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
@@ -349,6 +351,7 @@ func New(
 	}
 	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
 	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
+		log.Debugf("recvAliasOutputCB[%p], %v", cni, outputInfo.OutputID.ToHex())
 		if outputInfo.Consumed() {
 			// we don't need to send consumed alias outputs to the pipe
 			return
@@ -357,6 +360,7 @@ func New(
 	}
 	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
 	recvMilestoneCB := func(timestamp time.Time) {
+		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
 		recvMilestonePipeInCh <- timestamp
 	}
 	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
@@ -476,6 +480,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 
 // This will always run in the main thread, because that's a callback for the chainMgr.
 func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleAccessNodesOnChainUpdatedCB")
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromChain = accessNodesFromChain
 	})
@@ -484,6 +489,7 @@ func (cni *chainNodeImpl) handleAccessNodesOnChainUpdatedCB(accessNodesFromChain
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.log.Debugf("handleStateTrackerActCB")
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
 	cni.accessLock.Unlock()
@@ -496,6 +502,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //
 // The request/receipt awaits are already handled in the StateTracker.
 func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+	cni.log.Debugf("handleStateTrackerCnfCB")
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
 	cni.accessLock.Unlock()
@@ -510,16 +517,19 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 }
 
 func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleAccessNodesConfigUpdated")
 	cni.updateAccessNodes(func() {
 		cni.accessNodesFromNode = accessNodesFromNode
 	})
 }
 
 func (cni chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
+	cni.log.Debugf("handleServersUpdated")
 	cni.updateServerNodes(serverNodes)
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
+	cni.log.Debugf("handleTxPublished")
 	if _, ok := cni.publishingTXes[txPubResult.txID]; !ok {
 		return
 	}
@@ -532,6 +542,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 }
 
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+	cni.log.Debugf("handleAliasOutput")
 	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput)
 	outMsgs := cni.chainMgr.AsGPA().Input(
 		chainMgr.NewInputAliasOutputConfirmed(aliasOutput),
@@ -541,6 +552,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
+	cni.log.Debugf("handleMilestoneTimestamp")
 	cni.mempool.TangleTimeUpdated(timestamp)
 	for ji := range cni.consensusInsts {
 		for li := range cni.consensusInsts[ji] {
@@ -565,6 +577,7 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 }
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
+	cni.log.Debugf("handleChainMgrOutput")
 	if outputUntyped == nil {
 		cni.cleanupConsensusInsts(nil, nil)
 		cni.cleanupPublishingTXes(map[iotago.TransactionID]*chainMgr.NeedPublishTX{})
@@ -611,6 +624,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 }
 
 func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
+	cni.log.Debugf("handleConsensusOutput")
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
 	case cons.Completed:
@@ -641,6 +655,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 }
 
 func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
+	cni.log.Debugf("handleConsensusRecover")
 	chainMgrInput := chainMgr.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
