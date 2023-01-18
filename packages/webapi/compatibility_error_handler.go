@@ -20,6 +20,6 @@ func CompatibilityHTTPErrorHandler(logger *logger.Logger) func(error, echo.Conte
 		}
 
 		// Use V2 error handler otherwise. This is also a catch-all for any other error type.
-		apierrors.HTTPErrorHandler(err, c)
+		_ = apierrors.HTTPErrorHandler(err, c)
 	}
 }

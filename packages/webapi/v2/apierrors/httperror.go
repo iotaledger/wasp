@@ -22,7 +22,7 @@ func NewHTTPError(httpCode int, message interface{}, err error) *HTTPError {
 		HTTPCode: httpCode,
 		Message:  message,
 	}
-	
+
 	if err != nil {
 		httpError.AdditionalError = err.Error()
 	}
