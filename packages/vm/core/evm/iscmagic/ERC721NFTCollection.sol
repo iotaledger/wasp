@@ -8,10 +8,15 @@ import "@iscmagic/ISCSandbox.sol";
 import "@iscmagic/ISCAccounts.sol";
 import "@iscmagic/ISCPrivileged.sol";
 
-// The ERC721 contract for the "global" collection of ISC L2 NFTs.
-contract ERC721NFTs { // is IERC721, IERC165
+// The ERC721 contract for a L2 collection of ISC NFTs, as defined in IRC27:
+// https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
+contract ERC721NFTCollection { // is IERC721Metadata, IERC721, IERC165
     using ISCTypes for ISCAgentID;
     using ISCTypes for uint256;
+    using ISCTypes for ISCNFT;
+
+    NFTID _collectionId;
+    string _collectionName; // extracted from the IRC27 metadata
 
     // Mapping from token ID to approved address
     mapping (uint256 => address) private _tokenApprovals;
@@ -24,11 +29,12 @@ contract ERC721NFTs { // is IERC721, IERC165
 
     function balanceOf(address owner) public view returns (uint256) {
         ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(owner);
-        return __iscAccounts.getL2NFTAmount(ownerAgentID);
+        return __iscAccounts.getL2NFTAmountInCollection(ownerAgentID, _collectionId);
     }
 
     function ownerOf(uint256 tokenId) public view returns (address) {
         ISCNFT memory nft = __iscSandbox.getNFTData(tokenId.asNFTID());
+        require(nft.isInCollection(_collectionId));
         require(nft.owner.isEthereum());
         return nft.owner.ethAddress();
     }
@@ -95,12 +101,15 @@ contract ERC721NFTs { // is IERC721, IERC165
         }
     }
 
-    // ERC165
+    // IERC165
+
+    bytes4 private constant _INTERFACE_ID_ERC721METADATA = 0x5b5e139f;
     bytes4 private constant _INTERFACE_ID_ERC721 = 0x80ac58cd;
     bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
     function supportsInterface(bytes4 interfaceID) public pure returns (bool) {
         return interfaceID == _INTERFACE_ID_ERC165
-            || interfaceID == _INTERFACE_ID_ERC721;
+            || interfaceID == _INTERFACE_ID_ERC721
+            || interfaceID == _INTERFACE_ID_ERC721METADATA;
     }
 
     bytes4 private constant _ERC721_RECEIVED = 0x150b7a02;
@@ -119,9 +128,23 @@ contract ERC721NFTs { // is IERC721, IERC165
         assembly { size := extcodesize(account) }
         return size > 0;
     }
-}
 
-ERC721NFTs constant __erc721NFTs = ERC721NFTs(ISC_ERC721_ADDRESS);
+    // IERC721Metadata
+
+    function name() external view returns (string memory) {
+        return _collectionName;
+    }
+
+    function symbol() external pure returns (string memory) {
+        return ""; // not defined in IRC27
+    }
+
+    function tokenURI(uint256 tokenId) external view returns (string memory) {
+        IRC27NFT memory nft = __iscSandbox.getIRC27NFTData(tokenId.asNFTID());
+        require(nft.nft.isInCollection(_collectionId));
+        return nft.metadata.uri;
+    }
+}
 
 interface IERC721Receiver {
     function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes memory _data) external returns(bytes4);

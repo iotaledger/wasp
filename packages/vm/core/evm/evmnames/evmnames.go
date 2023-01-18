@@ -27,7 +27,8 @@ const (
 	FuncGetChainID                          = "getChainID"
 	FuncGetCallGasLimit                     = "getCallGasLimit"
 
-	FuncRegisterERC20NativeToken = "registerERC20NativeToken"
+	FuncRegisterERC20NativeToken    = "registerERC20NativeToken"
+	FuncRegisterERC721NFTCollection = "registerERC721NFTCollection"
 
 	// block context
 	FuncOpenBlockContext  = "openBlockContext"
@@ -54,4 +55,5 @@ const (
 	FieldTokenName         = "n"
 	FieldTokenTickerSymbol = "t"
 	FieldTokenDecimals     = "d"
+	FieldNFTCollectionID   = "C"
 )

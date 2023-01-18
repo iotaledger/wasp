@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // ISCChainID matches the type definition in ISCTypes.sol
@@ -208,6 +209,31 @@ func (n ISCNFT) MustUnwrap() *isc.NFT {
 		panic(err)
 	}
 	return ret
+}
+
+// IRC27NFTMetadata matches the struct definition in ISCTypes.sol
+type IRC27NFTMetadata struct {
+	Standard string
+	Version  string
+	MimeType string
+	Uri      string //nolint:revive // false positive
+	Name     string
+}
+
+func WrapIRC27NFTMetadata(m *transaction.IRC27NFTMetadata) IRC27NFTMetadata {
+	return IRC27NFTMetadata{
+		Standard: m.Standard,
+		Version:  m.Version,
+		MimeType: m.MIMEType,
+		Uri:      m.URI,
+		Name:     m.Name,
+	}
+}
+
+// IRC27NFT matches the struct definition in ISCTypes.sol
+type IRC27NFT struct {
+	Nft      ISCNFT
+	Metadata IRC27NFTMetadata
 }
 
 // ISCAllowance matches the struct definition in ISCTypes.sol

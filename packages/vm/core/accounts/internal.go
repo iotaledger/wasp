@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/core/marshalutil"
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -430,6 +431,19 @@ func getAccountNFTs(account *collections.ImmutableMap) []iotago.NFTID {
 		return true
 	})
 	return ret
+}
+
+func getAccountNFTsInCollection(state kv.KVStoreReader, account *collections.ImmutableMap, collectionID iotago.NFTID) []iotago.NFTID {
+	// TODO: this may be inefficient if the account owns many NFTs not in the collection
+	nftIDs := getAccountNFTs(account)
+	return lo.Filter(nftIDs, func(nftID iotago.NFTID, index int) bool {
+		nft := GetNFTData(state, nftID)
+		issuer, ok := nft.Issuer.(*iotago.NFTAddress)
+		if !ok {
+			return false
+		}
+		return issuer.NFTID() == collectionID
+	})
 }
 
 func GetTotalL2NFTs(state kv.KVStoreReader) map[iotago.NFTID]bool {

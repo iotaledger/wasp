@@ -27,10 +27,10 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -478,12 +478,14 @@ func TestSendAsNFT(t *testing.T) {
 
 	iscTest := env.deployISCTestContract(ethKey)
 
-	nft := env.mintNFTAndSendToL2(ethAgentID)
+	nft, _, err := env.solo.MintNFTL1(env.soloChain.OriginatorPrivateKey, env.soloChain.OriginatorAddress, []byte("foobar"))
+	require.NoError(t, err)
+	env.soloChain.MustDepositNFT(nft, ethAgentID, env.soloChain.OriginatorPrivateKey)
 
 	const storageDeposit uint64 = 10_000
 
 	// allow ISCTest to take the NFT
-	_, err := env.ISCMagicSandbox(ethKey).callFn(
+	_, err = env.ISCMagicSandbox(ethKey).callFn(
 		[]ethCallOptions{{sender: ethKey}},
 		"allow",
 		iscTest.address,
@@ -513,7 +515,7 @@ func TestSendAsNFT(t *testing.T) {
 	)
 }
 
-func TestERC721(t *testing.T) {
+func TestERC721NFTs(t *testing.T) {
 	env := initEVM(t)
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
@@ -526,7 +528,9 @@ func TestERC721(t *testing.T) {
 		require.EqualValues(t, 0, n.Uint64())
 	}
 
-	nft := env.mintNFTAndSendToL2(ethAgentID)
+	nft, _, err := env.solo.MintNFTL1(env.soloChain.OriginatorPrivateKey, env.soloChain.OriginatorAddress, []byte("foobar"))
+	require.NoError(t, err)
+	env.soloChain.MustDepositNFT(nft, ethAgentID, env.soloChain.OriginatorPrivateKey)
 
 	{
 		var n *big.Int
@@ -550,7 +554,7 @@ func TestERC721(t *testing.T) {
 		require.Error(t, err)
 	}
 
-	_, err := erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
 	require.NoError(t, err)
 
 	{
@@ -575,6 +579,145 @@ func TestERC721(t *testing.T) {
 		var a common.Address
 		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
 		require.EqualValues(t, receiverAddr, a)
+	}
+}
+
+func TestERC721NFTCollection(t *testing.T) {
+	env := initEVM(t)
+
+	collectionOwner, collectionOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(collectionOwnerAddr)/2, collectionOwner)
+	require.NoError(t, err)
+
+	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
+
+	collectionMetadata := transaction.NewIRC27NFTMetadata(
+		"text/html",
+		"https://my-awesome-nft-project.com",
+		"a string that is longer than 32 bytes",
+	)
+
+	collection, collectionInfo, err := env.solo.MintNFTL1(collectionOwner, collectionOwnerAddr, collectionMetadata.MustBytes())
+	require.NoError(t, err)
+
+	nftMetadatas := []*transaction.IRC27NFTMetadata{
+		transaction.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/1.json",
+			"nft1",
+		),
+		transaction.NewIRC27NFTMetadata(
+			"application/json",
+			"https://my-awesome-nft-project.com/2.json",
+			"nft2",
+		),
+	}
+	allNFTs, _, err := env.solo.MintNFTsL1(collectionOwner, collectionOwnerAddr, &collectionInfo.OutputID,
+		lo.Map(nftMetadatas, func(item *transaction.IRC27NFTMetadata, index int) []byte {
+			return item.MustBytes()
+		}),
+	)
+	require.NoError(t, err)
+
+	require.Len(t, allNFTs, 3)
+	for _, nft := range allNFTs {
+		require.True(t, env.solo.HasL1NFT(collectionOwnerAddr, &nft.ID))
+	}
+
+	// deposit all nfts on L2
+	nfts := func() []*isc.NFT {
+		var nfts []*isc.NFT
+		for _, nft := range allNFTs {
+			if nft.ID == collection.ID {
+				// the collection NFT in the owner's account
+				env.soloChain.MustDepositNFT(nft, isc.NewAgentID(collectionOwnerAddr), collectionOwner)
+			} else {
+				// others in ethAgentID's account
+				env.soloChain.MustDepositNFT(nft, ethAgentID, collectionOwner)
+				nfts = append(nfts, nft)
+			}
+		}
+		return nfts
+	}()
+	require.Len(t, nfts, 2)
+
+	// minted NFTs are in random order; find the first one in nftMetadatas
+	nft, ok := lo.Find(nfts, func(item *isc.NFT) bool {
+		metadata, err := transaction.IRC27NFTMetadataFromBytes(item.Metadata)
+		require.NoError(t, err)
+		return metadata.URI == nftMetadatas[0].URI
+	})
+	require.True(t, ok)
+
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.NoError(t, err)
+
+	// should not allow to register again
+	err = env.registerERC721NFTCollection(collectionOwner, collection.ID)
+	require.ErrorContains(t, err, "already exists")
+
+	erc721 := env.ERC721NFTCollection(ethKey, collection.ID)
+
+	{
+		var n *big.Int
+		erc721.callView("balanceOf", []any{ethAddr}, &n)
+		require.EqualValues(t, 2, n.Uint64())
+	}
+
+	{
+		var a common.Address
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		require.EqualValues(t, ethAddr, a)
+	}
+
+	receiverKey, receiverAddr := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	{
+		_, err := erc721.callFn([]ethCallOptions{{
+			sender:   receiverKey,
+			gasLimit: 100_000, // skip estimate gas (which will fail)
+		}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+		require.Error(t, err)
+	}
+
+	_, err = erc721.callFn(nil, "approve", receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+	require.NoError(t, err)
+
+	{
+		var a common.Address
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		require.EqualValues(t, receiverAddr, a)
+	}
+
+	_, err = erc721.callFn([]ethCallOptions{{
+		sender: receiverKey,
+	}}, "transferFrom", ethAddr, receiverAddr, iscmagic.WrapNFTID(nft.ID).TokenID())
+	require.NoError(t, err)
+
+	{
+		var a common.Address
+		erc721.callView("getApproved", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		var zero common.Address
+		require.EqualValues(t, zero, a)
+	}
+
+	{
+		var a common.Address
+		erc721.callView("ownerOf", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &a)
+		require.EqualValues(t, receiverAddr, a)
+	}
+
+	{
+		var name string
+		erc721.callView("name", nil, &name)
+		require.EqualValues(t, collectionMetadata.Name, name)
+	}
+
+	{
+		var uri string
+		erc721.callView("tokenURI", []any{iscmagic.WrapNFTID(nft.ID).TokenID()}, &uri)
+		require.EqualValues(t, nftMetadatas[0].URI, uri)
 	}
 }
 
@@ -815,7 +958,10 @@ func TestERC20NativeTokens(t *testing.T) {
 	require.NoError(t, err)
 
 	supply := big.NewInt(int64(10 * isc.Million))
-	foundrySN, nativeTokenID := env.createFoundry(foundryOwner, supply)
+	foundrySN, nativeTokenID, err := env.soloChain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
+	require.NoError(t, err)
+	err = env.soloChain.MintTokens(foundrySN, supply, foundryOwner)
+	require.NoError(t, err)
 
 	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
 	require.NoError(t, err)
@@ -831,23 +977,9 @@ func TestERC20NativeTokens(t *testing.T) {
 	ethKey, ethAddr := env.soloChain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 
-	_, err = env.soloChain.PostRequestSync(
-		solo.NewCallParams(
-			accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
-			dict.Dict{
-				accounts.ParamAgentID:          codec.EncodeAgentID(ethAgentID),
-				accounts.ParamForceOpenAccount: codec.EncodeBool(true),
-			},
-		).
-			WithAllowance(isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{
-				&iotago.NativeToken{
-					ID:     nativeTokenID,
-					Amount: supply,
-				},
-			}))).
-			WithMaxAffordableGasBudget(),
-		foundryOwner,
-	)
+	err = env.soloChain.SendFromL2ToL2Account(isc.NewAllowanceFungibleTokens(isc.NewFungibleTokens(0, iotago.NativeTokens{
+		&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
+	})), ethAgentID, foundryOwner)
 	require.NoError(t, err)
 
 	{
@@ -979,7 +1111,8 @@ func TestERC20NativeTokensLongName(t *testing.T) {
 
 	supply := big.NewInt(int64(10 * isc.Million))
 
-	foundrySN, _ := env.createFoundry(foundryOwner, supply)
+	foundrySN, _, err := env.soloChain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
+	require.NoError(t, err)
 
 	err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
 	require.ErrorContains(t, err, "too long")
@@ -1295,27 +1428,17 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 	// create some custom token, and set it as the chain gas token
 	customTokenDecimals := uint32(20) // 2 more decimal cases than ethereum
 
-	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncFoundryCreateNew.Name,
-		accounts.ParamTokenScheme, codec.EncodeTokenScheme(
-			&iotago.SimpleTokenScheme{
-				MaximumSupply: big.NewInt(999999999),
-				MintedTokens:  util.Big0,
-				MeltedTokens:  util.Big0,
-			},
-		),
-	).
-		AddBaseTokens(2 * isc.Million).
-		WithAllowance(isc.NewAllowanceBaseTokens(1 * isc.Million)).
-		WithGasBudget(math.MaxUint64)
-	res, err := env.soloChain.PostRequestSync(req, nil)
-	require.NoError(t, err)
-	foundrySN := kvdecoder.New(res).MustGetUint32(accounts.ParamFoundrySN)
-	nativeTokenID, err := env.soloChain.GetNativeTokenIDByFoundrySN(foundrySN)
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	err := env.soloChain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
 	require.NoError(t, err)
 
-	err = env.soloChain.MintTokens(foundrySN, big.NewInt(1_000_000), env.soloChain.OriginatorPrivateKey)
+	supply := big.NewInt(999999999)
+	foundrySN, nativeTokenID, err := env.soloChain.NewFoundryParams(supply).WithUser(foundryOwner).CreateFoundry()
 	require.NoError(t, err)
-	env.soloChain.AssertL2NativeTokens(env.soloChain.OriginatorAgentID, nativeTokenID, big.NewInt(1_000_000))
+
+	err = env.soloChain.MintTokens(foundrySN, big.NewInt(1_000_000), foundryOwner)
+	require.NoError(t, err)
+	env.soloChain.AssertL2NativeTokens(isc.NewAgentID(foundryOwnerAddr), nativeTokenID, big.NewInt(1_000_000))
 
 	gasFeePolicy := gas.GasFeePolicy{
 		GasFeeTokenID:       nativeTokenID,
@@ -1344,7 +1467,7 @@ func TestSolidityTransferCustomBaseTokens(t *testing.T) {
 			}}),
 		),
 		ethAgentID,
-		env.soloChain.OriginatorPrivateKey,
+		foundryOwner,
 	)
 	require.NoError(t, err)
 	env.soloChain.AssertL2NativeTokens(ethAgentID, nativeTokenID, big.NewInt(tokensToMoveToEvmAccount))

@@ -10,17 +10,20 @@ var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain accoun
 
 var (
 	// Views
-	ViewBalance                  = coreutil.ViewFunc("balance")
-	ViewBalanceBaseToken         = coreutil.ViewFunc("balanceBaseToken")
-	ViewBalanceNativeToken       = coreutil.ViewFunc("balanceNativeToken")
-	ViewTotalAssets              = coreutil.ViewFunc("totalAssets")
-	ViewAccounts                 = coreutil.ViewFunc("accounts")
-	ViewGetAccountNonce          = coreutil.ViewFunc("getAccountNonce")
-	ViewGetNativeTokenIDRegistry = coreutil.ViewFunc("getNativeTokenIDRegistry")
-	ViewFoundryOutput            = coreutil.ViewFunc("foundryOutput")
-	ViewAccountNFTs              = coreutil.ViewFunc("accountNFTs")
-	ViewAccountFoundries         = coreutil.ViewFunc("accountFoundries")
-	ViewNFTData                  = coreutil.ViewFunc("nftData")
+	ViewBalance                      = coreutil.ViewFunc("balance")
+	ViewBalanceBaseToken             = coreutil.ViewFunc("balanceBaseToken")
+	ViewBalanceNativeToken           = coreutil.ViewFunc("balanceNativeToken")
+	ViewTotalAssets                  = coreutil.ViewFunc("totalAssets")
+	ViewAccounts                     = coreutil.ViewFunc("accounts")
+	ViewGetAccountNonce              = coreutil.ViewFunc("getAccountNonce")
+	ViewGetNativeTokenIDRegistry     = coreutil.ViewFunc("getNativeTokenIDRegistry")
+	ViewFoundryOutput                = coreutil.ViewFunc("foundryOutput")
+	ViewAccountNFTs                  = coreutil.ViewFunc("accountNFTs")
+	ViewAccountNFTAmount             = coreutil.ViewFunc("accountNFTAmount")
+	ViewAccountNFTsInCollection      = coreutil.ViewFunc("accountNFTsInCollection")
+	ViewAccountNFTAmountInCollection = coreutil.ViewFunc("accountNFTAmountInCollection")
+	ViewAccountFoundries             = coreutil.ViewFunc("accountFoundries")
+	ViewNFTData                      = coreutil.ViewFunc("nftData")
 
 	// Funcs
 	FuncDeposit             = coreutil.Func("deposit")
@@ -69,8 +72,10 @@ const (
 	ParamDestroyTokens                = "y"
 	ParamStorageDepositAssumptionsBin = "u"
 	ParamForceOpenAccount             = "c"
+	ParamNFTAmount                    = "A"
 	ParamNFTIDs                       = "i"
 	ParamNFTID                        = "z"
+	ParamCollectionID                 = "C"
 	ParamNFTData                      = "e"
 	ParamBalance                      = "B"
 	ParamNativeTokenID                = "N"

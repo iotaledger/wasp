@@ -34,7 +34,8 @@ var (
 	FuncGetChainID                          = coreutil.ViewFunc(evmnames.FuncGetChainID)
 	FuncGetCallGasLimit                     = coreutil.ViewFunc(evmnames.FuncGetCallGasLimit)
 
-	FuncRegisterERC20NativeToken = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
+	FuncRegisterERC20NativeToken    = coreutil.Func(evmnames.FuncRegisterERC20NativeToken)
+	FuncRegisterERC721NFTCollection = coreutil.Func(evmnames.FuncRegisterERC721NFTCollection)
 
 	// block context
 	FuncOpenBlockContext  = coreutil.Func(evmnames.FuncOpenBlockContext)
@@ -62,6 +63,7 @@ const (
 	FieldTokenName         = evmnames.FieldTokenName         // string
 	FieldTokenTickerSymbol = evmnames.FieldTokenTickerSymbol // string
 	FieldTokenDecimals     = evmnames.FieldTokenDecimals     // uint8
+	FieldNFTCollectionID   = evmnames.FieldNFTCollectionID   // NFTID
 )
 
 const (
