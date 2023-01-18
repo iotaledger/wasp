@@ -12,21 +12,23 @@ type GenericError struct {
 
 // HTTPErrorHandler must be hooked to an echo server to render instances
 // of HTTPError as JSON
-func HTTPErrorHandler(err error, c echo.Context) {
+func HTTPErrorHandler(err error, c echo.Context) error {
+	var resultError error
+
 	if echoError, ok := err.(*echo.HTTPError); ok {
 		mappedError := HTTPErrorFromEchoError(echoError)
-		err = c.JSON(mappedError.HTTPCode, mappedError.GetErrorResult())
+		return c.JSON(mappedError.HTTPCode, mappedError.GetErrorResult())
 	}
 
 	if apiError, ok := err.(*HTTPError); ok {
 		if !c.Response().Committed {
 			if c.Request().Method == http.MethodHead { // Issue #608
-				err = c.NoContent(apiError.HTTPCode)
-			} else {
-				err = c.JSON(apiError.HTTPCode, apiError.GetErrorResult())
+				return c.NoContent(apiError.HTTPCode)
 			}
+			return c.JSON(apiError.HTTPCode, apiError.GetErrorResult())
 		}
 	}
 
-	c.Echo().DefaultHTTPErrorHandler(err, c)
+	c.Echo().DefaultHTTPErrorHandler(resultError, c)
+	return nil
 }

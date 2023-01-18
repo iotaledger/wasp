@@ -15,6 +15,11 @@ type AuthContext struct {
 	scheme          string
 	isAuthenticated bool
 	claims          *WaspClaims
+	name            string
+}
+
+func (a *AuthContext) Name() string {
+	return a.name
 }
 
 func (a *AuthContext) IsAuthenticated() bool {
