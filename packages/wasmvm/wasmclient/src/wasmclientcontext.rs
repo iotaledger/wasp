@@ -134,10 +134,8 @@ impl WasmClientContext {
     pub fn start_event_handlers(&'static self) -> errors::Result<()> {
         let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
         let done = Arc::clone(&self.event_done);
-        self.svc_client.subscribe_events(tx, done).unwrap();
-
-        self.process_event(rx).unwrap();
-
+        self.svc_client.subscribe_events(tx, done)?;
+        self.process_event(rx)?;
         return Ok(());
     }
 
@@ -196,13 +194,13 @@ impl WasmClientContext {
             Some(idx) => idx,
             None => return String::from(param),
         };
-        match param.chars().nth(idx + 1).unwrap() {
+        match param.chars().nth(idx + 1) {
             // escaped escape character
-            '~' => param[0..idx].to_string() + "~" + &self.unescape(&param[idx + 2..]),
+            Some('~') => param[0..idx].to_string() + "~" + &self.unescape(&param[idx + 2..]),
             // escaped vertical bar
-            '/' => param[0..idx].to_string() + "|" + &self.unescape(&param[idx + 2..]),
+            Some('/') => param[0..idx].to_string() + "|" + &self.unescape(&param[idx + 2..]),
             // escaped space
-            '_' => param[0..idx].to_string() + " " + &self.unescape(&param[idx + 2..]),
+            Some('_') => param[0..idx].to_string() + " " + &self.unescape(&param[idx + 2..]),
             _ => panic!("invalid event encoding"),
         }
     }

@@ -114,7 +114,10 @@ impl WasmClientSandbox for WasmClientContext {
 
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8> {
         let addr = wasmtypes::address_from_bytes(args);
-        let bech32 = codec::bech32_encode(&addr);
+        let bech32 = match codec::bech32_encode(&addr) {
+            Ok(v) => v,
+            Err(_) => return Vec::new(),
+        };
         return bech32.into_bytes();
     }
 
