@@ -65,7 +65,7 @@ func TestSynchronous(t *testing.T) {
 		if w {
 			reqs++
 		}
-		require.True(t, ctx.WaitUntilMempoolIsEmpty(180*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(-reqs, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -111,7 +111,7 @@ func TestConcurrency(t *testing.T) {
 				}
 			}(r, n)
 		}
-		require.True(t, ctx.WaitUntilMempoolIsEmpty(180*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()
@@ -160,7 +160,7 @@ func TestConcurrency2(t *testing.T) {
 			}(r, n)
 		}
 
-		require.True(t, ctx.WaitUntilMempoolIsEmpty(180*time.Second))
+		require.True(t, ctx.WaitForPendingRequests(sum, 180*time.Second))
 
 		v := testcore.ScFuncs.GetCounter(ctx)
 		v.Func.Call()

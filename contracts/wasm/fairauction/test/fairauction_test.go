@@ -57,7 +57,7 @@ func TestStartAuction(t *testing.T) {
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitUntilMempoolIsEmpty())
+	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
 func TestGetAuctionInfo(t *testing.T) {
@@ -91,7 +91,7 @@ func TestGetAuctionInfo(t *testing.T) {
 
 	// remove pending finalize_auction from backlog
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitUntilMempoolIsEmpty())
+	require.True(t, ctx.WaitForPendingRequests(1))
 }
 
 func TestFinalizedNoBids(t *testing.T) {
@@ -99,7 +99,7 @@ func TestFinalizedNoBids(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitUntilMempoolIsEmpty())
+	require.True(t, ctx.WaitForPendingRequests(1))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
@@ -120,7 +120,7 @@ func TestFinalizedOneBidTooLow(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitUntilMempoolIsEmpty())
+	require.True(t, ctx.WaitForPendingRequests(1))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
@@ -148,7 +148,7 @@ func TestFinalizedOneBid(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(61 * time.Minute)
-	require.True(t, ctx.WaitUntilMempoolIsEmpty())
+	require.True(t, ctx.WaitForPendingRequests(1))
 
 	info := fairauction.ScFuncs.GetAuctionInfo(ctx)
 	info.Params.Nft().SetValue(nftID)
