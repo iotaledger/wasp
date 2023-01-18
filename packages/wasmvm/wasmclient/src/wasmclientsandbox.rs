@@ -108,27 +108,27 @@ impl WasmClientSandbox for WasmClientContext {
 
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8> {
         let bech32 = wasmlib::string_from_bytes(args);
-        let addr = codec::bech32_decode(&bech32).unwrap();
-        return addr.to_bytes();
+        match codec::bech32_decode(&bech32) {
+            Ok(addr) => addr.to_bytes(),
+            Err(_) => return Vec::new(),
+        }
     }
 
     fn fn_utils_bech32_encode(&self, args: &[u8]) -> Vec<u8> {
         let addr = wasmtypes::address_from_bytes(args);
-        let bech32 = match codec::bech32_encode(&addr) {
-            Ok(v) => v,
+        match codec::bech32_encode(&addr) {
+            Ok(v) => return v.into_bytes(),
             Err(_) => return Vec::new(),
-        };
-        return bech32.into_bytes();
+        }
     }
 
     fn fn_utils_hash_name(&self, args: &[u8]) -> Vec<u8> {
-        let s = match std::str::from_utf8(args) {
-            Ok(v) => v,
+        match std::str::from_utf8(args) {
+            Ok(v) => return wasmtypes::hname_from_string(v).to_bytes(),
             Err(e) => {
                 self.err(&format!("invalid hname: {}", e), "");
                 return Vec::new();
             }
         };
-        return wasmtypes::hname_from_string(s).to_bytes();
     }
 }
