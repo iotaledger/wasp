@@ -6,7 +6,7 @@ import * as wasmlib from 'wasmlib';
 import {panic} from 'wasmlib';
 import * as coreaccounts from 'wasmlib/coreaccounts';
 import {WasmClientSandbox} from './wasmclientsandbox';
-import {IClientService} from "./wasmclientservice";
+import {IClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
@@ -82,6 +82,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     private async waitEventTimeout(msec: number): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         return new Promise(function (resolve) {
             setTimeout(function () {
@@ -89,7 +90,7 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
                     self.eventReceived = false;
                     resolve();
                 } else if (msec <= 0) {
-                    self.Err = "event wait timeout";
+                    self.Err = 'event wait timeout';
                     resolve();
                 } else {
                     self.waitEventTimeout(msec - 100).then(resolve);
@@ -107,18 +108,18 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     private processEvent(msg: string[]): void {
-        if (msg[0] == "error") {
+        if (msg[0] == 'error') {
             this.Err = msg[1];
             this.eventReceived = true;
             return;
         }
 
-        if (msg[0] != "contract" || msg[1] != this.chainID.toString()) {
+        if (msg[0] != 'contract' || msg[1] != this.chainID.toString()) {
             // not intended for us
             return;
         }
 
-        const params = msg[6].split("|");
+        const params = msg[6].split('|');
         for (let i = 0; i < params.length; i++) {
             params[i] = this.unescape(params[i]);
         }
@@ -147,21 +148,21 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
     }
 
     private unescape(param: string): string {
-        const i = param.indexOf("~");
+        const i = param.indexOf('~');
         if (i < 0) {
             return param;
         }
 
         switch (param.charAt(i + 1)) {
             case '~': // escaped escape character
-                return param.slice(0, i) + "~" + this.unescape(param.slice(i + 2));
+                return param.slice(0, i) + '~' + this.unescape(param.slice(i + 2));
             case '/': // escaped vertical bar
-                return param.slice(0, i) + "|" + this.unescape(param.slice(i + 2));
+                return param.slice(0, i) + '|' + this.unescape(param.slice(i + 2));
             case '_': // escaped space
-                return param.slice(0, i) + " " + this.unescape(param.slice(i + 2));
+                return param.slice(0, i) + ' ' + this.unescape(param.slice(i + 2));
             default:
-                panic("invalid event encoding");
+                panic('invalid event encoding');
         }
-        return "";
+        return '';
     }
 }

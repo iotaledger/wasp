@@ -476,7 +476,12 @@ func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...
 		expectedRequests = -expectedRequests
 	}
 
-	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
+	timeout := time.Duration(expectedRequests*5) * time.Second
+	if len(maxWait) > 0 {
+		timeout = maxWait[0]
+	}
+
+	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, timeout)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
 }

@@ -3,9 +3,7 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import {Socket} from "nanomsg";
-
-const nano = require('nanomsg');
+import nano, {Socket} from 'nanomsg';
 
 export interface IClientService {
     callViewByHname(chainID: wasmlib.ScChainID, hContract: wasmlib.ScHname, hFunction: wasmlib.ScHname, args: Uint8Array): [Uint8Array, isc.Error];
@@ -51,12 +49,13 @@ export class WasmClientService implements IClientService {
     }
 
     public subscribeEvents(who: any, callback: (msg: string[]) => void): isc.Error {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         this.callbacks.push(callback);
         this.subscribers.push(who);
         if (this.subscribers.length == 1) {
             this.eventListener.on('error', function (err: any) {
-                callback(["error", err.toString()]);
+                callback(['error', err.toString()]);
             });
             this.eventListener.on('data', function (buf: any) {
                 const txt = buf.toString();
@@ -67,7 +66,7 @@ export class WasmClientService implements IClientService {
                     }
                 }
             });
-            this.eventListener.connect("tcp://" + this.eventPort);
+            this.eventListener.connect('tcp://' + this.eventPort);
         }
         return null;
     }
