@@ -36,5 +36,5 @@ func TestBets(t *testing.T) {
 
 	// wait for finalize_auction
 	ctx.AdvanceClockBy(1201 * time.Second)
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitUntilMempoolIsEmpty())
 }

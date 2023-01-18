@@ -99,7 +99,7 @@ func TestIncrementRepeatOnce(t *testing.T) {
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitUntilMempoolIsEmpty())
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -112,7 +112,7 @@ func TestIncrementRepeatThrice(t *testing.T) {
 	repeatMany.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(3))
+	require.True(t, ctx.WaitUntilMempoolIsEmpty())
 
 	checkStateCounter(t, ctx, 4)
 }
@@ -144,7 +144,7 @@ func TestIncrementPostIncrement(t *testing.T) {
 	postIncrement.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(1))
+	require.True(t, ctx.WaitUntilMempoolIsEmpty())
 
 	checkStateCounter(t, ctx, 2)
 }
@@ -184,7 +184,7 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	localStatePost.Func.Post()
 	require.NoError(t, ctx.Err)
 
-	require.True(t, ctx.WaitForPendingRequests(3))
+	require.True(t, ctx.WaitUntilMempoolIsEmpty())
 
 	if ctx.IsWasm {
 		// global var in wasm execution has no effect

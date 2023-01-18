@@ -463,20 +463,12 @@ func (ctx *SoloContext) uploadWasm(keyPair *cryptolib.KeyPair) {
 	ctx.IsWasm = true
 }
 
-// WaitForPendingRequests waits for expectedRequests pending requests to be processed.
-// a negative value indicates the absolute amount of requests
+// WaitUntilMempoolIsEmpty waits for any pending requests to be processed.
 // The function will wait for maxWait (default 5 seconds) duration before giving up with a timeout.
 // The function returns false in case of a timeout.
-func (ctx *SoloContext) WaitForPendingRequests(expectedRequests int, maxWait ...time.Duration) bool {
+func (ctx *SoloContext) WaitUntilMempoolIsEmpty(maxWait ...time.Duration) bool {
 	_ = wasmhost.Connect(ctx.wasmHostOld)
-	if expectedRequests > 0 {
-		info := ctx.Chain.MempoolInfo()
-		expectedRequests += info.OutPoolCounter
-	} else {
-		expectedRequests = -expectedRequests
-	}
-
-	result := ctx.Chain.WaitForRequestsThrough(expectedRequests, maxWait...)
+	result := ctx.Chain.WaitUntilMempoolIsEmpty(maxWait...)
 	_ = wasmhost.Connect(ctx.wc)
 	return result
 }
