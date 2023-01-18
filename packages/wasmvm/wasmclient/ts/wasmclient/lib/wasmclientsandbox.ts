@@ -3,13 +3,13 @@
 
 import * as isc from './isc';
 import * as wasmlib from 'wasmlib';
-import { panic } from 'wasmlib';
-import { IClientService } from './';
+import {panic} from 'wasmlib';
+import {IClientService} from './';
 
 export class WasmClientSandbox implements wasmlib.ScHost {
     chainID: wasmlib.ScChainID = new wasmlib.ScChainID();
     Err: isc.Error = null;
-    hrp: string = "";
+    hrp = '';
     keyPair: isc.KeyPair | null = null;
     nonce: u64 = 0n;
     ReqID: wasmlib.ScRequestID = new wasmlib.ScRequestID();
@@ -116,7 +116,7 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return new Uint8Array(0);
         }
         if (hrp != this.hrp) {
-            this.Err = "invalid protocol prefix: " + hrp;
+            this.Err = 'invalid protocol prefix: ' + hrp;
             return new Uint8Array(0);
         }
         return addr.toBytes();

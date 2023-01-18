@@ -3,7 +3,7 @@
 
 import {Blake2b, Ed25519} from '@iota/crypto.js';
 import * as wasmlib from 'wasmlib';
-import {ScAddress, ScLengthEd25519, uint64ToBytes} from "wasmlib";
+import {ScAddress, uint64ToBytes} from 'wasmlib';
 
 export class KeyPair {
     publicKey: Uint8Array;
@@ -22,7 +22,7 @@ export class KeyPair {
 
     public address(): ScAddress {
         const addr = new Uint8Array(wasmlib.ScLengthEd25519);
-        addr[0] = wasmlib.ScAddressEd25519
+        addr[0] = wasmlib.ScAddressEd25519;
         addr.set(Blake2b.sum256(this.publicKey), 1);
         return wasmlib.addressFromBytes(addr);
     }
