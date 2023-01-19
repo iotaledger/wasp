@@ -12,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/iotaledger/wasp/packages/authentication/shared"
+	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/users"
 )
 
@@ -44,7 +45,19 @@ type WaspClaims struct {
 
 func (c *WaspClaims) HasPermission(permission string) bool {
 	_, exists := c.Permissions[permission]
-	return exists
+
+	if exists {
+		return true
+	}
+
+	if permission == permissions.Read {
+		// If a user only has write permissions, it should still be able to read.
+		_, exists = c.Permissions[permissions.Write]
+
+		return exists
+	}
+
+	return false
 }
 
 func (c *WaspClaims) compare(field, expected string) bool {
@@ -100,6 +113,8 @@ func (j *JWTAuth) Middleware(skipper middleware.Skipper, allow MiddlewareValidat
 
 			// read the claims set by the JWT middleware on the context
 			authContext.claims = token.Claims.(*WaspClaims)
+
+			authContext.name = authContext.claims.Subject
 
 			// do extended authClaims validation
 			if !authContext.claims.VerifyAudience(j.nodeID, true) {

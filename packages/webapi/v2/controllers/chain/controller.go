@@ -68,13 +68,13 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET("chains", c.getChainList, authentication.ValidatePermissions([]string{permissions.ChainRead})).
+	adminAPI.GET("chains", c.getChainList, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available chains", mocker.Get([]models.ChainInfoResponse{}), nil).
 		SetOperationId("getChains").
 		SetSummary("Get a list of all chains")
 
-	adminAPI.POST("chains/:chainID/activate", c.activateChain, authentication.ValidatePermissions([]string{permissions.ChainWrite})).
+	adminAPI.POST("chains/:chainID/activate", c.activateChain, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
@@ -82,7 +82,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
-	adminAPI.POST("chains/:chainID/deactivate", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.ChainWrite})).
+	adminAPI.POST("chains/:chainID/deactivate", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
@@ -90,28 +90,28 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
-	adminAPI.GET("chains/:chainID", c.getChainInfo, authentication.ValidatePermissions([]string{permissions.ChainRead})).
+	adminAPI.GET("chains/:chainID", c.getChainInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "Information about a specific chain", mocker.Get(models.ChainInfoResponse{}), nil).
 		SetOperationId("getChainInfo").
 		SetSummary("Get information about a specific chain")
 
-	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.ChainRead})).
+	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all nodes tied to the chain", mocker.Get(models.CommitteeInfoResponse{}), nil).
 		SetOperationId("getCommitteeInfo").
 		SetSummary("Get information about the deployed committee")
 
-	adminAPI.GET("chains/:chainID/contracts", c.getContracts, authentication.ValidatePermissions([]string{permissions.ChainRead})).
+	adminAPI.GET("chains/:chainID/contracts", c.getContracts, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "A list of all available contracts", mocker.Get([]models.ContractInfoResponse{}), nil).
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")
 
-	adminAPI.PUT("chains/:chainID/access-node/:publicKey", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
+	adminAPI.PUT("chains/:chainID/access-node/:publicKey", c.addAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "publicKey", "Nodes public key (Hex)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
@@ -119,7 +119,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetSummary("Configure a trusted node to be an access node.").
 		SetOperationId("addAccessNode")
 
-	adminAPI.DELETE("chains/:chainID/access-node/:publicKey", c.removeAccessNode, authentication.ValidatePermissions([]string{permissions.ChainWrite, permissions.PeeringWrite})).
+	adminAPI.DELETE("chains/:chainID/access-node/:publicKey", c.removeAccessNode, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", "chainID", "ChainID (Bech32)").
 		AddParamPath("", "publicKey", "Nodes public key (Hex)").
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
