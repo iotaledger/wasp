@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/iotaledger/hive.go/serializer/v2"
 	inxpow "github.com/iotaledger/inx-app/pkg/pow"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -33,6 +34,6 @@ func doBlockPow(ctx context.Context, block *iotago.Block, nodeClient *nodeclient
 
 	// DoPoW does the proof-of-work required to hit the target score configured on this Handler.
 	// The given iota.Block's nonce is automatically updated.
-	_, err := inxpow.DoPoW(ctx, block, float64(parameters.L1().Protocol.MinPoWScore), parallelism, refreshTipsInterval, refreshTipsFunc)
+	_, err := inxpow.DoPoW(ctx, block, serializer.DeSeriModePerformValidation|serializer.DeSeriModePerformLexicalOrdering, parameters.L1().Protocol, parallelism, refreshTipsInterval, refreshTipsFunc)
 	return err
 }
