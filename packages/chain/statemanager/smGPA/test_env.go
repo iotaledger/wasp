@@ -30,7 +30,7 @@ type testEnv struct {
 	log          *logger.Logger
 }
 
-func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUtils.BlockWAL, timersOpt ...StateManagerTimers) *testEnv {
+func newTestEnv(t *testing.T, nodeIDs []gpa.NodeID, createWALFun func() smGPAUtils.TestBlockWAL, timersOpt ...StateManagerTimers) *testEnv {
 	bf := smGPAUtils.NewBlockFactory(t)
 	chainID := bf.GetChainID()
 	log := testlogger.NewLogger(t).Named("c-" + chainID.ShortString())

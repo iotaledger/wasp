@@ -19,6 +19,12 @@ type BlockWAL interface {
 	Contents() []state.BlockHash
 }
 
+// May be used only for tests; deleting in production should not be available.
+type TestBlockWAL interface {
+	BlockWAL
+	Delete(state.BlockHash) bool
+}
+
 type TimeProvider interface {
 	SetNow(time.Time)
 	GetNow() time.Time

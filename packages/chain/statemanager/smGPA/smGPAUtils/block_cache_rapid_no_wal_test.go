@@ -22,10 +22,11 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 	blocks              map[BlockKey]state.Block
 	blockTimes          []*blockTime
 	blocksInCache       []BlockKey
+	addBlockCallback    func(state.Block)
 	log                 *logger.Logger
 }
 
-func (bcnwtsmT *blockCacheNoWALTestSM) initWAL(t *rapid.T, wal BlockWAL) {
+func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, wal BlockWAL, addBlockCallback func(state.Block)) {
 	var err error
 	bcnwtsmT.factory = NewBlockFactory(t)
 	bcnwtsmT.lastBlockCommitment = state.OriginL1Commitment()
@@ -35,10 +36,11 @@ func (bcnwtsmT *blockCacheNoWALTestSM) initWAL(t *rapid.T, wal BlockWAL) {
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	bcnwtsmT.blocks = make(map[BlockKey]state.Block)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
+	bcnwtsmT.addBlockCallback = addBlockCallback
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Init(t *rapid.T) {
-	bcnwtsmT.initWAL(t, NewEmptyBlockWAL())
+	bcnwtsmT.initStateMachine(t, NewEmptyTestBlockWAL(), func(state.Block) {})
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Cleanup() {
@@ -131,6 +133,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 		time:     time.Now(),
 		blockKey: blockKey,
 	})
+	bcnwtsmT.addBlockCallback(block)
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) blocksNotInCache(t *rapid.T) []BlockKey {
@@ -145,6 +148,6 @@ func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey Blo
 	require.True(t, blockExpected.Hash().Equals(block.Hash())) // Should be Equals instead of Hash().Equals(); bwtsmT.blocks[blockHash]
 }
 
-func TestBlockCacheNoWALPropBased(t *testing.T) {
+func TestBlockCachePropBasedNoWAL(t *testing.T) {
 	rapid.Check(t, rapid.Run[*blockCacheNoWALTestSM]())
 }

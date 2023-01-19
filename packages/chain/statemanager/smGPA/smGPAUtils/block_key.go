@@ -21,6 +21,10 @@ func (bkT BlockKey) Equals(e2 util.Equatable) bool {
 	return bkT == bk2
 }
 
+func (bkT BlockKey) AsBlockHash() state.BlockHash {
+	return state.BlockHash(bkT)
+}
+
 func (bkT BlockKey) String() string {
 	return state.BlockHash(bkT).String()
 }
