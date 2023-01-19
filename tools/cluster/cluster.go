@@ -243,7 +243,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		addAccessNodesRequests[i] = tx
 	}
 
-	peers := multiclient.New(chain.CommitteeAPIHosts())
+	peers := multiclient.New(chain.CommitteeAPIHosts()).WithLogFunc(clu.t.Logf)
 
 	for _, tx := range addAccessNodesRequests {
 		// ---------- wait until the requests are processed in all committee nodes
@@ -330,7 +330,7 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.APIHosts())
+	return multiclient.New(clu.Config.APIHosts()).WithLogFunc(clu.t.Logf)
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
