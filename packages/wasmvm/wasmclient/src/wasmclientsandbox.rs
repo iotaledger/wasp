@@ -86,6 +86,8 @@ impl WasmClientSandbox for WasmClientContext {
             return Vec::new();
         }
         let sc_assets = wasmlib::ScAssets::new(&req.transfer);
+        let mut nonce = self.nonce.lock().unwrap();
+        *nonce += 1;
         let res = self.svc_client.post_request(
             &self.chain_id,
             &req.contract,
@@ -93,7 +95,7 @@ impl WasmClientSandbox for WasmClientContext {
             &req.params,
             &sc_assets,
             self.key_pair.as_ref().unwrap(),
-            0, // FIXME must use counter
+            *nonce,
         );
 
         match res {
