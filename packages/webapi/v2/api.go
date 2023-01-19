@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/core/configuration"
 	loggerpkg "github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
@@ -33,8 +32,9 @@ func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManag
 		controller.RegisterPublic(publicGroup, mocker)
 
 		claimValidator := func(claims *authentication.WaspClaims) bool {
-			// The API will be accessible if the token has an 'API' claim
-			return claims.HasPermission(permissions.API)
+			// The v2 api uses another way of permission handling, so we can always return true here.
+			// Permissions are now validated at the route level. See the webapi/v2/controllers/*/controller.go routes.
+			return true
 		}
 
 		adminGroup := server.Group(controller.Name(), "v2/").
