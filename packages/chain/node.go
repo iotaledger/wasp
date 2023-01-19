@@ -40,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -172,18 +173,20 @@ type chainNodeImpl struct {
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	//
 	// Infrastructure.
-	netRecvPipe  pipe.Pipe[*peering.PeerMessageIn]
-	netPeeringID peering.PeeringID
-	netPeerPubs  map[gpa.NodeID]*cryptolib.PublicKey
-	net          peering.NetworkProvider
-	log          *logger.Logger
+	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
+	netPeeringID        peering.PeeringID
+	netPeerPubs         map[gpa.NodeID]*cryptolib.PublicKey
+	net                 peering.NetworkProvider
+	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
+	log                 *logger.Logger
 }
 
 type consensusInst struct {
-	request    *chainMgr.NeedConsensus
-	cancelFunc context.CancelFunc
-	consensus  *consGR.ConsGr
-	committee  []*cryptolib.PublicKey
+	request             *chainMgr.NeedConsensus
+	cancelFunc          context.CancelFunc
+	consensus           *consGR.ConsGr
+	committee           []*cryptolib.PublicKey
+	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator
 }
 
 // Used to correlate consensus request with its output.
@@ -230,6 +233,7 @@ func New(
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
+	shutdownCoordinator *shutdowncoordinator.ShutdownCoordinator,
 	log *logger.Logger,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
@@ -275,6 +279,7 @@ func New(
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                    net,
+		shutdownCoordinator:    shutdownCoordinator,
 		log:                    log,
 	}
 	cni.me = cni.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
@@ -304,6 +309,7 @@ func New(
 		net,
 		blockWAL,
 		chainStore,
+		shutdownCoordinator.Sub(fmt.Sprintf("stateMgr-%v", chainID)),
 		cni.log.Named("SM"),
 	)
 	if err != nil {
@@ -366,6 +372,7 @@ func New(
 	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB)
 	//
 	// Run the main thread.
+
 	go cni.run(ctx, netAttachID)
 	return cni, nil
 }
@@ -395,6 +402,7 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 
 //nolint:gocyclo
 func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
+	defer cni.net.Detach(netAttachID)
 	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
@@ -403,6 +411,17 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
 	for {
+		if ctx.Err() != nil {
+			if cni.shutdownCoordinator == nil {
+				return
+			}
+			// needs to wait for state mgr and consensusInst
+			if cni.shutdownCoordinator.AreAllSubComponentsDone() {
+				cni.net.Detach(netAttachID)
+				cni.shutdownCoordinator.Done()
+				return
+			}
+		}
 		select {
 		case txPublishResult, ok := <-recvTxPublishedPipeOutCh:
 			if !ok {
@@ -472,8 +491,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, netAttachID interface{}) {
 				cni.stateTrackerCnf.ChainNodeStateMgrResponse(resp)
 			}
 		case <-ctx.Done():
-			cni.net.Detach(netAttachID)
-			return
+			continue
 		}
 	}
 }
@@ -709,10 +727,15 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				recoveryTimeout, redeliveryPeriod, printStatusPeriod,
 				cni.log.Named(fmt.Sprintf("C-%v.LI-%v", committeeAddr.String()[:10], logIndexCopy)),
 			)
-			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{ // TODO: Handle terminations somehow.
+			cni.consensusInsts[committeeAddr][addLogIndex] = &consensusInst{
 				cancelFunc: consGrCancel,
 				consensus:  cgr,
 				committee:  dkShare.GetNodePubKeys(),
+				// TODO when to call Done() on this?
+				// shutdownCoordinator: cni.shutdownCoordinator.Sub(
+				// 	fmt.Sprintf("consensusInst - %s, %s, %d", cni.chainID, committeeAddr.String(), addLogIndex),
+				// ),
+				shutdownCoordinator: nil,
 			}
 			added = true
 		}

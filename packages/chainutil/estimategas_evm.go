@@ -52,7 +52,7 @@ var evmErrorsRegex = regexp.MustCompile("out of gas|intrinsic gas too low|(execu
 
 // EstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
-func EstimateGas(ch chain.Chain, call ethereum.CallMsg) (uint64, error) {
+func EstimateGas(ch chain.ChainCore, call ethereum.CallMsg) (uint64, error) {
 	// Determine the lowest and highest possible gas limits to binary search in between
 	var (
 		lo     uint64 = params.TxGas - 1
