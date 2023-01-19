@@ -41,27 +41,6 @@ const (
 	// MinimumBaseTokensOnCommonAccount can't harvest the minimum
 	MinimumBaseTokensOnCommonAccount = 3000
 
-	// prefix for a name of a particular account
-	prefixAccount = string(byte(iota) + 'A')
-	// map with all accounts listed
-	prefixAllAccounts
-	// map of account with all on-chain totals listed
-	prefixTotalL2AssetsAccount
-	// prefix for the map of nonces
-	prefixMaxAssumedNonceKey
-	// prefix for all foundries owned by the account
-	prefixAccountFoundries
-	// prefixNativeTokenOutputMap a map of accounts -> foundries
-	prefixNativeTokenOutputMap
-	// prefixFoundryOutputRecords a map with all foundry outputs
-	prefixFoundryOutputRecords
-	// prefixNFTOutput Records a map with all NFT outputs
-	prefixNFTOutputRecords
-	// prefixNFTData Records a map with all NFT data (issuer/metadata)
-	prefixNFTData
-	//
-	stateVarMinimumStorageDepositAssumptionsBin
-
 	ParamAgentID                      = "a"
 	ParamAccountNonce                 = "n"
 	ParamForceMinimumBaseTokens       = "f"
@@ -71,7 +50,6 @@ const (
 	ParamSupplyDeltaAbs               = "d"
 	ParamDestroyTokens                = "y"
 	ParamStorageDepositAssumptionsBin = "u"
-	ParamForceOpenAccount             = "c"
 	ParamNFTAmount                    = "A"
 	ParamNFTIDs                       = "i"
 	ParamNFTID                        = "z"

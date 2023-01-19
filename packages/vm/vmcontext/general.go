@@ -79,40 +79,12 @@ func (vmctx *VMContext) AllowanceAvailable() *isc.Allowance {
 	return allowance.Clone()
 }
 
-func (vmctx *VMContext) isOnChainAccount(agentID isc.AgentID) bool {
-	return vmctx.ChainID().IsSameChain(agentID)
-}
-
 func (vmctx *VMContext) IsCoreAccount(agentID isc.AgentID) bool {
 	contract, ok := agentID.(*isc.ContractAgentID)
 	if !ok {
 		return false
 	}
 	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
-}
-
-// targetAccountExists check if there's an account with non-zero balance,
-// or it is an existing smart contract
-func (vmctx *VMContext) targetAccountExists(agentID isc.AgentID) bool {
-	if agentID.Equals(vmctx.ChainID().CommonAccount()) {
-		return true
-	}
-	accountExists := false
-	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		accountExists = accounts.AccountExists(s, agentID)
-	})
-	if accountExists {
-		return true
-	}
-	// it may be a smart contract with 0 balance
-	if !vmctx.isOnChainAccount(agentID) {
-		return false
-	}
-	hname, _ := isc.HnameFromAgentID(agentID)
-	vmctx.callCore(root.Contract, func(s kv.KVStore) {
-		accountExists = root.ContractExists(s, hname)
-	})
-	return accountExists
 }
 
 func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Allowance) {
@@ -122,14 +94,10 @@ func (vmctx *VMContext) spendAllowedBudget(toSpend *isc.Allowance) {
 }
 
 // TransferAllowedFunds transfers funds within the budget set by the Allowance() to the existing target account on chain
-func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, forceOpenAccount bool, transfer ...*isc.Allowance) *isc.Allowance {
+func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
 	if vmctx.IsCoreAccount(target) {
 		// if the target is one of core contracts, assume target is the common account
 		target = vmctx.ChainID().CommonAccount()
-	} else if !forceOpenAccount && !vmctx.targetAccountExists(target) {
-		// check if target exists, if it is not forced
-		// forceOpenAccount == true it is not checked and the transfer will occur even if the target does not exist
-		panic(vm.ErrTransferTargetAccountDoesNotExists)
 	}
 
 	var toMove *isc.Allowance
@@ -148,7 +116,7 @@ func (vmctx *VMContext) TransferAllowedFunds(target isc.AgentID, forceOpenAccoun
 		caller = vmctx.ChainID().CommonAccount()
 	}
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		if !accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs) {
+		if err := accounts.MoveBetweenAccounts(s, caller, target, toMove.Assets, toMove.NFTs); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})

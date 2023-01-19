@@ -103,8 +103,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*e
 	tx, err := e.Chain.Client(walletKey).Post1Request(accounts.Contract.Hname(), accounts.FuncTransferAllowanceTo.Hname(), chainclient.PostRequestParams{
 		Transfer: isc.NewFungibleTokens(amount+transferAllowanceToGasBudgetBaseTokens, nil),
 		Args: map[kv.Key][]byte{
-			accounts.ParamAgentID:          codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
-			accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+			accounts.ParamAgentID: codec.EncodeAgentID(isc.NewEthereumAddressAgentID(ethAddr)),
 		},
 		Allowance: isc.NewAllowanceBaseTokens(amount),
 		GasBudget: &gasBudget,

@@ -324,15 +324,13 @@ func (ch *Chain) DepositAssetsToL2(assets *isc.FungibleTokens, user *cryptolib.K
 func (ch *Chain) TransferAllowanceTo(
 	allowance *isc.Allowance,
 	targetAccount isc.AgentID,
-	forceOpenAccount bool,
 	wallet *cryptolib.KeyPair,
 	nft ...*isc.NFT,
 ) error {
 	callParams := NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		dict.Dict{
-			accounts.ParamAgentID:          codec.EncodeAgentID(targetAccount),
-			accounts.ParamForceOpenAccount: codec.EncodeBool(forceOpenAccount),
+			accounts.ParamAgentID: codec.EncodeAgentID(targetAccount),
 		}).
 		WithAllowance(allowance).
 		WithFungibleTokens(allowance.Assets.Clone().AddBaseTokens(TransferAllowanceToGasBudgetBaseTokens)).
@@ -359,7 +357,6 @@ func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPa
 	return ch.TransferAllowanceTo(
 		isc.NewEmptyAllowance().AddNFTs(nft.ID),
 		to,
-		true,
 		owner,
 		nft,
 	)
@@ -378,7 +375,6 @@ func (ch *Chain) SendFromL1ToL2Account(totalBaseTokens uint64, toSend *isc.Fungi
 	_, err := ch.PostRequestSync(
 		NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 			accounts.ParamAgentID, target,
-			accounts.ParamForceOpenAccount, codec.EncodeBool(true),
 		).
 			AddFungibleTokens(sumAssets).
 			AddAllowance(isc.NewAllowanceFungibleTokens(toSend)).
@@ -396,7 +392,6 @@ func (ch *Chain) SendFromL1ToL2AccountBaseTokens(totalBaseTokens, baseTokensSend
 func (ch *Chain) SendFromL2ToL2Account(transfer *isc.Allowance, target isc.AgentID, user *cryptolib.KeyPair) error {
 	req := NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, target,
-		accounts.ParamForceOpenAccount, codec.EncodeBool(true),
 	)
 
 	req.AddBaseTokens(SendToL2AccountGasBudgetBaseTokens).
