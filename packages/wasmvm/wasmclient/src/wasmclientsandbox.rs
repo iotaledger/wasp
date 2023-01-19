@@ -109,8 +109,17 @@ impl WasmClientSandbox for WasmClientContext {
     fn fn_utils_bech32_decode(&self, args: &[u8]) -> Vec<u8> {
         let bech32 = wasmlib::string_from_bytes(args);
         match codec::bech32_decode(&bech32) {
-            Ok(addr) => addr.to_bytes(),
-            Err(_) => return Vec::new(),
+            Ok((hrp, addr)) => {
+                if hrp != self.hrp {
+                    self.err("invalid protocol prefix: ", &hrp);
+                    return Vec::new();
+                }
+                return addr.to_bytes();
+            }
+            Err(e) => {
+                self.err("", &e.to_string());
+                return Vec::new();
+            }
         }
     }
 
@@ -118,7 +127,10 @@ impl WasmClientSandbox for WasmClientContext {
         let addr = wasmtypes::address_from_bytes(args);
         match codec::bech32_encode(&addr) {
             Ok(v) => return v.into_bytes(),
-            Err(_) => return Vec::new(),
+            Err(e) => {
+                self.err("", &e.to_string());
+                return Vec::new();
+            }
         }
     }
 
@@ -126,7 +138,7 @@ impl WasmClientSandbox for WasmClientContext {
         match std::str::from_utf8(args) {
             Ok(v) => return wasmtypes::hname_from_string(v).to_bytes(),
             Err(e) => {
-                self.err(&format!("invalid hname: {}", e), "");
+                self.err("invalid hname: {}", &e.to_string());
                 return Vec::new();
             }
         };

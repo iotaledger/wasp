@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::fmt::format;
+
 use crate::errors;
 use bech32::*;
 use serde::{Deserialize, Serialize};
@@ -9,13 +11,13 @@ pub use wasmtypes::*;
 
 const BECH32_PREFIX: &'static str = "smr";
 
-pub fn bech32_decode(input: &str) -> errors::Result<ScAddress> {
-    let (_hrp, data, _v) = match bech32::decode(&input) {
+pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
+    let (hrp, data, _v) = match bech32::decode(&input) {
         Ok(v) => v,
-        Err(e) => return Err(e.to_string()),
+        Err(e) => return Err(String::from(format!("invalid bech32 string: {}", input))),
     };
     let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
-    return Ok(address_from_bytes(&buf));
+    return Ok((hrp, address_from_bytes(&buf)));
 }
 
 pub fn bech32_encode(addr: &ScAddress) -> errors::Result<String> {
