@@ -32,25 +32,27 @@ import (
 type secretShareImpl struct {
 	priShare    *share.PriShare
 	commitments []kyber.Point
+	nodeCount   int
 	threshold   int
 }
 
 var _ SecretShare = &secretShareImpl{}
 
-func NewDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, threshold int) SecretShare {
-	return newDistKeyShare(priShare, commitments, threshold)
+func NewDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, nodeCount, threshold int) SecretShare {
+	return newDistKeyShare(priShare, commitments, nodeCount, threshold)
 }
 
-func newDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, threshold int) *secretShareImpl {
+func newDistKeyShare(priShare *share.PriShare, commitments []kyber.Point, nodeCount, threshold int) *secretShareImpl {
 	return &secretShareImpl{
 		priShare:    priShare,
 		commitments: commitments,
+		nodeCount:   nodeCount,
 		threshold:   threshold,
 	}
 }
 
 func (d *secretShareImpl) NodeCount() int {
-	return len(d.commitments)
+	return d.nodeCount
 }
 
 // F = N - T.
@@ -69,6 +71,7 @@ func (d *secretShareImpl) Clone() *secretShareImpl {
 			V: d.priShare.V.Clone(),
 		},
 		util.CloneSlice(d.commitments),
+		d.nodeCount,
 		d.threshold,
 	)
 }
@@ -613,6 +616,7 @@ func (s *dkShareImpl) DSS() SecretShare {
 			V: s.edPrivateShare.Clone(),
 		},
 		util.CloneSlice(s.edPublicCommits),
+		int(s.n),
 		int(s.t),
 	)
 }
