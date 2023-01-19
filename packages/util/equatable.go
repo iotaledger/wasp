@@ -34,6 +34,16 @@ func RemoveAll[E Equatable](objectsToRemove, objects []E) []E {
 	return result
 }
 
+func Intersection[E Equatable](objects1, objects2 []E) []E {
+	result := make([]E, 0)
+	for _, o := range objects1 {
+		if Contains(o, objects2) {
+			result = append(result, o)
+		}
+	}
+	return result
+}
+
 func AllDifferent[E Equatable](objects []E) bool {
 	for i := range objects {
 		for j := 0; j < i; j++ {
