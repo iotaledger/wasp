@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
+// Function is not used currently
 func FillDBFromBlockWAL(db state.Store, bw BlockWAL) error {
 	storedBlockHashes := make(map[state.BlockHash]bool)
 	var storeBlockFun func(blockHash state.BlockHash) error

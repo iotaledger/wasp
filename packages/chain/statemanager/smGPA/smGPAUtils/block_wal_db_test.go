@@ -12,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
-// const constTestFolder = "basicWALTest" // TODO: define or remove
-
 func TestRecoverDBFromWALBasic(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
@@ -56,8 +54,3 @@ func testRecoverDBFromWALBasic(t *testing.T, log *logger.Logger, chainID isc.Cha
 		require.True(t, db.HasTrieRoot(blocks[i].L1Commitment().TrieRoot()))
 	}
 }
-
-/*func cleanupAfterTest(t *testing.T) {		// TODO: define or remove
-	err := os.RemoveAll(constTestFolder)
-	require.NoError(t, err)
-}*/
