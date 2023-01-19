@@ -12,7 +12,7 @@ const BECH32_PREFIX: &'static str = "smr";
 pub fn bech32_decode(input: &str) -> errors::Result<(String, ScAddress)> {
     let (hrp, data, _v) = match bech32::decode(&input) {
         Ok(v) => v,
-        Err(e) => return Err(String::from(format!("invalid bech32 string: {}", input))),
+        Err(_) => return Err(String::from(format!("invalid bech32 string: {}", input))),
     };
     let buf: Vec<u8> = data.iter().map(|&e| e.to_u8()).collect();
     return Ok((hrp, address_from_bytes(&buf)));
