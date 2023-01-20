@@ -67,7 +67,6 @@ func test2Chains(t *testing.T, w bool) {
 	req := solo.NewCallParams(
 		accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name,
 		accounts.ParamAgentID, contractAgentID,
-		accounts.ParamForceOpenAccount, true,
 	).
 		AddBaseTokens(baseTokensToSend).
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).

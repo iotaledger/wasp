@@ -8,7 +8,6 @@ funcs:
   transferAllowanceTo:
     params:
       agentID=a: AgentID
-      forceOpenAccount=c: Bool?
   withdraw: {}
   harvest: 
     params:

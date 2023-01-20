@@ -50,7 +50,7 @@ the L1 storage deposit. Otherwise, it will fail.
 
 :::
 
-### `transferAllowanceTo(a AgentID, c ForceOpenAccount)`
+### `transferAllowanceTo(a AgentID)`
 
 Moves the specified allowance from the sender's L2 account to the given L2 account on the chain.
 

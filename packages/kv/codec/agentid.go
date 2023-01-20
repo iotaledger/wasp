@@ -16,6 +16,14 @@ func DecodeAgentID(b []byte, def ...isc.AgentID) (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(b)
 }
 
+func MustDecodeAgentID(b []byte, def ...isc.AgentID) isc.AgentID {
+	r, err := DecodeAgentID(b, def...)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 func EncodeAgentID(value isc.AgentID) []byte {
 	return value.Bytes()
 }

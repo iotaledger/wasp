@@ -16,7 +16,6 @@ pub const HSC_NAME       : ScHname = ScHname(0x3c4b5e02);
 pub(crate) const PARAM_AGENT_ID                  : &str = "a";
 pub(crate) const PARAM_DESTROY_TOKENS            : &str = "y";
 pub(crate) const PARAM_FORCE_MINIMUM_BASE_TOKENS : &str = "f";
-pub(crate) const PARAM_FORCE_OPEN_ACCOUNT        : &str = "c";
 pub(crate) const PARAM_FOUNDRY_SN                : &str = "s";
 pub(crate) const PARAM_NFT_ID                    : &str = "z";
 pub(crate) const PARAM_SUPPLY_DELTA_ABS          : &str = "d";

@@ -732,7 +732,6 @@ func TestWithdrawDepositNativeTokens(t *testing.T) {
 		err = v.ch.TransferAllowanceTo(
 			isc.NewAllowanceFungibleTokens(isc.NewEmptyFungibleTokens().AddNativeTokens(v.nativeTokenID, 50)),
 			someEthereumAgentID,
-			true,
 			v.user,
 		)
 		require.NoError(t, err)
@@ -1122,8 +1121,7 @@ func TestTransferNFTAllowance(t *testing.T) {
 
 	_, err = ch.PostRequestOffLedger(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncTransferAllowanceTo.Name, dict.Dict{
-			accounts.ParamAgentID:          codec.Encode(finalOwnerAgentID),
-			accounts.ParamForceOpenAccount: codec.Encode(true),
+			accounts.ParamAgentID: codec.Encode(finalOwnerAgentID),
 		}).
 			WithAllowance(isc.NewAllowance(0, nil, []iotago.NFTID{nft.ID})).
 			WithMaxAffordableGasBudget(),

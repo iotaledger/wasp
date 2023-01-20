@@ -120,20 +120,12 @@ func (s ImmutableTransferAllowanceToParams) AgentID() wasmtypes.ScImmutableAgent
 	return wasmtypes.NewScImmutableAgentID(s.Proxy.Root(ParamAgentID))
 }
 
-func (s ImmutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScImmutableBool {
-	return wasmtypes.NewScImmutableBool(s.Proxy.Root(ParamForceOpenAccount))
-}
-
 type MutableTransferAllowanceToParams struct {
 	Proxy wasmtypes.Proxy
 }
 
 func (s MutableTransferAllowanceToParams) AgentID() wasmtypes.ScMutableAgentID {
 	return wasmtypes.NewScMutableAgentID(s.Proxy.Root(ParamAgentID))
-}
-
-func (s MutableTransferAllowanceToParams) ForceOpenAccount() wasmtypes.ScMutableBool {
-	return wasmtypes.NewScMutableBool(s.Proxy.Root(ParamForceOpenAccount))
 }
 
 type ImmutableAccountNFTsParams struct {

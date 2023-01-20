@@ -1305,7 +1305,6 @@ func TestSolidityTransferBaseTokens(t *testing.T) {
 	env.soloChain.TransferAllowanceTo(
 		isc.NewAllowanceBaseTokens(10*isc.Million),
 		isc.NewEthereumAddressAgentID(iscTest.address),
-		true,
 		l1Wallet,
 	)
 

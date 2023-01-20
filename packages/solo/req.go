@@ -518,7 +518,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 
 // GetMerkleProof return the merkle proof of the key in the smart contract. Assumes Merkle model is used
 func (ch *Chain) GetMerkleProof(scHname isc.Hname, key []byte) *trie.MerkleProof {
-	return ch.GetMerkleProofRaw(kv.Concat(scHname, key))
+	return ch.GetMerkleProofRaw(append(scHname.Bytes(), key...))
 }
 
 // GetL1Commitment returns state commitment taken from the anchor output
