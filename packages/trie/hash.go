@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"io"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 const (
@@ -71,12 +69,8 @@ func (h Hash) String() string {
 	return hex.EncodeToString(h[:])
 }
 
-func (h Hash) Equals(other util.Equatable) bool {
-	h2, ok := other.(Hash)
-	if !ok {
-		return false
-	}
-	return h == h2
+func (h Hash) Equals(other Hash) bool {
+	return h == other
 }
 
 func ReadHash(r io.Reader) (ret Hash, err error) {

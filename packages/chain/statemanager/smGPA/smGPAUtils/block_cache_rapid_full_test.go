@@ -4,12 +4,12 @@ package smGPAUtils
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheTestSM struct { // State machine for block cache property based Rapid tests
@@ -23,7 +23,7 @@ func (bctsmT *blockCacheTestSM) Init(t *rapid.T) {
 	bctsmT.blocksNotInWAL = []BlockKey{}
 	bctsmT.wal = NewMockedTestBlockWAL()
 	bctsmT.blockCacheNoWALTestSM.initStateMachine(t, bctsmT.wal, func(block state.Block) {
-		bctsmT.blocksNotInWAL = util.Remove(NewBlockKey(block.L1Commitment()), bctsmT.blocksNotInWAL)
+		bctsmT.blocksNotInWAL = lo.Without(bctsmT.blocksNotInWAL, NewBlockKey(block.L1Commitment()))
 	})
 }
 
@@ -43,7 +43,7 @@ func (bctsmT *blockCacheTestSM) RemoveBlockFromWAL(t *rapid.T) {
 	if len(bctsmT.blocksNotInWAL) == len(bctsmT.blocks) {
 		t.Skip()
 	}
-	blocksToChoose := util.RemoveAll(bctsmT.blocksNotInWAL, maps.Keys(bctsmT.blocks))
+	blocksToChoose := lo.Without(maps.Keys(bctsmT.blocks), bctsmT.blocksNotInWAL...)
 	blockKey := rapid.SampledFrom(blocksToChoose).Example()
 	bctsmT.wal.Delete(blockKey.AsBlockHash())
 	bctsmT.blocksNotInWAL = append(bctsmT.blocksNotInWAL, blockKey)
@@ -51,7 +51,7 @@ func (bctsmT *blockCacheTestSM) RemoveBlockFromWAL(t *rapid.T) {
 }
 
 func (bctsmT *blockCacheTestSM) GetBlockFromCache(t *rapid.T) {
-	blocksToChoose := util.Intersection(bctsmT.blocksNotInWAL, bctsmT.blocksInCache)
+	blocksToChoose := lo.Intersect(bctsmT.blocksNotInWAL, bctsmT.blocksInCache)
 	if len(blocksToChoose) == 0 {
 		t.Skip()
 	}
@@ -62,7 +62,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromCache(t *rapid.T) {
 
 func (bctsmT *blockCacheTestSM) GetBlockFromWAL(t *rapid.T) {
 	blocksToChoose := bctsmT.blocksNotInCache(t)
-	blocksToChoose = util.RemoveAll(bctsmT.blocksNotInWAL, blocksToChoose)
+	blocksToChoose = lo.Without(blocksToChoose, bctsmT.blocksNotInWAL...)
 	if len(blocksToChoose) == 0 {
 		t.Skip()
 	}
@@ -72,7 +72,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromWAL(t *rapid.T) {
 }
 
 func (bctsmT *blockCacheTestSM) GetBlockFromCacheOrWAL(t *rapid.T) {
-	blocksToChoose := util.RemoveAll(bctsmT.blocksNotInWAL, append([]BlockKey{}, bctsmT.blocksInCache...))
+	blocksToChoose := lo.Without(append([]BlockKey{}, bctsmT.blocksInCache...), bctsmT.blocksNotInWAL...)
 	if len(blocksToChoose) == 0 {
 		t.Skip()
 	}
@@ -82,7 +82,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromCacheOrWAL(t *rapid.T) {
 }
 
 func (bctsmT *blockCacheTestSM) GetBlockFromNowhere(t *rapid.T) { // Unsuccessfully
-	blocksToChoose := util.Intersection(bctsmT.blocksNotInWAL, bctsmT.blocksNotInCache(t))
+	blocksToChoose := lo.Intersect(bctsmT.blocksNotInWAL, bctsmT.blocksNotInCache(t))
 	if len(blocksToChoose) == 0 {
 		t.Skip()
 	}
@@ -98,7 +98,7 @@ func (bctsmT *blockCacheTestSM) GetBlockFromNowhere(t *rapid.T) { // Unsuccessfu
 // Restart(t *rapid.T) // inherited from blockCacheNoWALTestSM
 
 func (bctsmT *blockCacheTestSM) invariantAllBlocksInWAL(t *rapid.T) {
-	for _, blockKey := range util.RemoveAll(bctsmT.blocksNotInWAL, maps.Keys(bctsmT.blocks)) {
+	for _, blockKey := range lo.Without(maps.Keys(bctsmT.blocks), bctsmT.blocksNotInWAL...) {
 		require.True(t, bctsmT.wal.Contains(blockKey.AsBlockHash()))
 	}
 }

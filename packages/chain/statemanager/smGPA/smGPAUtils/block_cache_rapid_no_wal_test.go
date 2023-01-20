@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 	"pgregory.net/rapid"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -79,7 +79,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) CleanCache(t *rapid.T) {
 	bcnwtsmT.bc.CleanOlderThan(time)
 	for i := uint32(0); i <= index; i++ {
 		blockKey := bcnwtsmT.blockTimes[i].blockKey
-		bcnwtsmT.blocksInCache = util.Remove(blockKey, bcnwtsmT.blocksInCache)
+		bcnwtsmT.blocksInCache = lo.Without(bcnwtsmT.blocksInCache, blockKey)
 		t.Logf("Block %s deleted from cache", blockKey)
 	}
 	bcnwtsmT.blockTimes = bcnwtsmT.blockTimes[index+1:]
@@ -109,7 +109,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) invariantAllBlocksInCacheDifferent(t *rapid.T) {
-	require.True(t, util.AllDifferent(bcnwtsmT.blocksInCache))
+	require.Equal(t, len(bcnwtsmT.blocksInCache), len(lo.Uniq(bcnwtsmT.blocksInCache)))
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) invariantBlocksInCacheBijectionToBlockTimes(t *rapid.T) {
@@ -119,7 +119,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) invariantBlocksInCacheBijectionToBlockTim
 	}
 	require.Equal(t, len(bcnwtsmT.blocksInCache), len(blockTimeKeys))
 	for i := range bcnwtsmT.blocksInCache {
-		require.True(t, util.Contains(bcnwtsmT.blocksInCache[i], blockTimeKeys))
+		require.True(t, lo.Contains(blockTimeKeys, bcnwtsmT.blocksInCache[i]))
 	}
 }
 
@@ -127,7 +127,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 	blockKey := NewBlockKey(block.L1Commitment())
 	bcnwtsmT.blocks[blockKey] = block
 	bcnwtsmT.bc.AddBlock(block)
-	require.False(t, util.Contains(blockKey, bcnwtsmT.blocksInCache))
+	require.False(t, lo.Contains(bcnwtsmT.blocksInCache, blockKey))
 	bcnwtsmT.blocksInCache = append(bcnwtsmT.blocksInCache, blockKey)
 	bcnwtsmT.blockTimes = append(bcnwtsmT.blockTimes, &blockTime{
 		time:     time.Now(),
@@ -137,7 +137,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) addBlock(t *rapid.T, block state.Block) {
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) blocksNotInCache(t *rapid.T) []BlockKey {
-	return util.RemoveAll(bcnwtsmT.blocksInCache, maps.Keys(bcnwtsmT.blocks))
+	return lo.Without(maps.Keys(bcnwtsmT.blocks), bcnwtsmT.blocksInCache...)
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) getAndCheckBlock(t *rapid.T, blockKey BlockKey) {
