@@ -21,6 +21,7 @@ import (
 )
 
 type WaspServices struct {
+	waspVersion                 string
 	webAPIBindAddress           string
 	exploreAddressURL           string
 	config                      *configuration.Configuration
@@ -31,6 +32,7 @@ type WaspServices struct {
 }
 
 func NewWaspServices(
+	waspVersion string,
 	webAPIBindAddress string,
 	exploreAddressURL string,
 	config *configuration.Configuration,
@@ -40,6 +42,7 @@ func NewWaspServices(
 	trustedNetworkManager peering.TrustedNetworkManager,
 ) *WaspServices {
 	return &WaspServices{
+		waspVersion:                 waspVersion,
 		webAPIBindAddress:           webAPIBindAddress,
 		exploreAddressURL:           exploreAddressURL,
 		config:                      config,
@@ -48,6 +51,10 @@ func NewWaspServices(
 		networkProvider:             networkProvider,
 		trustedNetworkManager:       trustedNetworkManager,
 	}
+}
+
+func (w *WaspServices) WaspVersion() string {
+	return w.waspVersion
 }
 
 func (w *WaspServices) ConfigDump() map[string]interface{} {

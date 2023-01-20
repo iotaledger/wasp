@@ -12,15 +12,16 @@ import (
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
 
-	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var (
-	dir string
+var rootCmd *cobra.Command
 
-	rootCmd = &cobra.Command{
-		Version: wasp.Version,
+func initRootCmd() *cobra.Command {
+	var dir string
+
+	cmd := &cobra.Command{
+		Version: "0.1.0",
 		Use:     "gascalibration",
 		Args:    cobra.NoArgs,
 		Short:   "gascalibration is a command line tool to generate gas calibration reports.",
@@ -36,10 +37,14 @@ var (
 			drawGraph("Execution time contract gas usage", "executiontime", executionTimeFiles)
 		},
 	}
-)
+
+	cmd.PersistentFlags().StringVar(&dir, "dir", "", "Directory containing contracts")
+
+	return cmd
+}
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&dir, "dir", "", "Directory containing contracts")
+	rootCmd = initRootCmd()
 }
 
 func main() {

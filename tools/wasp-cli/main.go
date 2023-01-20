@@ -4,9 +4,12 @@
 package main
 
 import (
+	"strings"
+
+	goversion "github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/wasp"
+	"github.com/iotaledger/wasp/core/app"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
@@ -37,7 +40,14 @@ func initRootCmd(waspVersion string) *cobra.Command {
 }
 
 func init() {
-	waspVersion := wasp.Version
+	waspVersion := app.Version
+
+	if strings.HasPrefix(strings.ToLower(waspVersion), "v") {
+		if _, err := goversion.NewSemver(waspVersion[1:]); err == nil {
+			// version is a valid SemVer with a "v" prefix => remove the "v" prefix
+			waspVersion = waspVersion[1:]
+		}
+	}
 
 	if waspVersion == "" {
 		panic("unable to initialize app: no version given")
