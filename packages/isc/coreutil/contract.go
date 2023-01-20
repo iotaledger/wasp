@@ -56,7 +56,7 @@ func (i *ContractInfo) Hname() isc.Hname {
 
 // FullKey concatenates 4 bytes of hname with postfix
 func (i *ContractInfo) FullKey(postfix []byte) []byte {
-	return kv.Concat(i.Hname(), postfix)
+	return append(i.Hname().Bytes(), postfix...)
 }
 
 type (

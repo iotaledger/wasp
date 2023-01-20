@@ -390,11 +390,7 @@ func (s *WasmContextSandbox) fnTransferAllowed(args []byte) []byte {
 	scAssets := wasmlib.NewScAssets(req.Transfer)
 	if !scAssets.IsEmpty() {
 		allowance := s.cvt.IscAllowance(scAssets)
-		if req.Create {
-			s.ctx.TransferAllowedFundsForceCreateTarget(agentID, allowance)
-		} else {
-			s.ctx.TransferAllowedFunds(agentID, allowance)
-		}
+		s.ctx.TransferAllowedFunds(agentID, allowance)
 	}
 	return nil
 }

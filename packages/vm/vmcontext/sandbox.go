@@ -57,12 +57,12 @@ func (s *contractSandbox) AllowanceAvailable() *isc.Allowance {
 
 func (s *contractSandbox) TransferAllowedFunds(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, false, transfer...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
 
 func (s *contractSandbox) TransferAllowedFundsForceCreateTarget(target isc.AgentID, transfer ...*isc.Allowance) *isc.Allowance {
 	s.Ctx.(*VMContext).GasBurn(gas.BurnCodeTransferAllowance)
-	return s.Ctx.(*VMContext).TransferAllowedFunds(target, true, transfer...)
+	return s.Ctx.(*VMContext).TransferAllowedFunds(target, transfer...)
 }
 
 func (s *contractSandbox) Request() isc.Calldata {

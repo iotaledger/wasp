@@ -76,19 +76,11 @@ export class ImmutableTransferAllowanceToParams extends wasmtypes.ScProxy {
     agentID(): wasmtypes.ScImmutableAgentID {
         return new wasmtypes.ScImmutableAgentID(this.proxy.root(sc.ParamAgentID));
     }
-
-    forceOpenAccount(): wasmtypes.ScImmutableBool {
-        return new wasmtypes.ScImmutableBool(this.proxy.root(sc.ParamForceOpenAccount));
-    }
 }
 
 export class MutableTransferAllowanceToParams extends wasmtypes.ScProxy {
     agentID(): wasmtypes.ScMutableAgentID {
         return new wasmtypes.ScMutableAgentID(this.proxy.root(sc.ParamAgentID));
-    }
-
-    forceOpenAccount(): wasmtypes.ScMutableBool {
-        return new wasmtypes.ScMutableBool(this.proxy.root(sc.ParamForceOpenAccount));
     }
 }
 

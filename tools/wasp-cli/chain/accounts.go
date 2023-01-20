@@ -134,8 +134,7 @@ func depositCmd() *cobra.Command {
 						accounts.FuncTransferAllowanceTo.Name,
 						chainclient.PostRequestParams{
 							Args: dict.Dict{
-								accounts.ParamAgentID:          agentID.Bytes(),
-								accounts.ParamForceOpenAccount: codec.EncodeBool(true),
+								accounts.ParamAgentID: agentID.Bytes(),
 							},
 							Transfer:                 tokens,
 							Allowance:                allowance,

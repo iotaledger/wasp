@@ -104,7 +104,7 @@ func (vmctx *VMContext) GetNativeTokenBalanceTotal(nativeTokenID iotago.NativeTo
 func (vmctx *VMContext) GetAssets(agentID isc.AgentID) *isc.FungibleTokens {
 	var ret *isc.FungibleTokens
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetAccountAssets(s, agentID)
+		ret = accounts.GetAccountFungibleTokens(s, agentID)
 		if ret == nil {
 			ret = &isc.FungibleTokens{}
 		}
@@ -119,9 +119,9 @@ func (vmctx *VMContext) GetAccountNFTs(agentID isc.AgentID) (ret []iotago.NFTID)
 	return ret
 }
 
-func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret isc.NFT) {
+func (vmctx *VMContext) GetNFTData(nftID iotago.NFTID) (ret *isc.NFT) {
 	vmctx.callCore(accounts.Contract, func(s kv.KVStore) {
-		ret = accounts.GetNFTData(s, nftID)
+		ret = accounts.MustGetNFTData(s, nftID)
 	})
 	return ret
 }

@@ -38,8 +38,8 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
-	// GetNFTInfo returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID iotago.NFTID) NFT
+	// GetNFTData returns information about a NFTID (issuer and metadata)
+	GetNFTData(nftID iotago.NFTID) *NFT
 	// CallView calls another contract. Only calls view entry points
 	CallView(contractHname Hname, entryPoint Hname, params dict.Dict) dict.Dict
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -105,11 +105,7 @@ type Sandbox interface {
 	// Skipping 'assets' means transfer all Allowance().
 	// The TransferAllowedFunds call mutates AllowanceAvailable
 	// Returns remaining budget
-	// TransferAllowedFunds fails if target does not exist
 	TransferAllowedFunds(target AgentID, transfer ...*Allowance) *Allowance
-	// TransferAllowedFundsForceCreateTarget does not fail when target does not exist.
-	// If it is a random target, funds may be inaccessible (less safe)
-	TransferAllowedFundsForceCreateTarget(target AgentID, transfer ...*Allowance) *Allowance
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
 	// SendAsNFT sends an on-ledger request as an NFTOutput

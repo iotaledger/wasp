@@ -1,10 +1,7 @@
 package kv
 
 import (
-	"bytes"
 	"fmt"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // Key represents a key in the KVStore, to avoid unnecessary conversions
@@ -114,31 +111,4 @@ func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) 
 	if err != nil {
 		panic(err)
 	}
-}
-
-func Concat(fragments ...interface{}) []byte {
-	var buf bytes.Buffer
-	for _, v := range fragments {
-		switch v := v.(type) {
-		case string:
-			buf.WriteString(v)
-		case []byte:
-			buf.Write(v)
-		case Key:
-			buf.Write([]byte(v))
-		case byte:
-			buf.WriteByte(v)
-		case uint16:
-			buf.Write(util.Uint16To2Bytes(v))
-		case uint32:
-			buf.Write(util.Uint32To4Bytes(v))
-		case uint64:
-			buf.Write(util.Uint64To8Bytes(v))
-		case interface{ Bytes() []byte }:
-			buf.Write(v.Bytes())
-		default:
-			panic(fmt.Errorf("Concat: unknown key fragment type %T", v))
-		}
-	}
-	return buf.Bytes()
 }
