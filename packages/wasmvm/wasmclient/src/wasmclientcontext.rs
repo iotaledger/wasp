@@ -4,7 +4,7 @@
 use crate::*;
 use std::{
     any::Any,
-    sync::{mpsc, Arc, RwLock},
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread::spawn,
 };
 use wasmlib::*;
@@ -19,7 +19,7 @@ pub struct WasmClientContext {
     pub event_received: Arc<RwLock<bool>>,
     pub hrp: String,
     pub key_pair: Option<keypair::KeyPair>,
-    pub nonce: Arc<RwLock<u64>>,
+    pub nonce: Mutex<u64>,
     pub req_id: Arc<RwLock<ScRequestID>>,
     pub sc_name: String,
     pub sc_hname: ScHname,
@@ -49,7 +49,7 @@ impl WasmClientContext {
             event_received: Arc::new(RwLock::new(false)),
             hrp: hrp.to_string(),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
+            nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
             sc_hname: ScHname::new(sc_name),
@@ -218,7 +218,7 @@ impl Default for WasmClientContext {
             event_received: Arc::default(),
             hrp: String::from(""),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
+            nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: String::new(),
             sc_hname: ScHname(0),
