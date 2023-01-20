@@ -4,21 +4,32 @@
 pub use crate::*;
 pub use codec::*;
 pub use reqwest::*;
-pub use std::time::*;
+use std::{
+    sync::{mpsc, Arc, RwLock},
+    thread::spawn,
+    time::*,
+};
 pub use wasmlib::*;
 
 const DEFAULT_OPTIMISTIC_READ_TIMEOUT: Duration = Duration::from_millis(1100);
 
+pub const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
+pub const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
+pub const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
+pub const ISC_EVENT_KIND_ERROR: &str = "error";
+
 #[derive(Clone, PartialEq)]
 pub struct WaspClient {
     base_url: String,
+    event_port: String,
     token: String,
 }
 
 impl WaspClient {
-    pub fn new(base_url: &str) -> WaspClient {
+    pub fn new(base_url: &str, event_port: &str) -> WaspClient {
         return WaspClient {
             base_url: base_url.to_string(),
+            event_port: event_port.to_string(),
             token: String::from(""),
         };
     }
@@ -140,6 +151,37 @@ impl WaspClient {
             }
         }
     }
+    pub fn subscribe(&self, ch: mpsc::Sender<Vec<String>>, done: Arc<RwLock<bool>>) {
+        // FIXME should not reconnect every time
+        let (mut socket, _) = tungstenite::connect(&self.event_port).unwrap();
+        let read_done = Arc::clone(&done);
+        spawn(move || loop {
+            match socket.read_message() {
+                Ok(raw_msg) => {
+                    let raw_msg_str = raw_msg.to_string();
+                    if raw_msg_str != "" {
+                        let msg: Vec<String> = raw_msg_str.split(" ").map(|s| s.into()).collect();
+                        if msg[0] == ISC_EVENT_KIND_SMART_CONTRACT {
+                            ch.send(msg).unwrap();
+                        }
+                    }
+                }
+                Err(tungstenite::Error::ConnectionClosed) => {
+                    return Ok(());
+                }
+                Err(e) => {
+                    return Err(format!("subscribe err: {}", e));
+                }
+            };
+
+            if *read_done.read().unwrap() {
+                socket.close(None).unwrap();
+                let mut mut_done = read_done.write().unwrap();
+                *mut_done = false;
+                return Ok(());
+            }
+        });
+    }
 }
 
 #[cfg(test)]
@@ -149,8 +191,9 @@ mod tests {
 
     #[test]
     fn waspclient_new() {
-        let client = waspclient::WaspClient::new("http://localhost");
-        assert!(client.base_url == "http://localhost");
+        let client = waspclient::WaspClient::new("http://localhost:19090", "ws://localhost:15550");
+        assert!(client.base_url == "http://localhost:19090");
+        assert!(client.event_port == "ws://localhost:15550");
     }
 
     #[test]
@@ -172,7 +215,7 @@ mod tests {
             then.status(200);
         });
 
-        let client = waspclient::WaspClient::new(&mock_server.base_url());
+        let client = waspclient::WaspClient::new(&mock_server.base_url(), "");
         let sc_chain_id = wasmlib::chain_id_from_bytes(&chain_id_bytes);
         let sc_contract_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x89703a45));
         let sc_function_hname = wasmlib::hname_from_bytes(&wasmlib::uint32_to_bytes(0x78cc397a));
@@ -187,5 +230,96 @@ mod tests {
             )
             .unwrap();
         call_view_by_hname_mock.assert();
+    }
+    use std::{
+        net::TcpListener,
+        sync::{mpsc, Arc, RwLock},
+        thread::spawn,
+    };
+    use tungstenite::accept;
+
+    #[derive(Clone)]
+    struct MockServerMsg {
+        msg: String,
+        count: u32,
+    }
+
+    #[test]
+    fn test_subscribe() {
+        let url = "ws://localhost:3012";
+        let test_msg = "contract tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj | vm (contract): 89703a45: testwasmlib.test|1012000000|tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj|Lala";
+        mock_server(
+            url,
+            Some(MockServerMsg {
+                msg: test_msg.to_string(),
+                count: 3,
+            }),
+        );
+        let client = waspclient::WaspClient::new("", &url);
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+        let lock = Arc::new(RwLock::new(false));
+        client.subscribe(tx, lock);
+        let mut cnt = 0;
+        for msgs in rx.iter() {
+            let target_str = format!("{} cnt:{}", test_msg, cnt);
+            let target: Vec<String> = target_str.split(" ").map(|s| s.into()).collect();
+            for i in 0..msgs.len() {
+                assert!(msgs[i] == target[i]);
+            }
+            cnt += 1;
+        }
+    }
+    #[test]
+    fn test_subscribe_stop() {
+        let url = "ws://localhost:3013";
+        let test_msg = "contract tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj | vm (contract): 89703a45: testwasmlib.test|1012000000|tgl1pp0j5wr5e5dxhk4hzwlgfs9vu7r025zeq0et7ftkrzmf8lwa44wy645r2hj|Lala";
+        mock_server(
+            url,
+            Some(MockServerMsg {
+                msg: test_msg.to_string(),
+                count: 3,
+            }),
+        );
+        let client = waspclient::WaspClient::new("", &url);
+        let (tx, rx): (mpsc::Sender<Vec<String>>, mpsc::Receiver<Vec<String>>) = mpsc::channel();
+        let lock = Arc::new(RwLock::new(true));
+        let sub_lock = Arc::clone(&lock);
+        client.subscribe(tx, sub_lock);
+        let mut cnt = 0;
+        for msgs in rx.iter() {
+            let target_str = format!("{} cnt:{}", test_msg, cnt);
+            let target: Vec<String> = target_str.split(" ").map(|s| s.into()).collect();
+            for i in 0..msgs.len() {
+                assert!(msgs[i] == target[i]);
+            }
+            cnt += 1;
+        }
+        assert!(cnt == 1);
+        assert!(*lock.read().unwrap() == false);
+    }
+
+    fn mock_server(input_url: &str, response_msg: Option<MockServerMsg>) {
+        let ws_prefix = "ws://";
+        let url = match input_url.to_string().strip_prefix(ws_prefix) {
+            Some(v) => v.to_string(),
+            None => input_url.to_string(),
+        };
+        spawn(move || {
+            let server = TcpListener::bind(url).unwrap();
+            for stream in server.incoming() {
+                let mut socket = accept(stream.unwrap()).unwrap();
+                let msg_opt = response_msg.to_owned();
+                if !msg_opt.is_none() {
+                    let msg = msg_opt.unwrap();
+                    for cnt in 0..msg.count {
+                        let msg = format!("{} cnt:{}", msg.msg, cnt);
+                        socket
+                            .write_message(tungstenite::Message::Text(msg).into())
+                            .unwrap();
+                    }
+                    socket.close(None).unwrap();
+                }
+            }
+        });
     }
 }
