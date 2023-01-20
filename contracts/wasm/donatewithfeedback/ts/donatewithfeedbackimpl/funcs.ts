@@ -7,7 +7,7 @@ import * as sc from "../donatewithfeedback/index";
 export function funcDonate(ctx: wasmlib.ScFuncContext, f: sc.DonateContext): void {
     const amount = ctx.allowance().baseTokens();
     const transfer = wasmlib.ScTransfer.baseTokens(amount);
-    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.transferAllowed(ctx.accountID(), transfer);
     let donation = new sc.Donation();
     donation.amount = amount;
     donation.donator = ctx.caller();

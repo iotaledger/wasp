@@ -172,7 +172,7 @@ export function funcDivide(ctx: wasmlib.ScFuncContext, f: sc.DivideContext): voi
 
             // Perform the actual transfer of tokens from the caller allowance
             // to the member account.
-            ctx.transferAllowed(address.asAgentID(), transfers, true);
+            ctx.transferAllowed(address.asAgentID(), transfers);
         }
     }
 }

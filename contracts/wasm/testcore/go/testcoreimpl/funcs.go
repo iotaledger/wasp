@@ -64,7 +64,7 @@ func funcCheckContextFromFullEP(ctx wasmlib.ScFuncContext, f *CheckContextFromFu
 func funcClaimAllowance(ctx wasmlib.ScFuncContext, _ *ClaimAllowanceContext) {
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 }
 
 func funcDoNothing(ctx wasmlib.ScFuncContext, _ *DoNothingContext) {
@@ -111,7 +111,7 @@ func funcPingAllowanceBack(ctx wasmlib.ScFuncContext, _ *PingAllowanceBackContex
 	caller := ctx.Caller()
 	ctx.Require(caller.IsAddress(), "pingAllowanceBack: caller expected to be a L1 address")
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	ctx.Send(caller.Address(), transfer)
 }
 
@@ -136,7 +136,7 @@ func funcSendNFTsBack(ctx wasmlib.ScFuncContext, _ *SendNFTsBackContext) {
 	address := ctx.Caller().Address()
 	allowance := ctx.Allowance()
 	transfer := wasmlib.NewScTransferFromBalances(allowance)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	for nftID := range allowance.NftIDs() {
 		transfer = wasmlib.NewScTransferNFT(&nftID)
 		ctx.Send(address, transfer)
@@ -170,7 +170,7 @@ func funcSplitFunds(ctx wasmlib.ScFuncContext, _ *SplitFundsContext) {
 	tokensToTransfer := uint64(1_000_000)
 	transfer := wasmlib.NewScTransferBaseTokens(tokensToTransfer)
 	for ; tokens >= tokensToTransfer; tokens -= tokensToTransfer {
-		ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+		ctx.TransferAllowed(ctx.AccountID(), transfer)
 		ctx.Send(address, transfer)
 	}
 }
@@ -179,13 +179,13 @@ func funcSplitFundsNativeTokens(ctx wasmlib.ScFuncContext, _ *SplitFundsNativeTo
 	tokens := ctx.Allowance().BaseTokens()
 	address := ctx.Caller().Address()
 	transfer := wasmlib.NewScTransferBaseTokens(tokens)
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 	for _, token := range ctx.Allowance().TokenIDs() {
 		one := wasmtypes.NewScBigInt(1)
 		transfer = wasmlib.NewScTransferTokens(token, one)
 		tokens := ctx.Allowance().Balance(token)
 		for ; tokens.Cmp(one) >= 0; tokens = tokens.Sub(one) {
-			ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+			ctx.TransferAllowed(ctx.AccountID(), transfer)
 			ctx.Send(address, transfer)
 		}
 	}
@@ -244,7 +244,7 @@ func funcWithdrawFromChain(ctx wasmlib.ScFuncContext, f *WithdrawFromChainContex
 		ctx.Panic("not enough base tokens sent to cover StorageDeposit deposit")
 	}
 	transfer := wasmlib.NewScTransferFromBalances(ctx.Allowance())
-	ctx.TransferAllowed(ctx.AccountID(), transfer, false)
+	ctx.TransferAllowed(ctx.AccountID(), transfer)
 
 	//request := isc.RequestParameters{
 	//	TargetAddress:  targetChain.AsAddress(),

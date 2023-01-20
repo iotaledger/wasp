@@ -77,7 +77,7 @@ export function funcStartAuction(ctx: wasmlib.ScFuncContext, f: sc.StartAuctionC
     // take custody of deposit and NFT
     let transfer = wasmlib.ScTransfer.baseTokens(deposit);
     transfer.addNFT(auctionNFT)
-    ctx.transferAllowed(ctx.accountID(), transfer, false)
+    ctx.transferAllowed(ctx.accountID(), transfer)
 
     let fa = sc.ScFuncs.finalizeAuction(ctx);
     fa.params.nft().setValue(auction.nft);

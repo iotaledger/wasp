@@ -310,7 +310,7 @@ func (s ScSandboxFunc) Send(address wasmtypes.ScAddress, transfer *ScTransfer) {
 //}
 
 // TransferAllowed transfers allowed assets from caller to the specified account
-func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *ScTransfer, create bool) {
+func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *ScTransfer) {
 	// we need some assets to send
 	if transfer.IsEmpty() {
 		return
@@ -318,7 +318,6 @@ func (s ScSandboxFunc) TransferAllowed(agentID wasmtypes.ScAgentID, transfer *Sc
 
 	req := wasmrequests.TransferRequest{
 		AgentID:  agentID,
-		Create:   create,
 		Transfer: transfer.Bytes(),
 	}
 	Sandbox(FnTransferAllowed, req.Bytes())
