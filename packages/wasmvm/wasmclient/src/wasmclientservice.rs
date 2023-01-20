@@ -40,7 +40,6 @@ pub trait IClientService {
 #[derive(Clone, PartialEq)]
 pub struct WasmClientService {
     client: waspclient::WaspClient,
-    websocket: Option<websocket::Client>,
     event_port: String,
     last_err: errors::Result<()>,
 }
@@ -94,7 +93,7 @@ impl IClientService for WasmClientService {
         tx: mpsc::Sender<Vec<String>>,
         done: Arc<RwLock<bool>>,
     ) -> errors::Result<()> {
-        self.websocket.clone().unwrap().subscribe(tx, done); // TODO remove clone
+        self.client.subscribe(tx, done); // TODO remove clone
         return Ok(());
     }
 
@@ -113,10 +112,9 @@ impl IClientService for WasmClientService {
 }
 
 impl WasmClientService {
-    pub fn new(wasp_api: &str, event_port: &str, websocket_url: &str) -> Self {
+    pub fn new(wasp_api: &str, event_port: &str) -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new(wasp_api),
-            websocket: Some(websocket::Client::new(websocket_url).unwrap()),
+            client: waspclient::WaspClient::new(wasp_api, &event_port),
             event_port: event_port.to_string(),
             last_err: Ok(()),
         };
@@ -126,9 +124,8 @@ impl WasmClientService {
 impl Default for WasmClientService {
     fn default() -> Self {
         return WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090"),
+            client: waspclient::WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             event_port: "127.0.0.1:15550".to_string(),
-            websocket: None, // TODO set an empty object
             last_err: Ok(()),
         };
     }
@@ -143,8 +140,7 @@ mod tests {
     fn service_default() {
         let service = WasmClientService::default();
         let default_service = WasmClientService {
-            client: waspclient::WaspClient::new("127.0.0.1:19090"),
-            websocket: None,
+            client: waspclient::WaspClient::new("127.0.0.1:19090", "127.0.0.1:15550"),
             event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };

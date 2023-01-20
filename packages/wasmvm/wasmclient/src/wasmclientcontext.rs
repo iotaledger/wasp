@@ -4,15 +4,10 @@
 use crate::*;
 use std::{
     any::Any,
-    sync::{mpsc, Arc, RwLock},
+    sync::{mpsc, Arc, Mutex, RwLock},
     thread::spawn,
 };
 use wasmlib::*;
-
-const ISC_EVENT_KIND_NEW_BLOCK: &str = "new_block";
-const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the request sender
-const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
-const ISC_EVENT_KIND_ERROR: &str = "error";
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
@@ -24,7 +19,7 @@ pub struct WasmClientContext {
     pub event_received: Arc<RwLock<bool>>,
     pub hrp: String,
     pub key_pair: Option<keypair::KeyPair>,
-    pub nonce: Arc<RwLock<u64>>,
+    pub nonce: Mutex<u64>,
     pub req_id: Arc<RwLock<ScRequestID>>,
     pub sc_name: String,
     pub sc_hname: ScHname,
@@ -54,7 +49,7 @@ impl WasmClientContext {
             event_received: Arc::new(RwLock::new(false)),
             hrp: hrp.to_string(),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
+            nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
             sc_hname: ScHname::new(sc_name),
@@ -148,13 +143,15 @@ impl WasmClientContext {
         for msg in rx {
             spawn(move || {
                 let l = self.event_received.clone();
-                if msg[0] == ISC_EVENT_KIND_ERROR {
+                if msg[0] == isc::waspclient::ISC_EVENT_KIND_ERROR {
                     let mut received = l.write().unwrap();
                     *received = true;
                     return Err(msg[1].clone());
                 }
 
-                if msg[0] != ISC_EVENT_KIND_SMART_CONTRACT && msg[1] != self.chain_id.to_string() {
+                if msg[0] != isc::waspclient::ISC_EVENT_KIND_SMART_CONTRACT
+                    && msg[1] != self.chain_id.to_string()
+                {
                     // not intended for us
                     return Ok(());
                 }
@@ -221,7 +218,7 @@ impl Default for WasmClientContext {
             event_received: Arc::default(),
             hrp: String::from(""),
             key_pair: None,
-            nonce: Arc::new(RwLock::new(0)),
+            nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: String::new(),
             sc_hname: ScHname(0),

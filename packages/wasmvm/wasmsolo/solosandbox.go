@@ -78,6 +78,8 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 	switch funcNr {
 	case wasmlib.FnCall:
 		return s.fnCall(args)
+	case wasmlib.FnChainID:
+		return s.ctx.CurrentChainID().Bytes()
 	case wasmlib.FnLog:
 		return s.fnLog(args)
 	case wasmlib.FnPost:

@@ -5,7 +5,6 @@
 
 import {ScFuncCallContext, ScViewCallContext} from './contract';
 import {ScSandboxFunc, ScSandboxView} from './sandbox';
-import {ScChainID} from './wasmtypes/scchainid';
 import {ScHname} from './wasmtypes/schname';
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -15,10 +14,6 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
     // host(): ScHost | null {
     //     return null;
     // }
-
-    currentChainID(): ScChainID {
-        return super.currentChainID();
-    }
 
     initFuncCallContext(): void {
     }
@@ -32,11 +27,6 @@ export class ScFuncContext extends ScSandboxFunc implements ScFuncCallContext {
 
 // smart contract view interface which has only immutable access to state
 export class ScViewContext extends ScSandboxView implements ScViewCallContext {
-
-    currentChainID(): ScChainID {
-        return super.currentChainID();
-    }
-
     initViewCallContext(hContract: ScHname): ScHname {
         return hContract;
     }

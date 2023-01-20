@@ -28,6 +28,8 @@ func (s *WasmClientContext) Sandbox(funcNr int32, args []byte) []byte {
 	case wasmlib.FnCall:
 		s.eventReceived = false
 		return s.fnCall(args)
+	case wasmlib.FnChainID:
+		return s.chainID.Bytes()
 	case wasmlib.FnPost:
 		s.eventReceived = false
 		return s.fnPost(args)

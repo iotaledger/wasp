@@ -9,7 +9,6 @@ import (
 )
 
 type ScFuncCallContext interface {
-	CurrentChainID() wasmtypes.ScChainID
 	InitFuncCallContext()
 }
 
@@ -108,7 +107,6 @@ func (f *ScInitFunc) Params() []interface{} {
 type ScFunc struct {
 	ScView
 	allowance *ScTransfer
-	ctx       ScFuncCallContext
 	delay     uint32
 	transfer  *ScTransfer
 }
@@ -116,7 +114,6 @@ type ScFunc struct {
 func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
 	ctx.InitFuncCallContext()
 	f := new(ScFunc)
-	f.ctx = ctx
 	f.initView(hContract, hFunction)
 	return f
 }
@@ -155,7 +152,7 @@ func (f *ScFunc) OfContract(hContract wasmtypes.ScHname) *ScFunc {
 }
 
 func (f *ScFunc) Post() {
-	f.PostToChain(f.ctx.CurrentChainID())
+	f.PostToChain(ScFuncContext{}.CurrentChainID())
 }
 
 func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {

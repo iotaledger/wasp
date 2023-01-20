@@ -45,14 +45,14 @@ $#emit setupInitFunc
 $#if separator newline
 $#set separator $true
 $#each funcComment _funcComment
-    pub fn $func_name(_ctx: &dyn Sc$Kind$+CallContext) -> $FuncName$+Call {
+    pub fn $func_name(ctx: &impl Sc$Kind$+CallContext) -> $FuncName$+Call {
 $#if ptrs setPtrs noPtrs
     }
 `,
 	// *******************************
 	"setPtrs": `
         let mut f = $FuncName$+Call {
-            func:$falign Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
+            func:$falign Sc$initFunc$Kind::new(ctx, HSC_NAME, H$KIND$+_$FUNC_NAME),
 $#if param FuncNameParamsInit
 $#if result FuncNameResultsInit
         };
@@ -79,7 +79,7 @@ $#if result FuncNameResultsLink
 	// *******************************
 	"noPtrs": `
         $FuncName$+Call {
-            func: Sc$initFunc$Kind::new(HSC_NAME, H$KIND$+_$FUNC_NAME),
+            func: Sc$initFunc$Kind::new(ctx, HSC_NAME, H$KIND$+_$FUNC_NAME),
         }
 `,
 }

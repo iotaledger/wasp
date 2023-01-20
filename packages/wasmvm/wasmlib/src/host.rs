@@ -13,7 +13,7 @@ pub trait ScHost {
 static NULL_VM_HOST: NullVmHost = NullVmHost {};
 static mut HOST: &dyn ScHost = &NULL_VM_HOST;
 
-pub fn connect_host(h: &'static dyn ScHost) -> &dyn ScHost {
+pub fn connect_host(h: &'static impl ScHost) -> &dyn ScHost {
     unsafe {
         let old_host = HOST;
         HOST = h;
