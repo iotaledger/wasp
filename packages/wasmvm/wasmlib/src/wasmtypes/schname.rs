@@ -9,7 +9,7 @@ use crate::*;
 
 pub const SC_HNAME_LENGTH: usize = 4;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub struct ScHname(pub u32);
 
 impl ScHname {
