@@ -22,4 +22,3 @@ func (*emptyBlockWAL) Read(state.BlockHash) (state.Block, error) {
 	return nil, errors.New("default WAL contains no elements")
 }
 func (*emptyBlockWAL) Delete(state.BlockHash) bool { return false }
-func (*emptyBlockWAL) Contents() []state.BlockHash { return []state.BlockHash{} }

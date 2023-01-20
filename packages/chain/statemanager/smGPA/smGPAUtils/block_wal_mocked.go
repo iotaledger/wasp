@@ -49,13 +49,3 @@ func (mbwT *mockedBlockWAL) Delete(blockHash state.BlockHash) bool {
 	}
 	return contains
 }
-
-func (mbwT *mockedBlockWAL) Contents() []state.BlockHash {
-	result := make([]state.BlockHash, len(mbwT.walContents))
-	i := 0
-	for blockHash := range mbwT.walContents {
-		result[i] = blockHash
-		i++
-	}
-	return result
-}
