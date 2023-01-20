@@ -18,13 +18,12 @@ impl ScSandboxFunc for ScFuncContext {}
 
 impl ScFuncCallContext for ScFuncContext {
     fn init_func_call_context(&self) {
-        panic!("init_view_func_context");
     }
 }
 
 impl ScViewCallContext for ScFuncContext {
-    fn init_view_call_context(&self, _h_contract: ScHname) -> ScHname {
-        panic!("init_view_call_context");
+    fn init_view_call_context(&self, h_contract: ScHname) -> ScHname {
+        h_contract
     }
 }
 
@@ -40,7 +39,7 @@ impl ScSandbox for ScViewContext {}
 impl ScSandboxView for ScViewContext {}
 
 impl ScViewCallContext for ScViewContext {
-    fn init_view_call_context(&self, _h_contract: ScHname) -> ScHname {
-        panic!("can_call_view");
+    fn init_view_call_context(&self, h_contract: ScHname) -> ScHname {
+        h_contract
     }
 }

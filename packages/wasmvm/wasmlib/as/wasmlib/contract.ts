@@ -4,17 +4,16 @@
 import {ScTransfer} from './assets';
 import {ScDict} from './dict';
 import {sandbox} from './host';
-import {FnCall, FnPost, panic, ScSandbox} from './sandbox';
+import {FnCall, FnPost, panic} from './sandbox';
 import {CallRequest, PostRequest} from './wasmrequests';
 import {ScChainID} from './wasmtypes/scchainid';
 import {Proxy} from './wasmtypes/proxy';
 import {ScHname} from './wasmtypes/schname';
+import {ScFuncContext} from './context';
 
 // base contract objects
 
 export interface ScViewCallContext {
-    currentChainID(): ScChainID;
-
     initViewCallContext(hContract: ScHname): ScHname;
 }
 
@@ -127,7 +126,7 @@ export class ScFunc extends ScView {
     }
 
     post(): void {
-        return this.postToChain(new ScSandbox().currentChainID());
+        return this.postToChain(new ScFuncContext().currentChainID());
     }
 
     postToChain(chainID: ScChainID): void {

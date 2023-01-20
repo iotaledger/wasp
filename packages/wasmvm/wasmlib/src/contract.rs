@@ -8,12 +8,12 @@ use std::rc::Rc;
 use crate::*;
 use crate::host::*;
 
-pub trait ScFuncCallContext {
-    fn init_func_call_context(&self);
-}
-
 pub trait ScViewCallContext {
     fn init_view_call_context(&self, h_contract: ScHname) -> ScHname;
+}
+
+pub trait ScFuncCallContext : ScViewCallContext {
+    fn init_func_call_context(&self);
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -27,9 +27,10 @@ pub struct ScView {
 }
 
 impl ScView {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScView {
+    pub fn new(ctx: &impl ScViewCallContext, h_contract: ScHname, h_function: ScHname) -> ScView {
         ScView {
-            h_contract: h_contract,
+            // allow context to override default hContract
+            h_contract: ctx.init_view_call_context(h_contract),
             h_function: h_function,
             params: Rc::new(ScDict::new(&[])),
             results: Rc::new(ScDict::new(&[])),
@@ -77,9 +78,9 @@ pub struct ScInitFunc {
 }
 
 impl ScInitFunc {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
+    pub fn new(ctx: &impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScInitFunc {
         ScInitFunc {
-            view: ScView::new(h_contract, h_function),
+            view: ScView::new(ctx, h_contract, h_function),
         }
     }
 
@@ -113,9 +114,9 @@ pub struct ScFunc {
 }
 
 impl ScFunc {
-    pub fn new(h_contract: ScHname, h_function: ScHname) -> ScFunc {
+    pub fn new(ctx: &impl ScFuncCallContext, h_contract: ScHname, h_function: ScHname) -> ScFunc {
         ScFunc {
-            view: ScView::new(h_contract, h_function),
+            view: ScView::new(ctx, h_contract, h_function),
             allowance: ScTransfer::new(),
             delay: 0,
             transfer: ScTransfer::new(),
