@@ -325,7 +325,7 @@ export class ScSandboxFunc extends ScSandbox {
     //}
 
     // TransferAllowed transfers allowed assets from caller to the specified account
-    public transferAllowed(agentID: ScAgentID, transfer: ScTransfer, create: bool): void {
+    public transferAllowed(agentID: ScAgentID, transfer: ScTransfer): void {
         // we need some assets to send
         if (transfer.isEmpty()) {
             return;
@@ -333,7 +333,6 @@ export class ScSandboxFunc extends ScSandbox {
 
         const req = new TransferRequest();
         req.agentID = agentID;
-        req.create = create;
         req.transfer = transfer.toBytes();
         sandbox(FnTransferAllowed, req.bytes());
     }

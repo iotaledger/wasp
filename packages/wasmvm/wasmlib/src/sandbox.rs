@@ -309,7 +309,7 @@ pub trait ScSandboxFunc: ScSandbox {
     //}
 
     // TransferAllowed transfers allowed assets from caller to the specified account
-    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfer, create: bool) {
+    fn transfer_allowed(&self, agent_id: &ScAgentID, transfer: &ScTransfer) {
         // we need some assets to send
         if transfer.is_empty() {
             return;
@@ -317,7 +317,6 @@ pub trait ScSandboxFunc: ScSandbox {
 
         let req = wasmrequests::TransferRequest {
             agent_id: agent_id.clone(),
-            create: create,
             transfer: transfer.to_bytes(),
         };
         sandbox(FN_TRANSFER_ALLOWED, &req.to_bytes());

@@ -173,7 +173,7 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
 
             // Perform the actual transfer of tokens from the caller allowance
             // to the member account.
-            ctx.transfer_allowed(&address.as_agent_id(), &transfers, true);
+            ctx.transfer_allowed(&address.as_agent_id(), &transfers);
         }
     }
 }

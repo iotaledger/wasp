@@ -50,7 +50,7 @@ export function funcCheckContextFromFullEP(ctx: wasmlib.ScFuncContext, f: sc.Che
 export function funcClaimAllowance(ctx: wasmlib.ScFuncContext, f: sc.ClaimAllowanceContext): void {
     let allowance = ctx.allowance();
     let transfer = wasmlib.ScTransfer.fromBalances(allowance);
-    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.transferAllowed(ctx.accountID(), transfer);
 }
 
 export function funcDoNothing(ctx: wasmlib.ScFuncContext, f: sc.DoNothingContext): void {
@@ -96,7 +96,7 @@ export function funcPingAllowanceBack(ctx: wasmlib.ScFuncContext, f: sc.PingAllo
     const caller = ctx.caller();
     ctx.require(caller.isAddress(), "pingAllowanceBack: caller expected to be a L1 address");
     const transfer = wasmlib.ScTransfer.fromBalances(ctx.allowance());
-    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.transferAllowed(ctx.accountID(), transfer);
     ctx.send(caller.address(), transfer);
 }
 
@@ -121,7 +121,7 @@ export function funcSendNFTsBack(ctx: wasmlib.ScFuncContext, f: sc.SendNFTsBackC
     let address = ctx.caller().address();
     let allowance = ctx.allowance();
     let transfer = wasmlib.ScTransfer.fromBalances(allowance);
-    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.transferAllowed(ctx.accountID(), transfer);
     const nftIDs = allowance.nftIDs().values();
     for (let i = 0; i < nftIDs.length; i++) {
         let transfer = wasmlib.ScTransfer.nft(nftIDs[i]);
@@ -156,7 +156,7 @@ export function funcSplitFunds(ctx: wasmlib.ScFuncContext, f: sc.SplitFundsConte
     let tokensToTransfer: u64 = 1_000_000;
     const transfer = wasmlib.ScTransfer.baseTokens(tokensToTransfer);
     for (; tokens >= tokensToTransfer; tokens -= tokensToTransfer) {
-        ctx.transferAllowed(ctx.accountID(), transfer, false);
+        ctx.transferAllowed(ctx.accountID(), transfer);
         ctx.send(address, transfer);
     }
 }
@@ -165,7 +165,7 @@ export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.Spl
     let tokens = ctx.allowance().baseTokens();
     const address = ctx.caller().address();
     let transfer = wasmlib.ScTransfer.baseTokens(tokens);
-    ctx.transferAllowed(ctx.accountID(), transfer, false);
+    ctx.transferAllowed(ctx.accountID(), transfer);
     const tokenIDs = ctx.allowance().tokenIDs();
     const one = wasmtypes.ScBigInt.fromUint64(1);
     for (let i = 0; i < tokenIDs.length; i++) {
@@ -173,7 +173,7 @@ export function funcSplitFundsNativeTokens(ctx: wasmlib.ScFuncContext, f: sc.Spl
         transfer = wasmlib.ScTransfer.tokens(token, one);
         let tokens = ctx.allowance().balance(token);
         for (; tokens.cmp(one) >= 0; tokens = tokens.sub(one)) {
-            ctx.transferAllowed(ctx.accountID(), transfer, false);
+            ctx.transferAllowed(ctx.accountID(), transfer);
             ctx.send(address, transfer);
         }
     }
