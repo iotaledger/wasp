@@ -131,6 +131,15 @@ impl Default for WasmClientService {
     }
 }
 
+impl std::fmt::Debug for WasmClientService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::result::Result<(), std::fmt::Error> {
+        f.debug_tuple("WasmClientService")
+            .field(&self.client)
+            .field(&self.event_port)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::isc::waspclient;

@@ -10,7 +10,7 @@ use crate::*;
 pub const SC_REQUEST_ID_LENGTH: usize = 34;
 pub const REQUEST_ID_SEPARATOR: &str = "-";
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ScRequestID {
     id: [u8; SC_REQUEST_ID_LENGTH],
 }
