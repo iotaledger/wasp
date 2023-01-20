@@ -10,26 +10,28 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List deployed chains",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient(config.MustWaspAPI())
-		chains, err := client.GetChainRecordList()
-		log.Check(err)
-		model := &ListChainModel{
-			Length:  len(chains),
-			BaseURL: client.BaseURL(),
-		}
-		model.Chains = make(map[string]bool)
+func initListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "List deployed chains",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			client := config.WaspClient(config.MustWaspAPI())
+			chains, err := client.GetChainRecordList()
+			log.Check(err)
+			model := &ListChainModel{
+				Length:  len(chains),
+				BaseURL: client.BaseURL(),
+			}
+			model.Chains = make(map[string]bool)
 
-		for _, chain := range chains {
-			model.Chains[chain.ChainID().String()] = chain.Active
-		}
-		log.PrintCLIOutput(model)
-		showChainList(chains)
-	},
+			for _, chain := range chains {
+				model.Chains[chain.ChainID().String()] = chain.Active
+			}
+			log.PrintCLIOutput(model)
+			showChainList(chains)
+		},
+	}
 }
 
 func showChainList(chains []*registry.ChainRecord) {

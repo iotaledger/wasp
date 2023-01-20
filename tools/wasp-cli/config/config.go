@@ -19,32 +19,6 @@ var (
 	WaitForCompletion bool
 )
 
-var configSetCmd = &cobra.Command{
-	Use:   "set <key> <value>",
-	Short: "Set a configuration value",
-	Args:  cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		v := args[1]
-		switch v {
-		case "true":
-			Set(args[0], true)
-		case "false":
-			Set(args[0], false)
-		default:
-			Set(args[0], v)
-		}
-	},
-}
-
-var refreshL1ParamsCmd = &cobra.Command{
-	Use:   "refresh-l1-params",
-	Short: "Refresh L1 params from node",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		refreshL1ParamsFromNode()
-	},
-}
-
 const (
 	HostKindAPI     = "api"
 	HostKindPeering = "peering"
@@ -55,13 +29,43 @@ const (
 	l1ParamsExpiration   = 24 * time.Hour
 )
 
-func Init(rootCmd *cobra.Command) {
+func initConfigSetCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "set <key> <value>",
+		Short: "Set a configuration value",
+		Args:  cobra.ExactArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			v := args[1]
+			switch v {
+			case "true":
+				Set(args[0], true)
+			case "false":
+				Set(args[0], false)
+			default:
+				Set(args[0], v)
+			}
+		},
+	}
+}
+
+func initRefreshL1ParamsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "refresh-l1-params",
+		Short: "Refresh L1 params from node",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			refreshL1ParamsFromNode()
+		},
+	}
+}
+
+func Init(rootCmd *cobra.Command, waspVersion string) {
 	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
 	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 
-	rootCmd.AddCommand(configSetCmd)
-	rootCmd.AddCommand(checkVersionsCmd)
-	rootCmd.AddCommand(refreshL1ParamsCmd)
+	rootCmd.AddCommand(initConfigSetCmd())
+	rootCmd.AddCommand(initCheckVersionsCmd(waspVersion))
+	rootCmd.AddCommand(initRefreshL1ParamsCmd())
 
 	// The first time parameters.L1() is called, it will be initialized with this function
 	parameters.InitL1Lazy(func() {

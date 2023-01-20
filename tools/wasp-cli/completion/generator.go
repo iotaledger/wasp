@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func Command(name string) *cobra.Command {
+func InitCompletionCommand(name string) *cobra.Command {
 	completionCmd := &cobra.Command{
 		Use:   "gen_completion [bash|zsh|fish|powershell]",
 		Short: "Generates shell autocompletion script. Run `wasp-cli gen_completion -h` for instructions.",

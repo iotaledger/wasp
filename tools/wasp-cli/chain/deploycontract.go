@@ -16,39 +16,41 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
-var deployContractCmd = &cobra.Command{
-	Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
-	Short: "Deploy a contract in the chain",
-	Args:  cobra.MinimumNArgs(4),
-	Run: func(cmd *cobra.Command, args []string) {
-		apiAddress := config.MustWaspAPI()
-		vmtype := args[0]
-		name := args[1]
-		description := args[2]
-		initParams := util.EncodeParams(args[4:])
+func initDeployContractCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
+		Short: "Deploy a contract in the chain",
+		Args:  cobra.MinimumNArgs(4),
+		Run: func(cmd *cobra.Command, args []string) {
+			apiAddress := config.MustWaspAPI()
+			vmtype := args[0]
+			name := args[1]
+			description := args[2]
+			initParams := util.EncodeParams(args[4:])
 
-		var progHash hashing.HashValue
+			var progHash hashing.HashValue
 
-		switch vmtype {
-		case vmtypes.Core:
-			log.Fatal("cannot manually deploy core contracts")
+			switch vmtype {
+			case vmtypes.Core:
+				log.Fatal("cannot manually deploy core contracts")
 
-		case vmtypes.Native:
-			var err error
-			progHash, err = hashing.HashValueFromHex(args[3])
-			log.Check(err)
+			case vmtypes.Native:
+				var err error
+				progHash, err = hashing.HashValueFromHex(args[3])
+				log.Check(err)
 
-		default:
-			filename := args[3]
-			blobFieldValues := codec.MakeDict(map[string]interface{}{
-				blob.VarFieldVMType:             vmtype,
-				blob.VarFieldProgramDescription: description,
-				blob.VarFieldProgramBinary:      util.ReadFile(filename),
-			})
-			progHash = uploadBlob(blobFieldValues, apiAddress)
-		}
-		deployContract(name, description, progHash, initParams, apiAddress)
-	},
+			default:
+				filename := args[3]
+				blobFieldValues := codec.MakeDict(map[string]interface{}{
+					blob.VarFieldVMType:             vmtype,
+					blob.VarFieldProgramDescription: description,
+					blob.VarFieldProgramBinary:      util.ReadFile(filename),
+				})
+				progHash = uploadBlob(blobFieldValues, apiAddress)
+			}
+			deployContract(name, description, progHash, initParams, apiAddress)
+		},
+	}
 }
 
 func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict, apiAddress string) {

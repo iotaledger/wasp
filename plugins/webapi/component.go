@@ -23,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi"
 	v1 "github.com/iotaledger/wasp/packages/webapi/v1"
 	v2 "github.com/iotaledger/wasp/packages/webapi/v2"
@@ -78,6 +77,7 @@ func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
 
+		AppInfo                     *app.Info
 		AppConfig                   *configuration.Configuration `name:"appConfig"`
 		ShutdownHandler             *shutdown.ShutdownHandler
 		APICacheTTL                 time.Duration `name:"apiCacheTTL"`
@@ -133,7 +133,7 @@ func provide(c *dig.Container) error {
 		echoSwagger := echoswagger.New(e, "/doc", &echoswagger.Info{
 			Title:       "Wasp API",
 			Description: "REST API for the Wasp node",
-			Version:     wasp.Version,
+			Version:     deps.AppInfo.Version,
 		})
 
 		echoSwagger.AddSecurityAPIKey("Authorization", "JWT Token", echoswagger.SecurityInHeader).
@@ -152,6 +152,7 @@ func provide(c *dig.Container) error {
 		v1.Init(
 			Plugin.App().NewLogger("WebAPI/v1"),
 			echoSwagger,
+			deps.AppInfo.Version,
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,
 			deps.UserManager,
@@ -177,6 +178,7 @@ func provide(c *dig.Container) error {
 		v2.Init(
 			Plugin.App().NewLogger("WebAPI/v2"),
 			echoSwagger,
+			deps.AppInfo.Version,
 			deps.AppConfig,
 			deps.NetworkProvider,
 			deps.TrustedNetworkManager,

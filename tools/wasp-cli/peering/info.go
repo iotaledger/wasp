@@ -10,17 +10,19 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Node info.",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		info, err := config.WaspClient(config.MustWaspAPI()).GetPeeringSelf()
-		log.Check(err)
+func initInfoCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "info",
+		Short: "Node info.",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			info, err := config.WaspClient(config.MustWaspAPI()).GetPeeringSelf()
+			log.Check(err)
 
-		model := &InfoModel{PubKey: info.PubKey, NetID: info.NetID}
-		log.PrintCLIOutput(model)
-	},
+			model := &InfoModel{PubKey: info.PubKey, NetID: info.NetID}
+			log.PrintCLIOutput(model)
+		},
+	}
 }
 
 type InfoModel struct {

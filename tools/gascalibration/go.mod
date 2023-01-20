@@ -10,7 +10,6 @@ replace (
 )
 
 require (
-	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/iotaledger/wasp/tools/wasp-cli v1.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.6.1
 	gonum.org/v1/plot v0.12.0
@@ -49,10 +48,11 @@ require (
 	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20221222103313-daad49c58a06 // indirect
+	github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20230120131747-b65c9cb22ea9 // indirect
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.1.0.20221212191201-0105a0847e96 // indirect
+	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -64,6 +64,8 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/oasisprotocol/ed25519 v0.0.0-20210505154701-76d8c688d86e // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.24.1 // indirect
 	github.com/panjf2000/ants/v2 v2.7.1 // indirect
 	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
@@ -88,6 +90,7 @@ require (
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/kyber/v3 v3.0.14 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
+	go.uber.org/goleak v1.1.12 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect

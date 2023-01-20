@@ -28,6 +28,10 @@ type waspServicesMock struct {
 
 var _ WaspServicesInterface = &waspServicesMock{}
 
+func (w *waspServicesMock) WaspVersion() string {
+	return "mockVersion"
+}
+
 func (w *waspServicesMock) ConfigDump() map[string]interface{} {
 	return map[string]interface{}{
 		"foo": "bar",

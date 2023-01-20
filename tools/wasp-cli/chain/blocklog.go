@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func blockCmd() *cobra.Command {
+func initBlockCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "block [index]",
 		Short: "Get information about a block given its index, or latest block if missing",
@@ -116,7 +116,7 @@ func logEventsInBlock(index uint32) {
 	logEvents(ret)
 }
 
-func requestCmd() *cobra.Command {
+func initRequestCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "request <request-id>",
 		Short: "Get information about a request given its ID",
