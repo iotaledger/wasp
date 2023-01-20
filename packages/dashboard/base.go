@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics/nodeconnmetrics"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/packages/webapi/v1/routes"
 )
 
@@ -42,6 +41,7 @@ type BaseTemplateParams struct {
 }
 
 type WaspServicesInterface interface {
+	WaspVersion() string
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	WebAPIPort() string
@@ -102,7 +102,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 		Breadcrumbs:     breadcrumbs,
 		Path:            c.Path(),
 		MyNetworkID:     d.wasp.MyNetworkID(),
-		Version:         wasp.Version,
+		Version:         d.wasp.WaspVersion(),
 	}
 }
 

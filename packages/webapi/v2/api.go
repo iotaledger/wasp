@@ -49,6 +49,7 @@ func loadControllers(server echoswagger.ApiRoot, userManager *userspkg.UserManag
 func Init(
 	logger *loggerpkg.Logger,
 	server echoswagger.ApiRoot,
+	waspVersion string,
 	config *configuration.Configuration,
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
@@ -84,7 +85,7 @@ func Init(
 	controllersToLoad := []interfaces.APIController{
 		chain.NewChainController(logger, chainService, committeeService, evmService, nodeService, offLedgerService, registryService, vmService),
 		metrics.NewMetricsController(metricsService),
-		node.NewNodeController(config, dkgService, nodeService, peeringService),
+		node.NewNodeController(waspVersion, config, dkgService, nodeService, peeringService),
 		requests.NewRequestsController(chainService, offLedgerService, peeringService, vmService),
 		users.NewUsersController(userService),
 		corecontracts.NewCoreContractsController(vmService),

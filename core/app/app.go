@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/core/registry"
 	"github.com/iotaledger/wasp/core/users"
 	"github.com/iotaledger/wasp/core/wasmtimevm"
-	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/profilingrecorder"
 	"github.com/iotaledger/wasp/plugins/prometheus"
@@ -26,8 +25,17 @@ import (
 	"github.com/iotaledger/wasp/plugins/webapi"
 )
 
+var (
+	// Name of the app.
+	Name = "Wasp"
+
+	// Version of the app.
+	// This field is populated by the scripts that compile wasp.
+	Version = ""
+)
+
 func App() *app.App {
-	return app.New(wasp.Name, wasp.Version,
+	return app.New(Name, Version,
 		app.WithVersionCheck("iotaledger", "wasp"),
 		app.WithInitComponent(InitComponent),
 		app.WithCoreComponents([]*app.CoreComponent{
