@@ -8,21 +8,23 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var requestFundsCmd = &cobra.Command{
-	Use:   "request-funds",
-	Short: "Request funds from the faucet",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		address := Load().Address()
-		log.Check(config.L1Client().RequestFunds(address))
+func initRequestFundsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "request-funds",
+		Short: "Request funds from the faucet",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			address := Load().Address()
+			log.Check(config.L1Client().RequestFunds(address))
 
-		model := &RequestFundsModel{
-			Address: address.Bech32(parameters.L1().Protocol.Bech32HRP),
-			Message: "success",
-		}
+			model := &RequestFundsModel{
+				Address: address.Bech32(parameters.L1().Protocol.Bech32HRP),
+				Message: "success",
+			}
 
-		log.PrintCLIOutput(model)
-	},
+			log.PrintCLIOutput(model)
+		},
+	}
 }
 
 type RequestFundsModel struct {

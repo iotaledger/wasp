@@ -18,28 +18,30 @@ type Wallet struct {
 	KeyPair *cryptolib.KeyPair
 }
 
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize a new wallet",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		seed := cryptolib.NewSeed()
-		seedString := iotago.EncodeHex(seed[:])
-		viper.Set("wallet.seed", seedString)
-		log.Check(viper.WriteConfig())
+func initInitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Initialize a new wallet",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			seed := cryptolib.NewSeed()
+			seedString := iotago.EncodeHex(seed[:])
+			viper.Set("wallet.seed", seedString)
+			log.Check(viper.WriteConfig())
 
-		model := &InitModel{
-			ConfigPath: config.ConfigPath,
-		}
+			model := &InitModel{
+				ConfigPath: config.ConfigPath,
+			}
 
-		if log.VerboseFlag {
-			verboseOutputs := make(map[string]string)
-			verboseOutputs["Seed"] = seedString
-			model.VerboseOutputs = verboseOutputs
-		}
+			if log.VerboseFlag {
+				verboseOutputs := make(map[string]string)
+				verboseOutputs["Seed"] = seedString
+				model.VerboseOutputs = verboseOutputs
+			}
 
-		log.PrintCLIOutput(model)
-	},
+			log.PrintCLIOutput(model)
+		},
+	}
 }
 
 func Load() *Wallet {
