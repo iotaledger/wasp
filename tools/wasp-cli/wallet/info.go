@@ -10,25 +10,27 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var addressCmd = &cobra.Command{
-	Use:   "address",
-	Short: "Show the wallet address",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		wallet := Load()
+func initAddressCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "address",
+		Short: "Show the wallet address",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			wallet := Load()
 
-		address := wallet.Address()
+			address := wallet.Address()
 
-		model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP)}
+			model := &AddressModel{Address: address.Bech32(parameters.L1().Protocol.Bech32HRP)}
 
-		if log.VerboseFlag {
-			verboseOutput := make(map[string]string)
-			verboseOutput["Private key"] = wallet.KeyPair.GetPrivateKey().String()
-			verboseOutput["Public key"] = wallet.KeyPair.GetPublicKey().String()
-			model.VerboseOutput = verboseOutput
-		}
-		log.PrintCLIOutput(model)
-	},
+			if log.VerboseFlag {
+				verboseOutput := make(map[string]string)
+				verboseOutput["Private key"] = wallet.KeyPair.GetPrivateKey().String()
+				verboseOutput["Public key"] = wallet.KeyPair.GetPublicKey().String()
+				model.VerboseOutput = verboseOutput
+			}
+			log.PrintCLIOutput(model)
+		},
+	}
 }
 
 type AddressModel struct {
@@ -50,37 +52,39 @@ func (a *AddressModel) AsText() (string, error) {
 	return log.ParseCLIOutputTemplate(a, addressTemplate)
 }
 
-var balanceCmd = &cobra.Command{
-	Use:   "balance",
-	Short: "Show the wallet balance",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		wallet := Load()
-		address := wallet.Address()
+func initBalanceCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "balance",
+		Short: "Show the wallet balance",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			wallet := Load()
+			address := wallet.Address()
 
-		outs, err := config.L1Client().OutputMap(address)
-		log.Check(err)
+			outs, err := config.L1Client().OutputMap(address)
+			log.Check(err)
 
-		balance := isc.FungibleTokensFromOutputMap(outs)
+			balance := isc.FungibleTokensFromOutputMap(outs)
 
-		model := &BalanceModel{
-			Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
-			AddressIndex: addressIndex,
-			NativeTokens: balance.NativeTokens,
-			BaseTokens:   balance.BaseTokens,
-			OutputMap:    outs,
-		}
-		if log.VerboseFlag {
-			model.VerboseOutputs = map[uint16]string{}
-
-			for i, out := range outs {
-				tokens := isc.FungibleTokensFromOutput(out)
-				model.VerboseOutputs[i.Index()] = tokens.String()
+			model := &BalanceModel{
+				Address:      address.Bech32(parameters.L1().Protocol.Bech32HRP),
+				AddressIndex: addressIndex,
+				NativeTokens: balance.NativeTokens,
+				BaseTokens:   balance.BaseTokens,
+				OutputMap:    outs,
 			}
-		}
+			if log.VerboseFlag {
+				model.VerboseOutputs = map[uint16]string{}
 
-		log.PrintCLIOutput(model)
-	},
+				for i, out := range outs {
+					tokens := isc.FungibleTokensFromOutput(out)
+					model.VerboseOutputs[i.Index()] = tokens.String()
+				}
+			}
+
+			log.PrintCLIOutput(model)
+		},
+	}
 }
 
 var _ log.CLIOutput = &BalanceModel{}

@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func runDKGCmd() *cobra.Command {
+func initRunDKGCmd() *cobra.Command {
 	var (
 		committee []int
 		quorum    int

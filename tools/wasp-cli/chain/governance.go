@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func changeAccessNodesCmd() *cobra.Command {
+func initChangeAccessNodesCmd() *cobra.Command {
 	var offLedger bool
 
 	cmd := &cobra.Command{

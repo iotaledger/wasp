@@ -47,7 +47,7 @@ func isEnoughQuorum(n, t int) (bool, int) {
 	return t >= (n - maxF), maxF
 }
 
-func deployCmd() *cobra.Command {
+func initDeployCmd() *cobra.Command {
 	var (
 		committee        []int
 		quorum           int

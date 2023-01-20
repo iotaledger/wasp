@@ -9,19 +9,22 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-var peeringCmd = &cobra.Command{
-	Use:   "peering <command>",
-	Short: "Configure peering.",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Check(cmd.Help())
-	},
+func initPeeringCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "peering <command>",
+		Short: "Configure peering.",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			log.Check(cmd.Help())
+		},
+	}
 }
 
 func Init(rootCmd *cobra.Command) {
+	peeringCmd := initPeeringCmd()
 	rootCmd.AddCommand(peeringCmd)
-	peeringCmd.AddCommand(infoCmd)
-	peeringCmd.AddCommand(trustCmd)
-	peeringCmd.AddCommand(distrustCmd)
-	peeringCmd.AddCommand(listTrustedCmd)
+	peeringCmd.AddCommand(initInfoCmd())
+	peeringCmd.AddCommand(initTrustCmd())
+	peeringCmd.AddCommand(initDistrustCmd())
+	peeringCmd.AddCommand(initListTrustedCmd())
 }

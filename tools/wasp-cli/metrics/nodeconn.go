@@ -14,31 +14,33 @@ import (
 
 const maxMessageLen = 80
 
-var nodeconnMetricsCmd = &cobra.Command{
-	Use:   "nodeconn",
-	Short: "Show current value of collected metrics of connection to L1",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		client := config.WaspClient(config.MustWaspAPI())
-		if chainAlias == "" {
-			nodeconnMetrics, err := client.GetNodeConnectionMetrics()
-			log.Check(err)
-			log.Printf("Following chains are registered for L1 events:\n")
-			for _, s := range nodeconnMetrics.Registered {
-				log.Printf("\t%s\n", s)
+func initNodeconnMetricsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "nodeconn",
+		Short: "Show current value of collected metrics of connection to L1",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			client := config.WaspClient(config.MustWaspAPI())
+			if chainAlias == "" {
+				nodeconnMetrics, err := client.GetNodeConnectionMetrics()
+				log.Check(err)
+				log.Printf("Following chains are registered for L1 events:\n")
+				for _, s := range nodeconnMetrics.Registered {
+					log.Printf("\t%s\n", s)
+				}
+				printMessagesMetrics(
+					&nodeconnMetrics.NodeConnectionMessagesMetrics,
+					[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
+				)
+			} else {
+				chainID, err := isc.ChainIDFromString(chainAlias)
+				log.Check(err)
+				msgsMetrics, err := client.GetChainNodeConnectionMetrics(chainID)
+				log.Check(err)
+				printMessagesMetrics(msgsMetrics, [][]string{})
 			}
-			printMessagesMetrics(
-				&nodeconnMetrics.NodeConnectionMessagesMetrics,
-				[][]string{makeMessagesMetricsTableRow("Milestone", true, nodeconnMetrics.InMilestone)},
-			)
-		} else {
-			chainID, err := isc.ChainIDFromString(chainAlias)
-			log.Check(err)
-			msgsMetrics, err := client.GetChainNodeConnectionMetrics(chainID)
-			log.Check(err)
-			printMessagesMetrics(msgsMetrics, [][]string{})
-		}
-	},
+		},
+	}
 }
 
 func printMessagesMetrics(msgsMetrics *model.NodeConnectionMessagesMetrics, additionalRows [][]string) {

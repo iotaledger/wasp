@@ -13,7 +13,7 @@ import (
 
 var HTTP404ErrRegexp = regexp.MustCompile(`"Code":404`)
 
-func activateCmd() *cobra.Command {
+func initActivateCmd() *cobra.Command {
 	var nodes []int
 	cmd := &cobra.Command{
 		Use:   "activate",
@@ -48,7 +48,7 @@ func activateCmd() *cobra.Command {
 	return cmd
 }
 
-func deactivateCmd() *cobra.Command {
+func initDeactivateCmd() *cobra.Command {
 	var nodes []int
 	cmd := &cobra.Command{
 		Use:   "deactivate",

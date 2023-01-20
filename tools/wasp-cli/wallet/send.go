@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
-func sendFundsCmd() *cobra.Command {
+func initSendFundsCmd() *cobra.Command {
 	var adjustStorageDeposit bool
 
 	cmd := &cobra.Command{
