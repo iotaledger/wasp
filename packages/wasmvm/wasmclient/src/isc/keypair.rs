@@ -41,6 +41,7 @@ impl Debug for KeyPair {
 
 impl PartialEq for KeyPair {
     fn eq(&self, other: &Self) -> bool {
-        todo!()
+        // FIXME this may not be enough
+        return self.public_key == other.public_key;
     }
 }

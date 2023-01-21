@@ -58,6 +58,14 @@ impl WasmClientContext {
         return self.chain_id;
     }
 
+    pub fn current_keypair(&self) -> Option<keypair::KeyPair> {
+        return self.key_pair.clone();
+    }
+
+    pub fn current_svc_client(&self) -> WasmClientService {
+        return self.svc_client.clone();
+    }
+
     pub fn init_func_call_context(&'static self) {
         wasmlib::host::connect_host(self);
     }
@@ -102,7 +110,12 @@ impl WasmClientContext {
         }
     }
 
-    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) {
+    pub fn wait_request(&mut self) {
+        let req_id = self.req_id.read().unwrap().to_owned();
+        self.wait_request_id(Some(&req_id));
+    }
+
+    pub fn wait_request_id(&mut self, req_id: Option<&ScRequestID>) {
         let r_id;
         let binding;
         match req_id {
@@ -213,7 +226,7 @@ impl Default for WasmClientContext {
             event_done: Arc::default(),
             event_handlers: Vec::new(),
             event_received: Arc::default(),
-            hrp: String::from(""),
+            hrp: String::default(),
             key_pair: None,
             nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
