@@ -61,15 +61,12 @@ impl WasmClientSandbox for WasmClientContext {
             &req.params,
         );
 
-        match res {
-            Ok(v) => {
-                return v;
-            }
-            Err(e) => {
-                self.err("fn_call: ", &e);
-                return Vec::new();
-            }
+        if let Err(e) = &res {
+            self.err("fn_call: ", &e);
+            return Vec::new();
         }
+
+        return res.unwrap();
     }
 
     fn fn_post(&self, args: &[u8]) -> Vec<u8> {

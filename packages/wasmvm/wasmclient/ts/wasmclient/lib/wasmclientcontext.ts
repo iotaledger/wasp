@@ -44,6 +44,9 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
             }
         }
         this.eventHandlers.push(handler);
+        if (this.eventHandlers.length > 1) {
+            return null;
+        }
         return this.startEventHandlers();
     }
 
