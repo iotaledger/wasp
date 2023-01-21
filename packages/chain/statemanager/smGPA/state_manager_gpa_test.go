@@ -19,7 +19,7 @@ import (
 // of the blocks.
 func TestBasic(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -40,7 +40,7 @@ func TestManyNodes(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(10)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL, smTimers)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(16, 1)
@@ -108,7 +108,7 @@ func TestFull(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL, smTimers)
 	defer env.finalize()
 
 	lastCommitment := state.OriginL1Commitment()
@@ -190,7 +190,7 @@ func TestMempoolRequest(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smTimers := NewStateManagerTimers()
 	smTimers.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL, smTimers)
 	defer env.finalize()
 
 	mainBlocks := env.bf.GetBlocks(mainSize, 1)
@@ -219,7 +219,7 @@ func TestMempoolRequest(t *testing.T) {
 //     and block 0 as an old block.
 func TestMempoolRequestFirstStep(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -242,7 +242,7 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 	middleBlock := 4
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -268,7 +268,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	branchSize := 8
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedTestBlockWAL)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -292,7 +292,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	smTimers := NewStateManagerTimers()
 	smTimers.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
 	smTimers.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, smGPAUtils.NewMockedBlockWAL, smTimers)
+	env := newTestEnv(t, nodeIDs, smGPAUtils.NewEmptyTestBlockWAL, smTimers)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]

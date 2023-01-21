@@ -18,6 +18,8 @@ type blockWAL struct {
 	metrics *BlockWALMetrics
 }
 
+const constFileSuffix = ".blk"
+
 func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *BlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := os.MkdirAll(dir, 0o777); err != nil {
@@ -96,5 +98,5 @@ func (bwT *blockWAL) Read(blockHash state.BlockHash) (state.Block, error) {
 }
 
 func fileName(blockHash state.BlockHash) string {
-	return blockHash.String() + ".blk"
+	return blockHash.String() + constFileSuffix
 }

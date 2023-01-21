@@ -391,7 +391,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor),
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
-			smGPAUtils.NewMockedBlockWAL(),
+			smGPAUtils.NewMockedTestBlockWAL(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
