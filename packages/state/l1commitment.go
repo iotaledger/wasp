@@ -19,8 +19,6 @@ const BlockHashSize = 20
 
 type BlockHash [BlockHashSize]byte
 
-var _ util.Equatable = BlockHash{}
-
 // L1Commitment represents the data stored as metadata in the anchor output
 type L1Commitment struct {
 	// root commitment to the state
@@ -37,6 +35,19 @@ func BlockHashFromData(data []byte) (ret BlockHash) {
 	return
 }
 
+func BlockHashFromString(blockHashString string) (BlockHash, error) {
+	result := BlockHash{}
+	slice, err := iotago.DecodeHex(blockHashString)
+	if err != nil {
+		return result, fmt.Errorf("Error decoding block hash from string %s: %w", blockHashString, err)
+	}
+	if len(slice) != BlockHashSize {
+		return result, fmt.Errorf("Error decoding block hash from string %s: %v bytes obtained; expected %v bytes", blockHashString, len(slice), BlockHashSize)
+	}
+	copy(result[:], slice)
+	return result, nil
+}
+
 func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
 	return &L1Commitment{
 		trieRoot:  c,
@@ -48,12 +59,8 @@ func (bh BlockHash) String() string {
 	return iotago.EncodeHex(bh[:])
 }
 
-func (bh BlockHash) Equals(e2 util.Equatable) bool {
-	bh2, ok := e2.(BlockHash)
-	if !ok {
-		return false
-	}
-	return bh == bh2
+func (bh BlockHash) Equals(other BlockHash) bool {
+	return bh == other
 }
 
 func L1CommitmentFromBytes(data []byte) (*L1Commitment, error) {

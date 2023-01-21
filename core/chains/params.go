@@ -13,20 +13,20 @@ type ParametersChains struct {
 	PullMissingRequestsFromCommittee bool          `default:"true" usage:"whether or not to pull missing requests from other committee members"`
 }
 
-type ParametersRawBlocks struct {
-	Enabled   bool   `default:"false" usage:"whether the raw blocks plugin is enabled"`
-	Directory string `default:"blocks" usage:"the raw blocks path"`
+type ParametersWAL struct {
+	Enabled   bool   `default:"true" usage:"whether the WAL is enabled"`
+	Directory string `default:"wal" usage:"the path for WAL blocks"`
 }
 
 var (
-	ParamsChains    = &ParametersChains{}
-	ParamsRawBlocks = &ParametersRawBlocks{}
+	ParamsChains = &ParametersChains{}
+	ParamsWAL    = &ParametersWAL{}
 )
 
 var params = &app.ComponentParams{
 	Params: map[string]any{
-		"chains":    ParamsChains,
-		"rawBlocks": ParamsRawBlocks,
+		"chains": ParamsChains,
+		"wal":    ParamsWAL,
 	},
 	Masked: nil,
 }

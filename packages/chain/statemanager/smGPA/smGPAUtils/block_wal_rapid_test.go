@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/core/logger"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type blockWALTestSM struct { // State machine for block WAL property based Rapid tests
@@ -82,9 +82,9 @@ func (bwtsmT *blockWALTestSM) ReWriteBlock(t *rapid.T) {
 	err := bwtsmT.bw.Write(block)
 	require.NoError(t, err)
 	if takeFrom == 0 {
-		bwtsmT.blocksMoved = util.Remove(blockHash, bwtsmT.blocksMoved)
+		bwtsmT.blocksMoved = lo.Without(bwtsmT.blocksMoved, blockHash)
 	} else {
-		bwtsmT.blocksDamaged = util.Remove(blockHash, bwtsmT.blocksDamaged)
+		bwtsmT.blocksDamaged = lo.Without(bwtsmT.blocksDamaged, blockHash)
 	}
 	t.Logf("Block %s rewritten", blockHash)
 }
@@ -171,7 +171,7 @@ func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 func (bwtsmT *blockWALTestSM) getGoodBlockHashes() []state.BlockHash {
 	result := make([]state.BlockHash, 0)
 	for blockHash := range bwtsmT.blocks {
-		if !util.Contains(blockHash, bwtsmT.blocksMoved) && !util.Contains(blockHash, bwtsmT.blocksDamaged) {
+		if !lo.Contains(bwtsmT.blocksMoved, blockHash) && !lo.Contains(bwtsmT.blocksDamaged, blockHash) {
 			result = append(result, blockHash)
 		}
 	}

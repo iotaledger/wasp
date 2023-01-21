@@ -49,8 +49,8 @@ type Chains struct {
 	trustedNetworkManager            peering.TrustedNetworkManager
 	trustedNetworkListenerCancel     context.CancelFunc
 	chainStateStoreProvider          database.ChainStateKVStoreProvider
-	rawBlocksEnabled                 bool
-	rawBlocksDir                     string
+	walEnabled                       bool
+	walDir                           string
 
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
@@ -78,8 +78,8 @@ func New(
 	networkProvider peering.NetworkProvider,
 	trustedNetworkManager peering.TrustedNetworkManager,
 	chainStateStoreProvider database.ChainStateKVStoreProvider,
-	rawBlocksEnabled bool,
-	rawBlocksDir string,
+	walEnabled bool,
+	walDir string,
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
@@ -97,8 +97,8 @@ func New(
 		networkProvider:                  networkProvider,
 		trustedNetworkManager:            trustedNetworkManager,
 		chainStateStoreProvider:          chainStateStoreProvider,
-		rawBlocksEnabled:                 rawBlocksEnabled,
-		rawBlocksDir:                     rawBlocksDir,
+		walEnabled:                       walEnabled,
+		walDir:                           walDir,
 		chainRecordRegistryProvider:      chainRecordRegistryProvider,
 		dkShareRegistryProvider:          dkShareRegistryProvider,
 		nodeIdentityProvider:             nodeIdentityProvider,
@@ -214,9 +214,10 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error {
 		}
 	}
 
+	// Initialize WAL
 	var chainWAL smGPAUtils.BlockWAL
-	if c.rawBlocksEnabled {
-		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.rawBlocksDir, chainID, smGPAUtils.NewBlockWALMetrics())
+	if c.walEnabled {
+		chainWAL, err = smGPAUtils.NewBlockWAL(c.log, c.walDir, chainID, smGPAUtils.NewBlockWALMetrics())
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}

@@ -55,12 +55,26 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	blockKey := NewBlockKey(commitment)
 	// Check in cache
 	block, ok := bcT.blocks[blockKey]
-
 	if ok {
 		bcT.log.Debugf("Block %s retrieved from cache", commitment)
 		return block
 	}
 	bcT.log.Debugf("Block %s is not in cache", commitment)
+
+	// Check in WAL
+	// NOTE: this is not needed by state manager algorithm as all the blocks are
+	// stored in the DB. This is left for recovery in case of DB failure.
+	if bcT.wal.Contains(commitment.BlockHash()) {
+		block, err := bcT.wal.Read(commitment.BlockHash())
+		if err != nil {
+			bcT.log.Debugf("Error reading block %s from WAL: %w", commitment, err)
+			return nil
+		}
+		bcT.log.Debugf("Block %s retrieved from WAL", commitment)
+		return block
+	}
+	bcT.log.Debugf("Block %s is not in WAL", commitment)
+
 	return nil
 }
 
