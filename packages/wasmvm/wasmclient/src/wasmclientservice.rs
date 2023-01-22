@@ -103,11 +103,9 @@ impl IClientService for WasmClientService {
         req_id: &ScRequestID,
         timeout: Duration,
     ) -> errors::Result<()> {
-        let _ = self
+        return self
             .client
-            .wait_until_request_processed(&chain_id, req_id, timeout)?;
-
-        return Ok(());
+            .wait_until_request_processed(&chain_id, req_id, timeout);
     }
 }
 
