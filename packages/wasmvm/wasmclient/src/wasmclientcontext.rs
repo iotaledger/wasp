@@ -110,6 +110,22 @@ impl WasmClientContext {
         }
     }
 
+    pub fn wait_event(&self) -> errors::Result<()> {
+        return self.wait_event_timeout(10000);
+    }
+
+    pub fn wait_event_timeout(&self, msec: u64) -> errors::Result<()> {
+        for _ in 0..100 {
+            if *self.event_received.read().unwrap() {
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(msec));
+        }
+        let err_msg = String::from("event wait timeout");
+        self.err(&err_msg, "");
+        return Err(err_msg);
+    }
+
     pub fn wait_request(&mut self) {
         let req_id = self.req_id.read().unwrap().to_owned();
         self.wait_request_id(Some(&req_id));
@@ -182,18 +198,6 @@ impl WasmClientContext {
         }
 
         return Ok(());
-    }
-
-    pub fn wait_event(&self) -> errors::Result<()> {
-        for _ in 0..100 {
-            if *self.event_received.read().unwrap() {
-                return Ok(());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-        let err_msg = String::from("event wait timeout");
-        self.err(&err_msg, "");
-        return Err(err_msg);
     }
 
     fn unescape(&self, param: &str) -> String {
