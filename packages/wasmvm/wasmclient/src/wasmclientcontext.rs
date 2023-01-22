@@ -38,8 +38,8 @@ impl WasmClientContext {
             }
         };
 
-        WasmClientContext {
-            chain_id: chain_id_from_string(chain_id),
+        let mut ctx = WasmClientContext {
+            chain_id: chain_id_from_bytes(&[]),
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
@@ -51,7 +51,12 @@ impl WasmClientContext {
             sc_name: sc_name.to_string(),
             sc_hname: wasmlib::hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
-        }
+        };
+
+        // note that chain_id_from_string needs host to be connected
+        wasmlib::host::connect_host(&ctx);
+        ctx.chain_id = chain_id_from_string(chain_id);
+        ctx
     }
 
     pub fn current_chain_id(&self) -> ScChainID {
