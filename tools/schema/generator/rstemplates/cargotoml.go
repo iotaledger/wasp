@@ -23,7 +23,7 @@ crate-type = ["cdylib", "rlib"]
 $#emit dependencies$cargoMain
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
+wasm-bindgen-test = "0.3.33"
 `,
 	// *******************************
 	"packageLib": `
