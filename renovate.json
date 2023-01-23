@@ -9,7 +9,7 @@
     "tools/evm-toolkit/**"
   ],
   "ignoreDeps": [
-    "wasp",
-    "wasp-cli"
+    "github.com/iotaledger/wasp",
+    "github.com/iotaledger/wasp/tools/wasp-cli"
   ]
 }
