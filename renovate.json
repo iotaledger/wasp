@@ -7,5 +7,9 @@
     "documentation/**",
     "contracts/**",
     "tools/evm-toolkit/**"
+  ],
+  "ignoreDeps": [
+    "wasp",
+    "wasp-cli"
   ]
 }
