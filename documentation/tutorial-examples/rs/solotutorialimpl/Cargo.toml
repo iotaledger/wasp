@@ -19,4 +19,4 @@ wasmlib = { path = "../../../../packages/wasmvm/wasmlib" }
 #wasmlib = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.13"
+wasm-bindgen-test = "0.3.33"
