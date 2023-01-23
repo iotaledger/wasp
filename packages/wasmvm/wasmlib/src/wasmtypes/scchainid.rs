@@ -9,7 +9,7 @@ use crate::*;
 
 pub const SC_CHAIN_ID_LENGTH: usize = 32;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct ScChainID {
     id: [u8; SC_CHAIN_ID_LENGTH],
 }

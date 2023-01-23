@@ -4,6 +4,16 @@ import (
 	"testing"
 )
 
+//func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.SoloAgent, amount int64) {
+//	ctxAcc := ctx.SoloContextForCore(t, coreaccounts.ScName, coreaccounts.OnDispatch)
+//	f := coreaccounts.ScFuncs.Deposit(ctxAcc.Sign(user))
+//	if target != nil {
+//		f.Params.AgentID().SetValue(target.ScAgentID())
+//	}
+//	f.Func.TransferIotas(amount).Post()
+//	require.NoError(t, ctxAcc.Err)
+//}
+
 func Test2Chains(t *testing.T) {
 	t.SkipNow()
 	//run2(t, func(t *testing.T, w bool) {

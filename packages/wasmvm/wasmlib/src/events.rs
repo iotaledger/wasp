@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::*;
-use std::{any::Any, fmt::Debug};
+use std::any::Any;
 
-pub trait IEventHandlers: Any + Send + Sync + Debug {
+pub trait IEventHandlers: Any + Send + Sync {
     fn call_handler(&self, topic: &str, params: &Vec<String>);
 }
 
