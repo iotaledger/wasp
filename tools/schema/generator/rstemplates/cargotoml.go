@@ -64,7 +64,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 $package$+impl = { path = "../$package$+impl" }
 wasmvmhost = { git = "https://github.com/iotaledger/wasp", branch = "wasmclient" }
-console_error_panic_hook = { version = "0.1.6", optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }
 `,
 }
