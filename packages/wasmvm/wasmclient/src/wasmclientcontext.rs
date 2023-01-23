@@ -11,6 +11,7 @@ use wasmlib::*;
 
 // TODO to handle the request in parallel, WasmClientContext must be static now.
 // We need to solve this problem. By copying the vector of event_handlers, we may solve this problem
+#[derive(Debug)]
 pub struct WasmClientContext {
     pub chain_id: ScChainID,
     pub error: Arc<RwLock<errors::Result<()>>>,
@@ -27,38 +28,47 @@ pub struct WasmClientContext {
 }
 
 impl WasmClientContext {
-    pub fn new(
-        svc_client: &WasmClientService,
-        chain_id: &wasmlib::ScChainID,
-        sc_name: &str,
-    ) -> WasmClientContext {
-        let (hrp, _data, _v) = match bech32::decode(sc_name) {
-            Ok(vals) => vals,
+    pub fn new(svc_client: &WasmClientService, chain_id: &str, sc_name: &str) -> WasmClientContext {
+        let hrp = match codec::bech32_decode(chain_id) {
+            Ok((hrp, _)) => hrp,
             Err(e) => {
                 let ctx = WasmClientContext::default();
-                ctx.err("WasmClientContext init err: ", &e.to_string());
+                ctx.err("failed to init", e.as_str());
                 return ctx;
             }
         };
 
-        WasmClientContext {
-            chain_id: chain_id.clone(),
+        let mut ctx = WasmClientContext {
+            chain_id: chain_id_from_bytes(&[]),
             error: Arc::new(RwLock::new(Ok(()))),
             event_done: Arc::new(RwLock::new(false)),
             event_handlers: Vec::new(),
             event_received: Arc::new(RwLock::new(false)),
-            hrp: hrp.to_string(),
+            hrp: hrp,
             key_pair: None,
             nonce: Mutex::new(0),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
             sc_name: sc_name.to_string(),
-            sc_hname: ScHname::new(sc_name),
+            sc_hname: wasmlib::hname_from_bytes(&codec::hname_bytes(&sc_name)),
             svc_client: svc_client.clone(),
-        }
+        };
+
+        // note that chain_id_from_string needs host to be connected
+        wasmlib::host::connect_host(&ctx);
+        ctx.chain_id = chain_id_from_string(chain_id);
+        ctx
     }
 
     pub fn current_chain_id(&self) -> ScChainID {
         return self.chain_id;
+    }
+
+    pub fn current_keypair(&self) -> Option<keypair::KeyPair> {
+        return self.key_pair.clone();
+    }
+
+    pub fn current_svc_client(&self) -> WasmClientService {
+        return self.svc_client.clone();
     }
 
     pub fn init_func_call_context(&'static self) {
@@ -105,7 +115,28 @@ impl WasmClientContext {
         }
     }
 
-    pub fn wait_request(&mut self, req_id: Option<&ScRequestID>) {
+    pub fn wait_event(&self) -> errors::Result<()> {
+        return self.wait_event_timeout(10000);
+    }
+
+    pub fn wait_event_timeout(&self, msec: u64) -> errors::Result<()> {
+        for _ in 0..100 {
+            if *self.event_received.read().unwrap() {
+                return Ok(());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(msec));
+        }
+        let err_msg = String::from("event wait timeout");
+        self.err(&err_msg, "");
+        return Err(err_msg);
+    }
+
+    pub fn wait_request(&mut self) {
+        let req_id = self.req_id.read().unwrap().to_owned();
+        self.wait_request_id(Some(&req_id));
+    }
+
+    pub fn wait_request_id(&mut self, req_id: Option<&ScRequestID>) {
         let r_id;
         let binding;
         match req_id {
@@ -174,18 +205,6 @@ impl WasmClientContext {
         return Ok(());
     }
 
-    pub fn wait_event(&self) -> errors::Result<()> {
-        for _ in 0..100 {
-            if *self.event_received.read().unwrap() {
-                return Ok(());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
-        let err_msg = String::from("event wait timeout");
-        self.err(&err_msg, "");
-        return Err(err_msg);
-    }
-
     fn unescape(&self, param: &str) -> String {
         let idx = match param.find("~") {
             Some(idx) => idx,
@@ -216,7 +235,7 @@ impl Default for WasmClientContext {
             event_done: Arc::default(),
             event_handlers: Vec::new(),
             event_received: Arc::default(),
-            hrp: String::from(""),
+            hrp: String::default(),
             key_pair: None,
             nonce: Mutex::default(),
             req_id: Arc::new(RwLock::new(request_id_from_bytes(&[]))),
@@ -232,6 +251,7 @@ mod tests {
     use crate::*;
     use wasmlib::*;
 
+    #[derive(Debug)]
     struct FakeEventHandler {}
     impl IEventHandlers for FakeEventHandler {
         fn call_handler(&self, _topic: &str, _params: &Vec<String>) {}
@@ -244,15 +264,21 @@ mod tests {
             41, 180, 220, 182, 186, 38, 166, 60, 91, 105, 181, 183, 219, 243, 200, 162, 131, 181,
             57, 142, 41, 30, 236, 92, 178, 1, 116, 229, 174, 86, 156, 210,
         ]);
+
+        // FIXME use valid sc_name which meets the requirement of bech32
         let sc_name = "sc_name";
-        let ctx = wasmclientcontext::WasmClientContext::new(&svc_client, &chain_id, sc_name);
-        assert!(ctx.svc_client == svc_client);
-        assert!(ctx.sc_name == sc_name);
-        assert!(ctx.sc_hname == wasmlib::ScHname::new(sc_name));
-        assert!(ctx.chain_id == chain_id);
-        assert!(ctx.event_handlers.len() == 0);
-        // assert!(ctx.key_pair == None);
-        assert!(*ctx.req_id.read().unwrap() == wasmlib::request_id_from_bytes(&[]));
+        let ctx =
+            wasmclientcontext::WasmClientContext::new(&svc_client, &chain_id.to_string(), sc_name);
+        assert_eq!(svc_client, ctx.svc_client);
+        assert_eq!(sc_name, ctx.sc_name);
+        assert_eq!(wasmlib::ScHname::new(sc_name), ctx.sc_hname);
+        assert_eq!(chain_id, ctx.chain_id);
+        assert_eq!(0, ctx.event_handlers.len());
+        assert_eq!(None, ctx.key_pair);
+        assert_eq!(
+            wasmlib::request_id_from_bytes(&[]),
+            *ctx.req_id.read().unwrap()
+        );
     }
 
     #[test]

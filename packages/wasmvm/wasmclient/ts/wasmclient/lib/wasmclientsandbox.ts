@@ -27,6 +27,8 @@ export class WasmClientSandbox implements wasmlib.ScHost {
             return this;
         }
         this.hrp = hrp;
+
+        // note that chainIDFromString needs host to be connected
         wasmlib.connectHost(this);
         this.chainID = wasmlib.chainIDFromString(chain);
     }

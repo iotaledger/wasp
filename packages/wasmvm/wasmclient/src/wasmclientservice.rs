@@ -103,11 +103,9 @@ impl IClientService for WasmClientService {
         req_id: &ScRequestID,
         timeout: Duration,
     ) -> errors::Result<()> {
-        let _ = self
+        return self
             .client
-            .wait_until_request_processed(&chain_id, req_id, timeout)?;
-
-        return Ok(());
+            .wait_until_request_processed(&chain_id, req_id, timeout);
     }
 }
 
@@ -128,6 +126,15 @@ impl Default for WasmClientService {
             event_port: "127.0.0.1:15550".to_string(),
             last_err: Ok(()),
         };
+    }
+}
+
+impl std::fmt::Debug for WasmClientService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> core::result::Result<(), std::fmt::Error> {
+        f.debug_tuple("WasmClientService")
+            .field(&self.client)
+            .field(&self.event_port)
+            .finish()
     }
 }
 

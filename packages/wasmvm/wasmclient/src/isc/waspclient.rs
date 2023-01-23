@@ -18,7 +18,7 @@ pub const ISC_EVENT_KIND_RECEIPT: &str = "receipt"; // issuer will be the reques
 pub const ISC_EVENT_KIND_SMART_CONTRACT: &str = "contract";
 pub const ISC_EVENT_KIND_ERROR: &str = "error";
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct WaspClient {
     base_url: String,
     event_port: String,
