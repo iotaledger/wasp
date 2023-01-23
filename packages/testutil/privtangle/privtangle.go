@@ -176,6 +176,10 @@ func (pt *PrivTangle) startNode(i int) {
 		fmt.Sprintf("--prometheus.fileServiceDiscovery.target=localhost:%d", pt.NodePortPrometheus(i)),
 		fmt.Sprintf("--inx.bindAddress=localhost:%d", pt.NodePortINX(i)),
 		fmt.Sprintf("--p2p.db.path=%s", nodeP2PStore),
+		// nodes almost start at the same time in the clustertests,
+		// causing them to try to connect to each other at the same time, which ends up in "duplicated stream" errors.
+		// we can only fix that by a reconnect.
+		"--p2p.reconnectInterval=2s",
 		fmt.Sprintf("--p2p.identityPrivateKey=%s", hex.EncodeToString(pt.NodeKeyPairs[i].GetPrivateKey().AsBytes())),
 		fmt.Sprintf("--p2p.peers=%s", strings.Join(pt.NodeMultiAddrsWoIndex(i), ",")),
 	}
