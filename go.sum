@@ -413,8 +413,8 @@ github.com/juju/testing v0.0.0-20180920084828-472a3e8b2073/go.mod h1:63prj8cnj0t
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
-github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3 h1:b7VGpy3biHI8Q0O8BthxiJfOXhx5F0Ej4TNuJ9A1omo=
-github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3/go.mod h1:kXy7p3STAurkADD+/aZcsznZGKVHEqbtmdIzvPfrs1U=
+github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 h1:gb2I60XsNkyYmPd7PyeCkUMaFfoFuv3C4SlXlO1STHM=
+github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93/go.mod h1:kXy7p3STAurkADD+/aZcsznZGKVHEqbtmdIzvPfrs1U=
 github.com/kataras/golog v0.0.9/go.mod h1:12HJgwBIZFNGL0EJnMRhmvGA0PQGx8VFwrZtM4CqbAk=
 github.com/kataras/golog v0.0.10/go.mod h1:yJ8YKCmyL+nWjERB90Qwn+bdyBZsaQwU3bTVFgkFIp8=
 github.com/kataras/iris/v12 v12.0.1/go.mod h1:udK4vLQKkdDqMGJJVd/msuMtN6hpYJhg/lSzuxjhO+U=
