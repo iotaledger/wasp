@@ -4,7 +4,7 @@ go 1.19
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d
-	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3 // branch: dkg-2suites
+	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
 require (
