@@ -2,17 +2,18 @@ package trie
 
 import (
 	"encoding/hex"
+
+	lru "github.com/hashicorp/golang-lru"
 )
 
 // nodeStore immutable node store
 type nodeStore struct {
-	trieStore        KVReader
-	valueStore       KVReader
-	cache            map[string]*nodeData
-	clearCacheAtSize int
+	trieStore  KVReader
+	valueStore KVReader
+	cache      *lru.Cache
 }
 
-const defaultClearCacheEveryGets = 1000
+const defaultCacheSize = 10_000
 
 const (
 	partitionTrieNodes = byte(iota)
@@ -31,40 +32,40 @@ func MustInitRoot(store KVWriter) Hash {
 	return n.nodeData.commitment
 }
 
-func openNodeStore(store KVReader, clearCacheAtSize ...int) *nodeStore {
-	ret := &nodeStore{
-		trieStore:        makeReaderPartition(store, partitionTrieNodes),
-		valueStore:       makeReaderPartition(store, partitionValues),
-		cache:            make(map[string]*nodeData),
-		clearCacheAtSize: defaultClearCacheEveryGets,
+func openNodeStore(store KVReader, cacheSize ...int) *nodeStore {
+	size := defaultCacheSize
+	if len(cacheSize) > 0 {
+		size = cacheSize[0]
 	}
-	if len(clearCacheAtSize) > 0 {
-		ret.clearCacheAtSize = clearCacheAtSize[0]
+	cache, err := lru.New(size)
+	mustNoErr(err)
+
+	return &nodeStore{
+		trieStore:  makeReaderPartition(store, partitionTrieNodes),
+		valueStore: makeReaderPartition(store, partitionValues),
+		cache:      cache,
 	}
-	return ret
 }
 
 func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*nodeData, bool) {
 	dbKey := nodeCommitment.Bytes()
-	if ns.clearCacheAtSize > 0 {
-		// if caching is used at all
-		if ret, inCache := ns.cache[string(dbKey)]; inCache {
-			return ret, true
+	cacheKey := string(dbKey)
+	if ret, ok := ns.cache.Get(cacheKey); ok {
+		if ret == nil {
+			return nil, false
 		}
-		if len(ns.cache) > ns.clearCacheAtSize {
-			// GC the whole cache when cache reaches specified size
-			// TODO: improve
-			ns.cache = make(map[string]*nodeData)
-		}
+		return ret.(*nodeData), true
 	}
 	nodeBin := ns.trieStore.Get(dbKey)
 	if len(nodeBin) == 0 {
+		ns.cache.Add(cacheKey, nil)
 		return nil, false
 	}
 	ret, err := nodeDataFromBytes(nodeBin)
 	assertf(err == nil, "NodeStore::FetchNodeData err: '%v' nodeBin: '%s', commitment: %s",
 		err, hex.EncodeToString(nodeBin), nodeCommitment)
 	ret.commitment = nodeCommitment
+	ns.cache.Add(cacheKey, ret)
 	return ret, true
 }
 
@@ -88,5 +89,5 @@ func (ns *nodeStore) FetchChild(n *nodeData, childIdx byte, trieKey []byte) (*no
 }
 
 func (ns *nodeStore) clearCache() {
-	ns.cache = make(map[string]*nodeData)
+	ns.cache.Purge()
 }
