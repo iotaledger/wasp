@@ -456,13 +456,15 @@ func (n *netImpl) TrustPeer(pubKey *cryptolib.PublicKey, netID string) (*peering
 // It delegates everything to other implementation and updates the connections accordingly.
 func (n *netImpl) DistrustPeer(pubKey *cryptolib.PublicKey) (*peering.TrustedPeer, error) {
 	n.peersLock.Lock()
+	defer n.peersLock.Unlock()
+
 	for _, peer := range n.peers {
 		peerPubKey := peer.remotePubKey
 		if peerPubKey != nil && pubKey.Equals(peerPubKey) {
 			peer.trust(false)
 		}
 	}
-	n.peersLock.Unlock()
+
 	return n.trusted.DistrustPeer(pubKey)
 }
 
@@ -480,9 +482,17 @@ func (n *netImpl) usePeer(remotePubKey *cryptolib.PublicKey) (peering.PeerSender
 	if remotePubKey.Equals(n.nodeKeyPair.GetPublicKey()) {
 		return n, nil
 	}
-	n.peersLock.Lock()
-	defer n.peersLock.Unlock()
-	for _, p := range n.peers {
+
+	n.peersLock.RLock()
+
+	peers := make(map[libp2ppeer.ID]*peer, len(n.peers))
+	for k, v := range n.peers {
+		peers[k] = v
+	}
+
+	n.peersLock.RUnlock()
+
+	for _, p := range peers {
 		if p.remotePubKey.Equals(remotePubKey) {
 			p.usePeer()
 			return p, nil
@@ -496,10 +506,18 @@ func (n *netImpl) maintenanceLoop(stopCh chan bool) {
 		select {
 		case <-time.After(maintenancePeriod):
 			n.peersLock.RLock()
-			for _, p := range n.peers {
+
+			peers := make(map[libp2ppeer.ID]*peer, len(n.peers))
+			for k, v := range n.peers {
+				peers[k] = v
+			}
+
+			n.peersLock.RUnlock()
+
+			for _, p := range peers {
 				p.maintenanceCheck()
 			}
-			n.peersLock.RUnlock()
+
 		case <-stopCh:
 			return
 		}
