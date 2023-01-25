@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru"
+
 	"github.com/iotaledger/hive.go/core/kvstore"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -24,12 +26,21 @@ type store struct {
 	// stored in the db is the latestTrieRoot and all others have to be discovered by
 	// traversing the block chain backwards
 	trieRootByIndex map[uint32]trie.Hash
+
+	// stateCache is a cache of immutable state readers by trie root. Reusing the
+	// State instances allows to better take advantage of its internal caches.
+	stateCache *lru.Cache // [trie.Hash]State
 }
 
 func NewStore(db kvstore.KVStore) Store {
+	stateCache, err := lru.New(100)
+	if err != nil {
+		panic(err)
+	}
 	return &store{
 		db:              &storeDB{db},
 		trieRootByIndex: make(map[uint32]trie.Hash),
+		stateCache:      stateCache,
 	}
 }
 
@@ -46,7 +57,15 @@ func (s *store) BlockByTrieRoot(root trie.Hash) (Block, error) {
 }
 
 func (s *store) stateByTrieRoot(root trie.Hash) (*state, error) {
-	return newState(s.db, root)
+	if r, ok := s.stateCache.Get(root); ok {
+		return r.(*state), nil
+	}
+	r, err := newState(s.db, root)
+	if err != nil {
+		return nil, err
+	}
+	s.stateCache.Add(root, r)
+	return r, nil
 }
 
 func (s *store) StateByTrieRoot(root trie.Hash) (State, error) {

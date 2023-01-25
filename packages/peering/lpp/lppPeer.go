@@ -92,7 +92,7 @@ func (p *peer) maintenanceCheck() {
 		p.net.lppHeartbeatSend(p, true)
 	}
 	if numUsers == 0 && !trusted && lastMsgOld {
-		p.net.delPeer(p)
+		p.net.delPeerWithoutLock(p)
 		p.sendPipe.Close()
 		p.recvPipe.Close()
 	}
