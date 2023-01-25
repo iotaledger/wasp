@@ -1,7 +1,7 @@
 {
-  "version": "0.3.8",
-  "publicKey": "0x520c1f0cd3920fbbb8f10fd39c6eb6232c58a6fd47223d162d17150474d566bc",
-  "netId": "127.0.0.1:4000",
+  "version": "0.4.0-alpha.2-390-g5470f1925",
+  "publicKey": "0x8fb9555a17393f0e01aadd90f8b6bc8a64b1c5c37c99915942e40b2af99e72d6",
+  "netID": "0.0.0.0:4000",
   "l1Params": {
     "maxPayloadSize": 32498,
     "protocol": {
@@ -15,7 +15,7 @@
         "vByteFactorData": 1,
         "vByteFactorKey": 10
       },
-      "tokenSupply": "2779530283277761"
+      "tokenSupply": 2779530283277761
     },
     "baseToken": {
       "name": "TestCoin",
