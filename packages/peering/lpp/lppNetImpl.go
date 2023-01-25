@@ -61,7 +61,7 @@ type netImpl struct {
 	ctx         context.Context         // Context for the libp2p
 	ctxCancel   context.CancelFunc      // A way to close the context.
 	peers       map[libp2ppeer.ID]*peer // By remotePeer.ID()
-	peersLock   *sync.RWMutex
+	peersLock   *sync.Mutex
 	recvEvents  *events.Event // Used to publish events to all attached clients.
 	nodeKeyPair *cryptolib.KeyPair
 	trusted     peering.TrustedNetworkManager
@@ -110,7 +110,7 @@ func NewNetworkProvider(
 		ctxCancel:   ctxCancel,
 		port:        port,
 		peers:       make(map[libp2ppeer.ID]*peer),
-		peersLock:   &sync.RWMutex{},
+		peersLock:   &sync.Mutex{},
 		recvEvents:  nil, // Initialized bellow.
 		nodeKeyPair: nodeKeyPair,
 		trusted:     trusted,
@@ -283,10 +283,8 @@ func (n *netImpl) addPeer(trustedPeer *peering.TrustedPeer) error {
 
 // delete peer information from the in-memory structures.
 // Should be called when the peer is not used anymore by any users.
-func (n *netImpl) delPeer(peer *peer) {
+func (n *netImpl) delPeerWithoutLock(peer *peer) {
 	n.lppHost.Peerstore().ClearAddrs(peer.remoteLppID)
-	n.peersLock.Lock()
-	defer n.peersLock.Unlock()
 	delete(n.peers, peer.remoteLppID)
 }
 
@@ -380,8 +378,8 @@ func (n *netImpl) PeerByPubKey(peerPubKey *cryptolib.PublicKey) (peering.PeerSen
 
 // PeerStatus implements peering.NetworkProvider.
 func (n *netImpl) PeerStatus() []peering.PeerStatusProvider {
-	n.peersLock.RLock()
-	defer n.peersLock.RUnlock()
+	n.peersLock.Lock()
+	defer n.peersLock.Unlock()
 	peerStatus := make([]peering.PeerStatusProvider, 0)
 	for i := range n.peers {
 		peerStatus = append(peerStatus, n.peers[i])
@@ -483,21 +481,16 @@ func (n *netImpl) usePeer(remotePubKey *cryptolib.PublicKey) (peering.PeerSender
 		return n, nil
 	}
 
-	n.peersLock.RLock()
+	n.peersLock.Lock()
+	defer n.peersLock.Unlock()
 
-	peers := make(map[libp2ppeer.ID]*peer, len(n.peers))
-	for k, v := range n.peers {
-		peers[k] = v
-	}
-
-	n.peersLock.RUnlock()
-
-	for _, p := range peers {
+	for _, p := range n.peers {
 		if p.remotePubKey.Equals(remotePubKey) {
 			p.usePeer()
 			return p, nil
 		}
 	}
+
 	return nil, fmt.Errorf("peer %v is not trusted", remotePubKey)
 }
 
@@ -505,19 +498,11 @@ func (n *netImpl) maintenanceLoop(stopCh chan bool) {
 	for {
 		select {
 		case <-time.After(maintenancePeriod):
-			n.peersLock.RLock()
-
-			peers := make(map[libp2ppeer.ID]*peer, len(n.peers))
-			for k, v := range n.peers {
-				peers[k] = v
-			}
-
-			n.peersLock.RUnlock()
-
-			for _, p := range peers {
+			n.peersLock.Lock()
+			for _, p := range n.peers {
 				p.maintenanceCheck()
 			}
-
+			n.peersLock.Unlock()
 		case <-stopCh:
 			return
 		}
