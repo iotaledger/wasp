@@ -308,7 +308,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	cmi.log.Debugf("handleInputConsensusOutputDone: %+v", input)
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
-	if cmi.needConsensus.BaseAliasOutput.OutputID() == input.baseAliasOutputID {
+	if true || cmi.needConsensus.BaseAliasOutput.OutputID() == input.baseAliasOutputID { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
 		txID := input.nextAliasOutput.TransactionID()
 		cmi.needPublishTX[txID] = &NeedPublishTX{
 			CommitteeAddr:     input.committeeAddr,

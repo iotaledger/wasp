@@ -119,9 +119,10 @@ func testBasic(t *testing.T, n, f int) {
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("Consensus done", t.Logf)
-	for _, n := range nodes {
+	for nodeID, n := range nodes {
 		out := n.Output().(*chainMgr.Output)
-		require.Len(t, out.NeedPublishTX(), 1)
+		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
+		require.Len(t, out.NeedPublishTX(), 1, "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, step2TX, out.NeedPublishTX()[step2AO.TransactionID()].Tx)
 		require.Equal(t, originAO.OutputID(), out.NeedPublishTX()[step2AO.TransactionID()].BaseAliasOutputID)
 		require.Equal(t, cmtAddrA, &out.NeedPublishTX()[step2AO.TransactionID()].CommitteeAddr)
