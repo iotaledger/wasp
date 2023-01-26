@@ -122,3 +122,30 @@ func TestRapidReproduced(t *testing.T) {
 	check(1)
 	check(0x10)
 }
+
+func TestRapidReproduced2(t *testing.T) {
+	store := state.NewStore(mapdb.NewMapDB())
+	draft := store.NewOriginStateDraft()
+	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
+	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
+
+	block := store.Commit(draft)
+	root1 := block.TrieRoot()
+	blockState, err := store.StateByTrieRoot(block.TrieRoot())
+	t.Log(block.TrieRoot())
+	require.NoError(t, err)
+
+	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x2})), []byte{0x1})
+	require.Equal(t, blockState.MustGet(kv.Key([]byte{0x7})), []byte{0x1})
+
+	//
+	// Proceed to the next transition.
+	draft, err = store.NewEmptyStateDraft(block.L1Commitment())
+	require.NoError(t, err)
+
+	draft.Set(kv.Key([]byte{0x2}), []byte{0x0})
+	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
+
+	block = store.Commit(draft)
+	require.NotEqualValues(t, root1, block.TrieRoot())
+}
