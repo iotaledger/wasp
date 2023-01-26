@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/core/kvstore/mapdb"
@@ -272,6 +273,17 @@ func (tnc *testNodeConn) PublishTX(
 	}
 	if !tnc.chainID.Equals(chainID) {
 		tnc.t.Error("unexpected chain id")
+	}
+	txID, err := tx.ID()
+	require.NoError(tnc.t, err)
+	existing := lo.ContainsBy(tnc.published, func(publishedTX *iotago.Transaction) bool {
+		publishedID, err := publishedTX.ID()
+		require.NoError(tnc.t, err)
+		return txID == publishedID
+	})
+	if existing {
+		tnc.t.Logf("Already seen a TX with ID=%v", txID)
+		return nil
 	}
 	tnc.published = append(tnc.published, tx)
 	callback(tx, true)

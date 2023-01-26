@@ -103,6 +103,15 @@ func (o *Output) LatestConfirmedAliasOutput() *isc.AliasOutputWithID     { retur
 func (o *Output) ActiveAccessNodes() []*cryptolib.PublicKey              { return o.cmi.activeAccessNodes }
 func (o *Output) NeedConsensus() *NeedConsensus                          { return o.cmi.needConsensus }
 func (o *Output) NeedPublishTX() map[iotago.TransactionID]*NeedPublishTX { return o.cmi.needPublishTX }
+func (o *Output) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, |ActiveAccessNodes|=%v, NeedConsensus=%v, NeedPublishTX=%v}",
+		o.LatestConfirmedAliasOutput(),
+		len(o.ActiveAccessNodes()),
+		o.NeedConsensus(),
+		o.NeedPublishTX(),
+	)
+}
 
 type NeedConsensus struct {
 	CommitteeAddr   iotago.Ed25519Address
@@ -113,6 +122,15 @@ type NeedConsensus struct {
 
 func (nc *NeedConsensus) IsFor(output *cmtLog.Output) bool {
 	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseAliasOutput)
+}
+
+func (nc *NeedConsensus) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.NeedConsensus, CommitteeAddr=%v, LogIndex=%v, BaseAliasOutput=%v}",
+		nc.CommitteeAddr.String(),
+		nc.LogIndex,
+		nc.BaseAliasOutput,
+	)
 }
 
 type NeedPublishTX struct {
