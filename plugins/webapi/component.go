@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
+	"go.elastic.co/apm/module/apmechov4"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/core/app"
@@ -112,6 +113,8 @@ func provide(c *dig.Container) error {
 
 		e.HidePort = true
 		e.HTTPErrorHandler = webapi.CompatibilityHTTPErrorHandler(Plugin.Logger())
+
+		e.Use(apmechov4.Middleware())
 
 		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
