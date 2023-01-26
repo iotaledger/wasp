@@ -58,6 +58,8 @@ export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFu
 
         // get last used nonce from accounts core contract
         const agent = wasmlib.ScAgentID.fromAddress(keyPair.address());
+        console.log('Chain: ' + this.chainID.toString());
+        console.log('Agent: ' + agent.toString());
         const ctx = new WasmClientContext(this.svcClient, this.chainID.toString(), coreaccounts.ScName);
         const n = coreaccounts.ScFuncs.getAccountNonce(ctx);
         n.params.agentID().setValue(agent);

@@ -27,7 +27,7 @@ import (
 
 const (
 	useCluster    = false
-	useDisposable = false
+	useDisposable = true
 )
 
 func setupClient(t *testing.T) *wasmclient.WasmClientContext {
@@ -146,6 +146,13 @@ func TestClientAccountBalance(t *testing.T) {
 func TestClientArray(t *testing.T) {
 	ctx := setupClient(t)
 
+	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c.Params.Name().SetValue("Bands")
+	c.Func.Post()
+	require.NoError(t, ctx.Err)
+	ctx.WaitRequest()
+	require.NoError(t, ctx.Err)
+
 	v := testwasmlib.ScFuncs.StringMapOfStringArrayLength(ctx)
 	v.Params.Name().SetValue("Bands")
 	v.Func.Call()
@@ -166,7 +173,7 @@ func TestClientArray(t *testing.T) {
 	require.NoError(t, ctx.Err)
 	require.EqualValues(t, 1, v.Results.Length().Value())
 
-	c := testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
+	c = testwasmlib.ScFuncs.StringMapOfStringArrayClear(ctx)
 	c.Params.Name().SetValue("Bands")
 	c.Func.Post()
 	require.NoError(t, ctx.Err)

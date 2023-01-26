@@ -6,8 +6,8 @@ import * as wasmlib from 'wasmlib';
 import * as isc from './';
 
 export class JsonItem {
-    Key = '';
-    Value = '';
+    key = '';
+    value = '';
 }
 
 export class JsonReq {
@@ -53,8 +53,8 @@ export class Codec {
         enc.fixedBytes(wasmlib.uint32ToBytes(items.length as u32), wasmlib.ScUint32Length);
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            const key = wasmlib.hexDecode(item.Key);
-            const val = wasmlib.hexDecode(item.Value);
+            const key = wasmlib.hexDecode(item.key);
+            const val = wasmlib.hexDecode(item.value);
             enc.fixedBytes(wasmlib.uint16ToBytes(key.length as u16), wasmlib.ScUint16Length);
             enc.fixedBytes(key, key.length as u32);
             enc.fixedBytes(wasmlib.uint32ToBytes(val.length as u32), wasmlib.ScUint32Length);
@@ -75,8 +75,8 @@ export class Codec {
             const valLen = wasmlib.uint32FromBytes(valBuf);
             const val = dec.fixedBytes(valLen);
             const item = new JsonItem();
-            item.Key = wasmlib.hexEncode(key);
-            item.Value = wasmlib.hexEncode(val);
+            item.key = wasmlib.hexEncode(key);
+            item.value = wasmlib.hexEncode(val);
             dict.Items.push(item);
         }
         return dict;
