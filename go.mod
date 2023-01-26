@@ -3,7 +3,7 @@ module github.com/iotaledger/wasp
 go 1.19
 
 replace (
-	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d
+	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.10.26-wasp
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
@@ -13,6 +13,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v5 v5.0.0
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20230120131747-b65c9cb22ea9
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1
 	github.com/iotaledger/inx-app v1.0.0-rc.2
@@ -86,7 +87,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/holiman/uint256 v1.2.1 // indirect
 	github.com/huin/goupnp v1.0.3 // indirect

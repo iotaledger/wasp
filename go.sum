@@ -362,8 +362,8 @@ github.com/iancoleman/orderedmap v0.2.0 h1:sq1N/TFpYH++aViPcaKjys3bDClUEU7s5B+z6
 github.com/iancoleman/orderedmap v0.2.0/go.mod h1:N0Wam8K1arqPXNWjMo21EXnBPOPp36vB07FNRdD2geA=
 github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/CoI+jC3w2iA=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
-github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d h1:oUgPn1b0WcjeF7PrMSNlL4NkTac+k1cNKjH4T3M1mHQ=
-github.com/iotaledger/go-ethereum v0.0.0-20221102180613-7d920af2031d/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
+github.com/iotaledger/go-ethereum v1.10.26-wasp h1:OycFPMpnmGli5La0SdYzgnn4xqC8OARJ9e1HXa1gFNQ=
+github.com/iotaledger/go-ethereum v1.10.26-wasp/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
 github.com/iotaledger/grocksdb v1.7.5-0.20221128103803-fcdb79760195 h1:W5v+7oSXtSq2OSadYPyaAbPjTJW10T2bOgMDGZcyVOc=
 github.com/iotaledger/grocksdb v1.7.5-0.20221128103803-fcdb79760195/go.mod h1:AoAM7v6lyWRQzrmmegOEq759o1PgvvKvn2bEe1A1mc8=
 github.com/iotaledger/hive.go/core v1.0.0-rc.2.0.20230120131747-b65c9cb22ea9 h1:LoSCvY5osSnhcZQjITsOe5KiqqX2/MNEkF8jBkHAFf0=
