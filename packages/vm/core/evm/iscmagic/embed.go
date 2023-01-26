@@ -65,7 +65,7 @@ var (
 	ERC721NFTsAddress = packMagicAddress(addressKindERC721NFTs, nil)
 )
 
-//go:generate sh -c "solc --abi --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTCollection.sol -o ."
+//go:generate sh -c "solc --abi --storage-layout --bin-runtime --overwrite @iscmagic=`realpath .` ERC721NFTCollection.sol -o ."
 var (
 	//go:embed ERC721NFTCollection.abi
 	ERC721NFTCollectionABI string
