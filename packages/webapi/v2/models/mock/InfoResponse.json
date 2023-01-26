@@ -15,7 +15,7 @@
         "vByteFactorData": 1,
         "vByteFactorKey": 10
       },
-      "tokenSupply": 2779530283277761
+      "tokenSupply": "2779530283277761"
     },
     "baseToken": {
       "name": "TestCoin",
