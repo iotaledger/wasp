@@ -219,8 +219,8 @@ func registerERC721NFTCollection(ctx isc.Sandbox) dict.Dict {
 	evmState.CreateAccount(addr)
 	evmState.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
 	// see ERC721NFTCollection_storage.json
-	evmState.SetState(addr, solidity.StorageSlot(0), solidity.StorageEncodeBytes32(collectionID[:]))
-	for k, v := range solidity.StorageEncodeString(1, metadata.Name) {
+	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeBytes32(collectionID[:]))
+	for k, v := range solidity.StorageEncodeString(3, metadata.Name) {
 		evmState.SetState(addr, k, v)
 	}
 

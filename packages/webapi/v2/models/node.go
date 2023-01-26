@@ -38,7 +38,7 @@ type ProtocolParameters struct {
 	// The rent structure used by given node/network.
 	RentStructure RentStructure `json:"rentStructure" swagger:"desc(The rent structure of the protocol)"`
 	// TokenSupply defines the current token supply on the network.
-	TokenSupply uint64 `json:"tokenSupply" swagger:"desc(The token supply)"`
+	TokenSupply string `json:"tokenSupply" swagger:"desc(The token supply)"`
 }
 
 type L1Params struct {
@@ -61,7 +61,7 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 				VBFactorData: l1.Protocol.RentStructure.VBFactorData,
 				VBFactorKey:  l1.Protocol.RentStructure.VBFactorKey,
 			},
-			TokenSupply: l1.Protocol.TokenSupply,
+			TokenSupply: iotago.EncodeUint64(l1.Protocol.TokenSupply),
 		},
 		BaseToken: &parameters.BaseToken{
 			Name:            l1.BaseToken.Name,
