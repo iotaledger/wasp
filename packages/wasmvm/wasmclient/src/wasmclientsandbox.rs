@@ -87,7 +87,7 @@ impl WasmClientSandbox for WasmClientContext {
         let mut nonce = self.nonce.lock().unwrap();
         *nonce += 1;
         let res = self.svc_client.post_request(
-            &self.chain_id,
+            &req.chain_id,
             &req.contract,
             &req.function,
             &req.params,

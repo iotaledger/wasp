@@ -8,17 +8,22 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
-type ScFuncCallContext interface {
-	InitFuncCallContext()
+type ScViewCallContext interface {
+	FnCall(req *wasmrequests.CallRequest) []byte
+	FnChainID() wasmtypes.ScChainID
+	InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname
 }
 
-type ScViewCallContext interface {
-	InitViewCallContext(hContract wasmtypes.ScHname) wasmtypes.ScHname
+type ScFuncCallContext interface {
+	ScViewCallContext
+	FnPost(req *wasmrequests.PostRequest) []byte
+	InitFuncCallContext()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScView struct {
+	ctx          ScViewCallContext
 	hContract    wasmtypes.ScHname
 	hFunction    wasmtypes.ScHname
 	params       *ScDict
@@ -29,6 +34,7 @@ func NewScView(ctx ScViewCallContext, hContract, hFunction wasmtypes.ScHname) *S
 	// allow context to override default hContract
 	hContract = ctx.InitViewCallContext(hContract)
 	v := new(ScView)
+	v.ctx = ctx
 	v.initView(hContract, hFunction)
 	return v
 }
@@ -53,7 +59,7 @@ func (v *ScView) callWithAllowance(allowance *ScTransfer) {
 		Params:    v.params.Bytes(),
 		Allowance: allowance.Bytes(),
 	}
-	res := Sandbox(FnCall, req.Bytes())
+	res := v.ctx.FnCall(&req)
 	if v.resultsProxy != nil {
 		*v.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
 	}
@@ -77,6 +83,7 @@ type ScInitFunc struct {
 
 func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScInitFunc {
 	f := new(ScInitFunc)
+	f.ctx = ctx
 	f.initView(hContract, hFunction)
 	if ctx != nil {
 		ctx.InitFuncCallContext()
@@ -108,12 +115,15 @@ type ScFunc struct {
 	ScView
 	allowance *ScTransfer
 	delay     uint32
+	fctx      ScFuncCallContext
 	transfer  *ScTransfer
 }
 
 func NewScFunc(ctx ScFuncCallContext, hContract, hFunction wasmtypes.ScHname) *ScFunc {
 	ctx.InitFuncCallContext()
 	f := new(ScFunc)
+	f.ctx = ctx
+	f.fctx = ctx
 	f.initView(hContract, hFunction)
 	return f
 }
@@ -152,7 +162,7 @@ func (f *ScFunc) OfContract(hContract wasmtypes.ScHname) *ScFunc {
 }
 
 func (f *ScFunc) Post() {
-	f.PostToChain(ScFuncContext{}.CurrentChainID())
+	f.PostToChain(f.ctx.FnChainID())
 }
 
 func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
@@ -165,7 +175,7 @@ func (f *ScFunc) PostToChain(chainID wasmtypes.ScChainID) {
 		Transfer:  f.transfer.Bytes(),
 		Delay:     f.delay,
 	}
-	res := Sandbox(FnPost, req.Bytes())
+	res := f.fctx.FnPost(&req)
 	if f.resultsProxy != nil {
 		*f.resultsProxy = wasmtypes.NewProxy(NewScDictFromBytes(res))
 	}

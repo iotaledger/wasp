@@ -8,6 +8,7 @@ import (
 	"flag"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -336,6 +337,18 @@ func (ctx *SoloContext) existFile(lang string) string {
 
 	// file not found
 	return ""
+}
+
+func (ctx *SoloContext) FnCall(req *wasmrequests.CallRequest) []byte {
+	return NewSoloSandbox(ctx).FnCall(req)
+}
+
+func (ctx *SoloContext) FnChainID() wasmtypes.ScChainID {
+	return ctx.CurrentChainID()
+}
+
+func (ctx *SoloContext) FnPost(req *wasmrequests.PostRequest) []byte {
+	return NewSoloSandbox(ctx).FnPost(req)
 }
 
 func (ctx *SoloContext) Host() wasmlib.ScHost {

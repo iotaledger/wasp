@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmhost"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib"
 	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmrequests"
+	"github.com/iotaledger/wasp/packages/wasmvm/wasmlib/go/wasmlib/wasmtypes"
 )
 
 // SoloSandbox acts as a temporary host side of the WasmLib Sandbox interface.
@@ -77,13 +78,15 @@ func (s *SoloSandbox) Call(funcNr int32, args []byte) []byte {
 	}()
 	switch funcNr {
 	case wasmlib.FnCall:
-		return s.fnCall(args)
+		req := wasmrequests.NewCallRequestFromBytes(args)
+		return s.FnCall(req)
 	case wasmlib.FnChainID:
-		return s.ctx.CurrentChainID().Bytes()
+		return s.FnChainID().Bytes()
 	case wasmlib.FnLog:
 		return s.fnLog(args)
 	case wasmlib.FnPost:
-		return s.fnPost(args)
+		req := wasmrequests.NewPostRequestFromBytes(args)
+		return s.FnPost(req)
 	case wasmlib.FnUtilsBech32Decode:
 		return s.fnUtilsBech32Decode(args)
 	case wasmlib.FnUtilsBech32Encode:
@@ -161,10 +164,14 @@ func (s *SoloSandbox) postSync(contract, function string, params dict.Dict, allo
 
 //////////////////// sandbox functions \\\\\\\\\\\\\\\\\\\\
 
-func (s *SoloSandbox) fnCall(args []byte) []byte {
+func (s *SoloSandbox) fnLog(args []byte) []byte {
+	s.ctx.Chain.Log().Infof(string(args))
+	return nil
+}
+
+func (s *SoloSandbox) FnCall(req *wasmrequests.CallRequest) []byte {
 	ctx := s.ctx
 	ctx.GasFee = 0
-	req := wasmrequests.NewCallRequestFromBytes(args)
 	contract := s.cvt.IscHname(req.Contract)
 	if contract != isc.Hn(ctx.scName) {
 		s.Panicf("unknown contract: %s vs. %s", contract.String(), ctx.scName)
@@ -193,18 +200,12 @@ func (s *SoloSandbox) fnCall(args []byte) []byte {
 	return res.Bytes()
 }
 
-func (s *SoloSandbox) fnChainID(_ []byte) []byte {
-	return s.ctx.CurrentChainID().Bytes()
+func (s *SoloSandbox) FnChainID() wasmtypes.ScChainID {
+	return s.ctx.CurrentChainID()
 }
 
-func (s *SoloSandbox) fnLog(args []byte) []byte {
-	s.ctx.Chain.Log().Infof(string(args))
-	return nil
-}
-
-func (s *SoloSandbox) fnPost(args []byte) []byte {
-	req := wasmrequests.NewPostRequestFromBytes(args)
-	if !bytes.Equal(req.ChainID.Bytes(), s.fnChainID(nil)) {
+func (s *SoloSandbox) FnPost(req *wasmrequests.PostRequest) []byte {
+	if !bytes.Equal(req.ChainID.Bytes(), s.FnChainID().Bytes()) {
 		s.Panicf("unknown chain id: %s", req.ChainID.String())
 	}
 	contract := s.cvt.IscHname(req.Contract)

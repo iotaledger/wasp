@@ -110,7 +110,7 @@ func setupClientDisposable(t solo.TestContext) *wasmclient.WasmClientContext {
 
 func setupClientSolo(t solo.TestContext) *wasmclient.WasmClientContext {
 	ctx := wasmsolo.NewSoloContext(t, testwasmlib.ScName, testwasmlibimpl.OnDispatch)
-	chain := ctx.CurrentChainID().String()
+	chain := ctx.Chain.ChainID.String()
 	wallet := ctx.Chain.OriginatorPrivateKey
 
 	// use Solo as fake Wasp cluster

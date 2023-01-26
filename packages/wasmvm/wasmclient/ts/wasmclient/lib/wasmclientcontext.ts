@@ -10,7 +10,6 @@ import {IClientService} from './wasmclientservice';
 
 export class WasmClientContext extends WasmClientSandbox implements wasmlib.ScFuncCallContext {
     private eventHandlers: wasmlib.IEventHandlers[] = [];
-    private eventReceived: bool = false;
 
     public constructor(svcClient: IClientService, chain: string, scName: string) {
         super(svcClient, chain, scName);
