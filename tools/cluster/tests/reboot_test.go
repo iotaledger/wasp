@@ -22,6 +22,11 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, er)
 	er = env.Clu.WaspClient(0).ActivateChain(env.Chain.ChainID)
 	require.NoError(t, er)
+
+	er = env.Clu.WaspClient(1).DeactivateChain(env.Chain.ChainID)
+	require.NoError(t, er)
+	er = env.Clu.WaspClient(1).ActivateChain(env.Chain.ChainID)
+	require.NoError(t, er)
 	//-------
 
 	tx, err := client.PostRequest(inccounter.FuncIncCounter.Name)
@@ -137,6 +142,7 @@ func TestReboot2(t *testing.T) {
 	env.expectCounter(nativeIncCounterSCHname, 4)
 }
 
+// Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
 	env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 
@@ -149,13 +155,21 @@ func TestRebootDuringTasks(t *testing.T) {
 
 	for i := 0; i < 10000; i++ {
 		go func() {
-			// ignore the error
+			// ignore any error
 			client.PostOffLedgerRequest(inccounter.FuncIncCounter.Name)
 			// require.NoError(t, err)
 		}()
 	}
+
+	go func() {
+		for i := 0; i < 10000; i++ {
+			_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
+			require.NoError(t, err)
+		}
+	}()
 	for i := 0; i < 10; i++ {
 		// restart the nodes
+		// TODO test rebooting only 1 node and see if the consensus breaks
 		err := env.Clu.RestartNodes(0, 1, 2)
 		require.NoError(t, err)
 		time.Sleep(8 * time.Second)

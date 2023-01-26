@@ -7,8 +7,8 @@ const (
 	PriorityCloseDatabase = iota // no dependencies
 	PriorityDatabaseHealth
 	PriorityNodeConnection
-	PriorityChains
 	PriorityPeering
+	PriorityChains
 	PriorityWebAPI
 	PriorityDBGarbageCollection
 	PriorityPrometheus

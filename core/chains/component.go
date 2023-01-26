@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/shutdowncoordinator"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -102,6 +103,7 @@ func provide(c *dig.Container) error {
 				deps.NodeIdentityProvider,
 				deps.ConsensusStateRegistry,
 				deps.ChainListener,
+				shutdowncoordinator.New("chains", nil, CoreComponent.Logger()),
 			),
 		}
 	}); err != nil {
